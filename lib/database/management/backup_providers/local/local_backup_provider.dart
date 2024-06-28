@@ -35,7 +35,7 @@ class LocalBackupProvider extends BackupProvider {
       required String pathToZippedBackup,
       required int version}) async {
     final datePart =
-        DateTimeFormat.format(DateTime.now(), format: 'Y.j.d.H.i.s');
+        DateTimeFormat.format(DateTime.now(), format: 'Y-j-d-H-i-s-');
 
     final pathToBackupDir = await _pathToBackupDir;
 

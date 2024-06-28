@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:strings/strings.dart';
 
-import '../management/backup_providers/local/backup.dart';
+import '../management/backup_providers/local/local_backup_provider.dart';
 import '../management/db_utility.dart';
 
 /// Upgrade the database by applying each upgrade script in order
