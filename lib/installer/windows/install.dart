@@ -1,14 +1,15 @@
 import 'dart:ffi';
 
-import 'package:dcli/dcli.dart';
 import 'package:ffi/ffi.dart';
 import 'package:win32/win32.dart';
 
+import '../../util/dcli_stub.dart'
+    if (Platform.isWindows) 'package:dcli/dcli.dart';
 
 void windowsInstalller() {
   const protocol = 'hmb';
 
-  final appPath = DartScript.self.pathToScript;
+  final appPath = DartScript.self().pathToScript;
 
   final protocolKey = text('Software\\Classes\\$protocol');
   final commandKey = text('Software\\Classes\\$protocol\\shell\\open\\command');
@@ -32,7 +33,6 @@ void windowsInstalller() {
     nullptr,
   );
 
-  
   if (result == ERROR_SUCCESS) {
     // Set the default value for the protocol key
     RegSetValueEx(hKey.value, nullptr, 0, REG_SZ, protocolValue.cast<BYTE>(),
