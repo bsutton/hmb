@@ -4,6 +4,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../dao/dao.dart';
 import '../../entity/entities.dart';
 import '../../widgets/hmb_add_button.dart';
+import '../../widgets/hmb_are_you_sure_dialog.dart';
 import '../../widgets/hmb_text_field.dart';
 
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
@@ -159,27 +160,11 @@ class EntityListScreenState<T extends Entity<T>>
       ];
 
   Future<void> _confirmDelete(Entity<T> entity) async {
-    final deleteConfirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Confirmation'),
-        content: const Text('Are you sure you want to delete this item?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
-    );
-
-    if (deleteConfirmed ?? false) {
-      await _delete(entity);
-    }
+    await areYouSure(
+        context: context,
+        title: 'Delete Confirmation',
+        message: 'Are you sure you want to delete this item?',
+        onConfirmed: () async => _delete(entity));
   }
 
   @override
