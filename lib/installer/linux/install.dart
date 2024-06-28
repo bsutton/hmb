@@ -12,7 +12,7 @@ Future<void> linuxInstaller() async {
 Future<void> _installDeepLinkHander() async {
   var desktopLauncher =
       await rootBundle.loadString('assets/installer/linux/hmb.desktop');
-  final String pathToExe;
+final String pathToExe;
 
   if (DartScript.self.isCompiled) {
     pathToExe = DartScript.self.pathToExe;
