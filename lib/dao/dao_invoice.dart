@@ -50,7 +50,7 @@ class DaoInvoice extends Dao<Invoice> {
   }
 
   /// Create an invoice for the given job.
-  Future<Invoice> create(Job job) async {
+  Future<Invoice> create(Job job, List<int> selectedTaskIds) async {
     final tasks = await DaoTask().getTasksByJob(job);
 
     var totalAmount = MoneyEx.zero;
@@ -65,6 +65,9 @@ class DaoInvoice extends Dao<Invoice> {
 
     // Create invoice lines and groups for each task
     for (final task in tasks) {
+      if (!selectedTaskIds.contains(task.id)) {
+        continue;
+      }
       // Create invoice line group for the task
       final invoiceLineGroup = InvoiceLineGroup.forInsert(
         invoiceId: invoiceId,

@@ -34,7 +34,7 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
     _initialEntry = completer.future;
     // ignore: discarded_futures
     DaoTimeEntry().getActiveEntry().then((entry) {
-      if (entry != null && entry.taskId == widget.task!.id) {
+      if (entry != null && entry.taskId == widget.task?.id) {
         completer.complete(entry);
       } else {
         completer.complete(null);
