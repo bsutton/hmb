@@ -4,61 +4,47 @@ HMB (hold my beer) is an app designed for a single handyman to run their busines
 
 HMB supports the following:
 * customer database
-* supplier databse
+* supplier database
 * job management
+* timekeeping
+* shopping list
+* global shopping list
+* job invoicing
 
-A Job is to track work we are doing for a customer.
-How you use a job is fairly flexible but generally I recommend creating
-a job each time a customer books a service. 
 
-A job is associated with a single customer and site (simply an address associated
-with a customer). 
-Within a job you create tasks, I job should have at least one task but can
-and usually has many tasks associated with it.
+## Features
 
-As an example you might create a job called:
+HMB supports the following features:
+* customer database including multiple contacts and sites.
+* supplier database 
+* job management
+* time keeping
+* globally shopping list built from job/task based checklists.
+* basic job invoicing
+* click to dial 
+* click to email
+* click to text (coming)
 
-'Shed and Gates' 
+# Overview
 
-Then within the Job you might have the following tasks
-* order shed
-* build sheet
-* order gate latch
-* install gate latch
+HMB is based around Jobs. 
+A Job represents work for a customer at a specific site.
 
-Once you have a task you can add a checklist to track items that you need
-to take or purchase to complete the task.
+Within a Job you create the set of Tasks that make up the parts of a Job.
+Time tracking is done against a task.
+Each Task can have a checklist associated with it. Items in the checklist that
+are marked as 'need to be purchased' will be added to the global shopping list.
 
-Items in you checklist that are marked as need to be purchased can be
-seen in the global shopping list - so next time you go to the hardware store
-you can access a single shopping list, mark items as purchased and track how much 
-you paid for each item.
+The global shopping list is a list of all items that need to be purchased.
+Once a task is complete you can generate an invoice for the task. 
+Invoicing is very basic and you still need an external accounting package.
+Currently HMB supports Xero and is able to upload an invoice directly into Xero.
 
-# Time Entry
-HMB can track the time you spend on a job.
-Time is tracked against a task. Find the Job card, open it to see the list of tasks.
-You can start a task timer by click the '>' icon on the Task card.
-When you stop working on a task you can click the '[]' icon to stop the timer.
-The time is then added to the task.
+See the HMB wiki for more information.
 
-# Shopping List
-HMB has a global shopping list. This is a list of items that you need to purchase
-to complete a job.
-You can add items to the shopping list by clicking the '+' icon on the Job card.
-You can then add items to the shopping list by clicking the '+' icon on the
-Shopping List card.
+https://github.com/bsutton/handyman/wiki
 
-# Hardware Store
-HMB has a hardware store. This is a list of items that you can purchase.
-You can add items to the hardware store by clicking the '+' icon on the Job card.
-You can then add items to the hardware store by clicking the '+' icon on the
-Hardware Store card.
 
-# Hardware Inventory
-HMB has a hardware inventory. This is a list of items that you have purchased.
-You can add items to the hardware inventory by clicking the '+' icon on the Job card.
-You can then add items to the hardware inventory by clicking the '+' icon on the
-Hardware Inventory card.
 
 
 ## Getting Started
