@@ -45,6 +45,7 @@ where j.id =?
 select c.* 
 from customer c
 where c.name like ?
+order by c.modifiedDate desc
 ''', ['''%$filter%''']);
 
     return toList(data);
