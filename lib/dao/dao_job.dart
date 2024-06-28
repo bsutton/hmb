@@ -9,6 +9,7 @@ import '../entity/task.dart';
 import '../util/fixed_ex.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
+import 'dao_checklist_item.dart';
 import 'dao_task.dart';
 import 'dao_time_entry.dart';
 
@@ -140,6 +141,25 @@ where c.id =?
 ''', [customer.id]);
 
     return toList(data);
+  }
+
+  Future<bool> hasBillableTasks(Job job) async {
+    final tasks = await DaoTask().getTasksByJob(job);
+    for (final task in tasks) {
+      final timeEntries = await DaoTimeEntry().getByTask(task.id);
+      final unbilledTimeEntries = timeEntries.where((entry) => !entry.billed);
+      if (unbilledTimeEntries.isNotEmpty) {
+        return true;
+      }
+
+      final checkListItems = await DaoCheckListItem().getByTask(task);
+      final unbilledCheckListItems =
+          checkListItems.where((item) => !item.billed);
+      if (unbilledCheckListItems.isNotEmpty) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @override

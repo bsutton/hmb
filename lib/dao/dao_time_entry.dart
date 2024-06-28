@@ -34,6 +34,33 @@ class DaoTimeEntry extends Dao<TimeEntry> {
 
   @override
   JuneStateCreator get juneRefresher => DbTimeEntryChanged.new;
+
+  Future<void> markAsUnbilled(TimeEntry entity, int invoiceLineId) async {
+    final db = getDb();
+    await db.update(
+      tableName,
+      {'invoice_line_id': null, 'billed': 0},
+      where: 'id = ?',
+      whereArgs: [entity.id],
+    );
+  }
+
+  Future<void> markAsBilled(TimeEntry entity, int invoiceLineId) async {
+    final db = getDb();
+    await db.update(
+      tableName,
+      {'invoice_line_id': invoiceLineId, 'billed': 1},
+      where: 'id = ?',
+      whereArgs: [entity.id],
+    );
+  }
+
+  Future<List<TimeEntry>> getByInvoiceLineId(int invoiceLineId) async {
+    final db = getDb();
+    final results = await db.query(tableName,
+        where: 'invoice_line_id = ?', whereArgs: [invoiceLineId]);
+    return results.map(TimeEntry.fromMap).toList();
+  }
 }
 
 /// Can be used to notify the UI that the time entry has changed.

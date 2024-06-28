@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../entity/check_list.dart';
 import '../entity/check_list_item.dart';
+import '../entity/task.dart';
 import 'dao.dart';
 import 'dao_check_list_item_check_list.dart';
 
@@ -42,9 +43,11 @@ where cl.id =?
     await DaoCheckListItemCheckList().insertJoin(checklistitem, checklist);
   }
 
-  Future<void> markAsCompleted(CheckListItem item, Money cost) async {
+  Future<void> markAsCompleted(
+      CheckListItem item, Money unitCost, Fixed quantity) async {
     item
-      ..cost = cost
+      ..unitCost = unitCost
+      ..quantity = quantity
       ..completed = true;
 
     await update(item);
@@ -74,8 +77,32 @@ where cl.id =?
 ''', [checklist.id]);
   }
 
+  Future<List<CheckListItem>> getByTask(Task task) async {
+    final db = getDb();
+
+    final data = await db.rawQuery('''
+select cli.* 
+from task t
+join task_check_list tc
+  on t.id = tc.task_id
+join check_list cl
+  on tc.check_list_id = cl.id
+join check_list_item cli
+  on cl.id = cli.check_list_id
+where t.id =? 
+''', [task.id]);
+
+    return toList(data);
+  }
+
   @override
   JuneStateCreator get juneRefresher => CheckListItemState.new;
+
+  Future<void> markNotBilled(int invoiceLineId) async {
+    final db = getDb();
+    await db.update(tableName, {'billed': 0, 'invoice_line_id': null},
+        where: 'invoice_line_id=?', whereArgs: [invoiceLineId]);
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.
