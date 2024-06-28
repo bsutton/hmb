@@ -1,0 +1,6 @@
+ALTER TABLE check_list_item RENAME COLUMN cost TO unit_cost;
+ALTER TABLE check_list_item ADD COLUMN quantity INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE check_list_item ADD COLUMN billed INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE time_entry ADD COLUMN billed INTEGER NOT NULL DEFAULT 0;
+
