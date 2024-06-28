@@ -72,4 +72,8 @@ class Task extends Entity<Task> {
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
+
+  @override
+  String toString() =>
+      'Task(id: $id, jobId: $jobId, name: $name, completed: $completed)';
 }
