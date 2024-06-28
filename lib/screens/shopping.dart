@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -72,10 +73,10 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
     );
 
     if (confirmed ?? false) {
-      final quantity = int.tryParse(quantityController.text) ?? 1;
-      final cost = MoneyEx.tryParse(costController.text) * quantity;
+      final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
+      final unitCost = MoneyEx.tryParse(costController.text);
 
-      await DaoCheckListItem().markAsCompleted(item, cost);
+      await DaoCheckListItem().markAsCompleted(item, unitCost, quantity);
       await _loadCheckListItems();
     }
   }
