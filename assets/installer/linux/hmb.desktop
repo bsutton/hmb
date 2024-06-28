@@ -1,0 +1,16 @@
+[Desktop Entry]
+Name=Hold My Beer - I'm a handyman.
+Comment=Launch Hold My Beer via the hmb:// url scheme
+Path=$workingDir$
+Exec=$exec$
+Icon=web-browser
+Terminal=false
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=x-scheme-handler/hmb;
+
+
+# Use this veriation to attach to the debugger in a paused state.
+# Exec=gnome-terminal -e "bash -c 'flutter run --start-paused -d linux /home/bsutton/git/handyman/handyman/lib/main.dart;$SHELL'"
+# use this variation to see launch errors using a compiled exe.
+# Exec=gnome-terminal -e "bash -c '/home/bsutton/git/handyman/handyman/build/linux/x64/release/bundle/handyman;$SHELL'"

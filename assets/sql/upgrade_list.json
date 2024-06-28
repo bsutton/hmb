@@ -1,0 +1,14 @@
+[
+  "assets/sql/upgrade_scripts/v12.sql",
+  "assets/sql/upgrade_scripts/v11.sql",
+  "assets/sql/upgrade_scripts/v10.sql",
+  "assets/sql/upgrade_scripts/v9.sql",
+  "assets/sql/upgrade_scripts/v8.sql",
+  "assets/sql/upgrade_scripts/v7.sql",
+  "assets/sql/upgrade_scripts/v6.sql",
+  "assets/sql/upgrade_scripts/v5.sql",
+  "assets/sql/upgrade_scripts/v4.sql",
+  "assets/sql/upgrade_scripts/v3.sql",
+  "assets/sql/upgrade_scripts/v2.sql",
+  "assets/sql/upgrade_scripts/v1.sql"
+]

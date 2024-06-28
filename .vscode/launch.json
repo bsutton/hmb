@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "handyman-chrome",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "-d",
+                "chrome",
+                "--web-port",
+                "8000"
+            ],
+        },
+        {
+            "name": "handyman-linux",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "-d",
+                "linux"
+            ],
+        },
+        {
+            "name": "handyman-selected-device",
+            "request": "launch",
+            "type": "dart",
+          
+        },
+        {
+            "name": "handyman (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "handyman (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}

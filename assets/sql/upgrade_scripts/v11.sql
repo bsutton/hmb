@@ -1,0 +1,1 @@
+ALTER TABLE system ADD COLUMN sim_card_no int;
