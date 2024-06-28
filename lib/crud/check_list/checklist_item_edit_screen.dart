@@ -42,6 +42,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     implements NestedEntityState<CheckListItem> {
   late TextEditingController _descriptionController;
   late TextEditingController _costController;
+  late TextEditingController _quantityController;
   late TextEditingController _effortInHoursController;
   late FocusNode _descriptionFocusNode;
 
@@ -51,7 +52,10 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _descriptionController =
         TextEditingController(text: widget.checkListItem?.description);
     _costController =
-        TextEditingController(text: widget.checkListItem?.cost.toString());
+        TextEditingController(text: widget.checkListItem?.unitCost.toString());
+    _quantityController =
+        TextEditingController(text: widget.checkListItem?.quantity.toString());
+
     _effortInHoursController = TextEditingController(
         text: widget.checkListItem?.effortInHours.toString());
 
@@ -62,6 +66,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   void dispose() {
     _descriptionController.dispose();
     _costController.dispose();
+    _quantityController.dispose();
     _effortInHoursController.dispose();
     _descriptionFocusNode.dispose();
     super.dispose();
@@ -98,6 +103,11 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
               keyboardType: TextInputType.number,
             ),
             HMBTextField(
+              controller: _quantityController,
+              labelText: 'Quantity',
+              keyboardType: TextInputType.number,
+            ),
+            HMBTextField(
               controller: _effortInHoursController,
               labelText: 'Effort (in hours)',
               keyboardType: TextInputType.number,
@@ -128,7 +138,9 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
                   .checkListItemType
                   ?.id ??
               0,
-          cost: MoneyEx.tryParse(_costController.text),
+          billed: false,
+          unitCost: MoneyEx.tryParse(_costController.text),
+          quantity: FixedEx.tryParse(_quantityController.text),
           effortInHours: FixedEx.tryParse(_effortInHoursController.text),
           completed: checkListItem.completed);
 
@@ -139,7 +151,8 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         itemTypeId:
             June.getState(CheckListItemTypeStatus.new).checkListItemType?.id ??
                 0,
-        cost: MoneyEx.tryParse(_costController.text),
+        unitCost: MoneyEx.tryParse(_costController.text),
+        quantity: FixedEx.tryParse(_quantityController.text),
         effortInHours: FixedEx.tryParse(_effortInHoursController.text),
       );
 
