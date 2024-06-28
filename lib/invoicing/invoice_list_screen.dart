@@ -12,6 +12,7 @@ import '../entity/job.dart';
 import '../util/format.dart';
 import '../widgets/hmb_are_you_sure_dialog.dart';
 import '../widgets/hmb_button.dart';
+import 'dialog_select_tasks.dart';
 import 'edit_invoice_line_dialog.dart';
 
 class InvoiceListScreen extends StatefulWidget {
@@ -38,10 +39,15 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   }
 
   Future<void> _createInvoice() async {
-    await DaoInvoice().create(widget.job);
+    final selectedTasks = await DialogTaskSelection.show(context, widget.job);
 
-    // Refresh state
-    await _refresh();
+    if (selectedTasks.isNotEmpty) {
+      // Create invoice (and invoice lines
+      await DaoInvoice().create(widget.job, selectedTasks);
+
+      // Refresh state
+      await _refresh();
+    }
   }
 
   Future<void> _refresh() async {
