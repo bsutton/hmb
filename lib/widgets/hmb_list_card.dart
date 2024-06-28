@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 typedef OnDelete = Future<void> Function();
 typedef OnEdit = Widget Function();
+typedef Allowed = bool Function();
 typedef OnRefresh = Future<void> Function();
 
 class HMBCrudListCard extends StatelessWidget {
@@ -11,6 +12,8 @@ class HMBCrudListCard extends StatelessWidget {
       required this.onDelete,
       required this.onEdit,
       required this.onRefresh,
+      this.canEdit,
+      this.canDelete,
       super.key});
 
   final Widget child;
@@ -18,6 +21,8 @@ class HMBCrudListCard extends StatelessWidget {
   final OnEdit onEdit;
   final OnRefresh onRefresh;
   final Widget title;
+  final Allowed? canEdit;
+  final Allowed? canDelete;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -32,24 +37,28 @@ class HMBCrudListCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(child: title),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () async {
-                            await onDelete();
-                          },
-                        ),
+                        Visibility(
+                            visible: canDelete?.call() ?? true,
+                            child: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () async => onDelete(),
+                            )),
                       ]),
                 ),
                 child,
               ],
             )),
-        onTap: () async {
-          if (context.mounted) {
-            await Navigator.push(
-              context,
-              MaterialPageRoute<void>(builder: (context) => onEdit()),
-            ).then((_) => onRefresh());
-          }
-        },
+        onTap: () async => canEdit?.call() ?? true ? _pushEdit(context) : null,
       );
+
+  Future<void> _pushEdit(BuildContext context) async {
+    {
+      if (context.mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (context) => onEdit()),
+        ).then((_) => onRefresh());
+      }
+    }
+  }
 }

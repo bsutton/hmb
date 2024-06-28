@@ -18,6 +18,8 @@ class Parent<P extends Entity<P>> {
 
 enum CardDetail { full, summary }
 
+typedef Allowed<C> = bool Function(C entity);
+
 class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
     extends StatefulWidget {
   const NestedEntityListScreen({
@@ -32,6 +34,8 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
     required this.entityNameSingular,
     required this.parent,
     required this.fetchList,
+    this.canEdit,
+    this.canDelete,
     this.extended = false,
     super.key,
   });
@@ -41,6 +45,8 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
   final Widget Function(C entity) title;
   final Widget Function(C entity, CardDetail cardDetail) details;
   final Widget Function(C? entity) onEdit;
+  final Allowed<C>? canEdit;
+  final Allowed<C>? canDelete;
   final Future<void> Function(C? entity) onDelete;
   final Future<void> Function(C? entity) onInsert;
   final Future<List<C>> Function() fetchList;
@@ -174,6 +180,10 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
       title: widget.title(entity),
       onDelete: () async => _confirmDelete(entity),
       onEdit: () => widget.onEdit(entity),
+      canEdit:
+          widget.canEdit == null ? () => true : () => widget.canEdit!(entity),
+      canDelete:
+          widget.canDelete == null ? () => true : () => widget.canDelete!(entity),
       onRefresh: _refreshEntityList,
       child: Padding(
         padding: const EdgeInsets.only(left: 8),
