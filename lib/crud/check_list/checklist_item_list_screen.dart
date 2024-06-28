@@ -5,6 +5,7 @@ import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/check_list_item.dart';
 import '../../entity/check_list_item_type.dart';
 import '../../entity/entity.dart';
+import '../../widgets/hmb_fixed.dart';
 import '../../widgets/hmb_money.dart';
 import '../base_nested/nested_list_screen.dart';
 import 'checklist_item_edit_screen.dart';
@@ -47,7 +48,8 @@ class CheckListItemListScreen<P extends Entity<P>> extends StatelessWidget {
             return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HMBMoney(label: 'Cost', amount: checklistitem.cost)
+                  HMBMoney(label: 'Cost', amount: checklistitem.unitCost),
+                  HMBFixed(label: 'Quantity', amount: checklistitem.quantity)
                 ]);
           });
 }
