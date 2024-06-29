@@ -20,7 +20,7 @@ class DialWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min, // added line
         children: [
           IconButton(
-            iconSize: 25,
+            iconSize: 22,
             icon: const Icon(Icons.phone),
             onPressed: () async => Strings.isEmpty(phoneNo)
                 ? null
@@ -29,7 +29,7 @@ class DialWidget extends StatelessWidget {
             tooltip: 'Call or Text',
           ),
           IconButton(
-            iconSize: 25,
+            iconSize: 22,
             icon: const Icon(Icons.copy),
             onPressed: () async => Strings.isEmpty(phoneNo)
                 ? null
