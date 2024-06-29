@@ -17,7 +17,7 @@ class MailToIcon extends StatelessWidget {
         mainAxisSize: MainAxisSize.min, // added
         children: [
           IconButton(
-            iconSize: 25,
+            iconSize: 22,
             icon: const Icon(Icons.email),
             onPressed: () async =>
                 Strings.isEmpty(email) ? null : _sendEmail(context, email!),
@@ -25,7 +25,7 @@ class MailToIcon extends StatelessWidget {
             tooltip: 'Send an Email',
           ),
           IconButton(
-            iconSize: 25,
+            iconSize: 22,
             icon: const Icon(Icons.copy),
             onPressed: () async => Strings.isEmpty(email)
                 ? null
