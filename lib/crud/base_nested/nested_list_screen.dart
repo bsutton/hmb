@@ -182,8 +182,9 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
       onEdit: () => widget.onEdit(entity),
       canEdit:
           widget.canEdit == null ? () => true : () => widget.canEdit!(entity),
-      canDelete:
-          widget.canDelete == null ? () => true : () => widget.canDelete!(entity),
+      canDelete: widget.canDelete == null
+          ? () => true
+          : () => widget.canDelete!(entity),
       onRefresh: _refreshEntityList,
       child: Padding(
         padding: const EdgeInsets.only(left: 8),
