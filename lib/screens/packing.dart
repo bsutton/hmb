@@ -12,15 +12,15 @@ import '../dao/dao_task.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
 
-class ShoppingScreen extends StatefulWidget {
-  const ShoppingScreen({super.key});
+class PackingScreen extends StatefulWidget {
+  const PackingScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
-  _ShoppingScreenState createState() => _ShoppingScreenState();
+  _PackingScreenState createState() => _PackingScreenState();
 }
 
-class _ShoppingScreenState extends State<ShoppingScreen> {
+class _PackingScreenState extends State<PackingScreen> {
   late Future<List<CheckListItem>> _checkListItemsFuture;
   late List<CheckListItem> _checkListItems;
 
@@ -31,7 +31,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
   }
 
   Future<void> _loadCheckListItems() async {
-    _checkListItemsFuture = DaoCheckListItem().getShoppingItems();
+    _checkListItemsFuture = DaoCheckListItem().getPackingItems();
     _checkListItems = await _checkListItemsFuture;
     setState(() {});
   }
@@ -84,56 +84,53 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Shopping List'),
+          title: const Text('Packing List'),
         ),
-        body: FutureBuilder<List<CheckListItem>>(
+        body: FutureBuilderEx<List<CheckListItem>>(
           future: _checkListItemsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('''
-No Shopping Items found 
-- shopping items are taken from Task Check list items 
-that are marked as "buy".'''));
+          builder: (context, _checkListItems) {
+            if (_checkListItems == null || _checkListItems.isEmpty) {
+              return _showEmpty();
+            } else {
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 600) {
+                    // Mobile layout
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(8),
+                      itemCount: _checkListItems.length,
+                      itemBuilder: (context, index) {
+                        final item = _checkListItems[index];
+                        return _buildListItem(context, item);
+                      },
+                    );
+                  } else {
+                    // Desktop layout
+                    return GridView.builder(
+                      padding: const EdgeInsets.all(8),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 3,
+                      ),
+                      itemCount: _checkListItems.length,
+                      itemBuilder: (context, index) {
+                        final item = _checkListItems[index];
+                        return _buildListItem(context, item);
+                      },
+                    );
+                  }
+                },
+              );
             }
-
-            _checkListItems = snapshot.data!;
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth < 600) {
-                  // Mobile layout
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(8),
-                    itemCount: _checkListItems.length,
-                    itemBuilder: (context, index) {
-                      final item = _checkListItems[index];
-                      return _buildListItem(context, item);
-                    },
-                  );
-                } else {
-                  // Desktop layout
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(8),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 3,
-                    ),
-                    itemCount: _checkListItems.length,
-                    itemBuilder: (context, index) {
-                      final item = _checkListItems[index];
-                      return _buildListItem(context, item);
-                    },
-                  );
-                }
-              },
-            );
           },
         ),
       );
+
+  Center _showEmpty() => const Center(child: Text('''
+No Packing Items found 
+- Packing items are taken from Task Check list items 
+that are marked as "buy".'''));
 
   Widget _buildListItem(BuildContext context, CheckListItem item) => Card(
         margin: const EdgeInsets.symmetric(vertical: 8),

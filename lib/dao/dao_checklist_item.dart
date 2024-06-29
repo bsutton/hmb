@@ -103,6 +103,40 @@ where t.id =?
     await db.update(tableName, {'billed': 0, 'invoice_line_id': null},
         where: 'invoice_line_id=?', whereArgs: [invoiceLineId]);
   }
+
+  /// Get items that need to be packed.
+  Future<List<CheckListItem>> getPackingItems() async {
+    final db = getDb();
+
+    final data = await db.rawQuery('''
+select cli.* 
+from check_list_item cli
+join check_list_item_type clit
+  on cli.item_type_id = clit.id
+where clit.name = 'Materials - stock' 
+or clit.name = 'Tools - stock' 
+and  cli.completed = 0
+''');
+
+    return toList(data);
+  }
+
+  /// Get items that need to be packed.
+  Future<List<CheckListItem>> getShoppingItems() async {
+    final db = getDb();
+
+    final data = await db.rawQuery('''
+select cli.* 
+from check_list_item cli
+join check_list_item_type clit
+  on cli.item_type_id = clit.id
+where clit.name = 'Materials - buy' 
+or clit.name = 'Tools - buy' 
+and  cli.completed = 0
+''');
+
+    return toList(data);
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

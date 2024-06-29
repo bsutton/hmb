@@ -20,6 +20,7 @@ import 'database/management/database_helper.dart';
 import 'firebase_options.dart';
 import 'installer/linux/install.dart';
 import 'invoicing/xero_auth.dart';
+import 'screens/packing.dart';
 import 'screens/shopping.dart';
 import 'widgets/blocking_ui.dart';
 import 'widgets/hmb_toast.dart';
@@ -98,6 +99,7 @@ class MyDrawer extends StatelessWidget {
     DrawerItem(title: 'Customers', screen: const CustomerListScreen()),
     DrawerItem(title: 'Suppliers', screen: const SupplierListScreen()),
     DrawerItem(title: 'Shopping', screen: const ShoppingScreen()),
+    DrawerItem(title: 'Packing', screen: const PackingScreen()),
     DrawerItem(
       title: 'System',
       screen: FutureBuilderEx(
