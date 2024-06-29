@@ -20,7 +20,7 @@ class CustomerListScreen extends StatelessWidget {
   Widget build(BuildContext context) => EntityListScreen<Customer>(
       pageTitle: 'Customers',
       dao: DaoCustomer(),
-      title: (entity) => Text(entity.name) as Widget,
+      title: (entity) => HMBTextHeadline2(entity.name),
       fetchList: (filter) async => DaoCustomer().getByFilter(filter),
       onEdit: (customer) => CustomerEditScreen(customer: customer),
       details: (entity) {
@@ -34,7 +34,6 @@ class CustomerListScreen extends StatelessWidget {
                 builder: (context, contact) => Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          HMBTextHeadline2(customer.name),
                           ContactText(
                               label: 'Primary Contact:', contact: contact),
                           HMBPhoneText(

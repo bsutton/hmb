@@ -35,8 +35,7 @@ class JobCard extends StatelessWidget {
               builder: (context, site) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HMBTextHeadline2(customer?.name ?? 'Not Set'),
-                  HMBTextHeadline3(job.summary),
+                  HMBTextHeadline3(customer?.name ?? 'Not Set'),
                   FutureBuilderEx(
                     // ignore: discarded_futures
                     future: DaoContact().getById(job.contactId),
@@ -49,12 +48,12 @@ class JobCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  HMBSiteText(label: '', site: site),
                   HMBText('Status: ${jobStatus?.name}'),
                   HMBText('Scheduled: ${formatDate(job.startDate)}'),
                   HMBText(
                     '''Description: ${RichEditor.createParchment(job.description).toPlainText().split('\n').first}''',
                   ),
-                  HMBSiteText(label: 'Address:', site: site),
                   buildStatistics(job)
                 ],
               ),

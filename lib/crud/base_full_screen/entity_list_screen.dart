@@ -102,14 +102,15 @@ class EntityListScreenState<T extends Entity<T>>
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(4),
                       // widget.title(entity),
+                      title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            widget.title(entity),
+                            _buildDeleteButton(entity)
+                          ]),
+                      // subtitle: widget.subtile
                       visualDensity: const VisualDensity(horizontal: -4),
                       subtitle: widget.details(entity),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () async {
-                          await _confirmDelete(entity);
-                        },
-                      ),
                       onTap: () async {
                         if (context.mounted) {
                           await Navigator.push(
@@ -121,6 +122,13 @@ class EntityListScreenState<T extends Entity<T>>
                       },
                     ),
                   ));
+        },
+      );
+
+  IconButton _buildDeleteButton(T entity) => IconButton(
+        icon: const Icon(Icons.delete, color: Colors.red),
+        onPressed: () async {
+          await _confirmDelete(entity);
         },
       );
 
