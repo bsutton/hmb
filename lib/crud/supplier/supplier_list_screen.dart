@@ -20,7 +20,7 @@ class SupplierListScreen extends StatelessWidget {
   Widget build(BuildContext context) => EntityListScreen<Supplier>(
       pageTitle: 'Suppliers',
       dao: DaoSupplier(),
-      title: (entity) => Text(entity.name) as Widget,
+      title: (entity) => HMBTextHeadline2(entity.name),
       onEdit: (supplier) => SupplierEditScreen(supplier: supplier),
       details: (entity) {
         final supplier = entity;
@@ -33,7 +33,6 @@ class SupplierListScreen extends StatelessWidget {
                 builder: (context, contact) => Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          HMBTextHeadline2(supplier.name),
                           ContactText(
                               label: 'Primary Contact:', contact: contact),
                           HMBPhoneText(phoneNo: contact?.mobileNumber),
