@@ -6,7 +6,6 @@ class HMBRowGap extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return const Padding(padding: EdgeInsets.only(left: 10));
-  }
+  Widget build(BuildContext context) =>
+      const Padding(padding: EdgeInsets.only(left: 10));
 }
