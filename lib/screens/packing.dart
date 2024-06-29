@@ -22,7 +22,6 @@ class PackingScreen extends StatefulWidget {
 
 class _PackingScreenState extends State<PackingScreen> {
   late Future<List<CheckListItem>> _checkListItemsFuture;
-  late List<CheckListItem> _checkListItems;
 
   @override
   void initState() {
@@ -32,7 +31,6 @@ class _PackingScreenState extends State<PackingScreen> {
 
   Future<void> _loadCheckListItems() async {
     _checkListItemsFuture = DaoCheckListItem().getPackingItems();
-    _checkListItems = await _checkListItemsFuture;
     setState(() {});
   }
 
