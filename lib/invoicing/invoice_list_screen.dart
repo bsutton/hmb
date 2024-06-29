@@ -34,7 +34,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   @override
   void initState() {
     super.initState();
+    // ignore: discarded_futures
     _invoices = DaoInvoice().getByJobId(widget.job.id);
+    // ignore: discarded_futures
     _hasUnbilledItems = DaoJob().hasBillableTasks(widget.job);
   }
 
@@ -98,6 +100,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
           subtitle: Text('Total: ${invoice.totalAmount}'),
           children: [
             FutureBuilderEx<List<InvoiceLineGroup>>(
+              // ignore: discarded_futures
               future: DaoInvoiceLineGroup().getByInvoiceId(invoice.id),
               builder: (context, invoiceLineGroups) {
                 if (invoiceLineGroups!.isEmpty) {
@@ -199,9 +202,10 @@ Invoice # ${invoice.id} Issued: ${formatDate(invoice.createdDate)}'''),
     );
 
     if (editedLine != null) {
+      // Update the invoice line in the database
+      await DaoInvoiceLine().update(editedLine);
+      await DaoInvoice().recalculateTotal(editedLine.invoiceId);
       setState(() {
-        // Update the invoice line in the database
-        DaoInvoiceLine().update(editedLine);
         // Refresh the invoice lines
         _invoices = DaoInvoice().getByJobId(widget.job.id);
       });

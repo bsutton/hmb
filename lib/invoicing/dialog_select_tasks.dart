@@ -15,6 +15,7 @@ class DialogTaskSelection extends StatefulWidget {
   final Job job;
 
   @override
+  // ignore: library_private_types_in_public_api
   _DialogTaskSelectionState createState() => _DialogTaskSelectionState();
 
   /// Show the dialog
@@ -35,6 +36,7 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
   @override
   void initState() {
     super.initState();
+    // ignore: discarded_futures
     _tasks = _loadTasks();
   }
 

@@ -136,6 +136,18 @@ class DaoInvoice extends Dao<Invoice> {
 
   @override
   JuneStateCreator get juneRefresher => InvoiceState.new;
+
+  Future<void> recalculateTotal(int invoiceId) async {
+    final lines = await DaoInvoiceLine().getByInvoiceId(invoiceId);
+    var total = MoneyEx.zero;
+    for (final line in lines) {
+      final lineTotal = line.unitPrice.multiplyByFixed(line.quantity);
+      total += lineTotal;
+    }
+    final invoice = await DaoInvoice().getById(invoiceId);
+    final updatedInvoice = invoice!.copyWith(totalAmount: total);
+    await DaoInvoice().update(updatedInvoice);
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.
