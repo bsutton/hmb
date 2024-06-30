@@ -39,6 +39,10 @@ class HMBEmailField extends StatelessWidget {
               return 'Please enter a valid email address';
             }
           }
+
+          if (validator != null) {
+            return validator!(value);
+          }
           return null;
         },
       );
