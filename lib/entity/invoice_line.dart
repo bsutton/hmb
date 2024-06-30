@@ -2,6 +2,8 @@ import 'package:money2/money2.dart';
 
 import 'entity.dart';
 
+enum LineStatus { normal, noCharge, excluded, noChargeHidden }
+
 class InvoiceLine extends Entity<InvoiceLine> {
   InvoiceLine({
     required super.id,
@@ -13,6 +15,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required super.createdDate,
     required super.modifiedDate,
     this.invoiceLineGroupId,
+    this.status = LineStatus.normal,
   }) : super();
 
   InvoiceLine.forInsert({
@@ -22,6 +25,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.unitPrice,
     required this.lineTotal,
     this.invoiceLineGroupId,
+    this.status = LineStatus.normal,
   }) : super.forInsert();
 
   InvoiceLine.forUpdate({
@@ -32,19 +36,21 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.unitPrice,
     required this.lineTotal,
     this.invoiceLineGroupId,
+    this.status = LineStatus.normal,
   }) : super.forUpdate();
 
   factory InvoiceLine.fromMap(Map<String, dynamic> map) => InvoiceLine(
-        id: map['id'] as int,
-        invoiceId: map['invoice_id'] as int,
-        invoiceLineGroupId: map['invoice_line_group_id'] as int?,
-        description: map['description'] as String,
-        quantity: Fixed.fromInt(map['quantity'] as int),
-        unitPrice: Money.fromInt(map['unit_price'] as int, isoCode: 'AUD'),
-        lineTotal: Money.fromInt(map['line_total'] as int, isoCode: 'AUD'),
-        createdDate: DateTime.parse(map['created_date'] as String),
-        modifiedDate: DateTime.parse(map['modified_date'] as String),
-      );
+      id: map['id'] as int,
+      invoiceId: map['invoice_id'] as int,
+      invoiceLineGroupId: map['invoice_line_group_id'] as int?,
+      description: map['description'] as String,
+      quantity: Fixed.fromInt(map['quantity'] as int),
+      unitPrice: Money.fromInt(map['unit_price'] as int, isoCode: 'AUD'),
+      lineTotal: Money.fromInt(map['line_total'] as int, isoCode: 'AUD'),
+      createdDate: DateTime.parse(map['created_date'] as String),
+      modifiedDate: DateTime.parse(map['modified_date'] as String),
+      status:
+          LineStatus.values[map['status'] as int? ?? LineStatus.normal.index]);
 
   int invoiceId;
   int? invoiceLineGroupId;
@@ -52,6 +58,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
   Fixed quantity;
   Money unitPrice;
   Money lineTotal;
+  LineStatus status;
 
   InvoiceLine copyWith({
     int? id,
@@ -63,6 +70,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     Money? lineTotal,
     DateTime? createdDate,
     DateTime? modifiedDate,
+    LineStatus? status,
   }) =>
       InvoiceLine(
         id: id ?? this.id,
@@ -74,6 +82,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
         lineTotal: lineTotal ?? this.lineTotal,
         createdDate: createdDate ?? this.createdDate,
         modifiedDate: modifiedDate ?? this.modifiedDate,
+        status: status ?? this.status,
       );
 
   @override
@@ -87,5 +96,6 @@ class InvoiceLine extends Entity<InvoiceLine> {
         'line_total': lineTotal.minorUnits.toInt(),
         'created_date': createdDate.toIso8601String(),
         'modified_date': modifiedDate.toIso8601String(),
+        'status': status.index,
       };
 }
