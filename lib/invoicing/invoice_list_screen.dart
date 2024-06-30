@@ -166,19 +166,23 @@ Invoice # ${invoice.id} Issued: ${formatDate(invoice.createdDate)}'''),
 
   /// Build an invoice line.
   Widget _buildInvoiceLine(
-          List<InvoiceLine> invoiceLines, BuildContext context) =>
-      Column(
-        children: invoiceLines
-            .map((line) => ListTile(
-                  title: Text(line.description),
-                  subtitle: Text(
-                    '''Quantity: ${line.quantity}, Unit Price: ${line.unitPrice}''',
-                  ),
-                  trailing: Text('Total: ${line.lineTotal}'),
-                  onTap: () async => _editInvoiceLine(context, line),
-                ))
-            .toList(),
-      );
+      List<InvoiceLine> invoiceLines, BuildContext context) {
+    final visibleLines = invoiceLines
+        .where((line) => line.status != LineStatus.noChargeHidden)
+        .toList();
+    return Column(
+      children: visibleLines
+          .map((line) => ListTile(
+                title: Text(line.description),
+                subtitle: Text(
+                  '''Quantity: ${line.quantity}, Unit Price: ${line.unitPrice}, Status: ${line.status.toString().split('.').last}''',
+                ),
+                trailing: Text('Total: ${line.lineTotal}'),
+                onTap: () async => _editInvoiceLine(context, line),
+              ))
+          .toList(),
+    );
+  }
 
   /// build the create invoice button
   FutureBuilderEx<bool> _buildCreateInvoiceButton() => FutureBuilderEx<bool>(

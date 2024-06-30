@@ -8,72 +8,83 @@ class EditInvoiceLineDialog extends StatefulWidget {
   final InvoiceLine line;
 
   @override
-  // ignore: library_private_types_in_public_api
   _EditInvoiceLineDialogState createState() => _EditInvoiceLineDialogState();
 }
 
 class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
+  late TextEditingController _descriptionController;
   late TextEditingController _quantityController;
   late TextEditingController _unitPriceController;
-  late TextEditingController _percentageController;
+  late LineStatus _status;
 
   @override
   void initState() {
     super.initState();
+    _descriptionController =
+        TextEditingController(text: widget.line.description);
     _quantityController =
         TextEditingController(text: widget.line.quantity.toString());
     _unitPriceController =
         TextEditingController(text: widget.line.unitPrice.toString());
-    _percentageController = TextEditingController();
+    _status = widget.line.status;
   }
 
   @override
   Widget build(BuildContext context) => AlertDialog(
         title: const Text('Edit Invoice Line'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _quantityController,
-              decoration: const InputDecoration(labelText: 'Quantity'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _unitPriceController,
-              decoration: const InputDecoration(labelText: 'Unit Price (AUD)'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _percentageController,
-              decoration: const InputDecoration(labelText: 'Increase %'),
-              keyboardType: TextInputType.number,
-            ),
-          ],
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              TextField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(labelText: 'Description'),
+              ),
+              TextField(
+                controller: _quantityController,
+                decoration: const InputDecoration(labelText: 'Quantity'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: _unitPriceController,
+                decoration: const InputDecoration(labelText: 'Unit Price'),
+                keyboardType: TextInputType.number,
+              ),
+              DropdownButton<LineStatus>(
+                value: _status,
+                onChanged: (newValue) {
+                  setState(() {
+                    _status = newValue!;
+                  });
+                },
+                items: LineStatus.values
+                    .map((status) => DropdownMenuItem<LineStatus>(
+                          value: status,
+                          child: Text(status.toString().split('.').last),
+                        ))
+                    .toList(),
+              ),
+            ],
+          ),
         ),
-        actions: [
+        actions: <Widget>[
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
           ),
           TextButton(
+            child: const Text('Save'),
             onPressed: () {
-              final quantity = Fixed.parse(_quantityController.text);
-              final unitPrice =
-                  Money.parse(_unitPriceController.text, isoCode: 'AUD');
-              final percentage =
-                  double.tryParse(_percentageController.text) ?? 0.0;
-              final newUnitPrice = unitPrice * (1 + percentage / 100);
-              final lineTotal = newUnitPrice.multiplyByFixed(quantity);
-
               final updatedLine = widget.line.copyWith(
-                quantity: quantity,
-                unitPrice: newUnitPrice,
-                lineTotal: lineTotal,
+                description: _descriptionController.text,
+                quantity: Fixed.parse(_quantityController.text),
+                unitPrice:
+                    Money.parse(_unitPriceController.text, isoCode: 'AUD'),
+                status: _status,
               );
-
               Navigator.of(context).pop(updatedLine);
             },
-            child: const Text('Save'),
           ),
         ],
       );
