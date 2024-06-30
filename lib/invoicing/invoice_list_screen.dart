@@ -12,6 +12,7 @@ import '../entity/job.dart';
 import '../util/format.dart';
 import '../widgets/hmb_are_you_sure_dialog.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/hmb_one_of.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_line_dialog.dart';
 
@@ -182,16 +183,16 @@ Invoice # ${invoice.id} Issued: ${formatDate(invoice.createdDate)}'''),
   /// build the create invoice button
   FutureBuilderEx<bool> _buildCreateInvoiceButton() => FutureBuilderEx<bool>(
         future: _hasUnbilledItems,
-        builder: (context, hasUnbilledItems) => Visibility(
-          visible: hasUnbilledItems!,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: ElevatedButton(
-              onPressed: _createInvoice,
-              child: const Text('Create Invoice'),
+        builder: (context, hasUnbilledItems) => HMBOneOf(
+            condition: hasUnbilledItems!,
+            onTrue: Padding(
+              padding: const EdgeInsets.all(8),
+              child: ElevatedButton(
+                onPressed: _createInvoice,
+                child: const Text('Create Invoice'),
+              ),
             ),
-          ),
-        ),
+            onFalse: const Text('No billalbe Items found')),
       );
 
   /// Edit an invoice line.
