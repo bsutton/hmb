@@ -6,6 +6,7 @@ import '../entity/invoice.dart';
 import '../entity/invoice_line.dart';
 import '../entity/invoice_line_group.dart';
 import '../entity/job.dart';
+import '../util/exceptions.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
@@ -33,11 +34,8 @@ class DaoInvoice extends Dao<Invoice> {
   Future<List<Invoice>> getByJobId(int jobId,
       [Transaction? transaction]) async {
     final db = getDb(transaction);
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'job_id = ?',
-      whereArgs: [jobId],
-    );
+    final List<Map<String, dynamic>> maps = await db.query(tableName,
+        where: 'job_id = ?', whereArgs: [jobId], orderBy: 'id desc');
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
@@ -52,6 +50,11 @@ class DaoInvoice extends Dao<Invoice> {
   /// Create an invoice for the given job.
   Future<Invoice> create(Job job, List<int> selectedTaskIds) async {
     final tasks = await DaoTask().getTasksByJob(job);
+
+    if (job.hourlyRate == MoneyEx.zero) {
+      throw InvoiceException(
+          'Hourly rate must be set for job ${job.description}');
+    }
 
     var totalAmount = MoneyEx.zero;
 
@@ -82,6 +85,10 @@ class DaoInvoice extends Dao<Invoice> {
         final duration = timeEntry.duration.inMinutes / 60;
         final lineTotal =
             job.hourlyRate!.multiplyByFixed(Fixed.fromNum(duration));
+
+        if (lineTotal.isZero) {
+          continue;
+        }
 
         final invoiceLine = InvoiceLine.forInsert(
           invoiceId: invoiceId,
