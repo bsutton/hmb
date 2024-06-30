@@ -11,8 +11,10 @@ import '../../util/platform_ex.dart';
 import '../../util/sim_cards.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_email_field.dart';
+import '../../widgets/hmb_money_field.dart';
 import '../../widgets/hmb_phone_field.dart';
 import '../../widgets/hmb_text_field.dart';
+import '../../widgets/hmb_toast.dart';
 
 class SystemEditScreen extends StatefulWidget {
   const SystemEditScreen({required this.system, super.key});
@@ -134,6 +136,8 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
       if (mounted) {
         Navigator.of(context).pop();
       }
+    } else {
+      HMBToast.error(context, 'Fixed the errors and try again.');
     }
   }
 
@@ -174,6 +178,17 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
                   labelText: 'Account Number',
                   keyboardType: TextInputType.number,
                 ),
+                HMBMoneyField(
+                    controller: _defaultHourlyRateController,
+                    labelText: 'Default Hourly Rate',
+                    keyboardType: TextInputType.number,
+                    fieldName: 'default hourly rate'),
+                HMBMoneyField(
+                  controller: _defaultCallOutFeeController,
+                  labelText: 'Default Call Out Fee',
+                  keyboardType: TextInputType.number,
+                  fieldName: 'default call out fee',
+                ),
                 HMBTextField(
                   controller: _addressLine1Controller,
                   labelText: 'Address Line 1',
@@ -207,54 +222,21 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
                     labelText: 'Office Number'),
                 HMBEmailField(
                     controller: _emailAddressController,
+                    required: true,
                     labelText: 'Notice/Backup Email Address'),
                 HMBTextField(
                     controller: _webUrlController, labelText: 'Web URL'),
                 HMBTextField(
                     controller: _termsUrlController, labelText: 'Terms URL'),
                 HMBTextField(
-                  controller: _defaultHourlyRateController,
-                  labelText: 'Default Hourly Rate',
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a default hourly rate';
-                    }
-                    return null;
-                  },
-                ),
-                HMBTextField(
-                  controller: _defaultCallOutFeeController,
-                  labelText: 'Default Call Out Fee',
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a default call out fee';
-                    }
-                    return null;
-                  },
-                ),
-                HMBTextField(
                   controller: _xeroClientIdController,
                   labelText: 'Xero Client ID',
                   keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the client id';
-                    }
-                    return null;
-                  },
                 ),
                 HMBTextField(
                   controller: _xeroClientSecretController,
                   labelText: 'Xero Client Secret',
                   keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the client secret';
-                    }
-                    return null;
-                  },
                 ),
                 FutureBuilderEx(
                     // ignore: discarded_futures
