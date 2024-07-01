@@ -1,11 +1,27 @@
 import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:strings/strings.dart';
 
 import '../entity/supplier.dart';
 import 'dao.dart';
 
 class DaoSupplier extends Dao<Supplier> {
-  Future<void> createTable(Database db, int version) async {}
+  Future<List<Supplier>> getByFilter(String? filter) async {
+    final db = getDb();
+
+    if (Strings.isBlank(filter)) {
+      return getAll();
+    }
+    final like = '''%$filter%''';
+    final data = await db.rawQuery('''
+select s.* 
+from supplier s
+where s.name like ?
+or s.description like ?
+order by s.modifiedDate desc
+''', [like, like]);
+
+    return toList(data);
+  }
 
   @override
   Supplier fromMap(Map<String, dynamic> map) => Supplier.fromMap(map);

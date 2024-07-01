@@ -21,6 +21,7 @@ class SupplierListScreen extends StatelessWidget {
       pageTitle: 'Suppliers',
       dao: DaoSupplier(),
       title: (entity) => HMBTextHeadline2(entity.name),
+      fetchList: (filter) async => DaoSupplier().getByFilter(filter),
       onEdit: (supplier) => SupplierEditScreen(supplier: supplier),
       details: (entity) {
         final supplier = entity;
@@ -33,8 +34,8 @@ class SupplierListScreen extends StatelessWidget {
                 builder: (context, contact) => Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ContactText(
-                              label: 'Primary Contact:', contact: contact),
+                          HMBTextHeadline3(supplier.description ?? ''),
+                          ContactText(label: '', contact: contact),
                           HMBPhoneText(phoneNo: contact?.mobileNumber),
                           HMBEmailText(email: contact?.emailAddress),
                           HMBSiteText(label: '', site: site)
