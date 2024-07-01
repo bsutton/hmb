@@ -8,6 +8,7 @@ class EditInvoiceLineDialog extends StatefulWidget {
   final InvoiceLine line;
 
   @override
+  // ignore: library_private_types_in_public_api
   _EditInvoiceLineDialogState createState() => _EditInvoiceLineDialogState();
 }
 
