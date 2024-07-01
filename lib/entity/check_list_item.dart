@@ -115,4 +115,8 @@ class CheckListItem extends Entity<CheckListItem> {
         createdDate: createdDate ?? this.createdDate,
         modifiedDate: modifiedDate ?? this.modifiedDate,
       );
+
+  @override
+  String toString() =>
+      '''id: $id description: $description qty: $quantity cost: $unitCost completed: $completed billed: $billed''';
 }
