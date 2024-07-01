@@ -10,6 +10,7 @@ class Supplier extends Entity<Supplier> {
     required this.description,
     required this.bsb,
     required this.accountNumber,
+    required this.service,
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -20,6 +21,7 @@ class Supplier extends Entity<Supplier> {
     required this.description,
     required this.bsb,
     required this.accountNumber,
+    required this.service,
   }) : super.forInsert();
 
   Supplier.forUpdate({
@@ -29,6 +31,7 @@ class Supplier extends Entity<Supplier> {
     required this.description,
     required this.bsb,
     required this.accountNumber,
+    required this.service,
   }) : super.forUpdate();
 
   factory Supplier.fromMap(Map<String, dynamic> map) => Supplier(
@@ -38,6 +41,7 @@ class Supplier extends Entity<Supplier> {
         description: map['description'] as String?,
         bsb: map['bsb'] as String?,
         accountNumber: map['accountNumber'] as String?,
+        service: map['service'] as String?,
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
       );
@@ -47,6 +51,7 @@ class Supplier extends Entity<Supplier> {
   String? description;
   String? bsb;
   String? accountNumber;
+  String? service;
 
   @override
   Map<String, dynamic> toMap() => {
@@ -56,6 +61,7 @@ class Supplier extends Entity<Supplier> {
         'description': description,
         'bsb': bsb,
         'accountNumber': accountNumber,
+        'service': service,
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };

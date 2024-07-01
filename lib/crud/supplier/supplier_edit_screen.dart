@@ -34,6 +34,7 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
   late TextEditingController _descriptionController;
   late TextEditingController _bsbController;
   late TextEditingController _accountNumberController;
+  late TextEditingController _serviceController;
 
   @override
   void initState() {
@@ -46,6 +47,7 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
     _bsbController = TextEditingController(text: widget.supplier?.bsb);
     _accountNumberController =
         TextEditingController(text: widget.supplier?.accountNumber);
+    _serviceController = TextEditingController(text: widget.supplier?.service);
   }
 
   @override
@@ -72,6 +74,10 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
                       labelText: 'Name',
                       keyboardType: TextInputType.name,
                       required: true,
+                    ),
+                    HMBTextField(
+                      controller: _serviceController,
+                      labelText: 'Service',
                     ),
                     HMBTextArea(
                       controller: _descriptionController,
@@ -115,6 +121,7 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
         description: _descriptionController.text,
         bsb: _bsbController.text,
         accountNumber: _accountNumberController.text,
+        service: _serviceController.text,
       );
 
   @override
@@ -124,6 +131,7 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
         description: _descriptionController.text,
         bsb: _bsbController.text,
         accountNumber: _accountNumberController.text,
+        service: _serviceController.text,
       );
 
   @override

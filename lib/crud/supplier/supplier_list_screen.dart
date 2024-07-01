@@ -34,7 +34,7 @@ class SupplierListScreen extends StatelessWidget {
                 builder: (context, contact) => Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          HMBTextHeadline3(supplier.description ?? ''),
+                          HMBTextBody(supplier.service ?? ''),
                           ContactText(label: '', contact: contact),
                           HMBPhoneText(phoneNo: contact?.mobileNumber),
                           HMBEmailText(email: contact?.emailAddress),
