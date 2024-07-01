@@ -4,7 +4,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/customer.dart';
-import '../entity/job.dart';
 import 'dao.dart';
 import 'dao_system.dart';
 
@@ -18,19 +17,19 @@ class DaoCustomer extends Dao<Customer> {
   String get tableName => 'customer';
 
   /// Get the customer passed on the passed job.
-  Future<Customer?> getByJob(Job? job) async {
+  Future<Customer?> getByJob(int? jobId) async {
     final db = getDb();
 
-    if (job == null) {
+    if (jobId == null) {
       return null;
     }
     final data = await db.rawQuery('''
 select c.* 
 from job j
 join customer c
-  on c.id = job.customer_id
+  on c.id = j.customer_id
 where j.id =? 
-''', [job.id]);
+''', [jobId]);
 
     return toList(data).first;
   }
