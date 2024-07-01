@@ -27,10 +27,10 @@ class CustomerListScreen extends StatelessWidget {
         final customer = entity;
         return FutureBuilderEx(
             // ignore: discarded_futures
-            future: DaoSite().getPrimaryForCustomer(customer),
+            future: DaoSite().getPrimaryForCustomer(customer.id),
             builder: (context, site) => FutureBuilderEx(
                 // ignore: discarded_futures
-                future: DaoContact().getPrimaryForCustomer(customer),
+                future: DaoContact().getPrimaryForCustomer(customer.id),
                 builder: (context, contact) => Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

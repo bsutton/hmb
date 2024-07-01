@@ -21,8 +21,8 @@ class DaoSite extends Dao<Site> {
   String get tableName => 'site';
 
   /// returns the primary site for the customer
-  Future<Site?> getPrimaryForCustomer(Customer? customer) async {
-    if (customer == null) {
+  Future<Site?> getPrimaryForCustomer(int? customerId) async {
+    if (customerId == null) {
       return null;
     }
 
@@ -35,10 +35,10 @@ join customer_site sc
 join customer cu
   on sc.customer_id = cu.id
 where cu.id =? 
-and sc.`primary` = 1''', [customer.id]);
+and sc.`primary` = 1''', [customerId]);
 
     if (data.isEmpty) {
-      return (await DaoSite().getByCustomer(customer)).firstOrNull;
+      return (await DaoSite().getByCustomer(customerId)).firstOrNull;
     }
     return fromMap(data.first);
   }
@@ -66,10 +66,10 @@ and sc.`primary` = 1''', [supplier.id]);
     return fromMap(data.first);
   }
 
-  Future<List<Site>> getByCustomer(Customer? customer) async {
+  Future<List<Site>> getByCustomer(int? customerId) async {
     final db = getDb();
 
-    if (customer == null) {
+    if (customerId == null) {
       return [];
     }
     final data = await db.rawQuery('''
@@ -80,7 +80,7 @@ join customer_site sc
 join customer cu
   on sc.customer_id = cu.id
 where cu.id =? 
-''', [customer.id]);
+''', [customerId]);
 
     return toList(data);
   }
@@ -89,8 +89,11 @@ where cu.id =?
   Future<List<Site>> getByFilter(Customer? customer, String? filter) async {
     final db = getDb();
 
+    if (customer == null) {
+      return [];
+    }
     if (Strings.isBlank(filter)) {
-      return getByCustomer(customer);
+      return getByCustomer(customer.id);
     }
 
     final likeArg = '''%$filter%''';

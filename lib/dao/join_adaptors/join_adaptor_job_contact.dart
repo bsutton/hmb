@@ -14,7 +14,7 @@ class JoinAdaptorJobContact implements DaoJoinAdaptor<Contact, Job> {
 
   @override
   Future<List<Contact>> getByParent(Job? job) async =>
-      DaoContact().getByJob(job);
+      DaoContact().getByJob(job?.id);
 
   @override
   Future<void> insertForParent(Contact contact, Job job) async {

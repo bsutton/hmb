@@ -43,7 +43,7 @@ class HMBSelectContactState extends State<HMBSelectContact> {
                   });
                 },
                 items: (filter) async =>
-                    DaoContact().getByCustomer(widget.customer),
+                    DaoContact().getByCustomer(widget.customer?.id),
                 format: (contact) => ' ${contact.firstName} ${contact.surname}',
                 required: false),
           ),
