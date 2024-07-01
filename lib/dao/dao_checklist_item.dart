@@ -31,6 +31,27 @@ where cl.id =?
     return toList(data);
   }
 
+  Future<List<CheckListItem>> getItemsByTask(int? taskId) async {
+    final db = getDb();
+
+    if (taskId == null) {
+      return [];
+    }
+    final data = await db.rawQuery('''
+select cli.* 
+from check_list_item cli
+join check_list cl
+  on cli.check_list_id = cl.id
+join task_check_list jc
+  on cl.id = jc.check_list_id
+join task jo
+  on jc.task_id = jo.id
+where jo.id =? 
+''', [taskId]);
+
+    return toList(data);
+  }
+
   Future<void> deleteFromCheckList(
       CheckListItem checklistitem, CheckList checklist) async {
     await DaoCheckListItemCheckList().deleteJoin(checklist, checklistitem);

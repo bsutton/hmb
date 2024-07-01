@@ -30,6 +30,7 @@ class HMBCrudListCard extends StatelessWidget {
             semanticContainer: false,
             elevation: 2,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
                   padding: const EdgeInsets.only(left: 8),

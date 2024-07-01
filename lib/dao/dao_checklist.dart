@@ -15,10 +15,10 @@ class DaoCheckList extends Dao<CheckList> {
   @override
   String get tableName => 'check_list';
 
-  Future<CheckList?> getByTask(Task? task) async {
+  Future<CheckList?> getByTask(int? taskId) async {
     final db = getDb();
 
-    if (task == null) {
+    if (taskId == null) {
       return null;
     }
     final data = await db.rawQuery('''
@@ -29,13 +29,15 @@ join task_check_list jc
 join task jo
   on jc.task_id = jo.id
 where jo.id =? 
-''', [task.id]);
+''', [taskId]);
 
     final list = toList(data);
 
     if (list.isEmpty) {
       return null;
     }
+
+    assert(list.length == 1, 'A task should only have one default checklist');
     return list.first;
   }
 

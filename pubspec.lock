@@ -285,10 +285,10 @@ packages:
     dependency: transitive
     description:
       name: dev_build
-      sha256: "4a4c8e3aaaaa9a7de4039dc711ee573de5612a35a4469d01ecf30e5ae74cbcfd"
+      sha256: "5d23104ed6212275cca89b2226b5288833c6bb15529d4ad66a35a4b30fcb792b"
       url: "https://pub.dev"
     source: hosted
-    version: "0.16.7+4"
+    version: "1.0.0+1"
   diff_match_patch:
     dependency: transitive
     description:
@@ -405,10 +405,10 @@ packages:
     dependency: "direct main"
     description:
       name: fixed
-      sha256: "0d55e0a083026060f0b50c7f6e00d40a772d6a6b5e1812bc6e57c75ea58c21cc"
+      sha256: bcf2f5630a07c8cc85d82c69790cad3221e8cf19005348f07da8845784bbc7ed
       url: "https://pub.dev"
     source: hosted
-    version: "4.3.0"
+    version: "5.0.0"
   fixnum:
     dependency: transitive
     description:
@@ -588,10 +588,10 @@ packages:
     dependency: transitive
     description:
       name: google_sign_in_android
-      sha256: "60e4f7947fa413cd9f2e23c955e8406afe640a8b2fbd00b46fb2901058047b8f"
+      sha256: d3d38e0aefb518087e020a4d6d5c30fa29bdaf74f32b83dbdc64c997c3593e1d
       url: "https://pub.dev"
     source: hosted
-    version: "6.1.25"
+    version: "6.1.26"
   google_sign_in_ios:
     dependency: transitive
     description:
@@ -908,10 +908,10 @@ packages:
     dependency: "direct main"
     description:
       name: money2
-      sha256: a2365771d74d58ae1ddf2f9588802d4442a3de021642674ed22ac2da60fd25ea
+      sha256: "5700ef14b4c796dc00823f891c8c8f7fe8ec20da51b6c01732a1e706cb12f73a"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.1"
+    version: "5.1.0"
   native_synchronization:
     dependency: transitive
     description:
@@ -1220,10 +1220,10 @@ packages:
     dependency: transitive
     description:
       name: process_run
-      sha256: "8d9c6198b98fbbfb511edd42e7364e24d85c163e47398919871b952dc86a423e"
+      sha256: "6052115540ad88715d6bcee60656970f70c68c85846d1948b92e435f0382899e"
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.2"
+    version: "1.0.0+1"
   provider:
     dependency: "direct main"
     description:

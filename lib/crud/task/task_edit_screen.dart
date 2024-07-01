@@ -2,17 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 
+import '../../dao/dao_checklist.dart';
 import '../../dao/dao_task.dart';
 import '../../dao/dao_task_status.dart';
-import '../../dao/join_adaptors/join_adaptor_check_list.dart';
+import '../../dao/join_adaptors/join_adaptor_check_list_item.dart';
+import '../../entity/check_list.dart';
 import '../../entity/job.dart';
 import '../../entity/task.dart';
 import '../../entity/task_status.dart';
 import '../../util/fixed_ex.dart';
 import '../../util/money_ex.dart';
-import '../../widgets/hmb_crud_checklist.dart';
+import '../../widgets/hmb_crud_checklist_item.dart';
 import '../../widgets/hmb_crud_time_entry.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_area.dart';
@@ -48,6 +51,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   late FocusNode _estimatedCostFocusNode;
   late FocusNode _effortInHoursFocusNode;
   late FocusNode _itemTypeIdFocusNode;
+  // late Future<CheckList?> _checkListFuture;
 
   @override
   void initState() {
@@ -75,6 +79,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_summaryFocusNode);
     });
+
+    // _checkListFuture = _loadOrCreateCheckList();
   }
 
   @override
@@ -92,21 +98,16 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _itemTypeIdFocusNode.dispose();
   }
 
-  // String _formatDuration(Duration duration) {
-  //   final hours = duration.inHours;
-  //   final minutes = duration.inMinutes.remainder(60);
-  //   return '${hours}h ${minutes}m';
-  // }
-
   @override
   Widget build(BuildContext context) => NestedEntityEditScreen<Task, Job>(
         entity: widget.task,
         entityName: 'Task',
         dao: DaoTask(),
-        onInsert: (task) async => DaoTask().insert(task!),
+        onInsert: (task) async => _insertTaskWithCheckList(task!),
         entityState: this,
         editor: (task) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
             HMBTextField(
               controller: _nameController,
@@ -133,11 +134,22 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               keyboardType: TextInputType.number,
             ),
 
-            /// Check List CRUD
-            HBMCrudCheckList<Task>(
-                parentTitle: 'Task',
-                parent: Parent(task),
-                daoJoin: JoinAdaptorTaskCheckList()),
+            /// Direct Check List
+            FutureBuilderEx<CheckList?>(
+                // ignore: discarded_futures
+                future: DaoCheckList().getByTask(task?.id),
+                builder: (context, checklist) => Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            HBMCrudCheckListItem<CheckList>(
+                              parent: Parent(checklist),
+                              daoJoin: JoinAdaptorCheckListCheckListItem(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )),
 
             HBMCrudTimeEntry(
               parentTitle: 'Task',
@@ -155,6 +167,32 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       onChanged: (item) {
         June.getState(TaskStatusState.new).taskStatusId = item.id;
       });
+
+  Future<void> _insertTaskWithCheckList(Task task) async {
+    await DaoTask().insert(task);
+    final newChecklist = CheckList.forInsert(
+        name: 'default',
+        description: 'Default Checklist',
+        listType: CheckListType.owned);
+    await DaoCheckList().insertForTask(newChecklist, task);
+  }
+
+  Future<CheckList?> _loadOrCreateCheckList() async {
+    if (widget.task == null) {
+      return null;
+    }
+    final checklists = await DaoCheckList().getByTask(widget.task!.id);
+    if (checklists == null) {
+      return null;
+    } else {
+      final newChecklist = CheckList.forInsert(
+          name: 'default',
+          description: 'Default Task Checklist',
+          listType: CheckListType.owned);
+      await DaoCheckList().insert(newChecklist);
+      return newChecklist;
+    }
+  }
 
   @override
   Future<Task> forUpdate(Task task) async => Task.forUpdate(
@@ -179,7 +217,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   @override
   void refresh() {
-    setState(() {});
+    setState(() {
+      // _checkListFuture = _loadOrCreateCheckList();
+    });
   }
 }
 
@@ -188,57 +228,3 @@ class TaskStatusState {
 
   int? taskStatusId;
 }
-
-// class HBMCrudTimeEntry extends StatefulWidget {
-//   const HBMCrudTimeEntry(
-//       {required this.parentTitle, required this.parent, super.key});
-
-//   final String parentTitle;
-//   final Parent<Task> parent;
-
-//   @override
-//   _HBMCrudTimeEntryState createState() => _HBMCrudTimeEntryState();
-// }
-
-// class _HBMCrudTimeEntryState extends State<HBMCrudTimeEntry> {
-//   Future<void> refresh() async {
-//     setState(() {});
-//   }
-
-//   @override
-//   Widget build(BuildContext context) => FutureBuilder<List<TimeEntry>>(
-//         // ignore: discarded_futures
-//         future: DaoTimeEntry().getByTask(widget.parent.parent),
-//         builder: (context, snapshot) {
-//           if (snapshot.connectionState == ConnectionState.waiting) {
-//             return const Center(child: CircularProgressIndicator());
-//           } else if (snapshot.hasError) {
-//             return Center(child: Text('Error: ${snapshot.error}'));
-//           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-//             return const Center(child: Text('No time entries found.'));
-//           } else {
-//             return ListView.builder(
-//               shrinkWrap: true,
-//               itemCount: snapshot.data!.length,
-//               itemBuilder: (context, index) {
-//                 final timeEntry = snapshot.data![index];
-//                 return ListTile(
-//                   title: Text(
-//                       '''${timeEntry.startTime.toLocal()} 
-//- ${timeEntry.endTime?.toLocal() ?? 'Ongoing'}'''),
-//                   subtitle: Text(
-//                       '''Duration: ${_formatDuration(timeEntry.startTime, 
-// timeEntry.endTime)}'''),
-//                 );
-//               },
-//             );
-//           }
-//         },
-//       );
-
-// String _formatDuration(DateTime startTime, DateTime? endTime) {
-//   if (endTime == null) {
-//     return 'Ongoing';
-//   }
-//   return formatDuration(endTime.difference(startTime));
-// }

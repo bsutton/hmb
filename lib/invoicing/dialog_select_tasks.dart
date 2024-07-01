@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
 
 import '../dao/dao_checklist_item.dart';
@@ -6,6 +7,7 @@ import '../dao/dao_task.dart';
 import '../dao/dao_time_entry.dart';
 import '../entity/job.dart';
 import '../entity/task.dart';
+import '../util/money_ex.dart';
 
 /// show the user the set of tasks for the passed Job
 /// and allow them to select which tasks they want to
@@ -42,10 +44,14 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
 
   Future<List<Task>> _loadTasks() async {
     final tasks = await DaoTask().getTasksByJob(widget.job);
+    final billableTasks = <Task>[];
     for (final task in tasks) {
-      _selectedTasks[task.id] = true;
+      if ((await _calculateTaskCost(task)) > MoneyEx.zero) {
+        _selectedTasks[task.id] = true;
+        billableTasks.add(task);
+      }
     }
-    return tasks;
+    return billableTasks;
   }
 
   Future<Money> _calculateTaskCost(Task task) async {
@@ -68,46 +74,33 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: Text('Select Tasks to Bill for Job: ${widget.job.summary}'),
-        content: FutureBuilder<List<Task>>(
+        title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
+        content: FutureBuilderEx<List<Task>>(
           future: _tasks,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            final tasks = snapshot.data!;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: tasks
-                  .map((task) => FutureBuilder<Money>(
-                        // ignore: discarded_futures
-                        future: _calculateTaskCost(task),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return ListTile(
-                              title: Text(task.name),
-                              subtitle: const Text('Calculating cost...'),
-                              trailing: const CircularProgressIndicator(),
-                            );
-                          }
-
-                          final cost = snapshot.data!;
-                          return CheckboxListTile(
-                            title: Text(task.name),
-                            subtitle: Text('Total Cost: $cost'),
-                            value: _selectedTasks[task.id],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedTasks[task.id] = value!;
-                              });
-                            },
-                          );
+          builder: (context, tasks) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: tasks!
+                .map((task) => FutureBuilderEx<Money>(
+                      // ignore: discarded_futures
+                      future: _calculateTaskCost(task),
+                      waitingBuilder: (_) => ListTile(
+                        title: Text(task.name),
+                        subtitle: const Text('Calculating cost...'),
+                        trailing: const CircularProgressIndicator(),
+                      ),
+                      builder: (context, cost) => CheckboxListTile(
+                        title: Text(task.name),
+                        subtitle: Text('Total Cost: $cost'),
+                        value: _selectedTasks[task.id] ?? false,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedTasks[task.id] = value!;
+                          });
                         },
-                      ))
-                  .toList(),
-            );
-          },
+                      ),
+                    ))
+                .toList(),
+          ),
         ),
         actions: [
           TextButton(

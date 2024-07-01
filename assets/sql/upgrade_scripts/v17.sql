@@ -18,6 +18,7 @@ CREATE TABLE check_list_item (
 );
 
 
+update check_list_item_old set completed = 0 where completed is null;
 INSERT INTO check_list_item (id, check_list_id, description, item_type_id, unit_cost, effort_in_hours, quantity, completed, billed,  createdDate, modifiedDate)
 SELECT id, check_list_id, description, item_type_id, unit_cost, effort_in_hours, quantity, completed, billed,  createdDate, modifiedDate
 FROM check_list_item_old;
