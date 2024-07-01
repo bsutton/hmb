@@ -9,6 +9,7 @@ import 'dao.dart';
 import 'dao_contact_customer.dart';
 import 'dao_contact_job.dart';
 import 'dao_contact_supplier.dart';
+import 'dao_job.dart';
 
 class DaoContact extends Dao<Contact> {
   Future<void> createTable(Database db, int version) async {}
@@ -19,9 +20,15 @@ class DaoContact extends Dao<Contact> {
   @override
   String get tableName => 'contact';
 
+  ///
   /// returns the primary contact for the customer
-  Future<Contact?> getPrimaryForCustomer(Customer customer) async {
+  ///
+  Future<Contact?> getPrimaryForCustomer(int? customerId) async {
     final db = getDb();
+
+    if (customerId == null) {
+      return null;
+    }
     final data = await db.rawQuery('''
 select co.* 
 from contact co
@@ -30,15 +37,43 @@ join customer_contact cc
 join customer cu
   on cc.customer_id = cu.id
 where cu.id =? 
-and cc.`primary` = 1''', [customer.id]);
+and cc.`primary` = 1''', [customerId]);
 
     if (data.isEmpty) {
-      return (await DaoContact().getByCustomer(customer)).firstOrNull;
+      return (await DaoContact().getByCustomer(customerId)).firstOrNull;
     }
     return fromMap(data.first);
   }
 
+  ///
+  /// returns the primary contact for the job
+  ///
+  Future<Contact?> getForJob(int? jobId) async {
+    final db = getDb();
+
+    if (jobId == null) {
+      return null;
+    }
+    final data = await db.rawQuery('''
+select co.* 
+from contact co
+join job_contact jc
+  on co.id = jc.contact_id
+join job jo
+  on jc.job_id = jp.id
+where jo.id =? 
+''', [jobId]);
+
+    if (data.isEmpty) {
+      final job = await DaoJob().getById(jobId);
+      return DaoContact().getPrimaryForCustomer(job?.customerId);
+    }
+    return fromMap(data.first);
+  }
+
+  ///
   /// returns the primary contact for the customer
+  ///
   Future<Contact?> getPrimaryForSupplier(Supplier supplier) async {
     final db = getDb();
     final data = await db.rawQuery('''
@@ -57,10 +92,10 @@ and sc.`primary` = 1''', [supplier.id]);
     return fromMap(data.first);
   }
 
-  Future<List<Contact>> getByCustomer(Customer? customer) async {
+  Future<List<Contact>> getByCustomer(int? customerId) async {
     final db = getDb();
 
-    if (customer == null) {
+    if (customerId == null) {
       return [];
     }
     final data = await db.rawQuery('''
@@ -71,7 +106,7 @@ join customer_contact cc
 join customer cu
   on cc.customer_id = cu.id
 where cu.id =? 
-''', [customer.id]);
+''', [customerId]);
 
     return toList(data);
   }
@@ -97,10 +132,10 @@ where cu.id =?
     return toList(data);
   }
 
-  Future<List<Contact>> getByJob(Job? job) async {
+  Future<List<Contact>> getByJob(int? jobId) async {
     final db = getDb();
 
-    if (job == null) {
+    if (jobId == null) {
       return [];
     }
     final data = await db.rawQuery('''
@@ -111,7 +146,7 @@ join job_contact cc
 join job cu
   on cc.job_id = cu.id
 where cu.id =? 
-''', [job.id]);
+''', [jobId]);
 
     return toList(data);
   }

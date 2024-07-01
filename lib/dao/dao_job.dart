@@ -50,6 +50,8 @@ class DaoJob extends Dao<Job> {
     return list;
   }
 
+  
+
   /// search for jobs given a user supplied filter string.
   Future<List<Job>> getByFilter(String? filter) async {
     final db = getDb();
