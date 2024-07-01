@@ -113,8 +113,8 @@ select cli.*
 from check_list_item cli
 join check_list_item_type clit
   on cli.item_type_id = clit.id
-where clit.name = 'Materials - stock' 
-or clit.name = 'Tools - stock' 
+where (clit.name = 'Materials - stock' 
+or clit.name = 'Tools - stock') 
 and  cli.completed = 0
 ''');
 
@@ -130,8 +130,8 @@ select cli.*
 from check_list_item cli
 join check_list_item_type clit
   on cli.item_type_id = clit.id
-where clit.name = 'Materials - buy' 
-or clit.name = 'Tools - buy' 
+where (clit.name = 'Materials - buy' 
+or clit.name = 'Tools - buy') 
 and  cli.completed = 0
 ''');
 
