@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:june/june.dart';
 
 import '../../dao/dao_task.dart';
 import '../../dao/dao_task_status.dart';
@@ -10,6 +11,7 @@ import '../../entity/time_entry.dart';
 import '../../util/format.dart';
 import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/hmb_text.dart';
+import '../../widgets/hmb_toggle.dart';
 import '../base_nested/nested_list_screen.dart';
 import '../task/task_edit_screen.dart';
 
@@ -38,24 +40,64 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => NestedEntityListScreen<Task, Job>(
-        parent: widget.parent,
-        entityNamePlural: 'Tasks',
-        entityNameSingular: 'Task',
-        parentTitle: 'Job',
-        dao: DaoTask(),
-        // ignore: discarded_futures
-        fetchList: () => DaoTask().getTasksByJob(widget.parent.parent!),
-        title: (entity) => Text(entity.name),
-        onEdit: (task) =>
-            TaskEditScreen(job: widget.parent.parent!, task: task),
-        onDelete: (task) async => DaoTask().delete(task!.id),
-        onInsert: (task) async => DaoTask().insert(task!),
-        details: (task, details) => details == CardDetail.full
-            ? _buildFullTasksDetails(task)
-            : _buildTaskSummary(task),
-        extended: widget.extended,
-      );
+  Widget build(BuildContext context) {
+    final showCompleted =
+        June.getState(ShowCompletedTasksState.new).showCompletedTasks;
+    return Column(
+      children: [
+        Expanded(
+          child: NestedEntityListScreen<Task, Job>(
+            key: ValueKey(showCompleted),
+            parent: widget.parent,
+            entityNamePlural: 'Tasks',
+            entityNameSingular: 'Task',
+            parentTitle: 'Job',
+            dao: DaoTask(),
+            // ignore: discarded_futures
+            fetchList: _fetchTasks,
+            title: (entity) => Text(entity.name),
+            filterBar: (entity) => HMBToggle(
+              label: 'Show Completed',
+              tooltip: showCompleted
+                  ? 'Show Only Non-Completed Tasks'
+                  : 'Show Completed Tasks',
+              initialValue:
+                  June.getState(ShowCompletedTasksState.new).showCompletedTasks,
+              onChanged: (value) {
+                setState(() {
+                  June.getState(ShowCompletedTasksState.new).toggle();
+                });
+              },
+            ),
+            onEdit: (task) =>
+                TaskEditScreen(job: widget.parent.parent!, task: task),
+            onDelete: (task) async => DaoTask().delete(task!.id),
+            onInsert: (task) async => DaoTask().insert(task!),
+            details: (task, details) => details == CardDetail.full
+                ? _buildFullTasksDetails(task)
+                : _buildTaskSummary(task),
+            extended: widget.extended,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<List<Task>> _fetchTasks() async {
+    final showCompleted =
+        June.getState(ShowCompletedTasksState.new).showCompletedTasks;
+    final tasks = await DaoTask().getTasksByJob(widget.parent.parent!);
+
+    final included = <Task>[];
+    for (final task in tasks) {
+      final status = await DaoTaskStatus().getById(task.taskStatusId);
+      if (showCompleted && status?.name == 'Completed' ||
+          (!showCompleted && status?.name != 'Completed')) {
+        included.add(task);
+      }
+    }
+    return included;
+  }
 
   Column _buildFullTasksDetails(Task task) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,4 +138,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
           HMBStartTimeEntry(task: task)
         ],
       );
+}
+
+class ShowCompletedTasksState extends JuneState {
+  bool showCompletedTasks = false;
+
+  void toggle() {
+    showCompletedTasks = !showCompletedTasks;
+    refresh(); // Notify listeners to rebuild
+  }
 }
