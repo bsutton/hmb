@@ -150,7 +150,7 @@ that are marked as "buy".'''));
                       builder: (context, customer) => Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Customer: ${job.summary}'),
+                              Text('Customer: ${customer!.name}'),
                               Text('Job: ${job.summary}'),
                               Text('Task: ${task.name}'),
                               Text(

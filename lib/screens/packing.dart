@@ -7,6 +7,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../dao/dao_checklist_item.dart';
 import '../../entity/check_list_item.dart';
 import '../../widgets/hmb_text_field.dart';
+import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
 import '../util/format.dart';
@@ -141,19 +142,24 @@ that are marked as "buy".'''));
               builder: (context, task) => FutureBuilderEx(
                   // ignore: discarded_futures
                   future: DaoJob().getJobForTask(task!),
-                  builder: (context, job) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Job: ${job!.summary}'),
-                          Text('Task: ${task.name}'),
-                          Text('Scheduled Date: ${formatDate(job.startDate)}'),
-                          if (item.completed)
-                            const Text(
-                              'Completed',
-                              style: TextStyle(color: Colors.green),
-                            ),
-                        ],
-                      ))),
+                  builder: (context, job) => FutureBuilderEx(
+                      // ignore: discarded_futures
+                      future: DaoCustomer().getByJob(job!.id),
+                      builder: (context, customer) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Customer: ${customer!.name}'),
+                              Text('Job: ${job.summary}'),
+                              Text('Task: ${task.name}'),
+                              Text(
+                                  '''Scheduled Date: ${formatDate(job.startDate)}'''),
+                              if (item.completed)
+                                const Text(
+                                  'Completed',
+                                  style: TextStyle(color: Colors.green),
+                                ),
+                            ],
+                          )))),
           trailing: IconButton(
             icon: const Icon(Icons.check, color: Colors.green),
             onPressed: () async => _markAsCompleted(item),
