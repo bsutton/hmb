@@ -135,7 +135,7 @@ from check_list_item cli
 join check_list_item_type clit
   on cli.item_type_id = clit.id
 where (clit.name = 'Materials - stock' 
-or clit.name = 'Tools - stock') 
+or clit.name = 'Tools - own') 
 and  cli.completed = 0
 ''');
 
