@@ -60,7 +60,7 @@ from contact co
 join job_contact jc
   on co.id = jc.contact_id
 join job jo
-  on jc.job_id = jp.id
+  on jc.job_id = jo.id
 where jo.id =? 
 ''', [jobId]);
 
