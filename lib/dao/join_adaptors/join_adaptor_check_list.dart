@@ -17,7 +17,7 @@ class JoinAdaptorTaskCheckList implements DaoJoinAdaptor<CheckList, Task> {
 
   @override
   Future<List<CheckList>> getByParent(Task? task) async {
-    final checklist = await DaoCheckList().getByTask(task);
+    final checklist = await DaoCheckList().getByTask(task?.id);
 
     if (checklist == null) {
       return [];
