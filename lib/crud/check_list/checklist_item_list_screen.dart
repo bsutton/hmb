@@ -30,7 +30,7 @@ class CheckListItemListScreen<P extends Entity<P>> extends StatelessWidget {
   Widget build(BuildContext context) => NestedEntityListScreen<CheckListItem,
           P>(
       parent: parent,
-      parentTitle: 'Check List',
+      parentTitle: 'Task',
       entityNameSingular: 'Check List Item',
       entityNamePlural: 'Items',
       dao: DaoCheckListItem(),
