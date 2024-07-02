@@ -15,6 +15,7 @@ import '../../entity/task.dart';
 import '../../entity/task_status.dart';
 import '../../util/fixed_ex.dart';
 import '../../util/money_ex.dart';
+import '../../util/platform_ex.dart';
 import '../../widgets/hmb_crud_checklist_item.dart';
 import '../../widgets/hmb_crud_time_entry.dart';
 import '../../widgets/hmb_droplist.dart';
@@ -76,9 +77,11 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
     June.getState(TaskStatusState.new).taskStatusId = widget.task?.id ?? 1;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(_summaryFocusNode);
-    });
+    if (isNotMobile) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FocusScope.of(context).requestFocus(_summaryFocusNode);
+      });
+    }
 
     // _checkListFuture = _loadOrCreateCheckList();
   }
@@ -177,22 +180,22 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     await DaoCheckList().insertForTask(newChecklist, task);
   }
 
-  Future<CheckList?> _loadOrCreateCheckList() async {
-    if (widget.task == null) {
-      return null;
-    }
-    final checklists = await DaoCheckList().getByTask(widget.task!.id);
-    if (checklists == null) {
-      return null;
-    } else {
-      final newChecklist = CheckList.forInsert(
-          name: 'default',
-          description: 'Default Task Checklist',
-          listType: CheckListType.owned);
-      await DaoCheckList().insert(newChecklist);
-      return newChecklist;
-    }
-  }
+  // Future<CheckList?> _loadOrCreateCheckList() async {
+  //   if (widget.task == null) {
+  //     return null;
+  //   }
+  //   final checklists = await DaoCheckList().getByTask(widget.task!.id);
+  //   if (checklists == null) {
+  //     return null;
+  //   } else {
+  //     final newChecklist = CheckList.forInsert(
+  //         name: 'default',
+  //         description: 'Default Task Checklist',
+  //         listType: CheckListType.owned);
+  //     await DaoCheckList().insert(newChecklist);
+  //     return newChecklist;
+  //   }
+  // }
 
   @override
   Future<Task> forUpdate(Task task) async => Task.forUpdate(
