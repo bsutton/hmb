@@ -7,6 +7,7 @@ import '../entity/task.dart';
 import '../util/fixed_ex.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
+import 'dao_task_status.dart';
 import 'dao_time_entry.dart';
 
 class DaoTask extends Dao<Task> {
@@ -35,7 +36,9 @@ class DaoTask extends Dao<Task> {
     var totalCost = MoneyEx.zero;
     var earnedCost = MoneyEx.zero;
 
-    if (task.completed) {
+    final status = await DaoTaskStatus().getById(task.taskStatusId);
+
+    if (status?.isComplete() ?? false) {
       completedEffort += task.effortInHours ?? FixedEx.zero;
       earnedCost += task.estimatedCost ?? MoneyEx.zero;
     }

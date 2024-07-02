@@ -56,18 +56,23 @@ class _TaskListScreenState extends State<TaskListScreen> {
             // ignore: discarded_futures
             fetchList: _fetchTasks,
             title: (entity) => Text(entity.name),
-            filterBar: (entity) => HMBToggle(
-              label: 'Show Completed',
-              tooltip: showCompleted
-                  ? 'Show Only Non-Completed Tasks'
-                  : 'Show Completed Tasks',
-              initialValue:
-                  June.getState(ShowCompletedTasksState.new).showCompletedTasks,
-              onChanged: (value) {
-                setState(() {
-                  June.getState(ShowCompletedTasksState.new).toggle();
-                });
-              },
+            filterBar: (entity) => Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                HMBToggle(
+                  label: 'Show Completed',
+                  tooltip: showCompleted
+                      ? 'Show Only Non-Completed Tasks'
+                      : 'Show Completed Tasks',
+                  initialValue: June.getState(ShowCompletedTasksState.new)
+                      .showCompletedTasks,
+                  onChanged: (value) {
+                    setState(() {
+                      June.getState(ShowCompletedTasksState.new).toggle();
+                    });
+                  },
+                ),
+              ],
             ),
             onEdit: (task) =>
                 TaskEditScreen(job: widget.parent.parent!, task: task),
@@ -91,8 +96,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
     final included = <Task>[];
     for (final task in tasks) {
       final status = await DaoTaskStatus().getById(task.taskStatusId);
-      if (showCompleted && status?.name == 'Completed' ||
-          (!showCompleted && status?.name != 'Completed')) {
+      final complete = status?.isComplete() ?? false;
+      if ((showCompleted && complete) || (!showCompleted && !complete)) {
         included.add(task);
       }
     }

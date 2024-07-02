@@ -45,7 +45,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   late TextEditingController _descriptionController;
   late TextEditingController _estimatedCostController;
   late TextEditingController _effortInHoursController;
-  late bool _completed;
   late FocusNode _summaryFocusNode;
   late FocusNode _descriptionFocusNode;
   late FocusNode _costFocusNode;
@@ -66,7 +65,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _effortInHoursController =
         TextEditingController(text: widget.task?.effortInHours.toString());
 
-    _completed = widget.task?.completed ?? false;
 
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
@@ -203,7 +201,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       jobId: widget.job.id,
       name: _nameController.text,
       description: _descriptionController.text,
-      completed: _completed,
       estimatedCost: MoneyEx.tryParse(_estimatedCostController.text),
       effortInHours: FixedEx.tryParse(_effortInHoursController.text),
       taskStatusId: June.getState(TaskStatusState.new).taskStatusId!);
@@ -213,7 +210,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       jobId: widget.job.id,
       name: _nameController.text,
       description: _descriptionController.text,
-      completed: _completed,
       estimatedCost: MoneyEx.tryParse(_estimatedCostController.text),
       effortInHours: FixedEx.tryParse(_effortInHoursController.text),
       taskStatusId: June.getState(TaskStatusState.new).taskStatusId!);

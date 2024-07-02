@@ -1,5 +1,42 @@
 import 'entity.dart';
 
+enum TaskStatusEnum {
+  toBeSCheduled,
+  awaitingMaterials,
+  completed,
+  onHold,
+  inProgress,
+  cancelled,
+  preApproved,
+  approved,
+}
+
+/// These MUST match the db [TaskStatus] name columns.
+extension TaskStatusEnumExtension on TaskStatusEnum {
+  String get colValue {
+    switch (this) {
+      case TaskStatusEnum.toBeSCheduled:
+        return 'To be scheduled';
+      case TaskStatusEnum.awaitingMaterials:
+        return 'Awaiting Materials';
+      case TaskStatusEnum.completed:
+        return 'Completed';
+      case TaskStatusEnum.onHold:
+        return 'On Hold';
+      case TaskStatusEnum.inProgress:
+        return 'In progress';
+      case TaskStatusEnum.cancelled:
+        return 'Cancelled';
+      case TaskStatusEnum.preApproved:
+        return 'Pre-approved';
+      case TaskStatusEnum.approved:
+        return 'Approved';
+      default:
+        return '';
+    }
+  }
+}
+
 class TaskStatus extends Entity<TaskStatus> {
   TaskStatus({
     required super.id,
@@ -45,6 +82,29 @@ class TaskStatus extends Entity<TaskStatus> {
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
+
+  bool isComplete() {
+    switch (name) {
+      case 'To be scheduled':
+        return false;
+      case 'Awaiting Materials':
+        return false;
+      case 'Completed':
+        return true;
+      case 'On Hold':
+        return false;
+      case 'In progress':
+        return false;
+      case 'Cancelled':
+        return true;
+      case 'Pre-approved':
+        return false;
+      case 'Approved':
+        return false;
+      default:
+        return false;
+    }
+  }
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes

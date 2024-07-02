@@ -11,6 +11,7 @@ import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_checklist_item.dart';
 import 'dao_task.dart';
+import 'dao_task_status.dart';
 import 'dao_time_entry.dart';
 
 class DaoJob extends Dao<Job> {
@@ -49,8 +50,6 @@ class DaoJob extends Dao<Job> {
 
     return list;
   }
-
-  
 
   /// search for jobs given a user supplied filter string.
   Future<List<Job>> getByFilter(String? filter) async {
@@ -104,7 +103,9 @@ where t.id =?
     var workedHours = Fixed.fromNum(0, scale: 2);
 
     for (final task in tasks) {
-      if (task.completed) {
+      final status = await DaoTaskStatus().getById(task.taskStatusId);
+
+      if (status?.isComplete() ?? false) {
         completedEffort += task.effortInHours ?? FixedEx.zero;
         earnedCost += task.estimatedCost ?? MoneyEx.zero;
         completedTasks++;
