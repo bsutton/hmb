@@ -9,6 +9,7 @@ import '../../entity/entities.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_are_you_sure_dialog.dart';
 import '../../widgets/hmb_list_card.dart';
+import '../../widgets/hmb_toggle.dart';
 
 class Parent<P extends Entity<P>> {
   Parent(this.parent);
@@ -34,6 +35,7 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
     required this.entityNameSingular,
     required this.parent,
     required this.fetchList,
+    this.filterBar,
     this.canEdit,
     this.canDelete,
     this.extended = false,
@@ -43,6 +45,7 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
   final Parent<P> parent;
   final String entityNamePlural;
   final Widget Function(C entity) title;
+  final Widget Function(P entity)? filterBar;
   final Widget Function(C entity, CardDetail cardDetail) details;
   final Widget Function(C? entity) onEdit;
   final Allowed<C>? canEdit;
@@ -95,26 +98,31 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false, // No back button
-          title: Row(children: [
-            Text(
-              widget.entityNamePlural,
-              style: const TextStyle(fontSize: 18),
-            ),
-            IconButton(
-              tooltip: 'Show/Hide full card details',
-              onPressed: () {
-                setState(() {
-                  cardDetail = cardDetail == CardDetail.full
-                      ? CardDetail.summary
-                      : CardDetail.full;
-                });
-              },
-              iconSize: 25,
-              icon: Icon(cardDetail == CardDetail.full
-                  ? Icons.toggle_on
-                  : Icons.toggle_off),
-            )
-          ]),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Text(
+                  widget.entityNamePlural,
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const Spacer(),
+                HMBToggle(
+                  label: 'Show details',
+                  tooltip: 'Show/Hide full card details',
+                  initialValue: cardDetail == CardDetail.full,
+                  onChanged: (on) {
+                    setState(() {
+                      cardDetail = on ? CardDetail.summary : CardDetail.full;
+                    });
+                  },
+                )
+              ]),
+              if (widget.filterBar != null)
+                widget.filterBar!(widget.parent.parent!),
+            ],
+          ),
+
           actions: [
             HMBButtonAdd(
               enabled: widget.parent.parent != null,
