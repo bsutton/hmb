@@ -49,7 +49,7 @@ class JobCard extends StatelessWidget {
                     ),
                   ),
                   HMBSiteText(label: '', site: site),
-                  HMBText('Status: ${jobStatus?.name}'),
+                  HMBText('Status: ${jobStatus?.name ?? "Status Unknown"} '),
                   HMBText('Scheduled: ${formatDate(job.startDate)}'),
                   HMBText(
                     '''Description: ${RichEditor.createParchment(job.description).toPlainText().split('\n').first}''',
