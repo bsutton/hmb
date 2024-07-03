@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:strings/strings.dart';
 
 import '../dao/dao_invoice.dart';
 import '../dao/dao_invoice_line.dart';
@@ -13,6 +14,7 @@ import '../util/format.dart';
 import '../widgets/hmb_are_you_sure_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_one_of.dart';
+import '../widgets/hmb_toast.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_line_dialog.dart';
 import 'xero/xero_api.dart';
@@ -61,18 +63,15 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       _xeroApi = XeroApi();
       await _xeroApi.login();
       await DaoInvoice().uploadInvoiceToXero(invoice, _xeroApi);
+      await _refresh();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Invoice uploaded to Xero successfully')),
-        );
+        HMBToast.info(context, 'Invoice uploaded to Xero successfully');
       }
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload invoice: $e')),
-        );
+        HMBToast.error('Failed to upload invoice: $e',
+            acknowledgmentRequired: true);
       }
     }
   }
@@ -198,8 +197,20 @@ Xero Invoice # ${invoice.invoiceNum}'''),
                   title: 'Delete Invoice',
                   message: 'Are you sure you want to delete this invoice?',
                   onConfirmed: () async {
-                    await DaoInvoice().delete(invoice.id);
-                    await _refresh();
+                    try {
+                      await DaoInvoice().delete(invoice.id);
+                      if (Strings.isNotBlank(invoice.invoiceNum)) {
+                        await XeroApi().login();
+
+                        await XeroApi().deleteInvoice(invoice);
+                      }
+                      await _refresh();
+                      // ignore: avoid_catches_without_on_clauses
+                    } catch (e) {
+                      if (mounted) {
+                        HMBToast.error(e.toString());
+                      }
+                    }
                   }))
         ],
       );

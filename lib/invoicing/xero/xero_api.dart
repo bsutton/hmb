@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../entity/invoice.dart';
 import 'models/xero_invoice.dart';
 import 'xero_auth.dart';
 
@@ -32,8 +33,32 @@ class XeroApi {
         'Content-Type': 'application/json',
         'Xero-tenant-id': tenantId,
       },
-      body: jsonEncode({'Invoices': [xeroInvoice.toJson()]}),
+      body: jsonEncode({
+        'Invoices': [xeroInvoice.toJson()]
+      }),
     );
+    return response;
+  }
+
+  Future<http.Response> deleteInvoice(Invoice invoice) async {
+    final tenantId = await getTenantId();
+    final response = await http.post(
+      Uri.parse('${_baseUrl}Invoices/${invoice.invoiceNum}'),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
+        'Xero-tenant-id': tenantId,
+      },
+      body: '''
+{
+    "InvoiceNumber": "${invoice.invoiceNum}",
+    "Status": "DELETED"
+}
+''',
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Error deleting invoice: ${response.body}');
+    }
     return response;
   }
 
