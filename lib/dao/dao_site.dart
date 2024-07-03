@@ -140,10 +140,8 @@ where cu.id =?
     final data = await db.rawQuery('''
 select si.* 
 from site si
-join job_site js
-  on si.id = js.site_id
 join job jo
-  on js.job_id = jo.id
+  on jo.site_id = si.id
 where jo.id =? 
 ''', [job.id]);
 

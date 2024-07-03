@@ -8,13 +8,11 @@ import '../email_backup_provider.dart';
 class LocalBackupProvider extends BackupProvider {
   @override
   Future<void> deleteBackup(Backup backupToDelete) {
-    // TODO: implement deleteBackup
     throw UnimplementedError();
   }
 
   @override
   Future<Backup> getBackup(String pathTo) {
-    // TODO: implement getBackup
     throw UnimplementedError();
   }
 

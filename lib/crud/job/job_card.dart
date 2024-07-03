@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../dao/dao_contact.dart';
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
 import '../../dao/dao_job_status.dart';
-import '../../dao/dao_site.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../invoicing/invoice_list_screen.dart';
@@ -29,34 +27,24 @@ class JobCard extends StatelessWidget {
       builder: (context, jobStatus) => FutureBuilderEx<Customer?>(
             // ignore: discarded_futures
             future: DaoCustomer().getById(job.customerId),
-            builder: (context, customer) => FutureBuilderEx(
-              // ignore: discarded_futures
-              future: DaoSite().getByJob(job),
-              builder: (context, site) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  HMBTextHeadline3(customer?.name ?? 'Not Set'),
-                  FutureBuilderEx(
-                    // ignore: discarded_futures
-                    future: DaoContact().getById(job.contactId),
-                    builder: (context, contact) => Column(
-                      children: [
-                        HMBPhoneText(
-                            phoneNo:
-                                contact?.mobileNumber ?? contact?.landLine),
-                        HMBEmailText(email: contact?.emailAddress)
-                      ],
-                    ),
-                  ),
-                  HMBSiteText(label: '', site: site),
-                  HMBText('Status: ${jobStatus?.name ?? "Status Unknown"} '),
-                  HMBText('Scheduled: ${formatDate(job.startDate)}'),
-                  HMBText(
-                    '''Description: ${RichEditor.createParchment(job.description).toPlainText().split('\n').first}''',
-                  ),
-                  buildStatistics(job)
-                ],
-              ),
+            builder: (context, customer) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HMBTextHeadline3(customer?.name ?? 'Not Set'),
+                Column(
+                  children: [
+                    HMBJobPhoneText(job: job),
+                    HMBJobEmailText(job: job)
+                  ],
+                ),
+                HMBJobSiteText(label: '', job: job),
+                HMBText('Status: ${jobStatus?.name ?? "Status Unknown"} '),
+                HMBText('Scheduled: ${formatDate(job.startDate)}'),
+                HMBText(
+                  '''Description: ${RichEditor.createParchment(job.description).toPlainText().split('\n').first}''',
+                ),
+                buildStatistics(job)
+              ],
             ),
           ));
 
