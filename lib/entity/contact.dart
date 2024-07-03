@@ -107,6 +107,8 @@ class Contact extends Entity<Contact> {
 
   XeroContact toXeroContact() => XeroContact(
         name: fullname,
+        email: emailAddress,
+        phone: preferredPhone()
       );
 
   String preferredPhone() {

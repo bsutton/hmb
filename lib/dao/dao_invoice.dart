@@ -8,6 +8,7 @@ import '../entity/invoice.dart';
 import '../entity/invoice_line.dart';
 import '../entity/invoice_line_group.dart';
 import '../entity/job.dart';
+import '../invoicing/xero/models/xero_contact.dart';
 import '../invoicing/xero/xero_api.dart';
 import '../util/exceptions.dart';
 import '../util/format.dart';
@@ -189,25 +190,9 @@ class DaoInvoice extends Dao<Invoice> {
         xeroContactId = contacts.first['ContactID'] as String;
       } else {
         // Create the contact in Xero if it doesn't exist
-        final createContactResponse = await xeroApi.createContact({
-          'Name': contact.fullname,
-          'FirstName': contact.firstName,
-          'LastName': contact.surname,
-          'EmailAddress': contact.emailAddress,
-          'Addresses': [
-            {
-              'AddressType': 'POBOX',
-              'AddressLine1': site?.addressLine1,
-              'City': site?.suburb,
-              'Region': site?.state,
-              'PostalCode': site?.postcode,
-              // 'Country': site?.country
-            }
-          ],
-          'Phones': [
-            {'PhoneType': 'DEFAULT', 'PhoneNumber': contact.mobileNumber}
-          ]
-        });
+        final xeroContact = XeroContact.fromContact(contact);
+        final createContactResponse =
+            await xeroApi.createContact(xeroContact.toJson());
 
         if (createContactResponse.statusCode == 200) {
           // ignore: avoid_dynamic_calls

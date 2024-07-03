@@ -1,4 +1,3 @@
-import '../xero_api.dart';
 import 'models.dart';
 
 class XeroInvoice {
@@ -30,29 +29,14 @@ class XeroInvoice {
         'LineAmountTypes': lineAmountTypes,
       };
 
-  /// Send an invoice to Xero
-  static Future<void> create(XeroApi api, XeroInvoice invoice) async {
-    // final contact = XeroContact(name: 'Sample Customer');
-    // final lineItem = XeroLineItem(
-    //   description: 'Sample Item',
-    //   quantity: 1,
-    //   unitAmount: 100,
-    //   accountCode: '200',
-    // );
-    // final invoice = XeroInvoice(
-    //   type: 'ACCREC',
-    //   contact: contact,
-    //   lineItems: [lineItem],
-    //   issueDate: DateTime.now(),
-    //   dueDate: DateTime.now().add(const Duration(days: 30)),
-    //   lineAmountTypes: 'Exclusive',
-    // );
+  // /// Send an invoice to Xero
+  // static Future<void> create(XeroApi api, XeroInvoice invoice) async {
 
-    final response = await api.createInvoice(invoice);
-    if (response.statusCode == 200) {
-      print('Invoice created successfully');
-    } else {
-      print('Failed to create invoice: ${response.body}');
-    }
-  }
+  //   final response = await api.createInvoice(invoice);
+  //   if (response.statusCode == 200) {
+  //     print('Invoice created successfully');
+  //   } else {
+  //     print('Failed to create invoice: ${response.body}');
+  //   }
+  // }
 }

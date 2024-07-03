@@ -75,15 +75,13 @@ class XeroApi {
           'Xero-tenant-id': tenantId,
         },
         body: '');
-    if (response.statusCode != 200) {
+    if (response.statusCode != 204) {
       throw Exception('Error sending invoice: ${response.body}');
     }
 
     await _markAsSent(invoice);
     return response;
   }
-
-  
 
   /// Instruct xero to send the invoice to the jobs primary contact.
   Future<http.Response> _markAsAuthorised(Invoice invoice) async {
