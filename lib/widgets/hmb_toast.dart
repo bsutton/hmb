@@ -6,9 +6,8 @@ import 'package:toastification/toastification.dart';
 import 'hmb_text_scroll.dart';
 
 class HMBToast {
-  static void info(BuildContext context, String text) {
+  static void info(String text) {
     toastification.show(
-        context: context,
         type: ToastificationType.info,
         style: ToastificationStyle.minimal,
         autoCloseDuration: const Duration(seconds: 3),

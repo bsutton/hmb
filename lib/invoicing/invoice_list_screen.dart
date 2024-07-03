@@ -65,7 +65,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       await DaoInvoice().uploadInvoiceToXero(invoice, _xeroApi);
       await _refresh();
       if (mounted) {
-        HMBToast.info(context, 'Invoice uploaded to Xero successfully');
+        HMBToast.info( 'Invoice uploaded to Xero successfully');
       }
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {

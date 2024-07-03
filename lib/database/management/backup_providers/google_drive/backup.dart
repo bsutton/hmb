@@ -71,7 +71,7 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
     final authHeaders = await _currentUser?.authHeaders;
     if (authHeaders == null) {
       if (context.mounted) {
-        HMBToast.info(context, 'Not signed in');
+        HMBToast.info( 'Not signed in');
       }
       return;
     }

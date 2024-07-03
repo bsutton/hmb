@@ -7,6 +7,6 @@ Future<void> clipboardCopyTo(BuildContext context, String data) async {
   await Clipboard.setData(ClipboardData(text: data));
 
   if (context.mounted) {
-    HMBToast.notice(context, 'Copy $data to the clipboard');
+    HMBToast.info( 'Copy $data to the clipboard');
   }
 }

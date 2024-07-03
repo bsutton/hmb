@@ -77,7 +77,7 @@ class DialWidget extends StatelessWidget {
 
   Future<void> _call(BuildContext context, String phoneNo) async {
     if (!Platform.isAndroid) {
-      HMBToast.info(context, 'Dialing is only available on Android');
+      HMBToast.info( 'Dialing is only available on Android');
       return;
     }
 
@@ -86,7 +86,7 @@ class DialWidget extends StatelessWidget {
       final result = await Permission.phone.request();
       if (result.isDenied) {
         if (context.mounted) {
-          HMBToast.info(context, 'Phone permission is required to make calls');
+          HMBToast.info( 'Phone permission is required to make calls');
         }
         return;
       }
@@ -101,7 +101,7 @@ class DialWidget extends StatelessWidget {
     if (status.isDenied) {
       final result = await Permission.sms.request();
       if (result.isDenied && context.mounted) {
-        HMBToast.info(context, 'SMS permission is required to send texts');
+        HMBToast.info( 'SMS permission is required to send texts');
         return;
       }
     }
@@ -116,7 +116,7 @@ class DialWidget extends StatelessWidget {
           // gone by the time the notice arrives.
           // consider show a dialog that remains open util
           // the sms is sent.
-          HMBToast.info(context, 'SMS sent successfully');
+          HMBToast.info( 'SMS sent successfully');
         } else if (state == SmsMessageState.Fail) {
           HMBToast.error('Failed to send SMS');
         }

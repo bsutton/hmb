@@ -9,6 +9,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:toastification/toastification.dart';
 
 import 'crud/customer/customer_list_screen.dart';
 import 'crud/job/job_list_screen.dart';
@@ -44,9 +45,9 @@ void main(List<String> args) async {
 // Subscribe to all events (initial link and further)
   _appLinks.uriLinkStream.listen((uri) {
     print('Hi from app link');
-    HMBToast.notice(navigatorKey.currentContext!, 'Got a link $uri');
+    HMBToast.info( 'Got a link $uri');
     if (uri.path == ('/xero/auth_callback')) {
-      HMBToast.notice(navigatorKey.currentContext!, 'Some asked for xero');
+      HMBToast.info( 'Some asked for xero');
     }
   });
 
@@ -59,26 +60,28 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-      navigatorKey: navigatorKey,
-      title: 'Handyman',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      initialRoute: '/',
-      home: ChangeNotifierProvider(
-        create: (_) => BlockingUI(),
-        child: Scaffold(
-          body: BlockingUIBuilder<void>(
-            future: _initialise,
-            stacktrace: StackTrace.current,
-            label: 'Upgrade your database.',
-            builder: (context, _) =>
-                const HomeWithDrawer(initialScreen: JobListScreen()),
-          ),
-        ),
-      ));
+  Widget build(BuildContext context) => ToastificationWrapper(
+        child: MaterialApp(
+            navigatorKey: navigatorKey,
+            title: 'Handyman',
+            theme: ThemeData(
+              primarySwatch: Colors.blue,
+              visualDensity: VisualDensity.adaptivePlatformDensity,
+            ),
+            initialRoute: '/',
+            home: ChangeNotifierProvider(
+              create: (_) => BlockingUI(),
+              child: Scaffold(
+                body: BlockingUIBuilder<void>(
+                  future: _initialise,
+                  stacktrace: StackTrace.current,
+                  label: 'Upgrade your database.',
+                  builder: (context, _) =>
+                      const HomeWithDrawer(initialScreen: JobListScreen()),
+                ),
+              ),
+            )),
+      );
 }
 
 class DrawerItem {
