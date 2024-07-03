@@ -10,7 +10,7 @@ class HMBToast {
     toastification.show(
         type: ToastificationType.info,
         style: ToastificationStyle.minimal,
-        autoCloseDuration: const Duration(seconds: 3),
+        autoCloseDuration: const Duration(seconds: 6),
         // toast: Container(
         //   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         //   decoration: BoxDecoration(
