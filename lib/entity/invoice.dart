@@ -88,8 +88,7 @@ class Invoice extends Entity<Invoice> {
         issueDate: invoice.createdDate,
         dueDate: invoice.createdDate.add(const Duration(days: 3)),
         lineItems: invoiceLines.map((line) => line.toXeroLineItem()).toList(),
-        lineAmountTypes: 'Exclusive');
-
+        lineAmountTypes: 'Inclusive'); // All amounts are inclusive of tax.
     return xeroInvoice;
   }
 }
