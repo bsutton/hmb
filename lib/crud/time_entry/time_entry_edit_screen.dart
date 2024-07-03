@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../dao/dao_time_entry.dart';
 import '../../entity/task.dart';
 import '../../entity/time_entry.dart';
+import '../../util/format.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../base_nested/nested_edit_screen.dart';
 
@@ -129,6 +130,13 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
                   focusNode: _endTimeFocusNode,
                   labelText: 'End Time',
                   keyboardType: TextInputType.datetime,
+
+                  /// end time must be after start time.
+                  validator: (value) => (!parseDateTime(value ?? '')!.isAfter(
+                          parseDateTime(_startTimeController.text) ??
+                              DateTime.now()))
+                      ? 'End time must be after start time'
+                      : null,
                 ),
               ),
             ),

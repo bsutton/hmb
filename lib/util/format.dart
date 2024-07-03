@@ -1,4 +1,5 @@
 import 'package:date_time_format/date_time_format.dart';
+import 'package:intl/intl.dart';
 
 String formatDate(DateTime dateTime) =>
     DateTimeFormat.format(dateTime, format: 'D, j M');
@@ -21,10 +22,12 @@ String formatDuration(Duration duration, {bool seconds = false}) {
   return result;
 }
 
-// DateTime parseDateTime(String dateTime) {
-//   // DateTime.parse(dateTime, format: 'D, j M, H:i:s');
+DateFormat dateFormat = DateFormat('yyyy-MM-dd hh:mm a');
 
-// // var french = await Cultures.getCulture('au-AU');
+DateTime? parseDateTime(String? value) => dateFormat.tryParse(value ?? '');
+  // DateTime.parse(dateTime, format: 'D, j M, H:i:s');
+
+// var french = await Cultures.getCulture('au-AU');
 
 //   final localClone = tm.ZonedDateTimePattern.createWithInvariantCulture(
 //           'dddd yyyy-MM-dd HH:mm z') // 'dddd, dd MMM HH:mm:ss',
