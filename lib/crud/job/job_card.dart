@@ -69,6 +69,7 @@ class JobCard extends StatelessWidget {
               } else {
                 // Desktop layout
                 return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ..._buildStatistics(remainingTasks),
                     _buildInvoiceButton(context)
@@ -85,10 +86,6 @@ class JobCard extends StatelessWidget {
           builder: (context) => InvoiceListScreen(job: job),
         )),
         child: const Text('Invoice'),
-        // onPressed: () async => Navigator.of(context).pushNamed(
-        //   XeroAuthScreen.routeName,
-        //   arguments: InvoiceScreenArguments(job: job),
-        // ),
       );
 
   List<Widget> _buildStatistics(JobStatistics remainingTasks) => [
