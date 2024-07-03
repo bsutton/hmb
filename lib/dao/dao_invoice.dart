@@ -19,7 +19,6 @@ import 'dao_contact.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
-import 'dao_site.dart';
 import 'dao_task.dart';
 import 'dao_time_entry.dart';
 
@@ -174,8 +173,6 @@ class DaoInvoice extends Dao<Invoice> {
     if (contact == null) {
       throw Exception('Primary contact for the customer not found');
     }
-
-    final site = await DaoSite().getPrimaryForCustomer(job.customerId);
 
     // Check if the contact exists in Xero
     final contactResponse = await xeroApi.getContact(contact.fullname);

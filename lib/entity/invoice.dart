@@ -93,6 +93,7 @@ class Invoice extends Entity<Invoice> {
         type: 'ACCREC',
         contact: xeroContact,
         issueDate: invoice.createdDate,
+        // TODO(bsutton): make due date configurable
         dueDate: invoice.createdDate.add(const Duration(days: 3)),
         lineItems: invoiceLines.map((line) => line.toXeroLineItem()).toList(),
         lineAmountTypes: 'Inclusive'); // All amounts are inclusive of tax.
