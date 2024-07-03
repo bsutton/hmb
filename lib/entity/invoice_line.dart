@@ -105,7 +105,8 @@ class InvoiceLine extends Entity<InvoiceLine> {
       quantity: quantity,
       unitAmount: unitPrice,
       lineTotal: lineTotal,
-      accountCode: '240 - Handyman income',
-      itemCode: 'IHS-Labour'
-      );
+      // TODO(bsutton): fix these so that they can be configured from the system
+      /// table.
+      accountCode: '240', // 240 - Handyman income',
+      itemCode: 'IHS-Labour');
 }

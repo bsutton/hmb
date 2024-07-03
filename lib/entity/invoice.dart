@@ -15,6 +15,7 @@ class Invoice extends Entity<Invoice> {
     required super.createdDate,
     required super.modifiedDate,
     required this.invoiceNum,
+    this.externalInvoiceId,
   }) : super();
 
   Invoice.forInsert({
@@ -27,6 +28,7 @@ class Invoice extends Entity<Invoice> {
     required this.jobId,
     required this.totalAmount,
     required this.invoiceNum,
+    this.externalInvoiceId,
   }) : super.forUpdate();
 
   factory Invoice.fromMap(Map<String, dynamic> map) => Invoice(
@@ -36,11 +38,13 @@ class Invoice extends Entity<Invoice> {
         createdDate: DateTime.parse(map['created_date'] as String),
         modifiedDate: DateTime.parse(map['modified_date'] as String),
         invoiceNum: map['invoice_num'] as String?,
+        externalInvoiceId: map['external_invoice_id'] as String?,
       );
 
   int jobId;
   Money totalAmount;
   String? invoiceNum;
+  String? externalInvoiceId;
 
   Invoice copyWith({
     int? id,
@@ -49,6 +53,7 @@ class Invoice extends Entity<Invoice> {
     DateTime? createdDate,
     DateTime? modifiedDate,
     String? invoiceNum,
+    String? externalInvoiceId,
   }) =>
       Invoice(
         id: id ?? this.id,
@@ -57,6 +62,7 @@ class Invoice extends Entity<Invoice> {
         createdDate: createdDate ?? this.createdDate,
         modifiedDate: modifiedDate ?? this.modifiedDate,
         invoiceNum: invoiceNum ?? this.invoiceNum,
+        externalInvoiceId: externalInvoiceId ?? this.externalInvoiceId,
       );
 
   @override
@@ -67,6 +73,7 @@ class Invoice extends Entity<Invoice> {
         'created_date': createdDate.toIso8601String(),
         'modified_date': modifiedDate.toIso8601String(),
         'invoice_num': invoiceNum,
+        'external_invoice_id': externalInvoiceId,
       };
 
   Future<XeroInvoice> toXeroInvoice(Invoice invoice) async {

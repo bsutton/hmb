@@ -65,7 +65,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       await DaoInvoice().uploadInvoiceToXero(invoice, _xeroApi);
       await _refresh();
       if (mounted) {
-        HMBToast.info( 'Invoice uploaded to Xero successfully');
+        HMBToast.info('Invoice uploaded to Xero successfully');
       }
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
@@ -139,7 +139,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
             Padding(
               padding: const EdgeInsets.all(8),
               child: ElevatedButton(
-                  onPressed: () async => _uploadInvoiceToXero(invoice),
+                  onPressed: () async => _uploadOrSendInvoice(invoice),
                   child: _buildXeroButton(invoice)),
             )
           ],
@@ -151,6 +151,32 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       return const Text('Upload to Xero');
     } else {
       return const Text('Send from Xero');
+    }
+  }
+
+  Future<void> _uploadOrSendInvoice(Invoice invoice) async {
+    if (Strings.isBlank(invoice.invoiceNum)) {
+      await _uploadInvoiceToXero(invoice);
+    } else {
+      await _sendInvoiceFromXero(invoice);
+    }
+  }
+
+  Future<void> _sendInvoiceFromXero(Invoice invoice) async {
+    try {
+      _xeroApi = XeroApi();
+      await _xeroApi.login();
+      await _xeroApi.sendInvoice(invoice);
+      await _refresh();
+      if (mounted) {
+        HMBToast.info('Invoice sent from Xero successfully');
+      }
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      if (mounted) {
+        HMBToast.error('Failed to send invoice: $e',
+            acknowledgmentRequired: true);
+      }
     }
   }
 

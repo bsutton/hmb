@@ -62,6 +62,75 @@ class XeroApi {
     return response;
   }
 
+  /// Instruct xero to send the invoice to the jobs primary contact.
+  Future<http.Response> sendInvoice(Invoice invoice) async {
+    final tenantId = await getTenantId();
+
+    await _markAsAuthorised(invoice);
+    final response = await http.post(
+        Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}/Email'),
+        headers: {
+          'Authorization': 'Bearer ${xeroAuth.accessToken}',
+          'Content-Type': 'application/json',
+          'Xero-tenant-id': tenantId,
+        },
+        body: '');
+    if (response.statusCode != 200) {
+      throw Exception('Error sending invoice: ${response.body}');
+    }
+
+    await _markAsSent(invoice);
+    return response;
+  }
+
+  
+
+  /// Instruct xero to send the invoice to the jobs primary contact.
+  Future<http.Response> _markAsAuthorised(Invoice invoice) async {
+    final tenantId = await getTenantId();
+    final response = await http.post(
+      Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}'),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
+        'Xero-tenant-id': tenantId,
+      },
+      body: '''
+{
+    "InvoiceID": "${invoice.externalInvoiceId}",
+    "Status": "AUTHORISED"
+}
+''',
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Error marking invoice as authorised: ${response.body}');
+    }
+    return response;
+  }
+
+  /// Instruct xero to send the invoice to the jobs primary contact.
+  Future<http.Response> _markAsSent(Invoice invoice) async {
+    final tenantId = await getTenantId();
+    final response = await http.post(
+      Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}'),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
+        'Xero-tenant-id': tenantId,
+      },
+      body: '''
+{
+    "InvoiceID": "${invoice.externalInvoiceId}",
+    "SentToContact": "true"
+}
+''',
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Error marking invoice as sent: ${response.body}');
+    }
+    return response;
+  }
+
   Future<http.Response> getContact(String contactName) async {
     final tenantId = await getTenantId();
     final response = await http.get(

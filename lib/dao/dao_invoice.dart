@@ -237,8 +237,11 @@ class DaoInvoice extends Dao<Invoice> {
     final responseBody = jsonDecode(createInvoiceResponse.body);
     // ignore: avoid_dynamic_calls
     final invoiceNum = responseBody['Invoices'][0]['InvoiceNumber'] as String;
+    // ignore: avoid_dynamic_calls
+    final invoiceId = responseBody['Invoices'][0]['InvoiceID'] as String;
 
-    await DaoInvoice().update(invoice.copyWith(invoiceNum: invoiceNum));
+    await DaoInvoice().update(
+        invoice.copyWith(invoiceNum: invoiceNum, externalInvoiceId: invoiceId));
   }
 }
 
