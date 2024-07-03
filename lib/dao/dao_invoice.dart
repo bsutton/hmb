@@ -86,11 +86,12 @@ class DaoInvoice extends Dao<Invoice> {
       final invoiceLineGroupId =
           await DaoInvoiceLineGroup().insert(invoiceLineGroup);
 
+      /// Labour based billing
       final timeEntries = await DaoTimeEntry().getByTask(task.id);
       for (final timeEntry in timeEntries.where((entry) => !entry.billed)) {
-        final duration = timeEntry.duration.inMinutes / 60;
-        final lineTotal =
-            job.hourlyRate!.multiplyByFixed(Fixed.fromNum(duration));
+        final duration =
+            Fixed.fromNum(timeEntry.duration.inMinutes / 60, scale: 2);
+        final lineTotal = job.hourlyRate!.multiplyByFixed(duration);
 
         if (lineTotal.isZero) {
           continue;
@@ -101,7 +102,7 @@ class DaoInvoice extends Dao<Invoice> {
           invoiceLineGroupId: invoiceLineGroupId,
           description:
               'Labour: ${task.name} on ${formatDate(timeEntry.startTime)}',
-          quantity: Fixed.fromNum(duration, scale: 2),
+          quantity: duration,
           unitPrice: job.hourlyRate!,
           lineTotal: lineTotal,
         );
@@ -113,7 +114,7 @@ class DaoInvoice extends Dao<Invoice> {
         await DaoTimeEntry().markAsBilled(timeEntry, invoiceLine.id);
       }
 
-      // Create invoice lines for each checklist item
+      // Materials based billing
       final checkListItems = await DaoCheckListItem().getByTask(task);
       for (final item in checkListItems.where((item) => !item.billed)) {
         final lineTotal = item.unitCost.multiplyByFixed(item.quantity);
