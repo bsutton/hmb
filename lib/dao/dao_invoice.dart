@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
@@ -6,13 +8,17 @@ import '../entity/invoice.dart';
 import '../entity/invoice_line.dart';
 import '../entity/invoice_line_group.dart';
 import '../entity/job.dart';
+import '../invoicing/xero/xero_api.dart';
 import '../util/exceptions.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_checklist_item.dart';
+import 'dao_contact.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
+import 'dao_job.dart';
+import 'dao_site.dart';
 import 'dao_task.dart';
 import 'dao_time_entry.dart';
 
@@ -154,6 +160,84 @@ class DaoInvoice extends Dao<Invoice> {
     final invoice = await DaoInvoice().getById(invoiceId);
     final updatedInvoice = invoice!.copyWith(totalAmount: total);
     await DaoInvoice().update(updatedInvoice);
+  }
+
+  /// Uploads an invoice and returns the new Invoice Number
+  Future<void> uploadInvoiceToXero(Invoice invoice, XeroApi xeroApi) async {
+    // Fetch the job associated with the invoice
+    final job = await DaoJob().getById(invoice.jobId);
+
+    // Fetch the primary contact for the customer
+    final contact = await DaoContact().getPrimaryForCustomer(job!.customerId);
+    if (contact == null) {
+      throw Exception('Primary contact for the customer not found');
+    }
+
+    final site = await DaoSite().getPrimaryForCustomer(job.customerId);
+
+    // Check if the contact exists in Xero
+    final contactResponse = await xeroApi.getContact(contact.fullname);
+    String xeroContactId;
+
+    if (contactResponse.statusCode == 200) {
+      final contacts =
+          // ignore: avoid_dynamic_calls
+          jsonDecode(contactResponse.body)['Contacts'] as List<dynamic>;
+      if (contacts.isNotEmpty) {
+        // ignore: avoid_dynamic_calls
+        xeroContactId = contacts.first['ContactID'] as String;
+      } else {
+        // Create the contact in Xero if it doesn't exist
+        final createContactResponse = await xeroApi.createContact({
+          'Name': contact.fullname,
+          'FirstName': contact.firstName,
+          'LastName': contact.surname,
+          'EmailAddress': contact.emailAddress,
+          'Addresses': [
+            {
+              'AddressType': 'POBOX',
+              'AddressLine1': site?.addressLine1,
+              'City': site?.suburb,
+              'Region': site?.state,
+              'PostalCode': site?.postcode,
+              // 'Country': site?.country
+            }
+          ],
+          'Phones': [
+            {'PhoneType': 'DEFAULT', 'PhoneNumber': contact.mobileNumber}
+          ]
+        });
+
+        if (createContactResponse.statusCode == 200) {
+          // ignore: avoid_dynamic_calls
+          xeroContactId = (jsonDecode(createContactResponse.body)['Contacts']
+                  as List<Map<String, dynamic>>)
+              .first['ContactID'] as String;
+          // Update the local contact with the Xero contact ID
+          await DaoContact()
+              .update(contact.copyWith(xeroContactId: xeroContactId));
+        } else {
+          throw Exception('Failed to create contact in Xero');
+        }
+      }
+    } else {
+      throw InvoiceException(
+          '''Failed to fetch contact from Xero Error: ${contactResponse.reasonPhrase}''');
+    }
+
+    // Create the invoice in Xero
+    final xeroInvoice = await invoice.toXeroInvoice(invoice);
+
+    final createInvoiceResponse = await xeroApi.createInvoice(xeroInvoice);
+    if (createInvoiceResponse.statusCode != 200) {
+      throw Exception(
+          'Failed to create invoice in Xero: ${createInvoiceResponse.body}');
+    }
+    final responseBody = jsonDecode(createInvoiceResponse.body);
+    // ignore: avoid_dynamic_calls
+    final invoiceNum = responseBody['Invoices'][0]['InvoiceNumber'] as String;
+
+    await DaoInvoice().update(invoice.copyWith(invoiceNum: invoiceNum));
   }
 }
 

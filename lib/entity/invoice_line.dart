@@ -1,5 +1,6 @@
 import 'package:money2/money2.dart';
 
+import '../invoicing/xero/models/models.dart';
 import 'entity.dart';
 
 enum LineStatus { normal, noCharge, excluded, noChargeHidden }
@@ -98,4 +99,13 @@ class InvoiceLine extends Entity<InvoiceLine> {
         'modified_date': modifiedDate.toIso8601String(),
         'status': status.index,
       };
+
+  XeroLineItem toXeroLineItem() => XeroLineItem(
+      description: description,
+      quantity: quantity,
+      unitAmount: unitPrice,
+      lineTotal: lineTotal,
+      accountCode: '240 - Handyman income',
+      itemCode: 'IHS-Labour'
+      );
 }

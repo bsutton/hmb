@@ -14,3 +14,7 @@ class BackupException extends HMBException {
 class InvoiceException extends HMBException {
   InvoiceException(super.message);
 }
+
+class XeroException extends HMBException {
+  XeroException(super.message);
+}

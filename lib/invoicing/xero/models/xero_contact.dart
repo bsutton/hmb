@@ -1,5 +1,5 @@
-class Contact {
-  Contact({required this.name});
+class XeroContact {
+  XeroContact({required this.name});
   final String name;
 
   Map<String, dynamic> toJson() => {

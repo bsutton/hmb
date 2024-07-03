@@ -11,7 +11,6 @@ import 'package:strings/strings.dart';
 
 import '../../dao/dao_system.dart';
 import '../../util/exceptions.dart';
-import '../../widgets/hmb_toast.dart';
 
 class Credentials {}
 
@@ -33,50 +32,103 @@ class XeroAuth {
   XeroAuth._();
   static XeroAuth? _instance;
 
+  OidcUserManager? manager;
   OidcUser? oidcUser;
 
-  bool isAuthed() => oidcUser != null;
+  String get accessToken {
+    final token = oidcUser?.token.accessToken;
 
+    if (token == null) {
+      throw XeroException('Invalid State. Call login() first');
+    }
 
-
-  Future<OidcUser?> showAuthDialog(BuildContext context) async {
-    final user = await showDialog<OidcUser>(
-        context: context,
-        builder: (context) => AlertDialog(
-              title: const Text('Authenticate with Xero'),
-              actions: [
-                ElevatedButton(
-                  onPressed: () async => _authWrapper(context),
-                  child: const Text('Authenticate with Xero'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-              ],
-            ));
-
-    return user;
+    return token;
   }
 
-  Future<void> _authWrapper(BuildContext context) async {
+  Future<void> login() async {
+    if (oidcUser == null) {
+      await _init();
+      // Login
+      oidcUser = await manager!.loginAuthorizationCodeFlow();
+      await _init();
+    } else {
+      // Refresh token
+      await _refreshTokenIfNeeded();
+    }
+  }
+
+  Future<void> _refreshTokenIfNeeded() async {
     try {
-      final user = await _authenticate();
-      if (context.mounted) {
-        Navigator.of(context).pop(user);
-      }
-    } on InvoiceException catch (e) {
-      if (context.mounted) {
-        HMBToast.error(context, e.message);
+      if (_isTokenExpired()) {
+        oidcUser = await manager!.refreshToken();
       }
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
+      await _init();
+    }
+  }
+
+  bool _isTokenExpired() {
+    if (oidcUser?.token == null) {
+      return true;
+    }
+    return oidcUser!.token.isAccessTokenAboutToExpire(now: DateTime.now());
+  }
+
+  Future<void> refreshToken(BuildContext context) async {
+    if (manager == null) {
+      throw XeroException('Manager not initialized');
+    }
+
+    try {
+      final newUser = await manager!.refreshToken();
+      oidcUser = newUser;
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      print('Failed to refresh token: $e');
       if (context.mounted) {
-        HMBToast.error(context, e.toString());
+        await _init();
       }
     }
   }
-  Future<OidcUser?> _authenticate() async {
+
+  // Future<void> _showAuthDialog(BuildContext context) async {
+  //   await showDialog<OidcUser>(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //             title: const Text('Authenticate with Xero'),
+  //             actions: [
+  //               ElevatedButton(
+  //                 onPressed: () async => _authWrapper(context),
+  //                 child: const Text('Authenticate with Xero'),
+  //               ),
+  //               ElevatedButton(
+  //                 onPressed: () => Navigator.of(context).pop(),
+  //                 child: const Text('Cancel'),
+  //               ),
+  //             ],
+  //           ));
+  // }
+
+  // Future<void> _authWrapper(BuildContext context) async {
+  //   try {
+  //     final user = await _authenticate();
+  //     if (context.mounted) {
+  //       Navigator.of(context).pop(user);
+  //     }
+  //   } on InvoiceException catch (e) {
+  //     if (context.mounted) {
+  //       HMBToast.error(context, e.message);
+  //     }
+  //     // ignore: avoid_catches_without_on_clauses
+  //   } catch (e) {
+  //     if (context.mounted) {
+  //       HMBToast.error(context, e.toString());
+  //     }
+  //   }
+  // }
+
+  Future<void> _init() async {
     final _scopes = <String>[
       'openid',
       'profile',
@@ -87,7 +139,7 @@ class XeroAuth {
     ];
 
     final credentials = await _fetchCredentials();
-    final manager = OidcUserManager.lazy(
+    manager = OidcUserManager.lazy(
         discoveryDocumentUri: OidcUtils.getOpenIdConfigWellKnownUri(
           Uri.parse('https://identity.xero.com'),
         ),
@@ -123,22 +175,17 @@ class XeroAuth {
                       : Uri(),
         ));
 
-    //2. init()
-    await manager.init();
+    // Initialize the manager
+    await manager!.init();
 
-    //3. listen to user changes
-    manager.userChanges().listen((user) {
-      print('currentUser changed to $user');
-    });
+    // Listen to user changes
+    // manager!.userChanges().listen((user) {
+    //   print('currentUser changed to $user');
+    // });
+  }
 
-    //4. login
-    final newUser = await manager.loginAuthorizationCodeFlow();
-    print('currentUser changed to $newUser');
-
-    //5. logout
-    // await manager.logout();
-
-    return newUser;
+  Future<void> logout() async {
+    await manager?.logout();
   }
 
   Future<XeroCredentials> _fetchCredentials() async {

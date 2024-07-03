@@ -15,6 +15,7 @@ import '../widgets/hmb_button.dart';
 import '../widgets/hmb_one_of.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_line_dialog.dart';
+import 'xero/xero_api.dart';
 
 class InvoiceListScreen extends StatefulWidget {
   const InvoiceListScreen({
@@ -31,10 +32,12 @@ class InvoiceListScreen extends StatefulWidget {
 class _InvoiceListScreenState extends State<InvoiceListScreen> {
   late Future<List<Invoice>> _invoices;
   late Future<bool> _hasUnbilledItems;
+  late XeroApi _xeroApi;
 
   @override
   void initState() {
     super.initState();
+
     // ignore: discarded_futures
     _invoices = DaoInvoice().getByJobId(widget.job.id);
     // ignore: discarded_futures
@@ -45,11 +48,32 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     final selectedTasks = await DialogTaskSelection.show(context, widget.job);
 
     if (selectedTasks.isNotEmpty) {
-      // Create invoice (and invoice lines
+      // Create invoice (and invoice lines)
       await DaoInvoice().create(widget.job, selectedTasks);
 
       // Refresh state
       await _refresh();
+    }
+  }
+
+  Future<void> _uploadInvoiceToXero(Invoice invoice) async {
+    try {
+      _xeroApi = XeroApi();
+      await _xeroApi.login();
+      await DaoInvoice().uploadInvoiceToXero(invoice, _xeroApi);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Invoice uploaded to Xero successfully')),
+        );
+      }
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload invoice: $e')),
+        );
+      }
     }
   }
 
@@ -113,9 +137,23 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                 return _buildInvoiceGroup(invoiceLineGroups);
               },
             ),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: ElevatedButton(
+                  onPressed: () async => _uploadInvoiceToXero(invoice),
+                  child: _buildXeroButton(invoice)),
+            )
           ],
         ),
       );
+
+  Widget _buildXeroButton(Invoice invoice) {
+    if (invoice.invoiceNum == null) {
+      return const Text('Upload to Xero');
+    } else {
+      return const Text('Send from Xero');
+    }
+  }
 
   Padding _buildInvoiceGroup(List<InvoiceLineGroup> invoiceLineGroups) =>
       Padding(
@@ -151,6 +189,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         children: [
           Text('''
 Invoice # ${invoice.id} Issued: ${formatDate(invoice.createdDate)}'''),
+          if (invoice.invoiceNum != null) Text('''
+Xero Invoice # ${invoice.invoiceNum}'''),
           HMBButton(
               label: 'Delete',
               onPressed: () async => areYouSure(

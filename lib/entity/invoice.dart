@@ -1,5 +1,10 @@
 import 'package:money2/money2.dart';
 
+import '../dao/dao_contact.dart';
+import '../dao/dao_invoice_line.dart';
+import '../dao/dao_job.dart';
+import '../invoicing/xero/models/xero_invoice.dart';
+import '../util/exceptions.dart';
 import 'entity.dart';
 
 class Invoice extends Entity<Invoice> {
@@ -9,6 +14,7 @@ class Invoice extends Entity<Invoice> {
     required this.totalAmount,
     required super.createdDate,
     required super.modifiedDate,
+    required this.invoiceNum,
   }) : super();
 
   Invoice.forInsert({
@@ -20,6 +26,7 @@ class Invoice extends Entity<Invoice> {
     required super.entity,
     required this.jobId,
     required this.totalAmount,
+    required this.invoiceNum,
   }) : super.forUpdate();
 
   factory Invoice.fromMap(Map<String, dynamic> map) => Invoice(
@@ -28,10 +35,12 @@ class Invoice extends Entity<Invoice> {
         totalAmount: Money.fromInt(map['total_amount'] as int, isoCode: 'AUD'),
         createdDate: DateTime.parse(map['created_date'] as String),
         modifiedDate: DateTime.parse(map['modified_date'] as String),
+        invoiceNum: map['invoice_num'] as String?,
       );
 
   int jobId;
   Money totalAmount;
+  String? invoiceNum;
 
   Invoice copyWith({
     int? id,
@@ -39,6 +48,7 @@ class Invoice extends Entity<Invoice> {
     Money? totalAmount,
     DateTime? createdDate,
     DateTime? modifiedDate,
+    String? invoiceNum,
   }) =>
       Invoice(
         id: id ?? this.id,
@@ -46,6 +56,7 @@ class Invoice extends Entity<Invoice> {
         totalAmount: totalAmount ?? this.totalAmount,
         createdDate: createdDate ?? this.createdDate,
         modifiedDate: modifiedDate ?? this.modifiedDate,
+        invoiceNum: invoiceNum ?? this.invoiceNum,
       );
 
   @override
@@ -55,5 +66,30 @@ class Invoice extends Entity<Invoice> {
         'total_amount': totalAmount.minorUnits.toInt(),
         'created_date': createdDate.toIso8601String(),
         'modified_date': modifiedDate.toIso8601String(),
+        'invoice_num': invoiceNum,
       };
+
+  Future<XeroInvoice> toXeroInvoice(Invoice invoice) async {
+    final job = await DaoJob().getById(invoice.jobId);
+
+    final contact = await DaoContact().getForJob(job?.id);
+    if (contact == null) {
+      throw InvoiceException(
+          '''You must assign a Contact to the Job before you can upload an invoice''');
+    }
+    final xeroContact = contact.toXeroContact();
+
+    final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
+
+    final xeroInvoice = XeroInvoice(
+        reference: job!.summary,
+        type: 'ACCREC',
+        contact: xeroContact,
+        issueDate: invoice.createdDate,
+        dueDate: invoice.createdDate.add(const Duration(days: 3)),
+        lineItems: invoiceLines.map((line) => line.toXeroLineItem()).toList(),
+        lineAmountTypes: 'Exclusive');
+
+    return xeroInvoice;
+  }
 }

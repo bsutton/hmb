@@ -1,3 +1,4 @@
+import '../invoicing/xero/models/xero_contact.dart';
 import 'entity.dart';
 
 class Contact extends Entity<Contact> {
@@ -11,6 +12,7 @@ class Contact extends Entity<Contact> {
     required this.emailAddress,
     required super.createdDate,
     required super.modifiedDate,
+    this.xeroContactId,
   }) : super();
 
   Contact.forInsert({
@@ -20,6 +22,7 @@ class Contact extends Entity<Contact> {
     required this.landLine,
     required this.officeNumber,
     required this.emailAddress,
+    this.xeroContactId,
   }) : super.forInsert();
 
   Contact.forUpdate({
@@ -30,6 +33,7 @@ class Contact extends Entity<Contact> {
     required this.landLine,
     required this.officeNumber,
     required this.emailAddress,
+    this.xeroContactId,
   }) : super.forUpdate();
 
   factory Contact.fromMap(Map<String, dynamic> map) => Contact(
@@ -40,15 +44,20 @@ class Contact extends Entity<Contact> {
         landLine: map['landLine'] as String,
         officeNumber: map['officeNumber'] as String,
         emailAddress: map['emailAddress'] as String,
+        xeroContactId: map['xeroContactId'] as String?,
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
       );
+
   String firstName;
   String surname;
   String mobileNumber;
   String landLine;
   String officeNumber;
   String emailAddress;
+  String? xeroContactId;
+
+  String get fullname => '$firstName $surname';
 
   @override
   Map<String, dynamic> toMap() => {
@@ -59,9 +68,56 @@ class Contact extends Entity<Contact> {
         'landLine': landLine,
         'officeNumber': officeNumber,
         'emailAddress': emailAddress,
+        'xeroContactId': xeroContactId,
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
 
   String abbreviated() => '$firstName $surname';
+
+  Contact copyWith({
+    int? id,
+    String? firstName,
+    String? surname,
+    String? mobileNumber,
+    String? landLine,
+    String? officeNumber,
+    String? emailAddress,
+    String? addressLine1,
+    String? city,
+    String? region,
+    String? postalCode,
+    String? country,
+    String? xeroContactId,
+    DateTime? createdDate,
+    DateTime? modifiedDate,
+  }) =>
+      Contact(
+        id: id ?? this.id,
+        firstName: firstName ?? this.firstName,
+        surname: surname ?? this.surname,
+        mobileNumber: mobileNumber ?? this.mobileNumber,
+        landLine: landLine ?? this.landLine,
+        officeNumber: officeNumber ?? this.officeNumber,
+        emailAddress: emailAddress ?? this.emailAddress,
+        xeroContactId: xeroContactId ?? this.xeroContactId,
+        createdDate: createdDate ?? this.createdDate,
+        modifiedDate: modifiedDate ?? this.modifiedDate,
+      );
+
+  XeroContact toXeroContact() => XeroContact(
+        name: fullname,
+      );
+
+  String preferredPhone() {
+    if (mobileNumber.isNotEmpty) {
+      return mobileNumber;
+    } else if (officeNumber.isNotEmpty) {
+      return officeNumber;
+    } else if (landLine.isNotEmpty) {
+      return landLine;
+    } else {
+      return '';
+    }
+  }
 }
