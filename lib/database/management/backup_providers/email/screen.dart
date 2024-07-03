@@ -34,12 +34,12 @@ class _BackupScreenState extends State<BackupScreen> {
                   try {
                     await EmailBackupProvider().performBackup(version: 1);
                     if (context.mounted) {
-                      HMBToast.notice(context, 'Backup successful');
+                      HMBToast.info(context, 'Backup successful');
                     }
                     // ignore: avoid_catches_without_on_clauses
                   } catch (e) {
                     if (context.mounted) {
-                      HMBToast.error(context, e.toString());
+                      HMBToast.error(e.toString());
                     }
                   }
                 },

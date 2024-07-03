@@ -71,7 +71,7 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
     final authHeaders = await _currentUser?.authHeaders;
     if (authHeaders == null) {
       if (context.mounted) {
-        HMBToast.notice(context, 'Not signed in');
+        HMBToast.info(context, 'Not signed in');
       }
       return;
     }
@@ -95,7 +95,7 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
           : _googleSignIn.signIn();
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
-      HMBToast.error(context, 'Error signing in: $e');
+      HMBToast.error('Error signing in: $e');
       return null;
     }
   }

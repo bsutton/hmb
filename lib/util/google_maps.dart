@@ -12,7 +12,7 @@ class GoogleMaps {
       await launchUrl(Uri.parse(site.toGoogleMapsQuery()));
     } else {
       if (context.mounted) {
-        HMBToast.error(context, 'Could not open the map.');
+        HMBToast.error( 'Could not open the map.');
       }
     }
   }
