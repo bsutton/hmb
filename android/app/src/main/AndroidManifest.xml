@@ -33,7 +33,7 @@
 				<category android:name="android.intent.category.BROWSABLE" />
 				<data android:scheme="https" android:host="hmb.ivanhoehandyman.com.au" android:pathPrefix="/xero/auth_callback" />
 				<data android:scheme="http" />
-				</intent-filter
+				</intent-filter>
 				<!-- Deep Link sample -->
 				<intent-filter>
 					<action android:name="android.intent.action.VIEW" />
