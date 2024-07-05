@@ -26,18 +26,13 @@ import 'widgets/blocking_ui.dart';
 import 'widgets/hmb_toast.dart';
 
 void main(List<String> args) async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   if (args.isNotEmpty) {
     print('Got a link $args');
   } else {
     print('no args');
   }
-
-  WidgetsFlutterBinding.ensureInitialized();
-  // await TimeMachine.initialize({'rootBundle': rootBundle});
-  // final tzdb = await DateTimeZoneProviders.tzdb;
-  // final currentTimeZone = await FlutterNativeTimezone.getLocalTimezone();
-  // // log.info('Loading current timezone of [$currentTimeZone]');
-  // await tzdb[currentTimeZone];
 
   /// Implement deep linking
   final _appLinks = AppLinks(); // AppLinks is singleton
@@ -45,9 +40,10 @@ void main(List<String> args) async {
 // Subscribe to all events (initial link and further)
   _appLinks.uriLinkStream.listen((uri) {
     print('Hi from app link');
-    HMBToast.info( 'Got a link $uri');
+    HMBToast.info('Got a link $uri');
+    print('deeplink: $uri');
     if (uri.path == ('/xero/auth_callback')) {
-      HMBToast.info( 'Some asked for xero');
+      HMBToast.info('Somonee asked for xero');
     }
   });
 

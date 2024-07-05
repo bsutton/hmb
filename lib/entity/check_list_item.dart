@@ -71,6 +71,8 @@ class CheckListItem extends Entity<CheckListItem> {
   bool billed;
   int? invoiceLineId;
 
+  bool get hasCost => unitCost.multiplyByFixed(quantity) > MoneyEx.zero;
+
   @override
   Map<String, dynamic> toMap() => {
         'id': id,

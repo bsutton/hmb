@@ -11,6 +11,7 @@ import '../../util/platform_ex.dart';
 import '../../util/sim_cards.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_email_field.dart';
+import '../../widgets/hmb_money_editing_controller.dart';
 import '../../widgets/hmb_money_field.dart';
 import '../../widgets/hmb_phone_field.dart';
 import '../../widgets/hmb_text_field.dart';
@@ -42,9 +43,9 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
   late TextEditingController _emailAddressController;
   late TextEditingController _webUrlController;
   late TextEditingController _termsUrlController;
-  late TextEditingController _defaultHourlyRateController;
+  late HMBMoneyEditingController _defaultHourlyRateController;
 
-  late TextEditingController _defaultCallOutFeeController;
+  late HMBMoneyEditingController _defaultCallOutFeeController;
 
   late TextEditingController _xeroClientIdController;
   late TextEditingController _xeroClientSecretController;
@@ -72,9 +73,9 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
     _webUrlController = TextEditingController(text: widget.system.webUrl);
     _termsUrlController = TextEditingController(text: widget.system.termsUrl);
     _defaultHourlyRateController =
-        TextEditingController(text: widget.system.defaultHourlyRate.toString());
+        HMBMoneyEditingController(money: widget.system.defaultHourlyRate);
     _defaultCallOutFeeController =
-        TextEditingController(text: widget.system.defaultCallOutFee.toString());
+        HMBMoneyEditingController(money: widget.system.defaultCallOutFee);
 
     _xeroClientIdController =
         TextEditingController(text: widget.system.xeroClientId);
@@ -137,7 +138,7 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
         Navigator.of(context).pop();
       }
     } else {
-      HMBToast.error( 'Fixed the errors and try again.');
+      HMBToast.error('Fixed the errors and try again.');
     }
   }
 
@@ -181,12 +182,10 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
                 HMBMoneyField(
                     controller: _defaultHourlyRateController,
                     labelText: 'Default Hourly Rate',
-                    keyboardType: TextInputType.number,
                     fieldName: 'default hourly rate'),
                 HMBMoneyField(
                   controller: _defaultCallOutFeeController,
                   labelText: 'Default Call Out Fee',
-                  keyboardType: TextInputType.number,
                   fieldName: 'default call out fee',
                 ),
                 HMBTextField(

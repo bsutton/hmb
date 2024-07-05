@@ -30,7 +30,7 @@ extension JobStatusEnumExtension on JobStatusEnum {
       case 'onHold':
         return JobStatusEnum.onHold;
       default:
-        throw ArgumentError('Invalid job status name');
+        return JobStatusEnum.preStart;
     }
   }
 }

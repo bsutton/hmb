@@ -118,7 +118,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
                   },
                 )
               ]),
-              if (widget.filterBar != null)
+              if (widget.filterBar != null && widget.parent.parent != null)
                 widget.filterBar!(widget.parent.parent!),
             ],
           ),

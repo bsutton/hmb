@@ -6,12 +6,14 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao_checklist_item.dart';
 import '../../entity/check_list_item.dart';
-import '../../widgets/hmb_text_field.dart';
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
+import '../widgets/hmb_fixed_field.dart';
+import '../widgets/hmb_money_editing_controller.dart';
+import '../widgets/hmb_money_field.dart';
 
 class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});
@@ -36,12 +38,10 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
   }
 
   Future<void> _markAsCompleted(CheckListItem item) async {
-    final costController = TextEditingController()
-      ..text = item.unitCost.toString();
+    final costController = HMBMoneyEditingController(money: item.unitCost);
 
-    final quantityController = TextEditingController()
-      ..text =
-          (item.quantity == Fixed.zero ? Fixed.one : item.quantity).toString();
+    final quantityController = HMBFixedEditingController(
+        fixed: (item.quantity == Fixed.zero ? Fixed.one : item.quantity));
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -50,15 +50,15 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HMBTextField(
+            HMBMoneyField(
               controller: costController,
+              fieldName: 'Cost per item',
               labelText: 'Cost per item (optional)',
-              keyboardType: TextInputType.number,
             ),
-            HMBTextField(
+            HMBFixedField(
+              fieldName: 'quantity',
               controller: quantityController,
               labelText: 'Quantity (optional)',
-              keyboardType: TextInputType.number,
             ),
           ],
         ),

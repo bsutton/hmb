@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
 import '../util/money_ex.dart';
+import 'hmb_money_editing_controller.dart';
 import 'hmb_text_field.dart';
 
 class HMBMoneyField extends HMBTextField {
   factory HMBMoneyField(
-          {required TextEditingController controller,
+          {required HMBMoneyEditingController controller,
           required String labelText,
           required String fieldName,
           bool nonZero = true,
-          TextInputType keyboardType = TextInputType.text,
           bool required = false,
           FocusNode? focusNode,
           ValueChanged<String?>? onChanged,
@@ -22,7 +22,6 @@ class HMBMoneyField extends HMBTextField {
           labelText: labelText,
           fieldName: fieldName,
           nonZero: nonZero,
-          keyboardType: keyboardType,
           required: required,
           focusNode: focusNode,
           onChanged: onChanged,
@@ -36,14 +35,14 @@ class HMBMoneyField extends HMBTextField {
       required super.labelText,
       required this.fieldName,
       this.nonZero = true,
-      super.keyboardType = TextInputType.text,
       super.required = false,
       super.focusNode,
       super.onChanged,
       super.key,
       super.autofocus = false,
       super.leadingSpace = true,
-      super.validator});
+      super.validator})
+      : super(keyboardType: TextInputType.text);
 
   final String fieldName;
   final bool nonZero;

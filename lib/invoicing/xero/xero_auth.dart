@@ -160,7 +160,8 @@ class XeroAuth {
               : Platform.isIOS || Platform.isMacOS || Platform.isAndroid
                   // scheme: reverse domain name notation of your package name.
                   // path: anything.
-                  ? Uri.parse('dev.onepub.handyman://app_auth_redirect')
+                  ? Uri.parse(
+                      'https://hmb.ivanhoehandyman.com.au/xero/callback')
                   : Platform.isWindows || Platform.isLinux
                       // using port 0 means that we don't care which port is used,
                       // and a random unused port will be assigned.

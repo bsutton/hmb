@@ -58,8 +58,7 @@ class DaoInvoice extends Dao<Invoice> {
     final tasks = await DaoTask().getTasksByJob(job);
 
     if (job.hourlyRate == MoneyEx.zero) {
-      throw InvoiceException(
-          'Hourly rate must be set for job ${job.description}');
+      throw InvoiceException('Hourly rate must be set for job ${job.summary}');
     }
 
     var totalAmount = MoneyEx.zero;

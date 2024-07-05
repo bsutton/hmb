@@ -182,10 +182,15 @@ Add an App
 Configure a connection for the app;  storing the client id and client secret into the 
 system table - not currently not encrypted!
 
-Add the following redirect URL to the xero configuration:
+Add the following redirect URLs to the xero configuration:
+
+For development:
 
 http://localhost:12335
 
+For an android device:
+
+https://hmb.ivanhoehandyman.com.au/xero/callback
 
 
 # Build/install

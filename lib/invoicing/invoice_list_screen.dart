@@ -50,8 +50,14 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     final selectedTasks = await DialogTaskSelection.show(context, widget.job);
 
     if (selectedTasks.isNotEmpty) {
-      // Create invoice (and invoice lines)
-      await DaoInvoice().create(widget.job, selectedTasks);
+      try {
+        // Create invoice (and invoice lines)
+        await DaoInvoice().create(widget.job, selectedTasks);
+        // ignore: avoid_catches_without_on_clauses
+      } catch (e) {
+        HMBToast.error('Failed to create invoice: $e',
+            acknowledgmentRequired: true);
+      }
 
       // Refresh state
       await _refresh();

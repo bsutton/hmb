@@ -157,7 +157,7 @@ where c.id =?
 
       final checkListItems = await DaoCheckListItem().getByTask(task);
       final unbilledCheckListItems =
-          checkListItems.where((item) => !item.billed);
+          checkListItems.where((item) => !item.billed && item.hasCost);
       if (unbilledCheckListItems.isNotEmpty) {
         return true;
       }
