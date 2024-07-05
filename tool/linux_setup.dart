@@ -14,4 +14,15 @@ void main() {
           // you are running KDE then this needs to be changed ksecretservices.
           ' gnome-keyring'
       .start(privileged: true);
+
+  /// build keystore for app signing
+  /// Uses the standard java keytool
+  'keytool -genkey -v '
+          '-keystore hmb-key.keystore '
+          '-storepass '
+          'alias hmb-key '
+          '-keyalg RSA '
+          '-keysize 2048 '
+          '-validity 10000 '
+      .start();
 }
