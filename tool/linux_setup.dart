@@ -1,6 +1,7 @@
 #! /usr/bin/env dcli
 
 import 'package:dcli/dcli.dart';
+import 'package:path/path.dart';
 
 /// setup script to help get a linux (ubuntu) dev environment working.
 void main() {
@@ -15,14 +16,47 @@ void main() {
           ' gnome-keyring'
       .start(privileged: true);
 
-  /// build keystore for app signing
-  /// Uses the standard java keytool
-  'keytool -genkey -v '
-          '-keystore hmb-key.keystore '
-          '-storepass '
-          'alias hmb-key '
-          '-keyalg RSA '
-          '-keysize 2048 '
-          '-validity 10000 '
-      .start();
+  final projectRoot = DartProject.self.pathToProjectRoot;
+  final keyStorePath = join(projectRoot, 'hmb-key.keystore');
+  if (!exists(keyStorePath)) {
+    print(red(
+        'creating signing key - store this VERY SAFELEY - under "HMB keystore"'));
+    var bad = false;
+    String password;
+    String confirmed;
+    do {
+      if (bad) {
+        printerr('passwords do not match');
+      }
+      password = ask('Keystore Password');
+      confirmed = ask('Confirm password');
+      bad = true;
+    } while (password != confirmed);
+
+    const alias = 'hmbkey';
+
+    /// build keystore for app signing
+    /// Uses the standard java keytool
+    'keytool -genkey -v '
+            '-keystore $keyStorePath '
+            '-storepass $password '
+            '-alias $alias '
+            '-keyalg RSA '
+            '-keysize 2048 '
+            '-validity 10000 '
+        .start(terminal: true);
+
+    print(orange(
+        '''
+Your keystore has been created $keyStorePath. Backup it up to lastpass'''));
+
+    join(projectRoot, 'android', 'key.properties').write('''
+    storePassword=$password
+    keyPassword=$password
+    keyAlias=$alias
+    storeFile=$keyStorePath
+    ''');
+  } else {
+    print(orange('Using existing keystore $keyStorePath'));
+  }
 }
