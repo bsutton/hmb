@@ -135,6 +135,7 @@ class XeroApi {
       Uri.parse('${_baseUrl}Contacts?where=Name=="$contactName"'),
       headers: {
         'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
         'Xero-tenant-id': tenantId,
       },
     );

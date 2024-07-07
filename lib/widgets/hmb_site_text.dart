@@ -43,13 +43,7 @@ class HMBJobSiteText extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               if (site != null && Strings.isNotEmpty(label)) Text(label),
-              Text(Strings.join([
-                site?.addressLine1,
-                site?.addressLine2,
-                site?.suburb,
-                site?.state,
-                site?.postcode
-              ], separator: ', ', excludeEmpty: true)),
+              if (site != null) Text(site.address),
               if (site != null) HMBMapIcon(site),
             ],
           ));

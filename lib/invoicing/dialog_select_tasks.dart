@@ -7,7 +7,6 @@ import '../dao/dao_task.dart';
 import '../dao/dao_time_entry.dart';
 import '../entity/job.dart';
 import '../entity/task.dart';
-import '../util/exceptions.dart';
 import '../util/money_ex.dart';
 
 /// show the user the set of tasks for the passed Job
@@ -23,7 +22,6 @@ class DialogTaskSelection extends StatefulWidget {
 
   /// Show the dialog
   static Future<List<int>> show(BuildContext context, Job job) async {
-
     final selectedTaskIds = await showDialog<List<int>>(
       context: context,
       builder: (context) => DialogTaskSelection(job: job),

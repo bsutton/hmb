@@ -8,6 +8,7 @@ import '../../dao/dao_invoice_line.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/invoice.dart';
 import '../../util/format.dart';
+import '../../util/money_ex.dart';
 
 Future<File> generateInvoicePdf(Invoice invoice) async {
   final pdf = pw.Document();
@@ -15,24 +16,37 @@ Future<File> generateInvoicePdf(Invoice invoice) async {
 
   final lines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
 
+  // Calculate the total amount from the lines
+  final totalAmount =
+      lines.fold(MoneyEx.zero, (sum, line) => sum + line.lineTotal);
+
+  final phone = await formatPhone(system?.bestPhone);
+
   pdf.addPage(
     pw.Page(
       build: (context) => pw.Column(
         children: [
-          pw.Text(
-              'Invoice: ${invoice.externalInvoiceId ?? invoice.invoiceNum}'),
-          pw.Text('Date: ${invoice.createdDate.toIso8601String()}'),
+          pw.Text('Invoice: ${invoice.bestNumber}'),
+          pw.Text('Date: ${formatDate(invoice.createdDate)}'),
           pw.Text('Total Amount: ${invoice.totalAmount}'),
           pw.Text(
               '''Due Date: ${formatDate(invoice.createdDate.add(const Duration(days: 3)))}'''),
           pw.Divider(),
-          pw.Text('Business Details:'),
-          pw.Text('Business Name: ${system!.businessName}'),
-          pw.Text('''
-Address: ${system.addressLine1}, ${system.addressLine2}, ${system.suburb}, ${system.state}, ${system.postcode}'''),
-          pw.Text('Email: ${system.emailAddress}'),
-          pw.Text('Phone: ${system.mobileNumber}'),
-          pw.Text('${system.businessNumberLabel}: ${system.businessNumber}'),
+          pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Text('Business Details:'),
+                pw.Text('Business Name: ${system!.businessName}'),
+                pw.Text('''Address: ${system.address}'''),
+                pw.Text('Email: ${system.emailAddress}'),
+                pw.Text('Phone: $phone'),
+                pw.Text(
+                    '${system.businessNumberLabel}: ${system.businessNumber}'),
+              ],
+            ),
+          ),
           pw.Divider(),
           ...lines.map((line) => pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -41,6 +55,14 @@ Address: ${system.addressLine1}, ${system.addressLine2}, ${system.suburb}, ${sys
                   pw.Text(line.lineTotal.toString()),
                 ],
               )),
+          pw.Divider(),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Total:'),
+              pw.Text(totalAmount.toString()),
+            ],
+          ),
           pw.Divider(),
           pw.Text('Payment Details:'),
           pw.Text('BSB: ${system.bsb}'),

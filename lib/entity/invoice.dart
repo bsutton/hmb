@@ -46,6 +46,8 @@ class Invoice extends Entity<Invoice> {
   String? invoiceNum;
   String? externalInvoiceId;
 
+  String get bestNumber => externalInvoiceId ?? invoiceNum ?? '$id';
+
   Invoice copyWith({
     int? id,
     int? jobId,

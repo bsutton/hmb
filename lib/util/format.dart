@@ -1,5 +1,9 @@
 import 'package:date_time_format/date_time_format.dart';
+import 'package:dlibphonenumber/dlibphonenumber.dart';
 import 'package:intl/intl.dart';
+import 'package:strings/strings.dart';
+
+import '../dao/dao_system.dart';
 
 String formatDate(DateTime dateTime) =>
     DateTimeFormat.format(dateTime, format: 'D, j M');
@@ -25,7 +29,7 @@ String formatDuration(Duration duration, {bool seconds = false}) {
 DateFormat dateFormat = DateFormat('yyyy-MM-dd hh:mm a');
 
 DateTime? parseDateTime(String? value) => dateFormat.tryParse(value ?? '');
-  // DateTime.parse(dateTime, format: 'D, j M, H:i:s');
+// DateTime.parse(dateTime, format: 'D, j M, H:i:s');
 
 // var french = await Cultures.getCulture('au-AU');
 
@@ -35,3 +39,16 @@ DateTime? parseDateTime(String? value) => dateFormat.tryParse(value ?? '');
 
 //   return localClone.getValueOrThrow().localDateTime.toDateTimeLocal();
 // }
+
+Future<String> formatPhone(String? phone) async {
+  if (Strings.isBlank(phone)) {
+    return '';
+  }
+  final phoneUtil = PhoneNumberUtil.instance;
+
+  final system = await DaoSystem().get();
+
+  final phoneNumber = phoneUtil.parse(phone, system!.countryCode ?? 'AU');
+
+  return phoneUtil.format(phoneNumber, PhoneNumberFormat.national);
+}

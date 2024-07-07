@@ -1,3 +1,5 @@
+import 'package:strings/strings.dart';
+
 import 'entity.dart';
 
 class Site extends Entity<Site> {
@@ -44,6 +46,10 @@ class Site extends Entity<Site> {
   String suburb;
   String state;
   String postcode;
+
+  String get address =>
+      Strings.join([addressLine1, addressLine2, suburb, state, postcode],
+          separator: ', ', excludeEmpty: true);
 
   @override
   Map<String, dynamic> toMap() => {
