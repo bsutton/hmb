@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:strings/strings.dart';
 
 import '../../../../dao/dao_system.dart';
 import '../../../../util/exceptions.dart';
-import '../email_backup_provider.dart';
+import '../../../../widgets/hmb_toast.dart';
+import '../../database_helper.dart';
+import '../backup_provider.dart';
 
 class EmailBackupProvider extends BackupProvider {
   @override
@@ -100,6 +103,42 @@ class EmailBackupProvider extends BackupProvider {
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       throw BackupException('Error sending email: $e');
+    }
+  }
+
+  Future<File?> pickBackupFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles();
+
+      if (result != null && result.files.single.path != null) {
+        return File(result.files.single.path!);
+      }
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      throw BackupException('Error picking file: $e');
+    }
+    return null;
+  }
+
+  @override
+  Future<void> restoreDatabase() async {
+    try {
+      final backupFile = await pickBackupFile();
+      if (backupFile == null) {
+        throw BackupException('No backup file selected.');
+      }
+
+      // Get the path to the app's internal database
+      final dbPath = await DatabaseHelper().pathToDatabase();
+
+      // Replace the existing database with the selected backup
+      final dbFile = File(dbPath);
+      await backupFile.copy(dbFile.path);
+
+      HMBToast.info('Database restored from: ${backupFile.path}');
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      throw BackupException('Error restoring database: $e');
     }
   }
 }

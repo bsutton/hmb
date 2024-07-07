@@ -34,7 +34,7 @@ class _BackupScreenState extends State<BackupScreen> {
                   try {
                     await EmailBackupProvider().performBackup(version: 1);
                     if (context.mounted) {
-                      HMBToast.info( 'Backup successful');
+                      HMBToast.info('Backup successful');
                     }
                     // ignore: avoid_catches_without_on_clauses
                   } catch (e) {
@@ -46,6 +46,19 @@ class _BackupScreenState extends State<BackupScreen> {
                 child:
                     const Text('Backup the Database and send it as an email'),
               ),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await EmailBackupProvider().restoreDatabase();
+
+                    HMBToast.info('Database restored successfully.');
+                    // ignore: avoid_catches_without_on_clauses
+                  } catch (e) {
+                    HMBToast.error('Error: $e');
+                  }
+                },
+                child: const Text('Restore Backup'),
+              )
             ],
           ),
         ),

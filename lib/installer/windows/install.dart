@@ -27,42 +27,48 @@ void windowsInstalller() {
     0,
     nullptr,
     0, // REG_OPTION_NON_VOLATILE is 0
-    KEY_WRITE,
+    REG_SAM_FLAGS.KEY_WRITE,
     nullptr,
     hKey,
     nullptr,
   );
 
-  if (result == ERROR_SUCCESS) {
+  if (result == WIN32_ERROR.ERROR_SUCCESS) {
     // Set the default value for the protocol key
-    RegSetValueEx(hKey.value, nullptr, 0, REG_SZ, protocolValue.cast<BYTE>(),
+    RegSetValueEx(
+        hKey.value,
+        nullptr,
+        0,
+        REG_VALUE_TYPE.REG_SZ,
+        protocolValue.cast<BYTE>(),
         (protocolValue.length + 1) * sizeOf<Uint16>());
 
     // Set the URL Protocol value
-    RegSetValueEx(hKey.value, text('URL Protocol'), 0, REG_SZ, nullptr, 0);
+    RegSetValueEx(
+        hKey.value, text('URL Protocol'), 0, REG_VALUE_TYPE.REG_SZ, nullptr, 0);
 
     // Set the DefaultIcon value
     final hDefaultIconKey = calloc<HKEY>();
-    RegCreateKeyEx(hKey.value, defaultIconKey, 0, nullptr, 0, KEY_WRITE,
-        nullptr, hDefaultIconKey, nullptr);
+    RegCreateKeyEx(hKey.value, defaultIconKey, 0, nullptr, 0,
+        REG_SAM_FLAGS.KEY_WRITE, nullptr, hDefaultIconKey, nullptr);
     RegSetValueEx(
         hDefaultIconKey.value,
         nullptr,
         0,
-        REG_SZ,
+        REG_VALUE_TYPE.REG_SZ,
         defaultIconValue.cast<BYTE>(),
         (defaultIconValue.length + 1) * sizeOf<Uint16>());
     RegCloseKey(hDefaultIconKey.value);
 
     // Set the command value
     final hCommandKey = calloc<HKEY>();
-    RegCreateKeyEx(hKey.value, commandKey, 0, nullptr, 0, KEY_WRITE, nullptr,
-        hCommandKey, nullptr);
+    RegCreateKeyEx(hKey.value, commandKey, 0, nullptr, 0,
+        REG_SAM_FLAGS.KEY_WRITE, nullptr, hCommandKey, nullptr);
     RegSetValueEx(
         hCommandKey.value,
         nullptr,
         0,
-        REG_SZ,
+        REG_VALUE_TYPE.REG_SZ,
         commandValue.cast<BYTE>(),
         (commandValue.length + 1) * sizeOf<Uint16>());
     RegCloseKey(hCommandKey.value);

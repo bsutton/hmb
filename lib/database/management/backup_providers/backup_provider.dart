@@ -48,6 +48,8 @@ abstract class BackupProvider {
           version: version);
     }, suffix: 'zip');
   }
+
+  Future<void> restoreDatabase();
 }
 
 class BackupResult {
