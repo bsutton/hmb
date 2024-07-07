@@ -1,4 +1,5 @@
 import 'package:money2/money2.dart';
+import 'package:strings/strings.dart';
 
 import 'entity.dart';
 
@@ -27,6 +28,7 @@ class System extends Entity<System> {
     required this.businessName, // Added business name field
     required this.businessNumber, // Added business number field
     required this.businessNumberLabel, // Added business number label field
+    required this.countryCode, // Added country code field
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -53,7 +55,9 @@ class System extends Entity<System> {
       required this.xeroClientSecret,
       required this.businessName, // Added business name field
       required this.businessNumber, // Added business number field
-      required this.businessNumberLabel}) // Added business number label field
+      required this.businessNumberLabel, // Added business number label field
+      required this.countryCode // Added country code field
+      })
       : super.forInsert();
 
   System.forUpdate(
@@ -79,7 +83,9 @@ class System extends Entity<System> {
       required this.xeroClientSecret,
       required this.businessName, // Added business name field
       required this.businessNumber, // Added business number field
-      required this.businessNumberLabel}) // Added business number label field
+      required this.businessNumberLabel, // Added business number label field
+      required this.countryCode // Added country code field
+      })
       : super.forUpdate();
 
   factory System.fromMap(Map<String, dynamic> map) => System(
@@ -113,6 +119,7 @@ class System extends Entity<System> {
             map['business_number'] as String?, // Added business number field
         businessNumberLabel: map['business_number_label']
             as String?, // Added business number label field
+        countryCode: map['country_code'] as String?, // Added country code field
         createdDate: DateTime.tryParse((map['createdDate']) as String? ?? '') ??
             DateTime.now(),
         modifiedDate:
@@ -139,9 +146,16 @@ class System extends Entity<System> {
   int? simCardNo;
   String? xeroClientId;
   String? xeroClientSecret;
-  String? businessName; // Added business name field
-  String? businessNumber; // Added business number field
-  String? businessNumberLabel; // Added business number label field
+  String? businessName;
+  String? businessNumber;
+  String? businessNumberLabel;
+  String? countryCode;
+
+  String? get bestPhone => officeNumber ?? landLine ?? mobileNumber;
+
+  String get address =>
+      Strings.join([addressLine1, addressLine2, suburb, state, postcode],
+          separator: ', ', excludeEmpty: true);
 
   @override
   Map<String, dynamic> toMap() => {
@@ -169,6 +183,7 @@ class System extends Entity<System> {
         'business_number': businessNumber, // Added business number field
         'business_number_label':
             businessNumberLabel, // Added business number label field
+        'country_code': countryCode, // Added country code field
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };

@@ -1,3 +1,4 @@
+import 'package:country_code/country_code.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:mobile_number/mobile_number.dart';
@@ -41,20 +42,25 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
   late TextEditingController _emailAddressController;
   late TextEditingController _webUrlController;
   late TextEditingController _termsUrlController;
-  late TextEditingController
-      _businessNameController; // Added business name field
-  late TextEditingController
-      _businessNumberController; // Added business number field
-  late TextEditingController
-      _businessNumberLabelController; // Added business number label field
+  late TextEditingController _businessNameController;
+  late TextEditingController _businessNumberController;
+  late TextEditingController _businessNumberLabelController;
   late HMBMoneyEditingController _defaultHourlyRateController;
   late HMBMoneyEditingController _defaultCallOutFeeController;
   late TextEditingController _xeroClientIdController;
   late TextEditingController _xeroClientSecretController;
+  late String _selectedCountryCode;
+  late List<CountryCode> _countryCodes;
 
   @override
   void initState() {
     super.initState();
+    _initializeControllers();
+    // ignore: discarded_futures
+    _countryCodes = CountryCode.values;
+  }
+
+  void _initializeControllers() {
     _fromEmailController = TextEditingController(text: widget.system.fromEmail);
     _bsbController = TextEditingController(text: widget.system.bsb);
     _accountNoController = TextEditingController(text: widget.system.accountNo);
@@ -74,13 +80,12 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
         TextEditingController(text: widget.system.emailAddress);
     _webUrlController = TextEditingController(text: widget.system.webUrl);
     _termsUrlController = TextEditingController(text: widget.system.termsUrl);
-    _businessNameController = TextEditingController(
-        text: widget.system.businessName); // Added business name field
-    _businessNumberController = TextEditingController(
-        text: widget.system.businessNumber); // Added business number field
-    _businessNumberLabelController = TextEditingController(
-        text: widget
-            .system.businessNumberLabel); // Added business number label field
+    _businessNameController =
+        TextEditingController(text: widget.system.businessName);
+    _businessNumberController =
+        TextEditingController(text: widget.system.businessNumber);
+    _businessNumberLabelController =
+        TextEditingController(text: widget.system.businessNumberLabel);
     _defaultHourlyRateController =
         HMBMoneyEditingController(money: widget.system.defaultHourlyRate);
     _defaultCallOutFeeController =
@@ -89,10 +94,16 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
         TextEditingController(text: widget.system.xeroClientId);
     _xeroClientSecretController =
         TextEditingController(text: widget.system.xeroClientSecret);
+    _selectedCountryCode = widget.system.countryCode ?? 'US';
   }
 
   @override
   void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  void _disposeControllers() {
     _fromEmailController.dispose();
     _bsbController.dispose();
     _accountNoController.dispose();
@@ -107,15 +118,13 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
     _emailAddressController.dispose();
     _webUrlController.dispose();
     _termsUrlController.dispose();
-    _businessNameController.dispose(); // Dispose business name field
-    _businessNumberController.dispose(); // Dispose business number field
-    _businessNumberLabelController
-        .dispose(); // Dispose business number label field
+    _businessNameController.dispose();
+    _businessNumberController.dispose();
+    _businessNumberLabelController.dispose();
     _defaultHourlyRateController.dispose();
     _defaultCallOutFeeController.dispose();
     _xeroClientIdController.dispose();
     _xeroClientSecretController.dispose();
-    super.dispose();
   }
 
   Future<void> _saveForm() async {
@@ -141,12 +150,10 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
           MoneyEx.tryParse(_defaultCallOutFeeController.text);
       widget.system.xeroClientId = _xeroClientIdController.text;
       widget.system.xeroClientSecret = _xeroClientSecretController.text;
-      widget.system.businessName =
-          _businessNameController.text; // Save business name field
-      widget.system.businessNumber =
-          _businessNumberController.text; // Save business number field
-      widget.system.businessNumberLabel = _businessNumberLabelController
-          .text; // Save business number label field
+      widget.system.businessName = _businessNameController.text;
+      widget.system.businessNumber = _businessNumberController.text;
+      widget.system.businessNumberLabel = _businessNumberLabelController.text;
+      widget.system.countryCode = _selectedCountryCode;
 
       await DaoSystem().update(widget.system);
 
@@ -256,40 +263,62 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
                 HMBTextField(
                   controller: _businessNameController,
                   labelText: 'Business Name',
-                ), // Added business name field
+                ),
                 HMBTextField(
                   controller: _businessNumberController,
                   labelText: 'Business Number',
-                ), // Added business number field
+                ),
                 HMBTextField(
                   controller: _businessNumberLabelController,
                   labelText: 'Business Number Label',
-                ), // Added business number label field
+                ),
                 FutureBuilderEx(
-                    // ignore: discarded_futures
-                    future: getSimCards(),
-                    builder: (context, cards) {
-                      if (cards == null || cards.isEmpty) {
-                        return const Text('No sim cards found');
-                      } else {
-                        return HMBDroplist<SimCard>(
-                          title: 'Sim Card',
-                          initialItem: () async {
-                            final cards = await getSimCards();
-
-                            if (cards.isNotEmpty) {
-                              return cards[widget.system.simCardNo ?? 0];
-                            } else {
-                              return null;
-                            }
-                          },
-                          items: (filter) async => getSimCards(),
-                          format: (card) => card.displayName ?? 'Unnamed',
-                          onChanged: (card) =>
-                              widget.system.simCardNo = card.slotIndex,
-                        );
-                      }
-                    })
+                  // ignore: discarded_futures
+                  future: getSimCards(),
+                  builder: (context, cards) {
+                    if (cards == null || cards.isEmpty) {
+                      return const Text('No sim cards found');
+                    } else {
+                      return HMBDroplist<SimCard>(
+                        title: 'Sim Card',
+                        initialItem: () async {
+                          final cards = await getSimCards();
+                          if (cards.isNotEmpty) {
+                            return cards[widget.system.simCardNo ?? 0];
+                          } else {
+                            return null;
+                          }
+                        },
+                        items: (filter) async => getSimCards(),
+                        format: (card) => card.displayName ?? 'Unnamed',
+                        onChanged: (card) =>
+                            widget.system.simCardNo = card.slotIndex,
+                      );
+                    }
+                  },
+                ),
+                DropdownButtonFormField<String>(
+                  value: _selectedCountryCode,
+                  decoration: const InputDecoration(labelText: 'Country Code'),
+                  items: _countryCodes
+                      .map((country) => DropdownMenuItem<String>(
+                            value: country.alpha2,
+                            child: Text(
+                                '${country.countryName} (${country.alpha2})'),
+                          ))
+                      .toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _selectedCountryCode = newValue!;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select a country code';
+                    }
+                    return null;
+                  },
+                ),
               ],
             ),
           ),
