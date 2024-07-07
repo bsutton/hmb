@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="dev.onepub.handyman">
 	<uses-permission android:name="android.permission.CALL_PHONE" />
 	<uses-permission android:name="android.permission.SEND_SMS" />
 	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -31,20 +31,9 @@
 				<action android:name="android.intent.action.VIEW" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<category android:name="android.intent.category.BROWSABLE" />
-				<data android:scheme="https" android:host="hmb.ivanhoehandyman.com.au" android:pathPrefix="/xero/auth_callback" />
+				<data android:scheme="https" android:host="ivanhoehandyman.com.au" 
+				android:pathPrefix="/xero/auth_callback" />
 				<data android:scheme="http" />
-			</intent-filter>
-				<!-- Deep Link sample -->
-			<intent-filter>
-					<action android:name="android.intent.action.VIEW" />
-					<category android:name="android.intent.category.DEFAULT" />
-					<category android:name="android.intent.category.BROWSABLE" />
-					<!--
-					Add optional android:host to distinguish your app
-					from others in case of conflicting scheme name
-					-->
-					<data android:scheme="hmb" android:host="hmb.ivanhoehandyman.com.au" />
-					<!-- <data android:scheme="sample" /> -->
 			</intent-filter>
 			<!--
 			Don't delete the meta-data below.
@@ -71,5 +60,4 @@
 			<data android:scheme="mailto" />
 		</intent>
 	</queries>
-	
 </manifest>
