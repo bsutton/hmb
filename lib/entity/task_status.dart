@@ -31,8 +31,6 @@ extension TaskStatusEnumExtension on TaskStatusEnum {
         return 'Pre-approved';
       case TaskStatusEnum.approved:
         return 'Approved';
-      default:
-        return '';
     }
   }
 }

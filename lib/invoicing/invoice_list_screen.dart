@@ -11,12 +11,15 @@ import '../entity/invoice_line.dart';
 import '../entity/invoice_line_group.dart';
 import '../entity/job.dart';
 import '../util/format.dart';
+import '../util/money_ex.dart';
 import '../widgets/hmb_are_you_sure_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_one_of.dart';
 import '../widgets/hmb_toast.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_line_dialog.dart';
+import 'pdf/generate_invoice.dart';
+import 'pdf/pdf_preview_screen.dart';
 import 'xero/xero_api.dart';
 
 class InvoiceListScreen extends StatefulWidget {
@@ -47,6 +50,11 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   }
 
   Future<void> _createInvoice() async {
+    if (widget.job.hourlyRate == MoneyEx.zero) {
+      HMBToast.error('Hourly rate must be set for job ${widget.job.summary}');
+      return;
+    }
+
     final selectedTasks = await DialogTaskSelection.show(context, widget.job);
 
     if (selectedTasks.isNotEmpty) {
@@ -144,9 +152,27 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(8),
-              child: ElevatedButton(
-                  onPressed: () async => _uploadOrSendInvoice(invoice),
-                  child: _buildXeroButton(invoice)),
+              child: Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      final filePath = await generateInvoicePdf(invoice);
+                      if (mounted) {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (context) =>
+                                PdfPreviewScreen(filePath: filePath.path),
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text('Generate and Preview PDF'),
+                  ),
+                  ElevatedButton(
+                      onPressed: () async => _uploadOrSendInvoice(invoice),
+                      child: _buildXeroButton(invoice)),
+                ],
+              ),
             )
           ],
         ),

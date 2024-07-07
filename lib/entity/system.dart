@@ -24,7 +24,9 @@ class System extends Entity<System> {
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
-    // required this.xeroRedirectUrl,
+    required this.businessName, // Added business name field
+    required this.businessNumber, // Added business number field
+    required this.businessNumberLabel, // Added business number label field
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -49,8 +51,9 @@ class System extends Entity<System> {
       required this.simCardNo,
       required this.xeroClientId,
       required this.xeroClientSecret,
-      // required this.xeroRedirectUrl
-      })
+      required this.businessName, // Added business name field
+      required this.businessNumber, // Added business number field
+      required this.businessNumberLabel}) // Added business number label field
       : super.forInsert();
 
   System.forUpdate(
@@ -74,8 +77,9 @@ class System extends Entity<System> {
       required this.simCardNo,
       required this.xeroClientId,
       required this.xeroClientSecret,
-      // required this.xeroRedirectUrl
-      })
+      required this.businessName, // Added business name field
+      required this.businessNumber, // Added business number field
+      required this.businessNumberLabel}) // Added business number label field
       : super.forUpdate();
 
   factory System.fromMap(Map<String, dynamic> map) => System(
@@ -103,7 +107,12 @@ class System extends Entity<System> {
         simCardNo: map['sim_card_no'] as int?,
         xeroClientId: map['xero_client_id'] as String?,
         xeroClientSecret: map['xero_client_secret'] as String?,
-        // xeroRedirectUrl: map['xero_redirect_url'] as String?,
+        businessName:
+            map['business_name'] as String?, // Added business name field
+        businessNumber:
+            map['business_number'] as String?, // Added business number field
+        businessNumberLabel: map['business_number_label']
+            as String?, // Added business number label field
         createdDate: DateTime.tryParse((map['createdDate']) as String? ?? '') ??
             DateTime.now(),
         modifiedDate:
@@ -130,7 +139,9 @@ class System extends Entity<System> {
   int? simCardNo;
   String? xeroClientId;
   String? xeroClientSecret;
-  // String? xeroRedirectUrl;
+  String? businessName; // Added business name field
+  String? businessNumber; // Added business number field
+  String? businessNumberLabel; // Added business number label field
 
   @override
   Map<String, dynamic> toMap() => {
@@ -154,7 +165,10 @@ class System extends Entity<System> {
         'sim_card_no': simCardNo,
         'xero_client_id': xeroClientId,
         'xero_client_secret': xeroClientSecret,
-        // 'xero_redirect_url': xeroRedirectUrl,
+        'business_name': businessName, // Added business name field
+        'business_number': businessNumber, // Added business number field
+        'business_number_label':
+            businessNumberLabel, // Added business number label field
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };

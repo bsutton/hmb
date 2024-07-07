@@ -17,22 +17,26 @@ void main(List<String> args) {
             '''Update the list of assets - important to run for db upgrade scripts''')
     ..addFlag('build', abbr: 'b', help: 'build the apk')
     ..addFlag('install', abbr: 'i', help: 'install the apk')
-    ..addFlag('release', abbr: 'r', help: 'Create a signed release appbundle suitable to upload to Google Play store.');
+    ..addFlag('release',
+        abbr: 'r',
+        help:
+            '''
+Create a signed release appbundle suitable to upload to Google Play store.''');
 
   final results = parser.parse(args);
 
   var build = results['build'] as bool;
   var install = results['install'] as bool;
   var assets = results['assets'] as bool;
-  var release = results['release'] as bool;
+  final release = results['release'] as bool;
 
   if (!build && !install && !assets && !release) {
     /// no switches passed so do it all.
     build = install = assets = true;
   }
   if (release) {
-     install= false;
-     build = assets = true;
+    install = false;
+    build = assets = true;
   }
 
   if (assets) {
@@ -45,10 +49,11 @@ void main(List<String> args) {
       _runPubGet();
       needPubGet = false;
     }
-    if (release)
-    buildAppBundle();
-    else
-    buildApk();
+    if (release) {
+      buildAppBundle();
+    } else {
+      buildApk();
+    }
   }
 
   if (install) {
@@ -73,12 +78,12 @@ void buildApk() {
 // so tree shaking of icons isn't possible. Can we fix this?
   'flutter build apk --no-tree-shake-icons'.run;
 }
+
 void buildAppBundle() {
 // TODO(bsutton): the rich text editor includes randome icons
 // so tree shaking of icons isn't possible. Can we fix this?
   'flutter build appbundle --release --no-tree-shake-icons'.run;
 }
-
 
 void updateAssetList() {
   final pathToAssets = join(

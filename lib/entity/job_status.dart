@@ -41,8 +41,8 @@ class JobStatus extends Entity<JobStatus> {
         hidden: (map['hidden'] as int?) ?? 0,
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-        statusEnum:
-            JobStatusEnumExtension.fromName(map['status_enum'] as String? ?? ''),
+        statusEnum: JobStatusEnumExtension.fromName(
+            map['status_enum'] as String? ?? ''),
       );
 
   String name;

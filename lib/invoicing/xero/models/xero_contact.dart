@@ -17,7 +17,6 @@ class XeroContact {
       email: contact.emailAddress,
       phone: contact.mobileNumber);
 
-
   final String name;
   final String email;
   final String phone;

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:mobile_number/mobile_number.dart';
 
-// import 'package:sms_advanced/sms_advanced.dart';
-
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/money_ex.dart';
@@ -43,10 +41,14 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
   late TextEditingController _emailAddressController;
   late TextEditingController _webUrlController;
   late TextEditingController _termsUrlController;
+  late TextEditingController
+      _businessNameController; // Added business name field
+  late TextEditingController
+      _businessNumberController; // Added business number field
+  late TextEditingController
+      _businessNumberLabelController; // Added business number label field
   late HMBMoneyEditingController _defaultHourlyRateController;
-
   late HMBMoneyEditingController _defaultCallOutFeeController;
-
   late TextEditingController _xeroClientIdController;
   late TextEditingController _xeroClientSecretController;
 
@@ -72,11 +74,17 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
         TextEditingController(text: widget.system.emailAddress);
     _webUrlController = TextEditingController(text: widget.system.webUrl);
     _termsUrlController = TextEditingController(text: widget.system.termsUrl);
+    _businessNameController = TextEditingController(
+        text: widget.system.businessName); // Added business name field
+    _businessNumberController = TextEditingController(
+        text: widget.system.businessNumber); // Added business number field
+    _businessNumberLabelController = TextEditingController(
+        text: widget
+            .system.businessNumberLabel); // Added business number label field
     _defaultHourlyRateController =
         HMBMoneyEditingController(money: widget.system.defaultHourlyRate);
     _defaultCallOutFeeController =
         HMBMoneyEditingController(money: widget.system.defaultCallOutFee);
-
     _xeroClientIdController =
         TextEditingController(text: widget.system.xeroClientId);
     _xeroClientSecretController =
@@ -99,9 +107,12 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
     _emailAddressController.dispose();
     _webUrlController.dispose();
     _termsUrlController.dispose();
+    _businessNameController.dispose(); // Dispose business name field
+    _businessNumberController.dispose(); // Dispose business number field
+    _businessNumberLabelController
+        .dispose(); // Dispose business number label field
     _defaultHourlyRateController.dispose();
     _defaultCallOutFeeController.dispose();
-
     _xeroClientIdController.dispose();
     _xeroClientSecretController.dispose();
     super.dispose();
@@ -128,9 +139,14 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
           MoneyEx.tryParse(_defaultHourlyRateController.text);
       widget.system.defaultCallOutFee =
           MoneyEx.tryParse(_defaultCallOutFeeController.text);
-
       widget.system.xeroClientId = _xeroClientIdController.text;
       widget.system.xeroClientSecret = _xeroClientSecretController.text;
+      widget.system.businessName =
+          _businessNameController.text; // Save business name field
+      widget.system.businessNumber =
+          _businessNumberController.text; // Save business number field
+      widget.system.businessNumberLabel = _businessNumberLabelController
+          .text; // Save business number label field
 
       await DaoSystem().update(widget.system);
 
@@ -237,6 +253,18 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
                   labelText: 'Xero Client Secret',
                   keyboardType: TextInputType.number,
                 ),
+                HMBTextField(
+                  controller: _businessNameController,
+                  labelText: 'Business Name',
+                ), // Added business name field
+                HMBTextField(
+                  controller: _businessNumberController,
+                  labelText: 'Business Number',
+                ), // Added business number field
+                HMBTextField(
+                  controller: _businessNumberLabelController,
+                  labelText: 'Business Number Label',
+                ), // Added business number label field
                 FutureBuilderEx(
                     // ignore: discarded_futures
                     future: getSimCards(),

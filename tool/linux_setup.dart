@@ -18,11 +18,9 @@ void main() {
           ' gnome-keyring'
       .start(privileged: true);
 
-
-
   if (!exists(keyStorePath)) {
-    print(red(
-        'creating signing key - store this VERY SAFELEY - under "HMB keystore"'));
+    print(red('''
+creating signing key - store this VERY SAFELEY - under "HMB keystore"'''));
     var bad = false;
     String password;
     String confirmed;
@@ -35,8 +33,6 @@ void main() {
       bad = true;
     } while (password != confirmed);
 
-    
-
     /// build keystore for app signing
     /// Uses the standard java keytool
     'keytool -genkey -v '
@@ -48,8 +44,7 @@ void main() {
             '-validity 10000 '
         .start(terminal: true);
 
-    print(orange(
-        '''
+    print(orange('''
 Your keystore has been created $keyStorePath. Backup it up to lastpass'''));
 
     join(projectRoot, 'android', 'key.properties').write('''
