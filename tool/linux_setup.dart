@@ -11,11 +11,15 @@ void main() {
 
           /// The flutter package flutter_secure_storage_linux needs these
           /// lib deps.
-          'libsecret-1-dev libsecret-tools'
-          ' libjsoncpp-dev libsecret-1-0'
+          'libsecret-1-dev libsecret-tools '
+          ' libjsoncpp-dev libsecret-1-0 '
           // required by oidc for the secure storage pacakge. If
           // you are running KDE then this needs to be changed ksecretservices.
-          ' gnome-keyring'
+          ' gnome-keyring '
+          'clang cmake git '
+          'ninja-build pkg-config '
+          'libgtk-3-dev liblzma-dev '
+          'libstdc++-12-dev '
       .start(privileged: true);
 
   if (!exists(keyStorePath)) {
