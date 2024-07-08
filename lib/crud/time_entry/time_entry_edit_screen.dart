@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:strings/strings.dart';
 
 import '../../dao/dao_time_entry.dart';
 import '../../entity/task.dart';
@@ -132,9 +133,10 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
                   keyboardType: TextInputType.datetime,
 
                   /// end time must be after start time.
-                  validator: (value) => (!parseDateTime(value ?? '')!.isAfter(
-                          parseDateTime(_startTimeController.text) ??
-                              DateTime.now()))
+                  validator: (value) => (Strings.isNotBlank(value) &&
+                          (!parseDateTime(value ?? '')!.isAfter(
+                              parseDateTime(_startTimeController.text) ??
+                                  DateTime.now())))
                       ? 'End time must be after start time'
                       : null,
                 ),
