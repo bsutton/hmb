@@ -24,7 +24,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  app_links: ^6.1.4
+  # app_links: ^6.1.4
   archive: ^3.6.1
   completer_ex: ^4.0.3
   country_code:
@@ -52,6 +52,7 @@ dependencies:
   flutter_secure_storage_linux: ^1.2.1
   # ftoast: ^2.0.0
   future_builder_ex: ^4.0.0
+  go_router: ^14.2.0
   google_sign_in: ^6.2.1
   googleapis: ^13.1.0
   googleapis_auth: ^1.6.0

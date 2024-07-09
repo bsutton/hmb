@@ -1,11 +1,12 @@
 import 'dart:io';
 
-import 'package:app_links/app_links.dart';
+// import 'package:app_links/app_links.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -19,66 +20,140 @@ import 'dao/dao_system.dart';
 import 'database/management/backup_providers/email/screen.dart';
 import 'database/management/database_helper.dart';
 import 'firebase_options.dart';
-import 'installer/linux/install.dart';
+import 'installer/linux/install.dart' if (kIsWeb) 'util/web_stub.dart';
 import 'screens/packing.dart';
 import 'screens/shopping.dart';
 import 'widgets/blocking_ui.dart';
-import 'widgets/hmb_toast.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-
   if (args.isNotEmpty) {
     print('Got a link $args');
   } else {
     print('no args');
   }
 
-  /// Implement deep linking
-  final _appLinks = AppLinks(); // AppLinks is singleton
+  initAppLinks();
 
-// Subscribe to all events (initial link and further)
-  _appLinks.uriLinkStream.listen((uri) {
-    print('Hi from app link');
-    HMBToast.info('Got a link $uri');
-    print('deeplink: $uri');
-    if (uri.path == ('/xero/auth_callback')) {
-      HMBToast.info('Somonee asked for xero');
-    }
-  });
+  // runApp(const MyApp());
+  runApp(ToastificationWrapper(
+      child: MaterialApp.router(
+    title: 'Handyman',
+    theme: ThemeData(
+      primarySwatch: Colors.blue,
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+    ),
+    routerConfig: _router,
+  )));
 
-  runApp(const MyApp());
+  //     navigatorKey: navigatorKey,
+  //     title: 'Handyman',
+  //     theme: ThemeData(
+  //       primarySwatch: Colors.blue,
+  //       visualDensity: VisualDensity.adaptivePlatformDensity,
+  //     ),
+  //     initialRoute: '/',
+  //     onGenerateRoute: (settings) {
+  //       if (settings.name == XeroAuth.redirectPath) {
+  //         HMBToast.info('${settings.arguments}');
+  //         XeroAuth().completeLogin();
+  //       }
+  //       return null;
+  //     },
+  //     home: ChangeNotifierProvider(
+  //       create: (_) => BlockingUI(),
+  //       child: Scaffold(
+  //         body: BlockingUIBuilder<void>(
+  //           future: _initialise,
+  //           stacktrace: StackTrace.current,
+  //           label: 'Upgrade your database.',
+  //           builder: (context, _) =>
+  //               const HomeWithDrawer(initialScreen: JobListScreen()),
+  //         ),
+  //       ),
+  //     ))),
 }
 
-final navigatorKey = GlobalKey<NavigatorState>();
+void initAppLinks() {
+//   /// Implement deep linking
+//   final _appLinks = AppLinks(); // AppLinks is singleton
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+// // Subscribe to all events (initial link and further)
+//   _appLinks.uriLinkStream.listen((uri) {
+//     HMBToast.info('Hi from app link');
+//     HMBToast.info('Got a link $uri');
+//     HMBToast.info('deeplink: $uri');
+//     if (uri.path == XeroAuth.redirectPath) {
+//       HMBToast.error('Someone asked for xero');
+//     }
+//   });
+}
 
-  @override
-  Widget build(BuildContext context) => ToastificationWrapper(
-        child: MaterialApp(
-            navigatorKey: navigatorKey,
-            title: 'Handyman',
-            theme: ThemeData(
-              primarySwatch: Colors.blue,
-              visualDensity: VisualDensity.adaptivePlatformDensity,
-            ),
-            initialRoute: '/',
-            home: ChangeNotifierProvider(
-              create: (_) => BlockingUI(),
-              child: Scaffold(
-                body: BlockingUIBuilder<void>(
-                  future: _initialise,
-                  stacktrace: StackTrace.current,
-                  label: 'Upgrade your database.',
-                  builder: (context, _) =>
-                      const HomeWithDrawer(initialScreen: JobListScreen()),
-                ),
+// final navigatorKey = GlobalKey<NavigatorState>();
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) => ToastificationWrapper(
+//         child:
+
+//  MaterialApp(
+//     navigatorKey: navigatorKey,
+//     title: 'Handyman',
+//     theme: ThemeData(
+//       primarySwatch: Colors.blue,
+//       visualDensity: VisualDensity.adaptivePlatformDensity,
+//     ),
+//     initialRoute: '/',
+//     onGenerateRoute: (settings) {
+//       if (settings.name == XeroAuth.redirectPath) {
+//         HMBToast.info('${settings.arguments}');
+//         XeroAuth().completeLogin();
+//       }
+//       return null;
+//     },
+//     home: ChangeNotifierProvider(
+//       create: (_) => BlockingUI(),
+//       child: Scaffold(
+//         body: BlockingUIBuilder<void>(
+//           future: _initialise,
+//           stacktrace: StackTrace.current,
+//           label: 'Upgrade your database.',
+//           builder: (context, _) =>
+//               const HomeWithDrawer(initialScreen: JobListScreen()),
+//         ),
+//       ),
+//     )),
+// );
+//  }
+
+GoRouter get _router => GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, __) => ChangeNotifierProvider(
+            create: (_) => BlockingUI(),
+            child: Scaffold(
+              body: BlockingUIBuilder<void>(
+                future: _initialise,
+                stacktrace: StackTrace.current,
+                label: 'Upgrade your database.',
+                builder: (context, _) =>
+                    const HomeWithDrawer(initialScreen: JobListScreen()),
               ),
-            )),
-      );
-}
+            ),
+          ),
+          routes: [
+            GoRoute(
+              path: 'details',
+              builder: (_, __) =>
+                  Scaffold(appBar: AppBar(title: const Text('Details Screen'))),
+            ),
+          ],
+        ),
+      ],
+    );
 
 class DrawerItem {
   DrawerItem({required this.title, required this.screen});

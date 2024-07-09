@@ -5,7 +5,6 @@
 import FlutterMacOS
 import Foundation
 
-import app_links
 import file_selector_macos
 import firebase_core
 import flutter_appauth
@@ -20,7 +19,6 @@ import url_launcher_macos
 import window_to_front
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
-  AppLinksMacosPlugin.register(with: registry.registrar(forPlugin: "AppLinksMacosPlugin"))
   FileSelectorPlugin.register(with: registry.registrar(forPlugin: "FileSelectorPlugin"))
   FLTFirebaseCorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseCorePlugin"))
   FlutterAppauthPlugin.register(with: registry.registrar(forPlugin: "FlutterAppauthPlugin"))

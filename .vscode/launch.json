@@ -28,6 +28,7 @@
             "name": "handyman-selected-device",
             "request": "launch",
             "type": "dart",
+            "flutterMode": "debug"
           
         },
         {
