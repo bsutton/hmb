@@ -6,6 +6,7 @@ import '../dao/dao_invoice.dart';
 import '../dao/dao_invoice_line.dart';
 import '../dao/dao_invoice_line_group.dart';
 import '../dao/dao_job.dart';
+import '../dao/dao_time_entry.dart';
 import '../entity/invoice.dart';
 import '../entity/invoice_line.dart';
 import '../entity/invoice_line_group.dart';
@@ -55,20 +56,27 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       return;
     }
 
-    final selectedTasks = await DialogTaskSelection.show(context, widget.job);
+    if ((await DaoTimeEntry().getActiveEntry()) != null) {
+      HMBToast.error('Cannot create an invoice while a Task timer is active');
+      return;
+    }
 
-    if (selectedTasks.isNotEmpty) {
-      try {
-        // Create invoice (and invoice lines)
-        await DaoInvoice().create(widget.job, selectedTasks);
-        // ignore: avoid_catches_without_on_clauses
-      } catch (e) {
-        HMBToast.error('Failed to create invoice: $e',
-            acknowledgmentRequired: true);
+    if (mounted) {
+      final selectedTasks = await DialogTaskSelection.show(context, widget.job);
+
+      if (selectedTasks.isNotEmpty) {
+        try {
+          // Create invoice (and invoice lines)
+          await DaoInvoice().create(widget.job, selectedTasks);
+          // ignore: avoid_catches_without_on_clauses
+        } catch (e) {
+          HMBToast.error('Failed to create invoice: $e',
+              acknowledgmentRequired: true);
+        }
+
+        // Refresh state
+        await _refresh();
       }
-
-      // Refresh state
-      await _refresh();
     }
   }
 
