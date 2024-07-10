@@ -6,7 +6,7 @@ import 'package:completer_ex/completer_ex.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:provider/provider.dart';
+import 'package:june/june.dart';
 import 'package:stacktrace_impl/stacktrace_impl.dart';
 
 import '../util/hmb_theme.dart';
@@ -23,13 +23,22 @@ import 'tick_builder.dart';
 /// and put up a waiting indicator if the action
 /// takes more than 300 ms.
 ///
+/// The [BlockingOverlay] takes up zero space until the
+/// overlay is enabled by a [BlockingUIRunner].
+///
 /// To use this class you must addd a BlockingUI provider
 /// in your main:
 ///
 /// ```dart
-///   runApp(ChangeNotifierProvider(
-///   create: (_) => BlockingUI(),
-///   child: const MyApp(),
+///   runApp(Column(
+///   children: [
+///      BlockingOverlay(),
+///      RealUI(builder: (context) BlockingUIRunner(
+///          slowAction: _initialise,
+///          label: 'Upgrade your database.',
+///          builder: (context) =>
+///              const HomeWithDrawer(initialScreen: JobListScreen()),))
+///   ],
 /// ));
 /// ```
 ///
@@ -49,114 +58,9 @@ import 'tick_builder.dart';
 /// ```
 ///
 
-class BlockingUI extends ChangeNotifier {
-  factory BlockingUI() {
-    _self ??= BlockingUI._internal();
-    return _self!;
-  }
-
-  BlockingUI._internal();
-  static BlockingUI? _self;
-  DateTime? startTime;
-  int count = 0;
-
-  /// manages a possible nested set of calls to [run]
-  StackList<RunCallPoint> actions = StackList();
-
-  /// Executes a long running function asking the user to wait
-  /// if necessary.
-  ///
-  /// The [label] can be provided to inform the user what action is
-  /// holding things up. The [label] is displayed after the text:
-  /// 'Just a moment'.
-  /// As such the action should be a short verb e.g. Saving.
-  /// example
-  ///
-  /// If your function returns a future then use:
-  /// ```dart
-  /// Data x = BlockingUI().run<Data>(() => slowaction, action: 'Saving');
-  /// ```
-  /// If your function doesn't return a future then use: (note the use of async)
-  /// ```dart
-  /// Data x = BlockingUI().run<Data>(() async => slowaction, action: 'Saving');
-  ///
-  /// If [func] needs to return a null it must still return a future by using:
-  /// Future.value(null);
-  /// ```
-  Future<T> run<T>(Future<T> Function() func, {String? label}) {
-    final completer = CompleterEx<T>();
-    begin(label);
-    // Now call the long running function.
-    final result = func();
-    // if this fails you probably need to use return Future.value(null);
-    result
-        .then(completer.complete)
-        .catchError(completer.completeError)
-        .whenComplete(end);
-    return completer.future;
-  }
-
-  // Block the ui until the given [future] completes.
-  /// If the [future] completes successfully then [onDone]
-  /// is called otherwise [onError] is called.
-  Future<void> blockUntilFuture<T>(Future<T> Function() future,
-      {void Function(T)? onDone,
-      void Function(Object)? onError,
-      String? label}) async {
-    // Call run and await for the passed future to complete
-    await run<T>(
-        () async => future().then((t) {
-              onDone?.call(t);
-              return t;
-            },
-                // ignore: avoid_types_on_closure_parameters
-                onError: (Object e, StackTrace st) {
-              onError?.call(e);
-              // Log().e('''
-// blockUntilFuture returned an error
-//$e st: ${StackTraceImpl.fromStackTrace(st).formatStackTrace()}''');
-            }),
-        label: label);
-  }
-
-  void begin(String? label) {
-    actions.push(RunCallPoint(label));
-    count++;
-    // Log.e('begin count=$count');
-    // Log.d(green('UI is blocked'));
-    // Log.d(green(
-    //'blocked by: ${actions.peek().stackTrace.formatStackTrace()}'));
-
-    if (count == 1) {
-      startTime = DateTime.now();
-      notifyListeners();
-    }
-  }
-
-  void end() {
-    count--;
-    assert(count >= 0, 'bad');
-
-    actions.pop();
-
-    // Log.e('end count=$count');
-    // Log.d(
-    //green('unblocked for: ${callPoint.stackTrace.formatStackTrace()}'));
-
-    if (count == 0) {
-      startTime = null;
-      notifyListeners();
-    }
-  }
-
-  RunCallPoint get action => actions.peek();
-
-  bool get blocked => count > 0;
-}
-
 ///
 /// Use this builder when you need to build a component that
-/// is slow to build. It will display a [_BlockingUIWidget]
+/// is slow to build. It will display a [_BlockingOverlayWidget]
 /// whilst the new UI is built.
 ///
 /// We typically use this when transitioning to a new full
@@ -164,60 +68,34 @@ class BlockingUI extends ChangeNotifier {
 /// If the full screen component takes less than 500ms
 /// to build you will not see the blocking UI.
 ///
-/// Refer to [_BlockingUIWidget] for the full set of rules as to
+/// Refer to [_BlockingOverlayWidget] for the full set of rules as to
 /// when/how the blocking UI is presented.
 ///
-/// The [future] is called and once it completes the
-/// [builder] is called to render the ui.
-/// Whilst the [future] is running the [_BlockingUIWidget]
-/// is displayed.
-///
-class BlockingUIBuilder<T> extends StatelessWidget {
-  const BlockingUIBuilder(
-      {required this.future,
-      required this.builder,
-      required this.stacktrace,
-      this.label,
-      super.key});
-  final Future<T> Function() future;
-  final CompletedBuilder<T> builder;
-  final StackTrace stacktrace;
-  final String? label;
 
+class BlockingOverlay extends StatelessWidget {
+  const BlockingOverlay({super.key});
   @override
-  Widget build(BuildContext context) => FutureBuilderEx<T>(
-        // ignore: discarded_futures
-        future: Future.delayed(
-            // delay the call to run until the build is complete to
-            // avoid a flutter error that can occure if you call
-            //set state whilst a build is already running.
-            Duration.zero,
-            () async => BlockingUI().run(future, label: label)),
-        waitingBuilder: (context) => const _BlockingUIWidget(),
-        builder: builder,
-      );
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(ObjectFlagProperty<CompletedBuilder<T>>.has('builder', builder))
-      ..add(DiagnosticsProperty<StackTrace>('stacktrace', stacktrace))
-      ..add(ObjectFlagProperty<Future<T> Function()>.has('future', future));
-  }
+  Widget build(BuildContext context) => JuneBuilder(BlockingUI.new,
+      builder: (blockingUI) => FutureBuilderEx<void>(
+          // ignore: discarded_futures
+          future: blockingUI.waitForAllActions,
+          waitingBuilder: (context) => _BlockingOverlayWidget(blockingUI),
+          builder: (context, _) =>
+              const SizedBox.shrink() // widget.builder(context),
+          ));
 }
 
-/// The [_BlockingUIWidget] should NOT be used directly.
+/// The [_BlockingOverlayWidget] should NOT be used directly.
 ///
 /// It is added to app as an overlay and is
-/// activated/displayed as needed by the [BlockingUI.run], [BlockingUI.blockUntilFuture] and
-/// [BlockingUIBuilder] as needed.
+/// activated/displayed as needed by the [BlockingUIRunner].
 ///
 /// Displays the standard blocking UI widget which is
 /// The widget is not visible for the first 500 ms
 /// From 500 - 1000ms it shows the 'progress' indicator and greys the background
 /// From 1000ms to completion it shows a label 'Just a moment...'
 ///
-class _BlockingUIWidget extends StatefulWidget {
+class _BlockingOverlayWidget extends StatefulWidget {
   /// [placement] controls where the spinning placement indicator goes
   /// We normally use [TopOrTailPlacement.top] during the Registration
   /// Wizard and
@@ -226,14 +104,18 @@ class _BlockingUIWidget extends StatefulWidget {
   ///  [TopOrTailPlacement.bottom]
   /// placement otherwise you can see the help icon below the
   ///  progress indicator.
-  const _BlockingUIWidget(
+  const _BlockingOverlayWidget(this.blockingUI,
       {super.key,
       this.placement = TopOrTailPlacement.bottom,
       this.hideHelpIcon = true});
+
+  final BlockingUI blockingUI;
+
   final TopOrTailPlacement placement;
   final bool hideHelpIcon;
+
   @override
-  State<StatefulWidget> createState() => _BlockingUIWidgetState();
+  State<StatefulWidget> createState() => _BlockingOverlayWidgetState();
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -247,87 +129,233 @@ class _BlockingUIWidget extends StatefulWidget {
 /// Displays an full screen transparent container
 /// which blocks any user interaction.
 ///
-class _BlockingUIWidgetState extends State<_BlockingUIWidget> {
+class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
-    return Consumer<BlockingUI>(builder: (context, blockingUI, _) {
-      // Log.d(green('is UI blocked ${blockingUI.blocked}'));
-      if (blockingUI.blocked) {
-        // make it transparent for the first 500ms.
+    // Log.d(green('is UI blocked ${blockingUI.blocked}'));
+    if (widget.blockingUI.blocked) {
+      // make it transparent for the first 500ms.
 
-        return TickBuilder(
-            limit: 100,
-            interval: const Duration(milliseconds: 100),
-            builder: (context, index) {
-              final showProgress =
-                  DateTime.now().difference(blockingUI.startTime!) >
-                      const Duration(milliseconds: 500);
+      return TickBuilder(
+          limit: 100,
+          interval: const Duration(milliseconds: 100),
+          builder: (context, index) {
+            final showProgress =
+                DateTime.now().difference(widget.blockingUI.startTime!) >
+                    const Duration(milliseconds: 500);
 
-              // show label if we have been here more than 1 second.
-              final showLabel =
-                  DateTime.now().difference(blockingUI.startTime!) >
-                      const Duration(milliseconds: 1000);
+            // show label if we have been here more than 1 second.
+            final showLabel =
+                DateTime.now().difference(widget.blockingUI.startTime!) >
+                    const Duration(milliseconds: 1000);
 
-              return SizedBox(
-                  height: height,
-                  width: width,
-                  child: Stack(children: [
-                    // hide the help icon by drawing a container over it.
-                    if (showProgress && widget.hideHelpIcon)
-                      Positioned(
-                          bottom: 5,
-                          right: HMBTheme.padding,
-                          child: Container(
-                              height: 40,
-                              width: 40,
-                              color: HMBColors.appBarColor)),
-                    // cover the entire screen with an overlay.
+            return SizedBox(
+                height: height,
+                width: width,
+                child: Stack(children: [
+                  // hide the help icon by drawing a container over it.
+                  if (showProgress && widget.hideHelpIcon)
                     Positioned(
-                        bottom: 0,
+                        bottom: 5,
+                        right: HMBTheme.padding,
+                        child: Container(
+                            height: 40,
+                            width: 40,
+                            color: HMBColors.appBarColor)),
+                  // cover the entire screen with an overlay.
+                  Positioned(
+                      bottom: 0,
+                      left: 0,
+                      height: height,
+                      width: width,
+                      child: Opacity(
+                          opacity: (showProgress ? 0.6 : 0),
+                          child: Container(color: Colors.grey))),
+
+                  // draw the progress indicator
+                  if (showProgress)
+                    TopOrTail(
+                        placement: widget.placement,
+                        child: GestureDetector(
+                            onTap: cancelRun,
+                            child: const CircularProgressIndicator())),
+                  if (showLabel)
+                    Positioned(
+                        bottom: HMBTheme.padding,
                         left: 0,
-                        height: height,
                         width: width,
-                        child: Opacity(
-                            opacity: (showProgress ? 0.6 : 0),
-                            child: Container(color: Colors.grey))),
-
-                    // draw the progress indicator
-                    if (showProgress)
-                      TopOrTail(
-                          placement: widget.placement,
-                          child: GestureDetector(
-                              onTap: cancelRun,
-                              child: const CircularProgressIndicator())),
-
-                    if (showLabel)
-                      Positioned(
-                          bottom: HMBTheme.padding,
-                          left: 0,
-                          width: width,
-                          // height: 20,
-                          child: GestureDetector(
-                              onTap: cancelRun,
-                              child: Center(
-                                  child: Chip(
-                                label: (blockingUI.action.label == null
-                                    ? HMBTextChip('Just a moment...')
-                                    : HMBTextChip('''
-Just a moment: ${blockingUI.action.label}''')),
-                                backgroundColor: Colors.yellow,
-                                elevation: 7,
-                              ))))
-                  ]));
-            });
-      } else {
-        return Container();
-      }
-    });
+                        child: GestureDetector(
+                            onTap: cancelRun,
+                            child: Center(
+                                child: Chip(
+                              label: (widget.blockingUI.topAction.label == null
+                                  ? HMBTextChip('Just a moment...')
+                                  : HMBTextChip('''
+Just a moment: ${widget.blockingUI.topAction.label}''')),
+                              backgroundColor: Colors.yellow,
+                              elevation: 7,
+                            ))))
+                ]));
+          });
+    } else {
+      return Container();
+    }
   }
 
   void cancelRun() {
     // Log.d('cancel');
+  }
+}
+
+/// The [slowAction] is called and once it completes the
+/// [builder] is called to render the ui.
+/// Whilst the [slowAction] is running the [_BlockingOverlayWidget]
+/// is displayed.
+///
+class BlockingUIRunner extends StatefulWidget {
+  const BlockingUIRunner(
+      {required this.slowAction, required this.builder, this.label, super.key});
+
+  final WidgetBuilder builder;
+  final Future<void> Function() slowAction;
+  final String? label;
+
+  @override
+  State<BlockingUIRunner> createState() => _BlockingUIRunnerState();
+}
+
+class _BlockingUIRunnerState extends State<BlockingUIRunner> {
+  bool _initialised = false;
+  late final CompleterEx<void> completer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_initialised) {
+      _initialised = true;
+      completer = June.getState(BlockingUI.new)
+          .run(widget.slowAction, label: widget.label);
+
+      // ignore: discarded_futures
+      completer.future.whenComplete(() => setState(() {}));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (completer.isCompleted) {
+      return widget.builder(context);
+    } else {
+      return Container();
+    }
+  }
+}
+
+class BlockingUI extends JuneState {
+  BlockingUI();
+
+  /// manages a possible nested set of calls to [run]
+  StackList<ActionRunner<dynamic>> actions = StackList();
+
+  ActionRunner<dynamic> get topAction => actions.peek();
+
+  /// Executes a long running function asking the user to wait
+  /// if necessary.
+  ///
+  /// The [label] can be provided to inform the user what action is
+  /// holding things up. The [label] is displayed after the text:
+  /// 'Just a moment'.
+  /// As such the action should be a short verb e.g. Saving.
+  /// example
+  ///
+  /// If your function returns a future then use:
+  /// ```dart
+  /// Data x = BlockingUIRunner().run<Data>(() => slowaction, action: 'Saving');
+  /// ```
+  /// If your function doesn't return a future then use: (note the use of async)
+  /// ```dart
+  /// Data x = BlockingUIRunner().run<Data>(() async => slowaction,
+  /// action: 'Saving');
+  ///
+  /// If [func] needs to return a null it must still return a future by using:
+  /// Future.value(null);
+  /// ```
+  CompleterEx<T> run<T>(Future<T> Function() slowAction, {String? label}) {
+    final actionRunner = ActionRunner<T>(label, slowAction, end);
+
+    begin(actionRunner);
+
+    return actionRunner.completer;
+  }
+
+  Future<void> _waitForAllActions = Future.value();
+
+  Future<void> get waitForAllActions => _waitForAllActions;
+
+  /// True if any of the actions are still running.
+  bool get blocked {
+    var blocked = false;
+    for (final action in actions.stack) {
+      blocked |= action.completer.isCompleted;
+    }
+    return blocked;
+  }
+
+  /// The stack trace of the first action that is blocking the UI.
+  StackTrace get stackTrace => actions.peek().stackTrace;
+
+  DateTime? startTime;
+  int count = 0;
+
+  ///
+  /// begin
+  ///
+  void begin<T>(ActionRunner<T> actionRunner) {
+    actions.push(actionRunner);
+    count++;
+    // Log.e('begin count=$count');
+    // Log.d(green('UI is blocked'));
+    // Log.d(green(
+    //'blocked by: ${actions.peek().stackTrace.formatStackTrace()}'));
+
+    if (count == 1) {
+      startTime = DateTime.now();
+    }
+
+    /// start the action.
+    actionRunner.start();
+
+    /// Rebuild the future that lets us monitor all runners.
+    // ignore:  discarded_futures
+    _waitForAllActions = Future.wait<dynamic>(
+        actions.stack.map((runner) => runner.completer.future).toList());
+    // to ensure we don't try to call set start during a build
+    Future.delayed(Duration.zero, refresh);
+  }
+
+  ///
+  /// end
+  ///
+  void end() {
+    count--;
+    assert(count >= 0, 'bad');
+
+    actions.pop();
+
+    // Log.e('end count=$count');
+    // Log.d(
+    //green('unblocked for: ${callPoint.stackTrace.formatStackTrace()}'));
+
+    if (count == 0) {
+      startTime = null;
+    }
+
+    /// refresh so the label can be updated or if there are
+    /// no remaining actions then the UI can be unblocked.
+    // to ensure we don't try to call set start during a build
+    Future.delayed(Duration.zero, refresh);
   }
 }
 
@@ -338,10 +366,31 @@ Just a moment: ${blockingUI.action.label}''')),
 /// We also maintaine a list of [StackTraceImpl] in [stackTrace]
 /// so that we can dump call point stack traces for debugging
 /// purposes.
-class RunCallPoint {
-  RunCallPoint(this.label) : stackTrace = StackTraceImpl(skipFrames: 2);
-  String? label;
+class ActionRunner<T> {
+  ActionRunner(this.label, this.slowAction, this.end)
+      : stackTrace = StackTraceImpl(skipFrames: 2);
+  final String? label;
+
+  final Future<T> Function() slowAction;
+  void Function() end;
+
+  final completer = CompleterEx<T>();
 
   /// The stack trace of where the [BlockingUI.run] method was called from.
   StackTraceImpl stackTrace;
+
+  void start() {
+    // Now call the long running function.
+    // ignore: discarded_futures
+    final result = slowAction();
+    // if this fails you probably need to use return Future.value(null);
+    result
+        // ignore: discarded_futures, invalid_return_type_for_catch_error
+        .catchError(completer.completeError)
+        // ignore: discarded_futures
+        .whenComplete(() {
+      completer.complete();
+      end();
+    });
+  }
 }

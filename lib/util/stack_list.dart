@@ -23,7 +23,7 @@ class StackList<T> {
 
   T pop() => stack.removeFirst();
 
-  /// returns the item onf the top of the stack
+  /// returns the item on the top of the stack
   /// but does not remove the item.
   T peek() => stack.first;
 }
