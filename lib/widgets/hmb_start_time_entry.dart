@@ -78,7 +78,7 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
             showTask: true);
         if (stoppedTimeEntry != null) {
           followOnStartTime =
-              stoppedTimeEntry.startTime.add(const Duration(minutes: 1));
+              stoppedTimeEntry.endTime!.add(const Duration(minutes: 1));
           await DaoTimeEntry().update(stoppedTimeEntry);
         }
       }

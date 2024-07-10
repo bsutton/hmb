@@ -9,6 +9,7 @@ import '../util/format.dart';
 import 'hmb_date_time_picker.dart';
 import 'hmb_text.dart';
 import 'hmb_text_area.dart';
+import 'hmb_toast.dart';
 
 // final _dateTimeFormat = DateFormat('yyyy-MM-dd hh:mm a');
 
@@ -43,8 +44,8 @@ class _TimeEntryDialogState extends State<TimeEntryDialog> {
               now.year, now.month, now.day, now.hour, (now.minute ~/ 15) * 15);
     } else {
       // end time
-      nearestQuarterHour = DateTime(
-          now.year, now.month, now.day, now.hour, (now.minute ~/ 15) + 1 * 15);
+      nearestQuarterHour = DateTime(now.year, now.month, now.day, now.hour,
+          ((now.minute ~/ 15) + 1) * 15);
     }
     // If the user doesn't change the value then [selected]
     // needs to reflect the starting value.
@@ -102,6 +103,13 @@ class _TimeEntryDialogState extends State<TimeEntryDialog> {
             final note = noteController.text;
             TimeEntry timeEntry;
             if (widget.openEntry == null) {
+              /// start time must be in the past or within the next fifteen minutes.
+              if (selected!
+                  .isAfter(DateTime.now().add(const Duration(minutes: 15)))) {
+                HMBToast.error(
+                    'Start Time must be in the past or within 15min of now.');
+                return;
+              }
               timeEntry = TimeEntry.forInsert(
                   taskId: widget.task.id, startTime: selected!, note: note);
             } else {
