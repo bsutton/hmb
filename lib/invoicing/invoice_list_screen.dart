@@ -17,10 +17,10 @@ import '../widgets/hmb_are_you_sure_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_one_of.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/pdf_preview.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_line_dialog.dart';
 import 'pdf/generate_invoice.dart';
-import 'pdf/preview_screen.dart';
 import 'xero/xero_api.dart';
 
 class InvoiceListScreen extends StatefulWidget {
@@ -169,9 +169,11 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                         await Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (context) => PdfPreviewScreen(
-                                title: '''
+                              title: '''
 Invoice #${invoice.bestNumber} ${widget.job.summary}''',
-                                filePath: filePath.path),
+                              filePath: filePath.path,
+                              emailRecipients: const [],
+                            ),
                           ),
                         );
                       }

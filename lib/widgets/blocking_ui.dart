@@ -389,7 +389,10 @@ class ActionRunner<T> {
         .catchError(completer.completeError)
         // ignore: discarded_futures
         .whenComplete(() {
-      completer.complete();
+      /// If an error occurs we will aready be complete.
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
       end();
     });
   }

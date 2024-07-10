@@ -103,7 +103,8 @@ class _TimeEntryDialogState extends State<TimeEntryDialog> {
             final note = noteController.text;
             TimeEntry timeEntry;
             if (widget.openEntry == null) {
-              /// start time must be in the past or within the next fifteen minutes.
+              /// start time must be in the past or within the next
+              /// fifteen minutes.
               if (selected!
                   .isAfter(DateTime.now().add(const Duration(minutes: 15)))) {
                 HMBToast.error(

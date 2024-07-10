@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
+import '../../dao/dao_contact.dart';
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
 import '../../dao/dao_job_status.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../invoicing/invoice_list_screen.dart';
+import '../../quoting/quote_list_screen.dart';
 import '../../util/format.dart';
 import '../../widgets/hmb_email_text.dart';
 import '../../widgets/hmb_phone_text.dart';
@@ -63,6 +65,7 @@ class JobCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ..._buildStatistics(remainingTasks),
+                    _buildQuoteButton(context),
                     _buildInvoiceButton(context)
                   ],
                 );
@@ -72,6 +75,7 @@ class JobCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ..._buildStatistics(remainingTasks),
+                    _buildQuoteButton(context),
                     _buildInvoiceButton(context)
                   ],
                 );
@@ -86,6 +90,20 @@ class JobCard extends StatelessWidget {
           builder: (context) => InvoiceListScreen(job: job),
         )),
         child: const Text('Invoice'),
+      );
+
+  Widget _buildQuoteButton(BuildContext context) => ElevatedButton(
+        onPressed: () async => Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => FutureBuilderEx(
+              future: DaoContact().getByJob(job.id),
+              builder: (context, contacts) => QuoteListScreen(
+                  job: job,
+                  emailRecipients: contacts
+                          ?.map((contact) => contact.emailAddress)
+                          .toList() ??
+                      [])),
+        )),
+        child: const Text('Quote'),
       );
 
   List<Widget> _buildStatistics(JobStatistics remainingTasks) => [

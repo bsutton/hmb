@@ -1,6 +1,5 @@
 import 'dart:io';
 
-// import 'package:app_links/app_links.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -23,6 +22,7 @@ import 'database/management/backup_providers/email/screen.dart';
 import 'database/management/database_helper.dart';
 import 'firebase_options.dart';
 import 'installer/linux/install.dart' if (kIsWeb) 'util/web_stub.dart';
+import 'screens/error.dart';
 import 'screens/packing.dart';
 import 'screens/shopping.dart';
 import 'widgets/blocking_ui.dart';
@@ -41,148 +41,58 @@ void main(List<String> args) async {
 
   final blockingUIKey = GlobalKey();
 
-  runApp(Column(
-    children: [
-      const BlockingOverlay(),
-      Expanded(
-        child: ToastificationWrapper(
-          child: JuneBuilder(
-            TimeEntryState.new,
-            builder: (_) => BlockingUIRunner(
-              key: blockingUIKey,
-              slowAction: _initialise,
-              label: 'Upgrade your database.',
-              builder: (context) => MaterialApp.router(
-                title: 'Handyman',
-                theme: ThemeData(
-                  primarySwatch: Colors.blue,
-                  visualDensity: VisualDensity.adaptivePlatformDensity,
+  runApp(ToastificationWrapper(
+    child: MaterialApp(
+      home: Column(
+        children: [
+          Expanded(
+            child: Builder(
+              builder: (context) => JuneBuilder(
+                TimeEntryState.new,
+                builder: (_) => BlockingUIRunner(
+                  key: blockingUIKey,
+                  slowAction: () => _initialise(context),
+                  label: 'Upgrade your database.',
+                  builder: (context) => MaterialApp.router(
+                    title: 'Handyman',
+                    theme: ThemeData(
+                      primarySwatch: Colors.blue,
+                      visualDensity: VisualDensity.adaptivePlatformDensity,
+                    ),
+                    routerConfig: _router,
+                  ),
                 ),
-                routerConfig: _router,
               ),
             ),
           ),
-        ),
+          const BlockingOverlay(),
+        ],
       ),
-    ],
+    ),
   ));
 }
 
-// void main(List<String> args) async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   if (args.isNotEmpty) {
-//     print('Got a link $args');
-//   } else {
-//     print('no args');
-//   }
-
-//   initAppLinks();
-
-//   // runApp(const MyApp());
-//   runApp(ToastificationWrapper(
-//       child: MaterialApp.router(
-//     title: 'Handyman',
-//     theme: ThemeData(
-//       primarySwatch: Colors.blue,
-//       visualDensity: VisualDensity.adaptivePlatformDensity,
-//     ),
-//     routerConfig: _router,
-//   )));
-
-//   //     navigatorKey: navigatorKey,
-//   //     title: 'Handyman',
-//   //     theme: ThemeData(
-//   //       primarySwatch: Colors.blue,
-//   //       visualDensity: VisualDensity.adaptivePlatformDensity,
-//   //     ),
-//   //     initialRoute: '/',
-//   //     onGenerateRoute: (settings) {
-//   //       if (settings.name == XeroAuth.redirectPath) {
-//   //         HMBToast.info('${settings.arguments}');
-//   //         XeroAuth().completeLogin();
-//   //       }
-//   //       return null;
-//   //     },
-//   //     home: ChangeNotifierProvider(
-//   //       create: (_) => BlockingUI(),
-//   //       child: Scaffold(
-//   //         body: BlockingUIBuilder<void>(
-//   //           future: _initialise,
-//   //           stacktrace: StackTrace.current,
-//   //           label: 'Upgrade your database.',
-//   //           builder: (context, _) =>
-//   //               const HomeWithDrawer(initialScreen: JobListScreen()),
-//   //         ),
-//   //       ),
-//   //     ))),
-// }
-
 void initAppLinks() {
-//   /// Implement deep linking
-//   final _appLinks = AppLinks(); // AppLinks is singleton
+  // Uncomment and implement deep linking if needed
+  // final _appLinks = AppLinks(); // AppLinks is singleton
 
-// // Subscribe to all events (initial link and further)
-//   _appLinks.uriLinkStream.listen((uri) {
-//     HMBToast.info('Hi from app link');
-//     HMBToast.info('Got a link $uri');
-//     HMBToast.info('deeplink: $uri');
-//     if (uri.path == XeroAuth.redirectPath) {
-//       HMBToast.error('Someone asked for xero');
-//     }
-//   });
+  // Subscribe to all events (initial link and further)
+  // _appLinks.uriLinkStream.listen((uri) {
+  //   HMBToast.info('Hi from app link');
+  //   HMBToast.info('Got a link $uri');
+  //   HMBToast.info('deeplink: $uri');
+  //   if (uri.path == XeroAuth.redirectPath) {
+  //     HMBToast.error('Someone asked for xero');
+  //   }
+  // });
 }
-
-// // final navigatorKey = GlobalKey<NavigatorState>();
-
-// // class MyApp extends StatelessWidget {
-// //   const MyApp({super.key});
-
-// //   @override
-// //   Widget build(BuildContext context) => ToastificationWrapper(
-// //         child:
-
-// //  MaterialApp(
-// //     navigatorKey: navigatorKey,
-// //     title: 'Handyman',
-// //     theme: ThemeData(
-// //       primarySwatch: Colors.blue,
-// //       visualDensity: VisualDensity.adaptivePlatformDensity,
-// //     ),
-// //     initialRoute: '/',
-// //     onGenerateRoute: (settings) {
-// //       if (settings.name == XeroAuth.redirectPath) {
-// //         HMBToast.info('${settings.arguments}');
-// //         XeroAuth().completeLogin();
-// //       }
-// //       return null;
-// //     },
-// //     home: ChangeNotifierProvider(
-// //       create: (_) => BlockingUI(),
-// //       child: Scaffold(
-// //         body: BlockingUIBuilder<void>(
-// //           future: _initialise,
-// //           stacktrace: StackTrace.current,
-// //           label: 'Upgrade your database.',
-// //           builder: (context, _) =>
-// //               const HomeWithDrawer(initialScreen: JobListScreen()),
-// //         ),
-// //       ),
-// //     )),
-// // );
-// //  }
 
 GoRouter get _router => GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          builder: (_, __) => Scaffold(
-            body: BlockingUIRunner(
-              slowAction: _initialise,
-              label: 'Upgrade your database.',
-              builder: (context) =>
-                  const HomeWithDrawer(initialScreen: JobListScreen()),
-            ),
-          ),
+          builder: (_, __) =>
+              const HomeWithDrawer(initialScreen: JobListScreen()),
           routes: [
             GoRoute(
               path: 'details',
@@ -190,38 +100,75 @@ GoRouter get _router => GoRouter(
                 appBar: AppBar(title: const Text('Details Screen')),
               ),
             ),
+            GoRoute(
+              path: 'error',
+              builder: (context, state) {
+                final errorMessage = state.extra as String? ?? 'Unknown Error';
+                return ErrorScreen(errorMessage: errorMessage);
+              },
+            ),
+            GoRoute(
+              path: 'jobs',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: JobListScreen()),
+            ),
+            GoRoute(
+              path: 'customers',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: CustomerListScreen()),
+            ),
+            GoRoute(
+              path: 'suppliers',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: SupplierListScreen()),
+            ),
+            GoRoute(
+              path: 'shopping',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: ShoppingScreen()),
+            ),
+            GoRoute(
+              path: 'packing',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: PackingScreen()),
+            ),
+            GoRoute(
+              path: 'system',
+              builder: (_, __) => FutureBuilderEx(
+                // ignore: discarded_futures
+                future: DaoSystem().getById(1),
+                builder: (context, system) => HomeWithDrawer(
+                  initialScreen: SystemEditScreen(system: system!),
+                ),
+              ),
+            ),
+            GoRoute(
+              path: 'backup',
+              builder: (_, __) => const HomeWithDrawer(
+                  initialScreen: BackupScreen(pathToBackup: '')),
+            ),
           ],
         ),
       ],
     );
 
 class DrawerItem {
-  DrawerItem({required this.title, required this.screen});
+  DrawerItem({required this.title, required this.route});
   final String title;
-  final Widget screen;
+  final String route;
 }
 
 class MyDrawer extends StatelessWidget {
   MyDrawer({super.key});
 
   final List<DrawerItem> drawerItems = [
-    DrawerItem(title: 'Jobs', screen: const JobListScreen()),
-    DrawerItem(title: 'Customers', screen: const CustomerListScreen()),
-    DrawerItem(title: 'Suppliers', screen: const SupplierListScreen()),
-    DrawerItem(title: 'Shopping', screen: const ShoppingScreen()),
-    DrawerItem(title: 'Packing', screen: const PackingScreen()),
-    DrawerItem(
-      title: 'System',
-      screen: FutureBuilderEx(
-        future: DaoSystem().getById(1),
-        builder: (context, system) => SystemEditScreen(system: system!),
-      ),
-    ),
-    DrawerItem(
-        title: 'Backup',
-        screen: const BackupScreen(
-          pathToBackup: '',
-        )),
+    DrawerItem(title: 'Jobs', route: '/jobs'),
+    DrawerItem(title: 'Customers', route: '/customers'),
+    DrawerItem(title: 'Suppliers', route: '/suppliers'),
+    DrawerItem(title: 'Shopping', route: '/shopping'),
+    DrawerItem(title: 'Packing', route: '/packing'),
+    DrawerItem(title: 'System', route: '/system'),
+    DrawerItem(title: 'Backup', route: '/backup'),
   ];
 
   @override
@@ -230,19 +177,9 @@ class MyDrawer extends StatelessWidget {
           itemCount: drawerItems.length,
           itemBuilder: (context, index) => ListTile(
             title: Text(drawerItems[index].title),
-            onTap: () async {
-              final targetRoute = MaterialPageRoute<void>(
-                  builder: (context) => HomeWithDrawer(
-                        initialScreen: drawerItems[index].screen,
-                      ));
-
-              if (drawerItems[index].title == 'System') {
-                Navigator.pop(context); // Close the drawer
-                await Navigator.push(context, targetRoute);
-              } else {
-                // Navigator.pop(context); // Close the drawer
-                await Navigator.pushReplacement(context, targetRoute);
-              }
+            onTap: () {
+              Navigator.pop(context); // Close the drawer
+              context.go(drawerItems[index].route);
             },
           ),
         ),
@@ -282,23 +219,34 @@ class HomeWithDrawer extends StatelessWidget {
 }
 
 bool initialised = false;
-Future<void> _initialise() async {
-  /// The call to _initializeTimeEntryState cause a refresh
-  /// which kicks over the BlockingUIBuilder again
-  /// causing an endless loop.
+Future<void> _initialise(BuildContext context) async {
   if (!initialised) {
-    initialised = true;
-    await _checkInstall();
-    await _initFirebase();
-    await _initDb();
-    await _initializeTimeEntryState(refresh: false);
+    try {
+      initialised = true;
+      await _checkInstall();
+      await _initFirebase();
+      await _initDb();
+      await _initializeTimeEntryState(refresh: false);
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      if (context.mounted) {
+        await showDialog<void>(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => FullScreenDialog(
+                  content: ErrorScreen(errorMessage: e.toString()),
+                  title: 'Database Error',
+                ));
+        // context.go('/error',
+        //     extra: 'An error occurred while processing your request.');
+      }
+      rethrow;
+    }
   }
 }
 
 Future<void> _initFirebase() async {
   if (!Platform.isLinux) {
-    /// We use this for google sigin so we can backup to
-    /// the google drive.
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -307,9 +255,6 @@ Future<void> _initFirebase() async {
 
 Future<void> _initDb() async {
   await DatabaseHelper().initDatabase();
-
-  // await Future.delayed(const Duration(seconds: 60), () {});
-
   print('Database located at: ${await DatabaseHelper().pathToDatabase()}');
 }
 
