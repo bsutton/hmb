@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:june/june.dart';
 
 import '../dao/dao_task.dart';
 import '../dao/dao_time_entry.dart';
@@ -10,22 +10,21 @@ import '../entity/time_entry.dart';
 import '../util/format.dart';
 import 'time_entry_dialog.dart';
 
-// final _dateTimeFormat = DateFormat('yyyy-MM-dd hh:mm a');
-
-/// Display a control that lets you start/stop and time
-/// entry as well as displaying the elapsed time.
 class HMBStartTimeEntry extends StatefulWidget {
-  const HMBStartTimeEntry({required this.task, super.key});
-  @override
-  State<StatefulWidget> createState() => HMBStartTimeEntryState();
+  const HMBStartTimeEntry({
+    required this.task,
+    super.key,
+  });
 
   final Task? task;
+
+  @override
+  State<StatefulWidget> createState() => HMBStartTimeEntryState();
 }
 
 class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
   Timer? _timer;
   late Future<TimeEntry?> _initialEntry;
-  // TimeEntry? timeEntry;
 
   @override
   void initState() {
@@ -40,40 +39,40 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
         completer.complete(null);
       }
       setState(() {
-        // timeEntry = entry;
         _initTimer(entry);
+        if (entry != null) {
+          final task = widget.task;
+          June.getState<TimeEntryState>(TimeEntryState.new)
+              .setActiveTimeEntry(entry, task);
+        }
       });
     });
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilderEx(
+  Widget build(BuildContext context) => FutureBuilder(
       future: _initialEntry,
-      builder: (context, timeEntry) => Row(
-            children: [
-              IconButton(
-                icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
-                onPressed: () async => _toggleTimer(timeEntry),
-              ),
-              _buildElapsedTime(timeEntry)
-            ],
-          ));
+      builder: (context, snapshot) {
+        final timeEntry = snapshot.data;
+        return Row(
+          children: [
+            IconButton(
+              icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
+              onPressed: () async => _toggleTimer(timeEntry),
+            ),
+            _buildElapsedTime(timeEntry)
+          ],
+        );
+      });
 
   Future<void> _toggleTimer(TimeEntry? timeEntry) async {
     final activeEntry = await DaoTimeEntry().getActiveEntry();
-
-    /// If we stop an existing timer then the new one
-    /// should start where the old one left off + 1 min.
     DateTime? followOnStartTime;
 
-    /// If there is another activity running then it needs to be stopped.
     if (activeEntry != null && activeEntry.id != timeEntry?.id) {
       final otherTask = await DaoTask().getById(activeEntry.taskId);
 
       if (mounted) {
-        /// There is an existing timer for another task,
-        /// we must get the user to
-        /// shut it down first.
         final stoppedTimeEntry = await _showTimeEntryDialog(
             context, otherTask!, activeEntry,
             showTask: true);
@@ -86,27 +85,25 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
     }
 
     if (mounted) {
-      /// Ask the user to adjust the start or stop time.
       final newTimeEntry = await _showTimeEntryDialog(
           context, widget.task!, timeEntry,
           followOnStartTime: followOnStartTime);
       if (newTimeEntry != null) {
-        /// The user selected a start or stop time.
         if (timeEntry == null) {
-          // No existing entry so this is a new entry time.
           await DaoTimeEntry().insert(newTimeEntry);
           if (mounted) {
             setState(() {
               _startTimer(newTimeEntry);
             });
+            June.getState<TimeEntryState>(TimeEntryState.new)
+                .setActiveTimeEntry(newTimeEntry, widget.task);
           }
         } else {
-          /// There was an exising entry so this is a stop time.
           await DaoTimeEntry().update(newTimeEntry);
           if (mounted) {
-            if (mounted) {
-              setState(_stopTimer);
-            }
+            setState(_stopTimer);
+            June.getState<TimeEntryState>(TimeEntryState.new)
+                .clearActiveTimeEntry();
           }
         }
       }
@@ -121,15 +118,12 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
 
   void _startTimer(TimeEntry timeEntry) {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        // this.timeEntry = timeEntry;
-      });
+      setState(() {});
     });
   }
 
   void _stopTimer() {
     _timer?.cancel();
-    // timeEntry = null;
   }
 
   @override
@@ -159,4 +153,26 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
             showTask: showTask,
             followOnStartTime: followOnStartTime),
       );
+}
+
+class TimeEntryState extends JuneState {
+  TimeEntry? activeTimeEntry;
+  Task? task;
+
+  void setActiveTimeEntry(TimeEntry? entry, Task? task,
+      {bool doRefresh = true}) {
+    if (activeTimeEntry != entry) {
+      activeTimeEntry = entry;
+      this.task = task;
+      if (doRefresh) {
+        refresh();
+      }
+    }
+  }
+
+  void clearActiveTimeEntry() {
+    activeTimeEntry = null;
+    task = null;
+    refresh();
+  }
 }
