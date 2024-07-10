@@ -13,18 +13,24 @@ import '../util/money_ex.dart';
 /// and allow them to select which tasks they want to
 /// work on.
 class DialogTaskSelection extends StatefulWidget {
-  const DialogTaskSelection({required this.job, super.key});
+  const DialogTaskSelection(
+      {required this.job, required this.includeEstimatedTasks, super.key});
   final Job job;
+  final bool includeEstimatedTasks;
 
   @override
   // ignore: library_private_types_in_public_api
   _DialogTaskSelectionState createState() => _DialogTaskSelectionState();
 
   /// Show the dialog
-  static Future<List<int>> show(BuildContext context, Job job) async {
+  static Future<List<int>> show(
+      {required BuildContext context,
+      required Job job,
+      required bool includeEstimatedTasks}) async {
     final selectedTaskIds = await showDialog<List<int>>(
       context: context,
-      builder: (context) => DialogTaskSelection(job: job),
+      builder: (context) => DialogTaskSelection(
+          job: job, includeEstimatedTasks: includeEstimatedTasks),
     );
 
     return selectedTaskIds ?? [];
@@ -49,6 +55,13 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
       if ((await _calculateTaskCost(task)) > MoneyEx.zero) {
         _selectedTasks[task.id] = true;
         billableTasks.add(task);
+      }
+      if (widget.includeEstimatedTasks) {
+        {
+          if (task.estimatedCost != null || task.effortInHours != null) {
+            billableTasks.add(task);
+          }
+        }
       }
     }
     return billableTasks;

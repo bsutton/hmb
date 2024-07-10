@@ -62,7 +62,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     }
 
     if (mounted) {
-      final selectedTasks = await DialogTaskSelection.show(context, widget.job);
+      final selectedTasks =
+          await DialogTaskSelection.show(
+          context: context, job: widget.job, includeEstimatedTasks: false);
 
       if (selectedTasks.isNotEmpty) {
         try {

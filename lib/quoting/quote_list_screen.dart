@@ -44,7 +44,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     // ignore: discarded_futures
     _quotes = DaoQuote().getByJobId(widget.job.id);
     // ignore: discarded_futures
-    _hasUnbilledItems = DaoJob().hasBillableTasks(widget.job);
+    _hasUnbilledItems = DaoJob().hasQuoteableItems(widget.job);
   }
 
   Future<void> _createQuote() async {
@@ -54,7 +54,9 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     }
 
     if (mounted) {
-      final selectedTasks = await DialogTaskSelection.show(context, widget.job);
+      final selectedTasks =
+          await DialogTaskSelection.show(
+          context: context, job: widget.job, includeEstimatedTasks: true);
 
       if (selectedTasks.isNotEmpty) {
         try {

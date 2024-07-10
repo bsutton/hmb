@@ -1,3 +1,4 @@
+import 'package:fixed/fixed.dart';
 import 'package:june/june.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -60,6 +61,25 @@ class DaoQuote extends Dao<Quote> {
     );
 
     final quoteId = await DaoQuote().insert(quote);
+
+    // Add callout fee as a quote line
+    if (job.callOutFee != null && !job.callOutFee!.isZero) {
+      final quoteLineGroup = QuoteLineGroup.forInsert(
+        quoteId: quoteId,
+        name: 'Callout Fee',
+      );
+      await DaoQuoteLineGroup().insert(quoteLineGroup);
+      final callOutFeeLine = QuoteLine.forInsert(
+        quoteId: quoteId,
+        quoteLineGroupId: quoteLineGroup.id,
+        description: 'Callout Fee',
+        quantity: Fixed.fromInt(100),
+        unitPrice: job.callOutFee!,
+        lineTotal: job.callOutFee!,
+      );
+      await DaoQuoteLine().insert(callOutFeeLine);
+      totalAmount += job.callOutFee!;
+    }
 
     // Create quote lines and groups for each task
     for (final task in tasks) {

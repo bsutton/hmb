@@ -167,6 +167,19 @@ where c.id =?
 
   @override
   JuneStateCreator get juneRefresher => JobState.new;
+
+  Future<bool> hasQuoteableItems(Job job) async {
+    if (await hasBillableTasks(job)) {
+      return true;
+    }
+    final tasks = await DaoTask().getTasksByJob(job);
+    for (final task in tasks) {
+      if (task.effortInHours != null || task.estimatedCost != null) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.
