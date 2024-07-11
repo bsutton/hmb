@@ -10,4 +10,6 @@ extension FixedEx on Fixed {
   static Fixed fromInt(int? amount) => Fixed.fromInt(
         amount ?? 0,
       );
+
+  static bool isZeroOrNull(Fixed? amount) => amount == null || amount.isZero;
 }

@@ -10,4 +10,6 @@ extension MoneyEx on Money {
 
   static Money fromInt(int? amount) =>
       Money.fromInt(amount ?? 0, isoCode: 'AUD');
+
+  static bool isZeroOrNull(Money? money) => money == null || money.isZero;
 }
