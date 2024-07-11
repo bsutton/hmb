@@ -38,8 +38,9 @@ class DialogTaskSelection extends StatefulWidget {
 }
 
 class _DialogTaskSelectionState extends State<DialogTaskSelection> {
-  late Future<List<Task>> _tasks;
+  late Future<List<TaskCost>> _tasks;
   final Map<int, bool> _selectedTasks = {};
+  bool _selectAll = true;
 
   @override
   void initState() {
@@ -48,26 +49,27 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
     _tasks = _loadTasks();
   }
 
-  Future<List<Task>> _loadTasks() async {
+  Future<List<TaskCost>> _loadTasks() async {
     final tasks = await DaoTask().getTasksByJob(widget.job);
-    final billableTasks = <Task>[];
+    final billableTasks = <TaskCost>[];
+
     for (final task in tasks) {
-      if ((await _calculateTaskCost(task)) > MoneyEx.zero) {
+      final taskCost = await _calculateTaskCost(task);
+      if (taskCost.cost > MoneyEx.zero) {
         _selectedTasks[task.id] = true;
-        billableTasks.add(task);
+        billableTasks.add(taskCost);
       }
       if (widget.includeEstimatedTasks) {
-        {
-          if (task.estimatedCost != null || task.effortInHours != null) {
-            billableTasks.add(task);
-          }
+        if (task.estimatedCost != null || task.effortInHours != null) {
+          billableTasks.add(taskCost);
+          _selectedTasks[task.id] = true;
         }
       }
     }
     return billableTasks;
   }
 
-  Future<Money> _calculateTaskCost(Task task) async {
+  Future<TaskCost> _calculateTaskCost(Task task) async {
     var totalCost = Money.fromInt(0, isoCode: 'AUD');
     final timeEntries = await DaoTimeEntry().getByTask(task.id);
     final checkListItems = await DaoCheckListItem().getByTask(task);
@@ -82,37 +84,51 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
       totalCost += item.unitCost.multiplyByFixed(item.quantity);
     }
 
-    return totalCost;
+    return TaskCost(task, totalCost);
+  }
+
+  void _toggleSelectAll(bool? value) {
+    setState(() {
+      _selectAll = value ?? false;
+      for (final key in _selectedTasks.keys) {
+        _selectedTasks[key] = _selectAll;
+      }
+    });
+  }
+
+  void _toggleIndividualTask(int taskId, bool? value) {
+    setState(() {
+      _selectedTasks[taskId] = value ?? false;
+      if (_selectedTasks.values.every((isSelected) => isSelected)) {
+        _selectAll = true;
+      } else if (_selectedTasks.values.every((isSelected) => !isSelected)) {
+        _selectAll = false;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) => AlertDialog(
         title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
-        content: FutureBuilderEx<List<Task>>(
+        content: FutureBuilderEx<List<TaskCost>>(
           future: _tasks,
           builder: (context, tasks) => Column(
             mainAxisSize: MainAxisSize.min,
-            children: tasks!
-                .map((task) => FutureBuilderEx<Money>(
-                      // ignore: discarded_futures
-                      future: _calculateTaskCost(task),
-                      waitingBuilder: (_) => ListTile(
-                        title: Text(task.name),
-                        subtitle: const Text('Calculating cost...'),
-                        trailing: const CircularProgressIndicator(),
-                      ),
-                      builder: (context, cost) => CheckboxListTile(
-                        title: Text(task.name),
-                        subtitle: Text('Total Cost: $cost'),
-                        value: _selectedTasks[task.id] ?? false,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedTasks[task.id] = value!;
-                          });
-                        },
-                      ),
-                    ))
-                .toList(),
+            children: [
+              CheckboxListTile(
+                title: const Text('Select All'),
+                value: _selectAll,
+                onChanged: _toggleSelectAll,
+              ),
+              for (final taskCost in tasks!)
+                CheckboxListTile(
+                  title: Text(taskCost.task.name),
+                  subtitle: Text('Total Cost: ${taskCost.cost}'),
+                  value: _selectedTasks[taskCost.task.id] ?? false,
+                  onChanged: (value) =>
+                      _toggleIndividualTask(taskCost.task.id, value),
+                ),
+            ],
           ),
         ),
         actions: [
@@ -132,4 +148,10 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
           ),
         ],
       );
+}
+
+class TaskCost {
+  TaskCost(this.task, this.cost);
+  Task task;
+  Money cost;
 }
