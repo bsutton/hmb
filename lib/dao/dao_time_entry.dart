@@ -1,5 +1,5 @@
 import 'package:june/june.dart';
-import 'package:sqflite_common/sqlite_api.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../entity/time_entry.dart';
 import 'dao.dart';

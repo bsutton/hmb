@@ -1,6 +1,6 @@
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
-import 'package:sqflite_common/sqlite_api.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../entity/check_list_item.dart';
 import '../entity/job.dart';
@@ -87,8 +87,8 @@ where cli.id =?
   Future<void> deleteByJob(int id, {Transaction? transaction}) async {
     final db = getDb();
 
-    await DaoTimeEntry().deleteByTask(id,  transaction);
-    await DaoCheckList().deleteByTask(id,  transaction);
+    await DaoTimeEntry().deleteByTask(id, transaction);
+    await DaoCheckList().deleteByTask(id, transaction);
     // Delete tasks associated with the job
     await db.delete(
       'task',

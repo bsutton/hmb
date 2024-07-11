@@ -99,7 +99,7 @@ class JobEditScreenState extends State<JobEditScreen>
               // ignore: discarded_futures
               future: DaoCustomer().getById(selectedCustomer.customerId),
 
-              /// get the customer
+              /// get the job details
               builder: (context, customer) => EntityEditScreen<Job>(
                   entity: widget.job,
                   entityName: 'Job',
@@ -168,13 +168,26 @@ class JobEditScreenState extends State<JobEditScreen>
 
   JuneBuilder<SelectedContact> _chooseContact(Customer? customer, Job? job) =>
       JuneBuilder(() => SelectedContact()..contactId = job?.contactId,
-          builder: (state) =>
-              HMBSelectContact(initialContact: state, customer: customer));
+          builder: (state) => HMBSelectContact(
+              selectedContact: state,
+              customer: customer,
+              onSelected: (contact) => setState(() {
+                    setState(() {
+                      June.getState(SelectedContact.new).contactId =
+                          contact?.id;
+                    });
+                  })));
 
   JuneBuilder<SelectedSite> _chooseSite(Customer? customer, Job? job) =>
       JuneBuilder(() => SelectedSite()..siteId = job?.siteId,
-          builder: (state) =>
-              HMBSelectSite(initialSite: state, customer: customer));
+          builder: (state) => HMBSelectSite(
+              initialSite: state,
+              customer: customer,
+              onSelected: (site) => setState(() {
+                    setState(() {
+                      June.getState(SelectedSite.new).siteId = site?.id;
+                    });
+                  })));
 
   Widget _chooseCustomer() => SelectCustomer(
         selectedCustomer: June.getState(SelectedCustomer.new),
