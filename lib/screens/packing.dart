@@ -129,7 +129,7 @@ class _PackingScreenState extends State<PackingScreen> {
   Center _showEmpty() => const Center(child: Text('''
 No Packing Items found 
 - Packing items are taken from Task Check list items 
-that are marked as "buy".'''));
+that are marked as "Materials - stock" or "Tools - own".'''));
 
   Widget _buildListItem(BuildContext context, CheckListItem item) => Card(
         margin: const EdgeInsets.symmetric(vertical: 8),

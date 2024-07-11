@@ -92,7 +92,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
         body: FutureBuilderEx<List<CheckListItem>>(
           future: _checkListItemsFuture,
           builder: (context, _checkListItems) {
-            if (_checkListItems == null) {
+            if (_checkListItems == null || _checkListItems.isEmpty) {
               return const Center(child: Text('''
 No Shopping Items found 
 - shopping items are taken from Task Check list items 
