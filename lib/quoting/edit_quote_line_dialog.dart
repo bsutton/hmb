@@ -77,11 +77,14 @@ class _EditQuoteLineDialogState extends State<EditQuoteLineDialog> {
           TextButton(
             child: const Text('Save'),
             onPressed: () {
+              final quantity = Fixed.parse(_quantityController.text);
+              final unitPrice =
+                  Money.parse(_unitPriceController.text, isoCode: 'AUD');
               final updatedLine = widget.line.copyWith(
                 description: _descriptionController.text,
-                quantity: Fixed.parse(_quantityController.text),
-                unitPrice:
-                    Money.parse(_unitPriceController.text, isoCode: 'AUD'),
+                quantity: quantity,
+                unitPrice: unitPrice,
+                lineTotal: unitPrice.multiplyByFixed(quantity),
                 status: _status,
               );
               Navigator.of(context).pop(updatedLine);
