@@ -36,7 +36,7 @@ class QuoteListScreen extends StatefulWidget {
 
 class _QuoteListScreenState extends State<QuoteListScreen> {
   late Future<List<Quote>> _quotes;
-  late Future<bool> _hasUnbilledItems;
+  late Future<bool> _hasQuoteableItems;
 
   @override
   void initState() {
@@ -44,7 +44,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     // ignore: discarded_futures
     _quotes = DaoQuote().getByJobId(widget.job.id);
     // ignore: discarded_futures
-    _hasUnbilledItems = DaoJob().hasQuoteableItems(widget.job);
+    _hasQuoteableItems = DaoJob().hasQuoteableItems(widget.job);
   }
 
   Future<void> _createQuote() async {
@@ -54,8 +54,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     }
 
     if (mounted) {
-      final selectedTasks =
-          await DialogTaskSelection.show(
+      final selectedTasks = await DialogTaskSelection.show(
           context: context, job: widget.job, includeEstimatedTasks: true);
 
       if (selectedTasks.isNotEmpty) {
@@ -73,7 +72,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
 
   Future<void> _refresh() async {
     _quotes = DaoQuote().getByJobId(widget.job.id);
-    _hasUnbilledItems = DaoJob().hasBillableTasks(widget.job);
+    _hasQuoteableItems = DaoJob().hasQuoteableItems(widget.job);
     setState(() {});
   }
 
@@ -224,7 +223,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
   }
 
   FutureBuilderEx<bool> _buildCreateQuoteButton() => FutureBuilderEx<bool>(
-        future: _hasUnbilledItems,
+        future: _hasQuoteableItems,
         builder: (context, hasUnbilledItems) => HMBOneOf(
             condition: hasUnbilledItems!,
             onTrue: Padding(
