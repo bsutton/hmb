@@ -53,6 +53,11 @@ class DaoInvoice extends Dao<Invoice> {
     return super.delete(id);
   }
 
+  Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
+    await getDb(transaction)
+        .delete(tableName, where: 'job_id =?', whereArgs: [jobId]);
+  }
+
   /// Create an invoice for the given job.
   Future<Invoice> create(Job job, List<int> selectedTaskIds) async {
     final tasks = await DaoTask().getTasksByJob(job);

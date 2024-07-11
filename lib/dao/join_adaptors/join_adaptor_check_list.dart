@@ -10,7 +10,7 @@ import 'dao_join_adaptor.dart';
 class JoinAdaptorTaskCheckList implements DaoJoinAdaptor<CheckList, Task> {
   @override
   Future<void> deleteFromParent(CheckList checklist, Task task) async {
-    await DaoCheckListTask().deleteJoin(task, checklist);
+    await DaoCheckListTask().deleteJoin(task.id, checklist);
     await DaoCheckListItem().deleteByChecklist(checklist);
     await DaoCheckList().delete(checklist.id);
   }

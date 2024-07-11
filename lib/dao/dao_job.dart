@@ -10,6 +10,8 @@ import '../util/fixed_ex.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_checklist_item.dart';
+import 'dao_invoice.dart';
+import 'dao_quote.dart';
 import 'dao_task.dart';
 import 'dao_task_status.dart';
 import 'dao_time_entry.dart';
@@ -19,12 +21,9 @@ class DaoJob extends Dao<Job> {
   Future<int> delete(int id, [Transaction? transaction]) async {
     final db = getDb(transaction);
 
-    // Delete tasks associated with the job
-    await db.delete(
-      'task',
-      where: 'jobId = ?',
-      whereArgs: [id],
-    );
+    await DaoTask().deleteByJob(id, transaction: transaction);
+    await DaoInvoice().deleteByJob(id, transaction: transaction);
+    await DaoQuote().deleteByJob(id, transaction: transaction);
 
     // Delete the job itself
     return db.delete(

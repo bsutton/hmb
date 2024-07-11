@@ -5,6 +5,7 @@ import '../entity/check_list.dart';
 import '../entity/task.dart';
 import 'dao.dart';
 import 'dao_check_list_task.dart';
+import 'dao_checklist_item.dart';
 
 class DaoCheckList extends Dao<CheckList> {
   Future<void> createTable(Database db, int version) async {}
@@ -15,8 +16,8 @@ class DaoCheckList extends Dao<CheckList> {
   @override
   String get tableName => 'check_list';
 
-  Future<CheckList?> getByTask(int? taskId) async {
-    final db = getDb();
+  Future<CheckList?> getByTask(int? taskId, [Transaction? transaction]) async {
+    final db = getDb(transaction);
 
     if (taskId == null) {
       return null;
@@ -41,8 +42,13 @@ where jo.id =?
     return list.first;
   }
 
-  Future<void> deleteFromTask(CheckList checklist, Task task) async {
-    await DaoCheckListTask().deleteJoin(task, checklist);
+  Future<void> deleteByTask(int? taskId, [Transaction? transaction]) async {
+    final checklist = await getByTask(taskId,  transaction);
+    if (checklist == null) {
+      return;
+    }
+    await DaoCheckListTask().deleteJoin(taskId, checklist);
+    await DaoCheckListItem().deleteByChecklist(checklist);
     await delete(checklist.id);
   }
 

@@ -14,12 +14,12 @@ class DaoCheckListTask extends Dao<CheckList> {
   @override
   String get tableName => 'task_check_list';
 
-  Future<void> deleteJoin(Task task, CheckList checklist,
+  Future<void> deleteJoin(int? taskId, CheckList checklist,
       [Transaction? transaction]) async {
     await getDb(transaction).delete(
       tableName,
       where: 'task_id = ? and check_list_id = ?',
-      whereArgs: [task.id, checklist.id],
+      whereArgs: [taskId, checklist.id],
     );
   }
 

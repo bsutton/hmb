@@ -1,5 +1,6 @@
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/check_list_item.dart';
 import '../entity/job.dart';
@@ -7,6 +8,7 @@ import '../entity/task.dart';
 import '../util/fixed_ex.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
+import 'dao_checklist.dart';
 import 'dao_task_status.dart';
 import 'dao_time_entry.dart';
 
@@ -81,6 +83,19 @@ where cli.id =?
 
   @override
   JuneStateCreator get juneRefresher => TaskState.new;
+
+  Future<void> deleteByJob(int id, {Transaction? transaction}) async {
+    final db = getDb();
+
+    await DaoTimeEntry().deleteByTask(id,  transaction);
+    await DaoCheckList().deleteByTask(id,  transaction);
+    // Delete tasks associated with the job
+    await db.delete(
+      'task',
+      where: 'jobId = ?',
+      whereArgs: [id],
+    );
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

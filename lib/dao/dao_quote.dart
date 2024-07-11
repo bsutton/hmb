@@ -46,6 +46,14 @@ class DaoQuote extends Dao<Quote> {
     return super.delete(id);
   }
 
+  Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
+    final invoices = await getByJobId(jobId, transaction);
+
+    for (final invoice in invoices) {
+      await delete(invoice.id);
+    }
+  }
+
   /// Create a quote for the given job.
   Future<Quote> create(Job job, List<int> selectedTaskIds) async {
     final tasks = await DaoTask().getTasksByJob(job);

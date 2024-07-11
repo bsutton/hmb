@@ -1,4 +1,5 @@
 import 'package:june/june.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/time_entry.dart';
 import 'dao.dart';
@@ -60,6 +61,15 @@ class DaoTimeEntry extends Dao<TimeEntry> {
     final results = await db.query(tableName,
         where: 'invoice_line_id = ?', whereArgs: [invoiceLineId]);
     return results.map(TimeEntry.fromMap).toList();
+  }
+
+  Future<void> deleteByTask(int id, [Transaction? transaction]) async {
+    final db = getDb(transaction);
+    await db.delete(
+      tableName,
+      where: 'task_id =?',
+      whereArgs: [id],
+    );
   }
 }
 
