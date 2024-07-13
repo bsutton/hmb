@@ -74,7 +74,6 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   @override
   void initState() {
     super.initState();
-    // ignore: discarded_futures
     // entities = _fetchList();
   }
 
@@ -113,7 +112,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
                   initialValue: cardDetail == CardDetail.full,
                   onChanged: (on) {
                     setState(() {
-                      cardDetail = on ? CardDetail.summary : CardDetail.full;
+                      cardDetail = on ? CardDetail.full : CardDetail.summary;
                     });
                   },
                 )
@@ -122,7 +121,6 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
                 widget.filterBar!(widget.parent.parent!),
             ],
           ),
-
           actions: [
             HMBButtonAdd(
               enabled: widget.parent.parent != null,
