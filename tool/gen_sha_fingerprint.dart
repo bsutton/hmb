@@ -15,7 +15,10 @@ void main() {
   'keytool -list -v -keystore $keyStorePath -alias $keyStoreAlias'.run;
 
   print(orange('Generating debug sha256 key'));
-  'keytool -list -v -keystore $keyStorePathForDebug -alias $keyStoreAliasForDebug'.run;
+  'keytool -list -v -keystore $keyStorePathForDebug '
+          '-alias $keyStoreAliasForDebug'
+      .run;
 
-  print(green('Check that the ihserver/www_root/.well-known/assetlinks.json file has both of this signatures'));
+  print(green(
+      'Check that the ihserver/www_root/.well-known/assetlinks.json file has both of this signatures'));
 }
