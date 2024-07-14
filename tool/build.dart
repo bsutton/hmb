@@ -8,6 +8,10 @@ import 'package:dcli/dcli.dart';
 import 'package:hmb/database/management/db_utility.dart';
 import 'package:path/path.dart' as path;
 import 'package:path/path.dart';
+import 'package:pub_release/pub_release.dart';
+import 'package:pubspec_manager/pubspec_manager.dart' as pm;
+
+import 'lib/local_properties.dart';
 
 void main(List<String> args) {
   final parser = ArgParser()
@@ -79,7 +83,19 @@ void buildApk() {
 void buildAppBundle() {
 // TODO(bsutton): the rich text editor includes random icons
 // so tree shaking of icons isn't possible. Can we fix this?
-  'flutter build appbundle --release --no-tree-shake-icons'.run;
+  final pathToPubSpec = DartProject.self.pathToPubSpec;
+  final currentVersion = version(pubspecPath: pathToPubSpec)!;
+  final newVersion = askForVersion(currentVersion);
+  updateVersion(newVersion, pm.PubSpec.load(), pathToPubSpec);
+  join(DartProject.self.pathToProjectRoot, 'lib', 'version', 'version.dart')
+      .write('''
+/// generated
+String hmbVersion = '$newVersion';
+''');
+
+  updateAndroidVersion(newVersion);
+
+  'flutter.bat build appbundle --release --no-tree-shake-icons'.start();
 }
 
 void updateAssetList() {
