@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:country_code/country_code.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -26,6 +27,9 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
   late TextEditingController _webUrlController;
   late TextEditingController _termsUrlController;
 
+  late String _selectedCountryCode;
+  late List<CountryCode> _countryCodes;
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +46,8 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
         TextEditingController(text: system.businessNumberLabel);
     _webUrlController = TextEditingController(text: system.webUrl);
     _termsUrlController = TextEditingController(text: system.termsUrl);
+    _countryCodes = CountryCode.values;
+    _selectedCountryCode = system.countryCode ?? 'AU';
   }
 
   @override
@@ -62,7 +68,8 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
         ..businessNumber = _businessNumberController.text
         ..businessNumberLabel = _businessNumberLabelController.text
         ..webUrl = _webUrlController.text
-        ..termsUrl = _termsUrlController.text;
+        ..termsUrl = _termsUrlController.text
+        ..countryCode = _selectedCountryCode;
 
       await DaoSystem().update(system);
       widget.onNext();
@@ -101,6 +108,29 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
                         HMBTextField(
                           controller: _businessNumberLabelController,
                           labelText: 'Business Number Label',
+                        ),
+                        DropdownButtonFormField<String>(
+                          value: _selectedCountryCode,
+                          decoration:
+                              const InputDecoration(labelText: 'Country Code'),
+                          items: _countryCodes
+                              .map((country) => DropdownMenuItem<String>(
+                                    value: country.alpha2,
+                                    child: Text(
+                                        '''${country.countryName} (${country.alpha2})'''),
+                                  ))
+                              .toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedCountryCode = newValue!;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select a country code';
+                            }
+                            return null;
+                          },
                         ),
                         HMBTextField(
                           controller: _webUrlController,

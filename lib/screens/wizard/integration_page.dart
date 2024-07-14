@@ -1,4 +1,3 @@
-import 'package:country_code/country_code.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -22,13 +21,10 @@ class _WizardIntegrationPageState extends State<WizardIntegrationPage> {
 
   late TextEditingController _xeroClientIdController;
   late TextEditingController _xeroClientSecretController;
-  late String _selectedCountryCode;
-  late List<CountryCode> _countryCodes;
 
   @override
   void initState() {
     super.initState();
-    _countryCodes = CountryCode.values;
   }
 
   Future<void> _initialize() async {
@@ -36,7 +32,6 @@ class _WizardIntegrationPageState extends State<WizardIntegrationPage> {
     _xeroClientIdController = TextEditingController(text: system.xeroClientId);
     _xeroClientSecretController =
         TextEditingController(text: system.xeroClientSecret);
-    _selectedCountryCode = system.countryCode ?? 'US';
   }
 
   @override
@@ -51,8 +46,7 @@ class _WizardIntegrationPageState extends State<WizardIntegrationPage> {
       // Save the form data
       system
         ..xeroClientId = _xeroClientIdController.text
-        ..xeroClientSecret = _xeroClientSecretController.text
-        ..countryCode = _selectedCountryCode;
+        ..xeroClientSecret = _xeroClientSecretController.text;
 
       await DaoSystem().update(system);
       widget.onNext();
@@ -92,29 +86,6 @@ package and you need a Xero developer account.''',
                           controller: _xeroClientSecretController,
                           labelText: 'Xero Client Secret',
                           keyboardType: TextInputType.number,
-                        ),
-                        DropdownButtonFormField<String>(
-                          value: _selectedCountryCode,
-                          decoration:
-                              const InputDecoration(labelText: 'Country Code'),
-                          items: _countryCodes
-                              .map((country) => DropdownMenuItem<String>(
-                                    value: country.alpha2,
-                                    child: Text(
-                                        '''${country.countryName} (${country.alpha2})'''),
-                                  ))
-                              .toList(),
-                          onChanged: (newValue) {
-                            setState(() {
-                              _selectedCountryCode = newValue!;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select a country code';
-                            }
-                            return null;
-                          },
                         ),
                         const SizedBox(height: 16),
                         Row(

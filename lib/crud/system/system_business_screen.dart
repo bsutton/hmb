@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:country_code/country_code.dart';
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao_system.dart';
+import '../../entity/system.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -16,6 +19,9 @@ class SystemBusinessScreen extends StatefulWidget {
 
 class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
   final _formKey = GlobalKey<FormState>();
+  late final System system;
+  late String _selectedCountryCode;
+  late List<CountryCode> _countryCodes;
 
   late TextEditingController _businessNameController;
   late TextEditingController _businessNumberController;
@@ -23,24 +29,24 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
   late TextEditingController _webUrlController;
   late TextEditingController _termsUrlController;
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeControllers();
-  }
+  bool initialised = false;
+  Future<void> _initialize() async {
+    if (initialised) {
+      return;
+    }
+    initialised = true;
+    system = (await DaoSystem().get())!;
+    // ignore: discarded_futures
+    _countryCodes = CountryCode.values;
+    _selectedCountryCode = system.countryCode ?? 'AU';
 
-  void _initializeControllers() {
-    unawaited(DaoSystem().get().then((system) {
-      _businessNameController =
-          TextEditingController(text: system!.businessName);
-      _businessNumberController =
-          TextEditingController(text: system.businessNumber);
-      _businessNumberLabelController =
-          TextEditingController(text: system.businessNumberLabel);
-      _webUrlController = TextEditingController(text: system.webUrl);
-      _termsUrlController = TextEditingController(text: system.termsUrl);
-      setState(() {});
-    }));
+    _businessNameController = TextEditingController(text: system.businessName);
+    _businessNumberController =
+        TextEditingController(text: system.businessNumber);
+    _businessNumberLabelController =
+        TextEditingController(text: system.businessNumberLabel);
+    _webUrlController = TextEditingController(text: system.webUrl);
+    _termsUrlController = TextEditingController(text: system.termsUrl);
   }
 
   @override
@@ -62,7 +68,8 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
         ..businessNumber = _businessNumberController.text
         ..businessNumberLabel = _businessNumberLabelController.text
         ..webUrl = _webUrlController.text
-        ..termsUrl = _termsUrlController.text;
+        ..termsUrl = _termsUrlController.text
+        ..countryCode = _selectedCountryCode;
 
       await DaoSystem().update(system);
 
@@ -88,33 +95,59 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
         ),
         body: Padding(
           padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                HMBTextField(
-                  controller: _businessNameController,
-                  labelText: 'Business Name',
-                ),
-                HMBTextField(
-                  controller: _businessNumberController,
-                  labelText: 'Business Number',
-                ),
-                HMBTextField(
-                  controller: _businessNumberLabelController,
-                  labelText: 'Business Number Label',
-                ),
-                HMBTextField(
-                  controller: _webUrlController,
-                  labelText: 'Web URL',
-                ),
-                HMBTextField(
-                  controller: _termsUrlController,
-                  labelText: 'Terms URL',
-                ),
-              ],
-            ),
-          ),
+          child: FutureBuilderEx(
+              // ignore: discarded_futures
+              future: _initialize(),
+              builder: (context, _) => Form(
+                    key: _formKey,
+                    child: ListView(
+                      children: [
+                        HMBTextField(
+                          controller: _businessNameController,
+                          labelText: 'Business Name',
+                        ),
+                        HMBTextField(
+                          controller: _businessNumberController,
+                          labelText: 'Business Number',
+                        ),
+                        HMBTextField(
+                          controller: _businessNumberLabelController,
+                          labelText: 'Business Number Label',
+                        ),
+                        DropdownButtonFormField<String>(
+                          value: _selectedCountryCode,
+                          decoration:
+                              const InputDecoration(labelText: 'Country Code'),
+                          items: _countryCodes
+                              .map((country) => DropdownMenuItem<String>(
+                                    value: country.alpha2,
+                                    child: Text(
+                                        '''${country.countryName} (${country.alpha2})'''),
+                                  ))
+                              .toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedCountryCode = newValue!;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select a country code';
+                            }
+                            return null;
+                          },
+                        ),
+                        HMBTextField(
+                          controller: _webUrlController,
+                          labelText: 'Web URL',
+                        ),
+                        HMBTextField(
+                          controller: _termsUrlController,
+                          labelText: 'Terms URL',
+                        ),
+                      ],
+                    ),
+                  )),
         ),
       );
 }

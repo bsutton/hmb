@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:country_code/country_code.dart';
 import 'package:flutter/material.dart';
 
 import '../../dao/dao_system.dart';
@@ -21,15 +20,11 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
 
   late TextEditingController _xeroClientIdController;
   late TextEditingController _xeroClientSecretController;
-  late String _selectedCountryCode;
-  late List<CountryCode> _countryCodes;
 
   @override
   void initState() {
     super.initState();
     _initializeControllers();
-    // ignore: discarded_futures
-    _countryCodes = CountryCode.values;
   }
 
   void _initializeControllers() {
@@ -38,7 +33,7 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
           TextEditingController(text: system!.xeroClientId);
       _xeroClientSecretController =
           TextEditingController(text: system.xeroClientSecret);
-      _selectedCountryCode = system.countryCode ?? 'AU';
+
       setState(() {});
     }));
   }
@@ -55,9 +50,7 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
       final system = await DaoSystem().get();
       // Save the form data
       system!.xeroClientId = _xeroClientIdController.text;
-      system
-        ..xeroClientSecret = _xeroClientSecretController.text
-        ..countryCode = _selectedCountryCode;
+      system.xeroClientSecret = _xeroClientSecretController.text;
 
       await DaoSystem().update(system);
 
@@ -96,28 +89,6 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
                   controller: _xeroClientSecretController,
                   labelText: 'Xero Client Secret',
                   keyboardType: TextInputType.number,
-                ),
-                DropdownButtonFormField<String>(
-                  value: _selectedCountryCode,
-                  decoration: const InputDecoration(labelText: 'Country Code'),
-                  items: _countryCodes
-                      .map((country) => DropdownMenuItem<String>(
-                            value: country.alpha2,
-                            child: Text(
-                                '${country.countryName} (${country.alpha2})'),
-                          ))
-                      .toList(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      _selectedCountryCode = newValue!;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select a country code';
-                    }
-                    return null;
-                  },
                 ),
               ],
             ),
