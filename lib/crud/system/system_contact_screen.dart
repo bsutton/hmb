@@ -1,8 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:mobile_number/mobile_number.dart';
 
 import '../../dao/dao_system.dart';
+import '../../entity/system.dart';
+import '../../util/platform_ex.dart';
+import '../../util/sim_cards.dart';
+import '../../widgets/hmb_droplist.dart';
+import '../../widgets/hmb_email_field.dart';
 import '../../widgets/hmb_phone_field.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
@@ -28,29 +35,26 @@ class _SystemContactInformationScreenState
   late TextEditingController _mobileNumberController;
   late TextEditingController _landLineController;
   late TextEditingController _officeNumberController;
+  late TextEditingController _fromEmailController;
+  late TextEditingController _emailAddressController;
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeControllers();
-  }
+  late final System system;
 
-  void _initializeControllers() {
-    unawaited(DaoSystem().get().then((system) {
-      _addressLine1Controller =
-          TextEditingController(text: system!.addressLine1);
-      _addressLine2Controller =
-          TextEditingController(text: system.addressLine2);
-      _suburbController = TextEditingController(text: system.suburb);
-      _stateController = TextEditingController(text: system.state);
-      _postcodeController = TextEditingController(text: system.postcode);
-      _mobileNumberController =
-          TextEditingController(text: system.mobileNumber);
-      _landLineController = TextEditingController(text: system.landLine);
-      _officeNumberController =
-          TextEditingController(text: system.officeNumber);
-      setState(() {});
-    }));
+  Future<void> _initialize() async {
+    system = (await DaoSystem().get())!;
+
+    _addressLine1Controller = TextEditingController(text: system.addressLine1);
+    _addressLine2Controller = TextEditingController(text: system.addressLine2);
+    _suburbController = TextEditingController(text: system.suburb);
+    _stateController = TextEditingController(text: system.state);
+    _postcodeController = TextEditingController(text: system.postcode);
+    _mobileNumberController = TextEditingController(text: system.mobileNumber);
+    _landLineController = TextEditingController(text: system.landLine);
+    _officeNumberController = TextEditingController(text: system.officeNumber);
+
+    
+    _fromEmailController = TextEditingController(text: system.fromEmail);
+    _emailAddressController = TextEditingController(text: system.emailAddress);
   }
 
   @override
@@ -63,6 +67,8 @@ class _SystemContactInformationScreenState
     _mobileNumberController.dispose();
     _landLineController.dispose();
     _officeNumberController.dispose();
+    _fromEmailController.dispose();
+    _emailAddressController.dispose();
     super.dispose();
   }
 
@@ -78,7 +84,9 @@ class _SystemContactInformationScreenState
         ..postcode = _postcodeController.text
         ..mobileNumber = _mobileNumberController.text
         ..landLine = _landLineController.text
-        ..officeNumber = _officeNumberController.text;
+        ..officeNumber = _officeNumberController.text
+        ..fromEmail = _fromEmailController.text
+        ..emailAddress = _emailAddressController.text;
 
       await DaoSystem().update(system);
 
@@ -104,44 +112,88 @@ class _SystemContactInformationScreenState
         ),
         body: Padding(
           padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                HMBPhoneField(
-                    controller: _mobileNumberController,
-                    labelText: 'Mobile Number'),
-                HMBPhoneField(
-                    controller: _landLineController, labelText: 'Land Line'),
-                HMBPhoneField(
-                    controller: _officeNumberController,
-                    labelText: 'Office Number'),
-                HMBTextField(
-                  controller: _addressLine1Controller,
-                  labelText: 'Address Line 1',
-                  keyboardType: TextInputType.streetAddress,
+          child: FutureBuilderEx(
+              // ignore: discarded_futures
+              future: _initialize(),
+              builder: (context, _) => Form(
+                    key: _formKey,
+                    child: ListView(
+                      children: [
+                        HMBPhoneField(
+                            controller: _mobileNumberController,
+                            labelText: 'Mobile Number'),
+                        HMBPhoneField(
+                            controller: _landLineController,
+                            labelText: 'Land Line'),
+                        HMBPhoneField(
+                            controller: _officeNumberController,
+                            labelText: 'Office Number'),
+                        HMBEmailField(
+                          autofocus: isNotMobile,
+                          controller: _fromEmailController,
+                          labelText: 'From Email',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a from email';
+                            }
+                            return null;
+                          },
+                        ),
+                        HMBEmailField(
+                            controller: _emailAddressController,
+                            required: true,
+                            labelText: 'Notice/Backup Email Address'),
+                        HMBTextField(
+                          controller: _addressLine1Controller,
+                          labelText: 'Address Line 1',
+                          keyboardType: TextInputType.streetAddress,
+                        ),
+                        HMBTextField(
+                            controller: _addressLine2Controller,
+                            labelText: 'Address Line 2',
+                            keyboardType: TextInputType.streetAddress),
+                        HMBTextField(
+                          controller: _suburbController,
+                          labelText: 'Suburb',
+                          keyboardType: TextInputType.name,
+                        ),
+                        HMBTextField(
+                          controller: _stateController,
+                          labelText: 'State',
+                          keyboardType: TextInputType.name,
+                        ),
+                        HMBTextField(
+                            controller: _postcodeController,
+                            labelText: 'Post/Zip code',
+                            keyboardType: TextInputType.number),
+                       FutureBuilderEx(
+                  // ignore: discarded_futures
+                  future: getSimCards(),
+                  builder: (context, cards) {
+                    if (cards == null || cards.isEmpty) {
+                      return const Text('No sim cards found');
+                    } else {
+                      return HMBDroplist<SimCard>(
+                        title: 'Sim Card',
+                        initialItem: () async {
+                          final cards = await getSimCards();
+                          if (cards.isNotEmpty) {
+                            return cards[system.simCardNo ?? 0];
+                          } else {
+                            return null;
+                          }
+                        },
+                        items: (filter) async => getSimCards(),
+                        format: (card) => card.displayName ?? 'Unnamed',
+                        onChanged: (card) =>
+                            system.simCardNo = card.slotIndex,
+                      );
+                    }
+                  },
                 ),
-                HMBTextField(
-                    controller: _addressLine2Controller,
-                    labelText: 'Address Line 2',
-                    keyboardType: TextInputType.streetAddress),
-                HMBTextField(
-                  controller: _suburbController,
-                  labelText: 'Suburb',
-                  keyboardType: TextInputType.name,
-                ),
-                HMBTextField(
-                  controller: _stateController,
-                  labelText: 'State',
-                  keyboardType: TextInputType.name,
-                ),
-                HMBTextField(
-                    controller: _postcodeController,
-                    labelText: 'Post/Zip code',
-                    keyboardType: TextInputType.number),
-              ],
-            ),
-          ),
+                      ],
+                    ),
+                  )),
         ),
       );
 }

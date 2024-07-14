@@ -1,8 +1,14 @@
+import 'package:country_code/country_code.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:mobile_number/mobile_number.dart';
 
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
+import '../../util/platform_ex.dart';
+import '../../util/sim_cards.dart';
+import '../../widgets/hmb_droplist.dart';
+import '../../widgets/hmb_email_field.dart';
 import '../../widgets/hmb_phone_field.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
@@ -28,11 +34,11 @@ class _WizardContactPageState extends State<WizardContactPage> {
   late TextEditingController _mobileNumberController;
   late TextEditingController _landLineController;
   late TextEditingController _officeNumberController;
+  late TextEditingController _fromEmailController;
+  late TextEditingController _emailAddressController;
 
-  @override
-  void initState() {
-    super.initState();
-  }
+  late String _selectedCountryCode;
+  late List<CountryCode> _countryCodes;
 
   Future<void> _initialize() async {
     system = (await DaoSystem().get())!;
@@ -44,6 +50,11 @@ class _WizardContactPageState extends State<WizardContactPage> {
     _mobileNumberController = TextEditingController(text: system.mobileNumber);
     _landLineController = TextEditingController(text: system.landLine);
     _officeNumberController = TextEditingController(text: system.officeNumber);
+
+    _selectedCountryCode = system.countryCode ?? 'AU';
+    _countryCodes = CountryCode.values;
+    _fromEmailController = TextEditingController(text: system.fromEmail);
+    _emailAddressController = TextEditingController(text: system.emailAddress);
   }
 
   @override
@@ -56,6 +67,8 @@ class _WizardContactPageState extends State<WizardContactPage> {
     _mobileNumberController.dispose();
     _landLineController.dispose();
     _officeNumberController.dispose();
+    _fromEmailController.dispose();
+    _emailAddressController.dispose();
     super.dispose();
   }
 
@@ -70,7 +83,10 @@ class _WizardContactPageState extends State<WizardContactPage> {
         ..postcode = _postcodeController.text
         ..mobileNumber = _mobileNumberController.text
         ..landLine = _landLineController.text
-        ..officeNumber = _officeNumberController.text;
+        ..officeNumber = _officeNumberController.text
+        ..countryCode = _selectedCountryCode
+        ..fromEmail = _fromEmailController.text
+        ..emailAddress = _emailAddressController.text;
 
       await DaoSystem().update(system);
       widget.onNext();
@@ -97,6 +113,21 @@ class _WizardContactPageState extends State<WizardContactPage> {
                         const Text(
                           '''This screen collects contact information, including your address and phone numbers. This data is used for communication and correspondence.''',
                         ),
+                        HMBEmailField(
+                          autofocus: isNotMobile,
+                          controller: _fromEmailController,
+                          labelText: 'From Email',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a from email';
+                            }
+                            return null;
+                          },
+                        ),
+                        HMBEmailField(
+                            controller: _emailAddressController,
+                            required: true,
+                            labelText: 'Notice/Backup Email Address'),
                         HMBPhoneField(
                             controller: _mobileNumberController,
                             labelText: 'Mobile Number'),
@@ -130,6 +161,54 @@ class _WizardContactPageState extends State<WizardContactPage> {
                             controller: _postcodeController,
                             labelText: 'Post/Zip code',
                             keyboardType: TextInputType.number),
+                        DropdownButtonFormField<String>(
+                          value: _selectedCountryCode,
+                          decoration:
+                              const InputDecoration(labelText: 'Country Code'),
+                          items: _countryCodes
+                              .map((country) => DropdownMenuItem<String>(
+                                    value: country.alpha2,
+                                    child: Text(
+                                        '''${country.countryName} (${country.alpha2})'''),
+                                  ))
+                              .toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedCountryCode = newValue!;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select a country code';
+                            }
+                            return null;
+                          },
+                        ),
+                        FutureBuilderEx(
+                          // ignore: discarded_futures
+                          future: getSimCards(),
+                          builder: (context, cards) {
+                            if (cards == null || cards.isEmpty) {
+                              return const Text('No sim cards found');
+                            } else {
+                              return HMBDroplist<SimCard>(
+                                title: 'Sim Card',
+                                initialItem: () async {
+                                  final cards = await getSimCards();
+                                  if (cards.isNotEmpty) {
+                                    return cards[system.simCardNo ?? 0];
+                                  } else {
+                                    return null;
+                                  }
+                                },
+                                items: (filter) async => getSimCards(),
+                                format: (card) => card.displayName ?? 'Unnamed',
+                                onChanged: (card) =>
+                                    system.simCardNo = card.slotIndex,
+                              );
+                            }
+                          },
+                        ),
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
