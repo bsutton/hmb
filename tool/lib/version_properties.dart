@@ -24,7 +24,7 @@ void updateAndroidVersion(Version version) {
   // Save the updated properties back to the file
   _saveProperties(filePath, properties);
 
-  print('Updated flutter.versionCode to $versionCode');
+  print(green('Updated flutter.versionCode to $versionCode'));
 }
 
 Map<String, String> _loadProperties(String filePath) {
