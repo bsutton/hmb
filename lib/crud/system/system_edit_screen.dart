@@ -94,7 +94,7 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
         TextEditingController(text: widget.system.xeroClientId);
     _xeroClientSecretController =
         TextEditingController(text: widget.system.xeroClientSecret);
-    _selectedCountryCode = widget.system.countryCode ?? 'US';
+    _selectedCountryCode = widget.system.countryCode ?? 'AU';
   }
 
   @override

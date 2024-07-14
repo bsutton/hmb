@@ -4,7 +4,6 @@ import 'package:dcli_core/dcli_core.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
 import 'package:path/path.dart';
@@ -14,21 +13,26 @@ import 'package:toastification/toastification.dart';
 import 'crud/customer/customer_list_screen.dart';
 import 'crud/job/job_list_screen.dart';
 import 'crud/supplier/supplier_list_screen.dart';
-import 'crud/system/system_edit_screen.dart';
-import 'dao/dao_system.dart';
+import 'crud/system/system_billing_screen.dart';
+import 'crud/system/system_business_screen.dart';
+import 'crud/system/system_contact_screen.dart';
+import 'crud/system/system_integration_screen.dart';
 import 'dao/dao_task.dart';
 import 'dao/dao_time_entry.dart';
 import 'database/management/backup_providers/email/screen.dart';
 import 'database/management/database_helper.dart';
 import 'firebase_options.dart';
 import 'installer/linux/install.dart' if (kIsWeb) 'util/web_stub.dart';
+import 'screens/about.dart';
 import 'screens/error.dart';
 import 'screens/packing.dart';
 import 'screens/shopping.dart';
+import 'screens/wizard/wizard.dart';
 import 'widgets/blocking_ui.dart';
 import 'widgets/hmb_start_time_entry.dart';
 import 'widgets/hmb_status_bar.dart';
 
+bool firstRun = false;
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   if (args.isNotEmpty) {
@@ -91,6 +95,10 @@ GoRouter get _router => GoRouter(
       routes: [
         GoRoute(
           path: '/',
+          // ignore: prefer_expression_function_bodies
+          redirect: (context, state) {
+            return firstRun ? '/system/wizard' : null;
+          },
           builder: (_, __) =>
               const HomeWithDrawer(initialScreen: JobListScreen()),
           routes: [
@@ -133,19 +141,39 @@ GoRouter get _router => GoRouter(
                   const HomeWithDrawer(initialScreen: PackingScreen()),
             ),
             GoRoute(
-              path: 'system',
-              builder: (_, __) => FutureBuilderEx(
-                // ignore: discarded_futures
-                future: DaoSystem().getById(1),
-                builder: (context, system) => HomeWithDrawer(
-                  initialScreen: SystemEditScreen(system: system!),
-                ),
-              ),
+              path: 'system/business',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: SystemBusinessScreen()),
             ),
             GoRoute(
-              path: 'backup',
+              path: 'system/billing',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: SystemBillingScreen()),
+            ),
+            GoRoute(
+              path: 'system/contact',
+              builder: (_, __) => const HomeWithDrawer(
+                  initialScreen: SystemContactInformationScreen()),
+            ),
+            GoRoute(
+              path: 'system/integration',
+              builder: (_, __) => const HomeWithDrawer(
+                  initialScreen: SystemIntegrationScreen()),
+            ),
+            GoRoute(
+              path: 'system/about',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: AboutScreen()),
+            ),
+            GoRoute(
+              path: 'system/backup',
               builder: (_, __) => const HomeWithDrawer(
                   initialScreen: BackupScreen(pathToBackup: '')),
+            ),
+            GoRoute(
+              path: 'system/wizard',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: FirstRunWizard()),
             ),
           ],
         ),
@@ -153,9 +181,10 @@ GoRouter get _router => GoRouter(
     );
 
 class DrawerItem {
-  DrawerItem({required this.title, required this.route});
+  DrawerItem({required this.title, required this.route, this.children});
   final String title;
   final String route;
+  final List<DrawerItem>? children;
 }
 
 class MyDrawer extends StatelessWidget {
@@ -167,21 +196,48 @@ class MyDrawer extends StatelessWidget {
     DrawerItem(title: 'Suppliers', route: '/suppliers'),
     DrawerItem(title: 'Shopping', route: '/shopping'),
     DrawerItem(title: 'Packing', route: '/packing'),
-    DrawerItem(title: 'System', route: '/system'),
-    DrawerItem(title: 'Backup', route: '/backup'),
+    DrawerItem(
+      title: 'System',
+      route: '',
+      children: [
+        DrawerItem(title: 'Business', route: '/system/business'),
+        DrawerItem(title: 'Billing', route: '/system/billing'),
+        DrawerItem(title: 'Contact', route: '/system/contact'),
+        DrawerItem(title: 'Integration', route: '/system/integration'),
+        DrawerItem(title: 'Setup Wizard', route: '/system/wizard'),
+        DrawerItem(title: 'About', route: '/system/about'),
+        DrawerItem(title: 'Backup', route: '/system/backup'),
+      ],
+    ),
   ];
 
   @override
   Widget build(BuildContext context) => Drawer(
         child: ListView.builder(
           itemCount: drawerItems.length,
-          itemBuilder: (context, index) => ListTile(
-            title: Text(drawerItems[index].title),
-            onTap: () {
-              Navigator.pop(context); // Close the drawer
-              context.go(drawerItems[index].route);
-            },
-          ),
+          itemBuilder: (context, index) {
+            final item = drawerItems[index];
+            return item.children != null
+                ? ExpansionTile(
+                    title: Text(item.title),
+                    children: item.children!
+                        .map((child) => ListTile(
+                              title: Text(child.title),
+                              onTap: () {
+                                Navigator.pop(context); // Close the drawer
+                                context.go(child.route);
+                              },
+                            ))
+                        .toList(),
+                  )
+                : ListTile(
+                    title: Text(item.title),
+                    onTap: () {
+                      Navigator.pop(context); // Close the drawer
+                      context.go(item.route);
+                    },
+                  );
+          },
         ),
       );
 }
@@ -223,10 +279,11 @@ Future<void> _initialise(BuildContext context) async {
   if (!initialised) {
     try {
       initialised = true;
-      await _checkInstall();
+      firstRun = await _checkInstall();
       await _initFirebase();
       await _initDb();
       await _initializeTimeEntryState(refresh: false);
+
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       if (context.mounted) {
@@ -258,9 +315,9 @@ Future<void> _initDb() async {
   print('Database located at: ${await DatabaseHelper().pathToDatabase()}');
 }
 
-Future<void> _checkInstall() async {
+Future<bool> _checkInstall() async {
   if (kIsWeb) {
-    return;
+    return false;
   }
 
   final pathToHmbFirstRun = join(await pathToHmbFiles, 'firstrun.txt');
@@ -270,10 +327,12 @@ Future<void> _checkInstall() async {
     createDir(await pathToHmbFiles, recursive: true);
   }
 
-  if (!exists(pathToHmbFirstRun)) {
+  final firstRun = !exists(pathToHmbFirstRun);
+  if (firstRun) {
     await _install();
     touch(pathToHmbFirstRun, create: true);
   }
+  return firstRun;
 }
 
 Future<void> _install() async {
