@@ -103,12 +103,6 @@ GoRouter get _router => GoRouter(
               const HomeWithDrawer(initialScreen: JobListScreen()),
           routes: [
             GoRoute(
-              path: 'details',
-              builder: (_, __) => Scaffold(
-                appBar: AppBar(title: const Text('Details Screen')),
-              ),
-            ),
-            GoRoute(
               path: 'error',
               builder: (context, state) {
                 final errorMessage = state.extra as String? ?? 'Unknown Error';
