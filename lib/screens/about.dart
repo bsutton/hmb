@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../version/version.dart';
+import '../src/version/version.g.dart';
+
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -13,7 +14,7 @@ class AboutScreen extends StatelessWidget {
           child: Column(
         children: [
           const Text("Hold My Beer (HMB) - I'm a handyman"),
-          Text('Version: $hmbVersion'),
+          Text('Version: $packageVersion'),
           const Text('Author: S. Brett Sutton'),
         ],
       )));
