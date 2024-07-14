@@ -59,10 +59,10 @@ creating signing key - store this VERY SAFELEY - under "HMB keystore"'''));
 Your keystore has been created $keyStorePath. Backup it up to lastpass'''));
 
     join(projectRoot, 'android', 'key.properties').write('''
-    storePassword=$password
-    keyPassword=$password
-    keyAlias=$keyStoreAlias
-    storeFile=$keyStorePath
+storePassword=$password
+keyPassword=$password
+keyAlias=$keyStoreAlias
+storeFile=$keyStorePath
     ''');
   } else {
     print(orange('Using existing keystore $keyStorePath'));
@@ -101,10 +101,10 @@ creating debug signing key - store this VERY SAFELEY - under "HMB keystore"'''))
 Your keystore has been created $keyStorePathForDebug. Backup it up to lastpass'''));
 
     join(projectRoot, 'android', 'key.properties').write('''
-    storePassword=$password
-    keyPassword=$password
-    keyAlias=$keyStoreAliasForDebug
-    storeFile=$keyStorePathForDebug
+storePassword=$password
+keyPassword=$password
+keyAlias=$keyStoreAliasForDebug
+storeFile=$keyStorePathForDebug
     ''');
   } else {
     print(orange('Using existing debug keystore $keyStorePathForDebug'));
