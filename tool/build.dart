@@ -11,7 +11,7 @@ import 'package:path/path.dart';
 import 'package:pub_release/pub_release.dart';
 import 'package:pubspec_manager/pubspec_manager.dart' as pm;
 
-import 'lib/local_properties.dart';
+import 'lib/version_properties.dart';
 
 void main(List<String> args) {
   final parser = ArgParser()
@@ -91,6 +91,12 @@ void buildAppBundle() {
   updateAndroidVersion(newVersion);
 
   'flutter.bat build appbundle --release --no-tree-shake-icons'.start();
+
+  final targetPath =
+      join(DartProject.self.pathToProjectRoot, 'hmb-$newVersion.aab');
+  move(join('build', 'app', 'outputs', 'bundle', 'release', 'app-release.aab'),
+      targetPath);
+  print(orange('Moved the bundler to $targetPath'));
 }
 
 void updateAssetList() {
