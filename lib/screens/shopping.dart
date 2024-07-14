@@ -87,8 +87,8 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Shopping List'),
-        ),
+            title: const Text('Shopping List'),
+            automaticallyImplyLeading: false),
         body: FutureBuilderEx<List<CheckListItem>>(
           future: _checkListItemsFuture,
           builder: (context, _checkListItems) {

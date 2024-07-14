@@ -73,6 +73,7 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('System Integration'),
+          automaticallyImplyLeading: false,
           actions: [
             IconButton(
               icon: const Icon(Icons.save, color: Colors.purple),

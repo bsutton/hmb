@@ -83,8 +83,8 @@ class _PackingScreenState extends State<PackingScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Packing List'),
-        ),
+            title: const Text('Packing List'),
+            automaticallyImplyLeading: false),
         body: FutureBuilderEx<List<CheckListItem>>(
           future: _checkListItemsFuture,
           builder: (context, _checkListItems) {

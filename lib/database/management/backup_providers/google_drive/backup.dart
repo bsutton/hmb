@@ -40,6 +40,7 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Backup File to Google Drive'),
+          automaticallyImplyLeading: false,
           actions: [
             if (_currentUser != null)
               IconButton(
@@ -71,7 +72,7 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
     final authHeaders = await _currentUser?.authHeaders;
     if (authHeaders == null) {
       if (context.mounted) {
-        HMBToast.info( 'Not signed in');
+        HMBToast.info('Not signed in');
       }
       return;
     }

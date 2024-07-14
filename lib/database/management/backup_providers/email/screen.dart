@@ -22,8 +22,8 @@ class _BackupScreenState extends State<BackupScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Backup Database via email'),
-        ),
+            title: const Text('Backup Database via email'),
+            automaticallyImplyLeading: false),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

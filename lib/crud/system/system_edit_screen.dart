@@ -169,6 +169,7 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Edit System Entity'),
+          automaticallyImplyLeading: false,
           actions: [
             IconButton(
               icon: const Icon(Icons.save, color: Colors.purple),

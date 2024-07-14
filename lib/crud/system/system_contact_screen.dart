@@ -94,6 +94,7 @@ class _SystemContactInformationScreenState
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Contact Information'),
+          automaticallyImplyLeading: false,
           actions: [
             IconButton(
               icon: const Icon(Icons.save, color: Colors.purple),

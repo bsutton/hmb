@@ -78,6 +78,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Billing'),
+          automaticallyImplyLeading: false,
           actions: [
             IconButton(
               icon: const Icon(Icons.save, color: Colors.purple),

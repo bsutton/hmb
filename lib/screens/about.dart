@@ -7,12 +7,13 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: const Text('About')),
+      appBar:
+          AppBar(title: const Text('About'), automaticallyImplyLeading: false),
       body: Center(
           child: Column(
         children: [
           const Text("Hold My Beer (HMB) - I'm a handyman"),
-          Text('Version: $version'),
+          Text('Version: $hmbVersion'),
           const Text('Author: S. Brett Sutton'),
         ],
       )));

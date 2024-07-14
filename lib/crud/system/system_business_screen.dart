@@ -78,6 +78,7 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Business Details'),
+          automaticallyImplyLeading: false,
           actions: [
             IconButton(
               icon: const Icon(Icons.save, color: Colors.purple),

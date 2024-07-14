@@ -49,10 +49,10 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: Text(_currentEntity != null
-              ? 'Edit ${widget.entityName}'
-              : 'Add ${widget.entityName}'),
-        ),
+            title: Text(_currentEntity != null
+                ? 'Edit ${widget.entityName}'
+                : 'Add ${widget.entityName}'),
+            automaticallyImplyLeading: false),
         body: Column(
           children: [
             _commandButtons(context),

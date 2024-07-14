@@ -61,6 +61,7 @@ class EntityListScreenState<T extends Entity<T>>
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: Text(widget.pageTitle),
+          automaticallyImplyLeading: false,
           actions: _commands(),
         ),
         body: Padding(
