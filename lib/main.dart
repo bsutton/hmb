@@ -92,6 +92,7 @@ void initAppLinks() {
 }
 
 GoRouter get _router => GoRouter(
+      debugLogDiagnostics: true,
       routes: [
         GoRoute(
           path: '/',
@@ -168,6 +169,11 @@ GoRouter get _router => GoRouter(
               path: 'system/wizard',
               builder: (_, __) =>
                   const HomeWithDrawer(initialScreen: FirstRunWizard()),
+            ),
+            GoRoute(
+              path: 'xero/auth_complete',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: AboutScreen()),
             ),
           ],
         ),
