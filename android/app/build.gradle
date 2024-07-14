@@ -17,12 +17,19 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
+def versionProperties = new Properties()
+def versionPropertiesFile = rootProject.file("version.properties")
+if (versionPropertiesFile.exists()) {
+    versionPropertiesFile.withReader("UTF-8") { reader ->
+        versionProperties.load(reader)
+    }
+}
+def flutterVersionCode = versionProperties.getProperty("flutter.versionCode")
 if (flutterVersionCode == null) {
     flutterVersionCode = "1"
 }
 
-def flutterVersionName = localProperties.getProperty("flutter.versionName")
+def flutterVersionName = versionProperties.getProperty("flutter.versionName")
 if (flutterVersionName == null) {
     flutterVersionName = "1.0"
 }

@@ -87,11 +87,6 @@ void buildAppBundle() {
   final currentVersion = version(pubspecPath: pathToPubSpec)!;
   final newVersion = askForVersion(currentVersion);
   updateVersion(newVersion, pm.PubSpec.load(), pathToPubSpec);
-  join(DartProject.self.pathToProjectRoot, 'lib', 'version', 'version.dart')
-      .write('''
-/// generated
-String hmbVersion = '$newVersion';
-''');
 
   updateAndroidVersion(newVersion);
 
