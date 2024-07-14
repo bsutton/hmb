@@ -94,11 +94,17 @@ void buildAppBundle() {
 
   final targetPath =
       join(DartProject.self.pathToProjectRoot, 'hmb-$newVersion.aab');
+      if (exists(targetPath))
+      {
+        delete(targetPath);
+      }
   move(join('build', 'app', 'outputs', 'bundle', 'release', 'app-release.aab'),
       targetPath);
-  print(orange('Moved the bundler to $targetPath'));
+  print(orange('Moved the bundle to $targetPath'));
 }
 
+/// Update the list of sql upgrade scripts we ship as assets.
+/// The lists is held in assets/sql/upgrade_list.json
 void updateAssetList() {
   final pathToAssets = join(
       DartProject.self.pathToProjectRoot, 'assets', 'sql', 'upgrade_scripts');
