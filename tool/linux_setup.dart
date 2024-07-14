@@ -22,6 +22,13 @@ void main() {
           'libstdc++-12-dev '
       .start(privileged: true);
 
+  _createReleaseKeyStore();
+  _createDebugKeyStore();
+}
+
+/// Keystore used to generate the sha fingerprint required to
+/// sign the app and for deep links to work.
+void _createReleaseKeyStore() {
   if (!exists(keyStorePath)) {
     print(red('''
 creating signing key - store this VERY SAFELEY - under "HMB keystore"'''));
@@ -59,5 +66,47 @@ Your keystore has been created $keyStorePath. Backup it up to lastpass'''));
     ''');
   } else {
     print(orange('Using existing keystore $keyStorePath'));
+  }
+}
+
+/// Key store to generate sha finger print for deep links when debugging.
+void _createDebugKeyStore() {
+  if (!exists(keyStorePathForDebug)) {
+    print(red('''
+creating debug signing key - store this VERY SAFELEY - under "HMB keystore"'''));
+    var bad = false;
+    String password;
+    String confirmed;
+    do {
+      if (bad) {
+        printerr('passwords do not match');
+      }
+      password = ask('Keystore Password');
+      confirmed = ask('Confirm password');
+      bad = true;
+    } while (password != confirmed);
+
+    /// build keystore for app signing
+    /// Uses the standard java keytool
+    'keytool -genkey -v '
+            '-keystore $keyStorePathForDebug '
+            '-storepass $password '
+            '-alias $keyStoreAliasForDebug '
+            '-keyalg RSA '
+            '-keysize 2048 '
+            '-validity 10000 '
+        .start(terminal: true);
+
+    print(orange('''
+Your keystore has been created $keyStorePathForDebug. Backup it up to lastpass'''));
+
+    join(projectRoot, 'android', 'key.properties').write('''
+    storePassword=$password
+    keyPassword=$password
+    keyAlias=$keyStoreAliasForDebug
+    storeFile=$keyStorePathForDebug
+    ''');
+  } else {
+    print(orange('Using existing debug keystore $keyStorePathForDebug'));
   }
 }
