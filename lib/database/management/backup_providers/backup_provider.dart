@@ -32,7 +32,7 @@ abstract class BackupProvider {
     final encoder = ZipFileEncoder();
 
     return withTempDirAsync((tmpDir) async {
-      final datePart = formatDate(DateTime.now(), format: 'yy-mm-dd');
+      final datePart = formatDate(DateTime.now(), format: 'y-m-d');
       final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
       encoder.create(pathToZip);
       final wasOpen = DatabaseHelper().isOpen();

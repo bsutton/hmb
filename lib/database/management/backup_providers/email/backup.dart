@@ -34,9 +34,9 @@ class EmailBackupProvider extends BackupProvider {
       {required String pathToDatabase,
       required String pathToZippedBackup,
       required int version}) async {
-    if (!(Platform.isAndroid || Platform.isIOS)) {
-      throw BackupException('Email backup is not supported on this platform.');
-    }
+    // if (!(Platform.isAndroid || Platform.isIOS)) {
+    //   throw BackupException('Email backup is not supported on this platform.');
+    // }
 
     // await copyDatabase(context
     await sendEmailWithAttachment(pathToZippedBackup);
