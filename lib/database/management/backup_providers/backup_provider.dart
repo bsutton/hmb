@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:dcli_core/dcli_core.dart';
+import 'package:path/path.dart';
 
+import '../../../util/format.dart';
 import '../database_helper.dart';
 
 abstract class BackupProvider {
@@ -24,10 +26,14 @@ abstract class BackupProvider {
   /// system.
   Future<void> deleteBackup(Backup backupToDelete);
 
+  /// Closes the db, zip the backup file, store it and
+  /// then reopen the db.
   Future<BackupResult> performBackup({required int version}) async {
     final encoder = ZipFileEncoder();
 
-    return withTempFileAsync((pathToZip) async {
+    return withTempDirAsync((tmpDir) async {
+      final datePart = formatDate(DateTime.now(), format: 'yy-mm-dd');
+      final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
       encoder.create(pathToZip);
       final wasOpen = DatabaseHelper().isOpen();
 
@@ -35,7 +41,10 @@ abstract class BackupProvider {
         await DatabaseHelper().closeDb();
       }
       final pathToDatabase = await DatabaseHelper().pathToDatabase();
-      await encoder.addFile(File(pathToDatabase));
+      final pathToBackupFile = join(tmpDir, 'hmb-backup-$datePart.db');
+      copy(pathToDatabase, pathToBackupFile);
+
+      await encoder.addFile(File(pathToBackupFile));
       await encoder.close();
 
       if (wasOpen) {
@@ -44,9 +53,9 @@ abstract class BackupProvider {
       //after that some of code for making the zip files
       return store(
           pathToZippedBackup: pathToZip,
-          pathToDatabase: pathToDatabase,
+          pathToDatabase: pathToBackupFile,
           version: version);
-    }, suffix: 'zip');
+    });
   }
 
   Future<void> restoreDatabase();

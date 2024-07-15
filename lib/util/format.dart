@@ -5,8 +5,8 @@ import 'package:strings/strings.dart';
 
 import '../dao/dao_system.dart';
 
-String formatDate(DateTime dateTime) =>
-    DateTimeFormat.format(dateTime, format: 'D, j M');
+String formatDate(DateTime dateTime, {String format = 'D, j M'}) =>
+    DateTimeFormat.format(dateTime, format: format);
 
 String formatDateTime(DateTime dateTime, {bool seconds = false}) {
   final format = 'D, j M, H:i${seconds ? ':s' : ''}';
