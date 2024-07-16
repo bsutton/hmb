@@ -4,6 +4,7 @@ import 'package:archive/archive_io.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 
+import '../../../util/exceptions.dart';
 import '../../../util/format.dart';
 import '../database_helper.dart';
 
@@ -35,21 +36,13 @@ abstract class BackupProvider {
       final datePart = formatDate(DateTime.now(), format: 'y-m-d');
       final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
       encoder.create(pathToZip);
-      final wasOpen = DatabaseHelper().isOpen();
 
-      if (wasOpen) {
-        await DatabaseHelper().closeDb();
-      }
-      final pathToDatabase = await DatabaseHelper().pathToDatabase();
       final pathToBackupFile = join(tmpDir, 'hmb-backup-$datePart.db');
-      copy(pathToDatabase, pathToBackupFile);
 
+      await copyDatabaseTo(pathToBackupFile);
       await encoder.addFile(File(pathToBackupFile));
       await encoder.close();
 
-      if (wasOpen) {
-        await DatabaseHelper().openDb();
-      }
       //after that some of code for making the zip files
       return store(
           pathToZippedBackup: pathToZip,
@@ -58,7 +51,50 @@ abstract class BackupProvider {
     });
   }
 
+  /// Copies the current database to the backup file.
+  /// Opening and closing the db as it goes.
+  Future<void> copyDatabaseTo(String pathToBackupFile) async {
+    final wasOpen = DatabaseHelper().isOpen();
+    try {
+      if (wasOpen) {
+        if (wasOpen) {
+          await DatabaseHelper().closeDb();
+        }
+        final pathToDatabase = await DatabaseHelper().pathToDatabase();
+        copy(pathToDatabase, pathToBackupFile);
+      }
+    } finally {
+      if (wasOpen) {
+        await DatabaseHelper().openDb();
+      }
+    }
+  }
+
   Future<void> restoreDatabase();
+
+  /// Replaces the current database with the one in the backup file.
+  Future<void> replaceDatabase(String pathToBackupFile) async {
+    final wasOpen = DatabaseHelper().isOpen();
+    try {
+      // Get the path to the app's internal database
+      final dbPath = await DatabaseHelper().pathToDatabase();
+      if (wasOpen) {
+        await DatabaseHelper().closeDb();
+      }
+
+      // Replace the existing database with the selected backup
+      final dbFile = File(dbPath);
+      copy(pathToBackupFile, dbFile.path, overwrite: true);
+
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      throw BackupException('Error restoring database: $e');
+    } finally {
+      if (wasOpen) {
+        await DatabaseHelper().openDb();
+      }
+    }
+  }
 }
 
 class BackupResult {

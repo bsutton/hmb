@@ -128,12 +128,7 @@ class EmailBackupProvider extends BackupProvider {
         throw BackupException('No backup file selected.');
       }
 
-      // Get the path to the app's internal database
-      final dbPath = await DatabaseHelper().pathToDatabase();
-
-      // Replace the existing database with the selected backup
-      final dbFile = File(dbPath);
-      await backupFile.copy(dbFile.path);
+      await super.replaceDatabase(backupFile.path);
 
       HMBToast.info('Database restored from: ${backupFile.path}');
       // ignore: avoid_catches_without_on_clauses
