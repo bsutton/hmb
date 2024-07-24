@@ -90,7 +90,7 @@ void buildAppBundle() {
 
   updateAndroidVersion(newVersion);
 
-  'flutter.bat build appbundle --release --no-tree-shake-icons'.start();
+  'flutter build appbundle --release --no-tree-shake-icons'.start();
 
   final targetPath =
       join(DartProject.self.pathToProjectRoot, 'hmb-$newVersion.aab');
