@@ -7,7 +7,6 @@ import 'package:strings/strings.dart';
 import '../../../../dao/dao_system.dart';
 import '../../../../util/exceptions.dart';
 import '../../../../widgets/hmb_toast.dart';
-import '../../database_helper.dart';
 import '../backup_provider.dart';
 
 class EmailBackupProvider extends BackupProvider {
