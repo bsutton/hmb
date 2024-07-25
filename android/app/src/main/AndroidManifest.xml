@@ -1,8 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="dev.onepub.handyman">
 	<uses-permission android:name="android.permission.CALL_PHONE" />
-	<uses-permission android:name="android.permission.SEND_SMS" />
+	<!-- <uses-permission android:name="android.permission.SEND_SMS" /> -->
 	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
-	<uses-permission android:name="android.permission.RECEIVE_SMS" />
+	<!-- <uses-permission android:name="android.permission.RECEIVE_SMS" /> -->
 	<uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
 	<!-- so we can backup the db -->
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
