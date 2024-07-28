@@ -133,9 +133,23 @@ select cli.*
 from check_list_item cli
 join check_list_item_type clit
   on cli.item_type_id = clit.id
+join check_list cl
+  on cl.id = cli.check_list_id
+join task_check_list tcl
+  on cl.id = tcl.check_list_id
+join `task` t
+  on tcl.task_id = t.id
+join job j
+  on t.jobId = j.id
+join job_status js
+  on j.job_status_id = js.id
 where (clit.name = 'Materials - stock' 
 or clit.name = 'Tools - own') 
 and  cli.completed = 0
+and js.name != 'Prospecting'
+and js.name != 'Rejected'
+and js.name != 'On Hold'
+and js.name != 'Awaiting Payment'
 ''');
 
     return toList(data);
@@ -150,9 +164,23 @@ select cli.*
 from check_list_item cli
 join check_list_item_type clit
   on cli.item_type_id = clit.id
+join check_list cl
+  on cl.id = cli.check_list_id
+join task_check_list tcl
+  on cl.id = tcl.check_list_id
+join `task` t
+  on tcl.task_id = t.id
+join job j
+  on t.jobId = j.id
+join job_status js
+  on j.job_status_id = js.id
 where (clit.name = 'Materials - buy' 
 or clit.name = 'Tools - buy') 
 and  cli.completed = 0
+and js.name != 'Prospecting'
+and js.name != 'Rejected'
+and js.name != 'On Hold'
+and js.name != 'Awaiting Payment'
 ''');
 
     return toList(data);
