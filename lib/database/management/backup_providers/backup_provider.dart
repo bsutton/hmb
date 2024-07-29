@@ -60,9 +60,9 @@ abstract class BackupProvider {
         if (wasOpen) {
           await DatabaseHelper().closeDb();
         }
-        final pathToDatabase = await DatabaseHelper().pathToDatabase();
-        copy(pathToDatabase, pathToBackupFile);
       }
+      final pathToDatabase = await DatabaseHelper().pathToDatabase();
+      copy(pathToDatabase, pathToBackupFile);
     } finally {
       if (wasOpen) {
         await DatabaseHelper().openDb();
