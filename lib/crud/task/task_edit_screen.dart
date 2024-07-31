@@ -214,20 +214,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
                               Column(
                                 children: [
                                   Image.file(File(photo.filePath)),
-                                  TextField(
-                                    controller: TextEditingController(
-                                        text: photo.comment),
-                                    decoration: const InputDecoration(
-                                        labelText: 'Comment'),
-                                    onSubmitted: (newComment) async {
-                                      await PhotoDao().update(photo);
-                                      setState(() {
-                                        photo.comment = newComment;
-                                        // Update the photo comment in 
-                                        // the database
-                                      });
-                                    },
-                                  ),
+                                  _buildCommentField(photo),
                                   IconButton(
                                     icon: const Icon(Icons.delete),
                                     onPressed: () async {
@@ -250,6 +237,30 @@ class _TaskEditScreenState extends State<TaskEditScreen>
           ],
         ),
       );
+
+  Widget _buildCommentField(Photo photo) {
+    TextEditingController _commentController =
+        TextEditingController(text: photo.comment);
+    FocusNode _commentFocusNode = FocusNode();
+
+    _commentFocusNode.addListener(() async {
+      if (!_commentFocusNode.hasFocus) {
+        // Update the comment in the database when the text field loses focus
+        photo.comment = _commentController.text;
+        await PhotoDao().update(photo);
+        setState(() {
+          // Photo comment updated in the database
+        });
+      }
+    });
+
+    return TextField(
+      controller: _commentController,
+      focusNode: _commentFocusNode,
+      decoration: const InputDecoration(labelText: 'Comment'),
+      maxLines: null, // Allows the field to grow as needed
+    );
+  }
 
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
       title: 'Task Status',
