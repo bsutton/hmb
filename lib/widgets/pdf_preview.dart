@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../dao/dao_system.dart';
 import '../dialog/email_dialog.dart';
@@ -53,8 +54,23 @@ class PdfPreviewScreen extends StatelessWidget {
           child: Column(
             children: [
               Expanded(
-                child: PdfViewer.file(filePath),
-              ),
+                child: PdfViewer.file(
+                  filePath,
+                  params: PdfViewerParams(
+                    linkHandlerParams: PdfLinkHandlerParams(
+                      onLinkTap: (link) async {
+                        // handle URL or Dest
+                        if (link.url != null) {
+                          await launchUrl(link.url!);
+                        }
+                        // else if (link.dest != null) {
+                        //   controller.goToDest(link.dest);
+                        // }
+                      },
+                    ),
+                  ),
+                ),
+              )
             ],
           ),
         ),

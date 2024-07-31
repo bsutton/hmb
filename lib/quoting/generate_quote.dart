@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../dao/dao_quote_line.dart';
@@ -62,8 +63,20 @@ Future<File> generateQuotePdf(Quote quote) async {
           ),
           pw.Divider(),
           pw.Text('Payment Details:'),
-          pw.Text('BSB: ${system.bsb}'),
-          pw.Text('Account Number: ${system.accountNo}'),
+          if (system.showBsbAccountOnInvoice ?? false) ...[
+            pw.Text('BSB: ${system.bsb}'),
+            pw.Text('Account Number: ${system.accountNo}'),
+          ],
+          if (system.showPaymentLinkOnInvoice ?? false) ...[
+            pw.UrlLink(
+              child: pw.Text('Payment Link',
+                  style: const pw.TextStyle(
+                    color: PdfColors.blue,
+                    decoration: pw.TextDecoration.underline,
+                  )),
+              destination: system.paymentLinkUrl ?? '',
+            ),
+          ],
         ],
       ),
     ),

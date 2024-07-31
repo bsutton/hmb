@@ -65,13 +65,20 @@ Future<File> generateInvoicePdf(Invoice invoice) async {
           ),
           pw.Divider(),
           pw.Text('Payment Details:'),
-          pw.Text('BSB: ${system.bsb}'),
-          pw.Text('Account Number: ${system.accountNo}'),
-          pw.UrlLink(
+          if (system.showBsbAccountOnInvoice ?? false) ...[
+            pw.Text('BSB: ${system.bsb}'),
+            pw.Text('Account Number: ${system.accountNo}'),
+          ],
+          if (system.showPaymentLinkOnInvoice ?? false) ...[
+            pw.UrlLink(
               child: pw.Text('Pay Now',
-                  style: const pw.TextStyle(color: PdfColor(0, 0, 1))),
-              destination:
-                  'https://in.xero.com/${invoice.externalInvoiceId ?? invoice.invoiceNum}')
+                  style: const pw.TextStyle(
+                    color: PdfColors.blue,
+                    decoration: pw.TextDecoration.underline,
+                  )),
+              destination: system.paymentLinkUrl ?? '',
+            ),
+          ],
         ],
       ),
     ),

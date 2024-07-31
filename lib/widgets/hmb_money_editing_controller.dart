@@ -8,4 +8,8 @@ class HMBMoneyEditingController extends TextEditingController {
       : super(text: money == null || money.isZero ? '' : money.format('#.##'));
 
   Money? get money => MoneyEx.tryParse(text);
+
+  set money(Money? money) {
+    text = money == null || money.isZero ? '' : money.format('#.##');
+  }
 }

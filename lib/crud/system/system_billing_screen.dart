@@ -20,10 +20,17 @@ class SystemBillingScreen extends StatefulWidget {
 class _SystemBillingScreenState extends State<SystemBillingScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  late HMBMoneyEditingController _defaultHourlyRateController;
-  late HMBMoneyEditingController _defaultCallOutFeeController;
-  late TextEditingController _bsbController;
-  late TextEditingController _accountNoController;
+  late final HMBMoneyEditingController _defaultHourlyRateController =
+      HMBMoneyEditingController();
+  late final HMBMoneyEditingController _defaultCallOutFeeController =
+      HMBMoneyEditingController();
+  late final TextEditingController _bsbController = TextEditingController();
+  late final TextEditingController _accountNoController =
+      TextEditingController();
+  late final TextEditingController _paymentLinkUrlController =
+      TextEditingController();
+  bool _showBsbAccountOnInvoice = false;
+  bool _showPaymentLinkOnInvoice = false;
 
   @override
   void initState() {
@@ -33,12 +40,13 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
 
   void _initializeControllers() {
     unawaited(DaoSystem().get().then((system) {
-      _defaultHourlyRateController =
-          HMBMoneyEditingController(money: system!.defaultHourlyRate);
-      _defaultCallOutFeeController =
-          HMBMoneyEditingController(money: system.defaultCallOutFee);
-      _bsbController = TextEditingController(text: system.bsb);
-      _accountNoController = TextEditingController(text: system.accountNo);
+      _defaultHourlyRateController.money = system!.defaultHourlyRate;
+      _defaultCallOutFeeController.money = system.defaultCallOutFee;
+      _bsbController.text = system.bsb ?? '';
+      _accountNoController.text = system.accountNo ?? '';
+      _paymentLinkUrlController.text = system.paymentLinkUrl ?? '';
+      _showBsbAccountOnInvoice = system.showBsbAccountOnInvoice ?? true;
+      _showPaymentLinkOnInvoice = system.showPaymentLinkOnInvoice ?? true;
       setState(() {});
     }));
   }
@@ -49,6 +57,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
     _defaultCallOutFeeController.dispose();
     _bsbController.dispose();
     _accountNoController.dispose();
+    _paymentLinkUrlController.dispose();
     super.dispose();
   }
 
@@ -62,7 +71,10 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
         ..defaultCallOutFee =
             MoneyEx.tryParse(_defaultCallOutFeeController.text)
         ..bsb = _bsbController.text
-        ..accountNo = _accountNoController.text;
+        ..accountNo = _accountNoController.text
+        ..paymentLinkUrl = _paymentLinkUrlController.text
+        ..showBsbAccountOnInvoice = _showBsbAccountOnInvoice
+        ..showPaymentLinkOnInvoice = _showPaymentLinkOnInvoice;
 
       await DaoSystem().update(system);
 
@@ -109,6 +121,29 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
                   controller: _accountNoController,
                   labelText: 'Account Number',
                   keyboardType: TextInputType.number,
+                ),
+                SwitchListTile(
+                  title: const Text('Show BSB/Account on Quote/Invoice'),
+                  value: _showBsbAccountOnInvoice,
+                  onChanged: (value) {
+                    setState(() {
+                      _showBsbAccountOnInvoice = value;
+                    });
+                  },
+                ),
+                HMBTextField(
+                  controller: _paymentLinkUrlController,
+                  labelText: 'Payment Link URL',
+                  keyboardType: TextInputType.url,
+                ),
+                SwitchListTile(
+                  title: const Text('Show Payment Link on Quote/Invoice'),
+                  value: _showPaymentLinkOnInvoice,
+                  onChanged: (value) {
+                    setState(() {
+                      _showPaymentLinkOnInvoice = value;
+                    });
+                  },
                 ),
               ],
             ),

@@ -25,68 +25,75 @@ class System extends Entity<System> {
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
-    required this.businessName, // Added business name field
-    required this.businessNumber, // Added business number field
-    required this.businessNumberLabel, // Added business number label field
-    required this.countryCode, // Added country code field
+    required this.businessName,
+    required this.businessNumber,
+    required this.businessNumberLabel,
+    required this.countryCode,
+    required this.paymentLinkUrl,
+    required this.showBsbAccountOnInvoice,
+    required this.showPaymentLinkOnInvoice,
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
 
-  System.forInsert(
-      {required this.fromEmail,
-      required this.bsb,
-      required this.accountNo,
-      required this.addressLine1,
-      required this.addressLine2,
-      required this.suburb,
-      required this.state,
-      required this.postcode,
-      required this.mobileNumber,
-      required this.landLine,
-      required this.officeNumber,
-      required this.emailAddress,
-      required this.webUrl,
-      required this.defaultHourlyRate,
-      required this.termsUrl,
-      required this.defaultCallOutFee,
-      required this.simCardNo,
-      required this.xeroClientId,
-      required this.xeroClientSecret,
-      required this.businessName, // Added business name field
-      required this.businessNumber, // Added business number field
-      required this.businessNumberLabel, // Added business number label field
-      required this.countryCode // Added country code field
-      })
-      : super.forInsert();
+  System.forInsert({
+    required this.fromEmail,
+    required this.bsb,
+    required this.accountNo,
+    required this.addressLine1,
+    required this.addressLine2,
+    required this.suburb,
+    required this.state,
+    required this.postcode,
+    required this.mobileNumber,
+    required this.landLine,
+    required this.officeNumber,
+    required this.emailAddress,
+    required this.webUrl,
+    required this.defaultHourlyRate,
+    required this.termsUrl,
+    required this.defaultCallOutFee,
+    required this.simCardNo,
+    required this.xeroClientId,
+    required this.xeroClientSecret,
+    required this.businessName,
+    required this.businessNumber,
+    required this.businessNumberLabel,
+    required this.countryCode,
+    required this.paymentLinkUrl,
+    required this.showBsbAccountOnInvoice,
+    required this.showPaymentLinkOnInvoice,
+  }) : super.forInsert();
 
-  System.forUpdate(
-      {required super.entity,
-      required this.fromEmail,
-      required this.bsb,
-      required this.accountNo,
-      required this.addressLine1,
-      required this.addressLine2,
-      required this.suburb,
-      required this.state,
-      required this.postcode,
-      required this.mobileNumber,
-      required this.landLine,
-      required this.officeNumber,
-      required this.emailAddress,
-      required this.webUrl,
-      required this.defaultHourlyRate,
-      required this.termsUrl,
-      required this.defaultCallOutFee,
-      required this.simCardNo,
-      required this.xeroClientId,
-      required this.xeroClientSecret,
-      required this.businessName, // Added business name field
-      required this.businessNumber, // Added business number field
-      required this.businessNumberLabel, // Added business number label field
-      required this.countryCode // Added country code field
-      })
-      : super.forUpdate();
+  System.forUpdate({
+    required super.entity,
+    required this.fromEmail,
+    required this.bsb,
+    required this.accountNo,
+    required this.addressLine1,
+    required this.addressLine2,
+    required this.suburb,
+    required this.state,
+    required this.postcode,
+    required this.mobileNumber,
+    required this.landLine,
+    required this.officeNumber,
+    required this.emailAddress,
+    required this.webUrl,
+    required this.defaultHourlyRate,
+    required this.termsUrl,
+    required this.defaultCallOutFee,
+    required this.simCardNo,
+    required this.xeroClientId,
+    required this.xeroClientSecret,
+    required this.businessName,
+    required this.businessNumber,
+    required this.businessNumberLabel,
+    required this.countryCode,
+    required this.paymentLinkUrl,
+    required this.showBsbAccountOnInvoice,
+    required this.showPaymentLinkOnInvoice,
+  }) : super.forUpdate();
 
   factory System.fromMap(Map<String, dynamic> map) => System(
         id: map['id'] as int,
@@ -113,13 +120,14 @@ class System extends Entity<System> {
         simCardNo: map['sim_card_no'] as int?,
         xeroClientId: map['xero_client_id'] as String?,
         xeroClientSecret: map['xero_client_secret'] as String?,
-        businessName:
-            map['business_name'] as String?, // Added business name field
-        businessNumber:
-            map['business_number'] as String?, // Added business number field
-        businessNumberLabel: map['business_number_label']
-            as String?, // Added business number label field
-        countryCode: map['country_code'] as String?, // Added country code field
+        businessName: map['business_name'] as String?,
+        businessNumber: map['business_number'] as String?,
+        businessNumberLabel: map['business_number_label'] as String?,
+        countryCode: map['country_code'] as String?,
+        paymentLinkUrl:
+            map['payment_link_url'] as String?, // Added payment link URL field
+        showBsbAccountOnInvoice: map['show_bsb_account_on_invoice'] == 1,
+        showPaymentLinkOnInvoice: map['show_payment_link_on_invoice'] == 1,
         createdDate: DateTime.tryParse((map['createdDate']) as String? ?? '') ??
             DateTime.now(),
         modifiedDate:
@@ -140,9 +148,9 @@ class System extends Entity<System> {
   String? officeNumber;
   String? emailAddress;
   String? webUrl;
-  Money? defaultHourlyRate; // in cents
-  String? termsUrl; // link to terms and conditions
-  Money? defaultCallOutFee; // in cents
+  Money? defaultHourlyRate;
+  String? termsUrl;
+  Money? defaultCallOutFee;
   int? simCardNo;
   String? xeroClientId;
   String? xeroClientSecret;
@@ -150,6 +158,9 @@ class System extends Entity<System> {
   String? businessNumber;
   String? businessNumberLabel;
   String? countryCode;
+  String? paymentLinkUrl; // Added payment link URL field
+  bool? showBsbAccountOnInvoice; // Added show BSB/account on invoice field
+  bool? showPaymentLinkOnInvoice; // Added show payment link on invoice field
 
   String? get bestPhone => officeNumber ?? landLine ?? mobileNumber;
 
@@ -179,11 +190,14 @@ class System extends Entity<System> {
         'sim_card_no': simCardNo,
         'xero_client_id': xeroClientId,
         'xero_client_secret': xeroClientSecret,
-        'business_name': businessName, // Added business name field
-        'business_number': businessNumber, // Added business number field
-        'business_number_label':
-            businessNumberLabel, // Added business number label field
-        'country_code': countryCode, // Added country code field
+        'business_name': businessName,
+        'business_number': businessNumber,
+        'business_number_label': businessNumberLabel,
+        'country_code': countryCode,
+        'payment_link_url': paymentLinkUrl,
+        'show_bsb_account_on_invoice': showBsbAccountOnInvoice ?? true ? 1 : 0,
+        'show_payment_link_on_invoice':
+            showPaymentLinkOnInvoice ?? true ? 1 : 0,
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };

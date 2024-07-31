@@ -27,7 +27,7 @@ abstract class Dao<T extends Entity<T>> {
     June.getState(juneRefresher).setState();
   }
 
-  /// A callback which provides the [Dao] with the ability to notify
+  /// A callback which provides the [Dao]p with the ability to notify
   /// the [JuneState] returned by [juneRefresher].
   /// The [Dao] notifies the [juneRefresher] when ever the table
   /// is changed via one of the standard CRUD operations exposed
@@ -42,16 +42,15 @@ abstract class Dao<T extends Entity<T>> {
     return list;
   }
 
-  Future<T?> getById(int? entityId) {
+  Future<T?> getById(int? entityId) async {
     final db = getDb();
-    return db
-        .query(tableName, where: 'id =?', whereArgs: [entityId]).then((value) {
-      if (value.isEmpty) {
-        return null;
-      }
-      final entity = fromMap(value.first);
-      return entity;
-    });
+    final value =
+        await db.query(tableName, where: 'id =?', whereArgs: [entityId]);
+    if (value.isEmpty) {
+      return null;
+    }
+    final entity = fromMap(value.first);
+    return entity;
   }
 
   Future<int> update(covariant T entity, [Transaction? transaction]) async {
