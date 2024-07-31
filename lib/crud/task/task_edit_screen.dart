@@ -127,6 +127,48 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     return savedImage;
   }
 
+  Future<void> _showConfirmDeleteDialog(
+          BuildContext context, Photo photo) async =>
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete Photo'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Image.file(File(photo.filePath),
+                    width: 100, height: 100), // Thumbnail of the photo
+                if (photo.comment.isNotEmpty) Text(photo.comment),
+                const SizedBox(height: 10),
+                const Text('Are you sure you want to delete this photo?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Delete'),
+              onPressed: () async {
+                // Delete the photo from the database and the disk
+                await PhotoDao().delete(photo.id);
+                await File(photo.filePath).delete();
+                setState(() {
+                  _photosFuture = _loadPhotos(); // Refresh the photos
+                });
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        ),
+      );
+
   @override
   Widget build(BuildContext context) => NestedEntityEditScreen<Task, Job>(
         entity: widget.task,
@@ -218,14 +260,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
                                   IconButton(
                                     icon: const Icon(Icons.delete),
                                     onPressed: () async {
-                                      // Delete the photo from the database
-                                      // and the disk
-                                      await PhotoDao().delete(photo.id);
-                                      setState(() {
-                                        File(photo.filePath).delete();
-                                        _photosFuture =
-                                            _loadPhotos(); // Refresh the photos
-                                      });
+                                      await _showConfirmDeleteDialog(
+                                          context, photo);
                                     },
                                   ),
                                 ],
@@ -239,9 +275,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       );
 
   Widget _buildCommentField(Photo photo) {
-    TextEditingController _commentController =
-        TextEditingController(text: photo.comment);
-    FocusNode _commentFocusNode = FocusNode();
+    final _commentController = TextEditingController(text: photo.comment);
+    final _commentFocusNode = FocusNode();
 
     _commentFocusNode.addListener(() async {
       if (!_commentFocusNode.hasFocus) {
