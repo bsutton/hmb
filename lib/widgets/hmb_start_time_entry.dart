@@ -91,20 +91,14 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
       if (newTimeEntry != null) {
         if (timeEntry == null) {
           await DaoTimeEntry().insert(newTimeEntry);
-          if (mounted) {
-            setState(() {
-              _startTimer(newTimeEntry);
-            });
-            June.getState<TimeEntryState>(TimeEntryState.new)
-                .setActiveTimeEntry(newTimeEntry, widget.task);
-          }
+          _startTimer(newTimeEntry);
+          June.getState<TimeEntryState>(TimeEntryState.new)
+              .setActiveTimeEntry(newTimeEntry, widget.task);
         } else {
           await DaoTimeEntry().update(newTimeEntry);
-          if (mounted) {
-            setState(_stopTimer);
-            June.getState<TimeEntryState>(TimeEntryState.new)
-                .clearActiveTimeEntry();
-          }
+          _stopTimer();
+          June.getState<TimeEntryState>(TimeEntryState.new)
+              .clearActiveTimeEntry();
         }
       }
     }
@@ -124,6 +118,7 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
 
   void _stopTimer() {
     _timer?.cancel();
+    setState(() {});
   }
 
   @override
