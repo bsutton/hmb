@@ -29,6 +29,7 @@ import 'screens/packing.dart';
 import 'screens/shopping.dart';
 import 'screens/wizard/wizard.dart';
 import 'widgets/blocking_ui.dart';
+import 'widgets/full_screen_photo_view.dart';
 import 'widgets/hmb_start_time_entry.dart';
 import 'widgets/hmb_status_bar.dart';
 
@@ -174,6 +175,13 @@ GoRouter get _router => GoRouter(
               path: 'xero/auth_complete',
               builder: (_, __) =>
                   const HomeWithDrawer(initialScreen: AboutScreen()),
+            ),
+            GoRoute(
+              path: 'photo_viewer',
+              builder: (context, state) {
+                final imagePath = state.extra! as String;
+                return FullScreenPhotoViewer(imagePath: imagePath);
+              },
             ),
           ],
         ),
