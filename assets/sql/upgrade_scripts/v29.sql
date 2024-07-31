@@ -5,3 +5,4 @@ CREATE TABLE photos (
   comment TEXT,
   FOREIGN KEY (taskId) REFERENCES tasks(id)
 );
+

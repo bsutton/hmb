@@ -7,7 +7,7 @@ class PhotoDao extends Dao<Photo> {
   Future<List<Photo>> getPhotosByTaskId(int taskId) async {
     final db = getDb();
     final List<Map<String, dynamic>> maps =
-        await db.query('photos', where: 'taskId = ?', whereArgs: [taskId]);
+        await db.query(tableName, where: 'taskId = ?', whereArgs: [taskId]);
     return List.generate(maps.length, (i) => Photo.fromMap(maps[i]));
   }
 

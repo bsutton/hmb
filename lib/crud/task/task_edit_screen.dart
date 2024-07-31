@@ -70,7 +70,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _effortInHoursController =
         TextEditingController(text: widget.task?.effortInHours.toString());
 
-
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
     _costFocusNode = FocusNode();
@@ -116,7 +115,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   Future<File?> takePhoto() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
-    if (pickedFile == null) return null;
+    if (pickedFile == null) {
+      return null;
+    }
 
     final appDir = await getApplicationDocumentsDirectory();
     final fileName = pickedFile.path.split('/').last;
@@ -185,74 +186,66 @@ class _TaskEditScreenState extends State<TaskEditScreen>
             ),
 
             // Display photos and allow adding comments and deletion
-            FutureBuilder<List<Photo>>(
-              future: _photosFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Text('No photos');
-                } else {
-                  final photos = snapshot.data!;
-                  return Column(
-                    children: [
-                      for (final photo in photos)
-                        Column(
+            Column(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.camera_alt),
+                  onPressed: () async {
+                    final photoFile = await takePhoto();
+                    if (photoFile != null) {
+                      // Insert the photo metadata into the database
+                      final newPhoto = Photo.forInsert(
+                        taskId: task!.id,
+                        filePath: photoFile.path,
+                        comment: '',
+                      );
+                      await PhotoDao().insert(newPhoto);
+                      setState(() {
+                        _photosFuture = _loadPhotos(); // Refresh the photos
+                      });
+                    }
+                  },
+                ),
+                FutureBuilderEx<List<Photo>>(
+                    future: _photosFuture,
+                    builder: (context, photos) => Column(
                           children: [
-                            Image.file(File(photo.filePath)),
-                            TextField(
-                              controller:
-                                  TextEditingController(text: photo.comment),
-                              decoration:
-                                  const InputDecoration(labelText: 'Comment'),
-                              onSubmitted: (newComment) async {
-                                await PhotoDao().update(photo);
-                                setState(() {
-                                  photo.comment = newComment;
-                                  // Update the photo comment in the database
-                                });
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () async {
-                                // Delete the photo from the database
-                                // and the disk
-                                await PhotoDao().delete(photo.id);
-                                setState(() {
-                                  File(photo.filePath).delete();
-                                  _photosFuture =
-                                      _loadPhotos(); // Refresh the photos
-                                });
-                              },
-                            ),
+                            for (final photo in photos!)
+                              Column(
+                                children: [
+                                  Image.file(File(photo.filePath)),
+                                  TextField(
+                                    controller: TextEditingController(
+                                        text: photo.comment),
+                                    decoration: const InputDecoration(
+                                        labelText: 'Comment'),
+                                    onSubmitted: (newComment) async {
+                                      await PhotoDao().update(photo);
+                                      setState(() {
+                                        photo.comment = newComment;
+                                        // Update the photo comment in 
+                                        // the database
+                                      });
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete),
+                                    onPressed: () async {
+                                      // Delete the photo from the database
+                                      // and the disk
+                                      await PhotoDao().delete(photo.id);
+                                      setState(() {
+                                        File(photo.filePath).delete();
+                                        _photosFuture =
+                                            _loadPhotos(); // Refresh the photos
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
                           ],
-                        ),
-                      IconButton(
-                        icon: const Icon(Icons.camera_alt),
-                        onPressed: () async {
-                          final photoFile = await takePhoto();
-                          if (photoFile != null) {
-                            // Insert the photo metadata into the database
-                            final newPhoto = Photo.forInsert(
-                              taskId: task!.id,
-                              filePath: photoFile.path,
-                              comment: '',
-                            );
-                            await PhotoDao().insert(newPhoto);
-                            setState(() {
-                              _photosFuture =
-                                  _loadPhotos(); // Refresh the photos
-                            });
-                          }
-                        },
-                      ),
-                    ],
-                  );
-                }
-              },
+                        )),
+              ],
             ),
           ],
         ),
