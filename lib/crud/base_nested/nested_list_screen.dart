@@ -96,6 +96,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
+          toolbarHeight: 80,
           automaticallyImplyLeading: false, // No back button
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
