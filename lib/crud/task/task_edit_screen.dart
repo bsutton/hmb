@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:go_router/go_router.dart'; // Import GoRouter
 import 'package:image_picker/image_picker.dart';
 import 'package:june/june.dart';
 import 'package:path_provider/path_provider.dart';
@@ -169,6 +170,11 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         ),
       );
 
+  Future<void> _showFullScreenPhoto(
+      BuildContext context, String imagePath) async {
+    await context.push('/photo_viewer', extra: imagePath);
+  }
+
   @override
   Widget build(BuildContext context) => NestedEntityEditScreen<Task, Job>(
         entity: widget.task,
@@ -256,6 +262,21 @@ class _TaskEditScreenState extends State<TaskEditScreen>
                               Column(
                                 children: [
                                   Image.file(File(photo.filePath)),
+                                  Positioned(
+                                    right: 0,
+                                    child: GestureDetector(
+                                      onTap: () async => _showFullScreenPhoto(
+                                          context, photo.filePath),
+                                      child: Container(
+                                        color: Colors.black.withOpacity(0.5),
+                                        padding: const EdgeInsets.all(8),
+                                        child: const Icon(
+                                          Icons.fullscreen,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                   _buildCommentField(photo),
                                   IconButton(
                                     icon: const Icon(Icons.delete),
