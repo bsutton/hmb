@@ -1,0 +1,7 @@
+CREATE TABLE photos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  taskId INTEGER NOT NULL,
+  filePath TEXT NOT NULL,
+  comment TEXT,
+  FOREIGN KEY (taskId) REFERENCES tasks(id)
+);

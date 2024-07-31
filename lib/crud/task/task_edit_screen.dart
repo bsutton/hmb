@@ -1,16 +1,21 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:june/june.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../dao/dao_checklist.dart';
+import '../../dao/dao_photo.dart'; // Import the Photo DAO
 import '../../dao/dao_task.dart';
 import '../../dao/dao_task_status.dart';
 import '../../dao/join_adaptors/join_adaptor_check_list_item.dart';
 import '../../entity/check_list.dart';
 import '../../entity/job.dart';
+import '../../entity/photo.dart'; // Import the Photo entity
 import '../../entity/task.dart';
 import '../../entity/task_status.dart';
 import '../../util/fixed_ex.dart';
@@ -51,7 +56,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   late FocusNode _estimatedCostFocusNode;
   late FocusNode _effortInHoursFocusNode;
   late FocusNode _itemTypeIdFocusNode;
-  // late Future<CheckList?> _checkListFuture;
+  late Future<List<Photo>> _photosFuture; // Future to load photos
 
   @override
   void initState() {
@@ -81,7 +86,16 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       });
     }
 
-    // _checkListFuture = _loadOrCreateCheckList();
+    // Load photos associated with the task
+    // ignore: discarded_futures
+    _photosFuture = _loadPhotos();
+  }
+
+  Future<List<Photo>> _loadPhotos() async {
+    if (widget.task == null) {
+      return [];
+    }
+    return PhotoDao().getPhotosByTaskId(widget.task!.id);
   }
 
   @override
@@ -97,6 +111,19 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _estimatedCostFocusNode.dispose();
     _effortInHoursFocusNode.dispose();
     _itemTypeIdFocusNode.dispose();
+  }
+
+  Future<File?> takePhoto() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    if (pickedFile == null) return null;
+
+    final appDir = await getApplicationDocumentsDirectory();
+    final fileName = pickedFile.path.split('/').last;
+    final savedImage =
+        await File(pickedFile.path).copy('${appDir.path}/$fileName');
+
+    return savedImage;
   }
 
   @override
@@ -156,6 +183,77 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               parentTitle: 'Task',
               parent: Parent(task),
             ),
+
+            // Display photos and allow adding comments and deletion
+            FutureBuilder<List<Photo>>(
+              future: _photosFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Text('No photos');
+                } else {
+                  final photos = snapshot.data!;
+                  return Column(
+                    children: [
+                      for (final photo in photos)
+                        Column(
+                          children: [
+                            Image.file(File(photo.filePath)),
+                            TextField(
+                              controller:
+                                  TextEditingController(text: photo.comment),
+                              decoration:
+                                  const InputDecoration(labelText: 'Comment'),
+                              onSubmitted: (newComment) async {
+                                await PhotoDao().update(photo);
+                                setState(() {
+                                  photo.comment = newComment;
+                                  // Update the photo comment in the database
+                                });
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () async {
+                                // Delete the photo from the database
+                                // and the disk
+                                await PhotoDao().delete(photo.id);
+                                setState(() {
+                                  File(photo.filePath).delete();
+                                  _photosFuture =
+                                      _loadPhotos(); // Refresh the photos
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.camera_alt),
+                        onPressed: () async {
+                          final photoFile = await takePhoto();
+                          if (photoFile != null) {
+                            // Insert the photo metadata into the database
+                            final newPhoto = Photo.forInsert(
+                              taskId: task!.id,
+                              filePath: photoFile.path,
+                              comment: '',
+                            );
+                            await PhotoDao().insert(newPhoto);
+                            setState(() {
+                              _photosFuture =
+                                  _loadPhotos(); // Refresh the photos
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  );
+                }
+              },
+            ),
           ],
         ),
       );
@@ -178,23 +276,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     await DaoCheckList().insertForTask(newChecklist, task);
   }
 
-  // Future<CheckList?> _loadOrCreateCheckList() async {
-  //   if (widget.task == null) {
-  //     return null;
-  //   }
-  //   final checklists = await DaoCheckList().getByTask(widget.task!.id);
-  //   if (checklists == null) {
-  //     return null;
-  //   } else {
-  //     final newChecklist = CheckList.forInsert(
-  //         name: 'default',
-  //         description: 'Default Task Checklist',
-  //         listType: CheckListType.owned);
-  //     await DaoCheckList().insert(newChecklist);
-  //     return newChecklist;
-  //   }
-  // }
-
   @override
   Future<Task> forUpdate(Task task) async => Task.forUpdate(
       entity: task,
@@ -216,9 +297,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   @override
   void refresh() {
-    setState(() {
-      // _checkListFuture = _loadOrCreateCheckList();
-    });
+    // ignore: discarded_futures
+    _photosFuture = _loadPhotos(); // Refresh photos when screen is refreshed
+    setState(() {});
   }
 }
 
