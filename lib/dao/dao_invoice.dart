@@ -121,6 +121,9 @@ class DaoInvoice extends Dao<Invoice> {
       // Materials based billing
       final checkListItems = await DaoCheckListItem().getByTask(task);
       for (final item in checkListItems.where((item) => !item.billed)) {
+        if (!item.completed) {
+          continue;
+        }
         final lineTotal = item.unitCost.multiplyByFixed(item.quantity);
 
         final invoiceLine = InvoiceLine.forInsert(

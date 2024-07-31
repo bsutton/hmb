@@ -18,7 +18,7 @@ import '../widgets/hmb_one_of.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/pdf_preview.dart';
 import 'edit_quote_line_dialog.dart';
-import 'generate_quote.dart';
+import 'generate_quote_pdf.dart';
 
 class QuoteListScreen extends StatefulWidget {
   const QuoteListScreen({

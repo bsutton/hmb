@@ -20,7 +20,7 @@ import '../widgets/hmb_toast.dart';
 import '../widgets/pdf_preview.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_line_dialog.dart';
-import 'pdf/generate_invoice.dart';
+import 'pdf/generate_invoice_pdf.dart';
 import 'xero/xero_api.dart';
 
 class InvoiceListScreen extends StatefulWidget {
