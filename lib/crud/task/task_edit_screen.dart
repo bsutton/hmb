@@ -170,9 +170,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         ),
       );
 
-  Future<void> _showFullScreenPhoto(
-      BuildContext context, String imagePath) async {
-    await context.push('/photo_viewer', extra: imagePath);
+  void _showFullScreenPhoto(BuildContext context, String imagePath) {
+    context.push('/photo_viewer', extra: imagePath);
   }
 
   @override
@@ -257,37 +256,42 @@ class _TaskEditScreenState extends State<TaskEditScreen>
                 FutureBuilderEx<List<Photo>>(
                     future: _photosFuture,
                     builder: (context, photos) => Column(
-                          children: [
-                            for (final photo in photos!)
-                              Column(
-                                children: [
-                                  Image.file(File(photo.filePath)),
-                                  Positioned(
-                                    right: 0,
-                                    child: GestureDetector(
-                                      onTap: () async => _showFullScreenPhoto(
-                                          context, photo.filePath),
-                                      child: Container(
-                                        color: Colors.black.withOpacity(0.5),
-                                        padding: const EdgeInsets.all(8),
-                                        child: const Icon(
-                                          Icons.fullscreen,
-                                          color: Colors.white,
-                                        ),
+                          children: photos!
+                              .map((photo) => Column(
+                                    children: [
+                                      Stack(
+                                        children: [
+                                          Image.file(File(photo.filePath)),
+                                          Positioned(
+                                            right: 0,
+                                            child: GestureDetector(
+                                              onTap: () => _showFullScreenPhoto(
+                                                  context, photo.filePath),
+                                              child: Container(
+                                                color: Colors.black
+                                                    .withOpacity(0.5),
+                                                padding:
+                                                    const EdgeInsets.all(8),
+                                                child: const Icon(
+                                                  Icons.fullscreen,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ),
-                                  _buildCommentField(photo),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () async {
-                                      await _showConfirmDeleteDialog(
-                                          context, photo);
-                                    },
-                                  ),
-                                ],
-                              ),
-                          ],
+                                      _buildCommentField(photo),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete),
+                                        onPressed: () async {
+                                          await _showConfirmDeleteDialog(
+                                              context, photo);
+                                        },
+                                      ),
+                                    ],
+                                  ))
+                              .toList(),
                         )),
               ],
             ),
