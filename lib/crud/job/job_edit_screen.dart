@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -7,10 +8,13 @@ import 'package:june/june.dart';
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
 import '../../dao/dao_job_status.dart';
+import '../../dao/dao_photo.dart'; // Import the Photo DAO
 import '../../dao/dao_system.dart';
+import '../../dao/dao_task.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/job_status.dart';
+import '../../entity/photo.dart'; // Import the Photo entity
 import '../../util/money_ex.dart';
 import '../../util/platform_ex.dart';
 import '../../widgets/hmb_button.dart';
@@ -92,6 +96,16 @@ class JobEditScreenState extends State<JobEditScreen>
     }
   }
 
+  Future<List<Photo>> _fetchTaskPhotos() async {
+    final tasks = await DaoTask().getTasksByJob(widget.job!);
+    final photos = <Photo>[];
+    for (final task in tasks) {
+      final taskPhotos = await PhotoDao().getPhotosByTaskId(task.id);
+      photos.addAll(taskPhotos);
+    }
+    return photos;
+  }
+
   @override
   Widget build(BuildContext context) =>
       JuneBuilder(() => SelectedCustomer()..customerId = widget.job?.customerId,
@@ -131,6 +145,30 @@ class JobEditScreenState extends State<JobEditScreen>
                             /// allow the user to select a site for the job
                             _chooseSite(customer, job),
 
+                            // Display task photos
+                            FutureBuilderEx<List<Photo>>(
+                              // ignore: discarded_futures
+                              future: _fetchTaskPhotos(),
+                              builder: (context, photos) => SizedBox(
+                                height: 100,
+                                child: ListView(
+                                  scrollDirection: Axis.horizontal,
+                                  children: photos!
+                                      .map((photo) => Padding(
+                                            padding: const EdgeInsets.all(8),
+                                            child: Image.file(
+                                              File(photo.filePath),
+                                              width: 80,
+                                              height: 80,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ))
+                                      .toList(),
+                                ),
+                              ),
+                            ),
+
+                            // Manage tasks
                             _manageTasks(job),
                           ]))));
 
