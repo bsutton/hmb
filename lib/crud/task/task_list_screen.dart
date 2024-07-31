@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 
+import '../../dao/dao_photo.dart'; // Import the Photo DAO
 import '../../dao/dao_task.dart';
 import '../../dao/dao_task_status.dart';
 import '../../dao/dao_time_entry.dart';
@@ -140,9 +141,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
               builder: (context, timeEntries) => Text(formatDuration(
                   timeEntries!.fold<Duration>(
                       Duration.zero, (a, b) => a + b.duration)))),
+          FutureBuilderEx<int>(
+              // ignore: discarded_futures
+              future: _getPhotoCount(task.id),
+              builder: (context, photoCount) =>
+                  Text('Photos: ${photoCount ?? 0}')), // Display photo count
           HMBStartTimeEntry(task: task)
         ],
       );
+
+  Future<int> _getPhotoCount(int taskId) async =>
+      (await PhotoDao().getPhotosByTaskId(taskId)).length;
 }
 
 class ShowCompletedTasksState extends JuneState {
