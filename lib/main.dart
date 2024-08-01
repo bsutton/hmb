@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:dcli_core/dcli_core.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -21,7 +20,6 @@ import 'dao/dao_task.dart';
 import 'dao/dao_time_entry.dart';
 import 'database/management/backup_providers/email/screen.dart';
 import 'database/management/database_helper.dart';
-import 'firebase_options.dart';
 import 'installer/linux/install.dart' if (kIsWeb) 'util/web_stub.dart';
 import 'screens/about.dart';
 import 'screens/error.dart';
@@ -288,7 +286,7 @@ Future<void> _initialise(BuildContext context) async {
     try {
       initialised = true;
       firstRun = await _checkInstall();
-      await _initFirebase();
+      // await _initFirebase();
       await _initDb();
       await _initializeTimeEntryState(refresh: false);
 
@@ -310,13 +308,13 @@ Future<void> _initialise(BuildContext context) async {
   }
 }
 
-Future<void> _initFirebase() async {
-  if (!Platform.isLinux) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
-}
+// Future<void> _initFirebase() async {
+//   if (!Platform.isLinux) {
+//     await Firebase.initializeApp(
+//       options: DefaultFirebaseOptions.currentPlatform,
+//     );
+//   }
+// }
 
 Future<void> _initDb() async {
   await DatabaseHelper().initDatabase();
