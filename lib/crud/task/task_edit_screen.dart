@@ -170,8 +170,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         ),
       );
 
-  void _showFullScreenPhoto(BuildContext context, String imagePath) {
-    context.push('/photo_viewer', extra: imagePath);
+  Future<void> _showFullScreenPhoto(
+      BuildContext context, String imagePath) async {
+    await context.push('/photo_viewer', extra: imagePath);
   }
 
   @override
@@ -265,8 +266,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
                                           Positioned(
                                             right: 0,
                                             child: GestureDetector(
-                                              onTap: () => _showFullScreenPhoto(
-                                                  context, photo.filePath),
+                                              onTap: () async =>
+                                                  _showFullScreenPhoto(
+                                                      context, photo.filePath),
                                               child: Container(
                                                 color: Colors.black
                                                     .withOpacity(0.5),
