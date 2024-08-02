@@ -140,6 +140,7 @@ class JobEditScreenState extends State<JobEditScreen>
                           ]))));
 
   Widget _showSummary() => HMBTextField(
+        key: const Key('jobSummary'),
         focusNode: _summaryFocusNode,
         autofocus: isNotMobile,
         controller: _summaryController,
@@ -150,6 +151,7 @@ class JobEditScreenState extends State<JobEditScreen>
       );
 
   Widget _showHourlyRate() => HMBTextField(
+        key: const Key('hourlyRate'),
         controller: _hourlyRateController,
         focusNode: _hourlyRateFocusNode,
         labelText: 'Hourly Rate',
@@ -157,6 +159,7 @@ class JobEditScreenState extends State<JobEditScreen>
       );
 
   Widget _showCallOutFee() => HMBTextField(
+        key: const Key('callOutFee'),
         controller: _callOutFeeController,
         focusNode: _callOutFeeFocusNode,
         labelText: 'Call Out Fee',
