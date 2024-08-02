@@ -18,8 +18,9 @@ class SystemIntegrationScreen extends StatefulWidget {
 class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  late TextEditingController _xeroClientIdController;
-  late TextEditingController _xeroClientSecretController;
+  final _xeroClientIdController = TextEditingController();
+
+  final _xeroClientSecretController = TextEditingController();
 
   @override
   void initState() {
@@ -29,10 +30,8 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
 
   void _initializeControllers() {
     unawaited(DaoSystem().get().then((system) {
-      _xeroClientIdController =
-          TextEditingController(text: system!.xeroClientId);
-      _xeroClientSecretController =
-          TextEditingController(text: system.xeroClientSecret);
+      _xeroClientIdController.text = system!.xeroClientId ?? '';
+      _xeroClientSecretController.text = system.xeroClientSecret ?? '';
 
       setState(() {});
     }));
