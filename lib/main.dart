@@ -36,17 +36,23 @@ import 'widgets/hmb_status_bar.dart';
 bool firstRun = false;
 
 void main(List<String> args) async {
-  await SentryFlutter.init(
-    (options) {
-      options
-        ..dsn =
-            'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
-        ..tracesSampleRate = 1.0
-        ..profilesSampleRate = 1.0;
-    },
-    appRunner: () {
+  // Catch errors in asynchronous code
+  await runZonedGuarded(
+    () async {
+      // Ensure WidgetsFlutterBinding is initialized before any async code.
       WidgetsFlutterBinding.ensureInitialized();
 
+      // Initialize Sentry.
+      await SentryFlutter.init(
+        (options) {
+          options
+            ..dsn =
+                'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
+            ..tracesSampleRate = 1.0
+            ..profilesSampleRate = 1.0;
+        },
+      );
+      // Initialize app links and any other startup logic
       if (args.isNotEmpty) {
         print('Got a link $args');
       } else {
@@ -72,51 +78,45 @@ void main(List<String> args) async {
         runApp(ErrorApp(details.exception.toString()));
       };
 
-      // Catch errors in asynchronous code
-      runZonedGuarded(
-        () {
-          runApp(ToastificationWrapper(
-            child: MaterialApp(
-              home: Column(
-                children: [
-                  Expanded(
-                    child: Builder(
-                      builder: (context) => JuneBuilder(
-                        TimeEntryState.new,
-                        builder: (_) => BlockingUIRunner(
-                          key: blockingUIKey,
-                          slowAction: () => _initialise(context),
-                          label: 'Upgrade your database.',
-                          builder: (context) => MaterialApp.router(
-                            title: 'Handyman',
-                            theme: ThemeData(
-                              primarySwatch: Colors.blue,
-                              visualDensity:
-                                  VisualDensity.adaptivePlatformDensity,
-                            ),
-                            routerConfig: _router,
-                          ),
+      runApp(ToastificationWrapper(
+        child: MaterialApp(
+          home: Column(
+            children: [
+              Expanded(
+                child: Builder(
+                  builder: (context) => JuneBuilder(
+                    TimeEntryState.new,
+                    builder: (_) => BlockingUIRunner(
+                      key: blockingUIKey,
+                      slowAction: () => _initialise(context),
+                      label: 'Upgrade your database.',
+                      builder: (context) => MaterialApp.router(
+                        title: 'Handyman',
+                        theme: ThemeData(
+                          primarySwatch: Colors.blue,
+                          visualDensity: VisualDensity.adaptivePlatformDensity,
                         ),
+                        routerConfig: _router,
                       ),
                     ),
                   ),
-                  const BlockingOverlay(),
-                ],
+                ),
               ),
-            ),
-          ));
-        },
-        (error, stackTrace) {
-          // Capture the exception in Sentry
-          Sentry.captureException(
-            error,
-            stackTrace: stackTrace,
-          );
-
-          // Optionally, navigate to the ErrorScreen
-          runApp(ErrorApp(error.toString()));
-        },
+              const BlockingOverlay(),
+            ],
+          ),
+        ),
+      ));
+    },
+    (error, stackTrace) {
+      // Capture the exception in Sentry
+      Sentry.captureException(
+        error,
+        stackTrace: stackTrace,
       );
+
+      // Optionally, navigate to the ErrorScreen
+      runApp(ErrorApp(error.toString()));
     },
   );
 }
@@ -261,7 +261,7 @@ class MyDrawer extends StatelessWidget {
         DrawerItem(title: 'Contact', route: '/system/contact'),
         DrawerItem(title: 'Integration', route: '/system/integration'),
         DrawerItem(title: 'Setup Wizard', route: '/system/wizard'),
-        DrawerItem(title: 'About', route: '/system/about'),
+        DrawerItem(title: 'About/Support', route: '/system/about'),
         DrawerItem(title: 'Backup', route: '/system/backup'),
       ],
     ),
@@ -343,7 +343,7 @@ Future<void> _initialise(BuildContext context) async {
       // ignore: avoid_catches_without_on_clauses
     } catch (e, stackTrace) {
       // Capture the exception in Sentry
-      Sentry.captureException(e, stackTrace: stackTrace);
+      unawaited(Sentry.captureException(e, stackTrace: stackTrace));
 
       if (context.mounted) {
         await showDialog<void>(
