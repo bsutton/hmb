@@ -385,30 +385,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.9.3+1"
-  firebase_core:
-    dependency: "direct main"
-    description:
-      name: firebase_core
-      sha256: "1e06b0538ab3108a61d895ee16951670b491c4a94fce8f2d30e5de7a5eca4b28"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.1"
-  firebase_core_platform_interface:
-    dependency: transitive
-    description:
-      name: firebase_core_platform_interface
-      sha256: "1003a5a03a61fc9a22ef49f37cbcb9e46c86313a7b2e7029b9390cf8c6fc32cb"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.1.0"
-  firebase_core_web:
-    dependency: transitive
-    description:
-      name: firebase_core_web
-      sha256: "6643fe3dbd021e6ccfb751f7882b39df355708afbdeb4130fc50f9305a9d1a3d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.17.2"
   fixed:
     dependency: "direct main"
     description:
@@ -1064,6 +1040,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.1+3"
+  package_info_plus:
+    dependency: transitive
+    description:
+      name: package_info_plus
+      sha256: "4de6c36df77ffbcef0a5aefe04669d33f2d18397fea228277b852a2d4e58e860"
+      url: "https://pub.dev"
+    source: hosted
+    version: "8.0.1"
+  package_info_plus_platform_interface:
+    dependency: transitive
+    description:
+      name: package_info_plus_platform_interface
+      sha256: ac1f4a4847f1ade8e6a87d1f39f5d7c67490738642e2542f559ec38c37489a66
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.1"
   parchment:
     dependency: transitive
     description:
@@ -1408,6 +1400,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
+  sentry:
+    dependency: transitive
+    description:
+      name: sentry
+      sha256: "76ad4fab90ff82427c26939bd79dc4df345a081e2b1cd5954b947e340b9af9a5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "8.6.0"
+  sentry_flutter:
+    dependency: "direct main"
+    description:
+      name: sentry_flutter
+      sha256: a7c92014701093a7c0a373e1a47c54ec428d8468d8bf2b793fee7ea1b085c21b
+      url: "https://pub.dev"
+    source: hosted
+    version: "8.6.0"
   settings_yaml:
     dependency: transitive
     description:
