@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
@@ -97,6 +98,10 @@ class JobEditScreenState extends State<JobEditScreen>
   }
 
   Future<List<Photo>> _fetchTaskPhotos() async {
+
+    if (widget.job == null) {
+      return [];
+    }
     final tasks = await DaoTask().getTasksByJob(widget.job!);
     final photos = <Photo>[];
     for (final task in tasks) {
