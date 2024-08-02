@@ -38,7 +38,7 @@ where j.id =?
     final db = getDb();
 
     if (Strings.isBlank(filter)) {
-      return getAll();
+      return getAll(orderByClause: 'modifiedDate desc');
     }
     final data = await db.rawQuery('''
 select c.* 

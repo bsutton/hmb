@@ -34,9 +34,13 @@ abstract class Dao<T extends Entity<T>> {
   /// by the Dao.
   JuneStateCreator get juneRefresher;
 
-  Future<List<T>> getAll([Transaction? transaction]) async {
+  /// [orderByClause] is the list of columns followed by the collation order
+  ///  ```name desc, age```
+  Future<List<T>> getAll(
+      {String? orderByClause, Transaction? transaction}) async {
     final db = getDb(transaction);
-    final List<Map<String, dynamic>> maps = await db.query(tableName);
+    final List<Map<String, dynamic>> maps =
+        await db.query(tableName, orderBy: orderByClause);
     final list = List.generate(maps.length, (i) => fromMap(maps[i]));
 
     return list;

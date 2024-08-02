@@ -41,7 +41,8 @@ class DaoJob extends Dao<Job> {
 
   /// getAll - sort by modified date descending
   @override
-  Future<List<Job>> getAll([Transaction? transaction]) async {
+  Future<List<Job>> getAll(
+      {String? orderByClause, Transaction? transaction}) async {
     final db = getDb(transaction);
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, orderBy: 'modifiedDate desc');

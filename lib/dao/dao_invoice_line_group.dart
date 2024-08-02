@@ -13,7 +13,8 @@ class DaoInvoiceLineGroup extends Dao<InvoiceLineGroup> {
       InvoiceLineGroup.fromMap(map);
 
   @override
-  Future<List<InvoiceLineGroup>> getAll([Transaction? transaction]) async {
+  Future<List<InvoiceLineGroup>> getAll(
+      {String? orderByClause, Transaction? transaction}) async {
     final db = getDb(transaction);
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, orderBy: 'modified_date desc');

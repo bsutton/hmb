@@ -30,7 +30,8 @@ class DaoInvoice extends Dao<Invoice> {
   Invoice fromMap(Map<String, dynamic> map) => Invoice.fromMap(map);
 
   @override
-  Future<List<Invoice>> getAll([Transaction? transaction]) async {
+  Future<List<Invoice>> getAll(
+      {String? orderByClause, Transaction? transaction}) async {
     final db = getDb(transaction);
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, orderBy: 'modified_date desc');

@@ -24,7 +24,8 @@ class DaoQuote extends Dao<Quote> {
   Quote fromMap(Map<String, dynamic> map) => Quote.fromMap(map);
 
   @override
-  Future<List<Quote>> getAll([Transaction? transaction]) async {
+  Future<List<Quote>> getAll(
+      {String? orderByClause, Transaction? transaction}) async {
     final db = getDb(transaction);
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, orderBy: 'modified_date desc');
