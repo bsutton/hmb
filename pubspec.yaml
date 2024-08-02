@@ -12,7 +12,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.0.8
+version: 0.1.0
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -32,8 +32,8 @@ dependencies:
     version: ^1.1.0
   date_time_format: ^2.0.1
   datetime_picker_formfield: ^2.0.1
-  dcli: ^4.0.3
-  dcli_core: ^4.0.2
+  dcli: ^5.0.0
+  dcli_core: ^5.0.0
   direct_caller_sim_choice: ^1.0.5
   dlibphonenumber: ^1.1.18
   email_validator: ^3.0.0
@@ -49,19 +49,19 @@ dependencies:
   flutter_email_sender: ^6.0.3
   flutter_secure_storage: ^9.2.2
   flutter_secure_storage_linux: ^1.2.1
-  # ftoast: ^2.0.0
   future_builder_ex: ^4.0.0
   go_router: ^14.2.0
   google_sign_in: ^6.2.1
   googleapis: ^13.1.0
   googleapis_auth: ^1.6.0
-  halfpipe: ^0.0.1
+  halfpipe: ^1.0.1
   http: ^1.2.1
   image_picker: ^1.1.1
   intl: ^0.19.0
   june: ^1.0.0+1
   mailto: ^2.0.0
   mobile_number: ^2.1.1
+  mockito: ^5.4.4
   money2: ^5.0.1
   oidc: ^0.7.0
   oidc_core: ^0.7.0
@@ -94,8 +94,8 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   flutter_test:
     sdk: flutter
-  lint_hard: ^4.0.0
-  pub_release: ^10.1.0
+  lint_hard: ^5.0.0
+  pub_release: ^11.0.0
   pubspec_manager: ^1.0.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
