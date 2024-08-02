@@ -136,34 +136,24 @@ class Surface extends StatelessWidget {
     switch (elevation) {
       case SurfaceElevation.e0:
         color = HMBColors.surface0dp;
-        break;
       case SurfaceElevation.e1:
         color = HMBColors.surface1dp;
-        break;
       case SurfaceElevation.e2:
         color = HMBColors.surface2dp;
-        break;
       case SurfaceElevation.e3:
         color = HMBColors.surface3dp;
-        break;
       case SurfaceElevation.e4:
         color = HMBColors.surface4dp;
-        break;
       case SurfaceElevation.e6:
         color = HMBColors.surface6dp;
-        break;
       case SurfaceElevation.e8:
         color = HMBColors.surface8dp;
-        break;
       case SurfaceElevation.e12:
         color = HMBColors.surface12dp;
-        break;
       case SurfaceElevation.e16:
         color = HMBColors.surface16dp;
-        break;
       case SurfaceElevation.e24:
         color = HMBColors.surface24dp;
-        break;
     }
     return color;
   }
