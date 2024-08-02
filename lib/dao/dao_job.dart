@@ -91,7 +91,7 @@ where t.id =?
   }
 
   Future<JobStatistics> getJobStatistics(Job job) async {
-    final tasks = await DaoTask().getTasksByJob(job);
+    final tasks = await DaoTask().getTasksByJob(job.id);
 
     final totalTasks = tasks.length;
     var completedTasks = 0;
@@ -146,7 +146,7 @@ where c.id =?
   }
 
   Future<bool> hasBillableTasks(Job job) async {
-    final tasks = await DaoTask().getTasksByJob(job);
+    final tasks = await DaoTask().getTasksByJob(job.id);
     for (final task in tasks) {
       final timeEntries = await DaoTimeEntry().getByTask(task.id);
       final unbilledTimeEntries = timeEntries.where((entry) => !entry.billed);
@@ -171,7 +171,7 @@ where c.id =?
     if (await hasBillableTasks(job)) {
       return true;
     }
-    final tasks = await DaoTask().getTasksByJob(job);
+    final tasks = await DaoTask().getTasksByJob(job.id);
     for (final task in tasks) {
       if (task.effortInHours != null || task.estimatedCost != null) {
         return true;

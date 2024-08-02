@@ -3,8 +3,8 @@ import 'package:june/june.dart';
 import '../entity/photo.dart';
 import 'dao.dart';
 
-class PhotoDao extends Dao<Photo> {
-  Future<List<Photo>> getPhotosByTaskId(int taskId) async {
+class DaoPhoto extends Dao<Photo> {
+  Future<List<Photo>> getByTask(int taskId) async {
     final db = getDb();
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, where: 'taskId = ?', whereArgs: [taskId]);

@@ -1,21 +1,16 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
 import '../../dao/dao_job_status.dart';
-import '../../dao/dao_photo.dart'; // Import the Photo DAO
 import '../../dao/dao_system.dart';
-import '../../dao/dao_task.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/job_status.dart';
-import '../../entity/photo.dart'; // Import the Photo entity
 import '../../util/money_ex.dart';
 import '../../util/platform_ex.dart';
 import '../../widgets/hmb_button.dart';
@@ -25,6 +20,7 @@ import '../../widgets/hmb_form_section.dart';
 import '../../widgets/hmb_select_contact.dart';
 import '../../widgets/hmb_select_site.dart';
 import '../../widgets/hmb_text_field.dart';
+import '../../widgets/photo_gallery.dart';
 import '../../widgets/rich_editor.dart';
 import '../../widgets/select_customer.dart';
 import '../base_full_screen/entity_edit_screen.dart';
@@ -97,20 +93,6 @@ class JobEditScreenState extends State<JobEditScreen>
     }
   }
 
-  Future<List<Photo>> _fetchTaskPhotos() async {
-
-    if (widget.job == null) {
-      return [];
-    }
-    final tasks = await DaoTask().getTasksByJob(widget.job!);
-    final photos = <Photo>[];
-    for (final task in tasks) {
-      final taskPhotos = await PhotoDao().getPhotosByTaskId(task.id);
-      photos.addAll(taskPhotos);
-    }
-    return photos;
-  }
-
   @override
   Widget build(BuildContext context) =>
       JuneBuilder(() => SelectedCustomer()..customerId = widget.job?.customerId,
@@ -151,27 +133,7 @@ class JobEditScreenState extends State<JobEditScreen>
                             _chooseSite(customer, job),
 
                             // Display task photos
-                            FutureBuilderEx<List<Photo>>(
-                              // ignore: discarded_futures
-                              future: _fetchTaskPhotos(),
-                              builder: (context, photos) => SizedBox(
-                                height: 100,
-                                child: ListView(
-                                  scrollDirection: Axis.horizontal,
-                                  children: photos!
-                                      .map((photo) => Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Image.file(
-                                              File(photo.filePath),
-                                              width: 80,
-                                              height: 80,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ))
-                                      .toList(),
-                                ),
-                              ),
-                            ),
+                            PhotoGallery(job: job!),
 
                             // Manage tasks
                             _manageTasks(job),

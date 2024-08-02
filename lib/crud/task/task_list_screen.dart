@@ -92,7 +92,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   Future<List<Task>> _fetchTasks() async {
     final showCompleted =
         June.getState(ShowCompletedTasksState.new).showCompletedTasks;
-    final tasks = await DaoTask().getTasksByJob(widget.parent.parent!);
+    final tasks = await DaoTask().getTasksByJob(widget.parent.parent!.id);
 
     final included = <Task>[];
     for (final task in tasks) {
@@ -151,7 +151,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       );
 
   Future<int> _getPhotoCount(int taskId) async =>
-      (await PhotoDao().getPhotosByTaskId(taskId)).length;
+      (await DaoPhoto().getByTask(taskId)).length;
 }
 
 class ShowCompletedTasksState extends JuneState {

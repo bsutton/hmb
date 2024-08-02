@@ -50,7 +50,7 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
   }
 
   Future<List<TaskCost>> _loadTasks() async {
-    final tasks = await DaoTask().getTasksByJob(widget.job);
+    final tasks = await DaoTask().getTasksByJob(widget.job.id);
     final billableTasks = <TaskCost>[];
 
     for (final task in tasks) {

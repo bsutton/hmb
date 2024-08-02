@@ -15,6 +15,7 @@ import '../../widgets/hmb_phone_text.dart';
 import '../../widgets/hmb_site_text.dart';
 import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_themes.dart';
+import '../../widgets/photo_gallery.dart';
 import '../../widgets/rich_editor.dart';
 
 class JobCard extends StatelessWidget {
@@ -24,31 +25,33 @@ class JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
-      // ignore: discarded_futures
-      future: DaoJobStatus().getById(job.jobStatusId),
-      builder: (context, jobStatus) => FutureBuilderEx<Customer?>(
-            // ignore: discarded_futures
-            future: DaoCustomer().getById(job.customerId),
-            builder: (context, customer) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                HMBTextHeadline3(customer?.name ?? 'Not Set'),
-                Column(
-                  children: [
-                    HMBJobPhoneText(job: job),
-                    HMBJobEmailText(job: job)
-                  ],
-                ),
-                HMBJobSiteText(label: '', job: job),
-                HMBText('Status: ${jobStatus?.name ?? "Status Unknown"} '),
-                HMBText('Scheduled: ${formatDate(job.startDate)}'),
-                HMBText(
-                  '''Description: ${RichEditor.createParchment(job.description).toPlainText().split('\n').first}''',
-                ),
-                buildStatistics(job)
-              ],
-            ),
-          ));
+        // ignore: discarded_futures
+        future: DaoJobStatus().getById(job.jobStatusId),
+        builder: (context, jobStatus) => FutureBuilderEx<Customer?>(
+          // ignore: discarded_futures
+          future: DaoCustomer().getById(job.customerId),
+          builder: (context, customer) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              HMBTextHeadline3(customer?.name ?? 'Not Set'),
+              Column(
+                children: [
+                  HMBJobPhoneText(job: job),
+                  HMBJobEmailText(job: job)
+                ],
+              ),
+              HMBJobSiteText(label: '', job: job),
+              HMBText('Status: ${jobStatus?.name ?? "Status Unknown"} '),
+              HMBText('Scheduled: ${formatDate(job.startDate)}'),
+              HMBText(
+                '''Description: ${RichEditor.createParchment(job.description).toPlainText().split('\n').first}''',
+              ),
+              PhotoGallery(job: job),
+              buildStatistics(job)
+            ],
+          ),
+        ),
+      );
 
   FutureBuilderEx<JobStatistics> buildStatistics(Job job) => FutureBuilderEx(
         // ignore: discarded_futures

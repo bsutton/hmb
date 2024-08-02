@@ -27,6 +27,7 @@ import '../../widgets/hmb_crud_time_entry.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_area.dart';
 import '../../widgets/hmb_text_field.dart';
+import '../../widgets/photo_gallery.dart';
 import '../base_nested/nested_edit_screen.dart';
 import '../base_nested/nested_list_screen.dart';
 
@@ -95,7 +96,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     if (widget.task == null) {
       return [];
     }
-    return PhotoDao().getPhotosByTaskId(widget.task!.id);
+    return DaoPhoto().getByTask(widget.task!.id);
   }
 
   @override
@@ -156,7 +157,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               child: const Text('Delete'),
               onPressed: () async {
                 // Delete the photo from the database and the disk
-                await PhotoDao().delete(photo.id);
+                await DaoPhoto().delete(photo.id);
                 await File(photo.filePath).delete();
                 setState(() {
                   _photosFuture = _loadPhotos(); // Refresh the photos
@@ -170,9 +171,13 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         ),
       );
 
-  Future<void> _showFullScreenPhoto(
-      BuildContext context, String imagePath) async {
-    await context.push('/photo_viewer', extra: imagePath);
+  Future<void> _showFullScreenPhoto(BuildContext context, String imagePath,
+      String taskName, String comment) async {
+    await context.push('/photo_viewer', extra: {
+      'imagePath': imagePath,
+      'taskName': taskName,
+      'comment': comment,
+    });
   }
 
   @override
@@ -212,21 +217,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
             ),
 
             /// Direct Check List
-            FutureBuilderEx<CheckList?>(
-                // ignore: discarded_futures
-                future: DaoCheckList().getByTask(task?.id),
-                builder: (context, checklist) => Flexible(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            HBMCrudCheckListItem<CheckList>(
-                              parent: Parent(checklist),
-                              daoJoin: JoinAdaptorCheckListCheckListItem(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )),
+            _buildCheckList(task),
 
             HBMCrudTimeEntry(
               parentTitle: 'Task',
@@ -236,70 +227,102 @@ class _TaskEditScreenState extends State<TaskEditScreen>
             // Display photos and allow adding comments and deletion
             Column(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.camera_alt),
-                  onPressed: () async {
-                    final photoFile = await takePhoto();
-                    if (photoFile != null) {
-                      // Insert the photo metadata into the database
-                      final newPhoto = Photo.forInsert(
-                        taskId: task!.id,
-                        filePath: photoFile.path,
-                        comment: '',
-                      );
-                      await PhotoDao().insert(newPhoto);
-                      setState(() {
-                        _photosFuture = _loadPhotos(); // Refresh the photos
-                      });
-                    }
-                  },
-                ),
-                FutureBuilderEx<List<Photo>>(
-                    future: _photosFuture,
-                    builder: (context, photos) => Column(
-                          children: photos!
-                              .map((photo) => Column(
-                                    children: [
-                                      Stack(
-                                        children: [
-                                          Image.file(File(photo.filePath)),
-                                          Positioned(
-                                            right: 0,
-                                            child: GestureDetector(
-                                              onTap: () async =>
-                                                  _showFullScreenPhoto(
-                                                      context, photo.filePath),
-                                              child: Container(
-                                                color: Colors.black
-                                                    .withOpacity(0.5),
-                                                padding:
-                                                    const EdgeInsets.all(8),
-                                                child: const Icon(
-                                                  Icons.fullscreen,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      _buildCommentField(photo),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete),
-                                        onPressed: () async {
-                                          await _showConfirmDeleteDialog(
-                                              context, photo);
-                                        },
-                                      ),
-                                    ],
-                                  ))
-                              .toList(),
-                        )),
+                _buildTakePhotoButton(task),
+                _buildPhotoCRUD(),
               ],
             ),
           ],
         ),
       );
+
+  FutureBuilderEx<CheckList?> _buildCheckList(Task? task) =>
+      FutureBuilderEx<CheckList?>(
+          // ignore: discarded_futures
+          future: DaoCheckList().getByTask(task?.id),
+          builder: (context, checklist) => Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      HBMCrudCheckListItem<CheckList>(
+                        parent: Parent(checklist),
+                        daoJoin: JoinAdaptorCheckListCheckListItem(),
+                      ),
+                    ],
+                  ),
+                ),
+              ));
+
+  /// Build the take photo button
+  Widget _buildTakePhotoButton(Task? task) => IconButton(
+        icon: const Icon(Icons.camera_alt),
+        onPressed: () async {
+          final photoFile = await takePhoto();
+          if (photoFile != null) {
+            // Insert the photo metadata into the database
+            final newPhoto = Photo.forInsert(
+              taskId: task!.id,
+              filePath: photoFile.path,
+              comment: '',
+            );
+            await DaoPhoto().insert(newPhoto);
+            setState(() {
+              _photosFuture = _loadPhotos(); // Refresh the photos
+            });
+            PhotoGallery.notify();
+          }
+        },
+      );
+
+  /// Build the photo crud
+  Widget _buildPhotoCRUD() => FutureBuilderEx<List<Photo>>(
+      future: _photosFuture,
+      builder: (context, photos) => Column(
+            children: photos!
+                .map((photo) => Column(
+                      children: [
+                        Stack(
+                          children: [
+                            Image.file(File(photo.filePath)),
+                            Positioned(
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  // Fetch the task for this photo to get
+                                  // the task name.
+                                  final task =
+                                      await DaoTask().getById(photo.taskId);
+                                  if (context.mounted) {
+                                    await _showFullScreenPhoto(
+                                        context,
+                                        photo.filePath,
+                                        task!.name,
+                                        photo.comment);
+                                  }
+                                },
+                                child: Container(
+                                  color: Colors.black.withOpacity(0.5),
+                                  padding: const EdgeInsets.all(8),
+                                  child: const Icon(
+                                    Icons.fullscreen,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        _buildCommentField(photo),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () async {
+                            await _showConfirmDeleteDialog(context, photo);
+                            PhotoGallery.notify();
+                          },
+                        ),
+                      ],
+                    ))
+                .toList(),
+          ));
 
   Widget _buildCommentField(Photo photo) {
     final _commentController = TextEditingController(text: photo.comment);
@@ -309,10 +332,11 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       if (!_commentFocusNode.hasFocus) {
         // Update the comment in the database when the text field loses focus
         photo.comment = _commentController.text;
-        await PhotoDao().update(photo);
+        await DaoPhoto().update(photo);
         setState(() {
           // Photo comment updated in the database
         });
+        PhotoGallery.notify();
       }
     });
 

@@ -60,7 +60,7 @@ class DaoInvoice extends Dao<Invoice> {
 
   /// Create an invoice for the given job.
   Future<Invoice> create(Job job, List<int> selectedTaskIds) async {
-    final tasks = await DaoTask().getTasksByJob(job);
+    final tasks = await DaoTask().getTasksByJob(job.id);
 
     if (job.hourlyRate == MoneyEx.zero) {
       throw InvoiceException('Hourly rate must be set for job ${job.summary}');
