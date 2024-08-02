@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:dcli_core/dcli_core.dart';
+import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
 
 import '../../../util/exceptions.dart';
@@ -70,7 +71,7 @@ abstract class BackupProvider {
     }
   }
 
-  Future<void> restoreDatabase();
+  Future<void> restoreDatabase(BuildContext context);
 
   /// Replaces the current database with the one in the backup file.
   Future<void> replaceDatabase(String pathToBackupFile) async {

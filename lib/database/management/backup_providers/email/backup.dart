@@ -1,11 +1,13 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:strings/strings.dart';
 
 import '../../../../dao/dao_system.dart';
 import '../../../../util/exceptions.dart';
+import '../../../../widgets/hmb_file_picker_linux.dart';
 import '../../../../widgets/hmb_toast.dart';
 import '../backup_provider.dart';
 
@@ -105,24 +107,30 @@ class EmailBackupProvider extends BackupProvider {
     }
   }
 
-  Future<File?> pickBackupFile() async {
+  Future<File?> pickBackupFile(BuildContext context) async {
+    String? selectedFilePath;
     try {
-      final result = await FilePicker.platform.pickFiles();
+      if (Platform.isLinux) {
+        /// The FilePicker package does a really bad job on linux.
+        selectedFilePath = await HMBFilePickerDialog().show(context);
+      } else {
+        final result = await FilePicker.platform.pickFiles();
 
-      if (result != null && result.files.single.path != null) {
-        return File(result.files.single.path!);
+        if (result != null && result.files.single.path != null) {
+          selectedFilePath = result.files.single.path;
+        }
       }
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       throw BackupException('Error picking file: $e');
     }
-    return null;
+    return selectedFilePath == null ? null : File(selectedFilePath);
   }
 
   @override
-  Future<void> restoreDatabase() async {
+  Future<void> restoreDatabase(BuildContext context) async {
     try {
-      final backupFile = await pickBackupFile();
+      final backupFile = await pickBackupFile(context );
       if (backupFile == null) {
         throw BackupException('No backup file selected.');
       }
