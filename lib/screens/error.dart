@@ -1,7 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class ErrorScreen extends StatelessWidget {
   const ErrorScreen({required this.errorMessage, super.key});
+
+  ErrorScreen.fromException(Exception exception, StackTrace stackTrace,
+      {super.key})
+      : errorMessage = exception.toString() {
+    /// report error to sentry.
+    unawaited(Sentry.captureException(
+      exception,
+      stackTrace: stackTrace,
+    ));
+  }
   final String errorMessage;
 
   @override

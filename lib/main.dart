@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dcli_core/dcli_core.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:toastification/toastification.dart';
 
 import 'crud/customer/customer_list_screen.dart';
@@ -32,47 +34,86 @@ import 'widgets/hmb_start_time_entry.dart';
 import 'widgets/hmb_status_bar.dart';
 
 bool firstRun = false;
+
 void main(List<String> args) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  if (args.isNotEmpty) {
-    print('Got a link $args');
-  } else {
-    print('no args');
-  }
+  await SentryFlutter.init(
+    (options) {
+      options
+        ..dsn =
+            'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
+        ..tracesSampleRate = 1.0
+        ..profilesSampleRate = 1.0;
+    },
+    appRunner: () {
+      WidgetsFlutterBinding.ensureInitialized();
 
-  initAppLinks();
 
-  final blockingUIKey = GlobalKey();
 
-  runApp(ToastificationWrapper(
-    child: MaterialApp(
-      home: Column(
-        children: [
-          Expanded(
-            child: Builder(
-              builder: (context) => JuneBuilder(
-                TimeEntryState.new,
-                builder: (_) => BlockingUIRunner(
-                  key: blockingUIKey,
-                  slowAction: () => _initialise(context),
-                  label: 'Upgrade your database.',
-                  builder: (context) => MaterialApp.router(
-                    title: 'Handyman',
-                    theme: ThemeData(
-                      primarySwatch: Colors.blue,
-                      visualDensity: VisualDensity.adaptivePlatformDensity,
+      initAppLinks();
+
+      final blockingUIKey = GlobalKey();
+
+      // Set up error handling
+      FlutterError.onError = (FlutterErrorDetails details) {
+        // Log the error to the console
+        FlutterError.dumpErrorToConsole(details);
+
+        // Capture the exception in Sentry
+        Sentry.captureException(
+          details.exception,
+          stackTrace: details.stack,
+        );
+
+        // Optionally, navigate to the ErrorScreen
+        runApp(ErrorApp(details.exception.toString()));
+      };
+
+      // Catch errors in asynchronous code
+      runZonedGuarded(
+        () {
+          runApp(ToastificationWrapper(
+            child: MaterialApp(
+              home: Column(
+                children: [
+                  Expanded(
+                    child: Builder(
+                      builder: (context) => JuneBuilder(
+                        TimeEntryState.new,
+                        builder: (_) => BlockingUIRunner(
+                          key: blockingUIKey,
+                          slowAction: () => _initialise(context),
+                          label: 'Upgrade your database.',
+                          builder: (context) => MaterialApp.router(
+                            title: 'Handyman',
+                            theme: ThemeData(
+                              primarySwatch: Colors.blue,
+                              visualDensity: VisualDensity.adaptivePlatformDensity,
+                            ),
+                            routerConfig: _router,
+                          ),
+                        ),
+                      ),
                     ),
-                    routerConfig: _router,
                   ),
-                ),
+                  const BlockingOverlay(),
+                ],
               ),
             ),
-          ),
-          const BlockingOverlay(),
-        ],
-      ),
-    ),
-  ));
+          ));
+        },
+        (error, stackTrace) {
+          // Capture the exception in Sentry
+          Sentry.captureException(
+            error,
+            stackTrace: stackTrace,
+          );
+
+          // Optionally, navigate to the ErrorScreen
+          runApp(ErrorApp(error.toString()));
+        },
+      );
+    },
+  );
 }
 
 void initAppLinks() {
@@ -177,8 +218,11 @@ GoRouter get _router => GoRouter(
             GoRoute(
               path: 'photo_viewer',
               builder: (context, state) {
-                final imagePath = state.extra! as String;
-                return FullScreenPhotoViewer(imagePath: imagePath);
+                final args = state.extra! as Map<String, String>;
+                final imagePath = args['imagePath']!;
+                final taskName = args['taskName']!;
+                return FullScreenPhotoViewer(
+                    imagePath: imagePath, taskName: taskName);
               },
             ),
           ],
@@ -291,7 +335,10 @@ Future<void> _initialise(BuildContext context) async {
       await _initializeTimeEntryState(refresh: false);
 
       // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Capture the exception in Sentry
+      Sentry.captureException(e, stackTrace: stackTrace);
+
       if (context.mounted) {
         await showDialog<void>(
             context: context,
@@ -358,3 +405,18 @@ Future<void> _initializeTimeEntryState({required bool refresh}) async {
 
 Future<String> get pathToHmbFiles async =>
     join((await getApplicationSupportDirectory()).path, 'hmb');
+
+
+
+class ErrorApp extends StatelessWidget {
+  final String errorMessage;
+
+  ErrorApp(this.errorMessage);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: ErrorScreen(errorMessage: errorMessage),
+    );
+  }
+}
