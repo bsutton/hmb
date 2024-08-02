@@ -26,9 +26,9 @@ class TimeEntryListScreen extends StatelessWidget {
           '''Interval: ${formatDateTime(entity.startTime)} - ${entity.endTime != null ? formatDateTime(entity.endTime!) : 'running'}; ${entity.note}'''),
       onEdit: (timeEntry) =>
           TimeEntryEditScreen(task: parent.parent!, timeEntry: timeEntry),
-      canEdit: (timeEntry) => timeEntry.billed == false,
+      canEdit: (timeEntry) => !timeEntry.billed,
       onDelete: (timeEntry) async => DaoTimeEntry().delete(timeEntry!.id),
-      canDelete: (timeEntry) => timeEntry.billed == false,
+      canDelete: (timeEntry) => !timeEntry.billed,
       onInsert: (timeEntry) async => DaoTimeEntry().insert(timeEntry!),
       details: (timeEntry, details) => Row(
             children: [
