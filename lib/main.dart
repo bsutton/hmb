@@ -52,7 +52,7 @@ void main(List<String> args) async {
             ..profilesSampleRate = 1.0;
         },
       );
-      // Initialize app links and any other startup logic
+
       if (args.isNotEmpty) {
         print('Got a link $args');
       } else {
@@ -65,17 +65,27 @@ void main(List<String> args) async {
 
       // Set up error handling
       FlutterError.onError = (details) {
-        // Log the error to the console
-        FlutterError.dumpErrorToConsole(details);
+        // Check if the error is a RenderFlex overflow
+        final isRenderFlexOverflow =
+            details.exceptionAsString().contains('A RenderFlex overflowed');
 
-        // Capture the exception in Sentry
-        Sentry.captureException(
-          details.exception,
-          stackTrace: details.stack,
-        );
+        // If it's not a RenderFlex overflow, handle it normally
+        if (!isRenderFlexOverflow) {
+          // Log the error to the console
+          FlutterError.dumpErrorToConsole(details);
 
-        // Optionally, navigate to the ErrorScreen
-        runApp(ErrorApp(details.exception.toString()));
+          // Capture the exception in Sentry
+          Sentry.captureException(
+            details.exception,
+            stackTrace: details.stack,
+          );
+
+          // Optionally, navigate to the ErrorScreen
+          runApp(ErrorApp(details.exception.toString()));
+        } else {
+          // Log the RenderFlex overflow warning without crashing the app
+          debugPrint('RenderFlex overflowed: ${details.exception}');
+        }
       };
 
       runApp(ToastificationWrapper(
@@ -141,10 +151,7 @@ GoRouter get _router => GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          // ignore: prefer_expression_function_bodies
-          redirect: (context, state) {
-            return firstRun ? '/system/wizard' : null;
-          },
+          redirect: (context, state) => firstRun ? '/system/wizard' : null,
           builder: (_, __) =>
               const HomeWithDrawer(initialScreen: JobListScreen()),
           routes: [
@@ -353,8 +360,6 @@ Future<void> _initialise(BuildContext context) async {
                   content: ErrorScreen(errorMessage: e.toString()),
                   title: 'Database Error',
                 ));
-        // context.go('/error',
-        //     extra: 'An error occurred while processing your request.');
       }
       rethrow;
     }
