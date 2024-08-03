@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
 import '../entity/invoice_line.dart';
+import '../util/money_ex.dart';
 
 class EditInvoiceLineDialog extends StatefulWidget {
   const EditInvoiceLineDialog({required this.line, super.key});
@@ -84,7 +85,9 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
                 description: _descriptionController.text,
                 quantity: quantity,
                 unitPrice: unitPrice,
-                lineTotal: unitPrice.multiplyByFixed(quantity),
+                lineTotal: _status == LineStatus.normal
+                    ? unitPrice.multiplyByFixed(quantity)
+                    : MoneyEx.zero,
                 status: _status,
               );
               Navigator.of(context).pop(updatedLine);
