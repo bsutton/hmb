@@ -88,7 +88,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       if (mounted) {
         HMBToast.info('Invoice uploaded to Xero successfully');
       }
-    // ignore: avoid_catches_without_on_clauses
+      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       if (mounted) {
         HMBToast.error('Failed to upload invoice: $e',
@@ -284,9 +284,7 @@ Xero Invoice # ${invoice.invoiceNum}'''),
   /// Build an invoice line.
   Widget _buildInvoiceLine(
       List<InvoiceLine> invoiceLines, BuildContext context) {
-    final visibleLines = invoiceLines
-        .where((line) => line.status != LineStatus.noChargeHidden)
-        .toList();
+    final visibleLines = invoiceLines.toList();
     return Column(
       children: visibleLines
           .map((line) => ListTile(
