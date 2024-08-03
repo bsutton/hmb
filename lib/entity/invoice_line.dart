@@ -3,7 +3,17 @@ import 'package:money2/money2.dart';
 import '../invoicing/xero/models/models.dart';
 import 'entity.dart';
 
-enum LineStatus { normal, noCharge, excluded, noChargeHidden }
+enum LineStatus { 
+  /// The line item is chargable
+  normal, 
+  /// The line item will be show but the amount will be 0
+  noCharge, 
+  /// The line item is to be removed from this invoice
+  /// and made available to be billed on a later invoice.
+  excluded, 
+  
+  /// The line item is not chargable and will be hidden from the user
+  noChargeHidden }
 
 class InvoiceLine extends Entity<InvoiceLine> {
   InvoiceLine({
