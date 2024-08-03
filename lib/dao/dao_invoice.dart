@@ -163,7 +163,16 @@ class DaoInvoice extends Dao<Invoice> {
     final lines = await DaoInvoiceLine().getByInvoiceId(invoiceId);
     var total = MoneyEx.zero;
     for (final line in lines) {
-      final lineTotal = line.unitPrice.multiplyByFixed(line.quantity);
+      final Money lineTotal;
+      switch (line.status) {
+        case LineStatus.normal:
+          lineTotal = line.unitPrice.multiplyByFixed(line.quantity);
+
+        case LineStatus.noCharge:
+        case LineStatus.excluded:
+        case LineStatus.noChargeHidden:
+          lineTotal = MoneyEx.zero;
+      }
       total += lineTotal;
     }
     final invoice = await DaoInvoice().getById(invoiceId);
