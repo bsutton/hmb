@@ -14,11 +14,24 @@ class HMBEmailText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (Strings.isNotBlank(email))
-            Text('${plusSpace(label)} ${email ?? ''}'),
-          if (Strings.isNotBlank(email)) MailToIcon(email)
+            Flexible(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${plusSpace(label)} ${email ?? ''}',
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ),
+          if (Strings.isNotBlank(email))
+            Align(
+              alignment: Alignment.centerRight,
+              child: MailToIcon(email),
+            ),
         ],
       );
 }
@@ -32,13 +45,6 @@ class HMBJobEmailText extends StatelessWidget {
   Widget build(BuildContext context) => FutureBuilderEx(
       // ignore: discarded_futures
       future: DaoContact().getForJob(job.id),
-      builder: (context, contact) => Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (Strings.isNotBlank(contact?.emailAddress))
-                Text('${plusSpace(label)} ${contact?.emailAddress ?? ''}'),
-              if (Strings.isNotBlank(contact?.emailAddress))
-                MailToIcon(contact?.emailAddress)
-            ],
-          ));
+      builder: (context, contact) =>
+          HMBEmailText(email: contact?.emailAddress, label: label));
 }

@@ -40,10 +40,18 @@ class HMBTextHeadline extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 8, bottom: 12),
-        child: Text(text,
-            style: TextStyle(
-                color: color, fontSize: fontSize, fontWeight: FontWeight.w500)),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w500,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
       );
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -63,10 +71,18 @@ class HMBTextHeadline2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 8, bottom: 8),
-        child: Text(text,
-            style: TextStyle(
-                color: color, fontSize: fontSize, fontWeight: FontWeight.w500)),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w500,
+          ),
+          overflow: TextOverflow.ellipsis, // Handle overflow
+          maxLines: 1, // Limit to one line
+        ),
       );
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);

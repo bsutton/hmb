@@ -14,18 +14,29 @@ class HMBSiteText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (site != null && Strings.isNotEmpty(label)) Text(label),
-          Text(Strings.join([
-            site?.addressLine1,
-            site?.addressLine2,
-            site?.suburb,
-            site?.state,
-            site?.postcode
-          ], separator: ', ', excludeEmpty: true)),
-          if (site != null)
-            if (site != null) HMBMapIcon(site),
+          if (site != null && Strings.isNotEmpty(label))
+            Expanded(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          Expanded(
+            child: Text(
+              Strings.join([
+                site?.addressLine1,
+                site?.addressLine2,
+                site?.suburb,
+                site?.state,
+                site?.postcode
+              ], separator: ', ', excludeEmpty: true),
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+          if (site != null) HMBMapIcon(site)
         ],
       );
 }
@@ -39,12 +50,8 @@ class HMBJobSiteText extends StatelessWidget {
   Widget build(BuildContext context) => FutureBuilderEx(
       // ignore: discarded_futures
       future: DaoSite().getByJob(job),
-      builder: (context, site) => Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (site != null && Strings.isNotEmpty(label)) Text(label),
-              if (site != null) Text(site.address),
-              if (site != null) HMBMapIcon(site),
-            ],
+      builder: (context, site) => HMBSiteText(
+            label: label,
+            site: site,
           ));
 }

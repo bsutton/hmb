@@ -9,6 +9,7 @@ import 'dial_widget.dart';
 
 /// Displays the label and phoneNum.
 /// If the phoneNum is null then we display nothing.
+
 class HMBPhoneText extends StatelessWidget {
   const HMBPhoneText({required this.phoneNo, this.label, super.key});
   final String? label;
@@ -16,10 +17,24 @@ class HMBPhoneText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (Strings.isNotBlank(phoneNo)) Text('${plusSpace(label)} $phoneNo'),
-          if (Strings.isNotBlank(phoneNo)) DialWidget(phoneNo!)
+          if (Strings.isNotBlank(phoneNo))
+            Flexible(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${plusSpace(label)} $phoneNo',
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ),
+          if (Strings.isNotBlank(phoneNo))
+            Align(
+              alignment: Alignment.centerRight,
+              child: DialWidget(phoneNo!),
+            ),
         ],
       );
 }
@@ -37,13 +52,8 @@ class HMBJobPhoneText extends StatelessWidget {
       future: DaoContact().getById(job.contactId),
       builder: (context, contact) {
         final phoneNo = contact?.preferredPhone();
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            if (Strings.isNotBlank(phoneNo))
-              Text('${plusSpace(label)} $phoneNo'),
-            if (Strings.isNotBlank(phoneNo)) DialWidget(phoneNo!)
-          ],
+        return HMBPhoneText(
+          phoneNo: phoneNo,
         );
       });
 }

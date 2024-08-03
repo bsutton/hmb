@@ -46,13 +46,7 @@ class JobCard extends StatelessWidget {
                     customer?.name ?? 'Not Set',
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      HMBJobPhoneText(job: job),
-                      HMBJobEmailText(job: job),
-                    ],
-                  ),
+                  _buildContactPoints(),
                   const SizedBox(height: 8),
                   HMBJobSiteText(label: '', job: job),
                   const SizedBox(height: 8),
@@ -81,6 +75,30 @@ class JobCard extends StatelessWidget {
           ),
         ),
       );
+
+  Widget _buildContactPoints() {
+    final contactPoints = [
+      HMBJobPhoneText(job: job),
+      HMBJobEmailText(job: job)
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: (isMobile
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [...contactPoints],
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [...contactPoints],
+                  )));
+      },
+    );
+  }
 
   FutureBuilderEx<JobStatistics> buildStatistics(Job job) => FutureBuilderEx(
         // ignore: discarded_futures
@@ -165,7 +183,7 @@ class JobCard extends StatelessWidget {
 
   List<Widget> _buildStatistics(JobStatistics remainingTasks) => [
         HMBText(
-          'Completed: ${remainingTasks.completedTasks}/${remainingTasks.totalTasks}',
+          'Tasks: ${remainingTasks.completedTasks}/${remainingTasks.totalTasks}',
           bold: true,
         ),
         const SizedBox(width: 16), //

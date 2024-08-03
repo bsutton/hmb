@@ -88,6 +88,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       if (mounted) {
         HMBToast.info('Invoice uploaded to Xero successfully');
       }
+    // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       if (mounted) {
         HMBToast.error('Failed to upload invoice: $e',
@@ -230,6 +231,7 @@ Invoice #${invoice.bestNumber} ${widget.job.summary}''',
                     children: [
                       FutureBuilderEx<List<InvoiceLine>>(
                         future:
+                            // ignore: discarded_futures
                             DaoInvoiceLine().getByInvoiceLineGroupId(group.id),
                         builder: (context, invoiceLines) {
                           if (invoiceLines!.isEmpty) {
@@ -347,7 +349,7 @@ Total: ${line.lineTotal}'''),
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       try {
         // Mark source item as not billed
         if (line.invoiceLineGroupId != null) {

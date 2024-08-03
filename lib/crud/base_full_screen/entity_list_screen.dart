@@ -105,11 +105,14 @@ class EntityListScreenState<T extends Entity<T>>
                       contentPadding: const EdgeInsets.all(4),
                       // widget.title(entity),
                       title: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            widget.title(entity),
-                            _buildDeleteButton(entity)
-                          ]),
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: widget.title(entity),
+                          ),
+                          _buildDeleteButton(entity),
+                        ],
+                      ),
                       // subtitle: widget.subtile
                       visualDensity: const VisualDensity(horizontal: -4),
                       subtitle: widget.details(entity),
