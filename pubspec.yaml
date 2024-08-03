@@ -62,7 +62,7 @@ dependencies:
   mailto: ^2.0.0
   mobile_number: ^2.1.1
   mockito: ^5.4.4
-  money2: ^5.0.1
+  money2: ^5.2.1
   oidc: ^0.7.0
   oidc_core: ^0.7.0
   oidc_default_store: ^0.2.0+9

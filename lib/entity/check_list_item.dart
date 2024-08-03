@@ -79,9 +79,10 @@ class CheckListItem extends Entity<CheckListItem> {
         'check_list_id': checkListId,
         'description': description,
         'item_type_id': itemTypeId,
-        'unit_cost': unitCost.minorUnits.toInt(),
-        'effort_in_hours': effortInHours.minorUnits.toInt(),
-        'quantity': quantity.minorUnits.toInt(),
+        'unit_cost': unitCost.copyWith(decimalDigits: 2).minorUnits.toInt(),
+        'effort_in_hours':
+            Fixed.copyWith(effortInHours, scale: 2).minorUnits.toInt(),
+        'quantity': Fixed.copyWith(quantity, scale: 2).minorUnits.toInt(),
         'completed': completed ? 1 : 0, // Convert bool to int (1/0)
         'billed': billed ? 1 : 0, // Convert bool to int (1/0)
         'invoice_line_id': invoiceLineId,

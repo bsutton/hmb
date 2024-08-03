@@ -60,8 +60,11 @@ class Task extends Entity<Task> {
         'jobId': jobId,
         'name': name,
         'description': description,
-        'effort_in_hours': effortInHours?.minorUnits.toInt(),
-        'estimated_cost': estimatedCost?.minorUnits.toInt(),
+        'effort_in_hours': Fixed.copyWith(effortInHours ?? Fixed.zero, scale: 2)
+            .minorUnits
+            .toInt(),
+        'estimated_cost':
+            estimatedCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'task_status_id': taskStatusId,
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),

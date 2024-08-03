@@ -977,10 +977,10 @@ packages:
     dependency: "direct main"
     description:
       name: money2
-      sha256: "5700ef14b4c796dc00823f891c8c8f7fe8ec20da51b6c01732a1e706cb12f73a"
+      sha256: a13032c13d74d50bf919ec4016282d6e5a39be44936b2dce11b4b4b9abacfe43
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.0"
+    version: "5.2.1"
   native_synchronization_temp:
     dependency: transitive
     description:
