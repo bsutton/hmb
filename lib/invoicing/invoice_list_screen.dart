@@ -1,7 +1,10 @@
+// ignore_for_file: avoid_catches_without_on_clauses
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
 
+import '../dao/dao_checklist_item.dart';
 import '../dao/dao_invoice.dart';
 import '../dao/dao_invoice_line.dart';
 import '../dao/dao_invoice_line_group.dart';
@@ -43,7 +46,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   @override
   void initState() {
     super.initState();
-
     // ignore: discarded_futures
     _invoices = DaoInvoice().getByJobId(widget.job.id);
     // ignore: discarded_futures
@@ -69,7 +71,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         try {
           // Create invoice (and invoice lines)
           await DaoInvoice().create(widget.job, selectedTasks);
-          // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           HMBToast.error('Failed to create invoice: $e',
               acknowledgmentRequired: true);
@@ -90,7 +91,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       if (mounted) {
         HMBToast.info('Invoice uploaded to Xero successfully');
       }
-      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       if (mounted) {
         HMBToast.error('Failed to upload invoice: $e',
@@ -216,7 +216,6 @@ Invoice #${invoice.bestNumber} ${widget.job.summary}''',
       if (mounted) {
         HMBToast.info('Invoice sent from Xero successfully');
       }
-      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       if (mounted) {
         HMBToast.error('Failed to send invoice: $e',
@@ -272,11 +271,9 @@ Xero Invoice # ${invoice.invoiceNum}'''),
                       await DaoInvoice().delete(invoice.id);
                       if (Strings.isNotBlank(invoice.invoiceNum)) {
                         await XeroApi().login();
-
                         await XeroApi().deleteInvoice(invoice);
                       }
                       await _refresh();
-                      // ignore: avoid_catches_without_on_clauses
                     } catch (e) {
                       if (mounted) {
                         HMBToast.error(e.toString());
@@ -299,7 +296,16 @@ Xero Invoice # ${invoice.invoiceNum}'''),
                 subtitle: Text(
                   '''Quantity: ${line.quantity}, Unit Price: ${line.unitPrice}, Status: ${line.status.toString().split('.').last}''',
                 ),
-                trailing: Text('Total: ${line.lineTotal}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Total: ${line.lineTotal}'),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () async => _deleteInvoiceLine(line),
+                    ),
+                  ],
+                ),
                 onTap: () async => _editInvoiceLine(context, line),
               ))
           .toList(),
@@ -318,8 +324,30 @@ Xero Invoice # ${invoice.invoiceNum}'''),
                 child: const Text('Create Invoice'),
               ),
             ),
-            onFalse: const Text('No billalbe Items found')),
+            onFalse: const Text('No billable Items found')),
       );
+
+  /// Delete an invoice line and recalculate the invoice total.
+  Future<void> _deleteInvoiceLine(InvoiceLine line) async {
+    try {
+      // Mark source item as not billed
+      if (line.invoiceLineGroupId != null) {
+        await DaoCheckListItem().markNotBilled(line.id);
+        await DaoTimeEntry().markAsUnbilled(line.id);
+      }
+
+      // Delete the invoice line
+      await DaoInvoiceLine().delete(line.id);
+
+      // Recalculate the invoice total
+      await DaoInvoice().recalculateTotal(line.invoiceId);
+
+      await _refresh();
+    } catch (e) {
+      HMBToast.error('Failed to delete invoice line: $e',
+          acknowledgmentRequired: true);
+    }
+  }
 
   /// Edit an invoice line.
   Future<void> _editInvoiceLine(BuildContext context, InvoiceLine line) async {
@@ -329,11 +357,9 @@ Xero Invoice # ${invoice.invoiceNum}'''),
     );
 
     if (editedLine != null) {
-      // Update the invoice line in the database
       await DaoInvoiceLine().update(editedLine);
       await DaoInvoice().recalculateTotal(editedLine.invoiceId);
       setState(() {
-        // Refresh the invoice lines
         _invoices = DaoInvoice().getByJobId(widget.job.id);
       });
     }

@@ -39,14 +39,7 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
     final db = getDb();
     final lines = await getByInvoiceId(invoiceId);
     for (final line in lines) {
-      final timeEntries = await DaoTimeEntry().getByInvoiceLineId(line.id);
-      for (final timeEntry in timeEntries) {
-        await DaoTimeEntry().markAsUnbilled(timeEntry, line.id);
-      }
-    }
-
-    final invoiceLines = await getByInvoiceId(invoiceId);
-    for (final line in invoiceLines) {
+      await DaoTimeEntry().markAsUnbilled(line.id);
       await DaoCheckListItem().markNotBilled(line.id);
     }
     await db.delete(tableName, where: 'invoice_id =?', whereArgs: [invoiceId]);

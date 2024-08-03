@@ -56,7 +56,7 @@ class DaoInvoice extends Dao<Invoice> {
 
   Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
     await getDb(transaction)
-        .delete(tableName, where: 'job_id =?', whereArgs: [jobId]);
+        .delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
   }
 
   /// Create an invoice for the given job.
@@ -112,11 +112,11 @@ class DaoInvoice extends Dao<Invoice> {
           lineTotal: lineTotal,
         );
 
-        await DaoInvoiceLine().insert(invoiceLine);
+        final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
         totalAmount += lineTotal;
 
-        // Mark time entry as billed
-        await DaoTimeEntry().markAsBilled(timeEntry, invoiceLine.id);
+        // Mark time entry as billed with the invoice line id
+        await DaoTimeEntry().markAsBilled(timeEntry, invoiceLineId);
       }
 
       // Materials based billing
@@ -136,12 +136,12 @@ class DaoInvoice extends Dao<Invoice> {
           lineTotal: lineTotal,
         );
 
-        await DaoInvoiceLine().insert(invoiceLine);
+        final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
         totalAmount += lineTotal;
 
-        // Mark checklist item as billed
+        // Mark checklist item as billed with the invoice line id
         final updatedItem =
-            item.copyWith(billed: true, invoiceLineId: invoiceLine.id);
+            item.copyWith(billed: true, invoiceLineId: invoiceLineId);
         await DaoCheckListItem().update(updatedItem);
       }
     }
@@ -167,9 +167,7 @@ class DaoInvoice extends Dao<Invoice> {
       switch (line.status) {
         case LineStatus.normal:
           lineTotal = line.unitPrice.multiplyByFixed(line.quantity);
-
         case LineStatus.noCharge:
-        case LineStatus.excluded:
         case LineStatus.noChargeHidden:
           lineTotal = MoneyEx.zero;
       }

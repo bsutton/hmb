@@ -36,13 +36,13 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   @override
   JuneStateCreator get juneRefresher => DbTimeEntryChanged.new;
 
-  Future<void> markAsUnbilled(TimeEntry entity, int invoiceLineId) async {
+  Future<void> markAsUnbilled(int invoiceLineId) async {
     final db = getDb();
     await db.update(
       tableName,
       {'invoice_line_id': null, 'billed': 0},
-      where: 'id = ?',
-      whereArgs: [entity.id],
+      where: 'invoice_line_id = ?',
+      whereArgs: [invoiceLineId],
     );
   }
 
