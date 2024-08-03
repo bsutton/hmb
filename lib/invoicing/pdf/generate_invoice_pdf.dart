@@ -7,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import '../../dao/dao_invoice_line.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/invoice.dart';
+import '../../entity/invoice_line.dart'; // Make sure to import your line entity
 import '../../util/format.dart';
 import '../../util/money_ex.dart';
 
@@ -16,9 +17,10 @@ Future<File> generateInvoicePdf(Invoice invoice) async {
 
   final lines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
 
-  // Calculate the total amount from the lines
-  final totalAmount =
-      lines.fold(MoneyEx.zero, (sum, line) => sum + line.lineTotal);
+  // Calculate the total amount from lines, excluding noChargeHidden lines
+  final totalAmount = lines
+      .where((line) => line.status != LineStatus.noChargeHidden)
+      .fold(MoneyEx.zero, (sum, line) => sum + line.lineTotal);
 
   final phone = await formatPhone(system?.bestPhone);
 
@@ -30,7 +32,8 @@ Future<File> generateInvoicePdf(Invoice invoice) async {
           pw.Text('Date: ${formatDate(invoice.createdDate)}'),
           pw.Text('Total Amount: ${invoice.totalAmount}'),
           pw.Text(
-              '''Due Date: ${formatDate(invoice.createdDate.add(const Duration(days: 3)))}'''),
+            '''Due Date: ${formatDate(invoice.createdDate.add(const Duration(days: 3)))}''',
+          ),
           pw.Divider(),
           pw.Align(
             alignment: pw.Alignment.centerRight,
@@ -43,18 +46,23 @@ Future<File> generateInvoicePdf(Invoice invoice) async {
                 pw.Text('Email: ${system.emailAddress}'),
                 pw.Text('Phone: $phone'),
                 pw.Text(
-                    '${system.businessNumberLabel}: ${system.businessNumber}'),
+                  '${system.businessNumberLabel}: ${system.businessNumber}',
+                ),
               ],
             ),
           ),
           pw.Divider(),
-          ...lines.map((line) => pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(line.description),
-                  pw.Text(line.lineTotal.toString()),
-                ],
-              )),
+          ...lines
+              .where((line) => line.status != LineStatus.noChargeHidden)
+              .map(
+                (line) => pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(line.description),
+                    pw.Text(line.lineTotal.toString()),
+                  ],
+                ),
+              ),
           pw.Divider(),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -71,11 +79,13 @@ Future<File> generateInvoicePdf(Invoice invoice) async {
           ],
           if (system.showPaymentLinkOnInvoice ?? false) ...[
             pw.UrlLink(
-              child: pw.Text('Pay Now',
-                  style: const pw.TextStyle(
-                    color: PdfColors.blue,
-                    decoration: pw.TextDecoration.underline,
-                  )),
+              child: pw.Text(
+                'Pay Now',
+                style: const pw.TextStyle(
+                  color: PdfColors.blue,
+                  decoration: pw.TextDecoration.underline,
+                ),
+              ),
               destination: system.paymentLinkUrl ?? '',
             ),
           ],
