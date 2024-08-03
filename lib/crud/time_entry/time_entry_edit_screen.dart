@@ -120,6 +120,9 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
                   labelText: 'Start Time',
                   keyboardType: TextInputType.datetime,
                   required: true,
+                  validator: (value) => (parseDateTime(value) == null)
+                      ? 'You must enter a valid Start Time'
+                      : null,
                 ),
               ),
             ),
@@ -131,6 +134,7 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
                   focusNode: _endTimeFocusNode,
                   labelText: 'End Time',
                   keyboardType: TextInputType.datetime,
+                  required: true,
 
                   /// end time must be after start time.
                   validator: (value) => (Strings.isNotBlank(value) &&
