@@ -36,57 +36,22 @@ import 'widgets/hmb_status_bar.dart';
 bool firstRun = false;
 
 void main(List<String> args) async {
-  // Catch errors in asynchronous code
-  await runZonedGuarded(
-    () async {
-      // Ensure WidgetsFlutterBinding is initialized before any async code.
-      WidgetsFlutterBinding.ensureInitialized();
+  // Ensure WidgetsFlutterBinding is initialized before any async code.
+  WidgetsFlutterBinding.ensureInitialized();
 
-      // Initialize Sentry.
-      await SentryFlutter.init(
-        (options) {
-          options
-            ..dsn =
-                'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
-            ..tracesSampleRate = 1.0
-            ..profilesSampleRate = 1.0;
-        },
-      );
-
-      if (args.isNotEmpty) {
-        print('Got a link $args');
-      } else {
-        print('no args');
-      }
-
+  // Initialize Sentry.
+  await SentryFlutter.init(
+    (options) {
+      options
+        ..dsn =
+            'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
+        ..tracesSampleRate = 1.0
+        ..profilesSampleRate = 1.0;
+    },
+    appRunner: () {
       initAppLinks();
 
       final blockingUIKey = GlobalKey();
-
-      // Set up error handling
-      FlutterError.onError = (details) {
-        // Check if the error is a RenderFlex overflow
-        final isRenderFlexOverflow =
-            details.exceptionAsString().contains('A RenderFlex overflowed');
-
-        // If it's not a RenderFlex overflow, handle it normally
-        if (!isRenderFlexOverflow) {
-          // Log the error to the console
-          FlutterError.dumpErrorToConsole(details);
-
-          // Capture the exception in Sentry
-          Sentry.captureException(
-            details.exception,
-            stackTrace: details.stack,
-          );
-
-          // Optionally, navigate to the ErrorScreen
-          runApp(ErrorApp(details.exception.toString()));
-        } else {
-          // Log the RenderFlex overflow warning without crashing the app
-          debugPrint('RenderFlex overflowed: ${details.exception}');
-        }
-      };
 
       runApp(ToastificationWrapper(
         child: MaterialApp(
@@ -117,16 +82,6 @@ void main(List<String> args) async {
           ),
         ),
       ));
-    },
-    (error, stackTrace) {
-      // Capture the exception in Sentry
-      Sentry.captureException(
-        error,
-        stackTrace: stackTrace,
-      );
-
-      // Optionally, navigate to the ErrorScreen
-      runApp(ErrorApp(error.toString()));
     },
   );
 }
@@ -316,6 +271,7 @@ class HomeWithDrawer extends StatelessWidget {
         ),
         drawer: MyDrawer(),
         body: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             JuneBuilder<TimeEntryState>(
               TimeEntryState.new,
@@ -331,7 +287,7 @@ class HomeWithDrawer extends StatelessWidget {
                 return Container();
               },
             ),
-            Expanded(child: initialScreen),
+            Flexible(child: initialScreen),
           ],
         ),
       );
