@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'hmb_spacer.dart';
+
 class HMBChildCrudCard extends StatelessWidget {
   const HMBChildCrudCard({
     required this.crudListScreen,
@@ -13,23 +15,29 @@ class HMBChildCrudCard extends StatelessWidget {
   final String? headline;
 
   @override
-  Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.only(bottom: 8),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (headline != null)
-                Text(
-                  headline!,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              const SizedBox(height: 16),
-              crudListScreen
-            ],
+  Widget build(BuildContext context) => Column(
+        children: [
+          const HMBSpacer(height: true),
+          Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            color: Colors.deepPurpleAccent,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (headline != null)
+                    Text(
+                      headline!,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  const SizedBox(height: 16),
+                  crudListScreen
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       );
 }
