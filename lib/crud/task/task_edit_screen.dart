@@ -79,7 +79,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _effortInHoursFocusNode = FocusNode();
     _itemTypeIdFocusNode = FocusNode();
 
-    June.getState(TaskStatusState.new).taskStatusId = widget.task?.id ?? 1;
+    // Initialize task status correctly
+    final initialTaskStatusId = widget.task?.taskStatusId ?? 1;
+    June.getState(TaskStatusState.new).taskStatusId = initialTaskStatusId;
 
     if (isNotMobile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -273,7 +275,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         },
       );
 
-  /// Build the photo crud
+  /// Build the photo CRUD
   Widget _buildPhotoCRUD() => FutureBuilderEx<List<Photo>>(
       future: _photosFuture,
       builder: (context, photos) => Column(
