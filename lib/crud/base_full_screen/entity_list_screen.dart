@@ -140,6 +140,7 @@ class EntityListScreenState<T extends Entity<T>>
   List<Widget> _commands() => [
         SizedBox(
           width: 250,
+          height: 70,
           child: HMBTextField(
             leadingSpace: false,
             labelText: 'Filter',
