@@ -9,6 +9,7 @@ import '../dao/dao_photo.dart';
 import '../dao/dao_task.dart';
 import '../entity/job.dart';
 import '../entity/photo.dart';
+import 'hmb_empty.dart';
 
 class PhotoGallery extends StatelessWidget {
   const PhotoGallery({required this.job, super.key});
@@ -19,53 +20,59 @@ class PhotoGallery extends StatelessWidget {
   @override
   Widget build(BuildContext context) => JuneBuilder(PhotoGalleryState.new,
       builder: (context) => FutureBuilderEx<List<Photo>>(
-            // ignore: discarded_futures
-            future: _fetchTaskPhotos(),
-            builder: (context, photos) => SizedBox(
-              height: 100,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: photos!
-                    .map((photo) => Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: GestureDetector(
-                            onTap: () async {
-                              // Fetch the task for this photo to get
-                              // the task name.
-                              final task =
-                                  await DaoTask().getById(photo.taskId);
-                              if (context.mounted) {
-                                await _showFullScreenPhoto(context,
-                                    photo.filePath, task!.name, photo.comment);
-                              }
-                            },
-                            child: Stack(
-                              children: [
-                                Image.file(
-                                  File(photo.filePath),
-                                  width: 80,
-                                  height: 80,
-                                  fit: BoxFit.cover,
-                                ),
-                                const Positioned(
-                                  bottom: 8,
-                                  right: 0,
-                                  child: ColoredBox(
-                                    color: Colors.black45,
-                                    child: Icon(
-                                      Icons.zoom_out_map,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
+          // ignore: discarded_futures
+          future: _fetchTaskPhotos(),
+          builder: (context, photos) {
+            if (photos!.isEmpty) {
+              return const HMBEmpty();
+            } else {
+              return buildGallery(photos, context);
+            }
+          }));
+
+  SizedBox buildGallery(List<Photo>? photos, BuildContext context) => SizedBox(
+        height: 100,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: photos!
+              .map((photo) => Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: GestureDetector(
+                      onTap: () async {
+                        // Fetch the task for this photo to get
+                        // the task name.
+                        final task = await DaoTask().getById(photo.taskId);
+                        if (context.mounted) {
+                          await _showFullScreenPhoto(context, photo.filePath,
+                              task!.name, photo.comment);
+                        }
+                      },
+                      child: Stack(
+                        children: [
+                          Image.file(
+                            File(photo.filePath),
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                          const Positioned(
+                            bottom: 8,
+                            right: 0,
+                            child: ColoredBox(
+                              color: Colors.black45,
+                              child: Icon(
+                                Icons.zoom_out_map,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ))
-                    .toList(),
-              ),
-            ),
-          ));
+                        ],
+                      ),
+                    ),
+                  ))
+              .toList(),
+        ),
+      );
 
   Future<List<Photo>> _fetchTaskPhotos() async {
     final tasks = await DaoTask().getTasksByJob(job.id);

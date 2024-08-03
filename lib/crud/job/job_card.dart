@@ -13,6 +13,7 @@ import '../../util/format.dart';
 import '../../widgets/hmb_email_text.dart';
 import '../../widgets/hmb_phone_text.dart';
 import '../../widgets/hmb_site_text.dart';
+import '../../widgets/hmb_spacer.dart';
 import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_themes.dart';
 import '../../widgets/photo_gallery.dart';
@@ -30,25 +31,53 @@ class JobCard extends StatelessWidget {
         builder: (context, jobStatus) => FutureBuilderEx<Customer?>(
           // ignore: discarded_futures
           future: DaoCustomer().getById(job.customerId),
-          builder: (context, customer) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              HMBTextHeadline3(customer?.name ?? 'Not Set'),
-              Column(
+          builder: (context, customer) => Card(
+            margin: const EdgeInsets.all(16),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HMBJobPhoneText(job: job),
-                  HMBJobEmailText(job: job)
+                  HMBTextHeadline2(
+                    customer?.name ?? 'Not Set',
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      HMBJobPhoneText(job: job),
+                      HMBJobEmailText(job: job),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  HMBJobSiteText(label: '', job: job),
+                  const SizedBox(height: 8),
+                  HMBText(
+                    'Status: ${jobStatus?.name ?? "Status Unknown"}',
+                  ),
+                  const SizedBox(height: 8),
+                  HMBText(
+                    'Scheduled: ${formatDate(job.startDate)}',
+                  ),
+                  const SizedBox(height: 8),
+                  const HMBText('Description:', bold: true),
+                  HMBText(
+                    RichEditor.createParchment(job.description)
+                        .toPlainText()
+                        .split('\n')
+                        .first,
+                  ),
+                  const SizedBox(height: 8),
+                  PhotoGallery(job: job),
+                  const SizedBox(height: 16),
+                  buildStatistics(job),
                 ],
               ),
-              HMBJobSiteText(label: '', job: job),
-              HMBText('Status: ${jobStatus?.name ?? "Status Unknown"} '),
-              HMBText('Scheduled: ${formatDate(job.startDate)}'),
-              HMBText(
-                '''Description: ${RichEditor.createParchment(job.description).toPlainText().split('\n').first}''',
-              ),
-              PhotoGallery(job: job),
-              buildStatistics(job)
-            ],
+            ),
           ),
         ),
       );
@@ -62,36 +91,57 @@ class JobCard extends StatelessWidget {
           }
           return LayoutBuilder(
             builder: (context, constraints) {
-              if (constraints.maxWidth < 600) {
-                // Mobile layout
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ..._buildStatistics(remainingTasks),
-                    _buildQuoteButton(context),
-                    _buildInvoiceButton(context)
-                  ],
-                );
-              } else {
-                // Desktop layout
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ..._buildStatistics(remainingTasks),
-                    _buildQuoteButton(context),
-                    _buildInvoiceButton(context)
-                  ],
-                );
-              }
+              final isMobile = constraints.maxWidth < 600;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: isMobile
+                    ? _buildMobileLayout(remainingTasks, context)
+                    : _buildDesktopLayout(remainingTasks, context),
+              );
             },
           );
         },
+      );
+
+  Widget _buildMobileLayout(JobStatistics stats, BuildContext context) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ..._buildStatistics(stats),
+          const HMBSpacer(height: true),
+          Row(
+            children: [
+              _buildQuoteButton(context),
+              const HMBSpacer(width: true),
+              _buildInvoiceButton(context),
+            ],
+          ),
+        ],
+      );
+
+  Widget _buildDesktopLayout(JobStatistics stats, BuildContext context) =>
+      Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [..._buildStatistics(stats)]),
+          const HMBSpacer(height: true),
+          Row(children: [
+            _buildQuoteButton(context),
+            const HMBSpacer(width: true),
+            _buildInvoiceButton(context),
+          ]),
+        ],
       );
 
   Widget _buildInvoiceButton(BuildContext context) => ElevatedButton(
         onPressed: () async => Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => InvoiceListScreen(job: job),
         )),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          textStyle: const TextStyle(fontSize: 16),
+        ),
         child: const Text('Invoice'),
       );
 
@@ -106,25 +156,32 @@ class JobCard extends StatelessWidget {
                           .toList() ??
                       [])),
         )),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          textStyle: const TextStyle(fontSize: 16),
+        ),
         child: const Text('Quote'),
       );
 
   List<Widget> _buildStatistics(JobStatistics remainingTasks) => [
         HMBText(
           'Completed: ${remainingTasks.completedTasks}/${remainingTasks.totalTasks}',
+          bold: true,
         ),
         const SizedBox(width: 16), //
         HMBText(
-          'Effort(hrs): ${remainingTasks.completedEffort.format('0.00')}/${remainingTasks.totalEffort.format('0.00')}',
+          'Est. Effort(hrs): ${remainingTasks.completedEffort.format('0.00')}/${remainingTasks.totalEffort.format('0.00')}',
+          bold: true,
         ),
         const SizedBox(width: 16), //
         HMBText(
           'Earnings: ${remainingTasks.earnedCost}/${remainingTasks.totalCost}',
+          bold: true,
         ),
         const SizedBox(width: 16), //
         HMBText(
-          ' Worked: ${remainingTasks.worked}/${remainingTasks.workedHours}hrs',
-        )
+            'Worked: ${remainingTasks.worked}/${remainingTasks.workedHours}hrs',
+            bold: true)
       ];
 }
 

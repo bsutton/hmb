@@ -5,9 +5,11 @@ class HMBText extends StatelessWidget {
     this.labelText, {
     super.key,
     this.leadingSpace = true,
+    this.bold = false,
   });
   final String labelText;
   final bool leadingSpace;
+  final bool bold;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -15,7 +17,10 @@ class HMBText extends StatelessWidget {
           if (leadingSpace) const SizedBox(height: 8),
           Text(
             labelText,
-            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+            style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal),
           ),
         ],
       );
