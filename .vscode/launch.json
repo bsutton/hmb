@@ -19,6 +19,7 @@
             "name": "handyman-linux",
             "request": "launch",
             "type": "dart",
+            "program": "lib/main.dart",
             "args": [
                 "-d",
                 "linux"
@@ -29,7 +30,6 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug"
-          
         },
         {
             "name": "handyman (profile mode)",
@@ -42,6 +42,15 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
+        },
+        {
+            "name": "build relase",
+            "request": "launch",
+            "type": "dart",
+            "program": "tool/build.dart",
+            "args": [
+                "-r"
+            ]
         }
     ]
 }

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_catches_without_on_clauses
-
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
@@ -69,14 +67,13 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
       if (selectedTasks.isNotEmpty) {
         try {
-          // Create invoice (and invoice lines)
           await DaoInvoice().create(widget.job, selectedTasks);
+          // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           HMBToast.error('Failed to create invoice: $e',
               acknowledgmentRequired: true);
         }
 
-        // Refresh state
         await _refresh();
       }
     }
@@ -100,7 +97,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   }
 
   Future<void> _refresh() async {
-    // Refresh state
     _invoices = DaoInvoice().getByJobId(widget.job.id);
     _hasUnbilledItems = DaoJob().hasBillableTasks(widget.job);
     setState(() {});
@@ -119,7 +115,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         ),
       );
 
-  /// Build the list of invoices.
   Widget _buildInvoiceList() => Expanded(
         child: FutureBuilderEx<List<Invoice>>(
           future: _invoices,
@@ -216,6 +211,7 @@ Invoice #${invoice.bestNumber} ${widget.job.summary}''',
       if (mounted) {
         HMBToast.info('Invoice sent from Xero successfully');
       }
+      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       if (mounted) {
         HMBToast.error('Failed to send invoice: $e',
@@ -234,7 +230,6 @@ Invoice #${invoice.bestNumber} ${widget.job.summary}''',
                     children: [
                       FutureBuilderEx<List<InvoiceLine>>(
                         future:
-                            // ignore: discarded_futures
                             DaoInvoiceLine().getByInvoiceLineGroupId(group.id),
                         builder: (context, invoiceLines) {
                           if (invoiceLines!.isEmpty) {
@@ -274,6 +269,7 @@ Xero Invoice # ${invoice.invoiceNum}'''),
                         await XeroApi().deleteInvoice(invoice);
                       }
                       await _refresh();
+                      // ignore: avoid_catches_without_on_clauses
                     } catch (e) {
                       if (mounted) {
                         HMBToast.error(e.toString());
@@ -302,7 +298,7 @@ Xero Invoice # ${invoice.invoiceNum}'''),
                     Text('Total: ${line.lineTotal}'),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () async => _deleteInvoiceLine(line),
+                      onPressed: () async => _confirmAndDeleteInvoiceLine(line),
                     ),
                   ],
                 ),
@@ -312,7 +308,6 @@ Xero Invoice # ${invoice.invoiceNum}'''),
     );
   }
 
-  /// build the create invoice button
   FutureBuilderEx<bool> _buildCreateInvoiceButton() => FutureBuilderEx<bool>(
         future: _hasUnbilledItems,
         builder: (context, hasUnbilledItems) => HMBOneOf(
@@ -327,25 +322,59 @@ Xero Invoice # ${invoice.invoiceNum}'''),
             onFalse: const Text('No billable Items found')),
       );
 
-  /// Delete an invoice line and recalculate the invoice total.
-  Future<void> _deleteInvoiceLine(InvoiceLine line) async {
-    try {
-      // Mark source item as not billed
-      if (line.invoiceLineGroupId != null) {
-        await DaoCheckListItem().markNotBilled(line.id);
-        await DaoTimeEntry().markAsUnbilled(line.id);
+  Future<void> _confirmAndDeleteInvoiceLine(InvoiceLine line) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Invoice Line'),
+        content: Text('''
+Are you sure you want to delete this invoice line?
+
+Details:
+Description: ${line.description}
+Quantity: ${line.quantity}
+Total: ${line.lineTotal}'''),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          TextButton(
+            child: const Text('Delete'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        // Mark source item as not billed
+        if (line.invoiceLineGroupId != null) {
+          await DaoCheckListItem().markNotBilled(line.id);
+          await DaoTimeEntry().markAsUnbilled(line.id);
+        }
+
+        // Delete the invoice line
+        await DaoInvoiceLine().delete(line.id);
+
+        // Check if the line group is empty and delete if necessary
+        final remainingLines = await DaoInvoiceLine()
+            .getByInvoiceLineGroupId(line.invoiceLineGroupId!);
+
+        if (remainingLines.isEmpty) {
+          await DaoInvoiceLineGroup().delete(line.invoiceLineGroupId!);
+        }
+
+        // Recalculate the invoice total
+        await DaoInvoice().recalculateTotal(line.invoiceId);
+
+        await _refresh();
+        // ignore: avoid_catches_without_on_clauses
+      } catch (e) {
+        HMBToast.error('Failed to delete invoice line: $e',
+            acknowledgmentRequired: true);
       }
-
-      // Delete the invoice line
-      await DaoInvoiceLine().delete(line.id);
-
-      // Recalculate the invoice total
-      await DaoInvoice().recalculateTotal(line.invoiceId);
-
-      await _refresh();
-    } catch (e) {
-      HMBToast.error('Failed to delete invoice line: $e',
-          acknowledgmentRequired: true);
     }
   }
 
