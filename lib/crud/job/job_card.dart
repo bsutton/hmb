@@ -32,7 +32,7 @@ class JobCard extends StatelessWidget {
           // ignore: discarded_futures
           future: DaoCustomer().getById(job.customerId),
           builder: (context, customer) => Card(
-            margin: const EdgeInsets.all(16),
+            margin: const EdgeInsets.all(8),
             elevation: 4,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
