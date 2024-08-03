@@ -32,6 +32,7 @@ class CustomerListScreen extends StatelessWidget {
                 // ignore: discarded_futures
                 future: DaoContact().getPrimaryForCustomer(customer.id),
                 builder: (context, contact) => Column(
+                  mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ContactText(

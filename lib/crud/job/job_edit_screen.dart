@@ -107,6 +107,7 @@ class JobEditScreenState extends State<JobEditScreen>
                   dao: DaoJob(),
                   entityState: this,
                   editor: (job) => Column(
+                    mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             HMBFormSection(children: [
@@ -166,7 +167,7 @@ class JobEditScreenState extends State<JobEditScreen>
         keyboardType: TextInputType.number,
       );
 
-  HMBChildCrudCard _manageTasks(Job? job) => HMBChildCrudCard(
+  Widget _manageTasks(Job? job) => HMBChildCrudCard(
         // headline: 'Tasks',
         crudListScreen: TaskListScreen(
           parent: Parent(job),

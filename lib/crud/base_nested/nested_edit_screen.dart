@@ -56,18 +56,16 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
         body: Column(
           children: [
             _commandButtons(context),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      /// Inject the entity specific editor.
-                      widget.editor(_currentEntity),
-                    ],
-                  ),
+            Flexible(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    /// Inject the entity specific editor.
+                    widget.editor(_currentEntity),
+                  ],
                 ),
               ),
             ),

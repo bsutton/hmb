@@ -18,6 +18,7 @@ class HMBChildCrudCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (headline != null)
@@ -26,10 +27,7 @@ class HMBChildCrudCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               const SizedBox(height: 16),
-              SizedBox(
-                height: 400,
-                child: crudListScreen,
-              ),
+              crudListScreen
             ],
           ),
         ),

@@ -21,6 +21,7 @@ class JobListScreen extends StatefulWidget {
 class _JobListScreenState extends State<JobListScreen> {
   @override
   Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -38,7 +39,7 @@ class _JobListScreenState extends State<JobListScreen> {
               ),
             ],
           ),
-          Expanded(
+          Flexible(
             child: JuneBuilder(FilterState.new,
                 builder: (context) => EntityListScreen<Job>(
                       key: ValueKey(June.getState(FilterState.new)

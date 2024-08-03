@@ -94,94 +94,148 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => Column(
+        children: [
+          _buildTitle(),
+          _buildBody(),
+        ],
+      );
+
+  @override
+  Widget build2(BuildContext context) => Scaffold(
         appBar: AppBar(
           toolbarHeight: 80,
           automaticallyImplyLeading: false, // No back button
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Text(
-                  widget.entityNamePlural,
-                  style: const TextStyle(fontSize: 18),
-                ),
-                const Spacer(),
-                HMBToggle(
-                  label: 'Show details',
-                  tooltip: 'Show/Hide full card details',
-                  initialValue: cardDetail == CardDetail.full,
-                  onChanged: (on) {
-                    setState(() {
-                      cardDetail = on ? CardDetail.full : CardDetail.summary;
-                    });
-                  },
-                )
-              ]),
-              if (widget.filterBar != null && widget.parent.parent != null)
-                widget.filterBar!(widget.parent.parent!),
-            ],
-          ),
-          actions: [
-            HMBButtonAdd(
-              enabled: widget.parent.parent != null,
-              onPressed: () async {
-                if (context.mounted) {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                        builder: (context) => widget.onEdit(null)),
-                  ).then((_) => _refreshEntityList());
-                }
-              },
-            )
-          ],
+          title: _buildTitle(),
+          actions: [_buildAddButton(context)],
         ),
-        body: JuneBuilder(widget.dao.juneRefresher, builder: (context) {
-          // ignore: discarded_futures
-          entities = _fetchList();
-          return FutureBuilderEx<List<C>>(
-            future: entities,
-            waitingBuilder: (_) =>
-                const Center(child: CircularProgressIndicator()),
-            builder: (context, list) {
-              if (widget.parent.parent == null) {
-                return Center(
-                    child: Text(
-                  'Save the ${widget.parentTitle} first.',
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w500),
-                ));
-              }
-              if (list!.isEmpty) {
-                return Center(
-                    child: Text(
-                  'Click + to add a ${widget.entityNameSingular}.',
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w500),
-                ));
-              } else {
-                return widget.extended
-                    ? SingleChildScrollView(
-                        child: Column(
-                          children: list
-                              .map((item) => _buildCard(item, context))
-                              .toList(),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(2),
-                        itemCount: list.length,
-                        itemBuilder: (context, index) {
-                          final entity = list[index];
-                          return _buildCard(entity, context);
-                        },
-                      );
-              }
-            },
-          );
-        }),
+        body: _buildBody(),
       );
+
+  Widget _buildAddButton(BuildContext context) => HMBButtonAdd(
+        enabled: widget.parent.parent != null,
+        onPressed: () async {
+          if (context.mounted) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                  builder: (context) => widget.onEdit(null)),
+            ).then((_) => _refreshEntityList());
+          }
+        },
+      );
+
+  Column _buildTitle() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(children: [
+            Text(
+              widget.entityNamePlural,
+              style: const TextStyle(fontSize: 18),
+            ),
+            const Spacer(),
+            _buildFilter(),
+            _buildAddButton(context),
+          ]),
+        ],
+      );
+
+  Widget _buildFilter() => Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          HMBToggle(
+            label: 'Show details',
+            tooltip: 'Show/Hide full card details',
+            initialValue: cardDetail == CardDetail.full,
+            onChanged: (on) {
+              setState(() {
+                cardDetail = on ? CardDetail.full : CardDetail.summary;
+              });
+            },
+          ),
+          if (widget.filterBar != null && widget.parent.parent != null)
+            widget.filterBar!(widget.parent.parent!),
+        ],
+      );
+
+  JuneBuilder<JuneState> _buildBody() =>
+      JuneBuilder(widget.dao.juneRefresher, builder: (context) {
+        // return const HMBSpacer(height: true);
+        // ignore: discarded_futures
+        entities = _fetchList();
+        return FutureBuilderEx<List<C>>(
+          future: entities,
+          waitingBuilder: (_) =>
+              const Center(child: CircularProgressIndicator()),
+          builder: (context, list) {
+            if (widget.parent.parent == null) {
+              return Center(
+                  child: Text(
+                'Save the ${widget.parentTitle} first.',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              ));
+            }
+            if (list!.isEmpty) {
+              return Center(
+                  child: Text(
+                'Click + to add a ${widget.entityNameSingular}.',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              ));
+            } else {
+              return _displayColumn(list, context);
+            }
+          },
+        );
+      });
+
+  Widget _displayColumn(List<C> list, BuildContext context) {
+    final cards = <Widget>[];
+
+    for (final entity in list) {
+      cards.add(SizedBox(height: 200, child: _buildCard(entity, context)));
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: cards,
+    );
+    // return widget.extended
+    //     ? SingleChildScrollView(
+    //         child: Column(
+    //           children: list.map((item) => _buildCard(item, context)).toList(),
+    //         ),
+    //       )
+    //     : ListView.builder(
+    //         padding: const EdgeInsets.all(2),
+    //         itemCount: list.length,
+    //         itemBuilder: (context, index) {
+    //           final entity = list[index];
+    //           return _buildCard(entity, context);
+    //         },
+    //       );
+  }
+
+  // StatelessWidget _displayList(List<C> list, BuildContext context) =>
+  //     widget.extended
+  //         ? SingleChildScrollView(
+  //             child: Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children:
+  //                   list.map((item) => _buildCard(item, context)).toList(),
+  //             ),
+  //           )
+  //         : ListView.builder(
+  //             padding: const EdgeInsets.all(2),
+  //             itemCount: list.length,
+  //             itemBuilder: (context, index) {
+  //               final entity = list[index];
+  //               return _buildCard(entity, context);
+  //             },
+  //           );
 
   Widget _buildCard(C entity, BuildContext context) => HMBCrudListCard(
       title: widget.title(entity),

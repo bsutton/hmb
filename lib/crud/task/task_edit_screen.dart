@@ -137,16 +137,14 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Delete Photo'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Image.file(File(photo.filePath),
-                    width: 100, height: 100), // Thumbnail of the photo
-                if (photo.comment.isNotEmpty) Text(photo.comment),
-                const SizedBox(height: 10),
-                const Text('Are you sure you want to delete this photo?'),
-              ],
-            ),
+          content: ListBody(
+            children: <Widget>[
+              Image.file(File(photo.filePath),
+                  width: 100, height: 100), // Thumbnail of the photo
+              if (photo.comment.isNotEmpty) Text(photo.comment),
+              const SizedBox(height: 10),
+              const Text('Are you sure you want to delete this photo?'),
+            ],
           ),
           actions: <Widget>[
             TextButton(
@@ -190,6 +188,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         onInsert: (task) async => _insertTaskWithCheckList(task!),
         entityState: this,
         editor: (task) => Column(
+          
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -228,6 +227,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
             // Display photos and allow adding comments and deletion
             Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _buildTakePhotoButton(task),
                 _buildPhotoCRUD(),
@@ -244,6 +244,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
           builder: (context, checklist) => Flexible(
                 child: SingleChildScrollView(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       HBMCrudCheckListItem<CheckList>(
                         parent: Parent(checklist),
@@ -279,8 +280,10 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   Widget _buildPhotoCRUD() => FutureBuilderEx<List<Photo>>(
       future: _photosFuture,
       builder: (context, photos) => Column(
+        mainAxisSize: MainAxisSize.min,
             children: photos!
                 .map((photo) => Column(
+                  mainAxisSize: MainAxisSize.min,
                       children: [
                         Stack(
                           children: [

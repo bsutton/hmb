@@ -45,8 +45,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
     final showCompleted =
         June.getState(ShowCompletedTasksState.new).showCompletedTasks;
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
+        Flexible(
           child: NestedEntityListScreen<Task, Job>(
             key: ValueKey(showCompleted),
             parent: widget.parent,
@@ -106,6 +107,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Column _buildFullTasksDetails(Task task) => Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FutureBuilderEx(
@@ -129,6 +131,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       );
 
   Column _buildTaskSummary(Task task) => Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FutureBuilderEx(

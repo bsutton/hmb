@@ -48,7 +48,9 @@ class CheckListItemListScreen<P extends Entity<P>> extends StatelessWidget {
           ),
       details: (entity, details) {
         final checklistitem = entity;
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, 
+        mainAxisSize: MainAxisSize.min,
+        children: [
           HMBMoney(label: 'Cost', amount: checklistitem.unitCost),
           HMBFixed(label: 'Quantity', amount: checklistitem.quantity),
           if (checklistitem.completed)
