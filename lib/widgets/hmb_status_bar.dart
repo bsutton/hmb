@@ -13,6 +13,7 @@ class HMBStatusBar extends StatelessWidget {
     required this.onTimeEntryEnded,
     super.key,
   });
+
   final TimeEntry? activeTimeEntry;
   final Task? task;
   final VoidCallback onTimeEntryEnded;
@@ -29,13 +30,17 @@ class HMBStatusBar extends StatelessWidget {
         children: [
           HMBStartTimeEntry(task: task),
           const SizedBox(width: 8),
-          FutureBuilderEx(
+          Expanded(
+            child: FutureBuilderEx(
               // ignore: discarded_futures
               future: DaoJob().getJobForTask(task!),
               builder: (context, job) => Text(
-                    '${job!.summary} ${task!.name}',
-                    style: const TextStyle(color: Colors.white),
-                  )),
+                '${task!.name} - ${job!.summary}',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
         ],
       ),
     );
