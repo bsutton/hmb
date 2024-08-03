@@ -131,54 +131,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     return savedImage;
   }
 
-  Future<void> _showConfirmDeleteDialog(
-          BuildContext context, Photo photo) async =>
-      showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Delete Photo'),
-          content: ListBody(
-            children: <Widget>[
-              Image.file(File(photo.filePath),
-                  width: 100, height: 100), // Thumbnail of the photo
-              if (photo.comment.isNotEmpty) Text(photo.comment),
-              const SizedBox(height: 10),
-              const Text('Are you sure you want to delete this photo?'),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Delete'),
-              onPressed: () async {
-                // Delete the photo from the database and the disk
-                await DaoPhoto().delete(photo.id);
-                await File(photo.filePath).delete();
-                setState(() {
-                  _photosFuture = _loadPhotos(); // Refresh the photos
-                });
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-            ),
-          ],
-        ),
-      );
-
-  Future<void> _showFullScreenPhoto(BuildContext context, String imagePath,
-      String taskName, String comment) async {
-    await context.push('/photo_viewer', extra: {
-      'imagePath': imagePath,
-      'taskName': taskName,
-      'comment': comment,
-    });
-  }
 
   @override
   Widget build(BuildContext context) => NestedEntityEditScreen<Task, Job>(
@@ -395,6 +347,56 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     // ignore: discarded_futures
     _photosFuture = _loadPhotos(); // Refresh photos when screen is refreshed
     setState(() {});
+  }
+
+
+  Future<void> _showConfirmDeleteDialog(
+          BuildContext context, Photo photo) async =>
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete Photo'),
+          content: ListBody(
+            children: <Widget>[
+              Image.file(File(photo.filePath),
+                  width: 100, height: 100), // Thumbnail of the photo
+              if (photo.comment.isNotEmpty) Text(photo.comment),
+              const SizedBox(height: 10),
+              const Text('Are you sure you want to delete this photo?'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Delete'),
+              onPressed: () async {
+                // Delete the photo from the database and the disk
+                await DaoPhoto().delete(photo.id);
+                await File(photo.filePath).delete();
+                setState(() {
+                  _photosFuture = _loadPhotos(); // Refresh the photos
+                });
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        ),
+      );
+
+  Future<void> _showFullScreenPhoto(BuildContext context, String imagePath,
+      String taskName, String comment) async {
+    await context.push('/photo_viewer', extra: {
+      'imagePath': imagePath,
+      'taskName': taskName,
+      'comment': comment,
+    });
   }
 }
 

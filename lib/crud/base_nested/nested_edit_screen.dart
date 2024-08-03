@@ -63,8 +63,14 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    /// Inject the entity specific editor.
-                    widget.editor(_currentEntity),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(4),
+
+                        /// Inject the entity specific editor.
+                        child: widget.editor(_currentEntity),
+                      ),
+                    ),
                   ],
                 ),
               ),
