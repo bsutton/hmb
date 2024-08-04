@@ -101,17 +101,6 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
         ],
       );
 
-  @override
-  Widget build2(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          toolbarHeight: 80,
-          automaticallyImplyLeading: false, // No back button
-          title: _buildTitle(),
-          actions: [_buildAddButton(context)],
-        ),
-        body: _buildBody(),
-      );
-
   Widget _buildAddButton(BuildContext context) => HMBButtonAdd(
         enabled: widget.parent.parent != null,
         onPressed: () async {
@@ -203,39 +192,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
       mainAxisSize: MainAxisSize.min,
       children: cards,
     );
-    // return widget.extended
-    //     ? SingleChildScrollView(
-    //         child: Column(
-    //           children: list.map((item) => _buildCard(item, context)).toList(),
-    //         ),
-    //       )
-    //     : ListView.builder(
-    //         padding: const EdgeInsets.all(2),
-    //         itemCount: list.length,
-    //         itemBuilder: (context, index) {
-    //           final entity = list[index];
-    //           return _buildCard(entity, context);
-    //         },
-    //       );
   }
-
-  // StatelessWidget _displayList(List<C> list, BuildContext context) =>
-  //     widget.extended
-  //         ? SingleChildScrollView(
-  //             child: Column(
-  //               mainAxisSize: MainAxisSize.min,
-  //               children:
-  //                   list.map((item) => _buildCard(item, context)).toList(),
-  //             ),
-  //           )
-  //         : ListView.builder(
-  //             padding: const EdgeInsets.all(2),
-  //             itemCount: list.length,
-  //             itemBuilder: (context, index) {
-  //               final entity = list[index];
-  //               return _buildCard(entity, context);
-  //             },
-  //           );
 
   Widget _buildCard(C entity, BuildContext context) => HMBCrudListCard(
       title: widget.title(entity),

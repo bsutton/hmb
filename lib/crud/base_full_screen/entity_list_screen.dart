@@ -40,6 +40,7 @@ class EntityListScreenState<T extends Entity<T>>
   late Future<List<T>> entities;
   String? filterOption;
   late final TextEditingController filterController;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -88,7 +89,9 @@ class EntityListScreenState<T extends Entity<T>>
       );
 
   Widget _buildListTiles(List<T> list) => ListView.builder(
+        controller: _scrollController,
         // padding: const EdgeInsets.all(8),
+
         itemCount: list.length,
         itemBuilder: (context, index) {
           final entity = list[index];
@@ -184,6 +187,7 @@ class EntityListScreenState<T extends Entity<T>>
   @override
   void dispose() {
     filterController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 

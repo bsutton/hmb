@@ -373,12 +373,12 @@ Future<void> _initializeTimeEntryState({required bool refresh}) async {
 Future<String> get pathToHmbFiles async =>
     join((await getApplicationSupportDirectory()).path, 'hmb');
 
-class ErrorApp extends StatelessWidget {
-  const ErrorApp(this.errorMessage, {super.key});
-  final String errorMessage;
+// class ErrorApp extends StatelessWidget {
+//   const ErrorApp(this.errorMessage, {super.key});
+//   final String errorMessage;
 
-  @override
-  Widget build(BuildContext context) => MaterialApp(
-        home: ErrorScreen(errorMessage: errorMessage),
-      );
-}
+//   @override
+//   Widget build(BuildContext context) => MaterialApp(
+//         home: ErrorScreen(errorMessage: errorMessage),
+//       );
+// }
