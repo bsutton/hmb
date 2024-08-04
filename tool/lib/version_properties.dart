@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:dcli/dcli.dart';
-import 'package:hmb/src/version/version.g.dart';
 import 'package:path/path.dart';
 import 'package:pub_release/pub_release.dart';
 
@@ -19,7 +18,7 @@ void updateAndroidVersion(Version version) {
   // Update the property
   properties['flutter.versionCode'] = versionCode.toString();
 
-  properties['flutter.versionName'] = packageVersion;
+  properties['flutter.versionName'] = version.toString();
 
   // Save the updated properties back to the file
   _saveProperties(filePath, properties);

@@ -58,10 +58,6 @@ Create a signed release appbundle suitable to upload to Google Play store.''');
   }
 
   if (install) {
-    if (needPubGet) {
-      _runPubGet();
-      needPubGet = false;
-    }
     installApk();
   }
 }
@@ -71,6 +67,8 @@ void _runPubGet() {
 }
 
 void installApk() {
+  print(orange(
+      'Make certain you have first run --build so you get the lastet apk'));
   'flutter install'.run;
 }
 
@@ -94,10 +92,9 @@ void buildAppBundle() {
 
   final targetPath =
       join(DartProject.self.pathToProjectRoot, 'hmb-$newVersion.aab');
-      if (exists(targetPath))
-      {
-        delete(targetPath);
-      }
+  if (exists(targetPath)) {
+    delete(targetPath);
+  }
   move(join('build', 'app', 'outputs', 'bundle', 'release', 'app-release.aab'),
       targetPath);
   print(orange('Moved the bundle to $targetPath'));
