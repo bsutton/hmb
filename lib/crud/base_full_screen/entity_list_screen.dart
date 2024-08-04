@@ -5,6 +5,7 @@ import '../../dao/dao.dart';
 import '../../entity/entities.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_are_you_sure_dialog.dart';
+import '../../widgets/hmb_placeholder.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -70,7 +71,7 @@ class EntityListScreenState<T extends Entity<T>>
           child: FutureBuilderEx<List<T>>(
             future: entities,
             waitingBuilder: (_) =>
-                const Center(child: CircularProgressIndicator()),
+                const HMBPlaceHolder(height: 1137),
             builder: (context, list) {
               if (list == null || list.isEmpty) {
                 return Center(
@@ -96,6 +97,7 @@ class EntityListScreenState<T extends Entity<T>>
         itemBuilder: (context, index) {
           final entity = list[index];
           return FutureBuilderEx(
+              initialData: Colors.white,
               // ignore: discarded_futures
               future:
                   // ignore: discarded_futures
@@ -118,8 +120,11 @@ class EntityListScreenState<T extends Entity<T>>
                       ),
                       // subtitle: widget.subtile
                       visualDensity: const VisualDensity(horizontal: -4),
+                      // may body of the card
                       subtitle: widget.details(entity),
+
                       onTap: () async {
+                        // Display the edit crud.
                         if (context.mounted) {
                           await Navigator.push(
                             context,

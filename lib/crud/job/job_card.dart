@@ -27,15 +27,13 @@ class JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
-        waitingBuilder: (context) => const HMBPlaceHolder(height: 486),
+        waitingBuilder: (context) => const HMBPlaceHolder(height: 583),
         // ignore: discarded_futures
-        future: Future.delayed(const Duration(seconds: 2),
-            () => DaoJobStatus().getById(job.jobStatusId)),
+        future: DaoJobStatus().getById(job.jobStatusId),
         builder: (context, jobStatus) => FutureBuilderEx<Customer?>(
-          waitingBuilder: (context) => const HMBPlaceHolder(height: 486),
+          waitingBuilder: (context) => const HMBPlaceHolder(height: 583),
           // ignore: discarded_futures
-          future: Future.delayed(const Duration(seconds: 2),
-              () => DaoCustomer().getById(job.customerId)),
+          future: DaoCustomer().getById(job.customerId),
           builder: (context, customer) => Card(
             margin: const EdgeInsets.all(8),
             elevation: 4,
@@ -106,6 +104,7 @@ class JobCard extends StatelessWidget {
   }
 
   FutureBuilderEx<JobStatistics> buildStatistics(Job job) => FutureBuilderEx(
+        waitingBuilder: (_) => const HMBPlaceHolder(height: 97),
         // ignore: discarded_futures
         future: DaoJob().getJobStatistics(job),
         builder: (context, remainingTasks) {

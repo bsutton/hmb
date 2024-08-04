@@ -9,7 +9,7 @@ import '../dao/dao_photo.dart';
 import '../dao/dao_task.dart';
 import '../entity/job.dart';
 import '../entity/photo.dart';
-import 'hmb_empty.dart';
+import 'hmb_placeholder.dart';
 
 class PhotoGallery extends StatelessWidget {
   const PhotoGallery({required this.job, super.key});
@@ -20,11 +20,12 @@ class PhotoGallery extends StatelessWidget {
   @override
   Widget build(BuildContext context) => JuneBuilder(PhotoGalleryState.new,
       builder: (context) => FutureBuilderEx<List<Photo>>(
+          waitingBuilder: (context) => const HMBPlaceHolder(height: 100),
           // ignore: discarded_futures
           future: _fetchTaskPhotos(),
           builder: (context, photos) {
             if (photos!.isEmpty) {
-              return const HMBEmpty();
+              return const HMBPlaceHolder(height: 100);
             } else {
               return buildGallery(photos, context);
             }

@@ -6,6 +6,7 @@ import '../dao/dao_site.dart';
 import '../entity/job.dart';
 import '../entity/site.dart';
 import 'hmb_map_icon.dart';
+import 'hmb_placeholder.dart';
 
 class HMBSiteText extends StatelessWidget {
   const HMBSiteText({required this.label, required this.site, super.key});
@@ -48,6 +49,7 @@ class HMBJobSiteText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
+      waitingBuilder: (_) => const HMBPlaceHolder(height: 32),
       // ignore: discarded_futures
       future: DaoSite().getByJob(job),
       builder: (context, site) => HMBSiteText(

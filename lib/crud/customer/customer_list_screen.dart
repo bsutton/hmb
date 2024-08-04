@@ -8,6 +8,7 @@ import '../../entity/customer.dart';
 import '../../widgets/contact_text.dart';
 import '../../widgets/hmb_email_text.dart';
 import '../../widgets/hmb_phone_text.dart';
+import '../../widgets/hmb_placeholder.dart';
 import '../../widgets/hmb_site_text.dart';
 import '../../widgets/hmb_text_themes.dart';
 import '../base_full_screen/entity_list_screen.dart';
@@ -26,9 +27,11 @@ class CustomerListScreen extends StatelessWidget {
       details: (entity) {
         final customer = entity;
         return FutureBuilderEx(
+          waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
             // ignore: discarded_futures
             future: DaoSite().getPrimaryForCustomer(customer.id),
             builder: (context, site) => FutureBuilderEx(
+              waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
                 // ignore: discarded_futures
                 future: DaoContact().getPrimaryForCustomer(customer.id),
                 builder: (context, contact) => Column(

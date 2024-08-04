@@ -5,6 +5,7 @@ import 'package:strings/strings.dart';
 import '../dao/dao_contact.dart';
 import '../entity/job.dart';
 import '../util/plus_space.dart';
+import 'hmb_placeholder.dart';
 import 'mail_to_icon.dart';
 
 class HMBEmailText extends StatelessWidget {
@@ -43,6 +44,7 @@ class HMBJobEmailText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
+      waitingBuilder: (_) => const HMBPlaceHolder(height: 40),
       // ignore: discarded_futures
       future: DaoContact().getForJob(job.id),
       builder: (context, contact) =>

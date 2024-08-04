@@ -6,6 +6,7 @@ import '../dao/dao_contact.dart';
 import '../entity/job.dart';
 import '../util/plus_space.dart';
 import 'dial_widget.dart';
+import 'hmb_placeholder.dart';
 
 /// Displays the label and phoneNum.
 /// If the phoneNum is null then we display nothing.
@@ -48,6 +49,7 @@ class HMBJobPhoneText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
+      waitingBuilder: (_) => const HMBPlaceHolder(height: 40),
       // ignore: discarded_futures
       future: DaoContact().getById(job.contactId),
       builder: (context, contact) {
