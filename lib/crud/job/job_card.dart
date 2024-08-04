@@ -12,6 +12,7 @@ import '../../quoting/quote_list_screen.dart';
 import '../../util/format.dart';
 import '../../widgets/hmb_email_text.dart';
 import '../../widgets/hmb_phone_text.dart';
+import '../../widgets/hmb_placeholder.dart';
 import '../../widgets/hmb_site_text.dart';
 import '../../widgets/hmb_spacer.dart';
 import '../../widgets/hmb_text.dart';
@@ -26,11 +27,15 @@ class JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
+        waitingBuilder: (context) => const HMBPlaceHolder(height: 486),
         // ignore: discarded_futures
-        future: DaoJobStatus().getById(job.jobStatusId),
+        future: Future.delayed(const Duration(seconds: 2),
+            () => DaoJobStatus().getById(job.jobStatusId)),
         builder: (context, jobStatus) => FutureBuilderEx<Customer?>(
+          waitingBuilder: (context) => const HMBPlaceHolder(height: 486),
           // ignore: discarded_futures
-          future: DaoCustomer().getById(job.customerId),
+          future: Future.delayed(const Duration(seconds: 2),
+              () => DaoCustomer().getById(job.customerId)),
           builder: (context, customer) => Card(
             margin: const EdgeInsets.all(8),
             elevation: 4,

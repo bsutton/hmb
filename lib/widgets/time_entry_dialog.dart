@@ -67,7 +67,7 @@ class _TimeEntryDialogState extends State<TimeEntryDialog> {
         children: [
           HMBText('Current Time: ${formatDateTime(DateTime.now())}'),
 
-          if (widget.showTask == true) buildTaskDetails(),
+          if (widget.showTask) buildTaskDetails(),
           if (widget.openEntry != null)
             HMBText('Start: ${formatDateTime(widget.openEntry!.startTime)}'),
           HMBDateTimeField(
