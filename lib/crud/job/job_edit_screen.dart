@@ -11,6 +11,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/job_status.dart';
+import '../../util/format.dart';
 import '../../util/money_ex.dart';
 import '../../util/platform_ex.dart';
 import '../../widgets/hmb_button.dart';
@@ -107,7 +108,7 @@ class JobEditScreenState extends State<JobEditScreen>
                   dao: DaoJob(),
                   entityState: this,
                   editor: (job) => Column(
-                    mainAxisSize: MainAxisSize.min,
+                          mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             HMBFormSection(children: [
@@ -221,9 +222,12 @@ class JobEditScreenState extends State<JobEditScreen>
           June.getState(SelectJobStatus.new).jobStatusId = status.id,
       format: (value) => value.name);
 
-  HMBButton _chooseDate() => HMBButton(
-        onPressed: _selectDate,
-        label: 'Scheduled: ${_selectedDate.toLocal()}'.split(' ')[0],
+  Widget _chooseDate() => Padding(
+        padding: const EdgeInsets.all(8),
+        child: HMBButton(
+          onPressed: _selectDate,
+          label: 'Scheduled: ${formatDate(_selectedDate)}',
+        ),
       );
 
   Future<void> _selectDate() async {
