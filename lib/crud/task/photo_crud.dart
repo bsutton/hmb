@@ -136,39 +136,41 @@ class _PhotoCrudState extends State<PhotoCrud> {
   /// currently causing flutter to crash.
   Future<void> _showConfirmDeleteDialog(
       BuildContext context, Photo photo) async {
-    await widget.controller.deletePhoto(photo);
-    //   return showDialog<void>(
-    //         context: context,
-    //         builder: (context) => AlertDialog(
-    // title: const Text('Delete Photo'),
-    // content: const ListBody(
-    //   children: <Widget>[
-    //      Image.file(File(photo.filePath),
-    //          width: 100, height: 100), // Thumbnail of the photo
-    //      if (photo.comment.isNotEmpty) Text(photo.comment),
-    //      const SizedBox(height: 10),
-    //     Text('Are you sure you want to delete this photo?'),
-    //   ],
-    // ),
-    // actions: <Widget>[
-    //   TextButton(
-    //     child: const Text('Cancel'),
-    //     onPressed: () {
-    //       Navigator.of(context).pop();
-    //     },
-    //   ),
-    //   TextButton(
-    //     child: const Text('Delete'),
-    //     onPressed: () async {
-    //       await widget.controller.deletePhoto(photo);
-    //       if (context.mounted) {
-    //         Navigator.of(context).pop();
-    //       }
-    //     },
-    //   ),
-    // ],
-    //         ),
-    //       );
+    if (context.mounted) {
+      return showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete Photo'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Image.file(File(photo.filePath),
+                  width: 100, height: 100), // Thumbnail of the photo
+              if (photo.comment.isNotEmpty) Text(photo.comment),
+              const SizedBox(height: 10),
+              const Text('Are you sure you want to delete this photo?'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Delete'),
+              onPressed: () async {
+                await widget.controller.deletePhoto(photo);
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> _showFullScreenPhoto(BuildContext context, String imagePath,
