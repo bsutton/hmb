@@ -38,14 +38,16 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
       } else {
         completer.complete(null);
       }
-      setState(() {
-        _initTimer(entry);
-        if (entry != null) {
-          final task = widget.task;
-          June.getState<TimeEntryState>(TimeEntryState.new)
-              .setActiveTimeEntry(entry, task);
-        }
-      });
+      if (mounted) {
+        setState(() {
+          _initTimer(entry);
+          if (entry != null) {
+            final task = widget.task;
+            June.getState<TimeEntryState>(TimeEntryState.new)
+                .setActiveTimeEntry(entry, task);
+          }
+        });
+      }
     });
   }
 
