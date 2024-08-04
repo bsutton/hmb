@@ -62,6 +62,7 @@ class EntityListScreenState<T extends Entity<T>>
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
+          toolbarHeight: 80,
           title: Text(widget.pageTitle),
           automaticallyImplyLeading: false,
           actions: _commands(),
@@ -70,8 +71,7 @@ class EntityListScreenState<T extends Entity<T>>
           padding: const EdgeInsets.all(8),
           child: FutureBuilderEx<List<T>>(
             future: entities,
-            waitingBuilder: (_) =>
-                const HMBPlaceHolder(height: 1137),
+            waitingBuilder: (_) => const HMBPlaceHolder(height: 1137),
             builder: (context, list) {
               if (list == null || list.isEmpty) {
                 return Center(
@@ -148,10 +148,10 @@ class EntityListScreenState<T extends Entity<T>>
   List<Widget> _commands() => [
         SizedBox(
           width: 250,
-          height: 70,
+          height: 80,
           child: HMBTextField(
             leadingSpace: false,
-            labelText: 'Filter',
+            labelText: 'Filters',
             controller: filterController,
             onChanged: (newValue) async {
               filterOption = newValue;
