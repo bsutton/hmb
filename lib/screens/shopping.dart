@@ -6,14 +6,12 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao_checklist_item.dart';
 import '../../entity/check_list_item.dart';
+import '../../widgets/hmb_text_field.dart';
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
-import '../widgets/hmb_fixed_field.dart';
-import '../widgets/hmb_money_editing_controller.dart';
-import '../widgets/hmb_money_field.dart';
 
 class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});
@@ -38,10 +36,8 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
   }
 
   Future<void> _markAsCompleted(CheckListItem item) async {
-    final costController = HMBMoneyEditingController(money: item.unitCost);
-
-    final quantityController = HMBFixedEditingController(
-        fixed: (item.quantity == Fixed.zero ? Fixed.one : item.quantity));
+    final costController = TextEditingController();
+    final quantityController = TextEditingController();
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -50,15 +46,15 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HMBMoneyField(
+            HMBTextField(
               controller: costController,
-              fieldName: 'Cost per item',
               labelText: 'Cost per item (optional)',
+              keyboardType: TextInputType.number,
             ),
-            HMBFixedField(
-              fieldName: 'quantity',
+            HMBTextField(
               controller: quantityController,
               labelText: 'Quantity (optional)',
+              keyboardType: TextInputType.number,
             ),
           ],
         ),
@@ -93,10 +89,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
           future: _checkListItemsFuture,
           builder: (context, _checkListItems) {
             if (_checkListItems == null || _checkListItems.isEmpty) {
-              return const Center(child: Text('''
-No Shopping Items found 
-- shopping items are taken from Task Check list items 
-that are marked as "buy".'''));
+              return _showEmpty();
             } else {
               return LayoutBuilder(
                 builder: (context, constraints) {
@@ -133,6 +126,11 @@ that are marked as "buy".'''));
         ),
       );
 
+  Center _showEmpty() => const Center(child: Text('''
+No Shopping Items found 
+- Shopping items are taken from Task Check list items 
+that are marked as "Materials - buy" or "Tools - buy".'''));
+
   Widget _buildListItem(BuildContext context, CheckListItem item) => Card(
         margin: const EdgeInsets.symmetric(vertical: 8),
         elevation: 2,
@@ -155,6 +153,8 @@ that are marked as "buy".'''));
                               Text('Task: ${task.name}'),
                               Text(
                                   '''Scheduled Date: ${formatDate(job.startDate)}'''),
+                              Text(
+                                  '''Dimensions: ${item.dimension1} x ${item.dimension2} x ${item.dimension3} ${item.dimensionType}'''),
                               if (item.completed)
                                 const Text(
                                   'Completed',

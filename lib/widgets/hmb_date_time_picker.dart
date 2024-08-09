@@ -26,23 +26,26 @@ class HMBDateTimeField extends StatelessWidget {
             lastDate: DateTime(2100),
           ).then((date) async {
             if (date != null) {
-              final time = await showTimePicker(
-                context: context,
-                initialTime:
-                    TimeOfDay.fromDateTime(currentValue ?? DateTime.now()),
-                builder: (context, child) => MediaQuery(
-                  data: MediaQuery.of(context)
-                      .copyWith(alwaysUse24HourFormat: false),
-                  child: child!,
-                ),
-              );
-              final dt = DateTimeField.combine(date, time);
-              onChanged(dt);
-              return dt;
+              if (context.mounted) {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime:
+                      TimeOfDay.fromDateTime(currentValue ?? DateTime.now()),
+                  builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(context)
+                        .copyWith(alwaysUse24HourFormat: false),
+                    child: child!,
+                  ),
+                );
+                final dt = DateTimeField.combine(date, time);
+                onChanged(dt);
+                return dt;
+              }
             } else {
               onChanged(currentValue!);
               return currentValue;
             }
+            return null;
           }),
         ),
       ]);

@@ -153,6 +153,8 @@ that are marked as "Materials - stock" or "Tools - own".'''));
                               Text('Task: ${task.name}'),
                               Text(
                                   '''Scheduled Date: ${formatDate(job.startDate)}'''),
+                              Text(
+                                  '''Dimensions: ${item.dimension1} x ${item.dimension2} x ${item.dimension3} ${item.dimensionType}'''),
                               if (item.completed)
                                 const Text(
                                   'Completed',

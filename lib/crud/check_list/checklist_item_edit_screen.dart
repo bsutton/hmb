@@ -55,7 +55,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   late TextEditingController _dimension3Controller;
   late FocusNode _descriptionFocusNode;
   DimensionType _selectedDimensionType = DimensionType.length;
-  late String _selectedUnit;
+  String _selectedUnit = metricUnits[DimensionType.length]!.first;
   late System system;
 
   @override
@@ -79,6 +79,14 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _descriptionFocusNode = FocusNode();
   }
 
+  // Future<void> _initializeSystemSettings() async {
+  //   system = (await DaoSystem().get())!;
+  //   _selectedUnit = system.useMetricUnits
+  //       ? metricUnits[_selectedDimensionType]!.first
+  //       : imperialUnits[_selectedDimensionType]!.first;
+  //   setState(() {});
+  // }
+
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -101,94 +109,99 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         onInsert: (checkListItem) async =>
             widget.daoJoin.insertForParent(checkListItem!, widget.parent),
         entityState: this,
-        editor: (checklistItem) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            HMBTextField(
-              controller: _descriptionController,
-              focusNode: _descriptionFocusNode,
-              autofocus: isNotMobile,
-              labelText: 'Description',
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter the description';
-                }
-                return null;
-              },
-            ),
-            _chooseItemType(checklistItem),
-            HMBTextField(
-              controller: _costController,
-              labelText: 'Cost',
-              keyboardType: TextInputType.number,
-            ),
-            HMBTextField(
-              controller: _quantityController,
-              labelText: 'Quantity',
-              keyboardType: TextInputType.number,
-            ),
-            HMBTextField(
-              controller: _effortInHoursController,
-              labelText: 'Effort (in hours)',
-              keyboardType: TextInputType.number,
-            ),
-            FutureBuilderEx<System?>(
+        editor: (checklistItem) {
+          _selectedDimensionType =
+              checklistItem?.dimensionType ?? DimensionType.length;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              HMBTextField(
+                controller: _descriptionController,
+                focusNode: _descriptionFocusNode,
+                autofocus: isNotMobile,
+                labelText: 'Description',
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the description';
+                  }
+                  return null;
+                },
+              ),
+              _chooseItemType(checklistItem),
+              HMBTextField(
+                controller: _costController,
+                labelText: 'Cost',
+                keyboardType: TextInputType.number,
+              ),
+              HMBTextField(
+                controller: _quantityController,
+                labelText: 'Quantity',
+                keyboardType: TextInputType.number,
+              ),
+              HMBTextField(
+                controller: _effortInHoursController,
+                labelText: 'Effort (in hours)',
+                keyboardType: TextInputType.number,
+              ),
+
+              /// Units
+              FutureBuilderEx<System?>(
+                // ignore: discarded_futures
+                future: DaoSystem().get(),
+                waitingBuilder: (_) => HMBDroplist.placeHolder(),
+                builder: (context, system) => HMBDroplist<String>(
+                    title: 'Units',
+                    initialItem: () async => _selectedUnit,
+                    format: (unit) => unit,
+                    items: (filter) async =>
+                        system!.preferredUnits == PreferredUnits.metric
+                            ? metricUnits[_selectedDimensionType]!
+                            : imperialUnits[_selectedDimensionType]!,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedUnit = value;
+                      });
+                    }),
+              ),
+
+              /// Dimensions
+              FutureBuilderEx<System?>(
                 // ignore: discarded_futures
                 future: DaoSystem().get(),
                 waitingBuilder: (_) => HMBDroplist.placeHolder(),
                 builder: (context, system) => HMBDroplist<DimensionType>(
-                      title: 'Dimensions',
-                      initialItem: () async => _selectedDimensionType,
-                      format: (type) => type.name,
-                      items: (filter) async => DimensionType.values,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedDimensionType = value;
-                          _selectedUnit = system!.useMetricUnits
-                              ? metricUnits[_selectedDimensionType]!.first
-                              : imperialUnits[_selectedDimensionType]!.first;
-                        });
-                      },
-                    )),
-            DropdownButtonFormField<String>(
-              value: _selectedUnit,
-              decoration: const InputDecoration(
-                labelText: 'Units',
+                  title: 'Dimensions',
+                  initialItem: () async => _selectedDimensionType,
+                  format: (type) => type.name,
+                  items: (filter) async => DimensionType.values,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedDimensionType = value;
+                    });
+                  },
+                ),
               ),
-              items: (system.useMetricUnits
-                      ? metricUnits[_selectedDimensionType]
-                      : imperialUnits[_selectedDimensionType])!
-                  .map((unit) => DropdownMenuItem(
-                        value: unit,
-                        child: Text(unit),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedUnit = value!;
-                });
-              },
-            ),
-            if (_selectedDimensionType.labels.isNotEmpty)
-              HMBTextField(
-                controller: _dimension1Controller,
-                labelText: _selectedDimensionType.labels[0],
-                keyboardType: TextInputType.number,
-              ),
-            if (_selectedDimensionType.labels.length > 1)
-              HMBTextField(
-                controller: _dimension2Controller,
-                labelText: _selectedDimensionType.labels[1],
-                keyboardType: TextInputType.number,
-              ),
-            if (_selectedDimensionType.labels.length > 2)
-              HMBTextField(
-                controller: _dimension3Controller,
-                labelText: _selectedDimensionType.labels[2],
-                keyboardType: TextInputType.number,
-              ),
-          ],
-        ),
+              if (_selectedDimensionType.labels.isNotEmpty)
+                HMBTextField(
+                  controller: _dimension1Controller,
+                  labelText: _selectedDimensionType.labels[0],
+                  keyboardType: TextInputType.number,
+                ),
+              if (_selectedDimensionType.labels.length > 1)
+                HMBTextField(
+                  controller: _dimension2Controller,
+                  labelText: _selectedDimensionType.labels[1],
+                  keyboardType: TextInputType.number,
+                ),
+              if (_selectedDimensionType.labels.length > 2)
+                HMBTextField(
+                  controller: _dimension3Controller,
+                  labelText: _selectedDimensionType.labels[2],
+                  keyboardType: TextInputType.number,
+                ),
+            ],
+          );
+        },
       );
 
   HMBDroplist<CheckListItemType> _chooseItemType(

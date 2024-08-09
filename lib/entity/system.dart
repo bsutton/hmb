@@ -1,6 +1,7 @@
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
+import '../crud/check_list/dimension_units.dart';
 import 'entity.dart';
 
 class System extends Entity<System> {
@@ -32,6 +33,7 @@ class System extends Entity<System> {
     required this.paymentLinkUrl,
     required this.showBsbAccountOnInvoice,
     required this.showPaymentLinkOnInvoice,
+    required this.preferredUnits, //
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -63,6 +65,7 @@ class System extends Entity<System> {
     required this.paymentLinkUrl,
     required this.showBsbAccountOnInvoice,
     required this.showPaymentLinkOnInvoice,
+    this.preferredUnits = PreferredUnits.metric, // Default to metric
   }) : super.forInsert();
 
   System.forUpdate({
@@ -93,6 +96,7 @@ class System extends Entity<System> {
     required this.paymentLinkUrl,
     required this.showBsbAccountOnInvoice,
     required this.showPaymentLinkOnInvoice,
+    required this.preferredUnits, // Replaced useMetricUnits with preferredUnits
   }) : super.forUpdate();
 
   factory System.fromMap(Map<String, dynamic> map) => System(
@@ -124,8 +128,7 @@ class System extends Entity<System> {
         businessNumber: map['business_number'] as String?,
         businessNumberLabel: map['business_number_label'] as String?,
         countryCode: map['country_code'] as String?,
-        paymentLinkUrl:
-            map['payment_link_url'] as String?, // Added payment link URL field
+        paymentLinkUrl: map['payment_link_url'] as String?,
         showBsbAccountOnInvoice: map['show_bsb_account_on_invoice'] == 1,
         showPaymentLinkOnInvoice: map['show_payment_link_on_invoice'] == 1,
         createdDate: DateTime.tryParse((map['createdDate']) as String? ?? '') ??
@@ -133,6 +136,9 @@ class System extends Entity<System> {
         modifiedDate:
             DateTime.tryParse((map['modifiedDate']) as String? ?? '') ??
                 DateTime.now(),
+        preferredUnits: (map['use_metric_units'] == 1)
+            ? PreferredUnits.metric
+            : PreferredUnits.imperial, // Replaced useMetricUnits
       );
 
   String? fromEmail;
@@ -158,9 +164,10 @@ class System extends Entity<System> {
   String? businessNumber;
   String? businessNumberLabel;
   String? countryCode;
-  String? paymentLinkUrl; // Added payment link URL field
-  bool? showBsbAccountOnInvoice; // Added show BSB/account on invoice field
-  bool? showPaymentLinkOnInvoice; // Added show payment link on invoice field
+  String? paymentLinkUrl;
+  bool? showBsbAccountOnInvoice;
+  bool? showPaymentLinkOnInvoice;
+  PreferredUnits preferredUnits; // Replaced useMetricUnits
 
   String? get bestPhone => officeNumber ?? landLine ?? mobileNumber;
 
@@ -198,6 +205,9 @@ class System extends Entity<System> {
         'show_bsb_account_on_invoice': showBsbAccountOnInvoice ?? true ? 1 : 0,
         'show_payment_link_on_invoice':
             showPaymentLinkOnInvoice ?? true ? 1 : 0,
+        'use_metric_units': preferredUnits == PreferredUnits.metric
+            ? 1
+            : 0, // Convert back for storage
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };

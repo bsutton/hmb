@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
+import '../../crud/check_list/dimension_units.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
+import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -104,6 +106,19 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
                         HMBTextField(
                           controller: _termsUrlController,
                           labelText: 'Terms URL',
+                        ),
+                        HMBDroplist<PreferredUnits>(
+                          title: 'Unit System',
+                          initialItem: () async => system.preferredUnits,
+                          format: (unit) => unit == PreferredUnits.metric
+                              ? 'Metric'
+                              : 'Imperial',
+                          items: (filter) async => PreferredUnits.values,
+                          onChanged: (value) {
+                            setState(() {
+                              system.preferredUnits = value;
+                            });
+                          },
                         ),
                         const SizedBox(height: 16),
                         Row(

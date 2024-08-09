@@ -53,7 +53,8 @@
 //       await pumpJobEditScreen(tester);
 
 //       // Simulate entering text into input fields
-//       await tester.enterText(find.byKey(const Key('jobSummary')), 'Test Job');
+//       await tester.enterText(find.byKey(const Key('jobSummary'))
+//      , 'Test Job');
 //       await tester.enterText(find.byKey(const Key('hourlyRate')), '50');
 //       await tester.enterText(find.byKey(const Key('callOutFee')), '20');
 
@@ -77,7 +78,8 @@
 //       await pumpJobEditScreen(tester);
 
 //       // Simulate entering text into input fields
-//       await tester.enterText(find.byKey(const Key('jobSummary')), 'Test Job');
+//       await tester.enterText(find.byKey(const Key('jobSummary'))
+//    , 'Test Job');
 //       await tester.enterText(find.byKey(const Key('hourlyRate')), '50');
 //       await tester.enterText(find.byKey(const Key('callOutFee')), '20');
 

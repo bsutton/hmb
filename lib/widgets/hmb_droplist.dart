@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'hmb_droplist_dialog.dart';
+import 'hmb_placeholder.dart';
 import 'labeled_container.dart';
 
 class HMBDroplist<T> extends FormField<T> {
@@ -33,6 +34,8 @@ class HMBDroplist<T> extends FormField<T> {
             return null;
           },
         );
+
+  static Widget placeHolder() => const HMBPlaceHolder(height: 30);
 }
 
 class _HMBDroplist<T> extends StatefulWidget {

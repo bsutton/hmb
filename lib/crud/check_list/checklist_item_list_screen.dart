@@ -27,44 +27,46 @@ class CheckListItemListScreen<P extends Entity<P>> extends StatelessWidget {
   final CheckListItemType? checkListItemType;
 
   @override
-  Widget build(BuildContext context) => NestedEntityListScreen<CheckListItem,
-          P>(
-      parent: parent,
-      parentTitle: 'Task',
-      entityNameSingular: 'Check List Item',
-      entityNamePlural: 'Items',
-      dao: DaoCheckListItem(),
-      onDelete: (checklistitem) async =>
-          daoJoin.deleteFromParent(checklistitem!, parent.parent!),
-      onInsert: (checklistitem) async =>
-          daoJoin.insertForParent(checklistitem!, parent.parent!),
-      // ignore: discarded_futures
-      fetchList: () => daoJoin.getByParent(parent.parent),
-      title: (checklistitem) => Text(checklistitem.description) as Widget,
-      onEdit: (checklistitem) => CheckListItemEditScreen(
-            daoJoin: daoJoin,
-            parent: parent.parent!,
-            checkListItem: checklistitem,
-          ),
-      details: (entity, details) {
-        final checklistitem = entity;
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, 
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HMBMoney(label: 'Cost', amount: checklistitem.unitCost),
-          HMBFixed(label: 'Quantity', amount: checklistitem.quantity),
-          if (checklistitem.completed)
-            const Text(
-              'Completed',
-              style: TextStyle(color: Colors.green),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.check, color: Colors.green),
-              onPressed: () async => _markAsCompleted(context, checklistitem),
-            ),
-        ]);
-      });
+  Widget build(BuildContext context) =>
+      NestedEntityListScreen<CheckListItem, P>(
+          parent: parent,
+          parentTitle: 'Task',
+          entityNameSingular: 'Check List Item',
+          entityNamePlural: 'Items',
+          dao: DaoCheckListItem(),
+          onDelete: (checklistitem) async =>
+              daoJoin.deleteFromParent(checklistitem!, parent.parent!),
+          onInsert: (checklistitem) async =>
+              daoJoin.insertForParent(checklistitem!, parent.parent!),
+          // ignore: discarded_futures
+          fetchList: () => daoJoin.getByParent(parent.parent),
+          title: (checklistitem) => Text(checklistitem.description) as Widget,
+          onEdit: (checklistitem) => CheckListItemEditScreen(
+                daoJoin: daoJoin,
+                parent: parent.parent!,
+                checkListItem: checklistitem,
+              ),
+          details: (entity, details) {
+            final checklistitem = entity;
+            return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  HMBMoney(label: 'Cost', amount: checklistitem.unitCost),
+                  HMBFixed(label: 'Quantity', amount: checklistitem.quantity),
+                  if (checklistitem.completed)
+                    const Text(
+                      'Completed',
+                      style: TextStyle(color: Colors.green),
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.check, color: Colors.green),
+                      onPressed: () async =>
+                          _markAsCompleted(context, checklistitem),
+                    ),
+                ]);
+          });
 
   Future<void> _markAsCompleted(
       BuildContext context, CheckListItem item) async {

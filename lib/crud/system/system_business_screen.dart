@@ -6,8 +6,10 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
+import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
+import '../check_list/dimension_units.dart';
 
 class SystemBusinessScreen extends StatefulWidget {
   const SystemBusinessScreen({super.key});
@@ -36,7 +38,6 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
     }
     initialised = true;
     system = (await DaoSystem().get())!;
-    // ignore: discarded_futures
     _countryCodes = CountryCode.values;
     _selectedCountryCode = system.countryCode ?? 'AU';
 
@@ -69,7 +70,8 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
         ..businessNumberLabel = _businessNumberLabelController.text
         ..webUrl = _webUrlController.text
         ..termsUrl = _termsUrlController.text
-        ..countryCode = _selectedCountryCode;
+        ..countryCode = _selectedCountryCode
+        ..preferredUnits = system.preferredUnits;
 
       await DaoSystem().update(system);
 
@@ -96,58 +98,71 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
         body: Padding(
           padding: const EdgeInsets.all(16),
           child: FutureBuilderEx(
-              // ignore: discarded_futures
-              future: _initialize(),
-              builder: (context, _) => Form(
-                    key: _formKey,
-                    child: ListView(
-                      children: [
-                        HMBTextField(
-                          controller: _businessNameController,
-                          labelText: 'Business Name',
-                        ),
-                        HMBTextField(
-                          controller: _businessNumberController,
-                          labelText: 'Business Number',
-                        ),
-                        HMBTextField(
-                          controller: _businessNumberLabelController,
-                          labelText: 'Business Number Label',
-                        ),
-                        DropdownButtonFormField<String>(
-                          value: _selectedCountryCode,
-                          decoration:
-                              const InputDecoration(labelText: 'Country Code'),
-                          items: _countryCodes
-                              .map((country) => DropdownMenuItem<String>(
-                                    value: country.alpha2,
-                                    child: Text(
-                                        '''${country.countryName} (${country.alpha2})'''),
-                                  ))
-                              .toList(),
-                          onChanged: (newValue) {
-                            setState(() {
-                              _selectedCountryCode = newValue!;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select a country code';
-                            }
-                            return null;
-                          },
-                        ),
-                        HMBTextField(
-                          controller: _webUrlController,
-                          labelText: 'Web URL',
-                        ),
-                        HMBTextField(
-                          controller: _termsUrlController,
-                          labelText: 'Terms URL',
-                        ),
-                      ],
-                    ),
-                  )),
+            // ignore: discarded_futures
+            future: _initialize(),
+            builder: (context, _) => Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  HMBTextField(
+                    controller: _businessNameController,
+                    labelText: 'Business Name',
+                  ),
+                  HMBTextField(
+                    controller: _businessNumberController,
+                    labelText: 'Business Number',
+                  ),
+                  HMBTextField(
+                    controller: _businessNumberLabelController,
+                    labelText: 'Business Number Label',
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCountryCode,
+                    decoration:
+                        const InputDecoration(labelText: 'Country Code'),
+                    items: _countryCodes
+                        .map((country) => DropdownMenuItem<String>(
+                              value: country.alpha2,
+                              child: Text(
+                                  '''${country.countryName} (${country.alpha2})'''),
+                            ))
+                        .toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedCountryCode = newValue!;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select a country code';
+                      }
+                      return null;
+                    },
+                  ),
+                  HMBDroplist<PreferredUnits>(
+                    title: 'Unit System',
+                    initialItem: () async => system.preferredUnits,
+                    format: (unit) =>
+                        unit == PreferredUnits.metric ? 'Metric' : 'Imperial',
+                    items: (filter) async => PreferredUnits.values,
+                    onChanged: (value) {
+                      setState(() {
+                        system.preferredUnits = value;
+                      });
+                    },
+                  ),
+                  HMBTextField(
+                    controller: _webUrlController,
+                    labelText: 'Web URL',
+                  ),
+                  HMBTextField(
+                    controller: _termsUrlController,
+                    labelText: 'Terms URL',
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       );
 }
