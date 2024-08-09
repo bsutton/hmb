@@ -1,20 +1,26 @@
+import 'package:fixed/fixed.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 
 import '../../dao/dao_check_list_item_type.dart';
 import '../../dao/dao_checklist_item.dart';
+import '../../dao/dao_system.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/check_list.dart';
 import '../../entity/check_list_item.dart';
 import '../../entity/check_list_item_type.dart';
 import '../../entity/entity.dart';
+import '../../entity/system.dart';
 import '../../util/fixed_ex.dart';
 import '../../util/money_ex.dart';
 import '../../util/platform_ex.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../base_nested/nested_edit_screen.dart';
+import 'dimension_type.dart';
+import 'dimension_units.dart';
 
 class CheckListItemEditScreen<P extends Entity<P>> extends StatefulWidget {
   const CheckListItemEditScreen(
@@ -44,7 +50,13 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   late TextEditingController _costController;
   late TextEditingController _quantityController;
   late TextEditingController _effortInHoursController;
+  late TextEditingController _dimension1Controller;
+  late TextEditingController _dimension2Controller;
+  late TextEditingController _dimension3Controller;
   late FocusNode _descriptionFocusNode;
+  DimensionType _selectedDimensionType = DimensionType.length;
+  late String _selectedUnit;
+  late System system;
 
   @override
   void initState() {
@@ -55,9 +67,14 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         TextEditingController(text: widget.checkListItem?.unitCost.toString());
     _quantityController =
         TextEditingController(text: widget.checkListItem?.quantity.toString());
-
     _effortInHoursController = TextEditingController(
         text: widget.checkListItem?.effortInHours.toString());
+    _dimension1Controller = TextEditingController(
+        text: widget.checkListItem?.dimension1.toString());
+    _dimension2Controller = TextEditingController(
+        text: widget.checkListItem?.dimension2.toString());
+    _dimension3Controller = TextEditingController(
+        text: widget.checkListItem?.dimension3.toString());
 
     _descriptionFocusNode = FocusNode();
   }
@@ -68,6 +85,9 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _costController.dispose();
     _quantityController.dispose();
     _effortInHoursController.dispose();
+    _dimension1Controller.dispose();
+    _dimension2Controller.dispose();
+    _dimension3Controller.dispose();
     _descriptionFocusNode.dispose();
     super.dispose();
   }
@@ -112,6 +132,61 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
               labelText: 'Effort (in hours)',
               keyboardType: TextInputType.number,
             ),
+            FutureBuilderEx<System?>(
+                // ignore: discarded_futures
+                future: DaoSystem().get(),
+                waitingBuilder: (_) => HMBDroplist.placeHolder(),
+                builder: (context, system) => HMBDroplist<DimensionType>(
+                      title: 'Dimensions',
+                      initialItem: () async => _selectedDimensionType,
+                      format: (type) => type.name,
+                      items: (filter) async => DimensionType.values,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedDimensionType = value;
+                          _selectedUnit = system!.useMetricUnits
+                              ? metricUnits[_selectedDimensionType]!.first
+                              : imperialUnits[_selectedDimensionType]!.first;
+                        });
+                      },
+                    )),
+            DropdownButtonFormField<String>(
+              value: _selectedUnit,
+              decoration: const InputDecoration(
+                labelText: 'Units',
+              ),
+              items: (system.useMetricUnits
+                      ? metricUnits[_selectedDimensionType]
+                      : imperialUnits[_selectedDimensionType])!
+                  .map((unit) => DropdownMenuItem(
+                        value: unit,
+                        child: Text(unit),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedUnit = value!;
+                });
+              },
+            ),
+            if (_selectedDimensionType.labels.isNotEmpty)
+              HMBTextField(
+                controller: _dimension1Controller,
+                labelText: _selectedDimensionType.labels[0],
+                keyboardType: TextInputType.number,
+              ),
+            if (_selectedDimensionType.labels.length > 1)
+              HMBTextField(
+                controller: _dimension2Controller,
+                labelText: _selectedDimensionType.labels[1],
+                keyboardType: TextInputType.number,
+              ),
+            if (_selectedDimensionType.labels.length > 2)
+              HMBTextField(
+                controller: _dimension3Controller,
+                labelText: _selectedDimensionType.labels[2],
+                keyboardType: TextInputType.number,
+              ),
           ],
         ),
       );
@@ -142,7 +217,11 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
           unitCost: MoneyEx.tryParse(_costController.text),
           quantity: FixedEx.tryParse(_quantityController.text),
           effortInHours: FixedEx.tryParse(_effortInHoursController.text),
-          completed: checkListItem.completed);
+          completed: checkListItem.completed,
+          dimensionType: _selectedDimensionType,
+          dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
+          dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
+          dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero);
 
   @override
   Future<CheckListItem> forInsert() async => CheckListItem.forInsert(
@@ -154,6 +233,10 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         unitCost: MoneyEx.tryParse(_costController.text),
         quantity: FixedEx.tryParse(_quantityController.text),
         effortInHours: FixedEx.tryParse(_effortInHoursController.text),
+        dimensionType: _selectedDimensionType,
+        dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
+        dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
+        dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
       );
 
   @override
