@@ -21,6 +21,7 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.dimension1,
     required this.dimension2,
     required this.dimension3,
+    required this.units, // New field for units
     this.invoiceLineId,
   }) : super();
 
@@ -35,6 +36,7 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.dimension1,
     required this.dimension2,
     required this.dimension3,
+    required this.units, // New field for units
     this.completed = false,
     this.billed = false,
     this.invoiceLineId,
@@ -54,6 +56,7 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.dimension1,
     required this.dimension2,
     required this.dimension3,
+    required this.units, // New field for units
     this.invoiceLineId,
   }) : super.forUpdate();
 
@@ -73,7 +76,8 @@ class CheckListItem extends Entity<CheckListItem> {
       dimensionType: DimensionType.valueOf(map['dimension_type'] as String),
       dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
       dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
-      dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3));
+      dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
+      units: map['units'] as String); // New field for units
 
   int checkListId;
   String description;
@@ -88,6 +92,7 @@ class CheckListItem extends Entity<CheckListItem> {
   Fixed dimension1;
   Fixed dimension2;
   Fixed dimension3;
+  String units; // New field for units
 
   bool get hasCost => unitCost.multiplyByFixed(quantity) > MoneyEx.zero;
 
@@ -110,6 +115,7 @@ class CheckListItem extends Entity<CheckListItem> {
         'dimension1': Fixed.copyWith(dimension1, scale: 3).minorUnits.toInt(),
         'dimension2': Fixed.copyWith(dimension2, scale: 3).minorUnits.toInt(),
         'dimension3': Fixed.copyWith(dimension3, scale: 3).minorUnits.toInt(),
+        'units': units, // New field for units
       };
 
   CheckListItem copyWith({
@@ -129,6 +135,7 @@ class CheckListItem extends Entity<CheckListItem> {
     Fixed? dimension1,
     Fixed? dimension2,
     Fixed? dimension3,
+    String? units, // New field for units
   }) =>
       CheckListItem(
         id: id ?? this.id,
@@ -147,9 +154,10 @@ class CheckListItem extends Entity<CheckListItem> {
         dimension1: dimension1 ?? this.dimension1,
         dimension2: dimension2 ?? this.dimension2,
         dimension3: dimension3 ?? this.dimension3,
+        units: units ?? this.units, // New field for units
       );
 
   @override
   String toString() =>
-      '''id: $id description: $description qty: $quantity cost: $unitCost completed: $completed billed: $billed dimensions: $dimension1 x $dimension2 x $dimension3 $dimensionType''';
+      '''id: $id description: $description qty: $quantity cost: $unitCost completed: $completed billed: $billed dimensions: $dimension1 x $dimension2 x $dimension3 $dimensionType ($units)''';
 }

@@ -9,7 +9,7 @@ import '../../entity/system.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
-import '../check_list/dimension_units.dart';
+import '../check_list/dimension_type.dart';
 
 class SystemBusinessScreen extends StatefulWidget {
   const SystemBusinessScreen({super.key});
@@ -71,7 +71,7 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
         ..webUrl = _webUrlController.text
         ..termsUrl = _termsUrlController.text
         ..countryCode = _selectedCountryCode
-        ..preferredUnits = system.preferredUnits;
+        ..preferredUnitSystem = system.preferredUnitSystem;
 
       await DaoSystem().update(system);
 
@@ -139,15 +139,16 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
                       return null;
                     },
                   ),
-                  HMBDroplist<PreferredUnits>(
+                  HMBDroplist<PreferredUnitSystem>(
                     title: 'Unit System',
-                    initialItem: () async => system.preferredUnits,
-                    format: (unit) =>
-                        unit == PreferredUnits.metric ? 'Metric' : 'Imperial',
-                    items: (filter) async => PreferredUnits.values,
+                    initialItem: () async => system.preferredUnitSystem,
+                    format: (unit) => unit == PreferredUnitSystem.metric
+                        ? 'Metric'
+                        : 'Imperial',
+                    items: (filter) async => PreferredUnitSystem.values,
                     onChanged: (value) {
                       setState(() {
-                        system.preferredUnits = value;
+                        system.preferredUnitSystem = value;
                       });
                     },
                   ),

@@ -1,12 +1,10 @@
 import 'package:fixed/fixed.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 
 import '../../dao/dao_check_list_item_type.dart';
 import '../../dao/dao_checklist_item.dart';
-import '../../dao/dao_system.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/check_list.dart';
 import '../../entity/check_list_item.dart';
@@ -20,7 +18,6 @@ import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../base_nested/nested_edit_screen.dart';
 import 'dimension_type.dart';
-import 'dimension_units.dart';
 
 class CheckListItemEditScreen<P extends Entity<P>> extends StatefulWidget {
   const CheckListItemEditScreen(
@@ -55,7 +52,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   late TextEditingController _dimension3Controller;
   late FocusNode _descriptionFocusNode;
   DimensionType _selectedDimensionType = DimensionType.length;
-  String _selectedUnit = metricUnits[DimensionType.length]!.first;
+  String? _selectedUnit;
   late System system;
 
   @override
@@ -78,14 +75,6 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
     _descriptionFocusNode = FocusNode();
   }
-
-  // Future<void> _initializeSystemSettings() async {
-  //   system = (await DaoSystem().get())!;
-  //   _selectedUnit = system.useMetricUnits
-  //       ? metricUnits[_selectedDimensionType]!.first
-  //       : imperialUnits[_selectedDimensionType]!.first;
-  //   setState(() {});
-  // }
 
   @override
   void dispose() {
@@ -112,6 +101,12 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         editor: (checklistItem) {
           _selectedDimensionType =
               checklistItem?.dimensionType ?? DimensionType.length;
+          _selectedUnit = _selectedUnit ??
+              checklistItem?.units ??
+              (system.preferredUnitSystem == PreferredUnitSystem.metric
+                  ? metricUnits[_selectedDimensionType]!.first
+                  : imperialUnits[_selectedDimensionType]!.first);
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -144,43 +139,35 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
                 keyboardType: TextInputType.number,
               ),
 
-              /// Units
-              FutureBuilderEx<System?>(
-                // ignore: discarded_futures
-                future: DaoSystem().get(),
-                waitingBuilder: (_) => HMBDroplist.placeHolder(),
-                builder: (context, system) => HMBDroplist<String>(
-                    title: 'Units',
-                    initialItem: () async => _selectedUnit,
-                    format: (unit) => unit,
-                    items: (filter) async =>
-                        system!.preferredUnits == PreferredUnits.metric
-                            ? metricUnits[_selectedDimensionType]!
-                            : imperialUnits[_selectedDimensionType]!,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedUnit = value;
-                      });
-                    }),
+              /// Dimensions
+              HMBDroplist<DimensionType>(
+                title: 'Dimensions',
+                initialItem: () async => _selectedDimensionType,
+                format: (type) => type.name,
+                items: (filter) async => DimensionType.values,
+                onChanged: (value) async {
+                  if (_selectedDimensionType != value) {
+                    _selectedUnit = await getDefaultUnitForDimension(value);
+                  }
+                  setState(() {
+                    _selectedDimensionType = value;
+                    June.getState(UnitState.new).setState();
+                  });
+                },
               ),
 
-              /// Dimensions
-              FutureBuilderEx<System?>(
-                // ignore: discarded_futures
-                future: DaoSystem().get(),
-                waitingBuilder: (_) => HMBDroplist.placeHolder(),
-                builder: (context, system) => HMBDroplist<DimensionType>(
-                  title: 'Dimensions',
-                  initialItem: () async => _selectedDimensionType,
-                  format: (type) => type.name,
-                  items: (filter) async => DimensionType.values,
+              /// Units
+              HMBDroplist<String>(
+                  title: 'Units',
+                  initialItem: () async => _selectedUnit,
+                  format: (unit) => unit,
+                  items: (filter) async =>
+                      getUnitsForDimension(_selectedDimensionType),
                   onChanged: (value) {
                     setState(() {
-                      _selectedDimensionType = value;
+                      _selectedUnit = value;
                     });
-                  },
-                ),
-              ),
+                  }),
               if (_selectedDimensionType.labels.isNotEmpty)
                 HMBTextField(
                   controller: _dimension1Controller,
@@ -234,7 +221,8 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
           dimensionType: _selectedDimensionType,
           dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
           dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
-          dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero);
+          dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
+          units: _selectedUnit ?? 'mm'); // Save units
 
   @override
   Future<CheckListItem> forInsert() async => CheckListItem.forInsert(
@@ -250,6 +238,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
         dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
         dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
+        units: _selectedUnit ?? 'mm', // Save units
       );
 
   @override
@@ -261,3 +250,5 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 class CheckListItemTypeStatus {
   CheckListItemType? checkListItemType;
 }
+
+class UnitState extends JuneState {}

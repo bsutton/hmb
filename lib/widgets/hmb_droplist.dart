@@ -20,6 +20,7 @@ class HMBDroplist<T> extends FormField<T> {
   }) : super(
           autovalidateMode: AutovalidateMode.always,
           builder: (state) => _HMBDroplist<T>(
+            key: ValueKey(initialItem),
             state: state,
             initialItem: initialItem,
             items: items,
@@ -46,6 +47,7 @@ class _HMBDroplist<T> extends StatefulWidget {
     required this.format,
     required this.onChanged,
     required this.title,
+    required super.key,
   });
 
   final FormFieldState<T> state;
@@ -70,14 +72,18 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
   }
 
   Future<void> _loadSelectedItem() async {
-    _selectedItem = await widget.initialItem();
-    if (mounted) {
-      setState(() {
-        _loading = false;
-      });
+    try {
+      _selectedItem = await widget.initialItem();
+      if (mounted) {
+        setState(() {
+          print('Loading completed: _selectedItem = $_selectedItem');
+          _loading = false;
+        });
+      }
+      widget.state.didChange(_selectedItem);
+    } catch (e) {
+      print('Error loading item: $e');
     }
-
-    widget.state.didChange(_selectedItem);
   }
 
   @override
@@ -96,6 +102,7 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
           if (selectedItem != null) {
             if (mounted) {
               setState(() {
+                print('Item selected: _selectedItem = $selectedItem');
                 _selectedItem = selectedItem;
               });
             }

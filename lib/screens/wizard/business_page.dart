@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../crud/check_list/dimension_units.dart';
+import '../../crud/check_list/dimension_type.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../widgets/hmb_droplist.dart';
@@ -107,16 +107,16 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
                           controller: _termsUrlController,
                           labelText: 'Terms URL',
                         ),
-                        HMBDroplist<PreferredUnits>(
+                        HMBDroplist<PreferredUnitSystem>(
                           title: 'Unit System',
-                          initialItem: () async => system.preferredUnits,
-                          format: (unit) => unit == PreferredUnits.metric
+                          initialItem: () async => system.preferredUnitSystem,
+                          format: (unit) => unit == PreferredUnitSystem.metric
                               ? 'Metric'
                               : 'Imperial',
-                          items: (filter) async => PreferredUnits.values,
+                          items: (filter) async => PreferredUnitSystem.values,
                           onChanged: (value) {
                             setState(() {
-                              system.preferredUnits = value;
+                              system.preferredUnitSystem = value;
                             });
                           },
                         ),
