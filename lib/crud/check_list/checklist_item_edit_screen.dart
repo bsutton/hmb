@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fixed/fixed.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:june/june.dart';
 
 import '../../dao/dao_check_list_item_type.dart';
 import '../../dao/dao_checklist_item.dart';
+import '../../dao/dao_system.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/check_list.dart';
 import '../../entity/check_list_item.dart';
@@ -51,9 +54,9 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   late TextEditingController _dimension2Controller;
   late TextEditingController _dimension3Controller;
   late FocusNode _descriptionFocusNode;
-  DimensionType _selectedDimensionType = DimensionType.length;
+  DimensionType? _selectedDimensionType = DimensionType.length;
   String? _selectedUnit;
-  late System system;
+  System? system;
 
   @override
   void initState() {
@@ -74,6 +77,12 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         text: widget.checkListItem?.dimension3.toString());
 
     _descriptionFocusNode = FocusNode();
+
+    unawaited(getSystem());
+  }
+
+  Future<void> getSystem() async {
+    system = await DaoSystem().get();
   }
 
   @override
@@ -99,11 +108,12 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             widget.daoJoin.insertForParent(checkListItem!, widget.parent),
         entityState: this,
         editor: (checklistItem) {
-          _selectedDimensionType =
+          _selectedDimensionType ??=
               checklistItem?.dimensionType ?? DimensionType.length;
           _selectedUnit = _selectedUnit ??
               checklistItem?.units ??
-              (system.preferredUnitSystem == PreferredUnitSystem.metric
+              ((system?.preferredUnitSystem ?? PreferredUnitSystem.metric) ==
+                      PreferredUnitSystem.metric
                   ? metricUnits[_selectedDimensionType]!.first
                   : imperialUnits[_selectedDimensionType]!.first);
 
@@ -141,6 +151,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
               /// Dimensions
               HMBDroplist<DimensionType>(
+                key: ValueKey(_selectedDimensionType),
                 title: 'Dimensions',
                 initialItem: () async => _selectedDimensionType,
                 format: (type) => type.name,
@@ -151,6 +162,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
                   }
                   setState(() {
                     _selectedDimensionType = value;
+                    checklistItem?.dimensionType = value;
                     June.getState(UnitState.new).setState();
                   });
                 },
@@ -158,32 +170,33 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
               /// Units
               HMBDroplist<String>(
+                  key: ValueKey(_selectedUnit),
                   title: 'Units',
                   initialItem: () async => _selectedUnit,
                   format: (unit) => unit,
                   items: (filter) async =>
-                      getUnitsForDimension(_selectedDimensionType),
+                      getUnitsForDimension(_selectedDimensionType!),
                   onChanged: (value) {
                     setState(() {
                       _selectedUnit = value;
                     });
                   }),
-              if (_selectedDimensionType.labels.isNotEmpty)
+              if (_selectedDimensionType!.labels.isNotEmpty)
                 HMBTextField(
                   controller: _dimension1Controller,
-                  labelText: _selectedDimensionType.labels[0],
+                  labelText: _selectedDimensionType!.labels[0],
                   keyboardType: TextInputType.number,
                 ),
-              if (_selectedDimensionType.labels.length > 1)
+              if (_selectedDimensionType!.labels.length > 1)
                 HMBTextField(
                   controller: _dimension2Controller,
-                  labelText: _selectedDimensionType.labels[1],
+                  labelText: _selectedDimensionType!.labels[1],
                   keyboardType: TextInputType.number,
                 ),
-              if (_selectedDimensionType.labels.length > 2)
+              if (_selectedDimensionType!.labels.length > 2)
                 HMBTextField(
                   controller: _dimension3Controller,
-                  labelText: _selectedDimensionType.labels[2],
+                  labelText: _selectedDimensionType!.labels[2],
                   keyboardType: TextInputType.number,
                 ),
             ],
@@ -218,7 +231,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
           quantity: FixedEx.tryParse(_quantityController.text),
           effortInHours: FixedEx.tryParse(_effortInHoursController.text),
           completed: checkListItem.completed,
-          dimensionType: _selectedDimensionType,
+          dimensionType: _selectedDimensionType!,
           dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
           dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
           dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
@@ -234,7 +247,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         unitCost: MoneyEx.tryParse(_costController.text),
         quantity: FixedEx.tryParse(_quantityController.text),
         effortInHours: FixedEx.tryParse(_effortInHoursController.text),
-        dimensionType: _selectedDimensionType,
+        dimensionType: _selectedDimensionType!,
         dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
         dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
         dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
