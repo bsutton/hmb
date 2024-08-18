@@ -22,7 +22,11 @@ GoRouter get router => GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          redirect: (context, state) => firstRun ? '/system/wizard' : null,
+          redirect: (context, state) {
+            final alt = firstRun ? '/system/wizard' : null;
+            firstRun = false;
+            return alt;
+          },
           builder: (_, __) =>
               const HomeWithDrawer(initialScreen: JobListScreen()),
           routes: [
