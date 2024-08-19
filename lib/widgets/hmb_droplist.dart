@@ -81,6 +81,7 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
         });
       }
       widget.state.didChange(_selectedItem);
+    // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       print('Error loading item: $e');
     }

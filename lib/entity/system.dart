@@ -1,7 +1,7 @@
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
-import '../crud/check_list/dimension_type.dart';
+import '../util/measurement_type.dart';
 import 'entity.dart';
 
 class System extends Entity<System> {

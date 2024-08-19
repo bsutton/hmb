@@ -9,6 +9,7 @@ import '../../entity/entity.dart';
 import '../../util/money_ex.dart';
 import '../../widgets/hmb_fixed.dart';
 import '../../widgets/hmb_money.dart';
+import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../base_nested/nested_list_screen.dart';
 import 'checklist_item_edit_screen.dart';
@@ -54,6 +55,7 @@ class CheckListItemListScreen<P extends Entity<P>> extends StatelessWidget {
                 children: [
                   HMBMoney(label: 'Cost', amount: checklistitem.unitCost),
                   HMBFixed(label: 'Quantity', amount: checklistitem.quantity),
+                  HMBText(checklistitem.dimensions),
                   if (checklistitem.completed)
                     const Text(
                       'Completed',

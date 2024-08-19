@@ -154,7 +154,7 @@ that are marked as "Materials - buy" or "Tools - buy".'''));
                               Text(
                                   '''Scheduled Date: ${formatDate(job.startDate)}'''),
                               Text(
-                                  '''Dimensions: ${item.dimension1} x ${item.dimension2} x ${item.dimension3} ${item.dimensionType}'''),
+                                  '''Dimensions: ${item.dimension1} x ${item.dimension2} x ${item.dimension3} ${item.measurementType}'''),
                               if (item.completed)
                                 const Text(
                                   'Completed',

@@ -6,10 +6,10 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
+import '../../util/measurement_type.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
-import '../check_list/dimension_type.dart';
 
 class SystemBusinessScreen extends StatefulWidget {
   const SystemBusinessScreen({super.key});

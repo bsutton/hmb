@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:parchment_delta/parchment_delta.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -65,7 +64,7 @@ class RichEditor extends StatefulWidget {
       json = null;
     } else {
       try {
-        json =jsonDecode(parchmentAsJsonString) as List<dynamic>;
+        json = jsonDecode(parchmentAsJsonString) as List<dynamic>;
       } on FormatException catch (err, _) {
         print('Error parsing json, err: $err  data: $parchmentAsJsonString');
       }
