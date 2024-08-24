@@ -60,7 +60,7 @@ class Units2D extends Units {
 
   @override
   String format(List<Fixed> values) =>
-      '''${labels[0]}: ${values[0]} $measure, ${labels[1]}: ${values[1]} $measure, Total: ${_calc(values)} $name''';
+      '''${labels[0]}: ${values[0]} $measure, ${labels[1]}: ${values[1]} $measure Total: ${_calc(values)} $name''';
 
   @override
   Fixed _calc(List<Fixed> values) =>
@@ -79,7 +79,7 @@ class Units3D extends Units {
 
   @override
   String format(List<Fixed> values) =>
-      '''${labels[0]}: ${values[0]} $measure, ${labels[1]}: ${values[1]} $measure, ${labels[2]}: ${values[2]} $measure, Total: ${_calc(values)} $name''';
+      '''${labels[0]}: ${values[0]} $measure, ${labels[1]}: ${values[1]} $measure, ${labels[2]}: ${values[2]} $measure Total: ${_calc(values)} $name''';
 
   @override
   Fixed _calc(List<Fixed> values) => values.length < 3
