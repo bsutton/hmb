@@ -1,15 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'hmb_droplist_dialog.dart';
+
+import 'hmb_droplist_multi_dialog.dart';
 import 'hmb_placeholder.dart';
 import 'labeled_container.dart';
 
-class HMBDroplist<T> extends FormField<T> {
-  HMBDroplist({
-    required Future<T?> Function() initialItem,
+class HMBDroplistMultiSelect<T> extends FormField<List<T>> {
+  HMBDroplistMultiSelect({
+    required Future<List<T>> Function() initialItems,
     required Future<List<T>> Function(String? filter) items,
     required String Function(T) format,
-    required void Function(T?) onChanged, // Allow null to be passed
+    required void Function(List<T>) onChanged,
     required String title,
     super.onSaved,
     super.initialValue,
@@ -17,19 +19,18 @@ class HMBDroplist<T> extends FormField<T> {
     super.key,
   }) : super(
           autovalidateMode: AutovalidateMode.always,
-          builder: (state) => _HMBDroplist<T>(
-            key: ValueKey(initialItem),
+          builder: (state) => _HMBDroplistMultiSelect<T>(
+            key: ValueKey(initialItems),
             state: state,
-            initialItem: initialItem,
+            initialItems: initialItems,
             items: items,
             format: format,
             onChanged: onChanged,
             title: title,
-            required: required,
           ),
           validator: (value) {
-            if (required && value == null) {
-              return 'Please select an item';
+            if (required && (value == null || value.isEmpty)) {
+              return 'Please select at least one item';
             }
             return null;
           },
@@ -38,77 +39,76 @@ class HMBDroplist<T> extends FormField<T> {
   static Widget placeHolder() => const HMBPlaceHolder(height: 30);
 }
 
-class _HMBDroplist<T> extends StatefulWidget {
-  const _HMBDroplist({
+class _HMBDroplistMultiSelect<T> extends StatefulWidget {
+  const _HMBDroplistMultiSelect({
     required this.state,
-    required this.initialItem,
+    required this.initialItems,
     required this.items,
     required this.format,
     required this.onChanged,
     required this.title,
-    required this.required,
     required super.key,
   });
 
-  final FormFieldState<T> state;
-  final Future<T?> Function() initialItem;
+  final FormFieldState<List<T>> state;
+  final Future<List<T>> Function() initialItems;
   final Future<List<T>> Function(String? filter) items;
   final String Function(T) format;
-  final void Function(T?) onChanged; // Allow null to be passed
+  final void Function(List<T>) onChanged;
   final String title;
-  final bool required;
 
   @override
-  _HMBDroplistState<T> createState() => _HMBDroplistState<T>();
+  _HMBDroplistMultiSelectState<T> createState() =>
+      _HMBDroplistMultiSelectState<T>();
 }
 
-class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
-  T? _selectedItem;
+class _HMBDroplistMultiSelectState<T>
+    extends State<_HMBDroplistMultiSelect<T>> {
+  List<T> _selectedItems = [];
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_loadSelectedItem());
+    unawaited(_loadSelectedItems());
   }
 
-  Future<void> _loadSelectedItem() async {
+  Future<void> _loadSelectedItems() async {
     try {
-      _selectedItem = await widget.initialItem();
+      _selectedItems = await widget.initialItems();
       if (mounted) {
         setState(() {
           _loading = false;
         });
       }
-      widget.state.didChange(_selectedItem);
+      widget.state.didChange(_selectedItems);
     // ignore: avoid_catches_without_on_clauses
     } catch (e) {
-      print('Error loading item: $e');
+      print('Error loading items: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) => GestureDetector(
         onTap: () async {
-          final selectedItem = await showDialog<T>(
+          final selectedItems = await showDialog<List<T>>(
             context: context,
-            builder: (context) => HMBDroplistDialog<T>(
+            builder: (context) => HMBDroplistMultiSelectDialog<T>(
               getItems: widget.items,
               formatItem: widget.format,
               title: widget.title,
-              selectedItem: _selectedItem,
-              allowClear: !widget.required, // Allow clearing if not required
+              selectedItems: _selectedItems,
             ),
           );
 
-          if (selectedItem != null || !widget.required) {
+          if (selectedItems != null) {
             if (mounted) {
               setState(() {
-                _selectedItem = selectedItem;
+                _selectedItems = selectedItems;
               });
             }
-            widget.state.didChange(selectedItem);
-            widget.onChanged(selectedItem);
+            widget.state.didChange(selectedItems);
+            widget.onChanged(selectedItems);
           }
         },
         child: Column(
@@ -124,9 +124,9 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
                     const CircularProgressIndicator()
                   else
                     Text(
-                      _selectedItem != null
-                          ? widget.format(_selectedItem as T)
-                          : 'Select a ${widget.title}',
+                      _selectedItems.isNotEmpty
+                          ? _selectedItems.map(widget.format).join(', ')
+                          : 'Select ${widget.title}',
                       style: TextStyle(
                         fontSize: 13,
                         color: widget.state.hasError

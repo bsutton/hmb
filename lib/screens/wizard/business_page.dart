@@ -116,7 +116,7 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
                           items: (filter) async => PreferredUnitSystem.values,
                           onChanged: (value) {
                             setState(() {
-                              system.preferredUnitSystem = value;
+                              system.preferredUnitSystem = value!;
                             });
                           },
                         ),

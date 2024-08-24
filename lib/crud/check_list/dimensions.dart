@@ -69,7 +69,7 @@ class _DimensionWidgetState extends State<DimensionWidget> {
                                 .selected !=
                             value) {
                           June.getState(SelectedUnits.new).selected =
-                              await getDefaultUnitForMeasurementType(value);
+                              await getDefaultUnitForMeasurementType(value!);
                         }
                         setState(() {
                           June.getState(SelectedMeasurementType.new).selected =

@@ -293,7 +293,7 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
                         items: (filter) async => getSimCards(),
                         format: (card) => card.displayName ?? 'Unnamed',
                         onChanged: (card) =>
-                            widget.system.simCardNo = card.slotIndex,
+                            widget.system.simCardNo = card?.slotIndex,
                       );
                     }
                   },

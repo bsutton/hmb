@@ -4,6 +4,8 @@ import 'package:sqflite/sqflite.dart';
 
 import '../entity/check_list.dart';
 import '../entity/check_list_item.dart';
+import '../entity/job.dart';
+import '../entity/supplier.dart';
 import '../entity/task.dart';
 import 'dao.dart';
 import 'dao_check_list_item_check_list.dart';
@@ -155,33 +157,31 @@ and js.name != 'Awaiting Payment'
     return toList(data);
   }
 
-  /// Get items that need to be packed.
-  Future<List<CheckListItem>> getShoppingItems() async {
+  /// Get items that need to be purchased..
+  Future<List<CheckListItem>> getShoppingItems(
+      {List<Job>? jobs, Supplier? supplier}) async {
     final db = getDb();
+    final jobIds = jobs?.map((job) => job.id).toList() ?? [];
+    final jobCondition =
+        jobIds.isNotEmpty ? 'AND j.id IN (${jobIds.join(",")})' : '';
+    final supplierCondition =
+        supplier != null ? 'AND cli.supplier_id = ${supplier.id}' : '';
 
     final data = await db.rawQuery('''
-select cli.* 
-from check_list_item cli
-join check_list_item_type clit
-  on cli.item_type_id = clit.id
-join check_list cl
-  on cl.id = cli.check_list_id
-join task_check_list tcl
-  on cl.id = tcl.check_list_id
-join `task` t
-  on tcl.task_id = t.id
-join job j
-  on t.jobId = j.id
-join job_status js
-  on j.job_status_id = js.id
-where (clit.name = 'Materials - buy' 
-or clit.name = 'Tools - buy') 
-and  cli.completed = 0
-and js.name != 'Prospecting'
-and js.name != 'Rejected'
-and js.name != 'On Hold'
-and js.name != 'Awaiting Payment'
-''');
+    SELECT cli.* 
+    FROM check_list_item cli
+    JOIN check_list_item_type clit ON cli.item_type_id = clit.id
+    JOIN check_list cl ON cl.id = cli.check_list_id
+    JOIN task_check_list tcl ON cl.id = tcl.check_list_id
+    JOIN task t ON tcl.task_id = t.id
+    JOIN job j ON t.jobId = j.id
+    JOIN job_status js ON j.job_status_id = js.id
+    WHERE (clit.name = 'Materials - buy' OR clit.name = 'Tools - buy')
+    AND cli.completed = 0
+    AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
+    $jobCondition
+    $supplierCondition
+    ''');
 
     return toList(data);
   }

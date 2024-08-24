@@ -219,7 +219,7 @@ class JobEditScreenState extends State<JobEditScreen>
       initialItem: () async => DaoJobStatus().getById(
           job?.jobStatusId ?? June.getState(SelectJobStatus.new).jobStatusId),
       onChanged: (status) =>
-          June.getState(SelectJobStatus.new).jobStatusId = status.id,
+          June.getState(SelectJobStatus.new).jobStatusId = status?.id,
       format: (value) => value.name);
 
   Widget _chooseDate() => Padding(

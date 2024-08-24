@@ -51,6 +51,18 @@ class DaoJob extends Dao<Job> {
     return list;
   }
 
+  Future<Job?> getLastActiveJob() async {
+    final db = getDb();
+    final data = await db.query(
+      tableName,
+      where: 'last_active = ?',
+      whereArgs: [1],
+      orderBy: 'modifiedDate desc',
+      limit: 1,
+    );
+    return data.isNotEmpty ? fromMap(data.first) : null;
+  }
+
   /// search for jobs given a user supplied filter string.
   Future<List<Job>> getByFilter(String? filter) async {
     final db = getDb();
@@ -89,6 +101,23 @@ where t.id =?
 ''', [task.id]);
 
     return toList(data).first;
+  }
+
+  /// Only Jobs that we consider to be active.
+  Future<List<Job>> getActiveJobs(String? filter) async {
+    final db = getDb();
+    final likeArg = filter != null ? '''%$filter%''' : '%%';
+
+    final data = await db.rawQuery('''
+    SELECT j.*
+    FROM job j
+    JOIN job_status js ON j.job_status_id = js.id
+    WHERE js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment', 'Completed', 'To be Billed')
+    AND (j.summary LIKE ? OR j.description LIKE ?)
+    ORDER BY j.modifiedDate DESC
+    ''', [likeArg, likeArg]);
+
+    return toList(data);
   }
 
   Future<JobStatistics> getJobStatistics(Job job) async {

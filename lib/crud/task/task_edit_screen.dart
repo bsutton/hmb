@@ -177,7 +177,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       items: (filter) async => DaoTaskStatus().getByFilter(filter),
       format: (item) => item.name,
       onChanged: (item) {
-        June.getState(TaskStatusState.new).taskStatusId = item.id;
+        June.getState(TaskStatusState.new).taskStatusId = item?.id;
       });
 
   Future<void> _insertTask(Task task) async {

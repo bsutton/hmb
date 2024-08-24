@@ -2,37 +2,39 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-class HMBDroplistDialog<T> extends StatefulWidget {
-  const HMBDroplistDialog({
+class HMBDroplistMultiSelectDialog<T> extends StatefulWidget {
+  const HMBDroplistMultiSelectDialog({
     required this.getItems,
     required this.formatItem,
     required this.title,
-    this.selectedItem,
-    this.allowClear = false, // Allow clearing
+    required this.selectedItems,
     super.key,
   });
 
   final Future<List<T>> Function(String? filter) getItems;
   final String Function(T) formatItem;
   final String title;
-  final T? selectedItem;
-  final bool allowClear; // Allow clearing
+  final List<T> selectedItems;
 
   @override
   // ignore: library_private_types_in_public_api
-  _HMBDroplistDialogState<T> createState() => _HMBDroplistDialogState<T>();
+  _HMBDroplistMultiSelectDialogState<T> createState() =>
+      _HMBDroplistMultiSelectDialogState<T>();
 }
 
-class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
+class _HMBDroplistMultiSelectDialogState<T>
+    extends State<HMBDroplistMultiSelectDialog<T>> {
   List<T>? _items;
   bool _loading = true;
   String _filter = '';
+  late List<T> _selectedItems;
 
   final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _selectedItems = List.from(widget.selectedItems);
     unawaited(_loadItems());
   }
 
@@ -82,7 +84,7 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(context).pop(_selectedItems),
                   ),
                 ],
               ),
@@ -100,30 +102,26 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
                   ),
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: _items!.length + (widget.allowClear ? 1 : 0),
+                    itemCount: _items!.length,
                     itemBuilder: (context, index) {
-                      if (widget.allowClear && index == 0) {
-                        return ListTile(
-                          leading: const Icon(Icons.clear, color: Colors.red),
-                          title: const Text(
-                            'Clear selection',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                            ),
-                          ),
-                          onTap: () => Navigator.of(context).pop(),
-                        );
-                      }
-                      final item = _items![index - (widget.allowClear ? 1 : 0)];
-                      final isSelected = item == widget.selectedItem;
+                      final item = _items![index];
+                      final isSelected = _selectedItems.contains(item);
                       return ListTile(
                         selected: isSelected,
                         selectedTileColor:
                             Theme.of(context).primaryColor.withOpacity(0.1),
                         title: Text(widget.formatItem(item)),
+                        trailing: isSelected
+                            ? const Icon(Icons.check, color: Colors.green)
+                            : null,
                         onTap: () {
-                          Navigator.of(context).pop(item);
+                          setState(() {
+                            if (isSelected) {
+                              _selectedItems.remove(item);
+                            } else {
+                              _selectedItems.add(item);
+                            }
+                          });
                         },
                       );
                     },
@@ -154,7 +152,13 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
                 onChanged: _onFilterChanged,
               ),
             ),
-            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(_selectedItems),
+                child: const Text('Done'),
+              ),
+            ),
           ],
         ),
       );

@@ -204,7 +204,7 @@ class _WizardContactPageState extends State<WizardContactPage> {
                                 items: (filter) async => getSimCards(),
                                 format: (card) => card.displayName ?? 'Unnamed',
                                 onChanged: (card) =>
-                                    system.simCardNo = card.slotIndex,
+                                    system.simCardNo = card?.slotIndex,
                               );
                             }
                           },

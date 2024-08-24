@@ -14,6 +14,7 @@ class Job extends Entity<Job> {
     required this.jobStatusId,
     required this.hourlyRate,
     required this.callOutFee,
+    required this.lastActive, // New field for Last Active
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -28,6 +29,7 @@ class Job extends Entity<Job> {
     required this.jobStatusId,
     required this.hourlyRate,
     required this.callOutFee,
+    this.lastActive = false, // New field for Last Active
   }) : super.forInsert();
 
   Job.forUpdate({
@@ -41,6 +43,7 @@ class Job extends Entity<Job> {
     required this.jobStatusId,
     required this.hourlyRate,
     required this.callOutFee,
+    this.lastActive = false, //
   }) : super.forUpdate();
 
   factory Job.fromMap(Map<String, dynamic> map) => Job(
@@ -58,6 +61,7 @@ class Job extends Entity<Job> {
             Money.fromInt(map['call_out_fee'] as int? ?? 0, isoCode: 'AUD'),
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+        lastActive: map['last_active'] == 1,
       );
 
   @override
@@ -72,6 +76,7 @@ class Job extends Entity<Job> {
         'contact_id': contactId,
         'hourly_rate': hourlyRate?.minorUnits.toInt(),
         'call_out_fee': callOutFee?.minorUnits.toInt(),
+        'last_active': lastActive ? 1 : 0, // New field for Last Active
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
@@ -85,4 +90,5 @@ class Job extends Entity<Job> {
   int? jobStatusId;
   Money? hourlyRate;
   Money? callOutFee;
+  bool lastActive; // New field for Last Active
 }

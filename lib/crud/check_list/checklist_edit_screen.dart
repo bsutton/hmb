@@ -92,7 +92,7 @@ class _CheckListEditScreenState extends State<CheckListEditScreen>
                           .where((item) => item.name.contains(filter!))
                           .toList(),
                   onChanged: (item) => June.getState(CheckListTypeStatus.new)
-                      .checkListType = item,
+                      .checkListType = item!,
                   format: (taskStatus) => taskStatus.name),
             Flexible(
               child: SingleChildScrollView(

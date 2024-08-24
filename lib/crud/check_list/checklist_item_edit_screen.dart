@@ -181,20 +181,20 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             DaoCheckListItemType().getById(checkListItem?.itemTypeId ?? 0),
         items: (filter) async => DaoCheckListItemType().getByFilter(filter),
         format: (checklistItemType) => checklistItemType.name,
-        onChanged: (itemType) =>
-            June.getState(SelectedCheckListItemType.new).selected = itemType.id,
+        onChanged: (itemType) => June.getState(SelectedCheckListItemType.new)
+            .selected = itemType!.id,
       );
 
   HMBDroplist<Supplier> _chooseSupplier(CheckListItem? checkListItem) =>
       HMBDroplist<Supplier>(
-        title: 'Supplier',
-        initialItem: () async => _selectedSupplierId != null
-            ? DaoSupplier().getById(_selectedSupplierId)
-            : null,
-        items: (filter) async => DaoSupplier().getByFilter(filter),
-        format: (supplier) => supplier.name,
-        onChanged: (supplier) => _selectedSupplierId = supplier.id,
-      );
+          title: 'Supplier',
+          initialItem: () async => _selectedSupplierId != null
+              ? DaoSupplier().getById(_selectedSupplierId)
+              : null,
+          items: (filter) async => DaoSupplier().getByFilter(filter),
+          format: (supplier) => supplier.name,
+          onChanged: (supplier) => _selectedSupplierId = supplier?.id,
+          required: false);
 
   @override
   Future<CheckListItem> forUpdate(CheckListItem checkListItem) async =>

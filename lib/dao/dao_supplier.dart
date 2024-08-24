@@ -9,7 +9,7 @@ class DaoSupplier extends Dao<Supplier> {
     final db = getDb();
 
     if (Strings.isBlank(filter)) {
-      return getAll();
+      return getAll(orderByClause: 'name');
     }
     final like = '''%$filter%''';
     final data = await db.rawQuery('''
@@ -18,7 +18,7 @@ from supplier s
 where s.name like ?
 or s.description like ?
 or s.service like ?
-order by s.modifiedDate desc
+order by s.name
 ''', [like, like, like]);
 
     return toList(data);

@@ -120,7 +120,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
                       items: (filter) async => CustomerType.values,
                       title: 'Customer Type',
                       onChanged: (newValue) {
-                        _selectedCustomerType = newValue;
+                        _selectedCustomerType = newValue!;
                       },
                       format: (item) => item.name,
                     ),
