@@ -9,18 +9,24 @@ Map<String, MeasurementType> _measurementTypes = {
 };
 
 class MeasurementType {
-  /// The default units for each Measurement Type
+  /// Defines a type of measurement such
+  /// as length, weight, volume and includes
+  /// both the imperial and metric units for that
+  /// type of measurement.
   ///
+  /// The [name] of the MeasurementType such as 'volume'.
+  /// The [defaultMetric] Units used by the metric system.
+  /// The [defaultImperial] Units used by the imperial system.
+  /// The list of [metric] units for this measurement type.
+  /// The list of [imperial] units for this measurement type.
   const MeasurementType(
       {required this.name,
       required this.defaultMetric,
       required this.defaultImperial,
       required this.metric,
-      required this.imperial,
-      required this.labels});
+      required this.imperial});
 
   final String name;
-  final List<String> labels;
   final Units defaultMetric;
   final Units defaultImperial;
 
@@ -51,9 +57,6 @@ const length = MeasurementType(
       yd,
       ft,
       inch,
-    ],
-    labels: [
-      'Length'
     ]);
 
 const area = MeasurementType(
@@ -67,10 +70,6 @@ const area = MeasurementType(
     imperial: [
       yd2,
       ft2,
-    ],
-    labels: [
-      'Length',
-      'Width'
     ]);
 
 const volume = MeasurementType(
@@ -84,11 +83,6 @@ const volume = MeasurementType(
     imperial: [
       ft3,
       gallons,
-    ],
-    labels: [
-      'Height',
-      'Width',
-      'Depth'
     ]);
 
 const weight = MeasurementType(
@@ -104,11 +98,8 @@ const weight = MeasurementType(
       ton,
       lb,
       oz,
-    ],
-    labels: [
-      'Weight'
     ]);
-
+    
 enum PreferredUnitSystem { metric, imperial }
 
 /// Gets the list of valid units (mm, cm, m) for the given [measurementType]

@@ -56,6 +56,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   late TextEditingController _dimension2Controller;
 
   late TextEditingController _dimension3Controller;
+  late TextEditingController _urlController; // New controller for URL
 
   late FocusNode _descriptionFocusNode;
 
@@ -78,10 +79,13 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _dimension3Controller = TextEditingController(
         text: widget.checkListItem?.dimension3.toString());
 
+    _urlController = TextEditingController(
+        text: widget.checkListItem?.url); // Initialize with existing URL
+
     _descriptionFocusNode = FocusNode();
 
     June.getState(SelectedUnits.new).selected = null;
-    June.getState(SelectedDimensionType.new).selected = null;
+    June.getState(SelectedMeasurementType.new).selected = null;
     June.getState(SelectedCheckListItemType.new).selected = null;
   }
 
@@ -95,6 +99,8 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _dimension1Controller.dispose();
     _dimension2Controller.dispose();
     _dimension3Controller.dispose();
+
+    _urlController.dispose(); // Dispose URL controller
 
     _descriptionFocusNode.dispose();
     super.dispose();
@@ -130,12 +136,18 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
                       return null;
                     },
                   ),
+                  HMBTextField(
+                    controller: _urlController, // URL field
+                    labelText: 'Reference URL',
+                    keyboardType: TextInputType.url,
+                  ),
                   _chooseItemType(checklistItem),
                   HMBTextField(
                     controller: _costController,
                     labelText: 'Cost',
                     keyboardType: TextInputType.number,
                   ),
+
                   HMBTextField(
                     controller: _quantityController,
                     labelText: 'Quantity',
@@ -165,7 +177,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
       HMBDroplist<CheckListItemType>(
         title: 'Item Type',
         initialItem: () async =>
-            DaoCheckListItemType().getById(checkListItem?.itemTypeId),
+            DaoCheckListItemType().getById(checkListItem?.itemTypeId ?? 0),
         items: (filter) async => DaoCheckListItemType().getByFilter(filter),
         format: (checklistItemType) => checklistItemType.name,
         onChanged: (itemType) =>
@@ -186,12 +198,12 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
           effortInHours: FixedEx.tryParse(_effortInHoursController.text),
           completed: checkListItem.completed,
           measurementType:
-              June.getState(SelectedDimensionType.new).selectedOrDefault,
+              June.getState(SelectedMeasurementType.new).selectedOrDefault,
           dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
           dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
           dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
-          units:
-              June.getState(SelectedUnits.new).selectedOrDefault); // Save units
+          units: June.getState(SelectedUnits.new).selectedOrDefault,
+          url: _urlController.text);
 
   @override
   Future<CheckListItem> forInsert() async => CheckListItem.forInsert(
@@ -202,11 +214,12 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         quantity: FixedEx.tryParse(_quantityController.text),
         effortInHours: FixedEx.tryParse(_effortInHoursController.text),
         measurementType:
-            June.getState(SelectedDimensionType.new).selectedOrDefault,
+            June.getState(SelectedMeasurementType.new).selectedOrDefault,
         dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
         dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
         dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
         units: June.getState(SelectedUnits.new).selectedOrDefault, // Save units
+        url: _urlController.text,
       );
 
   @override
@@ -221,7 +234,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
     /// Dimensions
     final selectedDimensionType = checklistItem?.measurementType ?? length;
-    June.getState(SelectedDimensionType.new).selected = selectedDimensionType;
+    June.getState(SelectedMeasurementType.new).selected = selectedDimensionType;
 
     /// units
     var selectedUnits = June.getState(SelectedUnits.new).selected;
@@ -247,5 +260,5 @@ class SelectedCheckListItemType extends JuneState {
     setState();
   }
 
-  int? get selected => _selected;
+  int get selected => _selected ?? 0;
 }

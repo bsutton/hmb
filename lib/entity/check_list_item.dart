@@ -22,7 +22,8 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.dimension1,
     required this.dimension2,
     required this.dimension3,
-    required this.units, // New field for units
+    required this.units,
+    required this.url,
     this.invoiceLineId,
   }) : super();
 
@@ -38,6 +39,7 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.dimension2,
     required this.dimension3,
     required this.units, // New field for units
+    required this.url, // New field for URL
     this.completed = false,
     this.billed = false,
     this.invoiceLineId,
@@ -58,30 +60,33 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.dimension2,
     required this.dimension3,
     required this.units, // New field for units
+    required this.url, // New field for URL
     this.invoiceLineId,
   }) : super.forUpdate();
 
   factory CheckListItem.fromMap(Map<String, dynamic> map) => CheckListItem(
-      id: map['id'] as int,
-      checkListId: map['check_list_id'] as int,
-      description: map['description'] as String,
-      itemTypeId: map['item_type_id'] as int,
-      unitCost: MoneyEx.fromInt(map['unit_cost'] as int?),
-      effortInHours: Fixed.fromInt(map['effort_in_hours'] as int? ?? 0),
-      quantity: Fixed.fromInt(map['quantity'] as int? ?? 1),
-      completed: map['completed'] == 1,
-      billed: map['billed'] == 1,
-      invoiceLineId: map['invoice_line_id'] as int?,
-      createdDate: DateTime.parse(map['createdDate'] as String),
-      modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-      measurementType:
-          MeasurementType.fromName(map['measurement_type'] as String) ??
-              MeasurementType.defaultMeasurementType,
-      dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
-      dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
-      dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
-      units: Units.fromName(map['units'] as String) ??
-          Units.defaultUnits); // New field for units
+        id: map['id'] as int,
+        checkListId: map['check_list_id'] as int,
+        description: map['description'] as String,
+        itemTypeId: map['item_type_id'] as int,
+        unitCost: MoneyEx.fromInt(map['unit_cost'] as int?),
+        effortInHours: Fixed.fromInt(map['effort_in_hours'] as int? ?? 0),
+        quantity: Fixed.fromInt(map['quantity'] as int? ?? 1),
+        completed: map['completed'] == 1,
+        billed: map['billed'] == 1,
+        invoiceLineId: map['invoice_line_id'] as int?,
+        createdDate: DateTime.parse(map['createdDate'] as String),
+        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+        measurementType:
+            MeasurementType.fromName(map['measurement_type'] as String) ??
+                MeasurementType.defaultMeasurementType,
+        dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
+        dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
+        dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
+        units: Units.fromName(map['units'] as String) ??
+            Units.defaultUnits, // New field for units
+        url: map['url'] as String? ?? '', // New field for URL
+      );
 
   int checkListId;
   String description;
@@ -96,7 +101,8 @@ class CheckListItem extends Entity<CheckListItem> {
   Fixed dimension1;
   Fixed dimension2;
   Fixed dimension3;
-  Units units; // New field for units
+  Units units;
+  String url;
 
   bool get hasCost => unitCost.multiplyByFixed(quantity) > MoneyEx.zero;
 
@@ -105,22 +111,7 @@ class CheckListItem extends Entity<CheckListItem> {
       return '';
     }
 
-    final sb = StringBuffer()..write('${units.name}: ');
-
-    if (units.dimensions != 1) {
-      sb.write('${measurementType.labels[0]}: ');
-    }
-    sb.write('$dimension1');
-
-    if (units.dimensions > 1) {
-      sb.write(' ${measurementType.labels[1]}: $dimension2');
-    }
-
-    if (units.dimensions > 2) {
-      sb.write(' ${measurementType.labels[2]}: $dimension3');
-    }
-
-    return sb.toString();
+    return units.format([dimension1, dimension2, dimension3]);
   }
 
   bool get hasDimensions => itemTypeId == 1 || itemTypeId == 2;
@@ -145,6 +136,7 @@ class CheckListItem extends Entity<CheckListItem> {
         'dimension2': Fixed.copyWith(dimension2, scale: 3).minorUnits.toInt(),
         'dimension3': Fixed.copyWith(dimension3, scale: 3).minorUnits.toInt(),
         'units': units.name, // New field for units
+        'url': url, // New field for URL
       };
 
   CheckListItem copyWith({
@@ -164,7 +156,8 @@ class CheckListItem extends Entity<CheckListItem> {
     Fixed? dimension1,
     Fixed? dimension2,
     Fixed? dimension3,
-    Units? units, // New field for units
+    Units? units,
+    String? url,
   }) =>
       CheckListItem(
         id: id ?? this.id,
@@ -183,10 +176,11 @@ class CheckListItem extends Entity<CheckListItem> {
         dimension1: dimension1 ?? this.dimension1,
         dimension2: dimension2 ?? this.dimension2,
         dimension3: dimension3 ?? this.dimension3,
-        units: units ?? this.units, // New field for units
+        units: units ?? this.units,
+        url: url ?? this.url,
       );
 
   @override
   String toString() =>
-      '''id: $id description: $description qty: $quantity cost: $unitCost completed: $completed billed: $billed dimensions: $dimension1 x $dimension2 x $dimension3 $measurementType ($units)''';
+      '''id: $id description: $description qty: $quantity cost: $unitCost completed: $completed billed: $billed dimensions: $dimension1 x $dimension2 x $dimension3 $measurementType ($units) url: $url'''; // Updated to include URL
 }
