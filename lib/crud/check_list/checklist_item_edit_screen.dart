@@ -6,12 +6,14 @@ import 'package:june/june.dart';
 
 import '../../dao/dao_check_list_item_type.dart';
 import '../../dao/dao_checklist_item.dart';
+import '../../dao/dao_supplier.dart';
 import '../../dao/dao_system.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/check_list.dart';
 import '../../entity/check_list_item.dart';
 import '../../entity/check_list_item_type.dart';
 import '../../entity/entity.dart';
+import '../../entity/supplier.dart';
 import '../../entity/system.dart';
 import '../../util/fixed_ex.dart';
 import '../../util/measurement_type.dart';
@@ -50,15 +52,14 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   late TextEditingController _costController;
   late TextEditingController _quantityController;
   late TextEditingController _effortInHoursController;
-
   late TextEditingController _dimension1Controller;
-
   late TextEditingController _dimension2Controller;
-
   late TextEditingController _dimension3Controller;
   late TextEditingController _urlController; // New controller for URL
 
   late FocusNode _descriptionFocusNode;
+
+  int? _selectedSupplierId;
 
   @override
   void initState() {
@@ -82,6 +83,9 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _urlController = TextEditingController(
         text: widget.checkListItem?.url); // Initialize with existing URL
 
+    _selectedSupplierId =
+        widget.checkListItem?.supplierId; // Initialize with existing Supplier
+
     _descriptionFocusNode = FocusNode();
 
     June.getState(SelectedUnits.new).selected = null;
@@ -95,13 +99,10 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _costController.dispose();
     _quantityController.dispose();
     _effortInHoursController.dispose();
-
     _dimension1Controller.dispose();
     _dimension2Controller.dispose();
     _dimension3Controller.dispose();
-
-    _urlController.dispose(); // Dispose URL controller
-
+    _urlController.dispose();
     _descriptionFocusNode.dispose();
     super.dispose();
   }
@@ -142,12 +143,12 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
                     keyboardType: TextInputType.url,
                   ),
                   _chooseItemType(checklistItem),
+                  _chooseSupplier(checklistItem), // New Supplier drop list
                   HMBTextField(
                     controller: _costController,
                     labelText: 'Cost',
                     keyboardType: TextInputType.number,
                   ),
-
                   HMBTextField(
                     controller: _quantityController,
                     labelText: 'Quantity',
@@ -166,7 +167,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
                     dimension2Controller: _dimension2Controller,
                     dimension3Controller: _dimension3Controller,
                     checkListItem: checklistItem,
-                  )
+                  ),
                 ],
               );
             },
@@ -184,32 +185,44 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             June.getState(SelectedCheckListItemType.new).selected = itemType.id,
       );
 
+  HMBDroplist<Supplier> _chooseSupplier(CheckListItem? checkListItem) =>
+      HMBDroplist<Supplier>(
+        title: 'Supplier',
+        initialItem: () async => _selectedSupplierId != null
+            ? DaoSupplier().getById(_selectedSupplierId)
+            : null,
+        items: (filter) async => DaoSupplier().getByFilter(filter),
+        format: (supplier) => supplier.name,
+        onChanged: (supplier) => _selectedSupplierId = supplier.id,
+      );
+
   @override
   Future<CheckListItem> forUpdate(CheckListItem checkListItem) async =>
       CheckListItem.forUpdate(
-          entity: checkListItem,
-          checkListId: checkListItem.checkListId,
-          description: _descriptionController.text,
-          itemTypeId:
-              June.getState(SelectedCheckListItemType.new).selected ?? 0,
-          billed: false,
-          unitCost: MoneyEx.tryParse(_costController.text),
-          quantity: FixedEx.tryParse(_quantityController.text),
-          effortInHours: FixedEx.tryParse(_effortInHoursController.text),
-          completed: checkListItem.completed,
-          measurementType:
-              June.getState(SelectedMeasurementType.new).selectedOrDefault,
-          dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
-          dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
-          dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
-          units: June.getState(SelectedUnits.new).selectedOrDefault,
-          url: _urlController.text);
+        entity: checkListItem,
+        checkListId: checkListItem.checkListId,
+        description: _descriptionController.text,
+        itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
+        billed: false,
+        unitCost: MoneyEx.tryParse(_costController.text),
+        quantity: FixedEx.tryParse(_quantityController.text),
+        effortInHours: FixedEx.tryParse(_effortInHoursController.text),
+        completed: checkListItem.completed,
+        measurementType:
+            June.getState(SelectedMeasurementType.new).selectedOrDefault,
+        dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
+        dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
+        dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
+        units: June.getState(SelectedUnits.new).selectedOrDefault,
+        url: _urlController.text,
+        supplierId: _selectedSupplierId, // Save Supplier ID
+      );
 
   @override
   Future<CheckListItem> forInsert() async => CheckListItem.forInsert(
         checkListId: widget.parent.id,
         description: _descriptionController.text,
-        itemTypeId: June.getState(SelectedCheckListItemType.new).selected ?? 0,
+        itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
         unitCost: MoneyEx.tryParse(_costController.text),
         quantity: FixedEx.tryParse(_quantityController.text),
         effortInHours: FixedEx.tryParse(_effortInHoursController.text),
@@ -218,8 +231,9 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
         dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
         dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
-        units: June.getState(SelectedUnits.new).selectedOrDefault, // Save units
+        units: June.getState(SelectedUnits.new).selectedOrDefault,
         url: _urlController.text,
+        supplierId: _selectedSupplierId, // Save Supplier ID
       );
 
   @override

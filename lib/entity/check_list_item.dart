@@ -25,6 +25,7 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.units,
     required this.url,
     this.invoiceLineId,
+    this.supplierId, // New field for Supplier
   }) : super();
 
   CheckListItem.forInsert({
@@ -38,11 +39,12 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.dimension1,
     required this.dimension2,
     required this.dimension3,
-    required this.units, // New field for units
-    required this.url, // New field for URL
+    required this.units,
+    required this.url,
     this.completed = false,
     this.billed = false,
     this.invoiceLineId,
+    this.supplierId, // New field for Supplier
   }) : super.forInsert();
 
   CheckListItem.forUpdate({
@@ -59,9 +61,10 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.dimension1,
     required this.dimension2,
     required this.dimension3,
-    required this.units, // New field for units
-    required this.url, // New field for URL
+    required this.units,
+    required this.url,
     this.invoiceLineId,
+    this.supplierId,
   }) : super.forUpdate();
 
   factory CheckListItem.fromMap(Map<String, dynamic> map) => CheckListItem(
@@ -83,9 +86,9 @@ class CheckListItem extends Entity<CheckListItem> {
         dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
         dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
         dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
-        units: Units.fromName(map['units'] as String) ??
-            Units.defaultUnits, // New field for units
-        url: map['url'] as String? ?? '', // New field for URL
+        units: Units.fromName(map['units'] as String) ?? Units.defaultUnits,
+        url: map['url'] as String? ?? '',
+        supplierId: map['supplier_id'] as int?,
       );
 
   int checkListId;
@@ -103,6 +106,7 @@ class CheckListItem extends Entity<CheckListItem> {
   Fixed dimension3;
   Units units;
   String url;
+  int? supplierId;
 
   bool get hasCost => unitCost.multiplyByFixed(quantity) > MoneyEx.zero;
 
@@ -135,8 +139,9 @@ class CheckListItem extends Entity<CheckListItem> {
         'dimension1': Fixed.copyWith(dimension1, scale: 3).minorUnits.toInt(),
         'dimension2': Fixed.copyWith(dimension2, scale: 3).minorUnits.toInt(),
         'dimension3': Fixed.copyWith(dimension3, scale: 3).minorUnits.toInt(),
-        'units': units.name, // New field for units
-        'url': url, // New field for URL
+        'units': units.name,
+        'url': url,
+        'supplier_id': supplierId, // New field for Supplier
       };
 
   CheckListItem copyWith({
@@ -182,5 +187,5 @@ class CheckListItem extends Entity<CheckListItem> {
 
   @override
   String toString() =>
-      '''id: $id description: $description qty: $quantity cost: $unitCost completed: $completed billed: $billed dimensions: $dimension1 x $dimension2 x $dimension3 $measurementType ($units) url: $url'''; // Updated to include URL
+      '''id: $id description: $description qty: $quantity cost: $unitCost completed: $completed billed: $billed dimensions: $dimension1 x $dimension2 x $dimension3 $measurementType ($units) url: $url supplier: $supplierId''';
 }
