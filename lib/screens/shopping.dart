@@ -204,15 +204,14 @@ that are marked as "Materials - buy" or "Tools - buy".'''));
                       Text('Task: ${task.name}'),
                       if (supplier != null) Text('Supplier: ${supplier.name}'),
                       Text('''Scheduled Date: ${formatDate(job.startDate)}'''),
-                      Text(
-                          '''Dimensions: ${item.dimension1} x ${item.dimension2} x ${item.dimension3} ${item.measurementType}'''),
+                      Text(item.dimensions),
                       if (item.completed)
                         const Text(
                           'Completed',
                           style: TextStyle(color: Colors.green),
                         ),
                     ],
-                  ),
+                ),
                 ),
               ),
             ),
