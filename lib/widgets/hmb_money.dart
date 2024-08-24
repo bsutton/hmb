@@ -6,16 +6,16 @@ class HMBMoney extends StatelessWidget {
     required this.label, 
     required this.amount,
     super.key,
-    this.leadingPadding = true,
+    this.verticalPadding = true,
   });
   final String label;
-  final bool leadingPadding;
+  final bool verticalPadding;
   final Money? amount;
 
   @override
   Widget build(BuildContext context) => Column(
         children: [
-          if (leadingPadding) const SizedBox(height: 8),
+          if (verticalPadding) const SizedBox(height: 8),
           Text(
             '$label $amount',
             style: TextStyle(fontSize: 14, color: Colors.grey[700]),

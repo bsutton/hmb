@@ -40,7 +40,7 @@ dependencies:
   equatable: ^2.0.0
   ffi: ^2.1.2
   file_picker: ^8.0.5
-  fixed: ^5.0.0
+  fixed: ^5.0.1
   fleather: ^1.17.0
   flutter:
     sdk: flutter
