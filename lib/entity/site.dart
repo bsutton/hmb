@@ -10,6 +10,7 @@ class Site extends Entity<Site> {
     required this.suburb,
     required this.state,
     required this.postcode,
+    required this.accessDetails,
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -20,6 +21,7 @@ class Site extends Entity<Site> {
     required this.suburb,
     required this.state,
     required this.postcode,
+    required this.accessDetails,
   }) : super.forInsert();
 
   Site.forUpdate({
@@ -29,6 +31,7 @@ class Site extends Entity<Site> {
     required this.suburb,
     required this.state,
     required this.postcode,
+    required this.accessDetails,
   }) : super.forUpdate();
 
   factory Site.fromMap(Map<String, dynamic> map) => Site(
@@ -38,6 +41,7 @@ class Site extends Entity<Site> {
         suburb: map['suburb'] as String,
         state: map['state'] as String,
         postcode: map['postcode'] as String,
+        accessDetails: map['accessDetails'] as String?, // New field
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
       );
@@ -46,6 +50,9 @@ class Site extends Entity<Site> {
   String suburb;
   String state;
   String postcode;
+
+  /// Hold info such as pin codes for lock boxes.
+  String? accessDetails;
 
   String get address =>
       Strings.join([addressLine1, addressLine2, suburb, state, postcode],
@@ -59,6 +66,7 @@ class Site extends Entity<Site> {
         'suburb': suburb,
         'state': state,
         'postcode': postcode,
+        'accessDetails': accessDetails, // New field
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
@@ -76,5 +84,6 @@ class Site extends Entity<Site> {
       addressLine2.isEmpty &&
       suburb.isEmpty &&
       state.isEmpty &&
-      postcode.isEmpty;
+      postcode.isEmpty &&
+      Strings.isBlank(accessDetails);
 }

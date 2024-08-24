@@ -35,7 +35,8 @@ class _SiteEditScreenState extends State<SiteEditScreen>
   late TextEditingController _addressLine2Controller;
   late TextEditingController _suburbController;
   late TextEditingController _stateController;
-  late TextEditingController _sostcodeController;
+  late TextEditingController _postcodeController;
+  late TextEditingController _accessDetailsController; // New controller
 
   @override
   void initState() {
@@ -46,7 +47,9 @@ class _SiteEditScreenState extends State<SiteEditScreen>
         TextEditingController(text: widget.site?.addressLine2);
     _suburbController = TextEditingController(text: widget.site?.suburb);
     _stateController = TextEditingController(text: widget.site?.state);
-    _sostcodeController = TextEditingController(text: widget.site?.postcode);
+    _postcodeController = TextEditingController(text: widget.site?.postcode);
+    _accessDetailsController =
+        TextEditingController(text: widget.site?.accessDetails); // New field
   }
 
   @override
@@ -63,25 +66,29 @@ class _SiteEditScreenState extends State<SiteEditScreen>
             // Add other form fields for the new fields
             TextFormField(
               controller: _addressLine1Controller,
-              decoration: const InputDecoration(labelText: ' Address Line 1'),
+              decoration: const InputDecoration(labelText: 'Address Line 1'),
             ),
             TextFormField(
               controller: _addressLine2Controller,
-              decoration: const InputDecoration(labelText: ' Address Line 2'),
+              decoration: const InputDecoration(labelText: 'Address Line 2'),
             ),
             TextFormField(
               controller: _suburbController,
-              decoration: const InputDecoration(labelText: ' Suburb'),
+              decoration: const InputDecoration(labelText: 'Suburb'),
               keyboardType: TextInputType.name,
             ),
             TextFormField(
               controller: _stateController,
-              decoration: const InputDecoration(labelText: ' State'),
+              decoration: const InputDecoration(labelText: 'State'),
               keyboardType: TextInputType.name,
             ),
             TextFormField(
-              controller: _sostcodeController,
-              decoration: const InputDecoration(labelText: ' Postcode'),
+              controller: _postcodeController,
+              decoration: const InputDecoration(labelText: 'Postcode'),
+            ),
+            TextFormField(
+              controller: _accessDetailsController, // New field
+              decoration: const InputDecoration(labelText: 'Access Details'),
             ),
           ],
         ),
@@ -94,7 +101,8 @@ class _SiteEditScreenState extends State<SiteEditScreen>
       addressLine2: _addressLine2Controller.text,
       suburb: _suburbController.text,
       state: _stateController.text,
-      postcode: _sostcodeController.text);
+      postcode: _postcodeController.text,
+      accessDetails: _accessDetailsController.text); // New field
 
   @override
   Future<Site> forInsert() async => Site.forInsert(
@@ -102,7 +110,8 @@ class _SiteEditScreenState extends State<SiteEditScreen>
         addressLine2: _addressLine2Controller.text,
         suburb: _suburbController.text,
         state: _stateController.text,
-        postcode: _sostcodeController.text,
+        postcode: _postcodeController.text,
+        accessDetails: _accessDetailsController.text, // New field
       );
 
   @override
