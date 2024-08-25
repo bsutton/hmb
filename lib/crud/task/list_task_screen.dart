@@ -13,8 +13,8 @@ import '../../util/format.dart';
 import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_toggle.dart';
-import '../base_nested/nested_list_screen.dart';
-import '../task/task_edit_screen.dart';
+import '../base_nested/list_nested_screen.dart';
+import 'edit_task_screen.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen(

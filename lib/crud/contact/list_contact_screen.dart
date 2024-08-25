@@ -6,8 +6,8 @@ import '../../entity/contact.dart';
 import '../../entity/entity.dart';
 import '../../widgets/hmb_email_text.dart';
 import '../../widgets/hmb_phone_text.dart';
-import '../base_nested/nested_list_screen.dart';
-import 'contact_edit_screen.dart';
+import '../base_nested/list_nested_screen.dart';
+import 'edit_contact_screen.dart';
 
 class ContactListScreen<P extends Entity<P>> extends StatelessWidget {
   const ContactListScreen({

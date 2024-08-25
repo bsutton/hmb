@@ -6,9 +6,9 @@ import '../../dao/dao_job_status.dart';
 import '../../entity/job.dart';
 import '../../entity/job_status_enum.dart';
 import '../../widgets/hmb_text_themes.dart';
-import '../base_full_screen/entity_list_screen.dart';
+import '../base_full_screen/list_entity_screen.dart';
 import 'job_card.dart';
-import 'job_edit_screen.dart';
+import 'edit_job_screen.dart';
 
 class JobListScreen extends StatefulWidget {
   const JobListScreen({super.key});

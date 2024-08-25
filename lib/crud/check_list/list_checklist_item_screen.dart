@@ -11,8 +11,8 @@ import '../../widgets/hmb_fixed.dart';
 import '../../widgets/hmb_money.dart';
 import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_field.dart';
-import '../base_nested/nested_list_screen.dart';
-import 'checklist_item_edit_screen.dart';
+import '../base_nested/list_nested_screen.dart';
+import 'edit_checklist_item_screen.dart';
 
 class CheckListItemListScreen<P extends Entity<P>> extends StatelessWidget {
   const CheckListItemListScreen({

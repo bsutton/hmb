@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
-import '../crud/contact/contact_edit_screen.dart';
+import '../crud/contact/edit_contact_screen.dart';
 import '../dao/dao_contact.dart';
 import '../dao/join_adaptors/join_adaptor_customer_contact.dart';
 import '../entity/contact.dart';

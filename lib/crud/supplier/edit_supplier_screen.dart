@@ -11,8 +11,8 @@ import '../../widgets/hmb_crud_site.dart';
 import '../../widgets/hmb_form_section.dart';
 import '../../widgets/hmb_text_area.dart';
 import '../../widgets/hmb_text_field.dart';
-import '../base_full_screen/entity_edit_screen.dart';
-import '../base_nested/nested_list_screen.dart';
+import '../base_full_screen/edit_entity_screen.dart';
+import '../base_nested/list_nested_screen.dart';
 
 class SupplierEditScreen extends StatefulWidget {
   const SupplierEditScreen({super.key, this.supplier});

@@ -1,8 +1,8 @@
 import 'package:go_router/go_router.dart';
 
-import '../crud/customer/customer_list_screen.dart';
-import '../crud/job/job_list_screen.dart';
-import '../crud/supplier/supplier_list_screen.dart';
+import '../crud/customer/list_customer_screen.dart';
+import '../crud/job/list_job_screen.dart';
+import '../crud/supplier/list_supplier_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
 import '../crud/system/system_contact_screen.dart';
@@ -11,8 +11,8 @@ import '../database/management/backup_providers/email/screen.dart';
 import '../main.dart';
 import '../screens/about.dart';
 import '../screens/error.dart';
-import '../screens/packing.dart';
-import '../screens/shopping.dart';
+import '../screens/list_packing_screen.dart';
+import '../screens/list_shopping_screen.dart';
 import '../screens/wizard/wizard.dart';
 import '../widgets/full_screen_photo_view.dart';
 import 'home_with_drawer.dart';

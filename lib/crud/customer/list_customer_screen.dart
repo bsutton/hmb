@@ -11,8 +11,8 @@ import '../../widgets/hmb_phone_text.dart';
 import '../../widgets/hmb_placeholder.dart';
 import '../../widgets/hmb_site_text.dart';
 import '../../widgets/hmb_text_themes.dart';
-import '../base_full_screen/entity_list_screen.dart';
-import 'customer_edit_screen.dart';
+import '../base_full_screen/list_entity_screen.dart';
+import 'edit_customer_screen.dart';
 
 class CustomerListScreen extends StatelessWidget {
   const CustomerListScreen({super.key});

@@ -10,8 +10,8 @@ import '../../widgets/hmb_email_text.dart';
 import '../../widgets/hmb_phone_text.dart';
 import '../../widgets/hmb_site_text.dart';
 import '../../widgets/hmb_text_themes.dart';
-import '../base_full_screen/entity_list_screen.dart';
-import 'supplier_edit_screen.dart';
+import '../base_full_screen/list_entity_screen.dart';
+import 'edit_supplier_screen.dart';
 
 class SupplierListScreen extends StatelessWidget {
   const SupplierListScreen({super.key});

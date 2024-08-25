@@ -5,8 +5,8 @@ import '../../entity/task.dart';
 import '../../entity/time_entry.dart';
 import '../../util/format.dart';
 import '../../widgets/hmb_row_gap.dart';
-import '../base_nested/nested_list_screen.dart';
-import 'time_entry_edit_screen.dart';
+import '../base_nested/list_nested_screen.dart';
+import 'edit_time_entry_screen.dart';
 
 class TimeEntryListScreen extends StatelessWidget {
   const TimeEntryListScreen({required this.parent, super.key});

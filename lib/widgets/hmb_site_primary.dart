@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../crud/site/site_edit_screen.dart';
+import '../crud/site/edit_site_screen.dart';
 import '../dao/join_adaptors/dao_join_adaptor.dart';
 import '../entity/entity.dart';
 import '../entity/site.dart';

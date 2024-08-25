@@ -21,8 +21,8 @@ import '../../widgets/hmb_crud_time_entry.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_area.dart';
 import '../../widgets/hmb_text_field.dart';
-import '../base_nested/nested_edit_screen.dart';
-import '../base_nested/nested_list_screen.dart';
+import '../base_nested/edit_nested_screen.dart';
+import '../base_nested/list_nested_screen.dart';
 import 'photo_crud.dart';
 
 class TaskEditScreen extends StatefulWidget {

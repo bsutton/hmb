@@ -24,9 +24,9 @@ import '../../widgets/hmb_text_field.dart';
 import '../../widgets/photo_gallery.dart';
 import '../../widgets/rich_editor.dart';
 import '../../widgets/select_customer.dart';
-import '../base_full_screen/entity_edit_screen.dart';
-import '../base_nested/nested_list_screen.dart';
-import '../task/task_list_screen.dart';
+import '../base_full_screen/edit_entity_screen.dart';
+import '../base_nested/list_nested_screen.dart';
+import '../task/list_task_screen.dart';
 
 class JobEditScreen extends StatefulWidget {
   const JobEditScreen({super.key, this.job});

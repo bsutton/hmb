@@ -16,8 +16,8 @@ import '../../widgets/hmb_name_field.dart';
 import '../../widgets/hmb_switch.dart';
 import '../../widgets/hmb_text_area.dart';
 import '../../widgets/hmb_text_field.dart';
-import '../base_full_screen/entity_edit_screen.dart';
-import '../base_nested/nested_list_screen.dart';
+import '../base_full_screen/edit_entity_screen.dart';
+import '../base_nested/list_nested_screen.dart';
 
 class CustomerEditScreen extends StatefulWidget {
   const CustomerEditScreen({super.key, this.customer});

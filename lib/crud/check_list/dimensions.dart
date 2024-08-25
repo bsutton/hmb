@@ -10,7 +10,7 @@ import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_empty.dart';
 import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_field.dart';
-import 'checklist_item_edit_screen.dart';
+import 'edit_checklist_item_screen.dart';
 
 class DimensionWidget extends StatefulWidget {
   const DimensionWidget(

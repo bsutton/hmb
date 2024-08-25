@@ -7,7 +7,7 @@ import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/customer.dart';
 import '../../entity/entity.dart';
 import '../../entity/site.dart';
-import '../base_nested/nested_edit_screen.dart';
+import '../base_nested/edit_nested_screen.dart';
 
 class SiteEditScreen<P extends Entity<P>> extends StatefulWidget {
   const SiteEditScreen({

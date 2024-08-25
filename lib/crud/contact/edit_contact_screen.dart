@@ -10,7 +10,7 @@ import '../../util/platform_ex.dart';
 import '../../widgets/hmb_email_field.dart';
 import '../../widgets/hmb_name_field.dart';
 import '../../widgets/hmb_phone_field.dart';
-import '../base_nested/nested_edit_screen.dart';
+import '../base_nested/edit_nested_screen.dart';
 
 class ContactEditScreen<P extends Entity<P>> extends StatefulWidget {
   const ContactEditScreen(

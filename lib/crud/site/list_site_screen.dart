@@ -5,8 +5,8 @@ import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/entity.dart';
 import '../../entity/site.dart';
 import '../../widgets/hmb_site_text.dart';
-import '../base_nested/nested_list_screen.dart';
-import 'site_edit_screen.dart';
+import '../base_nested/list_nested_screen.dart';
+import 'edit_site_screen.dart';
 
 class SiteListScreen<P extends Entity<P>> extends StatelessWidget {
   const SiteListScreen({

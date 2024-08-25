@@ -21,7 +21,7 @@ import '../../util/money_ex.dart';
 import '../../util/platform_ex.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_field.dart';
-import '../base_nested/nested_edit_screen.dart';
+import '../base_nested/edit_nested_screen.dart';
 import 'dimensions.dart';
 
 class CheckListItemEditScreen<P extends Entity<P>> extends StatefulWidget {

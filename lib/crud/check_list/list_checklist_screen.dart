@@ -5,8 +5,8 @@ import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/check_list.dart';
 import '../../entity/entity.dart';
 import '../../widgets/hmb_text.dart';
-import '../base_nested/nested_list_screen.dart';
-import 'checklist_edit_screen.dart';
+import '../base_nested/list_nested_screen.dart';
+import 'edit_checklist_screen.dart';
 
 class CheckListListScreen<P extends Entity<P>> extends StatelessWidget {
   const CheckListListScreen({

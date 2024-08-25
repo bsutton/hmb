@@ -4,8 +4,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../crud/base_nested/nested_list_screen.dart';
-import '../crud/time_entry/time_entry_list_screen.dart';
+import '../crud/base_nested/list_nested_screen.dart';
+import '../crud/time_entry/list_time_entry_screen.dart';
 import '../entity/task.dart';
 import 'hmb_child_crud_card.dart';
 import 'hmb_start_time_entry.dart';

@@ -13,8 +13,8 @@ import '../../entity/entity.dart';
 import '../../widgets/hmb_crud_checklist_item.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_field.dart';
-import '../base_nested/nested_edit_screen.dart';
-import '../base_nested/nested_list_screen.dart';
+import '../base_nested/edit_nested_screen.dart';
+import '../base_nested/list_nested_screen.dart';
 
 class CheckListEditScreen<P extends Entity<P>> extends StatefulWidget {
   const CheckListEditScreen({

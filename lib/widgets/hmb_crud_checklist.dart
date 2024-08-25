@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 
-import '../crud/base_nested/nested_list_screen.dart';
-import '../crud/check_list/checklist_list_screen.dart';
+import '../crud/base_nested/list_nested_screen.dart';
+import '../crud/check_list/list_checklist_screen.dart';
 import '../dao/join_adaptors/dao_join_adaptor.dart';
 import '../entity/check_list.dart';
 import '../entity/entity.dart';

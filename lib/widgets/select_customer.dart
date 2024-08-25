@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
-import '../crud/customer/customer_edit_screen.dart';
+import '../crud/customer/edit_customer_screen.dart';
 import '../dao/dao_customer.dart';
 import '../entity/customer.dart';
 import 'hmb_add_button.dart';
