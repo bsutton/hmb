@@ -54,6 +54,11 @@
 			<action android:name="android.intent.action.PROCESS_TEXT" />
 			<data android:mimeType="text/plain" />
 		</intent>
+		  <!-- If your app checks for SMS support -->
+		<intent>
+			<action android:name="android.intent.action.VIEW" />
+			<data android:scheme="sms" />
+		</intent>
 		<!-- used by flutter_email_sender to send emails. -->
 		<intent>
 			<action android:name="android.intent.action.SENDTO" />

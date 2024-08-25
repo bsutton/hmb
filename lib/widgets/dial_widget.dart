@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sms_advanced/sms_advanced.dart';
 import 'package:strings/strings.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../util/clip_board.dart';
 import '../util/platform_ex.dart';
@@ -77,7 +78,7 @@ class DialWidget extends StatelessWidget {
 
   Future<void> _call(BuildContext context, String phoneNo) async {
     if (!Platform.isAndroid) {
-      HMBToast.info( 'Dialing is only available on Android');
+      HMBToast.info('Dialing is only available on Android');
       return;
     }
 
@@ -86,7 +87,7 @@ class DialWidget extends StatelessWidget {
       final result = await Permission.phone.request();
       if (result.isDenied) {
         if (context.mounted) {
-          HMBToast.info( 'Phone permission is required to make calls');
+          HMBToast.info('Phone permission is required to make calls');
         }
         return;
       }
@@ -97,11 +98,21 @@ class DialWidget extends StatelessWidget {
 
   Future<void> _sendText(
       BuildContext context, String phoneNo, String messageText) async {
+    final smsLaunchUri =
+        Uri(scheme: 'sms', path: phoneNo, queryParameters: <String, String>{
+      'body': Uri.encodeComponent(messageText),
+    });
+
+    await launchUrl(smsLaunchUri);
+  }
+
+  Future<void> _sendText2(
+      BuildContext context, String phoneNo, String messageText) async {
     final status = await Permission.sms.status;
     if (status.isDenied) {
       final result = await Permission.sms.request();
       if (result.isDenied && context.mounted) {
-        HMBToast.info( 'SMS permission is required to send texts');
+        HMBToast.info('SMS permission is required to send texts');
         return;
       }
     }
@@ -116,7 +127,7 @@ class DialWidget extends StatelessWidget {
           // gone by the time the notice arrives.
           // consider show a dialog that remains open util
           // the sms is sent.
-          HMBToast.info( 'SMS sent successfully');
+          HMBToast.info('SMS sent successfully');
         } else if (state == SmsMessageState.Fail) {
           HMBToast.error('Failed to send SMS');
         }
