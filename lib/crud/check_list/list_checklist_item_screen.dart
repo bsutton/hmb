@@ -1,5 +1,6 @@
 import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
+import 'package:june/june.dart';
 
 import '../../dao/dao_checklist_item.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
@@ -11,10 +12,11 @@ import '../../widgets/hmb_fixed.dart';
 import '../../widgets/hmb_money.dart';
 import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_field.dart';
+import '../../widgets/hmb_toggle.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_checklist_item_screen.dart';
 
-class CheckListItemListScreen<P extends Entity<P>> extends StatelessWidget {
+class CheckListItemListScreen<P extends Entity<P>> extends StatefulWidget {
   const CheckListItemListScreen({
     required this.parent,
     required this.daoJoin,
@@ -28,47 +30,85 @@ class CheckListItemListScreen<P extends Entity<P>> extends StatelessWidget {
   final CheckListItemType? checkListItemType;
 
   @override
-  Widget build(BuildContext context) =>
-      NestedEntityListScreen<CheckListItem, P>(
-          parent: parent,
-          parentTitle: 'Task',
-          entityNameSingular: 'Check List Item',
-          entityNamePlural: 'Items',
-          dao: DaoCheckListItem(),
-          onDelete: (checklistitem) async =>
-              daoJoin.deleteFromParent(checklistitem!, parent.parent!),
-          onInsert: (checklistitem) async =>
-              daoJoin.insertForParent(checklistitem!, parent.parent!),
-          // ignore: discarded_futures
-          fetchList: () => daoJoin.getByParent(parent.parent),
-          title: (checklistitem) => Text(checklistitem.description) as Widget,
-          onEdit: (checklistitem) => CheckListItemEditScreen(
-                daoJoin: daoJoin,
-                parent: parent.parent!,
-                checkListItem: checklistitem,
-              ),
-          details: (entity, details) {
-            final checklistitem = entity;
-            return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  HMBMoney(label: 'Cost', amount: checklistitem.unitCost),
-                  HMBFixed(label: 'Quantity', amount: checklistitem.quantity),
-                  HMBText(checklistitem.dimensions),
-                  if (checklistitem.completed)
-                    const Text(
-                      'Completed',
-                      style: TextStyle(color: Colors.green),
-                    )
-                  else
-                    IconButton(
-                      icon: const Icon(Icons.check, color: Colors.green),
-                      onPressed: () async =>
-                          _markAsCompleted(context, checklistitem),
-                    ),
-                ]);
-          });
+  State<CheckListItemListScreen<P>> createState() =>
+      _CheckListItemListScreenState<P>();
+}
+
+class _CheckListItemListScreenState<P extends Entity<P>>
+    extends State<CheckListItemListScreen<P>> {
+  @override
+  Widget build(BuildContext context) {
+    final showCompleted =
+        June.getState(ShowCompltedItems.new).showCompletedTasks;
+
+    return NestedEntityListScreen<CheckListItem, P>(
+        key: ValueKey(showCompleted),
+        parent: widget.parent,
+        parentTitle: 'Task',
+        entityNameSingular: 'Check List Item',
+        entityNamePlural: 'Items',
+        dao: DaoCheckListItem(),
+        onDelete: (checklistitem) async => widget.daoJoin
+            .deleteFromParent(checklistitem!, widget.parent.parent!),
+        onInsert: (checklistitem) async => widget.daoJoin
+            .insertForParent(checklistitem!, widget.parent.parent!),
+        // ignore: discarded_futures
+        fetchList: () async => _fetchItems(showCompleted),
+        title: (checklistitem) => Text(checklistitem.description) as Widget,
+        onEdit: (checklistitem) => CheckListItemEditScreen(
+              daoJoin: widget.daoJoin,
+              parent: widget.parent.parent!,
+              checkListItem: checklistitem,
+            ),
+        details: (entity, details) {
+          final checklistitem = entity;
+          return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                HMBMoney(label: 'Cost', amount: checklistitem.unitCost),
+                HMBFixed(label: 'Quantity', amount: checklistitem.quantity),
+                HMBText(checklistitem.dimensions),
+                if (checklistitem.completed)
+                  const Text(
+                    'Completed',
+                    style: TextStyle(color: Colors.green),
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.check, color: Colors.green),
+                    onPressed: () async =>
+                        _markAsCompleted(context, checklistitem),
+                  ),
+              ]);
+        },
+        filterBar: (entity) => Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                HMBToggle(
+                  label: 'Show Completed',
+                  tooltip: showCompleted
+                      ? 'Show Only Non-Completed Tasks'
+                      : 'Show Completed Tasks',
+                  initialValue:
+                      June.getState(ShowCompltedItems.new).showCompletedTasks,
+                  onChanged: (value) {
+                    setState(() {
+                      June.getState(ShowCompltedItems.new).toggle();
+                    });
+                  },
+                ),
+              ],
+            ));
+  }
+
+  Future<List<CheckListItem>> _fetchItems(bool showCompleted) async {
+    final items = await widget.daoJoin.getByParent(widget.parent.parent);
+
+    return items
+        .where((item) => showCompleted ? item.completed : !item.completed)
+        .toList();
+  }
 
   Future<void> _markAsCompleted(
       BuildContext context, CheckListItem item) async {
@@ -117,5 +157,14 @@ class CheckListItemListScreen<P extends Entity<P>> extends StatelessWidget {
 
       await DaoCheckListItem().markAsCompleted(item, unitCost, quantity);
     }
+  }
+}
+
+class ShowCompltedItems extends JuneState {
+  bool showCompletedTasks = false;
+
+  void toggle() {
+    showCompletedTasks = !showCompletedTasks;
+    refresh(); // Notify listeners to rebuild
   }
 }

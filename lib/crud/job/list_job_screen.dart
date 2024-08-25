@@ -7,8 +7,8 @@ import '../../entity/job.dart';
 import '../../entity/job_status_enum.dart';
 import '../../widgets/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
-import 'job_card.dart';
 import 'edit_job_screen.dart';
+import 'job_card.dart';
 
 class JobListScreen extends StatefulWidget {
   const JobListScreen({super.key});
@@ -21,7 +21,7 @@ class JobListScreen extends StatefulWidget {
 class _JobListScreenState extends State<JobListScreen> {
   @override
   Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
