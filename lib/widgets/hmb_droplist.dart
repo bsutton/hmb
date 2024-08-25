@@ -128,7 +128,7 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
                           ? widget.format(_selectedItem as T)
                           : 'Select a ${widget.title}',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 16,
                         color: widget.state.hasError
                             ? Theme.of(context).colorScheme.error
                             : Theme.of(context).textTheme.bodyLarge?.color ??
