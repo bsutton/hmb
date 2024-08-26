@@ -86,33 +86,7 @@ and will appear on the Job quote/invoice.
 
 Items in the checklist that are marked as 'Tools - own' will be added to the [packing list](https://github.com/bsutton/hmb/wiki/Packing-List).
 
-# Quoting
-When creating tasks you can select the billing method (fixed price or time and materials) and enter an estimate for the task.
-You an add checklist items which if marked as 'to be purchased' appear in the quote.
-
-Once you have created all of the task along with their estimates you can create an email a quote from the Job Card.
-- this is still a work in progress
-
-## invoicing
-Provides a the ability to generate invoices for Jobs.
-
-You still need an accounting package to run your business. You would generally transfer the details from an HMB invoice into your accounting package.
-
-You can either progressively invoice for work done or wait until the task/job is complete.
-
-
-## limitations
-HMB can only run on a single device - for most people this will mean your phone but you can also use a tablet (android only at this point).
-The advantage is that HMB works even when you don't have a mobile connection, the disadvantage is that if you lose
-or damage your phone you have just lost all your customer and job data and there is no way to share your HMB data with another team member.
-
-So - you need to **backup** HMB on a regular basis - it's easy and only takes a moment - see the section below on [backups](https://github.com/bsutton/hmb/wiki/Backups).
-
-
-
-
-
-
-
+# Getting Started
+Reading the [getting started](https://github.com/bsutton/hmb/wiki/2.-Getting-Started) guide is the right place to started and will help you get the most out of HMB.
 
 
