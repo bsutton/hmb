@@ -87,6 +87,6 @@ and will appear on the Job quote/invoice.
 Items in the checklist that are marked as 'Tools - own' will be added to the [packing list](https://github.com/bsutton/hmb/wiki/Packing-List).
 
 # Getting Started
-Reading the [getting started](https://github.com/bsutton/hmb/wiki/2.-Getting-Started) guide is the right place to started and will help you get the most out of HMB.
+Reading the [getting started](https://github.com/bsutton/hmb/wiki/2.-Getting-Started) guide is the right place to start and will help you get the most out of HMB.
 
 
