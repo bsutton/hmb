@@ -39,155 +39,231 @@ Future<File> generateQuotePdf(
   final systemColor = PdfColor.fromInt(system.billingColour);
 
   pdf.addPage(
-    pw.Page(
+    pw.MultiPage(
       pageTheme: pw.PageTheme(
-        margin: const pw.EdgeInsets.symmetric(
-            horizontal: 40), // Left and right margins
-        buildBackground: (context) => pw.FullPage(
-          ignoreMargins: true,
-          child: pw.Stack(
-            children: [
-              // Top band
-              pw.Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: pw.Container(
-                  height: 28, // 1cm height
-                  color: systemColor,
-                  child: pw.Padding(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 8),
-                    child: pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text(
-                          system.businessName ?? '',
-                          style: pw.TextStyle(
-                            fontSize: 18,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.white,
-                          ),
+        margin: pw.EdgeInsets.zero,
+        buildBackground: (context) => pw.Stack(
+          children: [
+            // Top coloured band with business name
+            pw.Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: pw.Container(
+                height: 28, // 1cm height
+                color: systemColor,
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 8),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        system.businessName ?? '',
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              // Bottom band with T&C link
-              pw.Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: pw.Container(
-                  height: 28, // 1cm height
-                  color: systemColor,
-                  child: pw.Center(
-                    child: pw.RichText(
-                      text: pw.TextSpan(
-                          text: 'This quote is subject to our ',
-                          style: const pw.TextStyle(color: PdfColors.white),
-                          children: [
-                            pw.WidgetSpan(
-                                child: pw.UrlLink(
-                              child: pw.Text(
-                                'Terms and Conditions',
-                                style: const pw.TextStyle(
-                                  color: PdfColors.blue,
-                                  decoration: pw.TextDecoration.underline,
-                                ),
-                              ),
-                              destination: system.termsUrl ?? '',
-                            )),
-                            const pw.TextSpan(text: ' and is valid for 30 days')
-                          ]),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      build: (context) => pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.SizedBox(height: 36), // Space to move content below the top band
-          if (logo != null)
-            pw.Align(
-              alignment: pw.Alignment.centerRight,
-              child: pw.Padding(
-                padding: const pw.EdgeInsets.only(top: 8, right: 16),
-                child: logo,
               ),
             ),
-          pw.SizedBox(height: 16),
-          pw.Text('Quote: ${quote.bestNumber}',
-              style:
-                  pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-          pw.Text('Date: ${formatDate(quote.createdDate)}'),
-          pw.Divider(),
-          pw.Text('Business Details:',
-              style:
-                  pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-          pw.Text('Business Name: ${system.businessName}'),
-          pw.Text('Address: ${system.address}'),
-          pw.Text('Email: ${system.emailAddress}'),
-          pw.Text('Phone: $phone'),
-          pw.Text('${system.businessNumberLabel}: ${system.businessNumber}'),
-          pw.Divider(),
+            // Bottom coloured band with T&C link
+            pw.Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: pw.Container(
+                height: 28, // 1cm height
+                color: systemColor,
+                child: pw.Padding(
+                    padding: const pw.EdgeInsets.only(left: 10, right: 10),
+                    child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.RichText(
+                            text: pw.TextSpan(
+                                text: 'This quote is subject to our ',
+                                style:
+                                    const pw.TextStyle(color: PdfColors.white),
+                                children: [
+                                  pw.WidgetSpan(
+                                    child: pw.UrlLink(
+                                      child: pw.Text(
+                                        'Terms and Conditions',
+                                        style: const pw.TextStyle(
+                                          color: PdfColors.blue,
+                                          decoration:
+                                              pw.TextDecoration.underline,
+                                        ),
+                                      ),
+                                      destination: system.termsUrl ?? '',
+                                    ),
+                                  ),
+                                  const pw.TextSpan(
+                                    text: ' and is valid for 30 days',
+                                  ),
+                                ]),
+                          ),
+                          pw.Text(
+                            '${context.pageNumber} of ${context.pagesCount}',
+                            style: const pw.TextStyle(fontSize: 12),
+                          ),
+                        ])),
+              ),
+            ),
+          ],
+        ),
+      ),
+      header: (context) {
+        if (context.pageNumber == 1) {
+          return pw.Padding(
+            padding: const pw.EdgeInsets.only(
+              top: 20,
+              left: 20,
+              right: 20,
+              bottom: 10,
+            ), // Prevent overlap with header
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.SizedBox(height: 16),
+                            pw.Text(
+                              'Quote: ${quote.bestNumber}',
+                              style: pw.TextStyle(
+                                fontSize: 18,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                            pw.Text('Date: ${formatDate(quote.createdDate)}'),
+                          ]),
 
-          // Display grouped items
-          if (displayGroupHeaders)
-            ...groupedLines.entries.map((entry) => pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(entry.key,
-                        style: pw.TextStyle(
-                            fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                    if (displayItems)
-                      ...entry.value.map((line) => pw.Row(
-                            mainAxisAlignment:
-                                pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text(line.description),
-                              if (displayCosts)
-                                pw.Text(line.lineTotal.toString()),
-                            ],
-                          )),
-                  ],
-                )),
+                      // business logo
+                      if (logo != null)
+                        pw.Align(
+                          alignment: pw.Alignment.centerRight,
+                          child: pw.Padding(
+                            padding:
+                                const pw.EdgeInsets.only(top: 8, right: 16),
+                            child: logo,
+                          ),
+                        ),
+                    ]),
+                pw.Divider(),
+                pw.Text(
+                  'Business Details:',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.Text('Business Name: ${system.businessName}'),
+                pw.Text('Address: ${system.address}'),
+                pw.Text('Email: ${system.emailAddress}'),
+                pw.Text('Phone: $phone'),
+                pw.Text(
+                    '${system.businessNumberLabel}: ${system.businessNumber}'),
+                pw.Divider(),
+              ],
+            ),
+          );
+        } else {
+          return pw.SizedBox(); // Empty header for subsequent pages
+        }
+      },
+      build: (context) {
+        final content = <pw.Widget>[];
 
+        if (displayGroupHeaders) {
+          for (final entry in groupedLines.entries) {
+            content.add(
+              pw.Text(
+                entry.key,
+                style: pw.TextStyle(
+                  fontSize: 14,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            );
+            if (displayItems) {
+              content.addAll(
+                entry.value
+                    .map((line) => pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            pw.Text(line.description),
+                            if (displayCosts)
+                              pw.Text(line.lineTotal.toString()),
+                          ],
+                        ))
+                    .toList(),
+              );
+            }
+          }
+        }
+
+        content.addAll([
           pw.Divider(),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text('Total:',
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-              pw.Text(totalAmount.toString(),
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text(
+                'Total:',
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
+              pw.Text(
+                totalAmount.toString(),
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
             ],
           ),
           pw.Divider(),
-          pw.Text('Payment Details:',
-              style:
-                  pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          pw.Text(
+            'Payment Details:',
+            style: pw.TextStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
           if (system.showBsbAccountOnInvoice ?? false) ...[
             pw.Text('BSB: ${system.bsb}'),
             pw.Text('Account Number: ${system.accountNo}'),
           ],
           if (system.showPaymentLinkOnInvoice ?? false) ...[
             pw.UrlLink(
-              child: pw.Text('Payment Link',
-                  style: const pw.TextStyle(
-                    color: PdfColors.blue,
-                    decoration: pw.TextDecoration.underline,
-                  )),
+              child: pw.Text(
+                'Payment Link',
+                style: const pw.TextStyle(
+                  color: PdfColors.blue,
+                  decoration: pw.TextDecoration.underline,
+                ),
+              ),
               destination: system.paymentLinkUrl ?? '',
             ),
           ],
-          pw.SizedBox(height: 36), // Space above the bottom band
-        ],
-      ),
+        ]);
+
+        return [
+          pw.Padding(
+              padding: const pw.EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 80, // Ensure space from top band
+                bottom: 60, // Ensure space from bottom band
+              ),
+              child: pw.Column(
+                  children: content,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start))
+        ]; // Indent for body content
+      },
     ),
   );
 
