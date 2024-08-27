@@ -119,7 +119,7 @@ class JobEditScreenState extends State<JobEditScreen>
                               _showHourlyRate(),
                               _showCallOutFee(),
                               SizedBox(
-                                height: 200,
+                                height: 300,
                                 child: RichEditor(
                                     controller: _descriptionController,
                                     focusNode: _descriptionFocusNode,
