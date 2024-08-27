@@ -85,32 +85,51 @@ class _PhotoCrudState extends State<PhotoCrud> {
   /// Display the photo with a 'Icon in the corner
   /// which when tapped will show the full screen photo
   /// with zoom/pan ability.
-  Stack _showPhoto(Photo photo) => Stack(
-        children: [
-          Image.file(File(photo.filePath)),
-          Positioned(
-            right: 0,
-            child: GestureDetector(
-              // Show full screen photo when tapped
-              onTap: () async {
+  Stack _showPhoto(Photo photo) {
+    final file = File(photo.filePath);
+    final isFileExist = file.existsSync();
+
+    return Stack(
+      children: [
+        if (isFileExist)
+          Image.file(file)
+        else
+          Container(
+            width: double.infinity,
+            height: 200,
+            color: Colors.grey,
+            child: const Icon(
+              Icons.broken_image,
+              color: Colors.white,
+              size: 80,
+            ),
+          ),
+        Positioned(
+          right: 0,
+          child: GestureDetector(
+            // Show full screen photo when tapped, only if the file exists
+            onTap: () async {
+              if (isFileExist) {
                 final task = await DaoTask().getById(photo.taskId);
                 if (mounted) {
                   await _showFullScreenPhoto(
                       context, photo.filePath, task!.name, photo.comment);
                 }
-              },
-              child: Container(
-                color: Colors.black.withOpacity(0.5),
-                padding: const EdgeInsets.all(8),
-                child: const Icon(
-                  Icons.fullscreen,
-                  color: Colors.white,
-                ),
+              }
+            },
+            child: Container(
+              color: Colors.black.withOpacity(0.5),
+              padding: const EdgeInsets.all(8),
+              child: const Icon(
+                Icons.fullscreen,
+                color: Colors.white,
               ),
             ),
           ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 
   IconButton _buildDeleteButton(Photo photo) => IconButton(
         icon: const Icon(Icons.delete),
