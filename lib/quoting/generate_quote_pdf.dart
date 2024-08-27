@@ -33,15 +33,92 @@ Future<File> generateQuotePdf(
   final phone = await formatPhone(system.bestPhone);
 
   // Load logo
-
   final logo = await _getLogo(system);
+
+  // Define the system color (using the color stored in the system table)
+  final systemColor = PdfColor.fromInt(system.billingColour);
 
   pdf.addPage(
     pw.Page(
+      pageTheme: pw.PageTheme(
+        margin: pw.EdgeInsets.zero,
+        buildBackground: (context) => pw.FullPage(
+          ignoreMargins: true,
+          child: pw.Stack(
+            children: [
+              // Top band
+              pw.Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: pw.Container(
+                  height: 28, // 1cm height
+                  color: systemColor,
+                  child: pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 8),
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                          system.businessName ?? '',
+                          style: pw.TextStyle(
+                            fontSize: 18,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Bottom band with T&C link
+              pw.Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: pw.Container(
+                  height: 28, // 1cm height
+                  color: systemColor,
+                  child: pw.Center(
+                    child: pw.RichText(
+                      text: pw.TextSpan(
+                          text: 'This quote is subject to our ',
+                          style: const pw.TextStyle(color: PdfColors.white),
+                          children: [
+                            pw.WidgetSpan(
+                                child: pw.UrlLink(
+                              child: pw.Text(
+                                'Terms and Conditions',
+                                style: const pw.TextStyle(
+                                  color: PdfColors.blue,
+                                  decoration: pw.TextDecoration.underline,
+                                ),
+                              ),
+                              destination: system.termsUrl ?? '',
+                            )),
+                          ]),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       build: (context) => pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          if (logo != null) pw.Center(child: logo),
+          pw.SizedBox(height: 36), // Space to move content below the top band
+          if (logo != null)
+            pw.Align(
+              alignment: pw.Alignment.centerRight,
+              child: pw.Padding(
+                padding: const pw.EdgeInsets.only(right: 16),
+                child: logo,
+              ),
+            ),
+          pw.SizedBox(height: 16),
           pw.Text('Quote: ${quote.bestNumber}',
               style:
                   pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
@@ -106,6 +183,7 @@ Future<File> generateQuotePdf(
               destination: system.paymentLinkUrl ?? '',
             ),
           ],
+          pw.SizedBox(height: 36), // Space above the bottom band
         ],
       ),
     ),
@@ -130,8 +208,6 @@ Map<String, List<QuoteLine>> _groupLinesByTask(List<QuoteLine> lines) {
 Future<pw.Widget?> _getLogo(System system) async {
   final logoPath = system.logoPath;
 
-  final logoType = system.logoType;
-
   if (logoPath.isEmpty) {
     return null;
   }
@@ -143,5 +219,6 @@ Future<pw.Widget?> _getLogo(System system) async {
   final image = pw.MemoryImage(await file.readAsBytes());
 
   return pw.Image(image,
-      width: logoType.width.toDouble(), height: logoType.height.toDouble());
+      width: system.logoType.width.toDouble(),
+      height: system.logoType.height.toDouble());
 }
