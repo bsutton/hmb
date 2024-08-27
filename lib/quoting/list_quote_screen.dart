@@ -132,7 +132,10 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
                 children: [
                   ElevatedButton(
                     onPressed: () async {
-                      final filePath = await generateQuotePdf(quote);
+                      final filePath = await generateQuotePdf(quote,
+                          displayCosts: true,
+                          displayGroupHeaders: true,
+                          displayItems: true);
                       if (mounted) {
                         await Navigator.of(context).push(
                           MaterialPageRoute<void>(

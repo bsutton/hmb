@@ -1,11 +1,19 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' hide context;
+import 'package:path_provider/path_provider.dart';
 
 import '../../dao/dao_system.dart';
+import '../../entity/system.dart';
 import '../../util/money_ex.dart';
+import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_money_editing_controller.dart';
 import '../../widgets/hmb_money_field.dart';
+import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -29,8 +37,12 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
       TextEditingController();
   late final TextEditingController _paymentLinkUrlController =
       TextEditingController();
+  late final TextEditingController _logoPathController =
+      TextEditingController();
   bool _showBsbAccountOnInvoice = false;
   bool _showPaymentLinkOnInvoice = false;
+  LogoType _logoType = LogoType.square;
+  String? _logoFile;
 
   @override
   void initState() {
@@ -42,9 +54,13 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
     unawaited(DaoSystem().get().then((system) {
       _defaultHourlyRateController.money = system!.defaultHourlyRate;
       _defaultCallOutFeeController.money = system.defaultCallOutFee;
+      _logoFile = system.logoPath;
+      _logoType = system.logoType;
       _bsbController.text = system.bsb ?? '';
       _accountNoController.text = system.accountNo ?? '';
       _paymentLinkUrlController.text = system.paymentLinkUrl ?? '';
+      _logoPathController.text = system.logoPath;
+      _logoType = system.logoType;
       _showBsbAccountOnInvoice = system.showBsbAccountOnInvoice ?? true;
       _showPaymentLinkOnInvoice = system.showPaymentLinkOnInvoice ?? true;
       setState(() {});
@@ -58,6 +74,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
     _bsbController.dispose();
     _accountNoController.dispose();
     _paymentLinkUrlController.dispose();
+    _logoPathController.dispose();
     super.dispose();
   }
 
@@ -74,7 +91,19 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
         ..accountNo = _accountNoController.text
         ..paymentLinkUrl = _paymentLinkUrlController.text
         ..showBsbAccountOnInvoice = _showBsbAccountOnInvoice
-        ..showPaymentLinkOnInvoice = _showPaymentLinkOnInvoice;
+        ..showPaymentLinkOnInvoice = _showPaymentLinkOnInvoice
+        ..logoPath = _logoPathController.text
+        ..logoType = _logoType;
+
+      if (_logoFile != null) {
+        final directory = await getApplicationDocumentsDirectory();
+        final logoPath = join(directory.path, 'logo', basename(_logoFile!));
+        if (!exists(dirname(logoPath))) {
+          createDir(dirname(logoPath), recursive: true);
+        }
+        copy(_logoFile!, logoPath, overwrite: true);
+        system.logoPath = logoPath;
+      }
 
       await DaoSystem().update(system);
 
@@ -83,6 +112,18 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
       }
     } else {
       HMBToast.error('Fix the errors and try again.');
+    }
+  }
+
+  Future<void> _pickLogo() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _logoFile = pickedFile.path;
+        _logoPathController.text = pickedFile.path;
+      });
     }
   }
 
@@ -145,6 +186,36 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
                     });
                   },
                 ),
+                const SizedBox(height: 20),
+                const Text('Logo Type'),
+                HMBDroplist<LogoType>(
+                  title: 'Logo Format',
+                  initialItem: () async => _logoType,
+                  items: (filter) async => LogoType.values,
+                  format: (logoType) => logoType.name,
+                  onChanged: (value) {
+                    setState(() {
+                      _logoType = value ?? LogoType.square;
+                    });
+                  },
+                ),
+                const SizedBox(height: 20),
+                const HMBText('Logo Path'),
+                TextButton.icon(
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text('Upload Logo'),
+                  onPressed: _pickLogo,
+                ),
+                if (_logoFile != null) ...[
+                  const SizedBox(height: 10),
+                  Center(
+                    child: Image.file(
+                      File(_logoFile!),
+                      width: _logoType.width.toDouble(),
+                      height: _logoType.height.toDouble(),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

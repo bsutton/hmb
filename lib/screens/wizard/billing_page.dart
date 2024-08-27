@@ -1,11 +1,18 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/money_ex.dart';
+import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_money_editing_controller.dart';
 import '../../widgets/hmb_money_field.dart';
+import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -25,6 +32,9 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
   late HMBMoneyEditingController _defaultCallOutFeeController;
   late TextEditingController _bsbController;
   late TextEditingController _accountNoController;
+  late TextEditingController _logoPathController;
+  LogoType _logoType = LogoType.square;
+  File? _logoFile;
 
   late final System system;
 
@@ -41,6 +51,8 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
         HMBMoneyEditingController(money: system.defaultCallOutFee);
     _bsbController = TextEditingController(text: system.bsb);
     _accountNoController = TextEditingController(text: system.accountNo);
+    _logoPathController = TextEditingController(text: system.logoPath);
+    _logoType = system.logoType;
   }
 
   @override
@@ -49,6 +61,7 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
     _defaultCallOutFeeController.dispose();
     _bsbController.dispose();
     _accountNoController.dispose();
+    _logoPathController.dispose();
     super.dispose();
   }
 
@@ -61,12 +74,33 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
         ..defaultCallOutFee =
             MoneyEx.tryParse(_defaultCallOutFeeController.text)
         ..bsb = _bsbController.text
-        ..accountNo = _accountNoController.text;
+        ..accountNo = _accountNoController.text
+        ..logoType = _logoType;
+
+      if (_logoFile != null) {
+        final directory = await getApplicationDocumentsDirectory();
+        final logoPath =
+            '${directory.path}/logo/${_logoFile!.path.split('/').last}';
+        _logoFile!.copySync(logoPath);
+        system.logoPath = logoPath;
+      }
 
       await DaoSystem().update(system);
       widget.onNext();
     } else {
       HMBToast.error('Fix the errors and try again.');
+    }
+  }
+
+  Future<void> _pickLogo() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _logoFile = File(pickedFile.path);
+        _logoPathController.text = pickedFile.path;
+      });
     }
   }
 
@@ -106,6 +140,26 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
                           controller: _accountNoController,
                           labelText: 'Account Number',
                           keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 20),
+                        const Text('Logo Type'),
+                        HMBDroplist<LogoType>(
+                          title: 'Logo Format',
+                          initialItem: () async => _logoType,
+                          items: (filter) async => LogoType.values,
+                          format: (logoType) => logoType.name,
+                          onChanged: (value) {
+                            setState(() {
+                              _logoType = value ?? LogoType.square;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        const HMBText('Logo Path'),
+                        TextButton.icon(
+                          icon: const Icon(Icons.upload_file),
+                          label: const Text('Upload Logo'),
+                          onPressed: _pickLogo,
                         ),
                         const SizedBox(height: 16),
                         Row(

@@ -4,6 +4,30 @@ import 'package:strings/strings.dart';
 import '../util/measurement_type.dart';
 import 'entity.dart';
 
+enum LogoType {
+  square(100, 100),
+  portrait(80, 120),
+  landscape(120, 80);
+
+  const LogoType(this.width, this.height);
+
+  final int width;
+  final int height;
+
+  static LogoType fromName(String? name) {
+    switch (name) {
+      case 'square':
+        return LogoType.square;
+      case 'portrait':
+        return LogoType.portrait;
+      case 'landscape':
+        return LogoType.landscape;
+      default:
+        return LogoType.square;
+    }
+  }
+}
+
 class System extends Entity<System> {
   System({
     required super.id,
@@ -33,7 +57,9 @@ class System extends Entity<System> {
     required this.paymentLinkUrl,
     required this.showBsbAccountOnInvoice,
     required this.showPaymentLinkOnInvoice,
-    required this.preferredUnitSystem, //
+    required this.preferredUnitSystem,
+    required this.logoPath, // Field for logo path
+    required this.logoType, // Field for logo type
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -65,7 +91,9 @@ class System extends Entity<System> {
     required this.paymentLinkUrl,
     required this.showBsbAccountOnInvoice,
     required this.showPaymentLinkOnInvoice,
-    this.preferredUnitSystem = PreferredUnitSystem.metric, // Default to metric
+    this.preferredUnitSystem = PreferredUnitSystem.metric,
+    this.logoPath = '', // Default empty path for logo
+    this.logoType = LogoType.square, // Default logo type
   }) : super.forInsert();
 
   System.forUpdate({
@@ -97,6 +125,8 @@ class System extends Entity<System> {
     required this.showBsbAccountOnInvoice,
     required this.showPaymentLinkOnInvoice,
     required this.preferredUnitSystem,
+    required this.logoPath, // Updated for logo path
+    required this.logoType, // Updated for logo type
   }) : super.forUpdate();
 
   factory System.fromMap(Map<String, dynamic> map) => System(
@@ -138,7 +168,10 @@ class System extends Entity<System> {
                 DateTime.now(),
         preferredUnitSystem: (map['use_metric_units'] == 1)
             ? PreferredUnitSystem.metric
-            : PreferredUnitSystem.imperial, // Replaced useMetricUnits
+            : PreferredUnitSystem.imperial,
+        logoPath: map['logo_path'] as String? ?? '', // Map for logo path
+        logoType:
+            LogoType.fromName(map['logo_type'] as String?), // Map for logo type
       );
 
   String? fromEmail;
@@ -167,7 +200,9 @@ class System extends Entity<System> {
   String? paymentLinkUrl;
   bool? showBsbAccountOnInvoice;
   bool? showPaymentLinkOnInvoice;
-  PreferredUnitSystem preferredUnitSystem; // Replaced useMetricUnits
+  PreferredUnitSystem preferredUnitSystem;
+  String logoPath; // Field for logo path
+  LogoType logoType; // Field for logo type
 
   String? get bestPhone => officeNumber ?? landLine ?? mobileNumber;
 
@@ -205,9 +240,10 @@ class System extends Entity<System> {
         'show_bsb_account_on_invoice': showBsbAccountOnInvoice ?? true ? 1 : 0,
         'show_payment_link_on_invoice':
             showPaymentLinkOnInvoice ?? true ? 1 : 0,
-        'use_metric_units': preferredUnitSystem == PreferredUnitSystem.metric
-            ? 1
-            : 0, // Convert back for storage
+        'use_metric_units':
+            preferredUnitSystem == PreferredUnitSystem.metric ? 1 : 0,
+        'logo_path': logoPath, // Include in map
+        'logo_type': logoType.name,
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
