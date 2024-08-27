@@ -38,7 +38,7 @@ abstract class BackupProvider {
       final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
       encoder.create(pathToZip);
 
-      final pathToBackupFile = join(tmpDir, 'hmb-backup-$datePart.db');
+      final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
 
       await copyDatabaseTo(pathToBackupFile);
       await encoder.addFile(File(pathToBackupFile));
