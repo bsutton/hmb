@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart'; // Import color picker
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' hide context;
 import 'package:path_provider/path_provider.dart';
@@ -43,6 +44,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
   bool _showPaymentLinkOnInvoice = false;
   LogoType _logoType = LogoType.square;
   String? _logoFile;
+  Color _billingColour = Colors.deepPurpleAccent; // Default billing color
 
   @override
   void initState() {
@@ -61,6 +63,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
       _paymentLinkUrlController.text = system.paymentLinkUrl ?? '';
       _logoPathController.text = system.logoPath;
       _logoType = system.logoType;
+      _billingColour = Color(system.billingColour);
       _showBsbAccountOnInvoice = system.showBsbAccountOnInvoice ?? true;
       _showPaymentLinkOnInvoice = system.showPaymentLinkOnInvoice ?? true;
       setState(() {});
@@ -93,7 +96,8 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
         ..showBsbAccountOnInvoice = _showBsbAccountOnInvoice
         ..showPaymentLinkOnInvoice = _showPaymentLinkOnInvoice
         ..logoPath = _logoPathController.text
-        ..logoType = _logoType;
+        ..logoType = _logoType
+        ..billingColour = _billingColour.value; // Save billing color
 
       if (_logoFile != null) {
         final directory = await getApplicationDocumentsDirectory();
@@ -125,6 +129,33 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
         _logoPathController.text = pickedFile.path;
       });
     }
+  }
+
+  Future<void> _pickBillingColour() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pick Billing Colour'),
+        content: SingleChildScrollView(
+          child: BlockPicker(
+            pickerColor: _billingColour,
+            onColorChanged: (color) {
+              setState(() {
+                _billingColour = color;
+              });
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Select'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -216,6 +247,20 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
                     ),
                   ),
                 ],
+                const SizedBox(height: 20),
+                ListTile(
+                  title: const Text('Billing Colour'),
+                  trailing: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: _billingColour,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(),
+                    ),
+                  ),
+                  onTap: _pickBillingColour,
+                ),
               ],
             ),
           ),

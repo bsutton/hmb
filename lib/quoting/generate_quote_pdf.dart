@@ -41,7 +41,8 @@ Future<File> generateQuotePdf(
   pdf.addPage(
     pw.Page(
       pageTheme: pw.PageTheme(
-        margin: pw.EdgeInsets.zero,
+        margin: const pw.EdgeInsets.symmetric(
+            horizontal: 40), // Left and right margins
         buildBackground: (context) => pw.FullPage(
           ignoreMargins: true,
           child: pw.Stack(
@@ -97,6 +98,7 @@ Future<File> generateQuotePdf(
                               ),
                               destination: system.termsUrl ?? '',
                             )),
+                            const pw.TextSpan(text: ' and is valid for 30 days')
                           ]),
                     ),
                   ),
@@ -114,7 +116,7 @@ Future<File> generateQuotePdf(
             pw.Align(
               alignment: pw.Alignment.centerRight,
               child: pw.Padding(
-                padding: const pw.EdgeInsets.only(right: 16),
+                padding: const pw.EdgeInsets.only(top: 8, right: 16),
                 child: logo,
               ),
             ),

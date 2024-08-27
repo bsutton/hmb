@@ -60,6 +60,7 @@ class System extends Entity<System> {
     required this.preferredUnitSystem,
     required this.logoPath, // Field for logo path
     required this.logoType, // Field for logo type
+    required this.billingColour, // Field for billing color
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -91,9 +92,10 @@ class System extends Entity<System> {
     required this.paymentLinkUrl,
     required this.showBsbAccountOnInvoice,
     required this.showPaymentLinkOnInvoice,
+    required this.billingColour, 
     this.preferredUnitSystem = PreferredUnitSystem.metric,
-    this.logoPath = '', // Default empty path for logo
-    this.logoType = LogoType.square, // Default logo type
+    this.logoPath = '', 
+    this.logoType = LogoType.square,
   }) : super.forInsert();
 
   System.forUpdate({
@@ -127,6 +129,7 @@ class System extends Entity<System> {
     required this.preferredUnitSystem,
     required this.logoPath, // Updated for logo path
     required this.logoType, // Updated for logo type
+    required this.billingColour, // Updated for billing color
   }) : super.forUpdate();
 
   factory System.fromMap(Map<String, dynamic> map) => System(
@@ -172,6 +175,8 @@ class System extends Entity<System> {
         logoPath: map['logo_path'] as String? ?? '', // Map for logo path
         logoType:
             LogoType.fromName(map['logo_type'] as String?), // Map for logo type
+        billingColour:
+            map['billing_colour'] as int? ?? 0xFF000000, // Default color black
       );
 
   String? fromEmail;
@@ -203,6 +208,7 @@ class System extends Entity<System> {
   PreferredUnitSystem preferredUnitSystem;
   String logoPath; // Field for logo path
   LogoType logoType; // Field for logo type
+  int billingColour; // Field for billing color
 
   String? get bestPhone => officeNumber ?? landLine ?? mobileNumber;
 
@@ -242,8 +248,9 @@ class System extends Entity<System> {
             showPaymentLinkOnInvoice ?? true ? 1 : 0,
         'use_metric_units':
             preferredUnitSystem == PreferredUnitSystem.metric ? 1 : 0,
-        'logo_path': logoPath, // Include in map
+        'logo_path': logoPath,
         'logo_type': logoType.name,
+        'billing_colour': billingColour,
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
