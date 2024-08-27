@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:url_launcher/url_launcher.dart'; // Add this import to handle URL launching
 
+import '../database/management/database_helper.dart';
 import '../src/version/version.g.dart';
 import '../util/exceptions.dart';
 
@@ -19,6 +21,11 @@ class AboutScreen extends StatelessWidget {
             children: [
               const Text("Hold My Beer (HMB) - I'm a handyman"),
               Text('Version: $packageVersion'),
+              FutureBuilderEx(
+                  // ignore: discarded_futures
+                  future: DatabaseHelper().getVersion(),
+                  builder: (context, version) =>
+                      Text('Database Version: $version')),
               const Text('Author: S. Brett Sutton'),
               const SizedBox(height: 20),
               const Text(
@@ -30,7 +37,8 @@ class AboutScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               TextButton(
-                onPressed:  ()async => _launchURL('https://github.com/bsutton/hmb'),
+                onPressed: () async =>
+                    _launchURL('https://github.com/bsutton/hmb'),
                 child: const Text(
                   'GitHub Repository',
                   style: TextStyle(color: Colors.blue),
