@@ -109,7 +109,8 @@ Future<File> generateQuotePdf(
                           ),
                           pw.Text(
                             '${context.pageNumber} of ${context.pagesCount}',
-                            style: const pw.TextStyle(fontSize: 12),
+                            style: const pw.TextStyle(
+                                fontSize: 12, color: PdfColors.white),
                           ),
                         ])),
               ),
