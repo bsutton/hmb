@@ -111,26 +111,26 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
   Widget build(BuildContext context) => AlertDialog(
         title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
         content: FutureBuilderEx<List<TaskCost>>(
-          future: _tasks,
-          builder: (context, tasks) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CheckboxListTile(
-                title: const Text('Select All'),
-                value: _selectAll,
-                onChanged: _toggleSelectAll,
-              ),
-              for (final taskCost in tasks!)
-                CheckboxListTile(
-                  title: Text(taskCost.task.name),
-                  subtitle: Text('Total Cost: ${taskCost.cost}'),
-                  value: _selectedTasks[taskCost.task.id] ?? false,
-                  onChanged: (value) =>
-                      _toggleIndividualTask(taskCost.task.id, value),
-                ),
-            ],
-          ),
-        ),
+            future: _tasks,
+            builder: (context, tasks) => SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      CheckboxListTile(
+                        title: const Text('Select All'),
+                        value: _selectAll,
+                        onChanged: _toggleSelectAll,
+                      ),
+                      for (final taskCost in tasks!)
+                        CheckboxListTile(
+                          title: Text(taskCost.task.name),
+                          subtitle: Text('Total Cost: ${taskCost.cost}'),
+                          value: _selectedTasks[taskCost.task.id] ?? false,
+                          onChanged: (value) =>
+                              _toggleIndividualTask(taskCost.task.id, value),
+                        ),
+                    ],
+                  ),
+                )),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
