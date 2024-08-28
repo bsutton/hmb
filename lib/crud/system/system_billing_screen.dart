@@ -7,6 +7,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart'; // Import color p
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' hide context;
 import 'package:path_provider/path_provider.dart';
+import 'package:strings/strings.dart';
 
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
@@ -99,16 +100,6 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
         ..logoType = _logoType
         ..billingColour = _billingColour.value; // Save billing color
 
-      if (_logoFile != null) {
-        final directory = await getApplicationDocumentsDirectory();
-        final logoPath = join(directory.path, 'logo', basename(_logoFile!));
-        if (!exists(dirname(logoPath))) {
-          createDir(dirname(logoPath), recursive: true);
-        }
-        copy(_logoFile!, logoPath, overwrite: true);
-        system.logoPath = logoPath;
-      }
-
       await DaoSystem().update(system);
 
       if (mounted) {
@@ -124,11 +115,21 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
+      await _saveLogoFile(pickedFile.path);
       setState(() {
         _logoFile = pickedFile.path;
         _logoPathController.text = pickedFile.path;
       });
     }
+  }
+
+  Future<void> _saveLogoFile(String path) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final logoPath = join(directory.path, 'logo', basename(path));
+    if (!exists(dirname(logoPath))) {
+      createDir(dirname(logoPath), recursive: true);
+    }
+    copy(path, logoPath, overwrite: true);
   }
 
   Future<void> _pickBillingColour() async {
@@ -237,7 +238,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
                   label: const Text('Upload Logo'),
                   onPressed: _pickLogo,
                 ),
-                if (_logoFile != null) ...[
+                if (Strings.isNotBlank(_logoFile)) ...[
                   const SizedBox(height: 10),
                   Center(
                     child: Image.file(
