@@ -7,10 +7,10 @@ import 'package:pdf/widgets.dart' as pw;
 import '../dao/dao_quote_line.dart';
 import '../dao/dao_system.dart';
 import '../entity/quote.dart';
-import '../entity/quote_line.dart';
 import '../entity/system.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
+import 'job_quote.dart';
 
 Future<File> generateQuotePdf(
   Quote quote, {
@@ -24,7 +24,7 @@ Future<File> generateQuotePdf(
   final lines = await DaoQuoteLine().getByQuoteId(quote.id);
 
   // Group items by some criteria, e.g., task name or category
-  final groupedLines = _groupLinesByTask(lines);
+  final jobQuote = await JobQuote.fromQuoteId(quote.id);
 
   // Calculate the total amount from the lines
   final totalAmount =
@@ -183,29 +183,40 @@ Future<File> generateQuotePdf(
         final content = <pw.Widget>[];
 
         if (displayGroupHeaders) {
-          for (final entry in groupedLines.entries) {
-            content.add(
-              pw.Text(
-                entry.key,
-                style: pw.TextStyle(
-                  fontSize: 14,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-            );
+          /// Display each Task
+          for (final group in jobQuote.groups) {
+            content
+              ..add(pw.SizedBox(height: 10)) // Add 10 units of space
+              ..add(pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      group.group.name,
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    if (displayCosts)
+                      pw.Text(
+                        group.total.toString(),
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      )
+                  ]));
+            // Items from the task if requested.
             if (displayItems) {
-              content.addAll(
-                entry.value
-                    .map((line) => pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                          children: [
-                            pw.Text(line.description),
-                            if (displayCosts)
-                              pw.Text(line.lineTotal.toString()),
-                          ],
-                        ))
-                    .toList(),
-              );
+              for (final line in group.lines) {
+                content.add(pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(line.description),
+                    if (displayCosts) pw.Text(line.lineTotal.toString()),
+                  ],
+                ));
+              }
             }
           }
         }
@@ -271,15 +282,6 @@ Future<File> generateQuotePdf(
   final file = File('${output.path}/quote_${quote.quoteNum ?? quote.id}.pdf');
   await file.writeAsBytes(await pdf.save());
   return file;
-}
-
-// Helper function to group lines by task or category
-Map<String, List<QuoteLine>> _groupLinesByTask(List<QuoteLine> lines) {
-  final grouped = <String, List<QuoteLine>>{};
-  for (final line in lines) {
-    grouped.putIfAbsent(line.description, () => []).add(line);
-  }
-  return grouped;
 }
 
 // Helper function to get the logo
