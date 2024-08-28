@@ -48,7 +48,14 @@ Future<String> formatPhone(String? phone) async {
 
   final system = await DaoSystem().get();
 
-  final phoneNumber = phoneUtil.parse(phone, system!.countryCode ?? 'AU');
+  String formatted;
 
-  return phoneUtil.format(phoneNumber, PhoneNumberFormat.national);
+  try {
+    final phoneNumber = phoneUtil.parse(phone, system!.countryCode ?? 'AU');
+    formatted = phoneUtil.format(phoneNumber, PhoneNumberFormat.national);
+    // ignore: avoid_catches_without_on_clauses
+  } catch (e) {
+    formatted = phone ?? '';
+  }
+  return formatted;
 }
