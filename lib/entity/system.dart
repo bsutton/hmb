@@ -4,26 +4,26 @@ import 'package:strings/strings.dart';
 import '../util/measurement_type.dart';
 import 'entity.dart';
 
-enum LogoType {
+enum LogoAspectRatio {
   square(100, 100),
   portrait(80, 120),
   landscape(120, 80);
 
-  const LogoType(this.width, this.height);
+  const LogoAspectRatio(this.width, this.height);
 
   final int width;
   final int height;
 
-  static LogoType fromName(String? name) {
+  static LogoAspectRatio fromName(String? name) {
     switch (name) {
       case 'square':
-        return LogoType.square;
+        return LogoAspectRatio.square;
       case 'portrait':
-        return LogoType.portrait;
+        return LogoAspectRatio.portrait;
       case 'landscape':
-        return LogoType.landscape;
+        return LogoAspectRatio.landscape;
       default:
-        return LogoType.square;
+        return LogoAspectRatio.square;
     }
   }
 }
@@ -59,7 +59,7 @@ class System extends Entity<System> {
     required this.showPaymentLinkOnInvoice,
     required this.preferredUnitSystem,
     required this.logoPath, // Field for logo path
-    required this.logoType, // Field for logo type
+    required this.logoAspectRatio, // Field for logo type
     required this.billingColour, // Field for billing color
     required super.createdDate,
     required super.modifiedDate,
@@ -92,10 +92,10 @@ class System extends Entity<System> {
     required this.paymentLinkUrl,
     required this.showBsbAccountOnInvoice,
     required this.showPaymentLinkOnInvoice,
-    required this.billingColour, 
+    required this.billingColour,
     this.preferredUnitSystem = PreferredUnitSystem.metric,
-    this.logoPath = '', 
-    this.logoType = LogoType.square,
+    this.logoPath = '',
+    this.logoAspectRatio = LogoAspectRatio.square,
   }) : super.forInsert();
 
   System.forUpdate({
@@ -128,7 +128,7 @@ class System extends Entity<System> {
     required this.showPaymentLinkOnInvoice,
     required this.preferredUnitSystem,
     required this.logoPath, // Updated for logo path
-    required this.logoType, // Updated for logo type
+    required this.logoAspectRatio, // Updated for logo type
     required this.billingColour, // Updated for billing color
   }) : super.forUpdate();
 
@@ -173,8 +173,8 @@ class System extends Entity<System> {
             ? PreferredUnitSystem.metric
             : PreferredUnitSystem.imperial,
         logoPath: map['logo_path'] as String? ?? '', // Map for logo path
-        logoType:
-            LogoType.fromName(map['logo_type'] as String?), // Map for logo type
+        logoAspectRatio: LogoAspectRatio.fromName(
+            map['logo_aspect_ratio'] as String?), // Map for logo type
         billingColour:
             map['billing_colour'] as int? ?? 0xFF000000, // Default color black
       );
@@ -207,7 +207,7 @@ class System extends Entity<System> {
   bool? showPaymentLinkOnInvoice;
   PreferredUnitSystem preferredUnitSystem;
   String logoPath; // Field for logo path
-  LogoType logoType; // Field for logo type
+  LogoAspectRatio logoAspectRatio; // Field for logo type
   int billingColour; // Field for billing color
 
   String? get bestPhone => officeNumber ?? landLine ?? mobileNumber;
@@ -249,7 +249,7 @@ class System extends Entity<System> {
         'use_metric_units':
             preferredUnitSystem == PreferredUnitSystem.metric ? 1 : 0,
         'logo_path': logoPath,
-        'logo_type': logoType.name,
+        'logo_aspect_ratio': logoAspectRatio.name,
         'billing_colour': billingColour,
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),

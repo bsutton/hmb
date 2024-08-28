@@ -15,8 +15,8 @@ import '../../util/money_ex.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_money_editing_controller.dart';
 import '../../widgets/hmb_money_field.dart';
-import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_field.dart';
+import '../../widgets/hmb_text_themes.dart';
 import '../../widgets/hmb_toast.dart';
 
 class SystemBillingScreen extends StatefulWidget {
@@ -43,7 +43,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
       TextEditingController();
   bool _showBsbAccountOnInvoice = false;
   bool _showPaymentLinkOnInvoice = false;
-  LogoType _logoType = LogoType.square;
+  LogoAspectRatio _logoAspectRatio = LogoAspectRatio.square;
   String? _logoFile;
   Color _billingColour = Colors.deepPurpleAccent; // Default billing color
 
@@ -58,12 +58,12 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
       _defaultHourlyRateController.money = system!.defaultHourlyRate;
       _defaultCallOutFeeController.money = system.defaultCallOutFee;
       _logoFile = system.logoPath;
-      _logoType = system.logoType;
+      _logoAspectRatio = system.logoAspectRatio;
       _bsbController.text = system.bsb ?? '';
       _accountNoController.text = system.accountNo ?? '';
       _paymentLinkUrlController.text = system.paymentLinkUrl ?? '';
       _logoPathController.text = system.logoPath;
-      _logoType = system.logoType;
+      _logoAspectRatio = system.logoAspectRatio;
       _billingColour = Color(system.billingColour);
       _showBsbAccountOnInvoice = system.showBsbAccountOnInvoice ?? true;
       _showPaymentLinkOnInvoice = system.showPaymentLinkOnInvoice ?? true;
@@ -97,7 +97,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
         ..showBsbAccountOnInvoice = _showBsbAccountOnInvoice
         ..showPaymentLinkOnInvoice = _showPaymentLinkOnInvoice
         ..logoPath = _logoPathController.text
-        ..logoType = _logoType
+        ..logoAspectRatio = _logoAspectRatio
         ..billingColour = _billingColour.value; // Save billing color
 
       await DaoSystem().update(system);
@@ -175,7 +175,8 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
           padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
-            child: ListView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 HMBMoneyField(
                     controller: _defaultHourlyRateController,
@@ -195,8 +196,9 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
                   labelText: 'Account Number',
                   keyboardType: TextInputType.number,
                 ),
+                const HMBTextHeadline2('Formatting for Invoices and Quotes'),
                 SwitchListTile(
-                  title: const Text('Show BSB/Account on Quote/Invoice'),
+                  title: const Text('Show BSB/Account'),
                   value: _showBsbAccountOnInvoice,
                   onChanged: (value) {
                     setState(() {
@@ -204,13 +206,8 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
                     });
                   },
                 ),
-                HMBTextField(
-                  controller: _paymentLinkUrlController,
-                  labelText: 'Payment Link URL',
-                  keyboardType: TextInputType.url,
-                ),
                 SwitchListTile(
-                  title: const Text('Show Payment Link on Quote/Invoice'),
+                  title: const Text('Show Payment Link'),
                   value: _showPaymentLinkOnInvoice,
                   onChanged: (value) {
                     setState(() {
@@ -218,21 +215,25 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
                     });
                   },
                 ),
+                if (_showPaymentLinkOnInvoice)
+                  HMBTextField(
+                    controller: _paymentLinkUrlController,
+                    labelText: 'Payment Link URL',
+                    keyboardType: TextInputType.url,
+                  ),
                 const SizedBox(height: 20),
-                const Text('Logo Type'),
-                HMBDroplist<LogoType>(
-                  title: 'Logo Format',
-                  initialItem: () async => _logoType,
-                  items: (filter) async => LogoType.values,
+                HMBDroplist<LogoAspectRatio>(
+                  title: 'Logo Aspect Ratio',
+                  initialItem: () async => _logoAspectRatio,
+                  items: (filter) async => LogoAspectRatio.values,
                   format: (logoType) => logoType.name,
                   onChanged: (value) {
                     setState(() {
-                      _logoType = value ?? LogoType.square;
+                      _logoAspectRatio = value ?? LogoAspectRatio.square;
                     });
                   },
                 ),
                 const SizedBox(height: 20),
-                const HMBText('Logo Path'),
                 TextButton.icon(
                   icon: const Icon(Icons.upload_file),
                   label: const Text('Upload Logo'),
@@ -240,12 +241,10 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
                 ),
                 if (Strings.isNotBlank(_logoFile)) ...[
                   const SizedBox(height: 10),
-                  Center(
-                    child: Image.file(
-                      File(_logoFile!),
-                      width: _logoType.width.toDouble(),
-                      height: _logoType.height.toDouble(),
-                    ),
+                  Image.file(
+                    File(_logoFile!),
+                    width: _logoAspectRatio.width.toDouble(),
+                    height: _logoAspectRatio.height.toDouble(),
                   ),
                 ],
                 const SizedBox(height: 20),

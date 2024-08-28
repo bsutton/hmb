@@ -33,7 +33,7 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
   late TextEditingController _bsbController;
   late TextEditingController _accountNoController;
   late TextEditingController _logoPathController;
-  LogoType _logoType = LogoType.square;
+  LogoAspectRatio _logoType = LogoAspectRatio.square;
   File? _logoFile;
 
   late final System system;
@@ -52,7 +52,7 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
     _bsbController = TextEditingController(text: system.bsb);
     _accountNoController = TextEditingController(text: system.accountNo);
     _logoPathController = TextEditingController(text: system.logoPath);
-    _logoType = system.logoType;
+    _logoType = system.logoAspectRatio;
   }
 
   @override
@@ -75,7 +75,7 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
             MoneyEx.tryParse(_defaultCallOutFeeController.text)
         ..bsb = _bsbController.text
         ..accountNo = _accountNoController.text
-        ..logoType = _logoType;
+        ..logoAspectRatio = _logoType;
 
       if (_logoFile != null) {
         final directory = await getApplicationDocumentsDirectory();
@@ -143,14 +143,14 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
                         ),
                         const SizedBox(height: 20),
                         const Text('Logo Type'),
-                        HMBDroplist<LogoType>(
-                          title: 'Logo Format',
+                        HMBDroplist<LogoAspectRatio>(
+                          title: 'Logo Aspect Ratio',
                           initialItem: () async => _logoType,
-                          items: (filter) async => LogoType.values,
+                          items: (filter) async => LogoAspectRatio.values,
                           format: (logoType) => logoType.name,
                           onChanged: (value) {
                             setState(() {
-                              _logoType = value ?? LogoType.square;
+                              _logoType = value ?? LogoAspectRatio.square;
                             });
                           },
                         ),
