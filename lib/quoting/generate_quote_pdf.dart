@@ -151,8 +151,7 @@ Future<File> generateQuotePdf(
                         pw.Align(
                           alignment: pw.Alignment.centerRight,
                           child: pw.Padding(
-                            padding:
-                                const pw.EdgeInsets.only(top: 8, right: 16),
+                            padding: const pw.EdgeInsets.only(top: 6),
                             child: logo,
                           ),
                         ),
@@ -305,6 +304,6 @@ Future<pw.Widget?> _getLogo(System system) async {
   final image = pw.MemoryImage(await file.readAsBytes());
 
   return pw.Image(image,
-      width: system.logoType.width.toDouble(),
-      height: system.logoType.height.toDouble());
+      width: system.logoAspectRatio.width.toDouble(),
+      height: system.logoAspectRatio.height.toDouble());
 }
