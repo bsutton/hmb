@@ -4,11 +4,9 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_quote.dart';
 import '../dao/dao_quote_line.dart';
-import '../dao/dao_quote_line_group.dart';
 import '../entity/job.dart';
 import '../entity/quote.dart';
 import '../entity/quote_line.dart';
-import '../entity/quote_line_group.dart';
 import '../invoicing/dialog_select_tasks.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
@@ -20,6 +18,7 @@ import '../widgets/hmb_toast.dart';
 import '../widgets/pdf_preview.dart';
 import 'edit_quote_line_dialog.dart';
 import 'generate_quote_pdf.dart';
+import 'job_quote.dart';
 
 class QuoteListScreen extends StatefulWidget {
   const QuoteListScreen({
@@ -115,16 +114,16 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
           title: _buildQuoteTitle(quote),
           subtitle: Text('Total: ${quote.totalAmount}'),
           children: [
-            FutureBuilderEx<List<QuoteLineGroup>>(
+            FutureBuilderEx<JobQuote>(
               // ignore: discarded_futures
-              future: DaoQuoteLineGroup().getByQuoteId(quote.id),
-              builder: (context, quoteLineGroups) {
-                if (quoteLineGroups!.isEmpty) {
+              future: JobQuote.fromQuoteId(quote.id),
+              builder: (context, jobQuote) {
+                if (jobQuote!.groups.isEmpty) {
                   return const ListTile(
                     title: Text('No quote lines found.'),
                   );
                 }
-                return _buildQuoteGroup(quoteLineGroups);
+                return _buildQuoteGroup(jobQuote);
               },
             ),
             Padding(
@@ -237,30 +236,26 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
         child: const Text('Generate and Preview PDF'),
       );
 
-  Padding _buildQuoteGroup(List<QuoteLineGroup> quoteLineGroups) => Padding(
-        padding: const EdgeInsets.only(left: 16),
-        child: Column(
-          children: quoteLineGroups
-              .map((group) => ExpansionTile(
-                    title: Text(group.name),
-                    children: [
-                      FutureBuilderEx<List<QuoteLine>>(
-                        // ignore: discarded_futures
-                        future: DaoQuoteLine().getByQuoteLineGroupId(group.id),
-                        builder: (context, quoteLines) {
-                          if (quoteLines!.isEmpty) {
-                            return const ListTile(
-                              title: Text('No quote lines found.'),
-                            );
-                          }
-                          return _buildQuoteLine(quoteLines, context);
-                        },
-                      ),
-                    ],
-                  ))
-              .toList(),
-        ),
-      );
+  Padding _buildQuoteGroup(JobQuote jobQuote) => Padding(
+      padding: const EdgeInsets.only(left: 16),
+      child: Column(children: [
+        for (final group in jobQuote.groups)
+          ExpansionTile(
+            title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(group.group.name),
+                  Text(group.total.toString())
+                ]),
+            children: [
+              if (group.lines.isEmpty)
+                const ListTile(
+                  title: Text('No quote lines found.'),
+                ),
+              _buildQuoteLine(group.lines, context)
+            ],
+          )
+      ]));
 
   Widget _buildQuoteTitle(Quote quote) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
