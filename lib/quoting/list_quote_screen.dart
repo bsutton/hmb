@@ -15,6 +15,7 @@ import '../util/money_ex.dart';
 import '../widgets/hmb_are_you_sure_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_one_of.dart';
+import '../widgets/hmb_text_themes.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/pdf_preview.dart';
 import 'edit_quote_line_dialog.dart';
@@ -264,7 +265,10 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
   Widget _buildQuoteTitle(Quote quote) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Quote # ${quote.id} Issued: ${formatDate(quote.createdDate)}'),
+          Flexible(
+            child: HMBTextHeadline(
+                'Quote # ${quote.id} Issued: ${formatDate(quote.createdDate)}'),
+          ),
           HMBButton(
               label: 'Delete',
               onPressed: () async => areYouSure(
