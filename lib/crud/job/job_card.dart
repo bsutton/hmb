@@ -79,29 +79,28 @@ class JobCard extends StatelessWidget {
         ),
       );
 
-  Widget _buildContactPoints() {
-    final contactPoints = [
-      HMBJobPhoneText(job: job),
-      HMBJobEmailText(job: job)
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 600;
-        return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: (isMobile
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [...contactPoints],
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [...contactPoints],
-                  )));
-      },
-    );
-  }
+  Widget _buildContactPoints() => LayoutBuilder(
+        builder: (context, constraints) {
+          final isMobile = constraints.maxWidth < 600;
+          return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: (isMobile
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        HMBJobPhoneText(job: job),
+                        HMBJobEmailText(job: job),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        HMBJobPhoneText(job: job),
+                        Expanded(child: HMBJobEmailText(job: job))
+                      ],
+                    )));
+        },
+      );
 
   FutureBuilderEx<JobStatistics> buildStatistics(Job job) => FutureBuilderEx(
         waitingBuilder: (_) => const HMBPlaceHolder(height: 97),
@@ -113,7 +112,7 @@ class JobCard extends StatelessWidget {
           }
           return LayoutBuilder(
             builder: (context, constraints) {
-              final isMobile = constraints.maxWidth < 600;
+              final isMobile = constraints.maxWidth < 800;
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: isMobile
@@ -144,9 +143,15 @@ class JobCard extends StatelessWidget {
   Widget _buildDesktopLayout(JobStatistics stats, BuildContext context) =>
       Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [..._buildStatistics(stats)]),
+          SizedBox(
+            height: 33,
+            child: Flexible(
+                fit: FlexFit.tight,
+                child: Row(children: [..._buildStatistics(stats)])),
+          ),
           const HMBSpacer(height: true),
           Row(children: [
             _buildQuoteButton(context),
@@ -203,7 +208,7 @@ class JobCard extends StatelessWidget {
         const SizedBox(width: 16), //
         HMBText(
             'Worked: ${remainingTasks.worked}/${remainingTasks.workedHours}hrs',
-            bold: true)
+            bold: true),
       ];
 }
 
