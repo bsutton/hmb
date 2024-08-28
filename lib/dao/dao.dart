@@ -48,6 +48,10 @@ abstract class Dao<T extends Entity<T>> {
 
   Future<T?> getById(int? entityId) async {
     final db = getDb();
+
+    if (entityId == null) {
+      return null;
+    }
     final value =
         await db.query(tableName, where: 'id =?', whereArgs: [entityId]);
     if (value.isEmpty) {
