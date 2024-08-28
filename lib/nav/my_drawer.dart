@@ -16,6 +16,7 @@ class MyDrawer extends StatelessWidget {
       title: 'System',
       route: '',
       children: [
+        DrawerItem(title: 'SMS Templates', route: '/sms_templates'),
         DrawerItem(title: 'Business', route: '/system/business'),
         DrawerItem(title: 'Billing', route: '/system/billing'),
         DrawerItem(title: 'Contact', route: '/system/contact'),

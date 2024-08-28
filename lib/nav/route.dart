@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../crud/customer/list_customer_screen.dart';
 import '../crud/job/list_job_screen.dart';
+import '../crud/sms_template/list_sms_template.dart';
 import '../crud/supplier/list_supplier_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
@@ -61,6 +62,11 @@ GoRouter get router => GoRouter(
               path: 'packing',
               builder: (_, __) =>
                   const HomeWithDrawer(initialScreen: PackingScreen()),
+            ),
+            GoRoute(
+              path: 'sms_templates',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: SmsTemplateListScreen()),
             ),
             GoRoute(
               path: 'system/business',
