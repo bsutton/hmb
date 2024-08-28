@@ -60,6 +60,7 @@ class DialWidget extends StatelessWidget {
             child: const Text('Text'),
             onPressed: () async {
               await _showTextInputDialog(context, phoneNo);
+              //await showSmsTemplateDialog(context);
               if (context.mounted) {
                 Navigator.of(context).pop();
               }
@@ -100,7 +101,7 @@ class DialWidget extends StatelessWidget {
       BuildContext context, String phoneNo, String messageText) async {
     final smsLaunchUri =
         Uri(scheme: 'sms', path: phoneNo, queryParameters: <String, String>{
-      'body': Uri.encodeComponent(messageText),
+      'body': messageText,
     });
 
     await launchUrl(smsLaunchUri);
