@@ -81,12 +81,7 @@ Each Task can have:
 * Annotated photos
 * track hours worked on the Task
 
-Items in the checklist that are marked as 'buy' will be added to the [shopping list](https://github.com/bsutton/hmb/wiki/Shopping-List)
-and will appear on the Job quote/invoice.
+To read more on using HMB go to the online documentation at [https://hmb.onepub.dev](https://hmb.onepub.dev)
 
-Items in the checklist that are marked as 'Tools - own' will be added to the [packing list](https://github.com/bsutton/hmb/wiki/Packing-List).
-
-# Getting Started
-Reading the [getting started](https://github.com/bsutton/hmb/wiki/2.-Getting-Started) guide is the right place to start and will help you get the most out of HMB.
 
 
