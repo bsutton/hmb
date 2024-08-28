@@ -55,4 +55,6 @@ class DatabaseHelper {
   }
 
   bool isOpen() => _database != null;
+
+  Future<int> getVersion() async => database.getVersion();
 }
