@@ -175,94 +175,96 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
           padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                HMBMoneyField(
-                    controller: _defaultHourlyRateController,
-                    labelText: 'Default Hourly Rate',
-                    fieldName: 'default hourly rate'),
-                HMBMoneyField(
-                  controller: _defaultCallOutFeeController,
-                  labelText: 'Default Call Out Fee',
-                  fieldName: 'default call out fee',
-                ),
-                HMBTextField(
-                    controller: _bsbController,
-                    labelText: 'BSB',
-                    keyboardType: TextInputType.number),
-                HMBTextField(
-                  controller: _accountNoController,
-                  labelText: 'Account Number',
-                  keyboardType: TextInputType.number,
-                ),
-                const HMBTextHeadline2('Formatting for Invoices and Quotes'),
-                SwitchListTile(
-                  title: const Text('Show BSB/Account'),
-                  value: _showBsbAccountOnInvoice,
-                  onChanged: (value) {
-                    setState(() {
-                      _showBsbAccountOnInvoice = value;
-                    });
-                  },
-                ),
-                SwitchListTile(
-                  title: const Text('Show Payment Link'),
-                  value: _showPaymentLinkOnInvoice,
-                  onChanged: (value) {
-                    setState(() {
-                      _showPaymentLinkOnInvoice = value;
-                    });
-                  },
-                ),
-                if (_showPaymentLinkOnInvoice)
-                  HMBTextField(
-                    controller: _paymentLinkUrlController,
-                    labelText: 'Payment Link URL',
-                    keyboardType: TextInputType.url,
+            child: ListView(children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  HMBMoneyField(
+                      controller: _defaultHourlyRateController,
+                      labelText: 'Default Hourly Rate',
+                      fieldName: 'default hourly rate'),
+                  HMBMoneyField(
+                    controller: _defaultCallOutFeeController,
+                    labelText: 'Default Call Out Fee',
+                    fieldName: 'default call out fee',
                   ),
-                const SizedBox(height: 20),
-                HMBDroplist<LogoAspectRatio>(
-                  title: 'Logo Aspect Ratio',
-                  initialItem: () async => _logoAspectRatio,
-                  items: (filter) async => LogoAspectRatio.values,
-                  format: (logoType) => logoType.name,
-                  onChanged: (value) {
-                    setState(() {
-                      _logoAspectRatio = value ?? LogoAspectRatio.square;
-                    });
-                  },
-                ),
-                const SizedBox(height: 20),
-                TextButton.icon(
-                  icon: const Icon(Icons.upload_file),
-                  label: const Text('Upload Logo'),
-                  onPressed: _pickLogo,
-                ),
-                if (Strings.isNotBlank(_logoFile)) ...[
-                  const SizedBox(height: 10),
-                  Image.file(
-                    File(_logoFile!),
-                    width: _logoAspectRatio.width.toDouble(),
-                    height: _logoAspectRatio.height.toDouble(),
+                  HMBTextField(
+                      controller: _bsbController,
+                      labelText: 'BSB',
+                      keyboardType: TextInputType.number),
+                  HMBTextField(
+                    controller: _accountNoController,
+                    labelText: 'Account Number',
+                    keyboardType: TextInputType.number,
+                  ),
+                  const HMBTextHeadline2('Formatting for Invoices and Quotes'),
+                  SwitchListTile(
+                    title: const Text('Show BSB/Account'),
+                    value: _showBsbAccountOnInvoice,
+                    onChanged: (value) {
+                      setState(() {
+                        _showBsbAccountOnInvoice = value;
+                      });
+                    },
+                  ),
+                  SwitchListTile(
+                    title: const Text('Show Payment Link'),
+                    value: _showPaymentLinkOnInvoice,
+                    onChanged: (value) {
+                      setState(() {
+                        _showPaymentLinkOnInvoice = value;
+                      });
+                    },
+                  ),
+                  if (_showPaymentLinkOnInvoice)
+                    HMBTextField(
+                      controller: _paymentLinkUrlController,
+                      labelText: 'Payment Link URL',
+                      keyboardType: TextInputType.url,
+                    ),
+                  const SizedBox(height: 20),
+                  HMBDroplist<LogoAspectRatio>(
+                    title: 'Logo Aspect Ratio',
+                    initialItem: () async => _logoAspectRatio,
+                    items: (filter) async => LogoAspectRatio.values,
+                    format: (logoType) => logoType.name,
+                    onChanged: (value) {
+                      setState(() {
+                        _logoAspectRatio = value ?? LogoAspectRatio.square;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton.icon(
+                    icon: const Icon(Icons.upload_file),
+                    label: const Text('Upload Logo'),
+                    onPressed: _pickLogo,
+                  ),
+                  if (Strings.isNotBlank(_logoFile)) ...[
+                    const SizedBox(height: 10),
+                    Image.file(
+                      File(_logoFile!),
+                      width: _logoAspectRatio.width.toDouble(),
+                      height: _logoAspectRatio.height.toDouble(),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  ListTile(
+                    title: const Text('Billing Colour'),
+                    trailing: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: _billingColour,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(),
+                      ),
+                    ),
+                    onTap: _pickBillingColour,
                   ),
                 ],
-                const SizedBox(height: 20),
-                ListTile(
-                  title: const Text('Billing Colour'),
-                  trailing: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: _billingColour,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(),
-                    ),
-                  ),
-                  onTap: _pickBillingColour,
-                ),
-              ],
-            ),
+              ),
+            ]),
           ),
         ),
       );
