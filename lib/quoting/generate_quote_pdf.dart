@@ -221,6 +221,9 @@ Future<File> generateQuotePdf(
           }
         }
 
+        final showAccount = system.showBsbAccountOnInvoice ?? false;
+        final showPaymentLink = system.showPaymentLinkOnInvoice ?? false;
+
         content.addAll([
           pw.Divider(),
           pw.Row(
@@ -237,18 +240,21 @@ Future<File> generateQuotePdf(
             ],
           ),
           pw.Divider(),
-          pw.Text(
-            'Payment Details:',
-            style: pw.TextStyle(
-              fontSize: 16,
-              fontWeight: pw.FontWeight.bold,
+
+          // Payment details
+          if (showPaymentLink || showAccount)
+            pw.Text(
+              'Payment Details:',
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
-          ),
-          if (system.showBsbAccountOnInvoice ?? false) ...[
+          if (showAccount) ...[
             pw.Text('BSB: ${system.bsb}'),
             pw.Text('Account Number: ${system.accountNo}'),
           ],
-          if (system.showPaymentLinkOnInvoice ?? false) ...[
+          if (showPaymentLink) ...[
             pw.UrlLink(
               child: pw.Text(
                 'Payment Link',
