@@ -1,38 +1,48 @@
 import 'entity.dart';
 
-enum SmsTemplateType { user, system }
+enum MessageTemplateOwner { user, system }
 
-class SmsTemplate extends Entity<SmsTemplate> {
-  SmsTemplate({
+enum MessageType {
+  sms,
+  email,
+}
+
+class MessageTemplate extends Entity<MessageTemplate> {
+  MessageTemplate({
     required super.id,
     required this.title,
     required this.message,
-    required this.type,
+    required this.messageType,
+    required this.owner,
     required this.enabled,
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
 
-  SmsTemplate.forInsert({
+  MessageTemplate.forInsert({
     required this.title,
     required this.message,
-    this.type = SmsTemplateType.user, // User templates are created by default
+    required this.messageType,
+    this.owner =
+        MessageTemplateOwner.user, // User templates are created by default
     this.enabled = true,
   }) : super.forInsert();
 
-  SmsTemplate.forUpdate({
+  MessageTemplate.forUpdate({
     required super.entity,
     required this.title,
     required this.message,
-    required this.type,
+    required this.messageType,
+    required this.owner,
     required this.enabled,
   }) : super.forUpdate();
 
-  factory SmsTemplate.fromMap(Map<String, dynamic> map) => SmsTemplate(
+  factory MessageTemplate.fromMap(Map<String, dynamic> map) => MessageTemplate(
         id: map['id'] as int,
         title: map['title'] as String,
         message: map['message'] as String,
-        type: SmsTemplateType.values[map['type'] as int],
+        messageType: MessageType.values.byName(map['message_type'] as String),
+        owner: MessageTemplateOwner.values[map['owner'] as int],
         enabled: map['enabled'] as int == 1,
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
@@ -40,7 +50,8 @@ class SmsTemplate extends Entity<SmsTemplate> {
 
   String title;
   String message;
-  SmsTemplateType type; // Identifies if it's a user or system template
+  MessageType messageType; // Indicates whether the template is for SMS or email
+  MessageTemplateOwner owner; // Identifies if it's a user or system template
   bool enabled; // Indicates if the template is enabled
 
   @override
@@ -48,7 +59,8 @@ class SmsTemplate extends Entity<SmsTemplate> {
         'id': id,
         'title': title,
         'message': message,
-        'type': type.index,
+        'message_type': messageType.name, // Store the enum as a string
+        'owner': owner.index,
         'enabled': enabled ? 1 : 0,
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),

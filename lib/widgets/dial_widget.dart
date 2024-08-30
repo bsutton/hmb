@@ -10,7 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../util/clip_board.dart';
 import '../util/platform_ex.dart';
 import 'hmb_toast.dart';
-import 'sms_template_dialog.dart';
+import 'message_template_dialog.dart';
 
 class DialWidget extends StatelessWidget {
   const DialWidget(this.phoneNo, {super.key});
@@ -61,7 +61,7 @@ class DialWidget extends StatelessWidget {
             child: const Text('Text'),
             onPressed: () async {
               // await _showTextInputDialog(context, phoneNo);
-              final template = await showSmsTemplateDialog(context);
+              final template = await showMessageTemplateDialog(context);
               if (context.mounted) {
                 if (template != null) {
                   if (context.mounted) {
@@ -69,7 +69,9 @@ class DialWidget extends StatelessWidget {
                         context, phoneNo, template.getFormattedMessage());
                   }
                 }
-                Navigator.of(context).pop();
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
               }
             },
           ),

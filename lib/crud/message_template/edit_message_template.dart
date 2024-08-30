@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 
-import '../../dao/dao_sms_template.dart';
-import '../../entity/sms_template.dart';
+import '../../dao/dao_message_template.dart';
+import '../../entity/message_template.dart';
 import '../../widgets/hmb_text_themes.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 
-class SmsTemplateEditScreen extends StatefulWidget {
-  const SmsTemplateEditScreen({super.key, this.smsTemplate});
-  final SmsTemplate? smsTemplate;
+class MessageTemplateEditScreen extends StatefulWidget {
+  const MessageTemplateEditScreen({super.key, this.messageTemplate});
+  final MessageTemplate? messageTemplate;
 
   @override
   // ignore: library_private_types_in_public_api
-  _SmsTemplateEditScreenState createState() => _SmsTemplateEditScreenState();
+  _MessageTemplateEditScreenState createState() =>
+      _MessageTemplateEditScreenState();
 }
 
-class _SmsTemplateEditScreenState extends State<SmsTemplateEditScreen>
-    implements EntityState<SmsTemplate> {
+class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
+    implements EntityState<MessageTemplate> {
   late TextEditingController _titleController;
   late TextEditingController _messageController;
   late bool _enabled;
@@ -23,10 +24,11 @@ class _SmsTemplateEditScreenState extends State<SmsTemplateEditScreen>
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.smsTemplate?.title);
+    _titleController =
+        TextEditingController(text: widget.messageTemplate?.title);
     _messageController =
-        TextEditingController(text: widget.smsTemplate?.message);
-    _enabled = widget.smsTemplate?.enabled ?? true;
+        TextEditingController(text: widget.messageTemplate?.message);
+    _enabled = widget.messageTemplate?.enabled ?? true;
   }
 
   @override
@@ -37,15 +39,15 @@ class _SmsTemplateEditScreenState extends State<SmsTemplateEditScreen>
   }
 
   @override
-  Widget build(BuildContext context) => EntityEditScreen<SmsTemplate>(
-        entity: widget.smsTemplate,
-        entityName: 'SMS Template',
-        dao: DaoSmsTemplate(),
+  Widget build(BuildContext context) => EntityEditScreen<MessageTemplate>(
+        entity: widget.messageTemplate,
+        entityName: 'Message Template',
+        dao: DaoMessageTemplate(),
         entityState: this,
-        editor: (smsTemplate) => Column(
+        editor: (messageTemplate) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (smsTemplate?.type == SmsTemplateType.user) ...[
+            if (messageTemplate?.owner == MessageTemplateOwner.user) ...[
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Title'),
@@ -80,20 +82,22 @@ class _SmsTemplateEditScreenState extends State<SmsTemplateEditScreen>
       );
 
   @override
-  Future<SmsTemplate> forUpdate(SmsTemplate smsTemplate) async =>
-      SmsTemplate.forUpdate(
-        entity: smsTemplate,
+  Future<MessageTemplate> forUpdate(MessageTemplate messageTemplate) async =>
+      MessageTemplate.forUpdate(
+        entity: messageTemplate,
         title: _titleController.text,
         message: _messageController.text,
-        type: smsTemplate.type,
+        owner: MessageTemplateOwner.user,
+        messageType: messageTemplate.messageType,
         enabled: _enabled,
       );
 
   @override
-  Future<SmsTemplate> forInsert() async => SmsTemplate.forInsert(
+  Future<MessageTemplate> forInsert() async => MessageTemplate.forInsert(
         title: _titleController.text,
         message: _messageController.text,
         enabled: _enabled,
+        messageType: MessageType.sms
       );
 
   @override

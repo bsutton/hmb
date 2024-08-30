@@ -32,22 +32,18 @@ class AboutScreen extends StatelessWidget {
                 'Get Support',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const Text(
-                'For support or to raise issues, visit our GitHub repo:',
-                textAlign: TextAlign.center,
-              ),
-              TextButton(
-                onPressed: () async =>
-                    _launchURL('https://github.com/bsutton/hmb'),
-                child: const Text(
-                  'GitHub Repository',
-                  style: TextStyle(color: Colors.blue),
-                ),
-              ),
-              const Text(
-                'Feel free to start a discussion or raise an issue.',
-                textAlign: TextAlign.center,
-              ),
+              ...linkButton(
+                  description: 'Read the manual and getting started guide',
+                  label: 'Manual/Getting Started',
+                  link: 'https://hmb.onepub.dev'),
+              ...linkButton(
+                  description: 'Have a problem; raise issues',
+                  label: 'GitHub Repository',
+                  link: 'https://github.com/bsutton/hmb'),
+              ...linkButton(
+                  description: 'Feel free to start a discussion:',
+                  label: 'Discussions',
+                  link: 'https://github.com/bsutton/hmb/discussions'),
             ],
           ),
         ),
@@ -61,4 +57,22 @@ class AboutScreen extends StatelessWidget {
       throw HMBException('Could not launch $url');
     }
   }
+
+  List<Widget> linkButton(
+          {required String description,
+          required String label,
+          required String link}) =>
+      [
+        Text(
+          description,
+          textAlign: TextAlign.center,
+        ),
+        TextButton(
+          onPressed: () async => _launchURL(link),
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.blue),
+          ),
+        )
+      ];
 }

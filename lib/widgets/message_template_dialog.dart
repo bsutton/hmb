@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../dao/dao_sms_template.dart';
-import '../../entity/sms_template.dart';
+import '../../entity/message_template.dart';
+import '../dao/dao_message_template.dart';
 
-class SmsTemplateDialog extends StatefulWidget {
-  const SmsTemplateDialog({
+class MessageTemplateDialog extends StatefulWidget {
+  const MessageTemplateDialog({
     required this.customerId,
     required this.jobId,
     super.key,
@@ -14,13 +14,15 @@ class SmsTemplateDialog extends StatefulWidget {
 
   @override
   // ignore: library_private_types_in_public_api
-  _SmsTemplateDialogState createState() => _SmsTemplateDialogState();
+  _MessageTemplateDialogState createState() => _MessageTemplateDialogState();
 }
 
-Future<SelectedSmsTemplate?> showSmsTemplateDialog(BuildContext context) async {
-  final result = await showDialog<SelectedSmsTemplate>(
+Future<SelectedMessageTemplate?> showMessageTemplateDialog(
+    BuildContext context) async {
+  final result = await showDialog<SelectedMessageTemplate>(
     context: context,
-    builder: (context) => const SmsTemplateDialog(customerId: 123, jobId: 456),
+    builder: (context) =>
+        const MessageTemplateDialog(customerId: 123, jobId: 456),
   );
 
   if (result != null) {
@@ -32,13 +34,12 @@ Future<SelectedSmsTemplate?> showSmsTemplateDialog(BuildContext context) async {
     print('Values: $values');
     print('Formatted Message: $formattedMessage');
   }
-
-  return result;
+  return null;
 }
 
-class _SmsTemplateDialogState extends State<SmsTemplateDialog> {
-  List<SmsTemplate> _templates = [];
-  SmsTemplate? _selectedTemplate;
+class _MessageTemplateDialogState extends State<MessageTemplateDialog> {
+  List<MessageTemplate> _templates = [];
+  MessageTemplate? _selectedTemplate;
   final Map<String, TextEditingController> _controllers = {};
 
   @override
@@ -49,7 +50,7 @@ class _SmsTemplateDialogState extends State<SmsTemplateDialog> {
   }
 
   Future<void> _loadTemplates() async {
-    final dao = DaoSmsTemplate();
+    final dao = DaoMessageTemplate();
     final templates = await dao.getByFilter(null);
     setState(() {
       _templates = templates.where((template) => template.enabled).toList();
@@ -111,16 +112,16 @@ class _SmsTemplateDialogState extends State<SmsTemplateDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Select SMS Template'),
+        title: const Text('Select Message Template'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DropdownButton<SmsTemplate>(
+            DropdownButton<MessageTemplate>(
               value: _selectedTemplate,
               hint: const Text('Choose a template'),
               isExpanded: true,
               items: _templates
-                  .map((template) => DropdownMenuItem<SmsTemplate>(
+                  .map((template) => DropdownMenuItem<MessageTemplate>(
                         value: template,
                         child: Text(template.title),
                       ))
@@ -170,12 +171,12 @@ class _SmsTemplateDialogState extends State<SmsTemplateDialog> {
           TextButton(
             onPressed: () {
               if (_selectedTemplate != null) {
-                final selectedSmsTemplate = SelectedSmsTemplate(
+                final selectedMessageTemplate = SelectedMessageTemplate(
                   template: _selectedTemplate!,
                   values: _controllers
                       .map((key, controller) => MapEntry(key, controller.text)),
                 );
-                Navigator.of(context).pop(selectedSmsTemplate);
+                Navigator.of(context).pop(selectedMessageTemplate);
               }
             },
             child: const Text('Select'),
@@ -184,12 +185,12 @@ class _SmsTemplateDialogState extends State<SmsTemplateDialog> {
       );
 }
 
-class SelectedSmsTemplate {
-  SelectedSmsTemplate({
+class SelectedMessageTemplate {
+  SelectedMessageTemplate({
     required this.template,
     required this.values,
   });
-  final SmsTemplate template;
+  final MessageTemplate template;
   final Map<String, String> values;
 
   String getFormattedMessage() {

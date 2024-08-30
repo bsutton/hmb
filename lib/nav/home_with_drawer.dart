@@ -3,7 +3,7 @@ import 'package:june/june.dart';
 
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/hmb_status_bar.dart';
-import 'my_drawer.dart';
+import 'nav_drawer.dart';
 
 class HomeWithDrawer extends StatelessWidget {
   const HomeWithDrawer({required this.initialScreen, super.key});
