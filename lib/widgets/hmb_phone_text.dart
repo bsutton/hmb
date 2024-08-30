@@ -53,7 +53,7 @@ class HMBJobPhoneText extends StatelessWidget {
       // ignore: discarded_futures
       future: DaoContact().getById(job.contactId),
       builder: (context, contact) {
-        final phoneNo = contact?.preferredPhone();
+        final phoneNo = contact?.bestPhone;
         return HMBPhoneText(
           phoneNo: phoneNo,
         );
