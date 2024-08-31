@@ -170,6 +170,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   FutureBuilderEx<CheckList?> _buildCheckList(Task? task) =>
       FutureBuilderEx<CheckList?>(
+          // ignore: discarded_futures
           future: DaoCheckList().getByTask(task?.id),
           builder: (context, checklist) => Flexible(
                 child: SingleChildScrollView(
