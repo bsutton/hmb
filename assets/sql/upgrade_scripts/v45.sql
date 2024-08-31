@@ -6,7 +6,7 @@ ALTER TABLE message_template ADD COLUMN message_type TEXT NOT NULL DEFAULT 'sms'
 
 
 -- Update existing rows to have the correct messageType
-UPDATE message_template SET messageType = 'sms' WHERE messageType IS NULL;
+UPDATE message_template SET message_type = 'sms' WHERE message_type IS NULL;
 
 -- Rename the field 'type' to 'owner' in the message_template table
 ALTER TABLE message_template RENAME COLUMN type TO owner;

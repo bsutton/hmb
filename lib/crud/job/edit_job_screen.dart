@@ -215,7 +215,8 @@ class JobEditScreenState extends State<JobEditScreen>
 
   Widget _chooseStatus(Job? job) => HMBDroplist<JobStatus>(
       title: 'Status',
-      items: (filter) async => DaoJobStatus().getAll(),
+      items: (filter) async =>
+          DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
       initialItem: () async => DaoJobStatus().getById(
           job?.jobStatusId ?? June.getState(SelectJobStatus.new).jobStatusId),
       onChanged: (status) =>

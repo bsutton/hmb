@@ -2,6 +2,11 @@ import 'package:money2/money2.dart';
 
 import 'entity.dart';
 
+enum BillingType {
+  timeAndMaterial,
+  fixedPrice,
+}
+
 class Job extends Entity<Job> {
   Job({
     required super.id,
@@ -14,9 +19,10 @@ class Job extends Entity<Job> {
     required this.jobStatusId,
     required this.hourlyRate,
     required this.callOutFee,
-    required this.lastActive, // New field for Last Active
+    required this.lastActive,
     required super.createdDate,
     required super.modifiedDate,
+    this.billingType = BillingType.timeAndMaterial, // New field for BillingType
   }) : super();
 
   Job.forInsert({
@@ -29,7 +35,8 @@ class Job extends Entity<Job> {
     required this.jobStatusId,
     required this.hourlyRate,
     required this.callOutFee,
-    this.lastActive = false, // New field for Last Active
+    this.lastActive = false,
+    this.billingType = BillingType.timeAndMaterial, // New field for BillingType
   }) : super.forInsert();
 
   Job.forUpdate({
@@ -43,7 +50,8 @@ class Job extends Entity<Job> {
     required this.jobStatusId,
     required this.hourlyRate,
     required this.callOutFee,
-    this.lastActive = false, //
+    this.lastActive = false,
+    this.billingType = BillingType.timeAndMaterial, // New field for BillingType
   }) : super.forUpdate();
 
   factory Job.fromMap(Map<String, dynamic> map) => Job(
@@ -62,6 +70,10 @@ class Job extends Entity<Job> {
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
         lastActive: map['last_active'] == 1,
+        billingType: BillingType.values.firstWhere(
+            (e) => e.name == map['billing_type'],
+            orElse: () =>
+                BillingType.timeAndMaterial), // New field for BillingType
       );
 
   @override
@@ -76,7 +88,8 @@ class Job extends Entity<Job> {
         'contact_id': contactId,
         'hourly_rate': hourlyRate?.minorUnits.toInt(),
         'call_out_fee': callOutFee?.minorUnits.toInt(),
-        'last_active': lastActive ? 1 : 0, // New field for Last Active
+        'last_active': lastActive ? 1 : 0,
+        'billing_type': billingType.name, // New field for BillingType
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
@@ -90,5 +103,6 @@ class Job extends Entity<Job> {
   int? jobStatusId;
   Money? hourlyRate;
   Money? callOutFee;
-  bool lastActive; // New field for Last Active
+  bool lastActive;
+  BillingType billingType; // New field for BillingType
 }

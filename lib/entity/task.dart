@@ -1,6 +1,7 @@
 import 'package:money2/money2.dart';
 
 import 'entity.dart';
+import 'job.dart';
 
 class Task extends Entity<Task> {
   Task(
@@ -12,7 +13,10 @@ class Task extends Entity<Task> {
       required this.estimatedCost,
       required this.taskStatusId,
       required super.createdDate,
-      required super.modifiedDate})
+      required super.modifiedDate,
+      this.billingType =
+          BillingType.timeAndMaterial // New field for BillingType
+      })
       : super();
 
   factory Task.fromMap(Map<String, dynamic> map) => Task(
@@ -26,6 +30,10 @@ class Task extends Entity<Task> {
         taskStatusId: map['task_status_id'] as int,
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+        billingType: BillingType.values.firstWhere(
+            (e) => e.name == map['billing_type'],
+            orElse: () =>
+                BillingType.timeAndMaterial), // New field for BillingType
       );
 
   Task.forInsert(
@@ -34,7 +42,10 @@ class Task extends Entity<Task> {
       required this.description,
       required this.effortInHours,
       required this.estimatedCost,
-      required this.taskStatusId})
+      required this.taskStatusId,
+      this.billingType =
+          BillingType.timeAndMaterial // New field for BillingType
+      })
       : super.forInsert();
 
   Task.forUpdate(
@@ -44,7 +55,10 @@ class Task extends Entity<Task> {
       required this.description,
       required this.effortInHours,
       required this.estimatedCost,
-      required this.taskStatusId})
+      required this.taskStatusId,
+      this.billingType =
+          BillingType.timeAndMaterial // New field for BillingType
+      })
       : super.forUpdate();
 
   int jobId;
@@ -53,6 +67,7 @@ class Task extends Entity<Task> {
   Fixed? effortInHours;
   Money? estimatedCost;
   int taskStatusId;
+  BillingType billingType; // New field for BillingType
 
   @override
   Map<String, dynamic> toMap() => {
@@ -66,6 +81,7 @@ class Task extends Entity<Task> {
         'estimated_cost':
             estimatedCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'task_status_id': taskStatusId,
+        'billing_type': billingType.name, // New field for BillingType
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
