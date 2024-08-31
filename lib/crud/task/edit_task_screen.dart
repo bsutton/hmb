@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
-import 'package:strings/strings.dart';
 
 import '../../dao/dao_checklist.dart';
 import '../../dao/dao_task.dart';

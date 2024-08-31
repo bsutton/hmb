@@ -141,7 +141,7 @@ that are marked as "Materials - stock" or "Tools - own".'''));
               future: DaoTask().getTaskForCheckListItem(item),
               builder: (context, task) => FutureBuilderEx(
                   // ignore: discarded_futures
-                  future: DaoJob().getJobForTask(task!),
+                  future: DaoJob().getJobForTask(task!.id),
                   builder: (context, job) => FutureBuilderEx(
                       // ignore: discarded_futures
                       future: DaoCustomer().getByJob(job!.id),
