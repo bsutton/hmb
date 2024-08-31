@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
-import 'package:strings/strings.dart';
 
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
@@ -165,7 +164,7 @@ class JobEditScreenState extends State<JobEditScreen>
         onChanged: (billingType) => setState(() {
           _selectedBillingType = billingType!;
         }),
-        format: (value) => value.name.toCapitalised(),
+        format: (value) => value.display,
       );
   Widget _showHourlyRate() => HMBTextField(
         key: const Key('hourlyRate'),

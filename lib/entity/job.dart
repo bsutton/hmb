@@ -3,8 +3,12 @@ import 'package:money2/money2.dart';
 import 'entity.dart';
 
 enum BillingType {
-  timeAndMaterial,
-  fixedPrice,
+  timeAndMaterial('Time and Materials'),
+  fixedPrice('Fixed Price');
+
+  const BillingType(this.display);
+
+  final String display;
 }
 
 class Job extends Entity<Job> {

@@ -78,8 +78,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _effortInHoursFocusNode = FocusNode();
     _itemTypeIdFocusNode = FocusNode();
 
-    _selectedBillingType =
-        widget.task?.billingType ?? BillingType.timeAndMaterial;
+    _selectedBillingType = widget.task?.billingType ?? widget.job.billingType;
 
     final initialTaskStatusId = widget.task?.taskStatusId ?? 1;
     June.getState(SelectedTaskStatus.new).taskStatusId = initialTaskStatusId;
@@ -165,7 +164,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         onChanged: (billingType) => setState(() {
           _selectedBillingType = billingType!;
         }),
-        format: (value) => value.name.toCapitalised(),
+        format: (value) => value.display,
       );
 
   FutureBuilderEx<CheckList?> _buildCheckList(Task? task) =>
@@ -188,8 +187,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
       title: 'Task Status',
-      initialItem: () async => DaoTaskStatus().getById(
-          task?.taskStatusId ?? June.getState(SelectedTaskStatus.new).taskStatusId),
+      initialItem: () async => DaoTaskStatus().getById(task?.taskStatusId ??
+          June.getState(SelectedTaskStatus.new).taskStatusId),
       items: (filter) async => DaoTaskStatus().getByFilter(filter),
       format: (item) => item.name,
       onChanged: (item) {
