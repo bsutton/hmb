@@ -21,7 +21,7 @@ class Task extends Entity<Task> {
 
   factory Task.fromMap(Map<String, dynamic> map) => Task(
         id: map['id'] as int,
-        jobId: map['job_d'] as int,
+        jobId: map['job_id'] as int,
         name: map['name'] as String,
         description: map['description'] as String,
         effortInHours: Fixed.fromInt(map['effort_in_hours'] as int),
