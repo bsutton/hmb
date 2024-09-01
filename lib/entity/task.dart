@@ -21,7 +21,7 @@ class Task extends Entity<Task> {
 
   factory Task.fromMap(Map<String, dynamic> map) => Task(
         id: map['id'] as int,
-        jobId: map['jobId'] as int,
+        jobId: map['job_d'] as int,
         name: map['name'] as String,
         description: map['description'] as String,
         effortInHours: Fixed.fromInt(map['effort_in_hours'] as int),
@@ -72,7 +72,7 @@ class Task extends Entity<Task> {
   @override
   Map<String, dynamic> toMap() => {
         'id': id,
-        'jobId': jobId,
+        'job_id': jobId,
         'name': name,
         'description': description,
         'effort_in_hours': Fixed.copyWith(effortInHours ?? Fixed.zero, scale: 2)
@@ -88,5 +88,5 @@ class Task extends Entity<Task> {
 
   @override
   String toString() =>
-      'Task(id: $id, jobId: $jobId, name: $name, statusiID: $taskStatusId)';
+      'Task(id: $id, jobId: $jobId, name: $name, statusID: $taskStatusId)';
 }

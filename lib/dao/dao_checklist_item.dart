@@ -142,7 +142,7 @@ join task_check_list tcl
 join `task` t
   on tcl.task_id = t.id
 join job j
-  on t.jobId = j.id
+  on t.job_id = j.id
 join job_status js
   on j.job_status_id = js.id
 where (clit.name = 'Materials - stock' 
@@ -174,7 +174,7 @@ and js.name != 'Awaiting Payment'
     JOIN check_list cl ON cl.id = cli.check_list_id
     JOIN task_check_list tcl ON cl.id = tcl.check_list_id
     JOIN task t ON tcl.task_id = t.id
-    JOIN job j ON t.jobId = j.id
+    JOIN job j ON t.job_Id = j.id
     JOIN job_status js ON j.job_status_id = js.id
     WHERE (clit.name = 'Materials - buy' OR clit.name = 'Tools - buy')
     AND cli.completed = 0

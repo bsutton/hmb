@@ -99,7 +99,7 @@ order by j.modifiedDate desc
 select j.* 
 from task t
 join job j
-  on t.jobId = j.id
+  on t.job_id = j.id
 where t.id =?
 ''', [taskId]);
 
