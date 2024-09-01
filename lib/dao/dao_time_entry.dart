@@ -71,6 +71,21 @@ class DaoTimeEntry extends Dao<TimeEntry> {
       whereArgs: [id],
     );
   }
+
+  /// Get the set of [TimeEntry]s for the given job.
+  /// Returns the most recent first.
+  Future<List<TimeEntry>> getByJob(int? jobId) async {
+    final db = getDb();
+    if (jobId == null) {
+      return [];
+    }
+    final results = await db.rawQuery('''
+      select * from $tableName
+      where task_id in (select id from task where job_id =?)
+      order by start_time desc
+''', [jobId]);
+    return results.map(TimeEntry.fromMap).toList();
+  }
 }
 
 /// Can be used to notify the UI that the time entry has changed.
