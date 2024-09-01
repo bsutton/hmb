@@ -93,4 +93,10 @@ class TimeEntry extends Entity<TimeEntry> {
         'billed': billed ? 1 : 0,
         'invoice_line_id': invoiceLineId,
       };
+
+  /// Did this current entry's endTime fall in the last quarter hour?
+  /// An entry that is still running is considered to be in the last
+  /// quarter hour.
+  bool inLastQuarterHour(DateTime now) =>
+      endTime == null || endTime!.hour == now.hour && endTime!.minute >= 45;
 }
