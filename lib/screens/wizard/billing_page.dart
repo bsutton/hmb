@@ -155,7 +155,7 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        const HMBText('Logo Path'),
+                         HMBText('Logo Path'),
                         TextButton.icon(
                           icon: const Icon(Icons.upload_file),
                           label: const Text('Upload Logo'),
