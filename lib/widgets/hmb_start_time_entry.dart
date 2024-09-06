@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
-import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
 import '../dao/dao_time_entry.dart';
 import '../entity/task.dart';
@@ -79,21 +78,26 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
   Future<void> _start(Task? task) async {
     final runningTimer = await DaoTimeEntry().getActiveEntry();
 
-    Task? stopTask;
+    Task? runningTask;
     if (runningTimer != null) {
-      stopTask = await DaoTask().getById(runningTimer.taskId);
+      runningTask = await DaoTask().getById(runningTimer.taskId);
     }
 
-    /// Fixed point in time for all cals.
-    final now = DateTime.now();
+    /// Fixed point in time for all calcs.
+    /// Start of the current minute.
+    final now =
+        DateTime.now().copyWith(second: 0, millisecond: 0, microsecond: 0);
 
     final startStopTimes = await _determineStartStopTime(
-        now: now, stopTask: stopTask, startTask: widget.task!);
+        runningTimer: runningTimer,
+        runningTask: runningTask,
+        now: now,
+        startTask: widget.task!);
 
     /// as there can only be one active timer
     /// we have no more work to do but stop this time.
     if (runningTimer != null) {
-      await _stopDialog(runningTimer, startStopTimes.stopTime!);
+      await _stopDialog(runningTimer, startStopTimes.priorTaskStopTime!);
     }
 
     /// there is no other timer running so just start the new timer
@@ -104,55 +108,73 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
   /// relation to the start task.
   /// If its for the same job the stop time will be now.
   /// If its for a different job we round up to the nearest quarter hour.
-  DateTime _determineStopTime(
-      {required DateTime now, required Task stopTask, Task? startTask}) {
-    if (startTask != null && stopTask.jobId == startTask.jobId) {
-      return now;
-    }
-    return _roundUpToQuaterHour(now);
-  }
+  // DateTime _determineStopTime(
+  //     {required DateTime now, required Task stopTask, Task? startTask}) {
+  //   if (startTask != null && stopTask.jobId == startTask.jobId) {
+  //     return now;
+  //   }
+  //   return _roundUpToQuaterHour(now);
+  // }
 
   Future<StopStartTime> _determineStartStopTime(
       {required DateTime now,
-      required Task? stopTask,
+      required Task? runningTask,
+      required TimeEntry? runningTimer,
       required Task startTask}) async {
-    DateTime? stopTime;
-    DateTime startTime;
+    assert(
+        runningTask != null && runningTimer != null ||
+            (runningTask != null &&
+                runningTimer != null &&
+                runningTask.id == runningTimer.taskId),
+        'The Timer must belong to the task or both be null');
 
-    final stopJob = await DaoJob().getById(stopTask?.jobId);
-    final startJob = await DaoJob().getById(startTask.jobId);
+    final endOfMinuteNow =
+        now.copyWith(second: 59, millisecond: 999, microsecond: 999999);
 
-    if (startJob?.id != stopJob?.id) {
+    if (runningTask?.jobId != startTask.jobId) {
       return StopStartTime(
 
-          /// probably wrong as the user forgot to stop the prior job.
-          stopTime: _roundUpToQuaterHour(now),
+          /// the stop time is probably wrong as the user
+          /// forgot to stop the prior job.
+          priorTaskStopTime: _roundUpToQuaterHour(now),
           startTime: _roundDownToQuaterHour(now));
     }
 
-    /// Check for a prior time entry for the same job
+    /// Same job so we stop the current task time as 'now'
+    /// and start the new timer as 'now' + 1 minute.
+    if (runningTimer != null) {
+      // last second of the minute.
+      return StopStartTime(
+          priorTaskStopTime: endOfMinuteNow,
+          startTime: now.add(const Duration(minutes: 1)));
+    }
+
+
+    /// As we have now running timer Check for a prior time entry for
+    /// the same job
     /// which may have been created by the  user manually stopping a timer
     /// or by the user starting a new timer and us automatically
     /// stopping an existing timer - toggle.
     /// if a timer (for the same job) was stopped in the last 15 minutes
-    /// then we want to start the new time seamlessly from the last one (plus 1
+    /// then we want to start the new timer seamlessly from the last one (plus 1
     /// minute)
     /// Note: if there is a running timer (for the same job) then
-    /// it will show as running the last quarter hour.
+    /// it will show as running in the last quarter hour.
     final priorEntries = await DaoTimeEntry().getByJob(startTask.jobId);
     if (priorEntries.isNotEmpty) {
-      final priorEntry = priorEntries.last;
+      final priorEntry = priorEntries.first;
 
       if (priorEntry.inLastQuarterHour(now)) {
-        stopTime = priorEntry.endTime ?? now;
-        startTime = stopTime.add(const Duration(minutes: 1));
-        return StopStartTime(stopTime: stopTime, startTime: startTime);
+        final stopTime = priorEntry.endTime ?? endOfMinuteNow;
+        final startTime = now.add(const Duration(minutes: 1));
+        return StopStartTime(priorTaskStopTime: stopTime, startTime: startTime);
       }
     }
 
-    /// No prior entries for the same job, in the last quarter hour
+    /// No timers running and no prior entries for the same job,
+    /// in the last quarter hour
     return StopStartTime(
-        stopTime: stopTime, startTime: _roundDownToQuaterHour(now));
+        priorTaskStopTime: null, startTime: _roundDownToQuaterHour(now));
   }
 
   DateTime _roundUpToQuaterHour(DateTime now) => DateTime(
@@ -268,8 +290,8 @@ class TimeEntryState extends JuneState {
 }
 
 class StopStartTime {
-  StopStartTime({required this.startTime, required this.stopTime});
+  StopStartTime({required this.startTime, required this.priorTaskStopTime});
 
   DateTime startTime;
-  DateTime? stopTime;
+  DateTime? priorTaskStopTime;
 }
