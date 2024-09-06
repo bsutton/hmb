@@ -105,6 +105,7 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
               onChanged: (date) {
                 setState(() {
                   selectedDate = date;
+                  selectedTime = TimeOfDay.fromDateTime(date);
                 });
                 _updateDuration();
               },
