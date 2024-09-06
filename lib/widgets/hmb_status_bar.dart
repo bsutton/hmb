@@ -23,9 +23,8 @@ class HMBStatusBar extends StatelessWidget {
     if (activeTimeEntry == null) {
       return Container();
     }
-    return Container(
+    return ColoredBox(
       color: Colors.blueAccent,
-      padding: const EdgeInsets.all(8),
       child: Row(
         children: [
           HMBStartTimeEntry(task: task),

@@ -57,15 +57,22 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
       future: _initialEntry,
       builder: (context, snapshot) {
         final timeEntry = snapshot.data;
-        return Row(
-          children: [
-            IconButton(
-              icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
-              onPressed: () async =>
-                  timeEntry != null ? _stop(widget.task) : _start(widget.task),
-            ),
-            _buildElapsedTime(timeEntry)
-          ],
+        return GestureDetector(
+          child: Row(
+            children: [
+              IconButton(
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                visualDensity: const VisualDensity(horizontal: -4),
+                icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
+                onPressed: () async => timeEntry != null
+                    ? _stop(widget.task)
+                    : _start(widget.task),
+              ),
+              _buildElapsedTime(timeEntry)
+            ],
+          ),
+          onTap: () async =>
+              timeEntry != null ? _stop(widget.task) : _start(widget.task),
         );
       });
 
