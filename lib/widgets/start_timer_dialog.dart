@@ -7,6 +7,7 @@ import '../entity/task.dart';
 import '../entity/time_entry.dart';
 import '../util/format.dart';
 import 'hmb_date_time_picker.dart';
+import 'hmb_dialog.dart';
 import 'hmb_text.dart';
 import 'hmb_text_area.dart';
 import 'hmb_toast.dart';
@@ -51,7 +52,7 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
 
     noteController.text = '';
 
-    return AlertDialog(
+    return HMBDialog(
       title: const Text('Start Timer'),
       content: Column(
         mainAxisSize: MainAxisSize.min,

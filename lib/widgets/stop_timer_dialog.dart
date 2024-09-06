@@ -7,6 +7,7 @@ import '../entity/task.dart';
 import '../entity/time_entry.dart';
 import '../util/format.dart';
 import 'hmb_date_time_picker.dart';
+import 'hmb_dialog.dart';
 import 'hmb_spacer.dart';
 import 'hmb_text.dart';
 import 'hmb_text_area.dart';
@@ -77,11 +78,7 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
 
     noteController.text = widget.timeEntry.note ?? '';
 
-    return AlertDialog(
-      titlePadding: const EdgeInsets.all(8),
-      contentPadding:
-          const EdgeInsets.only(left: 8, right: 8, top: 16, bottom: 16),
-      insetPadding: const EdgeInsets.all(0),
+    return HMBDialog(
       title: const Row(
         children: [
           Icon(Icons.stop, color: Colors.red),
@@ -89,40 +86,37 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
           Text('Stop Timer'),
         ],
       ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HMBText('Current Time: ${formatDateTime(DateTime.now())}'),
-            if (widget.showTask) buildTaskDetails(),
-            Row(children: [
-              HMBText(
-                'Time:',
-                bold: true,
-              ),
-              const HMBSpacer(width: true),
-              HMBText(formatDateTime(widget.timeEntry.startTime))
-            ]),
-            HMBDateTimeField(
-              label: 'Time:',
-              initialDateTime: selectedDate,
-              onChanged: (date) {
-                setState(() {
-                  selectedDate = date;
-                  selectedTime = TimeOfDay.fromDateTime(date);
-                });
-                _updateDuration();
-              },
-            ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          HMBText('Current Time: ${formatDateTime(DateTime.now())}'),
+          if (widget.showTask) buildTaskDetails(),
+          Row(children: [
             HMBText(
-                'Duration: ${duration.inHours}h ${duration.inMinutes % 60}m'),
-            HMBTextArea(
-              controller: noteController,
-              focusNode: noteFocusNode,
-              labelText: 'Note',
+              'Time:',
+              bold: true,
             ),
-          ],
-        ),
+            const HMBSpacer(width: true),
+            HMBText(formatDateTime(widget.timeEntry.startTime))
+          ]),
+          HMBDateTimeField(
+            label: 'Time:',
+            initialDateTime: selectedDate,
+            onChanged: (date) {
+              setState(() {
+                selectedDate = date;
+                selectedTime = TimeOfDay.fromDateTime(date);
+              });
+              _updateDuration();
+            },
+          ),
+          HMBText('Duration: ${duration.inHours}h ${duration.inMinutes % 60}m'),
+          HMBTextArea(
+            controller: noteController,
+            focusNode: noteFocusNode,
+            labelText: 'Note',
+          ),
+        ],
       ),
       actions: [
         TextButton(
@@ -172,7 +166,7 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
           BuildContext context, Duration duration) async =>
       await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => HMBDialog(
           title: const Text('Long Duration Warning'),
           content: Text(
               '''The time entry duration is ${duration.inHours} hours. Do you want to continue?'''),
@@ -194,13 +188,11 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FutureBuilderEx(
-              // ignore: discarded_futures
               future: DaoJob().getById(widget.task.jobId),
               builder: (context, job) => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       FutureBuilderEx(
-                          // ignore: discarded_futures
                           future: DaoCustomer().getById(job!.customerId),
                           builder: (context, customer) => Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
