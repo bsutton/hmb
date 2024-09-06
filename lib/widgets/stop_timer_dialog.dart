@@ -78,6 +78,10 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
     noteController.text = widget.timeEntry.note ?? '';
 
     return AlertDialog(
+      titlePadding: const EdgeInsets.all(8),
+      contentPadding:
+          const EdgeInsets.only(left: 8, right: 8, top: 16, bottom: 16),
+      insetPadding: const EdgeInsets.all(0),
       title: const Row(
         children: [
           Icon(Icons.stop, color: Colors.red),
@@ -93,14 +97,14 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
             if (widget.showTask) buildTaskDetails(),
             Row(children: [
               HMBText(
-                'Start Time:',
+                'Time:',
                 bold: true,
               ),
               const HMBSpacer(width: true),
               HMBText(formatDateTime(widget.timeEntry.startTime))
             ]),
             HMBDateTimeField(
-              label: 'Stop Time:',
+              label: 'Time:',
               initialDateTime: selectedDate,
               onChanged: (date) {
                 setState(() {
