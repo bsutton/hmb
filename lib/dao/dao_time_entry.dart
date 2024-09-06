@@ -82,7 +82,7 @@ class DaoTimeEntry extends Dao<TimeEntry> {
     final results = await db.rawQuery('''
       select * from $tableName
       where task_id in (select id from task where job_id =?)
-      order by start_time desc
+      order by end_time desc
 ''', [jobId]);
     return results.map(TimeEntry.fromMap).toList();
   }
