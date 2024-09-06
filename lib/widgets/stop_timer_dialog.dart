@@ -110,7 +110,7 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
               },
             ),
             HMBText(
-                'Duration: ${duration.inHours}h: ${duration.inMinutes % 60}m'),
+                'Duration: ${duration.inHours}h ${duration.inMinutes % 60}m'),
             HMBTextArea(
               controller: noteController,
               focusNode: noteFocusNode,
