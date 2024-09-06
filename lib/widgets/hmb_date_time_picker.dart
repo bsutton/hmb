@@ -31,7 +31,7 @@ class _HMBDateTimeFieldState extends m.State<HMBDateTimeField> {
   late m.TextEditingController timeController;
 
   final dateFormat = DateFormat('EEE, d MMM yyyy');
-  final timeFormat = DateFormat('H:mm');
+  final timeFormat = DateFormat('h:mm a');
 
   @override
   void initState() {

@@ -94,14 +94,20 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
         now: now,
         startTask: widget.task!);
 
+    var showStart = true;
+
+    /// If there is a running timer we need to stop it.
     /// as there can only be one active timer
     /// we have no more work to do but stop this time.
     if (runningTimer != null) {
-      await _stopDialog(runningTimer, startStopTimes.priorTaskStopTime!);
+      showStart =
+          await _stopDialog(runningTimer, startStopTimes.priorTaskStopTime!);
     }
 
-    /// there is no other timer running so just start the new timer
-    await _startDialog(widget.task!, startStopTimes.startTime);
+    if (showStart) {
+      /// there is no other timer running so just start the new timer
+      await _startDialog(widget.task!, startStopTimes.startTime);
+    }
   }
 
   /// We are stopping a task, determine the stop time based on its
@@ -122,35 +128,40 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
       required TimeEntry? runningTimer,
       required Task startTask}) async {
     assert(
-        runningTask != null && runningTimer != null ||
+        (runningTask == null && runningTimer == null) ||
             (runningTask != null &&
                 runningTimer != null &&
                 runningTask.id == runningTimer.taskId),
         'The Timer must belong to the task or both be null');
 
-    final endOfMinuteNow =
-        now.copyWith(second: 59, millisecond: 999, microsecond: 999999);
+    final nowRoundedDown =
+        now.copyWith(second: 0, millisecond: 0, microsecond: 0);
+    final nowPlusOne = nowRoundedDown.add(const Duration(minutes: 1));
 
-    if (runningTask?.jobId != startTask.jobId) {
-      return StopStartTime(
+    if (runningTask != null) {
+      if (runningTask.jobId != startTask.jobId) {
+        /// different job so we round the stopping task up to the
+        /// nearest 15 min and the starting task down to the nearest 15 min.
+        /// So yes these jobs will overlap but they will normally be
+        /// for two different clients (should we check this) and
+        /// the billing rules are 15min or part there of - per job
+        /// so this the correct calc given these rules.
+        return StopStartTime(
 
-          /// the stop time is probably wrong as the user
-          /// forgot to stop the prior job.
-          priorTaskStopTime: _roundUpToQuaterHour(now),
-          startTime: _roundDownToQuaterHour(now));
-    }
+            /// the stop time is probably wrong as the user
+            /// forgot to stop the prior job.
+            priorTaskStopTime: _roundUpToQuaterHour(now),
+            startTime: _roundDownToQuaterHour(now));
+      }
 
-    /// Same job so we stop the current task time as 'now'
-    /// and start the new timer as 'now' + 1 minute.
-    if (runningTimer != null) {
+      /// Same job so we stop the current task time as 'now'
+      /// and start the new timer as 'now' + 1 minute.
       // last second of the minute.
       return StopStartTime(
-          priorTaskStopTime: endOfMinuteNow,
-          startTime: now.add(const Duration(minutes: 1)));
+          priorTaskStopTime: nowRoundedDown, startTime: nowPlusOne);
     }
 
-
-    /// As we have now running timer Check for a prior time entry for
+    /// As we have no running task Check for a prior time entry for
     /// the same job
     /// which may have been created by the  user manually stopping a timer
     /// or by the user starting a new timer and us automatically
@@ -164,9 +175,15 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
     if (priorEntries.isNotEmpty) {
       final priorEntry = priorEntries.first;
 
-      if (priorEntry.inLastQuarterHour(now)) {
-        final stopTime = priorEntry.endTime ?? endOfMinuteNow;
-        final startTime = now.add(const Duration(minutes: 1));
+      if (priorEntry.recentlyStopped(now)) {
+        /// We should never see a running priorEntry as it would
+        /// have been passed in as the [runningTask]
+        /// So given there is a prior entry for the same job
+        /// that has just been stopped we should start the new timer
+        /// from the prior one (plus 1 minute) - we can't overlap
+        /// tasks on the same job as the customer won't like this.
+        final stopTime = priorEntry.endTime!;
+        final startTime = priorEntry.endTime!.add(const Duration(minutes: 1));
         return StopStartTime(priorTaskStopTime: stopTime, startTime: startTime);
       }
     }
@@ -178,7 +195,12 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
   }
 
   DateTime _roundUpToQuaterHour(DateTime now) => DateTime(
-      now.year, now.month, now.day, now.hour, ((now.minute ~/ 15) + 1) * 15);
+        now.year,
+        now.month,
+        now.day,
+        now.hour,
+        ((now.minute ~/ 15) + 1) * 15,
+      );
 
   DateTime _roundDownToQuaterHour(DateTime now) =>
       DateTime(now.year, now.month, now.day, now.hour, (now.minute ~/ 15) * 15);
@@ -206,7 +228,7 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
   //   }
   // }
 
-  Future<void> _stopDialog(TimeEntry activeEntry, DateTime stopTime) async {
+  Future<bool> _stopDialog(TimeEntry activeEntry, DateTime stopTime) async {
     final task = await DaoTask().getById(activeEntry.taskId);
 
     if (mounted) {
@@ -223,8 +245,10 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
 
         _timer?.cancel();
         setState(() {});
+        return true;
       }
     }
+    return false;
   }
 
   void _initTimer(TimeEntry? timeEntry) {
@@ -246,7 +270,13 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
 
   void _startTimer(TimeEntry timeEntry) {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      } else {
+        /// there can be a race conditions when shutting down a
+        /// timer so the check for [mounted] lets us clean up.
+        _timer?.cancel();
+      }
     });
   }
 
@@ -260,7 +290,7 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
     final running = timeEntry != null && timeEntry.endTime == null;
     if (running) {
       final elapsedTime = DateTime.now().difference(timeEntry.startTime);
-      return Text('Elapsed: ${formatDuration(elapsedTime, seconds: true)}');
+      return Text(formatDuration(elapsedTime, seconds: true));
     } else {
       return const Text('Tap to start tracking time');
     }

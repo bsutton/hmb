@@ -95,8 +95,11 @@ class TimeEntry extends Entity<TimeEntry> {
       };
 
   /// Did this current entry's endTime fall in the last quarter hour?
-  /// An entry that is still running is considered to be in the last
-  /// quarter hour.
-  bool inLastQuarterHour(DateTime now) =>
-      endTime == null || endTime!.hour == now.hour && endTime!.minute >= 45;
+  /// An entry that is still running or was stopped in the future
+  ///  is considered to be in the last quarter hour.
+  /// We do allow entries to be stopped in the future but only
+  /// within the next fifteen minutes - as we bill in fifteen minutes blocks
+  /// or part there of.
+  bool recentlyStopped(DateTime now) =>
+      endTime == null || now.difference(endTime!).inMinutes.abs() <= 15;
 }
