@@ -6,7 +6,6 @@ import '../entity/check_list.dart';
 import '../entity/check_list_item.dart';
 import '../entity/job.dart';
 import '../entity/supplier.dart';
-import '../entity/task.dart';
 import 'dao.dart';
 import 'dao_check_list_item_check_list.dart';
 
@@ -99,7 +98,7 @@ where cl.id =?
 ''', [checklist.id]);
   }
 
-  Future<List<CheckListItem>> getByTask(Task task) async {
+  Future<List<CheckListItem>> getByTask(int taskId) async {
     final db = getDb();
 
     final data = await db.rawQuery('''
@@ -112,7 +111,7 @@ join check_list cl
 join check_list_item cli
   on cl.id = cli.check_list_id
 where t.id =? 
-''', [task.id]);
+''', [taskId]);
 
     return toList(data);
   }
