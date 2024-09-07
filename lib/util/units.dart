@@ -107,6 +107,7 @@ const Units inch = Units1D('in', labels: ['Length']);
 /// area units
 const Units m2 = Units2D('m²', measure: 'm', labels: ['Length', 'Width']);
 const Units cm2 = Units2D('cm²', measure: 'cm', labels: ['Length', 'Width']);
+const Units mm2 = Units2D('mm²', measure: 'mm', labels: ['Length', 'Width']);
 const Units yd2 = Units2D('yd²', measure: 'yd', labels: ['Length', 'Width']);
 const Units ft2 = Units2D('ft²', measure: 'ft', labels: ['Length', 'Width']);
 
@@ -136,6 +137,7 @@ Map<String, Units> _unitsMap = {
   'in': inch,
   'm²': m2,
   'cm²': cm2,
+  'mm²': mm2,
   'yd²': yd2,
   'ft²': ft2,
   'm³': m3,

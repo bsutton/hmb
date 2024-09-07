@@ -66,6 +66,7 @@ const area = MeasurementType(
     metric: [
       m2,
       cm2,
+      mm2
     ],
     imperial: [
       yd2,
