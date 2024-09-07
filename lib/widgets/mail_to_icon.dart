@@ -37,8 +37,9 @@ class MailToIcon extends StatelessWidget {
       );
 
   Future<void> _sendEmail(BuildContext context, String email) async {
+    email = email.trim();
     if (!EmailValidator.validate(email)) {
-      HMBToast.error( "Invalid email address '$email'");
+      HMBToast.error("Invalid email address '$email'");
     } else {
       final mailtoLink = Mailto(
         to: [email],
