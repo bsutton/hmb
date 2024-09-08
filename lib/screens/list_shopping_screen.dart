@@ -189,7 +189,7 @@ that are marked as "Materials - buy" or "Tools - buy".'''));
             future: DaoTask().getTaskForCheckListItem(item),
             builder: (context, task) => FutureBuilderEx(
               // Fetch the job associated with the task
-              future: DaoJob().getJobForTask(task!),
+              future: DaoJob().getJobForTask(task!.id),
               builder: (context, job) => FutureBuilderEx(
                 // Fetch the customer associated with the job
                 future: DaoCustomer().getByJob(job!.id),

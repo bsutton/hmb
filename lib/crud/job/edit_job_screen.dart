@@ -49,6 +49,7 @@ class JobEditScreenState extends State<JobEditScreen>
   late FocusNode _callOutFeeFocusNode;
 
   late DateTime _selectedDate;
+  BillingType _selectedBillingType = BillingType.timeAndMaterial;
 
   @override
   void initState() {
@@ -72,6 +73,9 @@ class JobEditScreenState extends State<JobEditScreen>
     June.getState(SelectJobStatus.new).jobStatusId = widget.job?.jobStatusId;
     June.getState(SelectedSite.new).siteId = widget.job?.siteId;
     June.getState(SelectedContact.new).contactId = widget.job?.contactId;
+
+    _selectedBillingType =
+        widget.job?.billingType ?? BillingType.timeAndMaterial;
 
     if (widget.job == null) {
       // ignore: discarded_futures
@@ -116,6 +120,7 @@ class JobEditScreenState extends State<JobEditScreen>
                               _chooseCustomer(),
                               _chooseStatus(job),
                               _chooseDate(),
+                              _chooseBillingType(),
                               _showHourlyRate(),
                               _showCallOutFee(),
                               SizedBox(
@@ -152,6 +157,15 @@ class JobEditScreenState extends State<JobEditScreen>
         keyboardType: TextInputType.name,
       );
 
+  Widget _chooseBillingType() => HMBDroplist<BillingType>(
+        title: 'Billing Type',
+        items: (filter) async => BillingType.values,
+        initialItem: () async => _selectedBillingType,
+        onChanged: (billingType) => setState(() {
+          _selectedBillingType = billingType!;
+        }),
+        format: (value) => value.display,
+      );
   Widget _showHourlyRate() => HMBTextField(
         key: const Key('hourlyRate'),
         controller: _hourlyRateController,
@@ -215,7 +229,8 @@ class JobEditScreenState extends State<JobEditScreen>
 
   Widget _chooseStatus(Job? job) => HMBDroplist<JobStatus>(
       title: 'Status',
-      items: (filter) async => DaoJobStatus().getAll(),
+      items: (filter) async =>
+          DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
       initialItem: () async => DaoJobStatus().getById(
           job?.jobStatusId ?? June.getState(SelectJobStatus.new).jobStatusId),
       onChanged: (status) =>
@@ -246,28 +261,32 @@ class JobEditScreenState extends State<JobEditScreen>
 
   @override
   Future<Job> forUpdate(Job job) async => Job.forUpdate(
-      entity: job,
-      customerId: June.getState(SelectedCustomer.new).customerId,
-      summary: _summaryController.text,
-      description: jsonEncode(_descriptionController.document),
-      startDate: _selectedDate,
-      siteId: June.getState(SelectedSite.new).siteId,
-      contactId: June.getState(SelectedContact.new).contactId,
-      jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
-      hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
-      callOutFee: MoneyEx.tryParse(_callOutFeeController.text));
+        entity: job,
+        customerId: June.getState(SelectedCustomer.new).customerId,
+        summary: _summaryController.text,
+        description: jsonEncode(_descriptionController.document),
+        startDate: _selectedDate,
+        siteId: June.getState(SelectedSite.new).siteId,
+        contactId: June.getState(SelectedContact.new).contactId,
+        jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
+        hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
+        callOutFee: MoneyEx.tryParse(_callOutFeeController.text),
+        billingType: _selectedBillingType,
+      );
 
   @override
   Future<Job> forInsert() async => Job.forInsert(
-      customerId: June.getState(SelectedCustomer.new).customerId,
-      summary: _summaryController.text,
-      description: jsonEncode(_descriptionController.document),
-      startDate: _selectedDate,
-      siteId: June.getState(SelectedSite.new).siteId,
-      contactId: June.getState(SelectedContact.new).contactId,
-      jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
-      hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
-      callOutFee: MoneyEx.tryParse(_callOutFeeController.text));
+        customerId: June.getState(SelectedCustomer.new).customerId,
+        summary: _summaryController.text,
+        description: jsonEncode(_descriptionController.document),
+        startDate: _selectedDate,
+        siteId: June.getState(SelectedSite.new).siteId,
+        contactId: June.getState(SelectedContact.new).contactId,
+        jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
+        hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
+        callOutFee: MoneyEx.tryParse(_callOutFeeController.text),
+        billingType: _selectedBillingType,
+      );
 
   @override
   void dispose() {

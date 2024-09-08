@@ -43,7 +43,7 @@ class ContactListScreen<P extends Entity<P>> extends StatelessWidget {
       details: (entity, details) {
         final customer = entity;
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          HMBPhoneText(label: '', phoneNo: customer.mobileNumber),
+          HMBPhoneText(label: '', phoneNo: customer.bestPhone),
           HMBEmailText(label: '', email: customer.emailAddress)
         ]);
       });

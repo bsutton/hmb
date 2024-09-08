@@ -210,7 +210,11 @@ class System extends Entity<System> {
   LogoAspectRatio logoAspectRatio; // Field for logo type
   int billingColour; // Field for billing color
 
-  String? get bestPhone => officeNumber ?? landLine ?? mobileNumber;
+  String? get bestPhone => Strings.isNotBlank(mobileNumber)
+      ? mobileNumber
+      : Strings.isNotBlank(landLine)
+          ? landLine
+          : officeNumber;
 
   String get address =>
       Strings.join([addressLine1, addressLine2, suburb, state, postcode],

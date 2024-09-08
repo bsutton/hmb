@@ -61,7 +61,7 @@ class JobCard extends StatelessWidget {
                     'Scheduled: ${formatDate(job.startDate)}',
                   ),
                   const SizedBox(height: 8),
-                  const HMBText('Description:', bold: true),
+                   HMBText('Description:', bold: true),
                   HMBText(
                     RichEditor.createParchment(job.description)
                         .toPlainText()
@@ -148,9 +148,7 @@ class JobCard extends StatelessWidget {
         children: [
           SizedBox(
             height: 33,
-            child: Flexible(
-                fit: FlexFit.tight,
-                child: Row(children: [..._buildStatistics(stats)])),
+            child: Row(children: [..._buildStatistics(stats)]),
           ),
           const HMBSpacer(height: true),
           Row(children: [

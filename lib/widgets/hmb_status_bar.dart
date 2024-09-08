@@ -23,9 +23,8 @@ class HMBStatusBar extends StatelessWidget {
     if (activeTimeEntry == null) {
       return Container();
     }
-    return Container(
+    return ColoredBox(
       color: Colors.blueAccent,
-      padding: const EdgeInsets.all(8),
       child: Row(
         children: [
           HMBStartTimeEntry(task: task),
@@ -33,7 +32,7 @@ class HMBStatusBar extends StatelessWidget {
           Expanded(
             child: FutureBuilderEx(
               // ignore: discarded_futures
-              future: DaoJob().getJobForTask(task!),
+              future: DaoJob().getJobForTask(task?.id),
               builder: (context, job) => Text(
                 '${task!.name} - ${job!.summary}',
                 overflow: TextOverflow.ellipsis,

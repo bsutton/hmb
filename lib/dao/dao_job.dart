@@ -5,7 +5,6 @@ import 'package:strings/strings.dart';
 
 import '../entity/customer.dart';
 import '../entity/job.dart';
-import '../entity/task.dart';
 import '../util/fixed_ex.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
@@ -89,16 +88,20 @@ order by j.modifiedDate desc
     return toList(data);
   }
 
-  Future<Job> getJobForTask(Task task) async {
+  Future<Job?> getJobForTask(int? taskId) async {
     final db = getDb();
+
+    if (taskId == null) {
+      return null;
+    }
 
     final data = await db.rawQuery('''
 select j.* 
 from task t
 join job j
-  on t.jobId = j.id
+  on t.job_id = j.id
 where t.id =?
-''', [task.id]);
+''', [taskId]);
 
     return toList(data).first;
   }

@@ -13,7 +13,7 @@ class DaoTaskStatus extends Dao<TaskStatus> {
     final db = getDb();
 
     if (Strings.isBlank(filter)) {
-      return getAll();
+      return getAll(orderByClause: 'ordinal');
     }
 
     final likeArg = '''%$filter%''';
@@ -22,6 +22,7 @@ select ts.*
 from task_status ts 
 where ts.name like ?
 or ts.description like ?
+order by ordinal
 ''', [likeArg, likeArg]);
 
     return toList(data);

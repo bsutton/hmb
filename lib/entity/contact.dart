@@ -1,3 +1,5 @@
+import 'package:strings/strings.dart';
+
 import '../invoicing/xero/models/xero_contact.dart';
 import 'entity.dart';
 
@@ -105,18 +107,15 @@ class Contact extends Entity<Contact> {
         modifiedDate: modifiedDate ?? this.modifiedDate,
       );
 
-  XeroContact toXeroContact() => XeroContact(
-        name: fullname,
-        email: emailAddress,
-        phone: preferredPhone()
-      );
+  XeroContact toXeroContact() =>
+      XeroContact(name: fullname, email: emailAddress, phone: bestPhone);
 
-  String preferredPhone() {
-    if (mobileNumber.isNotEmpty) {
+  String get bestPhone {
+    if (Strings.isNotBlank(mobileNumber)) {
       return mobileNumber;
-    } else if (officeNumber.isNotEmpty) {
+    } else if (Strings.isNotBlank(officeNumber)) {
       return officeNumber;
-    } else if (landLine.isNotEmpty) {
+    } else if (Strings.isNotBlank(landLine)) {
       return landLine;
     } else {
       return '';

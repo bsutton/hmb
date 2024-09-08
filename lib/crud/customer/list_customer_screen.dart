@@ -27,21 +27,21 @@ class CustomerListScreen extends StatelessWidget {
       details: (entity) {
         final customer = entity;
         return FutureBuilderEx(
-          waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
+            waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
             // ignore: discarded_futures
             future: DaoSite().getPrimaryForCustomer(customer.id),
             builder: (context, site) => FutureBuilderEx(
-              waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
+                waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
                 // ignore: discarded_futures
                 future: DaoContact().getPrimaryForCustomer(customer.id),
                 builder: (context, contact) => Column(
-                  mainAxisSize: MainAxisSize.min,
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ContactText(
                               label: 'Primary Contact:', contact: contact),
                           HMBPhoneText(
-                              label: '', phoneNo: contact?.mobileNumber),
+                              label: '', phoneNo: contact?.bestPhone),
                           HMBEmailText(label: '', email: contact?.emailAddress),
                           HMBSiteText(label: '', site: site)
                         ])));

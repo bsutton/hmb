@@ -15,7 +15,7 @@ class XeroContact {
   factory XeroContact.fromContact(Contact contact) => XeroContact(
       name: contact.fullname,
       email: contact.emailAddress,
-      phone: contact.mobileNumber);
+      phone: contact.bestPhone);
 
   final String name;
   final String email;
@@ -56,6 +56,6 @@ class XeroContact {
 //             }
 //           ],
 //           'Phones': [
-//             {'PhoneType': 'DEFAULT', 'PhoneNumber': contact.mobileNumber}
+//             {'PhoneType': 'DEFAULT', 'PhoneNumber': contact.bestPhone}
 //           ]
 //         }

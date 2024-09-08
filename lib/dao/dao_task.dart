@@ -24,7 +24,7 @@ class DaoTask extends Dao<Task> {
     final db = getDb();
 
     final results =
-        await db.query(tableName, where: 'jobid = ?', whereArgs: [jobId]);
+        await db.query(tableName, where: 'job_id = ?', whereArgs: [jobId]);
 
     final tasks = <Task>[];
     for (final result in results) {
@@ -112,7 +112,7 @@ where cli.id =?
     // Delete tasks associated with the job
     await db.delete(
       'task',
-      where: 'jobId = ?',
+      where: 'job_id = ?',
       whereArgs: [id],
     );
   }

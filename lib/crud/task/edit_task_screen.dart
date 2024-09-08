@@ -54,6 +54,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   late FocusNode _effortInHoursFocusNode;
   late FocusNode _itemTypeIdFocusNode;
 
+  BillingType _selectedBillingType = BillingType.timeAndMaterial;
+
   @override
   void initState() {
     super.initState();
@@ -75,9 +77,10 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _effortInHoursFocusNode = FocusNode();
     _itemTypeIdFocusNode = FocusNode();
 
-    // Initialize task status correctly
+    _selectedBillingType = widget.task?.billingType ?? widget.job.billingType;
+
     final initialTaskStatusId = widget.task?.taskStatusId ?? 1;
-    June.getState(TaskStatusState.new).taskStatusId = initialTaskStatusId;
+    June.getState(SelectedTaskStatus.new).taskStatusId = initialTaskStatusId;
 
     if (isNotMobile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -139,8 +142,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               labelText: 'Effort (decimal hours)',
               keyboardType: TextInputType.number,
             ),
+            _chooseBillingType(), // Add this line
 
-            /// Direct Check List
             _buildCheckList(task),
 
             HBMCrudTimeEntry(
@@ -151,6 +154,16 @@ class _TaskEditScreenState extends State<TaskEditScreen>
             PhotoCrud(controller: _photoController),
           ],
         ),
+      );
+
+  Widget _chooseBillingType() => HMBDroplist<BillingType>(
+        title: 'Billing Type',
+        items: (filter) async => BillingType.values,
+        initialItem: () async => _selectedBillingType,
+        onChanged: (billingType) => setState(() {
+          _selectedBillingType = billingType!;
+        }),
+        format: (value) => value.display,
       );
 
   FutureBuilderEx<CheckList?> _buildCheckList(Task? task) =>
@@ -173,11 +186,12 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
       title: 'Task Status',
-      initialItem: () async => DaoTaskStatus().getById(task?.taskStatusId ?? 1),
+      initialItem: () async => DaoTaskStatus().getById(task?.taskStatusId ??
+          June.getState(SelectedTaskStatus.new).taskStatusId),
       items: (filter) async => DaoTaskStatus().getByFilter(filter),
       format: (item) => item.name,
       onChanged: (item) {
-        June.getState(TaskStatusState.new).taskStatusId = item?.id;
+        June.getState(SelectedTaskStatus.new).taskStatusId = item?.id;
       });
 
   Future<void> _insertTask(Task task) async {
@@ -201,7 +215,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       description: _descriptionController.text,
       estimatedCost: MoneyEx.tryParse(_estimatedCostController.text),
       effortInHours: FixedEx.tryParse(_effortInHoursController.text),
-      taskStatusId: June.getState(TaskStatusState.new).taskStatusId!,
+      taskStatusId: June.getState(SelectedTaskStatus.new).taskStatusId!,
+      billingType: _selectedBillingType, // Add this line
     );
   }
 
@@ -212,7 +227,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         description: _descriptionController.text,
         estimatedCost: MoneyEx.tryParse(_estimatedCostController.text),
         effortInHours: FixedEx.tryParse(_effortInHoursController.text),
-        taskStatusId: June.getState(TaskStatusState.new).taskStatusId!,
+        taskStatusId: June.getState(SelectedTaskStatus.new).taskStatusId!,
+        billingType: _selectedBillingType, // Add this line
       );
 
   @override
@@ -221,8 +237,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   }
 }
 
-class TaskStatusState {
-  TaskStatusState();
+class SelectedTaskStatus {
+  SelectedTaskStatus();
 
   int? taskStatusId;
 }

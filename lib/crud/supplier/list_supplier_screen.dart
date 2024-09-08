@@ -36,7 +36,7 @@ class SupplierListScreen extends StatelessWidget {
                         children: [
                           HMBTextBody(supplier.service ?? ''),
                           ContactText(label: '', contact: contact),
-                          HMBPhoneText(phoneNo: contact?.mobileNumber),
+                          HMBPhoneText(phoneNo: contact?.bestPhone),
                           HMBEmailText(email: contact?.emailAddress),
                           HMBSiteText(label: '', site: site)
                         ])));
