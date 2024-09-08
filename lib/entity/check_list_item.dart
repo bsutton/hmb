@@ -11,9 +11,9 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.checkListId,
     required this.description,
     required this.itemTypeId,
-    required this.unitCost,
-    required this.effortInHours,
-    required this.quantity,
+    required this.estimatedMaterialCost,
+    required this.estimatedLabour,
+    required this.estimatedMaterialQuantity,
     required this.completed,
     required this.billed,
     required super.createdDate,
@@ -32,9 +32,9 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.checkListId,
     required this.description,
     required this.itemTypeId,
-    required this.unitCost,
-    required this.effortInHours,
-    required this.quantity,
+    required this.estimatedMaterialCost,
+    required this.estimatedLabour,
+    required this.estimatedMaterialQuantity,
     required this.measurementType,
     required this.dimension1,
     required this.dimension2,
@@ -52,9 +52,9 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.checkListId,
     required this.description,
     required this.itemTypeId,
-    required this.unitCost,
-    required this.effortInHours,
-    required this.quantity,
+    required this.estimatedMaterialCost,
+    required this.estimatedLabour,
+    required this.estimatedMaterialQuantity,
     required this.completed,
     required this.billed,
     required this.measurementType,
@@ -72,9 +72,9 @@ class CheckListItem extends Entity<CheckListItem> {
         checkListId: map['check_list_id'] as int,
         description: map['description'] as String,
         itemTypeId: map['item_type_id'] as int,
-        unitCost: MoneyEx.fromInt(map['unit_cost'] as int?),
-        effortInHours: Fixed.fromInt(map['effort_in_hours'] as int? ?? 0),
-        quantity: Fixed.fromInt(map['quantity'] as int? ?? 1),
+        estimatedMaterialCost: MoneyEx.fromInt(map['unit_cost'] as int?),
+        estimatedLabour: Fixed.fromInt(map['effort_in_hours'] as int? ?? 0),
+        estimatedMaterialQuantity: Fixed.fromInt(map['quantity'] as int? ?? 1),
         completed: map['completed'] == 1,
         billed: map['billed'] == 1,
         invoiceLineId: map['invoice_line_id'] as int?,
@@ -94,9 +94,34 @@ class CheckListItem extends Entity<CheckListItem> {
   int checkListId;
   String description;
   int itemTypeId;
-  Money unitCost;
-  Fixed effortInHours;
-  Fixed quantity;
+
+  // Labour
+  Fixed? estimatedLabour; // For T&M the 'actual' is taken from time_entry's
+  Fixed? estimatedCost;
+
+
+// Materials - estimates used for Quote and Estimate
+  Money? estimatedMaterialCost;
+  Fixed? estimatedMaterialQuantity;
+
+  // T&M uses the actuals, Fixed uses the estimates for
+  // the Invoice.
+  // Recorded after the material has been purchased.
+  Money? actualMaterialCost;
+  Fixed? actualMaterialQuantity;
+
+  // Only used by Fixed for P&L reporting
+  Fixed? actualCost;
+
+  /// The margin to apply to the costs to derive the
+  /// charge.
+  Percentage margin;
+
+  /// The amount we will charge the customer.
+  /// For T&M this is an estimate
+  /// for Fixed this is the actual.
+  Fixed charge;
+
   bool completed;
   bool billed;
   int? invoiceLineId;
@@ -108,7 +133,9 @@ class CheckListItem extends Entity<CheckListItem> {
   String url;
   int? supplierId;
 
-  bool get hasCost => unitCost.multiplyByFixed(quantity) > MoneyEx.zero;
+  bool get hasCost =>
+      estimatedMaterialCost.multiplyByFixed(estimatedMaterialQuantity) >
+      MoneyEx.zero;
 
   String get dimensions {
     if (!hasDimensions) {
@@ -126,10 +153,13 @@ class CheckListItem extends Entity<CheckListItem> {
         'check_list_id': checkListId,
         'description': description,
         'item_type_id': itemTypeId,
-        'unit_cost': unitCost.copyWith(decimalDigits: 2).minorUnits.toInt(),
+        'unit_cost':
+            estimatedMaterialCost.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'effort_in_hours':
-            Fixed.copyWith(effortInHours, scale: 2).minorUnits.toInt(),
-        'quantity': Fixed.copyWith(quantity, scale: 2).minorUnits.toInt(),
+            Fixed.copyWith(estimatedLabour, scale: 2).minorUnits.toInt(),
+        'quantity': Fixed.copyWith(estimatedMaterialQuantity, scale: 2)
+            .minorUnits
+            .toInt(),
         'completed': completed ? 1 : 0,
         'billed': billed ? 1 : 0,
         'invoice_line_id': invoiceLineId,
@@ -169,9 +199,9 @@ class CheckListItem extends Entity<CheckListItem> {
         checkListId: checkListId ?? this.checkListId,
         description: description ?? this.description,
         itemTypeId: itemTypeId ?? this.itemTypeId,
-        unitCost: unitCost ?? this.unitCost,
-        effortInHours: effortInHours ?? this.effortInHours,
-        quantity: quantity ?? this.quantity,
+        estimatedMaterialCost: unitCost ?? this.estimatedMaterialCost,
+        estimatedLabour: effortInHours ?? this.estimatedLabour,
+        estimatedMaterialQuantity: quantity ?? this.estimatedMaterialQuantity,
         completed: completed ?? this.completed,
         billed: billed ?? this.billed,
         invoiceLineId: invoiceLineId ?? this.invoiceLineId,
@@ -187,5 +217,12 @@ class CheckListItem extends Entity<CheckListItem> {
 
   @override
   String toString() =>
-      '''id: $id description: $description qty: $quantity cost: $unitCost completed: $completed billed: $billed dimensions: $dimension1 x $dimension2 x $dimension3 $measurementType ($units) url: $url supplier: $supplierId''';
+      '''id: $id description: $description qty: $estimatedMaterialQuantity cost: $estimatedMaterialCost completed: $completed billed: $billed dimensions: $dimension1 x $dimension2 x $dimension3 $measurementType ($units) url: $url supplier: $supplierId''';
+}
+
+class Percentage {
+  Percentage(int percentage) : _percentage = Fixed.fromInt(percentage);
+  final Fixed _percentage;
+
+  Fixed get percentage => _percentage;
 }

@@ -66,8 +66,11 @@ class _CheckListItemListScreenState<P extends Entity<P>>
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                HMBMoney(label: 'Cost', amount: checklistitem.unitCost),
-                HMBFixed(label: 'Quantity', amount: checklistitem.quantity),
+                HMBMoney(
+                    label: 'Cost', amount: checklistitem.estimatedMaterialCost),
+                HMBFixed(
+                    label: 'Quantity',
+                    amount: checklistitem.estimatedMaterialQuantity),
                 HMBText(checklistitem.dimensions),
                 if (checklistitem.completed)
                   const Text(
@@ -113,11 +116,13 @@ class _CheckListItemListScreenState<P extends Entity<P>>
   Future<void> _markAsCompleted(
       BuildContext context, CheckListItem item) async {
     final costController = TextEditingController()
-      ..text = item.unitCost.toString();
+      ..text = item.estimatedMaterialCost.toString();
 
     final quantityController = TextEditingController()
-      ..text =
-          (item.quantity == Fixed.zero ? Fixed.one : item.quantity).toString();
+      ..text = (item.estimatedMaterialQuantity == Fixed.zero
+              ? Fixed.one
+              : item.estimatedMaterialQuantity)
+          .toString();
 
     final confirmed = await showDialog<bool>(
       context: context,

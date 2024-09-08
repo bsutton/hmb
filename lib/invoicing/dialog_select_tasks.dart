@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:money2/money2.dart';
 
-import '../dao/dao_checklist_item.dart';
 import '../dao/dao_task.dart';
-import '../dao/dao_time_entry.dart';
 import '../entity/job.dart';
-import '../entity/task.dart';
-import '../util/money_ex.dart';
 
 /// show the user the set of tasks for the passed Job
 /// and allow them to select which tasks they want to
@@ -38,53 +33,16 @@ class DialogTaskSelection extends StatefulWidget {
 }
 
 class _DialogTaskSelectionState extends State<DialogTaskSelection> {
-  late Future<List<TaskCost>> _tasks;
+  late Future<List<TaskEstimates>> _tasks;
   final Map<int, bool> _selectedTasks = {};
   bool _selectAll = true;
 
   @override
   void initState() {
     super.initState();
+    // Load tasks and their costs via the DAO
     // ignore: discarded_futures
-    _tasks = _loadTasks();
-  }
-
-  Future<List<TaskCost>> _loadTasks() async {
-    final tasks = await DaoTask().getTasksByJob(widget.job.id);
-    final billableTasks = <TaskCost>[];
-
-    for (final task in tasks) {
-      final taskCost = await _calculateTaskCost(task);
-      if (taskCost.cost > MoneyEx.zero) {
-        _selectedTasks[task.id] = true;
-        billableTasks.add(taskCost);
-      }
-      if (widget.includeEstimatedTasks) {
-        if (task.estimatedCost != null || task.effortInHours != null) {
-          billableTasks.add(taskCost);
-          _selectedTasks[task.id] = true;
-        }
-      }
-    }
-    return billableTasks;
-  }
-
-  Future<TaskCost> _calculateTaskCost(Task task) async {
-    var totalCost = Money.fromInt(0, isoCode: 'AUD');
-    final timeEntries = await DaoTimeEntry().getByTask(task.id);
-    final checkListItems = await DaoCheckListItem().getByTask(task);
-
-    for (final entry in timeEntries.where((entry) => !entry.billed)) {
-      final duration = entry.duration.inMinutes / 60;
-      totalCost +=
-          widget.job.hourlyRate!.multiplyByFixed(Fixed.fromNum(duration));
-    }
-
-    for (final item in checkListItems.where((item) => !item.billed)) {
-      totalCost += item.unitCost.multiplyByFixed(item.quantity);
-    }
-
-    return TaskCost(task, totalCost);
+    _tasks = DaoTask().getTaskCostsByJob(widget.job.id, widget.job.hourlyRate!);
   }
 
   void _toggleSelectAll(bool? value) {
@@ -110,7 +68,7 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
   @override
   Widget build(BuildContext context) => AlertDialog(
         title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
-        content: FutureBuilderEx<List<TaskCost>>(
+        content: FutureBuilderEx<List<TaskEstimates>>(
             future: _tasks,
             builder: (context, tasks) => SingleChildScrollView(
                   child: Column(
@@ -148,10 +106,4 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
           ),
         ],
       );
-}
-
-class TaskCost {
-  TaskCost(this.task, this.cost);
-  Task task;
-  Money cost;
 }

@@ -1,5 +1,3 @@
-import 'package:money2/money2.dart';
-
 import 'entity.dart';
 import 'job.dart';
 
@@ -9,8 +7,6 @@ class Task extends Entity<Task> {
       required this.jobId,
       required this.name,
       required this.description,
-      required this.effortInHours,
-      required this.estimatedCost,
       required this.taskStatusId,
       required super.createdDate,
       required super.modifiedDate,
@@ -24,9 +20,6 @@ class Task extends Entity<Task> {
         jobId: map['job_id'] as int,
         name: map['name'] as String,
         description: map['description'] as String,
-        effortInHours: Fixed.fromInt(map['effort_in_hours'] as int),
-        estimatedCost:
-            Money.fromInt(map['estimated_cost'] as int, isoCode: 'AUD'),
         taskStatusId: map['task_status_id'] as int,
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
@@ -40,8 +33,6 @@ class Task extends Entity<Task> {
       {required this.jobId,
       required this.name,
       required this.description,
-      required this.effortInHours,
-      required this.estimatedCost,
       required this.taskStatusId,
       this.billingType =
           BillingType.timeAndMaterial // New field for BillingType
@@ -53,8 +44,6 @@ class Task extends Entity<Task> {
       required this.jobId,
       required this.name,
       required this.description,
-      required this.effortInHours,
-      required this.estimatedCost,
       required this.taskStatusId,
       this.billingType =
           BillingType.timeAndMaterial // New field for BillingType
@@ -64,8 +53,6 @@ class Task extends Entity<Task> {
   int jobId;
   String name;
   String description;
-  Fixed? effortInHours;
-  Money? estimatedCost;
   int taskStatusId;
   BillingType billingType; // New field for BillingType
 
@@ -75,11 +62,6 @@ class Task extends Entity<Task> {
         'job_id': jobId,
         'name': name,
         'description': description,
-        'effort_in_hours': Fixed.copyWith(effortInHours ?? Fixed.zero, scale: 2)
-            .minorUnits
-            .toInt(),
-        'estimated_cost':
-            estimatedCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'task_status_id': taskStatusId,
         'billing_type': billingType.name, // New field for BillingType
         'createdDate': createdDate.toIso8601String(),

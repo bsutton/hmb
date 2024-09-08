@@ -4,13 +4,14 @@ import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../entity/check_list_item.dart';
+import '../entity/job.dart';
 import '../entity/task.dart';
-import '../util/fixed_ex.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_checklist.dart';
+import 'dao_checklist_item.dart';
+import 'dao_job.dart';
 import 'dao_photo.dart';
-import 'dao_task_status.dart';
 import 'dao_time_entry.dart';
 
 class DaoTask extends Dao<Task> {
@@ -36,17 +37,18 @@ class DaoTask extends Dao<Task> {
   Future<TaskStatistics> getTaskStatistics(Task task) async {
     var totalEffort = Fixed.zero;
     var completedEffort = Fixed.zero;
-    var totalCost = MoneyEx.zero;
+    final totalCost = MoneyEx.zero;
     var earnedCost = MoneyEx.zero;
 
-    final status = await DaoTaskStatus().getById(task.taskStatusId);
+    final hourlyRate = DaoTask().getHourlyRate(task);
 
-    if (status?.isComplete() ?? false) {
-      completedEffort += task.effortInHours ?? FixedEx.zero;
-      earnedCost += task.estimatedCost ?? MoneyEx.zero;
-    }
-    totalEffort += task.effortInHours ?? FixedEx.zero;
-    totalCost += task.estimatedCost ?? MoneyEx.zero;
+    // Get task cost and effort using the new getTaskCost method
+    final taskCost = await getTaskEstimates(task, hourlyRate);
+
+    // Total effort and cost are retrieved directly from the taskCost
+    totalEffort = taskCost.effortInHours;
+    completedEffort += taskCost.effortInHours;
+    earnedCost += taskCost.earnedCost;
 
     final timeEntries = await DaoTimeEntry().getByTask(task.id);
 
@@ -95,6 +97,87 @@ where cli.id =?
     }
   }
 
+  Future<TaskEstimates> getTaskEstimates(Task task, Money hourlyRate) async {
+    var totalCost = MoneyEx.zero;
+    var totalEffortInHours = Fixed.zero;
+    var completedEffort = Fixed.zero;
+    var earnedCost = MoneyEx.zero;
+
+    // Get checklist items for the task
+    final checkListItems = await DaoCheckListItem().getByTask(task.id);
+
+    for (final item in checkListItems) {
+      if (item.itemTypeId == 5) {
+        // Action type checklist item (effort)
+        totalEffortInHours += item.estimatedLabour;
+        if (item.completed) {
+          completedEffort += item.estimatedLabour; // Sum up completed effort
+          earnedCost += item.estimatedMaterialCost.multiplyByFixed(
+              item.estimatedMaterialQuantity); // Sum up earned cost
+        }
+      } else if (item.itemTypeId == 1 || item.itemTypeId == 3) {
+        // Materials and tools to be purchased
+        totalCost += item.estimatedMaterialCost
+            .multiplyByFixed(item.estimatedMaterialQuantity);
+        if (item.completed) {
+          earnedCost += item.estimatedMaterialCost.multiplyByFixed(item
+              .estimatedMaterialQuantity); // Earned cost for completed items
+        }
+      }
+    }
+
+    // Calculate time entries cost
+    final timeEntries = await DaoTimeEntry().getByTask(task.id);
+    for (final entry in timeEntries.where((entry) => !entry.billed)) {
+      final duration = entry.duration.inMinutes / 60;
+      totalCost += hourlyRate.multiplyByFixed(Fixed.fromNum(duration));
+    }
+
+    return TaskEstimates(
+        task: task,
+        cost: totalCost,
+        effortInHours: totalEffortInHours,
+        completedEffort: completedEffort,
+        earnedCost: earnedCost);
+  }
+
+  /// Returns a list of Task with their associated costs.
+  Future<List<TaskEstimates>> getTaskCostsByJob(
+      int jobId, Money hourlyRate) async {
+    final tasks = await getTasksByJob(jobId);
+    final taskCosts = <TaskEstimates>[];
+
+    for (final task in tasks) {
+      // Use the new getTaskCost method which now includes effortInHours
+      final taskCost = await getTaskEstimates(task, hourlyRate);
+      taskCosts.add(taskCost);
+    }
+
+    return taskCosts;
+  }
+
+  Future<Money> getTimeAndMaterialEarnings(Task task, Money hourlyRate) async {
+    assert(task.billingType == BillingType.timeAndMaterial,
+        'Can only be called for tasks billed by TimeAndMaterials');
+    var totalCost = MoneyEx.zero;
+
+    // Get all time entries for the task
+    final timeEntries = await DaoTimeEntry().getByTask(task.id);
+    for (final entry in timeEntries.where((entry) => !entry.billed)) {
+      final duration = entry.duration.inMinutes / 60;
+      totalCost += hourlyRate.multiplyByFixed(Fixed.fromNum(duration));
+    }
+
+    // Get all checklist items for the task
+    final checkListItems = await DaoCheckListItem().getByTask(task.id);
+    for (final item in checkListItems.where((item) => !item.billed)) {
+      totalCost += item.estimatedMaterialCost
+          .multiplyByFixed(item.estimatedMaterialQuantity);
+    }
+
+    return totalCost;
+  }
+
   @override
   JuneStateCreator get juneRefresher => TaskState.new;
 
@@ -116,6 +199,9 @@ where cli.id =?
       whereArgs: [id],
     );
   }
+
+  Future<Money> getHourlyRate(Task task) async =>
+      await DaoJob().getHourlyRate(task.jobId);
 }
 
 /// Used to notify the UI that the time entry has changed.
@@ -137,4 +223,20 @@ class TaskStatistics {
 
   /// sum of TimeEntry's for this task.
   Duration trackedEffort;
+}
+
+class TaskEstimates {
+  TaskEstimates({
+    required this.task,
+    required this.cost,
+    required this.effortInHours,
+    required this.completedEffort,
+    required this.earnedCost,
+  });
+
+  Task task;
+  Money cost;
+  Fixed effortInHours; // Total effort for the task
+  Fixed completedEffort; // Effort from completed checklist items
+  Money earnedCost; // Cost from completed checklist items
 }

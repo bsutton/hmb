@@ -66,12 +66,13 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     super.initState();
     _descriptionController =
         TextEditingController(text: widget.checkListItem?.description);
-    _costController =
-        TextEditingController(text: widget.checkListItem?.unitCost.toString());
+    _costController = TextEditingController(
+        text: widget.checkListItem?.estimatedMaterialCost.toString());
     _quantityController = TextEditingController(
-        text: (widget.checkListItem?.quantity ?? Fixed.one).toString());
+        text: (widget.checkListItem?.estimatedMaterialQuantity ?? Fixed.one)
+            .toString());
     _effortInHoursController = TextEditingController(
-        text: widget.checkListItem?.effortInHours.toString());
+        text: widget.checkListItem?.estimatedLabour.toString());
 
     _dimension1Controller = TextEditingController(
         text: widget.checkListItem?.dimension1.toString());
@@ -204,9 +205,9 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         description: _descriptionController.text,
         itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
         billed: false,
-        unitCost: MoneyEx.tryParse(_costController.text),
-        quantity: FixedEx.tryParse(_quantityController.text),
-        effortInHours: FixedEx.tryParse(_effortInHoursController.text),
+        estimatedMaterialCost: MoneyEx.tryParse(_costController.text),
+        estimatedMaterialQuantity: FixedEx.tryParse(_quantityController.text),
+        estimatedLabour: FixedEx.tryParse(_effortInHoursController.text),
         completed: checkListItem.completed,
         measurementType:
             June.getState(SelectedMeasurementType.new).selectedOrDefault,
@@ -223,9 +224,9 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         checkListId: widget.parent.id,
         description: _descriptionController.text,
         itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
-        unitCost: MoneyEx.tryParse(_costController.text),
-        quantity: FixedEx.tryParse(_quantityController.text),
-        effortInHours: FixedEx.tryParse(_effortInHoursController.text),
+        estimatedMaterialCost: MoneyEx.tryParse(_costController.text),
+        estimatedMaterialQuantity: FixedEx.tryParse(_quantityController.text),
+        estimatedLabour: FixedEx.tryParse(_effortInHoursController.text),
         measurementType:
             June.getState(SelectedMeasurementType.new).selectedOrDefault,
         dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,

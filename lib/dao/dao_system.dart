@@ -1,4 +1,5 @@
 import 'package:june/june.dart';
+import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../entity/system.dart';
@@ -16,6 +17,12 @@ class DaoSystem extends Dao<System> {
   String get tableName => 'system';
   @override
   JuneStateCreator get juneRefresher => SystemState.new;
+
+  Future<Money> getHourlyRate() async {
+    final system = await get();
+
+    return system??.defaultHourlyRate ?? Money.parse('100', isoCode: 'AUD');
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

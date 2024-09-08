@@ -5,12 +5,12 @@ import 'package:strings/strings.dart';
 
 import '../entity/customer.dart';
 import '../entity/job.dart';
-import '../util/fixed_ex.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_checklist_item.dart';
 import 'dao_invoice.dart';
 import 'dao_quote.dart';
+import 'dao_system.dart';
 import 'dao_task.dart';
 import 'dao_task_status.dart';
 import 'dao_time_entry.dart';
@@ -135,16 +135,31 @@ where t.id =?
     var workedHours = Fixed.fromNum(0, scale: 2);
 
     for (final task in tasks) {
+      // Fetch task status to check if it's completed
       final status = await DaoTaskStatus().getById(task.taskStatusId);
 
+      // Fetch checklist items related to the task
+      final checkListItems = await DaoCheckListItem().getByTask(task);
+
+      // Calculate effort and cost from checklist items
+      for (final item in checkListItems) {
+        totalEffort += item.estimatedLabour;
+        totalCost += item.estimatedMaterialCost
+            .multiplyByFixed(item.estimatedMaterialQuantity);
+
+        // If the task is completed, add to completed effort and earned cost
+        if ((status?.isComplete() ?? false) && item.completed) {
+          completedEffort += item.estimatedLabour;
+          earnedCost += item.estimatedMaterialCost
+              .multiplyByFixed(item.estimatedMaterialQuantity);
+        }
+      }
+
       if (status?.isComplete() ?? false) {
-        completedEffort += task.effortInHours ?? FixedEx.zero;
-        earnedCost += task.estimatedCost ?? MoneyEx.zero;
         completedTasks++;
       }
-      totalEffort += task.effortInHours ?? FixedEx.zero;
-      totalCost += task.estimatedCost ?? MoneyEx.zero;
 
+      // Calculate worked hours from time entries
       final timeEntries = await DaoTimeEntry().getByTask(task.id);
       for (final timeEntry in timeEntries) {
         workedHours +=
@@ -206,11 +221,21 @@ where c.id =?
     }
     final tasks = await DaoTask().getTasksByJob(job.id);
     for (final task in tasks) {
-      if (task.effortInHours != null || task.estimatedCost != null) {
-        return true;
+      final items = await DaoCheckListItem().getByTask(task.id);
+
+      for (final item in items) {
+        if (item.estimatedLabour != null || item.estimatedCost != null) {
+          return true;
+        }
       }
     }
     return false;
+  }
+
+  Future<Money> getHourlyRate(int jobId) async {
+    final job = await getById(jobId);
+
+    return job?.hourlyRate ?? DaoSystem().getHourlyRate();
   }
 }
 

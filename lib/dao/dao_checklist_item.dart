@@ -68,8 +68,8 @@ where jo.id =?
   Future<void> markAsCompleted(
       CheckListItem item, Money unitCost, Fixed quantity) async {
     item
-      ..unitCost = unitCost
-      ..quantity = quantity
+      ..estimatedMaterialCost = unitCost
+      ..estimatedMaterialQuantity = quantity
       ..completed = true;
 
     await update(item);

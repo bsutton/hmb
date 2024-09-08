@@ -105,7 +105,7 @@ class DaoQuote extends Dao<Quote> {
 
       if (!MoneyEx.isZeroOrNull(task.estimatedCost)) {
         /// Cost based billing
-        final lineTotal = task.estimatedCost!;
+        final lineTotal = task.estimatedCost;
 
         if (!lineTotal.isZero) {
           quoteLine = QuoteLine.forInsert(
@@ -144,15 +144,16 @@ class DaoQuote extends Dao<Quote> {
       /// Materials based billing
       final checkListItems = await DaoCheckListItem().getByTask(task);
       for (final item in checkListItems.where((item) => !item.billed)) {
-        final lineTotal = item.unitCost.multiplyByFixed(item.quantity);
+        final lineTotal = item.estimatedMaterialCost
+            .multiplyByFixed(item.estimatedMaterialQuantity);
         quoteLineGroup ??= await _createQuoteLineGroup(task, quoteId);
 
         final quoteLine = QuoteLine.forInsert(
           quoteId: quoteId,
           quoteLineGroupId: quoteLineGroup.id,
           description: 'Material: ${item.description}',
-          quantity: item.quantity,
-          unitPrice: item.unitCost,
+          quantity: item.estimatedMaterialQuantity,
+          unitPrice: item.estimatedMaterialCost,
           lineTotal: lineTotal,
         );
 

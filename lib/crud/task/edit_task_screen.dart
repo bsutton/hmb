@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
+import 'package:money2/money2.dart';
 
 import '../../dao/dao_checklist.dart';
+import '../../dao/dao_checklist_item.dart';
 import '../../dao/dao_task.dart';
 import '../../dao/dao_task_status.dart';
 import '../../dao/join_adaptors/join_adaptor_check_list_item.dart';
@@ -13,12 +15,12 @@ import '../../entity/check_list.dart';
 import '../../entity/job.dart';
 import '../../entity/task.dart';
 import '../../entity/task_status.dart';
-import '../../util/fixed_ex.dart';
 import '../../util/money_ex.dart';
 import '../../util/platform_ex.dart';
 import '../../widgets/hmb_crud_checklist_item.dart';
 import '../../widgets/hmb_crud_time_entry.dart';
 import '../../widgets/hmb_droplist.dart';
+import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_area.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../base_nested/edit_nested_screen.dart';
@@ -44,17 +46,15 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     implements NestedEntityState<Task> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
-  late TextEditingController _estimatedCostController;
-  late TextEditingController _effortInHoursController;
   late PhotoController _photoController;
   late FocusNode _summaryFocusNode;
   late FocusNode _descriptionFocusNode;
-  late FocusNode _costFocusNode;
-  late FocusNode _estimatedCostFocusNode;
-  late FocusNode _effortInHoursFocusNode;
-  late FocusNode _itemTypeIdFocusNode;
 
   BillingType _selectedBillingType = BillingType.timeAndMaterial;
+
+  Fixed _totalEffortInHours = Fixed.zero;
+  Money _totalMaterialsCost = MoneyEx.zero;
+  Money _totalToolsCost = MoneyEx.zero;
 
   @override
   void initState() {
@@ -63,24 +63,16 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _nameController = TextEditingController(text: widget.task?.name);
     _descriptionController =
         TextEditingController(text: widget.task?.description);
-    _estimatedCostController =
-        TextEditingController(text: widget.task?.estimatedCost.toString());
-    _effortInHoursController =
-        TextEditingController(text: widget.task?.effortInHours.toString());
 
     _photoController = PhotoController(task: widget.task);
 
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
-    _costFocusNode = FocusNode();
-    _estimatedCostFocusNode = FocusNode();
-    _effortInHoursFocusNode = FocusNode();
-    _itemTypeIdFocusNode = FocusNode();
 
     _selectedBillingType = widget.task?.billingType ?? widget.job.billingType;
 
-    final initialTaskStatusId = widget.task?.taskStatusId ?? 1;
-    June.getState(SelectedTaskStatus.new).taskStatusId = initialTaskStatusId;
+    // ignore: discarded_futures
+    _calculateChecklistSummary(); // Calculate the effort/cost based on checklist items
 
     if (isNotMobile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -94,15 +86,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     super.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
-    _estimatedCostController.dispose();
-    _effortInHoursController.dispose();
     _photoController.dispose();
     _summaryFocusNode.dispose();
     _descriptionFocusNode.dispose();
-    _costFocusNode.dispose();
-    _estimatedCostFocusNode.dispose();
-    _effortInHoursFocusNode.dispose();
-    _itemTypeIdFocusNode.dispose();
   }
 
   @override
@@ -130,27 +116,19 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               focusNode: _descriptionFocusNode,
               labelText: 'Description',
             ),
-            HMBTextField(
-              controller: _estimatedCostController,
-              focusNode: _estimatedCostFocusNode,
-              labelText: 'Estimated Cost',
-              keyboardType: TextInputType.number,
-            ),
-            HMBTextField(
-              controller: _effortInHoursController,
-              focusNode: _effortInHoursFocusNode,
-              labelText: 'Effort (decimal hours)',
-              keyboardType: TextInputType.number,
-            ),
-            _chooseBillingType(), // Add this line
+            _chooseBillingType(),
+
+            // Display the summary based on billing type
+            if (_selectedBillingType == BillingType.timeAndMaterial)
+              _buildEffortSummary(), // Display effort summary
+            if (_selectedBillingType == BillingType.fixedPrice)
+              _buildCostSummary(), // Display cost summary
 
             _buildCheckList(task),
-
             HBMCrudTimeEntry(
               parentTitle: 'Task',
               parent: Parent(task),
             ),
-
             PhotoCrud(controller: _photoController),
           ],
         ),
@@ -162,8 +140,50 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         initialItem: () async => _selectedBillingType,
         onChanged: (billingType) => setState(() {
           _selectedBillingType = billingType!;
+          // ignore: lines_longer_than_80_chars, discarded_futures
+          _calculateChecklistSummary(); // Recalculate the summary when billing type changes
         }),
         format: (value) => value.display,
+      );
+
+  // Calculate the checklist summary for effort or cost
+  Future<void> _calculateChecklistSummary() async {
+    final checkListItems = await DaoCheckListItem().getByTask(widget.task!.id);
+    _totalEffortInHours = Fixed.zero;
+    _totalMaterialsCost = MoneyEx.zero;
+    _totalToolsCost = MoneyEx.zero;
+
+    for (final item in checkListItems) {
+      switch (item.itemTypeId) {
+        case 5: // Action (Effort)
+          _totalEffortInHours += item.estimatedLabour;
+        case 1: // Materials - buy
+          _totalMaterialsCost += item.estimatedMaterialCost
+              .multiplyByFixed(item.estimatedMaterialQuantity);
+        case 3: // Tools - buy
+          _totalToolsCost += item.estimatedMaterialCost
+              .multiplyByFixed(item.estimatedMaterialQuantity);
+      }
+    }
+
+    setState(() {}); // Update the UI with the calculated summary
+  }
+
+  // Build the summary for effort (time and materials billing)
+  Widget _buildEffortSummary() => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          HMBText('Total Effort: $_totalEffortInHours hours', bold: true),
+        ],
+      );
+
+  // Build the summary for cost (fixed price billing)
+  Widget _buildCostSummary() => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          HMBText('Total Materials Cost: $_totalMaterialsCost'),
+          HMBText('Total Tools Cost: $_totalToolsCost'),
+        ],
       );
 
   FutureBuilderEx<CheckList?> _buildCheckList(Task? task) =>
@@ -213,10 +233,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       jobId: widget.job.id,
       name: _nameController.text,
       description: _descriptionController.text,
-      estimatedCost: MoneyEx.tryParse(_estimatedCostController.text),
-      effortInHours: FixedEx.tryParse(_effortInHoursController.text),
       taskStatusId: June.getState(SelectedTaskStatus.new).taskStatusId!,
-      billingType: _selectedBillingType, // Add this line
+      billingType: _selectedBillingType, // Retain the selected billing type
     );
   }
 
@@ -225,10 +243,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         jobId: widget.job.id,
         name: _nameController.text,
         description: _descriptionController.text,
-        estimatedCost: MoneyEx.tryParse(_estimatedCostController.text),
-        effortInHours: FixedEx.tryParse(_effortInHoursController.text),
         taskStatusId: June.getState(SelectedTaskStatus.new).taskStatusId!,
-        billingType: _selectedBillingType, // Add this line
+        billingType: _selectedBillingType, // Retain the selected billing type
       );
 
   @override

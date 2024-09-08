@@ -188,11 +188,13 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FutureBuilderEx(
+              // ignore: discarded_futures
               future: DaoJob().getById(widget.task.jobId),
               builder: (context, job) => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       FutureBuilderEx(
+                          // ignore: discarded_futures
                           future: DaoCustomer().getById(job!.customerId),
                           builder: (context, customer) => Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
