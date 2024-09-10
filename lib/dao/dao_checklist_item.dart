@@ -91,10 +91,12 @@ where cli.completed = 0
     final db = getDb();
 
     await db.rawDelete('''
-delete from check_list_item cli
-join check_list cl
-  on cl.id = cli.check_list_id
-where cl.id =? 
+
+DELETE FROM check_list_item
+WHERE check_list_id IN (
+  SELECT cl.id FROM check_list cl
+  WHERE cl.id = ?
+)
 ''', [checklist.id]);
   }
 
