@@ -52,6 +52,8 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   late TextEditingController _costController;
   late TextEditingController _quantityController;
   late TextEditingController _effortInHoursController;
+  late TextEditingController _chargeController;
+  late TextEditingController _marginController;
   late TextEditingController _dimension1Controller;
   late TextEditingController _dimension2Controller;
   late TextEditingController _dimension3Controller;
@@ -204,11 +206,13 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         checkListId: checkListItem.checkListId,
         description: _descriptionController.text,
         itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
-        billed: false,
         estimatedMaterialCost: MoneyEx.tryParse(_costController.text),
         estimatedMaterialQuantity: FixedEx.tryParse(_quantityController.text),
         estimatedLabour: FixedEx.tryParse(_effortInHoursController.text),
+        charge: MoneyEx.tryParse(_chargeController.text),
+        margin: FixedEx.tryParse(_marginController.text),
         completed: checkListItem.completed,
+        billed: false,
         measurementType:
             June.getState(SelectedMeasurementType.new).selectedOrDefault,
         dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
@@ -227,6 +231,9 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         estimatedMaterialCost: MoneyEx.tryParse(_costController.text),
         estimatedMaterialQuantity: FixedEx.tryParse(_quantityController.text),
         estimatedLabour: FixedEx.tryParse(_effortInHoursController.text),
+        charge: MoneyEx.tryParse(_chargeController.text),
+        margin: FixedEx.tryParse(_marginController.text),
+
         measurementType:
             June.getState(SelectedMeasurementType.new).selectedOrDefault,
         dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,

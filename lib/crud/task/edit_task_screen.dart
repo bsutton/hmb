@@ -155,14 +155,14 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
     for (final item in checkListItems) {
       switch (item.itemTypeId) {
-        case 5: // Action (Effort)
-          _totalEffortInHours += item.estimatedLabour;
+        case 5: // Labour (Effort)
+          _totalEffortInHours += item.estimatedLabour!;
         case 1: // Materials - buy
-          _totalMaterialsCost += item.estimatedMaterialCost
-              .multiplyByFixed(item.estimatedMaterialQuantity);
+          _totalMaterialsCost += item.estimatedMaterialCost!
+              .multiplyByFixed(item.estimatedMaterialQuantity!);
         case 3: // Tools - buy
-          _totalToolsCost += item.estimatedMaterialCost
-              .multiplyByFixed(item.estimatedMaterialQuantity);
+          _totalToolsCost += item.estimatedMaterialCost!
+              .multiplyByFixed(item.estimatedMaterialQuantity!);
       }
     }
 

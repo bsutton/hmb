@@ -21,7 +21,7 @@ class DaoSystem extends Dao<System> {
   Future<Money> getHourlyRate() async {
     final system = await get();
 
-    return system??.defaultHourlyRate ?? Money.parse('100', isoCode: 'AUD');
+    return system?.defaultHourlyRate ?? Money.parse('100', isoCode: 'AUD');
   }
 }
 

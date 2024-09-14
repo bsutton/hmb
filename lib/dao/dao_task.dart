@@ -40,7 +40,7 @@ class DaoTask extends Dao<Task> {
     final totalCost = MoneyEx.zero;
     var earnedCost = MoneyEx.zero;
 
-    final hourlyRate = DaoTask().getHourlyRate(task);
+    final hourlyRate = await DaoTask().getHourlyRate(task);
 
     // Get task cost and effort using the new getTaskCost method
     final taskCost = await getTaskEstimates(task, hourlyRate);
@@ -109,19 +109,19 @@ where cli.id =?
     for (final item in checkListItems) {
       if (item.itemTypeId == 5) {
         // Action type checklist item (effort)
-        totalEffortInHours += item.estimatedLabour;
+        totalEffortInHours += item.estimatedLabour!;
         if (item.completed) {
-          completedEffort += item.estimatedLabour; // Sum up completed effort
-          earnedCost += item.estimatedMaterialCost.multiplyByFixed(
-              item.estimatedMaterialQuantity); // Sum up earned cost
+          completedEffort += item.estimatedLabour!; // Sum up completed effort
+          earnedCost += item.estimatedMaterialCost!.multiplyByFixed(
+              item.estimatedMaterialQuantity!); // Sum up earned cost
         }
       } else if (item.itemTypeId == 1 || item.itemTypeId == 3) {
         // Materials and tools to be purchased
-        totalCost += item.estimatedMaterialCost
-            .multiplyByFixed(item.estimatedMaterialQuantity);
+        totalCost += item.estimatedMaterialCost!
+            .multiplyByFixed(item.estimatedMaterialQuantity!);
         if (item.completed) {
-          earnedCost += item.estimatedMaterialCost.multiplyByFixed(item
-              .estimatedMaterialQuantity); // Earned cost for completed items
+          earnedCost += item.estimatedMaterialCost!.multiplyByFixed(item
+              .estimatedMaterialQuantity!); // Earned cost for completed items
         }
       }
     }
@@ -171,8 +171,8 @@ where cli.id =?
     // Get all checklist items for the task
     final checkListItems = await DaoCheckListItem().getByTask(task.id);
     for (final item in checkListItems.where((item) => !item.billed)) {
-      totalCost += item.estimatedMaterialCost
-          .multiplyByFixed(item.estimatedMaterialQuantity);
+      totalCost += item.estimatedMaterialCost!
+          .multiplyByFixed(item.estimatedMaterialQuantity!);
     }
 
     return totalCost;
@@ -201,7 +201,7 @@ where cli.id =?
   }
 
   Future<Money> getHourlyRate(Task task) async =>
-      await DaoJob().getHourlyRate(task.jobId);
+      DaoJob().getHourlyRate(task.jobId);
 }
 
 /// Used to notify the UI that the time entry has changed.

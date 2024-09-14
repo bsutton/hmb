@@ -103,30 +103,35 @@ class DaoQuote extends Dao<Quote> {
 
       QuoteLine? quoteLine;
 
-      if (!MoneyEx.isZeroOrNull(task.estimatedCost)) {
+      final hourlyRate = await DaoTask().getHourlyRate(task);
+
+      final estimates = await DaoTask().getTaskEstimates(task, hourlyRate);
+
+      if (!MoneyEx.isZeroOrNull(estimates.cost)) {
         /// Cost based billing
-        final lineTotal = task.estimatedCost;
+        final lineTotal = estimates.cost;
 
         if (!lineTotal.isZero) {
           quoteLine = QuoteLine.forInsert(
             quoteId: quoteId,
             description: task.name,
             quantity: Fixed.fromInt(100),
-            unitPrice: task.estimatedCost!,
+            unitPrice: estimates.cost,
             lineTotal: lineTotal,
           );
 
           totalAmount += lineTotal;
         }
-      } else if (!FixedEx.isZeroOrNull(task.effortInHours)) {
+      } else if (!FixedEx.isZeroOrNull(estimates.effortInHours)) {
         /// Labour based billing using estimated effort
-        final lineTotal = job.hourlyRate!.multiplyByFixed(task.effortInHours!);
+        final lineTotal =
+            job.hourlyRate!.multiplyByFixed(estimates.effortInHours);
 
         if (!lineTotal.isZero) {
           quoteLine = QuoteLine.forInsert(
             quoteId: quoteId,
             description: task.name,
-            quantity: task.effortInHours!,
+            quantity: estimates.effortInHours,
             unitPrice: job.hourlyRate!,
             lineTotal: lineTotal,
           );
@@ -142,18 +147,18 @@ class DaoQuote extends Dao<Quote> {
       }
 
       /// Materials based billing
-      final checkListItems = await DaoCheckListItem().getByTask(task);
+      final checkListItems = await DaoCheckListItem().getByTask(task.id);
       for (final item in checkListItems.where((item) => !item.billed)) {
-        final lineTotal = item.estimatedMaterialCost
-            .multiplyByFixed(item.estimatedMaterialQuantity);
+        final lineTotal = item.estimatedMaterialCost!
+            .multiplyByFixed(item.estimatedMaterialQuantity!);
         quoteLineGroup ??= await _createQuoteLineGroup(task, quoteId);
 
         final quoteLine = QuoteLine.forInsert(
           quoteId: quoteId,
           quoteLineGroupId: quoteLineGroup.id,
           description: 'Material: ${item.description}',
-          quantity: item.estimatedMaterialQuantity,
-          unitPrice: item.estimatedMaterialCost,
+          quantity: item.estimatedMaterialQuantity!,
+          unitPrice: item.estimatedMaterialCost!,
           lineTotal: lineTotal,
         );
 

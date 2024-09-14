@@ -139,19 +139,19 @@ where t.id =?
       final status = await DaoTaskStatus().getById(task.taskStatusId);
 
       // Fetch checklist items related to the task
-      final checkListItems = await DaoCheckListItem().getByTask(task);
+      final checkListItems = await DaoCheckListItem().getByTask(task.id);
 
       // Calculate effort and cost from checklist items
       for (final item in checkListItems) {
-        totalEffort += item.estimatedLabour;
-        totalCost += item.estimatedMaterialCost
-            .multiplyByFixed(item.estimatedMaterialQuantity);
+        totalEffort += item.estimatedLabour!;
+        totalCost += item.estimatedMaterialCost!
+            .multiplyByFixed(item.estimatedMaterialQuantity!);
 
         // If the task is completed, add to completed effort and earned cost
         if ((status?.isComplete() ?? false) && item.completed) {
-          completedEffort += item.estimatedLabour;
-          earnedCost += item.estimatedMaterialCost
-              .multiplyByFixed(item.estimatedMaterialQuantity);
+          completedEffort += item.estimatedLabour!;
+          earnedCost += item.estimatedMaterialCost!
+              .multiplyByFixed(item.estimatedMaterialQuantity!);
         }
       }
 
@@ -202,7 +202,7 @@ where c.id =?
         return true;
       }
 
-      final checkListItems = await DaoCheckListItem().getByTask(task);
+      final checkListItems = await DaoCheckListItem().getByTask(task.id);
       final unbilledCheckListItems =
           checkListItems.where((item) => !item.billed && item.hasCost);
       if (unbilledCheckListItems.isNotEmpty) {
