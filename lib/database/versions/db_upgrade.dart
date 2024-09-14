@@ -87,8 +87,15 @@ Future<List<String>> parseSqlFile(String content) async {
   var inSingleQuote = false;
   var inDoubleQuote = false;
 
-  for (var i = 0; i < content.length; i++) {
-    final char = content[i];
+  // Split the content into lines and filter out lines starting with '--'
+  final lines =
+      content.split('\n').where((line) => !line.trim().startsWith('--'));
+
+  // Reconstruct the content from the filtered lines
+  final filteredContent = lines.join('\n');
+
+  for (var i = 0; i < filteredContent.length; i++) {
+    final char = filteredContent[i];
 
     if (char == "'" && !inDoubleQuote) {
       inSingleQuote = !inSingleQuote;
@@ -103,6 +110,7 @@ Future<List<String>> parseSqlFile(String content) async {
       buffer.write(char);
     }
   }
+
   if (buffer.isNotEmpty) {
     statements.add(buffer.toString().trim());
   }
