@@ -9,27 +9,24 @@ class HMBText extends StatelessWidget {
     this.verticalPadding = true,
     this.bold = false,
     Color? color,
-  }) {
-    this.color = color ??= Colors.grey[700];
-  }
+  }) : color = color ?? Colors.grey[700];
+
   final String labelText;
   final bool verticalPadding;
   final bool bold;
-  late final Color? color;
+  final Color? color;
 
   @override
-  Widget build(BuildContext context) => Row(children: [
-        Column(
-          children: [
-            if (verticalPadding) const SizedBox(height: 8),
-            Text(
-              labelText,
-              style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                  fontWeight: bold ? FontWeight.bold : FontWeight.normal),
-            ),
-          ],
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.only(top: verticalPadding ? 8.0 : 0.0),
+        child: Text(
+          labelText,
+          softWrap: true,
+          style: TextStyle(
+            fontSize: 14,
+            color: color,
+            fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
-      ]);
+      );
 }

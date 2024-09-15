@@ -60,8 +60,10 @@ class JobCard extends StatelessWidget {
                   HMBText(
                     'Scheduled: ${formatDate(job.startDate)}',
                   ),
-                  const SizedBox(height: 8),
-                   HMBText('Description:', bold: true),
+                  HMBText(
+                    'Description:',
+                    bold: true,
+                  ),
                   HMBText(
                     RichEditor.createParchment(job.description)
                         .toPlainText()
