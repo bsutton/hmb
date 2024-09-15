@@ -56,6 +56,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   Money _totalMaterialsCost = MoneyEx.zero;
   Money _totalToolsCost = MoneyEx.zero;
 
+  TaskStatus? _selectedTaskStatus; // Add this variable
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +79,21 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     if (isNotMobile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         FocusScope.of(context).requestFocus(_summaryFocusNode);
+      });
+    }
+
+    // ignore: discarded_futures
+    _loadInitialTaskStatus();
+  }
+
+  Future<void> _loadInitialTaskStatus() async {
+    final initialTaskStatusId = widget.task?.taskStatusId ??
+        June.getState(SelectedTaskStatus.new).taskStatusId;
+
+    if (initialTaskStatusId != null) {
+      final taskStatus = await DaoTaskStatus().getById(initialTaskStatusId);
+      setState(() {
+        _selectedTaskStatus = taskStatus;
       });
     }
   }
@@ -137,7 +154,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   Widget _chooseBillingType() => HMBDroplist<BillingType>(
         title: 'Billing Type',
         items: (filter) async => BillingType.values,
-        initialItem: () async => _selectedBillingType,
+        selectedItem: () async => _selectedBillingType,
         onChanged: (billingType) => setState(() {
           _selectedBillingType = billingType!;
           // ignore: lines_longer_than_80_chars, discarded_futures
@@ -205,14 +222,17 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               ));
 
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
-      title: 'Task Status',
-      initialItem: () async => DaoTaskStatus().getById(task?.taskStatusId ??
-          June.getState(SelectedTaskStatus.new).taskStatusId),
-      items: (filter) async => DaoTaskStatus().getByFilter(filter),
-      format: (item) => item.name,
-      onChanged: (item) {
-        June.getState(SelectedTaskStatus.new).taskStatusId = item?.id;
-      });
+        title: 'Task Status',
+        selectedItem:() async =>  _selectedTaskStatus,
+        items: (filter) async => DaoTaskStatus().getByFilter(filter),
+        format: (item) => item.name,
+        onChanged: (item) {
+          setState(() {
+            _selectedTaskStatus = item;
+            June.getState(SelectedTaskStatus.new).taskStatusId = item?.id;
+          });
+        },
+      );
 
   Future<void> _insertTask(Task task) async {
     await DaoTask().insert(task);

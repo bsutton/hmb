@@ -175,7 +175,7 @@ class _SystemContactInformationScreenState
                     } else {
                       return HMBDroplist<SimCard>(
                         title: 'Sim Card',
-                        initialItem: () async {
+                        selectedItem: () async {
                           final cards = await getSimCards();
                           if (cards.isNotEmpty) {
                             return cards[system.simCardNo ?? 0];

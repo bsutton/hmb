@@ -1,15 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import 'hmb_droplist_dialog.dart';
-import 'hmb_placeholder.dart';
 import 'labeled_container.dart';
 
 class HMBDroplist<T> extends FormField<T> {
   HMBDroplist({
-    required Future<T?> Function() initialItem,
+    required Future<T?> Function()
+        selectedItem, // Changed to a Future-returning function
     required Future<List<T>> Function(String? filter) items,
     required String Function(T) format,
-    required void Function(T?) onChanged, // Allow null to be passed
+    required void Function(T?) onChanged,
     required String title,
     super.onSaved,
     super.initialValue,
@@ -18,9 +20,8 @@ class HMBDroplist<T> extends FormField<T> {
   }) : super(
           autovalidateMode: AutovalidateMode.always,
           builder: (state) => _HMBDroplist<T>(
-            key: ValueKey(initialItem),
             state: state,
-            initialItem: initialItem,
+            selectedItemFuture: selectedItem, // Pass the Future function
             items: items,
             format: format,
             onChanged: onChanged,
@@ -34,27 +35,25 @@ class HMBDroplist<T> extends FormField<T> {
             return null;
           },
         );
-
-  static Widget placeHolder() => const HMBPlaceHolder(height: 30);
 }
 
 class _HMBDroplist<T> extends StatefulWidget {
   const _HMBDroplist({
     required this.state,
-    required this.initialItem,
+    required this.selectedItemFuture, // Accept the Future function
     required this.items,
     required this.format,
     required this.onChanged,
     required this.title,
     required this.required,
-    required super.key,
+    super.key,
   });
 
   final FormFieldState<T> state;
-  final Future<T?> Function() initialItem;
+  final Future<T?> Function() selectedItemFuture; // Future-returning function
   final Future<List<T>> Function(String? filter) items;
   final String Function(T) format;
-  final void Function(T?) onChanged; // Allow null to be passed
+  final void Function(T?) onChanged;
   final String title;
   final bool required;
 
@@ -74,16 +73,26 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
 
   Future<void> _loadSelectedItem() async {
     try {
-      _selectedItem = await widget.initialItem();
+      final selectedItem = await widget.selectedItemFuture();
       if (mounted) {
         setState(() {
+          _selectedItem = selectedItem;
           _loading = false;
         });
       }
       widget.state.didChange(_selectedItem);
     // ignore: avoid_catches_without_on_clauses
     } catch (e) {
-      print('Error loading item: $e');
+      print('Error loading selected item: $e');
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _HMBDroplist<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload selected item if the future function changes
+    if (oldWidget.selectedItemFuture != widget.selectedItemFuture) {
+      unawaited(_loadSelectedItem());
     }
   }
 
@@ -97,18 +106,16 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
               formatItem: widget.format,
               title: widget.title,
               selectedItem: _selectedItem,
-              allowClear: !widget.required, // Allow clearing if not required
+              allowClear: !widget.required,
             ),
           );
 
           if (selectedItem != null || !widget.required) {
-            if (mounted) {
-              setState(() {
-                _selectedItem = selectedItem;
-              });
-            }
-            widget.state.didChange(selectedItem);
-            widget.onChanged(selectedItem);
+            setState(() {
+              _selectedItem = selectedItem;
+            });
+            widget.state.didChange(_selectedItem);
+            widget.onChanged(_selectedItem);
           }
         },
         child: Column(
@@ -121,7 +128,11 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   if (_loading)
-                    const CircularProgressIndicator()
+                    const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   else
                     Text(
                       _selectedItem != null

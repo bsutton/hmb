@@ -160,7 +160,7 @@ class JobEditScreenState extends State<JobEditScreen>
   Widget _chooseBillingType() => HMBDroplist<BillingType>(
         title: 'Billing Type',
         items: (filter) async => BillingType.values,
-        initialItem: () async => _selectedBillingType,
+        selectedItem: () async => _selectedBillingType,
         onChanged: (billingType) => setState(() {
           _selectedBillingType = billingType!;
         }),
@@ -231,7 +231,7 @@ class JobEditScreenState extends State<JobEditScreen>
       title: 'Status',
       items: (filter) async =>
           DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
-      initialItem: () async => DaoJobStatus().getById(
+      selectedItem: () async => DaoJobStatus().getById(
           job?.jobStatusId ?? June.getState(SelectJobStatus.new).jobStatusId),
       onChanged: (status) =>
           June.getState(SelectJobStatus.new).jobStatusId = status?.id,

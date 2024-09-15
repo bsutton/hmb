@@ -116,7 +116,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
                           });
                         }),
                     HMBDroplist<CustomerType>(
-                      initialItem: () async => _selectedCustomerType,
+                      selectedItem: () async => _selectedCustomerType,
                       items: (filter) async => CustomerType.values,
                       title: 'Customer Type',
                       onChanged: (newValue) {

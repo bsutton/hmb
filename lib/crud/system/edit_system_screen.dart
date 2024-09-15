@@ -282,7 +282,7 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
                     } else {
                       return HMBDroplist<SimCard>(
                         title: 'Sim Card',
-                        initialItem: () async {
+                        selectedItem: () async {
                           final cards = await getSimCards();
                           if (cards.isNotEmpty) {
                             return cards[widget.system.simCardNo ?? 0];

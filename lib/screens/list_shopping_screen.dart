@@ -117,7 +117,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
                       required: false),
                   const SizedBox(height: 10),
                   HMBDroplist<Supplier>(
-                      initialItem: () async => _selectedSupplier,
+                      selectedItem: () async => _selectedSupplier,
                       items: (filter) async =>
                           DaoSupplier().getByFilter(filter),
                       format: (supplier) => supplier.name,

@@ -83,7 +83,7 @@ class _CheckListEditScreenState extends State<CheckListEditScreen>
                 controller: _descriptionController, labelText: 'Description'),
             if (widget.checkListType == null)
               HMBDroplist<CheckListType>(
-                  initialItem: () async =>
+                  selectedItem: () async =>
                       checklist?.listType ?? CheckListType.global,
                   title: 'Checklist Type',
                   items: (filter) async => Strings.isEmpty(filter)

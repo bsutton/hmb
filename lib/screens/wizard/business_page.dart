@@ -109,7 +109,7 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
                         ),
                         HMBDroplist<PreferredUnitSystem>(
                           title: 'Unit System',
-                          initialItem: () async => system.preferredUnitSystem,
+                          selectedItem: () async => system.preferredUnitSystem,
                           format: (unit) => unit == PreferredUnitSystem.metric
                               ? 'Metric'
                               : 'Imperial',

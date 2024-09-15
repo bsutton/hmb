@@ -225,7 +225,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
                   const SizedBox(height: 20),
                   HMBDroplist<LogoAspectRatio>(
                     title: 'Logo Aspect Ratio',
-                    initialItem: () async => _logoAspectRatio,
+                    selectedItem: () async => _logoAspectRatio,
                     items: (filter) async => LogoAspectRatio.values,
                     format: (logoType) => logoType.name,
                     onChanged: (value) {

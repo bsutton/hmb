@@ -60,7 +60,7 @@ class _DimensionWidgetState extends State<DimensionWidget> {
                   return Column(children: [
                     HMBDroplist<MeasurementType>(
                       title: 'Measurement Type',
-                      initialItem: () async =>
+                      selectedItem:() async => 
                           June.getState(SelectedMeasurementType.new).selected,
                       format: (type) => type.name,
                       items: (filter) async => MeasurementType.list,
@@ -82,7 +82,7 @@ class _DimensionWidgetState extends State<DimensionWidget> {
                     /// Units
                     HMBDroplist<Units>(
                         title: 'Units',
-                        initialItem: () async => selectedUnit,
+                        selectedItem: () async=> selectedUnit,
                         format: (unit) => unit.name,
                         items: (filter) async => getUnitsForMeasurementType(
                             June.getState(SelectedMeasurementType.new)
