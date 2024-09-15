@@ -250,4 +250,3 @@ typedef Percentage = Fixed;
 
 //   Fixed get percentage => _percentage;
 // }
-
