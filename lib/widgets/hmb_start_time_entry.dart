@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:hmb/dao/dao_job.dart';
 import 'package:june/june.dart';
 
+import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
 import '../dao/dao_time_entry.dart';
 import '../entity/task.dart';
@@ -270,6 +270,7 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
         task: widget.task!, startTime: startTime);
     if (newTimeEntry != null) {
       await DaoTimeEntry().insert(newTimeEntry);
+
       /// If we are running a time for a job then it must
       /// be the active job.
       await DaoJob().markActive(task.jobId);
