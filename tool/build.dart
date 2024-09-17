@@ -19,8 +19,11 @@ void main(List<String> args) {
         abbr: 'a',
         help:
             '''Update the list of assets - important to run for db upgrade scripts''')
-    ..addFlag('build', abbr: 'b', help: 'build the apk')
-    ..addFlag('install', abbr: 'i', help: 'install the apk')
+    ..addFlag('build',
+        abbr: 'b',
+        help: 'build the apk suitable for installing the app via USB')
+    ..addFlag('install',
+        abbr: 'i', help: 'install the apk to a device connected via USB')
     ..addFlag('release', abbr: 'r', help: '''
 Create a signed release appbundle suitable to upload to Google Play store.''');
 
