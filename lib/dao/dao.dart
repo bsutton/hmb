@@ -15,6 +15,9 @@ abstract class Dao<T extends Entity<T>> {
   /// Updating the passed in entity so that it has the assigned id.
   Future<int> insert(covariant T entity, [Transaction? transaction]) async {
     final db = getDb(transaction);
+    entity
+      ..createdDate = DateTime.now()
+      ..modifiedDate = DateTime.now();
     final id = await db.insert(tableName, entity.toMap()..remove('id'));
     entity.id = id;
 
@@ -63,6 +66,7 @@ abstract class Dao<T extends Entity<T>> {
 
   Future<int> update(covariant T entity, [Transaction? transaction]) async {
     final db = getDb(transaction);
+    entity.modifiedDate = DateTime.now();
     final id = await db.update(
       tableName,
       entity.toMap(),

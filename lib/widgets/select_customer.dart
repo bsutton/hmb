@@ -52,7 +52,7 @@ class SelectCustomerState extends State<SelectCustomer> {
           Expanded(
             child: HMBDroplist<Customer>(
               title: 'Customer',
-              initialItem: _getInitialCustomer,
+              selectedItem: _getInitialCustomer,
               onChanged: _onCustomerChanged,
               items: (filter) async => _getCustomers(filter),
               format: (customer) => customer.name,

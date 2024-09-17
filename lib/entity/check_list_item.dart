@@ -90,13 +90,16 @@ class CheckListItem extends Entity<CheckListItem> {
         invoiceLineId: map['invoice_line_id'] as int?,
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-        measurementType:
-            MeasurementType.fromName(map['measurement_type'] as String) ??
-                MeasurementType.defaultMeasurementType,
+        measurementType: MeasurementType.fromName(
+                map['measurement_type'] as String? ??
+                    MeasurementType.defaultMeasurementType.name) ??
+            MeasurementType.defaultMeasurementType,
         dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
         dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
         dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
-        units: Units.fromName(map['units'] as String) ?? Units.defaultUnits,
+        units: Units.fromName(
+                map['units'] as String? ?? Units.defaultUnits.name) ??
+            Units.defaultUnits,
         url: map['url'] as String? ?? '',
         supplierId: map['supplier_id'] as int?,
       );
@@ -250,4 +253,3 @@ typedef Percentage = Fixed;
 
 //   Fixed get percentage => _percentage;
 // }
-

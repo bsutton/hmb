@@ -180,7 +180,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
           CheckListItem? checkListItem) =>
       HMBDroplist<CheckListItemType>(
         title: 'Item Type',
-        initialItem: () async =>
+        selectedItem: () async =>
             DaoCheckListItemType().getById(checkListItem?.itemTypeId ?? 0),
         items: (filter) async => DaoCheckListItemType().getByFilter(filter),
         format: (checklistItemType) => checklistItemType.name,
@@ -191,7 +191,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   HMBDroplist<Supplier> _chooseSupplier(CheckListItem? checkListItem) =>
       HMBDroplist<Supplier>(
           title: 'Supplier',
-          initialItem: () async => _selectedSupplierId != null
+          selectedItem: () async => _selectedSupplierId != null
               ? DaoSupplier().getById(_selectedSupplierId)
               : null,
           items: (filter) async => DaoSupplier().getByFilter(filter),

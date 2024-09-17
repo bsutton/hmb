@@ -22,8 +22,8 @@ SELECT
     1,                                             -- Default quantity
     0,                                             -- Not completed
     0,                                             -- Not billed
-    NOW(),                                         -- Created Date
-    NOW()                                          -- Modified Date
+    CURRENT_TIMESTAMP,                             -- Created Date
+    CURRENT_TIMESTAMP                              -- Modified Date
 FROM task t
 JOIN task_check_list tcl ON t.id = tcl.task_id
 JOIN job j ON t.job_id = j.id
@@ -52,8 +52,8 @@ SELECT
     1,                                             -- Default quantity
     0,                                             -- Not completed
     0,                                             -- Not billed
-    NOW(),                                         -- Created Date
-    NOW()                                          -- Modified Date
+    CURRENT_TIMESTAMP,                             -- Created Date
+    CURRENT_TIMESTAMP                              -- Modified Date
 FROM task t
 JOIN task_check_list tcl ON t.id = tcl.task_id
 WHERE t.estimated_cost IS NOT NULL 

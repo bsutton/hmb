@@ -145,7 +145,7 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
                         const Text('Logo Type'),
                         HMBDroplist<LogoAspectRatio>(
                           title: 'Logo Aspect Ratio',
-                          initialItem: () async => _logoType,
+                          selectedItem: () async => _logoType,
                           items: (filter) async => LogoAspectRatio.values,
                           format: (logoType) => logoType.name,
                           onChanged: (value) {

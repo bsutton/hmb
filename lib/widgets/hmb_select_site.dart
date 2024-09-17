@@ -67,7 +67,7 @@ class HMBSelectSiteState extends State<HMBSelectSite> {
           Expanded(
             child: HMBDroplist<Site>(
               title: 'Site',
-              initialItem: _getInitialSite,
+              selectedItem: _getInitialSite,
               onChanged: _onSiteChanged,
               items: (filter) async => _getSites(filter),
               format: (site) => site.abbreviated(),

@@ -62,6 +62,23 @@ class DaoJob extends Dao<Job> {
     return data.isNotEmpty ? fromMap(data.first) : null;
   }
 
+  Future<void> markActive(int jobId) async {
+    final lastActive = await getLastActiveJob();
+    if (lastActive != null) {
+      if (lastActive.id != jobId) {
+        lastActive.lastActive = false;
+        await update(lastActive);
+      }
+    }
+    final job = await getById(jobId);
+
+    /// even if the job is active we want to update the last
+    /// modified date so it comes up first in the job list.
+    job?.lastActive = true;
+    job?.modifiedDate = DateTime.now();
+    await update(job!);
+  }
+
   /// search for jobs given a user supplied filter string.
   Future<List<Job>> getByFilter(String? filter) async {
     final db = getDb();

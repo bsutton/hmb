@@ -67,7 +67,7 @@ class HMBSelectContactState extends State<HMBSelectContact> {
           Expanded(
             child: HMBDroplist<Contact>(
               title: 'Contact',
-              initialItem: _getInitialContact,
+              selectedItem: _getInitialContact,
               onChanged: _onContactChanged,
               items: (filter) async => _getContacts(filter),
               format: (contact) => ' ${contact.firstName} ${contact.surname}',
