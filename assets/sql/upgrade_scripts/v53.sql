@@ -125,28 +125,31 @@ WHERE cli.description = 'Action for Estimated Cost';
 
 
 -- remove the old task columns
-
 -- Step 1: Rename the existing table
 ALTER TABLE task RENAME TO task_old;
 
 -- Step 2: Create the new task table without 'effort_in_hours' and 'estimated_cost' columns
 CREATE TABLE task (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  -- List other columns in the task table excluding 'effort_in_hours' and 'estimated_cost'
-  name TEXT NOT NULL,
-  description TEXT,
-  job_id INTEGER,
-  -- Add other necessary columns here
-  createdDate TEXT NOT NULL,
-  modifiedDate TEXT NOT NULL,
-  FOREIGN KEY (job_id) REFERENCES job(id)
+    id INTEGER PRIMARY KEY,
+    job_id INTEGER,
+    name TEXT,
+    description TEXT,
+    task_status_id INTEGER,
+    createdDate TEXT,
+    modifiedDate TEXT,
+    billing_type TEXT,
+    FOREIGN KEY (job_id) REFERENCES job(id),
+    FOREIGN KEY (task_status_id) REFERENCES task_status(id)
 );
 
 -- Step 3: Copy data from the old table to the new table
-INSERT INTO task (id, name, description, job_id, createdDate, modifiedDate)
-SELECT id, name, description, job_id, createdDate, modifiedDate
+INSERT INTO task (id, job_id, name, description, task_status_id, createdDate, modifiedDate, billing_type)
+SELECT id, job_id, name, description, task_status_id, createdDate, modifiedDate, billing_type
 FROM task_old;
 
 -- Step 4: Drop the old table
 DROP TABLE task_old;
+
+-- Step 5: Rename the new table to the original table name
+-- This step is actually unnecessary in this case, as the table has already been created with the desired name.
 
