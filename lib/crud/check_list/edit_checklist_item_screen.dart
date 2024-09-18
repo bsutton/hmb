@@ -29,7 +29,7 @@ class CheckListItemEditScreen<P extends Entity<P>> extends StatefulWidget {
   const CheckListItemEditScreen({
     required this.parent,
     required this.daoJoin,
-        required this.billingType, // Pass job type
+    required this.billingType, // Pass job type
     required this.hourlyRate,
     super.key,
     this.checkListItem,
@@ -38,7 +38,7 @@ class CheckListItemEditScreen<P extends Entity<P>> extends StatefulWidget {
   final DaoJoinAdaptor daoJoin;
   final P parent;
   final CheckListItem? checkListItem;
-    final BillingType billingType; // 'Fixed Price' or 'Time and Materials'
+  final BillingType billingType; // 'Fixed Price' or 'Time and Materials'
   final Money hourlyRate;
 
   @override
@@ -59,7 +59,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   late TextEditingController _descriptionController;
   late TextEditingController _estimatedMaterialUnitCostController;
   late TextEditingController _estimatedMaterialQuantityController;
-  late TextEditingController _esitmatedLabourHoursController;
+  late TextEditingController _estimatedLabourHoursController;
   late TextEditingController _estimatedLabourCostController;
   late TextEditingController _chargeController;
   late TextEditingController _marginController;
@@ -84,7 +84,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _estimatedMaterialQuantityController = TextEditingController(
         text: (widget.checkListItem?.estimatedMaterialQuantity ?? Fixed.one)
             .toString());
-    _esitmatedLabourHoursController = TextEditingController(
+    _estimatedLabourHoursController = TextEditingController(
         text: widget.checkListItem?.estimatedLabourHours.toString());
 
     _estimatedLabourCostController = TextEditingController(
@@ -119,7 +119,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _descriptionController.dispose();
     _estimatedMaterialUnitCostController.dispose();
     _estimatedMaterialQuantityController.dispose();
-    _esitmatedLabourHoursController.dispose();
+    _estimatedLabourHoursController.dispose();
     _estimatedLabourCostController.dispose();
     _marginController.dispose();
     _chargeController.dispose();
@@ -133,52 +133,53 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
-      // ignore: discarded_futures
-      future: DaoSystem().get(),
-      builder: (context, system) =>
-          NestedEntityEditScreen<CheckListItem, CheckList>(
-            entity: widget.checkListItem,
-            entityName: 'Check List Item',
-            dao: DaoCheckListItem(),
-            onInsert: (checkListItem) async =>
-                widget.daoJoin.insertForParent(checkListItem!, widget.parent),
-            entityState: this,
-            editor: (checklistItem) {
-              _initSelected(checklistItem, system);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  HMBTextField(
-                    controller: _descriptionController,
-                    focusNode: _descriptionFocusNode,
-                    autofocus: isNotMobile,
-                    labelText: 'Description',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter the description';
-                      }
-                      return null;
-                    },
-                  ),
-                  HMBTextField(
-                    controller: _urlController,
-                    labelText: 'Reference URL',
-                    keyboardType: TextInputType.url,
-                  ),
-                  _chooseItemType(checklistItem),
-                  _chooseSupplier(checklistItem),
-                  ..._buildFieldsBasedOnItemType(),
-                  _buildMarginAndChargeFields(),
-                  DimensionWidget(
-                    dimension1Controller: _dimension1Controller,
-                    dimension2Controller: _dimension2Controller,
-                    dimension3Controller: _dimension3Controller,
-                    checkListItem: checklistItem,
-                  ),
-                ],
-              );
-            },
-          ));
+        // ignore: discarded_futures
+        future: DaoSystem().get(),
+        builder: (context, system) =>
+            NestedEntityEditScreen<CheckListItem, CheckList>(
+          entity: widget.checkListItem,
+          entityName: 'Check List Item',
+          dao: DaoCheckListItem(),
+          onInsert: (checkListItem) async =>
+              widget.daoJoin.insertForParent(checkListItem!, widget.parent),
+          entityState: this,
+          editor: (checklistItem) {
+            _initSelected(checklistItem, system);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                HMBTextField(
+                  controller: _descriptionController,
+                  focusNode: _descriptionFocusNode,
+                  autofocus: isNotMobile,
+                  labelText: 'Description',
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the description';
+                    }
+                    return null;
+                  },
+                ),
+                HMBTextField(
+                  controller: _urlController,
+                  labelText: 'Reference URL',
+                  keyboardType: TextInputType.url,
+                ),
+                _chooseItemType(checklistItem),
+                _chooseSupplier(checklistItem),
+                ..._buildFieldsBasedOnItemType(),
+                _buildMarginAndChargeFields(),
+                DimensionWidget(
+                  dimension1Controller: _dimension1Controller,
+                  dimension2Controller: _dimension2Controller,
+                  dimension3Controller: _dimension3Controller,
+                  checkListItem: checklistItem,
+                ),
+              ],
+            );
+          },
+        ),
+      );
 
   HMBDroplist<CheckListItemType> _chooseItemType(
           CheckListItem? checkListItem) =>
@@ -232,10 +233,13 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         _buildLabourEntryModeSwitch(),
         if (_labourEntryMode == LabourEntryMode.hours)
           HMBTextField(
-            controller: _esitmatedLabourHoursController,
+            controller: _estimatedLabourHoursController,
             labelText: 'Estimated Hours',
             keyboardType: TextInputType.number,
-            onChanged: _calculateEstimatedCostFromHours,
+            onChanged: (value) {
+              _calculateEstimatedCostFromHours(value);
+              _calculateChargeFromMargin(_marginController.text);
+            },
           )
         else
           HMBTextField(
@@ -268,26 +272,22 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         ],
       );
 
-  void _calculateEstimatedCostFromHours(String? value) {
-    final estimatedHours = FixedEx.tryParse(value);
-    // Assuming a hypothetical hourly rate of 100
-    
-    final estimatedCost = widget.hourlyRate.multiplyByFixed(estimatedHours);
-    _estimatedMaterialUnitCostController.text = estimatedCost.toString();
-    _calculateChargeFromMargin(_marginController.text);
-  }
-
   List<Widget> _buildBuyFields() => [
         HMBTextField(
           controller: _estimatedMaterialUnitCostController,
-          labelText: 'Estimated Cost',
+          labelText: 'Estimated Unit Cost',
           keyboardType: TextInputType.number,
-          onChanged: _calculateChargeFromMargin,
+          onChanged: (value) {
+            _calculateChargeFromMargin(_marginController.text);
+          },
         ),
         HMBTextField(
           controller: _estimatedMaterialQuantityController,
           labelText: 'Quantity',
           keyboardType: TextInputType.number,
+          onChanged: (value) {
+            _calculateChargeFromMargin(_marginController.text);
+          },
         ),
       ];
 
@@ -321,13 +321,50 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         ],
       );
 
-  void _calculateChargeFromMargin(String? value) {
-    final margin = FixedEx.tryParse(value);
-    final estimatedCost =
-        MoneyEx.tryParse(_estimatedMaterialUnitCostController.text);
-    final charge =
-        estimatedCost.multiplyByFixed(Fixed.one + margin / Fixed.fromInt(100));
-    _chargeController.text = charge.toString();
+  void _calculateChargeFromMargin(String? marginValue) {
+    final margin = FixedEx.tryParse(marginValue).divide(100);
+    Money? estimatedCost;
+
+    // Determine the estimated cost based on item type
+    if (_selectedItemTypeId == 5) {
+      // Labour
+      if (_labourEntryMode == LabourEntryMode.hours) {
+        final estimatedHours =
+            FixedEx.tryParse(_estimatedLabourHoursController.text);
+        estimatedCost = widget.hourlyRate.multiplyByFixed(estimatedHours);
+      } else {
+        estimatedCost = MoneyEx.tryParse(_estimatedLabourCostController.text);
+      }
+    } else if (_selectedItemTypeId == 1 || _selectedItemTypeId == 3) {
+      // Materials - buy or Tools - buy
+      final unitCost =
+          MoneyEx.tryParse(_estimatedMaterialUnitCostController.text);
+
+      final quantity =
+          FixedEx.tryParse(_estimatedMaterialQuantityController.text);
+      estimatedCost = unitCost.multiplyByFixed(quantity);
+    } else if (_selectedItemTypeId == 2 || _selectedItemTypeId == 4) {
+      // Materials - stock or Tools - stock
+      final charge = MoneyEx.tryParse(_chargeController.text);
+      _chargeController.text = charge.toString();
+
+      // For stock items, we use the charge directly without applying the margin
+      return;
+    }
+
+    // Calculate the charge using the margin
+    if (estimatedCost != null) {
+      final charge = estimatedCost
+          .multiplyByFixed(Fixed.one + (margin / Fixed.fromInt(100)));
+      _chargeController.text = charge.toString();
+    }
+  }
+
+  void _calculateEstimatedCostFromHours(String? hoursValue) {
+    final estimatedHours = FixedEx.tryParse(hoursValue);
+    // Calculate the estimated cost using the hourly rate
+    final estimatedCost = widget.hourlyRate.multiplyByFixed(estimatedHours);
+    _estimatedLabourCostController.text = estimatedCost.toString();
   }
 
   @override
@@ -342,7 +379,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         estimatedMaterialQuantity:
             FixedEx.tryParse(_estimatedMaterialQuantityController.text),
         estimatedLabourHours:
-            FixedEx.tryParse(_esitmatedLabourHoursController.text),
+            FixedEx.tryParse(_estimatedLabourHoursController.text),
         estimatedLabourCost:
             MoneyEx.tryParse(_estimatedLabourCostController.text),
         charge: MoneyEx.tryParse(_chargeController.text),
@@ -372,7 +409,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         estimatedMaterialQuantity:
             FixedEx.tryParse(_estimatedMaterialQuantityController.text),
         estimatedLabourHours:
-            FixedEx.tryParse(_esitmatedLabourHoursController.text),
+            FixedEx.tryParse(_estimatedLabourHoursController.text),
         estimatedLabourCost:
             MoneyEx.tryParse(_estimatedLabourCostController.text),
         charge: MoneyEx.tryParse(_chargeController.text),
