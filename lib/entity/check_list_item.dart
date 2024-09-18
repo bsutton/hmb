@@ -5,6 +5,23 @@ import '../util/money_ex.dart';
 import '../util/units.dart';
 import 'entity.dart';
 
+enum LabourEntryMode {
+  hours('Hours'),
+  dollars('Dollars');
+
+  const LabourEntryMode(this._display);
+  final String _display;
+
+  static String getDisplay(LabourEntryMode mode) {
+    switch (mode) {
+      case LabourEntryMode.hours:
+        return LabourEntryMode.hours._display;
+      case LabourEntryMode.dollars:
+        return LabourEntryMode.dollars._display;
+    }
+  }
+}
+
 class CheckListItem extends Entity<CheckListItem> {
   CheckListItem({
     required super.id,
@@ -14,6 +31,7 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.estimatedMaterialCost,
     required this.estimatedLabour,
     required this.estimatedMaterialQuantity,
+    required this.estimatedCost,
     required this.charge,
     required this.margin,
     required this.completed,
@@ -37,6 +55,7 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.estimatedMaterialCost,
     required this.estimatedLabour,
     required this.estimatedMaterialQuantity,
+    required this.estimatedCost,
     required this.charge,
     required this.margin,
     required this.measurementType,
@@ -59,6 +78,7 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.estimatedMaterialCost,
     required this.estimatedLabour,
     required this.estimatedMaterialQuantity,
+    required this.estimatedCost,
     required this.margin,
     required this.charge,
     required this.completed,
@@ -83,6 +103,8 @@ class CheckListItem extends Entity<CheckListItem> {
         estimatedLabour: Fixed.fromInt(map['estimated_labour'] as int? ?? 0),
         estimatedMaterialQuantity:
             Fixed.fromInt(map['estimated_material_quantity'] as int? ?? 1),
+        estimatedCost:
+            Money.fromInt(map['estimated_cost'] as int? ?? 0, isoCode: 'AUD'),
         charge: Money.fromInt(map['charge'] as int? ?? 0, isoCode: 'AUD'),
         margin: Percentage.fromInt(map['charge'] as int? ?? 0),
         completed: map['completed'] == 1,
@@ -110,7 +132,7 @@ class CheckListItem extends Entity<CheckListItem> {
 
   // Labour
   Fixed? estimatedLabour; // For T&M the 'actual' is taken from time_entry's
-  Fixed? estimatedCost;
+  Money? estimatedCost;
 
 // Materials - estimates used for Quote and Estimate
   Money? estimatedMaterialCost;
@@ -201,6 +223,7 @@ class CheckListItem extends Entity<CheckListItem> {
     Money? estimatedMaterialCost,
     Fixed? estimatedLabour,
     Fixed? estimatedMaterialQuantity,
+    Money? estimatedCost,
     Money? charge,
     Percentage? margin,
     bool? completed,
@@ -225,6 +248,7 @@ class CheckListItem extends Entity<CheckListItem> {
         estimatedLabour: estimatedLabour ?? this.estimatedLabour,
         estimatedMaterialQuantity:
             estimatedMaterialQuantity ?? this.estimatedMaterialQuantity,
+        estimatedCost: estimatedCost ?? this.estimatedCost,
         charge: charge ?? this.charge,
         margin: margin ?? this.margin,
         completed: completed ?? this.completed,

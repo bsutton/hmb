@@ -97,6 +97,20 @@ where cli.id =?
     }
   }
 
+  Future<Task> getTask(CheckListItem item) async {
+    final db = getDb();
+    final data = await db.rawQuery('''
+SELECT t.*
+FROM task t
+JOIN task_check_list tc ON t.id = tc.task_id
+JOIN check_list cl ON tc.check_list_id = cl.id
+JOIN check_list_item cli ON cl.id = cli.check_list_id
+WHERE cli.id = ?
+''', [item.id]);
+
+    return toList(data).first;
+  }
+
   Future<TaskEstimates> getTaskEstimates(Task task, Money hourlyRate) async {
     var totalCost = MoneyEx.zero;
     var totalEffortInHours = Fixed.zero;
@@ -202,6 +216,12 @@ where cli.id =?
 
   Future<Money> getHourlyRate(Task task) async =>
       DaoJob().getHourlyRate(task.jobId);
+
+  Future<BillingType> getBillingType(Task task) async {
+    final job = await DaoJob().getById(task.jobId);
+
+    return task.billingType ?? job?.billingType ?? BillingType.timeAndMaterial;
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

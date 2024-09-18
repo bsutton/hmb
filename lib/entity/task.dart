@@ -54,7 +54,7 @@ class Task extends Entity<Task> {
   String name;
   String description;
   int taskStatusId;
-  BillingType billingType; // New field for BillingType
+  BillingType? billingType; // New field for BillingType
 
   @override
   Map<String, dynamic> toMap() => {
@@ -63,7 +63,7 @@ class Task extends Entity<Task> {
         'name': name,
         'description': description,
         'task_status_id': taskStatusId,
-        'billing_type': billingType.name, // New field for BillingType
+        'billing_type': billingType?.name, // New field for BillingType
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };

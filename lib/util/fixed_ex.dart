@@ -7,6 +7,13 @@ extension FixedEx on Fixed {
   static Fixed tryParse(String? amount) =>
       Fixed.tryParse(Strings.orElseOnBlank(amount, '0')) ?? zero;
 
+  static Fixed tryParseOrElse(String? amount, Fixed orElse) {
+    if (Strings.isBlank(amount)) {
+      return orElse;
+    }
+    return Fixed.tryParse(amount ?? '') ?? orElse;
+  }
+
   static Fixed fromInt(int? amount) => Fixed.fromInt(
         amount ?? 0,
       );
