@@ -14,6 +14,7 @@ import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_empty.dart';
 import '../../widgets/hmb_text.dart';
 import '../../widgets/hmb_text_field.dart';
+import 'edit_checklist_item_screen.dart';
 
 class DimensionWidget extends StatefulWidget {
   const DimensionWidget({
@@ -194,19 +195,6 @@ class SelectedUnits extends JuneState {
 }
 
 class MeasuremenTotal extends JuneState {}
-
-/// The selected CheckListItemType
-class SelectedCheckListItemType extends JuneState {
-  /// Selected ID of the [CheckListItemType].
-  int? _selected;
-
-  set selected(int? value) {
-    _selected = value;
-    setState();
-  }
-
-  int get selected => _selected ?? 0;
-}
 
 MeasurementType getDefaultMeasurementType() => length;
 
