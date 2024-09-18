@@ -129,7 +129,6 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     // _costController.dispose();
     // _quantityController.dispose();
     // _effortInHoursController.dispose();
-    _marginController.dispose();
     _chargeController.dispose();
     _dimension1Controller.dispose();
     _dimension2Controller.dispose();
