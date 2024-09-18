@@ -6,6 +6,7 @@ import 'package:money2/money2.dart';
 import '../../dao/dao_checklist_item.dart';
 import '../../dao/dao_task.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
+import '../../entity/check_list.dart';
 import '../../entity/check_list_item.dart';
 import '../../entity/check_list_item_type.dart';
 import '../../entity/entity.dart';
@@ -40,7 +41,7 @@ class CheckListItemListScreen<P extends Entity<P>> extends StatefulWidget {
 
 class TaskAndRate {
   TaskAndRate(this.task, this.rate, this.billingType);
-  Task task;
+  Task? task;
   Money rate;
   BillingType billingType;
 
@@ -49,6 +50,13 @@ class TaskAndRate {
     final billingType = await DaoTask().getBillingType(task);
     return TaskAndRate(task, hourlyRate, billingType);
   }
+}
+
+Future<TaskAndRate> getTaskAndRate(CheckList? checkList) async {
+  if (checkList == null) {
+    return TaskAndRate(null, MoneyEx.zero, BillingType.timeAndMaterial);
+  }
+  return TaskAndRate.fromTask(await DaoTask().getTaskForCheckList(checkList));
 }
 
 class _CheckListItemListScreenState<P extends Entity<P>>
@@ -60,7 +68,7 @@ class _CheckListItemListScreenState<P extends Entity<P>>
 
     return FutureBuilderEx(
       // ignore: discarded_futures
-      future: TaskAndRate.fromTask(widget.parent.parent! as Task),
+      future: getTaskAndRate(widget.parent.parent as CheckList?),
       builder: (context, taskAndRate) =>
           NestedEntityListScreen<CheckListItem, P>(
               key: ValueKey(showCompleted),

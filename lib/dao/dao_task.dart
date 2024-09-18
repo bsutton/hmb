@@ -3,6 +3,7 @@ import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../entity/check_list.dart';
 import '../entity/check_list_item.dart';
 import '../entity/job.dart';
 import '../entity/task.dart';
@@ -95,6 +96,20 @@ where cli.id =?
         delete(photo.filePath);
       }
     }
+  }
+
+  Future<Task> getTaskForCheckList(CheckList checkList) async {
+    final db = getDb();
+
+    final data = await db.rawQuery('''
+    SELECT t.* 
+    FROM check_list cl
+    JOIN task_check_list tcl ON tcl.check_list_id = cl.id
+    JOIN task t ON tcl.task_id = t.id
+    WHERE cl.id = ?
+  ''', [checkList.id]);
+
+    return toList(data).first;
   }
 
   Future<Task> getTask(CheckListItem item) async {
