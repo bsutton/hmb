@@ -123,18 +123,19 @@ WHERE cli.id = ?
     for (final item in checkListItems) {
       if (item.itemTypeId == 5) {
         // Action type checklist item (effort)
-        totalEffortInHours += item.estimatedLabour!;
+        totalEffortInHours += item.estimatedLabourHours!;
         if (item.completed) {
-          completedEffort += item.estimatedLabour!; // Sum up completed effort
-          earnedCost += item.estimatedMaterialCost!.multiplyByFixed(
+          completedEffort +=
+              item.estimatedLabourHours!; // Sum up completed effort
+          earnedCost += item.estimatedMaterialUnitCost!.multiplyByFixed(
               item.estimatedMaterialQuantity!); // Sum up earned cost
         }
       } else if (item.itemTypeId == 1 || item.itemTypeId == 3) {
         // Materials and tools to be purchased
-        totalCost += item.estimatedMaterialCost!
+        totalCost += item.estimatedMaterialUnitCost!
             .multiplyByFixed(item.estimatedMaterialQuantity!);
         if (item.completed) {
-          earnedCost += item.estimatedMaterialCost!.multiplyByFixed(item
+          earnedCost += item.estimatedMaterialUnitCost!.multiplyByFixed(item
               .estimatedMaterialQuantity!); // Earned cost for completed items
         }
       }
@@ -185,7 +186,7 @@ WHERE cli.id = ?
     // Get all checklist items for the task
     final checkListItems = await DaoCheckListItem().getByTask(task.id);
     for (final item in checkListItems.where((item) => !item.billed)) {
-      totalCost += item.estimatedMaterialCost!
+      totalCost += item.estimatedMaterialUnitCost!
           .multiplyByFixed(item.estimatedMaterialQuantity!);
     }
 

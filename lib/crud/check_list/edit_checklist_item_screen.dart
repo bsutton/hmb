@@ -76,12 +76,13 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _descriptionController =
         TextEditingController(text: widget.checkListItem?.description ?? '');
     _estimatedCostController = TextEditingController(
-        text: widget.checkListItem?.estimatedMaterialCost?.toString() ?? '');
+        text:
+            widget.checkListItem?.estimatedMaterialUnitCost?.toString() ?? '');
     _estimatedQuantityController = TextEditingController(
         text:
             widget.checkListItem?.estimatedMaterialQuantity?.toString() ?? '1');
     _estimatedHoursController = TextEditingController(
-        text: widget.checkListItem?.estimatedLabour?.toString() ?? '');
+        text: widget.checkListItem?.estimatedLabourHours?.toString() ?? '');
     _chargeController = TextEditingController(
         text: widget.checkListItem?.charge.toString() ?? '');
     _marginController = TextEditingController(
@@ -408,10 +409,10 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
       checkListId: widget.parent.id,
       description: _descriptionController.text,
       itemTypeId: itemTypeId,
-      estimatedMaterialCost: estimatedCost,
-      estimatedLabour: estimatedHours,
+      estimatedMaterialUnitCost: estimatedCost,
+      estimatedLabourHours: estimatedHours,
       estimatedMaterialQuantity: estimatedQuantity,
-      estimatedCost: estimatedCost,
+      estimatedLabourCost: estimatedCost,
       charge: charge,
       margin: margin,
       completed: existingItem?.completed ?? false,
@@ -437,10 +438,10 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             checkListId: baseItem.checkListId,
             description: baseItem.description,
             itemTypeId: baseItem.itemTypeId,
-            estimatedMaterialCost: baseItem.estimatedMaterialCost,
-            estimatedLabour: baseItem.estimatedLabour,
+            estimatedMaterialUnitCost: baseItem.estimatedMaterialUnitCost,
+            estimatedLabourHours: baseItem.estimatedLabourHours,
             estimatedMaterialQuantity: baseItem.estimatedMaterialQuantity,
-            estimatedCost: baseItem.estimatedCost,
+            estimatedLabourCost: baseItem.estimatedLabourCost,
             charge: baseItem.charge,
             margin: baseItem.margin,
             measurementType: baseItem.measurementType,
@@ -456,10 +457,10 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             checkListId: baseItem.checkListId,
             description: baseItem.description,
             itemTypeId: baseItem.itemTypeId,
-            estimatedMaterialCost: baseItem.estimatedMaterialCost,
-            estimatedLabour: baseItem.estimatedLabour,
+            estimatedMaterialUnitCost: baseItem.estimatedMaterialUnitCost,
+            estimatedLabourHours: baseItem.estimatedLabourHours,
             estimatedMaterialQuantity: baseItem.estimatedMaterialQuantity,
-            estimatedCost: baseItem.estimatedCost,
+            estimatedLabourCost: baseItem.estimatedLabourCost,
             charge: baseItem.charge,
             margin: baseItem.margin,
             completed: baseItem.completed,

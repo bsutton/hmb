@@ -125,7 +125,7 @@ class DaoInvoice extends Dao<Invoice> {
         if (!item.completed) {
           continue;
         }
-        final lineTotal = item.estimatedMaterialCost!
+        final lineTotal = item.estimatedMaterialUnitCost!
             .multiplyByFixed(item.estimatedMaterialQuantity!);
 
         final invoiceLine = InvoiceLine.forInsert(
@@ -133,7 +133,7 @@ class DaoInvoice extends Dao<Invoice> {
           invoiceLineGroupId: invoiceLineGroupId,
           description: 'Material: ${item.description}',
           quantity: item.estimatedMaterialQuantity!,
-          unitPrice: item.estimatedMaterialCost!,
+          unitPrice: item.estimatedMaterialUnitCost!,
           lineTotal: lineTotal,
         );
 

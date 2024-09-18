@@ -160,14 +160,14 @@ where t.id =?
 
       // Calculate effort and cost from checklist items
       for (final item in checkListItems) {
-        totalEffort += item.estimatedLabour!;
-        totalCost += item.estimatedMaterialCost!
+        totalEffort += item.estimatedLabourHours!;
+        totalCost += item.estimatedMaterialUnitCost!
             .multiplyByFixed(item.estimatedMaterialQuantity!);
 
         // If the task is completed, add to completed effort and earned cost
         if ((status?.isComplete() ?? false) && item.completed) {
-          completedEffort += item.estimatedLabour!;
-          earnedCost += item.estimatedMaterialCost!
+          completedEffort += item.estimatedLabourHours!;
+          earnedCost += item.estimatedMaterialUnitCost!
               .multiplyByFixed(item.estimatedMaterialQuantity!);
         }
       }
@@ -241,7 +241,8 @@ where c.id =?
       final items = await DaoCheckListItem().getByTask(task.id);
 
       for (final item in items) {
-        if (item.estimatedLabour != null || item.estimatedCost != null) {
+        if (item.estimatedLabourHours != null ||
+            item.estimatedLabourCost != null) {
           return true;
         }
       }

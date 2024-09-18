@@ -29,9 +29,9 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.description,
     required this.itemTypeId,
     required this.estimatedMaterialUnitCost,
-    required this.estimatedLabourHours,
     required this.estimatedMaterialQuantity,
-    required this.estimatedCost,
+    required this.estimatedLabourHours,
+    required this.estimatedLabourCost,
     required this.charge,
     required this.margin,
     required this.completed,
@@ -55,7 +55,7 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.estimatedMaterialUnitCost,
     required this.estimatedLabourHours,
     required this.estimatedMaterialQuantity,
-    required this.estimatedCost,
+    required this.estimatedLabourCost,
     required this.charge,
     required this.margin,
     required this.measurementType,
@@ -78,7 +78,7 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.estimatedMaterialUnitCost,
     required this.estimatedLabourHours,
     required this.estimatedMaterialQuantity,
-    required this.estimatedCost,
+    required this.estimatedLabourCost,
     required this.margin,
     required this.charge,
     required this.completed,
@@ -103,9 +103,10 @@ class CheckListItem extends Entity<CheckListItem> {
         estimatedMaterialQuantity:
             Fixed.fromInt(map['estimated_material_quantity'] as int? ?? 1),
         estimatedLabourHours:
-            Fixed.fromInt(map['estimated_labour'] as int? ?? 0),
-        estimatedCost:
-            Money.fromInt(map['estimated_cost'] as int? ?? 0, isoCode: 'AUD'),
+            Fixed.fromInt(map['estimated_labour_hours'] as int? ?? 0),
+        estimatedLabourCost: Money.fromInt(
+            map['estimated_labour_cost'] as int? ?? 0,
+            isoCode: 'AUD'),
         charge: Money.fromInt(map['charge'] as int? ?? 0, isoCode: 'AUD'),
         margin: Percentage.fromInt(map['charge'] as int? ?? 0),
         completed: map['completed'] == 1,
@@ -134,10 +135,16 @@ class CheckListItem extends Entity<CheckListItem> {
   // Labour
   Fixed?
       estimatedLabourHours; // For T&M the 'actual' is taken from time_entry's
-  Money? estimatedCost;
+
+  /// The estimated labour cost. Used
+  /// when [estimatedLabourHours] isn't used.
+  Money? estimatedLabourCost;
 
 // Materials - estimates used for Quote and Estimate
+  /// The estimated cost per unit of material.
   Money? estimatedMaterialUnitCost;
+
+  /// The esitmated quantity of the materials.
   Fixed? estimatedMaterialQuantity;
 
   // T&M uses the actuals, Fixed uses the estimates for
@@ -197,14 +204,17 @@ class CheckListItem extends Entity<CheckListItem> {
             .toInt(),
         'estimated_material_quantity': estimatedMaterialQuantity == null
             ? null
-            : Fixed.copyWith(estimatedMaterialQuantity!, scale: 2)
+            : Fixed.copyWith(estimatedMaterialQuantity!, scale: 3)
                 .minorUnits
                 .toInt(),
-        'estimated_labour': estimatedLabourHours == null
+        'estimated_labour_hours': estimatedLabourHours == null
             ? null
-            : Fixed.copyWith(estimatedLabourHours!, scale: 2)
+            : Fixed.copyWith(estimatedLabourHours!, scale: 3)
                 .minorUnits
                 .toInt(),
+        'estimated_labour_cost':
+            estimatedLabourCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
+
         'completed': completed ? 1 : 0,
         'billed': billed ? 1 : 0,
         'invoice_line_id': invoiceLineId,
@@ -225,9 +235,9 @@ class CheckListItem extends Entity<CheckListItem> {
     String? description,
     int? itemTypeId,
     Money? estimatedMaterialCost,
-    Fixed? estimatedLabour,
     Fixed? estimatedMaterialQuantity,
-    Money? estimatedCost,
+    Fixed? estimatedLabour,
+    Money? estimatedLabourCost,
     Money? charge,
     Percentage? margin,
     bool? completed,
@@ -249,10 +259,10 @@ class CheckListItem extends Entity<CheckListItem> {
         itemTypeId: itemTypeId ?? this.itemTypeId,
         estimatedMaterialUnitCost:
             estimatedMaterialCost ?? estimatedMaterialUnitCost,
-        estimatedLabourHours: estimatedLabour ?? this.estimatedLabourHours,
+        estimatedLabourHours: estimatedLabour ?? estimatedLabourHours,
         estimatedMaterialQuantity:
             estimatedMaterialQuantity ?? this.estimatedMaterialQuantity,
-        estimatedCost: estimatedCost ?? this.estimatedCost,
+        estimatedLabourCost: estimatedLabourCost ?? this.estimatedLabourCost,
         charge: charge ?? this.charge,
         margin: margin ?? this.margin,
         completed: completed ?? this.completed,

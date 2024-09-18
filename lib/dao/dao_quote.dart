@@ -149,7 +149,7 @@ class DaoQuote extends Dao<Quote> {
       /// Materials based billing
       final checkListItems = await DaoCheckListItem().getByTask(task.id);
       for (final item in checkListItems.where((item) => !item.billed)) {
-        final lineTotal = item.estimatedMaterialCost!
+        final lineTotal = item.estimatedMaterialUnitCost!
             .multiplyByFixed(item.estimatedMaterialQuantity!);
         quoteLineGroup ??= await _createQuoteLineGroup(task, quoteId);
 
@@ -158,7 +158,7 @@ class DaoQuote extends Dao<Quote> {
           quoteLineGroupId: quoteLineGroup.id,
           description: 'Material: ${item.description}',
           quantity: item.estimatedMaterialQuantity!,
-          unitPrice: item.estimatedMaterialCost!,
+          unitPrice: item.estimatedMaterialUnitCost!,
           lineTotal: lineTotal,
         );
 
