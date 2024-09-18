@@ -2,7 +2,7 @@
 Thank you for your interest in contributing to this project. This Contributor License Agreement ("Agreement") sets out the terms under which intellectual property in your contributions will be licensed to the project owner. By signing this Agreement, you agree to the following terms:
 
 ## 1. Definitions
-"Project": The open-source HMB project, hosted on GitHub under the repository [repository link](https://github.com/bsutton/hmb).
+"Project": The open-source HMB (aka Hold my Beer - I'm a handyman) project, hosted on GitHub under the repository [repository link](https://github.com/bsutton/hmb).
 
 "Contribution": Any code, documentation, or other materials you submit to the Project, whether created or modified by you.
 
@@ -25,7 +25,7 @@ If your employer has rights to intellectual property that you create, you have r
 You acknowledge that the Project owner(s) are under no obligation to use or incorporate your Contributions into the Project.
 
 ## 6. Governing Law
-This Agreement shall be governed by and construed in accordance with the laws of [Victoria, Australia], without regard to its conflicts of laws provisions.
+This Agreement shall be governed by and construed in accordance with the laws of Victoria, Australia, without regard to its conflicts of laws provisions.
 
 ## 7. Signatures
 By making a Contribution to the Project, you agree to the terms of this Agreement.
