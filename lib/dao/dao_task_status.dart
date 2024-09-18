@@ -28,6 +28,21 @@ order by ordinal
     return toList(data);
   }
 
+  Future<TaskStatus> getByEnum(TaskStatusEnum taskStatusEnum) async {
+    final db = getDb();
+
+    final data = await db.rawQuery('''
+select ts.*
+from task_status ts 
+where ts.name = ?
+''', [taskStatusEnum.colValue]);
+    final list = toList(data);
+    assert(list.length == 1,
+        '''The TaskStatusEnum must have a corresponding entry in the task_status table''');
+
+    return toList(data).first;
+  }
+
   @override
   TaskStatus fromMap(Map<String, dynamic> map) => TaskStatus.fromMap(map);
   @override
