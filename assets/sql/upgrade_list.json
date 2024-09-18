@@ -1,4 +1,5 @@
 [
+  "assets/sql/upgrade_scripts/v52.sql",
   "assets/sql/upgrade_scripts/v51.sql",
   "assets/sql/upgrade_scripts/v50.sql",
   "assets/sql/upgrade_scripts/v49.sql",
