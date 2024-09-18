@@ -76,6 +76,12 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _effortInHoursController = TextEditingController(
         text: widget.checkListItem?.estimatedLabour.toString());
 
+    _marginController =
+        TextEditingController(text: widget.checkListItem?.margin.toString());
+
+    _chargeController =
+        TextEditingController(text: widget.checkListItem?.charge.toString());
+
     _dimension1Controller = TextEditingController(
         text: widget.checkListItem?.dimension1.toString());
     _dimension2Controller = TextEditingController(
@@ -102,6 +108,8 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _costController.dispose();
     _quantityController.dispose();
     _effortInHoursController.dispose();
+    _marginController.dispose();
+    _chargeController.dispose();
     _dimension1Controller.dispose();
     _dimension2Controller.dispose();
     _dimension3Controller.dispose();
@@ -215,9 +223,12 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         billed: false,
         measurementType:
             June.getState(SelectedMeasurementType.new).selectedOrDefault,
-        dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
-        dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
-        dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
+        dimension1:
+            Fixed.tryParse(_dimension1Controller.text, scale: 3) ?? Fixed.zero,
+        dimension2:
+            Fixed.tryParse(_dimension2Controller.text, scale: 3) ?? Fixed.zero,
+        dimension3:
+            Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
         units: June.getState(SelectedUnits.new).selectedOrDefault,
         url: _urlController.text,
         supplierId: _selectedSupplierId, // Save Supplier ID
@@ -236,9 +247,12 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
         measurementType:
             June.getState(SelectedMeasurementType.new).selectedOrDefault,
-        dimension1: Fixed.tryParse(_dimension1Controller.text) ?? Fixed.zero,
-        dimension2: Fixed.tryParse(_dimension2Controller.text) ?? Fixed.zero,
-        dimension3: Fixed.tryParse(_dimension3Controller.text) ?? Fixed.zero,
+        dimension1:
+            Fixed.tryParse(_dimension1Controller.text, scale: 3) ?? Fixed.zero,
+        dimension2:
+            Fixed.tryParse(_dimension2Controller.text, scale: 3) ?? Fixed.zero,
+        dimension3:
+            Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
         units: June.getState(SelectedUnits.new).selectedOrDefault,
         url: _urlController.text,
         supplierId: _selectedSupplierId, // Save Supplier ID
