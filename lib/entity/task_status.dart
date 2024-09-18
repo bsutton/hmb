@@ -7,7 +7,7 @@ enum TaskStatusEnum {
   onHold,
   inProgress,
   cancelled,
-  preApproved,
+  preApproval,
   approved,
 }
 
@@ -27,8 +27,8 @@ extension TaskStatusEnumExtension on TaskStatusEnum {
         return 'In progress';
       case TaskStatusEnum.cancelled:
         return 'Cancelled';
-      case TaskStatusEnum.preApproved:
-        return 'Pre-approved';
+      case TaskStatusEnum.preApproval:
+        return 'Pre-approval';
       case TaskStatusEnum.approved:
         return 'Approved';
     }
