@@ -23,5 +23,5 @@ class HBMCrudCheckListItem<P extends Entity<P>> extends StatelessWidget {
   Widget build(BuildContext context) => HMBChildCrudCard(
       headline: 'Items',
       crudListScreen:
-          CheckListItemEditScreen<P>(daoJoin: daoJoin, parent: parent));
+          CheckListItemListScreen(daoJoin: daoJoin, parent: parent));
 }
