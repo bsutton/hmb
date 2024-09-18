@@ -56,8 +56,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   Money _totalMaterialsCost = MoneyEx.zero;
   Money _totalToolsCost = MoneyEx.zero;
 
-  TaskStatus? _selectedTaskStatus; // Add this variable
-
   @override
   void initState() {
     super.initState();
@@ -87,15 +85,16 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   }
 
   Future<void> _loadInitialTaskStatus() async {
-    final initialTaskStatusId = widget.task?.taskStatusId ??
-        June.getState(SelectedTaskStatus.new).taskStatusId;
-
-    if (initialTaskStatusId != null) {
-      final taskStatus = await DaoTaskStatus().getById(initialTaskStatusId);
-      setState(() {
-        _selectedTaskStatus = taskStatus;
-      });
+    TaskStatus? taskStatus;
+    if (widget.task?.taskStatusId != null) {
+      taskStatus = await DaoTaskStatus().getById(widget.task!.taskStatusId);
     }
+
+    taskStatus ??= await DaoTaskStatus().getByEnum(TaskStatusEnum.preApproval);
+
+    setState(() {
+      June.getState(SelectedTaskStatus.new).taskStatus = taskStatus;
+    });
   }
 
   @override
@@ -165,10 +164,14 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   // Calculate the checklist summary for effort or cost
   Future<void> _calculateChecklistSummary() async {
-    final checkListItems = await DaoCheckListItem().getByTask(widget.task!.id);
     _totalEffortInHours = Fixed.zero;
     _totalMaterialsCost = MoneyEx.zero;
     _totalToolsCost = MoneyEx.zero;
+
+    if (widget.task == null) {
+      return;
+    }
+    final checkListItems = await DaoCheckListItem().getByTask(widget.task!.id);
 
     for (final item in checkListItems) {
       switch (item.itemTypeId) {
@@ -223,13 +226,13 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
         title: 'Task Status',
-        selectedItem:() async =>  _selectedTaskStatus,
+        selectedItem: () async =>
+            June.getState(SelectedTaskStatus.new).taskStatus,
         items: (filter) async => DaoTaskStatus().getByFilter(filter),
         format: (item) => item.name,
         onChanged: (item) {
           setState(() {
-            _selectedTaskStatus = item;
-            June.getState(SelectedTaskStatus.new).taskStatusId = item?.id;
+            June.getState(SelectedTaskStatus.new).taskStatus = item;
           });
         },
       );
@@ -253,7 +256,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       jobId: widget.job.id,
       name: _nameController.text,
       description: _descriptionController.text,
-      taskStatusId: June.getState(SelectedTaskStatus.new).taskStatusId!,
+      taskStatusId: June.getState(SelectedTaskStatus.new).taskStatus!.id,
       billingType: _selectedBillingType, // Retain the selected billing type
     );
   }
@@ -263,7 +266,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         jobId: widget.job.id,
         name: _nameController.text,
         description: _descriptionController.text,
-        taskStatusId: June.getState(SelectedTaskStatus.new).taskStatusId!,
+        taskStatusId: June.getState(SelectedTaskStatus.new).taskStatus!.id,
         billingType: _selectedBillingType, // Retain the selected billing type
       );
 
@@ -276,5 +279,5 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 class SelectedTaskStatus {
   SelectedTaskStatus();
 
-  int? taskStatusId;
+  TaskStatus? taskStatus;
 }

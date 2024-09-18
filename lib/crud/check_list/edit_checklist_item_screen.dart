@@ -86,6 +86,21 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         text: widget.checkListItem?.charge.toString() ?? '');
     _marginController = TextEditingController(
         text: widget.checkListItem?.margin.toString() ?? '');
+    TextEditingController(text: widget.checkListItem?.description);
+    // _costController = TextEditingController(
+    //     text: widget.checkListItem?.estimatedMaterialCost.toString());
+    // _quantityController = TextEditingController(
+    //     text: (widget.checkListItem?.estimatedMaterialQuantity ?? Fixed.one)
+    //         .toString());
+    // _effortInHoursController = TextEditingController(
+    //     text: widget.checkListItem?.estimatedLabour.toString());
+
+    _marginController =
+        TextEditingController(text: widget.checkListItem?.margin.toString());
+
+    _chargeController =
+        TextEditingController(text: widget.checkListItem?.charge.toString());
+
     _dimension1Controller = TextEditingController(
         text: widget.checkListItem?.dimension1.toString() ?? '');
     _dimension2Controller = TextEditingController(
@@ -111,6 +126,11 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     _estimatedHoursController.dispose();
     _chargeController.dispose();
     _marginController.dispose();
+    // _costController.dispose();
+    // _quantityController.dispose();
+    // _effortInHoursController.dispose();
+    _marginController.dispose();
+    _chargeController.dispose();
     _dimension1Controller.dispose();
     _dimension2Controller.dispose();
     _dimension3Controller.dispose();
@@ -454,6 +474,18 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             supplierId: baseItem.supplierId,
           );
   }
+  //   measurementType:
+  //       June.getState(SelectedMeasurementType.new).selectedOrDefault,
+  //   dimension1:
+  //       Fixed.tryParse(_dimension1Controller.text, scale: 3) ?? Fixed.zero,
+  //   dimension2:
+  //       Fixed.tryParse(_dimension2Controller.text, scale: 3) ?? Fixed.zero,
+  //   dimension3:
+  //       Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
+  //   units: June.getState(SelectedUnits.new).selectedOrDefault,
+  //   url: _urlController.text,
+  //   supplierId: _selectedSupplierId, // Save Supplier ID
+  // );
 
   @override
   void refresh() {

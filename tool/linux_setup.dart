@@ -20,6 +20,7 @@ void main() {
           'ninja-build pkg-config '
           'libgtk-3-dev liblzma-dev '
           'libstdc++-12-dev '
+          'libsqlite3-dev '
       .start(privileged: true);
 
   _createReleaseKeyStore();
