@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -20,6 +22,7 @@ import '../../util/fixed_ex.dart';
 import '../../util/measurement_type.dart';
 import '../../util/money_ex.dart';
 import '../../util/platform_ex.dart';
+import '../../widgets/async_state.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../base_nested/edit_nested_screen.dart';
@@ -54,7 +57,8 @@ class CheckListItemEditScreen<P extends Entity<P>> extends StatefulWidget {
   }
 }
 
-class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
+class _CheckListItemEditScreenState
+    extends AsyncState<CheckListItemEditScreen, System>
     implements NestedEntityState<CheckListItem> {
   late TextEditingController _descriptionController;
   late TextEditingController _estimatedMaterialUnitCostController;
@@ -70,8 +74,6 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
   late FocusNode _descriptionFocusNode;
 
-  int? _selectedSupplierId;
-  int? _selectedItemTypeId;
   LabourEntryMode _labourEntryMode = LabourEntryMode.hours;
   @override
   CheckListItem? currentEntity;
@@ -110,15 +112,34 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         TextEditingController(text: currentEntity?.dimension3.toString());
 
     _urlController = TextEditingController(text: currentEntity?.url);
-    _selectedSupplierId = currentEntity?.supplierId;
-    _selectedItemTypeId = currentEntity?.itemTypeId;
     _labourEntryMode = currentEntity?.labourEntryMode ?? LabourEntryMode.hours;
 
     _descriptionFocusNode = FocusNode();
+  }
 
-    June.getState(SelectedUnits.new).selected = null;
-    June.getState(SelectedMeasurementType.new).selected = null;
-    June.getState(SelectedCheckListItemType.new).selected = null;
+  @override
+  Future<System> asyncInitState() async {
+    final system = await DaoSystem().get();
+    var selectedUnits = June.getState(SelectedUnits.new).selected;
+
+    June.getState(SelectedSupplier.new).selected = currentEntity?.supplierId;
+
+    final selectedDimensionType = currentEntity?.measurementType ?? length;
+    June.getState(SelectedMeasurementType.new).selected = selectedDimensionType;
+
+    final defaultDimensionType =
+        system!.preferredUnitSystem == PreferredUnitSystem.metric
+            ? selectedDimensionType.defaultMetric
+            : selectedDimensionType.defaultImperial;
+
+    selectedUnits =
+        selectedUnits ?? currentEntity?.units ?? defaultDimensionType;
+    June.getState(SelectedUnits.new).selected = selectedUnits;
+    June.getState(SelectedMeasurementType.new).selected =
+        currentEntity?.measurementType;
+    June.getState(SelectedCheckListItemType.new).selected =
+        currentEntity?.itemTypeId;
+    return system;
   }
 
   @override
@@ -140,8 +161,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
-        // ignore: discarded_futures
-        future: DaoSystem().get(),
+        future: initialised,
         builder: (context, system) =>
             NestedEntityEditScreen<CheckListItem, CheckList>(
           key: globalKey,
@@ -150,44 +170,40 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
           onInsert: (checkListItem) async =>
               widget.daoJoin.insertForParent(checkListItem!, widget.parent),
           entityState: this,
-          editor: (checklistItem) {
-            _initSelected(checklistItem, system);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+          editor: (checklistItem) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              HMBTextField(
+                controller: _descriptionController,
+                focusNode: _descriptionFocusNode,
+                autofocus: isNotMobile,
+                labelText: 'Description',
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the description';
+                  }
+                  return null;
+                },
+              ),
+              _chooseItemType(checklistItem),
+              if (June.getState(SelectedCheckListItemType.new).selected !=
+                  0) ...[
+                _chooseSupplier(checklistItem),
+                ..._buildFieldsBasedOnItemType(),
                 HMBTextField(
-                  controller: _descriptionController,
-                  focusNode: _descriptionFocusNode,
-                  autofocus: isNotMobile,
-                  labelText: 'Description',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the description';
-                    }
-                    return null;
-                  },
+                  controller: _urlController,
+                  labelText: 'Reference URL',
+                  keyboardType: TextInputType.url,
                 ),
-                _chooseItemType(checklistItem),
-                if (_selectedItemTypeId != null) ...[
-                  _chooseSupplier(checklistItem),
-                  _buildLabourEntryModeSwitch(),
-                  ..._buildFieldsBasedOnItemType(),
-                  _buildMarginAndChargeFields(),
-                  HMBTextField(
-                    controller: _urlController,
-                    labelText: 'Reference URL',
-                    keyboardType: TextInputType.url,
-                  ),
-                  DimensionWidget(
-                    dimension1Controller: _dimension1Controller,
-                    dimension2Controller: _dimension2Controller,
-                    dimension3Controller: _dimension3Controller,
-                    checkListItem: checklistItem,
-                  ),
-                ],
+                DimensionWidget(
+                  dimension1Controller: _dimension1Controller,
+                  dimension2Controller: _dimension2Controller,
+                  dimension3Controller: _dimension3Controller,
+                  checkListItem: checklistItem,
+                ),
               ],
-            );
-          },
+            ],
+          ),
         ),
       );
 
@@ -195,15 +211,14 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
           CheckListItem? checkListItem) =>
       HMBDroplist<CheckListItemType>(
         title: 'Item Type',
-        selectedItem: () async =>
-            DaoCheckListItemType().getById(_selectedItemTypeId ?? 0),
+        selectedItem: () async => DaoCheckListItemType()
+            .getById(June.getState(SelectedCheckListItemType.new).selected),
         items: (filter) async => DaoCheckListItemType().getByFilter(filter),
         format: (checklistItemType) => checklistItemType.name,
         onChanged: (itemType) {
           setState(() {
-            _selectedItemTypeId = itemType?.id;
             June.getState(SelectedCheckListItemType.new).selected =
-                _selectedItemTypeId;
+                itemType?.id;
           });
         },
       );
@@ -211,24 +226,25 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   HMBDroplist<Supplier> _chooseSupplier(CheckListItem? checkListItem) =>
       HMBDroplist<Supplier>(
         title: 'Supplier',
-        selectedItem: () async => _selectedSupplierId != null
-            ? DaoSupplier().getById(_selectedSupplierId)
-            : null,
+        selectedItem: () async =>
+            June.getState(SelectedSupplier.new).selected != null
+                ? DaoSupplier()
+                    .getById(June.getState(SelectedSupplier.new).selected)
+                : null,
         items: (filter) async => DaoSupplier().getByFilter(filter),
         format: (supplier) => supplier.name,
         onChanged: (supplier) {
           setState(() {
-            _selectedSupplierId = supplier?.id;
+            June.getState(SelectedSupplier.new).selected = supplier?.id;
           });
         },
         required: false,
       );
 
   List<Widget> _buildFieldsBasedOnItemType() {
-    if (_selectedItemTypeId == null) {
-      return [];
-    }
-    switch (_selectedItemTypeId) {
+    switch (June.getState(SelectedCheckListItemType.new).selected) {
+      case 0:
+        return [];
       case 5: // Labour
         return _buildLabourFields();
       case 1: // Materials - buy
@@ -243,6 +259,17 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   }
 
   List<Widget> _buildLabourFields() => [
+        HMBDroplist<LabourEntryMode>(
+            title: 'Labour Entry Mode',
+            selectedItem: () async => _labourEntryMode,
+            items: (filter) async => LabourEntryMode.values,
+            format: LabourEntryMode.getDisplay,
+            onChanged: (mode) {
+              setState(() {
+                _labourEntryMode = mode ?? LabourEntryMode.hours;
+              });
+            },
+            required: false),
         if (_labourEntryMode == LabourEntryMode.hours)
           HMBTextField(
             controller: _estimatedLabourHoursController,
@@ -260,6 +287,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             keyboardType: TextInputType.number,
             onChanged: _calculateChargeFromMargin,
           ),
+        _buildMarginAndChargeFields(),
       ];
 
   void _calculateChargeFromMargin(String? marginValue) {
@@ -278,8 +306,8 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
     var charge = MoneyEx.tryParse(_chargeController.text);
 
-    charge = DaoCheckListItem().calculateChargeFromMargin(
-        itemTypeId: _selectedItemTypeId,
+    charge = DaoCheckListItem().calculateCharge(
+        itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
         margin: margin,
         labourEntryMode: _labourEntryMode,
         estimatedLabourHours: estimatedLabourHours,
@@ -291,17 +319,6 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
     _chargeController.text = charge.toString();
   }
-
-  Widget _buildLabourEntryModeSwitch() => HMBDroplist<LabourEntryMode>(
-        title: 'Labour Entry Mode',
-        selectedItem: () async => _labourEntryMode,
-        items: (filter) async => LabourEntryMode.values,
-        format: LabourEntryMode.getDisplay,
-        onChanged: (mode) {
-          _labourEntryMode = mode ?? LabourEntryMode.hours;
-        },
-        required: false,
-      );
 
   List<Widget> _buildBuyFields() => [
         HMBTextField(
@@ -320,18 +337,33 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             _calculateChargeFromMargin(_marginController.text);
           },
         ),
+        _buildMarginAndChargeFields(),
       ];
 
   List<Widget> _buildStockFields() => [
         HMBTextField(
-          controller: _chargeController,
-          labelText: 'Charge',
+          controller: _estimatedMaterialUnitCostController,
+          labelText: 'Unit Cost',
           keyboardType: TextInputType.number,
+          onChanged: (value) {
+            _calculateChargeFromMargin(_marginController.text);
+          },
         ),
         HMBTextField(
           controller: _estimatedMaterialQuantityController,
           labelText: 'Quantity',
           keyboardType: TextInputType.number,
+          onChanged: (value) {
+            _calculateChargeFromMargin(_marginController.text);
+          },
+        ),
+        HMBTextField(
+          controller: _chargeController,
+          labelText: 'Charge',
+          keyboardType: TextInputType.number,
+          onChanged: (value) {
+            _calculateChargeFromMargin(_marginController.text);
+          },
         ),
       ];
 
@@ -348,6 +380,9 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             controller: _chargeController,
             labelText: 'Charge',
             keyboardType: TextInputType.number,
+            onChanged: (value) {
+              _calculateChargeFromMargin(_marginController.text);
+            },
           ),
         ],
       );
@@ -388,7 +423,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
         units: June.getState(SelectedUnits.new).selectedOrDefault,
         url: _urlController.text,
-        supplierId: _selectedSupplierId,
+        supplierId: June.getState(SelectedSupplier.new).selected,
       );
 
   @override
@@ -417,34 +452,27 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
         units: June.getState(SelectedUnits.new).selectedOrDefault,
         url: _urlController.text,
-        supplierId: _selectedSupplierId,
+        supplierId: June.getState(SelectedSupplier.new).selected,
       );
 
   @override
   void refresh() {
     setState(() {});
   }
-
-  void _initSelected(CheckListItem? checklistItem, System? system) {
-    June.getState(SelectedCheckListItemType.new).selected =
-        checklistItem?.itemTypeId;
-    final selectedDimensionType = checklistItem?.measurementType ?? length;
-    June.getState(SelectedMeasurementType.new).selected = selectedDimensionType;
-
-    var selectedUnits = June.getState(SelectedUnits.new).selected;
-
-    final defaultDimensionType =
-        system!.preferredUnitSystem == PreferredUnitSystem.metric
-            ? selectedDimensionType.defaultMetric
-            : selectedDimensionType.defaultImperial;
-
-    selectedUnits =
-        selectedUnits ?? checklistItem?.units ?? defaultDimensionType;
-    June.getState(SelectedUnits.new).selected = selectedUnits;
-  }
 }
 
 class SelectedCheckListItemType extends JuneState {
+  int? _selected;
+
+  set selected(int? value) {
+    _selected = value;
+    setState();
+  }
+
+  int get selected => _selected ?? 0;
+}
+
+class SelectedSupplier extends JuneState {
   int? _selected;
 
   set selected(int? value) {

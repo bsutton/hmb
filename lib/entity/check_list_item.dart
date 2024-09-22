@@ -74,10 +74,9 @@ class CheckListItem extends Entity<CheckListItem> {
             scale: 3),
         estimatedLabourHours:
             Fixed.fromInt(map['estimated_labour_hours'] as int? ?? 0, scale: 3),
-        estimatedLabourCost: Money.fromInt(
-            map['estimated_labour_cost'] as int? ?? 0,
-            isoCode: 'AUD'),
-        charge: Money.fromInt(map['charge'] as int? ?? 0, isoCode: 'AUD'),
+        estimatedLabourCost:
+            MoneyEx.fromInt(map['estimated_labour_cost'] as int? ?? 0),
+        charge: MoneyEx.fromInt(map['charge'] as int? ?? 0),
         margin: Percentage.fromInt(map['margin'] as int? ?? 0, scale: 3),
         completed: map['completed'] == 1,
         billed: map['billed'] == 1,
@@ -220,7 +219,7 @@ class CheckListItem extends Entity<CheckListItem> {
         'description': description,
         'item_type_id': itemTypeId,
         'estimated_material_unit_cost': estimatedMaterialUnitCost
-            ?.copyWith(decimalDigits: 3)
+            ?.copyWith(decimalDigits: 2)
             .minorUnits
             .toInt(),
         'estimated_material_quantity': estimatedMaterialQuantity == null
@@ -236,7 +235,7 @@ class CheckListItem extends Entity<CheckListItem> {
         'estimated_labour_cost':
             estimatedLabourCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'margin': Fixed.copyWith(margin, scale: 3).minorUnits.toInt(),
-        'charge': charge.copyWith(decimalDigits: 3).minorUnits.toInt(),
+        'charge': charge.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'labour_entry_mode': labourEntryMode.toSqlString(), // Added for SQL
         'completed': completed ? 1 : 0,
         'billed': billed ? 1 : 0,

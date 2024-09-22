@@ -6,7 +6,6 @@ import '../entity/check_list.dart';
 import '../entity/check_list_item.dart';
 import '../entity/job.dart';
 import '../entity/supplier.dart';
-import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_check_list_item_check_list.dart';
 
@@ -189,7 +188,7 @@ and js.name != 'Awaiting Payment'
   }
 
   /// Returns the caculated charge.
-  Money calculateChargeFromMargin(
+  Money calculateCharge(
       {required int? itemTypeId,
       required Fixed margin,
       required LabourEntryMode labourEntryMode,
@@ -203,6 +202,16 @@ and js.name != 'Awaiting Payment'
 
     // Determine the estimated cost based on item type
     switch (itemTypeId) {
+      case 1: // Materials - stock
+      case 2: // Materials - buy
+      case 3: // Tools - buy
+      case 4: // Tools - own
+        {
+          final quantity = estimatedMaterialQuantity;
+          estimatedCost = estimatedMaterialUnitCost.multiplyByFixed(quantity);
+          charge = estimatedCost
+              .multiplyByFixed(Fixed.one + (margin / Fixed.fromInt(100)));
+        }
       // Labour
       case 5:
         {
@@ -211,34 +220,12 @@ and js.name != 'Awaiting Payment'
           } else {
             estimatedCost = estimatedLabourCost;
           }
-        }
-
-      // Materials - buy or Tools - buy
-      case 1:
-      case 3:
-        {
-          final quantity = estimatedMaterialQuantity;
-          estimatedCost = estimatedMaterialUnitCost.multiplyByFixed(quantity);
-        }
-      // Materials - stock or Tools - stock
-      case 2:
-      case 4:
-        {
-          // For stock items, we use the charge directly without applying
-          // the margin
-          return charge;
+          charge = estimatedCost
+              .multiplyByFixed(Fixed.one + (margin / Fixed.fromInt(100)));
         }
     }
 
-    // Calculate the charge using the margin
-    if (estimatedCost != null) {
-      final charge = estimatedCost
-          .multiplyByFixed(Fixed.one + (margin / Fixed.fromInt(100)));
-
-      return charge;
-    }
-
-    return MoneyEx.zero;
+    return charge;
   }
 }
 
