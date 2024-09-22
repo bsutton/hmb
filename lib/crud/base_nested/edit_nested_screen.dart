@@ -8,13 +8,13 @@ abstract class NestedEntityState<E extends Entity<E>> {
   Future<E> forInsert();
   Future<E> forUpdate(E entity);
   void refresh();
+  E? currentEntity;
 }
 
 class NestedEntityEditScreen<C extends Entity<C>, P extends Entity<P>>
     extends StatefulWidget {
   const NestedEntityEditScreen({
-    required this.entity,
-    required this.editor,
+        required this.editor,
     required this.onInsert,
     required this.entityName,
     required this.entityState,
@@ -22,7 +22,6 @@ class NestedEntityEditScreen<C extends Entity<C>, P extends Entity<P>>
     super.key,
   });
 
-  final C? entity;
   final String entityName;
   final Dao<C> dao;
   final Widget Function(C? entity) editor;
@@ -38,18 +37,15 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
     extends State<NestedEntityEditScreen<C, P>> {
   final _formKey = GlobalKey<FormState>();
 
-  C? _currentEntity;
-
   @override
   void initState() {
     super.initState();
-    _currentEntity = widget.entity;
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-            title: Text(_currentEntity != null
+            title: Text(widget.entityState.currentEntity != null
                 ? 'Edit ${widget.entityName}'
                 : 'Add ${widget.entityName}'),
             automaticallyImplyLeading: false),
@@ -68,7 +64,7 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
                         padding: const EdgeInsets.all(4),
 
                         /// Inject the entity specific editor.
-                        child: widget.editor(_currentEntity),
+                        child: widget.editor(widget.entityState.currentEntity),
                       ),
                     ),
                   ],
@@ -98,24 +94,22 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
 
   Future<void> _save({bool close = false}) async {
     if (_formKey.currentState!.validate()) {
-      if (_currentEntity != null) {
-        final updatedEntity =
-            await widget.entityState.forUpdate(_currentEntity!);
+      if (widget.entityState.currentEntity != null) {
+        final updatedEntity = await widget.entityState
+            .forUpdate(widget.entityState.currentEntity!);
         await widget.dao.update(updatedEntity);
         setState(() {
-          _currentEntity = updatedEntity;
+          widget.entityState.currentEntity = updatedEntity;
         });
       } else {
         final newEntity = await widget.entityState.forInsert();
         await widget.onInsert(newEntity);
-        setState(() {
-          _currentEntity = newEntity;
-          widget.entityState.refresh();
-        });
+        widget.entityState.currentEntity = newEntity;
       }
 
       if (close && mounted) {
-        Navigator.of(context).pop(_currentEntity);
+        widget.entityState.refresh();
+        Navigator.of(context).pop(widget.entityState.currentEntity);
       } else {
         setState(() {});
       }

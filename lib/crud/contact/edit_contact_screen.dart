@@ -40,18 +40,22 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   late FocusNode _firstNameFocusNode;
 
   @override
+  Contact? currentEntity;
+
+  @override
   void initState() {
     super.initState();
+    currentEntity ??= widget.contact;
     _firstNameController =
-        TextEditingController(text: widget.contact?.firstName);
-    _surnameController = TextEditingController(text: widget.contact?.surname);
+        TextEditingController(text: currentEntity?.firstName);
+    _surnameController = TextEditingController(text: currentEntity?.surname);
     _mobileNumberController =
-        TextEditingController(text: widget.contact?.mobileNumber);
-    _landlineController = TextEditingController(text: widget.contact?.landLine);
+        TextEditingController(text: currentEntity?.mobileNumber);
+    _landlineController = TextEditingController(text: currentEntity?.landLine);
     _officeNumberController =
-        TextEditingController(text: widget.contact?.officeNumber);
+        TextEditingController(text: currentEntity?.officeNumber);
     _emailaddressController =
-        TextEditingController(text: widget.contact?.emailAddress);
+        TextEditingController(text: currentEntity?.emailAddress);
 
     _firstNameFocusNode = FocusNode();
   }
@@ -71,7 +75,6 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   @override
   Widget build(BuildContext context) =>
       NestedEntityEditScreen<Contact, Customer>(
-        entity: widget.contact,
         entityName: 'Contact',
         dao: DaoContact(),
         onInsert: (contact) async =>

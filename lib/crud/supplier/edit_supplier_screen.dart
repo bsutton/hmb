@@ -37,8 +37,12 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
   late TextEditingController _serviceController;
 
   @override
+  Supplier? currentEntity;
+  @override
   void initState() {
     super.initState();
+
+    currentEntity ??= widget.supplier;
     _nameController = TextEditingController(text: widget.supplier?.name);
     _businessNumberController =
         TextEditingController(text: widget.supplier?.businessNumber);
@@ -52,7 +56,6 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
 
   @override
   Widget build(BuildContext context) => EntityEditScreen<Supplier>(
-        entity: widget.supplier,
         entityName: 'Supplier',
         dao: DaoSupplier(),
         entityState: this,

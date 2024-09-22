@@ -22,8 +22,12 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
   late bool _enabled;
 
   @override
+  MessageTemplate? currentEntity;
+
+  @override
   void initState() {
     super.initState();
+    currentEntity ??= widget.messageTemplate;
     _titleController =
         TextEditingController(text: widget.messageTemplate?.title);
     _messageController =
@@ -40,7 +44,6 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
 
   @override
   Widget build(BuildContext context) => EntityEditScreen<MessageTemplate>(
-        entity: widget.messageTemplate,
         entityName: 'Message Template',
         dao: DaoMessageTemplate(),
         entityState: this,
@@ -94,11 +97,10 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
 
   @override
   Future<MessageTemplate> forInsert() async => MessageTemplate.forInsert(
-        title: _titleController.text,
-        message: _messageController.text,
-        enabled: _enabled,
-        messageType: MessageType.sms
-      );
+      title: _titleController.text,
+      message: _messageController.text,
+      enabled: _enabled,
+      messageType: MessageType.sms);
 
   @override
   void refresh() {

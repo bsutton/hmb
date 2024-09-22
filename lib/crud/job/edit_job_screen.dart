@@ -52,8 +52,13 @@ class JobEditScreenState extends State<JobEditScreen>
   BillingType _selectedBillingType = BillingType.timeAndMaterial;
 
   @override
+  Job? currentEntity;
+
+  @override
   void initState() {
     super.initState();
+
+    currentEntity ??= widget.job;
     _selectedDate = widget.job?.startDate ?? DateTime.now();
     _summaryController = TextEditingController(text: widget.job?.summary ?? '');
     _descriptionController = RichEditorController(
@@ -107,7 +112,6 @@ class JobEditScreenState extends State<JobEditScreen>
 
               /// get the job details
               builder: (context, customer) => EntityEditScreen<Job>(
-                  entity: widget.job,
                   entityName: 'Job',
                   dao: DaoJob(),
                   entityState: this,

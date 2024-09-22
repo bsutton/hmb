@@ -36,25 +36,29 @@ class _SiteEditScreenState extends State<SiteEditScreen>
   late TextEditingController _suburbController;
   late TextEditingController _stateController;
   late TextEditingController _postcodeController;
-  late TextEditingController _accessDetailsController; // New controller
+  late TextEditingController _accessDetailsController;
+
+  @override
+  Site? currentEntity;
 
   @override
   void initState() {
     super.initState();
+
+    currentEntity ??= widget.site;
     _addressLine1Controller =
-        TextEditingController(text: widget.site?.addressLine1);
+        TextEditingController(text: currentEntity?.addressLine1);
     _addressLine2Controller =
-        TextEditingController(text: widget.site?.addressLine2);
-    _suburbController = TextEditingController(text: widget.site?.suburb);
-    _stateController = TextEditingController(text: widget.site?.state);
-    _postcodeController = TextEditingController(text: widget.site?.postcode);
+        TextEditingController(text: currentEntity?.addressLine2);
+    _suburbController = TextEditingController(text: currentEntity?.suburb);
+    _stateController = TextEditingController(text: currentEntity?.state);
+    _postcodeController = TextEditingController(text: currentEntity?.postcode);
     _accessDetailsController =
-        TextEditingController(text: widget.site?.accessDetails); // New field
+        TextEditingController(text: currentEntity?.accessDetails); // New field
   }
 
   @override
   Widget build(BuildContext context) => NestedEntityEditScreen<Site, Customer>(
-        entity: widget.site,
         entityName: 'Site',
         dao: DaoSite(),
         entityState: this,

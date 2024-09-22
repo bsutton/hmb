@@ -50,6 +50,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   late FocusNode _summaryFocusNode;
   late FocusNode _descriptionFocusNode;
 
+  @override
+  Task? currentEntity;
+
   BillingType _selectedBillingType = BillingType.timeAndMaterial;
 
   Fixed _totalEffortInHours = Fixed.zero;
@@ -60,16 +63,18 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   void initState() {
     super.initState();
 
-    _nameController = TextEditingController(text: widget.task?.name);
-    _descriptionController =
-        TextEditingController(text: widget.task?.description);
+    currentEntity ??= widget.task;
 
-    _photoController = PhotoController(task: widget.task);
+    _nameController = TextEditingController(text: currentEntity?.name);
+    _descriptionController =
+        TextEditingController(text: currentEntity?.description);
+
+    _photoController = PhotoController(task: currentEntity);
 
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
 
-    _selectedBillingType = widget.task?.billingType ?? widget.job.billingType;
+    _selectedBillingType = currentEntity?.billingType ?? widget.job.billingType;
 
     // ignore: discarded_futures
     _calculateChecklistSummary(); // Calculate the effort/cost based on checklist items
@@ -86,8 +91,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   Future<void> _loadInitialTaskStatus() async {
     TaskStatus? taskStatus;
-    if (widget.task?.taskStatusId != null) {
-      taskStatus = await DaoTaskStatus().getById(widget.task!.taskStatusId);
+    if (currentEntity?.taskStatusId != null) {
+      taskStatus = await DaoTaskStatus().getById(currentEntity!.taskStatusId);
     }
 
     taskStatus ??= await DaoTaskStatus().getByEnum(TaskStatusEnum.preApproval);
@@ -109,7 +114,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   @override
   Widget build(BuildContext context) => NestedEntityEditScreen<Task, Job>(
-        entity: widget.task,
         entityName: 'Task',
         dao: DaoTask(),
         onInsert: (task) async {
@@ -168,10 +172,11 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _totalMaterialsCost = MoneyEx.zero;
     _totalToolsCost = MoneyEx.zero;
 
-    if (widget.task == null) {
+    if (currentEntity == null) {
       return;
     }
-    final checkListItems = await DaoCheckListItem().getByTask(widget.task!.id);
+    final checkListItems =
+        await DaoCheckListItem().getByTask(currentEntity!.id);
 
     for (final item in checkListItems) {
       switch (item.itemTypeId) {

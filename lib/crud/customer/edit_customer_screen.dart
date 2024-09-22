@@ -42,8 +42,12 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
   late CustomerType _selectedCustomerType;
 
   @override
+  Customer? currentEntity;
+
+  @override
   void initState() {
     super.initState();
+    currentEntity ??= widget.customer;
     _nameController = TextEditingController(text: widget.customer?.name);
     _descriptionController =
         TextEditingController(text: widget.customer?.description);
@@ -74,7 +78,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
 
   @override
   Widget build(BuildContext context) => EntityEditScreen<Customer>(
-        entity: widget.customer,
         entityName: 'Customer',
         dao: DaoCustomer(),
         entityState: this,

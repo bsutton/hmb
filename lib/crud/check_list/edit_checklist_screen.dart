@@ -44,11 +44,17 @@ class _CheckListEditScreenState extends State<CheckListEditScreen>
   late TextEditingController _descriptionController;
 
   @override
+  CheckList? currentEntity;
+
+  @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.checklist?.name);
+
+    currentEntity ??= widget.checklist;
+
+    _nameController = TextEditingController(text: currentEntity?.name);
     _descriptionController =
-        TextEditingController(text: widget.checklist?.description);
+        TextEditingController(text: currentEntity?.description);
     June.getState(CheckListTypeStatus.new).checkListType =
         widget.checkListType ?? CheckListType.global;
   }
@@ -63,7 +69,6 @@ class _CheckListEditScreenState extends State<CheckListEditScreen>
   @override
   Widget build(BuildContext context) =>
       NestedEntityEditScreen<CheckList, Customer>(
-        entity: widget.checklist,
         entityName: 'CheckList',
         dao: DaoCheckList(),
         entityState: this,

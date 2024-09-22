@@ -36,18 +36,22 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
   final DateFormat _dateTimeFormat = DateFormat('yyyy-MM-dd hh:mm a');
 
   @override
+  TimeEntry? currentEntity;
+
+  @override
   void initState() {
     super.initState();
 
+    currentEntity ??= widget.timeEntry;
     _startTimeController = TextEditingController(
-        text: widget.timeEntry != null
-            ? _dateTimeFormat.format(widget.timeEntry!.startTime.toLocal())
+        text: currentEntity != null
+            ? _dateTimeFormat.format(currentEntity!.startTime.toLocal())
             : '');
     _endTimeController = TextEditingController(
-        text: widget.timeEntry?.endTime != null
-            ? _dateTimeFormat.format(widget.timeEntry!.endTime!.toLocal())
+        text: currentEntity?.endTime != null
+            ? _dateTimeFormat.format(currentEntity!.endTime!.toLocal())
             : '');
-    _noteController = TextEditingController(text: widget.timeEntry?.note ?? '');
+    _noteController = TextEditingController(text: currentEntity?.note ?? '');
 
     _startTimeFocusNode = FocusNode();
     _endTimeFocusNode = FocusNode();
@@ -103,7 +107,6 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
 
   @override
   Widget build(BuildContext context) => NestedEntityEditScreen<TimeEntry, Task>(
-        entity: widget.timeEntry,
         entityName: 'Time Entry',
         dao: DaoTimeEntry(),
         onInsert: (timeEntry) async => DaoTimeEntry().insert(timeEntry!),

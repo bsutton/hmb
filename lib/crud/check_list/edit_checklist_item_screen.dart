@@ -73,40 +73,46 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   int? _selectedSupplierId;
   int? _selectedItemTypeId;
   LabourEntryMode _labourEntryMode = LabourEntryMode.hours;
+  @override
+  CheckListItem? currentEntity;
+
+  final globalKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+
+    currentEntity ??= widget.checkListItem;
+
     _descriptionController =
-        TextEditingController(text: widget.checkListItem?.description);
+        TextEditingController(text: currentEntity?.description);
     _estimatedMaterialUnitCostController = TextEditingController(
-        text: widget.checkListItem?.estimatedMaterialUnitCost.toString());
+        text: currentEntity?.estimatedMaterialUnitCost.toString());
     _estimatedMaterialQuantityController = TextEditingController(
-        text: (widget.checkListItem?.estimatedMaterialQuantity ?? Fixed.one)
-            .toString());
+        text:
+            (currentEntity?.estimatedMaterialQuantity ?? Fixed.one).toString());
     _estimatedLabourHoursController = TextEditingController(
-        text: widget.checkListItem?.estimatedLabourHours.toString());
+        text: currentEntity?.estimatedLabourHours.toString());
 
     _estimatedLabourCostController = TextEditingController(
-        text: widget.checkListItem?.estimatedLabourCost.toString());
+        text: currentEntity?.estimatedLabourCost.toString());
 
     _marginController =
-        TextEditingController(text: widget.checkListItem?.margin.toString());
+        TextEditingController(text: currentEntity?.margin.toString());
     _chargeController =
-        TextEditingController(text: widget.checkListItem?.charge.toString());
+        TextEditingController(text: currentEntity?.charge.toString());
 
-    _dimension1Controller = TextEditingController(
-        text: widget.checkListItem?.dimension1.toString());
-    _dimension2Controller = TextEditingController(
-        text: widget.checkListItem?.dimension2.toString());
-    _dimension3Controller = TextEditingController(
-        text: widget.checkListItem?.dimension3.toString());
+    _dimension1Controller =
+        TextEditingController(text: currentEntity?.dimension1.toString());
+    _dimension2Controller =
+        TextEditingController(text: currentEntity?.dimension2.toString());
+    _dimension3Controller =
+        TextEditingController(text: currentEntity?.dimension3.toString());
 
-    _urlController = TextEditingController(text: widget.checkListItem?.url);
-    _selectedSupplierId = widget.checkListItem?.supplierId;
-    _selectedItemTypeId = widget.checkListItem?.itemTypeId;
-    _labourEntryMode =
-        widget.checkListItem?.labourEntryMode ?? LabourEntryMode.hours;
+    _urlController = TextEditingController(text: currentEntity?.url);
+    _selectedSupplierId = currentEntity?.supplierId;
+    _selectedItemTypeId = currentEntity?.itemTypeId;
+    _labourEntryMode = currentEntity?.labourEntryMode ?? LabourEntryMode.hours;
 
     _descriptionFocusNode = FocusNode();
 
@@ -138,7 +144,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         future: DaoSystem().get(),
         builder: (context, system) =>
             NestedEntityEditScreen<CheckListItem, CheckList>(
-          entity: widget.checkListItem,
+          key: globalKey,
           entityName: 'Check List Item',
           dao: DaoCheckListItem(),
           onInsert: (checkListItem) async =>
@@ -162,21 +168,23 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
                   },
                 ),
                 _chooseItemType(checklistItem),
-                _chooseSupplier(checklistItem),
-                _buildLabourEntryModeSwitch(),
-                ..._buildFieldsBasedOnItemType(),
-                _buildMarginAndChargeFields(),
-                HMBTextField(
-                  controller: _urlController,
-                  labelText: 'Reference URL',
-                  keyboardType: TextInputType.url,
-                ),
-                DimensionWidget(
-                  dimension1Controller: _dimension1Controller,
-                  dimension2Controller: _dimension2Controller,
-                  dimension3Controller: _dimension3Controller,
-                  checkListItem: checklistItem,
-                ),
+                if (_selectedItemTypeId != null) ...[
+                  _chooseSupplier(checklistItem),
+                  _buildLabourEntryModeSwitch(),
+                  ..._buildFieldsBasedOnItemType(),
+                  _buildMarginAndChargeFields(),
+                  HMBTextField(
+                    controller: _urlController,
+                    labelText: 'Reference URL',
+                    keyboardType: TextInputType.url,
+                  ),
+                  DimensionWidget(
+                    dimension1Controller: _dimension1Controller,
+                    dimension2Controller: _dimension2Controller,
+                    dimension3Controller: _dimension3Controller,
+                    checkListItem: checklistItem,
+                  ),
+                ],
               ],
             );
           },
@@ -217,6 +225,9 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
       );
 
   List<Widget> _buildFieldsBasedOnItemType() {
+    if (_selectedItemTypeId == null) {
+      return [];
+    }
     switch (_selectedItemTypeId) {
       case 5: // Labour
         return _buildLabourFields();
@@ -287,9 +298,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         items: (filter) async => LabourEntryMode.values,
         format: LabourEntryMode.getDisplay,
         onChanged: (mode) {
-          setState(() {
-            _labourEntryMode = mode ?? LabourEntryMode.hours;
-          });
+          _labourEntryMode = mode ?? LabourEntryMode.hours;
         },
         required: false,
       );
@@ -345,7 +354,6 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
   void _calculateEstimatedCostFromHours(String? hoursValue) {
     final estimatedHours = FixedEx.tryParse(hoursValue);
-    // Calculate the estimated cost using the hourly rate
     final estimatedCost = widget.hourlyRate.multiplyByFixed(estimatedHours);
     _estimatedLabourCostController.text = estimatedCost.toString();
   }
