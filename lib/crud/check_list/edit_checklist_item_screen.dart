@@ -103,9 +103,10 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         text: widget.checkListItem?.dimension3.toString());
 
     _urlController = TextEditingController(text: widget.checkListItem?.url);
-
     _selectedSupplierId = widget.checkListItem?.supplierId;
     _selectedItemTypeId = widget.checkListItem?.itemTypeId;
+    _labourEntryMode =
+        widget.checkListItem?.labourEntryMode ?? LabourEntryMode.hours;
 
     _descriptionFocusNode = FocusNode();
 
@@ -162,6 +163,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
                 ),
                 _chooseItemType(checklistItem),
                 _chooseSupplier(checklistItem),
+                _buildLabourEntryModeSwitch(),
                 ..._buildFieldsBasedOnItemType(),
                 _buildMarginAndChargeFields(),
                 HMBTextField(
@@ -230,7 +232,6 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
   }
 
   List<Widget> _buildLabourFields() => [
-        _buildLabourEntryModeSwitch(),
         if (_labourEntryMode == LabourEntryMode.hours)
           HMBTextField(
             controller: _estimatedLabourHoursController,
@@ -252,9 +253,6 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
 
   void _calculateChargeFromMargin(String? marginValue) {
     final margin = FixedEx.tryParse(marginValue).divide(100);
-
-    FixedEx.tryParse(_estimatedLabourHoursController.text);
-
     final estimatedLabourHours =
         FixedEx.tryParse(_estimatedLabourHoursController.text);
 
@@ -264,7 +262,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
     final estimatedLabourCost =
         MoneyEx.tryParse(_estimatedLabourCostController.text);
 
-    final estimatedMaterailQuantity =
+    final estimatedMaterialQuantity =
         FixedEx.tryParse(_estimatedMaterialQuantityController.text);
 
     var charge = MoneyEx.tryParse(_chargeController.text);
@@ -273,18 +271,18 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         itemTypeId: _selectedItemTypeId,
         margin: margin,
         labourEntryMode: _labourEntryMode,
-        estimatedLabobourHours: estimatedLabourHours,
+        estimatedLabourHours: estimatedLabourHours,
         hourlyRate: widget.hourlyRate,
-        estimatedMaterailUnitCost: unitCost,
+        estimatedMaterialUnitCost: unitCost,
         estimatedLabourCost: estimatedLabourCost,
-        estimatedMaterialQuantity: estimatedMaterailQuantity,
+        estimatedMaterialQuantity: estimatedMaterialQuantity,
         charge: charge);
 
     _chargeController.text = charge.toString();
   }
 
   Widget _buildLabourEntryModeSwitch() => HMBDroplist<LabourEntryMode>(
-        title: 'Enter Labour as:',
+        title: 'Labour Entry Mode',
         selectedItem: () async => _labourEntryMode,
         items: (filter) async => LabourEntryMode.values,
         format: LabourEntryMode.getDisplay,
@@ -371,6 +369,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
         margin: FixedEx.tryParse(_marginController.text),
         completed: checkListItem.completed,
         billed: false,
+        labourEntryMode: _labourEntryMode,
         measurementType:
             June.getState(SelectedMeasurementType.new).selectedOrDefault,
         dimension1:
@@ -399,6 +398,7 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
             MoneyEx.tryParse(_estimatedLabourCostController.text),
         charge: MoneyEx.tryParse(_chargeController.text),
         margin: FixedEx.tryParse(_marginController.text),
+        labourEntryMode: _labourEntryMode,
         measurementType:
             June.getState(SelectedMeasurementType.new).selectedOrDefault,
         dimension1:

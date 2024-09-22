@@ -20,6 +20,19 @@ enum LabourEntryMode {
         return LabourEntryMode.dollars._display;
     }
   }
+
+  static LabourEntryMode fromString(String value) {
+    switch (value) {
+      case 'Hours':
+        return LabourEntryMode.hours;
+      case 'Dollars':
+        return LabourEntryMode.dollars;
+      default:
+        throw ArgumentError('Unknown LabourEntryMode: $value');
+    }
+  }
+
+  String toSqlString() => _display;
 }
 
 class CheckListItem extends Entity<CheckListItem> {
@@ -44,9 +57,48 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.dimension3,
     required this.units,
     required this.url,
+    required this.labourEntryMode,
     this.invoiceLineId,
-    this.supplierId, // New field for Supplier
+    this.supplierId,
   }) : super();
+
+  factory CheckListItem.fromMap(Map<String, dynamic> map) => CheckListItem(
+        id: map['id'] as int,
+        checkListId: map['check_list_id'] as int,
+        description: map['description'] as String,
+        itemTypeId: map['item_type_id'] as int,
+        estimatedMaterialUnitCost:
+            MoneyEx.fromInt(map['estimated_material_unit_cost'] as int?),
+        estimatedMaterialQuantity: Fixed.fromInt(
+            map['estimated_material_quantity'] as int? ?? 1,
+            scale: 3),
+        estimatedLabourHours:
+            Fixed.fromInt(map['estimated_labour_hours'] as int? ?? 0, scale: 3),
+        estimatedLabourCost: Money.fromInt(
+            map['estimated_labour_cost'] as int? ?? 0,
+            isoCode: 'AUD'),
+        charge: Money.fromInt(map['charge'] as int? ?? 0, isoCode: 'AUD'),
+        margin: Percentage.fromInt(map['margin'] as int? ?? 0, scale: 3),
+        completed: map['completed'] == 1,
+        billed: map['billed'] == 1,
+        invoiceLineId: map['invoice_line_id'] as int?,
+        measurementType: MeasurementType.fromName(
+                map['measurement_type'] as String? ??
+                    MeasurementType.defaultMeasurementType.name) ??
+            MeasurementType.defaultMeasurementType,
+        dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
+        dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
+        dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
+        units: Units.fromName(
+                map['units'] as String? ?? Units.defaultUnits.name) ??
+            Units.defaultUnits,
+        url: map['url'] as String? ?? '',
+        supplierId: map['supplier_id'] as int?,
+        labourEntryMode:
+            LabourEntryMode.fromString(map['labour_entry_mode'] as String),
+        createdDate: DateTime.parse(map['createdDate'] as String),
+        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+      );
 
   CheckListItem.forInsert({
     required this.checkListId,
@@ -64,69 +116,38 @@ class CheckListItem extends Entity<CheckListItem> {
     required this.dimension3,
     required this.units,
     required this.url,
+    required this.labourEntryMode,
     this.completed = false,
     this.billed = false,
     this.invoiceLineId,
     this.supplierId, // New field for Supplier
   }) : super.forInsert();
 
-  CheckListItem.forUpdate({
-    required super.entity,
-    required this.checkListId,
-    required this.description,
-    required this.itemTypeId,
-    required this.estimatedMaterialUnitCost,
-    required this.estimatedLabourHours,
-    required this.estimatedMaterialQuantity,
-    required this.estimatedLabourCost,
-    required this.margin,
-    required this.charge,
-    required this.completed,
-    required this.billed,
-    required this.measurementType,
-    required this.dimension1,
-    required this.dimension2,
-    required this.dimension3,
-    required this.units,
-    required this.url,
-    this.invoiceLineId,
-    this.supplierId,
-  }) : super.forUpdate();
+  CheckListItem.forUpdate(
+      {required super.entity,
+      required this.checkListId,
+      required this.description,
+      required this.itemTypeId,
+      required this.estimatedMaterialUnitCost,
+      required this.estimatedLabourHours,
+      required this.estimatedMaterialQuantity,
+      required this.estimatedLabourCost,
+      required this.margin,
+      required this.charge,
+      required this.completed,
+      required this.billed,
+      required this.measurementType,
+      required this.dimension1,
+      required this.dimension2,
+      required this.dimension3,
+      required this.units,
+      required this.url,
+      required this.labourEntryMode,
+      this.invoiceLineId,
+      this.supplierId})
+      : super.forUpdate();
 
-  factory CheckListItem.fromMap(Map<String, dynamic> map) => CheckListItem(
-        id: map['id'] as int,
-        checkListId: map['check_list_id'] as int,
-        description: map['description'] as String,
-        itemTypeId: map['item_type_id'] as int,
-        estimatedMaterialUnitCost:
-            MoneyEx.fromInt(map['estimated_material_unit_cost'] as int?),
-        estimatedMaterialQuantity:
-            Fixed.fromInt(map['estimated_material_quantity'] as int? ?? 1),
-        estimatedLabourHours:
-            Fixed.fromInt(map['estimated_labour_hours'] as int? ?? 0),
-        estimatedLabourCost: Money.fromInt(
-            map['estimated_labour_cost'] as int? ?? 0,
-            isoCode: 'AUD'),
-        charge: Money.fromInt(map['charge'] as int? ?? 0, isoCode: 'AUD'),
-        margin: Percentage.fromInt(map['charge'] as int? ?? 0),
-        completed: map['completed'] == 1,
-        billed: map['billed'] == 1,
-        invoiceLineId: map['invoice_line_id'] as int?,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-        measurementType: MeasurementType.fromName(
-                map['measurement_type'] as String? ??
-                    MeasurementType.defaultMeasurementType.name) ??
-            MeasurementType.defaultMeasurementType,
-        dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
-        dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
-        dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
-        units: Units.fromName(
-                map['units'] as String? ?? Units.defaultUnits.name) ??
-            Units.defaultUnits,
-        url: map['url'] as String? ?? '',
-        supplierId: map['supplier_id'] as int?,
-      );
+  LabourEntryMode labourEntryMode;
 
   int checkListId;
   String description;
@@ -199,7 +220,7 @@ class CheckListItem extends Entity<CheckListItem> {
         'description': description,
         'item_type_id': itemTypeId,
         'estimated_material_unit_cost': estimatedMaterialUnitCost
-            ?.copyWith(decimalDigits: 2)
+            ?.copyWith(decimalDigits: 3)
             .minorUnits
             .toInt(),
         'estimated_material_quantity': estimatedMaterialQuantity == null
@@ -214,21 +235,22 @@ class CheckListItem extends Entity<CheckListItem> {
                 .toInt(),
         'estimated_labour_cost':
             estimatedLabourCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
-
+        'margin': Fixed.copyWith(margin, scale: 3).minorUnits.toInt(),
+        'charge': charge.copyWith(decimalDigits: 3).minorUnits.toInt(),
+        'labour_entry_mode': labourEntryMode.toSqlString(), // Added for SQL
         'completed': completed ? 1 : 0,
         'billed': billed ? 1 : 0,
         'invoice_line_id': invoiceLineId,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
         'measurement_type': measurementType.name,
         'dimension1': Fixed.copyWith(dimension1, scale: 3).minorUnits.toInt(),
         'dimension2': Fixed.copyWith(dimension2, scale: 3).minorUnits.toInt(),
         'dimension3': Fixed.copyWith(dimension3, scale: 3).minorUnits.toInt(),
         'units': units.name,
         'url': url,
-        'supplier_id': supplierId, // New field for Supplier
+        'supplier_id': supplierId,
+        'createdDate': createdDate.toIso8601String(),
+        'modifiedDate': modifiedDate.toIso8601String(),
       };
-
   CheckListItem copyWith({
     int? id,
     int? checkListId,
@@ -251,6 +273,7 @@ class CheckListItem extends Entity<CheckListItem> {
     Fixed? dimension3,
     Units? units,
     String? url,
+    LabourEntryMode? labourEntryMode,
   }) =>
       CheckListItem(
         id: id ?? this.id,
@@ -275,6 +298,7 @@ class CheckListItem extends Entity<CheckListItem> {
         dimension2: dimension2 ?? this.dimension2,
         dimension3: dimension3 ?? this.dimension3,
         units: units ?? this.units,
+        labourEntryMode: labourEntryMode ?? this.labourEntryMode,
         url: url ?? this.url,
       );
 
@@ -284,10 +308,3 @@ class CheckListItem extends Entity<CheckListItem> {
 }
 
 typedef Percentage = Fixed;
-
-// class Percentage {
-//   Percentage(int percentage) : _percentage = Fixed.fromInt(percentage);
-//   final Fixed _percentage;
-
-//   Fixed get percentage => _percentage;
-// }

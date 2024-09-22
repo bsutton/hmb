@@ -6,6 +6,7 @@ import '../entity/check_list.dart';
 import '../entity/check_list_item.dart';
 import '../entity/job.dart';
 import '../entity/supplier.dart';
+import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_check_list_item_check_list.dart';
 
@@ -185,6 +186,59 @@ and js.name != 'Awaiting Payment'
     ''');
 
     return toList(data);
+  }
+
+  /// Returns the caculated charge.
+  Money calculateChargeFromMargin(
+      {required int? itemTypeId,
+      required Fixed margin,
+      required LabourEntryMode labourEntryMode,
+      required Fixed estimatedLabourHours,
+      required Money hourlyRate,
+      required Money estimatedMaterialUnitCost,
+      required Money estimatedLabourCost,
+      required Fixed estimatedMaterialQuantity,
+      required Money charge}) {
+    Money? estimatedCost;
+
+    // Determine the estimated cost based on item type
+    switch (itemTypeId) {
+      // Labour
+      case 5:
+        {
+          if (labourEntryMode == LabourEntryMode.hours) {
+            estimatedCost = hourlyRate.multiplyByFixed(estimatedLabourHours);
+          } else {
+            estimatedCost = estimatedLabourCost;
+          }
+        }
+
+      // Materials - buy or Tools - buy
+      case 1:
+      case 3:
+        {
+          final quantity = estimatedMaterialQuantity;
+          estimatedCost = estimatedMaterialUnitCost.multiplyByFixed(quantity);
+        }
+      // Materials - stock or Tools - stock
+      case 2:
+      case 4:
+        {
+          // For stock items, we use the charge directly without applying
+          // the margin
+          return charge;
+        }
+    }
+
+    // Calculate the charge using the margin
+    if (estimatedCost != null) {
+      final charge = estimatedCost
+          .multiplyByFixed(Fixed.one + (margin / Fixed.fromInt(100)));
+
+      return charge;
+    }
+
+    return MoneyEx.zero;
   }
 }
 
