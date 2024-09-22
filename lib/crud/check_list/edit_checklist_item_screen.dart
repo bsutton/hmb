@@ -160,15 +160,15 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
                     return null;
                   },
                 ),
+                _chooseItemType(checklistItem),
+                _chooseSupplier(checklistItem),
+                ..._buildFieldsBasedOnItemType(),
+                _buildMarginAndChargeFields(),
                 HMBTextField(
                   controller: _urlController,
                   labelText: 'Reference URL',
                   keyboardType: TextInputType.url,
                 ),
-                _chooseItemType(checklistItem),
-                _chooseSupplier(checklistItem),
-                ..._buildFieldsBasedOnItemType(),
-                _buildMarginAndChargeFields(),
                 DimensionWidget(
                   dimension1Controller: _dimension1Controller,
                   dimension2Controller: _dimension2Controller,
@@ -250,26 +250,50 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
           ),
       ];
 
-  Widget _buildLabourEntryModeSwitch() => Row(
-        children: [
-          const Text('Enter Labour as: '),
-          Expanded(
-            child: DropdownButton<LabourEntryMode>(
-              value: _labourEntryMode,
-              items: LabourEntryMode.values
-                  .map((mode) => DropdownMenuItem(
-                        value: mode,
-                        child: Text(LabourEntryMode.getDisplay(mode)),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _labourEntryMode = value ?? LabourEntryMode.hours;
-                });
-              },
-            ),
-          ),
-        ],
+  void _calculateChargeFromMargin(String? marginValue) {
+    final margin = FixedEx.tryParse(marginValue).divide(100);
+
+    FixedEx.tryParse(_estimatedLabourHoursController.text);
+
+    final estimatedLabourHours =
+        FixedEx.tryParse(_estimatedLabourHoursController.text);
+
+    final unitCost =
+        MoneyEx.tryParse(_estimatedMaterialUnitCostController.text);
+
+    final estimatedLabourCost =
+        MoneyEx.tryParse(_estimatedLabourCostController.text);
+
+    final estimatedMaterailQuantity =
+        FixedEx.tryParse(_estimatedMaterialQuantityController.text);
+
+    var charge = MoneyEx.tryParse(_chargeController.text);
+
+    charge = DaoCheckListItem().calculateChargeFromMargin(
+        itemTypeId: _selectedItemTypeId,
+        margin: margin,
+        labourEntryMode: _labourEntryMode,
+        estimatedLabobourHours: estimatedLabourHours,
+        hourlyRate: widget.hourlyRate,
+        estimatedMaterailUnitCost: unitCost,
+        estimatedLabourCost: estimatedLabourCost,
+        estimatedMaterialQuantity: estimatedMaterailQuantity,
+        charge: charge);
+
+    _chargeController.text = charge.toString();
+  }
+
+  Widget _buildLabourEntryModeSwitch() => HMBDroplist<LabourEntryMode>(
+        title: 'Enter Labour as:',
+        selectedItem: () async => _labourEntryMode,
+        items: (filter) async => LabourEntryMode.values,
+        format: LabourEntryMode.getDisplay,
+        onChanged: (mode) {
+          setState(() {
+            _labourEntryMode = mode ?? LabourEntryMode.hours;
+          });
+        },
+        required: false,
       );
 
   List<Widget> _buildBuyFields() => [
@@ -320,45 +344,6 @@ class _CheckListItemEditScreenState extends State<CheckListItemEditScreen>
           ),
         ],
       );
-
-  void _calculateChargeFromMargin(String? marginValue) {
-    final margin = FixedEx.tryParse(marginValue).divide(100);
-    Money? estimatedCost;
-
-    // Determine the estimated cost based on item type
-    if (_selectedItemTypeId == 5) {
-      // Labour
-      if (_labourEntryMode == LabourEntryMode.hours) {
-        final estimatedHours =
-            FixedEx.tryParse(_estimatedLabourHoursController.text);
-        estimatedCost = widget.hourlyRate.multiplyByFixed(estimatedHours);
-      } else {
-        estimatedCost = MoneyEx.tryParse(_estimatedLabourCostController.text);
-      }
-    } else if (_selectedItemTypeId == 1 || _selectedItemTypeId == 3) {
-      // Materials - buy or Tools - buy
-      final unitCost =
-          MoneyEx.tryParse(_estimatedMaterialUnitCostController.text);
-
-      final quantity =
-          FixedEx.tryParse(_estimatedMaterialQuantityController.text);
-      estimatedCost = unitCost.multiplyByFixed(quantity);
-    } else if (_selectedItemTypeId == 2 || _selectedItemTypeId == 4) {
-      // Materials - stock or Tools - stock
-      final charge = MoneyEx.tryParse(_chargeController.text);
-      _chargeController.text = charge.toString();
-
-      // For stock items, we use the charge directly without applying the margin
-      return;
-    }
-
-    // Calculate the charge using the margin
-    if (estimatedCost != null) {
-      final charge = estimatedCost
-          .multiplyByFixed(Fixed.one + (margin / Fixed.fromInt(100)));
-      _chargeController.text = charge.toString();
-    }
-  }
 
   void _calculateEstimatedCostFromHours(String? hoursValue) {
     final estimatedHours = FixedEx.tryParse(hoursValue);
