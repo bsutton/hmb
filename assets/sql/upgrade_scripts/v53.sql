@@ -66,3 +66,17 @@ DROP TABLE task_old;
 -- Step 5: Rename the new table to the original table name
 -- This step is actually unnecessary in this case, as the table has already been created with the desired name.
 
+-- original calc didn't account for the fact we store 3 decimals as a int.
+
+-- UPDATE check_list_item 
+-- SET estimated_material_unit_cost = estimated_material_unit_cost / 1000 
+-- WHERE description = 'Action for Estimated Cost';
+
+UPDATE check_list_item 
+SET 
+estimated_material_unit_cost = estimated_material_unit_cost /1000,
+estimated_labour_cost = estimated_labour_cost / 1000 ,
+estimated_material_quantity = estimated_material_quantity * 100
+WHERE description = 'Action for Effort in Hours';
+
+
