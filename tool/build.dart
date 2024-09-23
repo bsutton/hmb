@@ -25,10 +25,16 @@ void main(List<String> args) {
     ..addFlag('install',
         abbr: 'i', help: 'install the apk to a device connected via USB')
     ..addFlag('release', abbr: 'r', help: '''
-Create a signed release appbundle suitable to upload to Google Play store.''');
+Create a signed release appbundle suitable to upload to Google Play store.''')
+    ..addFlag('help', abbr: 'h', help: 'Shows the help message');
 
   final results = parser.parse(args);
 
+  final help = results['help'] as bool;
+  if (help) {
+    showUsage(parser);
+    exit(0);
+  }
   var build = results['build'] as bool;
   var install = results['install'] as bool;
   var assets = results['assets'] as bool;
@@ -36,7 +42,7 @@ Create a signed release appbundle suitable to upload to Google Play store.''');
 
   if (!build && !install && !assets && !release) {
     /// no switches passed so do it all.
-    build = install = assets = true;
+    assets = build = install = true;
   }
   if (release) {
     install = false;
@@ -63,6 +69,14 @@ Create a signed release appbundle suitable to upload to Google Play store.''');
   if (install) {
     installApk();
   }
+}
+
+void showUsage(ArgParser parser) {
+  print('''
+Tools to help build the app
+  If no switches are passed then --assets, --build and --install are assumed
+  ''');
+  print(parser.usage);
 }
 
 void _runPubGet() {
