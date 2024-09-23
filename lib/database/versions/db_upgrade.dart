@@ -86,23 +86,47 @@ Future<List<String>> parseSqlFile(String content) async {
   final buffer = StringBuffer();
   var inSingleQuote = false;
   var inDoubleQuote = false;
+  var inComment = false;
 
-  // Split the content into lines and filter out lines starting with '--'
-  final lines =
-      content.split('\n').where((line) => !line.trim().startsWith('--'));
+  for (var i = 0; i < content.length; i++) {
+    final char = content[i];
+    final nextChar = i + 1 < content.length ? content[i + 1] : '';
 
-  // Reconstruct the content from the filtered lines
-  final filteredContent = lines.join('\n');
-
-  for (var i = 0; i < filteredContent.length; i++) {
-    final char = filteredContent[i];
-
-    if (char == "'" && !inDoubleQuote) {
-      inSingleQuote = !inSingleQuote;
-    } else if (char == '"' && !inSingleQuote) {
-      inDoubleQuote = !inDoubleQuote;
+    // Detect start of comment
+    if (!inSingleQuote &&
+        !inDoubleQuote &&
+        !inComment &&
+        char == '-' &&
+        nextChar == '-') {
+      inComment = true;
+      i++; // Skip the next '-' character
+      continue;
     }
 
+    // Ignore characters within a comment until the end of the line
+    if (inComment) {
+      if (char == '\n') {
+        inComment = false;
+        buffer.write(char); // Include the newline character
+      }
+      continue;
+    }
+
+    // Toggle single quote context
+    if (char == "'" && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      buffer.write(char);
+      continue;
+    }
+
+    // Toggle double quote context
+    if (char == '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      buffer.write(char);
+      continue;
+    }
+
+    // Handle semicolon outside of quotes
     if (char == ';' && !inSingleQuote && !inDoubleQuote) {
       statements.add(buffer.toString().trim());
       buffer.clear();
