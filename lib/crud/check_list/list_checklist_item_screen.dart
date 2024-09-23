@@ -158,34 +158,29 @@ class _CheckListItemListScreenState<P extends Entity<P>>
 
   List<Widget> _buildLabourFields(CheckListItem checkListItem) => [
         if (checkListItem.labourEntryMode == LabourEntryMode.hours)
-          HMBText('Estimated Hours: ${checkListItem.estimatedLabourHours} ')
-        else
-          HMBText('Estimated Cost: ${checkListItem.estimatedLabourCost} '),
-        HMBText('Charge: ${checkListItem.charge}'),
+          HMBText('Est: Hours: ${checkListItem.estimatedLabourHours} '
+              'Cost: ${checkListItem.estimatedLabourCost} '),
+        HMBText('Charge: ${checkListItem.charge} '
+            'Margin (%): ${checkListItem.margin}'),
       ];
 
   List<Widget> _buildBuyFields(CheckListItem checkListItem) => [
+        HMBText('Est: Unit Cost: ${checkListItem.estimatedMaterialUnitCost} '
+            'Qty: ${checkListItem.estimatedMaterialQuantity} '),
         HMBText(
-            'Estimated Unit Cost: ${checkListItem.estimatedMaterialUnitCost}'),
-        HMBText(
-          'Estimated Quantity: ${checkListItem.estimatedMaterialQuantity}',
+          'Charge: ${checkListItem.charge} '
+          'Margin (%): ${checkListItem.margin}',
         ),
       ];
 
   List<Widget> _buildStockFields(CheckListItem checkListItem) => [
-        HMBText('Charge: ${checkListItem.charge}'),
         HMBText(
-          'Quantity: ${checkListItem.estimatedMaterialQuantity}',
+          'Unit Charge: ${checkListItem.charge} '
+          'Qty: ${checkListItem.estimatedMaterialQuantity} ',
         ),
+        HMBText('Charge: ${checkListItem.charge} '
+            'Margin (%): ${checkListItem.margin}'),
       ];
-
-  Widget _buildMarginAndChargeFields(CheckListItem checkListItem) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          HMBText('Margin (%): ${checkListItem.margin}'),
-          HMBText('Charge: ${checkListItem.charge}'),
-        ],
-      );
 
   Future<void> _markAsCompleted(
       BuildContext context, CheckListItem item) async {
