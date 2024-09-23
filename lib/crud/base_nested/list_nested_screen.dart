@@ -185,7 +185,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
     final cards = <Widget>[];
 
     for (final entity in list) {
-      cards.add(SizedBox(height: 200, child: _buildCard(entity, context)));
+      cards.add(SizedBox(height: 212, child: _buildCard(entity, context)));
     }
 
     return Column(
