@@ -8,13 +8,13 @@ list(APPEND FLUTTER_PLUGIN_LIST
   oidc_windows
   permission_handler_windows
   printing
-  sentry_flutter
   url_launcher_windows
   window_to_front
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
   pdfrx
+  sentry_flutter
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)
