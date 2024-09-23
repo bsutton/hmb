@@ -51,6 +51,9 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
     final costController = TextEditingController();
     final quantityController = TextEditingController();
 
+    costController.text = item.estimatedMaterialUnitCost.toString();
+    quantityController.text = item.estimatedMaterialQuantity.toString();
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -211,7 +214,7 @@ that are marked as "Materials - buy" or "Tools - buy".'''));
                           style: TextStyle(color: Colors.green),
                         ),
                     ],
-                ),
+                  ),
                 ),
               ),
             ),
