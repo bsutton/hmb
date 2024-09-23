@@ -3,6 +3,8 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../dao/dao_task.dart';
 import '../entity/job.dart';
+import '../entity/task.dart';
+import '../widgets/async_state.dart';
 
 /// show the user the set of tasks for the passed Job
 /// and allow them to select which tasks they want to
@@ -32,17 +34,24 @@ class DialogTaskSelection extends StatefulWidget {
   }
 }
 
-class _DialogTaskSelectionState extends State<DialogTaskSelection> {
-  late Future<List<TaskEstimates>> _tasks;
+class _DialogTaskSelectionState
+    extends AsyncState<DialogTaskSelection, List<TaskEstimates>> {
+  // late List<TaskEstimates> _tasks;
   final Map<int, bool> _selectedTasks = {};
   bool _selectAll = true;
 
   @override
-  void initState() {
-    super.initState();
+  Future<List<TaskEstimates>> asyncInitState() async {
     // Load tasks and their costs via the DAO
-    // ignore: discarded_futures
-    _tasks = DaoTask().getTaskCostsByJob(widget.job.id, widget.job.hourlyRate!);
+    final tasksEstimates = await DaoTask()
+        .getTaskCostsByJob(widget.job.id, widget.job.hourlyRate!);
+
+    /// Mark all tasks as selected.
+    for (final estimate in tasksEstimates) {
+      _selectedTasks[estimate.task.id] = true;
+    }
+
+    return tasksEstimates;
   }
 
   void _toggleSelectAll(bool? value) {
@@ -69,8 +78,8 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
   Widget build(BuildContext context) => AlertDialog(
         title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
         content: FutureBuilderEx<List<TaskEstimates>>(
-            future: _tasks,
-            builder: (context, tasks) => SingleChildScrollView(
+            future: initialised,
+            builder: (context, taskEstimates) => SingleChildScrollView(
                   child: Column(
                     children: [
                       CheckboxListTile(
@@ -78,7 +87,7 @@ class _DialogTaskSelectionState extends State<DialogTaskSelection> {
                         value: _selectAll,
                         onChanged: _toggleSelectAll,
                       ),
-                      for (final taskCost in tasks!)
+                      for (final taskCost in taskEstimates!)
                         CheckboxListTile(
                           title: Text(taskCost.task.name),
                           subtitle: Text('Total Cost: ${taskCost.cost}'),
