@@ -227,7 +227,7 @@ class _CheckListItemEditScreenState
       HMBDroplist<Supplier>(
         title: 'Supplier',
         selectedItem: () async =>
-            June.getState(SelectedSupplier.new).selected != null
+            June.getState(SelectedSupplier.new).selected != 0
                 ? DaoSupplier()
                     .getById(June.getState(SelectedSupplier.new).selected)
                 : null,
@@ -285,7 +285,8 @@ class _CheckListItemEditScreenState
             controller: _estimatedLabourCostController,
             labelText: 'Estimated Cost',
             keyboardType: TextInputType.number,
-            onChanged: _calculateChargeFromMargin,
+            onChanged: (value) =>
+                _calculateChargeFromMargin(_marginController.text),
           ),
         _buildMarginAndChargeFields(),
       ];
