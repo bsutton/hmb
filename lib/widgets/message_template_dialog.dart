@@ -1,28 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:strings/strings.dart';
 
 import '../../entity/message_template.dart';
+import '../dao/dao_contact.dart';
+import '../dao/dao_customer.dart';
 import '../dao/dao_message_template.dart';
+import '../dao/dao_site.dart';
+import '../entity/contact.dart';
+import '../entity/customer.dart';
+import '../entity/job.dart';
+import '../entity/site.dart';
+import '../entity/supplier.dart';
+import 'async_state.dart';
+import 'hmb_date_time_picker.dart';
+import 'hmb_droplist.dart';
+
+class PlaceHolderField {
+  PlaceHolderField(this.placeholder, this.controller, this.picker);
+  String placeholder;
+  ValueNotifier<TextEditingValue>? controller;
+  Widget picker;
+}
 
 class MessageTemplateDialog extends StatefulWidget {
   const MessageTemplateDialog({
-    required this.customerId,
-    required this.jobId,
     super.key,
+    this.job,
+    this.customer,
+    this.supplier,
+    this.contact,
   });
-  final int customerId;
-  final int jobId;
+  final Job? job;
+  final Customer? customer;
+  final Contact? contact;
+  final Supplier? supplier;
 
   @override
-  // ignore: library_private_types_in_public_api
   _MessageTemplateDialogState createState() => _MessageTemplateDialogState();
 }
 
-Future<SelectedMessageTemplate?> showMessageTemplateDialog(
-    BuildContext context) async {
+Future<SelectedMessageTemplate?> showMessageTemplateDialog(BuildContext context,
+    {Customer? customer,
+    Job? job,
+    Contact? contact,
+    Supplier? supplier}) async {
   final result = await showDialog<SelectedMessageTemplate>(
     context: context,
     builder: (context) =>
-        const MessageTemplateDialog(customerId: 123, jobId: 456),
+        MessageTemplateDialog(customer: customer, job: job, supplier: supplier),
   );
 
   if (result != null) {
@@ -37,54 +62,197 @@ Future<SelectedMessageTemplate?> showMessageTemplateDialog(
   return null;
 }
 
-class _MessageTemplateDialogState extends State<MessageTemplateDialog> {
+class _MessageTemplateDialogState
+    extends AsyncState<MessageTemplateDialog, void> {
   List<MessageTemplate> _templates = [];
   MessageTemplate? _selectedTemplate;
-  final Map<String, TextEditingController> _controllers = {};
+
+  final Map<String, PlaceHolderField> placeholderFields = {};
+  Customer? _selectedCustomer;
+  Site? _selectedSite;
+  Contact? _selectedContact;
 
   @override
-  void initState() {
-    super.initState();
-    // ignore: discarded_futures
-    _loadTemplates();
+  Future<void> asyncInitState() async {
+    await _loadTemplates();
+    if (widget.job != null) {
+      await _loadJobDetails(widget.job!);
+    }
   }
 
   Future<void> _loadTemplates() async {
-    final dao = DaoMessageTemplate();
-    final templates = await dao.getByFilter(null);
+    // Fetch templates based on the screen (Job, Customer, Supplier, or Contact)
+    final templates = await DaoMessageTemplate().getByFilter(null);
     setState(() {
-      _templates = templates.where((template) => template.enabled).toList();
+      _templates = _filterTemplates(templates);
     });
   }
 
-  Widget _buildInputField(String placeholder) {
-    if (!_controllers.containsKey(placeholder)) {
-      _controllers[placeholder] = TextEditingController();
+  Future<void> _loadJobDetails(Job job) async {
+    // Load customer and site details for the job
+    final customer = await DaoCustomer().getById(job.customerId);
+    final site = await DaoSite().getById(job.siteId);
+    _selectedCustomer = customer;
+    _selectedSite = site;
+    _selectedContact = job.contactId != null
+        ? await DaoContact().getById(job.contactId).then((c) => c)
+        : null;
+    setState(() {});
+  }
+
+  List<MessageTemplate> _filterTemplates(List<MessageTemplate> templates) {
+    // Filter based on the screen type (job, customer, supplier, contact)
+    if (widget.job != null) {
+      return templates.where((t) => t.message.contains('{{job_')).toList();
+    } else if (widget.customer != null) {
+      return templates.where((t) => t.message.contains('{{customer_')).toList();
+    } else if (widget.supplier != null) {
+      return templates.where((t) => t.message.contains('{{supplier_')).toList();
+    } else if (widget.contact != null) {
+      return templates.where((t) => t.message.contains('{{contact_')).toList();
+    }
+    return templates;
+  }
+
+  Widget _buildPlaceholderField(String placeholder) {
+    if (!placeholderFields.containsKey(placeholder)) {
+      placeholderFields[placeholder] = TextEditingController();
     }
 
+    return buildPlaceHolderPicker(placeholder);
+  }
+
+  PlaceHolderField buildPlaceHolderPicker(String placeholder) {
+    if (placeholder.contains('time')) {
+      return _buildTimePicker(placeholder);
+    } else if (placeholder.contains('date')) {
+      return _buildDatePicker(placeholder);
+    } else if (placeholder == 'delay_period') {
+      return _buildPeriodPicker(placeholder);
+    } else if (placeholder == 'customer_name' && _selectedCustomer != null) {
+      return HMBDroplist(
+          title: 'Customer',
+          selectedItem: () async => _selectedCustomer,
+          items: (filter) async => DaoCustomer().getByFilter(filter),
+          onChanged: (customer) => _selectedCustomer = customer,
+          format: (customer) => customer.name);
+    } else if (placeholder == 'site' && _selectedSite != null) {
+      return TextFormField(
+        controller: placeholderFields[placeholder]!
+          ..text = _selectedSite!.address,
+        decoration: const InputDecoration(labelText: 'Site'),
+      );
+    } else if (placeholder == 'contact_name' && _selectedContact != null) {
+      return TextFormField(
+        controller: placeholderFields[placeholder]!
+          ..text = _selectedContact!.fullname,
+        decoration: const InputDecoration(labelText: 'Contact Name'),
+      );
+    }
+
+    // Default TextFormField for other placeholders
     return TextFormField(
-      controller: _controllers[placeholder],
-      decoration: InputDecoration(labelText: placeholder),
+      controller: placeholderFields[placeholder],
+      decoration: InputDecoration(labelText: placeholder.toCapitalised()),
     );
   }
 
-  Widget _buildTimePicker(String placeholder) {
+  PlaceHolderField _buildTimePicker(String placeholder) {
     var selectedTime = TimeOfDay.now();
 
+    final widget = HMBDateTimeField(
+        label: placeholder,
+        initialDateTime: DateTime.now(),
+        onChanged: (datetime) => _selectedTime = datetime,
+        showDate: false);
+
+    return PlaceHolderField(placeholder, null, widget);
+
+    // ListTile(
+    //   title: Text(placeholder),
+    //   subtitle: Text(placeholderFields[placeholder]?.text ?? 'Select Time'),
+    //   onTap: () async {
+    //     final pickedTime = await showTimePicker(
+    //       context: context,
+    //       initialTime: selectedTime,
+    //     );
+    //     if (pickedTime != null) {
+    //       setState(() {
+    //         selectedTime = pickedTime;
+    //         placeholderFields[placeholder]?.text = selectedTime.format(context);
+    //       });
+    //     }
+    //   },
+    // );
+  }
+
+    PlaceHolderField _buildDatePicker(String placeholder) {
+    var selectedTime = TimeOfDay.now();
+
+    final widget = HMBDateTimeField(
+        label: placeholder,
+        initialDateTime: DateTime.now(),
+        onChanged: (datetime) => selectedDate = datetime,
+        showDate: false);
+
+    return PlaceHolderField(placeholder, null, widget);
+
+    // ListTile(
+    //   title: Text(placeholder),
+    //   subtitle: Text(placeholderFields[placeholder]?.text ?? 'Select Time'),
+    //   onTap: () async {
+    //     final pickedTime = await showTimePicker(
+    //       context: context,
+    //       initialTime: selectedTime,
+    //     );
+    //     if (pickedTime != null) {
+    //       setState(() {
+    //         selectedTime = pickedTime;
+    //         placeholderFields[placeholder]?.text = selectedTime.format(context);
+    //       });
+    //     }
+    //   },
+    // );
+  }
+
+  Widget _buildDatePicker(String placeholder) {
+    var selectedDate = DateTime.now();
     return ListTile(
       title: Text(placeholder),
-      subtitle: Text(_controllers[placeholder]?.text ?? 'Select Time'),
+      subtitle: Text(placeholderFields[placeholder]?.text ?? 'Select Date'),
       onTap: () async {
-        final pickedTime = await showTimePicker(
+        final pickedDate = await showDatePicker(
           context: context,
-          initialTime: selectedTime,
+          initialDate: selectedDate,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
         );
-        if (pickedTime != null) {
+        if (pickedDate != null) {
           setState(() {
-            selectedTime = pickedTime;
-            _controllers[placeholder]?.text = selectedTime.format(context);
+            selectedDate = pickedDate;
+            placeholderFields[placeholder]?.text =
+                '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}';
           });
         }
+      },
+    );
+  }
+
+  Widget _buildPeriodPicker(String placeholder) {
+    final periods = <String>['15 minutes', '30 minutes', '1 hour', '2 hours'];
+    return DropdownButtonFormField<String>(
+      decoration: const InputDecoration(labelText: 'Delay Period'),
+      value: placeholderFields[placeholder]?.text,
+      items: periods
+          .map((period) => DropdownMenuItem<String>(
+                value: period,
+                child: Text(period),
+              ))
+          .toList(),
+      onChanged: (newValue) {
+        setState(() {
+          placeholderFields[placeholder]?.text = newValue!;
+        });
       },
     );
   }
@@ -95,7 +263,7 @@ class _MessageTemplateDialogState extends State<MessageTemplateDialog> {
     }
 
     var previewMessage = _selectedTemplate!.message;
-    _controllers.forEach((key, controller) {
+    placeholderFields.forEach((key, controller) {
       previewMessage = previewMessage.replaceAll(
           '{{$key}}', controller.text.isEmpty ? '[$key]' : controller.text);
     });
@@ -116,21 +284,14 @@ class _MessageTemplateDialogState extends State<MessageTemplateDialog> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DropdownButton<MessageTemplate>(
-              value: _selectedTemplate,
-              hint: const Text('Choose a template'),
-              isExpanded: true,
-              items: _templates
-                  .map((template) => DropdownMenuItem<MessageTemplate>(
-                        value: template,
-                        child: Text(template.title),
-                      ))
-                  .toList(),
+            HMBDroplist<MessageTemplate>(
+              selectedItem: () async => _selectedTemplate,
+              items: (filter) async => _templates,
+              format: (template) => template.title,
               onChanged: (template) {
                 setState(() {
                   _selectedTemplate = template;
-                  _controllers.clear();
-
+                  placeholderFields.clear();
                   if (_selectedTemplate != null) {
                     final regExp = RegExp(r'\{\{(\w+)\}\}');
                     final matches =
@@ -138,26 +299,18 @@ class _MessageTemplateDialogState extends State<MessageTemplateDialog> {
 
                     for (final match in matches) {
                       final placeholder = match.group(1)!;
-                      if (placeholder.contains('time')) {
-                        _controllers[placeholder] = TextEditingController();
-                      } else {
-                        _controllers[placeholder] = TextEditingController();
-                      }
+                      placeholderFields[placeholder] = TextEditingController();
                     }
                   }
                 });
               },
+              title: 'Choose a template',
             ),
             const SizedBox(height: 20),
             if (_selectedTemplate != null)
               Column(
-                children: _controllers.keys.map((key) {
-                  if (key.contains('time')) {
-                    return _buildTimePicker(key);
-                  } else {
-                    return _buildInputField(key);
-                  }
-                }).toList(),
+                children:
+                    placeholderFields.keys.map(_buildPlaceholderField).toList(),
               ),
             const SizedBox(height: 20),
             _buildPreview(),
@@ -173,7 +326,7 @@ class _MessageTemplateDialogState extends State<MessageTemplateDialog> {
               if (_selectedTemplate != null) {
                 final selectedMessageTemplate = SelectedMessageTemplate(
                   template: _selectedTemplate!,
-                  values: _controllers
+                  values: placeholderFields
                       .map((key, controller) => MapEntry(key, controller.text)),
                 );
                 Navigator.of(context).pop(selectedMessageTemplate);

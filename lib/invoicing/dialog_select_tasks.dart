@@ -3,7 +3,6 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../dao/dao_task.dart';
 import '../entity/job.dart';
-import '../entity/task.dart';
 import '../widgets/async_state.dart';
 
 /// show the user the set of tasks for the passed Job
