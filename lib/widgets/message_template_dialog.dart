@@ -16,10 +16,15 @@ import 'hmb_date_time_picker.dart';
 import 'hmb_droplist.dart';
 
 class PlaceHolderField {
-  PlaceHolderField(this.placeholder, this.controller, this.picker);
-  String placeholder;
-  ValueNotifier<TextEditingValue>? controller;
-  Widget picker;
+  PlaceHolderField({
+    required this.placeholder,
+    required this.widget,
+    this.controller,
+  });
+
+  final String placeholder;
+  final TextEditingController? controller;
+  final Widget widget;
 }
 
 class MessageTemplateDialog extends StatefulWidget {
@@ -30,6 +35,7 @@ class MessageTemplateDialog extends StatefulWidget {
     this.supplier,
     this.contact,
   });
+
   final Job? job;
   final Customer? customer;
   final Contact? contact;
@@ -39,15 +45,21 @@ class MessageTemplateDialog extends StatefulWidget {
   _MessageTemplateDialogState createState() => _MessageTemplateDialogState();
 }
 
-Future<SelectedMessageTemplate?> showMessageTemplateDialog(BuildContext context,
-    {Customer? customer,
-    Job? job,
-    Contact? contact,
-    Supplier? supplier}) async {
+Future<SelectedMessageTemplate?> showMessageTemplateDialog(
+  BuildContext context, {
+  Customer? customer,
+  Job? job,
+  Contact? contact,
+  Supplier? supplier,
+}) async {
   final result = await showDialog<SelectedMessageTemplate>(
     context: context,
-    builder: (context) =>
-        MessageTemplateDialog(customer: customer, job: job, supplier: supplier),
+    builder: (context) => MessageTemplateDialog(
+      customer: customer,
+      job: job,
+      supplier: supplier,
+      contact: contact,
+    ),
   );
 
   if (result != null) {
@@ -59,7 +71,7 @@ Future<SelectedMessageTemplate?> showMessageTemplateDialog(BuildContext context,
     print('Values: $values');
     print('Formatted Message: $formattedMessage');
   }
-  return null;
+  return result;
 }
 
 class _MessageTemplateDialogState
@@ -81,7 +93,6 @@ class _MessageTemplateDialogState
   }
 
   Future<void> _loadTemplates() async {
-    // Fetch templates based on the screen (Job, Customer, Supplier, or Contact)
     final templates = await DaoMessageTemplate().getByFilter(null);
     setState(() {
       _templates = _filterTemplates(templates);
@@ -89,160 +100,198 @@ class _MessageTemplateDialogState
   }
 
   Future<void> _loadJobDetails(Job job) async {
-    // Load customer and site details for the job
     final customer = await DaoCustomer().getById(job.customerId);
     final site = await DaoSite().getById(job.siteId);
     _selectedCustomer = customer;
     _selectedSite = site;
     _selectedContact = job.contactId != null
-        ? await DaoContact().getById(job.contactId).then((c) => c)
+        ? await DaoContact().getById(job.contactId)
         : null;
     setState(() {});
   }
 
   List<MessageTemplate> _filterTemplates(List<MessageTemplate> templates) {
-    // Filter based on the screen type (job, customer, supplier, contact)
+    // Filter based on the screen type
     if (widget.job != null) {
-      return templates.where((t) => t.message.contains('{{job_')).toList();
+      return templates;
     } else if (widget.customer != null) {
-      return templates.where((t) => t.message.contains('{{customer_')).toList();
+      return templates
+          .where((t) => t.message.contains('{{customer_}}'))
+          .toList();
     } else if (widget.supplier != null) {
-      return templates.where((t) => t.message.contains('{{supplier_')).toList();
+      return templates
+          .where((t) => t.message.contains('{{supplier_}}'))
+          .toList();
     } else if (widget.contact != null) {
-      return templates.where((t) => t.message.contains('{{contact_')).toList();
+      return templates
+          .where((t) => t.message.contains('{{contact_}}'))
+          .toList();
     }
     return templates;
   }
 
-  Widget _buildPlaceholderField(String placeholder) {
-    if (!placeholderFields.containsKey(placeholder)) {
-      placeholderFields[placeholder] = TextEditingController();
-    }
+  void _initializePlaceholders() {
+    placeholderFields.clear();
+    if (_selectedTemplate != null) {
+      final regExp = RegExp(r'\{\{(\w+)\}\}');
+      final matches = regExp.allMatches(_selectedTemplate!.message);
 
-    return buildPlaceHolderPicker(placeholder);
+      for (final match in matches) {
+        final placeholder = match.group(1)!;
+        placeholderFields[placeholder] = _buildPlaceHolderField(placeholder);
+      }
+    }
   }
 
-  PlaceHolderField buildPlaceHolderPicker(String placeholder) {
+  PlaceHolderField _buildPlaceHolderField(String placeholder) {
     if (placeholder.contains('time')) {
       return _buildTimePicker(placeholder);
     } else if (placeholder.contains('date')) {
       return _buildDatePicker(placeholder);
     } else if (placeholder == 'delay_period') {
       return _buildPeriodPicker(placeholder);
-    } else if (placeholder == 'customer_name' && _selectedCustomer != null) {
-      return HMBDroplist(
-          title: 'Customer',
-          selectedItem: () async => _selectedCustomer,
-          items: (filter) async => DaoCustomer().getByFilter(filter),
-          onChanged: (customer) => _selectedCustomer = customer,
-          format: (customer) => customer.name);
-    } else if (placeholder == 'site' && _selectedSite != null) {
-      return TextFormField(
-        controller: placeholderFields[placeholder]!
-          ..text = _selectedSite!.address,
-        decoration: const InputDecoration(labelText: 'Site'),
-      );
-    } else if (placeholder == 'contact_name' && _selectedContact != null) {
-      return TextFormField(
-        controller: placeholderFields[placeholder]!
-          ..text = _selectedContact!.fullname,
-        decoration: const InputDecoration(labelText: 'Contact Name'),
-      );
+    } else if (placeholder == 'customer_name') {
+      return _buildCustomerDroplist(placeholder);
+    } else if (placeholder == 'job_address') {
+      return _buildSiteDroplist(placeholder);
+    } else if (placeholder == 'contact_name') {
+      return _buildContactDroplist(placeholder);
     }
 
     // Default TextFormField for other placeholders
-    return TextFormField(
-      controller: placeholderFields[placeholder],
+    final controller = TextEditingController();
+    final widget = TextFormField(
+      controller: controller,
       decoration: InputDecoration(labelText: placeholder.toCapitalised()),
+    );
+    return PlaceHolderField(
+      placeholder: placeholder,
+      controller: controller,
+      widget: widget,
+    );
+  }
+
+  PlaceHolderField _buildCustomerDroplist(String placeholder) {
+    final controller = TextEditingController();
+    final widget = HMBDroplist<Customer>(
+      title: 'Select Customer',
+      selectedItem: () async => _selectedCustomer,
+      items: (filter) async => DaoCustomer().getByFilter(filter),
+      format: (customer) => customer.name,
+      onChanged: (customer) {
+        setState(() {
+          _selectedCustomer = customer;
+          controller.text = customer?.name ?? '';
+        });
+      },
+    );
+    return PlaceHolderField(
+      placeholder: placeholder,
+      controller: controller,
+      widget: widget,
+    );
+  }
+
+  PlaceHolderField _buildSiteDroplist(String placeholder) {
+    final controller = TextEditingController();
+    final Widget droplist;
+    droplist = HMBDroplist<Site>(
+      title: 'Select Job Address',
+      selectedItem: () async => _selectedSite,
+      items: (filter) async {
+        if (widget.job != null) {
+          final site = await DaoSite().getById(widget.job!.siteId);
+          return [site!];
+        } else {
+          final customer = await DaoCustomer().getById(widget.job!.customerId);
+          return DaoSite().getByFilter(customer, filter);
+        }
+      },
+      format: (site) => site.address,
+      onChanged: (site) {
+        setState(() {
+          _selectedSite = site;
+          controller.text = site?.address ?? '';
+        });
+      },
+    );
+    return PlaceHolderField(
+      placeholder: placeholder,
+      controller: controller,
+      widget: droplist,
+    );
+  }
+
+  PlaceHolderField _buildContactDroplist(String placeholder) {
+    final controller = TextEditingController();
+    final Widget droplist;
+    droplist = HMBDroplist<Contact>(
+      title: 'Select Contact',
+      selectedItem: () async => _selectedContact,
+      items: (filter) async {
+        if (widget.job != null && widget.job!.contactId != null) {
+          final contact = await DaoContact().getById(widget.job!.contactId);
+          return [contact!];
+        } else {
+          final customer = await DaoCustomer().getById(widget.job!.customerId);
+          return DaoContact().getByFilter(customer!, filter);
+        }
+      },
+      format: (contact) => contact.fullname,
+      onChanged: (contact) {
+        setState(() {
+          _selectedContact = contact;
+          controller.text = contact?.fullname ?? '';
+        });
+      },
+    );
+    return PlaceHolderField(
+      placeholder: placeholder,
+      controller: controller,
+      widget: droplist,
     );
   }
 
   PlaceHolderField _buildTimePicker(String placeholder) {
-    var selectedTime = TimeOfDay.now();
-
+    final controller = TextEditingController();
     final widget = HMBDateTimeField(
-        label: placeholder,
-        initialDateTime: DateTime.now(),
-        onChanged: (datetime) => _selectedTime = datetime,
-        showDate: false);
-
-    return PlaceHolderField(placeholder, null, widget);
-
-    // ListTile(
-    //   title: Text(placeholder),
-    //   subtitle: Text(placeholderFields[placeholder]?.text ?? 'Select Time'),
-    //   onTap: () async {
-    //     final pickedTime = await showTimePicker(
-    //       context: context,
-    //       initialTime: selectedTime,
-    //     );
-    //     if (pickedTime != null) {
-    //       setState(() {
-    //         selectedTime = pickedTime;
-    //         placeholderFields[placeholder]?.text = selectedTime.format(context);
-    //       });
-    //     }
-    //   },
-    // );
-  }
-
-    PlaceHolderField _buildDatePicker(String placeholder) {
-    var selectedTime = TimeOfDay.now();
-
-    final widget = HMBDateTimeField(
-        label: placeholder,
-        initialDateTime: DateTime.now(),
-        onChanged: (datetime) => selectedDate = datetime,
-        showDate: false);
-
-    return PlaceHolderField(placeholder, null, widget);
-
-    // ListTile(
-    //   title: Text(placeholder),
-    //   subtitle: Text(placeholderFields[placeholder]?.text ?? 'Select Time'),
-    //   onTap: () async {
-    //     final pickedTime = await showTimePicker(
-    //       context: context,
-    //       initialTime: selectedTime,
-    //     );
-    //     if (pickedTime != null) {
-    //       setState(() {
-    //         selectedTime = pickedTime;
-    //         placeholderFields[placeholder]?.text = selectedTime.format(context);
-    //       });
-    //     }
-    //   },
-    // );
-  }
-
-  Widget _buildDatePicker(String placeholder) {
-    var selectedDate = DateTime.now();
-    return ListTile(
-      title: Text(placeholder),
-      subtitle: Text(placeholderFields[placeholder]?.text ?? 'Select Date'),
-      onTap: () async {
-        final pickedDate = await showDatePicker(
-          context: context,
-          initialDate: selectedDate,
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2100),
-        );
-        if (pickedDate != null) {
-          setState(() {
-            selectedDate = pickedDate;
-            placeholderFields[placeholder]?.text =
-                '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}';
-          });
-        }
+      label: placeholder.toCapitalised(),
+      initialDateTime: DateTime.now(),
+      onChanged: (datetime) {
+        controller.text = TimeOfDay.fromDateTime(datetime).format(context);
       },
+      showDate: false,
+    );
+    return PlaceHolderField(
+      placeholder: placeholder,
+      controller: controller,
+      widget: widget,
     );
   }
 
-  Widget _buildPeriodPicker(String placeholder) {
+  PlaceHolderField _buildDatePicker(String placeholder) {
+    final controller = TextEditingController();
+    final widget = HMBDateTimeField(
+      label: placeholder.toCapitalised(),
+      initialDateTime: DateTime.now(),
+      onChanged: (datetime) {
+        controller.text = '${datetime.day}/${datetime.month}/${datetime.year}';
+      },
+      showTime: false,
+    );
+    return PlaceHolderField(
+      placeholder: placeholder,
+      controller: controller,
+      widget: widget,
+    );
+  }
+
+  PlaceHolderField _buildPeriodPicker(String placeholder) {
+    final controller = TextEditingController();
     final periods = <String>['15 minutes', '30 minutes', '1 hour', '2 hours'];
-    return DropdownButtonFormField<String>(
+    final widget = DropdownButtonFormField<String>(
       decoration: const InputDecoration(labelText: 'Delay Period'),
-      value: placeholderFields[placeholder]?.text,
+      value: controller.text.isEmpty ? null : controller.text,
       items: periods
           .map((period) => DropdownMenuItem<String>(
                 value: period,
@@ -251,9 +300,14 @@ class _MessageTemplateDialogState
           .toList(),
       onChanged: (newValue) {
         setState(() {
-          placeholderFields[placeholder]?.text = newValue!;
+          controller.text = newValue!;
         });
       },
+    );
+    return PlaceHolderField(
+      placeholder: placeholder,
+      controller: controller,
+      widget: widget,
     );
   }
 
@@ -263,9 +317,10 @@ class _MessageTemplateDialogState
     }
 
     var previewMessage = _selectedTemplate!.message;
-    placeholderFields.forEach((key, controller) {
-      previewMessage = previewMessage.replaceAll(
-          '{{$key}}', controller.text.isEmpty ? '[$key]' : controller.text);
+    placeholderFields.forEach((key, field) {
+      final text = field.controller?.text ?? '';
+      previewMessage =
+          previewMessage.replaceAll('{{$key}}', text.isEmpty ? '[$key]' : text);
     });
 
     return Column(
@@ -281,40 +336,37 @@ class _MessageTemplateDialogState
   @override
   Widget build(BuildContext context) => AlertDialog(
         title: const Text('Select Message Template'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HMBDroplist<MessageTemplate>(
-              selectedItem: () async => _selectedTemplate,
-              items: (filter) async => _templates,
-              format: (template) => template.title,
-              onChanged: (template) {
-                setState(() {
-                  _selectedTemplate = template;
-                  placeholderFields.clear();
-                  if (_selectedTemplate != null) {
-                    final regExp = RegExp(r'\{\{(\w+)\}\}');
-                    final matches =
-                        regExp.allMatches(_selectedTemplate!.message);
-
-                    for (final match in matches) {
-                      final placeholder = match.group(1)!;
-                      placeholderFields[placeholder] = TextEditingController();
-                    }
-                  }
-                });
-              },
-              title: 'Choose a template',
-            ),
-            const SizedBox(height: 20),
-            if (_selectedTemplate != null)
-              Column(
-                children:
-                    placeholderFields.keys.map(_buildPlaceholderField).toList(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HMBDroplist<MessageTemplate>(
+                selectedItem: () async => _selectedTemplate,
+                items: (filter) async => filter == null
+                    ? _templates
+                    : _templates
+                        .where((template) => template.message.contains(filter))
+                        .toList(),
+                format: (template) => template.title,
+                onChanged: (template) {
+                  setState(() {
+                    _selectedTemplate = template;
+                    _initializePlaceholders();
+                  });
+                },
+                title: 'Choose a template',
               ),
-            const SizedBox(height: 20),
-            _buildPreview(),
-          ],
+              const SizedBox(height: 20),
+              if (_selectedTemplate != null)
+                Column(
+                  children: placeholderFields.values
+                      .map((field) => field.widget)
+                      .toList(),
+                ),
+              const SizedBox(height: 20),
+              _buildPreview(),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -326,8 +378,10 @@ class _MessageTemplateDialogState
               if (_selectedTemplate != null) {
                 final selectedMessageTemplate = SelectedMessageTemplate(
                   template: _selectedTemplate!,
-                  values: placeholderFields
-                      .map((key, controller) => MapEntry(key, controller.text)),
+                  values: placeholderFields.map((key, field) {
+                    final text = field.controller?.text ?? '';
+                    return MapEntry(key, text);
+                  }),
                 );
                 Navigator.of(context).pop(selectedMessageTemplate);
               }
@@ -343,6 +397,7 @@ class SelectedMessageTemplate {
     required this.template,
     required this.values,
   });
+
   final MessageTemplate template;
   final Map<String, String> values;
 
