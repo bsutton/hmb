@@ -33,7 +33,7 @@ class HMBSelectSiteState extends State<HMBSelectSite> {
       DaoSite().getById(widget.initialSite.siteId);
 
   Future<List<Site>> _getSites(String? filter) async =>
-      DaoSite().getByFilter(widget.customer, filter);
+      DaoSite().getByFilter(widget.customer?.id, filter);
 
   void _onSiteChanged(Site? newValue) {
     setState(() {

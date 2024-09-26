@@ -86,14 +86,14 @@ where cu.id =?
   }
 
   /// search for Sites given a user supplied filter string.
-  Future<List<Site>> getByFilter(Customer? customer, String? filter) async {
+  Future<List<Site>> getByFilter(int? customerId, String? filter) async {
     final db = getDb();
 
-    if (customer == null) {
+    if (customerId == null) {
       return [];
     }
     if (Strings.isBlank(filter)) {
-      return getByCustomer(customer.id);
+      return getByCustomer(customerId);
     }
 
     final likeArg = '''%$filter%''';
