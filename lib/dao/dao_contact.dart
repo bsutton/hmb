@@ -1,5 +1,6 @@
 import 'package:june/june.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:strings/strings.dart';
 
 import '../entity/contact.dart';
 import '../entity/customer.dart';
@@ -191,6 +192,26 @@ where jo.id =?
 
   @override
   JuneStateCreator get juneRefresher => ContactState.new;
+
+  Future<List<Contact>> getByFilter(Customer customer, String? filter) async {
+    final db = getDb();
+
+    if (Strings.isBlank(filter)) {
+      return getAll(orderByClause: 'modifiedDate desc');
+    }
+    final data = await db.rawQuery('''
+select c.* 
+form contact c
+join customer_contact cc
+  on c.id = cc.contact_id
+join customer cu
+  on cc.customer_id = cu.id
+where c.name like ?
+order by c.modifiedDate desc
+''', ['''%$filter%''']);
+
+    return toList(data);
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.
