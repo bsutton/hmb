@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../../entity/message_template.dart';
 import '../dao/dao_contact.dart';
 import '../dao/dao_customer.dart';
+import '../dao/dao_job.dart';
 import '../dao/dao_message_template.dart';
 import '../dao/dao_site.dart';
 import '../entity/contact.dart';
@@ -16,15 +18,16 @@ import 'hmb_date_time_picker.dart';
 import 'hmb_droplist.dart';
 
 class PlaceHolderField {
-  PlaceHolderField({
-    required this.placeholder,
-    required this.widget,
-    this.controller,
-  });
+  PlaceHolderField(
+      {required this.placeholder,
+      required this.widget,
+      required this.getValue,
+      this.controller});
 
   final String placeholder;
   final TextEditingController? controller;
   final Widget widget;
+  final Future<String> Function() getValue;
 }
 
 class MessageTemplateDialog extends StatefulWidget {
@@ -82,6 +85,7 @@ class _MessageTemplateDialogState
 
   final Map<String, PlaceHolderField> placeholderFields = {};
   Customer? _selectedCustomer;
+  Job? _selectedJob;
   Site? _selectedSite;
   Contact? _selectedContact;
 
@@ -132,14 +136,28 @@ class _MessageTemplateDialogState
   }
 
   void _initializePlaceholders() {
-    placeholderFields.clear();
     if (_selectedTemplate != null) {
       final regExp = RegExp(r'\{\{(\w+)\}\}');
       final matches = regExp.allMatches(_selectedTemplate!.message);
 
-      for (final match in matches) {
-        final placeholder = match.group(1)!;
-        placeholderFields[placeholder] = _buildPlaceHolderField(placeholder);
+      // Get the list of placeholders in the new template
+      final newPlaceholders = matches.map((m) => m.group(1)!).toSet();
+
+      // Remove placeholders that are no longer in the new template
+      placeholderFields.keys
+          .where((key) => !newPlaceholders.contains(key))
+          .toList()
+          .forEach(placeholderFields.remove);
+
+      // Add new placeholders or keep existing ones
+      for (final placeholder in newPlaceholders) {
+        if (!placeholderFields.containsKey(placeholder)) {
+          // Create a new placeholder field
+          placeholderFields[placeholder] = _buildPlaceHolderField(placeholder);
+        } else {
+          // If the placeholder already exists, update the widget to ensure it reflects any changes
+          placeholderFields[placeholder] = _buildPlaceHolderField(placeholder);
+        }
       }
     }
   }
@@ -157,23 +175,33 @@ class _MessageTemplateDialogState
       return _buildSiteDroplist(placeholder);
     } else if (placeholder == 'contact_name') {
       return _buildContactDroplist(placeholder);
+    } else if (placeholder.contains('job')) {
+      return _buildJobDroplist(placeholder);
     }
 
     // Default TextFormField for other placeholders
-    final controller = TextEditingController();
+    final controller =
+        placeholderFields[placeholder]?.controller ?? TextEditingController();
     final widget = TextFormField(
       controller: controller,
       decoration: InputDecoration(labelText: placeholder.toCapitalised()),
     );
     return PlaceHolderField(
-      placeholder: placeholder,
-      controller: controller,
-      widget: widget,
-    );
+        placeholder: placeholder,
+        controller: controller,
+        widget: widget,
+        getValue: () async => controller.text);
   }
 
   PlaceHolderField _buildCustomerDroplist(String placeholder) {
-    final controller = TextEditingController();
+    final controller =
+        placeholderFields[placeholder]?.controller ?? TextEditingController();
+
+    // Set controller's text to current selected customer
+    if (_selectedCustomer != null) {
+      controller.text = _selectedCustomer!.name;
+    }
+
     final widget = HMBDroplist<Customer>(
       title: 'Select Customer',
       selectedItem: () async => _selectedCustomer,
@@ -190,14 +218,55 @@ class _MessageTemplateDialogState
       },
     );
     return PlaceHolderField(
-      placeholder: placeholder,
-      controller: controller,
-      widget: widget,
-    );
+        placeholder: placeholder,
+        controller: controller,
+        widget: widget,
+        getValue: () async => controller.text);
   }
 
+  PlaceHolderField _buildJobDroplist(String placeholder) {
+    final controller =
+        placeholderFields[placeholder]?.controller ?? TextEditingController();
+
+    // Set controller's text to current selected customer
+    if (_selectedJob != null) {
+      controller.text = _selectedJob!.description;
+    }
+
+    final widget = HMBDroplist<Job>(
+      title: 'Select Job',
+      selectedItem: () async => _selectedJob,
+      items: (filter) async => DaoJob().getByFilter(filter),
+      format: (job) => job.summary,
+      onChanged: (job) {
+        setState(() {
+          _selectedJob = job;
+          controller.text = job?.summary ?? '';
+          // Reset site and contact when job changes
+          _selectedSite = null;
+          _selectedContact = null;
+        });
+      },
+    );
+    return PlaceHolderField(
+        placeholder: placeholder,
+        widget: widget,
+        getValue: () async =>
+            (await _getJobValue(placeholder)) ?? controller.text);
+  }
+
+  Future<Money> jobCost(Job job) async =>
+      (await DaoJob().getJobStatistics(job)).totalCost;
+
   PlaceHolderField _buildSiteDroplist(String placeholder) {
-    final controller = TextEditingController();
+    final controller =
+        placeholderFields[placeholder]?.controller ?? TextEditingController();
+
+    // Set controller's text to current selected site
+    if (_selectedSite != null) {
+      controller.text = _selectedSite!.address;
+    }
+
     final droplist = HMBDroplist<Site>(
       title: 'Select Site',
       selectedItem: () async => _selectedSite,
@@ -222,11 +291,19 @@ class _MessageTemplateDialogState
       placeholder: placeholder,
       controller: controller,
       widget: droplist,
+      getValue: () async => controller.text,
     );
   }
 
   PlaceHolderField _buildContactDroplist(String placeholder) {
-    final controller = TextEditingController();
+    final controller =
+        placeholderFields[placeholder]?.controller ?? TextEditingController();
+
+    // Set controller's text to current selected contact
+    if (_selectedContact != null) {
+      controller.text = _selectedContact!.fullname;
+    }
+
     final droplist = HMBDroplist<Contact>(
       title: 'Select Contact',
       selectedItem: () async => _selectedContact,
@@ -251,11 +328,14 @@ class _MessageTemplateDialogState
       placeholder: placeholder,
       controller: controller,
       widget: droplist,
+      getValue: () async => controller.text,
     );
   }
 
   PlaceHolderField _buildTimePicker(String placeholder) {
-    final controller = TextEditingController();
+    final controller =
+        placeholderFields[placeholder]?.controller ?? TextEditingController();
+
     final widget = HMBDateTimeField(
       label: placeholder.toCapitalised(),
       initialDateTime: DateTime.now(),
@@ -268,11 +348,14 @@ class _MessageTemplateDialogState
       placeholder: placeholder,
       controller: controller,
       widget: widget,
+      getValue: () async => controller.text,
     );
   }
 
   PlaceHolderField _buildDatePicker(String placeholder) {
-    final controller = TextEditingController();
+    final controller =
+        placeholderFields[placeholder]?.controller ?? TextEditingController();
+
     final widget = HMBDateTimeField(
       label: placeholder.toCapitalised(),
       initialDateTime: DateTime.now(),
@@ -285,15 +368,17 @@ class _MessageTemplateDialogState
       placeholder: placeholder,
       controller: controller,
       widget: widget,
+      getValue: () async => controller.text,
     );
   }
 
   PlaceHolderField _buildPeriodPicker(String placeholder) {
-    final controller = TextEditingController();
+    final controller =
+        placeholderFields[placeholder]?.controller ?? TextEditingController();
     final periods = <String>['15 minutes', '30 minutes', '1 hour', '2 hours'];
     final widget = DropdownButtonFormField<String>(
       decoration: const InputDecoration(labelText: 'Delay Period'),
-      value: controller.text.isEmpty ? null : controller.text,
+      value: controller.text.isNotEmpty ? controller.text : null,
       items: periods
           .map((period) => DropdownMenuItem<String>(
                 value: period,
@@ -310,6 +395,7 @@ class _MessageTemplateDialogState
       placeholder: placeholder,
       controller: controller,
       widget: widget,
+      getValue: () async => controller.text,
     );
   }
 
@@ -347,7 +433,7 @@ class _MessageTemplateDialogState
                 items: (filter) async => filter == null
                     ? _templates
                     : _templates
-                        .where((template) => template.message.contains(filter))
+                        .where((template) => template.title.contains(filter))
                         .toList(),
                 format: (template) => template.title,
                 onChanged: (template) {
@@ -392,6 +478,20 @@ class _MessageTemplateDialogState
           ),
         ],
       );
+
+  Future<String?> _getJobValue(String placeholder) async {
+    if (_selectedJob != null) {
+      switch (placeholder) {
+        case 'job_cost':
+          return jobCost(_selectedJob!).toString();
+        case 'job_description':
+          return _selectedJob!.description;
+        default:
+          return _selectedJob!.summary;
+      }
+    }
+    return null;
+  }
 }
 
 class SelectedMessageTemplate {
