@@ -42,6 +42,7 @@ class MessageTemplateDialog extends StatefulWidget {
   final Supplier? supplier;
 
   @override
+  // ignore: library_private_types_in_public_api
   _MessageTemplateDialogState createState() => _MessageTemplateDialogState();
 }
 
@@ -152,7 +153,7 @@ class _MessageTemplateDialogState
       return _buildPeriodPicker(placeholder);
     } else if (placeholder == 'customer_name') {
       return _buildCustomerDroplist(placeholder);
-    } else if (placeholder == 'job_address') {
+    } else if (placeholder == 'site') {
       return _buildSiteDroplist(placeholder);
     } else if (placeholder == 'contact_name') {
       return _buildContactDroplist(placeholder);
@@ -182,6 +183,9 @@ class _MessageTemplateDialogState
         setState(() {
           _selectedCustomer = customer;
           controller.text = customer?.name ?? '';
+          // Reset site and contact when customer changes
+          _selectedSite = null;
+          _selectedContact = null;
         });
       },
     );
@@ -194,17 +198,16 @@ class _MessageTemplateDialogState
 
   PlaceHolderField _buildSiteDroplist(String placeholder) {
     final controller = TextEditingController();
-    final Widget droplist;
-    droplist = HMBDroplist<Site>(
-      title: 'Select Job Address',
+    final droplist = HMBDroplist<Site>(
+      title: 'Select Site',
       selectedItem: () async => _selectedSite,
       items: (filter) async {
-        if (widget.job != null) {
-          final site = await DaoSite().getById(widget.job!.siteId);
-          return [site!];
+        if (_selectedCustomer != null) {
+          // Fetch sites associated with the selected customer
+          return DaoSite().getByFilter(_selectedCustomer!.id, filter);
         } else {
-          final customer = await DaoCustomer().getById(widget.job!.customerId);
-          return DaoSite().getByFilter(customer, filter);
+          // Fetch all sites
+          return DaoSite().getAll();
         }
       },
       format: (site) => site.address,
@@ -224,8 +227,7 @@ class _MessageTemplateDialogState
 
   PlaceHolderField _buildContactDroplist(String placeholder) {
     final controller = TextEditingController();
-    final Widget droplist;
-    droplist = HMBDroplist<Contact>(
+    final droplist = HMBDroplist<Contact>(
       title: 'Select Contact',
       selectedItem: () async => _selectedContact,
       items: (filter) async {
