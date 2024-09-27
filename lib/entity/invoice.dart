@@ -16,11 +16,15 @@ class Invoice extends Entity<Invoice> {
     required super.modifiedDate,
     required this.invoiceNum,
     this.externalInvoiceId,
-  }) : super();
+    this.dueDate, // New dueDate field
+  }) : super() {
+    dueDate ??= createdDate.add(const Duration(days: 1));
+  }
 
   Invoice.forInsert({
     required this.jobId,
     required this.totalAmount,
+    this.dueDate, // New dueDate field
   }) : super.forInsert();
 
   Invoice.forUpdate({
@@ -29,6 +33,7 @@ class Invoice extends Entity<Invoice> {
     required this.totalAmount,
     required this.invoiceNum,
     this.externalInvoiceId,
+    this.dueDate, // New dueDate field
   }) : super.forUpdate();
 
   factory Invoice.fromMap(Map<String, dynamic> map) => Invoice(
@@ -39,12 +44,16 @@ class Invoice extends Entity<Invoice> {
         modifiedDate: DateTime.parse(map['modified_date'] as String),
         invoiceNum: map['invoice_num'] as String?,
         externalInvoiceId: map['external_invoice_id'] as String?,
+        dueDate: map['due_date'] != null
+            ? DateTime.parse(map['due_date'] as String)
+            : null, // Handle new dueDate field
       );
 
   int jobId;
   Money totalAmount;
   String? invoiceNum;
   String? externalInvoiceId;
+  DateTime? dueDate; // New dueDate field
 
   String get bestNumber => externalInvoiceId ?? invoiceNum ?? '$id';
 
@@ -56,6 +65,7 @@ class Invoice extends Entity<Invoice> {
     DateTime? modifiedDate,
     String? invoiceNum,
     String? externalInvoiceId,
+    DateTime? dueDate, // Add new dueDate field
   }) =>
       Invoice(
         id: id ?? this.id,
@@ -65,6 +75,7 @@ class Invoice extends Entity<Invoice> {
         modifiedDate: modifiedDate ?? this.modifiedDate,
         invoiceNum: invoiceNum ?? this.invoiceNum,
         externalInvoiceId: externalInvoiceId ?? this.externalInvoiceId,
+        dueDate: dueDate ?? this.dueDate, // Handle new dueDate field
       );
 
   @override
@@ -76,11 +87,11 @@ class Invoice extends Entity<Invoice> {
         'modified_date': modifiedDate.toIso8601String(),
         'invoice_num': invoiceNum,
         'external_invoice_id': externalInvoiceId,
+        'due_date': dueDate?.toIso8601String(), // Add dueDate to map
       };
 
   Future<XeroInvoice> toXeroInvoice(Invoice invoice) async {
     final job = await DaoJob().getById(invoice.jobId);
-
     final contact = await DaoContact().getForJob(job?.id);
     if (contact == null) {
       throw InvoiceException(
@@ -95,8 +106,9 @@ class Invoice extends Entity<Invoice> {
         type: 'ACCREC',
         contact: xeroContact,
         issueDate: invoice.createdDate,
-        // TODO(bsutton): make due date configurable
-        dueDate: invoice.createdDate.add(const Duration(days: 3)),
+        dueDate: invoice.dueDate ??
+            invoice.createdDate
+                .add(const Duration(days: 1)), // Use the due date
         lineItems: invoiceLines.map((line) => line.toXeroLineItem()).toList(),
         lineAmountTypes: 'Inclusive'); // All amounts are inclusive of tax.
     return xeroInvoice;
