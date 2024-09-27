@@ -33,13 +33,12 @@ Future<File> generateInvoicePdf(
   // Define the system color (using the color stored in the system table)
   final systemColor = PdfColor.fromInt(system.billingColour);
 
-     var groupedLines = <GroupedLine>[];
+  var groupedLines = <GroupedLine>[];
 
-    if (displayGroupHeaders) {
-          // Group items by `invoiceLineGroupId`
-           groupedLines = await groupByInvoiceLineGroup(lines);
-    }
-
+  if (displayGroupHeaders) {
+    // Group items by `invoiceLineGroupId`
+    groupedLines = await groupByInvoiceLineGroup(lines);
+  }
 
   pdf.addPage(
     pw.MultiPage(
@@ -296,7 +295,7 @@ Future<List<GroupedLine>> groupByInvoiceLineGroup(
     final total =
         entry.value.fold(MoneyEx.zero, (sum, line) => sum + line.lineTotal);
     groupLines.add(GroupedLine(
-        key: entry.key!,
+        key: entry.key,
         title: (await DaoInvoiceLineGroup().getById(entry.key))!.name,
         items: entry.value,
         total: total));

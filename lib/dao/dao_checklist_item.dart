@@ -2,10 +2,7 @@ import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../entity/check_list.dart';
-import '../entity/check_list_item.dart';
-import '../entity/job.dart';
-import '../entity/supplier.dart';
+import '../entity/_index.g.dart';
 import 'dao.dart';
 import 'dao_check_list_item_check_list.dart';
 
@@ -73,6 +70,14 @@ where jo.id =?
       ..completed = true;
 
     await update(item);
+  }
+
+  /// Marks the item as billed and links it to the invoice line it was
+  /// billed on.
+  Future<void> markAsBilled(CheckListItem item, int invoiceLineId) async {
+    final updatedItem =
+        item.copyWith(billed: true, invoiceLineId: invoiceLineId);
+    await DaoCheckListItem().update(updatedItem);
   }
 
   Future<List<CheckListItem>> getIncompleteItems() async {

@@ -67,7 +67,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
       if (selectedTasks.isNotEmpty) {
         try {
-          await DaoInvoice().create(widget.job, selectedTasks);
+          await DaoInvoice()
+              .create(widget.job, selectedTasks, groupByTask: true);
           // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           HMBToast.error('Failed to create invoice: $e',
@@ -175,13 +176,16 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
           var displayCosts = true;
           var displayGroupHeaders = true;
           var displayItems = true;
+          var groupByTask = true; // Default to group by task
 
-          final result = await showDialog<Map<String, bool>>(
+          final result = await showDialog<Map<String, dynamic>>(
             context: context,
             builder: (context) {
               var tempDisplayCosts = displayCosts;
               var tempDisplayGroupHeaders = displayGroupHeaders;
               var tempDisplayItems = displayItems;
+              var tempGroupByTask =
+                  groupByTask; // Temporary selection for grouping
 
               return StatefulBuilder(
                 builder: (context, setState) => AlertDialog(
@@ -216,6 +220,26 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                           });
                         },
                       ),
+                      const SizedBox(height: 20),
+                      DropdownButton<bool>(
+                        value: tempGroupByTask,
+                        items: const [
+                          DropdownMenuItem(
+                            value: true,
+                            child: Text('Group by Task/Date'),
+                          ),
+                          DropdownMenuItem(
+                            value: false,
+                            child: Text('Group by Date/Task'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            tempGroupByTask = value ?? true;
+                          });
+                        },
+                        isExpanded: true,
+                      ),
                     ],
                   ),
                   actions: [
@@ -229,6 +253,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                           'displayCosts': tempDisplayCosts,
                           'displayGroupHeaders': tempDisplayGroupHeaders,
                           'displayItems': tempDisplayItems,
+                          'groupByTask': tempGroupByTask,
                         });
                       },
                       child: const Text('OK'),
@@ -243,6 +268,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
             displayCosts = result['displayCosts'] ?? true;
             displayGroupHeaders = result['displayGroupHeaders'] ?? true;
             displayItems = result['displayItems'] ?? true;
+            groupByTask = result['groupByTask'] ?? true;
 
             final filePath = await generateInvoicePdf(
               invoice,
