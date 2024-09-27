@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:strings/strings.dart';
 
 import '../dao/dao_system.dart';
+import 'local_date.dart';
+import 'local_time.dart';
 
 String formatDate(DateTime dateTime, {String format = 'D, j M'}) =>
     DateTimeFormat.format(dateTime, format: format);
@@ -25,6 +27,15 @@ String formatDuration(Duration duration, {bool seconds = false}) {
 
   return result;
 }
+
+String formatLocalDate(LocalDate date, [String pattern = 'yyyy/MM/dd']) =>
+    DateFormat(pattern).format(date.toDateTime());
+
+String formatLocalTime(LocalTime time, [String pattern = 'h:mm:ss a']) =>
+    formatTime(time.toDateTime(), pattern);
+
+String formatTime(DateTime date, [String pattern = 'h:mm:ss a']) =>
+    DateFormat(pattern).format(date);
 
 DateFormat dateFormat = DateFormat('yyyy-MM-dd hh:mm a');
 

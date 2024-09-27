@@ -8,7 +8,52 @@ class DaoCheckListItemType extends Dao<CheckListItemType> {
   @override
   String get tableName => 'check_list_item_type';
 
-  /// search for jobs given a user supplied filter string.
+  /// Get all CheckListItemTypes
+  Future<List<CheckListItemType>> getAllCheckListItemTypes() async {
+    final db = getDb();
+    final data = await db.query(tableName);
+    return toList(data);
+  }
+
+  /// Get CheckListItemTypes by name
+  Future<List<CheckListItemType>> getByName(String name) async {
+    final db = getDb();
+    final data = await db.query(
+      tableName,
+      where: 'name = ?',
+      whereArgs: ['name'],
+    );
+    return toList(data);
+  }
+
+  /// Get CheckListItemTypes by 'toPurchase' flag
+  Future<List<CheckListItemType>> getByToPurchase(
+      {required bool toPurchase}) async {
+    final db = getDb();
+    final data = await db.query(
+      tableName,
+      where: 'to_purchase = ?',
+      whereArgs: [if (toPurchase) 1 else 0],
+    );
+    return toList(data);
+  }
+
+  Future<CheckListItemType> getMaterialsBuy() async =>
+      (await getByName('Materials - buy')).first;
+
+  Future<CheckListItemType> getMaterialsStock() async =>
+      (await getByName('Materials - stock')).first;
+
+  Future<CheckListItemType> getToolsBuy() async =>
+      (await getByName('Tools - buy')).first;
+
+  Future<CheckListItemType> getToolsOwn() async =>
+      (await getByName('Tools - own')).first;
+
+  Future<CheckListItemType> getLabour() async =>
+      (await getByName('Labour')).first;
+
+  /// Search for CheckListItemTypes based on a filter string
   Future<List<CheckListItemType>> getByFilter(String? filter) async {
     final db = getDb();
 
@@ -35,7 +80,7 @@ or it.description like ?
   JuneStateCreator get juneRefresher => CheckListItemTypeState.new;
 }
 
-/// Used to notify the UI that the time entry has changed.
+/// Used to notify the UI that the CheckListItemType has changed.
 class CheckListItemTypeState extends JuneState {
   CheckListItemTypeState();
 }

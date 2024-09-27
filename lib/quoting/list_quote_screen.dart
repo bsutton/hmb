@@ -4,6 +4,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_quote.dart';
 import '../dao/dao_quote_line.dart';
+import '../entity/invoice_line.dart';
 import '../entity/job.dart';
 import '../entity/quote.dart';
 import '../entity/quote_line.dart';

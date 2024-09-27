@@ -5,6 +5,7 @@ import '../dao/dao_invoice_line.dart';
 import '../dao/dao_job.dart';
 import '../invoicing/xero/models/xero_invoice.dart';
 import '../util/exceptions.dart';
+import '../util/local_date.dart';
 import 'entity.dart';
 
 class Invoice extends Entity<Invoice> {
@@ -16,15 +17,16 @@ class Invoice extends Entity<Invoice> {
     required super.modifiedDate,
     required this.invoiceNum,
     this.externalInvoiceId,
-    this.dueDate, // New dueDate field
+    LocalDate? dueDate, // New dueDate field
   }) : super() {
-    dueDate ??= createdDate.add(const Duration(days: 1));
+    this.dueDate = dueDate ??
+        LocalDate.fromDateTime(createdDate.add(const Duration(days: 1)));
   }
 
   Invoice.forInsert({
     required this.jobId,
+    required this.dueDate, // New dueDate field
     required this.totalAmount,
-    this.dueDate, // New dueDate field
   }) : super.forInsert();
 
   Invoice.forUpdate({
@@ -32,8 +34,8 @@ class Invoice extends Entity<Invoice> {
     required this.jobId,
     required this.totalAmount,
     required this.invoiceNum,
+    required this.dueDate, // New dueDate field
     this.externalInvoiceId,
-    this.dueDate, // New dueDate field
   }) : super.forUpdate();
 
   factory Invoice.fromMap(Map<String, dynamic> map) => Invoice(
@@ -45,7 +47,7 @@ class Invoice extends Entity<Invoice> {
         invoiceNum: map['invoice_num'] as String?,
         externalInvoiceId: map['external_invoice_id'] as String?,
         dueDate: map['due_date'] != null
-            ? DateTime.parse(map['due_date'] as String)
+            ? const LocalDateConverter().fromJson(map['due_date'] as String)
             : null, // Handle new dueDate field
       );
 
@@ -53,7 +55,7 @@ class Invoice extends Entity<Invoice> {
   Money totalAmount;
   String? invoiceNum;
   String? externalInvoiceId;
-  DateTime? dueDate; // New dueDate field
+  late LocalDate dueDate; // New dueDate field
 
   String get bestNumber => externalInvoiceId ?? invoiceNum ?? '$id';
 
@@ -65,7 +67,7 @@ class Invoice extends Entity<Invoice> {
     DateTime? modifiedDate,
     String? invoiceNum,
     String? externalInvoiceId,
-    DateTime? dueDate, // Add new dueDate field
+    LocalDate? dueDate, // Add new dueDate field
   }) =>
       Invoice(
         id: id ?? this.id,
@@ -87,7 +89,8 @@ class Invoice extends Entity<Invoice> {
         'modified_date': modifiedDate.toIso8601String(),
         'invoice_num': invoiceNum,
         'external_invoice_id': externalInvoiceId,
-        'due_date': dueDate?.toIso8601String(), // Add dueDate to map
+        'due_date':
+            const LocalDateConverter().toJson(dueDate), // Add dueDate to map
       };
 
   Future<XeroInvoice> toXeroInvoice(Invoice invoice) async {
@@ -105,10 +108,8 @@ class Invoice extends Entity<Invoice> {
         reference: job!.summary,
         type: 'ACCREC',
         contact: xeroContact,
-        issueDate: invoice.createdDate,
-        dueDate: invoice.dueDate ??
-            invoice.createdDate
-                .add(const Duration(days: 1)), // Use the due date
+        issueDate: LocalDate.fromDateTime(invoice.createdDate),
+        dueDate: invoice.dueDate,
         lineItems: invoiceLines.map((line) => line.toXeroLineItem()).toList(),
         lineAmountTypes: 'Inclusive'); // All amounts are inclusive of tax.
     return xeroInvoice;

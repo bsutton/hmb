@@ -155,7 +155,8 @@ class _MessageTemplateDialogState
           // Create a new placeholder field
           placeholderFields[placeholder] = _buildPlaceHolderField(placeholder);
         } else {
-          // If the placeholder already exists, update the widget to ensure it reflects any changes
+          // If the placeholder already exists, update the widget
+          // to ensure it reflects any changes
           placeholderFields[placeholder] = _buildPlaceHolderField(placeholder);
         }
       }
