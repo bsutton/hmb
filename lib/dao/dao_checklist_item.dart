@@ -132,11 +132,11 @@ where t.id =?
         where: 'invoice_line_id=?', whereArgs: [invoiceLineId]);
   }
 
-  /// Get items that need to be packed.
-  Future<List<CheckListItem>> getPackingItems() async {
+  /// Get items that need to be packed, optionally filtered by a list of jobs.
+  Future<List<CheckListItem>> getPackingItems({List<Job>? jobs}) async {
     final db = getDb();
 
-    final data = await db.rawQuery('''
+    var query = '''
 select cli.* 
 from check_list_item cli
 join check_list_item_type clit
@@ -153,12 +153,27 @@ join job_status js
   on j.job_status_id = js.id
 where (clit.name = 'Materials - stock' 
 or clit.name = 'Tools - own') 
-and  cli.completed = 0
+and cli.completed = 0
 and js.name != 'Prospecting'
 and js.name != 'Rejected'
 and js.name != 'On Hold'
 and js.name != 'Awaiting Payment'
-''');
+''';
+
+    // If a list of jobs is provided, add an "IN" clause to filter
+    //by the job IDs
+    final parameters = <int>[];
+    if (jobs != null && jobs.isNotEmpty) {
+      // Generate placeholders for the job IDs
+      final jobIds = jobs.map((job) => job.id).toList();
+      final placeholders = List.filled(jobIds.length, '?').join(',');
+
+      query += ' and j.id IN ($placeholders)';
+      parameters.addAll(jobIds);
+    }
+
+    // Execute the query with or without the job filter
+    final data = await db.rawQuery(query, parameters);
 
     return toList(data);
   }
