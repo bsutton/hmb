@@ -18,10 +18,9 @@ import '../widgets/hmb_are_you_sure_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_one_of.dart';
 import '../widgets/hmb_toast.dart';
-import '../widgets/pdf_preview.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_line_dialog.dart';
-import 'pdf/generate_invoice_pdf.dart';
+import 'generate_invoice_dialog.dart';
 import 'xero/xero_api.dart';
 
 class InvoiceListScreen extends StatefulWidget {
@@ -62,8 +61,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     }
 
     if (mounted) {
-      final selectedTasks = await DialogTaskSelection.show(
-          context: context, job: widget.job, includeEstimatedTasks: false);
+      final selectedTasks = await DialogTaskSelection.showInvoice(
+          context: context, job: widget.job);
 
       if (selectedTasks.isNotEmpty) {
         try {
@@ -160,7 +159,11 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
               padding: const EdgeInsets.all(8),
               child: Row(
                 children: [
-                  _buildGenerateButton(invoice),
+                  GenerateInvoiceDialog(
+                      context: context,
+                      mounted: mounted,
+                      widget: widget,
+                      invoice: invoice),
                   ElevatedButton(
                       onPressed: () async => _uploadOrSendInvoice(invoice),
                       child: _buildXeroButton(invoice)),
@@ -169,129 +172,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
             )
           ],
         ),
-      );
-
-  ElevatedButton _buildGenerateButton(Invoice invoice) => ElevatedButton(
-        onPressed: () async {
-          var displayCosts = true;
-          var displayGroupHeaders = true;
-          var displayItems = true;
-          var groupByTask = true; // Default to group by task
-
-          final result = await showDialog<Map<String, dynamic>>(
-            context: context,
-            builder: (context) {
-              var tempDisplayCosts = displayCosts;
-              var tempDisplayGroupHeaders = displayGroupHeaders;
-              var tempDisplayItems = displayItems;
-              var tempGroupByTask =
-                  groupByTask; // Temporary selection for grouping
-
-              return StatefulBuilder(
-                builder: (context, setState) => AlertDialog(
-                  title: const Text('Select Invoice Options'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CheckboxListTile(
-                        title: const Text('Display Costs'),
-                        value: tempDisplayCosts,
-                        onChanged: (value) {
-                          setState(() {
-                            tempDisplayCosts = value ?? true;
-                          });
-                        },
-                      ),
-                      CheckboxListTile(
-                        title: const Text('Display Group Headers'),
-                        value: tempDisplayGroupHeaders,
-                        onChanged: (value) {
-                          setState(() {
-                            tempDisplayGroupHeaders = value ?? true;
-                          });
-                        },
-                      ),
-                      CheckboxListTile(
-                        title: const Text('Display Items'),
-                        value: tempDisplayItems,
-                        onChanged: (value) {
-                          setState(() {
-                            tempDisplayItems = value ?? true;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      DropdownButton<bool>(
-                        value: tempGroupByTask,
-                        items: const [
-                          DropdownMenuItem(
-                            value: true,
-                            child: Text('Group by Task/Date'),
-                          ),
-                          DropdownMenuItem(
-                            value: false,
-                            child: Text('Group by Date/Task'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            tempGroupByTask = value ?? true;
-                          });
-                        },
-                        isExpanded: true,
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop({
-                          'displayCosts': tempDisplayCosts,
-                          'displayGroupHeaders': tempDisplayGroupHeaders,
-                          'displayItems': tempDisplayItems,
-                          'groupByTask': tempGroupByTask,
-                        });
-                      },
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-
-          if (result != null && mounted) {
-            displayCosts = result['displayCosts'] ?? true;
-            displayGroupHeaders = result['displayGroupHeaders'] ?? true;
-            displayItems = result['displayItems'] ?? true;
-            groupByTask = result['groupByTask'] ?? true;
-
-            final filePath = await generateInvoicePdf(
-              invoice,
-              displayCosts: displayCosts,
-              displayGroupHeaders: displayGroupHeaders,
-              displayItems: displayItems,
-            );
-
-            if (mounted) {
-              await Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (context) => PdfPreviewScreen(
-                    title:
-                        '''Invoice #${invoice.bestNumber} ${widget.job.summary}''',
-                    filePath: filePath.path,
-                    emailRecipients: const [],
-                  ),
-                ),
-              );
-            }
-          }
-        },
-        child: const Text('Generate and Preview PDF'),
       );
 
   Widget _buildXeroButton(Invoice invoice) {

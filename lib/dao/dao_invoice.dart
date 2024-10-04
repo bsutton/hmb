@@ -8,17 +8,15 @@ import '../entity/_index.g.dart';
 import '../invoicing/xero/models/xero_contact.dart';
 import '../invoicing/xero/xero_api.dart';
 import '../util/exceptions.dart';
-import '../util/format.dart';
 import '../util/local_date.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
-import 'dao_checklist_item.dart';
 import 'dao_contact.dart';
+import 'dao_invoice_create_by_date.dart';
+import 'dao_invoice_create_by_task.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
-import 'dao_task.dart';
-import 'dao_time_entry.dart';
 
 class DaoInvoice extends Dao<Invoice> {
   @override
@@ -60,8 +58,6 @@ class DaoInvoice extends Dao<Invoice> {
   /// Create an invoice for the given job.
   Future<Invoice> create(Job job, List<int> selectedTaskIds,
       {required bool groupByTask}) async {
-    final tasks = await DaoTask().getTasksByJob(job.id);
-
     if (job.hourlyRate == MoneyEx.zero) {
       throw InvoiceException('Hourly rate must be set for job ${job.summary}');
     }
@@ -76,137 +72,13 @@ class DaoInvoice extends Dao<Invoice> {
 
     final invoiceId = await DaoInvoice().insert(invoice);
 
-    // Prepare containers for grouping
-    final taskGroupMap = <int, List<LineAndSource>>{};
-    final dateGroupedLines = <LineAndSource>[];
-
-    for (final task in tasks) {
-      if (!selectedTaskIds.contains(task.id)) {
-        continue;
-      }
-
-      // Group by task: Create invoice line group for the task
-      if (groupByTask) {
-        final invoiceLineGroup = InvoiceLineGroup.forInsert(
-          invoiceId: invoiceId,
-          name: task.name,
-        );
-
-        final invoiceLineGroupId =
-            await DaoInvoiceLineGroup().insert(invoiceLineGroup);
-
-        // Add time entries (labour) grouped by date
-        final timeEntries = await DaoTimeEntry().getByTask(task.id);
-        for (final timeEntry in timeEntries.where((entry) => !entry.billed)) {
-          final duration =
-              Fixed.fromNum(timeEntry.duration.inMinutes / 60, scale: 2);
-          final lineTotal = job.hourlyRate!.multiplyByFixed(duration);
-
-          if (lineTotal.isZero) {
-            continue;
-          }
-
-          final invoiceLine = InvoiceLine.forInsert(
-            invoiceId: invoiceId,
-            invoiceLineGroupId: invoiceLineGroupId,
-            description:
-                'Labour: ${task.name} on ${formatDate(timeEntry.startTime)}',
-            quantity: duration,
-            unitPrice: job.hourlyRate!,
-            lineTotal: lineTotal,
-          );
-
-          final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-          totalAmount += lineTotal;
-
-          // Mark time entry as billed with the invoice line id
-          await DaoTimeEntry().markAsBilled(timeEntry, invoiceLineId);
-        }
-
-        // Add materials
-        final checkListItems = await DaoCheckListItem().getByTask(task.id);
-        for (final item
-            in checkListItems.where((item) => !item.billed && item.completed)) {
-          final lineTotal = item.estimatedMaterialUnitCost!
-              .multiplyByFixed(item.estimatedMaterialQuantity!);
-
-          final invoiceLine = InvoiceLine.forInsert(
-            invoiceId: invoiceId,
-            invoiceLineGroupId: invoiceLineGroupId,
-            description: 'Material: ${item.description}',
-            quantity: item.estimatedMaterialQuantity!,
-            unitPrice: item.estimatedMaterialUnitCost!,
-            lineTotal: lineTotal,
-          );
-          final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-          await DaoCheckListItem().markAsBilled(item, invoiceLineId);
-          totalAmount += lineTotal;
-        }
-      }
-      // Group by date
-      else {
-        // Labour grouped by date
-        final timeEntries = await DaoTimeEntry().getByTask(task.id);
-        for (final timeEntry in timeEntries.where((entry) => !entry.billed)) {
-          final duration =
-              Fixed.fromNum(timeEntry.duration.inMinutes / 60, scale: 2);
-          final lineTotal = job.hourlyRate!.multiplyByFixed(duration);
-
-          if (lineTotal.isZero) {
-            continue;
-          }
-
-          final invoiceLine = InvoiceLine.forInsert(
-            invoiceId: invoiceId,
-            description:
-                'Labour: ${task.name} on ${formatDate(timeEntry.startTime)}',
-            quantity: duration,
-            unitPrice: job.hourlyRate!,
-            lineTotal: lineTotal,
-          );
-          dateGroupedLines
-              .add(LineAndSource(line: invoiceLine, timeEntry: timeEntry));
-          totalAmount += lineTotal;
-        }
-
-        // Materials grouped under their respective task
-        if (taskGroupMap[task.id] == null) {
-          taskGroupMap[task.id] = [];
-        }
-        final checkListItems = await DaoCheckListItem().getByTask(task.id);
-        for (final item
-            in checkListItems.where((item) => !item.billed && item.completed)) {
-          final lineTotal = item.estimatedMaterialUnitCost!
-              .multiplyByFixed(item.estimatedMaterialQuantity!);
-
-          final invoiceLine = InvoiceLine.forInsert(
-            invoiceId: invoiceId,
-            description: 'Material: ${item.description}',
-            quantity: item.estimatedMaterialQuantity!,
-            unitPrice: item.estimatedMaterialUnitCost!,
-            lineTotal: lineTotal,
-          );
-          taskGroupMap[task.id]!
-              .add(LineAndSource(line: invoiceLine, checkListItem: item));
-          totalAmount += lineTotal;
-        }
-      }
+    // Group by task: Create invoice line group for the task
+    if (groupByTask) {
+      totalAmount = await createByTask( invoiceId, job, selectedTaskIds);
     }
-
-    // Insert date-based labour lines directly
-    if (!groupByTask) {
-      for (final line in dateGroupedLines) {
-        final invoiceLineId = await DaoInvoiceLine().insert(line.line);
-        await line.markBilled(invoiceLineId);
-      }
-
-      // Insert materials grouped by task at the bottom
-      for (final taskLines in taskGroupMap.values) {
-        for (final line in taskLines) {
-          final invoiceLineId = await DaoInvoiceLine().insert(line.line);
-          await line.markBilled(invoiceLineId);
-        }
-      }
+    // Group by date
+    else {
+      totalAmount = await createByDate(job, invoiceId, selectedTaskIds);
     }
 
     // Update the invoice total amount
@@ -308,20 +180,4 @@ class DaoInvoice extends Dao<Invoice> {
 /// Used to notify the UI that the time entry has changed.
 class InvoiceState extends JuneState {
   InvoiceState();
-}
-
-class LineAndSource {
-  LineAndSource({required this.line, this.checkListItem, this.timeEntry});
-  InvoiceLine line;
-  CheckListItem? checkListItem;
-  TimeEntry? timeEntry;
-
-  Future<void> markBilled(int invoiceLineId) async {
-    if (checkListItem != null) {
-      await DaoCheckListItem().markAsBilled(checkListItem!, invoiceLineId);
-    }
-    if (timeEntry != null) {
-      await DaoTimeEntry().markAsBilled(timeEntry!, invoiceLineId);
-    }
-  }
 }

@@ -1,5 +1,19 @@
 import 'entity.dart';
 
+/// Must match the db entries.
+enum CheckListItemTypeEnum {
+  materialsBuy(1, 'Materials - buy'),
+  materialsStock(2, 'Materials - stock'),
+  toolsBuy(3, 'Tools - buy'),
+  toolsOwn(4, 'Tools - own'),
+  labour(5, 'Labour');
+
+  const CheckListItemTypeEnum(this.id, this.description);
+
+  final int id;
+  final String description;
+}
+
 class CheckListItemType extends Entity<CheckListItemType> {
   CheckListItemType({
     required super.id,

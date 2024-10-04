@@ -1,3 +1,5 @@
+import 'package:money2/money2.dart';
+
 import 'entity.dart';
 
 class TimeEntry extends Entity<TimeEntry> {
@@ -57,6 +59,8 @@ class TimeEntry extends Entity<TimeEntry> {
     final end = endTime ?? DateTime.now();
     return end.difference(startTime);
   }
+
+  Fixed get hours =>  Fixed.fromNum(duration.inMinutes / 60);
 
   TimeEntry copyWith({
     int? id,

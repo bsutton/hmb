@@ -107,31 +107,31 @@ class DaoQuote extends Dao<Quote> {
 
       final estimates = await DaoTask().getTaskEstimates(task, hourlyRate);
 
-      if (!MoneyEx.isZeroOrNull(estimates.cost)) {
+      if (!MoneyEx.isZeroOrNull(estimates.estimatedMaterialsCharge)) {
         /// Cost based billing
-        final lineTotal = estimates.cost;
+        final lineTotal = estimates.estimatedMaterialsCharge;
 
         if (!lineTotal.isZero) {
           quoteLine = QuoteLine.forInsert(
             quoteId: quoteId,
             description: task.name,
             quantity: Fixed.fromInt(100),
-            unitPrice: estimates.cost,
+            unitPrice: estimates.estimatedMaterialsCharge,
             lineTotal: lineTotal,
           );
 
           totalAmount += lineTotal;
         }
-      } else if (!FixedEx.isZeroOrNull(estimates.effortInHours)) {
+      } else if (!FixedEx.isZeroOrNull(estimates.estimatedLabour)) {
         /// Labour based billing using estimated effort
         final lineTotal =
-            job.hourlyRate!.multiplyByFixed(estimates.effortInHours);
+            job.hourlyRate!.multiplyByFixed(estimates.estimatedLabour);
 
         if (!lineTotal.isZero) {
           quoteLine = QuoteLine.forInsert(
             quoteId: quoteId,
             description: task.name,
-            quantity: estimates.effortInHours,
+            quantity: estimates.estimatedLabour,
             unitPrice: job.hourlyRate!,
             lineTotal: lineTotal,
           );

@@ -3,10 +3,7 @@ import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../entity/check_list.dart';
-import '../entity/check_list_item.dart';
-import '../entity/job.dart';
-import '../entity/task.dart';
+import '../entity/_index.g.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_checklist.dart';
@@ -33,38 +30,6 @@ class DaoTask extends Dao<Task> {
       tasks.add(Task.fromMap(result));
     }
     return tasks;
-  }
-
-  Future<TaskStatistics> getTaskStatistics(Task task) async {
-    var totalEffort = Fixed.zero;
-    var completedEffort = Fixed.zero;
-    final totalCost = MoneyEx.zero;
-    var earnedCost = MoneyEx.zero;
-
-    final hourlyRate = await DaoTask().getHourlyRate(task);
-
-    // Get task cost and effort using the new getTaskCost method
-    final taskCost = await getTaskEstimates(task, hourlyRate);
-
-    // Total effort and cost are retrieved directly from the taskCost
-    totalEffort = taskCost.effortInHours;
-    completedEffort += taskCost.effortInHours;
-    earnedCost += taskCost.earnedCost;
-
-    final timeEntries = await DaoTimeEntry().getByTask(task.id);
-
-    var trackedEffort = Duration.zero;
-
-    for (final timeEntry in timeEntries) {
-      trackedEffort += timeEntry.duration;
-    }
-
-    return TaskStatistics(
-        totalEffort: totalEffort,
-        completedEffort: completedEffort,
-        totalCost: totalCost,
-        earnedCost: earnedCost,
-        trackedEffort: trackedEffort);
   }
 
   Future<Task> getTaskForCheckListItem(CheckListItem item) async {
@@ -126,87 +91,125 @@ WHERE cli.id = ?
     return toList(data).first;
   }
 
-  Future<TaskEstimates> getTaskEstimates(Task task, Money hourlyRate) async {
-    var totalCost = MoneyEx.zero;
-    var totalEffortInHours = Fixed.zero;
-    var completedEffort = Fixed.zero;
-    var earnedCost = MoneyEx.zero;
+  /// If [includeBilled] is true then we return the accured value since
+  /// the [Job] started. If [includeBilled] is false then we only
+  /// include labour/materials that haven't been billed.
+  Future<TaskAccuredValue> getAccruedValue(
+      {required Task task, required bool includeBilled}) async {
+    final hourlyRate = await DaoTask().getHourlyRate(task);
+    final billingType = await DaoTask().getBillingType(task);
+
+    // Get task cost and effort using the new getTaskCost method
+    final taskEstimatedCharges = await getTaskEstimates(task, hourlyRate);
+
+    var totalEarnedLabour = Fixed.zero;
+    var totalMaterialCharges = MoneyEx.zero;
+
+    if (billingType == BillingType.timeAndMaterial) {
+      final timeEntries = await DaoTimeEntry().getByTask(task.id);
+      for (final timeEntry in timeEntries) {
+        if ((includeBilled && timeEntry.billed) || !timeEntry.billed) {
+          totalEarnedLabour += timeEntry.hours;
+        }
+      }
+
+      /// Material costs.
+      for (final item in await DaoCheckListItem().getByTask(task.id)) {
+        if (item.itemTypeId == CheckListItemTypeEnum.materialsBuy.id) {
+          if ((includeBilled && item.billed) || !item.billed) {
+            // Materials and tools to be purchased
+            totalMaterialCharges += (item.actualMaterialCost ?? MoneyEx.zero)
+                .multiplyByFixed(item.actualMaterialQuantity ?? Fixed.one);
+          }
+        }
+      }
+    } else // fixed price
+    {
+      totalEarnedLabour = taskEstimatedCharges.estimatedLabour;
+      totalMaterialCharges += taskEstimatedCharges.estimatedMaterialsCharge;
+    }
+
+    return TaskAccuredValue(
+        taskEstimatedValue: taskEstimatedCharges,
+        earnedMaterialCharges: totalMaterialCharges,
+        earnedLabour: totalEarnedLabour);
+  }
+
+  Future<TaskEstimatedValue> getTaskEstimates(
+      Task task, Money hourlyRate) async {
+    var estimatedMaterialsCharge = MoneyEx.zero;
+    var estimatedLabourCharge = Fixed.zero;
 
     // Get checklist items for the task
     final checkListItems = await DaoCheckListItem().getByTask(task.id);
 
+    final billingType = await DaoTask().getBillingType(task);
+
     for (final item in checkListItems) {
-      if (item.itemTypeId == 5) {
-        // Action type checklist item (effort)
-        totalEffortInHours += item.estimatedLabourHours!;
-        if (item.completed) {
-          completedEffort +=
-              item.estimatedLabourHours!; // Sum up completed effort
-          earnedCost += item.estimatedMaterialUnitCost!.multiplyByFixed(
-              item.estimatedMaterialQuantity!); // Sum up earned cost
-        }
-      } else if (item.itemTypeId == 1 || item.itemTypeId == 3) {
+      if (item.itemTypeId == CheckListItemTypeEnum.labour.id) {
+        // Labour check list item
+        estimatedLabourCharge += item.estimatedLabourHours!;
+      } else if (item.itemTypeId == CheckListItemTypeEnum.materialsBuy.id) {
         // Materials and tools to be purchased
-        totalCost += item.estimatedMaterialUnitCost!
+        estimatedMaterialsCharge += item.estimatedMaterialUnitCost!
             .multiplyByFixed(item.estimatedMaterialQuantity!);
-        if (item.completed) {
-          earnedCost += item.estimatedMaterialUnitCost!.multiplyByFixed(item
-              .estimatedMaterialQuantity!); // Earned cost for completed items
-        }
       }
     }
 
-    // Calculate time entries cost
-    final timeEntries = await DaoTimeEntry().getByTask(task.id);
-    for (final entry in timeEntries.where((entry) => !entry.billed)) {
-      final duration = entry.duration.inMinutes / 60;
-      totalCost += hourlyRate.multiplyByFixed(Fixed.fromNum(duration));
+    if (billingType == BillingType.timeAndMaterial) {
+      // Calculate time entries cost
+      final timeEntries = await DaoTimeEntry().getByTask(task.id);
+      for (final entry in timeEntries.where((entry) => !entry.billed)) {
+        final duration = entry.duration.inMinutes / 60;
+        estimatedMaterialsCharge +=
+            hourlyRate.multiplyByFixed(Fixed.fromNum(duration));
+      }
     }
 
-    return TaskEstimates(
+    return TaskEstimatedValue(
         task: task,
-        cost: totalCost,
-        effortInHours: totalEffortInHours,
-        completedEffort: completedEffort,
-        earnedCost: earnedCost);
+        estimatedMaterialsCharge: estimatedMaterialsCharge,
+        estimatedLabour: estimatedLabourCharge);
   }
 
   /// Returns a list of Task with their associated costs.
-  Future<List<TaskEstimates>> getTaskCostsByJob(
-      int jobId, Money hourlyRate) async {
+  Future<List<TaskAccuredValue>> getTaskCostsByJob(
+      {required int jobId, required bool includeBilled}) async {
     final tasks = await getTasksByJob(jobId);
-    final taskCosts = <TaskEstimates>[];
+    final taskCosts = <TaskAccuredValue>[];
 
     for (final task in tasks) {
       // Use the new getTaskCost method which now includes effortInHours
-      final taskCost = await getTaskEstimates(task, hourlyRate);
+      final taskCost =
+          await getAccruedValue(task: task, includeBilled: includeBilled);
       taskCosts.add(taskCost);
     }
 
     return taskCosts;
   }
 
-  Future<Money> getTimeAndMaterialEarnings(Task task, Money hourlyRate) async {
-    assert(task.billingType == BillingType.timeAndMaterial,
-        'Can only be called for tasks billed by TimeAndMaterials');
-    var totalCost = MoneyEx.zero;
+  // Future<Money> getTimeAndMaterialEarnings(Task task, Money hourlyRate)
+  //   async {
+  //   assert(task.billingType == BillingType.timeAndMaterial,
+  //       'Can only be called for tasks billed by TimeAndMaterials');
+  //   var totalCost = MoneyEx.zero;
 
-    // Get all time entries for the task
-    final timeEntries = await DaoTimeEntry().getByTask(task.id);
-    for (final entry in timeEntries.where((entry) => !entry.billed)) {
-      final duration = entry.duration.inMinutes / 60;
-      totalCost += hourlyRate.multiplyByFixed(Fixed.fromNum(duration));
-    }
+  //   // Get all time entries for the task
+  //   final timeEntries = await DaoTimeEntry().getByTask(task.id);
+  //   for (final entry in timeEntries.where((entry) => !entry.billed)) {
+  //     final duration = entry.duration.inMinutes / 60;
+  //     totalCost += hourlyRate.multiplyByFixed(Fixed.fromNum(duration));
+  //   }
 
-    // Get all checklist items for the task
-    final checkListItems = await DaoCheckListItem().getByTask(task.id);
-    for (final item in checkListItems.where((item) => !item.billed)) {
-      totalCost += item.estimatedMaterialUnitCost!
-          .multiplyByFixed(item.estimatedMaterialQuantity!);
-    }
+  //   // Get all checklist items for the task
+  //   final checkListItems = await DaoCheckListItem().getByTask(task.id);
+  //   for (final item in checkListItems.where((item) => !item.billed)) {
+  //     totalCost += item.estimatedMaterialUnitCost!
+  //         .multiplyByFixed(item.estimatedMaterialQuantity!);
+  //   }
 
-    return totalCost;
-  }
+  //   return totalCost;
+  // }
 
   @override
   JuneStateCreator get juneRefresher => TaskState.new;
@@ -245,34 +248,56 @@ class TaskState extends JuneState {
   TaskState();
 }
 
-class TaskStatistics {
-  TaskStatistics(
-      {required this.totalEffort,
-      required this.completedEffort,
-      required this.totalCost,
-      required this.earnedCost,
-      required this.trackedEffort});
-  final Fixed totalEffort;
-  final Fixed completedEffort;
-  final Money totalCost;
-  final Money earnedCost;
+/// Holds the value earned from labour and materials
+/// for work that has been completed.
+/// For FixedPrice this is based on the estimates
+/// for Time and Materials this is based on actuals.
+class TaskAccuredValue {
+  TaskAccuredValue(
+      {required this.taskEstimatedValue,
+      required this.earnedMaterialCharges,
+      required this.earnedLabour});
+  final TaskEstimatedValue taskEstimatedValue;
 
-  /// sum of TimeEntry's for this task.
-  Duration trackedEffort;
+  /// The total worth of materials that have
+  /// been marked as completd.
+  /// For FixedPrice
+  /// Taken from the estimated materials cost.
+  /// For Time And Materials
+  /// Taken from the actual materials cost.
+  final Money earnedMaterialCharges;
+
+  /// Stored as decimal hours
+  /// For FixedPrice
+  /// This is taken from the estimated labour costs.
+  ///
+  /// For Time and Materials
+  /// This is taken from completed [TimeEntry]s
+  Fixed earnedLabour;
+
+  /// The total of labour changes and materials
+  Future<Money> get earned async =>
+      earnedMaterialCharges +
+      (await DaoTask().getHourlyRate(taskEstimatedValue.task))
+          .multiplyByFixed(earnedLabour);
+
+  Task get task => taskEstimatedValue.task;
 }
 
-class TaskEstimates {
-  TaskEstimates({
+class TaskEstimatedValue {
+  TaskEstimatedValue({
     required this.task,
-    required this.cost,
-    required this.effortInHours,
-    required this.completedEffort,
-    required this.earnedCost,
+    required this.estimatedMaterialsCharge,
+    required this.estimatedLabour,
   });
 
   Task task;
-  Money cost;
-  Fixed effortInHours; // Total effort for the task
-  Fixed completedEffort; // Effort from completed checklist items
-  Money earnedCost; // Cost from completed checklist items
+
+  /// Estimated material charges taken from
+  /// [CheckListItem]s materials buy
+  Money estimatedMaterialsCharge;
+
+  /// Estimated labour (in hours) for the task taken
+  /// from [CheckListItem]s of type [CheckListItemTypeEnum.labour]
+  Fixed estimatedLabour;
 }

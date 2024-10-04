@@ -55,8 +55,8 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     }
 
     if (mounted) {
-      final selectedTasks = await DialogTaskSelection.show(
-          context: context, job: widget.job, includeEstimatedTasks: true);
+      final selectedTasks = await DialogTaskSelection.showQuote(
+          context: context, job: widget.job);
 
       if (selectedTasks.isNotEmpty) {
         try {
