@@ -124,7 +124,8 @@ class _CheckListItemEditScreenState
 
     June.getState(SelectedSupplier.new).selected = currentEntity?.supplierId;
 
-    final selectedDimensionType = currentEntity?.measurementType ?? length;
+    final selectedDimensionType =
+        currentEntity?.measurementType ?? MeasurementType.length;
     June.getState(SelectedMeasurementType.new).selected = selectedDimensionType;
 
     final defaultDimensionType =
