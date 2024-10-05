@@ -6,14 +6,16 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:dcli/dcli.dart';
 import 'package:hmb/database/management/db_utility.dart';
+import 'package:hmb/database/versions/db_upgrade.dart';
 import 'package:path/path.dart' as path;
 import 'package:path/path.dart';
 import 'package:pub_release/pub_release.dart';
 import 'package:pubspec_manager/pubspec_manager.dart' as pm;
+import 'package:sqflite/sqflite.dart';
 
 import 'lib/version_properties.dart';
 
-void main(List<String> args) {
+void main(List<String> args) async {
   final parser = ArgParser()
     ..addFlag('assets',
         abbr: 'a',
@@ -50,7 +52,7 @@ Create a signed release appbundle suitable to upload to Google Play store.''')
   }
 
   if (assets) {
-    updateAssetList();
+    await updateAssetList();
   }
   var needPubGet = true;
 
@@ -119,7 +121,7 @@ void buildAppBundle() {
 
 /// Update the list of sql upgrade scripts we ship as assets.
 /// The lists is held in assets/sql/upgrade_list.json
-void updateAssetList() {
+Future<void> updateAssetList() async {
   final pathToAssets = join(
       DartProject.self.pathToProjectRoot, 'assets', 'sql', 'upgrade_scripts');
   final assetFiles = find('v*.sql', workingDirectory: pathToAssets).toList();
@@ -130,12 +132,8 @@ void updateAssetList() {
       /// We are creating asset path which must us the posix path delimiter \
       .map((path) {
     final rel = relative(path, from: DartProject.self.pathToProjectRoot);
-
-    /// rebuild the path with posix path delimiter
     return posix.joinAll(split(rel));
   }).toList()
-
-    /// sort in descending order.
     ..sort((a, b) =>
         extractVerionForSQLUpgradeScript(b) -
         extractVerionForSQLUpgradeScript(a));
@@ -153,4 +151,31 @@ void updateAssetList() {
     ..writeAsStringSync(jsonContent);
 
   print('SQL Asset list generated: ${jsonFile.path}');
+
+  // After updating the assets, create the clean test database.
+  await createCleanTestDatabase();
+}
+
+/// Method to create a new clean database for unit testing.
+Future<void> createCleanTestDatabase() async {
+  final testDbPath = join(
+      Directory.current.path, 'test', 'fixtures', 'db', 'handyman_test.db');
+
+  // Ensure the directory exists
+  final dbDir = dirname(testDbPath);
+  if (!exists(dbDir)) {
+    createDir(dbDir, recursive: true);
+  }
+
+  final db = await databaseFactory.openDatabase(testDbPath,
+      options: OpenDatabaseOptions(
+          version: await getLatestVersion(),
+          onUpgrade: (db, oldVersion, newVersion) => upgradeDb(
+              db: db,
+              oldVersion: oldVersion,
+              newVersion: newVersion,
+              backup: true)));
+
+  print('Clean test database created at: $testDbPath');
+  await db.close();
 }
