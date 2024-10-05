@@ -54,7 +54,8 @@ class JobCard extends StatelessWidget {
                   HMBJobSiteText(label: '', job: job),
                   const SizedBox(height: 8),
                   HMBText(
-                    'Status: ${jobStatus?.name ?? "Status Unknown"}',
+                    '''
+# ${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
                   ),
                   const SizedBox(height: 8),
                   HMBText(
