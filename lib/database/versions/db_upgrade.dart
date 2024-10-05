@@ -1,11 +1,9 @@
-import 'dart:convert';
-
-import 'package:flutter/services.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
-import '../management/backup_providers/local/local_backup_provider.dart';
+import '../management/backup_providers/backup_provider.dart';
 import '../management/db_utility.dart';
+import 'script_source.dart';
 
 /// Upgrade the database by applying each upgrade script in order
 /// from the db's current version to the latest version.
@@ -13,7 +11,9 @@ Future<void> upgradeDb(
     {required Database db,
     required int oldVersion,
     required int newVersion,
-    required bool backup}) async {
+    required bool backup,
+    required ScriptSource src,
+    required BackupProvider backupProvider}) async {
   if (oldVersion == 1) {
     print('Creating database');
   } else {
@@ -22,11 +22,11 @@ Future<void> upgradeDb(
     } else {
       print('Backing up database prior to upgrade');
 
-      await LocalBackupProvider().performBackup(version: oldVersion);
+      await backupProvider.performBackup(version: oldVersion, src: src);
       print('Upgrade database from Version $oldVersion');
     }
   }
-  final upgradeAssets = await _loadPathsToUpgradeScriptAssets();
+  final upgradeAssets = await src.upgradeScripts();
 
   // sort the list of upgrade script numerically after stripping
   // of the .sql extension.
@@ -43,13 +43,13 @@ Future<void> upgradeDb(
     final scriptVersion = extractVerionForSQLUpgradeScript(pathToScript);
     if (scriptVersion >= firstUpgrade) {
       print('Upgrading to $scriptVersion via $pathToScript');
-      await _executeScript(db, pathToScript);
+      await _executeScript(db, src, pathToScript);
     }
   }
 }
 
-Future<int> getLatestVersion() async {
-  final upgradeAssets = await _loadPathsToUpgradeScriptAssets();
+Future<int> getLatestVersion(ScriptSource src) async {
+  final upgradeAssets = await src.upgradeScripts();
 
   // sort the list of upgrade script numerically after stripping
   // of the .sql extension.
@@ -60,9 +60,11 @@ Future<int> getLatestVersion() async {
   return extractVerionForSQLUpgradeScript(upgradeAssets.last);
 }
 
-Future<void> _executeScript(Database db, String pathToScript) async {
-  final sql = await rootBundle.loadString(pathToScript);
-  print('running $pathToScript');
+Future<void> _executeScript(
+    Database db, ScriptSource src, String pathToScript) async {
+  final sql = await src.loadSQL(pathToScript);
+
+  print('running $src.pathToScript');
   final statements = await parseSqlFile(sql);
 
   for (final statement in statements) {
@@ -76,12 +78,6 @@ Future<void> _executeScript(Database db, String pathToScript) async {
 
 Future<void> x(Database db, String command) async {
   await db.execute(command);
-}
-
-Future<List<String>> _loadPathsToUpgradeScriptAssets() async {
-  final jsonString =
-      await rootBundle.loadString('assets/sql/upgrade_list.json');
-  return List<String>.from(json.decode(jsonString) as List);
 }
 
 Future<List<String>> parseSqlFile(String content) async {

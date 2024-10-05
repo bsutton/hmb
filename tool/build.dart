@@ -5,13 +5,16 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:dcli/dcli.dart';
+import 'package:hmb/database/factory/cli_database_factory.dart';
+import 'package:hmb/database/management/backup_providers/dev/dev_backup_provider.dart';
 import 'package:hmb/database/management/db_utility.dart';
 import 'package:hmb/database/versions/db_upgrade.dart';
+import 'package:hmb/database/versions/project_script_source.dart';
 import 'package:path/path.dart' as path;
 import 'package:path/path.dart';
 import 'package:pub_release/pub_release.dart';
 import 'package:pubspec_manager/pubspec_manager.dart' as pm;
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'lib/version_properties.dart';
 
@@ -159,7 +162,7 @@ Future<void> updateAssetList() async {
 /// Method to create a new clean database for unit testing.
 Future<void> createCleanTestDatabase() async {
   final testDbPath = join(
-      Directory.current.path, 'test', 'fixtures', 'db', 'handyman_test.db');
+      Directory.current.path, 'test', 'fixture', 'db', 'handyman_test.db');
 
   // Ensure the directory exists
   final dbDir = dirname(testDbPath);
@@ -167,14 +170,18 @@ Future<void> createCleanTestDatabase() async {
     createDir(dbDir, recursive: true);
   }
 
+  final databaseFactory = CliDatabaseFactory();
+  final src = ProjectScriptSource();
   final db = await databaseFactory.openDatabase(testDbPath,
       options: OpenDatabaseOptions(
-          version: await getLatestVersion(),
+          version: await getLatestVersion(src),
           onUpgrade: (db, oldVersion, newVersion) => upgradeDb(
               db: db,
               oldVersion: oldVersion,
               newVersion: newVersion,
-              backup: true)));
+              backup: true,
+              src: src,
+              backupProvider: DevBackupProvider(databaseFactory))));
 
   print('Clean test database created at: $testDbPath');
   await db.close();

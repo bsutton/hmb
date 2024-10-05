@@ -75,7 +75,7 @@ dependencies:
   sms_advanced: # ^1.1.0
     hosted: https://onepub.dev/api/jbbxpsdavu/
   sqflite: ^2.3.2
-  sqflite_common_ffi: ^2.3.3
+  sqflite_common_ffi: ^2.3.3+1
   sqflite_common_ffi_web: ^0.4.3+1
   stacktrace_impl: ^2.3.0
   strings: ^3.1.1
