@@ -26,7 +26,13 @@ class DatabaseHelper {
     final path = await pathToDatabase();
     _database = await databaseFactory.openDatabase(path,
         options: OpenDatabaseOptions(
-            version: await getLatestVersion(), onUpgrade: upgradeDb));
+            version: await getLatestVersion(),
+            onUpgrade: (db, oldVersion, newVersion) => upgradeDb(
+                db: db,
+                backup: kIsWeb,
+                oldVersion: oldVersion,
+                newVersion: newVersion)
+            ));
   }
 
   Future<String> pathToDatabase() async {

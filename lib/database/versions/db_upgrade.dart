@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:strings/strings.dart';
@@ -10,12 +9,16 @@ import '../management/db_utility.dart';
 
 /// Upgrade the database by applying each upgrade script in order
 /// from the db's current version to the latest version.
-Future<void> upgradeDb(Database db, int oldVersion, int newVersion) async {
+Future<void> upgradeDb(
+    {required Database db,
+    required int oldVersion,
+    required int newVersion,
+    required bool backup}) async {
   if (oldVersion == 1) {
     print('Creating database');
   } else {
-    if (kIsWeb) {
-      print("Skipping web backup as we don't have a solution");
+    if (backup) {
+      print("Skipping backup as we don't have a solution");
     } else {
       print('Backing up database prior to upgrade');
 
