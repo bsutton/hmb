@@ -211,21 +211,15 @@ where c.id =?
   }
 
   Future<bool> hasBillableTasks(Job job) async {
-    final tasks = await DaoTask().getTasksByJob(job.id);
-    for (final task in tasks) {
-      final timeEntries = await DaoTimeEntry().getByTask(task.id);
-      final unbilledTimeEntries = timeEntries.where((entry) => !entry.billed);
-      if (unbilledTimeEntries.isNotEmpty) {
-        return true;
-      }
+    final tasksAccruedValue =
+        await DaoTask().getTaskCostsByJob(jobId: job.id, includeBilled: false);
 
-      final checkListItems = await DaoCheckListItem().getByTask(task.id);
-      final unbilledCheckListItems =
-          checkListItems.where((item) => !item.billed && item.hasCost);
-      if (unbilledCheckListItems.isNotEmpty) {
+    for (final task in tasksAccruedValue) {
+      if ((await task.earned) > MoneyEx.zero) {
         return true;
       }
     }
+
     return false;
   }
 
