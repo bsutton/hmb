@@ -3,10 +3,9 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../dao/dao_task.dart';
 import '../entity/job.dart';
-import '../util/money_ex.dart';
 import '../widgets/async_state.dart';
 
-enum _Showing { showQuote, showInvoice }
+enum Showing { showQuote, showInvoice }
 
 /// show the user the set of tasks for the passed Job
 /// and allow them to select which tasks they want to
@@ -15,7 +14,7 @@ class DialogTaskSelection extends StatefulWidget {
   const DialogTaskSelection(
       {required this.job, required this.showing, super.key});
   final Job job;
-  final _Showing showing;
+  final Showing showing;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -29,7 +28,7 @@ class DialogTaskSelection extends StatefulWidget {
     final selectedTaskIds = await showDialog<List<int>>(
       context: context,
       builder: (context) =>
-          DialogTaskSelection(job: job, showing: _Showing.showQuote),
+          DialogTaskSelection(job: job, showing: Showing.showQuote),
     );
 
     return selectedTaskIds ?? [];
@@ -43,7 +42,7 @@ class DialogTaskSelection extends StatefulWidget {
     final selectedTaskIds = await showDialog<List<int>>(
       context: context,
       builder: (context) =>
-          DialogTaskSelection(job: job, showing: _Showing.showInvoice),
+          DialogTaskSelection(job: job, showing: Showing.showInvoice),
     );
 
     return selectedTaskIds ?? [];
@@ -51,29 +50,24 @@ class DialogTaskSelection extends StatefulWidget {
 }
 
 class _DialogTaskSelectionState
-    extends AsyncState<DialogTaskSelection, List<TaskAccuredValue>> {
+    extends AsyncState<DialogTaskSelection, List<TaskAccruedValue>> {
   // late List<TaskEstimates> _tasks;
   final Map<int, bool> _selectedTasks = {};
   bool _selectAll = true;
 
   @override
-  Future<List<TaskAccuredValue>> asyncInitState() async {
+  Future<List<TaskAccruedValue>> asyncInitState() async {
     // Load tasks and their costs via the DAO
     final tasksAccruedValue = await DaoTask().getTaskCostsByJob(
         jobId: widget.job.id,
-        includeBilled: widget.showing == _Showing.showQuote);
+        includeBilled: widget.showing == Showing.showQuote);
 
     /// Mark all tasks as selected.
     for (final accuredValue in tasksAccruedValue) {
-      if ((await accuredValue.earned) == MoneyEx.zero) {
-        continue;
-      }
       _selectedTasks[accuredValue.task.id] = true;
     }
 
-    return tasksAccruedValue
-        .where((accrued)  => (await accrued.earned) != MoneyEx.zero)
-        .toList();
+    return tasksAccruedValue;
   }
 
   void _toggleSelectAll(bool? value) {
@@ -99,7 +93,7 @@ class _DialogTaskSelectionState
   @override
   Widget build(BuildContext context) => AlertDialog(
         title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
-        content: FutureBuilderEx<List<TaskAccuredValue>>(
+        content: FutureBuilderEx<List<TaskAccruedValue>>(
             future: initialised,
             builder: (context, taskEstimates) => SingleChildScrollView(
                   child: Column(
