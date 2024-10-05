@@ -94,7 +94,7 @@ WHERE cli.id = ?
   /// If [includeBilled] is true then we return the accured value since
   /// the [Job] started. If [includeBilled] is false then we only
   /// include labour/materials that haven't been billed.
-  Future<TaskAccuredValue> getAccruedValue(
+  Future<TaskAccruedValue> getAccruedValue(
       {required Task task, required bool includeBilled}) async {
     final hourlyRate = await DaoTask().getHourlyRate(task);
     final billingType = await DaoTask().getBillingType(task);
@@ -129,7 +129,7 @@ WHERE cli.id = ?
       totalMaterialCharges += taskEstimatedCharges.estimatedMaterialsCharge;
     }
 
-    return TaskAccuredValue(
+    return TaskAccruedValue(
         taskEstimatedValue: taskEstimatedCharges,
         earnedMaterialCharges: totalMaterialCharges,
         earnedLabour: totalEarnedLabour);
@@ -173,16 +173,22 @@ WHERE cli.id = ?
   }
 
   /// Returns a list of Task with their associated costs.
-  Future<List<TaskAccuredValue>> getTaskCostsByJob(
+  /// Tasks with a zero value are excluded.
+  Future<List<TaskAccruedValue>> getTaskCostsByJob(
       {required int jobId, required bool includeBilled}) async {
     final tasks = await getTasksByJob(jobId);
-    final taskCosts = <TaskAccuredValue>[];
+    final taskCosts = <TaskAccruedValue>[];
 
     for (final task in tasks) {
       // Use the new getTaskCost method which now includes effortInHours
-      final taskCost =
+      final accruedValue =
           await getAccruedValue(task: task, includeBilled: includeBilled);
-      taskCosts.add(taskCost);
+
+      if ((await accruedValue.earned) == MoneyEx.zero) {
+        continue;
+      }
+
+      taskCosts.add(accruedValue);
     }
 
     return taskCosts;
@@ -252,8 +258,8 @@ class TaskState extends JuneState {
 /// for work that has been completed.
 /// For FixedPrice this is based on the estimates
 /// for Time and Materials this is based on actuals.
-class TaskAccuredValue {
-  TaskAccuredValue(
+class TaskAccruedValue {
+  TaskAccruedValue(
       {required this.taskEstimatedValue,
       required this.earnedMaterialCharges,
       required this.earnedLabour});
