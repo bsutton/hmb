@@ -32,6 +32,18 @@ class DaoTask extends Dao<Task> {
     return tasks;
   }
 
+  @override
+  Future<int> insert(covariant Task entity, [Transaction? transaction]) async {
+    final task = super.insert(entity, transaction);
+    final newChecklist = CheckList.forInsert(
+        name: 'default',
+        description: 'Default Checklist',
+        listType: CheckListType.owned);
+    await DaoCheckList().insertForTask(newChecklist, entity);
+
+    return task;
+  }
+
   Future<Task> getTaskForCheckListItem(CheckListItem item) async {
     final db = getDb();
 
