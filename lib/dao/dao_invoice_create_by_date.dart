@@ -32,6 +32,7 @@ Future<Money> createByDate(
 
   for (final workDate in workDates) {
     final tasksForDate = TasksForDate(workDate, job, selectedTaskIds);
+    await tasksForDate.build();
 
     // TODO(bsutton): don't and a group if no invoice lines are generated.
     /// A new invoice group for each date.
