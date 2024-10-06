@@ -21,7 +21,7 @@ class DaoCheckListItemType extends Dao<CheckListItemType> {
     final data = await db.query(
       tableName,
       where: 'name = ?',
-      whereArgs: ['name'],
+      whereArgs: [name],
     );
     return toList(data);
   }
