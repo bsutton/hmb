@@ -57,12 +57,18 @@ class LocalDate {
 
   bool isEqual(LocalDate rhs) => date.compareTo(rhs.date) == 0;
 
+  @override
+  bool operator ==(Object other) => other is LocalDate && isEqual(other);
+
   LocalDate add(Duration duration) =>
       LocalDate.fromDateTime(date.add(duration));
 
   /// returns the no. of days between this date and the
   /// passed [other] date.
   int daysBetween(LocalDate other) => date.difference(other.date).inDays;
+
+  @override
+  int get hashCode => date.hashCode;
 }
 
 class LocalDateConverter implements JsonConverter<LocalDate, String> {
