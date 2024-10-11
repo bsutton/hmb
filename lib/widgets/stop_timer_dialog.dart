@@ -93,14 +93,14 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
           if (widget.showTask) buildTaskDetails(),
           Row(children: [
             HMBText(
-              'Time:',
+              'Start:',
               bold: true,
             ),
             const HMBSpacer(width: true),
             HMBText(formatDateTime(widget.timeEntry.startTime))
           ]),
           HMBDateTimeField(
-            label: 'Time:',
+            label: 'Stop:',
             initialDateTime: selectedDate,
             onChanged: (date) {
               setState(() {
