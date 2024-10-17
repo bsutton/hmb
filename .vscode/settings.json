@@ -1,5 +1,13 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
     "java.compile.nullAnalysis.mode": "automatic",
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "hmb",
+            "database": "${workspaceFolder:hmb}/.dart_tool/sqflite_common_ffi/databases/handyman.db"
+        }
+    ]
 }
