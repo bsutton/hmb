@@ -11,7 +11,7 @@ class Tool extends Entity<Tool> {
     this.datePurchased,
     this.serialNumber,
   });
-  final String name;
+  final Strcat /ing name;
   final String category;
   final DateTime? datePurchased;
   final String? serialNumber;
