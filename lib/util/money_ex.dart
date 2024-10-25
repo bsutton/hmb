@@ -12,5 +12,7 @@ extension MoneyEx on Money {
   static Money fromInt(int? amount) =>
       Money.fromInt(amount ?? 0, isoCode: 'AUD', decimalDigits: 2);
 
+  static Money dollars(int dollars) => fromInt(dollars * 100);
+
   static bool isZeroOrNull(Money? money) => money == null || money.isZero;
 }
