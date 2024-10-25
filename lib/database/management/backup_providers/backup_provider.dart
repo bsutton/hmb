@@ -15,7 +15,7 @@ abstract class BackupProvider {
 
   HMBDatabaseFactory databaseFactory;
 
-  /// Returns tthe path to where the file was stored.
+  /// Returns the path to where the file was stored.
   // TODO(bsutton): this should be a uri
   Future<BackupResult> store(
       {required String pathToDatabase,
@@ -36,28 +36,30 @@ abstract class BackupProvider {
   /// Closes the db, zip the backup file, store it and
   /// then reopen the db.
   Future<BackupResult> performBackup(
-      {required int version, required ScriptSource src}) async {
-    final encoder = ZipFileEncoder();
+          {required int version, required ScriptSource src}) =>
+      withTempDirAsync((tmpDir) async {
+        final encoder = ZipFileEncoder();
+        try {
+          final datePart = formatDate(DateTime.now(), format: 'y-m-d');
+          final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
+          encoder.create(pathToZip);
+          final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
 
-    return withTempDirAsync((tmpDir) async {
-      final datePart = formatDate(DateTime.now(), format: 'y-m-d');
-      final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
-      encoder.create(pathToZip);
+          await copyDatabaseTo(pathToBackupFile, src, this);
+          await encoder.addFile(File(pathToBackupFile));
+          await encoder.close();
 
-      final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
-
-      await copyDatabaseTo(pathToBackupFile, src, this);
-      await encoder.addFile(File(pathToBackupFile));
-      await encoder.close();
-
-      //after that some of code for making the zip files
-      return store(
-          pathToZippedBackup: pathToZip,
-          pathToDatabase: pathToBackupFile,
-          version: version);
-    });
-    //i am amazing. u r not.
-  }
+          //after that some of code for making the zip files
+          return store(
+              pathToZippedBackup: pathToZip,
+              pathToDatabase: pathToBackupFile,
+              version: version);
+        } catch (e) {
+          await encoder.close();
+          rethrow;
+        }
+      });
+  //i am amazing. u r not.
 
   /// copied here so we can use the [BackupProvider] from the cli.
   String formatDate(DateTime dateTime, {String format = 'D, j M'}) =>
@@ -70,9 +72,7 @@ abstract class BackupProvider {
     final wasOpen = DatabaseHelper().isOpen();
     try {
       if (wasOpen) {
-        if (wasOpen) {
-          await DatabaseHelper().closeDb();
-        }
+        await DatabaseHelper().closeDb();
       }
       final pathToDatabase = await DatabaseHelper().pathToDatabase();
       copy(pathToDatabase, pathToBackupFile);
