@@ -11,7 +11,7 @@ class Tool extends Entity<Tool> {
     this.datePurchased,
     this.serialNumber,
   });
-  final Strcat /ing name;
+  final String name;
   final String category;
   final DateTime? datePurchased;
   final String? serialNumber;
@@ -30,7 +30,7 @@ class Tool extends Entity<Tool> {
         'modifiedDate': modifiedDate.toIso8601String(),
       };
 
-  static Tool fromMap(Map<String, dynamic> map) => Tool(
+  factory Tool.fromMap(Map<String, dynamic> map) => Tool(
         id: map['id'] as int,
         name: map['name'] as String,
         category: map['category'] as String,

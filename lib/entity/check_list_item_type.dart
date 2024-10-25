@@ -12,6 +12,8 @@ enum CheckListItemTypeEnum {
 
   final int id;
   final String description;
+
+  static CheckListItemTypeEnum fromId(int id) => values[id - 1];
 }
 
 class CheckListItemType extends Entity<CheckListItemType> {

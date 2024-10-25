@@ -1,3 +1,5 @@
+import 'package:june/june.dart';
+
 import '../entity/tool.dart';
 import 'dao.dart';
 
@@ -34,4 +36,11 @@ class DaoTool extends Dao<Tool> {
     final db = getDb();
     await db.delete(tableName, where: 'id = ?', whereArgs: [id]);
   }
+
+  @override
+  JuneStateCreator get juneRefresher => DbToolChanged.new;
+}
+
+class DbToolChanged extends JuneState {
+  DbToolChanged();
 }
