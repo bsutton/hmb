@@ -18,12 +18,12 @@ Future<void> upgradeDb(
     print('Creating database');
   } else {
     if (backup) {
-      print("Skipping backup as we don't have a solution");
-    } else {
       print('Backing up database prior to upgrade');
 
       await backupProvider.performBackup(version: oldVersion, src: src);
       print('Upgrade database from Version $oldVersion');
+    } else {
+      print('Skipping backup');
     }
   }
   final upgradeAssets = await src.upgradeScripts();

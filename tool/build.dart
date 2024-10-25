@@ -12,7 +12,7 @@ import 'package:hmb/database/versions/db_upgrade.dart';
 import 'package:hmb/database/versions/project_script_source.dart';
 import 'package:path/path.dart' as path;
 import 'package:path/path.dart';
-import 'package:pub_release/pub_release.dart';
+import 'package:pub_release/pub_release.dart' hide Settings;
 import 'package:pubspec_manager/pubspec_manager.dart' as pm;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -34,6 +34,8 @@ Create a signed release appbundle suitable to upload to Google Play store.''')
     ..addFlag('help', abbr: 'h', help: 'Shows the help message');
 
   final results = parser.parse(args);
+
+  Settings().setVerbose(enabled: false);
 
   final help = results['help'] as bool;
   if (help) {
@@ -161,8 +163,8 @@ Future<void> updateAssetList() async {
 
 /// Method to create a new clean database for unit testing.
 Future<void> createCleanTestDatabase() async {
-  final testDbPath = join(
-      Directory.current.path, 'test', 'fixture', 'db', 'handyman_test.db');
+  final testDbPath =
+      join(Directory.current.path, 'test', 'fixture', 'db', 'handyman_test.db');
 
   // Ensure the directory exists
   final dbDir = dirname(testDbPath);

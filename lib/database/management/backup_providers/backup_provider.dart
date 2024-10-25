@@ -38,14 +38,22 @@ abstract class BackupProvider {
   Future<BackupResult> performBackup(
           {required int version, required ScriptSource src}) =>
       withTempDirAsync((tmpDir) async {
+        final datePart = formatDate(DateTime.now(), format: 'y-m-d');
+        final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
         final encoder = ZipFileEncoder();
         try {
-          final datePart = formatDate(DateTime.now(), format: 'y-m-d');
-          final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
-          encoder.create(pathToZip);
           final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
 
+          if (!exists(pathToBackupFile)) {
+            print('Database file not found. No backup peformed.');
+            return BackupResult(
+                pathToBackup: pathToBackupFile,
+                pathToSource: '',
+                success: false);
+          }
           await copyDatabaseTo(pathToBackupFile, src, this);
+
+          encoder.create(pathToZip);
           await encoder.addFile(File(pathToBackupFile));
           await encoder.close();
 

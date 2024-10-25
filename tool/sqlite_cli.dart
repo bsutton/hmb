@@ -23,8 +23,8 @@ void main(List<String> args) async {
       'databases', 'handyman.db');
 
   if (results['test'] as bool) {
-    pathToDb =
-        join(DartProject.self.pathToTestDir, 'fixture', 'db', 'handyman_test.db');
+    pathToDb = join(
+        DartProject.self.pathToTestDir, 'fixture', 'db', 'handyman_test.db');
   }
 
   'sqlite3 $pathToDb'.start(terminal: true);
