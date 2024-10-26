@@ -12,8 +12,9 @@
         {
             "previewLimit": 50,
             "driver": "SQLite",
-            "name": "test_d",
-            "database": "/tmp/.dclitmp/62132903-1dad-4db4-9ac7-16fef28d84c9/handyman_test_temp.db"
+            "name": "temp_db",
+            "database": "C:\\Users\\bsutt\\AppData\\Local\\Temp\\.dclitmp\\af8c110c-9693-44cb-a305-fa025a3adc59\\handyman_test_temp.db"
         }
-    ]
+    ],
+    "sqltools.useNodeRuntime": true
 }

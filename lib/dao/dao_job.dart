@@ -44,7 +44,7 @@ class DaoJob extends Dao<Job> {
       {String? orderByClause, Transaction? transaction}) async {
     final db = getDb(transaction);
     final List<Map<String, dynamic>> maps =
-        await db.query(tableName, orderBy: 'modifiedDate desc');
+        await db.query(tableName, orderBy: 'modified_date desc');
     final list = List.generate(maps.length, (i) => fromMap(maps[i]));
 
     return list;
@@ -56,7 +56,7 @@ class DaoJob extends Dao<Job> {
       tableName,
       where: 'last_active = ?',
       whereArgs: [1],
-      orderBy: 'modifiedDate desc',
+      orderBy: 'modified_date desc',
       limit: 1,
     );
     return data.isNotEmpty ? fromMap(data.first) : null;
@@ -99,7 +99,7 @@ where j.summary like ?
 or j.description like ?
 or c.name like ?
 or js.name like ?
-order by j.modifiedDate desc
+order by j.modified_date desc
 ''', [likeArg, likeArg, likeArg, likeArg]);
 
     return toList(data);
@@ -134,7 +134,7 @@ where t.id =?
     JOIN job_status js ON j.job_status_id = js.id
     WHERE js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment', 'Completed', 'To be Billed')
     AND (j.summary LIKE ? OR j.description LIKE ?)
-    ORDER BY j.modifiedDate DESC
+    ORDER BY j.modifie_date DESC
     ''', [likeArg, likeArg]);
 
     return toList(data);

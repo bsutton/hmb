@@ -45,7 +45,8 @@ abstract class BackupProvider {
           final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
 
           if (!exists(pathToBackupFile)) {
-            print('Database file not found. No backup peformed.');
+            print('''
+Database file not found at $pathToBackupFile. No backup peformed.''');
             return BackupResult(
                 pathToBackup: pathToBackupFile,
                 pathToSource: '',

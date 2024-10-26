@@ -130,8 +130,9 @@ WHERE cli.id = ?
         if (item.itemTypeId == CheckListItemTypeEnum.materialsBuy.id) {
           if ((includeBilled && item.billed) || !item.billed) {
             // Materials and tools to be purchased
-            totalMaterialCharges += (item.actualMaterialCost ?? MoneyEx.zero)
-                .multiplyByFixed(item.actualMaterialQuantity ?? Fixed.one);
+            totalMaterialCharges +=
+                (item.actualMaterialUnitCost ?? MoneyEx.zero)
+                    .multiplyByFixed(item.actualMaterialQuantity ?? Fixed.one);
           }
         }
       }

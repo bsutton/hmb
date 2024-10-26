@@ -38,25 +38,36 @@ Future<Money> createByTask(
     // Add time entries (labour) grouped by date
     if (job.billingType == BillingType.timeAndMaterial) {
       totalAmount += await _timeAndMaterialsLabour(
-          labourForDays, job, invoiceId, invoiceLineGroupId, task, totalAmount);
+          labourForDays, job, invoiceId, invoiceLineGroupId, task);
     } else {
       totalAmount += await _fixedPriceLabour(
-          labourForDays, job, invoiceId, invoiceLineGroupId, task, totalAmount);
+          labourForDays, job, invoiceId, invoiceLineGroupId, task);
     }
 
     // Add materials
     final checkListItems = await DaoCheckListItem().getByTask(task.id);
     for (final item
         in checkListItems.where((item) => !item.billed && item.completed)) {
-      final lineTotal = item.estimatedMaterialUnitCost!
-          .multiplyByFixed(item.estimatedMaterialQuantity!);
+      Money unitCost;
+      Fixed quantity;
+
+      switch (job.billingType) {
+        case BillingType.timeAndMaterial:
+          unitCost = item.actualMaterialUnitCost!;
+          quantity = item.actualMaterialQuantity!;
+        case BillingType.fixedPrice:
+          unitCost = item.estimatedMaterialUnitCost!;
+          quantity = item.estimatedMaterialQuantity!;
+      }
+
+      final lineTotal = unitCost.multiplyByFixed(quantity);
 
       final invoiceLine = InvoiceLine.forInsert(
         invoiceId: invoiceId,
         invoiceLineGroupId: invoiceLineGroupId,
         description: 'Material: ${item.description}',
-        quantity: item.estimatedMaterialQuantity!,
-        unitPrice: item.estimatedMaterialUnitCost!,
+        quantity: quantity,
+        unitPrice: unitCost,
         lineTotal: lineTotal,
       );
       final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
@@ -68,12 +79,13 @@ Future<Money> createByTask(
 }
 
 Future<Money> _timeAndMaterialsLabour(
-    List<LabourForTaskOnDate> labourForDays,
-    Job job,
-    int invoiceId,
-    int invoiceLineGroupId,
-    Task task,
-    Money totalAmount) async {
+  List<LabourForTaskOnDate> labourForDays,
+  Job job,
+  int invoiceId,
+  int invoiceLineGroupId,
+  Task task,
+) async {
+  var totalAmount = MoneyEx.zero;
   // Add time entries (labour) grouped by date
   for (final labourForDay in labourForDays) {
     final lineTotal =
@@ -108,12 +120,14 @@ Future<Money> _timeAndMaterialsLabour(
 /// CheckListItems of type [CheckListItemTypeEnum.labour] estimates
 /// are used on an invoice.
 Future<Money> _fixedPriceLabour(
-    List<LabourForTaskOnDate> labourForDays,
-    Job job,
-    int invoiceId,
-    int invoiceLineGroupId,
-    Task task,
-    Money totalAmount) async {
+  List<LabourForTaskOnDate> labourForDays,
+  Job job,
+  int invoiceId,
+  int invoiceLineGroupId,
+  Task task,
+) async {
+  var totalAmount = MoneyEx.zero;
+
   // Add time entries (labour) grouped by date
   for (final labourForDay in labourForDays) {
     final lineTotal =
@@ -179,12 +193,5 @@ class LineAndSource {
   CheckListItem? checkListItem;
   TimeEntry? timeEntry;
 
-  Future<void> markBilled(int invoiceLineId) async {
-    if (checkListItem != null) {
-      await DaoCheckListItem().markAsBilled(checkListItem!, invoiceLineId);
-    }
-    if (timeEntry != null) {
-      await DaoTimeEntry().markAsBilled(timeEntry!, invoiceLineId);
-    }
-  }
+  Future<void> markBilled(int invoiceLineId) async {}
 }
