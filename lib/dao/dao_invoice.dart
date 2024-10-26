@@ -72,13 +72,28 @@ class DaoInvoice extends Dao<Invoice> {
 
     final invoiceId = await DaoInvoice().insert(invoice);
 
-todo we need to check for a default system call out fee.
-can a user suppress the call out fee?
-    if (job.callOutFee != null && job.callOutFee! > MoneyEx.zero) {
-      final invoiceLineGroup = InvoiceLineGroup.forInsert(
-          invoiceId: invoiceId, name: 'Call Out Fee');
-      await DaoInvoiceLineGroup().insert(invoiceLineGroup);
-      totalAmount += job.callOutFee!;
+    /// Fixed Price invoices don't have a Booking Fee as it is wrapped
+    /// up in the total
+    if (job.billingType == BillingType.timeAndMaterial) {
+      final bookingFee = await DaoJob().getBookingFee(job);
+
+      if (bookingFee > MoneyEx.zero) {
+        final invoiceLineGroup = InvoiceLineGroup.forInsert(
+            invoiceId: invoiceId, name: 'Booking Fee');
+        await DaoInvoiceLineGroup().insert(invoiceLineGroup);
+
+        final invoiceLine = InvoiceLine.forInsert(
+          invoiceId: invoiceId,
+          invoiceLineGroupId: invoiceLineGroup.id,
+          description: 'Booking Fee: ',
+          quantity: Fixed.one,
+          unitPrice: bookingFee,
+          lineTotal: bookingFee,
+        );
+        await DaoInvoiceLine().insert(invoiceLine);
+
+        totalAmount += bookingFee;
+      }
     }
 
     // Group by task: Create invoice line group for the task

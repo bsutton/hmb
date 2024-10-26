@@ -89,7 +89,7 @@ CheckListItem insertMaterials(
 }
 
 Future<Job> createJob(DateTime now, BillingType billingType,
-    {required Money hourlyRate, Money? callOutFee}) async {
+    {required Money hourlyRate, Money? bookingFee}) async {
   // Insert a job with time and materials billing type
   final job = Job.forInsert(
       customerId: 1, // Assuming a customer ID
@@ -100,7 +100,7 @@ Future<Job> createJob(DateTime now, BillingType billingType,
       contactId: 1, // Assuming a contact ID
       jobStatusId: 1, // Assuming job status ID
       hourlyRate: hourlyRate, // $50 per hour
-      callOutFee: callOutFee, // $100 callout fee
+      bookingFee: bookingFee, // $100 Booking Fee
       billingType: billingType);
   await DaoJob().insert(job);
 

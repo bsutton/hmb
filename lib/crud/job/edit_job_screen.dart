@@ -41,12 +41,12 @@ class JobEditScreenState extends State<JobEditScreen>
   late TextEditingController _summaryController;
   late RichEditorController _descriptionController;
   late TextEditingController _hourlyRateController;
-  late TextEditingController _callOutFeeController;
+  late TextEditingController _bookingFeeController;
 
   late FocusNode _summaryFocusNode;
   late FocusNode _descriptionFocusNode;
   late FocusNode _hourlyRateFocusNode;
-  late FocusNode _callOutFeeFocusNode;
+  late FocusNode _bookingFeeFocusNode;
 
   late DateTime _selectedDate;
   BillingType _selectedBillingType = BillingType.timeAndMaterial;
@@ -65,13 +65,13 @@ class JobEditScreenState extends State<JobEditScreen>
         parchmentAsJsonString: widget.job?.description ?? '');
     _hourlyRateController =
         TextEditingController(text: widget.job?.hourlyRate?.toString() ?? '');
-    _callOutFeeController =
-        TextEditingController(text: widget.job?.callOutFee?.toString() ?? '');
+    _bookingFeeController =
+        TextEditingController(text: widget.job?.bookingFee?.toString() ?? '');
 
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
     _hourlyRateFocusNode = FocusNode();
-    _callOutFeeFocusNode = FocusNode();
+    _bookingFeeFocusNode = FocusNode();
 
     /// reset the state.
     June.getState(SelectedCustomer.new).customerId = widget.job?.customerId;
@@ -88,8 +88,8 @@ class JobEditScreenState extends State<JobEditScreen>
         setState(() {
           _hourlyRateController.text =
               system!.defaultHourlyRate?.amount.toString() ?? '0.00';
-          _callOutFeeController.text =
-              system.defaultCallOutFee?.amount.toString() ?? '0.00';
+          _bookingFeeController.text =
+              system.defaultBookingFee?.amount.toString() ?? '0.00';
         });
         // Hard coded id of the 'Prospecting' status, probably not a great way
         // to do this.
@@ -126,7 +126,7 @@ class JobEditScreenState extends State<JobEditScreen>
                               _chooseDate(),
                               _chooseBillingType(),
                               _showHourlyRate(),
-                              _showCallOutFee(),
+                              _showBookingFee(),
                               SizedBox(
                                 height: 300,
                                 child: RichEditor(
@@ -178,11 +178,11 @@ class JobEditScreenState extends State<JobEditScreen>
         keyboardType: TextInputType.number,
       );
 
-  Widget _showCallOutFee() => HMBTextField(
-        key: const Key('callOutFee'),
-        controller: _callOutFeeController,
-        focusNode: _callOutFeeFocusNode,
-        labelText: 'Call Out Fee',
+  Widget _showBookingFee() => HMBTextField(
+        key: const Key('bookingFee'),
+        controller: _bookingFeeController,
+        focusNode: _bookingFeeFocusNode,
+        labelText: 'Booking Fee',
         keyboardType: TextInputType.number,
       );
 
@@ -274,7 +274,7 @@ class JobEditScreenState extends State<JobEditScreen>
         contactId: June.getState(SelectedContact.new).contactId,
         jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
         hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
-        callOutFee: MoneyEx.tryParse(_callOutFeeController.text),
+        bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
         billingType: _selectedBillingType,
       );
 
@@ -288,7 +288,7 @@ class JobEditScreenState extends State<JobEditScreen>
         contactId: June.getState(SelectedContact.new).contactId,
         jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
         hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
-        callOutFee: MoneyEx.tryParse(_callOutFeeController.text),
+        bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
         billingType: _selectedBillingType,
       );
 
@@ -297,11 +297,11 @@ class JobEditScreenState extends State<JobEditScreen>
     _summaryController.dispose();
     _descriptionController.dispose();
     _hourlyRateController.dispose();
-    _callOutFeeController.dispose();
+    _bookingFeeController.dispose();
     _summaryFocusNode.dispose();
     _descriptionFocusNode.dispose();
     _hourlyRateFocusNode.dispose();
-    _callOutFeeFocusNode.dispose();
+    _bookingFeeFocusNode.dispose();
     super.dispose();
   }
 

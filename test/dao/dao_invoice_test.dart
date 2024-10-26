@@ -24,7 +24,7 @@ should create an invoice for time and materials job with correct rates and mark 
       final now = DateTime.now();
       final today = LocalDate.fromDateTime(now);
       final job = await createJob(now, BillingType.timeAndMaterial,
-          hourlyRate: MoneyEx.dollars(50), callOutFee: MoneyEx.dollars(100));
+          hourlyRate: MoneyEx.dollars(50), bookingFee: MoneyEx.dollars(100));
       final task = await createTask(job, 'Task 1');
       final checkList = await DaoCheckList().getByTask(task.id);
 
@@ -52,7 +52,7 @@ should create an invoice for time and materials job with correct rates and mark 
           await DaoInvoiceLineGroup().getByInvoiceId(invoice.id);
       expect(invoiceGroupLines.length, equals(2));
 
-      expect(invoiceGroupLines[0].name, equals('Call Out Fee'));
+      expect(invoiceGroupLines[0].name, equals('Booking Fee'));
       expect(invoiceGroupLines[1].name, equals(formatLocalDate(today)));
       // Verify that the time entry and checklist item are marked as billed
       final billedTimeEntry = await DaoTimeEntry().getById(timeEntry.id);

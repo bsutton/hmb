@@ -73,23 +73,23 @@ class DaoQuote extends Dao<Quote> {
 
     final quoteId = await DaoQuote().insert(quote);
 
-    // Add callout fee as a quote line
-    if (job.callOutFee != null && !job.callOutFee!.isZero) {
+    // Add Booking Fee as a quote line
+    if (job.bookingFee != null && !job.bookingFee!.isZero) {
       final quoteLineGroup = QuoteLineGroup.forInsert(
         quoteId: quoteId,
-        name: 'Callout Fee',
+        name: 'Booking Fee',
       );
       await DaoQuoteLineGroup().insert(quoteLineGroup);
-      final callOutFeeLine = QuoteLine.forInsert(
+      final bookingFeeLine = QuoteLine.forInsert(
         quoteId: quoteId,
         quoteLineGroupId: quoteLineGroup.id,
-        description: 'Callout Fee',
+        description: 'Booking Fee',
         quantity: Fixed.fromInt(100),
-        unitPrice: job.callOutFee!,
-        lineTotal: job.callOutFee!,
+        unitPrice: job.bookingFee!,
+        lineTotal: job.bookingFee!,
       );
-      await DaoQuoteLine().insert(callOutFeeLine);
-      totalAmount += job.callOutFee!;
+      await DaoQuoteLine().insert(bookingFeeLine);
+      totalAmount += job.bookingFee!;
     }
 
     // Create quote lines and groups for each task

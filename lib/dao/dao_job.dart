@@ -195,15 +195,15 @@ where t.id =?
         worked: job.hourlyRate!.multiplyByFixed(workedHours));
   }
 
-  Future<Money> getCalloutFee(Job job) async {
-    if (job.callOutFee != null) {
-      return job.callOutFee!;
+  Future<Money> getBookingFee(Job job) async {
+    if (job.bookingFee != null) {
+      return job.bookingFee!;
     }
 
     final system = await DaoSystem().get();
 
-    if (system != null && system.defaultCallOutFee != null) {
-      return system.defaultCallOutFee!;
+    if (system != null && system.defaultBookingFee != null) {
+      return system.defaultBookingFee!;
     }
 
     return MoneyEx.zero;
