@@ -8,12 +8,9 @@ import '../entity/_index.g.dart';
 import '../invoicing/xero/models/xero_contact.dart';
 import '../invoicing/xero/xero_api.dart';
 import '../util/exceptions.dart';
-import '../util/local_date.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_contact.dart';
-import 'dao_invoice_create_by_date.dart';
-import 'dao_invoice_create_by_task.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
@@ -53,51 +50,6 @@ class DaoInvoice extends Dao<Invoice> {
   Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
     await getDb(transaction)
         .delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
-  }
-
-  /// Create an invoice for the given job.
-  Future<Invoice> create(Job job, List<int> selectedTaskIds,
-      {required bool groupByTask}) async {
-    if (job.hourlyRate == MoneyEx.zero) {
-      throw InvoiceException('Hourly rate must be set for job ${job.summary}');
-    }
-
-    var totalAmount = MoneyEx.zero;
-
-    // Create invoice
-    final invoice = Invoice.forInsert(
-        jobId: job.id,
-        totalAmount: totalAmount,
-        dueDate: LocalDate.today().add(const Duration(days: 1)));
-
-    final invoiceId = await DaoInvoice().insert(invoice);
-
-todo we need to check for a default system call out fee.
-can a user suppress the call out fee?
-    if (job.callOutFee != null && job.callOutFee! > MoneyEx.zero) {
-      final invoiceLineGroup = InvoiceLineGroup.forInsert(
-          invoiceId: invoiceId, name: 'Call Out Fee');
-      await DaoInvoiceLineGroup().insert(invoiceLineGroup);
-      totalAmount += job.callOutFee!;
-    }
-
-    // Group by task: Create invoice line group for the task
-    if (groupByTask) {
-      totalAmount += await createByTask(invoiceId, job, selectedTaskIds);
-    }
-    // Group by date
-    else {
-      totalAmount += await createByDate(job, invoiceId, selectedTaskIds);
-    }
-
-    // Update the invoice total amount
-    final updatedInvoice = invoice.copyWith(
-      id: invoiceId,
-      totalAmount: totalAmount,
-    );
-    await DaoInvoice().update(updatedInvoice);
-
-    return updatedInvoice;
   }
 
   @override

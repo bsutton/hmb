@@ -195,6 +195,20 @@ where t.id =?
         worked: job.hourlyRate!.multiplyByFixed(workedHours));
   }
 
+  Future<Money> getBookingFee(Job job) async {
+    if (job.bookingFee != null) {
+      return job.bookingFee!;
+    }
+
+    final system = await DaoSystem().get();
+
+    if (system != null && system.defaultBookingFee != null) {
+      return system.defaultBookingFee!;
+    }
+
+    return MoneyEx.zero;
+  }
+
   /// Get all the jobs for the given customer.
   Future<List<Job>> getByCustomer(Customer customer) async {
     final db = getDb();
@@ -248,6 +262,24 @@ where c.id =?
     final job = await getById(jobId);
 
     return job?.hourlyRate ?? DaoSystem().getHourlyRate();
+  }
+
+  /// Calculates the total quoted price for the job.
+  // TODO(bsutton): should we create a 'quote' and take the amount from there?
+  Future<Money> getFixedPriceTotal(Job job) async {
+    final tasks = await DaoTask().getTasksByJob(job.id);
+
+    var total = MoneyEx.zero;
+    for (final task in tasks) {
+      final items = await DaoCheckListItem().getByTask(task.id);
+
+      for (final item in items) {
+        if (item.charge > MoneyEx.zero) {
+          total += item.charge;
+        }
+      }
+    }
+    return total;
   }
 }
 

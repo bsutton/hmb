@@ -46,7 +46,7 @@ class System extends Entity<System> {
     required this.webUrl,
     required this.defaultHourlyRate,
     required this.termsUrl,
-    required this.defaultCallOutFee,
+    required this.defaultBookingFee,
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
@@ -81,7 +81,7 @@ class System extends Entity<System> {
     required this.webUrl,
     required this.defaultHourlyRate,
     required this.termsUrl,
-    required this.defaultCallOutFee,
+    required this.defaultBookingFee,
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
@@ -115,7 +115,7 @@ class System extends Entity<System> {
     required this.webUrl,
     required this.defaultHourlyRate,
     required this.termsUrl,
-    required this.defaultCallOutFee,
+    required this.defaultBookingFee,
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
@@ -134,25 +134,25 @@ class System extends Entity<System> {
 
   factory System.fromMap(Map<String, dynamic> map) => System(
         id: map['id'] as int,
-        fromEmail: map['fromEmail'] as String?,
+        fromEmail: map['from_email'] as String?,
         bsb: map['BSB'] as String?,
-        accountNo: map['accountNo'] as String?,
-        addressLine1: map['addressLine1'] as String?,
-        addressLine2: map['addressLine2'] as String?,
+        accountNo: map['account_no'] as String?,
+        addressLine1: map['address_line_1'] as String?,
+        addressLine2: map['address_line_2'] as String?,
         suburb: map['suburb'] as String?,
         state: map['state'] as String?,
         postcode: map['postcode'] as String?,
-        mobileNumber: map['mobileNumber'] as String?,
-        landLine: map['landLine'] as String?,
-        officeNumber: map['officeNumber'] as String?,
-        emailAddress: map['emailAddress'] as String?,
-        webUrl: map['webUrl'] as String?,
+        mobileNumber: map['mobile_number'] as String?,
+        landLine: map['landline'] as String?,
+        officeNumber: map['office_number'] as String?,
+        emailAddress: map['email_address'] as String?,
+        webUrl: map['web_url'] as String?,
         defaultHourlyRate: Money.fromInt(
             map['default_hourly_rate'] as int? ?? 0,
             isoCode: 'AUD'),
         termsUrl: map['terms_url'] as String?,
-        defaultCallOutFee: Money.fromInt(
-            map['default_call_out_fee'] as int? ?? 0,
+        defaultBookingFee: Money.fromInt(
+            map['default_booking_fee'] as int? ?? 0,
             isoCode: 'AUD'),
         simCardNo: map['sim_card_no'] as int?,
         xeroClientId: map['xero_client_id'] as String?,
@@ -164,10 +164,11 @@ class System extends Entity<System> {
         paymentLinkUrl: map['payment_link_url'] as String?,
         showBsbAccountOnInvoice: map['show_bsb_account_on_invoice'] == 1,
         showPaymentLinkOnInvoice: map['show_payment_link_on_invoice'] == 1,
-        createdDate: DateTime.tryParse((map['createdDate']) as String? ?? '') ??
-            DateTime.now(),
+        createdDate:
+            DateTime.tryParse((map['created_date']) as String? ?? '') ??
+                DateTime.now(),
         modifiedDate:
-            DateTime.tryParse((map['modifiedDate']) as String? ?? '') ??
+            DateTime.tryParse((map['modified_date']) as String? ?? '') ??
                 DateTime.now(),
         preferredUnitSystem: (map['use_metric_units'] == 1)
             ? PreferredUnitSystem.metric
@@ -194,7 +195,7 @@ class System extends Entity<System> {
   String? webUrl;
   Money? defaultHourlyRate;
   String? termsUrl;
-  Money? defaultCallOutFee;
+  Money? defaultBookingFee;
   int? simCardNo;
   String? xeroClientId;
   String? xeroClientSecret;
@@ -223,22 +224,22 @@ class System extends Entity<System> {
   @override
   Map<String, dynamic> toMap() => {
         'id': id,
-        'fromEmail': fromEmail,
+        'from_email': fromEmail,
         'BSB': bsb,
-        'accountNo': accountNo,
-        'addressLine1': addressLine1,
-        'addressLine2': addressLine2,
+        'account_no': accountNo,
+        'address_line_1': addressLine1,
+        'address_line_2': addressLine2,
         'suburb': suburb,
         'state': state,
         'postcode': postcode,
-        'mobileNumber': mobileNumber,
-        'landLine': landLine,
-        'officeNumber': officeNumber,
-        'emailAddress': emailAddress,
-        'webUrl': webUrl,
+        'mobile_number': mobileNumber,
+        'landline': landLine,
+        'office_number': officeNumber,
+        'email_address': emailAddress,
+        'web_url': webUrl,
         'default_hourly_rate': defaultHourlyRate?.minorUnits.toInt(),
         'terms_url': termsUrl,
-        'default_call_out_fee': defaultCallOutFee?.minorUnits.toInt(),
+        'default_booking_fee': defaultBookingFee?.minorUnits.toInt(),
         'sim_card_no': simCardNo,
         'xero_client_id': xeroClientId,
         'xero_client_secret': xeroClientSecret,
@@ -255,7 +256,7 @@ class System extends Entity<System> {
         'logo_path': logoPath,
         'logo_aspect_ratio': logoAspectRatio.name,
         'billing_colour': billingColour,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
+        'created_date': createdDate.toIso8601String(),
+        'modified_date': modifiedDate.toIso8601String(),
       };
 }

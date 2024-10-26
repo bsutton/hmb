@@ -32,7 +32,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
 
   late final HMBMoneyEditingController _defaultHourlyRateController =
       HMBMoneyEditingController();
-  late final HMBMoneyEditingController _defaultCallOutFeeController =
+  late final HMBMoneyEditingController _defaultBookingFeeController =
       HMBMoneyEditingController();
   late final TextEditingController _bsbController = TextEditingController();
   late final TextEditingController _accountNoController =
@@ -56,7 +56,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
   void _initializeControllers() {
     unawaited(DaoSystem().get().then((system) {
       _defaultHourlyRateController.money = system!.defaultHourlyRate;
-      _defaultCallOutFeeController.money = system.defaultCallOutFee;
+      _defaultBookingFeeController.money = system.defaultBookingFee;
       _logoFile = system.logoPath;
       _logoAspectRatio = system.logoAspectRatio;
       _bsbController.text = system.bsb ?? '';
@@ -74,7 +74,7 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
   @override
   void dispose() {
     _defaultHourlyRateController.dispose();
-    _defaultCallOutFeeController.dispose();
+    _defaultBookingFeeController.dispose();
     _bsbController.dispose();
     _accountNoController.dispose();
     _paymentLinkUrlController.dispose();
@@ -89,8 +89,8 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
       system!.defaultHourlyRate =
           MoneyEx.tryParse(_defaultHourlyRateController.text);
       system
-        ..defaultCallOutFee =
-            MoneyEx.tryParse(_defaultCallOutFeeController.text)
+        ..defaultBookingFee =
+            MoneyEx.tryParse(_defaultBookingFeeController.text)
         ..bsb = _bsbController.text
         ..accountNo = _accountNoController.text
         ..paymentLinkUrl = _paymentLinkUrlController.text
@@ -184,9 +184,9 @@ class _SystemBillingScreenState extends State<SystemBillingScreen> {
                       labelText: 'Default Hourly Rate',
                       fieldName: 'default hourly rate'),
                   HMBMoneyField(
-                    controller: _defaultCallOutFeeController,
-                    labelText: 'Default Call Out Fee',
-                    fieldName: 'default call out fee',
+                    controller: _defaultBookingFeeController,
+                    labelText: 'Default Booking Fee',
+                    fieldName: 'default Booking Fee',
                   ),
                   HMBTextField(
                       controller: _bsbController,

@@ -2,6 +2,7 @@ import 'package:money2/money2.dart';
 
 import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
+import '../util/percentage.dart';
 import '../util/units.dart';
 import '_index.g.dart';
 
@@ -77,8 +78,8 @@ class CheckListItem extends Entity<CheckListItem> {
             Fixed.fromInt(map['estimated_labour_hours'] as int? ?? 0, scale: 3),
         estimatedLabourCost:
             MoneyEx.fromInt(map['estimated_labour_cost'] as int? ?? 0),
-        charge: MoneyEx.fromInt(map['charge'] as int? ?? 0),
-        margin: Percentage.fromInt(map['margin'] as int? ?? 0, scale: 3),
+        charge: _moneyOrNull(map['charge'] as int?),
+        margin: Percentage.fromInt(map['margin'] as int? ?? 0, decimals: 3),
         completed: map['completed'] == 1,
         billed: map['billed'] == 1,
         invoiceLineId: map['invoice_line_id'] as int?,
@@ -206,10 +207,11 @@ class CheckListItem extends Entity<CheckListItem> {
       case CheckListItemTypeEnum.materialsStock:
       case CheckListItemTypeEnum.toolsBuy:
       case CheckListItemTypeEnum.toolsOwn:
-        return calcMaterialCost()
-            .multiplyByFixed(Fixed.one + margin.divide(100));
+        return _charge =
+            calcMaterialCost().multiplyByFixed(Fixed.one + margin.divide(100));
       case CheckListItemTypeEnum.labour:
-        return calcLabourCost().multiplyByFixed(Fixed.one + margin.divide(100));
+        return _charge =
+            calcLabourCost().multiplyByFixed(Fixed.one + margin.divide(100));
     }
   }
 
@@ -340,4 +342,9 @@ class CheckListItem extends Entity<CheckListItem> {
       '''id: $id description: $description qty: $estimatedMaterialQuantity cost: $estimatedMaterialUnitCost completed: $completed billed: $billed dimensions: $dimension1 x $dimension2 x $dimension3 $measurementType ($units) url: $url supplier: $supplierId''';
 }
 
-typedef Percentage = Fixed;
+Money? _moneyOrNull(int? amount) {
+  if (amount == null) {
+    return null;
+  }
+  return MoneyEx.fromInt(amount);
+}

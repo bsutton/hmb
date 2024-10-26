@@ -6,6 +6,7 @@ import '../dao/dao_checklist_item.dart';
 import '../dao/dao_invoice.dart';
 import '../dao/dao_invoice_line.dart';
 import '../dao/dao_invoice_line_group.dart';
+import '../dao/dao_invoice_time_and_materials.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_time_entry.dart';
 import '../entity/invoice.dart';
@@ -66,8 +67,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
       if (selectedTasks.isNotEmpty) {
         try {
-          await DaoInvoice()
-              .create(widget.job, selectedTasks, groupByTask: true);
+          await createTimeAndMaterialsInvoice(widget.job, selectedTasks,
+              groupByTask: true);
           // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           HMBToast.error('Failed to create invoice: $e',
