@@ -21,6 +21,7 @@ import '../../entity/system.dart';
 import '../../util/fixed_ex.dart';
 import '../../util/measurement_type.dart';
 import '../../util/money_ex.dart';
+import '../../util/percentage.dart';
 import '../../util/platform_ex.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/hmb_droplist.dart';
@@ -411,7 +412,7 @@ class _CheckListItemEditScreenState
         estimatedLabourCost:
             MoneyEx.tryParse(_estimatedLabourCostController.text),
         charge: MoneyEx.tryParse(_chargeController.text),
-        margin: FixedEx.tryParse(_marginController.text),
+        margin: Percentage.tryParse(_marginController.text),
         completed: checkListItem.completed,
         billed: false,
         labourEntryMode: _labourEntryMode,
@@ -442,7 +443,7 @@ class _CheckListItemEditScreenState
         estimatedLabourCost:
             MoneyEx.tryParse(_estimatedLabourCostController.text),
         charge: MoneyEx.tryParse(_chargeController.text),
-        margin: FixedEx.tryParse(_marginController.text),
+        margin: Percentage.tryParse(_marginController.text),
         labourEntryMode: _labourEntryMode,
         measurementType:
             June.getState(SelectedMeasurementType.new).selectedOrDefault,

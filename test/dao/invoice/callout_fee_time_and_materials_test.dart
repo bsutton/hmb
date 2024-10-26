@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/_index.g.dart';
+import 'package:hmb/dao/dao_invoice_time_and_materials.dart';
 import 'package:hmb/entity/_index.g.dart';
 import 'package:hmb/util/money_ex.dart';
 import 'package:money2/money2.dart';
@@ -26,7 +27,8 @@ void main() {
       await _setSystemBookingFee(MoneyEx.dollars(100));
 
       // Create invoice for the job
-      final invoice = await DaoInvoice().create(job, [], groupByTask: true);
+      final invoice =
+          await createTimeAndMaterialsInvoice(job, [], groupByTask: true);
 
       // Verify that the invoice includes the system Booking Fee.
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
@@ -45,7 +47,8 @@ void main() {
       await _setSystemBookingFee(MoneyEx.dollars(100));
 
       // Create invoice for the job
-      final invoice = await DaoInvoice().create(job, [], groupByTask: true);
+      final invoice =
+          await createTimeAndMaterialsInvoice(job, [], groupByTask: true);
 
       // Verify that the invoice includes the system Booking Fee.
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
@@ -65,9 +68,11 @@ void main() {
       await _setSystemBookingFee(MoneyEx.dollars(100));
 
       // Create invoice for the job
-      final invoice = await DaoInvoice().create(job, [], groupByTask: true);
+      final invoice =
+          await createTimeAndMaterialsInvoice(job, [], groupByTask: true);
 
-      // Verify that the invoice includes the job-specific Booking Fee (ignores system fee).
+      // Verify that the invoice includes the job-specific
+      //  Booking Fee (ignores system fee).
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
       expect(invoiceLines.length, equals(1));
       expect(invoiceLines.first.lineTotal, equals(MoneyEx.dollars(50)));
@@ -85,7 +90,8 @@ void main() {
       await _setSystemBookingFee(MoneyEx.zero);
 
       // Create invoice for the job
-      final invoice = await DaoInvoice().create(job, [], groupByTask: true);
+      final invoice =
+          await createTimeAndMaterialsInvoice(job, [], groupByTask: true);
 
       // Verify that the invoice does not contain a Booking Fee.
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);

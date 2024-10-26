@@ -263,6 +263,24 @@ where c.id =?
 
     return job?.hourlyRate ?? DaoSystem().getHourlyRate();
   }
+
+  /// Calculates the total quoted price for the job.
+  // TODO(bsutton): should we create a 'quote' and take the amount from there?
+  Future<Money> getFixedPriceTotal(Job job) async {
+    final tasks = await DaoTask().getTasksByJob(job.id);
+
+    var total = MoneyEx.zero;
+    for (final task in tasks) {
+      final items = await DaoCheckListItem().getByTask(task.id);
+
+      for (final item in items) {
+        if (item.charge > MoneyEx.zero) {
+          total += item.charge;
+        }
+      }
+    }
+    return total;
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

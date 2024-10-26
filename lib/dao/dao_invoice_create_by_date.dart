@@ -33,21 +33,20 @@ Future<Money> createByDate(
   for (final workDate in workDates) {
     final tasksForDate = TasksForDate(workDate, job, selectedTaskIds);
     await tasksForDate.build();
-
-    // TODO(bsutton): don't and a group if no invoice lines are generated.
-    /// A new invoice group for each date.
-    final invoiceLineGroup = InvoiceLineGroup.forInsert(
-      invoiceId: invoiceId,
-      name: formatLocalDate(workDate),
-    );
-    final invoiceLineGroupId =
-        await DaoInvoiceLineGroup().insert(invoiceLineGroup);
+    var groupCreated = false;
 
     var totalDurationForDate = Fixed.zero;
+    var invoiceLineGroupId = -1;
 
     for (final taskForDate in tasksForDate.taskForDate) {
       if (taskForDate.durationInHours == Fixed.zero) {
         continue;
+      }
+
+      if (!groupCreated) {
+        invoiceLineGroupId =
+            await _createInvoiceGroupForDate(invoiceId, workDate);
+        groupCreated = true;
       }
 
       // Create an invoice line with the total hours in the description
@@ -97,22 +96,51 @@ Future<Money> createByDate(
       await emitMaterialsByTask(job, invoiceId, selectedTaskIds);
 }
 
+Future<int> _createInvoiceGroupForDate(
+    int invoiceId, LocalDate workDate) async {
+  final invoiceLineGroup = InvoiceLineGroup.forInsert(
+    invoiceId: invoiceId,
+    name: formatLocalDate(workDate),
+  );
+  final invoiceLineGroupId =
+      await DaoInvoiceLineGroup().insert(invoiceLineGroup);
+  return invoiceLineGroupId;
+}
+
 // Add materials at the end of the invoice, grouped under their respective tasks
 Future<Money> emitMaterialsByTask(
     Job job, int invoiceId, List<int> selectedTaskIds) async {
   var totalAmount = MoneyEx.zero;
 
   for (final taskId in selectedTaskIds) {
+    var groupCreated = false;
     final checkListItems = await DaoCheckListItem().getByTask(taskId);
+    var invoiceLineGroupId = -1;
     for (final item in checkListItems) {
-      if (item.billed || !item.completed) {
+      final itemType = CheckListItemTypeEnum.fromId(item.itemTypeId);
+      if (item.billed ||
+          !item.completed ||
+          itemType == CheckListItemTypeEnum.labour ||
+          itemType == CheckListItemTypeEnum.toolsOwn ||
+          item.charge == MoneyEx.zero) {
         continue;
       }
+
+      if (!groupCreated) {
+        final task = await DaoTask().getById(taskId);
+        final invoiceLineGroup = InvoiceLineGroup.forInsert(
+            invoiceId: invoiceId, name: 'Materials for ${task!.name}');
+        invoiceLineGroupId =
+            await DaoInvoiceLineGroup().insert(invoiceLineGroup);
+        groupCreated = true;
+      }
+
       final lineTotal = item.estimatedMaterialUnitCost!
           .multiplyByFixed(item.estimatedMaterialQuantity!);
 
       final invoiceLine = InvoiceLine.forInsert(
         invoiceId: invoiceId,
+        invoiceLineGroupId: invoiceLineGroupId,
         description: 'Material: ${item.description}',
         quantity: item.estimatedMaterialQuantity!,
         unitPrice: item.estimatedMaterialUnitCost!,

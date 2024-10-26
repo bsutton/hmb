@@ -164,8 +164,9 @@ class System extends Entity<System> {
         paymentLinkUrl: map['payment_link_url'] as String?,
         showBsbAccountOnInvoice: map['show_bsb_account_on_invoice'] == 1,
         showPaymentLinkOnInvoice: map['show_payment_link_on_invoice'] == 1,
-        createdDate: DateTime.tryParse((map['created_date']) as String? ?? '') ??
-            DateTime.now(),
+        createdDate:
+            DateTime.tryParse((map['created_date']) as String? ?? '') ??
+                DateTime.now(),
         modifiedDate:
             DateTime.tryParse((map['modified_date']) as String? ?? '') ??
                 DateTime.now(),

@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/_index.g.dart';
+import 'package:hmb/dao/dao_invoice_fixed_price.dart';
 import 'package:hmb/entity/_index.g.dart';
 import 'package:hmb/util/money_ex.dart';
+import 'package:hmb/util/percentage.dart';
 import 'package:money2/money2.dart';
 
 import '../../database/management/db_utility_test.dart';
@@ -25,11 +27,12 @@ void main() {
       await _setSystemBookingFee(MoneyEx.dollars(100));
 
       // Create invoice for the job
-      final invoice = await DaoInvoice().create(job, [], groupByTask: true);
+      final invoice = await createFixedPriceInvoice(
+          job, 'Full Amount', Percentage.onehundred, null);
 
-      // Verify that the invoice does not contain a Booking Fee.
+      // Invoice should just have a single progress payment line.
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-      expect(invoiceLines.length, equals(0));
+      expect(invoiceLines.length, equals(1));
 
       // Check invoice totals
       expect(invoice.totalAmount, MoneyEx.fromInt(0));
@@ -43,11 +46,12 @@ void main() {
       await _setSystemBookingFee(MoneyEx.dollars(100));
 
       // Create invoice for the job
-      final invoice = await DaoInvoice().create(job, [], groupByTask: true);
+      final invoice = await createFixedPriceInvoice(
+          job, 'Full Amount', Percentage.onehundred, null);
 
-      // Verify that the invoice does not contain a Booking Fee.
+      // Invoice should just have a single progress payment line.
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-      expect(invoiceLines.length, equals(0));
+      expect(invoiceLines.length, equals(1));
 
       // Check invoice totals
       expect(invoice.totalAmount, MoneyEx.dollars(0));
@@ -61,11 +65,12 @@ void main() {
       await _setSystemBookingFee(MoneyEx.dollars(100));
 
       // Create invoice for the job
-      final invoice = await DaoInvoice().create(job, [], groupByTask: true);
+      final invoice = await createFixedPriceInvoice(
+          job, 'Full Amount', Percentage.fromInt(10000), null);
 
-      // Verify that the invoice does not contain a Booking Fee.
+      // Invoice should just have a single progress payment line.
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-      expect(invoiceLines.length, equals(0));
+      expect(invoiceLines.length, equals(1));
 
       // Check invoice totals
       expect(invoice.totalAmount, MoneyEx.dollars(0));
@@ -79,11 +84,12 @@ void main() {
       await _setSystemBookingFee(MoneyEx.zero);
 
       // Create invoice for the job
-      final invoice = await DaoInvoice().create(job, [], groupByTask: true);
+      final invoice = await createFixedPriceInvoice(
+          job, 'Full Amount', Percentage.fromInt(10000), null);
 
-      // Verify that the invoice does not contain a Booking Fee.
+      // Invoice should just have a single progress payment line.
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-      expect(invoiceLines.length, equals(0));
+      expect(invoiceLines.length, equals(1));
 
       // Check invoice totals
       expect(invoice.totalAmount, MoneyEx.fromInt(0));

@@ -36,32 +36,12 @@ Future<Money> createByTask(
     final labourForDays = await collectLabourPerDay(task);
 
     // Add time entries (labour) grouped by date
-    for (final labourForDay in labourForDays) {
-      final lineTotal =
-          job.hourlyRate!.multiplyByFixed(labourForDay.durationInHours);
-
-      if (lineTotal.isZero) {
-        continue;
-      }
-
-      final invoiceLine = InvoiceLine.forInsert(
-        invoiceId: invoiceId,
-        invoiceLineGroupId: invoiceLineGroupId,
-        description:
-            'Labour: ${task.name} on ${formatLocalDate(labourForDay.date)} '
-            'Hours: ${labourForDay.durationInHours}',
-        quantity: labourForDay.durationInHours,
-        unitPrice: job.hourlyRate!,
-        lineTotal: lineTotal,
-      );
-
-      final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-      totalAmount += lineTotal;
-
-      for (final timeEntry in labourForDay.timeEntries) {
-        // Mark time entry as billed with the invoice line id
-        await DaoTimeEntry().markAsBilled(timeEntry, invoiceLineId);
-      }
+    if (job.billingType == BillingType.timeAndMaterial) {
+      totalAmount += await _timeAndMaterialsLabour(
+          labourForDays, job, invoiceId, invoiceLineGroupId, task, totalAmount);
+    } else {
+      totalAmount += await _fixedPriceLabour(
+          labourForDays, job, invoiceId, invoiceLineGroupId, task, totalAmount);
     }
 
     // Add materials
@@ -82,6 +62,84 @@ Future<Money> createByTask(
       final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
       await DaoCheckListItem().markAsBilled(item, invoiceLineId);
       totalAmount += lineTotal;
+    }
+  }
+  return totalAmount;
+}
+
+Future<Money> _timeAndMaterialsLabour(
+    List<LabourForTaskOnDate> labourForDays,
+    Job job,
+    int invoiceId,
+    int invoiceLineGroupId,
+    Task task,
+    Money totalAmount) async {
+  // Add time entries (labour) grouped by date
+  for (final labourForDay in labourForDays) {
+    final lineTotal =
+        job.hourlyRate!.multiplyByFixed(labourForDay.durationInHours);
+
+    if (lineTotal.isZero) {
+      continue;
+    }
+
+    final invoiceLine = InvoiceLine.forInsert(
+      invoiceId: invoiceId,
+      invoiceLineGroupId: invoiceLineGroupId,
+      description:
+          'Labour: ${task.name} on ${formatLocalDate(labourForDay.date)} '
+          'Hours: ${labourForDay.durationInHours}',
+      quantity: labourForDay.durationInHours,
+      unitPrice: job.hourlyRate!,
+      lineTotal: lineTotal,
+    );
+
+    final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
+    totalAmount += lineTotal;
+
+    for (final timeEntry in labourForDay.timeEntries) {
+      // Mark time entry as billed with the invoice line id
+      await DaoTimeEntry().markAsBilled(timeEntry, invoiceLineId);
+    }
+  }
+  return totalAmount;
+}
+
+/// CheckListItems of type [CheckListItemTypeEnum.labour] estimates
+/// are used on an invoice.
+Future<Money> _fixedPriceLabour(
+    List<LabourForTaskOnDate> labourForDays,
+    Job job,
+    int invoiceId,
+    int invoiceLineGroupId,
+    Task task,
+    Money totalAmount) async {
+  // Add time entries (labour) grouped by date
+  for (final labourForDay in labourForDays) {
+    final lineTotal =
+        job.hourlyRate!.multiplyByFixed(labourForDay.durationInHours);
+
+    if (lineTotal.isZero) {
+      continue;
+    }
+
+    final invoiceLine = InvoiceLine.forInsert(
+      invoiceId: invoiceId,
+      invoiceLineGroupId: invoiceLineGroupId,
+      description:
+          'Labour: ${task.name} on ${formatLocalDate(labourForDay.date)} '
+          'Hours: ${labourForDay.durationInHours}',
+      quantity: labourForDay.durationInHours,
+      unitPrice: job.hourlyRate!,
+      lineTotal: lineTotal,
+    );
+
+    final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
+    totalAmount += lineTotal;
+
+    for (final timeEntry in labourForDay.timeEntries) {
+      // Mark time entry as billed with the invoice line id
+      await DaoTimeEntry().markAsBilled(timeEntry, invoiceLineId);
     }
   }
   return totalAmount;

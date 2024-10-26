@@ -2,6 +2,7 @@ import 'package:money2/money2.dart';
 
 import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
+import '../util/percentage.dart';
 import '../util/units.dart';
 import '_index.g.dart';
 
@@ -78,7 +79,7 @@ class CheckListItem extends Entity<CheckListItem> {
         estimatedLabourCost:
             MoneyEx.fromInt(map['estimated_labour_cost'] as int? ?? 0),
         charge: _moneyOrNull(map['charge'] as int?),
-        margin: Percentage.fromInt(map['margin'] as int? ?? 0, scale: 3),
+        margin: Percentage.fromInt(map['margin'] as int? ?? 0, decimals: 3),
         completed: map['completed'] == 1,
         billed: map['billed'] == 1,
         invoiceLineId: map['invoice_line_id'] as int?,
@@ -347,5 +348,3 @@ Money? _moneyOrNull(int? amount) {
   }
   return MoneyEx.fromInt(amount);
 }
-
-typedef Percentage = Fixed;

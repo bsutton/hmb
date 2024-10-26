@@ -1,6 +1,7 @@
 import 'package:hmb/dao/_index.g.dart';
 import 'package:hmb/entity/_index.g.dart';
 import 'package:hmb/util/measurement_type.dart';
+import 'package:hmb/util/percentage.dart';
 import 'package:hmb/util/units.dart';
 import 'package:money2/money2.dart';
 
@@ -44,7 +45,7 @@ Future<CheckListItem> insertLabourEstimates(
     estimatedLabourHours: hours,
     estimatedLabourCost: labourCost,
     charge: null,
-    margin: Percentage.fromNum(0.1, scale: 3), // 10% margin
+    margin: Percentage.ten, // 10% margin
     completed: true,
     measurementType: MeasurementType.length,
     dimension1: Fixed.fromNum(1, scale: 3),
@@ -59,13 +60,12 @@ Future<CheckListItem> insertLabourEstimates(
   return labourItem;
 }
 
-CheckListItem insertMaterials(
+Future<CheckListItem> insertMaterials(
     CheckList? checkList,
-    String description,
     Fixed quantity,
     Money unitCost,
     Percentage margin,
-    CheckListItemType checkListItemType) {
+    CheckListItemType checkListItemType) async {
   final completedMaterialItem = CheckListItem.forInsert(
     checkListId: checkList!.id, // Assuming a check list ID
     description: 'Completed Material Item',
@@ -85,6 +85,9 @@ CheckListItem insertMaterials(
     url: 'http://example.com/material',
     labourEntryMode: LabourEntryMode.hours,
   );
+
+  await DaoCheckListItem().insert(completedMaterialItem);
+
   return completedMaterialItem;
 }
 

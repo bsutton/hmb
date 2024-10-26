@@ -18,6 +18,8 @@ Future<Database> setupTestDb() async {
   // Path where the test database will be copied to and used
   final testDbPath = join(createTempDir(), 'handyman_test_temp.db');
 
+  print('Running against test db at: $testDbPath');
+
   // Ensure the test db directory exists
   final dbDir = dirname(testDbPath);
   if (!exists(dbDir)) {
