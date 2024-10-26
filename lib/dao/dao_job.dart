@@ -195,6 +195,20 @@ where t.id =?
         worked: job.hourlyRate!.multiplyByFixed(workedHours));
   }
 
+  Future<Money> getCalloutFee(Job job) async {
+    if (job.callOutFee != null) {
+      return job.callOutFee!;
+    }
+
+    final system = await DaoSystem().get();
+
+    if (system != null && system.defaultCallOutFee != null) {
+      return system.defaultCallOutFee!;
+    }
+
+    return MoneyEx.zero;
+  }
+
   /// Get all the jobs for the given customer.
   Future<List<Job>> getByCustomer(Customer customer) async {
     final db = getDb();
