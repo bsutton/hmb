@@ -72,7 +72,7 @@ class CheckListItem extends Entity<CheckListItem> {
         estimatedMaterialUnitCost:
             MoneyEx.fromInt(map['estimated_material_unit_cost'] as int?),
         estimatedMaterialQuantity: Fixed.fromInt(
-            map['estimated_material_quantity'] as int? ?? 1,
+            map['estimated_material_quantity'] as int? ?? 0,
             scale: 3),
         estimatedLabourHours:
             Fixed.fromInt(map['estimated_labour_hours'] as int? ?? 0, scale: 3),
@@ -207,11 +207,9 @@ class CheckListItem extends Entity<CheckListItem> {
       case CheckListItemTypeEnum.materialsStock:
       case CheckListItemTypeEnum.toolsBuy:
       case CheckListItemTypeEnum.toolsOwn:
-        return _charge =
-            calcMaterialCost().multiplyByFixed(Fixed.one + margin.divide(100));
+        return _charge = calcMaterialCost().multiplyByFixed(Fixed.one + margin);
       case CheckListItemTypeEnum.labour:
-        return _charge =
-            calcLabourCost().multiplyByFixed(Fixed.one + margin.divide(100));
+        return _charge = calcLabourCost().multiplyByFixed(Fixed.one + margin);
     }
   }
 
