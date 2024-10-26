@@ -8,6 +8,12 @@
             "driver": "SQLite",
             "name": "hmb",
             "database": "${workspaceFolder:hmb}/.dart_tool/sqflite_common_ffi/databases/handyman.db"
+        },
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "test_d",
+            "database": "/tmp/.dclitmp/62132903-1dad-4db4-9ac7-16fef28d84c9/handyman_test_temp.db"
         }
     ]
 }
