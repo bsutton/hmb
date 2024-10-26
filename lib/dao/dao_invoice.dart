@@ -72,13 +72,22 @@ class DaoInvoice extends Dao<Invoice> {
 
     final invoiceId = await DaoInvoice().insert(invoice);
 
+todo we need to check for a default system call out fee.
+can a user suppress the call out fee?
+    if (job.callOutFee != null && job.callOutFee! > MoneyEx.zero) {
+      final invoiceLineGroup = InvoiceLineGroup.forInsert(
+          invoiceId: invoiceId, name: 'Call Out Fee');
+      await DaoInvoiceLineGroup().insert(invoiceLineGroup);
+      totalAmount += job.callOutFee!;
+    }
+
     // Group by task: Create invoice line group for the task
     if (groupByTask) {
-      totalAmount = await createByTask( invoiceId, job, selectedTaskIds);
+      totalAmount += await createByTask(invoiceId, job, selectedTaskIds);
     }
     // Group by date
     else {
-      totalAmount = await createByDate(job, invoiceId, selectedTaskIds);
+      totalAmount += await createByDate(job, invoiceId, selectedTaskIds);
     }
 
     // Update the invoice total amount
