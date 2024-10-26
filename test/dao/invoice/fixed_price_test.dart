@@ -28,15 +28,15 @@ void main() {
     // Insert a labour item with 10 estimated hours at $50/hour
     await insertLabourEstimates(
       checkList,
-      MoneyEx.fromInt(5000), // $50/hour
-      Fixed.fromNum(1000, scale: 2), // 10 hours
+      MoneyEx.dollars(50), // $50/hour
+      Fixed.fromInt(1000), // 10 hours
     );
 
     // Insert a material buy item with estimated cost $200
     await insertMaterials(
       checkList,
       Fixed.fromNum(1),
-      MoneyEx.fromInt(20000), // $200 estimated cost
+      MoneyEx.dollars(200), // $200 estimated cost
       Percentage.twenty, // 20% margin
       (await DaoCheckListItemType()
           .getById(CheckListItemTypeEnum.materialsBuy.id))!,
@@ -52,6 +52,6 @@ void main() {
 
     // Check invoice totals
     expect(invoice.totalAmount,
-        MoneyEx.fromInt(70000)); // $500 (labour) + $240 (material)
+        MoneyEx.dollars(790)); // $550 (labour) + $240 (material)
   });
 }
