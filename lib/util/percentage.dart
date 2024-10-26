@@ -19,12 +19,12 @@ class Percentage extends Fixed {
         Fixed.tryParse(Strings.orElseOnBlank(amount, '0'), scale: 3) ??
             Fixed.zero;
 
-    return Percentage(fixed.minorUnits.toInt());
+    return Percentage(fixed.minorUnits.toInt(), decimals: fixed.scale);
   }
   factory Percentage.fromInt(int? amount, {int decimals = 2}) {
     final fixed = Fixed.fromInt(amount ?? 0, scale: decimals);
 
-    return Percentage(fixed.minorUnits.toInt());
+    return Percentage(fixed.minorUnits.toInt(), decimals: fixed.scale);
   }
   static final Percentage zero = Percentage(0, decimals: 3);
   static final Percentage ten = Percentage(100, decimals: 3);
@@ -32,5 +32,5 @@ class Percentage extends Fixed {
   static final Percentage onehundred = Percentage(1000, decimals: 3);
 
   @override
-  String toString() => format('00.0%');
+  String toString() => format('0.0%');
 }
