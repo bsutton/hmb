@@ -7,6 +7,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/measurement_type.dart';
 import '../../widgets/hmb_droplist.dart';
+import '../../widgets/hmb_text_area.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -27,6 +28,8 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
   late TextEditingController _businessNumberLabelController;
   late TextEditingController _webUrlController;
   late TextEditingController _termsUrlController;
+  late TextEditingController _paymentTermsInDaysController;
+  late TextEditingController _paymentOptionsController;
 
   late final System system;
 
@@ -39,6 +42,10 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
         TextEditingController(text: system.businessNumberLabel);
     _webUrlController = TextEditingController(text: system.webUrl);
     _termsUrlController = TextEditingController(text: system.termsUrl);
+    _paymentTermsInDaysController =
+        TextEditingController(text: system.paymentTermsInDays.toString() ?? '');
+    _paymentOptionsController =
+        TextEditingController(text: system.paymentOptions ?? '');
   }
 
   @override
@@ -48,6 +55,8 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
     _businessNumberLabelController.dispose();
     _webUrlController.dispose();
     _termsUrlController.dispose();
+    _paymentTermsInDaysController.dispose();
+    _paymentOptionsController.dispose();
     super.dispose();
   }
 
@@ -59,7 +68,10 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
         ..businessNumber = _businessNumberController.text
         ..businessNumberLabel = _businessNumberLabelController.text
         ..webUrl = _webUrlController.text
-        ..termsUrl = _termsUrlController.text;
+        ..termsUrl = _termsUrlController.text
+        ..paymentTermsInDays =
+            int.tryParse(_paymentTermsInDaysController.text) ?? 3
+        ..paymentOptions = _paymentOptionsController.text;
 
       await DaoSystem().update(system);
       widget.onNext();
@@ -106,6 +118,15 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
                         HMBTextField(
                           controller: _termsUrlController,
                           labelText: 'Terms URL',
+                        ),
+                        HMBTextField(
+                          controller: _paymentTermsInDaysController,
+                          labelText: 'Payment Terms (in Days)',
+                          keyboardType: TextInputType.number,
+                        ),
+                        HMBTextArea(
+                          controller: _paymentOptionsController,
+                          labelText: 'Payment Options',
                         ),
                         HMBDroplist<PreferredUnitSystem>(
                           title: 'Unit System',

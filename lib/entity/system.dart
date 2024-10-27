@@ -61,6 +61,8 @@ class System extends Entity<System> {
     required this.logoPath, // Field for logo path
     required this.logoAspectRatio, // Field for logo type
     required this.billingColour, // Field for billing color
+    required this.paymentTermsInDays,
+    required this.paymentOptions,
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -93,6 +95,8 @@ class System extends Entity<System> {
     required this.showBsbAccountOnInvoice,
     required this.showPaymentLinkOnInvoice,
     required this.billingColour,
+    required this.paymentTermsInDays,
+    required this.paymentOptions,
     this.preferredUnitSystem = PreferredUnitSystem.metric,
     this.logoPath = '',
     this.logoAspectRatio = LogoAspectRatio.square,
@@ -130,6 +134,8 @@ class System extends Entity<System> {
     required this.logoPath, // Updated for logo path
     required this.logoAspectRatio, // Updated for logo type
     required this.billingColour, // Updated for billing color
+    required this.paymentTermsInDays,
+    required this.paymentOptions,
   }) : super.forUpdate();
 
   factory System.fromMap(Map<String, dynamic> map) => System(
@@ -164,12 +170,6 @@ class System extends Entity<System> {
         paymentLinkUrl: map['payment_link_url'] as String?,
         showBsbAccountOnInvoice: map['show_bsb_account_on_invoice'] == 1,
         showPaymentLinkOnInvoice: map['show_payment_link_on_invoice'] == 1,
-        createdDate:
-            DateTime.tryParse((map['created_date']) as String? ?? '') ??
-                DateTime.now(),
-        modifiedDate:
-            DateTime.tryParse((map['modified_date']) as String? ?? '') ??
-                DateTime.now(),
         preferredUnitSystem: (map['use_metric_units'] == 1)
             ? PreferredUnitSystem.metric
             : PreferredUnitSystem.imperial,
@@ -178,6 +178,14 @@ class System extends Entity<System> {
             map['logo_aspect_ratio'] as String?), // Map for logo type
         billingColour:
             map['billing_colour'] as int? ?? 0xFF000000, // Default color black
+        paymentTermsInDays: map['payment_terms_in_days'] as int? ?? 3,
+        paymentOptions: map['payment_options'] as String? ?? '',
+        createdDate:
+            DateTime.tryParse((map['created_date']) as String? ?? '') ??
+                DateTime.now(),
+        modifiedDate:
+            DateTime.tryParse((map['modified_date']) as String? ?? '') ??
+                DateTime.now(),
       );
 
   String? fromEmail;
@@ -210,6 +218,8 @@ class System extends Entity<System> {
   String logoPath; // Field for logo path
   LogoAspectRatio logoAspectRatio; // Field for logo type
   int billingColour; // Field for billing color
+  int paymentTermsInDays;
+  String paymentOptions;
 
   String? get bestPhone => Strings.isNotBlank(mobileNumber)
       ? mobileNumber
@@ -256,6 +266,8 @@ class System extends Entity<System> {
         'logo_path': logoPath,
         'logo_aspect_ratio': logoAspectRatio.name,
         'billing_colour': billingColour,
+        'payment_terms_in_days': paymentTermsInDays,
+        'payment_options': paymentOptions,
         'created_date': createdDate.toIso8601String(),
         'modified_date': modifiedDate.toIso8601String(),
       };
