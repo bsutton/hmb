@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../dao/dao_job.dart';
-import '../dao/dao_quote.dart';
-import '../dao/dao_quote_line.dart';
+import '../dao/_index.g.dart';
 import '../entity/invoice_line.dart';
 import '../entity/job.dart';
 import '../entity/quote.dart';
@@ -220,6 +218,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
               displayItems: displayItems,
             );
 
+            final system = await DaoSystem().get();
             if (mounted) {
               await Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -227,6 +226,8 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
                     title:
                         '''Quote #${quote.bestNumber} ${widget.job.summary}''',
                     filePath: filePath.path,
+                    emailSubject: '${system!.businessName ?? 'Your'} quote',
+                    emailBody: 'Please find the attached Quotation',
                     emailRecipients: widget.emailRecipients,
                   ),
                 ),
