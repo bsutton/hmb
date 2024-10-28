@@ -128,7 +128,8 @@ Future<File> generateInvoicePdf(
                         ),
                         pw.Text('Date: ${formatDate(invoice.createdDate)}'),
                         pw.Text(
-                          'Due Date: ${formatLocalDate(invoice.dueDate)}',
+                          '''
+Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}''',
                         ),
                       ],
                     ),
@@ -254,6 +255,16 @@ Future<File> generateInvoicePdf(
               destination: system.paymentLinkUrl ?? '',
             ),
           ],
+          pw.SizedBox(height: 10), // Space before payment terms and options
+          // Payment terms and options
+          pw.Text(
+            paymentTerms(system),
+            style: const pw.TextStyle(fontSize: 12),
+          ),
+          pw.Text(
+            'Payment Options: ${system.paymentOptions}',
+            style: const pw.TextStyle(fontSize: 12),
+          ),
         ]);
 
         return [
@@ -261,8 +272,8 @@ Future<File> generateInvoicePdf(
             padding: const pw.EdgeInsets.only(
               left: 20,
               right: 20,
-              top: 80, // Ensure space from top band
-              bottom: 60, // Ensure space from bottom band
+              top: 80,
+              bottom: 60,
             ),
             child: pw.Column(
               children: content,
@@ -278,6 +289,14 @@ Future<File> generateInvoicePdf(
   final file = File('${output.path}/invoice_${invoice.invoiceNum}.pdf');
   await file.writeAsBytes(await pdf.save());
   return file;
+}
+
+String paymentTerms(System system) {
+  if (system.paymentTermsInDays == 0) {
+    return 'Payment Terms: immediate';
+  } else {
+    return 'Payment Terms: ${system.paymentTermsInDays} days';
+  }
 }
 
 // Helper function to group items by `invoiceLineGroupId`
