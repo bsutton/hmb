@@ -11,6 +11,19 @@ class Tool extends Entity<Tool> {
     this.datePurchased,
     this.serialNumber,
   });
+
+  factory Tool.fromMap(Map<String, dynamic> map) => Tool(
+        id: map['id'] as int,
+        name: map['name'] as String,
+        category: map['category'] as String,
+        datePurchased: map['datePurchased'] != null
+            ? DateTime.parse(map['datePurchased'] as String)
+            : null,
+        serialNumber: map['serialNumber'] as String?,
+        supplierId: map['supplierId'] as int,
+        createdDate: DateTime.parse(map['createdDate'] as String),
+        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+      );
   final String name;
   final String category;
   final DateTime? datePurchased;
@@ -29,17 +42,4 @@ class Tool extends Entity<Tool> {
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
-
-  factory Tool.fromMap(Map<String, dynamic> map) => Tool(
-        id: map['id'] as int,
-        name: map['name'] as String,
-        category: map['category'] as String,
-        datePurchased: map['datePurchased'] != null
-            ? DateTime.parse(map['datePurchased'] as String)
-            : null,
-        serialNumber: map['serialNumber'] as String?,
-        supplierId: map['supplierId'] as int,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-      );
 }
