@@ -136,6 +136,20 @@ class DaoInvoice extends Dao<Invoice> {
     await DaoInvoice().update(
         invoice.copyWith(invoiceNum: invoiceNum, externalInvoiceId: invoiceId));
   }
+
+  Future<List<String>> getEmailsByInvoice(Invoice invoice) async {
+    final job = await DaoJob().getById(invoice.jobId);
+    final customer = await DaoCustomer().getById(job!.customerId);
+    final contacts = await DaoContact().getByCustomer(customer!.id);
+
+    final emails = <String>[];
+
+    for (final contact in contacts) {
+      emails.add(contact.emailAddress);
+    }
+
+    return emails;
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.
