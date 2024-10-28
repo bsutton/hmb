@@ -43,10 +43,11 @@ abstract class BackupProvider {
         final encoder = ZipFileEncoder();
         try {
           final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
+          final pathToDatabase = await DatabaseHelper().pathToDatabase();
 
-          if (!exists(pathToBackupFile)) {
+          if (!exists(pathToDatabase)) {
             print('''
-Database file not found at $pathToBackupFile. No backup peformed.''');
+Database file not found at $pathToDatabase. No backup peformed.''');
             return BackupResult(
                 pathToBackup: pathToBackupFile,
                 pathToSource: '',
