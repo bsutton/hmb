@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 ///
 /// [AsyncState] makes it easy to do async initialisation of a [StatefulWidget]
 ///
-/// Instead of you [StatefulWidget] derving from [State] you derive
+/// Instead of [StatefulWidget] deriving from [State] you derive
 /// from [AsyncState].
 ///
 /// You can then override the 'asyncInitState' method to do some
 /// asynchrounus initialisation.
-/// You can see if the initialiseation is  complete you can
-/// check for 'initialised'.
+/// You can see if async initialisation is complete by 
+/// check 'initialised'.
 /// This is usually passed to a [FutureBuilderEx]:
 /// ```dart
 /// Widget build(BuildContext context)
