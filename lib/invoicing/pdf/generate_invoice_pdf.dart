@@ -313,11 +313,15 @@ Future<List<GroupedLine>> groupByInvoiceLineGroup(
   for (final entry in grouped.entries) {
     final total =
         entry.value.fold(MoneyEx.zero, (sum, line) => sum + line.lineTotal);
-    groupLines.add(GroupedLine(
+    final groupLine = GroupedLine(
         key: entry.key,
         title: (await DaoInvoiceLineGroup().getById(entry.key))!.name,
         items: entry.value,
-        total: total));
+        total: total);
+
+    if (groupLine.hasVisibleItems) {
+      groupLines.add(groupLine);
+    }
   }
 
   return groupLines;
@@ -336,6 +340,13 @@ class GroupedLine {
   final String title;
   final List<InvoiceLine> items;
   final Money total;
+
+  Fixed get quantity =>
+      items.map((line) => line.quantity).reduce((lhs, rhs) => lhs + rhs);
+
+  bool get hasVisibleItems => items
+      .where((item) => item.status != LineStatus.noChargeHidden)
+      .isNotEmpty;
 }
 
 // Helper function to get the logo

@@ -52,8 +52,7 @@ Future<Money> createByDate(
       // Create an invoice line with the total hours in the description
       final invoiceLine = InvoiceLine.forInsert(
           invoiceId: invoiceId,
-          description: 'Labour: ${taskForDate.task.name} - '
-              '${taskForDate.durationInHours} hours worked',
+          description: 'Labour: ${taskForDate.task.name}',
           quantity: taskForDate.durationInHours,
           unitPrice: job.hourlyRate!,
           lineTotal:

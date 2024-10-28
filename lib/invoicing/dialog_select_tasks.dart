@@ -133,7 +133,11 @@ class _DialogTaskSelectionState
                       CheckboxListTile(
                           title: const Text('Bill booking Fee'),
                           value: billBookingFee,
-                          onChanged: (value) => billBookingFee = value ?? true),
+                          onChanged: (value) {
+                            setState(() {
+                              billBookingFee = value ?? true;
+                            });
+                          }),
                       CheckboxListTile(
                         title: const Text('Select All'),
                         value: _selectAll,
