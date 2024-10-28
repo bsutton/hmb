@@ -7,8 +7,8 @@ import '../widgets/pdf_preview.dart';
 import 'list_invoice_screen.dart';
 import 'pdf/generate_invoice_pdf.dart';
 
-class GenerateInvoiceDialog extends StatelessWidget {
-  const GenerateInvoiceDialog({
+class GenerateInvoicePdfDialog extends StatelessWidget {
+  const GenerateInvoicePdfDialog({
     required this.context,
     required this.mounted,
     required this.widget,
@@ -33,11 +33,10 @@ class GenerateInvoiceDialog extends StatelessWidget {
           final result = await showDialog<Map<String, bool>>(
             context: context,
             builder: (context) {
-              var tempBillBookingFee = billBookingFee;
               var tempDisplayCosts = displayCosts;
               var tempDisplayGroupHeaders = displayGroupHeaders;
               var tempDisplayItems = displayItems;
-              var tempGroupByTask =
+              final tempGroupByTask =
                   groupByTask; // Temporary selection for grouping
 
               return StatefulBuilder(
@@ -46,35 +45,6 @@ class GenerateInvoiceDialog extends StatelessWidget {
                   content: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      DropdownButton<bool>(
-                        value: tempGroupByTask,
-                        items: const [
-                          DropdownMenuItem(
-                            value: true,
-                            child: Text('Group by Task/Date'),
-                          ),
-                          DropdownMenuItem(
-                            value: false,
-                            child: Text('Group by Date/Task'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            tempGroupByTask = value ?? true;
-                          });
-                        },
-                        isExpanded: true,
-                      ),
-                      const SizedBox(height: 20),
-                      CheckboxListTile(
-                        title: const Text('Bill Booking Fee'),
-                        value: tempBillBookingFee,
-                        onChanged: (value) {
-                          setState(() {
-                            tempBillBookingFee = value ?? true;
-                          });
-                        },
-                      ),
                       CheckboxListTile(
                         title: const Text('Display Costs'),
                         value: tempDisplayCosts,
