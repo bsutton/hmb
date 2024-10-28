@@ -10,7 +10,7 @@ import 'dao_invoice_create_by_task.dart';
 
 Future<Invoice> createTimeAndMaterialsInvoice(
     Job job, List<int> selectedTaskIds,
-    {required bool groupByTask}) async {
+    {required bool groupByTask, required bool billBookingFee}) async {
   if (job.hourlyRate == MoneyEx.zero) {
     throw InvoiceException('Hourly rate must be set for job ${job.summary}');
   }
@@ -22,11 +22,13 @@ Future<Invoice> createTimeAndMaterialsInvoice(
 
   var totalAmount = MoneyEx.zero;
 
+  final system = await DaoSystem().get();
   // Create invoice
   final invoice = Invoice.forInsert(
       jobId: job.id,
       totalAmount: totalAmount,
-      dueDate: LocalDate.today().add(const Duration(days: 1)));
+      dueDate:
+          LocalDate.today().add(Duration(days: system!.paymentTermsInDays)));
 
   final invoiceId = await DaoInvoice().insert(invoice);
 
@@ -35,7 +37,7 @@ Future<Invoice> createTimeAndMaterialsInvoice(
   if (job.billingType == BillingType.timeAndMaterial) {
     final bookingFee = await DaoJob().getBookingFee(job);
 
-    if (bookingFee > MoneyEx.zero) {
+    if (billBookingFee && bookingFee > MoneyEx.zero) {
       final invoiceLineGroup =
           InvoiceLineGroup.forInsert(invoiceId: invoiceId, name: 'Booking Fee');
       await DaoInvoiceLineGroup().insert(invoiceLineGroup);

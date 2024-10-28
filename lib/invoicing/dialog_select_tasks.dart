@@ -21,32 +21,38 @@ class DialogTaskSelection extends StatefulWidget {
   _DialogTaskSelectionState createState() => _DialogTaskSelectionState();
 
   /// Show the dialog
-  static Future<List<int>> showQuote({
+  static Future<InvoiceOptions?> showQuote({
     required BuildContext context,
     required Job job,
   }) async {
-    final selectedTaskIds = await showDialog<List<int>>(
+    final invoiceOptions = await showDialog<InvoiceOptions>(
       context: context,
       builder: (context) =>
           DialogTaskSelection(job: job, showing: Showing.showQuote),
     );
 
-    return selectedTaskIds ?? [];
+    return invoiceOptions;
   }
 
   /// Show the dialog
-  static Future<List<int>> showInvoice({
+  static Future<InvoiceOptions?> showInvoice({
     required BuildContext context,
     required Job job,
   }) async {
-    final selectedTaskIds = await showDialog<List<int>>(
+    final invoiceOptions = await showDialog<InvoiceOptions>(
       context: context,
       builder: (context) =>
           DialogTaskSelection(job: job, showing: Showing.showInvoice),
     );
 
-    return selectedTaskIds ?? [];
+    return invoiceOptions;
   }
+}
+
+class InvoiceOptions {
+  InvoiceOptions({required this.selectedTaskIds, required this.billBookingFee});
+  List<int> selectedTaskIds = [];
+  bool billBookingFee = true;
 }
 
 class _DialogTaskSelectionState
@@ -54,6 +60,7 @@ class _DialogTaskSelectionState
   // late List<TaskEstimates> _tasks;
   final Map<int, bool> _selectedTasks = {};
   bool _selectAll = true;
+  bool billBookingFee = true;
 
   @override
   Future<List<TaskAccruedValue>> asyncInitState() async {
@@ -99,6 +106,10 @@ class _DialogTaskSelectionState
                   child: Column(
                     children: [
                       CheckboxListTile(
+                          title: const Text('Bill booking Fee'),
+                          value: billBookingFee,
+                          onChanged: (value) => billBookingFee = value ?? true),
+                      CheckboxListTile(
                         title: const Text('Select All'),
                         value: _selectAll,
                         onChanged: _toggleSelectAll,
@@ -126,7 +137,9 @@ class _DialogTaskSelectionState
                   .where((entry) => entry.value)
                   .map((entry) => entry.key)
                   .toList();
-              Navigator.of(context).pop(selectedTaskIds);
+              Navigator.of(context).pop(InvoiceOptions(
+                  selectedTaskIds: selectedTaskIds,
+                  billBookingFee: billBookingFee));
             },
             child: const Text('OK'),
           ),

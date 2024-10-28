@@ -62,13 +62,21 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     }
 
     if (mounted) {
-      final selectedTasks = await DialogTaskSelection.showInvoice(
+      final invoiceOptions = await DialogTaskSelection.showInvoice(
           context: context, job: widget.job);
 
-      if (selectedTasks.isNotEmpty) {
+      if (invoiceOptions != null) {
         try {
-          await createTimeAndMaterialsInvoice(widget.job, selectedTasks,
-              groupByTask: true);
+          if (invoiceOptions.selectedTaskIds.isNotEmpty ||
+              invoiceOptions.billBookingFee) {
+            await createTimeAndMaterialsInvoice(
+                widget.job, invoiceOptions.selectedTaskIds,
+                groupByTask: true,
+                billBookingFee: invoiceOptions.billBookingFee);
+          } else {
+            HMBToast.info('''
+You must select at least one Task or the Booking Fee to invoice''');
+          }
           // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           HMBToast.error('Failed to create invoice: $e',
