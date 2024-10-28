@@ -13,6 +13,7 @@ import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_money_editing_controller.dart';
 import '../../widgets/hmb_money_field.dart';
 import '../../widgets/hmb_text.dart';
+import '../../widgets/hmb_text_area.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -33,6 +34,9 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
   late TextEditingController _bsbController;
   late TextEditingController _accountNoController;
   late TextEditingController _logoPathController;
+  late TextEditingController _paymentTermsInDaysController;
+  late TextEditingController _paymentOptionsController;
+
   LogoAspectRatio _logoType = LogoAspectRatio.square;
   File? _logoFile;
 
@@ -53,6 +57,10 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
     _accountNoController = TextEditingController(text: system.accountNo);
     _logoPathController = TextEditingController(text: system.logoPath);
     _logoType = system.logoAspectRatio;
+    _paymentTermsInDaysController =
+        TextEditingController(text: system.paymentTermsInDays.toString());
+    _paymentOptionsController =
+        TextEditingController(text: system.paymentOptions);
   }
 
   @override
@@ -60,6 +68,9 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
     _defaultHourlyRateController.dispose();
     _defaultBookingFeeController.dispose();
     _bsbController.dispose();
+    _paymentTermsInDaysController.dispose();
+    _paymentOptionsController.dispose();
+
     _accountNoController.dispose();
     _logoPathController.dispose();
     super.dispose();
@@ -75,7 +86,10 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
             MoneyEx.tryParse(_defaultBookingFeeController.text)
         ..bsb = _bsbController.text
         ..accountNo = _accountNoController.text
-        ..logoAspectRatio = _logoType;
+        ..logoAspectRatio = _logoType
+        ..paymentTermsInDays =
+            int.tryParse(_paymentTermsInDaysController.text) ?? 3
+        ..paymentOptions = _paymentOptionsController.text;
 
       if (_logoFile != null) {
         final directory = await getApplicationDocumentsDirectory();
@@ -140,6 +154,15 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
                           controller: _accountNoController,
                           labelText: 'Account Number',
                           keyboardType: TextInputType.number,
+                        ),
+                        HMBTextField(
+                          controller: _paymentTermsInDaysController,
+                          labelText: 'Payment Terms (in Days)',
+                          keyboardType: TextInputType.number,
+                        ),
+                        HMBTextArea(
+                          controller: _paymentOptionsController,
+                          labelText: 'Payment Options',
                         ),
                         const SizedBox(height: 20),
                         const Text('Logo Type'),

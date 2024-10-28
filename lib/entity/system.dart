@@ -141,7 +141,7 @@ class System extends Entity<System> {
   factory System.fromMap(Map<String, dynamic> map) => System(
         id: map['id'] as int,
         fromEmail: map['from_email'] as String?,
-        bsb: map['BSB'] as String?,
+        bsb: map['bsb'] as String?,
         accountNo: map['account_no'] as String?,
         addressLine1: map['address_line_1'] as String?,
         addressLine2: map['address_line_2'] as String?,
@@ -235,7 +235,7 @@ class System extends Entity<System> {
   Map<String, dynamic> toMap() => {
         'id': id,
         'from_email': fromEmail,
-        'BSB': bsb,
+        'bsb': bsb,
         'account_no': accountNo,
         'address_line_1': addressLine1,
         'address_line_2': addressLine2,

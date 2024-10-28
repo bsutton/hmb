@@ -8,7 +8,6 @@ import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/measurement_type.dart';
 import '../../widgets/hmb_droplist.dart';
-import '../../widgets/hmb_text_area.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -31,8 +30,6 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
   late TextEditingController _businessNumberLabelController;
   late TextEditingController _webUrlController;
   late TextEditingController _termsUrlController;
-  late TextEditingController _paymentTermsInDaysController;
-  late TextEditingController _paymentOptionsController;
 
   bool initialised = false;
   Future<void> _initialize() async {
@@ -51,10 +48,6 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
         TextEditingController(text: system.businessNumberLabel);
     _webUrlController = TextEditingController(text: system.webUrl);
     _termsUrlController = TextEditingController(text: system.termsUrl);
-    _paymentTermsInDaysController =
-        TextEditingController(text: system.paymentTermsInDays.toString());
-    _paymentOptionsController =
-        TextEditingController(text: system.paymentOptions);
   }
 
   @override
@@ -64,8 +57,6 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
     _businessNumberLabelController.dispose();
     _webUrlController.dispose();
     _termsUrlController.dispose();
-    _paymentTermsInDaysController.dispose();
-    _paymentOptionsController.dispose();
     super.dispose();
   }
 
@@ -80,10 +71,7 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
         ..webUrl = _webUrlController.text
         ..termsUrl = _termsUrlController.text
         ..countryCode = _selectedCountryCode
-        ..preferredUnitSystem = system.preferredUnitSystem
-        ..paymentTermsInDays =
-            int.tryParse(_paymentTermsInDaysController.text) ?? 3
-        ..paymentOptions = _paymentOptionsController.text;
+        ..preferredUnitSystem = system.preferredUnitSystem;
 
       await DaoSystem().update(system);
 
@@ -171,15 +159,6 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
                   HMBTextField(
                     controller: _termsUrlController,
                     labelText: 'Terms URL',
-                  ),
-                  HMBTextField(
-                    controller: _paymentTermsInDaysController,
-                    labelText: 'Payment Terms (in Days)',
-                    keyboardType: TextInputType.number,
-                  ),
-                  HMBTextArea(
-                    controller: _paymentOptionsController,
-                    labelText: 'Payment Options',
                   ),
                 ],
               ),

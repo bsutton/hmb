@@ -26,10 +26,11 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
   late TextEditingController _businessNameController;
   late TextEditingController _businessNumberController;
   late TextEditingController _businessNumberLabelController;
-  late TextEditingController _webUrlController;
-  late TextEditingController _termsUrlController;
   late TextEditingController _paymentTermsInDaysController;
   late TextEditingController _paymentOptionsController;
+
+  late TextEditingController _webUrlController;
+  late TextEditingController _termsUrlController;
 
   late final System system;
 
@@ -40,12 +41,13 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
         TextEditingController(text: system.businessNumber);
     _businessNumberLabelController =
         TextEditingController(text: system.businessNumberLabel);
+    _paymentTermsInDaysController =
+        TextEditingController(text: system.paymentTermsInDays.toString());
+    _paymentOptionsController =
+        TextEditingController(text: system.paymentOptions);
+
     _webUrlController = TextEditingController(text: system.webUrl);
     _termsUrlController = TextEditingController(text: system.termsUrl);
-    _paymentTermsInDaysController =
-        TextEditingController(text: system.paymentTermsInDays.toString() ?? '');
-    _paymentOptionsController =
-        TextEditingController(text: system.paymentOptions ?? '');
   }
 
   @override
@@ -53,10 +55,11 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
     _businessNameController.dispose();
     _businessNumberController.dispose();
     _businessNumberLabelController.dispose();
-    _webUrlController.dispose();
-    _termsUrlController.dispose();
     _paymentTermsInDaysController.dispose();
     _paymentOptionsController.dispose();
+
+    _webUrlController.dispose();
+    _termsUrlController.dispose();
     super.dispose();
   }
 
@@ -112,14 +115,6 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
                           labelText: 'Business Number Label',
                         ),
                         HMBTextField(
-                          controller: _webUrlController,
-                          labelText: 'Web URL',
-                        ),
-                        HMBTextField(
-                          controller: _termsUrlController,
-                          labelText: 'Terms URL',
-                        ),
-                        HMBTextField(
                           controller: _paymentTermsInDaysController,
                           labelText: 'Payment Terms (in Days)',
                           keyboardType: TextInputType.number,
@@ -127,6 +122,14 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
                         HMBTextArea(
                           controller: _paymentOptionsController,
                           labelText: 'Payment Options',
+                        ),
+                        HMBTextField(
+                          controller: _webUrlController,
+                          labelText: 'Web URL',
+                        ),
+                        HMBTextField(
+                          controller: _termsUrlController,
+                          labelText: 'Terms URL',
                         ),
                         HMBDroplist<PreferredUnitSystem>(
                           title: 'Unit System',
