@@ -44,7 +44,7 @@ should create an invoice for time and materials job with correct rates and mark 
 
       // Create invoice for the job
       final invoice = await createTimeAndMaterialsInvoice(job, [task.id],
-          groupByTask: false);
+          groupByTask: false, billBookingFee: true);
 
       // Verify that the invoice includes both time entry and material item
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
@@ -103,7 +103,7 @@ should create an invoice for time and materials job with correct rates and mark 
     // Create invoice grouped by date
     final invoice = await createTimeAndMaterialsInvoice(
         job, [task1.id, task2.id],
-        groupByTask: false);
+        groupByTask: false, billBookingFee: true);
 
     // Verify invoice lines
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
@@ -139,7 +139,7 @@ should create an invoice for time and materials job with correct rates and mark 
     // Create invoice grouped by task
     final invoice = await createTimeAndMaterialsInvoice(
         job, [task1.id, task2.id],
-        groupByTask: true);
+        groupByTask: true, billBookingFee: true);
 
     // Verify invoice lines
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);

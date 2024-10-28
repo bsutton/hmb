@@ -34,7 +34,7 @@ should create an invoice with work done on two different dates for the same task
 
       // Create invoice grouped by date
       final invoice = await createTimeAndMaterialsInvoice(job, [task.id],
-          groupByTask: false);
+          groupByTask: false, billBookingFee: true);
 
       // Verify invoice lines
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
@@ -67,7 +67,7 @@ should create an invoice with work done on two different dates for two different
       // Create invoice grouped by date
       final invoice = await createTimeAndMaterialsInvoice(
           job, [task1.id, task2.id],
-          groupByTask: false);
+          groupByTask: false, billBookingFee: true);
 
       // Verify invoice lines
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);

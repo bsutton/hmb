@@ -50,9 +50,13 @@ class DialogTaskSelection extends StatefulWidget {
 }
 
 class InvoiceOptions {
-  InvoiceOptions({required this.selectedTaskIds, required this.billBookingFee});
+  InvoiceOptions(
+      {required this.selectedTaskIds,
+      required this.billBookingFee,
+      required this.groupByTask});
   List<int> selectedTaskIds = [];
   bool billBookingFee = true;
+  bool groupByTask;
 }
 
 class _DialogTaskSelectionState
@@ -61,6 +65,7 @@ class _DialogTaskSelectionState
   final Map<int, bool> _selectedTasks = {};
   bool _selectAll = true;
   bool billBookingFee = true;
+  bool groupByTask = false;
 
   @override
   Future<List<TaskAccruedValue>> asyncInitState() async {
@@ -105,6 +110,26 @@ class _DialogTaskSelectionState
             builder: (context, taskEstimates) => SingleChildScrollView(
                   child: Column(
                     children: [
+                      DropdownButton<bool>(
+                        value: groupByTask,
+                        items: const [
+                          DropdownMenuItem(
+                            value: true,
+                            child: Text('Group by Task/Date'),
+                          ),
+                          DropdownMenuItem(
+                            value: false,
+                            child: Text('Group by Date/Task'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            groupByTask = value ?? true;
+                          });
+                        },
+                        isExpanded: true,
+                      ),
+                      const SizedBox(height: 20),
                       CheckboxListTile(
                           title: const Text('Bill booking Fee'),
                           value: billBookingFee,
@@ -139,7 +164,8 @@ class _DialogTaskSelectionState
                   .toList();
               Navigator.of(context).pop(InvoiceOptions(
                   selectedTaskIds: selectedTaskIds,
-                  billBookingFee: billBookingFee));
+                  billBookingFee: billBookingFee,
+                  groupByTask: groupByTask));
             },
             child: const Text('OK'),
           ),

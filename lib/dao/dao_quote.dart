@@ -7,6 +7,7 @@ import '../entity/quote.dart';
 import '../entity/quote_line.dart';
 import '../entity/quote_line_group.dart';
 import '../entity/task.dart';
+import '../invoicing/dialog_select_tasks.dart';
 import '../util/exceptions.dart';
 import '../util/fixed_ex.dart';
 import '../util/money_ex.dart';
@@ -56,7 +57,7 @@ class DaoQuote extends Dao<Quote> {
   }
 
   /// Create a quote for the given job.
-  Future<Quote> create(Job job, List<int> selectedTaskIds) async {
+  Future<Quote> create(Job job, InvoiceOptions invoiceOptions) async {
     final tasks = await DaoTask().getTasksByJob(job.id);
 
     if (job.hourlyRate == MoneyEx.zero) {
@@ -94,7 +95,7 @@ class DaoQuote extends Dao<Quote> {
 
     // Create quote lines and groups for each task
     for (final task in tasks) {
-      if (!selectedTaskIds.contains(task.id)) {
+      if (!invoiceOptions.selectedTaskIds.contains(task.id)) {
         continue;
       }
 

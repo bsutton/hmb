@@ -21,7 +21,7 @@ import '../widgets/hmb_one_of.dart';
 import '../widgets/hmb_toast.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_line_dialog.dart';
-import 'generate_invoice_dialog.dart';
+import 'generate_invoice_pdf_dialog.dart';
 import 'xero/xero_api.dart';
 
 class InvoiceListScreen extends StatefulWidget {
@@ -71,7 +71,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
               invoiceOptions.billBookingFee) {
             await createTimeAndMaterialsInvoice(
                 widget.job, invoiceOptions.selectedTaskIds,
-                groupByTask: true,
+                groupByTask: invoiceOptions.groupByTask,
                 billBookingFee: invoiceOptions.billBookingFee);
           } else {
             HMBToast.info('''
@@ -168,7 +168,7 @@ You must select at least one Task or the Booking Fee to invoice''');
               padding: const EdgeInsets.all(8),
               child: Row(
                 children: [
-                  GenerateInvoiceDialog(
+                  GenerateInvoicePdfDialog(
                       context: context,
                       mounted: mounted,
                       widget: widget,

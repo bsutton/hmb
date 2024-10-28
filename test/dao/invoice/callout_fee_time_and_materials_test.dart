@@ -27,8 +27,8 @@ void main() {
       await _setSystemBookingFee(MoneyEx.dollars(100));
 
       // Create invoice for the job
-      final invoice =
-          await createTimeAndMaterialsInvoice(job, [], groupByTask: true);
+      final invoice = await createTimeAndMaterialsInvoice(job, [],
+          groupByTask: true, billBookingFee: true);
 
       // Verify that the invoice includes the system Booking Fee.
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
@@ -47,8 +47,8 @@ void main() {
       await _setSystemBookingFee(MoneyEx.dollars(100));
 
       // Create invoice for the job
-      final invoice =
-          await createTimeAndMaterialsInvoice(job, [], groupByTask: true);
+      final invoice = await createTimeAndMaterialsInvoice(job, [],
+          groupByTask: true, billBookingFee: true);
 
       // Verify that the invoice includes the system Booking Fee.
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
@@ -68,8 +68,8 @@ void main() {
       await _setSystemBookingFee(MoneyEx.dollars(100));
 
       // Create invoice for the job
-      final invoice =
-          await createTimeAndMaterialsInvoice(job, [], groupByTask: true);
+      final invoice = await createTimeAndMaterialsInvoice(job, [],
+          groupByTask: true, billBookingFee: true);
 
       // Verify that the invoice includes the job-specific
       //  Booking Fee (ignores system fee).
@@ -90,8 +90,8 @@ void main() {
       await _setSystemBookingFee(MoneyEx.zero);
 
       // Create invoice for the job
-      final invoice =
-          await createTimeAndMaterialsInvoice(job, [], groupByTask: true);
+      final invoice = await createTimeAndMaterialsInvoice(job, [],
+          groupByTask: true, billBookingFee: true);
 
       // Verify that the invoice does not contain a Booking Fee.
       final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);

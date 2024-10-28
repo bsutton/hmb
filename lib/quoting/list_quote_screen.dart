@@ -53,12 +53,18 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     }
 
     if (mounted) {
-      final selectedTasks = await DialogTaskSelection.showQuote(
+      final invoiceOptions = await DialogTaskSelection.showQuote(
           context: context, job: widget.job);
 
-      if (selectedTasks.isNotEmpty) {
+      if (invoiceOptions != null) {
         try {
-          await DaoQuote().create(widget.job, selectedTasks);
+          if (!invoiceOptions.billBookingFee &&
+              invoiceOptions.selectedTaskIds.isEmpty) {
+            HMBToast.error('You must select a task or the booking Fee',
+                acknowledgmentRequired: true);
+            return;
+          }
+          await DaoQuote().create(widget.job, invoiceOptions);
           // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           HMBToast.error('Failed to create quote: $e',
