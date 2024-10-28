@@ -411,7 +411,7 @@ class _CheckListItemEditScreenState
             FixedEx.tryParse(_estimatedLabourHoursController.text),
         estimatedLabourCost:
             MoneyEx.tryParse(_estimatedLabourCostController.text),
-        charge: MoneyEx.tryParse(_chargeController.text),
+        charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
         margin: Percentage.tryParse(_marginController.text),
         completed: checkListItem.completed,
         billed: false,
@@ -442,7 +442,7 @@ class _CheckListItemEditScreenState
             FixedEx.tryParse(_estimatedLabourHoursController.text),
         estimatedLabourCost:
             MoneyEx.tryParse(_estimatedLabourCostController.text),
-        charge: MoneyEx.tryParse(_chargeController.text),
+        charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
         margin: Percentage.tryParse(_marginController.text),
         labourEntryMode: _labourEntryMode,
         measurementType:
