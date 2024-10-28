@@ -17,7 +17,7 @@ class Invoice extends Entity<Invoice> {
     required super.modifiedDate,
     required this.invoiceNum,
     this.externalInvoiceId,
-    LocalDate? dueDate, // New dueDate field
+    LocalDate? dueDate, 
   }) : super() {
     this.dueDate = dueDate ??
         LocalDate.fromDateTime(createdDate.add(const Duration(days: 1)));
@@ -55,7 +55,7 @@ class Invoice extends Entity<Invoice> {
   Money totalAmount;
   String? invoiceNum;
   String? externalInvoiceId;
-  late LocalDate dueDate; // New dueDate field
+  late LocalDate dueDate; 
 
   String get bestNumber => externalInvoiceId ?? invoiceNum ?? '$id';
 
