@@ -286,7 +286,7 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}''',
   );
 
   final output = await getTemporaryDirectory();
-  final file = File('${output.path}/invoice_${invoice.invoiceNum}.pdf');
+  final file = File('${output.path}/invoice_${invoice.bestNumber}.pdf');
   await file.writeAsBytes(await pdf.save());
   return file;
 }
