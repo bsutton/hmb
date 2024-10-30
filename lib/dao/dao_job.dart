@@ -134,7 +134,7 @@ where t.id =?
     JOIN job_status js ON j.job_status_id = js.id
     WHERE js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment', 'Completed', 'To be Billed')
     AND (j.summary LIKE ? OR j.description LIKE ?)
-    ORDER BY j.modifie_date DESC
+    ORDER BY j.modified_date DESC
     ''', [likeArg, likeArg]);
 
     return toList(data);
