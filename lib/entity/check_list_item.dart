@@ -218,10 +218,14 @@ class CheckListItem extends Entity<CheckListItem> {
       case CheckListItemTypeEnum.materialsStock:
       case CheckListItemTypeEnum.toolsBuy:
       case CheckListItemTypeEnum.toolsOwn:
-        return _charge = calcMaterialCost().multiplyByFixed(Fixed.one + margin);
+        return calcMaterialCost().multiplyByFixed(Fixed.one + margin);
       case CheckListItemTypeEnum.labour:
-        return _charge = calcLabourCost().multiplyByFixed(Fixed.one + margin);
+        return calcLabourCost().multiplyByFixed(Fixed.one + margin);
     }
+  }
+
+  set charge(Money value) {
+    _charge = value;
   }
 
   /// Once the material has been purchased we use the actual cost.
