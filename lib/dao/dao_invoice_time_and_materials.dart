@@ -43,13 +43,17 @@ Future<Invoice> createTimeAndMaterialsInvoice(
       await DaoInvoiceLineGroup().insert(invoiceLineGroup);
 
       final invoiceLine = InvoiceLine.forInsert(
-        invoiceId: invoiceId,
-        invoiceLineGroupId: invoiceLineGroup.id,
-        description: 'Booking Fee: ',
-        quantity: Fixed.one,
-        unitPrice: bookingFee,
-        lineTotal: bookingFee,
-      );
+          invoiceId: invoiceId,
+          invoiceLineGroupId: invoiceLineGroup.id,
+          description: 'Booking Fee: ',
+          quantity: Fixed.one,
+          unitPrice: bookingFee,
+          lineTotal: bookingFee,
+          fromBookingFee: true);
+
+      job.bookingFeeInvoiced = true;
+      await DaoJob().update(job);
+
       await DaoInvoiceLine().insert(invoiceLine);
 
       totalAmount += bookingFee;

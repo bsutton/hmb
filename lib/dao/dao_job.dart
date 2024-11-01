@@ -281,6 +281,27 @@ where c.id =?
     }
     return total;
   }
+
+  /// Must be
+  /// Time and Materials
+  /// Not been invoiced
+  /// Have a non-zero booking fee.
+  Future<bool> hasBillableBookingFee(Job job) async =>
+      job.billingType == BillingType.timeAndMaterial &&
+      !job.bookingFeeInvoiced &&
+      job.bookingFee != null &&
+      (await getBookingFee(job) != MoneyEx.zero);
+
+  Future<void> markBookingFeeNotBilled(Job job) async {
+    job.bookingFeeInvoiced = false;
+
+    await update(job);
+  }
+
+  Future<Job> getJobForInvoice(int invoiceId) async {
+    final invoice = (await DaoInvoice().getById(invoiceId))!;
+    return (await getById(invoice.jobId))!;
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

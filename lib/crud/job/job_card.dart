@@ -20,10 +20,30 @@ import '../../widgets/hmb_text_themes.dart';
 import '../../widgets/photo_gallery.dart';
 import '../../widgets/rich_editor.dart';
 
-class JobCard extends StatelessWidget {
+class JobCard extends StatefulWidget {
   const JobCard({required this.job, super.key});
 
   final Job job;
+
+  @override
+  _JobCardState createState() => _JobCardState();
+}
+
+class _JobCardState extends State<JobCard> {
+  late Job job;
+
+  @override
+  void initState() {
+    super.initState();
+    job = widget.job;
+  }
+
+  Future<void> _refreshJob() async {
+    final refreshedJob = await DaoJob().getById(job.id);
+    setState(() {
+      job = refreshedJob ?? job;
+    });
+  }
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
@@ -163,9 +183,12 @@ class JobCard extends StatelessWidget {
       );
 
   Widget _buildInvoiceButton(BuildContext context) => ElevatedButton(
-        onPressed: () async => Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => InvoiceListScreen(job: job),
-        )),
+        onPressed: () async {
+          await Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => InvoiceListScreen(job: job),
+          ));
+          await _refreshJob(); // Refresh the job after returning
+        },
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           textStyle: const TextStyle(fontSize: 16),

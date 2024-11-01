@@ -26,7 +26,8 @@ class Job extends Entity<Job> {
     required this.lastActive,
     required super.createdDate,
     required super.modifiedDate,
-    this.billingType = BillingType.timeAndMaterial, // New field for BillingType
+    this.billingType = BillingType.timeAndMaterial,
+    this.bookingFeeInvoiced = false,
   }) : super();
 
   Job.forInsert({
@@ -40,7 +41,8 @@ class Job extends Entity<Job> {
     required this.hourlyRate,
     required this.bookingFee,
     this.lastActive = false,
-    this.billingType = BillingType.timeAndMaterial, // New field for BillingType
+    this.billingType = BillingType.timeAndMaterial,
+    this.bookingFeeInvoiced = false,
   }) : super.forInsert();
 
   Job.forUpdate({
@@ -55,7 +57,8 @@ class Job extends Entity<Job> {
     required this.hourlyRate,
     required this.bookingFee,
     this.lastActive = false,
-    this.billingType = BillingType.timeAndMaterial, // New field for BillingType
+    this.billingType = BillingType.timeAndMaterial,
+    this.bookingFeeInvoiced = false,
   }) : super.forUpdate();
 
   factory Job.fromMap(Map<String, dynamic> map) => Job(
@@ -75,9 +78,10 @@ class Job extends Entity<Job> {
         modifiedDate: DateTime.parse(map['modified_date'] as String),
         lastActive: map['last_active'] == 1,
         billingType: BillingType.values.firstWhere(
-            (e) => e.name == map['billing_type'],
-            orElse: () =>
-                BillingType.timeAndMaterial), // New field for BillingType
+          (e) => e.name == map['billing_type'],
+          orElse: () => BillingType.timeAndMaterial,
+        ),
+        bookingFeeInvoiced: map['booking_fee_invoiced'] == 1,
       );
 
   @override
@@ -93,7 +97,8 @@ class Job extends Entity<Job> {
         'hourly_rate': hourlyRate?.minorUnits.toInt(),
         'booking_fee': bookingFee?.minorUnits.toInt(),
         'last_active': lastActive ? 1 : 0,
-        'billing_type': billingType.name, // New field for BillingType
+        'billing_type': billingType.name,
+        'booking_fee_invoiced': bookingFeeInvoiced ? 1 : 0,
         'created_date': createdDate.toIso8601String(),
         'modified_date': modifiedDate.toIso8601String(),
       };
@@ -108,5 +113,6 @@ class Job extends Entity<Job> {
   Money? hourlyRate;
   Money? bookingFee;
   bool lastActive;
-  BillingType billingType; // New field for BillingType
+  BillingType billingType;
+  bool bookingFeeInvoiced;
 }

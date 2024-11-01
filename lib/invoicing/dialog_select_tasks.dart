@@ -130,14 +130,17 @@ class _DialogTaskSelectionState
                         isExpanded: true,
                       ),
                       const SizedBox(height: 20),
-                      CheckboxListTile(
-                          title: const Text('Bill booking Fee'),
-                          value: billBookingFee,
-                          onChanged: (value) {
-                            setState(() {
-                              billBookingFee = value ?? true;
-                            });
-                          }),
+                      if (widget.job.billingType ==
+                              BillingType.timeAndMaterial &&
+                          !widget.job.bookingFeeInvoiced)
+                        CheckboxListTile(
+                            title: const Text('Bill booking Fee'),
+                            value: billBookingFee,
+                            onChanged: (value) {
+                              setState(() {
+                                billBookingFee = value ?? true;
+                              });
+                            }),
                       CheckboxListTile(
                         title: const Text('Select All'),
                         value: _selectAll,

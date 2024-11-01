@@ -15,6 +15,7 @@ import '../entity/invoice_line_group.dart';
 import '../entity/job.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
+import '../widgets/async_state.dart';
 import '../widgets/hmb_are_you_sure_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_one_of.dart';
@@ -36,23 +37,31 @@ class InvoiceListScreen extends StatefulWidget {
   _InvoiceListScreenState createState() => _InvoiceListScreenState();
 }
 
-class _InvoiceListScreenState extends State<InvoiceListScreen> {
+class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
   late Future<List<Invoice>> _invoices;
   late Future<bool> _hasUnbilledItems;
   late XeroApi _xeroApi;
+  late Job job;
 
   @override
-  void initState() {
-    super.initState();
+  Future<void> asyncInitState() async {
+    /// make certain we always have the latest copy of the job.
+    job = (await DaoJob().getById(widget.job.id))!;
     // ignore: discarded_futures
-    _invoices = DaoInvoice().getByJobId(widget.job.id);
-    // ignore: discarded_futures
-    _hasUnbilledItems = DaoJob().hasBillableTasks(widget.job);
+    _invoices = DaoInvoice().getByJobId(job.id);
+    _hasUnbilledItems = hasBillableItems();
+  }
+
+  Future<bool> hasBillableItems() async {
+    final hasBillableTasks = await DaoJob().hasBillableTasks(job);
+    final hasBillableBookingFee = await DaoJob().hasBillableBookingFee(job);
+
+    return Future.value(hasBillableTasks || hasBillableBookingFee);
   }
 
   Future<void> _createInvoice() async {
-    if (widget.job.hourlyRate == MoneyEx.zero) {
-      HMBToast.error('Hourly rate must be set for job ${widget.job.summary}');
+    if (job.hourlyRate == MoneyEx.zero) {
+      HMBToast.error('Hourly rate must be set for job ${job.summary}');
       return;
     }
 
@@ -62,17 +71,19 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     }
 
     if (mounted) {
-      final invoiceOptions = await DialogTaskSelection.showInvoice(
-          context: context, job: widget.job);
+      final invoiceOptions =
+          await DialogTaskSelection.showInvoice(context: context, job: job);
 
       if (invoiceOptions != null) {
         try {
           if (invoiceOptions.selectedTaskIds.isNotEmpty ||
               invoiceOptions.billBookingFee) {
             await createTimeAndMaterialsInvoice(
-                widget.job, invoiceOptions.selectedTaskIds,
+                job, invoiceOptions.selectedTaskIds,
                 groupByTask: invoiceOptions.groupByTask,
                 billBookingFee: invoiceOptions.billBookingFee);
+
+            await _refresh();
           } else {
             HMBToast.info('''
 You must select at least one Task or the Booking Fee to invoice''');
@@ -107,8 +118,9 @@ You must select at least one Task or the Booking Fee to invoice''');
   }
 
   Future<void> _refresh() async {
-    _invoices = DaoInvoice().getByJobId(widget.job.id);
-    _hasUnbilledItems = DaoJob().hasBillableTasks(widget.job);
+    job = (await DaoJob().getById(job.id))!;
+    _invoices = DaoInvoice().getByJobId(job.id);
+    _hasUnbilledItems = hasBillableItems();
     setState(() {});
   }
 
@@ -117,12 +129,14 @@ You must select at least one Task or the Booking Fee to invoice''');
         appBar: AppBar(
           title: Text('Invoices for Job: ${widget.job.summary}'),
         ),
-        body: Column(
-          children: [
-            _buildCreateInvoiceButton(),
-            _buildInvoiceList(),
-          ],
-        ),
+        body: FutureBuilderEx(
+            future: initialised,
+            builder: (context, _) => Column(
+                  children: [
+                    _buildCreateInvoiceButton(),
+                    _buildInvoiceList(),
+                  ],
+                )),
       );
 
   Widget _buildInvoiceList() => Expanded(
@@ -348,7 +362,7 @@ Total: ${line.lineTotal}'''),
         // Mark source item as not billed
         if (line.invoiceLineGroupId != null) {
           await DaoCheckListItem().markNotBilled(line.id);
-          await DaoTimeEntry().markAsUnbilled(line.id);
+          await DaoTimeEntry().markAsNotbilled(line.id);
         }
 
         // Delete the invoice line
@@ -385,7 +399,7 @@ Total: ${line.lineTotal}'''),
       await DaoInvoiceLine().update(editedLine);
       await DaoInvoice().recalculateTotal(editedLine.invoiceId);
       setState(() {
-        _invoices = DaoInvoice().getByJobId(widget.job.id);
+        _invoices = DaoInvoice().getByJobId(job.id);
       });
     }
   }
