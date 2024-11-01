@@ -64,11 +64,16 @@ class _DialogTaskSelectionState
   // late List<TaskEstimates> _tasks;
   final Map<int, bool> _selectedTasks = {};
   bool _selectAll = true;
-  bool billBookingFee = true;
+  late bool billBookingFee;
+  late bool canBillBookingFee;
   bool groupByTask = false;
 
   @override
   Future<List<TaskAccruedValue>> asyncInitState() async {
+    billBookingFee = canBillBookingFee =
+        widget.job.billingType == BillingType.timeAndMaterial &&
+            !widget.job.bookingFeeInvoiced;
+
     // Load tasks and their costs via the DAO
     final tasksAccruedValue = await DaoTask().getTaskCostsByJob(
         jobId: widget.job.id,
@@ -130,9 +135,7 @@ class _DialogTaskSelectionState
                         isExpanded: true,
                       ),
                       const SizedBox(height: 20),
-                      if (widget.job.billingType ==
-                              BillingType.timeAndMaterial &&
-                          !widget.job.bookingFeeInvoiced)
+                      if (canBillBookingFee)
                         CheckboxListTile(
                             title: const Text('Bill booking Fee'),
                             value: billBookingFee,
@@ -141,11 +144,12 @@ class _DialogTaskSelectionState
                                 billBookingFee = value ?? true;
                               });
                             }),
-                      CheckboxListTile(
-                        title: const Text('Select All'),
-                        value: _selectAll,
-                        onChanged: _toggleSelectAll,
-                      ),
+                      if (_selectedTasks.isNotEmpty)
+                        CheckboxListTile(
+                          title: const Text('Select All'),
+                          value: _selectAll,
+                          onChanged: _toggleSelectAll,
+                        ),
                       for (final taskCost in taskEstimates!)
                         CheckboxListTile(
                           title: Text(taskCost.task.name),

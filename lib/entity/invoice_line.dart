@@ -123,7 +123,8 @@ class InvoiceLine extends Entity<InvoiceLine> {
         quantity: quantity,
         unitAmount: unitPrice,
         lineTotal: lineTotal,
-        // TODO(bsutton): fix these so that they can be configured from the system
+        // TODO(bsutton): fix these so that they can be configured 
+        //from the system
         /// table.
         accountCode: '240',
         itemCode: 'IHS-Labour',
