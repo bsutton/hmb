@@ -15,8 +15,9 @@ abstract class BackupProvider {
 
   HMBDatabaseFactory databaseFactory;
 
+  /// Stores the zipped backup file to a [BackupProvider]s
+  /// defined location.
   /// Returns the path to where the file was stored.
-  // TODO(bsutton): this should be a uri
   Future<BackupResult> store(
       {required String pathToDatabase,
       required String pathToZippedBackup,
@@ -41,6 +42,7 @@ abstract class BackupProvider {
         final datePart = formatDate(DateTime.now(), format: 'y-m-d');
         final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
         final encoder = ZipFileEncoder();
+        var closed = false;
         try {
           final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
           final pathToDatabase = await DatabaseHelper().pathToDatabase();
@@ -58,6 +60,7 @@ Database file not found at $pathToDatabase. No backup peformed.''');
           encoder.create(pathToZip);
           await encoder.addFile(File(pathToBackupFile));
           await encoder.close();
+          closed = true;
 
           //after that some of code for making the zip files
           return store(
@@ -65,7 +68,9 @@ Database file not found at $pathToDatabase. No backup peformed.''');
               pathToDatabase: pathToBackupFile,
               version: version);
         } catch (e) {
-          await encoder.close();
+          if (!closed) {
+            encoder.closeSync();
+          }
           rethrow;
         }
       });

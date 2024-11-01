@@ -1,3 +1,6 @@
+import 'package:dcli/dcli.dart';
+import 'package:path/path.dart';
+
 import '../../../factory/hmb_database_factory.dart';
 import '../backup_provider.dart';
 
@@ -33,8 +36,21 @@ class DevBackupProvider extends BackupProvider {
   Future<BackupResult> store(
       {required String pathToDatabase,
       required String pathToZippedBackup,
-      required int version}) {
-    // TODO(bsutton): implement store
-    throw UnimplementedError();
+      required int version}) async {
+    var pathToBackupFile = join(DartProject.self.pathToProjectRoot, 'backups',
+        basename(pathToZippedBackup));
+
+    var count = 1;
+    while (exists(pathToBackupFile)) {
+      pathToBackupFile =
+          '''${join(dirname(pathToBackupFile), basenameWithoutExtension(pathToBackupFile))}.${count++}${extension(pathToBackupFile)}''';
+    }
+    print('Saving backup to $pathToBackupFile');
+    move(pathToZippedBackup, pathToBackupFile);
+
+    return BackupResult(
+        pathToBackup: pathToBackupFile,
+        pathToSource: pathToZippedBackup,
+        success: true);
   }
 }
