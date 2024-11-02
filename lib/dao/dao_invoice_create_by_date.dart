@@ -10,6 +10,7 @@ import 'dao_invoice_line_group.dart';
 import 'dao_task.dart';
 import 'dao_time_entry.dart';
 
+/// This is specifically for Time And Materials Invoicces
 Future<Money> createByDate(
   Job job,
   int invoiceId,
@@ -25,6 +26,11 @@ Future<Money> createByDate(
   final times = await DaoTimeEntry().getByJob(job.id);
   for (final timeEntry in times) {
     if (!selectedTaskIds.contains(times.first.taskId)) {
+      continue;
+    }
+
+    /// Don't re-bill lines that have already been billed
+    if (timeEntry.billed) {
       continue;
     }
     workDates.add(LocalDate.fromDateTime(timeEntry.startTime));
@@ -134,15 +140,15 @@ Future<Money> emitMaterialsByTask(
         groupCreated = true;
       }
 
-      final lineTotal = item.estimatedMaterialUnitCost!
-          .multiplyByFixed(item.estimatedMaterialQuantity!);
+      final lineTotal = item.actualMaterialUnitCost!
+          .multiplyByFixed(item.actualMaterialQuantity!);
 
       final invoiceLine = InvoiceLine.forInsert(
         invoiceId: invoiceId,
         invoiceLineGroupId: invoiceLineGroupId,
         description: 'Material: ${item.description}',
-        quantity: item.estimatedMaterialQuantity!,
-        unitPrice: item.estimatedMaterialUnitCost!,
+        quantity: item.actualMaterialQuantity!,
+        unitPrice: item.actualMaterialUnitCost!,
         lineTotal: lineTotal,
       );
       final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
@@ -154,8 +160,8 @@ Future<Money> emitMaterialsByTask(
   return totalAmount;
 }
 
-/// Accumulates all timeentries for the given [date]
-/// group by task.
+/// Accumulates all timeentries (that haven't been billed)
+/// for the given [date] group by task.
 class TasksForDate {
   TasksForDate(this.date, this.job, this.selectedTaskIds);
 
@@ -171,6 +177,9 @@ class TasksForDate {
 
       final timeEntries = await DaoTimeEntry().getByTask(task.id);
       for (final timeEntry in timeEntries) {
+        if (timeEntry.billed) {
+          continue;
+        }
         if (LocalDate.fromDateTime(timeEntry.startTime) == date) {
           taskEntries.add(timeEntry);
         }
