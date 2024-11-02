@@ -62,12 +62,20 @@ Create a signed release appbundle suitable to upload to Google Play store.''')
   var needPubGet = true;
 
   if (build) {
+      final pathToPubSpec = DartProject.self.pathToPubSpec;
+  final currentVersion = version(pubspecPath: pathToPubSpec)!;
+  final newVersion = askForVersion(currentVersion);
+  updateVersion(newVersion, pm.PubSpec.load(), pathToPubSpec);
+
+  updateAndroidVersion(newVersion);
+
+
     if (needPubGet) {
       _runPubGet();
       needPubGet = false;
     }
     if (release) {
-      buildAppBundle();
+      buildAppBundle(newVersion);
     } else {
       buildApk();
     }
@@ -102,15 +110,9 @@ void buildApk() {
   'flutter build apk --no-tree-shake-icons'.run;
 }
 
-void buildAppBundle() {
+void buildAppBundle(Version newVersion) {
 // TODO(bsutton): the rich text editor includes random icons
 // so tree shaking of icons isn't possible. Can we fix this?
-  final pathToPubSpec = DartProject.self.pathToPubSpec;
-  final currentVersion = version(pubspecPath: pathToPubSpec)!;
-  final newVersion = askForVersion(currentVersion);
-  updateVersion(newVersion, pm.PubSpec.load(), pathToPubSpec);
-
-  updateAndroidVersion(newVersion);
 
   'flutter build appbundle --release --no-tree-shake-icons'.start();
 
