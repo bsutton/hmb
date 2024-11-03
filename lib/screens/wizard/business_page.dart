@@ -6,6 +6,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/measurement_type.dart';
+import '../../widgets/async_state.dart';
 import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_text_area.dart';
 import '../../widgets/hmb_text_field.dart';
@@ -20,7 +21,7 @@ class WizardBusinessPage extends StatefulWidget {
   _WizardBusinessPageState createState() => _WizardBusinessPageState();
 }
 
-class _WizardBusinessPageState extends State<WizardBusinessPage> {
+class _WizardBusinessPageState extends AsyncState<WizardBusinessPage, void> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _businessNameController;
@@ -34,7 +35,8 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
 
   late final System system;
 
-  Future<void> _initialize() async {
+  @override
+  Future<void> asyncInitState() async {
     system = (await DaoSystem().get())!;
     _businessNameController = TextEditingController(text: system.businessName);
     _businessNumberController =
@@ -93,7 +95,7 @@ class _WizardBusinessPageState extends State<WizardBusinessPage> {
           padding: const EdgeInsets.all(16),
           child: FutureBuilderEx(
               // ignore: discarded_futures
-              future: _initialize(),
+              future: initialised,
               builder: (context, _) => Form(
                     key: _formKey,
                     child: ListView(
