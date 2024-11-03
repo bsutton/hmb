@@ -29,6 +29,51 @@ abstract class Units {
   Fixed _calc(List<Fixed> values);
 
   String get measure;
+
+  // Calculation functions
+  Fixed linearCalc(Fixed value) => value; // 1D calculation
+  Fixed areaCalc(Fixed d1, Fixed d2) =>
+      Fixed.copyWith(d1 * d2, scale: 3); // 2D calculation
+  Fixed volumeCalc(Fixed d1, Fixed d2, Fixed d3) =>
+      Fixed.copyWith(d1 * d2 * d3, scale: 3); // 3D calculation
+
+// Define named variables for each unit with labels
+
+  /// linear units
+  static const Units mm = Units1D('mm', labels: ['Length']);
+  static const Units cm = Units1D('cm', labels: ['Length']);
+  static const Units m = Units1D('m', labels: ['Length']);
+  static const Units yd = Units1D('yd', labels: ['Length']);
+  static const Units ft = Units1D('ft', labels: ['Length']);
+  static const Units inch = Units1D('in', labels: ['Length']);
+
+  /// area units
+  static const Units m2 =
+      Units2D('m²', measure: 'm', labels: ['Length', 'Width']);
+  static const Units cm2 =
+      Units2D('cm²', measure: 'cm', labels: ['Length', 'Width']);
+  static const Units mm2 =
+      Units2D('mm²', measure: 'mm', labels: ['Length', 'Width']);
+  static const Units yd2 =
+      Units2D('yd²', measure: 'yd', labels: ['Length', 'Width']);
+  static const Units ft2 =
+      Units2D('ft²', measure: 'ft', labels: ['Length', 'Width']);
+
+  /// Volume units
+  static const Units m3 =
+      Units3D('m³', measure: 'm', labels: ['Height', 'Width', 'Depth']);
+  static const Units liters = Units1D('litres', labels: ['Volume']);
+  static const Units ft3 =
+      Units3D('ft³', measure: 'ft³', labels: ['Height', 'Width', 'Depth']);
+  static const Units gallons = Units1D('gallons', labels: ['Volume']);
+
+  /// Weight
+  static const Units t = Units1D('t', labels: ['Weight']);
+  static const Units kg = Units1D('kg', labels: ['Weight']);
+  static const Units g = Units1D('g', labels: ['Weight']);
+  static const Units ton = Units1D('ton', labels: ['Weight']);
+  static const Units lb = Units1D('lb', labels: ['Weight']);
+  static const Units oz = Units1D('oz', labels: ['Weight']);
 }
 
 class Units1D extends Units {
@@ -87,67 +132,27 @@ class Units3D extends Units {
       : volumeCalc(values[0], values[1], values[2]);
 }
 
-// Calculation functions
-Fixed linearCalc(Fixed value) => value; // 1D calculation
-Fixed areaCalc(Fixed d1, Fixed d2) =>
-    Fixed.copyWith(d1 * d2, scale: 3); // 2D calculation
-Fixed volumeCalc(Fixed d1, Fixed d2, Fixed d3) =>
-    Fixed.copyWith(d1 * d2 * d3, scale: 3); // 3D calculation
-
-// Define named variables for each unit with labels
-
-/// linear units
-const Units mm = Units1D('mm', labels: ['Length']);
-const Units cm = Units1D('cm', labels: ['Length']);
-const Units m = Units1D('m', labels: ['Length']);
-const Units yd = Units1D('yd', labels: ['Length']);
-const Units ft = Units1D('ft', labels: ['Length']);
-const Units inch = Units1D('in', labels: ['Length']);
-
-/// area units
-const Units m2 = Units2D('m²', measure: 'm', labels: ['Length', 'Width']);
-const Units cm2 = Units2D('cm²', measure: 'cm', labels: ['Length', 'Width']);
-const Units mm2 = Units2D('mm²', measure: 'mm', labels: ['Length', 'Width']);
-const Units yd2 = Units2D('yd²', measure: 'yd', labels: ['Length', 'Width']);
-const Units ft2 = Units2D('ft²', measure: 'ft', labels: ['Length', 'Width']);
-
-/// Volume units
-const Units m3 =
-    Units3D('m³', measure: 'm', labels: ['Height', 'Width', 'Depth']);
-const Units liters = Units1D('litres', labels: ['Volume']);
-const Units ft3 =
-    Units3D('ft³', measure: 'ft³', labels: ['Height', 'Width', 'Depth']);
-const Units gallons = Units1D('gallons', labels: ['Volume']);
-
-/// Weight
-const Units t = Units1D('t', labels: ['Weight']);
-const Units kg = Units1D('kg', labels: ['Weight']);
-const Units g = Units1D('g', labels: ['Weight']);
-const Units ton = Units1D('ton', labels: ['Weight']);
-const Units lb = Units1D('lb', labels: ['Weight']);
-const Units oz = Units1D('oz', labels: ['Weight']);
-
 // Map of unit names to Units objects
 Map<String, Units> _unitsMap = {
-  'mm': mm,
-  'cm': cm,
-  'm': m,
-  'yd': yd,
-  'ft': ft,
-  'in': inch,
-  'm²': m2,
-  'cm²': cm2,
-  'mm²': mm2,
-  'yd²': yd2,
-  'ft²': ft2,
-  'm³': m3,
-  'liters': liters,
-  'ft³': ft3,
-  'gallons': gallons,
-  't': t,
-  'kg': kg,
-  'g': g,
-  'ton': ton,
-  'lb': lb,
-  'oz': oz,
+  'mm': Units.mm,
+  'cm': Units.cm,
+  'm': Units.m,
+  'yd': Units.yd,
+  'ft': Units.ft,
+  'in': Units.inch,
+  'm²': Units.m2,
+  'cm²': Units.cm2,
+  'mm²': Units.mm2,
+  'yd²': Units.yd2,
+  'ft²': Units.ft2,
+  'm³': Units.m3,
+  'liters': Units.liters,
+  'ft³': Units.ft3,
+  'gallons': Units.gallons,
+  't': Units.t,
+  'kg': Units.kg,
+  'g': Units.g,
+  'ton': Units.ton,
+  'lb': Units.lb,
+  'oz': Units.oz,
 };

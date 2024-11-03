@@ -7,6 +7,7 @@ import '../entity/quote.dart';
 import '../entity/quote_line.dart';
 import '../entity/quote_line_group.dart';
 import '../entity/task.dart';
+import '../invoicing/dialog_select_tasks.dart';
 import '../util/exceptions.dart';
 import '../util/fixed_ex.dart';
 import '../util/money_ex.dart';
@@ -56,7 +57,7 @@ class DaoQuote extends Dao<Quote> {
   }
 
   /// Create a quote for the given job.
-  Future<Quote> create(Job job, List<int> selectedTaskIds) async {
+  Future<Quote> create(Job job, InvoiceOptions invoiceOptions) async {
     final tasks = await DaoTask().getTasksByJob(job.id);
 
     if (job.hourlyRate == MoneyEx.zero) {
@@ -73,28 +74,28 @@ class DaoQuote extends Dao<Quote> {
 
     final quoteId = await DaoQuote().insert(quote);
 
-    // Add callout fee as a quote line
-    if (job.callOutFee != null && !job.callOutFee!.isZero) {
+    // Add Booking Fee as a quote line
+    if (job.bookingFee != null && !job.bookingFee!.isZero) {
       final quoteLineGroup = QuoteLineGroup.forInsert(
         quoteId: quoteId,
-        name: 'Callout Fee',
+        name: 'Booking Fee',
       );
       await DaoQuoteLineGroup().insert(quoteLineGroup);
-      final callOutFeeLine = QuoteLine.forInsert(
+      final bookingFeeLine = QuoteLine.forInsert(
         quoteId: quoteId,
         quoteLineGroupId: quoteLineGroup.id,
-        description: 'Callout Fee',
+        description: 'Booking Fee',
         quantity: Fixed.fromInt(100),
-        unitPrice: job.callOutFee!,
-        lineTotal: job.callOutFee!,
+        unitPrice: job.bookingFee!,
+        lineTotal: job.bookingFee!,
       );
-      await DaoQuoteLine().insert(callOutFeeLine);
-      totalAmount += job.callOutFee!;
+      await DaoQuoteLine().insert(bookingFeeLine);
+      totalAmount += job.bookingFee!;
     }
 
     // Create quote lines and groups for each task
     for (final task in tasks) {
-      if (!selectedTaskIds.contains(task.id)) {
+      if (!invoiceOptions.selectedTaskIds.contains(task.id)) {
         continue;
       }
 
@@ -107,31 +108,31 @@ class DaoQuote extends Dao<Quote> {
 
       final estimates = await DaoTask().getTaskEstimates(task, hourlyRate);
 
-      if (!MoneyEx.isZeroOrNull(estimates.cost)) {
+      if (!MoneyEx.isZeroOrNull(estimates.estimatedMaterialsCharge)) {
         /// Cost based billing
-        final lineTotal = estimates.cost;
+        final lineTotal = estimates.estimatedMaterialsCharge;
 
         if (!lineTotal.isZero) {
           quoteLine = QuoteLine.forInsert(
             quoteId: quoteId,
             description: task.name,
             quantity: Fixed.fromInt(100),
-            unitPrice: estimates.cost,
+            unitPrice: estimates.estimatedMaterialsCharge,
             lineTotal: lineTotal,
           );
 
           totalAmount += lineTotal;
         }
-      } else if (!FixedEx.isZeroOrNull(estimates.effortInHours)) {
+      } else if (!FixedEx.isZeroOrNull(estimates.estimatedLabour)) {
         /// Labour based billing using estimated effort
         final lineTotal =
-            job.hourlyRate!.multiplyByFixed(estimates.effortInHours);
+            job.hourlyRate!.multiplyByFixed(estimates.estimatedLabour);
 
         if (!lineTotal.isZero) {
           quoteLine = QuoteLine.forInsert(
             quoteId: quoteId,
             description: task.name,
-            quantity: estimates.effortInHours,
+            quantity: estimates.estimatedLabour,
             unitPrice: job.hourlyRate!,
             lineTotal: lineTotal,
           );

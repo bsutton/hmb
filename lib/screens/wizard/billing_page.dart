@@ -13,6 +13,7 @@ import '../../widgets/hmb_droplist.dart';
 import '../../widgets/hmb_money_editing_controller.dart';
 import '../../widgets/hmb_money_field.dart';
 import '../../widgets/hmb_text.dart';
+import '../../widgets/hmb_text_area.dart';
 import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -29,10 +30,13 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
   final _formKey = GlobalKey<FormState>();
 
   late HMBMoneyEditingController _defaultHourlyRateController;
-  late HMBMoneyEditingController _defaultCallOutFeeController;
+  late HMBMoneyEditingController _defaultBookingFeeController;
   late TextEditingController _bsbController;
   late TextEditingController _accountNoController;
   late TextEditingController _logoPathController;
+  late TextEditingController _paymentTermsInDaysController;
+  late TextEditingController _paymentOptionsController;
+
   LogoAspectRatio _logoType = LogoAspectRatio.square;
   File? _logoFile;
 
@@ -47,19 +51,26 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
     system = (await DaoSystem().get())!;
     _defaultHourlyRateController =
         HMBMoneyEditingController(money: system.defaultHourlyRate);
-    _defaultCallOutFeeController =
-        HMBMoneyEditingController(money: system.defaultCallOutFee);
+    _defaultBookingFeeController =
+        HMBMoneyEditingController(money: system.defaultBookingFee);
     _bsbController = TextEditingController(text: system.bsb);
     _accountNoController = TextEditingController(text: system.accountNo);
     _logoPathController = TextEditingController(text: system.logoPath);
     _logoType = system.logoAspectRatio;
+    _paymentTermsInDaysController =
+        TextEditingController(text: system.paymentTermsInDays.toString());
+    _paymentOptionsController =
+        TextEditingController(text: system.paymentOptions);
   }
 
   @override
   void dispose() {
     _defaultHourlyRateController.dispose();
-    _defaultCallOutFeeController.dispose();
+    _defaultBookingFeeController.dispose();
     _bsbController.dispose();
+    _paymentTermsInDaysController.dispose();
+    _paymentOptionsController.dispose();
+
     _accountNoController.dispose();
     _logoPathController.dispose();
     super.dispose();
@@ -71,11 +82,14 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
       system
         ..defaultHourlyRate =
             MoneyEx.tryParse(_defaultHourlyRateController.text)
-        ..defaultCallOutFee =
-            MoneyEx.tryParse(_defaultCallOutFeeController.text)
+        ..defaultBookingFee =
+            MoneyEx.tryParse(_defaultBookingFeeController.text)
         ..bsb = _bsbController.text
         ..accountNo = _accountNoController.text
-        ..logoAspectRatio = _logoType;
+        ..logoAspectRatio = _logoType
+        ..paymentTermsInDays =
+            int.tryParse(_paymentTermsInDaysController.text) ?? 3
+        ..paymentOptions = _paymentOptionsController.text;
 
       if (_logoFile != null) {
         final directory = await getApplicationDocumentsDirectory();
@@ -128,9 +142,9 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
                             labelText: 'Default Hourly Rate',
                             fieldName: 'default hourly rate'),
                         HMBMoneyField(
-                          controller: _defaultCallOutFeeController,
-                          labelText: 'Default Call Out Fee',
-                          fieldName: 'default call out fee',
+                          controller: _defaultBookingFeeController,
+                          labelText: 'Default Booking Fee',
+                          fieldName: 'default Booking Fee',
                         ),
                         HMBTextField(
                             controller: _bsbController,
@@ -140,6 +154,15 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
                           controller: _accountNoController,
                           labelText: 'Account Number',
                           keyboardType: TextInputType.number,
+                        ),
+                        HMBTextField(
+                          controller: _paymentTermsInDaysController,
+                          labelText: 'Payment Terms (in Days)',
+                          keyboardType: TextInputType.number,
+                        ),
+                        HMBTextArea(
+                          controller: _paymentOptionsController,
+                          labelText: 'Payment Options',
                         ),
                         const SizedBox(height: 20),
                         const Text('Logo Type'),
@@ -155,7 +178,7 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
                           },
                         ),
                         const SizedBox(height: 20),
-                         HMBText('Logo Path'),
+                        HMBText('Logo Path'),
                         TextButton.icon(
                           icon: const Icon(Icons.upload_file),
                           label: const Text('Upload Logo'),

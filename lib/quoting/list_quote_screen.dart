@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../dao/dao_job.dart';
-import '../dao/dao_quote.dart';
-import '../dao/dao_quote_line.dart';
+import '../dao/_index.g.dart';
+import '../entity/invoice_line.dart';
 import '../entity/job.dart';
 import '../entity/quote.dart';
 import '../entity/quote_line.dart';
@@ -54,12 +53,18 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     }
 
     if (mounted) {
-      final selectedTasks = await DialogTaskSelection.show(
-          context: context, job: widget.job, includeEstimatedTasks: true);
+      final invoiceOptions = await DialogTaskSelection.showQuote(
+          context: context, job: widget.job);
 
-      if (selectedTasks.isNotEmpty) {
+      if (invoiceOptions != null) {
         try {
-          await DaoQuote().create(widget.job, selectedTasks);
+          if (!invoiceOptions.billBookingFee &&
+              invoiceOptions.selectedTaskIds.isEmpty) {
+            HMBToast.error('You must select a task or the booking Fee',
+                acknowledgmentRequired: true);
+            return;
+          }
+          await DaoQuote().create(widget.job, invoiceOptions);
           // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           HMBToast.error('Failed to create quote: $e',
@@ -219,6 +224,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
               displayItems: displayItems,
             );
 
+            final system = await DaoSystem().get();
             if (mounted) {
               await Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -226,6 +232,8 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
                     title:
                         '''Quote #${quote.bestNumber} ${widget.job.summary}''',
                     filePath: filePath.path,
+                    emailSubject: '${system!.businessName ?? 'Your'} quote',
+                    emailBody: 'Please find the attached Quotation',
                     emailRecipients: widget.emailRecipients,
                   ),
                 ),

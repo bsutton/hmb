@@ -1,5 +1,6 @@
 import 'package:june/june.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:strings/strings.dart';
 
 import '../entity/contact.dart';
 import '../entity/customer.dart';
@@ -7,7 +8,6 @@ import '../entity/job.dart';
 import '../entity/supplier.dart';
 import 'dao.dart';
 import 'dao_contact_customer.dart';
-import 'dao_contact_job.dart';
 import 'dao_contact_supplier.dart';
 import 'dao_job.dart';
 
@@ -48,7 +48,7 @@ and cc.`primary` = 1''', [customerId]);
   ///
   /// returns the primary contact for the job
   ///
-  Future<Contact?> getForJob(int? jobId) async {
+  Future<Contact?> getPrimaryForJob(int? jobId) async {
     final db = getDb();
 
     if (jobId == null) {
@@ -57,10 +57,8 @@ and cc.`primary` = 1''', [customerId]);
     final data = await db.rawQuery('''
 select co.* 
 from contact co
-join job_contact jc
-  on co.id = jc.contact_id
 join job jo
-  on jc.job_id = jo.id
+  on co.id = jo.contact_id
 where jo.id =? 
 ''', [jobId]);
 
@@ -180,17 +178,35 @@ where jo.id =?
   }
 
   Future<void> deleteFromJob(Contact contact, Job job) async {
-    await DaoContactJob().deleteJoin(job, contact);
     await delete(contact.id);
   }
 
   Future<void> insertForJob(Contact contact, Job job) async {
     await insert(contact);
-    await DaoContactJob().insertJoin(contact, job);
   }
 
   @override
   JuneStateCreator get juneRefresher => ContactState.new;
+
+  Future<List<Contact>> getByFilter(Customer customer, String? filter) async {
+    final db = getDb();
+
+    if (Strings.isBlank(filter)) {
+      return getAll(orderByClause: 'modifiedDate desc');
+    }
+    final data = await db.rawQuery('''
+select c.* 
+form contact c
+join customer_contact cc
+  on c.id = cc.contact_id
+join customer cu
+  on cc.customer_id = cu.id
+where c.name like ?
+order by c.modifiedDate desc
+''', ['''%$filter%''']);
+
+    return toList(data);
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

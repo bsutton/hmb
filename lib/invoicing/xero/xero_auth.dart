@@ -1,6 +1,7 @@
 // ignore_for_file: lines_longer_than_80_chars
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,8 @@ class XeroAuth {
 
   XeroAuth._();
 
+  /// This path must match one of the paths in the https:/developer.xero.com
+  /// Configuration | Redirect URIs section.
   static const redirectPath = '/xero/auth_complete';
   static XeroAuth? _instance;
 
@@ -154,32 +157,7 @@ class XeroAuth {
             clientSecret: credentials.clientSecret),
         store: OidcDefaultStore(),
         settings: OidcUserManagerSettings(
-            scope: _scopes,
-            redirectUri: kIsWeb
-                // this url must be an actual html page.
-                // see the file in /web/redirect.html for an example.
-                //
-                // for debugging in flutter, you must run this app with --web-port 22433
-                // TODO(bsutton): copy a redirect.html from the oidc project
-                // somewhere and use that path here.
-                ? Uri.parse('http://localhost:22433/redirect.html')
-                // : Platform.isIOS || Platform.isMacOS || Platform.isAndroid
-                // scheme: reverse domain name notation of your package name.
-                // path: anything.
-                : Uri.parse('https://ivanhoehandyman.com.au$redirectPath')
-            // : Platform.isWindows || Platform.isLinux
-            // using port 0 means that we don't care which port is used,
-            // and a random unused port will be assigned.
-            //
-            // this is safer than passing a port yourself.
-            //
-            // note that you can also pass a path like /redirect,
-            // but it's completely optional.
-            // ? Uri.parse('http://localhost:12335')
-            // ? Uri.parse(
-            //     'https://au.com.ivanhoehandyman/xero/callback')
-            // : Uri(),
-            ));
+            scope: _scopes, redirectUri: _getRedirectUrl()));
 
     // Initialize the manager
     await manager!.init();
@@ -188,6 +166,33 @@ class XeroAuth {
     // manager!.userChanges().listen((user) {
     //   print('currentUser changed to $user');
     // });
+  }
+
+  Uri _getRedirectUrl() {
+    if (kIsWeb) {
+      // this url must be an actual html page.
+      // see the file in /web/redirect.html for an example.
+      //
+      // for debugging in flutter, you must run this app with --web-port 22433
+      // TODO(bsutton): copy a redirect.html from the oidc project
+      // somewhere and use that path here.
+      return Uri.parse('http://localhost:22433/redirect.html');
+    }
+
+    if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
+      /// This path must match one of the paths in the https:/developer.xero.com
+      /// Configuration | Redirect URIs section.
+      return Uri.parse('https://ivanhoehandyman.com.au$redirectPath');
+    }
+
+    if (Platform.isWindows || Platform.isLinux) {
+      /// This path must match one of the paths in the https:/developer.xero.com
+      /// Configuration | Redirect URIs section.
+      return Uri.parse('http://localhost:12335');
+    }
+
+    /// probably should throw.
+    return Uri();
   }
 
   Future<void> logout() async {

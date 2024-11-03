@@ -52,7 +52,8 @@ class _DimensionWidgetState extends State<DimensionWidget> {
     // Initialize the selected measurement type and units using JuneState
     final selectedMeasurementTypeState =
         June.getState(SelectedMeasurementType.new)
-          ..selected = widget.checkListItem?.measurementType ?? length;
+          ..selected =
+              widget.checkListItem?.measurementType ?? MeasurementType.length;
 
     unawaited(getDefaultUnitForMeasurementType(
             selectedMeasurementTypeState.selectedOrDefault)
@@ -92,10 +93,11 @@ class _DimensionWidgetState extends State<DimensionWidget> {
                       if (selectedMeasurementTypeState.selected != value) {
                         selectedUnitsState.selected =
                             await getDefaultUnitForMeasurementType(
-                                value ?? length);
+                                value ?? MeasurementType.length);
                       }
                       setState(() {
-                        selectedMeasurementTypeState.selected = value ?? length;
+                        selectedMeasurementTypeState.selected =
+                            value ?? MeasurementType.length;
                         selectedUnitsState.setState();
                       });
                     },
@@ -178,7 +180,7 @@ class SelectedMeasurementType extends JuneState {
 
   MeasurementType? get selected => _selected;
 
-  MeasurementType get selectedOrDefault => _selected ?? length;
+  MeasurementType get selectedOrDefault => _selected ?? MeasurementType.length;
 }
 
 /// The selected Units
@@ -191,12 +193,12 @@ class SelectedUnits extends JuneState {
   }
 
   Units? get selected => _selected;
-  Units get selectedOrDefault => _selected ?? mm;
+  Units get selectedOrDefault => _selected ?? Units.mm;
 }
 
 class MeasuremenTotal extends JuneState {}
 
-MeasurementType getDefaultMeasurementType() => length;
+MeasurementType getDefaultMeasurementType() => MeasurementType.length;
 
 Future<Units> getDefaultUnitForMeasurementType(
     MeasurementType measurementType) async {

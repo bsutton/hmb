@@ -1,12 +1,14 @@
 import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
-import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../../factory/hmb_database_factory.dart';
 import '../backup_provider.dart';
 
 class LocalBackupProvider extends BackupProvider {
+  LocalBackupProvider(super.databaseFactory);
+
   @override
   Future<void> deleteBackup(Backup backupToDelete) {
     throw UnimplementedError();
@@ -57,7 +59,8 @@ class LocalBackupProvider extends BackupProvider {
       join((await getApplicationDocumentsDirectory()).path, 'hmb', 'backups');
 
   @override
-  Future<void> restoreDatabase(BuildContext context) async {
+  Future<void> restoreDatabase(String pathToRestoreDatabase,
+      BackupProvider backupProvider, HMBDatabaseFactory databaseFactory) async {
     // TODO(bsutton): implement restoreDatabase
     throw UnimplementedError();
   }

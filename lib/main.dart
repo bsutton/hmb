@@ -12,7 +12,10 @@ import 'package:toastification/toastification.dart';
 
 import 'dao/dao_task.dart';
 import 'dao/dao_time_entry.dart';
+import 'database/factory/flutter_database_factory.dart';
+import 'database/management/backup_providers/local/local_backup_provider.dart';
 import 'database/management/database_helper.dart';
+import 'database/versions/asset_script_source.dart';
 import 'installer/linux/install.dart' if (kIsWeb) 'util/web_stub.dart';
 import 'nav/route.dart';
 import 'screens/error.dart';
@@ -117,7 +120,11 @@ Future<void> _initialise(BuildContext context) async {
 }
 
 Future<void> _initDb() async {
-  await DatabaseHelper().initDatabase();
+  await DatabaseHelper().initDatabase(
+      src: AssetScriptSource(),
+      backupProvider: LocalBackupProvider(FlutterDatabaseFactory()),
+      backup: !kIsWeb,
+      databaseFactory: FlutterDatabaseFactory());
   print('Database located at: ${await DatabaseHelper().pathToDatabase()}');
 }
 

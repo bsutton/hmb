@@ -44,7 +44,7 @@ class DaoJob extends Dao<Job> {
       {String? orderByClause, Transaction? transaction}) async {
     final db = getDb(transaction);
     final List<Map<String, dynamic>> maps =
-        await db.query(tableName, orderBy: 'modifiedDate desc');
+        await db.query(tableName, orderBy: 'modified_date desc');
     final list = List.generate(maps.length, (i) => fromMap(maps[i]));
 
     return list;
@@ -56,7 +56,7 @@ class DaoJob extends Dao<Job> {
       tableName,
       where: 'last_active = ?',
       whereArgs: [1],
-      orderBy: 'modifiedDate desc',
+      orderBy: 'modified_date desc',
       limit: 1,
     );
     return data.isNotEmpty ? fromMap(data.first) : null;
@@ -99,7 +99,7 @@ where j.summary like ?
 or j.description like ?
 or c.name like ?
 or js.name like ?
-order by j.modifiedDate desc
+order by j.modified_date desc
 ''', [likeArg, likeArg, likeArg, likeArg]);
 
     return toList(data);
@@ -134,7 +134,7 @@ where t.id =?
     JOIN job_status js ON j.job_status_id = js.id
     WHERE js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment', 'Completed', 'To be Billed')
     AND (j.summary LIKE ? OR j.description LIKE ?)
-    ORDER BY j.modifiedDate DESC
+    ORDER BY j.modified_date DESC
     ''', [likeArg, likeArg]);
 
     return toList(data);
@@ -195,6 +195,20 @@ where t.id =?
         worked: job.hourlyRate!.multiplyByFixed(workedHours));
   }
 
+  Future<Money> getBookingFee(Job job) async {
+    if (job.bookingFee != null) {
+      return job.bookingFee!;
+    }
+
+    final system = await DaoSystem().get();
+
+    if (system != null && system.defaultBookingFee != null) {
+      return system.defaultBookingFee!;
+    }
+
+    return MoneyEx.zero;
+  }
+
   /// Get all the jobs for the given customer.
   Future<List<Job>> getByCustomer(Customer customer) async {
     final db = getDb();
@@ -211,21 +225,15 @@ where c.id =?
   }
 
   Future<bool> hasBillableTasks(Job job) async {
-    final tasks = await DaoTask().getTasksByJob(job.id);
-    for (final task in tasks) {
-      final timeEntries = await DaoTimeEntry().getByTask(task.id);
-      final unbilledTimeEntries = timeEntries.where((entry) => !entry.billed);
-      if (unbilledTimeEntries.isNotEmpty) {
-        return true;
-      }
+    final tasksAccruedValue =
+        await DaoTask().getTaskCostsByJob(jobId: job.id, includeBilled: false);
 
-      final checkListItems = await DaoCheckListItem().getByTask(task.id);
-      final unbilledCheckListItems =
-          checkListItems.where((item) => !item.billed && item.hasCost);
-      if (unbilledCheckListItems.isNotEmpty) {
+    for (final task in tasksAccruedValue) {
+      if ((await task.earned) > MoneyEx.zero) {
         return true;
       }
     }
+
     return false;
   }
 
@@ -254,6 +262,45 @@ where c.id =?
     final job = await getById(jobId);
 
     return job?.hourlyRate ?? DaoSystem().getHourlyRate();
+  }
+
+  /// Calculates the total quoted price for the job.
+  // TODO(bsutton): should we create a 'quote' and take the amount from there?
+  Future<Money> getFixedPriceTotal(Job job) async {
+    final tasks = await DaoTask().getTasksByJob(job.id);
+
+    var total = MoneyEx.zero;
+    for (final task in tasks) {
+      final items = await DaoCheckListItem().getByTask(task.id);
+
+      for (final item in items) {
+        if (item.charge > MoneyEx.zero) {
+          total += item.charge;
+        }
+      }
+    }
+    return total;
+  }
+
+  /// Must be
+  /// Time and Materials
+  /// Not been invoiced
+  /// Have a non-zero booking fee.
+  Future<bool> hasBillableBookingFee(Job job) async =>
+      job.billingType == BillingType.timeAndMaterial &&
+      !job.bookingFeeInvoiced &&
+      job.bookingFee != null &&
+      (await getBookingFee(job) != MoneyEx.zero);
+
+  Future<void> markBookingFeeNotBilled(Job job) async {
+    job.bookingFeeInvoiced = false;
+
+    await update(job);
+  }
+
+  Future<Job> getJobForInvoice(int invoiceId) async {
+    final invoice = (await DaoInvoice().getById(invoiceId))!;
+    return (await getById(invoice.jobId))!;
   }
 }
 

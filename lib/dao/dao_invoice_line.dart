@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import '../entity/invoice_line.dart';
 import 'dao.dart';
 import 'dao_checklist_item.dart';
+import 'dao_job.dart';
 import 'dao_time_entry.dart';
 
 class DaoInvoiceLine extends Dao<InvoiceLine> {
@@ -39,7 +40,15 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
     final db = getDb();
     final lines = await getByInvoiceId(invoiceId);
     for (final line in lines) {
-      await DaoTimeEntry().markAsUnbilled(line.id);
+      if (line.fromBookingFee) {
+        final job = await DaoJob().getJobForInvoice(invoiceId);
+        await DaoJob().markBookingFeeNotBilled(job);
+      }
+
+      /// try each of the source types and if they
+      /// have a matching line id then mark them as
+      /// not billed.
+      await DaoTimeEntry().markAsNotbilled(line.id);
       await DaoCheckListItem().markNotBilled(line.id);
     }
     await db.delete(tableName, where: 'invoice_id =?', whereArgs: [invoiceId]);

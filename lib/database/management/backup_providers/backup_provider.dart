@@ -1,17 +1,23 @@
 import 'dart:io';
 
 import 'package:archive/archive_io.dart';
+import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
-import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
 
 import '../../../util/exceptions.dart';
-import '../../../util/format.dart';
+import '../../factory/hmb_database_factory.dart';
+import '../../versions/script_source.dart';
 import '../database_helper.dart';
 
 abstract class BackupProvider {
-  /// Returns tthe path to where the file was stored.
-  // TODO(bsutton): this should be a uri
+  BackupProvider(this.databaseFactory);
+
+  HMBDatabaseFactory databaseFactory;
+
+  /// Stores the zipped backup file to a [BackupProvider]s
+  /// defined location.
+  /// Returns the path to where the file was stored.
   Future<BackupResult> store(
       {required String pathToDatabase,
       required String pathToZippedBackup,
@@ -30,51 +36,78 @@ abstract class BackupProvider {
 
   /// Closes the db, zip the backup file, store it and
   /// then reopen the db.
-  Future<BackupResult> performBackup({required int version}) async {
-    final encoder = ZipFileEncoder();
+  Future<BackupResult> performBackup(
+          {required int version, required ScriptSource src}) =>
+      withTempDirAsync((tmpDir) async {
+        final datePart = formatDate(DateTime.now(), format: 'y-m-d');
+        final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
+        final encoder = ZipFileEncoder();
+        var closed = false;
+        try {
+          final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
+          final pathToDatabase = await DatabaseHelper().pathToDatabase();
 
-    return withTempDirAsync((tmpDir) async {
-      final datePart = formatDate(DateTime.now(), format: 'y-m-d');
-      final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
-      encoder.create(pathToZip);
+          if (!exists(pathToDatabase)) {
+            print('''
+Database file not found at $pathToDatabase. No backup peformed.''');
+            return BackupResult(
+                pathToBackup: pathToBackupFile,
+                pathToSource: '',
+                success: false);
+          }
+          await copyDatabaseTo(pathToBackupFile, src, this);
 
-      final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
+          encoder.create(pathToZip);
+          await encoder.addFile(File(pathToBackupFile));
+          await encoder.close();
+          closed = true;
 
-      await copyDatabaseTo(pathToBackupFile);
-      await encoder.addFile(File(pathToBackupFile));
-      await encoder.close();
+          //after that some of code for making the zip files
+          return store(
+              pathToZippedBackup: pathToZip,
+              pathToDatabase: pathToBackupFile,
+              version: version);
+        } catch (e) {
+          if (!closed) {
+            encoder.closeSync();
+          }
+          rethrow;
+        }
+      });
+  //i am amazing. u r not.
 
-      //after that some of code for making the zip files
-      return store(
-          pathToZippedBackup: pathToZip,
-          pathToDatabase: pathToBackupFile,
-          version: version);
-    });
-  }
+  /// copied here so we can use the [BackupProvider] from the cli.
+  String formatDate(DateTime dateTime, {String format = 'D, j M'}) =>
+      DateTimeFormat.format(dateTime, format: format);
 
   /// Copies the current database to the backup file.
   /// Opening and closing the db as it goes.
-  Future<void> copyDatabaseTo(String pathToBackupFile) async {
+  Future<void> copyDatabaseTo(String pathToBackupFile, ScriptSource src,
+      BackupProvider backupProvider) async {
     final wasOpen = DatabaseHelper().isOpen();
     try {
       if (wasOpen) {
-        if (wasOpen) {
-          await DatabaseHelper().closeDb();
-        }
+        await DatabaseHelper().closeDb();
       }
       final pathToDatabase = await DatabaseHelper().pathToDatabase();
       copy(pathToDatabase, pathToBackupFile);
     } finally {
       if (wasOpen) {
-        await DatabaseHelper().openDb();
+        await DatabaseHelper().openDb(
+            src: src,
+            backupProvider: backupProvider,
+            databaseFactory: databaseFactory,
+            backup: false);
       }
     }
   }
 
-  Future<void> restoreDatabase(BuildContext context);
+  Future<void> restoreDatabase(String pathToRestoreDatabase,
+      BackupProvider backupProvider, HMBDatabaseFactory databaseFactory);
 
   /// Replaces the current database with the one in the backup file.
-  Future<void> replaceDatabase(String pathToBackupFile) async {
+  Future<void> replaceDatabase(String pathToBackupFile, ScriptSource src,
+      BackupProvider backupProvider, HMBDatabaseFactory databaseFactory) async {
     final wasOpen = DatabaseHelper().isOpen();
     try {
       // Get the path to the app's internal database
@@ -92,7 +125,11 @@ abstract class BackupProvider {
       throw BackupException('Error restoring database: $e');
     } finally {
       if (wasOpen) {
-        await DatabaseHelper().openDb();
+        await DatabaseHelper().openDb(
+            src: src,
+            backupProvider: backupProvider,
+            databaseFactory: databaseFactory,
+            backup: false);
       }
     }
   }

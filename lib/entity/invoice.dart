@@ -5,6 +5,7 @@ import '../dao/dao_invoice_line.dart';
 import '../dao/dao_job.dart';
 import '../invoicing/xero/models/xero_invoice.dart';
 import '../util/exceptions.dart';
+import '../util/local_date.dart';
 import 'entity.dart';
 
 class Invoice extends Entity<Invoice> {
@@ -16,10 +17,15 @@ class Invoice extends Entity<Invoice> {
     required super.modifiedDate,
     required this.invoiceNum,
     this.externalInvoiceId,
-  }) : super();
+    LocalDate? dueDate,
+  }) : super() {
+    this.dueDate = dueDate ??
+        LocalDate.fromDateTime(createdDate.add(const Duration(days: 1)));
+  }
 
   Invoice.forInsert({
     required this.jobId,
+    required this.dueDate, // New dueDate field
     required this.totalAmount,
   }) : super.forInsert();
 
@@ -28,6 +34,7 @@ class Invoice extends Entity<Invoice> {
     required this.jobId,
     required this.totalAmount,
     required this.invoiceNum,
+    required this.dueDate, // New dueDate field
     this.externalInvoiceId,
   }) : super.forUpdate();
 
@@ -39,12 +46,16 @@ class Invoice extends Entity<Invoice> {
         modifiedDate: DateTime.parse(map['modified_date'] as String),
         invoiceNum: map['invoice_num'] as String?,
         externalInvoiceId: map['external_invoice_id'] as String?,
+        dueDate: map['due_date'] != null
+            ? const LocalDateConverter().fromJson(map['due_date'] as String)
+            : null, // Handle new dueDate field
       );
 
   int jobId;
   Money totalAmount;
   String? invoiceNum;
   String? externalInvoiceId;
+  late LocalDate dueDate;
 
   String get bestNumber => externalInvoiceId ?? invoiceNum ?? '$id';
 
@@ -56,6 +67,7 @@ class Invoice extends Entity<Invoice> {
     DateTime? modifiedDate,
     String? invoiceNum,
     String? externalInvoiceId,
+    LocalDate? dueDate, // Add new dueDate field
   }) =>
       Invoice(
         id: id ?? this.id,
@@ -65,6 +77,7 @@ class Invoice extends Entity<Invoice> {
         modifiedDate: modifiedDate ?? this.modifiedDate,
         invoiceNum: invoiceNum ?? this.invoiceNum,
         externalInvoiceId: externalInvoiceId ?? this.externalInvoiceId,
+        dueDate: dueDate ?? this.dueDate, // Handle new dueDate field
       );
 
   @override
@@ -76,12 +89,13 @@ class Invoice extends Entity<Invoice> {
         'modified_date': modifiedDate.toIso8601String(),
         'invoice_num': invoiceNum,
         'external_invoice_id': externalInvoiceId,
+        'due_date':
+            const LocalDateConverter().toJson(dueDate), // Add dueDate to map
       };
 
   Future<XeroInvoice> toXeroInvoice(Invoice invoice) async {
     final job = await DaoJob().getById(invoice.jobId);
-
-    final contact = await DaoContact().getForJob(job?.id);
+    final contact = await DaoContact().getPrimaryForJob(job?.id);
     if (contact == null) {
       throw InvoiceException(
           '''You must assign a Contact to the Job before you can upload an invoice''');
@@ -94,9 +108,8 @@ class Invoice extends Entity<Invoice> {
         reference: job!.summary,
         type: 'ACCREC',
         contact: xeroContact,
-        issueDate: invoice.createdDate,
-        // TODO(bsutton): make due date configurable
-        dueDate: invoice.createdDate.add(const Duration(days: 3)),
+        issueDate: LocalDate.fromDateTime(invoice.createdDate),
+        dueDate: invoice.dueDate,
         lineItems: invoiceLines.map((line) => line.toXeroLineItem()).toList(),
         lineAmountTypes: 'Inclusive'); // All amounts are inclusive of tax.
     return xeroInvoice;

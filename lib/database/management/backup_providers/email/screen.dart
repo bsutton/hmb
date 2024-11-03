@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../widgets/hmb_toast.dart';
+import '../../../factory/flutter_database_factory.dart';
+import '../../../versions/asset_script_source.dart';
 import 'backup.dart';
 
 class BackupScreen extends StatefulWidget {
@@ -46,7 +48,8 @@ class _BackupScreenState extends State<BackupScreen> {
                 ElevatedButton.icon(
                   onPressed: () async {
                     try {
-                      await EmailBackupProvider().performBackup(version: 1);
+                      await EmailBackupProvider(FlutterDatabaseFactory())
+                          .performBackup(version: 1, src: AssetScriptSource());
                       if (context.mounted) {
                         HMBToast.info('Backup successful');
                       }
@@ -76,7 +79,8 @@ class _BackupScreenState extends State<BackupScreen> {
                 ElevatedButton.icon(
                   onPressed: () async {
                     try {
-                      await EmailBackupProvider().restoreDatabase(context);
+                      await EmailBackupProvider(FlutterDatabaseFactory())
+                          .restore(context);
 
                       HMBToast.info('Database restored successfully.');
                       // ignore: avoid_catches_without_on_clauses

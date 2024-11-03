@@ -46,7 +46,7 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
   late TextEditingController _businessNumberController;
   late TextEditingController _businessNumberLabelController;
   late HMBMoneyEditingController _defaultHourlyRateController;
-  late HMBMoneyEditingController _defaultCallOutFeeController;
+  late HMBMoneyEditingController _defaultBookingFeeController;
   late TextEditingController _xeroClientIdController;
   late TextEditingController _xeroClientSecretController;
   late String _selectedCountryCode;
@@ -88,8 +88,8 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
         TextEditingController(text: widget.system.businessNumberLabel);
     _defaultHourlyRateController =
         HMBMoneyEditingController(money: widget.system.defaultHourlyRate);
-    _defaultCallOutFeeController =
-        HMBMoneyEditingController(money: widget.system.defaultCallOutFee);
+    _defaultBookingFeeController =
+        HMBMoneyEditingController(money: widget.system.defaultBookingFee);
     _xeroClientIdController =
         TextEditingController(text: widget.system.xeroClientId);
     _xeroClientSecretController =
@@ -122,7 +122,7 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
     _businessNumberController.dispose();
     _businessNumberLabelController.dispose();
     _defaultHourlyRateController.dispose();
-    _defaultCallOutFeeController.dispose();
+    _defaultBookingFeeController.dispose();
     _xeroClientIdController.dispose();
     _xeroClientSecretController.dispose();
   }
@@ -146,8 +146,8 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
       widget.system.termsUrl = _termsUrlController.text;
       widget.system.defaultHourlyRate =
           MoneyEx.tryParse(_defaultHourlyRateController.text);
-      widget.system.defaultCallOutFee =
-          MoneyEx.tryParse(_defaultCallOutFeeController.text);
+      widget.system.defaultBookingFee =
+          MoneyEx.tryParse(_defaultBookingFeeController.text);
       widget.system.xeroClientId = _xeroClientIdController.text;
       widget.system.xeroClientSecret = _xeroClientSecretController.text;
       widget.system.businessName = _businessNameController.text;
@@ -208,9 +208,9 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
                     labelText: 'Default Hourly Rate',
                     fieldName: 'default hourly rate'),
                 HMBMoneyField(
-                  controller: _defaultCallOutFeeController,
-                  labelText: 'Default Call Out Fee',
-                  fieldName: 'default call out fee',
+                  controller: _defaultBookingFeeController,
+                  labelText: 'Default Booking Fee',
+                  fieldName: 'default Booking Fee',
                 ),
                 HMBTextField(
                   controller: _addressLine1Controller,

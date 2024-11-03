@@ -13,12 +13,17 @@ class HMBDateTimeField extends m.StatefulWidget {
     required this.label,
     required this.initialDateTime,
     required this.onChanged,
+    this.showTime = true,
+    this.showDate = true,
     super.key,
-  });
+  }) : assert(showTime || showDate,
+            'You must have at least one of showTime or showDate as true');
 
   final String label;
   final DateTime initialDateTime;
   final OnChanged onChanged;
+  final bool showTime;
+  final bool showDate;
 
   @override
   // ignore: library_private_types_in_public_api

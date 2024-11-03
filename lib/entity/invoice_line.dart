@@ -26,6 +26,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required super.modifiedDate,
     this.invoiceLineGroupId,
     this.status = LineStatus.normal,
+    this.fromBookingFee = false,
   }) : super();
 
   InvoiceLine.forInsert({
@@ -36,6 +37,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.lineTotal,
     this.invoiceLineGroupId,
     this.status = LineStatus.normal,
+    this.fromBookingFee = false,
   }) : super.forInsert();
 
   InvoiceLine.forUpdate({
@@ -47,20 +49,23 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.lineTotal,
     this.invoiceLineGroupId,
     this.status = LineStatus.normal,
+    this.fromBookingFee = false,
   }) : super.forUpdate();
 
   factory InvoiceLine.fromMap(Map<String, dynamic> map) => InvoiceLine(
-      id: map['id'] as int,
-      invoiceId: map['invoice_id'] as int,
-      invoiceLineGroupId: map['invoice_line_group_id'] as int?,
-      description: map['description'] as String,
-      quantity: Fixed.fromInt(map['quantity'] as int),
-      unitPrice: Money.fromInt(map['unit_price'] as int, isoCode: 'AUD'),
-      lineTotal: Money.fromInt(map['line_total'] as int, isoCode: 'AUD'),
-      createdDate: DateTime.parse(map['created_date'] as String),
-      modifiedDate: DateTime.parse(map['modified_date'] as String),
-      status:
-          LineStatus.values[map['status'] as int? ?? LineStatus.normal.index]);
+        id: map['id'] as int,
+        invoiceId: map['invoice_id'] as int,
+        invoiceLineGroupId: map['invoice_line_group_id'] as int?,
+        description: map['description'] as String,
+        quantity: Fixed.fromInt(map['quantity'] as int),
+        unitPrice: Money.fromInt(map['unit_price'] as int, isoCode: 'AUD'),
+        lineTotal: Money.fromInt(map['line_total'] as int, isoCode: 'AUD'),
+        createdDate: DateTime.parse(map['created_date'] as String),
+        modifiedDate: DateTime.parse(map['modified_date'] as String),
+        status:
+            LineStatus.values[map['status'] as int? ?? LineStatus.normal.index],
+        fromBookingFee: map['from_booking_fee'] == 1,
+      );
 
   int invoiceId;
   int? invoiceLineGroupId;
@@ -69,6 +74,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
   Money unitPrice;
   Money lineTotal;
   LineStatus status;
+  bool fromBookingFee;
 
   InvoiceLine copyWith({
     int? id,
@@ -81,6 +87,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     DateTime? createdDate,
     DateTime? modifiedDate,
     LineStatus? status,
+    bool? fromBookingFee,
   }) =>
       InvoiceLine(
         id: id ?? this.id,
@@ -93,6 +100,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
         createdDate: createdDate ?? this.createdDate,
         modifiedDate: modifiedDate ?? this.modifiedDate,
         status: status ?? this.status,
+        fromBookingFee: fromBookingFee ?? this.fromBookingFee,
       );
 
   @override
@@ -107,15 +115,18 @@ class InvoiceLine extends Entity<InvoiceLine> {
         'created_date': createdDate.toIso8601String(),
         'modified_date': modifiedDate.toIso8601String(),
         'status': status.index,
+        'from_booking_fee': fromBookingFee ? 1 : 0,
       };
 
   XeroLineItem toXeroLineItem() => XeroLineItem(
-      description: description,
-      quantity: quantity,
-      unitAmount: unitPrice,
-      lineTotal: lineTotal,
-      // TODO(bsutton): fix these so that they can be configured from the system
-      /// table.
-      accountCode: '240', // 240 - Handyman income',
-      itemCode: 'IHS-Labour');
+        description: description,
+        quantity: quantity,
+        unitAmount: unitPrice,
+        lineTotal: lineTotal,
+        // TODO(bsutton): fix these so that they can be configured 
+        //from the system
+        /// table.
+        accountCode: '240',
+        itemCode: 'IHS-Labour',
+      );
 }

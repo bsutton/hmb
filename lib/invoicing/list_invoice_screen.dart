@@ -6,6 +6,7 @@ import '../dao/dao_checklist_item.dart';
 import '../dao/dao_invoice.dart';
 import '../dao/dao_invoice_line.dart';
 import '../dao/dao_invoice_line_group.dart';
+import '../dao/dao_invoice_time_and_materials.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_time_entry.dart';
 import '../entity/invoice.dart';
@@ -14,14 +15,14 @@ import '../entity/invoice_line_group.dart';
 import '../entity/job.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
+import '../widgets/async_state.dart';
 import '../widgets/hmb_are_you_sure_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_one_of.dart';
 import '../widgets/hmb_toast.dart';
-import '../widgets/pdf_preview.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_line_dialog.dart';
-import 'pdf/generate_invoice_pdf.dart';
+import 'generate_invoice_pdf_dialog.dart';
 import 'xero/xero_api.dart';
 
 class InvoiceListScreen extends StatefulWidget {
@@ -36,23 +37,31 @@ class InvoiceListScreen extends StatefulWidget {
   _InvoiceListScreenState createState() => _InvoiceListScreenState();
 }
 
-class _InvoiceListScreenState extends State<InvoiceListScreen> {
+class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
   late Future<List<Invoice>> _invoices;
   late Future<bool> _hasUnbilledItems;
   late XeroApi _xeroApi;
+  late Job job;
 
   @override
-  void initState() {
-    super.initState();
+  Future<void> asyncInitState() async {
+    /// make certain we always have the latest copy of the job.
+    job = (await DaoJob().getById(widget.job.id))!;
     // ignore: discarded_futures
-    _invoices = DaoInvoice().getByJobId(widget.job.id);
-    // ignore: discarded_futures
-    _hasUnbilledItems = DaoJob().hasBillableTasks(widget.job);
+    _invoices = DaoInvoice().getByJobId(job.id);
+    _hasUnbilledItems = hasBillableItems();
+  }
+
+  Future<bool> hasBillableItems() async {
+    final hasBillableTasks = await DaoJob().hasBillableTasks(job);
+    final hasBillableBookingFee = await DaoJob().hasBillableBookingFee(job);
+
+    return Future.value(hasBillableTasks || hasBillableBookingFee);
   }
 
   Future<void> _createInvoice() async {
-    if (widget.job.hourlyRate == MoneyEx.zero) {
-      HMBToast.error('Hourly rate must be set for job ${widget.job.summary}');
+    if (job.hourlyRate == MoneyEx.zero) {
+      HMBToast.error('Hourly rate must be set for job ${job.summary}');
       return;
     }
 
@@ -62,12 +71,23 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     }
 
     if (mounted) {
-      final selectedTasks = await DialogTaskSelection.show(
-          context: context, job: widget.job, includeEstimatedTasks: false);
+      final invoiceOptions =
+          await DialogTaskSelection.showInvoice(context: context, job: job);
 
-      if (selectedTasks.isNotEmpty) {
+      if (invoiceOptions != null) {
         try {
-          await DaoInvoice().create(widget.job, selectedTasks);
+          if (invoiceOptions.selectedTaskIds.isNotEmpty ||
+              invoiceOptions.billBookingFee) {
+            await createTimeAndMaterialsInvoice(
+                job, invoiceOptions.selectedTaskIds,
+                groupByTask: invoiceOptions.groupByTask,
+                billBookingFee: invoiceOptions.billBookingFee);
+
+            await _refresh();
+          } else {
+            HMBToast.info('''
+You must select at least one Task or the Booking Fee to invoice''');
+          }
           // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           HMBToast.error('Failed to create invoice: $e',
@@ -98,8 +118,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   }
 
   Future<void> _refresh() async {
-    _invoices = DaoInvoice().getByJobId(widget.job.id);
-    _hasUnbilledItems = DaoJob().hasBillableTasks(widget.job);
+    job = (await DaoJob().getById(job.id))!;
+    _invoices = DaoInvoice().getByJobId(job.id);
+    _hasUnbilledItems = hasBillableItems();
     setState(() {});
   }
 
@@ -108,12 +129,14 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         appBar: AppBar(
           title: Text('Invoices for Job: ${widget.job.summary}'),
         ),
-        body: Column(
-          children: [
-            _buildCreateInvoiceButton(),
-            _buildInvoiceList(),
-          ],
-        ),
+        body: FutureBuilderEx(
+            future: initialised,
+            builder: (context, _) => Column(
+                  children: [
+                    _buildCreateInvoiceButton(),
+                    _buildInvoiceList(),
+                  ],
+                )),
       );
 
   Widget _buildInvoiceList() => Expanded(
@@ -159,24 +182,11 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
               padding: const EdgeInsets.all(8),
               child: Row(
                 children: [
-                  ElevatedButton(
-                    onPressed: () async {
-                      final filePath = await generateInvoicePdf(invoice);
-                      if (mounted) {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (context) => PdfPreviewScreen(
-                              title: '''
-Invoice #${invoice.bestNumber} ${widget.job.summary}''',
-                              filePath: filePath.path,
-                              emailRecipients: const [],
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: const Text('Generate and Preview PDF'),
-                  ),
+                  GenerateInvoicePdfDialog(
+                      context: context,
+                      mounted: mounted,
+                      widget: widget,
+                      invoice: invoice),
                   ElevatedButton(
                       onPressed: () async => _uploadOrSendInvoice(invoice),
                       child: _buildXeroButton(invoice)),
@@ -352,7 +362,7 @@ Total: ${line.lineTotal}'''),
         // Mark source item as not billed
         if (line.invoiceLineGroupId != null) {
           await DaoCheckListItem().markNotBilled(line.id);
-          await DaoTimeEntry().markAsUnbilled(line.id);
+          await DaoTimeEntry().markAsNotbilled(line.id);
         }
 
         // Delete the invoice line
@@ -389,7 +399,7 @@ Total: ${line.lineTotal}'''),
       await DaoInvoiceLine().update(editedLine);
       await DaoInvoice().recalculateTotal(editedLine.invoiceId);
       setState(() {
-        _invoices = DaoInvoice().getByJobId(widget.job.id);
+        _invoices = DaoInvoice().getByJobId(job.id);
       });
     }
   }

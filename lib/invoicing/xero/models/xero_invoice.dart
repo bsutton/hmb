@@ -1,3 +1,4 @@
+import '../../../util/local_date.dart';
 import 'models.dart';
 
 class XeroInvoice {
@@ -14,8 +15,8 @@ class XeroInvoice {
   final String type;
   final XeroContact contact;
   final List<XeroLineItem> lineItems;
-  final DateTime issueDate;
-  final DateTime dueDate;
+  final LocalDate issueDate;
+  final LocalDate dueDate;
   final String lineAmountTypes;
 
   /// toJson
@@ -24,8 +25,8 @@ class XeroInvoice {
         'Type': type,
         'Contact': contact.toJson(),
         'LineItems': lineItems.map((item) => item.toJson()).toList(),
-        'Date': issueDate.toIso8601String(),
-        'DueDate': dueDate.toIso8601String(),
+        'Date': const LocalDateConverter().toJson(issueDate),
+        'DueDate': const LocalDateConverter().toJson(dueDate),
         'LineAmountTypes': lineAmountTypes,
       };
 

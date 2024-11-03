@@ -1,0 +1,1 @@
+update check_list_item set charge = null where charge = 0;
