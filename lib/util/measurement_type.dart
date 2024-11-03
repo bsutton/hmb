@@ -2,10 +2,10 @@ import '../dao/dao_system.dart';
 import 'units.dart';
 
 Map<String, MeasurementType> _measurementTypes = {
-  length.name: length,
-  area.name: area,
-  volume.name: volume,
-  weight.name: weight,
+  MeasurementType.length.name: MeasurementType.length,
+  MeasurementType.area.name: MeasurementType.area,
+  MeasurementType.volume.name: MeasurementType.volume,
+  MeasurementType.weight.name: MeasurementType.weight,
 };
 
 class MeasurementType {
@@ -41,66 +41,66 @@ class MeasurementType {
 
   @override
   String toString() => name;
-}
 
 // Use the defined variables in the MeasurementType constructors
-const length = MeasurementType(
-    name: 'length',
-    defaultMetric: mm,
-    defaultImperial: inch,
-    metric: [
-      m,
-      cm,
-      mm
-    ],
-    imperial: [
-      yd,
-      ft,
-      inch,
-    ]);
+  static const length = MeasurementType(
+      name: 'length',
+      defaultMetric: Units.mm,
+      defaultImperial: Units.inch,
+      metric: [
+        Units.m,
+        Units.cm,
+        Units.mm
+      ],
+      imperial: [
+        Units.yd,
+        Units.ft,
+        Units.inch,
+      ]);
 
-const area = MeasurementType(
-    name: 'area',
-    defaultMetric: m2,
-    defaultImperial: yd2,
-    metric: [
-      m2,
-      cm2,
-      mm2
-    ],
-    imperial: [
-      yd2,
-      ft2,
-    ]);
+  static const area = MeasurementType(
+      name: 'area',
+      defaultMetric: Units.m2,
+      defaultImperial: Units.yd2,
+      metric: [
+        Units.m2,
+        Units.cm2,
+        Units.mm2
+      ],
+      imperial: [
+        Units.yd2,
+        Units.ft2,
+      ]);
 
-const volume = MeasurementType(
-    name: 'volume',
-    defaultMetric: m3,
-    defaultImperial: ft3,
-    metric: [
-      m3,
-      liters,
-    ],
-    imperial: [
-      ft3,
-      gallons,
-    ]);
+  static const volume = MeasurementType(
+      name: 'volume',
+      defaultMetric: Units.m3,
+      defaultImperial: Units.ft3,
+      metric: [
+        Units.m3,
+        Units.liters,
+      ],
+      imperial: [
+        Units.ft3,
+        Units.gallons,
+      ]);
 
-const weight = MeasurementType(
-    name: 'weight',
-    defaultMetric: kg,
-    defaultImperial: lb,
-    metric: [
-      t,
-      kg,
-      g,
-    ],
-    imperial: [
-      ton,
-      lb,
-      oz,
-    ]);
-    
+  static const weight = MeasurementType(
+      name: 'weight',
+      defaultMetric: Units.kg,
+      defaultImperial: Units.lb,
+      metric: [
+        Units.t,
+        Units.kg,
+        Units.g,
+      ],
+      imperial: [
+        Units.ton,
+        Units.lb,
+        Units.oz,
+      ]);
+}
+
 enum PreferredUnitSystem { metric, imperial }
 
 /// Gets the list of valid units (mm, cm, m) for the given [measurementType]

@@ -116,13 +116,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
               builder: (context, status) => Text(status?.name ?? 'Not Set')),
           FutureBuilderEx(
             // ignore: discarded_futures
-            future: DaoTask().getTaskStatistics(task),
-            builder: (context, taskStatistics) => Row(
+            future: DaoTask().getAccruedValue(task: task, includeBilled: true),
+            builder: (context, taskAccruedValue) => Row(
               children: [
                 HMBText(
-                    'Effort(hrs): ${taskStatistics!.completedEffort.format('0.00')}/${taskStatistics.totalEffort.format('0.00')}'),
+                    'Effort(hrs): ${taskAccruedValue!.earnedLabour.format('0.00')}/${taskAccruedValue.taskEstimatedValue.estimatedLabour.format('0.00')}'),
                 HMBText(
-                    ' Earnings: ${taskStatistics.earnedCost}/${taskStatistics.totalCost}')
+                    ' Earnings: ${taskAccruedValue.earnedMaterialCharges}/${taskAccruedValue.taskEstimatedValue.estimatedMaterialsCharge}')
               ],
             ),
           ),

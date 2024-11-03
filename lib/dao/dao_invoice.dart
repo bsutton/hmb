@@ -3,24 +3,18 @@ import 'dart:convert';
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:strings/strings.dart';
 
-import '../entity/invoice.dart';
-import '../entity/invoice_line.dart';
-import '../entity/invoice_line_group.dart';
-import '../entity/job.dart';
+import '../entity/_index.g.dart';
 import '../invoicing/xero/models/xero_contact.dart';
 import '../invoicing/xero/xero_api.dart';
 import '../util/exceptions.dart';
-import '../util/format.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
-import 'dao_checklist_item.dart';
 import 'dao_contact.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
-import 'dao_task.dart';
-import 'dao_time_entry.dart';
 
 class DaoInvoice extends Dao<Invoice> {
   @override
@@ -57,104 +51,6 @@ class DaoInvoice extends Dao<Invoice> {
   Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
     await getDb(transaction)
         .delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
-  }
-
-  /// Create an invoice for the given job.
-  Future<Invoice> create(Job job, List<int> selectedTaskIds) async {
-    final tasks = await DaoTask().getTasksByJob(job.id);
-
-    if (job.hourlyRate == MoneyEx.zero) {
-      throw InvoiceException('Hourly rate must be set for job ${job.summary}');
-    }
-
-    var totalAmount = MoneyEx.zero;
-
-    // Create invoice
-    final invoice = Invoice.forInsert(
-      jobId: job.id,
-      totalAmount: totalAmount,
-    );
-
-    final invoiceId = await DaoInvoice().insert(invoice);
-
-    // Create invoice lines and groups for each task
-    for (final task in tasks) {
-      if (!selectedTaskIds.contains(task.id)) {
-        continue;
-      }
-      // Create invoice line group for the task
-      final invoiceLineGroup = InvoiceLineGroup.forInsert(
-        invoiceId: invoiceId,
-        name: task.name,
-      );
-
-      final invoiceLineGroupId =
-          await DaoInvoiceLineGroup().insert(invoiceLineGroup);
-
-      /// Labour based billing
-      final timeEntries = await DaoTimeEntry().getByTask(task.id);
-      for (final timeEntry in timeEntries.where((entry) => !entry.billed)) {
-        final duration =
-            Fixed.fromNum(timeEntry.duration.inMinutes / 60, scale: 2);
-        final lineTotal = job.hourlyRate!.multiplyByFixed(duration);
-
-        if (lineTotal.isZero) {
-          continue;
-        }
-
-        final invoiceLine = InvoiceLine.forInsert(
-          invoiceId: invoiceId,
-          invoiceLineGroupId: invoiceLineGroupId,
-          description:
-              'Labour: ${task.name} on ${formatDate(timeEntry.startTime)}',
-          quantity: duration,
-          unitPrice: job.hourlyRate!,
-          lineTotal: lineTotal,
-        );
-
-        final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-        totalAmount += lineTotal;
-
-        // Mark time entry as billed with the invoice line id
-        await DaoTimeEntry().markAsBilled(timeEntry, invoiceLineId);
-      }
-
-      // Materials based billing
-      final checkListItems = await DaoCheckListItem().getByTask(task.id);
-      for (final item in checkListItems.where((item) => !item.billed)) {
-        if (!item.completed) {
-          continue;
-        }
-        final lineTotal = item.estimatedMaterialUnitCost!
-            .multiplyByFixed(item.estimatedMaterialQuantity!);
-
-        final invoiceLine = InvoiceLine.forInsert(
-          invoiceId: invoiceId,
-          invoiceLineGroupId: invoiceLineGroupId,
-          description: 'Material: ${item.description}',
-          quantity: item.estimatedMaterialQuantity!,
-          unitPrice: item.estimatedMaterialUnitCost!,
-          lineTotal: lineTotal,
-        );
-
-        final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-        totalAmount += lineTotal;
-
-        // Mark checklist item as billed with the invoice line id
-        final updatedItem =
-            item.copyWith(billed: true, invoiceLineId: invoiceLineId);
-        await DaoCheckListItem().update(updatedItem);
-      }
-    }
-
-    // Update the invoice total amount
-    final updatedInvoice = invoice.copyWith(
-      id: invoiceId,
-      totalAmount: totalAmount,
-    );
-    await DaoInvoice().update(updatedInvoice);
-
-    return updatedInvoice;
   }
 
   @override
@@ -209,9 +105,10 @@ class DaoInvoice extends Dao<Invoice> {
 
         if (createContactResponse.statusCode == 200) {
           // ignore: avoid_dynamic_calls
-          xeroContactId = (jsonDecode(createContactResponse.body)['Contacts']
-                  as List<Map<String, dynamic>>)
-              .first['ContactID'] as String;
+          xeroContactId =
+              // ignore: avoid_dynamic_calls
+              (jsonDecode(createContactResponse.body)['Contacts'] as List)
+                  .first['ContactID'] as String;
           // Update the local contact with the Xero contact ID
           await DaoContact()
               .update(contact.copyWith(xeroContactId: xeroContactId));
@@ -240,6 +137,22 @@ class DaoInvoice extends Dao<Invoice> {
 
     await DaoInvoice().update(
         invoice.copyWith(invoiceNum: invoiceNum, externalInvoiceId: invoiceId));
+  }
+
+  Future<List<String>> getEmailsByInvoice(Invoice invoice) async {
+    final job = await DaoJob().getById(invoice.jobId);
+    final customer = await DaoCustomer().getById(job!.customerId);
+    final contacts = await DaoContact().getByCustomer(customer!.id);
+
+    final emails = <String>[];
+
+    for (final contact in contacts) {
+      if (Strings.isNotBlank(contact.emailAddress)) {
+        emails.add(contact.emailAddress);
+      }
+    }
+
+    return emails;
   }
 }
 

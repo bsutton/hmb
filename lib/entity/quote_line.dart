@@ -1,7 +1,8 @@
 import 'package:money2/money2.dart';
 import 'entity.dart';
+import 'invoice_line.dart';
 
-enum LineStatus { normal, noCharge, excluded, noChargeHidden }
+
 
 class QuoteLine extends Entity<QuoteLine> {
   QuoteLine({

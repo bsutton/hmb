@@ -9,9 +9,13 @@ import '../../../../dao/dao_system.dart';
 import '../../../../util/exceptions.dart';
 import '../../../../widgets/hmb_file_picker_linux.dart';
 import '../../../../widgets/hmb_toast.dart';
+import '../../../factory/hmb_database_factory.dart';
+import '../../../versions/asset_script_source.dart';
 import '../backup_provider.dart';
 
 class EmailBackupProvider extends BackupProvider {
+  EmailBackupProvider(super.databaseFactory);
+
   @override
   Future<void> deleteBackup(Backup backupToDelete) {
     /// no op - you can't delete backups we email off.
@@ -128,19 +132,26 @@ class EmailBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<void> restoreDatabase(BuildContext context) async {
+  Future<void> restoreDatabase(String pathToRestoreDatabase,
+      BackupProvider backupProvider, HMBDatabaseFactory databaseFactory) async {
     try {
-      final backupFile = await pickBackupFile(context );
-      if (backupFile == null) {
-        throw BackupException('No backup file selected.');
-      }
+      final assetScriptSource = AssetScriptSource();
+      await super.replaceDatabase(pathToRestoreDatabase, assetScriptSource,
+          backupProvider, databaseFactory);
 
-      await super.replaceDatabase(backupFile.path);
-
-      HMBToast.info('Database restored from: ${backupFile.path}');
+      HMBToast.info('Database restored from: $pathToRestoreDatabase');
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       throw BackupException('Error restoring database: $e');
     }
+  }
+
+  Future<void> restore(BuildContext context) async {
+    final backupFile = await pickBackupFile(context);
+    if (backupFile == null) {
+      throw BackupException('No backup file selected.');
+    }
+
+    await restoreDatabase(backupFile.path, this, databaseFactory);
   }
 }

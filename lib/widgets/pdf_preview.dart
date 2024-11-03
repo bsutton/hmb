@@ -9,12 +9,17 @@ import 'hmb_toast.dart';
 class PdfPreviewScreen extends StatelessWidget {
   const PdfPreviewScreen({
     required this.title,
+    required this.emailSubject,
+    required this.emailBody,
     required this.filePath,
     required this.emailRecipients,
     super.key,
   });
   final String title;
   final String filePath;
+
+  final String emailSubject;
+  final String emailBody;
   final List<String> emailRecipients;
 
   Future<void> _showEmailDialog(BuildContext context) async {
@@ -32,8 +37,8 @@ class PdfPreviewScreen extends StatelessWidget {
           emailRecipients: emailRecipients,
           system: system!,
           filePath: filePath,
-          subject: 'Invanhoe Handyman quote',
-          body: 'Please find the attached Quotation',
+          subject: emailSubject,
+          body: emailBody,
         ),
       );
     }

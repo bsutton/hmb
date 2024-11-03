@@ -167,19 +167,17 @@ class _CheckListItemListScreenState<P extends Entity<P>>
   List<Widget> _buildBuyFields(CheckListItem checkListItem) => [
         HMBText('Est: Unit Cost: ${checkListItem.estimatedMaterialUnitCost} '
             'Qty: ${checkListItem.estimatedMaterialQuantity} '),
-        HMBText(
-          'Charge: ${checkListItem.charge} '
-          'Margin (%): ${checkListItem.margin}',
-        ),
+        HMBText('Margin (%): ${checkListItem.margin} '
+            'Charge: ${checkListItem.charge}'),
       ];
 
   List<Widget> _buildStockFields(CheckListItem checkListItem) => [
         HMBText(
-          'Unit Charge: ${checkListItem.charge} '
+          'Unit Charge: ${checkListItem.estimatedMaterialUnitCost} '
           'Qty: ${checkListItem.estimatedMaterialQuantity} ',
         ),
-        HMBText('Charge: ${checkListItem.charge} '
-            'Margin (%): ${checkListItem.margin}'),
+        HMBText('Margin (%): ${checkListItem.margin} '
+            'Charge: ${checkListItem.charge}'),
       ];
 
   Future<void> _markAsCompleted(

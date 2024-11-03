@@ -10,8 +10,10 @@ import '../../widgets/hmb_text_field.dart';
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
+import '../entity/job.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
+import '../widgets/hmb_droplist_multi.dart';
 
 class PackingScreen extends StatefulWidget {
   const PackingScreen({super.key});
@@ -23,6 +25,7 @@ class PackingScreen extends StatefulWidget {
 
 class _PackingScreenState extends State<PackingScreen> {
   late Future<List<CheckListItem>> _checkListItemsFuture;
+  List<Job> _selectedJobs = [];
 
   @override
   void initState() {
@@ -31,7 +34,9 @@ class _PackingScreenState extends State<PackingScreen> {
   }
 
   Future<void> _loadCheckListItems() async {
-    _checkListItemsFuture = DaoCheckListItem().getPackingItems();
+    // Pass the selected jobs to filter the packing items
+    _checkListItemsFuture =
+        DaoCheckListItem().getPackingItems(jobs: _selectedJobs);
     setState(() {});
   }
 
@@ -83,46 +88,72 @@ class _PackingScreenState extends State<PackingScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-            title: const Text('Packing List'),
-            automaticallyImplyLeading: false),
-        body: FutureBuilderEx<List<CheckListItem>>(
-          future: _checkListItemsFuture,
-          builder: (context, _checkListItems) {
-            if (_checkListItems == null || _checkListItems.isEmpty) {
-              return _showEmpty();
-            } else {
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth < 600) {
-                    // Mobile layout
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(8),
-                      itemCount: _checkListItems.length,
-                      itemBuilder: (context, index) {
-                        final item = _checkListItems[index];
-                        return _buildListItem(context, item);
-                      },
-                    );
+          title: const Text('Packing List'),
+          automaticallyImplyLeading: false,
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  HMBDroplistMultiSelect<Job>(
+                    initialItems: () async => _selectedJobs,
+                    items: (filter) async => DaoJob().getActiveJobs(filter),
+                    format: (job) => job.summary,
+                    onChanged: (selectedJobs) async {
+                      _selectedJobs = selectedJobs;
+                      await _loadCheckListItems();
+                    },
+                    title: 'Filter by Jobs',
+                    required: false,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: FutureBuilderEx<List<CheckListItem>>(
+                future: _checkListItemsFuture,
+                builder: (context, _checkListItems) {
+                  if (_checkListItems == null || _checkListItems.isEmpty) {
+                    return _showEmpty();
                   } else {
-                    // Desktop layout
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(8),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 3,
-                      ),
-                      itemCount: _checkListItems.length,
-                      itemBuilder: (context, index) {
-                        final item = _checkListItems[index];
-                        return _buildListItem(context, item);
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth < 600) {
+                          // Mobile layout
+                          return ListView.builder(
+                            padding: const EdgeInsets.all(8),
+                            itemCount: _checkListItems.length,
+                            itemBuilder: (context, index) {
+                              final item = _checkListItems[index];
+                              return _buildListItem(context, item);
+                            },
+                          );
+                        } else {
+                          // Desktop layout
+                          return GridView.builder(
+                            padding: const EdgeInsets.all(8),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 3,
+                            ),
+                            itemCount: _checkListItems.length,
+                            itemBuilder: (context, index) {
+                              final item = _checkListItems[index];
+                              return _buildListItem(context, item);
+                            },
+                          );
+                        }
                       },
                     );
                   }
                 },
-              );
-            }
-          },
+              ),
+            ),
+          ],
         ),
       );
 

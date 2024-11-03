@@ -1,0 +1,1 @@
+ALTER TABLE job ADD COLUMN booking_fee_invoiced INTEGER DEFAULT 0;

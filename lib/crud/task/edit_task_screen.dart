@@ -244,12 +244,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   Future<void> _insertTask(Task task) async {
     await DaoTask().insert(task);
-    final newChecklist = CheckList.forInsert(
-        name: 'default',
-        description: 'Default Checklist',
-        listType: CheckListType.owned);
-    await DaoCheckList().insertForTask(newChecklist, task);
-
+    
     _photoController.task = task;
   }
 

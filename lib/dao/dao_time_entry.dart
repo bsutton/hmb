@@ -1,7 +1,10 @@
+import 'package:fixed/fixed.dart';
 import 'package:june/june.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../entity/time_entry.dart';
+import '../entity/_index.g.dart';
+import '../util/date_time_ex.dart';
+import '../util/local_date.dart';
 import 'dao.dart';
 
 class DaoTimeEntry extends Dao<TimeEntry> {
@@ -36,7 +39,7 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   @override
   JuneStateCreator get juneRefresher => DbTimeEntryChanged.new;
 
-  Future<void> markAsUnbilled(int invoiceLineId) async {
+  Future<void> markAsNotbilled(int invoiceLineId) async {
     final db = getDb();
     await db.update(
       tableName,
@@ -86,6 +89,48 @@ class DaoTimeEntry extends Dao<TimeEntry> {
 ''', [jobId]);
     return results.map(TimeEntry.fromMap).toList();
   }
+
+  /// Get the non-billed labour for the given [task] in the given [date]
+  Future<LabourForTaskOnDate> getLabourForDate(
+      Task task, LocalDate date) async {
+    final timeEntries = await getByTask(task.id);
+
+    final matched = <TimeEntry>[];
+    for (final timeEntry in timeEntries) {
+      if (timeEntry.billed) {
+        continue;
+      }
+
+      if (timeEntry.startTime.toLocalDate() == date) {
+        matched.add(timeEntry);
+      }
+    }
+
+    return LabourForTaskOnDate(task, date, matched);
+  }
+
+  // Future<List<LabourForTaskOnDate>> collectLabourPerDay(
+  //     Job job, Task task, int invoiceId) async {
+  //   final timeEntries = await DaoTimeEntry().getByTask(task.id);
+
+  //   // Create a map to group time entries by date
+  //   final timeEntryGroups = <LocalDate, List<TimeEntry>>{};
+
+  //   for (final timeEntry in timeEntries.where((entry) => !entry.billed)) {
+  //     final date = LocalDate.fromDateTime(timeEntry.startTime);
+  //     timeEntryGroups.putIfAbsent(date, () => []).add(timeEntry);
+  //   }
+
+  //   final days = <LabourForTaskOnDate>[];
+
+  //   /// Sum the hours
+  //   for (final entry in timeEntryGroups.entries) {
+  //     final date = entry.key;
+  //     days.add(LabourForTaskOnDate(date, entry.value));
+  //   }
+
+  //   return days;
+  // }
 }
 
 /// Can be used to notify the UI that the time entry has changed.
@@ -97,4 +142,19 @@ class DaoTimeEntry extends Dao<TimeEntry> {
 /// ```
 class DbTimeEntryChanged extends JuneState {
   DbTimeEntryChanged();
+}
+
+/// Used to accumulate all time entries, for a specific task and date
+/// that haven't yet been billed.
+class LabourForTaskOnDate {
+  LabourForTaskOnDate(this.task, this.date, this.timeEntries) {
+    hours =
+        timeEntries.fold(Duration.zero, (sum, value) => sum + value.duration);
+  }
+  Task task;
+  LocalDate date;
+  List<TimeEntry> timeEntries;
+  late Duration hours;
+
+  Fixed get durationInHours => Fixed.fromNum(hours.inMinutes / 60, scale: 2);
 }

@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
+import '../factory/hmb_database_factory.dart';
 import '../versions/db_upgrade.dart';
+import '../versions/script_source.dart';
+import 'backup_providers/backup_provider.dart';
 
 class DatabaseHelper {
   factory DatabaseHelper() => instance;
@@ -16,17 +16,37 @@ class DatabaseHelper {
 
   Database get database => _database!;
 
-  Future<void> initDatabase() async {
-    _initDatabaseFactory();
-
-    await openDb();
+  Future<void> initDatabase(
+      {required ScriptSource src,
+      required BackupProvider backupProvider,
+      required bool backup,
+      required HMBDatabaseFactory databaseFactory,
+      String? pathToDb}) async {
+    await openDb(
+        path: pathToDb,
+        src: src,
+        backupProvider: backupProvider,
+        databaseFactory: databaseFactory,
+        backup: backup);
   }
 
-  Future<void> openDb() async {
-    final path = await pathToDatabase();
+  Future<void> openDb(
+      {required ScriptSource src,
+      required BackupProvider backupProvider,
+      required HMBDatabaseFactory databaseFactory,
+      required bool backup,
+      String? path}) async {
+    path ??= await pathToDatabase();
     _database = await databaseFactory.openDatabase(path,
         options: OpenDatabaseOptions(
-            version: await getLatestVersion(), onUpgrade: upgradeDb));
+            version: await getLatestVersion(src),
+            onUpgrade: (db, oldVersion, newVersion) => upgradeDb(
+                db: db,
+                backup: backup,
+                oldVersion: oldVersion,
+                newVersion: newVersion,
+                src: src,
+                backupProvider: backupProvider)));
   }
 
   Future<String> pathToDatabase() async {
@@ -38,20 +58,6 @@ class DatabaseHelper {
     final db = database;
     _database = null;
     await db.close();
-  }
-
-  void _initDatabaseFactory() {
-    if (kIsWeb) {
-      databaseFactory = databaseFactoryFfiWeb;
-    } else {
-      if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
-        /// required for non-mobile platforms.
-        sqfliteFfiInit();
-        databaseFactory = databaseFactoryFfi;
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        /// uses the default factory.
-      }
-    }
   }
 
   bool isOpen() => _database != null;

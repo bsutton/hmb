@@ -64,8 +64,8 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
     if (_formKey.currentState!.validate()) {
       final system = await DaoSystem().get();
       // Save the form data
-      system!.businessName = _businessNameController.text;
-      system
+      system!
+        ..businessName = _businessNameController.text
         ..businessNumber = _businessNumberController.text
         ..businessNumberLabel = _businessNumberLabelController.text
         ..webUrl = _webUrlController.text

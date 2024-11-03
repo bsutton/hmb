@@ -29,28 +29,41 @@
             "name": "handyman-selected-device",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "debug"
+            "flutterMode": "debug",
+            "program": "lib/main.dart",
         },
         {
             "name": "handyman (profile mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "flutterMode": "profile",
+            "program": "lib/main.dart",
         },
         {
             "name": "handyman (release mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "release",
+            "program": "lib/main.dart",
         },
         {
-            "name": "build relase",
+            "name": "build release",
             "request": "launch",
             "type": "dart",
             "program": "tool/build.dart",
             "args": [
                 "-r"
             ]
+        },
+        {
+            "name": "build assets",
+            "request": "launch",
+            "type": "dart",
+            "program": "tool/build.dart",
+            "args": [
+                "-a"
+            ]
         }
+
     ]
 }

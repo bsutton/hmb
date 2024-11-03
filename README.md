@@ -6,6 +6,13 @@ HMB is free to use with community based support that can be obtained by raising 
 
 HMB currently runs on android but is designed to also run on iOS (need someone to assist with the apple store release process).
 
+
+Show your support for HMB by sponsoring my work: 
+
+<a href="https://github.com/sponsors/bsutton?o=esb" target="_blank">
+  <img src="https://img.shields.io/badge/Sponsor-bsutton-orange" alt="Sponsor @bsutton" />
+</a>
+
 HMB supports the following:
 * customer database
 * supplier database

@@ -43,10 +43,10 @@
 //       await pumpJobEditScreen(tester);
 
 //       expect(find.byType(TextField),
-//           findsNWidgets(3)); // Summary, HourlyRate, CallOutFee
+//           findsNWidgets(3)); // Summary, HourlyRate, BookingFee
 //       expect(find.text('Job Summary'), findsOneWidget);
 //       expect(find.text('Hourly Rate'), findsOneWidget);
-//       expect(find.text('Call Out Fee'), findsOneWidget);
+//       expect(find.text('Booking Fee'), findsOneWidget);
 //     });
 
 //     testWidgets('should create a new job successfully', (tester) async {
@@ -56,7 +56,7 @@
 //       await tester.enterText(find.byKey(const Key('jobSummary'))
 //      , 'Test Job');
 //       await tester.enterText(find.byKey(const Key('hourlyRate')), '50');
-//       await tester.enterText(find.byKey(const Key('callOutFee')), '20');
+//       await tester.enterText(find.byKey(const Key('bookingFee')), '20');
 
 //       // Simulate tapping the save button
 //       final saveButton = find.text('Save');
@@ -69,7 +69,7 @@
 //       final job = captured.first as Job;
 //       expect(job.summary, 'Test Job');
 //       expect(job.hourlyRate!.amount, 50);
-//       expect(job.callOutFee!.amount, 20);
+//       expect(job.bookingFee!.amount, 20);
 //     });
 
 //     testWidgets('should show error when job creation fails', (tester) async {
@@ -81,7 +81,7 @@
 //       await tester.enterText(find.byKey(const Key('jobSummary'))
 //    , 'Test Job');
 //       await tester.enterText(find.byKey(const Key('hourlyRate')), '50');
-//       await tester.enterText(find.byKey(const Key('callOutFee')), '20');
+//       await tester.enterText(find.byKey(const Key('bookingFee')), '20');
 
 //       // Simulate tapping the save button
 //       final saveButton = find.text('Save');

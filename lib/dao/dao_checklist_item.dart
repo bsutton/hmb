@@ -2,10 +2,7 @@ import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../entity/check_list.dart';
-import '../entity/check_list_item.dart';
-import '../entity/job.dart';
-import '../entity/supplier.dart';
+import '../entity/_index.g.dart';
 import 'dao.dart';
 import 'dao_check_list_item_check_list.dart';
 
@@ -68,11 +65,20 @@ where jo.id =?
   Future<void> markAsCompleted(
       CheckListItem item, Money unitCost, Fixed quantity) async {
     item
-      ..estimatedMaterialUnitCost = unitCost
-      ..estimatedMaterialQuantity = quantity
+      ..actualMaterialUnitCost = unitCost
+      ..actualMaterialQuantity = quantity
+      ..charge = item.calcMaterialCost()
       ..completed = true;
 
     await update(item);
+  }
+
+  /// Marks the item as billed and links it to the invoice line it was
+  /// billed on.
+  Future<void> markAsBilled(CheckListItem item, int invoiceLineId) async {
+    final updatedItem =
+        item.copyWith(billed: true, invoiceLineId: invoiceLineId);
+    await DaoCheckListItem().update(updatedItem);
   }
 
   Future<List<CheckListItem>> getIncompleteItems() async {
@@ -127,11 +133,11 @@ where t.id =?
         where: 'invoice_line_id=?', whereArgs: [invoiceLineId]);
   }
 
-  /// Get items that need to be packed.
-  Future<List<CheckListItem>> getPackingItems() async {
+  /// Get items that need to be packed, optionally filtered by a list of jobs.
+  Future<List<CheckListItem>> getPackingItems({List<Job>? jobs}) async {
     final db = getDb();
 
-    final data = await db.rawQuery('''
+    var query = '''
 select cli.* 
 from check_list_item cli
 join check_list_item_type clit
@@ -148,12 +154,27 @@ join job_status js
   on j.job_status_id = js.id
 where (clit.name = 'Materials - stock' 
 or clit.name = 'Tools - own') 
-and  cli.completed = 0
+and cli.completed = 0
 and js.name != 'Prospecting'
 and js.name != 'Rejected'
 and js.name != 'On Hold'
 and js.name != 'Awaiting Payment'
-''');
+''';
+
+    // If a list of jobs is provided, add an "IN" clause to filter
+    //by the job IDs
+    final parameters = <int>[];
+    if (jobs != null && jobs.isNotEmpty) {
+      // Generate placeholders for the job IDs
+      final jobIds = jobs.map((job) => job.id).toList();
+      final placeholders = List.filled(jobIds.length, '?').join(',');
+
+      query += ' and j.id IN ($placeholders)';
+      parameters.addAll(jobIds);
+    }
+
+    // Execute the query with or without the job filter
+    final data = await db.rawQuery(query, parameters);
 
     return toList(data);
   }

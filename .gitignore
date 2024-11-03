@@ -47,3 +47,4 @@ hmb-key.keystore
 hmb-key.keystore.zip
 backups/*.db
 *.aab
+backups/*
