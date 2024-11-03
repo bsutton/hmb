@@ -17,7 +17,7 @@ class Invoice extends Entity<Invoice> {
     required super.modifiedDate,
     required this.invoiceNum,
     this.externalInvoiceId,
-    LocalDate? dueDate, 
+    LocalDate? dueDate,
   }) : super() {
     this.dueDate = dueDate ??
         LocalDate.fromDateTime(createdDate.add(const Duration(days: 1)));
@@ -55,7 +55,7 @@ class Invoice extends Entity<Invoice> {
   Money totalAmount;
   String? invoiceNum;
   String? externalInvoiceId;
-  late LocalDate dueDate; 
+  late LocalDate dueDate;
 
   String get bestNumber => externalInvoiceId ?? invoiceNum ?? '$id';
 
@@ -95,7 +95,7 @@ class Invoice extends Entity<Invoice> {
 
   Future<XeroInvoice> toXeroInvoice(Invoice invoice) async {
     final job = await DaoJob().getById(invoice.jobId);
-    final contact = await DaoContact().getForJob(job?.id);
+    final contact = await DaoContact().getPrimaryForJob(job?.id);
     if (contact == null) {
       throw InvoiceException(
           '''You must assign a Contact to the Job before you can upload an invoice''');

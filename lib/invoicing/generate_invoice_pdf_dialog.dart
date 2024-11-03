@@ -112,7 +112,7 @@ class GenerateInvoicePdfDialog extends StatelessWidget {
             );
             final system = await DaoSystem().get();
             final job = await DaoJob().getById(invoice.jobId);
-            final contact = await DaoContact().getForJob(job!.id);
+            final contact = await DaoContact().getPrimaryForJob(job!.id);
             final recipients = await DaoInvoice().getEmailsByInvoice(invoice);
             if (context.mounted) {
               await Navigator.of(context).push(
@@ -124,7 +124,7 @@ class GenerateInvoicePdfDialog extends StatelessWidget {
                     emailSubject:
                         '''${system!.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
                     emailBody: '''
-${contact!.firstName},
+${contact!.firstName.trim()},
 Please find the attached invoice for your job.
 
 Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}

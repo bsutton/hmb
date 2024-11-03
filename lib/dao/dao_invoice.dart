@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:strings/strings.dart';
 
 import '../entity/_index.g.dart';
 import '../invoicing/xero/models/xero_contact.dart';
@@ -145,7 +146,9 @@ class DaoInvoice extends Dao<Invoice> {
     final emails = <String>[];
 
     for (final contact in contacts) {
-      emails.add(contact.emailAddress);
+      if (Strings.isNotBlank(contact.emailAddress)) {
+        emails.add(contact.emailAddress);
+      }
     }
 
     return emails;
