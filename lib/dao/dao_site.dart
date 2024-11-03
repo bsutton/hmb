@@ -8,7 +8,6 @@ import '../entity/site.dart';
 import '../entity/supplier.dart';
 import 'dao.dart';
 import 'dao_site_customer.dart';
-import 'dao_site_job.dart';
 import 'dao_site_supplier.dart';
 
 class DaoSite extends Dao<Site> {
@@ -174,13 +173,11 @@ where jo.id =?
   }
 
   Future<void> deleteFromJob(Site site, Job job) async {
-    await DaoSiteJob().deleteJoin(job, site);
     await delete(site.id);
   }
 
   Future<void> insertForJob(Site site, Job job) async {
     await insert(site);
-    await DaoSiteJob().insertJoin(site, job);
   }
 
   @override

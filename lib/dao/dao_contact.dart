@@ -8,7 +8,6 @@ import '../entity/job.dart';
 import '../entity/supplier.dart';
 import 'dao.dart';
 import 'dao_contact_customer.dart';
-import 'dao_contact_job.dart';
 import 'dao_contact_supplier.dart';
 import 'dao_job.dart';
 
@@ -49,7 +48,7 @@ and cc.`primary` = 1''', [customerId]);
   ///
   /// returns the primary contact for the job
   ///
-  Future<Contact?> getForJob(int? jobId) async {
+  Future<Contact?> getPrimaryForJob(int? jobId) async {
     final db = getDb();
 
     if (jobId == null) {
@@ -58,10 +57,8 @@ and cc.`primary` = 1''', [customerId]);
     final data = await db.rawQuery('''
 select co.* 
 from contact co
-join job_contact jc
-  on co.id = jc.contact_id
 join job jo
-  on jc.job_id = jo.id
+  on co.id = jo.contact_id
 where jo.id =? 
 ''', [jobId]);
 
@@ -181,13 +178,11 @@ where jo.id =?
   }
 
   Future<void> deleteFromJob(Contact contact, Job job) async {
-    await DaoContactJob().deleteJoin(job, contact);
     await delete(contact.id);
   }
 
   Future<void> insertForJob(Contact contact, Job job) async {
     await insert(contact);
-    await DaoContactJob().insertJoin(contact, job);
   }
 
   @override
