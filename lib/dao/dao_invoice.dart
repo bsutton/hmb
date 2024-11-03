@@ -105,9 +105,10 @@ class DaoInvoice extends Dao<Invoice> {
 
         if (createContactResponse.statusCode == 200) {
           // ignore: avoid_dynamic_calls
-          xeroContactId = (jsonDecode(createContactResponse.body)['Contacts']
-                  as List<Map<String, dynamic>>)
-              .first['ContactID'] as String;
+          xeroContactId =
+              // ignore: avoid_dynamic_calls
+              (jsonDecode(createContactResponse.body)['Contacts'] as List)
+                  .first['ContactID'] as String;
           // Update the local contact with the Xero contact ID
           await DaoContact()
               .update(contact.copyWith(xeroContactId: xeroContactId));
