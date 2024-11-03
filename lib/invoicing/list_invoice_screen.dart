@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:strings/strings.dart';
 
 import '../dao/dao_checklist_item.dart';
@@ -109,8 +110,11 @@ You must select at least one Task or the Booking Fee to invoice''');
         HMBToast.info('Invoice uploaded to Xero successfully');
       }
       // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
+    } catch (e, st) {
       if (mounted) {
+        await Sentry.captureException(e,
+            stackTrace: st,
+            hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}));
         HMBToast.error('Failed to upload invoice: $e',
             acknowledgmentRequired: true);
       }
