@@ -8,6 +8,9 @@
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
 # include: package:flutter_lints/flutter.yaml
+analyzer:
+  errors:
+    avoid_classes_with_only_static_members: ignore
 include: package:lint_hard/all.yaml
 
 linter:

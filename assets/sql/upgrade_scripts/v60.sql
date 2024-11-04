@@ -160,9 +160,9 @@ SELECT  id,
         billing_colour,
     createdDate,
     modifiedDate
-FROM System;
+FROM system;
 -- Step 6: Drop the old System table and rename the new table
-DROP TABLE System;
-ALTER TABLE System_new
-    RENAME TO System;
+DROP TABLE system;
+ALTER TABLE system_new
+    RENAME TO system;
 PRAGMA foreign_keys = on;

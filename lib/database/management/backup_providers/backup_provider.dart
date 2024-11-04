@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:archive/archive_io.dart';
@@ -6,6 +7,8 @@ import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 
 import '../../../util/exceptions.dart';
+import '../../../util/sentry_noop.dart'
+    if (dart.library.ui) 'package:sentry_flutter/sentry_flutter.dart';
 import '../../factory/hmb_database_factory.dart';
 import '../../versions/script_source.dart';
 import '../database_helper.dart';
@@ -67,7 +70,10 @@ Database file not found at $pathToDatabase. No backup peformed.''');
               pathToZippedBackup: pathToZip,
               pathToDatabase: pathToBackupFile,
               version: version);
-        } catch (e) {
+        } catch (e, st) {
+          if (Platform.isAndroid || Platform.isIOS) {
+            await Sentry.captureException(e, stackTrace: st);
+          }
           if (!closed) {
             encoder.closeSync();
           }

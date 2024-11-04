@@ -111,10 +111,9 @@ You must select at least one Task or the Booking Fee to invoice''');
       }
       // ignore: avoid_catches_without_on_clauses
     } catch (e, st) {
+      await Sentry.captureException(e,
+          stackTrace: st, hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}));
       if (mounted) {
-        await Sentry.captureException(e,
-            stackTrace: st,
-            hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}));
         HMBToast.error('Failed to upload invoice: $e',
             acknowledgmentRequired: true);
       }

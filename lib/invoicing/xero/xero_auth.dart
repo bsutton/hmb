@@ -163,9 +163,12 @@ class XeroAuth {
     await manager!.init();
 
     // Listen to user changes
-    // manager!.userChanges().listen((user) {
-    //   print('currentUser changed to $user');
-    // });
+    manager!.userChanges().listen((user) {
+      HMBToast.info("User changed notification from OIDC");
+      print('currentUser changed to $user');
+    });
+
+    final newUser = await manager!.loginAuthorizationCodeFlow();
   }
 
   Uri _getRedirectUrl() {

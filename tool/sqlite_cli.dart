@@ -15,7 +15,7 @@ void main(List<String> args) async {
     ..addFlag('test', abbr: 't', help: 'Connect to the test fixtures db');
 
   final results = parser.parse(args);
-  if (results['help'] as bool || results.arguments.isEmpty) {
+  if (results['help'] as bool ) {
     print(parser.usage);
     exit(0);
   }

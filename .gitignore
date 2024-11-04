@@ -48,3 +48,4 @@ hmb-key.keystore.zip
 backups/*.db
 *.aab
 backups/*
+hmb.session.sql
