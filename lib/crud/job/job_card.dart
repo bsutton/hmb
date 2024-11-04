@@ -184,7 +184,7 @@ class _JobCardState extends State<JobCard> {
 
   Widget _buildInvoiceButton(BuildContext context) => ElevatedButton(
         onPressed: () async {
-          await Navigator.of(context).push(MaterialPageRoute(
+          await Navigator.of(context).push(MaterialPageRoute<void>(
             builder: (context) => InvoiceListScreen(job: job),
           ));
           await _refreshJob(); // Refresh the job after returning
