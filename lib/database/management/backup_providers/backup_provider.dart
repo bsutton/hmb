@@ -5,9 +5,10 @@ import 'package:archive/archive_io.dart';
 import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../../util/exceptions.dart';
+import '../../../util/sentry_noop.dart'
+    if (dart.library.ui) 'package:sentry_flutter/sentry_flutter.dart';
 import '../../factory/hmb_database_factory.dart';
 import '../../versions/script_source.dart';
 import '../database_helper.dart';
@@ -70,7 +71,9 @@ Database file not found at $pathToDatabase. No backup peformed.''');
               pathToDatabase: pathToBackupFile,
               version: version);
         } catch (e, st) {
-          await Sentry.captureException(e, stackTrace: st);
+          if (Platform.isAndroid || Platform.isIOS) {
+            await Sentry.captureException(e, stackTrace: st);
+          }
           if (!closed) {
             encoder.closeSync();
           }
