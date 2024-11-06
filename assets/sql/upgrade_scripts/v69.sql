@@ -5,13 +5,13 @@ set message =
 where title = 
  "Running Late - Short Delay";
 
-delete message_template
+delete from message_template
 where title = 'Running Late - Traffic';
 
-delete message_template
+delete from message_template
 where title = 'Running Late - Previous Job Overrun';
 
 
-delete message_template
+delete from message_template
 where title = 'Running Late - Weather Conditions';
 
