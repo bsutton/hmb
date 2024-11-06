@@ -92,9 +92,16 @@ class _MessageTemplateDialogState
   @override
   Future<void> asyncInitState() async {
     await _loadTemplates();
+    _selectedCustomer = widget.customer;
+    _selectedContact = widget.contact;
     if (widget.job != null) {
       await _loadJobDetails(widget.job!);
     }
+    _selectedSite ??=
+        (await DaoSite().getByCustomer(_selectedCustomer?.id)).firstOrNull;
+
+    _selectedContact ??=
+        (await DaoContact().getByCustomer(_selectedCustomer?.id)).firstOrNull;
   }
 
   Future<void> _loadTemplates() async {
@@ -204,7 +211,7 @@ class _MessageTemplateDialogState
     }
 
     final widget = HMBDroplist<Customer>(
-      title: 'Select Customer',
+      title: 'Customer',
       selectedItem: () async => _selectedCustomer,
       items: (filter) async => DaoCustomer().getByFilter(filter),
       format: (customer) => customer.name,
@@ -235,7 +242,7 @@ class _MessageTemplateDialogState
     }
 
     final widget = HMBDroplist<Job>(
-      title: 'Select Job',
+      title: 'Job',
       selectedItem: () async => _selectedJob,
       items: (filter) async => DaoJob().getByFilter(filter),
       format: (job) => job.summary,
@@ -269,7 +276,7 @@ class _MessageTemplateDialogState
     }
 
     final droplist = HMBDroplist<Site>(
-      title: 'Select Site',
+      title: 'Site',
       selectedItem: () async => _selectedSite,
       items: (filter) async {
         if (_selectedCustomer != null) {
@@ -306,7 +313,7 @@ class _MessageTemplateDialogState
     }
 
     final droplist = HMBDroplist<Contact>(
-      title: 'Select Contact',
+      title: 'Contact',
       selectedItem: () async => _selectedContact,
       items: (filter) async {
         if (widget.job != null && widget.job!.contactId != null) {
@@ -376,7 +383,16 @@ class _MessageTemplateDialogState
   PlaceHolderField _buildPeriodPicker(String placeholder) {
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
-    final periods = <String>['15 minutes', '30 minutes', '1 hour', '2 hours'];
+    final periods = <String>[
+      '10 minutes',
+      '15 minutes',
+      '20 minutes',
+      '30 minutes',
+      '45 minutes',
+      '1 hour',
+      '1.5 hours',
+      '2 hours'
+    ];
     final widget = DropdownButtonFormField<String>(
       decoration: const InputDecoration(labelText: 'Delay Period'),
       value: controller.text.isNotEmpty ? controller.text : null,
