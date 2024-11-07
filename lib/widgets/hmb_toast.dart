@@ -9,7 +9,10 @@ class HMBToast {
         type: ToastificationType.info,
         style: ToastificationStyle.minimal,
         autoCloseDuration: const Duration(seconds: 6),
-        description: Text(text));
+        description: Text(
+          text,
+          maxLines: 6,
+        ));
   }
 
   static void error(String text, {bool acknowledgmentRequired = false}) {
@@ -21,6 +24,7 @@ class HMBToast {
         autoCloseDuration:
             acknowledgmentRequired ? null : const Duration(seconds: 6),
         description: Text(text,
+            maxLines: 6,
             style: const TextStyle(color: Colors.black, fontSize: 18)),
         alignment: Alignment.center,
         style: ToastificationStyle.minimal,
