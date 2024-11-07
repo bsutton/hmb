@@ -18,7 +18,6 @@ import '../util/format.dart';
 import '../util/money_ex.dart';
 import '../widgets/async_state.dart';
 import '../widgets/hmb_are_you_sure_dialog.dart';
-import '../widgets/hmb_button.dart';
 import '../widgets/hmb_one_of.dart';
 import '../widgets/hmb_toast.dart';
 import 'dialog_select_tasks.dart';
@@ -272,8 +271,8 @@ You must select at least one Task or the Booking Fee to invoice''');
 Invoice # ${invoice.id} Issued: ${formatDate(invoice.createdDate)}'''),
           if (invoice.invoiceNum != null) Text('''
 Xero Invoice # ${invoice.invoiceNum}'''),
-          HMBButton(
-              label: 'Delete',
+          IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
               onPressed: () async => areYouSure(
                   context: context,
                   title: 'Delete Invoice',
