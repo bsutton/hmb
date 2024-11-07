@@ -124,7 +124,9 @@ You must select at least one Task or the Booking Fee to invoice''');
     job = (await DaoJob().getById(job.id))!;
     _invoices = DaoInvoice().getByJobId(job.id);
     _hasUnbilledItems = hasBillableItems();
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
