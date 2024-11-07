@@ -137,6 +137,8 @@ class DaoInvoice extends Dao<Invoice> {
 
     await DaoInvoice().update(
         invoice.copyWith(invoiceNum: invoiceNum, externalInvoiceId: invoiceId));
+
+    await xeroApi.markAsAuthorised(invoice);
   }
 
   Future<List<String>> getEmailsByInvoice(Invoice invoice) async {
