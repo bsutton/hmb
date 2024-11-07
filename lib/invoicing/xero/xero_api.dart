@@ -66,7 +66,7 @@ class XeroApi {
   Future<http.Response> sendInvoice(Invoice invoice) async {
     final tenantId = await getTenantId();
 
-    await _markAsAuthorised(invoice);
+    await markAsAuthorised(invoice);
     final response = await http.post(
         Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}/Email'),
         headers: {
@@ -83,8 +83,8 @@ class XeroApi {
     return response;
   }
 
-  /// Instruct xero to send the invoice to the jobs primary contact.
-  Future<http.Response> _markAsAuthorised(Invoice invoice) async {
+  /// Instruct xero to send the invoice to the job's primary contact.
+  Future<http.Response> markAsAuthorised(Invoice invoice) async {
     final tenantId = await getTenantId();
     final response = await http.post(
       Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}'),
