@@ -1,6 +1,7 @@
+-- rename the table Job to job and System to system.
 ALTER TABLE "System"
     RENAME TO system_old;
--- Step 1: Create a new table "system" without the logo_path and logo_aspect_ratio columns
+-- Step 1: Create a new table "system" 
 CREATE TABLE system (
     id INTEGER PRIMARY KEY,
     from_email TEXT,

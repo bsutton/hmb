@@ -1,6 +1,8 @@
 import 'package:sqflite/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
+import '../../entity/version.dart';
+import '../../src/version/version.g.dart' as code;
 import '../management/backup_providers/backup_provider.dart';
 import '../management/db_utility.dart';
 import 'script_source.dart';
@@ -44,7 +46,25 @@ Future<void> upgradeDb(
     if (scriptVersion >= firstUpgrade) {
       print('Upgrading to $scriptVersion via $pathToScript');
       await _executeScript(db, src, pathToScript);
+
+      await insertVersion(
+          db,
+          Version.forInsert(
+              dbVersion: scriptVersion, codeVersion: code.packageVersion));
     }
+  }
+}
+
+/// We can't use the Dao layer as it uses June which assumes
+/// data:ui is available which from the CLI it isn't.
+Future<void> insertVersion(Database db, Version version) async {
+  // We didn't have a version table before v71.
+  if (version.dbVersion > 71) {
+    version
+      ..createdDate = DateTime.now()
+      ..modifiedDate = DateTime.now();
+    final id = await db.insert('version', version.toMap()..remove('id'));
+    version.id = id;
   }
 }
 

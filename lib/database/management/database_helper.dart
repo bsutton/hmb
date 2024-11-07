@@ -37,9 +37,11 @@ class DatabaseHelper {
       required bool backup,
       String? path}) async {
     path ??= await pathToDatabase();
+    final targetVersion = await getLatestVersion(src);
+    print('target db version: $targetVersion');
     _database = await databaseFactory.openDatabase(path,
         options: OpenDatabaseOptions(
-            version: await getLatestVersion(src),
+            version: targetVersion,
             onUpgrade: (db, oldVersion, newVersion) => upgradeDb(
                 db: db,
                 backup: backup,
