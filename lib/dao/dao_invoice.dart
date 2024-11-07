@@ -135,10 +135,12 @@ class DaoInvoice extends Dao<Invoice> {
     // ignore: avoid_dynamic_calls
     final invoiceId = responseBody['Invoices'][0]['InvoiceID'] as String;
 
-    await DaoInvoice().update(
-        invoice.copyWith(invoiceNum: invoiceNum, externalInvoiceId: invoiceId));
+    final completedInvoice =
+        invoice.copyWith(invoiceNum: invoiceNum, externalInvoiceId: invoiceId);
 
-    await xeroApi.markAsAuthorised(invoice);
+    await DaoInvoice().update(completedInvoice);
+
+    await xeroApi.markAsAuthorised(completedInvoice);
   }
 
   Future<List<String>> getEmailsByInvoice(Invoice invoice) async {
