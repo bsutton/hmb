@@ -4,6 +4,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:strings/strings.dart';
 
 import '../dao/dao_checklist_item.dart';
+import '../dao/dao_contact.dart';
 import '../dao/dao_invoice.dart';
 import '../dao/dao_invoice_line.dart';
 import '../dao/dao_invoice_line_group.dart';
@@ -40,7 +41,7 @@ class InvoiceListScreen extends StatefulWidget {
 class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
   late Future<List<Invoice>> _invoices;
   late Future<bool> _hasUnbilledItems;
-  late XeroApi _xeroApi;
+  final XeroApi _xeroApi = XeroApi();
   late Job job;
 
   @override
@@ -101,7 +102,17 @@ You must select at least one Task or the Booking Fee to invoice''');
 
   Future<void> _uploadInvoiceToXero(Invoice invoice) async {
     try {
-      _xeroApi = XeroApi();
+      final contact = await DaoContact().getPrimaryForCustomer(job.customerId);
+      if (contact == null) {
+        HMBToast.error('You must first add a Contact to the Customer');
+        return;
+      }
+
+      if (Strings.isBlank(contact.emailAddress)) {
+        HMBToast.error("The customer's primary contact must have an email.");
+        return;
+      }
+
       await _xeroApi.login();
       await DaoInvoice().uploadInvoiceToXero(invoice, _xeroApi);
       await _refresh();
@@ -219,7 +230,6 @@ You must select at least one Task or the Booking Fee to invoice''');
 
   Future<void> _sendInvoiceFromXero(Invoice invoice) async {
     try {
-      _xeroApi = XeroApi();
       await _xeroApi.login();
       await _xeroApi.sendInvoice(invoice);
       await _refresh();
@@ -264,34 +274,39 @@ You must select at least one Task or the Booking Fee to invoice''');
       );
 
   /// Build the title for an invoice.
-  Widget _buildInvoiceTitle(Invoice invoice) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildInvoiceTitle(Invoice invoice) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('''
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('''
 Invoice # ${invoice.id} Issued: ${formatDate(invoice.createdDate)}'''),
+              IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () async => areYouSure(
+                      context: context,
+                      title: 'Delete Invoice',
+                      message: 'Are you sure you want to delete this invoice?',
+                      onConfirmed: () async {
+                        try {
+                          await DaoInvoice().delete(invoice.id);
+                          if (Strings.isNotBlank(invoice.invoiceNum)) {
+                            await XeroApi().login();
+                            await XeroApi().deleteInvoice(invoice);
+                          }
+                          await _refresh();
+                          // ignore: avoid_catches_without_on_clauses
+                        } catch (e) {
+                          if (mounted) {
+                            HMBToast.error(e.toString());
+                          }
+                        }
+                      }))
+            ],
+          ),
           if (invoice.invoiceNum != null) Text('''
 Xero Invoice # ${invoice.invoiceNum}'''),
-          IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () async => areYouSure(
-                  context: context,
-                  title: 'Delete Invoice',
-                  message: 'Are you sure you want to delete this invoice?',
-                  onConfirmed: () async {
-                    try {
-                      await DaoInvoice().delete(invoice.id);
-                      if (Strings.isNotBlank(invoice.invoiceNum)) {
-                        await XeroApi().login();
-                        await XeroApi().deleteInvoice(invoice);
-                      }
-                      await _refresh();
-                      // ignore: avoid_catches_without_on_clauses
-                    } catch (e) {
-                      if (mounted) {
-                        HMBToast.error(e.toString());
-                      }
-                    }
-                  }))
         ],
       );
 
