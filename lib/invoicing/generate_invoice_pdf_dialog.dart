@@ -139,6 +139,6 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
             }
           }
         },
-        child: const Text('Generate and Preview PDF'),
+        child: const Text('Preview PDF'),
       );
 }
