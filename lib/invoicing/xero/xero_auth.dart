@@ -44,6 +44,25 @@ class XeroAuth2 {
   }
 
   Future<void> login() async {
+    // If we have an existing client and it's not expired, use it.
+    if (client != null && !client!.credentials.isExpired) {
+      log('Access token is valid, no login required.');
+      return;
+    }
+
+    // If the token is expired, attempt to refresh it.
+    if (client != null && client!.credentials.isExpired) {
+      try {
+        log('Access token expired, attempting to refresh.');
+        await refreshToken();
+        log('Token refreshed successfully.');
+        return;
+        // ignore: avoid_catches_without_on_clauses
+      } catch (e) {
+        log('Token refresh failed: $e. Proceeding to full login.');
+      }
+    }
+
     final loginComplete = Completer<void>();
 
     final credentials = await _fetchCredentials();
@@ -76,7 +95,6 @@ class XeroAuth2 {
     }
 
     final appLinks = AppLinks();
-// Subscribe to all events (initial link and further)
     late StreamSubscription<Uri> sub;
     sub = appLinks.uriLinkStream.listen((uri) {
       log('applink: $uri');
@@ -87,7 +105,6 @@ class XeroAuth2 {
       }
     });
 
-    // Handle the redirection back to the app in `completeLogin`.
     return loginComplete.future;
   }
 
@@ -95,8 +112,7 @@ class XeroAuth2 {
       Completer<void> loginComplete, Uri responseUri) async {
     log('completeLogin with: $responseUri');
     if (grant == null) {
-      log('grant not initialised');
-      log('loginComplete with Error - grant not initialised');
+      log('grant not initialized');
       loginComplete.completeError('Grant not initialized');
       throw XeroException('Grant not initialized');
     }
@@ -119,8 +135,7 @@ class XeroAuth2 {
     }
 
     if (client!.credentials.isExpired) {
-      final refreshedClient = await client!.refreshCredentials();
-      client = refreshedClient;
+      client = await client!.refreshCredentials();
     }
   }
 
