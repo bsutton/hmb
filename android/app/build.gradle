@@ -10,7 +10,7 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
-ext.kotlin_version = "1.8.0"
+// ext.kotlin_version = "1.8.0"
 
 
 def localProperties = new Properties()
@@ -63,10 +63,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
-        // required bu the oidc package
-        manifestPlaceholders = [appAuthRedirectScheme: 'dev.onepub.handyman'
         /// proves substitution key/values for AndroidManifest.xml
-        , applicationName: 'dev.onepub.handyman']
+        manifestPlaceholders = [
+        // required by the oidc package
+         appAuthRedirectScheme: 'dev.onepub.handyman',
+         applicationName: 'dev.onepub.handyman']
     }
 
     signingConfigs {
