@@ -16,7 +16,6 @@ import '../screens/list_packing_screen.dart';
 import '../screens/list_shopping_screen.dart';
 import '../screens/wizard/wizard.dart';
 import '../widgets/full_screen_photo_view.dart';
-import '../widgets/hmb_toast.dart';
 import 'home_with_drawer.dart';
 
 GoRouter get router => GoRouter(
@@ -105,27 +104,7 @@ GoRouter get router => GoRouter(
                   const HomeWithDrawer(initialScreen: FirstRunWizard()),
             ),
 
-            /// intent handler for xero authentication
-            /// not certain this is actuall used.
-            GoRoute(
-              path: 'xero/auth_complete',
-              builder: (_, state) {
-                final code = state.pathParameters['code'];
-                final scope = state.pathParameters['scope'];
-                final linkState = state.pathParameters['state'];
-                final sessionState = state.pathParameters['sessionState'];
-
-                HMBToast.info('''
-code: $code
-scope: $scope
-state: $linkState
-sessionState: $sessionState''');
-
-
-                return const HomeWithDrawer(initialScreen: AboutScreen());
-              },
-            ),
-            GoRoute(
+                    GoRoute(
               path: 'photo_viewer',
               builder: (context, state) {
                 final args = state.extra! as Map<String, String>;
