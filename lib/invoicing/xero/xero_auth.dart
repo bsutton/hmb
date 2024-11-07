@@ -105,9 +105,6 @@ class XeroAuth2 {
       client =
           await grant!.handleAuthorizationResponse(responseUri.queryParameters);
       log('Login completed successfully');
-      // HMBToast.info(
-      //     'User logged in with access token: ${client!.credentials.accessToken}');
-      log('loginComplete success');
       loginComplete.complete();
     } catch (e) {
       log('failed to complete login: $e');
