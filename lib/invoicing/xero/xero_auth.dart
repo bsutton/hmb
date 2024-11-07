@@ -1,13 +1,11 @@
-// ignore_for_file: lines_longer_than_80_chars
-
 import 'dart:async';
 import 'dart:io';
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:oidc/oidc.dart';
-import 'package:oidc_default_store/oidc_default_store.dart';
+import 'package:oauth2/oauth2.dart' as oauth2;
 import 'package:strings/strings.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../dao/dao_system.dart';
 import '../../util/exceptions.dart';
@@ -24,182 +22,123 @@ class XeroCredentials implements Credentials {
   String clientSecret;
 }
 
-class XeroAuth {
-  factory XeroAuth() {
-    _instance ??= XeroAuth._();
+class XeroAuth2 {
+  factory XeroAuth2() {
+    _instance ??= XeroAuth2._();
     return _instance!;
   }
 
-  XeroAuth._();
+  XeroAuth2._();
 
-  /// This path must match one of the paths in the https:/developer.xero.com
-  /// Configuration | Redirect URIs section.
   static const redirectPath = '/xero/auth_complete';
-  static XeroAuth? _instance;
+  static XeroAuth2? _instance;
 
-  OidcUserManager? manager;
-  OidcUser? oidcUser;
+  oauth2.Client? client;
+  oauth2.AuthorizationCodeGrant? grant;
 
   String get accessToken {
-    final token = oidcUser?.token.accessToken;
-
-    if (token == null) {
+    if (client == null || client!.credentials.isExpired) {
       throw XeroException('Invalid State. Call login() first');
     }
-
-    return token;
+    return client!.credentials.accessToken;
   }
 
   Future<void> login() async {
-    if (oidcUser == null) {
-      await _init();
-      // Login
-      oidcUser = await manager!.loginAuthorizationCodeFlow();
-      HMBToast.error('User aquired: ${oidcUser?.uid}');
-    } else {
-      // Refresh token
-      await _refreshTokenIfNeeded();
-    }
-  }
-
-  void completeLogin() {
-    HMBToast.error('completeLogin called');
-  }
-
-  Future<void> _refreshTokenIfNeeded() async {
-    try {
-      if (_isTokenExpired()) {
-        oidcUser = await manager!.refreshToken();
-      }
-      // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
-      await _init();
-    }
-  }
-
-  bool _isTokenExpired() {
-    if (oidcUser?.token == null) {
-      return true;
-    }
-    return oidcUser!.token.isAccessTokenAboutToExpire(now: DateTime.now());
-  }
-
-  Future<void> refreshToken(BuildContext context) async {
-    if (manager == null) {
-      throw XeroException('Manager not initialized');
-    }
-
-    try {
-      final newUser = await manager!.refreshToken();
-      oidcUser = newUser;
-      // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
-      print('Failed to refresh token: $e');
-      if (context.mounted) {
-        await _init();
-      }
-    }
-  }
-
-  // Future<void> _showAuthDialog(BuildContext context) async {
-  //   await showDialog<OidcUser>(
-  //       context: context,
-  //       builder: (context) => AlertDialog(
-  //             title: const Text('Authenticate with Xero'),
-  //             actions: [
-  //               ElevatedButton(
-  //                 onPressed: () async => _authWrapper(context),
-  //                 child: const Text('Authenticate with Xero'),
-  //               ),
-  //               ElevatedButton(
-  //                 onPressed: () => Navigator.of(context).pop(),
-  //                 child: const Text('Cancel'),
-  //               ),
-  //             ],
-  //           ));
-  // }
-
-  // Future<void> _authWrapper(BuildContext context) async {
-  //   try {
-  //     final user = await _authenticate();
-  //     if (context.mounted) {
-  //       Navigator.of(context).pop(user);
-  //     }
-  //   } on InvoiceException catch (e) {
-  //     if (context.mounted) {
-  //       HMBToast.error(context, e.message);
-  //     }
-  //     // ignore: avoid_catches_without_on_clauses
-  //   } catch (e) {
-  //     if (context.mounted) {
-  //       HMBToast.error(context, e.toString());
-  //     }
-  //   }
-  // }
-
-  Future<void> _init() async {
-    final _scopes = <String>[
-      'openid',
-      'profile',
-      'email',
-      'offline_access',
-      'accounting.transactions',
-      'accounting.contacts'
-    ];
+    final loginComplete = Completer<void>();
 
     final credentials = await _fetchCredentials();
-    manager = OidcUserManager.lazy(
-        discoveryDocumentUri: OidcUtils.getOpenIdConfigWellKnownUri(
-          Uri.parse('https://identity.xero.com'),
-        ),
-        clientCredentials: OidcClientAuthentication.clientSecretBasic(
-            clientId: credentials.clientId,
-            clientSecret: credentials.clientSecret),
-        store: OidcDefaultStore(),
-        settings: OidcUserManagerSettings(
-            scope: _scopes, redirectUri: _getRedirectUrl()));
+    final authorizationEndpoint =
+        Uri.parse('https://login.xero.com/identity/connect/authorize');
+    final tokenEndpoint = Uri.parse('https://identity.xero.com/connect/token');
+    final redirectUri = _getRedirectUrl();
 
-    // Initialize the manager
-    await manager!.init();
+    grant = oauth2.AuthorizationCodeGrant(
+      credentials.clientId,
+      authorizationEndpoint,
+      tokenEndpoint,
+      secret: credentials.clientSecret,
+    );
 
-    // Listen to user changes
-    manager!.userChanges().listen((user) {
-      HMBToast.info("User changed notification from OIDC");
-      print('currentUser changed to $user');
+    final authorizationUrl = grant!.getAuthorizationUrl(
+      redirectUri,
+      scopes: [
+        'openid',
+        'profile',
+        'email',
+        'offline_access',
+        'accounting.transactions',
+        'accounting.contacts',
+      ],
+    );
+
+    if (await canLaunchUrl(authorizationUrl)) {
+      await launchUrl(authorizationUrl);
+    }
+
+    final appLinks = AppLinks();
+// Subscribe to all events (initial link and further)
+    late StreamSubscription<Uri> sub;
+    sub = appLinks.uriLinkStream.listen((uri) {
+      log('applink: $uri');
+      if (uri.toString().startsWith(_getRedirectUrl().toString())) {
+        sub.cancel();
+        log('applink - matched calling completeLogin');
+        completeLogin(loginComplete, uri);
+      }
     });
 
-    final newUser = await manager!.loginAuthorizationCodeFlow();
+    // Handle the redirection back to the app in `completeLogin`.
+    return loginComplete.future;
+  }
+
+  Future<void> completeLogin(
+      Completer<void> loginComplete, Uri responseUri) async {
+    log('completeLogin with: $responseUri');
+    if (grant == null) {
+      log('grant not initialised');
+      log('loginComplete with Error - grant not initialised');
+      loginComplete.completeError('Grant not initialized');
+      throw XeroException('Grant not initialized');
+    }
+
+    try {
+      client =
+          await grant!.handleAuthorizationResponse(responseUri.queryParameters);
+      log('Login completed successfully');
+      // HMBToast.info(
+      //     'User logged in with access token: ${client!.credentials.accessToken}');
+      log('loginComplete success');
+      loginComplete.complete();
+    } catch (e) {
+      log('failed to complete login: $e');
+      HMBToast.error('Failed to complete login: $e');
+      loginComplete.completeError('Failed to complete login: $e');
+    }
+  }
+
+  Future<void> refreshToken() async {
+    if (client == null) {
+      throw XeroException('Client not initialized');
+    }
+
+    if (client!.credentials.isExpired) {
+      final refreshedClient = await client!.refreshCredentials();
+      client = refreshedClient;
+    }
   }
 
   Uri _getRedirectUrl() {
     if (kIsWeb) {
-      // this url must be an actual html page.
-      // see the file in /web/redirect.html for an example.
-      //
-      // for debugging in flutter, you must run this app with --web-port 22433
-      // TODO(bsutton): copy a redirect.html from the oidc project
-      // somewhere and use that path here.
       return Uri.parse('http://localhost:22433/redirect.html');
     }
-
-    if (Platform.isIOS || Platform.isMacOS || Platform.isAndroid) {
-      /// This path must match one of the paths in the https:/developer.xero.com
-      /// Configuration | Redirect URIs section.
+    if (Platform.isAndroid || Platform.isIOS) {
       return Uri.parse('https://ivanhoehandyman.com.au$redirectPath');
     }
-
-    if (Platform.isWindows || Platform.isLinux) {
-      /// This path must match one of the paths in the https:/developer.xero.com
-      /// Configuration | Redirect URIs section.
-      return Uri.parse('http://localhost:12335');
-    }
-
-    /// probably should throw.
-    return Uri();
+    return Uri.parse('http://localhost:12335');
   }
 
   Future<void> logout() async {
-    await manager?.logout();
+    client = null;
   }
 
   Future<XeroCredentials> _fetchCredentials() async {
@@ -214,4 +153,8 @@ class XeroAuth {
     return XeroCredentials(
         clientId: system.xeroClientId!, clientSecret: system.xeroClientSecret!);
   }
+}
+
+void log(String text) {
+  print('HMB: $text');
 }

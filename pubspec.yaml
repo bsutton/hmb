@@ -12,13 +12,13 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.5.4
+version: 0.5.9
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  # app_links: ^6.1.4
+  app_links: ^6.1.4
   archive: ^3.6.1
   completer_ex: ^4.0.3
   country_code:
@@ -59,9 +59,7 @@ dependencies:
   mobile_number: ^2.1.1
   mockito: ^5.4.4
   money2: ^5.2.1
-  oidc: ^0.7.0
-  oidc_core: ^0.7.0
-  oidc_default_store: ^0.2.0+9
+  oauth2: ^2.0.3
   parchment_delta: ^1.0.0
   path: ^1.9.0
   path_provider: ^2.0.0

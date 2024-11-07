@@ -9,7 +9,7 @@ import 'xero_auth.dart';
 class XeroApi {
   factory XeroApi() => _instance;
 
-  XeroApi._internal() : xeroAuth = XeroAuth();
+  XeroApi._internal() : xeroAuth = XeroAuth2();
 
   static final XeroApi _instance = XeroApi._internal();
 
@@ -22,7 +22,7 @@ class XeroApi {
 
   String? _tenantId;
 
-  XeroAuth xeroAuth;
+  XeroAuth2 xeroAuth;
 
   Future<http.Response> createInvoice(XeroInvoice xeroInvoice) async {
     final tenantId = await getTenantId();

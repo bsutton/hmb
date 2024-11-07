@@ -5,11 +5,10 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_linux
   flutter_secure_storage_linux
-  oidc_linux
+  gtk
   printing
   sentry_flutter
   url_launcher_linux
-  window_to_front
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
