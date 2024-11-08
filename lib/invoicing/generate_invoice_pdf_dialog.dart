@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:strings/strings.dart';
 
 import '../dao/_index.g.dart';
 import '../entity/invoice.dart';
@@ -118,22 +119,23 @@ class GenerateInvoicePdfDialog extends StatelessWidget {
               await Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (context) => PdfPreviewScreen(
-                    title:
-                        '''Invoice #${invoice.bestNumber} ${widget.job.summary}''',
-                    filePath: filePath.path,
-                    emailSubject:
-                        '''${system!.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
-                    emailBody: '''
+                      title:
+                          '''Invoice #${invoice.bestNumber} ${widget.job.summary}''',
+                      filePath: filePath.path,
+                      emailSubject:
+                          '''${system!.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
+                      emailBody: '''
 ${contact!.firstName.trim()},
 Please find the attached invoice for your job.
 
 Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
 ''',
-                    emailRecipients: [
-                      ...recipients,
-                      if (system.emailAddress != null) system.emailAddress!
-                    ],
-                  ),
+                      emailRecipients: [
+                        ...recipients,
+                        if (Strings.isNotBlank(system.emailAddress))
+                          system.emailAddress!
+                      ],
+                      onSent: () async => DaoInvoice().markSent(invoice)),
                 ),
               );
             }

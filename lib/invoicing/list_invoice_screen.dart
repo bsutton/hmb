@@ -202,48 +202,16 @@ You must select at least one Task or the Booking Fee to invoice''');
                       mounted: mounted,
                       widget: widget,
                       invoice: invoice),
-                  ElevatedButton(
-                      onPressed: () async => _uploadOrSendInvoice(invoice),
-                      child: _buildXeroButton(invoice)),
+                  if (Strings.isBlank(invoice.invoiceNum))
+                    ElevatedButton(
+                        onPressed: () async => _uploadInvoiceToXero(invoice),
+                        child: const Text('Upload to Xero')),
                 ],
               ),
             )
           ],
         ),
       );
-
-  Widget _buildXeroButton(Invoice invoice) {
-    if (invoice.invoiceNum == null) {
-      return const Text('Upload to Xero');
-    } else {
-      return const Text('Send from Xero');
-    }
-  }
-
-  Future<void> _uploadOrSendInvoice(Invoice invoice) async {
-    if (Strings.isBlank(invoice.invoiceNum)) {
-      await _uploadInvoiceToXero(invoice);
-    } else {
-      await _sendInvoiceFromXero(invoice);
-    }
-  }
-
-  Future<void> _sendInvoiceFromXero(Invoice invoice) async {
-    try {
-      await _xeroApi.login();
-      await _xeroApi.sendInvoice(invoice);
-      await _refresh();
-      if (mounted) {
-        HMBToast.info('Invoice sent from Xero successfully');
-      }
-      // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
-      if (mounted) {
-        HMBToast.error('Failed to send invoice: $e',
-            acknowledgmentRequired: true);
-      }
-    }
-  }
 
   Padding _buildInvoiceGroup(List<InvoiceLineGroup> invoiceLineGroups) =>
       Padding(
@@ -290,10 +258,16 @@ Invoice # ${invoice.id} Issued: ${formatDate(invoice.createdDate)}'''),
                       message: 'Are you sure you want to delete this invoice?',
                       onConfirmed: () async {
                         try {
+                          final sent = invoice.sent;
                           await DaoInvoice().delete(invoice.id);
                           if (Strings.isNotBlank(invoice.invoiceNum)) {
                             await XeroApi().login();
-                            await XeroApi().deleteInvoice(invoice);
+                            if (sent) {
+                              HMBToast.error('''
+This invoice has been sent to the customer and cannot be deleted''');
+                            } else {
+                              await XeroApi().deleteInvoice(invoice);
+                            }
                           }
                           await _refresh();
                           // ignore: avoid_catches_without_on_clauses

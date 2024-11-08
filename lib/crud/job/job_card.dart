@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:strings/strings.dart';
 
 import '../../dao/dao_contact.dart';
 import '../../dao/dao_customer.dart';
@@ -204,7 +205,7 @@ class _JobCardState extends State<JobCard> {
               builder: (context, contacts) => QuoteListScreen(
                   job: job,
                   emailRecipients: contacts
-                          ?.map((contact) => contact.emailAddress)
+                          ?.map((contact) => Strings.trim(contact.emailAddress))
                           .toList() ??
                       [])),
         )),

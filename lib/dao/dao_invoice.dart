@@ -80,10 +80,14 @@ class DaoInvoice extends Dao<Invoice> {
     // Fetch the job associated with the invoice
     final job = await DaoJob().getById(invoice.jobId);
 
+    final contact = await DaoContact().getPrimaryForJob(job!.id);
     // Fetch the primary contact for the customer
-    final contact = await DaoContact().getPrimaryForCustomer(job!.customerId);
     if (contact == null) {
-      throw Exception('Primary contact for the customer not found');
+      throw Exception('You must select a contact for the Job');
+    }
+    if (Strings.isBlank(contact.emailAddress)) {
+      throw Exception('''
+You must provide an email address for the Contact ${contact.fullname}''');
     }
 
     // Check if the contact exists in Xero
@@ -124,7 +128,7 @@ class DaoInvoice extends Dao<Invoice> {
     // Create the invoice in Xero
     final xeroInvoice = await invoice.toXeroInvoice(invoice);
 
-    final createInvoiceResponse = await xeroApi.createInvoice(xeroInvoice);
+    final createInvoiceResponse = await xeroApi.uploadInvoice(xeroInvoice);
     if (createInvoiceResponse.statusCode != 200) {
       throw Exception(
           'Failed to create invoice in Xero: ${createInvoiceResponse.body}');
@@ -139,8 +143,6 @@ class DaoInvoice extends Dao<Invoice> {
         invoice.copyWith(invoiceNum: invoiceNum, externalInvoiceId: invoiceId);
 
     await DaoInvoice().update(completedInvoice);
-
-    await xeroApi.markAsAuthorised(completedInvoice);
   }
 
   Future<List<String>> getEmailsByInvoice(Invoice invoice) async {
@@ -148,15 +150,28 @@ class DaoInvoice extends Dao<Invoice> {
     final customer = await DaoCustomer().getById(job!.customerId);
     final contacts = await DaoContact().getByCustomer(customer!.id);
 
-    final emails = <String>[];
+    /// make sure we have no dups.
+    final emails = <String>{};
 
     for (final contact in contacts) {
       if (Strings.isNotBlank(contact.emailAddress)) {
-        emails.add(contact.emailAddress);
+        emails.add(contact.emailAddress.trim());
       }
     }
 
-    return emails;
+    return emails.toList();
+  }
+
+  Future<void> markSent(Invoice invoice) async {
+    invoice.sent = true;
+
+    await update(invoice);
+
+    final xeroApi = XeroApi();
+    await xeroApi.login();
+
+    await xeroApi.markApproved(invoice);
+    await xeroApi.markAsSent(invoice);
   }
 }
 

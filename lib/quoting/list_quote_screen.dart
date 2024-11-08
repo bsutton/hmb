@@ -234,6 +234,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
                     emailSubject: '${system!.businessName ?? 'Your'} quote',
                     emailBody: 'Please find the attached Quotation',
                     emailRecipients: widget.emailRecipients,
+                    onSent: () async {},
                   ),
                 ),
               );

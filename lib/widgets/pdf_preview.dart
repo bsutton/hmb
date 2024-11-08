@@ -13,6 +13,7 @@ class PdfPreviewScreen extends StatelessWidget {
     required this.emailBody,
     required this.filePath,
     required this.emailRecipients,
+    required this.onSent,
     super.key,
   });
   final String title;
@@ -21,6 +22,7 @@ class PdfPreviewScreen extends StatelessWidget {
   final String emailSubject;
   final String emailBody;
   final List<String> emailRecipients;
+  final Future<void> Function() onSent;
 
   Future<void> _showEmailDialog(BuildContext context) async {
     final system = await DaoSystem().get();
@@ -31,7 +33,7 @@ class PdfPreviewScreen extends StatelessWidget {
     }
 
     if (context.mounted) {
-      await showDialog<void>(
+      final sent = await showDialog<bool>(
         context: context,
         builder: (context) => EmailDialog(
           emailRecipients: emailRecipients,
@@ -41,6 +43,9 @@ class PdfPreviewScreen extends StatelessWidget {
           body: emailBody,
         ),
       );
+      if (sent ?? false) {
+        await onSent();
+      }
     }
   }
 

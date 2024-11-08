@@ -24,7 +24,7 @@ class XeroApi {
 
   XeroAuth2 xeroAuth;
 
-  Future<http.Response> createInvoice(XeroInvoice xeroInvoice) async {
+  Future<http.Response> uploadInvoice(XeroInvoice xeroInvoice) async {
     final tenantId = await getTenantId();
     final response = await http.post(
       Uri.parse('${_baseUrl}Invoices'),
@@ -62,11 +62,35 @@ class XeroApi {
     return response;
   }
 
+  /// Invoices which have been authorised cannot be deleted and
+  /// instead must be voided.
+  Future<http.Response> voidInvoice(Invoice invoice) async {
+    final tenantId = await getTenantId();
+    final response = await http.post(
+      Uri.parse('${_baseUrl}Invoices/${invoice.invoiceNum}'),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
+        'Xero-tenant-id': tenantId,
+      },
+      body: '''
+{
+    "InvoiceNumber": "${invoice.invoiceNum}",
+    "Status": "VOIDED"
+}
+''',
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Error deleting invoice: ${response.body}');
+    }
+    return response;
+  }
+
   /// Instruct xero to send the invoice to the jobs primary contact.
   Future<http.Response> sendInvoice(Invoice invoice) async {
     final tenantId = await getTenantId();
 
-    await markAsAuthorised(invoice);
+    await markApproved(invoice);
     final response = await http.post(
         Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}/Email'),
         headers: {
@@ -79,12 +103,12 @@ class XeroApi {
       throw Exception('Error sending invoice: ${response.body}');
     }
 
-    await _markAsSent(invoice);
+    await markAsSent(invoice);
     return response;
   }
 
   /// Instruct xero to send the invoice to the job's primary contact.
-  Future<http.Response> markAsAuthorised(Invoice invoice) async {
+  Future<http.Response> markApproved(Invoice invoice) async {
     final tenantId = await getTenantId();
     final response = await http.post(
       Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}'),
@@ -106,8 +130,8 @@ class XeroApi {
     return response;
   }
 
-  /// Instruct xero to send the invoice to the jobs primary contact.
-  Future<http.Response> _markAsSent(Invoice invoice) async {
+  /// Mark the invoice in xero as sent. 
+  Future<http.Response> markAsSent(Invoice invoice) async {
     final tenantId = await getTenantId();
     final response = await http.post(
       Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}'),

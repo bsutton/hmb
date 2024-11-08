@@ -87,7 +87,7 @@ ${widget.system.businessNumberLabel}: ${widget.system.businessNumber}
           TextButton(
             child: const Text('Cancel'),
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(context).pop(false);
             },
           ),
           TextButton(
@@ -104,7 +104,7 @@ ${widget.system.businessNumberLabel}: ${widget.system.businessNumber}
                 await FlutterEmailSender.send(email);
                 HMBToast.info('Email sent successfully');
                 if (context.mounted) {
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(true);
                 }
               } else {
                 HMBToast.info('Please select a recipient');
