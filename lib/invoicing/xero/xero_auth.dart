@@ -1,8 +1,5 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../dao/dao_system.dart';
 import '../../util/exceptions.dart';
 import '../../widgets/hmb_toast.dart';
+import 'redirect_handler.dart';
 
 class Credentials {}
 
@@ -30,7 +28,7 @@ class XeroAuth2 {
 
   XeroAuth2._();
 
-  static const redirectPath = '/xero/auth_complete';
+  static const redirectPath = 'xero/auth_complete';
   static XeroAuth2? _instance;
 
   oauth2.Client? client;
@@ -69,7 +67,10 @@ class XeroAuth2 {
     final authorizationEndpoint =
         Uri.parse('https://login.xero.com/identity/connect/authorize');
     final tokenEndpoint = Uri.parse('https://identity.xero.com/connect/token');
-    final redirectUri = _getRedirectUrl();
+
+    final redirectHandler = initRedirectHandler();
+
+    final redirectUri = redirectHandler.redirectUri;
 
     grant = oauth2.AuthorizationCodeGrant(
       credentials.clientId,
@@ -90,16 +91,16 @@ class XeroAuth2 {
       ],
     );
 
-    if (await canLaunchUrl(authorizationUrl)) {
-      await launchUrl(authorizationUrl);
-    }
+    // if (await canLaunchUrl(authorizationUrl)) {
+    await launchUrl(authorizationUrl);
+    // }
+    await redirectHandler.start();
 
-    final appLinks = AppLinks();
     late StreamSubscription<Uri> sub;
-    sub = appLinks.uriLinkStream.listen((uri) {
-      log('applink: $uri');
-      if (uri.toString().startsWith(_getRedirectUrl().toString())) {
+    sub = redirectHandler.stream.listen((uri) {
+      if (uri.toString().startsWith(redirectHandler.redirectUri.toString())) {
         sub.cancel();
+        redirectHandler.stop();
         log('applink - matched calling completeLogin');
         completeLogin(loginComplete, uri);
       }
@@ -139,16 +140,6 @@ class XeroAuth2 {
     }
   }
 
-  Uri _getRedirectUrl() {
-    if (kIsWeb) {
-      return Uri.parse('http://localhost:22433/redirect.html');
-    }
-    if (Platform.isAndroid || Platform.isIOS) {
-      return Uri.parse('https://ivanhoehandyman.com.au$redirectPath');
-    }
-    return Uri.parse('http://localhost:12335');
-  }
-
   Future<void> logout() async {
     client = null;
   }
@@ -159,8 +150,8 @@ class XeroAuth2 {
     if (system == null ||
         Strings.isBlank(system.xeroClientId) ||
         Strings.isBlank(system.xeroClientSecret)) {
-      throw InvoiceException(
-          'The Xero credentials are not set. Go to the System screen and set them.');
+      throw InvoiceException('''
+The Xero credentials are not set. Go to the System screen and set them.''');
     }
     return XeroCredentials(
         clientId: system.xeroClientId!, clientSecret: system.xeroClientSecret!);
