@@ -172,6 +172,7 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
   Future<TimeEntry> forInsert() async => TimeEntry.forInsert(
       taskId: widget.task.id,
       startTime: _dateTimeFormat.parse(_startTimeController.text),
+      endTime: _dateTimeFormat.parse(_endTimeController.text),
       note: _noteController.text);
 
   @override

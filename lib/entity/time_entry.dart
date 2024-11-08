@@ -32,6 +32,7 @@ class TimeEntry extends Entity<TimeEntry> {
   TimeEntry.forInsert(
       {required this.taskId,
       required this.startTime,
+      this.endTime,
       this.note,
       this.billed = false})
       : super.forInsert();
@@ -60,7 +61,7 @@ class TimeEntry extends Entity<TimeEntry> {
     return end.difference(startTime);
   }
 
-  Fixed get hours =>  Fixed.fromNum(duration.inMinutes / 60);
+  Fixed get hours => Fixed.fromNum(duration.inMinutes / 60);
 
   TimeEntry copyWith({
     int? id,
