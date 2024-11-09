@@ -10,10 +10,10 @@ import '../../entity/check_list_item.dart';
 import '../../entity/check_list_item_type.dart';
 import '../../util/measurement_type.dart';
 import '../../util/units.dart';
-import '../../widgets/hmb_droplist.dart';
-import '../../widgets/hmb_empty.dart';
-import '../../widgets/hmb_text.dart';
-import '../../widgets/hmb_text_field.dart';
+import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/layout/hmb_empty.dart';
+import '../../widgets/select/hmb_droplist.dart';
+import '../../widgets/text/hmb_text.dart';
 import 'edit_checklist_item_screen.dart';
 
 class DimensionWidget extends StatefulWidget {

@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../layout/hmb_placeholder.dart';
+import '../layout/labeled_container.dart';
 import 'hmb_droplist_multi_dialog.dart';
-import 'hmb_placeholder.dart';
-import 'labeled_container.dart';
 
 class HMBDroplistMultiSelect<T> extends FormField<List<T>> {
   HMBDroplistMultiSelect({
@@ -82,7 +82,7 @@ class _HMBDroplistMultiSelectState<T>
         });
       }
       widget.state.didChange(_selectedItems);
-    // ignore: avoid_catches_without_on_clauses
+      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       print('Error loading items: $e');
     }

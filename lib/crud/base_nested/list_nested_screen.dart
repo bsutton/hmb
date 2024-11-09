@@ -6,10 +6,10 @@ import 'package:june/june.dart';
 
 import '../../dao/dao.dart';
 import '../../entity/entities.dart';
+import '../../widgets/dialog/hmb_are_you_sure_dialog.dart';
 import '../../widgets/hmb_add_button.dart';
-import '../../widgets/hmb_are_you_sure_dialog.dart';
-import '../../widgets/hmb_list_card.dart';
 import '../../widgets/hmb_toggle.dart';
+import '../../widgets/layout/hmb_list_card.dart';
 
 class Parent<P extends Entity<P>> {
   Parent(this.parent);

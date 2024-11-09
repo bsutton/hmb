@@ -11,15 +11,15 @@ import '../../entity/job.dart';
 import '../../invoicing/list_invoice_screen.dart';
 import '../../quoting/list_quote_screen.dart';
 import '../../util/format.dart';
-import '../../widgets/hmb_email_text.dart';
-import '../../widgets/hmb_phone_text.dart';
-import '../../widgets/hmb_placeholder.dart';
-import '../../widgets/hmb_site_text.dart';
-import '../../widgets/hmb_spacer.dart';
-import '../../widgets/hmb_text.dart';
-import '../../widgets/hmb_text_themes.dart';
-import '../../widgets/photo_gallery.dart';
-import '../../widgets/rich_editor.dart';
+import '../../widgets/layout/hmb_placeholder.dart';
+import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/media/photo_gallery.dart';
+import '../../widgets/media/rich_editor.dart';
+import '../../widgets/text/hmb_email_text.dart';
+import '../../widgets/text/hmb_phone_text.dart';
+import '../../widgets/text/hmb_site_text.dart';
+import '../../widgets/text/hmb_text.dart';
+import '../../widgets/text/hmb_text_themes.dart';
 
 class JobCard extends StatefulWidget {
   const JobCard({required this.job, super.key});

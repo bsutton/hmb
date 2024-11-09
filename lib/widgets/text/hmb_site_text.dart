@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
 
-import '../dao/dao_site.dart';
-import '../entity/job.dart';
-import '../entity/site.dart';
-import 'hmb_map_icon.dart';
-import 'hmb_placeholder.dart';
+import '../../dao/dao_site.dart';
+import '../../entity/job.dart';
+import '../../entity/site.dart';
+import '../hmb_map_icon.dart';
+import '../layout/hmb_placeholder.dart';
 
 class HMBSiteText extends StatelessWidget {
   const HMBSiteText({required this.label, required this.site, super.key});

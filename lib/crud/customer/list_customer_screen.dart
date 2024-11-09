@@ -5,12 +5,12 @@ import '../../dao/dao.dart';
 import '../../dao/dao_contact.dart';
 import '../../dao/dao_site.dart';
 import '../../entity/customer.dart';
-import '../../widgets/contact_text.dart';
-import '../../widgets/hmb_email_text.dart';
-import '../../widgets/hmb_phone_text.dart';
-import '../../widgets/hmb_placeholder.dart';
-import '../../widgets/hmb_site_text.dart';
-import '../../widgets/hmb_text_themes.dart';
+import '../../widgets/layout/hmb_placeholder.dart';
+import '../../widgets/text/contact_text.dart';
+import '../../widgets/text/hmb_email_text.dart';
+import '../../widgets/text/hmb_phone_text.dart';
+import '../../widgets/text/hmb_site_text.dart';
+import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_customer_screen.dart';
 
@@ -40,8 +40,7 @@ class CustomerListScreen extends StatelessWidget {
                         children: [
                           ContactText(
                               label: 'Primary Contact:', contact: contact),
-                          HMBPhoneText(
-                              label: '', phoneNo: contact?.bestPhone),
+                          HMBPhoneText(label: '', phoneNo: contact?.bestPhone),
                           HMBEmailText(label: '', email: contact?.emailAddress),
                           HMBSiteText(label: '', site: site)
                         ])));

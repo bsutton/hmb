@@ -4,7 +4,7 @@ import 'package:strings/strings.dart';
 import '../dao/_index.g.dart';
 import '../entity/invoice.dart';
 import '../util/format.dart';
-import '../widgets/pdf_preview.dart';
+import '../widgets/media/pdf_preview.dart';
 import 'list_invoice_screen.dart';
 import 'pdf/generate_invoice_pdf.dart';
 

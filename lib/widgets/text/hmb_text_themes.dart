@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../util/hmb_theme.dart';
+import '../../util/hmb_theme.dart';
 
 ///
 /// Use this style on any page that has a full width heading at the

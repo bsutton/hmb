@@ -4,7 +4,7 @@ import '../../dao/dao_site.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/entity.dart';
 import '../../entity/site.dart';
-import '../../widgets/hmb_site_text.dart';
+import '../../widgets/text/hmb_site_text.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_site_screen.dart';
 

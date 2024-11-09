@@ -6,14 +6,14 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao_checklist_item.dart';
 import '../../entity/check_list_item.dart';
-import '../../widgets/hmb_text_field.dart';
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
 import '../entity/job.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
-import '../widgets/hmb_droplist_multi.dart';
+import '../widgets/fields/hmb_text_field.dart';
+import '../widgets/select/hmb_droplist_multi.dart';
 
 class PackingScreen extends StatefulWidget {
   const PackingScreen({super.key});

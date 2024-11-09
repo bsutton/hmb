@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../dao/dao_system.dart';
-import '../../widgets/hmb_text_field.dart';
+import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
 class SystemIntegrationScreen extends StatefulWidget {

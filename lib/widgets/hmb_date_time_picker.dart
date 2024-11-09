@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart' as m;
 import 'package:intl/intl.dart';
 
-import 'hmb_spacer.dart';
-import 'hmb_text.dart';
+import 'layout/hmb_spacer.dart';
+import 'text/hmb_text.dart';
 
 typedef OnChanged = void Function(DateTime newValue);
 

@@ -17,12 +17,13 @@ import '../../entity/task.dart';
 import '../../entity/task_status.dart';
 import '../../util/money_ex.dart';
 import '../../util/platform_ex.dart';
+import '../../widgets/fields/hmb_text_area.dart';
+import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_crud_checklist_item.dart';
 import '../../widgets/hmb_crud_time_entry.dart';
-import '../../widgets/hmb_droplist.dart';
-import '../../widgets/hmb_text.dart';
-import '../../widgets/hmb_text_area.dart';
-import '../../widgets/hmb_text_field.dart';
+import '../../widgets/media/photo_controller.dart';
+import '../../widgets/select/hmb_droplist.dart';
+import '../../widgets/text/hmb_text.dart';
 import '../base_nested/edit_nested_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'photo_crud.dart';
@@ -46,7 +47,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     implements NestedEntityState<Task> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
-  late PhotoController _photoController;
+  late PhotoController<Task> _photoController;
   late FocusNode _summaryFocusNode;
   late FocusNode _descriptionFocusNode;
 
@@ -69,7 +70,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _descriptionController =
         TextEditingController(text: currentEntity?.description);
 
-    _photoController = PhotoController(task: currentEntity);
+    _photoController = PhotoController<Task>(parent: currentEntity);
 
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
@@ -149,7 +150,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               parentTitle: 'Task',
               parent: Parent(task),
             ),
-            PhotoCrud(controller: _photoController),
+            PhotoCrud<Task>(parentName: 'Task', controller: _photoController),
           ],
         ),
       );
@@ -244,8 +245,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   Future<void> _insertTask(Task task) async {
     await DaoTask().insert(task);
-    
-    _photoController.task = task;
+
+    _photoController.parent = task;
   }
 
   @override

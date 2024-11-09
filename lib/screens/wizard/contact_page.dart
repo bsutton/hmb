@@ -7,11 +7,11 @@ import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/platform_ex.dart';
 import '../../util/sim_cards.dart';
-import '../../widgets/hmb_droplist.dart';
-import '../../widgets/hmb_email_field.dart';
-import '../../widgets/hmb_phone_field.dart';
-import '../../widgets/hmb_text_field.dart';
+import '../../widgets/fields/hmb_email_field.dart';
+import '../../widgets/fields/hmb_phone_field.dart';
+import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/select/hmb_droplist.dart';
 
 class WizardContactPage extends StatefulWidget {
   const WizardContactPage({required this.onNext, super.key});

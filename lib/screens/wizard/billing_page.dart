@@ -9,13 +9,13 @@ import 'package:path_provider/path_provider.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/money_ex.dart';
-import '../../widgets/hmb_droplist.dart';
-import '../../widgets/hmb_money_editing_controller.dart';
-import '../../widgets/hmb_money_field.dart';
-import '../../widgets/hmb_text.dart';
-import '../../widgets/hmb_text_area.dart';
-import '../../widgets/hmb_text_field.dart';
+import '../../widgets/fields/hmb_money_editing_controller.dart';
+import '../../widgets/fields/hmb_money_field.dart';
+import '../../widgets/fields/hmb_text_area.dart';
+import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/select/hmb_droplist.dart';
+import '../../widgets/text/hmb_text.dart';
 
 class WizardBillingPage extends StatefulWidget {
   const WizardBillingPage({required this.onNext, super.key});

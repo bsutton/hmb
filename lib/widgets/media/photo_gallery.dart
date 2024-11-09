@@ -5,11 +5,11 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
 
-import '../dao/dao_photo.dart';
-import '../dao/dao_task.dart';
-import '../entity/job.dart';
-import '../entity/photo.dart';
-import 'hmb_placeholder.dart';
+import '../../dao/dao_photo.dart';
+import '../../dao/dao_task.dart';
+import '../../entity/job.dart';
+import '../../entity/photo.dart';
+import '../layout/hmb_placeholder.dart';
 
 class PhotoGallery extends StatelessWidget {
   const PhotoGallery({required this.job, super.key});

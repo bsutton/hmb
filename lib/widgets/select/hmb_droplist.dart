@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../layout/labeled_container.dart';
 import 'hmb_droplist_dialog.dart';
-import 'labeled_container.dart';
 
 class HMBDroplist<T> extends FormField<T> {
   HMBDroplist({
@@ -81,7 +81,7 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
         });
       }
       widget.state.didChange(_selectedItem);
-    // ignore: avoid_catches_without_on_clauses
+      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       print('Error loading selected item: $e');
     }

@@ -4,7 +4,7 @@ import '../../dao/dao_checklist.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/check_list.dart';
 import '../../entity/entity.dart';
-import '../../widgets/hmb_text.dart';
+import '../../widgets/text/hmb_text.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_checklist_screen.dart';
 

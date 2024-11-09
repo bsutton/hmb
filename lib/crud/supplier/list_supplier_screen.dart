@@ -5,11 +5,11 @@ import '../../dao/dao_contact.dart';
 import '../../dao/dao_site.dart';
 import '../../dao/dao_supplier.dart';
 import '../../entity/supplier.dart';
-import '../../widgets/contact_text.dart';
-import '../../widgets/hmb_email_text.dart';
-import '../../widgets/hmb_phone_text.dart';
-import '../../widgets/hmb_site_text.dart';
-import '../../widgets/hmb_text_themes.dart';
+import '../../widgets/text/contact_text.dart';
+import '../../widgets/text/hmb_email_text.dart';
+import '../../widgets/text/hmb_phone_text.dart';
+import '../../widgets/text/hmb_site_text.dart';
+import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_supplier_screen.dart';
 

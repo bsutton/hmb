@@ -13,9 +13,9 @@ import '../../entity/entity.dart';
 import '../../entity/job.dart';
 import '../../entity/task.dart';
 import '../../util/money_ex.dart';
-import '../../widgets/hmb_text.dart';
-import '../../widgets/hmb_text_field.dart';
+import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toggle.dart';
+import '../../widgets/text/hmb_text.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_checklist_item_screen.dart';
 

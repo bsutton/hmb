@@ -5,7 +5,7 @@ import '../../dao/dao_job.dart';
 import '../../dao/dao_job_status.dart';
 import '../../entity/job.dart';
 import '../../entity/job_status_enum.dart';
-import '../../widgets/hmb_text_themes.dart';
+import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_job_screen.dart';
 import 'job_card.dart';

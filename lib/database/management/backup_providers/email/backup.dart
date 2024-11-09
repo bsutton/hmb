@@ -7,7 +7,7 @@ import 'package:strings/strings.dart';
 
 import '../../../../dao/dao_system.dart';
 import '../../../../util/exceptions.dart';
-import '../../../../widgets/hmb_file_picker_linux.dart';
+import '../../../../widgets/dialog/hmb_file_picker_linux.dart';
 import '../../../../widgets/hmb_toast.dart';
 import '../../../factory/hmb_database_factory.dart';
 import '../../../versions/asset_script_source.dart';

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
 
-import '../dao/dao_contact.dart';
-import '../entity/job.dart';
-import '../util/plus_space.dart';
-import 'dial_widget.dart';
-import 'hmb_placeholder.dart';
+import '../../dao/dao_contact.dart';
+import '../../entity/job.dart';
+import '../../util/plus_space.dart';
+import '../dial_widget.dart';
+import '../layout/hmb_placeholder.dart';
 
 /// Displays the label and phoneNum.
 /// If the phoneNum is null then we display nothing.

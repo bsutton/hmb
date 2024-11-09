@@ -10,8 +10,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../entity/_index.g.dart';
 import '../util/clip_board.dart';
 import '../util/platform_ex.dart';
+import 'dialog/message_template_dialog.dart';
 import 'hmb_toast.dart';
-import 'message_template_dialog.dart';
 
 class DialWidget extends StatelessWidget {
   const DialWidget(this.phoneNo,
@@ -67,11 +67,11 @@ class DialWidget extends StatelessWidget {
             child: const Text('Text'),
             onPressed: () async {
               // await _showTextInputDialog(context, phoneNo);
-              final template = await showMessageTemplateDialog(context, 
-              customer: customer,
-              contact: contact,
-              supplier: supplier,
-              job: job);
+              final template = await showMessageTemplateDialog(context,
+                  customer: customer,
+                  contact: contact,
+                  supplier: supplier,
+                  job: job);
               if (context.mounted) {
                 if (template != null) {
                   if (context.mounted) {

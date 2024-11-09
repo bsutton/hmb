@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../dao/dao_message_template.dart';
 import '../../entity/message_template.dart';
-import '../../widgets/hmb_text_themes.dart';
+import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_message_template.dart';
 

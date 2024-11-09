@@ -5,7 +5,7 @@ import 'package:june/june.dart';
 
 import '../dao/dao_job.dart';
 import '../entity/job.dart';
-import 'hmb_droplist_multi.dart';
+import 'select/hmb_droplist_multi.dart';
 
 class JobFilterWidget extends StatefulWidget {
   const JobFilterWidget({required this.onJobSelectionChanged, super.key});

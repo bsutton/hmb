@@ -7,7 +7,7 @@ import '../../dao/dao_time_entry.dart';
 import '../../entity/task.dart';
 import '../../entity/time_entry.dart';
 import '../../util/format.dart';
-import '../../widgets/hmb_text_field.dart';
+import '../../widgets/fields/hmb_text_field.dart';
 import '../base_nested/edit_nested_screen.dart';
 
 class TimeEntryEditScreen extends StatefulWidget {

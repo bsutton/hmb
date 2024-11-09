@@ -11,8 +11,8 @@ import 'package:stacktrace_impl/stacktrace_impl.dart';
 
 import '../util/hmb_theme.dart';
 import '../util/stack_list.dart';
-import 'hmb_text_themes.dart';
-import 'position.dart';
+import 'layout/position.dart';
+import 'text/hmb_text_themes.dart';
 import 'tick_builder.dart';
 
 ///

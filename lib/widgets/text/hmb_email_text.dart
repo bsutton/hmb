@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
 
-import '../dao/dao_contact.dart';
-import '../entity/job.dart';
-import '../util/plus_space.dart';
-import 'hmb_placeholder.dart';
-import 'mail_to_icon.dart';
+import '../../dao/dao_contact.dart';
+import '../../entity/job.dart';
+import '../../util/plus_space.dart';
+import '../layout/hmb_placeholder.dart';
+import '../mail_to_icon.dart';
 
 class HMBEmailText extends StatelessWidget {
   const HMBEmailText({required this.email, this.label, super.key});

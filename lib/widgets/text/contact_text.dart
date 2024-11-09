@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../entity/contact.dart';
+import '../../entity/contact.dart';
 
 class ContactText extends StatelessWidget {
   const ContactText({required this.label, required this.contact, super.key});

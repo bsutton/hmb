@@ -3,11 +3,11 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao.dart';
 import '../../entity/entities.dart';
+import '../../widgets/dialog/hmb_are_you_sure_dialog.dart';
+import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_add_button.dart';
-import '../../widgets/hmb_are_you_sure_dialog.dart';
-import '../../widgets/hmb_placeholder.dart';
-import '../../widgets/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/hmb_placeholder.dart';
 
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   EntityListScreen({

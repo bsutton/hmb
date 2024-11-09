@@ -9,8 +9,8 @@ import '../dao/dao_time_entry.dart';
 import '../entity/task.dart';
 import '../entity/time_entry.dart';
 import '../util/format.dart';
-import 'start_timer_dialog.dart';
-import 'stop_timer_dialog.dart';
+import 'dialog/start_timer_dialog.dart';
+import 'dialog/stop_timer_dialog.dart';
 
 class HMBStartTimeEntry extends StatefulWidget {
   const HMBStartTimeEntry({

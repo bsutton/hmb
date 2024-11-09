@@ -18,7 +18,7 @@ import '../entity/job.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
 import '../widgets/async_state.dart';
-import '../widgets/hmb_are_you_sure_dialog.dart';
+import '../widgets/dialog/hmb_are_you_sure_dialog.dart';
 import '../widgets/hmb_one_of.dart';
 import '../widgets/hmb_toast.dart';
 import 'dialog_select_tasks.dart';

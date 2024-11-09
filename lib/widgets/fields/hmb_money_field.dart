@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
-import '../util/money_ex.dart';
+import '../../util/money_ex.dart';
+import 'hmb_money_editing_controller.dart';
 import 'hmb_text_field.dart';
 
-class HMBFixedField extends HMBTextField {
-  factory HMBFixedField(
-          {required HMBFixedEditingController controller,
+class HMBMoneyField extends HMBTextField {
+  factory HMBMoneyField(
+          {required HMBMoneyEditingController controller,
           required String labelText,
           required String fieldName,
           bool nonZero = true,
@@ -16,7 +17,7 @@ class HMBFixedField extends HMBTextField {
           Key? key,
           bool autofocus = false,
           bool leadingSpace = true}) =>
-      HMBFixedField._(
+      HMBMoneyField._(
           controller: controller,
           labelText: labelText,
           fieldName: fieldName,
@@ -29,7 +30,7 @@ class HMBFixedField extends HMBTextField {
           leadingSpace: leadingSpace,
           validator: (value) => validation(value, nonZero, fieldName));
 
-  const HMBFixedField._(
+  const HMBMoneyField._(
       {required super.controller,
       required super.labelText,
       required this.fieldName,
@@ -60,12 +61,4 @@ class HMBFixedField extends HMBTextField {
     // no error
     return null;
   }
-}
-
-class HMBFixedEditingController extends TextEditingController {
-  HMBFixedEditingController({
-    required this.fixed,
-  }) : super(text: fixed == null || fixed.isZero ? '' : fixed.toString());
-
-  final Fixed? fixed;
 }

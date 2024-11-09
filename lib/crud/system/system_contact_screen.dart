@@ -8,11 +8,11 @@ import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/platform_ex.dart';
 import '../../util/sim_cards.dart';
-import '../../widgets/hmb_droplist.dart';
-import '../../widgets/hmb_email_field.dart';
-import '../../widgets/hmb_phone_field.dart';
-import '../../widgets/hmb_text_field.dart';
+import '../../widgets/fields/hmb_email_field.dart';
+import '../../widgets/fields/hmb_phone_field.dart';
+import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/select/hmb_droplist.dart';
 
 class SystemContactInformationScreen extends StatefulWidget {
   const SystemContactInformationScreen({super.key});
@@ -52,7 +52,6 @@ class _SystemContactInformationScreenState
     _landLineController = TextEditingController(text: system.landLine);
     _officeNumberController = TextEditingController(text: system.officeNumber);
 
-    
     _fromEmailController = TextEditingController(text: system.fromEmail);
     _emailAddressController = TextEditingController(text: system.emailAddress);
   }
@@ -166,31 +165,31 @@ class _SystemContactInformationScreenState
                             controller: _postcodeController,
                             labelText: 'Post/Zip code',
                             keyboardType: TextInputType.number),
-                       FutureBuilderEx(
-                  // ignore: discarded_futures
-                  future: getSimCards(),
-                  builder: (context, cards) {
-                    if (cards == null || cards.isEmpty) {
-                      return const Text('No sim cards found');
-                    } else {
-                      return HMBDroplist<SimCard>(
-                        title: 'Sim Card',
-                        selectedItem: () async {
-                          final cards = await getSimCards();
-                          if (cards.isNotEmpty) {
-                            return cards[system.simCardNo ?? 0];
-                          } else {
-                            return null;
-                          }
-                        },
-                        items: (filter) async => getSimCards(),
-                        format: (card) => card.displayName ?? 'Unnamed',
-                        onChanged: (card) =>
-                            system.simCardNo = card?.slotIndex,
-                      );
-                    }
-                  },
-                ),
+                        FutureBuilderEx(
+                          // ignore: discarded_futures
+                          future: getSimCards(),
+                          builder: (context, cards) {
+                            if (cards == null || cards.isEmpty) {
+                              return const Text('No sim cards found');
+                            } else {
+                              return HMBDroplist<SimCard>(
+                                title: 'Sim Card',
+                                selectedItem: () async {
+                                  final cards = await getSimCards();
+                                  if (cards.isNotEmpty) {
+                                    return cards[system.simCardNo ?? 0];
+                                  } else {
+                                    return null;
+                                  }
+                                },
+                                items: (filter) async => getSimCards(),
+                                format: (card) => card.displayName ?? 'Unnamed',
+                                onChanged: (card) =>
+                                    system.simCardNo = card?.slotIndex,
+                              );
+                            }
+                          },
+                        ),
                       ],
                     ),
                   )),

@@ -11,14 +11,14 @@ import '../../dao/dao_supplier.dart';
 import '../../entity/check_list_item.dart';
 import '../../entity/job.dart';
 import '../../entity/supplier.dart';
-import '../../widgets/hmb_text_field.dart';
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
-import '../widgets/hmb_droplist.dart';
-import '../widgets/hmb_droplist_multi.dart';
+import '../widgets/fields/hmb_text_field.dart';
+import '../widgets/select/hmb_droplist.dart';
+import '../widgets/select/hmb_droplist_multi.dart';
 
 class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});

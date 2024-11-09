@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../dao/dao_customer.dart';
-import '../dao/dao_job.dart';
-import '../entity/task.dart';
-import '../entity/time_entry.dart';
-import '../util/format.dart';
-import 'hmb_date_time_picker.dart';
+import '../../dao/dao_customer.dart';
+import '../../dao/dao_job.dart';
+import '../../entity/task.dart';
+import '../../entity/time_entry.dart';
+import '../../util/format.dart';
+import '../fields/hmb_text_area.dart';
+import '../hmb_date_time_picker.dart';
+import '../hmb_toast.dart';
+import '../text/hmb_text.dart';
 import 'hmb_dialog.dart';
-import 'hmb_text.dart';
-import 'hmb_text_area.dart';
-import 'hmb_toast.dart';
 
 class StartTimerDialog extends StatefulWidget {
   const StartTimerDialog(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'dial_widget.dart';
+import '../dial_widget.dart';
 
 class HMBPhoneField extends StatelessWidget {
   const HMBPhoneField(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'hmb_text_themes.dart';
+import 'text/hmb_text_themes.dart';
 
 // ignore: avoid_positional_boolean_parameters
 typedef OnChanged = void Function(bool on);
