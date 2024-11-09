@@ -44,9 +44,9 @@ class LocalHostServer extends RedirectHandler {
       InternetAddress.loopbackIPv4,
       port,
     );
-    print('Listening on http://${server!.address.host}:${server!.port}');
+    log('Listening on http://${server!.address.host}:${server!.port}');
 
-    await for (final HttpRequest request in server!) {
+    server!.listen((request) async {
       if (request.uri.path == '/${XeroAuth2.redirectPath}') {
         // Notify all subscribers about the auth completion
         _authStreamController.add(request.requestedUri);
@@ -66,7 +66,7 @@ class LocalHostServer extends RedirectHandler {
           ..write('404: Not Found');
         await request.response.close();
       }
-    }
+    });
   }
 
   // Subscribe to the auth completion stream
@@ -79,7 +79,8 @@ class LocalHostServer extends RedirectHandler {
   // Close the stream controller when no longer needed
   @override
   Future<void> stop() async {
-    await _authStreamController.close();
+    log('Stoping LocalHostServer');
+    running = false;
     await server?.close(force: true);
   }
 

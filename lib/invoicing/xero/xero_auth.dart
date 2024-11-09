@@ -91,9 +91,6 @@ class XeroAuth2 {
       ],
     );
 
-    // if (await canLaunchUrl(authorizationUrl)) {
-    await launchUrl(authorizationUrl);
-    // }
     await redirectHandler.start();
 
     late StreamSubscription<Uri> sub;
@@ -105,6 +102,9 @@ class XeroAuth2 {
         completeLogin(loginComplete, uri);
       }
     });
+
+    /// Start the browser auth sequence
+    await launchUrl(authorizationUrl);
 
     return loginComplete.future;
   }
