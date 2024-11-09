@@ -12,11 +12,15 @@ class MyDrawer extends StatelessWidget {
     DrawerItem(title: 'Suppliers', route: '/suppliers'),
     DrawerItem(title: 'Shopping', route: '/shopping'),
     DrawerItem(title: 'Packing', route: '/packing'),
+    DrawerItem(title: 'Extras', route: '', children: [
+      DrawerItem(title: 'Tools', route: '/extras/tools'),
+      DrawerItem(title: 'Manufacturers', route: '/extras/manufacturers'),
+    ]),
     DrawerItem(
       title: 'System',
       route: '',
       children: [
-        DrawerItem(title: 'SMS Templates', route: '/sms_templates'),
+        DrawerItem(title: 'SMS Templates', route: '/system/sms_templates'),
         DrawerItem(title: 'Business', route: '/system/business'),
         DrawerItem(title: 'Billing', route: '/system/billing'),
         DrawerItem(title: 'Contact', route: '/system/contact'),

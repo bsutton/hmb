@@ -8,22 +8,24 @@ import 'package:image_picker/image_picker.dart';
 import 'package:june/june.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../../dao/dao_photo.dart';
 import '../../dao/dao_task.dart';
+import '../../entity/entity.dart';
 import '../../entity/photo.dart';
-import '../../entity/task.dart';
-import '../../widgets/photo_gallery.dart';
+import '../../widgets/media/photo_controller.dart';
+import '../../widgets/media/photo_gallery.dart';
 
-class PhotoCrud extends StatefulWidget {
-  const PhotoCrud({required this.controller, super.key});
+class PhotoCrud<E extends Entity<E>> extends StatefulWidget {
+  const PhotoCrud(
+      {required this.parentName, required this.controller, super.key});
 
-  final PhotoController controller;
+  final String parentName;
+  final PhotoController<E> controller;
 
   @override
-  State<PhotoCrud> createState() => _PhotoCrudState();
+  State<PhotoCrud> createState() => _PhotoCrudState<E>();
 }
 
-class _PhotoCrudState extends State<PhotoCrud> {
+class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
   @override
   void initState() {
     super.initState();
@@ -31,8 +33,9 @@ class _PhotoCrudState extends State<PhotoCrud> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.controller._task == null) {
-      return const Center(child: Text('To Add a Photo - Save the Task First'));
+    if (widget.controller.parent == null) {
+      return Center(
+          child: Text('To Add a Photo - Save the ${widget.parentName} First'));
     }
     // Display photos and allow adding comments and deletion
     else {
@@ -43,7 +46,7 @@ class _PhotoCrudState extends State<PhotoCrud> {
               builder: (context, photos) => Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildAddButton(widget.controller._task, photos),
+                      _buildAddButton(widget.controller.parent, photos),
                       _buildPhotoCRUD(photos),
                     ],
                   )));
@@ -51,14 +54,14 @@ class _PhotoCrudState extends State<PhotoCrud> {
   }
 
   /// Build the take photo button
-  Widget _buildAddButton(Task? task, List<Photo>? photos) => IconButton(
+  Widget _buildAddButton(E? parent, List<Photo>? photos) => IconButton(
         icon: const Icon(Icons.camera_alt),
         onPressed: () async {
           final photoFile = await takePhoto();
           if (photoFile != null) {
             // Insert the photo metadata into the database
             final newPhoto = Photo.forInsert(
-              taskId: task!.id,
+              taskId: parent!.id,
               filePath: photoFile.path,
               comment: '',
             );
@@ -221,91 +224,3 @@ class _PhotoCrudState extends State<PhotoCrud> {
 }
 
 class PhotoLoader extends JuneState {}
-
-class PhotoController {
-  PhotoController({required Task? task}) : _task = task {
-    unawaited(_loadPhotos());
-  }
-
-  Task? _task;
-  final List<Photo> _photos = [];
-
-  Task? get task => _task;
-
-  set task(Task? task) {
-    _task = task;
-    June.getState(PhotoLoader.new).setState();
-  }
-
-  Future<List<Photo>> get photos async {
-    await _completer.future;
-    return _photos;
-  }
-
-  final Completer<void> _completer = Completer<void>();
-
-  // List to hold comment controllers for each photo
-  final List<TextEditingController> _commentControllers = [];
-
-  Future<void> _loadPhotos() async {
-    if (_task == null) {
-      _completer.complete();
-      return;
-    }
-    _photos.addAll(await DaoPhoto().getByTask(_task!.id));
-
-    // Initialize comment controllers if not already initialized
-    if (_commentControllers.isEmpty) {
-      for (final photo in _photos) {
-        final controller = TextEditingController(text: photo.comment);
-
-        _commentControllers.add(controller);
-      }
-    }
-    _completer.complete();
-  }
-
-  /// Save comments explicitly when saving the task
-  Future<void> save() async {
-    await _completer.future;
-    for (var i = 0; i < _commentControllers.length; i++) {
-      final photo = _photos[i]..comment = _commentControllers[i].text;
-      await DaoPhoto().update(photo);
-    }
-    PhotoGallery.notify();
-  }
-
-  void dispose() {
-    for (final controller in _commentControllers) {
-      controller.dispose();
-    }
-  }
-
-  TextEditingController commentController(Photo photo) =>
-      _commentControllers[_photos.indexOf(photo)];
-
-  Future<void> addPhoto(Photo newPhoto) async {
-    await DaoPhoto().insert(newPhoto);
-
-    _photos.add(newPhoto);
-    _commentControllers.add(TextEditingController());
-    _refresh();
-  }
-
-  Future<void> deletePhoto(Photo photo) async {
-    final exist = File(photo.filePath).existsSync();
-    print('exists: $exist');
-    // Delete the photo from the database and the disk
-    await DaoPhoto().delete(photo.id);
-    await File(photo.filePath).delete();
-    _commentControllers.removeAt(_photos.indexOf(photo)).dispose();
-    _photos.remove(photo);
-
-    _refresh();
-  }
-
-  void _refresh() {
-    June.getState(PhotoLoader.new).setState();
-    PhotoGallery.notify();
-  }
-}

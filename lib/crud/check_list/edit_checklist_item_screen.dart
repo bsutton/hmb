@@ -26,6 +26,7 @@ import '../../util/platform_ex.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/select/hmb_droplist.dart';
+import '../../widgets/select/select_supplier.dart';
 import '../base_nested/edit_nested_screen.dart';
 import 'dimensions.dart';
 
@@ -465,17 +466,6 @@ class _CheckListItemEditScreenState
 }
 
 class SelectedCheckListItemType extends JuneState {
-  int? _selected;
-
-  set selected(int? value) {
-    _selected = value;
-    setState();
-  }
-
-  int get selected => _selected ?? 0;
-}
-
-class SelectedSupplier extends JuneState {
   int? _selected;
 
   set selected(int? value) {
