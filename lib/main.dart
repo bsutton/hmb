@@ -21,6 +21,7 @@ import 'nav/route.dart';
 import 'screens/error.dart';
 import 'widgets/blocking_ui.dart';
 import 'widgets/hmb_start_time_entry.dart';
+import 'widgets/media/windows_camera_delegate.dart';
 
 bool firstRun = false;
 
@@ -38,6 +39,7 @@ void main(List<String> args) async {
         ..profilesSampleRate = 1.0;
     },
     appRunner: () {
+      initCamera();
       initAppLinks();
 
       final blockingUIKey = GlobalKey();
@@ -73,6 +75,13 @@ void main(List<String> args) async {
       ));
     },
   );
+}
+
+void initCamera() {
+  if (Platform.isWindows) {
+    /// Add camera support to Image Picker on Windows.
+    WindowsCameraDelegate.register();
+  }
 }
 
 void initAppLinks() {

@@ -20,6 +20,8 @@ environment:
 dependencies:
   app_links: ^6.1.4
   archive: ^3.6.1
+  camera_platform_interface: ^2.8.0
+  camera_windows: ^0.2.6
   completer_ex: ^4.0.3
   country_code:
     hosted: https://onepub.dev/api/jbbxpsdavu/
@@ -51,6 +53,8 @@ dependencies:
   halfpipe: ^1.0.1
   http: ^1.2.1
   image_picker: ^1.1.1
+  image_picker_platform_interface: ^2.10.0
+  image_picker_windows: ^0.2.1+1
   intl: ^0.19.0
   json_annotation: ^4.9.0
   june: ^1.0.0+1
