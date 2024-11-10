@@ -123,7 +123,7 @@ GoRouter get router => GoRouter(
                 final taskName = args['taskName']!;
                 final comment = args['comment']!;
                 return FullScreenPhotoViewer(
-                    imagePath: imagePath, taskName: taskName, comment: comment);
+                    imagePath: imagePath, title: taskName, comment: comment);
               },
             ),
           ],

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_catches_without_on_clauses
+
 import 'dart:async';
 
 import 'package:camera_platform_interface/camera_platform_interface.dart';

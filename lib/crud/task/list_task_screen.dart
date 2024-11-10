@@ -154,7 +154,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       );
 
   Future<int> _getPhotoCount(int taskId) async =>
-      (await DaoPhoto().getByTask(taskId)).length;
+      (await DaoPhoto().getByParent( taskId, ParentType.task)).length;
 }
 
 class ShowCompletedTasksState extends JuneState {

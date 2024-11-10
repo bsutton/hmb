@@ -144,7 +144,7 @@ class JobEditScreenState extends State<JobEditScreen>
                             _chooseSite(customer, job),
 
                             // Display task photos
-                            if (job != null) PhotoGallery(job: job),
+                            if (job != null) PhotoGallery.forJob(job: job),
 
                             // Manage tasks
                             _manageTasks(job),

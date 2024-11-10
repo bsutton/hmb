@@ -3,13 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
+import '../../dao/dao_photo.dart';
 import '../../dao/dao_tool.dart';
 import '../../entity/tool.dart';
 import '../../util/money_ex.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/hmb_date_time_picker.dart';
 import '../../widgets/media/photo_controller.dart';
+import '../../widgets/media/photo_thumbnail.dart';
 import '../../widgets/select/select_manufacture.dart';
 import '../../widgets/select/select_supplier.dart';
 import '../base_full_screen/edit_entity_screen.dart';
@@ -31,22 +34,23 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
   late TextEditingController _serialNumberController;
   late TextEditingController _warrantyPeriodController;
   late TextEditingController _costController;
-  late TextEditingController _receiptPhotoController;
-  late TextEditingController _serialNumberPhotoController;
   late PhotoController<Tool> _photoController;
+
+  String? _receiptPhotoPath;
+  String? _serialNumberPhotoPath;
 
   @override
   Tool? currentEntity;
   final selectedSupplier = SelectedSupplier();
   final selectedManufacturer = SelectedManufacturer();
   final selectedCategory = SelectedCategory();
+  DateTime selectedDatePurchased = DateTime.now();
 
   @override
   Future<void> asyncInitState() async {
     currentEntity ??= widget.tool;
 
     _nameController = TextEditingController(text: currentEntity?.name);
-
     _descriptionController =
         TextEditingController(text: currentEntity?.description);
     _serialNumberController =
@@ -55,11 +59,12 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
         TextEditingController(text: currentEntity?.warrantyPeriod?.toString());
     _costController =
         TextEditingController(text: currentEntity?.cost?.toString());
-    _receiptPhotoController =
-        TextEditingController(text: currentEntity?.receiptPhotoPath);
-    _serialNumberPhotoController =
-        TextEditingController(text: currentEntity?.serialNumberPhotoPath);
-    _photoController = PhotoController<Tool>(parent: currentEntity);
+    selectedDatePurchased = currentEntity?.datePurchased ?? DateTime.now();
+    _photoController = PhotoController<Tool>(
+        parent: currentEntity, parentType: ParentType.tool);
+
+    _receiptPhotoPath = currentEntity?.receiptPhotoPath;
+    _serialNumberPhotoPath = currentEntity?.serialNumberPhotoPath;
 
     if (currentEntity != null) {
       selectedSupplier.selected = currentEntity?.supplierId;
@@ -126,36 +131,90 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                 ),
-                HMBTextField(
-                  controller: _receiptPhotoController,
-                  labelText: 'Receipt Photo Path',
+                HMBDateTimeField(
+                  showTime: false,
+                  label: 'Date Purchased',
+                  initialDateTime: selectedDatePurchased,
+                  onChanged: (datePurchased) async {
+                    selectedDatePurchased = datePurchased;
+                  },
                 ),
-                HMBTextField(
-                  controller: _serialNumberPhotoController,
-                  labelText: 'Serial Number Photo Path',
+                const SizedBox(height: 16),
+                _buildPhotoField(
+                  context,
+                  title: 'Serial Number Photo',
+                  photoPath: _serialNumberPhotoPath,
+                  onCapture: (path) {
+                    setState(() {
+                      _serialNumberPhotoPath = path;
+                    });
+                  },
                 ),
+                const SizedBox(height: 16),
+                _buildPhotoField(
+                  context,
+                  title: 'Receipt Photo',
+                  photoPath: _receiptPhotoPath,
+                  onCapture: (path) {
+                    setState(() {
+                      _receiptPhotoPath = path;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
                 PhotoCrud<Tool>(
-                    parentName: 'Tool', controller: _photoController),
+                  parentName: 'Tool',
+                  parentType: ParentType.tool,
+                  controller: _photoController,
+                ),
               ],
             ),
           ));
+
+  Widget _buildPhotoField(BuildContext context,
+          {required String title,
+          required String? photoPath,
+          required void Function(String) onCapture}) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Capture Photo'),
+                onPressed: () async {
+                  final path = await _photoController.takePhoto();
+                  if (path != null) {
+                    onCapture(path.path);
+                  }
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          PhotoThumbnail(photoPath: photoPath, title: title)
+        ],
+      );
 
   @override
   Future<Tool> forUpdate(Tool tool) async {
     await _photoController.save();
     return Tool.forUpdate(
-      entity: tool,
-      name: _nameController.text,
-      categoryId: selectedCategory.categoryId,
-      description: _descriptionController.text,
-      serialNumber: _serialNumberController.text,
-      supplierId: selectedSupplier.selected,
-      manufacturerId: selectedManufacturer.manufacturerId,
-      warrantyPeriod: int.tryParse(_warrantyPeriodController.text),
-      cost: MoneyEx.tryParse(_costController.text),
-      receiptPhotoPath: _receiptPhotoController.text,
-      serialNumberPhotoPath: _serialNumberPhotoController.text,
-    );
+        entity: tool,
+        name: _nameController.text,
+        categoryId: selectedCategory.categoryId,
+        description: _descriptionController.text,
+        serialNumber: _serialNumberController.text,
+        supplierId: selectedSupplier.selected,
+        manufacturerId: selectedManufacturer.manufacturerId,
+        warrantyPeriod: int.tryParse(_warrantyPeriodController.text),
+        cost: MoneyEx.tryParse(_costController.text),
+        receiptPhotoPath: _receiptPhotoPath,
+        serialNumberPhotoPath: _serialNumberPhotoPath,
+        datePurchased: selectedDatePurchased);
   }
 
   @override
@@ -168,8 +227,9 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
         manufacturerId: selectedManufacturer.manufacturerId,
         warrantyPeriod: int.tryParse(_warrantyPeriodController.text),
         cost: MoneyEx.tryParse(_costController.text),
-        receiptPhotoPath: _receiptPhotoController.text,
-        serialNumberPhotoPath: _serialNumberPhotoController.text,
+        receiptPhotoPath: _receiptPhotoPath,
+        serialNumberPhotoPath: _serialNumberPhotoPath,
+        datePurchased: selectedDatePurchased,
       );
 
   @override

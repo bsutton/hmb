@@ -2,27 +2,36 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
 
 import '../../dao/dao_photo.dart';
-import '../../dao/dao_task.dart';
 import '../../entity/job.dart';
-import '../../entity/photo.dart';
+import '../../entity/tool.dart';
 import '../layout/hmb_placeholder.dart';
+import 'full_screen_photo_view.dart';
 
 class PhotoGallery extends StatelessWidget {
-  const PhotoGallery({required this.job, super.key});
+  PhotoGallery.forJob({required Job job, super.key}) {
+    _fetchPhotos = () async => PhotoMeta.getByParent(job.id, ParentType.task);
+  }
 
-  final Job job;
+  PhotoGallery.forTool({required Tool tool, super.key}) {
+    _fetchPhotos = () async =>
+        (await DaoPhoto().getByParent(tool.id, ParentType.tool))
+            .map((photo) => PhotoMeta(
+                photo: photo, title: tool.name, comment: tool.description))
+            .toList();
+  }
+
+  late final Future<List<PhotoMeta>> Function() _fetchPhotos;
 
   /// Show a list of photo thumbnails for the job.
   @override
   Widget build(BuildContext context) => JuneBuilder(PhotoGalleryState.new,
-      builder: (context) => FutureBuilderEx<List<Photo>>(
+      builder: (context) => FutureBuilderEx<List<PhotoMeta>>(
           waitingBuilder: (context) => const HMBPlaceHolder(height: 100),
           // ignore: discarded_futures
-          future: _fetchTaskPhotos(),
+          future: _fetchPhotos(),
           builder: (context, photos) {
             if (photos!.isEmpty) {
               return const HMBPlaceHolder(height: 100);
@@ -31,12 +40,13 @@ class PhotoGallery extends StatelessWidget {
             }
           }));
 
-  SizedBox buildGallery(List<Photo> photos, BuildContext context) => SizedBox(
+  SizedBox buildGallery(List<PhotoMeta> photos, BuildContext context) =>
+      SizedBox(
         height: 100,
         child: ListView(
           scrollDirection: Axis.horizontal,
-          children: photos.map((photo) {
-            final file = File(photo.filePath);
+          children: photos.map((photoMeta) {
+            final file = File(photoMeta.photo.filePath);
             final isFileExist = file.existsSync();
 
             return Padding(
@@ -45,10 +55,12 @@ class PhotoGallery extends StatelessWidget {
                 onTap: () async {
                   if (isFileExist) {
                     // Fetch the task for this photo to get the task name.
-                    final task = await DaoTask().getById(photo.taskId);
                     if (context.mounted) {
-                      await _showFullScreenPhoto(
-                          context, photo.filePath, task!.name, photo.comment);
+                      await FullScreenPhotoViewer.show(
+                          context: context,
+                          imagePath: photoMeta.photo.filePath,
+                          title: photoMeta.title,
+                          comment: photoMeta.comment);
                     }
                   }
                 },
@@ -92,28 +104,18 @@ class PhotoGallery extends StatelessWidget {
         ),
       );
 
-  Future<List<Photo>> _fetchTaskPhotos() async {
-    final tasks = await DaoTask().getTasksByJob(job.id);
-    final photos = <Photo>[];
-    for (final task in tasks) {
-      final taskPhotos = await DaoPhoto().getByTask(task.id);
-      photos.addAll(taskPhotos);
-    }
-    return photos;
-  }
-
   static void notify() {
     June.getState(PhotoGalleryState.new).setState();
   }
 
-  Future<void> _showFullScreenPhoto(BuildContext context, String imagePath,
-      String taskName, String comment) async {
-    await context.push('/photo_viewer', extra: {
-      'imagePath': imagePath,
-      'taskName': taskName,
-      'comment': comment,
-    });
-  }
+  // Future<void> _showFullScreenPhoto(BuildContext context, String imagePath,
+  //     String taskName, String comment) async {
+  //   await context.push('/photo_viewer', extra: {
+  //     'imagePath': imagePath,
+  //     'taskName': taskName,
+  //     'comment': comment,
+  //   });
+  // }
 }
 
 class PhotoGalleryState extends JuneState {

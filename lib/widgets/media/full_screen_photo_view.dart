@@ -2,18 +2,19 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:strings/strings.dart';
 
 class FullScreenPhotoViewer extends StatelessWidget {
   const FullScreenPhotoViewer({
     required this.imagePath,
-    required this.taskName,
+    required this.title,
     required this.comment,
     super.key,
   });
 
   final String imagePath;
-  final String taskName;
-  final String comment;
+  final String title;
+  final String? comment;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -33,8 +34,9 @@ class FullScreenPhotoViewer extends StatelessWidget {
               right: 20,
               child: Column(
                 children: [
+                  /// title
                   Text(
-                    taskName,
+                    title,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -42,9 +44,11 @@ class FullScreenPhotoViewer extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  if (comment.isNotEmpty)
+
+                  /// comment
+                  if (Strings.isNotBlank(comment))
                     Text(
-                      comment,
+                      comment!,
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 16,
@@ -54,6 +58,8 @@ class FullScreenPhotoViewer extends StatelessWidget {
                 ],
               ),
             ),
+
+            /// close icon.
             Positioned(
               top: 40,
               right: 20,
@@ -65,4 +71,17 @@ class FullScreenPhotoViewer extends StatelessWidget {
           ],
         ),
       );
+
+  static Future<void> show(
+      {required BuildContext context,
+      required String imagePath,
+      required String title,
+      required String? comment}) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+          builder: (context) => FullScreenPhotoViewer(
+              imagePath: imagePath, title: title, comment: comment)),
+    );
+  }
 }

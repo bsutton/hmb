@@ -94,7 +94,7 @@ class _JobCardState extends State<JobCard> {
                         .first,
                   ),
                   const SizedBox(height: 8),
-                  PhotoGallery(job: job),
+                  PhotoGallery.forJob(job: job),
                   const SizedBox(height: 16),
                   buildStatistics(job),
                 ],

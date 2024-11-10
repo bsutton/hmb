@@ -8,6 +8,7 @@ import 'package:money2/money2.dart';
 
 import '../../dao/dao_checklist.dart';
 import '../../dao/dao_checklist_item.dart';
+import '../../dao/dao_photo.dart';
 import '../../dao/dao_task.dart';
 import '../../dao/dao_task_status.dart';
 import '../../dao/join_adaptors/join_adaptor_check_list_item.dart';
@@ -70,7 +71,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _descriptionController =
         TextEditingController(text: currentEntity?.description);
 
-    _photoController = PhotoController<Task>(parent: currentEntity);
+    _photoController = PhotoController<Task>(
+        parent: currentEntity, parentType: ParentType.task);
 
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
@@ -150,7 +152,10 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               parentTitle: 'Task',
               parent: Parent(task),
             ),
-            PhotoCrud<Task>(parentName: 'Task', controller: _photoController),
+            PhotoCrud<Task>(
+                parentName: 'Task',
+                parentType: ParentType.task,
+                controller: _photoController),
           ],
         ),
       );

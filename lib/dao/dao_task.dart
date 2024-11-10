@@ -63,7 +63,7 @@ where cli.id =?
   }
 
   Future<void> deleteTaskPhotos(int taskId, {Transaction? transaction}) async {
-    final photos = await DaoPhoto().getByTask(taskId);
+    final photos = await DaoPhoto().getByParent(taskId, ParentType.task);
 
     for (final photo in photos) {
       await DaoPhoto().delete(photo.id);

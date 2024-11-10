@@ -90,33 +90,34 @@ class _HMBDateTimeFieldState extends m.State<HMBDateTimeField> {
               },
             ),
           ),
-          const HMBSpacer(width: true),
-          m.SizedBox(
-            width: 80,
-            child: m.TextFormField(
-              readOnly: true,
-              decoration: const m.InputDecoration(
-                labelText: 'Select Time',
+          if (widget.showTime) const HMBSpacer(width: true),
+          if (widget.showTime)
+            m.SizedBox(
+              width: 80,
+              child: m.TextFormField(
+                readOnly: true,
+                decoration: const m.InputDecoration(
+                  labelText: 'Select Time',
+                ),
+                controller: timeController,
+                onTap: () async {
+                  final time = await _showTimePicker(context, selectedDateTime);
+                  if (time != null) {
+                    setState(() {
+                      selectedDateTime = DateTime(
+                        selectedDateTime.year,
+                        selectedDateTime.month,
+                        selectedDateTime.day,
+                        time.hour,
+                        time.minute,
+                      );
+                      timeController.text = timeFormat.format(selectedDateTime);
+                    });
+                    widget.onChanged(selectedDateTime);
+                  }
+                },
               ),
-              controller: timeController,
-              onTap: () async {
-                final time = await _showTimePicker(context, selectedDateTime);
-                if (time != null) {
-                  setState(() {
-                    selectedDateTime = DateTime(
-                      selectedDateTime.year,
-                      selectedDateTime.month,
-                      selectedDateTime.day,
-                      time.hour,
-                      time.minute,
-                    );
-                    timeController.text = timeFormat.format(selectedDateTime);
-                  });
-                  widget.onChanged(selectedDateTime);
-                }
-              },
             ),
-          ),
         ],
       );
 

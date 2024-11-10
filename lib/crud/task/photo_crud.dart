@@ -3,22 +3,25 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:june/june.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:strings/strings.dart';
 
-import '../../dao/dao_task.dart';
+import '../../dao/dao_photo.dart';
 import '../../entity/entity.dart';
 import '../../entity/photo.dart';
+import '../../widgets/media/full_screen_photo_view.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_gallery.dart';
 
 class PhotoCrud<E extends Entity<E>> extends StatefulWidget {
   const PhotoCrud(
-      {required this.parentName, required this.controller, super.key});
+      {required this.parentName,
+      required this.parentType,
+      required this.controller,
+      super.key});
 
   final String parentName;
+  final ParentType parentType;
   final PhotoController<E> controller;
 
   @override
@@ -43,43 +46,45 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
           builder: (context) => FutureBuilderEx(
               // ignore: discarded_futures
               future: widget.controller.photos,
-              builder: (context, photos) => Column(
+              builder: (context, photoMetas) => Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildAddButton(widget.controller.parent, photos),
-                      _buildPhotoCRUD(photos),
+                      _buildAddButton(widget.controller.parent, photoMetas),
+                      _buildPhotoCRUD(photoMetas),
                     ],
                   )));
     }
   }
 
   /// Build the take photo button
-  Widget _buildAddButton(E? parent, List<Photo>? photos) => IconButton(
+  Widget _buildAddButton(E? parent, List<PhotoMeta>? photoMetas) => IconButton(
         icon: const Icon(Icons.camera_alt),
         onPressed: () async {
-          final photoFile = await takePhoto();
+          final photoFile = await widget.controller.takePhoto();
           if (photoFile != null) {
             // Insert the photo metadata into the database
             final newPhoto = Photo.forInsert(
-              taskId: parent!.id,
+              parentId: parent!.id,
+              parentType: widget.parentType.name,
               filePath: photoFile.path,
               comment: '',
             );
-            await widget.controller.addPhoto(newPhoto);
+            await widget.controller
+                .addPhoto(PhotoMeta(photo: newPhoto, title: '', comment: null));
           }
         },
       );
 
   /// Build the photo CRUD
-  Widget _buildPhotoCRUD(List<Photo>? photos) => Column(
+  Widget _buildPhotoCRUD(List<PhotoMeta>? photoMetas) => Column(
         mainAxisSize: MainAxisSize.min,
-        children: photos!
-            .map((photo) => Column(
+        children: photoMetas!
+            .map((photoMeta) => Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _showPhoto(photo),
-                    _buildCommentField(photo),
-                    _buildDeleteButton(photo),
+                    _showPhoto(photoMeta),
+                    _buildCommentField(photoMeta),
+                    _buildDeleteButton(photoMeta),
                   ],
                 ))
             .toList(),
@@ -88,8 +93,8 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
   /// Display the photo with a 'Icon in the corner
   /// which when tapped will show the full screen photo
   /// with zoom/pan ability.
-  Stack _showPhoto(Photo photo) {
-    final file = File(photo.filePath);
+  Stack _showPhoto(PhotoMeta photoMeta) {
+    final file = File(photoMeta.photo.filePath);
     final isFileExist = file.existsSync();
 
     return Stack(
@@ -113,10 +118,12 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
             // Show full screen photo when tapped, only if the file exists
             onTap: () async {
               if (isFileExist) {
-                final task = await DaoTask().getById(photo.taskId);
                 if (mounted) {
-                  await _showFullScreenPhoto(
-                      context, photo.filePath, task!.name, photo.comment);
+                  await FullScreenPhotoViewer.show(
+                      context: context,
+                      imagePath: photoMeta.photo.filePath,
+                      title: photoMeta.title,
+                      comment: photoMeta.comment);
                 }
               }
             },
@@ -134,30 +141,30 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
     );
   }
 
-  IconButton _buildDeleteButton(Photo photo) => IconButton(
+  IconButton _buildDeleteButton(PhotoMeta photoMeta) => IconButton(
         icon: const Icon(Icons.delete),
         onPressed: () async {
-          await _showConfirmDeleteDialog(context, photo);
+          await _showConfirmDeleteDialog(context, photoMeta);
           PhotoGallery.notify();
         },
       );
 
-  Widget _buildCommentField(Photo photo) {
-    final commentControlller = widget.controller.commentController(photo);
+  Widget _buildCommentField(PhotoMeta photoMeta) {
+    final commentControlller = widget.controller.commentController(photoMeta);
     return TextField(
       controller: commentControlller,
       decoration: const InputDecoration(labelText: 'Comment'),
       maxLines: null, // Allows the field to grow as needed
       onChanged: (value) {
         // Update comment immediately when text changes
-        photo.comment = value;
+        photoMeta.comment = value;
       },
     );
   }
 
   /// currently causing flutter to crash.
   Future<void> _showConfirmDeleteDialog(
-      BuildContext context, Photo photo) async {
+      BuildContext context, PhotoMeta photoMeta) async {
     if (context.mounted) {
       return showDialog<void>(
         context: context,
@@ -166,9 +173,10 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Image.file(File(photo.filePath),
+              Image.file(File(photoMeta.photo.filePath),
                   width: 100, height: 100), // Thumbnail of the photo
-              if (photo.comment.isNotEmpty) Text(photo.comment),
+              if (Strings.isNotBlank(photoMeta.comment))
+                Text(photoMeta.photo.comment),
               const SizedBox(height: 10),
               const Text('Are you sure you want to delete this photo?'),
             ],
@@ -183,7 +191,7 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
             TextButton(
               child: const Text('Delete'),
               onPressed: () async {
-                await widget.controller.deletePhoto(photo);
+                await widget.controller.deletePhoto(photoMeta);
                 if (context.mounted) {
                   Navigator.of(context).pop();
                 }
@@ -195,32 +203,14 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
     }
   }
 
-  Future<void> _showFullScreenPhoto(BuildContext context, String imagePath,
-      String taskName, String comment) async {
-    await context.push('/photo_viewer', extra: {
-      'imagePath': imagePath,
-      'taskName': taskName,
-      'comment': comment,
-    });
-  }
-
-  Future<File?> takePhoto() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
-    if (pickedFile == null) {
-      return null;
-    }
-
-    final appDir = await getApplicationDocumentsDirectory();
-    final fileName = pickedFile.path.split('/').last;
-    final savedImage =
-        await File(pickedFile.path).copy('${appDir.path}/$fileName');
-
-    final exist = File(savedImage.path).existsSync();
-    print('exists: $exist');
-
-    return savedImage;
-  }
+  // Future<void> _showFullScreenPhoto(BuildContext context, String imagePath,
+  //     String taskName, String comment) async {
+  //   await context.push('/photo_viewer', extra: {
+  //     'imagePath': imagePath,
+  //     'taskName': taskName,
+  //     'comment': comment,
+  //   });
+  // }
 }
 
 class PhotoLoader extends JuneState {}
