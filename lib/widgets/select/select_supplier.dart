@@ -8,11 +8,16 @@ import '../hmb_add_button.dart';
 import 'hmb_droplist.dart';
 
 class SelectSupplier extends StatefulWidget {
-  const SelectSupplier(
-      {required this.selectedSupplier, super.key, this.onSelected});
-  final SelectedSupplier selectedSupplier;
+  const SelectSupplier({
+    required this.selectedSupplier,
+    super.key,
+    this.onSelected,
+    this.isRequired = false, // New parameter with default value
+  });
 
+  final SelectedSupplier selectedSupplier;
   final void Function(Supplier? supplier)? onSelected;
+  final bool isRequired; // New field to indicate if the selection is required
 
   @override
   SelectSupplierState createState() => SelectSupplierState();
@@ -51,11 +56,12 @@ class SelectSupplierState extends State<SelectSupplier> {
         children: [
           Expanded(
             child: HMBDroplist<Supplier>(
-              title: 'Supplier',
+              title: widget.isRequired ? 'Supplier *' : 'Supplier',
               selectedItem: _getInitialSupplier,
               onChanged: _onSupplierChanged,
               items: (filter) async => _getSuppliers(filter),
               format: (supplier) => supplier.name,
+              required: widget.isRequired,
             ),
           ),
           Center(
