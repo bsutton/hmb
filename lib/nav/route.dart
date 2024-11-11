@@ -16,7 +16,7 @@ import '../screens/about.dart';
 import '../screens/error.dart';
 import '../screens/list_packing_screen.dart';
 import '../screens/list_shopping_screen.dart';
-import '../screens/wizard/wizard.dart';
+import '../screens/wizard/system_wizard.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import 'home_with_drawer.dart';
 

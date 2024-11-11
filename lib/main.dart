@@ -19,6 +19,7 @@ import 'database/versions/asset_script_source.dart';
 import 'installer/linux/install.dart' if (kIsWeb) 'util/web_stub.dart';
 import 'nav/route.dart';
 import 'screens/error.dart';
+import 'util/log.dart';
 import 'widgets/blocking_ui.dart';
 import 'widgets/hmb_start_time_entry.dart';
 import 'widgets/media/windows_camera_delegate.dart';
@@ -26,6 +27,8 @@ import 'widgets/media/windows_camera_delegate.dart';
 bool firstRun = false;
 
 void main(List<String> args) async {
+  Log.configure('.');
+
   // Ensure WidgetsFlutterBinding is initialized before any async code.
   WidgetsFlutterBinding.ensureInitialized();
 
