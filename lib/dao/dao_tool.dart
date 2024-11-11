@@ -29,8 +29,10 @@ class DaoTool extends Dao<Tool> {
     final data = await db.rawQuery('''
 select t.* 
 from tool t
+join category c
+on t.categoryId = c.id
 where t.name like ?
-or t.category like ?
+or c.name like ?
 or t.serialNumber like ?
 or t.description like ?
 order by t.name
