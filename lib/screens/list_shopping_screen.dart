@@ -11,9 +11,12 @@ import '../../dao/dao_supplier.dart';
 import '../../entity/check_list_item.dart';
 import '../../entity/job.dart';
 import '../../entity/supplier.dart';
+import '../dao/dao_check_list_item_type.dart';
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
+import '../dao/dao_tool.dart';
+import '../entity/tool.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
 import '../widgets/fields/hmb_text_field.dart';
@@ -92,6 +95,41 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
 
       await DaoCheckListItem().markAsCompleted(item, unitCost, quantity);
       await _loadCheckListItems();
+
+      // Check if item type is "Tool - buy" and prompt to add to tool list
+      if (item.itemTypeId == (await DaoCheckListItemType().getToolsBuy()).id) {
+        if (mounted) {
+          final addTool = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Add Tool to Tool List?'),
+              content: const Text(
+                  'Would you like to add this tool to your tool list?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('No'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Yes'),
+                ),
+              ],
+            ),
+          );
+
+          if (addTool ?? false) {
+            final tool = Tool.forInsert(
+              name: item.description,
+              cost: unitCost,
+              supplierId: item.supplierId,
+              datePurchased: DateTime.now(),
+              // Add any other relevant details
+            );
+            await DaoTool().insertTool(tool);
+          }
+        }
+      }
     }
   }
 
