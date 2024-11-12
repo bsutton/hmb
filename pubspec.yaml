@@ -57,6 +57,7 @@ dependencies:
   image_picker: ^1.1.1
   image_picker_platform_interface: ^2.10.0
   image_picker_windows: ^0.2.1+1
+  infinite_calendar_view: ^1.0.2
   intl: ^0.19.0
   json_annotation: ^4.9.0
   june: ^1.0.0+1

@@ -842,6 +842,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.1+1"
+  infinite_calendar_view:
+    dependency: "direct main"
+    description:
+      name: infinite_calendar_view
+      sha256: "0a4147546f460950df0edadd3148fded609590eb0925d8a8903e75f2fed37ebf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   ini:
     dependency: transitive
     description:
@@ -1527,6 +1535,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
+  sticky_infinite_list:
+    dependency: transitive
+    description:
+      name: sticky_infinite_list
+      sha256: d9cc75fd08af04bd23608a7129a895d6424977897bb54a11687ed1f3a3d55be1
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.1"
   stream_channel:
     dependency: transitive
     description:
