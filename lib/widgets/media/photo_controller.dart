@@ -100,7 +100,6 @@ class PhotoController<E extends Entity<E>> {
 
   Future<File?> takePhoto() async {
     final picker = ImagePicker();
-    ImagePickerWindows().cameraDelegate = WindowsCameraDelegate();
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
     if (pickedFile == null) {
       return null;
