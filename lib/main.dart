@@ -13,6 +13,7 @@ import 'package:toastification/toastification.dart';
 import 'dao/dao_task.dart';
 import 'dao/dao_time_entry.dart';
 import 'database/factory/flutter_database_factory.dart';
+import 'database/management/backup_providers/email/screen.dart';
 import 'database/management/backup_providers/local/local_backup_provider.dart';
 import 'database/management/database_helper.dart';
 import 'database/versions/asset_script_source.dart';
@@ -22,7 +23,8 @@ import 'screens/error.dart';
 import 'util/log.dart';
 import 'widgets/blocking_ui.dart';
 import 'widgets/hmb_start_time_entry.dart';
-import 'widgets/media/windows_camera_delegate.dart';
+import 'widgets/hmb_toast.dart';
+import 'widgets/media/desktop_camera_delegate.dart';
 
 bool firstRun = false;
 
@@ -81,9 +83,9 @@ void main(List<String> args) async {
 }
 
 void initCamera() {
-  if (Platform.isWindows) {
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     /// Add camera support to Image Picker on Windows.
-    WindowsCameraDelegate.register();
+    DesktopCameraDelegate.register();
   }
 }
 
@@ -109,7 +111,9 @@ Future<void> _initialise(BuildContext context) async {
       initialised = true;
       firstRun = await _checkInstall();
       // await _initFirebase();
-      await _initDb();
+      if (context.mounted) {
+        await _initDb(context);
+      }
       await _initializeTimeEntryState(refresh: false);
 
       // ignore: avoid_catches_without_on_clauses
@@ -131,13 +135,29 @@ Future<void> _initialise(BuildContext context) async {
   }
 }
 
-Future<void> _initDb() async {
-  await DatabaseHelper().initDatabase(
-      src: AssetScriptSource(),
-      backupProvider: LocalBackupProvider(FlutterDatabaseFactory()),
-      backup: !kIsWeb,
-      databaseFactory: FlutterDatabaseFactory());
-  print('Database located at: ${await DatabaseHelper().pathToDatabase()}');
+Future<void> _initDb(BuildContext context) async {
+  final backupProvider = LocalBackupProvider(FlutterDatabaseFactory());
+  try {
+    await DatabaseHelper().initDatabase(
+        src: AssetScriptSource(),
+        backupProvider: backupProvider,
+        backup: !kIsWeb,
+        databaseFactory: FlutterDatabaseFactory());
+    print('Database located at: ${await backupProvider.databasePath}');
+    // ignore: avoid_catches_without_on_clauses
+  } catch (e, st) {
+    HMBToast.error(
+        'Db open failed. Try rebooting your phone or restore the db $e');
+
+    unawaited(Sentry.captureException(e, stackTrace: st));
+    if (context.mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+            builder: (context) => const BackupScreen(pathToBackup: '')),
+      );
+    }
+  }
 }
 
 Future<bool> _checkInstall() async {

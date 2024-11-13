@@ -7,7 +7,7 @@ import 'package:image_picker_platform_interface/image_picker_platform_interface.
 
 import '../hmb_toast.dart';
 
-class WindowsCameraDelegate extends ImagePickerCameraDelegate {
+class DesktopCameraDelegate extends ImagePickerCameraDelegate {
   List<CameraDescription> _cameras = [];
   int _cameraId = -1;
   bool _initialized = false;
@@ -114,7 +114,7 @@ class WindowsCameraDelegate extends ImagePickerCameraDelegate {
   static void register() {
     final instance = ImagePickerPlatform.instance;
     if (instance is CameraDelegatingImagePickerPlatform) {
-      instance.cameraDelegate = WindowsCameraDelegate();
+      instance.cameraDelegate = DesktopCameraDelegate();
     }
   }
 }
