@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../dao/dao.dart';
 import '../../dao/dao_contact.dart';
+import '../../dao/dao_customer.dart';
 import '../../dao/dao_site.dart';
 import '../../entity/customer.dart';
 import '../../widgets/layout/hmb_placeholder.dart';

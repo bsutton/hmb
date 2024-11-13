@@ -1,4 +1,4 @@
-import 'package:june/state_manager/src/simple/controllers.dart';
+import 'package:june/june.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../entity/quote_line_group.dart';

@@ -12,6 +12,7 @@ import '../util/exceptions.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_contact.dart';
+import 'dao_customer.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
