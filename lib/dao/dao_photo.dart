@@ -1,9 +1,7 @@
 import 'package:june/june.dart';
-import 'package:path/path.dart';
 
-import '../../../../util/paths.dart'
-    if (dart.library.ui) '../../../../util/paths_flutter.dart';
 import '../entity/photo.dart';
+import '../util/photo_meta.dart';
 import 'dao.dart';
 import 'dao_task.dart';
 import 'dao_tool.dart';
@@ -36,42 +34,6 @@ class DaoPhoto extends Dao<Photo> {
 
   @override
   String get tableName => 'photo';
-}
-
-class PhotoState extends JuneState {
-  PhotoState();
-}
-
-class PhotoMeta {
-  PhotoMeta({required this.photo, required this.title, required this.comment});
-
-  PhotoMeta.fromPhoto({required this.photo})
-      : comment = photo.comment,
-        title = '';
-
-  final Photo photo;
-  final String title;
-  String? comment;
-  String? _absolutePath;
-
-  static Future<List<PhotoMeta>> getByParent(
-      int parentId, ParentType parentType) async {
-    switch (parentType) {
-      case ParentType.task:
-        return getByJob(parentId);
-      case ParentType.tool:
-        return getByTool(parentId);
-    }
-  }
-
-  String get absolutePathTo {
-    assert(_absolutePath != null, 'You must call the resolve method first');
-
-    return _absolutePath!;
-  }
-
-  Future<String> resolve() async =>
-      _absolutePath = join(await getPhotosRootPath(), photo.filePath);
 
   static Future<List<PhotoMeta>> getByJob(int jobId) async {
     final tasks = await DaoTask().getTasksByJob(jobId);
@@ -92,11 +54,17 @@ class PhotoMeta {
         .toList();
   }
 
-  /// Resolves all of the file paths into absolute file paths.
-  static Future<List<PhotoMeta>> resolveAll(List<PhotoMeta> photos) async {
-    for (final meta in photos) {
-      await meta.resolve();
+  static Future<List<PhotoMeta>> getMetaByParent(
+      int parentId, ParentType parentType) async {
+    switch (parentType) {
+      case ParentType.task:
+        return getByJob(parentId);
+      case ParentType.tool:
+        return getByTool(parentId);
     }
-    return photos;
   }
+}
+
+class PhotoState extends JuneState {
+  PhotoState();
 }

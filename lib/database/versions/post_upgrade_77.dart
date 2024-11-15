@@ -1,8 +1,8 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../dao/dao_base.dart';
-import '../../dao/dao_photo.dart';
 import '../../entity/photo.dart';
+import '../../util/photo_meta.dart';
 import '../../widgets/media/captured_photo.dart';
 
 /// Is run after the v77.sql upgrade script is run.

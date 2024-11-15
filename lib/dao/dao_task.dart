@@ -5,6 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../entity/_index.g.dart';
 import '../util/money_ex.dart';
+import '../util/photo_meta.dart';
 import 'dao.dart';
 import 'dao_checklist.dart';
 import 'dao_checklist_item.dart';

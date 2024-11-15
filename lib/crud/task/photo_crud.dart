@@ -10,6 +10,7 @@ import 'package:strings/strings.dart';
 import '../../dao/dao_photo.dart';
 import '../../entity/entity.dart';
 import '../../entity/photo.dart';
+import '../../util/photo_meta.dart';
 import '../../widgets/media/full_screen_photo_view.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_gallery.dart';

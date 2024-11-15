@@ -7,12 +7,14 @@ import 'package:june/june.dart';
 import '../../dao/dao_photo.dart';
 import '../../entity/job.dart';
 import '../../entity/tool.dart';
+import '../../util/photo_meta.dart';
 import '../layout/hmb_placeholder.dart';
 import 'full_screen_photo_view.dart';
 
 class PhotoGallery extends StatelessWidget {
   PhotoGallery.forJob({required Job job, super.key}) {
-    _fetchPhotos = () async => PhotoMeta.getByParent(job.id, ParentType.task);
+    _fetchPhotos =
+        () async => DaoPhoto.getMetaByParent(job.id, ParentType.task);
   }
 
   PhotoGallery.forTool({required Tool tool, super.key}) {
