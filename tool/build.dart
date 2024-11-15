@@ -62,13 +62,12 @@ Create a signed release appbundle suitable to upload to Google Play store.''')
   var needPubGet = true;
 
   if (build) {
-      final pathToPubSpec = DartProject.self.pathToPubSpec;
-  final currentVersion = version(pubspecPath: pathToPubSpec)!;
-  final newVersion = askForVersion(currentVersion);
-  updateVersion(newVersion, pm.PubSpec.load(), pathToPubSpec);
+    final pathToPubSpec = DartProject.self.pathToPubSpec;
+    final currentVersion = version(pubspecPath: pathToPubSpec)!;
+    final newVersion = askForVersion(currentVersion);
+    updateVersion(newVersion, pm.PubSpec.load(), pathToPubSpec);
 
-  updateAndroidVersion(newVersion);
-
+    updateAndroidVersion(newVersion);
 
     if (needPubGet) {
       _runPubGet();

@@ -20,7 +20,7 @@ class DaoTask extends Dao<Task> {
   String get tableName => 'task';
 
   Future<List<Task>> getTasksByJob(int jobId) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     final results =
         await db.query(tableName, where: 'job_id = ?', whereArgs: [jobId]);
@@ -45,7 +45,7 @@ class DaoTask extends Dao<Task> {
   }
 
   Future<Task> getTaskForCheckListItem(CheckListItem item) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     final data = await db.rawQuery('''
 select t.* 
@@ -76,7 +76,7 @@ where cli.id =?
   }
 
   Future<Task> getTaskForCheckList(CheckList checkList) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     final data = await db.rawQuery('''
     SELECT t.* 
@@ -90,7 +90,7 @@ where cli.id =?
   }
 
   Future<Task> getTask(CheckListItem item) async {
-    final db = getDb();
+    final db = withoutTransaction();
     final data = await db.rawQuery('''
 SELECT t.*
 FROM task t
@@ -234,7 +234,7 @@ WHERE cli.id = ?
   JuneStateCreator get juneRefresher => TaskState.new;
 
   Future<void> deleteByJob(int id, {Transaction? transaction}) async {
-    final db = getDb();
+    final db = withinTransaction(transaction);
 
     final tasks = await getTasksByJob(id);
 

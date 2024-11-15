@@ -10,7 +10,7 @@ class DaoTaskStatus extends Dao<TaskStatus> {
 
   /// search for jobs given a user supplied filter string.
   Future<List<TaskStatus>> getByFilter(String? filter) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (Strings.isBlank(filter)) {
       return getAll(orderByClause: 'ordinal');
@@ -29,7 +29,7 @@ order by ordinal
   }
 
   Future<TaskStatus> getByEnum(TaskStatusEnum taskStatusEnum) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     final data = await db.rawQuery('''
 select ts.*

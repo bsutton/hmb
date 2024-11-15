@@ -110,10 +110,8 @@ Future<void> _initialise(BuildContext context) async {
     try {
       initialised = true;
       firstRun = await _checkInstall();
-      // await _initFirebase();
-      if (context.mounted) {
-        await _initDb(context);
-      }
+      // ignore: use_build_context_synchronously
+      await _initDb(context);
       await _initializeTimeEntryState(refresh: false);
 
       // ignore: avoid_catches_without_on_clauses

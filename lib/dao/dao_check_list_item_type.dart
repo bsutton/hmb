@@ -10,14 +10,14 @@ class DaoCheckListItemType extends Dao<CheckListItemType> {
 
   /// Get all CheckListItemTypes
   Future<List<CheckListItemType>> getAllCheckListItemTypes() async {
-    final db = getDb();
+    final db = withoutTransaction();
     final data = await db.query(tableName);
     return toList(data);
   }
 
   /// Get CheckListItemTypes by name
   Future<List<CheckListItemType>> getByName(String name) async {
-    final db = getDb();
+    final db = withoutTransaction();
     final data = await db.query(
       tableName,
       where: 'name = ?',
@@ -29,7 +29,7 @@ class DaoCheckListItemType extends Dao<CheckListItemType> {
   /// Get CheckListItemTypes by 'toPurchase' flag
   Future<List<CheckListItemType>> getByToPurchase(
       {required bool toPurchase}) async {
-    final db = getDb();
+    final db = withoutTransaction();
     final data = await db.query(
       tableName,
       where: 'to_purchase = ?',
@@ -55,7 +55,7 @@ class DaoCheckListItemType extends Dao<CheckListItemType> {
 
   /// Search for CheckListItemTypes based on a filter string
   Future<List<CheckListItemType>> getByFilter(String? filter) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (Strings.isBlank(filter)) {
       return getAll();

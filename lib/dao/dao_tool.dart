@@ -1,4 +1,5 @@
 import 'package:june/june.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/tool.dart';
@@ -12,14 +13,14 @@ class DaoTool extends Dao<Tool> {
   Tool fromMap(Map<String, dynamic> map) => Tool.fromMap(map);
 
   Future<List<Tool>> getAllTools() async {
-    final db = getDb();
+    final db = withoutTransaction();
     final List<Map<String, dynamic>> maps = await db.query(tableName);
 
     return maps.map(fromMap).toList();
   }
 
   Future<List<Tool>> getByFilter(String? filter) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (Strings.isBlank(filter)) {
       return getAll(orderByClause: 'name');
@@ -41,13 +42,13 @@ order by t.name
     return toList(data);
   }
 
-  Future<void> insertTool(Tool tool) async {
-    final db = getDb();
+  Future<void> insertTool(Tool tool, [Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
     await db.insert(tableName, tool.toMap());
   }
 
-  Future<void> updateTool(Tool tool) async {
-    final db = getDb();
+  Future<void> updateTool(Tool tool, [Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
     await db.update(
       tableName,
       tool.toMap(),
@@ -56,8 +57,8 @@ order by t.name
     );
   }
 
-  Future<void> deleteTool(int id) async {
-    final db = getDb();
+  Future<void> deleteTool(int id, [Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
     await db.delete(tableName, where: 'id = ?', whereArgs: [id]);
   }
 

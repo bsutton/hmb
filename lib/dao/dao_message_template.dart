@@ -12,7 +12,7 @@ class DaoMessageTemplate extends Dao<MessageTemplate> {
   String get tableName => 'message_template';
 
   Future<List<MessageTemplate>> getByFilter(String? filter) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (filter == null || filter.isEmpty) {
       return getAll(orderByClause: 'modifiedDate desc');

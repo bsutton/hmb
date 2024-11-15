@@ -21,7 +21,7 @@ class DaoVersion extends Dao<Version> {
   Version fromMap(Map<String, dynamic> map) => Version.fromMap(map);
 
   Future<Version?> getLatestVersion() async {
-    final db = getDb();
+    final db = withoutTransaction();
     final result = await db.query(
       tableName,
       orderBy: 'db_version DESC',

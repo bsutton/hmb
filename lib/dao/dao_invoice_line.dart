@@ -17,7 +17,7 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
   @override
   Future<List<InvoiceLine>> getAll(
       {String? orderByClause, Transaction? transaction}) async {
-    final db = getDb(transaction);
+    final db = withinTransaction(transaction);
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, orderBy: 'modified_date desc');
     return List.generate(maps.length, (i) => fromMap(maps[i]));
@@ -25,7 +25,7 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
 
   Future<List<InvoiceLine>> getByInvoiceId(int invoiceId,
       [Transaction? transaction]) async {
-    final db = getDb(transaction);
+    final db = withinTransaction(transaction);
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
       where: 'invoice_id = ?',
@@ -36,8 +36,9 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
 
   /// Deletes all invoice lines for the given invoice id.
   /// and marks all time entries as unbilled.
-  Future<void> deleteByInvoiceId(int invoiceId) async {
-    final db = getDb();
+  Future<void> deleteByInvoiceId(int invoiceId,
+      [Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
     final lines = await getByInvoiceId(invoiceId);
     for (final line in lines) {
       if (line.fromBookingFee) {
@@ -58,7 +59,7 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
   JuneStateCreator get juneRefresher => InvoiceLineState.new;
 
   Future<List<InvoiceLine>> getByInvoiceLineGroupId(int id) async {
-    final db = getDb();
+    final db = withoutTransaction();
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
       where: 'invoice_line_group_id = ?',

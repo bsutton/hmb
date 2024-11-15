@@ -16,9 +16,8 @@ class DaoCheckListItem extends Dao<CheckListItem> {
   String get tableName => 'check_list_item';
 
   Future<List<CheckListItem>> getByCheckList(CheckList checklist) async {
-    final db = getDb();
 
-    final data = await db.rawQuery('''
+    final data = await withoutTransaction().rawQuery('''
 select cli.* 
 from check_list cl
 join check_list_item cli
@@ -30,7 +29,7 @@ where cl.id =?
   }
 
   Future<List<CheckListItem>> getItemsByTask(int? taskId) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (taskId == null) {
       return [];
@@ -82,7 +81,7 @@ where jo.id =?
   }
 
   Future<List<CheckListItem>> getIncompleteItems() async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     final data = await db.rawQuery('''
 select cli.* 
@@ -94,7 +93,7 @@ where cli.completed = 0
   }
 
   Future<void> deleteByChecklist(CheckList checklist) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     await db.rawDelete('''
 
@@ -107,7 +106,7 @@ WHERE check_list_id IN (
   }
 
   Future<List<CheckListItem>> getByTask(int taskId) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     final data = await db.rawQuery('''
 select cli.* 
@@ -128,14 +127,14 @@ where t.id =?
   JuneStateCreator get juneRefresher => CheckListItemState.new;
 
   Future<void> markNotBilled(int invoiceLineId) async {
-    final db = getDb();
+    final db = withoutTransaction();
     await db.update(tableName, {'billed': 0, 'invoice_line_id': null},
         where: 'invoice_line_id=?', whereArgs: [invoiceLineId]);
   }
 
   /// Get items that need to be packed, optionally filtered by a list of jobs.
   Future<List<CheckListItem>> getPackingItems({List<Job>? jobs}) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     var query = '''
 select cli.* 
@@ -182,7 +181,7 @@ and js.name != 'Awaiting Payment'
   /// Get items that need to be purchased..
   Future<List<CheckListItem>> getShoppingItems(
       {List<Job>? jobs, Supplier? supplier}) async {
-    final db = getDb();
+    final db = withoutTransaction();
     final jobIds = jobs?.map((job) => job.id).toList() ?? [];
     final jobCondition =
         jobIds.isNotEmpty ? 'AND j.id IN (${jobIds.join(",")})' : '';

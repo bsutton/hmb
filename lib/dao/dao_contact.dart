@@ -24,7 +24,7 @@ class DaoContact extends Dao<Contact> {
   /// returns the primary contact for the customer
   ///
   Future<Contact?> getPrimaryForCustomer(int? customerId) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (customerId == null) {
       return null;
@@ -49,7 +49,7 @@ and cc.`primary` = 1''', [customerId]);
   /// returns the primary contact for the job
   ///
   Future<Contact?> getPrimaryForJob(int? jobId) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (jobId == null) {
       return null;
@@ -73,7 +73,7 @@ where jo.id =?
   /// returns the primary contact for the customer
   ///
   Future<Contact?> getPrimaryForSupplier(Supplier supplier) async {
-    final db = getDb();
+    final db = withoutTransaction();
     final data = await db.rawQuery('''
 select co.* 
 from contact co
@@ -91,7 +91,7 @@ and sc.`primary` = 1''', [supplier.id]);
   }
 
   Future<List<Contact>> getByCustomer(int? customerId) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (customerId == null) {
       return [];
@@ -112,7 +112,7 @@ where cu.id =?
   /// returns the primary contact for the supplier
 
   Future<List<Contact>> getBySupplier(Supplier? supplier) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (supplier == null) {
       return [];
@@ -131,7 +131,7 @@ where cu.id =?
   }
 
   Future<List<Contact>> getByJob(int? jobId) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (jobId == null) {
       return [];
@@ -189,7 +189,7 @@ where jo.id =?
   JuneStateCreator get juneRefresher => ContactState.new;
 
   Future<List<Contact>> getByFilter(Customer customer, String? filter) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (Strings.isBlank(filter)) {
       return getAll(orderByClause: 'modifiedDate desc');

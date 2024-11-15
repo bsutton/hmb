@@ -25,16 +25,15 @@ class DaoQuote extends Dao<Quote> {
   Quote fromMap(Map<String, dynamic> map) => Quote.fromMap(map);
 
   @override
-  Future<List<Quote>> getAll(
-      {String? orderByClause, Transaction? transaction}) async {
-    final db = getDb(transaction);
+  Future<List<Quote>> getAll({String? orderByClause}) async {
+    final db = withoutTransaction();
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, orderBy: 'modified_date desc');
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
-  Future<List<Quote>> getByJobId(int jobId, [Transaction? transaction]) async {
-    final db = getDb(transaction);
+  Future<List<Quote>> getByJobId(int jobId) async {
+    final db = withoutTransaction();
     final List<Map<String, dynamic>> maps = await db.query(tableName,
         where: 'job_id = ?', whereArgs: [jobId], orderBy: 'id desc');
     return List.generate(maps.length, (i) => fromMap(maps[i]));
@@ -49,10 +48,10 @@ class DaoQuote extends Dao<Quote> {
   }
 
   Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
-    final invoices = await getByJobId(jobId, transaction);
+    final invoices = await getByJobId(jobId);
 
     for (final invoice in invoices) {
-      await delete(invoice.id);
+      await delete(invoice.id, transaction);
     }
   }
 

@@ -12,25 +12,22 @@ class DaoQuoteLine extends Dao<QuoteLine> {
   QuoteLine fromMap(Map<String, dynamic> map) => QuoteLine.fromMap(map);
 
   @override
-  Future<List<QuoteLine>> getAll(
-      {String? orderByClause, Transaction? transaction}) async {
-    final db = getDb(transaction);
+  Future<List<QuoteLine>> getAll({String? orderByClause}) async {
+    final db = withoutTransaction();
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, orderBy: 'modified_date desc');
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
-  Future<List<QuoteLine>> getByQuoteId(int quoteId,
-      [Transaction? transaction]) async {
-    final db = getDb(transaction);
+  Future<List<QuoteLine>> getByQuoteId(int quoteId) async {
+    final db = withoutTransaction();
     final List<Map<String, dynamic>> maps = await db.query(tableName,
         where: 'quote_id = ?', whereArgs: [quoteId], orderBy: 'id desc');
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
-  Future<List<QuoteLine>> getByQuoteLineGroupId(int quoteLineGroupId,
-      [Transaction? transaction]) async {
-    final db = getDb(transaction);
+  Future<List<QuoteLine>> getByQuoteLineGroupId(int quoteLineGroupId) async {
+    final db = withoutTransaction();
     final List<Map<String, dynamic>> maps = await db.query(tableName,
         where: 'quote_line_group_id = ?',
         whereArgs: [quoteLineGroupId],
@@ -39,13 +36,13 @@ class DaoQuoteLine extends Dao<QuoteLine> {
   }
 
   Future<int> deleteByQuoteId(int quoteId, [Transaction? transaction]) async {
-    final db = getDb(transaction);
+    final db = withinTransaction(transaction);
     return db.delete(tableName, where: 'quote_id = ?', whereArgs: [quoteId]);
   }
 
   Future<int> deleteByQuoteLineGroupId(int quoteLineGroupId,
       [Transaction? transaction]) async {
-    final db = getDb(transaction);
+    final db = withinTransaction(transaction);
     return db.delete(tableName,
         where: 'quote_line_group_id = ?', whereArgs: [quoteLineGroupId]);
   }

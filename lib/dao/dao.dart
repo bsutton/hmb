@@ -1,5 +1,6 @@
 import 'package:june/june.dart';
 
+import '../database/management/database_helper.dart';
 import '../entity/entity.dart';
 import 'dao_base.dart';
 
@@ -8,7 +9,7 @@ export '../database/management/database_helper.dart';
 typedef JuneStateCreator = JuneState Function();
 
 abstract class Dao<T extends Entity<T>> extends DaoBase<T> {
-  Dao() : super(_notifier) {
+  Dao() : super(DatabaseHelper.instance.database, _notifier) {
     super.tableName = tableName;
     super.mapper = fromMap;
   }

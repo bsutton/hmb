@@ -6,7 +6,7 @@ import 'dao.dart';
 
 class DaoManufacturer extends Dao<Manufacturer> {
   Future<List<Manufacturer>> getByFilter(String? filter) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (Strings.isBlank(filter)) {
       return getAll(orderByClause: 'name');

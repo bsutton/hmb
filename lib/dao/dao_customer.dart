@@ -18,7 +18,7 @@ class DaoCustomer extends Dao<Customer> {
 
   /// Get the customer passed on the passed job.
   Future<Customer?> getByJob(int? jobId) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (jobId == null) {
       return null;
@@ -35,7 +35,7 @@ where j.id =?
   }
 
   Future<List<Customer>> getByFilter(String? filter) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (Strings.isBlank(filter)) {
       return getAll(orderByClause: 'modifiedDate desc');

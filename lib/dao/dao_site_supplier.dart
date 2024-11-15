@@ -16,7 +16,7 @@ class DaoSiteSupplier extends Dao<Site> {
 
   Future<void> deleteJoin(Supplier supplier, Site site,
       [Transaction? transaction]) async {
-    await getDb(transaction).delete(
+    await withinTransaction(transaction).delete(
       tableName,
       where: 'supplier_id = ? and site_id = ?',
       whereArgs: [supplier.id, site.id],
@@ -25,7 +25,7 @@ class DaoSiteSupplier extends Dao<Site> {
 
   Future<void> insertJoin(Site site, Supplier supplier,
       [Transaction? transaction]) async {
-    await getDb(transaction).insert(
+    await withinTransaction(transaction).insert(
       tableName,
       {'supplier_id': supplier.id, 'site_id': site.id},
     );
@@ -33,7 +33,7 @@ class DaoSiteSupplier extends Dao<Site> {
 
   Future<void> setAsPrimary(Site site, Supplier supplier,
       [Transaction? transaction]) async {
-    await getDb(transaction).update(
+    await withinTransaction(transaction).update(
       tableName,
       {'primary': 1},
       where: 'supplier_id = ? and site_id = ?',

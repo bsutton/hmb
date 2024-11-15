@@ -5,7 +5,6 @@ import 'dao.dart';
 
 class DaoCategory extends Dao<Category> {
   Future<List<Category>> getByFilter(String? filter) async {
-    final db = getDb();
 
     if (filter == null || filter.isEmpty) {
       return getAll(orderByClause: 'name');

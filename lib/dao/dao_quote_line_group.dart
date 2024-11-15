@@ -15,7 +15,7 @@ class DaoQuoteLineGroup extends Dao<QuoteLineGroup> {
   @override
   Future<List<QuoteLineGroup>> getAll(
       {String? orderByClause, Transaction? transaction}) async {
-    final db = getDb(transaction);
+    final db = withinTransaction(transaction);
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, orderBy: 'modified_date desc');
     return List.generate(maps.length, (i) => fromMap(maps[i]));
@@ -23,14 +23,14 @@ class DaoQuoteLineGroup extends Dao<QuoteLineGroup> {
 
   Future<List<QuoteLineGroup>> getByQuoteId(int quoteId,
       [Transaction? transaction]) async {
-    final db = getDb(transaction);
+    final db = withinTransaction(transaction);
     final List<Map<String, dynamic>> maps = await db.query(tableName,
         where: 'quote_id = ?', whereArgs: [quoteId], orderBy: 'id desc');
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
   Future<int> deleteByQuoteId(int quoteId, [Transaction? transaction]) async {
-    final db = getDb(transaction);
+    final db = withinTransaction(transaction);
     return db.delete(tableName, where: 'quote_id = ?', whereArgs: [quoteId]);
   }
 

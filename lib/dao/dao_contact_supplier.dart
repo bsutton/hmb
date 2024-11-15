@@ -17,7 +17,7 @@ class DaoContactSupplier extends Dao<Contact> {
 
   Future<void> deleteJoin(Supplier supplier, Contact contact,
       [Transaction? transaction]) async {
-    await getDb(transaction).delete(
+    await withinTransaction(transaction).delete(
       tableName,
       where: 'supplier_id = ? and contact_id = ?',
       whereArgs: [supplier.id, contact.id],
@@ -27,7 +27,7 @@ class DaoContactSupplier extends Dao<Contact> {
 
   Future<void> insertJoin(Contact contact, Supplier supplier,
       [Transaction? transaction]) async {
-    await getDb(transaction).insert(
+    await withinTransaction(transaction).insert(
       tableName,
       {'supplier_id': supplier.id, 'contact_id': contact.id},
     );
@@ -35,7 +35,7 @@ class DaoContactSupplier extends Dao<Contact> {
 
   Future<void> setAsPrimary(Contact contact, Supplier supplier,
       [Transaction? transaction]) async {
-    await getDb(transaction).update(
+    await withinTransaction(transaction).update(
       tableName,
       {'primary': 1},
       where: 'supplier_id = ? and contact_id = ?',

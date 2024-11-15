@@ -18,7 +18,7 @@ import 'dao_time_entry.dart';
 class DaoJob extends Dao<Job> {
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
-    final db = getDb(transaction);
+    final db = withinTransaction(transaction);
 
     await DaoTask().deleteByJob(id, transaction: transaction);
     await DaoInvoice().deleteByJob(id, transaction: transaction);
@@ -41,8 +41,8 @@ class DaoJob extends Dao<Job> {
   /// getAll - sort by modified date descending
   @override
   Future<List<Job>> getAll(
-      {String? orderByClause, Transaction? transaction}) async {
-    final db = getDb(transaction);
+      {String? orderByClause}) async {
+    final db = withoutTransaction();
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, orderBy: 'modified_date desc');
     final list = List.generate(maps.length, (i) => fromMap(maps[i]));
@@ -51,7 +51,7 @@ class DaoJob extends Dao<Job> {
   }
 
   Future<Job?> getLastActiveJob() async {
-    final db = getDb();
+    final db = withoutTransaction();
     final data = await db.query(
       tableName,
       where: 'last_active = ?',
@@ -81,7 +81,7 @@ class DaoJob extends Dao<Job> {
 
   /// search for jobs given a user supplied filter string.
   Future<List<Job>> getByFilter(String? filter) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (Strings.isBlank(filter)) {
       return getAll();
@@ -106,7 +106,7 @@ order by j.modified_date desc
   }
 
   Future<Job?> getJobForTask(int? taskId) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (taskId == null) {
       return null;
@@ -125,7 +125,7 @@ where t.id =?
 
   /// Only Jobs that we consider to be active.
   Future<List<Job>> getActiveJobs(String? filter) async {
-    final db = getDb();
+    final db = withoutTransaction();
     final likeArg = filter != null ? '''%$filter%''' : '%%';
 
     final data = await db.rawQuery('''
@@ -211,7 +211,7 @@ where t.id =?
 
   /// Get all the jobs for the given customer.
   Future<List<Job>> getByCustomer(Customer customer) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     final data = await db.rawQuery('''
 select j.* 

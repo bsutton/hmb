@@ -16,7 +16,7 @@ class DaoCheckListTask extends Dao<CheckList> {
 
   Future<void> deleteJoin(int? taskId, CheckList checklist,
       [Transaction? transaction]) async {
-    await getDb(transaction).delete(
+    await withinTransaction(transaction).delete(
       tableName,
       where: 'task_id = ? and check_list_id = ?',
       whereArgs: [taskId, checklist.id],
@@ -25,7 +25,7 @@ class DaoCheckListTask extends Dao<CheckList> {
 
   Future<void> insertJoin(CheckList checklist, Task task,
       [Transaction? transaction]) async {
-    await getDb(transaction).insert(
+    await withinTransaction(transaction).insert(
       tableName,
       {'task_id': task.id, 'check_list_id': checklist.id},
     );
@@ -33,7 +33,7 @@ class DaoCheckListTask extends Dao<CheckList> {
 
   Future<void> setAsPrimary(CheckList checklist, Task task,
       [Transaction? transaction]) async {
-    await getDb(transaction).update(
+    await withinTransaction(transaction).update(
       tableName,
       {'primary': 1},
       where: 'task_id = ? and check_list_id = ?',

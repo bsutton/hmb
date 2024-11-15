@@ -25,7 +25,7 @@ class DaoSite extends Dao<Site> {
       return null;
     }
 
-    final db = getDb();
+    final db = withoutTransaction();
     final data = await db.rawQuery('''
 select s.* 
 from site s
@@ -48,7 +48,7 @@ and sc.`primary` = 1''', [customerId]);
       return null;
     }
 
-    final db = getDb();
+    final db = withoutTransaction();
     final data = await db.rawQuery('''
 select s.* 
 from site s
@@ -66,7 +66,7 @@ and sc.`primary` = 1''', [supplier.id]);
   }
 
   Future<List<Site>> getByCustomer(int? customerId) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (customerId == null) {
       return [];
@@ -86,7 +86,7 @@ where cu.id =?
 
   /// search for Sites given a user supplied filter string.
   Future<List<Site>> getByFilter(int? customerId, String? filter) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (customerId == null) {
       return [];
@@ -112,7 +112,7 @@ or s.postcode like ?
   }
 
   Future<List<Site>> getBySupplier(Supplier? supplier) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (supplier == null) {
       return [];
@@ -131,7 +131,7 @@ where cu.id =?
   }
 
   Future<Site?> getByJob(Job? job) async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     if (job == null) {
       return null;

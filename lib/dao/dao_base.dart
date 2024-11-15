@@ -1,20 +1,21 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
-import '../database/management/database_helper.dart';
 import '../entity/entity.dart';
 
 class DaoBase<T extends Entity<T>> {
-  DaoBase(this._notify);
+  DaoBase(this.db, this._notify);
 
   /// Use this method when you need to do db operations
   /// from a non-flutter app - e.g. CLI apps.
-  factory DaoBase.direct(
-      String tableName, T Function(Map<String, dynamic> map) fromMap) {
-    final dao = DaoBase<T>((_) {})
+  factory DaoBase.direct(Database db, String tableName,
+      T Function(Map<String, dynamic> map) fromMap) {
+    final dao = DaoBase<T>(db, (_) {})
       .._tableName = tableName
       .._fromMap = fromMap;
     return dao;
   }
+
+  Database db;
 
   final void Function(DaoBase<T> dao) _notify;
 
@@ -31,11 +32,11 @@ class DaoBase<T extends Entity<T>> {
   /// Insert [entity] into the database.
   /// Updating the passed in entity so that it has the assigned id.
   Future<int> insert(covariant T entity, [Transaction? transaction]) async {
-    final db = getDb(transaction);
+    final executor = transaction ?? db;
     entity
       ..createdDate = DateTime.now()
       ..modifiedDate = DateTime.now();
-    final id = await db.insert(_tableName, entity.toMap()..remove('id'));
+    final id = await executor.insert(_tableName, entity.toMap()..remove('id'));
     entity.id = id;
 
     _notify(this);
@@ -45,19 +46,16 @@ class DaoBase<T extends Entity<T>> {
 
   /// [orderByClause] is the list of columns followed by the collation order
   ///  ```name desc, age```
-  Future<List<T>> getAll(
-      {String? orderByClause, Transaction? transaction}) async {
-    final db = getDb(transaction);
+  Future<List<T>> getAll({String? orderByClause}) async {
+    final executor = db;
     final List<Map<String, dynamic>> maps =
-        await db.query(_tableName, orderBy: orderByClause);
+        await executor.query(_tableName, orderBy: orderByClause);
     final list = List.generate(maps.length, (i) => _fromMap(maps[i]));
 
     return list;
   }
 
   Future<T?> getById(int? entityId) async {
-    final db = getDb();
-
     if (entityId == null) {
       return null;
     }
@@ -71,9 +69,9 @@ class DaoBase<T extends Entity<T>> {
   }
 
   Future<int> update(covariant T entity, [Transaction? transaction]) async {
-    final db = getDb(transaction);
+    final executor = transaction ?? db;
     entity.modifiedDate = DateTime.now();
-    final id = await db.update(
+    final id = await executor.update(
       _tableName,
       entity.toMap(),
       where: 'id = ?',
@@ -85,8 +83,8 @@ class DaoBase<T extends Entity<T>> {
 
   //// Returns the number of rows deleted.
   Future<int> delete(int id, [Transaction? transaction]) async {
-    final db = getDb(transaction);
-    final rowsDeleted = db.delete(
+    final executor = transaction ?? db;
+    final rowsDeleted = executor.delete(
       _tableName,
       where: 'id = ?',
       whereArgs: [id],
@@ -102,6 +100,10 @@ class DaoBase<T extends Entity<T>> {
     return List.generate(data.length, (i) => _fromMap(data[i]));
   }
 
-  DatabaseExecutor getDb([Transaction? transaction]) =>
-      transaction ?? DatabaseHelper.instance.database;
+  /// Allows you to execute a command against the db
+  /// optionally within a transaction.
+  DatabaseExecutor withinTransaction(Transaction? transaction) =>
+      transaction ?? db;
+
+  DatabaseExecutor withoutTransaction() => db;
 }

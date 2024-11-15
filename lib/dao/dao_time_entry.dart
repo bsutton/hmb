@@ -15,7 +15,7 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   String get tableName => 'time_entry';
 
   Future<List<TimeEntry>> getByTask(int? taskId) async {
-    final db = getDb();
+    final db = withoutTransaction();
     if (taskId == null) {
       return [];
     }
@@ -27,7 +27,7 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   /// Find the active [TimeEntry] there should only ever
   /// be one or none.
   Future<TimeEntry?> getActiveEntry() async {
-    final db = getDb();
+    final db = withoutTransaction();
 
     final results = await db.query(tableName,
         where: 'end_time is null', orderBy: 'start_time desc');
@@ -40,7 +40,7 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   JuneStateCreator get juneRefresher => DbTimeEntryChanged.new;
 
   Future<void> markAsNotbilled(int invoiceLineId) async {
-    final db = getDb();
+    final db = withoutTransaction();
     await db.update(
       tableName,
       {'invoice_line_id': null, 'billed': 0},
@@ -50,7 +50,7 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   }
 
   Future<void> markAsBilled(TimeEntry entity, int invoiceLineId) async {
-    final db = getDb();
+    final db = withoutTransaction();
     await db.update(
       tableName,
       {'invoice_line_id': invoiceLineId, 'billed': 1},
@@ -60,14 +60,14 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   }
 
   Future<List<TimeEntry>> getByInvoiceLineId(int invoiceLineId) async {
-    final db = getDb();
+    final db = withoutTransaction();
     final results = await db.query(tableName,
         where: 'invoice_line_id = ?', whereArgs: [invoiceLineId]);
     return results.map(TimeEntry.fromMap).toList();
   }
 
   Future<void> deleteByTask(int id, [Transaction? transaction]) async {
-    final db = getDb(transaction);
+    final db = withinTransaction(transaction);
     await db.delete(
       tableName,
       where: 'task_id =?',
@@ -78,7 +78,7 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   /// Get the set of [TimeEntry]s for the given job.
   /// Returns the most recent first.
   Future<List<TimeEntry>> getByJob(int? jobId) async {
-    final db = getDb();
+    final db = withoutTransaction();
     if (jobId == null) {
       return [];
     }

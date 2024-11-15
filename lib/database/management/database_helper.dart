@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:path/path.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../factory/hmb_database_factory.dart';
 import '../versions/db_upgrade.dart';
@@ -16,27 +16,26 @@ class DatabaseHelper {
 
   Database get database => _database!;
 
-  Future<void> initDatabase(
-      {required ScriptSource src,
-      required BackupProvider backupProvider,
-      required bool backup,
-      required HMBDatabaseFactory databaseFactory,
-      String? pathToDb}) async {
+  Future<void> initDatabase({
+    required ScriptSource src,
+    required BackupProvider backupProvider,
+    required bool backup,
+    required HMBDatabaseFactory databaseFactory,
+  }) async {
     await openDb(
-        path: pathToDb,
         src: src,
         backupProvider: backupProvider,
         databaseFactory: databaseFactory,
         backup: backup);
   }
 
-  Future<void> openDb(
-      {required ScriptSource src,
-      required BackupProvider backupProvider,
-      required HMBDatabaseFactory databaseFactory,
-      required bool backup,
-      String? path}) async {
-    path ??= await pathToDatabase();
+  Future<void> openDb({
+    required ScriptSource src,
+    required BackupProvider backupProvider,
+    required HMBDatabaseFactory databaseFactory,
+    required bool backup,
+  }) async {
+    final path = await backupProvider.databasePath;
     final targetVersion = await getLatestVersion(src);
     print('target db version: $targetVersion');
     _database = await databaseFactory.openDatabase(path,
@@ -49,11 +48,6 @@ class DatabaseHelper {
                 newVersion: newVersion,
                 src: src,
                 backupProvider: backupProvider)));
-  }
-
-  Future<String> pathToDatabase() async {
-    final path = join(await getDatabasesPath(), 'handyman.db');
-    return path;
   }
 
   Future<void> closeDb() async {

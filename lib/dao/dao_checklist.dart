@@ -17,7 +17,7 @@ class DaoCheckList extends Dao<CheckList> {
   String get tableName => 'check_list';
 
   Future<CheckList?> getByTask(int? taskId, [Transaction? transaction]) async {
-    final db = getDb(transaction);
+    final db = withinTransaction(transaction);
 
     if (taskId == null) {
       return null;
