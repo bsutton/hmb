@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../dao/dao_photo.dart';
 import '../../entity/tool.dart';
+import '../../widgets/media/captured_photo.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/wizard_step.dart';
 
@@ -15,10 +16,11 @@ class ToolPhotoStep extends WizardStep {
 
   String? _toolPhotoPath;
 
-  Future<void> _takePhoto(String title, void Function(String) onCapture) async {
+  Future<void> _takePhoto(
+      String title, void Function(CapturedPhoto) onCapture) async {
     final path = await _photoController.takePhoto();
     if (path != null) {
-      onCapture(path.path);
+      onCapture(path);
     }
   }
 
@@ -33,8 +35,8 @@ class ToolPhotoStep extends WizardStep {
                 label: const Text('Capture Tool Photo'),
                 onPressed: () async => _takePhoto(
                   'Tool Photo',
-                  (path) => setState(() {
-                    _toolPhotoPath = path;
+                  (capturedPhoto) => setState(() {
+                    _toolPhotoPath = capturedPhoto.relativePath;
                   }),
                 ),
               ),

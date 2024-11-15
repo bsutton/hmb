@@ -6,6 +6,7 @@ import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart
 import '../../dao/dao_photo.dart';
 import '../../entity/tool.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/media/captured_photo.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/wizard_step.dart';
 
@@ -43,8 +44,8 @@ class SerialNumberStep extends WizardStep {
               label: const Text('Capture Serial Number Photo'),
               onPressed: () async => _takePhoto(
                 'Serial Photo',
-                (path) => setState(() {
-                  _serialPhotoPath = path;
+                (capturedPhoto) => setState(() {
+                  _serialPhotoPath = capturedPhoto.relativePath;
                 }),
               ),
             ),
@@ -59,10 +60,11 @@ class SerialNumberStep extends WizardStep {
         ),
       );
 
-  Future<void> _takePhoto(String title, void Function(String) onCapture) async {
-    final path = await _photoController.takePhoto();
-    if (path != null) {
-      onCapture(path.path);
+  Future<void> _takePhoto(
+      String title, void Function(CapturedPhoto) onCapture) async {
+    final capturedPhoto = await _photoController.takePhoto();
+    if (capturedPhoto != null) {
+      onCapture(capturedPhoto);
     }
   }
 
@@ -98,12 +100,13 @@ class SerialNumberStep extends WizardStep {
         // Optionally, notify the user
         HMBToast.info('No barcode found in the image.');
       }
+      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       print('Error scanning barcode: $e');
       // Optionally, handle errors appropriately
       HMBToast.error('Error scanning barcode: $e');
     } finally {
-      barcodeScanner.close();
+      await barcodeScanner.close();
     }
   }
 }

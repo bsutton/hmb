@@ -567,7 +567,9 @@ class WizardState extends State<Wizard> {
   /// Throws an [ArgumentError] if the step doesn't exist.
   int _indexOf(WizardStep step) {
     for (var i = 0; i < widget.steps.length; i++) {
-      if (step == widget.steps[i]) return i;
+      if (step == widget.steps[i]) {
+        return i;
+      }
     }
 
     throw ArgumentError.value(step, 'Given step is not in the list of steps');
