@@ -1,13 +1,15 @@
 import 'package:dcli/dcli.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/database/factory/cli_database_factory.dart';
-import 'package:hmb/database/management/backup_providers/local/local_backup_provider.dart';
 import 'package:hmb/database/management/database_helper.dart';
 import 'package:hmb/database/versions/project_script_source.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'backup_providers/test_backup_provider.dart';
+
 Database? testDb;
+late String testDbPath;
 
 Future<Database> setupTestDb() async {
   final project = DartProject.self;
@@ -16,7 +18,7 @@ Future<Database> setupTestDb() async {
       project.pathToProjectRoot, 'test', 'fixture', 'db', 'handyman_test.db');
 
   // Path where the test database will be copied to and used
-  final testDbPath = join(createTempDir(), 'handyman_test_temp.db');
+  testDbPath = join(createTempDir(), 'handyman_test_temp.db');
 
   print('Running against test db at: $testDbPath');
 
@@ -31,9 +33,8 @@ Future<Database> setupTestDb() async {
 
   // Open the copied database for testing
   await DatabaseHelper().initDatabase(
-      pathToDb: testDbPath,
       src: ProjectScriptSource(),
-      backupProvider: LocalBackupProvider(CliDatabaseFactory()),
+      backupProvider: TestBackupProvider(CliDatabaseFactory(), testDbPath),
       databaseFactory: CliDatabaseFactory(),
       backup: false);
   testDb = await openDatabase(testDbPath);

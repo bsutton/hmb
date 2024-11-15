@@ -11,15 +11,11 @@ class BackupScreen extends StatefulWidget {
   final String pathToBackup;
 
   @override
-  // ignore: library_private_types_in_public_api
   _BackupScreenState createState() => _BackupScreenState();
 }
 
 class _BackupScreenState extends State<BackupScreen> {
-  @override
-  void initState() {
-    super.initState();
-  }
+  bool _includePhotos = false;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -45,11 +41,33 @@ class _BackupScreenState extends State<BackupScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Row(
+                    mainAxisSize:
+                        MainAxisSize.min, // Shrink the Row to fit its children
+                    children: [
+                      const Text('Include photos in backup'),
+                      Checkbox(
+                        value: _includePhotos,
+                        onChanged: (value) {
+                          setState(() {
+                            _includePhotos = value ?? false;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
                 ElevatedButton.icon(
                   onPressed: () async {
                     try {
                       await EmailBackupProvider(FlutterDatabaseFactory())
-                          .performBackup(version: 1, src: AssetScriptSource());
+                          .performBackup(
+                              version: 1,
+                              src: AssetScriptSource(),
+                              includePhotos: _includePhotos);
                       if (context.mounted) {
                         HMBToast.info('Backup successful');
                       }

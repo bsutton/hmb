@@ -11,6 +11,7 @@ import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_date_time_picker.dart';
+import '../../widgets/media/captured_photo.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_thumbnail.dart';
 import '../../widgets/select/select_manufacture.dart';
@@ -144,9 +145,9 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
                   context,
                   title: 'Serial Number Photo',
                   photoPath: _serialNumberPhotoPath,
-                  onCapture: (path) {
+                  onCapture: (capturedPhoto) {
                     setState(() {
-                      _serialNumberPhotoPath = path;
+                      _serialNumberPhotoPath = capturedPhoto.relativePath;
                     });
                   },
                 ),
@@ -157,7 +158,7 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
                   photoPath: _receiptPhotoPath,
                   onCapture: (path) {
                     setState(() {
-                      _receiptPhotoPath = path;
+                      _receiptPhotoPath = path.relativePath;
                     });
                   },
                 ),
@@ -174,7 +175,7 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
   Widget _buildPhotoField(BuildContext context,
           {required String title,
           required String? photoPath,
-          required void Function(String) onCapture}) =>
+          required void Function(CapturedPhoto) onCapture}) =>
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -186,9 +187,9 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
                 icon: const Icon(Icons.camera_alt),
                 label: const Text('Capture Photo'),
                 onPressed: () async {
-                  final path = await _photoController.takePhoto();
-                  if (path != null) {
-                    onCapture(path.path);
+                  final capturedPhoto = await _photoController.takePhoto();
+                  if (capturedPhoto != null) {
+                    onCapture(capturedPhoto);
                   }
                 },
               ),

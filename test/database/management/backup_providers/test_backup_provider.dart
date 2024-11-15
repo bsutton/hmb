@@ -1,26 +1,24 @@
 import 'package:dcli/dcli.dart';
+import 'package:hmb/database/management/backup_providers/backup_provider.dart';
 import 'package:path/path.dart';
 
-import '../backup_provider.dart';
+class TestBackupProvider extends BackupProvider {
+  TestBackupProvider(super.databaseFactory, this.pathToDatabase);
 
-class DevBackupProvider extends BackupProvider {
-  DevBackupProvider(super.databaseFactory);
+  String pathToDatabase;
 
   @override
   Future<void> deleteBackup(Backup backupToDelete) {
-    // TODO(bsutton): implement deleteBackup
     throw UnimplementedError();
   }
 
   @override
   Future<Backup> getBackup(String pathTo) {
-    // TODO(bsutton): implement getBackup
     throw UnimplementedError();
   }
 
   @override
   Future<List<String>> getBackups() {
-    // TODO(bsutton): implement getBackups
     throw UnimplementedError();
   }
 
@@ -51,10 +49,5 @@ class DevBackupProvider extends BackupProvider {
       join(DartProject.self.pathToProjectRoot, 'photos');
 
   @override
-  Future<String> get databasePath async => join(
-      DartProject.self.pathToProjectRoot,
-      '.dart_tools',
-      'sqflite_common_ffi',
-      'database',
-      'handyman.db');
+  Future<String> get databasePath async => pathToDatabase;
 }

@@ -3,16 +3,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_picker_windows/image_picker_windows.dart';
 import 'package:june/june.dart';
-import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../crud/task/photo_crud.dart';
 import '../../dao/dao_photo.dart';
 import '../../entity/entity.dart';
+import 'captured_photo.dart';
 import 'photo_gallery.dart';
-import 'windows_camera_delegate.dart';
 
 class PhotoController<E extends Entity<E>> {
   PhotoController({required E? parent, required this.parentType})
@@ -98,22 +95,14 @@ class PhotoController<E extends Entity<E>> {
     _refresh();
   }
 
-  Future<File?> takePhoto() async {
+  Future<CapturedPhoto?> takePhoto() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
     if (pickedFile == null) {
       return null;
     }
 
-    final appDir = await getApplicationDocumentsDirectory();
-    final fileName = basename(pickedFile.path);
-    final savedImage =
-        await File(pickedFile.path).copy(join(appDir.path, fileName));
-
-    final exist = File(savedImage.path).existsSync();
-    print('exists: $exist');
-
-    return savedImage;
+    return CapturedPhoto.saveToHMBStorage(pickedFile.path);
   }
 
   void _refresh() {

@@ -5,6 +5,7 @@ import '../../entity/version.dart';
 import '../../src/version/version.g.dart' as code;
 import '../management/backup_providers/backup_provider.dart';
 import '../management/db_utility.dart';
+import 'post_upgrade_77.dart';
 import 'script_source.dart';
 
 /// Upgrade the database by applying each upgrade script in order
@@ -47,6 +48,11 @@ Future<void> upgradeDb(
       print('Upgrading to $scriptVersion via $pathToScript');
       await _executeScript(db, src, pathToScript);
 
+      /// invoke any registered post upgrade actions for [scriptVersion]
+      if (upgradeActions.containsKey(scriptVersion)) {
+        await upgradeActions[scriptVersion]!.call(db);
+      }
+
       await insertVersion(
           db,
           Version.forInsert(
@@ -54,6 +60,10 @@ Future<void> upgradeDb(
     }
   }
 }
+
+final upgradeActions = <int, Future<void> Function(Database)>{
+  77: postv77Upgrade
+};
 
 /// We can't use the Dao layer as it uses June which assumes
 /// data:ui is available which from the CLI it isn't.

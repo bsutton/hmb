@@ -2,10 +2,13 @@ import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite_common/sqflite.dart';
 
-import '../../../factory/hmb_database_factory.dart';
+import '../../../../util/paths.dart'
+    if (dart.library.ui) '../../../../util/paths_flutter.dart';
 import '../backup_provider.dart';
 
+/// Does on device backups.
 class LocalBackupProvider extends BackupProvider {
   LocalBackupProvider(super.databaseFactory);
 
@@ -32,7 +35,7 @@ class LocalBackupProvider extends BackupProvider {
 
   @override
   Future<BackupResult> store(
-      {required String pathToDatabase,
+      {required String pathToDatabaseCopy,
       required String pathToZippedBackup,
       required int version}) async {
     final datePart =
@@ -51,7 +54,7 @@ class LocalBackupProvider extends BackupProvider {
 
     return BackupResult(
         pathToBackup: pathToBackupFile,
-        pathToSource: pathToZippedBackup,
+        pathToSource: await databasePath,
         success: true);
   }
 
@@ -59,9 +62,9 @@ class LocalBackupProvider extends BackupProvider {
       join((await getApplicationDocumentsDirectory()).path, 'hmb', 'backups');
 
   @override
-  Future<void> restoreDatabase(String pathToRestoreDatabase,
-      BackupProvider backupProvider, HMBDatabaseFactory databaseFactory) async {
-    // TODO(bsutton): implement restoreDatabase
-    throw UnimplementedError();
-  }
+  Future<String> get photosRootPath => getPhotosRootPath();
+
+  @override
+  Future<String> get databasePath async =>
+      join(await getDatabasesPath(), 'handyman.db');
 }

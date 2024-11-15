@@ -60,13 +60,13 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
   Widget _buildAddButton(E? parent, List<PhotoMeta>? photoMetas) => IconButton(
         icon: const Icon(Icons.camera_alt),
         onPressed: () async {
-          final photoFile = await widget.controller.takePhoto();
-          if (photoFile != null) {
+          final capturedPhoto = await widget.controller.takePhoto();
+          if (capturedPhoto != null) {
             // Insert the photo metadata into the database
             final newPhoto = Photo.forInsert(
               parentId: parent!.id,
               parentType: widget.parentType.name,
-              filePath: photoFile.path,
+              filePath: capturedPhoto.relativePath,
               comment: '',
             );
             await widget.controller

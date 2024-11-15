@@ -9,13 +9,20 @@ enum ParentType { task, tool }
 
 class DaoPhoto extends Dao<Photo> {
   Future<List<Photo>> getByParent(int parentId, ParentType parentType) async {
-    final db = getDb();
+    final db = withoutTransaction();
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
       where: 'parentId = ? AND parentType = ?',
       whereArgs: [parentId, parentType.name],
     );
     return List.generate(maps.length, (i) => Photo.fromMap(maps[i]));
+  }
+
+  Future<List<String>> getAllPhotoPaths() async {
+    final db = withoutTransaction();
+    final List<Map<String, dynamic>> maps =
+        await db.query('photo', columns: ['filePath']);
+    return maps.map((map) => map['filePath'] as String).toList();
   }
 
   @override

@@ -3,13 +3,15 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:path/path.dart';
+import 'package:sqflite_common/sqflite.dart' as sql;
 import 'package:strings/strings.dart';
 
 import '../../../../dao/dao_system.dart';
 import '../../../../util/exceptions.dart';
+import '../../../../util/paths.dart'
+    if (dart.library.ui) '../../../../util/paths_flutter.dart';
 import '../../../../widgets/dialog/hmb_file_picker_linux.dart';
-import '../../../../widgets/hmb_toast.dart';
-import '../../../factory/hmb_database_factory.dart';
 import '../../../versions/asset_script_source.dart';
 import '../backup_provider.dart';
 
@@ -36,7 +38,7 @@ class EmailBackupProvider extends BackupProvider {
 
   @override
   Future<BackupResult> store(
-      {required String pathToDatabase,
+      {required String pathToDatabaseCopy,
       required String pathToZippedBackup,
       required int version}) async {
     if (!(Platform.isAndroid || Platform.isIOS)) {
@@ -46,7 +48,7 @@ class EmailBackupProvider extends BackupProvider {
     // await copyDatabase(context
     await sendEmailWithAttachment(pathToZippedBackup);
     return BackupResult(
-        pathToSource: pathToDatabase,
+        pathToSource: pathToDatabaseCopy,
         pathToBackup: pathToZippedBackup,
         success: true);
   }
@@ -131,27 +133,19 @@ class EmailBackupProvider extends BackupProvider {
     return selectedFilePath == null ? null : File(selectedFilePath);
   }
 
-  @override
-  Future<void> restoreDatabase(String pathToRestoreDatabase,
-      BackupProvider backupProvider, HMBDatabaseFactory databaseFactory) async {
-    try {
-      final assetScriptSource = AssetScriptSource();
-      await super.replaceDatabase(pathToRestoreDatabase, assetScriptSource,
-          backupProvider, databaseFactory);
-
-      HMBToast.info('Database restored from: $pathToRestoreDatabase');
-      // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
-      throw BackupException('Error restoring database: $e');
-    }
-  }
-
   Future<void> restore(BuildContext context) async {
     final backupFile = await pickBackupFile(context);
     if (backupFile == null) {
       throw BackupException('No backup file selected.');
     }
 
-    await restoreDatabase(backupFile.path, this, databaseFactory);
+    await performRestore(backupFile.path, AssetScriptSource(), databaseFactory);
   }
+
+  @override
+  Future<String> get photosRootPath => getPhotosRootPath();
+
+  @override
+  Future<String> get databasePath async =>
+      join(await sql.getDatabasesPath(), 'handyman.db');
 }
