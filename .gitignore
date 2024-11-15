@@ -49,3 +49,4 @@ backups/*.db
 *.aab
 backups/*
 hmb.session.sql
+photos/test_photo.jpg
