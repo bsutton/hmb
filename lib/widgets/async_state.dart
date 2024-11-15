@@ -19,6 +19,10 @@ import 'package:flutter/material.dart';
 ///   return FutureBuilderEx(future: initialised, ....)
 /// }
 /// ```
+/// 
+/// Any items that are to be disposed should be called in the standard
+/// [initState] as in some cases the [dispose] can be called before 
+/// asyncInitState has run.
 abstract class AsyncState<T extends StatefulWidget, R> extends State<T> {
   final _initialised = Completer<R>();
 

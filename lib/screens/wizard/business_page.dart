@@ -36,8 +36,8 @@ class _WizardBusinessPageState extends AsyncState<WizardBusinessPage, void> {
   late final System system;
 
   @override
-  Future<void> asyncInitState() async {
-    system = (await DaoSystem().get())!;
+  void initState() {
+    super.initState();
     _businessNameController = TextEditingController(text: system.businessName);
     _businessNumberController =
         TextEditingController(text: system.businessNumber);
@@ -50,6 +50,11 @@ class _WizardBusinessPageState extends AsyncState<WizardBusinessPage, void> {
 
     _webUrlController = TextEditingController(text: system.webUrl);
     _termsUrlController = TextEditingController(text: system.termsUrl);
+  }
+
+  @override
+  Future<void> asyncInitState() async {
+    system = (await DaoSystem().get())!;
   }
 
   @override
