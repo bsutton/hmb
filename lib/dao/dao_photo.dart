@@ -35,14 +35,12 @@ class DaoPhoto extends Dao<Photo> {
   @override
   String get tableName => 'photo';
 
-  static Future<List<PhotoMeta>> getByJob(int jobId) async {
-    final tasks = await DaoTask().getTasksByJob(jobId);
+  static Future<List<PhotoMeta>> getByTask(int taskId) async {
+    final task = await DaoTask().getById(taskId);
     final photos = <PhotoMeta>[];
-    for (final task in tasks) {
-      final taskPhotos = await DaoPhoto().getByParent(task.id, ParentType.task);
-      photos.addAll(taskPhotos.map(
-          (photo) => PhotoMeta(photo: photo, title: task.name, comment: null)));
-    }
+    final taskPhotos = await DaoPhoto().getByParent(task!.id, ParentType.task);
+    photos.addAll(taskPhotos.map(
+        (photo) => PhotoMeta(photo: photo, title: task.name, comment: null)));
     return photos;
   }
 
@@ -58,7 +56,7 @@ class DaoPhoto extends Dao<Photo> {
       int parentId, ParentType parentType) async {
     switch (parentType) {
       case ParentType.task:
-        return getByJob(parentId);
+        return getByTask(parentId);
       case ParentType.tool:
         return getByTool(parentId);
     }
