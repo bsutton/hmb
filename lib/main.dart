@@ -13,7 +13,7 @@ import 'package:toastification/toastification.dart';
 import 'dao/dao_task.dart';
 import 'dao/dao_time_entry.dart';
 import 'database/factory/flutter_database_factory.dart';
-import 'database/management/backup_providers/email/screen.dart';
+import 'database/management/backup_providers/email/email_backup_screen.dart';
 import 'database/management/backup_providers/local/local_backup_provider.dart';
 import 'database/management/database_helper.dart';
 import 'database/versions/asset_script_source.dart';

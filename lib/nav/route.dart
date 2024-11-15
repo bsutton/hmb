@@ -10,7 +10,7 @@ import '../crud/system/system_business_screen.dart';
 import '../crud/system/system_contact_screen.dart';
 import '../crud/system/system_integration_screen.dart';
 import '../crud/tool/list_tool_screen.dart';
-import '../database/management/backup_providers/email/screen.dart';
+import '../database/management/backup_providers/email/email_backup_screen.dart';
 import '../main.dart';
 import '../screens/about.dart';
 import '../screens/error.dart';
