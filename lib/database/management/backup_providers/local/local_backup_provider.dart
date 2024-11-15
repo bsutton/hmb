@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common/sqflite.dart';
 
+import '../../../../util/log.dart';
 import '../../../../util/paths.dart'
     if (dart.library.ui) '../../../../util/paths_flutter.dart';
 import '../backup_provider.dart';
@@ -13,19 +16,23 @@ class LocalBackupProvider extends BackupProvider {
   LocalBackupProvider(super.databaseFactory);
 
   @override
-  Future<void> deleteBackup(Backup backupToDelete) {
-    throw UnimplementedError();
+  String get name => 'Local Backup';
+
+  @override
+  Future<void> deleteBackup(Backup backupToDelete) async {
+    delete(backupToDelete.pathTo);
   }
 
   @override
-  Future<Backup> getBackup(String pathTo) {
-    throw UnimplementedError();
-  }
+  Future<File> fetchBackup(String pathToBackupInStorage) async =>
+      File(pathToBackupInStorage);
 
   @override
   Future<List<String>> getBackups() async {
     final backups = <String>[];
-    find('*.zip', workingDirectory: await _pathToBackupDir, progress: (item) {
+    final backupPath = await _pathToBackupDir;
+    Log.d('Searching for backups in $backupPath');
+    find('*.zip', workingDirectory: backupPath, progress: (item) {
       backups.add(item.pathTo);
       return true;
     });

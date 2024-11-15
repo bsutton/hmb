@@ -44,6 +44,10 @@ def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
+dependencies {
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
+}
+
 
 android {
     namespace = "dev.onepub.handyman"

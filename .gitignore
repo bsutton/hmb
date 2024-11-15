@@ -50,3 +50,8 @@ backups/*.db
 backups/*
 hmb.session.sql
 photos/test_photo.jpg
+hmb-debug.keystore
+hmb-debug.keystore.zip
+hmb-production.keystore
+hmb-production.keystore.zip
+android/key.properties.zip

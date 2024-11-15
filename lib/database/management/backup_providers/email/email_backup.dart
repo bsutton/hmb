@@ -19,14 +19,17 @@ class EmailBackupProvider extends BackupProvider {
   EmailBackupProvider(super.databaseFactory);
 
   @override
+  String get name => 'Email Backup';
+
+  @override
   Future<void> deleteBackup(Backup backupToDelete) {
     /// no op - you can't delete backups we email off.
     throw UnimplementedError();
   }
 
   @override
-  Future<Backup> getBackup(String pathTo) {
-    /// no op - you can't retrieve  backups we email off.
+  Future<File> fetchBackup(String pathToBackupInStorage) {
+    /// you can't retrieve emailed backups
     throw UnimplementedError();
   }
 

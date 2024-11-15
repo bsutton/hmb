@@ -68,9 +68,12 @@ where cli.id =?
     for (final photo in photos) {
       await DaoPhoto().delete(photo.id);
 
+      final absolutePathToPhoto =
+          await PhotoMeta.fromPhoto(photo: photo).resolve();
+
       // Delete the photo file from the disk
-      if (exists(photo.filePath)) {
-        delete(photo.filePath);
+      if (exists(absolutePathToPhoto)) {
+        delete(absolutePathToPhoto);
       }
     }
   }

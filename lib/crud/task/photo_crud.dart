@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
@@ -93,53 +94,49 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
   /// Display the photo with a 'Icon in the corner
   /// which when tapped will show the full screen photo
   /// with zoom/pan ability.
-  Stack _showPhoto(PhotoMeta photoMeta) {
-    final file = File(photoMeta.photo.filePath);
-    final isFileExist = file.existsSync();
-
-    return Stack(
-      children: [
-        if (isFileExist)
-          Image.file(file)
-        else
-          Container(
-            width: double.infinity,
-            height: 200,
-            color: Colors.grey,
-            child: const Icon(
-              Icons.broken_image,
-              color: Colors.white,
-              size: 80,
-            ),
-          ),
-        Positioned(
-          right: 0,
-          child: GestureDetector(
-            // Show full screen photo when tapped, only if the file exists
-            onTap: () async {
-              if (isFileExist) {
-                if (mounted) {
-                  await FullScreenPhotoViewer.show(
-                      context: context,
-                      imagePath: photoMeta.photo.filePath,
-                      title: photoMeta.title,
-                      comment: photoMeta.comment);
-                }
-              }
-            },
-            child: Container(
-              color: Colors.black.withOpacity(0.5),
-              padding: const EdgeInsets.all(8),
-              child: const Icon(
-                Icons.fullscreen,
-                color: Colors.white,
+  Widget _showPhoto(PhotoMeta photoMeta) => FutureBuilderEx(
+      // ignore: discarded_futures
+      future: photoMeta.resolve(),
+      builder: (context, path) => Stack(
+            children: [
+              if (exists(path!))
+                Image.file(File(path))
+              else
+                Container(
+                  width: double.infinity,
+                  height: 200,
+                  color: Colors.grey,
+                  child: const Icon(
+                    Icons.broken_image,
+                    color: Colors.white,
+                    size: 80,
+                  ),
+                ),
+              Positioned(
+                right: 0,
+                child: GestureDetector(
+                  // Show full screen photo when tapped, only if the file exists
+                  onTap: () async {
+                    if (exists(path) && mounted) {
+                      await FullScreenPhotoViewer.show(
+                          context: context,
+                          imagePath: path,
+                          title: photoMeta.title,
+                          comment: photoMeta.comment);
+                    }
+                  },
+                  child: Container(
+                    color: Colors.black.withOpacity(0.5),
+                    padding: const EdgeInsets.all(8),
+                    child: const Icon(
+                      Icons.fullscreen,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+            ],
+          ));
 
   IconButton _buildDeleteButton(PhotoMeta photoMeta) => IconButton(
         icon: const Icon(Icons.delete),
@@ -165,6 +162,7 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
   /// currently causing flutter to crash.
   Future<void> _showConfirmDeleteDialog(
       BuildContext context, PhotoMeta photoMeta) async {
+    final pathToPhoto = photoMeta.absolutePathTo;
     if (context.mounted) {
       return showDialog<void>(
         context: context,
@@ -173,7 +171,7 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Image.file(File(photoMeta.photo.filePath),
+              Image.file(File(pathToPhoto),
                   width: 100, height: 100), // Thumbnail of the photo
               if (Strings.isNotBlank(photoMeta.comment))
                 Text(photoMeta.photo.comment),

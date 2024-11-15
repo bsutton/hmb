@@ -40,69 +40,73 @@ class PhotoGallery extends StatelessWidget {
             }
           }));
 
-  SizedBox buildGallery(List<PhotoMeta> photos, BuildContext context) =>
-      SizedBox(
-        height: 100,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: photos.map((photoMeta) {
-            final file = File(photoMeta.photo.filePath);
-            final isFileExist = file.existsSync();
+  Widget buildGallery(List<PhotoMeta> photos, BuildContext context) =>
+      FutureBuilderEx(
+          // ignore: discarded_futures
+          future: PhotoMeta.resolveAll(photos),
+          builder: (context, resolved) => SizedBox(
+                height: 100,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: resolved!.map((photoMeta) {
+                    final file = File(photoMeta.absolutePathTo);
+                    final isFileExist = file.existsSync();
 
-            return Padding(
-              padding: const EdgeInsets.all(8),
-              child: GestureDetector(
-                onTap: () async {
-                  if (isFileExist) {
-                    // Fetch the task for this photo to get the task name.
-                    if (context.mounted) {
-                      await FullScreenPhotoViewer.show(
-                          context: context,
-                          imagePath: photoMeta.photo.filePath,
-                          title: photoMeta.title,
-                          comment: photoMeta.comment);
-                    }
-                  }
-                },
-                child: Stack(
-                  children: [
-                    if (isFileExist)
-                      Image.file(
-                        file,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                      )
-                    else
-                      Container(
-                        width: 80,
-                        height: 80,
-                        color: Colors.grey,
-                        child: const Icon(
-                          Icons.broken_image,
-                          color: Colors.white,
-                          size: 40,
+                    return Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: GestureDetector(
+                        onTap: () async {
+                          if (isFileExist) {
+                            // Fetch the task for this photo to get
+                            // the task name.
+                            if (context.mounted) {
+                              await FullScreenPhotoViewer.show(
+                                  context: context,
+                                  imagePath: photoMeta.absolutePathTo,
+                                  title: photoMeta.title,
+                                  comment: photoMeta.comment);
+                            }
+                          }
+                        },
+                        child: Stack(
+                          children: [
+                            if (isFileExist)
+                              Image.file(
+                                file,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              )
+                            else
+                              Container(
+                                width: 80,
+                                height: 80,
+                                color: Colors.grey,
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  color: Colors.white,
+                                  size: 40,
+                                ),
+                              ),
+                            if (isFileExist)
+                              const Positioned(
+                                bottom: 8,
+                                right: 0,
+                                child: ColoredBox(
+                                  color: Colors.black45,
+                                  child: Icon(
+                                    Icons.zoom_out_map,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                    if (isFileExist)
-                      const Positioned(
-                        bottom: 8,
-                        right: 0,
-                        child: ColoredBox(
-                          color: Colors.black45,
-                          child: Icon(
-                            Icons.zoom_out_map,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                  ],
+                    );
+                  }).toList(),
                 ),
-              ),
-            );
-          }).toList(),
-        ),
-      );
+              ));
 
   static void notify() {
     June.getState(PhotoGalleryState.new).setState();

@@ -16,6 +16,10 @@ import '../database_helper.dart';
 abstract class BackupProvider {
   BackupProvider(this.databaseFactory);
 
+  /// A descrive name of the provider we show to the
+  /// user when offering a backup option.
+  String get name;
+
   HMBDatabaseFactory databaseFactory;
 
   /// Stores the zipped backup file to a [BackupProvider]s
@@ -28,9 +32,6 @@ abstract class BackupProvider {
 
   /// Retrieve a list of prior backups made by the backup provider.
   Future<List<String>> getBackups();
-
-  /// Retrieve a specific backup made by the backup provider.
-  Future<Backup> getBackup(String pathTo);
 
   /// Delete a specific backup made by the backup provider.
   /// The pathTo is the path to the backup file on the providers
@@ -120,8 +121,9 @@ Database file not found at $pathToDatabase. No backup performed.''');
         if (!exists(photosDir)) {
           createDir(photosDir, recursive: true);
         }
+        final backup = await fetchBackup(pathToZipBackupFile);
 
-        final dbPath = await extractFiles(pathToZipBackupFile, tmpDir);
+        final dbPath = await extractFiles(backup, tmpDir);
 
         if (dbPath == null) {
           throw BackupException('No database found in the zip file');
@@ -142,6 +144,12 @@ Database file not found at $pathToDatabase. No backup performed.''');
       }
     });
   }
+
+  /// Fetchs the backup from storage and makes
+  /// it available on the local file system
+  /// returning a [File] object to the local file.
+  ///
+  Future<File> fetchBackup(String pathToBackupInStorage);
 
   /// We can't use DaoPhoto as it uses June which is a flutter component
   /// and we need this to work from the cli.
@@ -186,12 +194,11 @@ Database file not found at $pathToDatabase. No backup performed.''');
 
   Future<String> get photosRootPath;
 
-  Future<String?> extractFiles(
-      String pathToZipBackupFile, String tmpDir) async {
+  Future<String?> extractFiles(File backupFile, String tmpDir) async {
     final encoder = ZipDecoder();
     String? dbPath;
     // Extract the ZIP file contents to a temporary directory
-    final archive = encoder.decodeBuffer(InputFileStream(pathToZipBackupFile));
+    final archive = encoder.decodeBuffer(InputFileStream(backupFile.path));
 
     for (final file in archive) {
       final filename = file.name;

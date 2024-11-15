@@ -9,26 +9,22 @@ import 'package:path/path.dart';
 
 import '../../../../widgets/hmb_toast.dart';
 
-class BackupAuthGoogleScreenV1 extends StatefulWidget {
-  const BackupAuthGoogleScreenV1({required this.pathToBackup, super.key});
+class BackupAuthGoogleScreen extends StatefulWidget {
+  const BackupAuthGoogleScreen({required this.pathToBackup, super.key});
 
   final String pathToBackup;
 
   @override
   // ignore: library_private_types_in_public_api
-  _BackupAuthGoogleScreenV1State createState() =>
-      _BackupAuthGoogleScreenV1State();
+  _BackupAuthGoogleScreenState createState() => _BackupAuthGoogleScreenState();
 }
 
-class _BackupAuthGoogleScreenV1State extends State<BackupAuthGoogleScreenV1> {
-  _BackupAuthGoogleScreenV1State()
-      : _googleSignIn = GoogleSignIn(
-          scopes: [drive.DriveApi.driveFileScope],
-        );
-
+class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
   GoogleSignInAccount? _currentUser;
 
-  final GoogleSignIn _googleSignIn;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: [drive.DriveApi.driveFileScope],
+  );
 
   @override
   void initState() {

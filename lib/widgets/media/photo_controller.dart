@@ -84,11 +84,12 @@ class PhotoController<E extends Entity<E>> {
   }
 
   Future<void> deletePhoto(PhotoMeta photoMeta) async {
-    final exist = File(photoMeta.photo.filePath).existsSync();
+    await photoMeta.resolve();
+    final exist = File(photoMeta.absolutePathTo).existsSync();
     print('exists: $exist');
     // Delete the photo from the database and the disk
     await DaoPhoto().delete(photoMeta.photo.id);
-    await File(photoMeta.photo.filePath).delete();
+    await File(photoMeta.absolutePathTo).delete();
     _commentControllers.removeAt(_photos.indexOf(photoMeta)).dispose();
     _photos.remove(photoMeta);
 

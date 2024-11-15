@@ -50,7 +50,7 @@ dependencies:
   go_router: ^14.2.0
   google_mlkit_barcode_scanning: ^0.13.0
   google_sign_in: ^6.2.1
-    googleapis: ^13.1.0
+  googleapis: ^13.1.0
   googleapis_auth: ^1.6.0
   halfpipe: ^1.0.1
   http: ^1.2.1
@@ -67,7 +67,8 @@ dependencies:
   mockito: ^5.4.4
   money2: ^5.2.1
   oauth2: ^2.0.3
-    parchment_delta: ^1.0.0
+  package_info_plus: ^8.1.1
+  parchment_delta: ^1.0.0
   path: ^1.9.0
   path_provider: ^2.0.0
   pdf: ^3.11.0

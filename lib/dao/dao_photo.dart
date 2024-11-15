@@ -1,5 +1,8 @@
 import 'package:june/june.dart';
+import 'package:path/path.dart';
 
+import '../../../../util/paths.dart'
+    if (dart.library.ui) '../../../../util/paths_flutter.dart';
 import '../entity/photo.dart';
 import 'dao.dart';
 import 'dao_task.dart';
@@ -41,9 +44,15 @@ class PhotoState extends JuneState {
 
 class PhotoMeta {
   PhotoMeta({required this.photo, required this.title, required this.comment});
-  Photo photo;
-  String title;
+
+  PhotoMeta.fromPhoto({required this.photo})
+      : comment = photo.comment,
+        title = '';
+
+  final Photo photo;
+  final String title;
   String? comment;
+  String? _absolutePath;
 
   static Future<List<PhotoMeta>> getByParent(
       int parentId, ParentType parentType) async {
@@ -54,23 +63,40 @@ class PhotoMeta {
         return getByTool(parentId);
     }
   }
-}
 
-Future<List<PhotoMeta>> getByJob(int jobId) async {
-  final tasks = await DaoTask().getTasksByJob(jobId);
-  final photos = <PhotoMeta>[];
-  for (final task in tasks) {
-    final taskPhotos = await DaoPhoto().getByParent(task.id, ParentType.task);
-    photos.addAll(taskPhotos.map(
-        (photo) => PhotoMeta(photo: photo, title: task.name, comment: null)));
+  String get absolutePathTo {
+    assert(_absolutePath != null, 'You must call the resolve method first');
+
+    return _absolutePath!;
   }
-  return photos;
-}
 
-Future<List<PhotoMeta>> getByTool(int toolId) async {
-  final tool = await DaoTool().getById(toolId);
-  return (await DaoPhoto().getByParent(tool!.id, ParentType.tool))
-      .map((photo) =>
-          PhotoMeta(photo: photo, title: tool.name, comment: tool.description))
-      .toList();
+  Future<String> resolve() async =>
+      _absolutePath = join(await getPhotosRootPath(), photo.filePath);
+
+  static Future<List<PhotoMeta>> getByJob(int jobId) async {
+    final tasks = await DaoTask().getTasksByJob(jobId);
+    final photos = <PhotoMeta>[];
+    for (final task in tasks) {
+      final taskPhotos = await DaoPhoto().getByParent(task.id, ParentType.task);
+      photos.addAll(taskPhotos.map(
+          (photo) => PhotoMeta(photo: photo, title: task.name, comment: null)));
+    }
+    return photos;
+  }
+
+  static Future<List<PhotoMeta>> getByTool(int toolId) async {
+    final tool = await DaoTool().getById(toolId);
+    return (await DaoPhoto().getByParent(tool!.id, ParentType.tool))
+        .map((photo) => PhotoMeta(
+            photo: photo, title: tool.name, comment: tool.description))
+        .toList();
+  }
+
+  /// Resolves all of the file paths into absolute file paths.
+  static Future<List<PhotoMeta>> resolveAll(List<PhotoMeta> photos) async {
+    for (final meta in photos) {
+      await meta.resolve();
+    }
+    return photos;
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../dao/dao_base.dart';
+import '../../dao/dao_photo.dart';
 import '../../entity/photo.dart';
 import '../../widgets/media/captured_photo.dart';
 
@@ -11,9 +12,11 @@ Future<void> postv77Upgrade(Database db) async {
   final photos = await daoPhoto.getAll();
 
   for (final photo in photos) {
-    photo.filePath =
-        (await CapturedPhoto.fromAbsolute(absolutePathToPhoto: photo.filePath))
-            .relativePath;
+    final absolutePathToPhoto =
+        await PhotoMeta.fromPhoto(photo: photo).resolve();
+    photo.filePath = (await CapturedPhoto.fromAbsolute(
+            absolutePathToPhoto: absolutePathToPhoto))
+        .relativePath;
 
     await daoPhoto.update(photo);
   }

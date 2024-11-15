@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dcli/dcli.dart';
 import 'package:path/path.dart';
 
@@ -7,22 +9,21 @@ class DevBackupProvider extends BackupProvider {
   DevBackupProvider(super.databaseFactory);
 
   @override
-  Future<void> deleteBackup(Backup backupToDelete) {
-    // TODO(bsutton): implement deleteBackup
-    throw UnimplementedError();
+  String get name => 'Dev Backup';
+
+  @override
+  Future<void> deleteBackup(Backup backupToDelete) async {
+    delete(backupToDelete.pathTo);
   }
 
   @override
-  Future<Backup> getBackup(String pathTo) {
-    // TODO(bsutton): implement getBackup
-    throw UnimplementedError();
-  }
+  Future<File> fetchBackup(String pathToBackupInStorage) async =>
+      File(pathToBackupInStorage);
 
   @override
-  Future<List<String>> getBackups() {
-    // TODO(bsutton): implement getBackups
-    throw UnimplementedError();
-  }
+  Future<List<String>> getBackups() async => find('*.zip',
+          workingDirectory: join(DartProject.self.pathToProjectRoot, 'backups'))
+      .toList();
 
   @override
   Future<BackupResult> store(

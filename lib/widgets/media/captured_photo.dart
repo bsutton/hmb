@@ -28,7 +28,7 @@ class CapturedPhoto {
   }
 
   /// Path to the captured photo relative to HMB's main
-  /// photo storage area as designated by [photosRootPath] which
+  /// photo storage area as designated by photosRootPath which
   /// is different on each device.
   late final String relativePath;
 
@@ -42,8 +42,8 @@ class CapturedPhoto {
     final relativePathToPhoto =
         relative(absolutePathToPhoto, from: await getPhotosRootPath());
 
-    assert(relativePathToPhoto == absolutePathToPhoto, '''
-The relative call failed probably because [saveTo] is relative to [photsRootPath]''');
+    assert(relativePathToPhoto != absolutePathToPhoto, '''
+The relative call failed probably because $relativePathToPhoto isn't relative to $absolutePathToPhoto''');
 
     return CapturedPhoto(relativePath: relativePathToPhoto);
   }
