@@ -7,6 +7,7 @@ import 'package:june/june.dart';
 import '../../dao/dao_photo.dart';
 import '../../dao/dao_task.dart';
 import '../../entity/job.dart';
+import '../../entity/task.dart';
 import '../../entity/tool.dart';
 import '../../util/photo_meta.dart';
 import '../layout/hmb_placeholder.dart';
@@ -22,6 +23,11 @@ class PhotoGallery extends StatelessWidget {
       }
       return meta;
     };
+  }
+
+  PhotoGallery.forTask({required Task task, super.key}) {
+    _fetchPhotos = () async =>
+        [...await DaoPhoto.getMetaByParent(task.id, ParentType.task)];
   }
 
   PhotoGallery.forTool({required Tool tool, super.key}) {
