@@ -159,6 +159,7 @@ class _MessageTemplateDialogState
     }
   }
 
+/// find the matching placeholder
   PlaceHolderField _buildPlaceHolderField(String placeholder) {
     if (placeholder.contains('time')) {
       return _buildTimePicker(placeholder);
@@ -190,6 +191,7 @@ class _MessageTemplateDialogState
         getValue: () async => controller.text);
   }
 
+/// Customer placeholder drop list
   PlaceHolderField _buildCustomerDroplist(String placeholder) {
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
@@ -221,6 +223,7 @@ class _MessageTemplateDialogState
         getValue: () async => controller.text);
   }
 
+/// Job placeholder drop list
   PlaceHolderField _buildJobDroplist(String placeholder) {
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
@@ -255,6 +258,7 @@ class _MessageTemplateDialogState
   Future<Money> jobCost(Job job) async =>
       (await DaoJob().getJobStatistics(job)).totalCost;
 
+  /// Site placeholder drop list
   PlaceHolderField _buildSiteDroplist(String placeholder) {
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
@@ -292,6 +296,7 @@ class _MessageTemplateDialogState
     );
   }
 
+  /// Contact placeholder drop list
   PlaceHolderField _buildContactDroplist(String placeholder) {
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
@@ -329,6 +334,7 @@ class _MessageTemplateDialogState
     );
   }
 
+  /// Time placeholder drop list
   PlaceHolderField _buildTimePicker(String placeholder) {
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
@@ -349,6 +355,7 @@ class _MessageTemplateDialogState
     );
   }
 
+  /// Date placeholder drop list
   PlaceHolderField _buildDatePicker(String placeholder) {
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
@@ -369,6 +376,7 @@ class _MessageTemplateDialogState
     );
   }
 
+  /// Delay Period placeholder drop list
   PlaceHolderField _buildPeriodPicker(String placeholder) {
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
@@ -405,6 +413,7 @@ class _MessageTemplateDialogState
     );
   }
 
+/// Preview window
   Widget _buildPreview() {
     if (_selectedTemplate == null) {
       return Container();
