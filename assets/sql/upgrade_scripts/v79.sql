@@ -1,0 +1,2 @@
+ALTER TABLE system ADD COLUMN firstname TEXT;
+ALTER TABLE system ADD COLUMN surname TEXT;

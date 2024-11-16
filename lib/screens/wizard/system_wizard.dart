@@ -51,7 +51,7 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
           TextButton(
             onPressed: _skipStep,
             child:
-                const Text('Skip All', style: TextStyle(color: Colors.white)),
+                const Text('Skip All', style: TextStyle(color: Colors.black)),
           ),
         ],
       ),

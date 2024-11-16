@@ -37,6 +37,8 @@ class _SystemContactInformationScreenState
   late TextEditingController _officeNumberController;
   late TextEditingController _fromEmailController;
   late TextEditingController _emailAddressController;
+  late TextEditingController _firstNameController; // New controller
+  late TextEditingController _surnameController; // New controller
 
   late final System system;
 
@@ -51,9 +53,10 @@ class _SystemContactInformationScreenState
     _mobileNumberController = TextEditingController(text: system.mobileNumber);
     _landLineController = TextEditingController(text: system.landLine);
     _officeNumberController = TextEditingController(text: system.officeNumber);
-
     _fromEmailController = TextEditingController(text: system.fromEmail);
     _emailAddressController = TextEditingController(text: system.emailAddress);
+    _firstNameController = TextEditingController(text: system.firstname);
+    _surnameController = TextEditingController(text: system.surname);
   }
 
   @override
@@ -68,6 +71,8 @@ class _SystemContactInformationScreenState
     _officeNumberController.dispose();
     _fromEmailController.dispose();
     _emailAddressController.dispose();
+    _firstNameController.dispose(); // Dispose
+    _surnameController.dispose(); // Dispose
     super.dispose();
   }
 
@@ -75,8 +80,10 @@ class _SystemContactInformationScreenState
     if (_formKey.currentState!.validate()) {
       final system = await DaoSystem().get();
       // Save the form data
-      system!.addressLine1 = _addressLine1Controller.text;
-      system
+      system!
+        ..firstname = _firstNameController.text // Save first name
+        ..surname = _surnameController.text // Save surname
+        ..addressLine1 = _addressLine1Controller.text
         ..addressLine2 = _addressLine2Controller.text
         ..suburb = _suburbController.text
         ..state = _stateController.text
@@ -118,6 +125,28 @@ class _SystemContactInformationScreenState
                     key: _formKey,
                     child: ListView(
                       children: [
+                        HMBTextField(
+                          controller: _firstNameController,
+                          labelText: 'First Name',
+                          required: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your first name';
+                            }
+                            return null;
+                          },
+                        ),
+                        HMBTextField(
+                          controller: _surnameController,
+                          labelText: 'Surname',
+                          required: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your surname';
+                            }
+                            return null;
+                          },
+                        ),
                         HMBPhoneField(
                             controller: _mobileNumberController,
                             labelText: 'Mobile Number'),

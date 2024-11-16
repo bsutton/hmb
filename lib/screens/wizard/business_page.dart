@@ -38,23 +38,27 @@ class _WizardBusinessPageState extends AsyncState<WizardBusinessPage, void> {
   @override
   void initState() {
     super.initState();
-    _businessNameController = TextEditingController(text: system.businessName);
-    _businessNumberController =
-        TextEditingController(text: system.businessNumber);
-    _businessNumberLabelController =
-        TextEditingController(text: system.businessNumberLabel);
-    _paymentTermsInDaysController =
-        TextEditingController(text: system.paymentTermsInDays.toString());
-    _paymentOptionsController =
-        TextEditingController(text: system.paymentOptions);
+    _businessNameController = TextEditingController();
+    _businessNumberController = TextEditingController();
+    _businessNumberLabelController = TextEditingController();
+    _paymentTermsInDaysController = TextEditingController();
+    _paymentOptionsController = TextEditingController();
 
-    _webUrlController = TextEditingController(text: system.webUrl);
-    _termsUrlController = TextEditingController(text: system.termsUrl);
+    _webUrlController = TextEditingController();
+    _termsUrlController = TextEditingController();
   }
 
   @override
   Future<void> asyncInitState() async {
     system = (await DaoSystem().get())!;
+
+    _businessNameController.text = system.businessName ?? '';
+    _businessNumberController.text = system.businessNumber ?? '';
+    _businessNumberLabelController.text = system.businessNumberLabel ?? '';
+    _paymentTermsInDaysController.text = system.paymentTermsInDays.toString();
+    _paymentOptionsController.text = system.paymentOptions;
+    _webUrlController.text = system.webUrl ?? '';
+    _termsUrlController.text = system.termsUrl ?? '';
   }
 
   @override

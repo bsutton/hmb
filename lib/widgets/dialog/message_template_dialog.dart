@@ -8,6 +8,7 @@ import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
 import '../../dao/dao_message_template.dart';
 import '../../dao/dao_site.dart';
+import '../../dao/dao_system.dart';
 import '../../entity/contact.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
@@ -72,6 +73,7 @@ class _MessageTemplateDialogState
     with SingleTickerProviderStateMixin {
   List<MessageTemplate> _templates = [];
   MessageTemplate? _selectedTemplate;
+  String _signature = '';
 
   final Map<String, PlaceHolderField> placeholderFields = {};
   Customer? _selectedCustomer;
@@ -86,6 +88,7 @@ class _MessageTemplateDialogState
   Future<void> asyncInitState() async {
     _tabController = TabController(length: 2, vsync: this);
     await _loadTemplates();
+    await _fetchSignature();
     _selectedCustomer = widget.customer;
     _selectedContact = widget.contact;
     if (widget.job != null) {
@@ -96,6 +99,12 @@ class _MessageTemplateDialogState
 
     _selectedContact ??=
         (await DaoContact().getByCustomer(_selectedCustomer?.id)).firstOrNull;
+  }
+
+  Future<void> _fetchSignature() async {
+    final system = await DaoSystem().get();
+    _signature =
+        '${system?.firstname ?? ''} ${system?.surname ?? ''}\n${system?.businessName ?? ''}';
   }
 
   Future<void> _loadTemplates() async {
@@ -152,14 +161,15 @@ class _MessageTemplateDialogState
 
       // Add new placeholders or keep existing ones
       for (final placeholder in newPlaceholders) {
-        if (!placeholderFields.containsKey(placeholder)) {
+        if (placeholder != 'signature' &&
+            !placeholderFields.containsKey(placeholder)) {
           placeholderFields[placeholder] = _buildPlaceHolderField(placeholder);
         }
       }
     }
   }
 
-/// find the matching placeholder
+  /// find the matching placeholder
   PlaceHolderField _buildPlaceHolderField(String placeholder) {
     if (placeholder.contains('time')) {
       return _buildTimePicker(placeholder);
@@ -191,7 +201,7 @@ class _MessageTemplateDialogState
         getValue: () async => controller.text);
   }
 
-/// Customer placeholder drop list
+  /// Customer placeholder drop list
   PlaceHolderField _buildCustomerDroplist(String placeholder) {
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
@@ -223,7 +233,7 @@ class _MessageTemplateDialogState
         getValue: () async => controller.text);
   }
 
-/// Job placeholder drop list
+  /// Job placeholder drop list
   PlaceHolderField _buildJobDroplist(String placeholder) {
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
@@ -413,17 +423,23 @@ class _MessageTemplateDialogState
     );
   }
 
-/// Preview window
+  /// Preview window
   Widget _buildPreview() {
     if (_selectedTemplate == null) {
       return Container();
     }
 
     var previewMessage = _selectedTemplate!.message;
+
+    // Replace the 'signature' placeholder
+    previewMessage = previewMessage.replaceAll(
+        '{{signature}}', _signature.isNotEmpty ? _signature : '[signature]');
+
+    // Replace other placeholders
     placeholderFields.forEach((key, field) {
       final text = field.controller?.text ?? '';
-      previewMessage =
-          previewMessage.replaceAll('{{$key}}', text.isEmpty ? '[$key]' : text);
+      previewMessage = previewMessage.replaceAll(
+          '{{$key}}', text.isNotEmpty ? text : '[$key]');
     });
 
     return Container(
@@ -540,19 +556,25 @@ class _MessageTemplateDialogState
                 child: const Text('Cancel'),
               ),
               TextButton(
+                child: const Text('Select'),
                 onPressed: () {
                   if (_selectedTemplate != null) {
+                    final values = Map<String, String>.from(
+                        placeholderFields.map((key, field) {
+                      final text = field.controller?.text ?? '';
+                      return MapEntry(key, text);
+                    }));
+
+                    // Add the 'signature' to values
+                    values['signature'] = _signature;
+
                     final selectedMessageTemplate = SelectedMessageTemplate(
                       template: _selectedTemplate!,
-                      values: placeholderFields.map((key, field) {
-                        final text = field.controller?.text ?? '';
-                        return MapEntry(key, text);
-                      }),
+                      values: values,
                     );
                     Navigator.of(context).pop(selectedMessageTemplate);
                   }
                 },
-                child: const Text('Select'),
               ),
             ],
           ),
