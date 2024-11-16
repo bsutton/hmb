@@ -63,33 +63,34 @@ class _HMBDateTimeFieldState extends m.State<HMBDateTimeField> {
             widget.label,
             bold: true,
           ),
-          const HMBSpacer(width: true),
-          m.SizedBox(
-            width: 140,
-            child: m.TextFormField(
-              readOnly: true,
-              decoration: const m.InputDecoration(
-                labelText: 'Select Date',
+          if (widget.showDate) const HMBSpacer(width: true),
+          if (widget.showDate)
+            m.SizedBox(
+              width: 140,
+              child: m.TextFormField(
+                readOnly: true,
+                decoration: const m.InputDecoration(
+                  labelText: 'Select Date',
+                ),
+                controller: dateController,
+                onTap: () async {
+                  final date = await _showDatePicker(context, selectedDateTime);
+                  if (date != null) {
+                    setState(() {
+                      selectedDateTime = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        selectedDateTime.hour,
+                        selectedDateTime.minute,
+                      );
+                      dateController.text = dateFormat.format(selectedDateTime);
+                    });
+                    widget.onChanged(selectedDateTime);
+                  }
+                },
               ),
-              controller: dateController,
-              onTap: () async {
-                final date = await _showDatePicker(context, selectedDateTime);
-                if (date != null) {
-                  setState(() {
-                    selectedDateTime = DateTime(
-                      date.year,
-                      date.month,
-                      date.day,
-                      selectedDateTime.hour,
-                      selectedDateTime.minute,
-                    );
-                    dateController.text = dateFormat.format(selectedDateTime);
-                  });
-                  widget.onChanged(selectedDateTime);
-                }
-              },
             ),
-          ),
           if (widget.showTime) const HMBSpacer(width: true),
           if (widget.showTime)
             m.SizedBox(
