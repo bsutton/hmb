@@ -73,7 +73,7 @@ class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
 
     if (mounted) {
       final invoiceOptions =
-          await DialogTaskSelection.showInvoice(context: context, job: job);
+          await showInvoice(context: context, job: job);
 
       if (invoiceOptions != null) {
         try {

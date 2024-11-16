@@ -1,52 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:money2/money2.dart';
 
 import '../dao/dao_task.dart';
 import '../entity/job.dart';
+import '../entity/task.dart';
 import '../widgets/async_state.dart';
 
 enum Showing { showQuote, showInvoice }
+
+/// Show the dialog
+Future<InvoiceOptions?> showQuote({
+  required BuildContext context,
+  required Job job,
+}) async {
+  final estimates = await DaoTask().getEstimatesForJob(job.id);
+
+  if (context.mounted) {
+    final invoiceOptions = await showDialog<InvoiceOptions>(
+        context: context,
+        builder: (context) => DialogTaskSelection(
+            job: job,
+            taskSelectors: estimates
+                .map((estimate) => TaskSelector(
+                    estimate.task, estimate.task.name, estimate.total))
+                .toList()));
+
+    return invoiceOptions;
+  }
+  return null;
+}
+
+/// Show the dialog
+Future<InvoiceOptions?> showInvoice({
+  required BuildContext context,
+  required Job job,
+}) async {
+  final values = await DaoTask()
+      .getAccruedValueForJob(jobId: job.id, includedBilled: false);
+
+  final selectors = <TaskSelector>[];
+  for (final value in values) {
+    selectors
+        .add(TaskSelector(value.task, value.task.name, await value.earned));
+  }
+
+  if (context.mounted) {
+    final invoiceOptions = await showDialog<InvoiceOptions>(
+        context: context,
+        builder: (context) =>
+            DialogTaskSelection(job: job, taskSelectors: selectors));
+    return invoiceOptions;
+  }
+  return null;
+}
 
 /// show the user the set of tasks for the passed Job
 /// and allow them to select which tasks they want to
 /// work on.
 class DialogTaskSelection extends StatefulWidget {
   const DialogTaskSelection(
-      {required this.job, required this.showing, super.key});
+      {required this.job, required this.taskSelectors, super.key});
   final Job job;
-  final Showing showing;
+  final List<TaskSelector> taskSelectors;
 
   @override
   // ignore: library_private_types_in_public_api
   _DialogTaskSelectionState createState() => _DialogTaskSelectionState();
+}
 
-  /// Show the dialog
-  static Future<InvoiceOptions?> showQuote({
-    required BuildContext context,
-    required Job job,
-  }) async {
-    final invoiceOptions = await showDialog<InvoiceOptions>(
-      context: context,
-      builder: (context) =>
-          DialogTaskSelection(job: job, showing: Showing.showQuote),
-    );
-
-    return invoiceOptions;
-  }
-
-  /// Show the dialog
-  static Future<InvoiceOptions?> showInvoice({
-    required BuildContext context,
-    required Job job,
-  }) async {
-    final invoiceOptions = await showDialog<InvoiceOptions>(
-      context: context,
-      builder: (context) =>
-          DialogTaskSelection(job: job, showing: Showing.showInvoice),
-    );
-
-    return invoiceOptions;
-  }
+class TaskSelector {
+  TaskSelector(this.task, this.description, this.value);
+  final Task task;
+  final String description;
+  final Money value;
 }
 
 class InvoiceOptions {
@@ -60,7 +87,7 @@ class InvoiceOptions {
 }
 
 class _DialogTaskSelectionState
-    extends AsyncState<DialogTaskSelection, List<TaskAccruedValue>> {
+    extends AsyncState<DialogTaskSelection, List<TaskSelector>> {
   // late List<TaskEstimates> _tasks;
   final Map<int, bool> _selectedTasks = {};
   bool _selectAll = true;
@@ -69,22 +96,17 @@ class _DialogTaskSelectionState
   bool groupByTask = false;
 
   @override
-  Future<List<TaskAccruedValue>> asyncInitState() async {
+  Future<List<TaskSelector>> asyncInitState() async {
     billBookingFee = canBillBookingFee =
         widget.job.billingType == BillingType.timeAndMaterial &&
             !widget.job.bookingFeeInvoiced;
 
-    // Load tasks and their costs via the DAO
-    final tasksAccruedValue = await DaoTask().getTaskCostsByJob(
-        jobId: widget.job.id,
-        includeBilled: widget.showing == Showing.showQuote);
-
     /// Mark all tasks as selected.
-    for (final accuredValue in tasksAccruedValue) {
+    for (final accuredValue in widget.taskSelectors) {
       _selectedTasks[accuredValue.task.id] = true;
     }
 
-    return tasksAccruedValue;
+    return widget.taskSelectors;
   }
 
   void _toggleSelectAll(bool? value) {
@@ -110,9 +132,9 @@ class _DialogTaskSelectionState
   @override
   Widget build(BuildContext context) => AlertDialog(
         title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
-        content: FutureBuilderEx<List<TaskAccruedValue>>(
+        content: FutureBuilderEx<List<TaskSelector>>(
             future: initialised,
-            builder: (context, taskEstimates) => SingleChildScrollView(
+            builder: (context, taskSelectors) => SingleChildScrollView(
                   child: Column(
                     children: [
                       DropdownButton<bool>(
@@ -150,14 +172,14 @@ class _DialogTaskSelectionState
                           value: _selectAll,
                           onChanged: _toggleSelectAll,
                         ),
-                      for (final taskCost in taskEstimates!)
+                      for (final taskSelector in taskSelectors!)
                         CheckboxListTile(
-                          title: Text(taskCost.task.name),
-                          subtitle: Text(
-                              '''Total Cost: ${taskCost.taskEstimatedValue.estimatedMaterialsCharge}'''),
-                          value: _selectedTasks[taskCost.task.id] ?? false,
-                          onChanged: (value) =>
-                              _toggleIndividualTask(taskCost.task.id, value),
+                          title: Text(taskSelector.description),
+                          subtitle:
+                              Text('''Total Cost: ${taskSelector.value}'''),
+                          value: _selectedTasks[taskSelector.task.id] ?? false,
+                          onChanged: (value) => _toggleIndividualTask(
+                              taskSelector.task.id, value),
                         ),
                     ],
                   ),
@@ -182,4 +204,13 @@ class _DialogTaskSelectionState
           ),
         ],
       );
+
+  Future<Money> cost(TaskAccruedValue taskCost, Showing showing) async {
+    switch (showing) {
+      case Showing.showQuote:
+        return taskCost.quoted;
+      case Showing.showInvoice:
+        return taskCost.earned;
+    }
+  }
 }

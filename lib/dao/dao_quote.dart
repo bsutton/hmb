@@ -2,14 +2,9 @@ import 'package:fixed/fixed.dart';
 import 'package:june/june.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../entity/job.dart';
-import '../entity/quote.dart';
-import '../entity/quote_line.dart';
-import '../entity/quote_line_group.dart';
-import '../entity/task.dart';
+import '../entity/_index.g.dart';
 import '../invoicing/dialog_select_tasks.dart';
 import '../util/exceptions.dart';
-import '../util/fixed_ex.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_checklist_item.dart';
@@ -57,7 +52,7 @@ class DaoQuote extends Dao<Quote> {
 
   /// Create a quote for the given job.
   Future<Quote> create(Job job, InvoiceOptions invoiceOptions) async {
-    final tasks = await DaoTask().getTasksByJob(job.id);
+    final estimates = await DaoTask().getEstimatesForJob(job.id);
 
     if (job.hourlyRate == MoneyEx.zero) {
       throw InvoiceException('Hourly rate must be set for job ${job.summary}');
@@ -93,8 +88,8 @@ class DaoQuote extends Dao<Quote> {
     }
 
     // Create quote lines and groups for each task
-    for (final task in tasks) {
-      if (!invoiceOptions.selectedTaskIds.contains(task.id)) {
+    for (final estimate in estimates) {
+      if (!invoiceOptions.selectedTaskIds.contains(estimate.task.id)) {
         continue;
       }
 
@@ -103,35 +98,15 @@ class DaoQuote extends Dao<Quote> {
 
       QuoteLine? quoteLine;
 
-      final hourlyRate = await DaoTask().getHourlyRate(task);
-
-      final estimates = await DaoTask().getTaskEstimates(task, hourlyRate);
-
-      if (!MoneyEx.isZeroOrNull(estimates.estimatedMaterialsCharge)) {
-        /// Cost based billing
-        final lineTotal = estimates.estimatedMaterialsCharge;
-
-        if (!lineTotal.isZero) {
-          quoteLine = QuoteLine.forInsert(
-            quoteId: quoteId,
-            description: task.name,
-            quantity: Fixed.fromInt(100),
-            unitPrice: estimates.estimatedMaterialsCharge,
-            lineTotal: lineTotal,
-          );
-
-          totalAmount += lineTotal;
-        }
-      } else if (!FixedEx.isZeroOrNull(estimates.estimatedLabour)) {
+      if (!MoneyEx.isZeroOrNull(estimate.estimatedLabourCharge)) {
         /// Labour based billing using estimated effort
-        final lineTotal =
-            job.hourlyRate!.multiplyByFixed(estimates.estimatedLabour);
+        final lineTotal = estimate.estimatedLabourCharge;
 
         if (!lineTotal.isZero) {
           quoteLine = QuoteLine.forInsert(
             quoteId: quoteId,
-            description: task.name,
-            quantity: estimates.estimatedLabour,
+            description: 'Labour',
+            quantity: estimate.estimatedLabour,
             unitPrice: job.hourlyRate!,
             lineTotal: lineTotal,
           );
@@ -141,17 +116,22 @@ class DaoQuote extends Dao<Quote> {
       }
 
       if (quoteLine != null) {
-        quoteLineGroup ??= await _createQuoteLineGroup(task, quoteId);
+        quoteLineGroup ??= await _createQuoteLineGroup(estimate.task, quoteId);
         await DaoQuoteLine()
             .insert(quoteLine.copyWith(quoteLineGroupId: quoteLineGroup.id));
       }
 
       /// Materials based billing
-      final checkListItems = await DaoCheckListItem().getByTask(task.id);
+      final checkListItems =
+          await DaoCheckListItem().getByTask(estimate.task.id);
       for (final item in checkListItems.where((item) => !item.billed)) {
+        /// Labour is already accounted for in the above labour costs.
+        if (item.itemTypeId == CheckListItemTypeEnum.labour.id) {
+          continue;
+        }
         final lineTotal = item.estimatedMaterialUnitCost!
             .multiplyByFixed(item.estimatedMaterialQuantity!);
-        quoteLineGroup ??= await _createQuoteLineGroup(task, quoteId);
+        quoteLineGroup ??= await _createQuoteLineGroup(estimate.task, quoteId);
 
         final quoteLine = QuoteLine.forInsert(
           quoteId: quoteId,

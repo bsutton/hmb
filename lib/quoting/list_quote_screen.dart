@@ -52,8 +52,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     }
 
     if (mounted) {
-      final invoiceOptions = await DialogTaskSelection.showQuote(
-          context: context, job: widget.job);
+      final invoiceOptions = await showQuote(context: context, job: widget.job);
 
       if (invoiceOptions != null) {
         try {

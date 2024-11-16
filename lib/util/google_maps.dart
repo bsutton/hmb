@@ -7,6 +7,7 @@ class GoogleMaps {
   GoogleMaps._();
 
   static Future<void> openMap(BuildContext context, Site site) async {
+    /// https://github.com/flutter/flutter/issues/159014
     // if (await canLaunchUrl(Uri.parse(site.toGoogleMapsQuery()))) {
     await launchUrl(Uri.parse(site.toGoogleMapsQuery()));
     // }

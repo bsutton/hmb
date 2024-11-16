@@ -115,8 +115,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
               future: DaoTaskStatus().getById(task.taskStatusId),
               builder: (context, status) => Text(status?.name ?? 'Not Set')),
           FutureBuilderEx(
-            // ignore: discarded_futures
-            future: DaoTask().getAccruedValue(task: task, includeBilled: true),
+            future: DaoTask()
+                // ignore: discarded_futures
+                .getAccruedValueForTask(task: task, includeBilled: true),
             builder: (context, taskAccruedValue) => Row(
               children: [
                 HMBText(
@@ -154,7 +155,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       );
 
   Future<int> _getPhotoCount(int taskId) async =>
-      (await DaoPhoto().getByParent( taskId, ParentType.task)).length;
+      (await DaoPhoto().getByParent(taskId, ParentType.task)).length;
 }
 
 class ShowCompletedTasksState extends JuneState {

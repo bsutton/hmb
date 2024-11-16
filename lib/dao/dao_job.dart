@@ -40,8 +40,7 @@ class DaoJob extends Dao<Job> {
 
   /// getAll - sort by modified date descending
   @override
-  Future<List<Job>> getAll(
-      {String? orderByClause}) async {
+  Future<List<Job>> getAll({String? orderByClause}) async {
     final db = withoutTransaction();
     final List<Map<String, dynamic>> maps =
         await db.query(tableName, orderBy: 'modified_date desc');
@@ -225,8 +224,8 @@ where c.id =?
   }
 
   Future<bool> hasBillableTasks(Job job) async {
-    final tasksAccruedValue =
-        await DaoTask().getTaskCostsByJob(jobId: job.id, includeBilled: false);
+    final tasksAccruedValue = await DaoTask()
+        .getAccruedValueForJob(jobId: job.id, includedBilled: false);
 
     for (final task in tasksAccruedValue) {
       if ((await task.earned) > MoneyEx.zero) {
@@ -241,21 +240,9 @@ where c.id =?
   JuneStateCreator get juneRefresher => JobState.new;
 
   Future<bool> hasQuoteableItems(Job job) async {
-    if (await hasBillableTasks(job)) {
-      return true;
-    }
-    final tasks = await DaoTask().getTasksByJob(job.id);
-    for (final task in tasks) {
-      final items = await DaoCheckListItem().getByTask(task.id);
+    final estimates = await DaoTask().getEstimatesForJob(job.id);
 
-      for (final item in items) {
-        if (item.estimatedLabourHours != null ||
-            item.estimatedLabourCost != null) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return estimates.fold(false, (a, b) async => await a || b.total.isPositive);
   }
 
   Future<Money> getHourlyRate(int jobId) async {
@@ -267,16 +254,12 @@ where c.id =?
   /// Calculates the total quoted price for the job.
   // TODO(bsutton): should we create a 'quote' and take the amount from there?
   Future<Money> getFixedPriceTotal(Job job) async {
-    final tasks = await DaoTask().getTasksByJob(job.id);
+    final estimates = await DaoTask().getEstimatesForJob(job.id);
 
     var total = MoneyEx.zero;
-    for (final task in tasks) {
-      final items = await DaoCheckListItem().getByTask(task.id);
-
-      for (final item in items) {
-        if (item.charge > MoneyEx.zero) {
-          total += item.charge;
-        }
+    for (final estimate in estimates) {
+      if (estimate.total > MoneyEx.zero) {
+        total += estimate.total;
       }
     }
     return total;

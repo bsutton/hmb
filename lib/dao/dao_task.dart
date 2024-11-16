@@ -107,16 +107,27 @@ WHERE cli.id = ?
     return toList(data).first;
   }
 
+  Future<List<TaskAccruedValue>> getAccruedValueForJob({required int jobId, required bool includedBilled}) async {
+    final tasks = await DaoTask().getTasksByJob(jobId);
+
+    final value = <TaskAccruedValue>[];
+    for (final task in tasks) {
+      value.add(await getAccruedValueForTask(task: task, includeBilled: includedBilled));
+    }
+
+    return value;
+  }
+
   /// If [includeBilled] is true then we return the accured value since
   /// the [Job] started. If [includeBilled] is false then we only
   /// include labour/materials that haven't been billed.
-  Future<TaskAccruedValue> getAccruedValue(
+  Future<TaskAccruedValue> getAccruedValueForTask(
       {required Task task, required bool includeBilled}) async {
     final hourlyRate = await DaoTask().getHourlyRate(task);
     final billingType = await DaoTask().getBillingType(task);
 
     // Get task cost and effort using the new getTaskCost method
-    final taskEstimatedCharges = await getTaskEstimates(task, hourlyRate);
+    final taskEstimatedCharges = await getEstimateForTask(task, hourlyRate);
 
     var totalEarnedLabour = Fixed.zero;
     var totalMaterialCharges = MoneyEx.zero;
@@ -152,7 +163,24 @@ WHERE cli.id = ?
         earnedLabour: totalEarnedLabour);
   }
 
-  Future<TaskEstimatedValue> getTaskEstimates(
+  /// Returns a estimates for each Task associated with [jobId]
+  /// Tasks with a zero value are excluded.
+  Future<List<TaskEstimatedValue>> getEstimatesForJob(int jobId) async {
+    final tasks = await getTasksByJob(jobId);
+
+    final estimates = <TaskEstimatedValue>[];
+    for (final task in tasks) {
+      final hourlyRate = await DaoTask().getHourlyRate(task);
+      final estimate = await getEstimateForTask(task, hourlyRate);
+      if (!estimate.total.isZero) {
+        estimates.add(estimate);
+      }
+    }
+
+    return estimates;
+  }
+
+  Future<TaskEstimatedValue> getEstimateForTask(
       Task task, Money hourlyRate) async {
     var estimatedMaterialsCharge = MoneyEx.zero;
     var estimatedLabourCharge = Fixed.zero;
@@ -185,30 +213,9 @@ WHERE cli.id = ?
 
     return TaskEstimatedValue(
         task: task,
+        hourlyRate: hourlyRate,
         estimatedMaterialsCharge: estimatedMaterialsCharge,
         estimatedLabour: estimatedLabourCharge);
-  }
-
-  /// Returns a list of Task with their associated costs.
-  /// Tasks with a zero value are excluded.
-  Future<List<TaskAccruedValue>> getTaskCostsByJob(
-      {required int jobId, required bool includeBilled}) async {
-    final tasks = await getTasksByJob(jobId);
-    final taskCosts = <TaskAccruedValue>[];
-
-    for (final task in tasks) {
-      // Use the new getTaskCost method which now includes effortInHours
-      final accruedValue =
-          await getAccruedValue(task: task, includeBilled: includeBilled);
-
-      if ((await accruedValue.earned) == MoneyEx.zero) {
-        continue;
-      }
-
-      taskCosts.add(accruedValue);
-    }
-
-    return taskCosts;
   }
 
   // Future<Money> getTimeAndMaterialEarnings(Task task, Money hourlyRate)
@@ -304,6 +311,12 @@ class TaskAccruedValue {
       (await DaoTask().getHourlyRate(taskEstimatedValue.task))
           .multiplyByFixed(earnedLabour);
 
+  /// The total of labour changes and materials
+  Future<Money> get quoted async =>
+      taskEstimatedValue.estimatedMaterialsCharge +
+      (await DaoTask().getHourlyRate(taskEstimatedValue.task))
+          .multiplyByFixed(taskEstimatedValue.estimatedLabour);
+
   Task get task => taskEstimatedValue.task;
 }
 
@@ -312,9 +325,11 @@ class TaskEstimatedValue {
     required this.task,
     required this.estimatedMaterialsCharge,
     required this.estimatedLabour,
+    required this.hourlyRate,
   });
 
   Task task;
+  Money hourlyRate;
 
   /// Estimated material charges taken from
   /// [CheckListItem]s materials buy
@@ -323,4 +338,9 @@ class TaskEstimatedValue {
   /// Estimated labour (in hours) for the task taken
   /// from [CheckListItem]s of type [CheckListItemTypeEnum.labour]
   Fixed estimatedLabour;
+
+  Money get estimatedLabourCharge =>
+      hourlyRate.multiplyByFixed(estimatedLabour);
+
+  Money get total => estimatedMaterialsCharge + estimatedLabourCharge;
 }
