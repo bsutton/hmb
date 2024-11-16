@@ -15,6 +15,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
     required this.messageType,
     required this.owner,
     required this.enabled,
+    required this.ordinal,
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -26,6 +27,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
     this.owner =
         MessageTemplateOwner.user, // User templates are created by default
     this.enabled = true,
+    this.ordinal = 0, // Default ordinal value
   }) : super.forInsert();
 
   MessageTemplate.forUpdate({
@@ -35,6 +37,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
     required this.messageType,
     required this.owner,
     required this.enabled,
+    required this.ordinal,
   }) : super.forUpdate();
 
   factory MessageTemplate.fromMap(Map<String, dynamic> map) => MessageTemplate(
@@ -44,6 +47,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
         messageType: MessageType.values.byName(map['message_type'] as String),
         owner: MessageTemplateOwner.values[map['owner'] as int],
         enabled: map['enabled'] as int == 1,
+        ordinal: map['ordinal'] as int,
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
       );
@@ -53,6 +57,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
   MessageType messageType; // Indicates whether the template is for SMS or email
   MessageTemplateOwner owner; // Identifies if it's a user or system template
   bool enabled; // Indicates if the template is enabled
+  int ordinal; // Indicates the order of the template
 
   @override
   Map<String, dynamic> toMap() => {
@@ -62,6 +67,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
         'message_type': messageType.name, // Store the enum as a string
         'owner': owner.index,
         'enabled': enabled ? 1 : 0,
+        'ordinal': ordinal,
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
@@ -73,6 +79,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
     MessageType? messageType,
     MessageTemplateOwner? owner,
     bool? enabled,
+    int? ordinal,
     DateTime? createdDate,
     DateTime? modifiedDate,
   }) =>
@@ -83,6 +90,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
         messageType: messageType ?? this.messageType,
         owner: owner ?? this.owner,
         enabled: enabled ?? this.enabled,
+        ordinal: ordinal ?? this.ordinal,
         createdDate: createdDate ?? this.createdDate,
         modifiedDate: modifiedDate ?? this.modifiedDate,
       );
