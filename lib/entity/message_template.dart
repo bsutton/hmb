@@ -65,4 +65,25 @@ class MessageTemplate extends Entity<MessageTemplate> {
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
+
+  // copyWith method
+  MessageTemplate copyWith({
+    String? title,
+    String? message,
+    MessageType? messageType,
+    MessageTemplateOwner? owner,
+    bool? enabled,
+    DateTime? createdDate,
+    DateTime? modifiedDate,
+  }) =>
+      MessageTemplate(
+        id: id,
+        title: title ?? this.title,
+        message: message ?? this.message,
+        messageType: messageType ?? this.messageType,
+        owner: owner ?? this.owner,
+        enabled: enabled ?? this.enabled,
+        createdDate: createdDate ?? this.createdDate,
+        modifiedDate: modifiedDate ?? this.modifiedDate,
+      );
 }
