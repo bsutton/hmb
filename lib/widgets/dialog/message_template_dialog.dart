@@ -18,11 +18,12 @@ import '../hmb_date_time_picker.dart';
 import '../select/hmb_droplist.dart';
 
 class PlaceHolderField {
-  PlaceHolderField(
-      {required this.placeholder,
-      required this.widget,
-      required this.getValue,
-      this.controller});
+  PlaceHolderField({
+    required this.placeholder,
+    required this.widget,
+    required this.getValue,
+    this.controller,
+  });
 
   final String placeholder;
   final TextEditingController? controller;
@@ -45,7 +46,6 @@ class MessageTemplateDialog extends StatefulWidget {
   final Supplier? supplier;
 
   @override
-  // ignore: library_private_types_in_public_api
   _MessageTemplateDialogState createState() => _MessageTemplateDialogState();
 }
 
@@ -55,31 +55,21 @@ Future<SelectedMessageTemplate?> showMessageTemplateDialog(
   Job? job,
   Contact? contact,
   Supplier? supplier,
-}) async {
-  final result = await showDialog<SelectedMessageTemplate>(
-    context: context,
-    builder: (context) => MessageTemplateDialog(
-      customer: customer,
-      job: job,
-      supplier: supplier,
-      contact: contact,
-    ),
-  );
-
-  if (result != null) {
-    final selectedTemplate = result.template;
-    final values = result.values;
-    final formattedMessage = result.getFormattedMessage();
-
-    print('Selected Template: ${selectedTemplate.title}');
-    print('Values: $values');
-    print('Formatted Message: $formattedMessage');
-  }
-  return result;
-}
+}) async =>
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => MessageTemplateDialog(
+          customer: customer,
+          job: job,
+          supplier: supplier,
+          contact: contact,
+        ),
+      ),
+    );
 
 class _MessageTemplateDialogState
-    extends AsyncState<MessageTemplateDialog, void> {
+    extends AsyncState<MessageTemplateDialog, void>
+    with SingleTickerProviderStateMixin {
   List<MessageTemplate> _templates = [];
   MessageTemplate? _selectedTemplate;
 
@@ -89,8 +79,12 @@ class _MessageTemplateDialogState
   Site? _selectedSite;
   Contact? _selectedContact;
 
+  late TabController _tabController;
+  final TextEditingController _messageController = TextEditingController();
+
   @override
   Future<void> asyncInitState() async {
+    _tabController = TabController(length: 2, vsync: this);
     await _loadTemplates();
     _selectedCustomer = widget.customer;
     _selectedContact = widget.contact;
@@ -159,11 +153,6 @@ class _MessageTemplateDialogState
       // Add new placeholders or keep existing ones
       for (final placeholder in newPlaceholders) {
         if (!placeholderFields.containsKey(placeholder)) {
-          // Create a new placeholder field
-          placeholderFields[placeholder] = _buildPlaceHolderField(placeholder);
-        } else {
-          // If the placeholder already exists, update the widget
-          // to ensure it reflects any changes
           placeholderFields[placeholder] = _buildPlaceHolderField(placeholder);
         }
       }
@@ -236,7 +225,7 @@ class _MessageTemplateDialogState
     final controller =
         placeholderFields[placeholder]?.controller ?? TextEditingController();
 
-    // Set controller's text to current selected customer
+    // Set controller's text to current selected job
     if (_selectedJob != null) {
       controller.text = _selectedJob!.description;
     }
@@ -428,72 +417,137 @@ class _MessageTemplateDialogState
           previewMessage.replaceAll('{{$key}}', text.isEmpty ? '[$key]' : text);
     });
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Preview:', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 10),
-        Text(previewMessage, style: Theme.of(context).textTheme.bodyLarge),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: SingleChildScrollView(
+        child:
+            Text(previewMessage, style: Theme.of(context).textTheme.bodyLarge),
+      ),
     );
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Select Message Template'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              HMBDroplist<MessageTemplate>(
-                selectedItem: () async => _selectedTemplate,
-                items: (filter) async => filter == null
-                    ? _templates
-                    : _templates
-                        .where((template) => template.title.contains(filter))
-                        .toList(),
-                format: (template) => template.title,
-                onChanged: (template) {
-                  setState(() {
-                    _selectedTemplate = template;
-                    _initializePlaceholders();
-                  });
-                },
-                title: 'Choose a template',
-              ),
-              const SizedBox(height: 20),
-              if (_selectedTemplate != null)
-                Column(
-                  children: placeholderFields.values
-                      .map((field) => field.widget)
-                      .toList(),
+  @override
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Message Template'),
+        ),
+        body: Column(
+          children: [
+            // The top part with template selection and placeholders
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    HMBDroplist<MessageTemplate>(
+                      selectedItem: () async => _selectedTemplate,
+                      items: (filter) async => filter == null
+                          ? _templates
+                          : _templates
+                              .where(
+                                  (template) => template.title.contains(filter))
+                              .toList(),
+                      format: (template) => template.title,
+                      onChanged: (template) {
+                        setState(() {
+                          _selectedTemplate = template;
+                          _initializePlaceholders();
+                          _messageController.text =
+                              _selectedTemplate?.message ?? '';
+                        });
+                      },
+                      title: 'Choose a template',
+                    ),
+                    const SizedBox(height: 20),
+                    if (_selectedTemplate != null)
+                      Column(
+                        children: placeholderFields.values
+                            .map((field) => field.widget)
+                            .toList(),
+                      ),
+                  ],
                 ),
-              const SizedBox(height: 20),
-              _buildPreview(),
+              ),
+            ),
+            // The TabBar
+            TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'Edit'),
+                Tab(text: 'Preview'),
+              ],
+            ),
+            // The TabBarView inside an Expanded widget
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // First Tab: Edit Message
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextFormField(
+                      controller: _messageController,
+                      maxLines: null,
+                      expands: true,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Edit Message',
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedTemplate = _selectedTemplate?.copyWith(
+                            message: value,
+                          );
+                        });
+                      },
+                    ),
+                  ),
+                  // Second Tab: Preview Message
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: SingleChildScrollView(
+                      child: _buildPreview(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        // Buttons at the bottom
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (_selectedTemplate != null) {
+                    final selectedMessageTemplate = SelectedMessageTemplate(
+                      template: _selectedTemplate!,
+                      values: placeholderFields.map((key, field) {
+                        final text = field.controller?.text ?? '';
+                        return MapEntry(key, text);
+                      }),
+                    );
+                    Navigator.of(context).pop(selectedMessageTemplate);
+                  }
+                },
+                child: const Text('Select'),
+              ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (_selectedTemplate != null) {
-                final selectedMessageTemplate = SelectedMessageTemplate(
-                  template: _selectedTemplate!,
-                  values: placeholderFields.map((key, field) {
-                    final text = field.controller?.text ?? '';
-                    return MapEntry(key, text);
-                  }),
-                );
-                Navigator.of(context).pop(selectedMessageTemplate);
-              }
-            },
-            child: const Text('Select'),
-          ),
-        ],
       );
 
   Future<String?> _getJobValue(String placeholder) async {
