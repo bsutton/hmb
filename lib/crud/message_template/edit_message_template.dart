@@ -88,6 +88,7 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
   Future<MessageTemplate> forUpdate(MessageTemplate messageTemplate) async =>
       MessageTemplate.forUpdate(
         entity: messageTemplate,
+        ordinal: messageTemplate.ordinal,
         title: _titleController.text,
         message: _messageController.text,
         owner: MessageTemplateOwner.user,
