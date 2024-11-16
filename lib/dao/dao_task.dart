@@ -107,12 +107,14 @@ WHERE cli.id = ?
     return toList(data).first;
   }
 
-  Future<List<TaskAccruedValue>> getAccruedValueForJob({required int jobId, required bool includedBilled}) async {
+  Future<List<TaskAccruedValue>> getAccruedValueForJob(
+      {required int jobId, required bool includedBilled}) async {
     final tasks = await DaoTask().getTasksByJob(jobId);
 
     final value = <TaskAccruedValue>[];
     for (final task in tasks) {
-      value.add(await getAccruedValueForTask(task: task, includeBilled: includedBilled));
+      value.add(await getAccruedValueForTask(
+          task: task, includeBilled: includedBilled));
     }
 
     return value;
