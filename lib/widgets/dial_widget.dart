@@ -7,20 +7,16 @@ import 'package:sms_advanced/sms_advanced.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../entity/_index.g.dart';
 import '../util/clip_board.dart';
 import '../util/platform_ex.dart';
 import 'dialog/message_template_dialog.dart';
 import 'hmb_toast.dart';
 
 class DialWidget extends StatelessWidget {
-  const DialWidget(this.phoneNo,
-      {super.key, this.job, this.customer, this.contact, this.supplier});
+  const DialWidget(this.phoneNo, {required this.messageData, super.key});
   final String phoneNo;
-  final Job? job;
-  final Customer? customer;
-  final Contact? contact;
-  final Supplier? supplier;
+
+  final MessageData messageData;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -67,11 +63,10 @@ class DialWidget extends StatelessWidget {
             child: const Text('Text'),
             onPressed: () async {
               // await _showTextInputDialog(context, phoneNo);
-              final template = await showMessageTemplateDialog(context,
-                  customer: customer,
-                  contact: contact,
-                  supplier: supplier,
-                  job: job);
+              final template = await showMessageTemplateDialog(
+                context,
+                messageData: messageData,
+              );
               if (context.mounted) {
                 if (template != null) {
                   if (context.mounted) {

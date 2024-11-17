@@ -7,6 +7,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/platform_ex.dart';
 import '../../util/sim_cards.dart';
+import '../../widgets/dialog/message_template_dialog.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -54,8 +55,10 @@ class _WizardContactPageState extends State<WizardContactPage> {
     _officeNumberController = TextEditingController(text: system.officeNumber);
     _fromEmailController = TextEditingController(text: system.fromEmail);
     _emailAddressController = TextEditingController(text: system.emailAddress);
-    _firstNameController = TextEditingController(text: system.firstname); // Initialize
-    _surnameController = TextEditingController(text: system.surname); // Initialize
+    _firstNameController =
+        TextEditingController(text: system.firstname); // Initialize
+    _surnameController =
+        TextEditingController(text: system.surname); // Initialize
 
     _selectedCountryCode = system.countryCode ?? 'AU';
     _countryCodes = CountryCode.values;
@@ -160,13 +163,16 @@ class _WizardContactPageState extends State<WizardContactPage> {
                             labelText: 'Notice/Backup Email Address'),
                         HMBPhoneField(
                             controller: _mobileNumberController,
-                            labelText: 'Mobile Number'),
+                            labelText: 'Mobile Number', 
+                            messageData: MessageData()),
                         HMBPhoneField(
                             controller: _landLineController,
-                            labelText: 'Land Line'),
+                            labelText: 'Land Line', 
+                            messageData: MessageData()),
                         HMBPhoneField(
                             controller: _officeNumberController,
-                            labelText: 'Office Number'),
+                            labelText: 'Office Number', 
+                            messageData: MessageData()),
                         const SizedBox(height: 16),
                         HMBTextField(
                           controller: _addressLine1Controller,

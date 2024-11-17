@@ -8,6 +8,7 @@ import '../../entity/system.dart';
 import '../../util/money_ex.dart';
 import '../../util/platform_ex.dart';
 import '../../util/sim_cards.dart';
+import '../../widgets/dialog/message_template_dialog.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_money_editing_controller.dart';
 import '../../widgets/fields/hmb_money_field.dart';
@@ -237,12 +238,16 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
                     keyboardType: TextInputType.number),
                 HMBPhoneField(
                     controller: _mobileNumberController,
-                    labelText: 'Mobile Number'),
+                    labelText: 'Mobile Number',
+                    messageData: MessageData()),
                 HMBPhoneField(
-                    controller: _landLineController, labelText: 'Land Line'),
+                    controller: _landLineController,
+                    labelText: 'Land Line',
+                    messageData: MessageData()),
                 HMBPhoneField(
                     controller: _officeNumberController,
-                    labelText: 'Office Number'),
+                    labelText: 'Office Number',
+                    messageData: MessageData()),
                 HMBEmailField(
                     controller: _emailAddressController,
                     required: true,

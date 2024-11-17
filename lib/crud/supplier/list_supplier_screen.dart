@@ -5,6 +5,7 @@ import '../../dao/dao_contact.dart';
 import '../../dao/dao_site.dart';
 import '../../dao/dao_supplier.dart';
 import '../../entity/supplier.dart';
+import '../../widgets/dialog/message_template_dialog.dart';
 import '../../widgets/text/contact_text.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
@@ -36,7 +37,10 @@ class SupplierListScreen extends StatelessWidget {
                         children: [
                           HMBTextBody(supplier.service ?? ''),
                           ContactText(label: '', contact: contact),
-                          HMBPhoneText(phoneNo: contact?.bestPhone),
+                          HMBPhoneText(
+                            phoneNo: contact?.bestPhone,
+                            messageData: MessageData(supplier: supplier),
+                          ),
                           HMBEmailText(email: contact?.emailAddress),
                           HMBSiteText(label: '', site: site)
                         ])));

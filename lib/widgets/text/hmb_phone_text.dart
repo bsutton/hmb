@@ -6,15 +6,21 @@ import '../../dao/dao_contact.dart';
 import '../../entity/job.dart';
 import '../../util/plus_space.dart';
 import '../dial_widget.dart';
+import '../dialog/message_template_dialog.dart';
 import '../layout/hmb_placeholder.dart';
 
 /// Displays the label and phoneNum.
 /// If the phoneNum is null then we display nothing.
 
 class HMBPhoneText extends StatelessWidget {
-  const HMBPhoneText({required this.phoneNo, this.label, super.key});
+  const HMBPhoneText(
+      {required this.phoneNo,
+      required this.messageData,
+      this.label,
+      super.key});
   final String? label;
   final String? phoneNo;
+  final MessageData messageData;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -34,7 +40,7 @@ class HMBPhoneText extends StatelessWidget {
           if (Strings.isNotBlank(phoneNo))
             Align(
               alignment: Alignment.centerRight,
-              child: DialWidget(phoneNo!),
+              child: DialWidget(phoneNo!, messageData: messageData),
             ),
         ],
       );
@@ -56,6 +62,7 @@ class HMBJobPhoneText extends StatelessWidget {
         final phoneNo = contact?.bestPhone;
         return HMBPhoneText(
           phoneNo: phoneNo,
+          messageData: MessageData(job: job, contact: contact),
         );
       });
 }

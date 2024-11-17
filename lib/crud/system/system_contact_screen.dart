@@ -8,6 +8,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/platform_ex.dart';
 import '../../util/sim_cards.dart';
+import '../../widgets/dialog/message_template_dialog.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -149,13 +150,16 @@ class _SystemContactInformationScreenState
                         ),
                         HMBPhoneField(
                             controller: _mobileNumberController,
-                            labelText: 'Mobile Number'),
+                            labelText: 'Mobile Number',
+                            messageData: MessageData()),
                         HMBPhoneField(
                             controller: _landLineController,
-                            labelText: 'Land Line'),
+                            labelText: 'Land Line',
+                            messageData: MessageData()),
                         HMBPhoneField(
                             controller: _officeNumberController,
-                            labelText: 'Office Number'),
+                            labelText: 'Office Number',
+                            messageData: MessageData()),
                         HMBEmailField(
                           autofocus: isNotMobile,
                           controller: _fromEmailController,

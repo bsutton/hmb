@@ -4,6 +4,7 @@ import '../../dao/dao_contact.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/contact.dart';
 import '../../entity/entity.dart';
+import '../../widgets/dialog/message_template_dialog.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
 import '../base_nested/list_nested_screen.dart';
@@ -41,10 +42,13 @@ class ContactListScreen<P extends Entity<P>> extends StatelessWidget {
       onInsert: (contact) async =>
           daoJoin.insertForParent(contact!, parent.parent!),
       details: (entity, details) {
-        final customer = entity;
+        final contact = entity;
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          HMBPhoneText(label: '', phoneNo: customer.bestPhone),
-          HMBEmailText(label: '', email: customer.emailAddress)
+          HMBPhoneText(
+              label: '',
+              phoneNo: contact.bestPhone,
+              messageData: MessageData(contact: contact)),
+          HMBEmailText(label: '', email: contact.emailAddress)
         ]);
       });
 }
