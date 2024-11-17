@@ -20,6 +20,7 @@ import '../../widgets/text/hmb_phone_text.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../../widgets/text/hmb_text_themes.dart';
+import 'rapid/rapid_quote_entry_screen.dart';
 
 class JobCard extends StatefulWidget {
   const JobCard({required this.job, super.key});
@@ -67,6 +68,18 @@ class _JobCardState extends State<JobCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  TextButton(
+                    onPressed: () async {
+                      if (context.mounted) {
+                        await Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                                builder: (context) =>
+                                    RapidQuoteEntryScreen(job: job)));
+                      }
+                    },
+                    child: const Text('Rapid'),
+                  ),
                   HMBTextHeadline2(
                     customer?.name ?? 'Not Set',
                   ),

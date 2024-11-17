@@ -3,6 +3,8 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
 
 import '../../dao/dao_contact.dart';
+import '../../dao/dao_customer.dart';
+import '../../dao/dao_site.dart';
 import '../../entity/job.dart';
 import '../../util/plus_space.dart';
 import '../dial_widget.dart';
@@ -54,15 +56,24 @@ class HMBJobPhoneText extends StatelessWidget {
   final Job job;
 
   @override
-  Widget build(BuildContext context) => FutureBuilderEx(
+  Widget build(BuildContext context) => FutureBuilderEx<MessageData>(
       waitingBuilder: (_) => const HMBPlaceHolder(height: 40),
       // ignore: discarded_futures
-      future: DaoContact().getById(job.contactId),
-      builder: (context, contact) {
-        final phoneNo = contact?.bestPhone;
+      future: getData(job),
+      builder: (context, data) {
+        final phoneNo = data!.contact?.bestPhone;
         return HMBPhoneText(
           phoneNo: phoneNo,
-          messageData: MessageData(job: job, contact: contact),
+          messageData: data,
         );
       });
+
+  Future<MessageData> getData(Job job) async {
+    final contact = await DaoContact().getById(job.contactId);
+    final site = await DaoSite().getById(job.siteId);
+    final customer = await DaoCustomer().getById(job.customerId);
+
+    return MessageData(
+        job: job, contact: contact, site: site, customer: customer);
+  }
 }
