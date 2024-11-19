@@ -9,7 +9,7 @@ class ContactName extends PlaceHolder<Contact> {
   ContactName() : super(name: keyName, key: keyScope);
 
   static String keyName = 'contact';
-  static String keyScope = 'job';
+  static String keyScope = 'contact';
 
   Contact? contact;
   @override

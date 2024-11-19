@@ -10,7 +10,7 @@ class ServiceDate extends PlaceHolder<LocalDate> {
   ServiceDate() : super(name: keyName, key: keyScope);
 
   static String keyName = 'service_date';
-  static String keyScope = 'date';
+  static String keyScope = 'service_date';
 
   LocalDate? serviceDate;
 
@@ -66,8 +66,8 @@ class AppointmentDate extends PlaceHolder<LocalDate> {
 class DueDate extends PlaceHolder<LocalDate> {
   DueDate() : super(name: keyName, key: keyScope);
 
-  static String keyName = 'due_date';
-  static String keyScope = 'due_date';
+  static String keyName = 'invoice.due_date';
+  static String keyScope = 'invoice.due_date';
 
   LocalDate? dueDate;
   @override

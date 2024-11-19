@@ -7,7 +7,7 @@ import 'place_holder.dart';
 class CustomerName extends PlaceHolder<Customer> {
   CustomerName() : super(name: keyName, key: keyScope);
 
-  static String keyName = 'customer_name';
+  static String keyName = 'customer.name';
   static String keyScope = 'customer';
 
   Customer? customer;
