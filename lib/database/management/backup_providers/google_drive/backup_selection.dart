@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../../widgets/async_state.dart';
 import '../backup_provider.dart';
@@ -14,21 +15,21 @@ class BackupSelectionScreen extends StatefulWidget {
 
 class _BackupSelectionScreenState
     extends AsyncState<BackupSelectionScreen, void> {
-  late Future<List<String>> _backupsFuture;
+  late Future<Backups> _backupsFuture;
 
   @override
   Future<void> asyncInitState() async {
     _backupsFuture = _loadBackups();
   }
 
-  Future<List<String>> _loadBackups() async {
+  Future<Backups> _loadBackups() async {
     try {
       final backups = await widget.backupProvider.getBackups();
-      return backups;
+      return Backups(backups, await widget.backupProvider.backupLocation);
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       // Handle error if necessary
-      return [];
+      return Backups([], await widget.backupProvider.backupLocation);
     }
   }
 
@@ -37,22 +38,19 @@ class _BackupSelectionScreenState
         appBar: AppBar(
           title: const Text('Select Backup to Restore'),
         ),
-        body: FutureBuilder<List<String>>(
+        body: FutureBuilderEx<Backups>(
           future: _backupsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(
-                  child: Text('Error loading backups: ${snapshot.error}'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No backups available.'));
+          errorBuilder: (context, error) =>
+              Center(child: Text('Error loading backups: $error')),
+          builder: (context, backups) {
+            if (backups == null || backups.backups.isEmpty) {
+              return Center(child: Text('''
+No backups available in ${backups!.location}'''));
             } else {
-              final backups = snapshot.data!;
               return ListView.builder(
-                itemCount: backups.length,
+                itemCount: backups.backups.length,
                 itemBuilder: (context, index) {
-                  final pathToBackup = backups[index];
+                  final pathToBackup = backups.backups[index];
                   return ListTile(
                     title: Text(pathToBackup),
                     onTap: () {
@@ -65,4 +63,10 @@ class _BackupSelectionScreenState
           },
         ),
       );
+}
+
+class Backups {
+  Backups(this.backups, this.location);
+  List<String> backups;
+  String location;
 }

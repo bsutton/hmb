@@ -151,4 +151,7 @@ class EmailBackupProvider extends BackupProvider {
   @override
   Future<String> get databasePath async =>
       join(await sql.getDatabasesPath(), 'handyman.db');
+
+  @override
+  Future<String> get backupLocation => throw UnimplementedError();
 }

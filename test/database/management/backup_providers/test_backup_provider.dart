@@ -50,6 +50,9 @@ class TestBackupProvider extends BackupProvider {
   }
 
   @override
+  Future<String> get backupLocation async => 'None';
+
+  @override
   Future<String> get photosRootPath async =>
       join(DartProject.self.pathToProjectRoot, 'photos');
 

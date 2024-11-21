@@ -21,9 +21,11 @@ class DevBackupProvider extends BackupProvider {
       File(pathToBackupInStorage);
 
   @override
-  Future<List<String>> getBackups() async => find('*.zip',
-          workingDirectory: join(DartProject.self.pathToProjectRoot, 'backups'))
-      .toList();
+  Future<List<String>> getBackups() async =>
+      find('*.zip', workingDirectory: _pathToBackups()).toList();
+
+  String _pathToBackups() =>
+      join(DartProject.self.pathToProjectRoot, 'backups');
 
   @override
   Future<BackupResult> store(
@@ -58,4 +60,7 @@ class DevBackupProvider extends BackupProvider {
       'sqflite_common_ffi',
       'database',
       'handyman.db');
+
+  @override
+  Future<String> get backupLocation async => _pathToBackups();
 }

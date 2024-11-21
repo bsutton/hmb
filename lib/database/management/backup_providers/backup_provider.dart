@@ -260,6 +260,11 @@ Database file not found at $pathToDatabase. No backup performed.''');
     }
   }
 
+  /// A somewhat abstract string desgined to show the
+  /// location of where backups are stored to the
+  /// user.
+  Future<String> get backupLocation;
+
   /// Path to location of database
   /// This is probably not the correct class for this
   /// to be in but it was convenient to place it here

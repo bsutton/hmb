@@ -203,6 +203,9 @@ class GoogleDriveBackupProvider extends BackupProvider {
   @override
   Future<String> get databasePath async =>
       join(await sql.getDatabasesPath(), 'handyman.db');
+
+  @override
+  Future<String> get backupLocation async => 'Google Drive: /hmb/backups';
 }
 
 class GoogleAuthClient extends http.BaseClient {
