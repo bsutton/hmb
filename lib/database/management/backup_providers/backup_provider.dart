@@ -134,7 +134,7 @@ Database file not found at $pathToDatabase. No backup performed.''');
         if (exists(appDbPath)) {
           delete(appDbPath);
         }
-        copy(dbPathm appDbPath);
+        copy(dbPath, appDbPath);
 
         // Reopen the database after restoring
         await DatabaseHelper().openDb(
