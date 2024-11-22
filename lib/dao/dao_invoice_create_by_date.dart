@@ -7,6 +7,7 @@ import '../util/money_ex.dart';
 import 'dao_checklist_item.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
+import 'dao_job.dart';
 import 'dao_task.dart';
 import 'dao_time_entry.dart';
 
@@ -117,6 +118,8 @@ Future<Money> emitMaterialsByTask(
     Job job, int invoiceId, List<int> selectedTaskIds) async {
   var totalAmount = MoneyEx.zero;
 
+  final hourlyRate = await DaoJob().getHourlyRate(job.id);
+
   for (final taskId in selectedTaskIds) {
     var groupCreated = false;
     final checkListItems = await DaoCheckListItem().getByTask(taskId);
@@ -127,7 +130,7 @@ Future<Money> emitMaterialsByTask(
           !item.completed ||
           itemType == CheckListItemTypeEnum.labour ||
           itemType == CheckListItemTypeEnum.toolsOwn ||
-          item.charge == MoneyEx.zero) {
+          item.getCharge(hourlyRate) == MoneyEx.zero) {
         continue;
       }
 

@@ -123,12 +123,12 @@ class _MessageTemplateDialogState
         // ignore: inference_failure_on_instance_creation
         final placeholder = PlaceHolder.fromName(name);
 
-        final field = placeholder.field(widget.messageData);
-        field.placeholder.listen = (value, reset) {
-          _reset(reset);
-          _refreshPreview();
-        };
-        placeholderFields[field.placeholder.name] = field;
+        // final field = placeholder.field(widget.messageData);
+        // field.placeholder.listen = (value, reset) {
+        //   _reset(reset);
+        //   _refreshPreview();
+        // };
+        // placeholderFields[field.placeholder.name] = field;
       }
     }
   }
@@ -199,7 +199,7 @@ class _MessageTemplateDialogState
                     if (_selectedTemplate != null)
                       Column(
                         children: placeholderFields.values
-                        .where((field) => field.widget!= null)
+                            .where((field) => field.widget != null)
                             .map((field) => field.widget)
                             .whereType<Widget>()
                             .toList(),

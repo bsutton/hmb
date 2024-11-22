@@ -16,9 +16,9 @@ class SiteHolder extends PlaceHolder<Site> {
   @override
   Future<String> value(MessageData data) async => site?.address ?? '';
 
-  @override
-  PlaceHolderField<Site> field(MessageData data) =>
-      _buildSiteDroplist(this, data);
+  // @override
+  // PlaceHolderField<Site> field(MessageData data) =>
+  //     _buildSiteDroplist(this, data);
 
   @override
   void setValue(Site? value) => site = value;

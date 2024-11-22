@@ -3,24 +3,26 @@ import 'customer_source.dart';
 import 'place_holder.dart';
 
 class CustomerName extends PlaceHolder<String> {
+  CustomerName({required this.customerSource})
+      : super(name: keyName, key: keyScope);
   final CustomerSource customerSource;
 
-  CustomerName({required this.customerSource}) : super(name: 'customer.name', key: 'customer');
+  static String keyName = 'customer.name';
+  static String keyScope = 'customer';
 
   @override
-  Future<String> value(MessageData data) async {
-    return customerSource.value?.name ?? '';
-  }
+  Future<String> value(MessageData data) async =>
+      customerSource.value?.name ?? '';
 
-  @override
-  PlaceHolderField<String> field(MessageData data) {
-    // No field needed; value comes from customerSource
-    return PlaceHolderField(
-      placeholder: this,
-      widget: null,
-      getValue: (data) async => value(data),
-    );
-  }
+  // @override
+  // PlaceHolderField<String> field(MessageData data) {
+  //   // No field needed; value comes from customerSource
+  //   return PlaceHolderField(
+  //     placeholder: this,
+  //     widget: null,
+  //     getValue: (data) async => value(data),
+  //   );
+  // }
 
   @override
   void setValue(String? value) {

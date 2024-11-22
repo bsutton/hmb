@@ -17,8 +17,9 @@ class AppointmentTime extends PlaceHolder<LocalTime> {
   Future<String> value(MessageData data) async => formatLocalTime(
       appointmentTime ?? data.appointmentTime ?? LocalTime.now());
 
-  @override
-  PlaceHolderField<LocalTime> field(MessageData data) => _buildTimePicker(this);
+  // @override
+  // PlaceHolderField<LocalTime> field(MessageData data)
+  //=> _buildTimePicker(this);
 
   @override
   void setValue(LocalTime? value) => appointmentTime = value;

@@ -17,8 +17,8 @@ class DefaultHolder extends PlaceHolder<String> {
   @override
   Future<String> value(MessageData data) async => _value ?? '';
 
-  @override
-  PlaceHolderField<String> field(MessageData data) => _buildTextPicker(this);
+  // @override
+  // PlaceHolderField<String> field(MessageData data) => _buildTextPicker(this);
 
   @override
   void setValue(String? value) => _value = value;
@@ -52,12 +52,12 @@ class SignatureHolder extends PlaceHolder<String> {
   @override
   Future<String> value(MessageData data) async => _fetchSignature();
 
-  @override
-  PlaceHolderField<String> field(MessageData data) =>
-       PlaceHolderField(
-      placeholder: this,
-      widget: null,
-      getValue: (data) async => value(data));
+  // @override
+  // PlaceHolderField<String> field(MessageData data) =>
+  //      PlaceHolderField(
+  //     placeholder: this,
+  //     widget: null,
+  //     getValue: (data) async => value(data));
 
   @override
   void setValue(String? value) {}

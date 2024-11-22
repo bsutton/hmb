@@ -66,7 +66,7 @@ where jo.id =?
     item
       ..actualMaterialUnitCost = unitCost
       ..actualMaterialQuantity = quantity
-      ..charge = item.calcMaterialCost()
+      ..setCharge(item.calcMaterialCost())
       ..completed = true;
 
     await update(item);

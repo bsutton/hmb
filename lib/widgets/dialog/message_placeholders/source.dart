@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:hmb/widgets/dialog/message_template_dialog.dart';
+
+import '../message_template_dialog.dart';
+import 'place_holder.dart';
 
 abstract class Source<T> {
+  Source({required this.name});
   String name;
   T? value;
-  void Function(T? value)? onChanged;
-
-  Source({required this.name});
+  void Function(T? value, ResetFields resetFields)? onChanged;
 
   Widget field(MessageData data);
 
   void setValue(T? newValue) {
     value = newValue;
-    if (onChanged != null) {
-      onChanged!(newValue);
-    }
+    // if (onChanged != null) {
+    //   onChanged!(newValue, );
+    // }
   }
 }

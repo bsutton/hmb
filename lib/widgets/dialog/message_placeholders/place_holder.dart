@@ -5,8 +5,6 @@ import 'contact_holder.dart';
 import 'customer_holder.dart';
 import 'date_holder.dart';
 import 'delay_period.dart';
-import 'job_cost.dart';
-import 'job_descripion.dart';
 import 'site_holder.dart';
 import 'text_holder.dart';
 import 'time_holder.dart';
@@ -32,7 +30,7 @@ abstract class PlaceHolder<T> {
   Future<String> value(MessageData data);
 
   void setValue(T? value);
-  PlaceHolderField<T> field(MessageData data);
+  // PlaceHolderField<T> field(MessageData data);
 
   /// Used by the field picker to notify the ui
   /// that a new value has been picked.
@@ -49,9 +47,9 @@ abstract class PlaceHolder<T> {
     CustomerName.keyName: CustomerName.new,
     DelayPeriod.keyName: DelayPeriod.new,
     DueDate.keyName: DueDate.new,
-    JobCost.keyName: JobCost.new,
-    JobDescription.keyName: JobDescription.new,
-    JobName.keyName: JobName.new,
+    // JobCost.keyName: JobCost.new,
+    // JobDescription.keyName: JobDescription.new,
+    // JobName.keyName: JobName.new,
     OriginalDate.keyName: OriginalDate.new,
     ServiceDate.keyName: ServiceDate.new,
     SiteHolder.keyName: SiteHolder.new,

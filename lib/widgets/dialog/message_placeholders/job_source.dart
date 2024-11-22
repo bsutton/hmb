@@ -9,7 +9,7 @@ import 'source.dart';
 
 class JobSource extends Source<Job> {
   JobSource({required this.customerSource}) : super(name: 'job') {
-    customerSource.onChanged = (customer) {
+    customerSource.onChanged = (customer, resetFields) {
       // Reset job value when customer changes
       setValue(null);
     };
@@ -22,7 +22,7 @@ class JobSource extends Source<Job> {
         selectedItem: () async => value,
         items: (filter) async {
           if (customerSource.value != null) {
-            return DaoJob().getByCustomer(customerSource.value!, filter);
+            return DaoJob().getByCustomer(customerSource.value!);
           } else {
             return [];
           }

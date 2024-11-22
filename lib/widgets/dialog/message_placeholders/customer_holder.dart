@@ -14,9 +14,9 @@ class CustomerName extends PlaceHolder<Customer> {
   @override
   Future<String> value(MessageData data) async => customer?.name ?? '';
 
-  @override
-  PlaceHolderField<Customer> field(MessageData data) =>
-      _buildCustomerDroplist(this, data);
+  // @override
+  // PlaceHolderField<Customer> field(MessageData data) =>
+  //     _buildCustomerDroplist(this, data);
 
   @override
   void setValue(Customer? value) => customer = value;

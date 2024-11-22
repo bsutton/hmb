@@ -1,12 +1,15 @@
 import '../../../dao/dao_job.dart';
-import '../job_source.dart';
 import '../message_template_dialog.dart';
+import 'job_source.dart';
 import 'place_holder.dart';
 
 class JobCost extends PlaceHolder<String> {
+  JobCost({required this.jobSource}) : super(name: keyName, key: keyScope);
   final JobSource jobSource;
 
-  JobCost({required this.jobSource}) : super(name: 'job.cost', key: 'job');
+  static String keyName = 'job.cost';
+  static String keyScope = 'job';
+
 
   @override
   Future<String> value(MessageData data) async {
@@ -18,15 +21,6 @@ class JobCost extends PlaceHolder<String> {
     }
   }
 
-  @override
-  PlaceHolderField<String> field(MessageData data) {
-    // No field needed; value comes from jobSource
-    return PlaceHolderField(
-      placeholder: this,
-      widget: null,
-      getValue: (data) async => value(data),
-    );
-  }
 
   @override
   void setValue(String? value) {

@@ -103,8 +103,8 @@ class _CheckListItemEditScreenState
 
     _marginController =
         TextEditingController(text: currentEntity?.margin.toString());
-    _chargeController =
-        TextEditingController(text: currentEntity?.charge.toString());
+    _chargeController = TextEditingController(
+        text: currentEntity?.getCharge(widget.hourlyRate).toString());
 
     _dimension1Controller =
         TextEditingController(text: currentEntity?.dimension1.toString());

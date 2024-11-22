@@ -172,11 +172,12 @@ class CheckListItem extends Entity<CheckListItem> {
   int itemTypeId;
 
   // Labour
-  Fixed?
-      estimatedLabourHours; // For T&M the 'actual' is taken from time_entry's
+  /// For T&M the 'actual' is taken from time_entry's
+  /// The estimated labour hours used when [LabourEntryMode.hours] is used.
+  Fixed? estimatedLabourHours;
 
-  /// The estimated labour cost. Used
-  /// when [estimatedLabourHours] isn't used.
+  /// The estimated labour cost.
+  /// Used when [LabourEntryMode.dollars] is used.
   Money? estimatedLabourCost;
 
   // Materials - estimates used for Quote and Estimate
@@ -208,7 +209,7 @@ class CheckListItem extends Entity<CheckListItem> {
   /// are ignored.
   Money? _charge;
 
-  Money get charge {
+  Money getCharge(Money hourlyRate) {
     if (_charge != null) {
       return _charge!;
     }
@@ -220,11 +221,12 @@ class CheckListItem extends Entity<CheckListItem> {
       case CheckListItemTypeEnum.toolsOwn:
         return calcMaterialCost().multiplyByFixed(Fixed.one + margin);
       case CheckListItemTypeEnum.labour:
-        return calcLabourCost().multiplyByFixed(Fixed.one + margin);
+        return calcLabourCost(hourlyRate).multiplyByFixed(Fixed.one + margin);
     }
   }
 
-  set charge(Money value) {
+  // ignore: use_setters_to_change_properties
+  void setCharge(Money value) {
     _charge = value;
   }
 
@@ -236,8 +238,17 @@ class CheckListItem extends Entity<CheckListItem> {
           .multiplyByFixed(
               actualMaterialQuantity ?? estimatedMaterialQuantity ?? Fixed.one);
 
-  Money calcLabourCost() => (estimatedLabourCost ?? MoneyEx.zero)
-      .multiplyByFixed(estimatedLabourHours ?? Fixed.zero);
+  Money calcLabourCost(Money hourlyRate) {
+    switch (labourEntryMode) {
+      case LabourEntryMode.dollars:
+        return estimatedLabourCost ?? MoneyEx.zero;
+      case LabourEntryMode.hours:
+        if (estimatedLabourHours != null) {
+          return hourlyRate.multiplyByFixed(estimatedLabourHours!);
+        }
+    }
+    return MoneyEx.zero;
+  }
 
   bool completed;
   bool billed;

@@ -97,7 +97,8 @@ class _CheckListItemListScreenState<P extends Entity<P>>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ..._buildFieldsBasedOnItemType(checklistitem),
+                      ..._buildFieldsBasedOnItemType(
+                          checklistitem, taskAndRate?.rate ?? MoneyEx.zero),
                       HMBText(checklistitem.dimensions),
                       if (checklistitem.completed)
                         const Text(
@@ -141,43 +142,49 @@ class _CheckListItemListScreenState<P extends Entity<P>>
         .toList();
   }
 
-  List<Widget> _buildFieldsBasedOnItemType(CheckListItem checkListItem) {
+  List<Widget> _buildFieldsBasedOnItemType(
+      CheckListItem checkListItem, Money hourlyRate) {
     switch (checkListItem.itemTypeId) {
       case 5: // Labour
-        return _buildLabourFields(checkListItem);
+        return _buildLabourFields(checkListItem, hourlyRate);
       case 1: // Materials - buy
       case 3: // Tools - buy
-        return _buildBuyFields(checkListItem);
+        return _buildBuyFields(checkListItem, hourlyRate);
       case 2: // Materials - stock
       case 4: // Tools - stock
-        return _buildStockFields(checkListItem);
+        return _buildStockFields(checkListItem, hourlyRate);
       default:
         return [];
     }
   }
 
-  List<Widget> _buildLabourFields(CheckListItem checkListItem) => [
+  List<Widget> _buildLabourFields(
+          CheckListItem checkListItem, Money hourlyRate) =>
+      [
         if (checkListItem.labourEntryMode == LabourEntryMode.hours)
           HMBText('Est: Hours: ${checkListItem.estimatedLabourHours} '
               'Cost: ${checkListItem.estimatedLabourCost} '),
-        HMBText('Charge: ${checkListItem.charge} '
+        HMBText('Charge: ${checkListItem.getCharge(hourlyRate)} '
             'Margin (%): ${checkListItem.margin}'),
       ];
 
-  List<Widget> _buildBuyFields(CheckListItem checkListItem) => [
+  List<Widget> _buildBuyFields(CheckListItem checkListItem, Money hourlyRate) =>
+      [
         HMBText('Est: Unit Cost: ${checkListItem.estimatedMaterialUnitCost} '
             'Qty: ${checkListItem.estimatedMaterialQuantity} '),
         HMBText('Margin (%): ${checkListItem.margin} '
-            'Charge: ${checkListItem.charge}'),
+            'Charge: ${checkListItem.getCharge(hourlyRate)}'),
       ];
 
-  List<Widget> _buildStockFields(CheckListItem checkListItem) => [
+  List<Widget> _buildStockFields(
+          CheckListItem checkListItem, Money hourlyRate) =>
+      [
         HMBText(
           'Unit Charge: ${checkListItem.estimatedMaterialUnitCost} '
           'Qty: ${checkListItem.estimatedMaterialQuantity} ',
         ),
         HMBText('Margin (%): ${checkListItem.margin} '
-            'Charge: ${checkListItem.charge}'),
+            'Charge: ${checkListItem.getCharge(hourlyRate)}'),
       ];
 
   Future<void> _markAsCompleted(
