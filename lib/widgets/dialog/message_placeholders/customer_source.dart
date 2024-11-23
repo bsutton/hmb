@@ -13,20 +13,17 @@ class CustomerSource extends Source<Customer> {
   Customer? customer;
 
   @override
-  Widget field(MessageData data) 
-
-  =>HMBDroplist<Customer>(
-    title: 'Customer',
-    selectedItem: () async => customer,
-    items: (filter) async => DaoCustomer().getByFilter(filter),
-    format: (customer) => customer.name,
-    onChanged: (customer) {
-      this.customer = customer;
-      // Reset site and contact when customer changes
-      onChanged
-          ?.call(customer, ResetFields(site: true, contact: true));
-    },
-  );
+  Widget field(MessageData data) => HMBDroplist<Customer>(
+        title: 'Customer',
+        selectedItem: () async => customer,
+        items: (filter) async => DaoCustomer().getByFilter(filter),
+        format: (customer) => customer.name,
+        onChanged: (customer) {
+          this.customer = customer;
+          // Reset site and contact when customer changes
+          onChanged?.call(customer, ResetFields(site: true, contact: true));
+        },
+      );
 }
 
 

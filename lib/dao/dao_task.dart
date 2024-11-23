@@ -4,13 +4,14 @@ import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../entity/_index.g.dart';
+import '../entity/check_list_item.dart';
+import '../entity/task_item.dart';
 import '../util/money_ex.dart';
 import '../util/photo_meta.dart';
 import 'dao.dart';
-import 'dao_checklist.dart';
-import 'dao_checklist_item.dart';
 import 'dao_job.dart';
 import 'dao_photo.dart';
+import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
 
 class DaoTask extends Dao<Task> {
@@ -36,32 +37,27 @@ class DaoTask extends Dao<Task> {
   @override
   Future<int> insert(covariant Task entity, [Transaction? transaction]) async {
     final task = super.insert(entity, transaction);
-    final newChecklist = CheckList.forInsert(
-        name: 'default',
-        description: 'Default Checklist',
-        listType: CheckListType.owned);
-    await DaoCheckList().insertForTask(newChecklist, entity);
 
     return task;
   }
 
-  Future<Task> getTaskForCheckListItem(CheckListItem item) async {
-    final db = withoutTransaction();
+//   Future<Task> getTaskForCheckListItem(CheckListItem item) async {
+//     final db = withoutTransaction();
 
-    final data = await db.rawQuery('''
-select t.* 
-from check_list_item cli
-join check_list cl
-  on cli.check_list_id = cl.id
-join task_check_list tcl
-  on tcl.check_list_id = cl.id
-join task t
-  on tcl.task_id = t.id
-where cli.id =? 
-''', [item.id]);
+//     final data = await db.rawQuery('''
+// select t.*
+// from task_item cli
+// join check_list cl
+//   on cli.check_list_id = cl.id
+// join task_check_list tcl
+//   on tcl.check_list_id = cl.id
+// join task t
+//   on tcl.task_id = t.id
+// where cli.id =?
+// ''', [item.id]);
 
-    return toList(data).first;
-  }
+//     return toList(data).first;
+//   }
 
   Future<void> deleteTaskPhotos(int taskId, {Transaction? transaction}) async {
     final photos = await DaoPhoto().getByParent(taskId, ParentType.task);
@@ -79,32 +75,21 @@ where cli.id =?
     }
   }
 
-  Future<Task> getTaskForCheckList(CheckList checkList) async {
+  Future<Task> getTaskForItem(TaskItem item) async {
     final db = withoutTransaction();
 
-    final data = await db.rawQuery('''
-    SELECT t.* 
-    FROM check_list cl
-    JOIN task_check_list tcl ON tcl.check_list_id = cl.id
-    JOIN task t ON tcl.task_id = t.id
-    WHERE cl.id = ?
-  ''', [checkList.id]);
-
-    return toList(data).first;
-  }
-
-  Future<Task> getTask(CheckListItem item) async {
-    final db = withoutTransaction();
     final data = await db.rawQuery('''
 SELECT t.*
 FROM task t
-JOIN task_check_list tc ON t.id = tc.task_id
-JOIN check_list cl ON tc.check_list_id = cl.id
-JOIN check_list_item cli ON cl.id = cli.check_list_id
-WHERE cli.id = ?
+JOIN task_item ti ON t.id = ti.task_id
+WHERE ti.id = ?
 ''', [item.id]);
 
-    return toList(data).first;
+    if (data.isNotEmpty) {
+      return Task.fromMap(data.first);
+    } else {
+      throw Exception('No task found for the provided task item.');
+    }
   }
 
   Future<List<TaskAccruedValue>> getAccruedValueForJob(
@@ -143,8 +128,8 @@ WHERE cli.id = ?
       }
 
       /// Material costs.
-      for (final item in await DaoCheckListItem().getByTask(task.id)) {
-        if (item.itemTypeId == CheckListItemTypeEnum.materialsBuy.id) {
+      for (final item in await DaoTaskItem().getByTask(task.id)) {
+        if (item.itemTypeId == TaskItemTypeEnum.materialsBuy.id) {
           if ((includeBilled && item.billed) || !item.billed) {
             // Materials and tools to be purchased
             totalMaterialCharges +=
@@ -188,15 +173,15 @@ WHERE cli.id = ?
     var estimatedLabourCharge = Fixed.zero;
 
     // Get checklist items for the task
-    final checkListItems = await DaoCheckListItem().getByTask(task.id);
+    final taskItems = await DaoTaskItem().getByTask(task.id);
 
     final billingType = await DaoTask().getBillingType(task);
 
-    for (final item in checkListItems) {
-      if (item.itemTypeId == CheckListItemTypeEnum.labour.id) {
+    for (final item in taskItems) {
+      if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
         // Labour check list item
         estimatedLabourCharge += item.estimatedLabourHours!;
-      } else if (item.itemTypeId == CheckListItemTypeEnum.materialsBuy.id) {
+      } else if (item.itemTypeId == TaskItemTypeEnum.materialsBuy.id) {
         // Materials and tools to be purchased
         estimatedMaterialsCharge += item.estimatedMaterialUnitCost!
             .multiplyByFixed(item.estimatedMaterialQuantity!);
@@ -253,7 +238,7 @@ WHERE cli.id = ?
 
     for (final task in tasks) {
       await DaoTimeEntry().deleteByTask(task.id, transaction);
-      await DaoCheckList().deleteByTask(task.id, transaction);
+      await DaoTaskItem().deleteByTask(task, transaction);
       await deleteTaskPhotos(task.id, transaction: transaction);
     }
 
@@ -272,6 +257,35 @@ WHERE cli.id = ?
     final job = await DaoJob().getById(task.jobId);
 
     return task.billingType ?? job?.billingType ?? BillingType.timeAndMaterial;
+  }
+
+  Future<BillingType> getBillingTypeByTaskItem(TaskItem taskItem) async {
+    final db = withoutTransaction();
+
+    final data = await db.rawQuery('''
+SELECT 
+  t.billing_type AS task_billing_type,
+  j.billing_type AS job_billing_type
+FROM task_item ti
+JOIN task t ON ti.task_id = t.id
+JOIN job j ON t.job_id = j.id
+WHERE ti.id = ?
+''', [taskItem.id]);
+
+    if (data.isNotEmpty) {
+      final taskBillingType = data.first['task_billing_type'] as String?;
+      final jobBillingType = data.first['job_billing_type'] as String?;
+
+      // Return the task's billing type if present; otherwise, the job's
+      // billing type.
+      // Default to BillingType.timeAndMaterial if both are null.
+      return BillingType.values.firstWhere(
+        (e) => e.name == (taskBillingType ?? jobBillingType),
+        orElse: () => BillingType.timeAndMaterial,
+      );
+    }
+
+    throw Exception('No billing type found for the provided TaskItem.');
   }
 }
 
@@ -338,7 +352,7 @@ class TaskEstimatedValue {
   Money estimatedMaterialsCharge;
 
   /// Estimated labour (in hours) for the task taken
-  /// from [CheckListItem]s of type [CheckListItemTypeEnum.labour]
+  /// from [CheckListItem]s of type [TaskItemTypeEnum.labour]
   Fixed estimatedLabour;
 
   Money get estimatedLabourCharge =>

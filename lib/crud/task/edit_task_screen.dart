@@ -2,17 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 
-import '../../dao/dao_checklist.dart';
-import '../../dao/dao_checklist_item.dart';
 import '../../dao/dao_photo.dart';
 import '../../dao/dao_task.dart';
+import '../../dao/dao_task_item.dart';
 import '../../dao/dao_task_status.dart';
-import '../../dao/join_adaptors/join_adaptor_check_list_item.dart';
-import '../../entity/check_list.dart';
 import '../../entity/job.dart';
 import '../../entity/task.dart';
 import '../../entity/task_status.dart';
@@ -147,7 +143,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
             if (_selectedBillingType == BillingType.fixedPrice)
               _buildCostSummary(), // Display cost summary
 
-            _buildCheckList(task),
+            _buildItemList(task),
             HBMCrudTimeEntry(
               parentTitle: 'Task',
               parent: Parent(task),
@@ -181,10 +177,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     if (currentEntity == null) {
       return;
     }
-    final checkListItems =
-        await DaoCheckListItem().getByTask(currentEntity!.id);
+    final taskItems = await DaoTaskItem().getByTask(currentEntity!.id);
 
-    for (final item in checkListItems) {
+    for (final item in taskItems) {
       switch (item.itemTypeId) {
         case 5: // Labour (Effort)
           _totalEffortInHours += item.estimatedLabourHours!;
@@ -217,23 +212,18 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         ],
       );
 
-  FutureBuilderEx<CheckList?> _buildCheckList(Task? task) =>
-      FutureBuilderEx<CheckList?>(
-          // ignore: discarded_futures
-          future: DaoCheckList().getByTask(task?.id),
-          builder: (context, checklist) => Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      HBMCrudCheckListItem<CheckList>(
-                        parent: Parent(checklist),
-                        daoJoin: JoinAdaptorCheckListCheckListItem(),
-                      ),
-                    ],
-                  ),
-                ),
-              ));
+  Widget _buildItemList(Task? task) => Flexible(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HMBCrudTaskItem(
+                task: task,
+              ),
+            ],
+          ),
+        ),
+      );
 
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
         title: 'Task Status',

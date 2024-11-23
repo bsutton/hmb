@@ -1,5 +1,7 @@
 import 'package:hmb/dao/_index.g.dart';
+import 'package:hmb/dao/dao_task_item.dart';
 import 'package:hmb/entity/_index.g.dart';
+import 'package:hmb/entity/task_item.dart';
 import 'package:hmb/util/measurement_type.dart';
 import 'package:hmb/util/percentage.dart';
 import 'package:hmb/util/units.dart';
@@ -31,15 +33,15 @@ Future<Task> createTask(Job job, String name) async {
   return task;
 }
 
-Future<CheckListItem> insertLabourEstimates(
-  CheckList? checkList,
+Future<TaskItem> insertLabourEstimates(
+  Task? task,
   Money labourCost,
   Fixed hours,
 ) async {
-  final labourItem = CheckListItem.forInsert(
-    checkListId: checkList!.id, // Assuming a check list ID
+  final labourItem = TaskItem.forInsert(
+    taskId: task!.id, // Assuming a check list ID
     description: 'Labour',
-    itemTypeId: (await DaoCheckListItemType().getLabour()).id,
+    itemTypeId: (await DaoTaskItemType().getLabour()).id,
     estimatedMaterialUnitCost: null,
     estimatedMaterialQuantity: null,
     estimatedLabourHours: hours,
@@ -56,18 +58,14 @@ Future<CheckListItem> insertLabourEstimates(
     labourEntryMode: LabourEntryMode.hours,
   );
 
-  await DaoCheckListItem().insert(labourItem);
+  await DaoTaskItem().insert(labourItem);
   return labourItem;
 }
 
-Future<CheckListItem> insertMaterials(
-    CheckList? checkList,
-    Fixed quantity,
-    Money unitCost,
-    Percentage margin,
-    CheckListItemType checkListItemType) async {
-  final completedMaterialItem = CheckListItem.forInsert(
-    checkListId: checkList!.id, // Assuming a check list ID
+Future<TaskItem> insertMaterials(Task? task, Fixed quantity, Money unitCost,
+    Percentage margin, TaskItemType checkListItemType) async {
+  final completedMaterialItem = TaskItem.forInsert(
+    taskId: task!.id,
     description: 'Completed Material Item',
     itemTypeId: checkListItemType.id,
     estimatedMaterialUnitCost: unitCost,
@@ -86,16 +84,15 @@ Future<CheckListItem> insertMaterials(
     labourEntryMode: LabourEntryMode.hours,
   );
 
-  await DaoCheckListItem().insert(completedMaterialItem);
+  await DaoTaskItem().insert(completedMaterialItem);
 
   return completedMaterialItem;
 }
 
 Future<Job> createJob(DateTime now, BillingType billingType,
-    {required Money hourlyRate, Money? bookingFee,
-    String summary = 'Time and Materials Job'
-    
-    }) async {
+    {required Money hourlyRate,
+    Money? bookingFee,
+    String summary = 'Time and Materials Job'}) async {
   // Insert a job with time and materials billing type
   final job = Job.forInsert(
       customerId: 1, // Assuming a customer ID

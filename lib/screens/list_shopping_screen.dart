@@ -6,22 +6,23 @@ import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../dao/dao_checklist_item.dart';
 import '../../dao/dao_supplier.dart';
-import '../../entity/check_list_item.dart';
 import '../../entity/job.dart';
 import '../../entity/supplier.dart';
-import '../dao/dao_check_list_item_type.dart';
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
+import '../dao/dao_task_item.dart';
+import '../dao/dao_task_item_type.dart';
 import '../dao/dao_tool.dart';
 import '../entity/tool.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
+import '../widgets/async_state.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/select/hmb_droplist_multi.dart';
+import 'list_packing_screen.dart';
 
 class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});
@@ -31,31 +32,39 @@ class ShoppingScreen extends StatefulWidget {
   _ShoppingScreenState createState() => _ShoppingScreenState();
 }
 
-class _ShoppingScreenState extends State<ShoppingScreen> {
-  late Future<List<CheckListItem>> _checkListItemsFuture;
+class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
+  late final _taskItems = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
   Supplier? _selectedSupplier;
 
   @override
-  void initState() {
-    super.initState();
-    unawaited(_loadCheckListItems());
+  Future<void> asyncInitState() async {
+    await _loadTaskItems();
   }
 
-  Future<void> _loadCheckListItems() async {
-    _checkListItemsFuture = DaoCheckListItem().getShoppingItems(
+  Future<void> _loadTaskItems() async {
+    final taskItems = await DaoTaskItem().getShoppingItems(
       jobs: _selectedJobs,
       supplier: _selectedSupplier,
     );
+
+    final contexts = <TaskItemContext>[];
+    for (final taskItem in taskItems) {
+      final task = await DaoTask().getById(taskItem.id);
+      final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
+      contexts.add(TaskItemContext(task!, taskItem, billingType));
+    }
     setState(() {});
   }
 
-  Future<void> _markAsCompleted(CheckListItem item) async {
+  Future<void> _markAsCompleted(TaskItemContext itemContext) async {
     final costController = TextEditingController();
     final quantityController = TextEditingController();
 
-    costController.text = item.estimatedMaterialUnitCost.toString();
-    quantityController.text = item.estimatedMaterialQuantity.toString();
+    costController.text =
+        itemContext.taskItem.estimatedMaterialUnitCost.toString();
+    quantityController.text =
+        itemContext.taskItem.estimatedMaterialQuantity.toString();
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -93,11 +102,13 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
       final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
       final unitCost = MoneyEx.tryParse(costController.text);
 
-      await DaoCheckListItem().markAsCompleted(item, unitCost, quantity);
-      await _loadCheckListItems();
+      await DaoTaskItem().markAsCompleted(
+          itemContext.billingType, itemContext.taskItem, unitCost, quantity);
+      await _loadTaskItems();
 
       // Check if item type is "Tool - buy" and prompt to add to tool list
-      if (item.itemTypeId == (await DaoCheckListItemType().getToolsBuy()).id) {
+      if (itemContext.taskItem.itemTypeId ==
+          (await DaoTaskItemType().getToolsBuy()).id) {
         if (mounted) {
           final addTool = await showDialog<bool>(
             context: context,
@@ -120,9 +131,9 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
 
           if (addTool ?? false) {
             final tool = Tool.forInsert(
-              name: item.description,
+              name: itemContext.taskItem.description,
               cost: unitCost,
-              supplierId: item.supplierId,
+              supplierId: itemContext.taskItem.supplierId,
               datePurchased: DateTime.now(),
               // Add any other relevant details
             );
@@ -152,7 +163,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
                       format: (job) => job.summary,
                       onChanged: (selectedJobs) async {
                         _selectedJobs = selectedJobs;
-                        await _loadCheckListItems();
+                        await _loadTaskItems();
                       },
                       title: 'Filter by Jobs',
                       required: false),
@@ -164,7 +175,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
                       format: (supplier) => supplier.name,
                       onChanged: (supplier) async {
                         _selectedSupplier = supplier;
-                        await _loadCheckListItems();
+                        await _loadTaskItems();
                       },
                       title: 'Filter by Supplier',
                       required: false),
@@ -172,10 +183,10 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
               ),
             ),
             Expanded(
-              child: FutureBuilderEx<List<CheckListItem>>(
-                future: _checkListItemsFuture,
-                builder: (context, _checkListItems) {
-                  if (_checkListItems == null || _checkListItems.isEmpty) {
+              child: FutureBuilderEx<void>(
+                future: initialised,
+                builder: (context, _) {
+                  if (_taskItems.isEmpty) {
                     return _showEmpty();
                   } else {
                     return LayoutBuilder(
@@ -184,9 +195,9 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
                           // Mobile layout
                           return ListView.builder(
                             padding: const EdgeInsets.all(8),
-                            itemCount: _checkListItems.length,
+                            itemCount: _taskItems.length,
                             itemBuilder: (context, index) {
-                              final item = _checkListItems[index];
+                              final item = _taskItems[index];
                               return _buildListItem(context, item);
                             },
                           );
@@ -199,9 +210,9 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
                               crossAxisCount: 2,
                               childAspectRatio: 3,
                             ),
-                            itemCount: _checkListItems.length,
+                            itemCount: _taskItems.length,
                             itemBuilder: (context, index) {
-                              final item = _checkListItems[index];
+                              final item = _taskItems[index];
                               return _buildListItem(context, item);
                             },
                           );
@@ -220,48 +231,45 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
 No Shopping Items found 
 - Shopping items are taken from Task Check list items 
 that are marked as "Materials - buy" or "Tools - buy".'''));
-  Widget _buildListItem(BuildContext context, CheckListItem item) => Card(
+  Widget _buildListItem(BuildContext context, TaskItemContext itemContext) =>
+      Card(
         margin: const EdgeInsets.symmetric(vertical: 8),
         elevation: 2,
         child: ListTile(
-          title: Text(item.description),
+          title: Text(itemContext.taskItem.description),
           subtitle: FutureBuilderEx(
-            // Fetch the task associated with the checklist item
-            future: DaoTask().getTaskForCheckListItem(item),
-            builder: (context, task) => FutureBuilderEx(
-              // Fetch the job associated with the task
-              future: DaoJob().getJobForTask(task!.id),
-              builder: (context, job) => FutureBuilderEx(
-                // Fetch the customer associated with the job
-                future: DaoCustomer().getByJob(job!.id),
-                builder: (context, customer) => FutureBuilderEx(
-                  // Fetch the supplier associated with the checklist item
-                  future: DaoSupplier().getById(item.supplierId),
-                  builder: (context, supplier) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Customer: ${customer!.name}'),
-                      Text('Job: ${job.summary}'),
-                      Text('Task: ${task.name}'),
-                      if (supplier != null) Text('Supplier: ${supplier.name}'),
-                      Text('''Scheduled Date: ${formatDate(job.startDate)}'''),
-                      Text(item.dimensions),
-                      if (item.completed)
-                        const Text(
-                          'Completed',
-                          style: TextStyle(color: Colors.green),
-                        ),
-                    ],
-                  ),
+            // Fetch the job associated with the task
+            future: DaoJob().getJobForTask(itemContext.task.id),
+            builder: (context, job) => FutureBuilderEx(
+              // Fetch the customer associated with the job
+              future: DaoCustomer().getByJob(job!.id),
+              builder: (context, customer) => FutureBuilderEx(
+                // Fetch the supplier associated with the checklist item
+                future: DaoSupplier().getById(itemContext.taskItem.supplierId),
+                builder: (context, supplier) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Customer: ${customer!.name}'),
+                    Text('Job: ${job.summary}'),
+                    Text('Task: ${itemContext.task.name}'),
+                    if (supplier != null) Text('Supplier: ${supplier.name}'),
+                    Text('''Scheduled Date: ${formatDate(job.startDate)}'''),
+                    Text(itemContext.taskItem.dimensions),
+                    if (itemContext.taskItem.completed)
+                      const Text(
+                        'Completed',
+                        style: TextStyle(color: Colors.green),
+                      ),
+                  ],
                 ),
               ),
             ),
           ),
           trailing: IconButton(
             icon: const Icon(Icons.check, color: Colors.green),
-            onPressed: () async => _markAsCompleted(item),
+            onPressed: () async => _markAsCompleted(itemContext),
           ),
-          onTap: () async => _markAsCompleted(item),
+          onTap: () async => _markAsCompleted(itemContext),
         ),
       );
 }

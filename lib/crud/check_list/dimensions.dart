@@ -4,28 +4,28 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 
-import '../../dao/dao_check_list_item_type.dart';
 import '../../dao/dao_system.dart';
-import '../../entity/check_list_item.dart';
-import '../../entity/check_list_item_type.dart';
+import '../../dao/dao_task_item_type.dart';
+import '../../entity/task_item.dart';
+import '../../entity/task_item_type.dart';
 import '../../util/measurement_type.dart';
 import '../../util/units.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/hmb_empty.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/text/hmb_text.dart';
-import 'edit_checklist_item_screen.dart';
+import 'edit_task_item_screen.dart';
 
 class DimensionWidget extends StatefulWidget {
   const DimensionWidget({
-    required this.checkListItem,
+    required this.taskItem,
     required this.dimension1Controller,
     required this.dimension2Controller,
     required this.dimension3Controller,
     super.key,
   });
 
-  final CheckListItem? checkListItem;
+  final TaskItem? taskItem;
 
   final TextEditingController dimension1Controller;
 
@@ -53,23 +53,23 @@ class _DimensionWidgetState extends State<DimensionWidget> {
     final selectedMeasurementTypeState =
         June.getState(SelectedMeasurementType.new)
           ..selected =
-              widget.checkListItem?.measurementType ?? MeasurementType.length;
+              widget.taskItem?.measurementType ?? MeasurementType.length;
 
     unawaited(getDefaultUnitForMeasurementType(
             selectedMeasurementTypeState.selectedOrDefault)
         .then((defaultUnits) {
       June.getState(SelectedUnits.new).selected =
-          widget.checkListItem?.units ?? defaultUnits;
+          widget.taskItem?.units ?? defaultUnits;
     }));
   }
 
   @override
   Widget build(BuildContext context) => JuneBuilder<SelectedCheckListItemType>(
         SelectedCheckListItemType.new,
-        builder: (selectedItemTypeState) => FutureBuilderEx<CheckListItemType?>(
+        builder: (selectedItemTypeState) => FutureBuilderEx<TaskItemType?>(
           future:
               // ignore: discarded_futures
-              DaoCheckListItemType().getById(selectedItemTypeState.selected),
+              DaoTaskItemType().getById(selectedItemTypeState.selected),
           builder: (context, itemType) {
             if (!_itemTypesWithDimensions.contains(itemType?.name ?? '')) {
               return const HMBEmpty();

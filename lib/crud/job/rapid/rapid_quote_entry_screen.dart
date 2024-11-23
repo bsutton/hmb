@@ -2,22 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
 
-import '../../../dao/dao_checklist.dart';
-import '../../../dao/dao_checklist_item.dart';
 import '../../../dao/dao_task.dart';
-import '../../../dao/join_adaptors/join_adaptor_check_list_item.dart';
-import '../../../entity/check_list.dart';
-import '../../../entity/check_list_item.dart';
-import '../../../entity/check_list_item_type.dart';
+import '../../../dao/dao_task_item.dart';
 import '../../../entity/job.dart';
 import '../../../entity/task.dart';
+import '../../../entity/task_item.dart';
+import '../../../entity/task_item_type.dart';
 import '../../../util/money_ex.dart';
 import '../../../widgets/async_state.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/media/photo_gallery.dart';
 import '../../../widgets/text/hmb_text_themes.dart';
-import '../../check_list/edit_checklist_item_screen.dart';
-import '../../check_list/list_checklist_item_screen.dart';
+import '../../check_list/edit_task_item_screen.dart';
+import '../../check_list/list_task_item_screen.dart';
 import '../../task/edit_task_screen.dart';
 
 class RapidQuoteEntryScreen extends StatefulWidget {
@@ -53,17 +50,15 @@ class _RapidQuoteEntryScreenState
     var totalMaterials = MoneyEx.zero;
 
     for (final task in _tasks) {
-      final checkList = await DaoCheckList().getByTask(task.id);
-      if (checkList != null) {
-        final items = await DaoCheckListItem().getByCheckList(checkList);
+      final items = await DaoTaskItem().getByTask(task.id);
 
-        final hourlyRate = await DaoTask().getHourlyRate(task);
-        for (final item in items) {
-          if (item.itemTypeId == CheckListItemTypeEnum.labour.id) {
-            totalLabour += item.calcLabourCost(hourlyRate);
-          } else {
-            totalMaterials += item.calcMaterialCost();
-          }
+      final hourlyRate = await DaoTask().getHourlyRate(task);
+      for (final item in items) {
+        if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
+          totalLabour += item.calcLabourCost(hourlyRate);
+        } else {
+          final billingType = await DaoTask().getBillingType(task);
+          totalMaterials += item.calcMaterialCost(billingType);
         }
       }
     }
@@ -185,15 +180,16 @@ class _RapidQuoteEntryScreenState
       future: ItemsAndRate.fromTask(task),
       builder: (context, itemAndRate) => Column(
             children: itemAndRate!.items
-                .map((item) =>
-                    _buildItemTile(item, task, itemAndRate.hourlyRate))
+                .map((item) => _buildItemTile(item, task,
+                    itemAndRate.hourlyRate, itemAndRate.billingType))
                 .toList(),
           ));
 
-  Widget _buildItemTile(CheckListItem item, Task task, Money hourlyRate) =>
+  Widget _buildItemTile(TaskItem item, Task task, Money hourlyRate,
+          BillingType billingType) =>
       ListTile(
         title: Text(item.description),
-        subtitle: Text('Cost: ${item.getCharge(hourlyRate)}'),
+        subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
         trailing: IconButton(
           icon: const Icon(Icons.delete),
           onPressed: () async => _deleteItem(item),
@@ -202,55 +198,35 @@ class _RapidQuoteEntryScreenState
       );
 
   Future<void> _addItemToTask(Task task) async {
-    final checkList = await DaoCheckList().getByTask(task.id);
-    if (checkList != null) {
-      if (mounted) {
-        CheckListItem? newItem;
+    TaskItem? newItem;
 
-        newItem =
-            await Navigator.of(context).push<CheckListItem>(MaterialPageRoute(
-                builder: (context) => FutureBuilderEx(
-                      // ignore: discarded_futures
-                      future: getTaskAndRate(checkList),
-                      builder: (context, taskAndRate) =>
-                          CheckListItemEditScreen<CheckList>(
-                        daoJoin: JoinAdaptorCheckListCheckListItem(),
-                        parent: checkList,
-                        checkListItem: newItem,
-                        billingType: taskAndRate?.billingType ??
-                            BillingType.timeAndMaterial,
-                        hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
-                      ),
-                    )));
-        if (newItem != null) {
-          await _calculateTotals();
-          setState(() {});
-        }
-      }
-    } else {
-      // Create a new checklist for the task
-      final newCheckList = CheckList.forInsert(
-        name: 'Checklist for ${task.name}',
-        description: '',
-        listType: CheckListType.owned,
-      );
-      await DaoCheckList().insert(newCheckList);
-      await DaoCheckList().insertForTask(newCheckList, task);
-      await _addItemToTask(task);
+    newItem = await Navigator.of(context).push<TaskItem>(MaterialPageRoute(
+        builder: (context) => FutureBuilderEx(
+              // ignore: discarded_futures
+              future: getTaskAndRate(task),
+              builder: (context, taskAndRate) => TaskItemEditScreen(
+                parent: task,
+                taskItem: newItem,
+                billingType:
+                    taskAndRate?.billingType ?? BillingType.timeAndMaterial,
+                hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
+              ),
+            )));
+    if (newItem != null) {
+      await _calculateTotals();
+      setState(() {});
     }
   }
 
-  Future<void> _editItem(CheckListItem item, Task task) async {
-    final checkList = await DaoCheckList().getById(item.checkListId);
-    final updatedItem = await Navigator.of(context).push<CheckListItem>(
+  Future<void> _editItem(TaskItem item, Task task) async {
+    final updatedItem = await Navigator.of(context).push<TaskItem>(
       MaterialPageRoute(
         builder: (context) => FutureBuilderEx(
           // ignore: discarded_futures
-          future: getTaskAndRate(checkList),
-          builder: (context, taskAndRate) => CheckListItemEditScreen<Task>(
-            daoJoin: JoinAdaptorCheckListCheckListItem(),
+          future: getTaskAndRate(task),
+          builder: (context, taskAndRate) => TaskItemEditScreen(
             parent: task,
-            checkListItem: item,
+            taskItem: item,
             billingType:
                 taskAndRate?.billingType ?? BillingType.timeAndMaterial,
             hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
@@ -265,33 +241,31 @@ class _RapidQuoteEntryScreenState
     }
   }
 
-  Future<void> _deleteItem(CheckListItem item) async {
-    await DaoCheckListItem().delete(item.id);
+  Future<void> _deleteItem(TaskItem item) async {
+    await DaoTaskItem().delete(item.id);
     await _calculateTotals();
     setState(() {});
   }
 
-  Future<TaskAndRate> getTaskAndRate(CheckList? checkList) async {
-    if (checkList == null) {
+  Future<TaskAndRate> getTaskAndRate(Task? task) async {
+    if (task == null) {
       return TaskAndRate(null, MoneyEx.zero, BillingType.timeAndMaterial);
     }
-    return TaskAndRate.fromTask(await DaoTask().getTaskForCheckList(checkList));
+    return TaskAndRate.fromTask(task);
   }
 }
 
 class ItemsAndRate {
-  ItemsAndRate(this.items, this.hourlyRate);
+  ItemsAndRate(this.items, this.hourlyRate, this.billingType);
 
-  List<CheckListItem> items;
+  List<TaskItem> items;
   Money hourlyRate;
+  BillingType billingType;
 
   static Future<ItemsAndRate> fromTask(Task task) async {
-    final checkList = await DaoCheckList().getByTask(task.id);
     final hourlyRate = await DaoTask().getHourlyRate(task);
-    if (checkList != null) {
-      return ItemsAndRate(
-          await DaoCheckListItem().getByCheckList(checkList), hourlyRate);
-    }
-    return ItemsAndRate(<CheckListItem>[], hourlyRate);
+    final billingType = await DaoTask().getBillingType(task);
+    return ItemsAndRate(
+        await DaoTaskItem().getByTask(task.id), hourlyRate, billingType);
   }
 }

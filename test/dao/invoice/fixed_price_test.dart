@@ -23,23 +23,21 @@ void main() {
     final job = await createJob(now, BillingType.fixedPrice,
         hourlyRate: MoneyEx.fromInt(5000));
     final task = await createTask(job, 'Task 1');
-    final checkList = await DaoCheckList().getByTask(task.id);
 
     // Insert a labour item with 10 estimated hours at $50/hour
     await insertLabourEstimates(
-      checkList,
+      task,
       MoneyEx.dollars(50), // $50/hour
       Fixed.fromInt(1000), // 10 hours
     );
 
     // Insert a material buy item with estimated cost $200
     await insertMaterials(
-      checkList,
+      task,
       Fixed.fromNum(1),
       MoneyEx.dollars(200), // $200 estimated cost
       Percentage.twenty, // 20% margin
-      (await DaoCheckListItemType()
-          .getById(CheckListItemTypeEnum.materialsBuy.id))!,
+      (await DaoTaskItemType().getById(TaskItemTypeEnum.materialsBuy.id))!,
     );
 
     // Create invoice for the job

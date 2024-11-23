@@ -14,7 +14,7 @@ import 'package:toastification/toastification.dart';
 import 'dao/dao_task.dart';
 import 'dao/dao_time_entry.dart';
 import 'database/factory/flutter_database_factory.dart';
-import 'database/management/backup_providers/email/email_backup_screen.dart';
+import 'database/management/backup_providers/google_drive/google_drive_backup_screen.dart';
 import 'database/management/backup_providers/local/local_backup_provider.dart';
 import 'database/management/database_helper.dart';
 import 'database/versions/asset_script_source.dart';
@@ -156,7 +156,7 @@ Future<void> _initDb(BuildContext context) async {
       await Navigator.push(
         context,
         MaterialPageRoute<void>(
-            builder: (context) => const BackupScreen(pathToBackup: '')),
+            builder: (context) => const GoogleDriveBackupScreen()),
       );
     }
   }

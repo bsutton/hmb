@@ -1,13 +1,14 @@
 import 'package:money2/money2.dart';
 
 import '../entity/_index.g.dart';
+import '../entity/task_item.dart';
 import '../util/format.dart';
 import '../util/local_date.dart';
 import '../util/money_ex.dart';
-import 'dao_checklist_item.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_task.dart';
+import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
 
 /// Group by Task then Dates within that task, followed by materials
@@ -45,9 +46,9 @@ Future<Money> createByTask(
     }
 
     // Add materials
-    final checkListItems = await DaoCheckListItem().getByTask(task.id);
+    final taskItesm = await DaoTaskItem().getByTask(task.id);
     for (final item
-        in checkListItems.where((item) => !item.billed && item.completed)) {
+        in taskItesm.where((item) => !item.billed && item.completed)) {
       Money unitCost;
       Fixed quantity;
 
@@ -71,7 +72,7 @@ Future<Money> createByTask(
         lineTotal: lineTotal,
       );
       final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-      await DaoCheckListItem().markAsBilled(item, invoiceLineId);
+      await DaoTaskItem().markAsBilled(item, invoiceLineId);
       totalAmount += lineTotal;
     }
   }
@@ -117,7 +118,7 @@ Future<Money> _timeAndMaterialsLabour(
   return totalAmount;
 }
 
-/// CheckListItems of type [CheckListItemTypeEnum.labour] estimates
+/// CheckListItems of type [TaskItemTypeEnum.labour] estimates
 /// are used on an invoice.
 Future<Money> _fixedPriceLabour(
   List<LabourForTaskOnDate> labourForDays,
@@ -188,9 +189,9 @@ Future<List<LabourForTaskOnDate>> collectLabourPerDay(Task task) async {
 }
 
 class LineAndSource {
-  LineAndSource({required this.line, this.checkListItem, this.timeEntry});
+  LineAndSource({required this.line, this.taskItem, this.timeEntry});
   InvoiceLine line;
-  CheckListItem? checkListItem;
+  TaskItem? taskItem;
   TimeEntry? timeEntry;
 
   Future<void> markBilled(int invoiceLineId) async {}

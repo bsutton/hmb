@@ -6,18 +6,16 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 
-import '../../dao/dao_check_list_item_type.dart';
-import '../../dao/dao_checklist_item.dart';
 import '../../dao/dao_supplier.dart';
 import '../../dao/dao_system.dart';
-import '../../dao/join_adaptors/dao_join_adaptor.dart';
-import '../../entity/check_list.dart';
-import '../../entity/check_list_item.dart';
-import '../../entity/check_list_item_type.dart';
-import '../../entity/entity.dart';
+import '../../dao/dao_task_item.dart';
+import '../../dao/dao_task_item_type.dart';
 import '../../entity/job.dart';
 import '../../entity/supplier.dart';
 import '../../entity/system.dart';
+import '../../entity/task.dart';
+import '../../entity/task_item.dart';
+import '../../entity/task_item_type.dart';
 import '../../util/fixed_ex.dart';
 import '../../util/measurement_type.dart';
 import '../../util/money_ex.dart';
@@ -30,38 +28,33 @@ import '../../widgets/select/select_supplier.dart';
 import '../base_nested/edit_nested_screen.dart';
 import 'dimensions.dart';
 
-class CheckListItemEditScreen<P extends Entity<P>> extends StatefulWidget {
-  const CheckListItemEditScreen({
+class TaskItemEditScreen extends StatefulWidget {
+  const TaskItemEditScreen({
     required this.parent,
-    required this.daoJoin,
-    required this.billingType, // Pass job type
+    required this.billingType,
     required this.hourlyRate,
     super.key,
-    this.checkListItem,
+    this.taskItem,
   });
 
-  final DaoJoinAdaptor daoJoin;
-  final P parent;
-  final CheckListItem? checkListItem;
+  final Task? parent;
+  final TaskItem? taskItem;
   final BillingType billingType; // 'Fixed Price' or 'Time and Materials'
   final Money hourlyRate;
 
   @override
   // ignore: library_private_types_in_public_api
-  _CheckListItemEditScreenState createState() =>
-      _CheckListItemEditScreenState();
+  _TaskItemEditScreenState createState() => _TaskItemEditScreenState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(
-        DiagnosticsProperty<CheckListItem?>('checkListItem', checkListItem));
+    properties.add(DiagnosticsProperty<TaskItem?>('taskItem', taskItem));
   }
 }
 
-class _CheckListItemEditScreenState
-    extends AsyncState<CheckListItemEditScreen, System>
-    implements NestedEntityState<CheckListItem> {
+class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen, System>
+    implements NestedEntityState<TaskItem> {
   late TextEditingController _descriptionController;
   late TextEditingController _estimatedMaterialUnitCostController;
   late TextEditingController _estimatedMaterialQuantityController;
@@ -78,7 +71,7 @@ class _CheckListItemEditScreenState
 
   LabourEntryMode _labourEntryMode = LabourEntryMode.hours;
   @override
-  CheckListItem? currentEntity;
+  TaskItem? currentEntity;
 
   final globalKey = GlobalKey();
 
@@ -86,7 +79,7 @@ class _CheckListItemEditScreenState
   void initState() {
     super.initState();
 
-    currentEntity ??= widget.checkListItem;
+    currentEntity ??= widget.taskItem;
 
     _descriptionController =
         TextEditingController(text: currentEntity?.description);
@@ -104,7 +97,9 @@ class _CheckListItemEditScreenState
     _marginController =
         TextEditingController(text: currentEntity?.margin.toString());
     _chargeController = TextEditingController(
-        text: currentEntity?.getCharge(widget.hourlyRate).toString());
+        text: currentEntity
+            ?.getCharge(widget.billingType, widget.hourlyRate)
+            .toString());
 
     _dimension1Controller =
         TextEditingController(text: currentEntity?.dimension1.toString());
@@ -165,15 +160,13 @@ class _CheckListItemEditScreenState
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
         future: initialised,
-        builder: (context, system) =>
-            NestedEntityEditScreen<CheckListItem, CheckList>(
+        builder: (context, system) => NestedEntityEditScreen<TaskItem, Task>(
           key: globalKey,
-          entityName: 'Check List Item',
-          dao: DaoCheckListItem(),
-          onInsert: (checkListItem) async =>
-              widget.daoJoin.insertForParent(checkListItem!, widget.parent),
+          entityName: 'Task Item',
+          dao: DaoTaskItem(),
+          onInsert: (taskItem) async => DaoTaskItem().insert(taskItem!),
           entityState: this,
-          editor: (checklistItem) => Column(
+          editor: (taskItem) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               HMBTextField(
@@ -188,10 +181,10 @@ class _CheckListItemEditScreenState
                   return null;
                 },
               ),
-              _chooseItemType(checklistItem),
+              _chooseItemType(taskItem),
               if (June.getState(SelectedCheckListItemType.new).selected !=
                   0) ...[
-                _chooseSupplier(checklistItem),
+                _chooseSupplier(taskItem),
                 ..._buildFieldsBasedOnItemType(),
                 HMBTextField(
                   controller: _urlController,
@@ -202,7 +195,7 @@ class _CheckListItemEditScreenState
                   dimension1Controller: _dimension1Controller,
                   dimension2Controller: _dimension2Controller,
                   dimension3Controller: _dimension3Controller,
-                  checkListItem: checklistItem,
+                  taskItem: taskItem,
                 ),
               ],
             ],
@@ -210,13 +203,12 @@ class _CheckListItemEditScreenState
         ),
       );
 
-  HMBDroplist<CheckListItemType> _chooseItemType(
-          CheckListItem? checkListItem) =>
-      HMBDroplist<CheckListItemType>(
+  HMBDroplist<TaskItemType> _chooseItemType(TaskItem? taskItem) =>
+      HMBDroplist<TaskItemType>(
         title: 'Item Type',
-        selectedItem: () async => DaoCheckListItemType()
+        selectedItem: () async => DaoTaskItemType()
             .getById(June.getState(SelectedCheckListItemType.new).selected),
-        items: (filter) async => DaoCheckListItemType().getByFilter(filter),
+        items: (filter) async => DaoTaskItemType().getByFilter(filter),
         format: (checklistItemType) => checklistItemType.name,
         onChanged: (itemType) {
           setState(() {
@@ -226,7 +218,7 @@ class _CheckListItemEditScreenState
         },
       );
 
-  HMBDroplist<Supplier> _chooseSupplier(CheckListItem? checkListItem) =>
+  HMBDroplist<Supplier> _chooseSupplier(TaskItem? taskItem) =>
       HMBDroplist<Supplier>(
         title: 'Supplier',
         selectedItem: () async =>
@@ -310,7 +302,7 @@ class _CheckListItemEditScreenState
 
     var charge = MoneyEx.tryParse(_chargeController.text);
 
-    charge = DaoCheckListItem().calculateCharge(
+    charge = DaoTaskItem().calculateCharge(
         itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
         margin: margin,
         labourEntryMode: _labourEntryMode,
@@ -398,10 +390,9 @@ class _CheckListItemEditScreenState
   }
 
   @override
-  Future<CheckListItem> forUpdate(CheckListItem checkListItem) async =>
-      CheckListItem.forUpdate(
-        entity: checkListItem,
-        checkListId: checkListItem.checkListId,
+  Future<TaskItem> forUpdate(TaskItem taskItem) async => TaskItem.forUpdate(
+        entity: taskItem,
+        taskId: taskItem.taskId,
         description: _descriptionController.text,
         itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
         estimatedMaterialUnitCost:
@@ -414,7 +405,7 @@ class _CheckListItemEditScreenState
             MoneyEx.tryParse(_estimatedLabourCostController.text),
         charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
         margin: Percentage.tryParse(_marginController.text),
-        completed: checkListItem.completed,
+        completed: taskItem.completed,
         billed: false,
         labourEntryMode: _labourEntryMode,
         measurementType:
@@ -431,8 +422,8 @@ class _CheckListItemEditScreenState
       );
 
   @override
-  Future<CheckListItem> forInsert() async => CheckListItem.forInsert(
-        checkListId: widget.parent.id,
+  Future<TaskItem> forInsert() async => TaskItem.forInsert(
+        taskId: widget.parent!.id,
         description: _descriptionController.text,
         itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
         estimatedMaterialUnitCost:

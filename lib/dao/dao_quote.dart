@@ -7,10 +7,10 @@ import '../invoicing/dialog_select_tasks.dart';
 import '../util/exceptions.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
-import 'dao_checklist_item.dart';
 import 'dao_quote_line.dart';
 import 'dao_quote_line_group.dart';
 import 'dao_task.dart';
+import 'dao_task_item.dart';
 
 class DaoQuote extends Dao<Quote> {
   @override
@@ -122,11 +122,10 @@ class DaoQuote extends Dao<Quote> {
       }
 
       /// Materials based billing
-      final checkListItems =
-          await DaoCheckListItem().getByTask(estimate.task.id);
-      for (final item in checkListItems.where((item) => !item.billed)) {
+      final taskItems = await DaoTaskItem().getByTask(estimate.task.id);
+      for (final item in taskItems.where((item) => !item.billed)) {
         /// Labour is already accounted for in the above labour costs.
-        if (item.itemTypeId == CheckListItemTypeEnum.labour.id) {
+        if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
           continue;
         }
         final lineTotal = item.estimatedMaterialUnitCost!

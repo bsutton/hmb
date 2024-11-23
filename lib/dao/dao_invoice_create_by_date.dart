@@ -4,11 +4,11 @@ import '../entity/_index.g.dart';
 import '../util/format.dart';
 import '../util/local_date.dart';
 import '../util/money_ex.dart';
-import 'dao_checklist_item.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
 import 'dao_task.dart';
+import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
 
 /// This is specifically for Time And Materials Invoicces
@@ -121,16 +121,18 @@ Future<Money> emitMaterialsByTask(
   final hourlyRate = await DaoJob().getHourlyRate(job.id);
 
   for (final taskId in selectedTaskIds) {
+    final task = await DaoTask().getById(taskId);
+    final billingType = await DaoTask().getBillingType(task!);
     var groupCreated = false;
-    final checkListItems = await DaoCheckListItem().getByTask(taskId);
+    final taskItem = await DaoTaskItem().getByTask(taskId);
     var invoiceLineGroupId = -1;
-    for (final item in checkListItems) {
-      final itemType = CheckListItemTypeEnum.fromId(item.itemTypeId);
+    for (final item in taskItem) {
+      final itemType = TaskItemTypeEnum.fromId(item.itemTypeId);
       if (item.billed ||
           !item.completed ||
-          itemType == CheckListItemTypeEnum.labour ||
-          itemType == CheckListItemTypeEnum.toolsOwn ||
-          item.getCharge(hourlyRate) == MoneyEx.zero) {
+          itemType == TaskItemTypeEnum.labour ||
+          itemType == TaskItemTypeEnum.toolsOwn ||
+          item.getCharge(billingType, hourlyRate) == MoneyEx.zero) {
         continue;
       }
 
@@ -155,7 +157,7 @@ Future<Money> emitMaterialsByTask(
         lineTotal: lineTotal,
       );
       final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-      await DaoCheckListItem().markAsBilled(item, invoiceLineId);
+      await DaoTaskItem().markAsBilled(item, invoiceLineId);
 
       totalAmount += lineTotal;
     }

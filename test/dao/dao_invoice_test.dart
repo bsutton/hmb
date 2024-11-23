@@ -28,12 +28,11 @@ should create an invoice for time and materials job with correct rates and mark 
       final job = await createJob(now, BillingType.timeAndMaterial,
           hourlyRate: MoneyEx.dollars(50), bookingFee: MoneyEx.dollars(100));
       final task = await createTask(job, 'Task 1');
-      final checkList = await DaoCheckList().getByTask(task.id);
 
       /// Item - Labour 2 hrs, $50 ph.
       /// No effect on invoice as it is not billed
       await insertLabourEstimates(
-        checkList,
+        task,
         MoneyEx.fromInt(5000), // $50 labour cost
         Fixed.fromNum(2, scale: 3), // 2 hours of labour
       );
@@ -90,15 +89,12 @@ should create an invoice for time and materials job with correct rates and mark 
     await createTimeEntry(task1, now, const Duration(hours: 1));
     await createTimeEntry(task2, now, const Duration(hours: 2));
 
-    // Create checklist items
-    final checkList1 = await DaoCheckList().getByTask(task1.id);
-
     await insertMaterials(
-        checkList1,
+        task1,
         Fixed.fromNum(2, scale: 3),
         MoneyEx.fromInt(200),
         Percentage.zero,
-        await DaoCheckListItemType().getMaterialsBuy());
+        await DaoTaskItemType().getMaterialsBuy());
 
     // Create invoice grouped by date
     final invoice = await createTimeAndMaterialsInvoice(
@@ -129,9 +125,8 @@ should create an invoice for time and materials job with correct rates and mark 
     await createTimeEntry(task2, now, const Duration(hours: 2));
 
     // Create checklist items
-    final checkList1 = await DaoCheckList().getByTask(task1.id);
     await insertLabourEstimates(
-      checkList1,
+      task1,
       MoneyEx.fromInt(2000),
       Fixed.fromNum(1, scale: 3),
     );

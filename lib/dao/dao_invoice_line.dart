@@ -3,8 +3,8 @@ import 'package:sqflite/sqflite.dart';
 
 import '../entity/invoice_line.dart';
 import 'dao.dart';
-import 'dao_checklist_item.dart';
 import 'dao_job.dart';
+import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
 
 class DaoInvoiceLine extends Dao<InvoiceLine> {
@@ -50,7 +50,7 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
       /// have a matching line id then mark them as
       /// not billed.
       await DaoTimeEntry().markAsNotbilled(line.id);
-      await DaoCheckListItem().markNotBilled(line.id);
+      await DaoTaskItem().markNotBilled(line.id);
     }
     await db.delete(tableName, where: 'invoice_id =?', whereArgs: [invoiceId]);
   }

@@ -54,7 +54,9 @@ class Task extends Entity<Task> {
   String name;
   String description;
   int taskStatusId;
-  BillingType? billingType; // New field for BillingType
+
+  /// If [billingType] is null then take it from the Job.
+  BillingType? billingType;
 
   @override
   Map<String, dynamic> toMap() => {

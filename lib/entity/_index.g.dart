@@ -8,8 +8,6 @@
 //.title~
 
 export 'check_list.dart';
-export 'check_list_item.dart';
-export 'check_list_item_type.dart';
 export 'contact.dart';
 export 'customer.dart';
 export 'entities.dart';
@@ -31,6 +29,7 @@ export 'supplier.dart';
 export 'system.dart';
 export 'task.dart';
 export 'task_check_list.dart';
+export 'task_item_type.dart';
 export 'task_status.dart';
 export 'time_entry.dart';
 

@@ -3,13 +3,13 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:strings/strings.dart';
 
-import '../dao/dao_checklist_item.dart';
 import '../dao/dao_contact.dart';
 import '../dao/dao_invoice.dart';
 import '../dao/dao_invoice_line.dart';
 import '../dao/dao_invoice_line_group.dart';
 import '../dao/dao_invoice_time_and_materials.dart';
 import '../dao/dao_job.dart';
+import '../dao/dao_task_item.dart';
 import '../dao/dao_time_entry.dart';
 import '../entity/invoice.dart';
 import '../entity/invoice_line.dart';
@@ -354,7 +354,7 @@ Total: ${line.lineTotal}'''),
       try {
         // Mark source item as not billed
         if (line.invoiceLineGroupId != null) {
-          await DaoCheckListItem().markNotBilled(line.id);
+          await DaoTaskItem().markNotBilled(line.id);
           await DaoTimeEntry().markAsNotbilled(line.id);
         }
 

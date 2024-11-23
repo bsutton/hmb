@@ -4,13 +4,44 @@ import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
 import '../util/percentage.dart';
 import '../util/units.dart';
-import '_index.g.dart';
-import 'task_item.dart';
+import 'entity.dart';
+import 'job.dart';
+import 'task_item_type.dart';
 
-class CheckListItem extends Entity<CheckListItem> {
-  CheckListItem({
+enum LabourEntryMode {
+  hours('Hours'),
+  dollars('Dollars');
+
+  const LabourEntryMode(this._display);
+  final String _display;
+
+  static String getDisplay(LabourEntryMode mode) {
+    switch (mode) {
+      case LabourEntryMode.hours:
+        return LabourEntryMode.hours._display;
+      case LabourEntryMode.dollars:
+        return LabourEntryMode.dollars._display;
+    }
+  }
+
+  static LabourEntryMode fromString(String value) {
+    switch (value) {
+      case 'Hours':
+        return LabourEntryMode.hours;
+      case 'Dollars':
+        return LabourEntryMode.dollars;
+      default:
+        throw ArgumentError('Unknown LabourEntryMode: $value');
+    }
+  }
+
+  String toSqlString() => _display;
+}
+
+class TaskItem extends Entity<TaskItem> {
+  TaskItem({
     required super.id,
-    required this.checkListId,
+    required this.taskId,
     required this.description,
     required this.itemTypeId,
     required this.estimatedMaterialUnitCost,
@@ -38,9 +69,64 @@ class CheckListItem extends Entity<CheckListItem> {
   })  : _charge = charge,
         super();
 
-  factory CheckListItem.fromMap(Map<String, dynamic> map) => CheckListItem(
+  TaskItem.forInsert({
+    required this.taskId,
+    required this.description,
+    required this.itemTypeId,
+    required this.estimatedMaterialUnitCost,
+    required this.estimatedLabourHours,
+    required this.estimatedMaterialQuantity,
+    required this.estimatedLabourCost,
+    required Money? charge,
+    required this.margin,
+    required this.measurementType,
+    required this.dimension1,
+    required this.dimension2,
+    required this.dimension3,
+    required this.units,
+    required this.url,
+    required this.labourEntryMode,
+    this.completed = false,
+    this.billed = false,
+    this.invoiceLineId,
+    this.supplierId,
+    this.actualMaterialUnitCost,
+    this.actualMaterialQuantity,
+    this.actualCost,
+  })  : _charge = charge,
+        super.forInsert();
+
+  TaskItem.forUpdate(
+      {required super.entity,
+      required this.taskId,
+      required this.description,
+      required this.itemTypeId,
+      required this.estimatedMaterialUnitCost,
+      required this.estimatedLabourHours,
+      required this.estimatedMaterialQuantity,
+      required this.estimatedLabourCost,
+      required this.margin,
+      required Money? charge,
+      required this.completed,
+      required this.billed,
+      required this.measurementType,
+      required this.dimension1,
+      required this.dimension2,
+      required this.dimension3,
+      required this.units,
+      required this.url,
+      required this.labourEntryMode,
+      this.invoiceLineId,
+      this.supplierId,
+      this.actualMaterialUnitCost,
+      this.actualMaterialQuantity,
+      this.actualCost})
+      : _charge = charge,
+        super.forUpdate();
+
+  factory TaskItem.fromMap(Map<String, dynamic> map) => TaskItem(
         id: map['id'] as int,
-        checkListId: map['check_list_id'] as int,
+        taskId: map['task_id'] as int,
         description: map['description'] as String,
         itemTypeId: map['item_type_id'] as int,
         estimatedMaterialUnitCost:
@@ -81,110 +167,34 @@ class CheckListItem extends Entity<CheckListItem> {
         actualCost: MoneyEx.fromInt(map['actual_cost'] as int? ?? 0),
       );
 
-  CheckListItem.forInsert({
-    required this.checkListId,
-    required this.description,
-    required this.itemTypeId,
-    required this.estimatedMaterialUnitCost,
-    required this.estimatedLabourHours,
-    required this.estimatedMaterialQuantity,
-    required this.estimatedLabourCost,
-    required Money? charge,
-    required this.margin,
-    required this.measurementType,
-    required this.dimension1,
-    required this.dimension2,
-    required this.dimension3,
-    required this.units,
-    required this.url,
-    required this.labourEntryMode,
-    this.completed = false,
-    this.billed = false,
-    this.invoiceLineId,
-    this.supplierId,
-    this.actualMaterialUnitCost,
-    this.actualMaterialQuantity,
-    this.actualCost,
-  })  : _charge = charge,
-        super.forInsert();
-
-  CheckListItem.forUpdate(
-      {required super.entity,
-      required this.checkListId,
-      required this.description,
-      required this.itemTypeId,
-      required this.estimatedMaterialUnitCost,
-      required this.estimatedLabourHours,
-      required this.estimatedMaterialQuantity,
-      required this.estimatedLabourCost,
-      required this.margin,
-      required Money? charge,
-      required this.completed,
-      required this.billed,
-      required this.measurementType,
-      required this.dimension1,
-      required this.dimension2,
-      required this.dimension3,
-      required this.units,
-      required this.url,
-      required this.labourEntryMode,
-      this.invoiceLineId,
-      this.supplierId,
-      this.actualMaterialUnitCost,
-      this.actualMaterialQuantity,
-      this.actualCost})
-      : _charge = charge,
-        super.forUpdate();
-
-  LabourEntryMode labourEntryMode;
-
-  int checkListId;
+  int taskId;
   String description;
   int itemTypeId;
-
-  // Labour
-  /// For T&M the 'actual' is taken from time_entry's
-  /// The estimated labour hours used when [LabourEntryMode.hours] is used.
   Fixed? estimatedLabourHours;
-
-  /// The estimated labour cost.
-  /// Used when [LabourEntryMode.dollars] is used.
   Money? estimatedLabourCost;
-
-  // Materials - estimates used for Quote and Estimate
-  /// The estimated cost per unit of material.
   Money? estimatedMaterialUnitCost;
-
-  /// The esitmated quantity of the materials.
   Fixed? estimatedMaterialQuantity;
-
-  // T&M uses the actuals, Fixed uses the estimates for
-  // the Invoice.
-  // Recorded after the material has been purchased.
   Money? actualMaterialUnitCost;
   Fixed? actualMaterialQuantity;
-
-  // Only used by Fixed for P&L reporting
   Money? actualCost;
-
-  /// The margin to apply to the costs to derive the
-  /// charge.
   Percentage margin;
-
-  /// The amount we will charge the customer.
-  /// For T&M this is an estimate
-  /// for Fixed this is the actual.
-  /// If null then the charge is calculated from
-  /// the estimation fields. If non-null
-  /// then the charge is used and the estimates
-  /// are ignored.
   Money? _charge;
+  bool completed;
+  bool billed;
+  int? invoiceLineId;
+  MeasurementType? measurementType;
+  Fixed dimension1;
+  Fixed dimension2;
+  Fixed dimension3;
+  Units? units;
+  String url;
+  int? supplierId;
+  LabourEntryMode labourEntryMode;
 
   Money getCharge(BillingType billingType, Money hourlyRate) {
     if (_charge != null) {
       return _charge!;
     }
-
     switch (TaskItemTypeEnum.fromId(itemTypeId)) {
       case TaskItemTypeEnum.materialsBuy:
       case TaskItemTypeEnum.materialsStock:
@@ -197,14 +207,6 @@ class CheckListItem extends Entity<CheckListItem> {
     }
   }
 
-  // ignore: use_setters_to_change_properties
-  void setCharge(Money value) {
-    _charge = value;
-  }
-
-  /// For fixed price we always use the estimated cost.
-  /// For T&M we use the estimated cost until we have
-  /// the actual cost.
   Money calcMaterialCost(BillingType billingType) {
     if (billingType == BillingType.fixedPrice) {
       return (estimatedMaterialUnitCost ?? MoneyEx.zero)
@@ -216,6 +218,11 @@ class CheckListItem extends Entity<CheckListItem> {
           actualMaterialQuantity ?? estimatedMaterialQuantity ?? Fixed.one;
       return cost.multiplyByFixed(quantity);
     }
+  }
+
+  // ignore: use_setters_to_change_properties
+  void setCharge(Money value) {
+    _charge = value;
   }
 
   Money calcLabourCost(Money hourlyRate) {
@@ -230,29 +237,12 @@ class CheckListItem extends Entity<CheckListItem> {
     return MoneyEx.zero;
   }
 
-  bool completed;
-  bool billed;
-  int? invoiceLineId;
-  MeasurementType measurementType;
-  Fixed dimension1;
-  Fixed dimension2;
-  Fixed dimension3;
-  Units units;
-  String url;
-  int? supplierId;
-
-  bool get hasCost =>
-      estimatedMaterialUnitCost != null &&
-      estimatedMaterialUnitCost!
-              .multiplyByFixed(estimatedMaterialQuantity ?? Fixed.one) >
-          MoneyEx.zero;
-
   String get dimensions {
     if (!hasDimensions) {
       return '';
     }
 
-    return units.format([dimension1, dimension2, dimension3]);
+    return units?.format([dimension1, dimension2, dimension3]) ?? '';
   }
 
   bool get hasDimensions => itemTypeId == 1 || itemTypeId == 2;
@@ -260,7 +250,7 @@ class CheckListItem extends Entity<CheckListItem> {
   @override
   Map<String, dynamic> toMap() => {
         'id': id,
-        'check_list_id': checkListId,
+        'task_id': taskId,
         'description': description,
         'item_type_id': itemTypeId,
         'estimated_material_unit_cost': estimatedMaterialUnitCost
@@ -279,19 +269,19 @@ class CheckListItem extends Entity<CheckListItem> {
                 .toInt(),
         'estimated_labour_cost':
             estimatedLabourCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
-        'margin': Fixed.copyWith(margin, scale: 3).minorUnits.toInt(),
         'charge': _charge?.copyWith(decimalDigits: 2).minorUnits.toInt(),
-        'labour_entry_mode': labourEntryMode.toSqlString(),
+        'margin': Fixed.copyWith(margin, scale: 3).minorUnits.toInt(),
         'completed': completed ? 1 : 0,
         'billed': billed ? 1 : 0,
         'invoice_line_id': invoiceLineId,
-        'measurement_type': measurementType.name,
+        'measurement_type': measurementType?.name,
         'dimension1': Fixed.copyWith(dimension1, scale: 3).minorUnits.toInt(),
         'dimension2': Fixed.copyWith(dimension2, scale: 3).minorUnits.toInt(),
         'dimension3': Fixed.copyWith(dimension3, scale: 3).minorUnits.toInt(),
-        'units': units.name,
+        'units': units?.name,
         'url': url,
         'supplier_id': supplierId,
+        'labour_entry_mode': labourEntryMode.toSqlString(),
         'actual_material_unit_cost': actualMaterialUnitCost
             ?.copyWith(decimalDigits: 2)
             .minorUnits
@@ -306,9 +296,10 @@ class CheckListItem extends Entity<CheckListItem> {
         'created_date': createdDate.toIso8601String(),
         'modified_date': modifiedDate.toIso8601String(),
       };
-  CheckListItem copyWith({
+
+  TaskItem copyWith({
     int? id,
-    int? checkListId,
+    int? taskId,
     String? description,
     int? itemTypeId,
     Money? estimatedMaterialCost,
@@ -322,7 +313,7 @@ class CheckListItem extends Entity<CheckListItem> {
     int? invoiceLineId,
     DateTime? createdDate,
     DateTime? modifiedDate,
-    MeasurementType? dimensionType,
+    MeasurementType? measurementType,
     Fixed? dimension1,
     Fixed? dimension2,
     Fixed? dimension3,
@@ -333,9 +324,9 @@ class CheckListItem extends Entity<CheckListItem> {
     Fixed? actualMaterialQuantity,
     Money? actualCost,
   }) =>
-      CheckListItem(
+      TaskItem(
         id: id ?? this.id,
-        checkListId: checkListId ?? this.checkListId,
+        taskId: taskId ?? this.taskId,
         description: description ?? this.description,
         itemTypeId: itemTypeId ?? this.itemTypeId,
         estimatedMaterialUnitCost:
@@ -351,7 +342,7 @@ class CheckListItem extends Entity<CheckListItem> {
         invoiceLineId: invoiceLineId ?? this.invoiceLineId,
         createdDate: createdDate ?? this.createdDate,
         modifiedDate: modifiedDate ?? this.modifiedDate,
-        measurementType: dimensionType ?? measurementType,
+        measurementType: measurementType ?? this.measurementType,
         dimension1: dimension1 ?? this.dimension1,
         dimension2: dimension2 ?? this.dimension2,
         dimension3: dimension3 ?? this.dimension3,
@@ -364,8 +355,4 @@ class CheckListItem extends Entity<CheckListItem> {
             actualMaterialQuantity ?? this.actualMaterialQuantity,
         actualCost: actualCost ?? this.actualCost,
       );
-
-  @override
-  String toString() =>
-      '''id: $id description: $description qty: $estimatedMaterialQuantity cost: $estimatedMaterialUnitCost completed: $completed billed: $billed dimensions: $dimension1 x $dimension2 x $dimension3 $measurementType ($units) url: $url supplier: $supplierId actualMaterialCost: $actualMaterialUnitCost actualMaterialQuantity: $actualMaterialQuantity actualCost: $actualCost''';
 }

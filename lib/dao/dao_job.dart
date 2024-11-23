@@ -7,11 +7,11 @@ import '../entity/customer.dart';
 import '../entity/job.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
-import 'dao_checklist_item.dart';
 import 'dao_invoice.dart';
 import 'dao_quote.dart';
 import 'dao_system.dart';
 import 'dao_task.dart';
+import 'dao_task_item.dart';
 import 'dao_task_status.dart';
 import 'dao_time_entry.dart';
 
@@ -155,10 +155,10 @@ where t.id =?
       final status = await DaoTaskStatus().getById(task.taskStatusId);
 
       // Fetch checklist items related to the task
-      final checkListItems = await DaoCheckListItem().getByTask(task.id);
+      final taskItems = await DaoTaskItem().getByTask(task.id);
 
       // Calculate effort and cost from checklist items
-      for (final item in checkListItems) {
+      for (final item in taskItems) {
         totalEffort += item.estimatedLabourHours!;
         totalCost += item.estimatedMaterialUnitCost!
             .multiplyByFixed(item.estimatedMaterialQuantity!);

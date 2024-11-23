@@ -4,14 +4,16 @@ import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../dao/dao_checklist_item.dart';
-import '../../entity/check_list_item.dart';
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
+import '../dao/dao_task_item.dart';
 import '../entity/job.dart';
+import '../entity/task.dart';
+import '../entity/task_item.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
+import '../widgets/async_state.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/select/hmb_droplist_multi.dart';
 
@@ -23,24 +25,36 @@ class PackingScreen extends StatefulWidget {
   _PackingScreenState createState() => _PackingScreenState();
 }
 
-class _PackingScreenState extends State<PackingScreen> {
-  late Future<List<CheckListItem>> _checkListItemsFuture;
+class TaskItemContext {
+  TaskItemContext(this.task, this.taskItem, this.billingType);
+  TaskItem taskItem;
+  Task task;
+  BillingType billingType;
+}
+
+class _PackingScreenState extends AsyncState<PackingScreen, void> {
+  final taskItems = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
 
   @override
-  void initState() {
-    super.initState();
-    unawaited(_loadCheckListItems());
+  Future<void> asyncInitState() async {
+    await _loadTaskItems();
   }
 
-  Future<void> _loadCheckListItems() async {
+  Future<void> _loadTaskItems() async {
     // Pass the selected jobs to filter the packing items
-    _checkListItemsFuture =
-        DaoCheckListItem().getPackingItems(jobs: _selectedJobs);
+    final taskItems = await DaoTaskItem().getPackingItems(jobs: _selectedJobs);
+
+    final contexts = <TaskItemContext>[];
+    for (final taskItem in taskItems) {
+      final task = await DaoTask().getById(taskItem.id);
+      final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
+      contexts.add(TaskItemContext(task!, taskItem, billingType));
+    }
     setState(() {});
   }
 
-  Future<void> _markAsCompleted(CheckListItem item) async {
+  Future<void> _markAsCompleted(TaskItemContext itemContext) async {
     final costController = TextEditingController();
     final quantityController = TextEditingController();
 
@@ -80,8 +94,9 @@ class _PackingScreenState extends State<PackingScreen> {
       final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
       final unitCost = MoneyEx.tryParse(costController.text);
 
-      await DaoCheckListItem().markAsCompleted(item, unitCost, quantity);
-      await _loadCheckListItems();
+      await DaoTaskItem().markAsCompleted(
+          itemContext.billingType, itemContext.taskItem, unitCost, quantity);
+      await _loadTaskItems();
     }
   }
 
@@ -104,7 +119,7 @@ class _PackingScreenState extends State<PackingScreen> {
                     format: (job) => job.summary,
                     onChanged: (selectedJobs) async {
                       _selectedJobs = selectedJobs;
-                      await _loadCheckListItems();
+                      await _loadTaskItems();
                     },
                     title: 'Filter by Jobs',
                     required: false,
@@ -113,10 +128,10 @@ class _PackingScreenState extends State<PackingScreen> {
               ),
             ),
             Expanded(
-              child: FutureBuilderEx<List<CheckListItem>>(
-                future: _checkListItemsFuture,
-                builder: (context, _checkListItems) {
-                  if (_checkListItems == null || _checkListItems.isEmpty) {
+              child: FutureBuilderEx<void>(
+                future: initialised,
+                builder: (context, _taskItems) {
+                  if (taskItems.isEmpty) {
                     return _showEmpty();
                   } else {
                     return LayoutBuilder(
@@ -125,9 +140,9 @@ class _PackingScreenState extends State<PackingScreen> {
                           // Mobile layout
                           return ListView.builder(
                             padding: const EdgeInsets.all(8),
-                            itemCount: _checkListItems.length,
+                            itemCount: taskItems.length,
                             itemBuilder: (context, index) {
-                              final item = _checkListItems[index];
+                              final item = taskItems[index];
                               return _buildListItem(context, item);
                             },
                           );
@@ -140,10 +155,10 @@ class _PackingScreenState extends State<PackingScreen> {
                               crossAxisCount: 2,
                               childAspectRatio: 3,
                             ),
-                            itemCount: _checkListItems.length,
+                            itemCount: taskItems.length,
                             itemBuilder: (context, index) {
-                              final item = _checkListItems[index];
-                              return _buildListItem(context, item);
+                              final itemContext = taskItems[index];
+                              return _buildListItem(context, itemContext);
                             },
                           );
                         }
@@ -162,42 +177,45 @@ No Packing Items found
 - Packing items are taken from Task Check list items 
 that are marked as "Materials - stock" or "Tools - own".'''));
 
-  Widget _buildListItem(BuildContext context, CheckListItem item) => Card(
+  Widget _buildListItem(
+    BuildContext context,
+    TaskItemContext itemContext,
+  ) =>
+      Card(
         margin: const EdgeInsets.symmetric(vertical: 8),
         elevation: 2,
         child: ListTile(
-          title: Text(item.description),
+          title: Text(itemContext.taskItem.description),
           subtitle: FutureBuilderEx(
               // ignore: discarded_futures
-              future: DaoTask().getTaskForCheckListItem(item),
-              builder: (context, task) => FutureBuilderEx(
+              future: DaoJob().getJobForTask(itemContext.task.id),
+              builder: (context, job) => FutureBuilderEx(
                   // ignore: discarded_futures
-                  future: DaoJob().getJobForTask(task!.id),
-                  builder: (context, job) => FutureBuilderEx(
-                      // ignore: discarded_futures
-                      future: DaoCustomer().getByJob(job!.id),
-                      builder: (context, customer) => Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Customer: ${customer!.name}'),
-                              Text('Job: ${job.summary}'),
-                              Text('Task: ${task.name}'),
-                              Text(
-                                  '''Scheduled Date: ${formatDate(job.startDate)}'''),
-                              Text(
-                                  '''Dimensions: ${item.dimension1} x ${item.dimension2} x ${item.dimension3} ${item.measurementType}'''),
-                              if (item.completed)
-                                const Text(
-                                  'Completed',
-                                  style: TextStyle(color: Colors.green),
-                                ),
-                            ],
-                          )))),
+                  future: DaoCustomer().getByJob(job!.id),
+                  builder: (context, customer) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Customer: ${customer!.name}'),
+                          Text('Job: ${job.summary}'),
+                          Text('Task: ${itemContext.task.name}'),
+                          Text(
+                              '''Scheduled Date: ${formatDate(job.startDate)}'''),
+                          Text('Dimensions: ${itemContext.taskItem.dimension1} '
+                              'x ${itemContext.taskItem.dimension2} '
+                              'x ${itemContext.taskItem.dimension3} '
+                              '${itemContext.taskItem.measurementType}'),
+                          if (itemContext.taskItem.completed)
+                            const Text(
+                              'Completed',
+                              style: TextStyle(color: Colors.green),
+                            ),
+                        ],
+                      ))),
           trailing: IconButton(
             icon: const Icon(Icons.check, color: Colors.green),
-            onPressed: () async => _markAsCompleted(item),
+            onPressed: () async => _markAsCompleted(itemContext),
           ),
-          onTap: () async => _markAsCompleted(item),
+          onTap: () async => _markAsCompleted(itemContext),
         ),
       );
 }

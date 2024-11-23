@@ -2,26 +2,19 @@
 
 import 'package:flutter/material.dart';
 
-import '../crud/base_nested/list_nested_screen.dart';
-import '../crud/check_list/list_checklist_item_screen.dart';
-import '../dao/join_adaptors/dao_join_adaptor.dart';
-import '../entity/check_list_item.dart';
-import '../entity/entity.dart';
+import '../crud/check_list/list_task_item_screen.dart';
+import '../entity/task.dart';
 import 'hmb_child_crud_card.dart';
 
-class HBMCrudCheckListItem<P extends Entity<P>> extends StatelessWidget {
-  const HBMCrudCheckListItem({
-    required this.parent,
-    required this.daoJoin,
+class HMBCrudTaskItem extends StatelessWidget {
+  const HMBCrudTaskItem({
+    required this.task,
     super.key,
   });
 
-  final DaoJoinAdaptor<CheckListItem, P> daoJoin;
-  final Parent<P> parent;
+  final Task? task;
 
   @override
   Widget build(BuildContext context) => HMBChildCrudCard(
-      headline: 'Items',
-      crudListScreen:
-          CheckListItemListScreen(daoJoin: daoJoin, parent: parent));
+      headline: 'Items', crudListScreen: TaskItemListScreen(task: task));
 }
