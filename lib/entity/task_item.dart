@@ -207,17 +207,25 @@ class TaskItem extends Entity<TaskItem> {
     }
   }
 
-  Money calcMaterialCost(BillingType billingType) {
-    if (billingType == BillingType.fixedPrice) {
-      return (estimatedMaterialUnitCost ?? MoneyEx.zero)
-          .multiplyByFixed(estimatedMaterialQuantity ?? Fixed.one);
+  Money calcMaterialCost(BillingType billingType) => switch (billingType) {
+        BillingType.fixedPrice => (estimatedMaterialUnitCost ?? MoneyEx.zero)
+            .multiplyByFixed(estimatedMaterialQuantity ?? Fixed.one),
+        BillingType.timeAndMaterial => _tAndMCost()
+      };
+
+  /// Calc cost for a Time And Materials job.
+  Money _tAndMCost() {
+    var quantity = Fixed.one;
+    var cost = MoneyEx.zero;
+
+    if (completed) {
+      cost = actualMaterialUnitCost ?? MoneyEx.zero;
+      quantity = actualMaterialQuantity ?? Fixed.one;
     } else {
-      final cost =
-          actualMaterialUnitCost ?? estimatedMaterialUnitCost ?? MoneyEx.zero;
-      final quantity =
-          actualMaterialQuantity ?? estimatedMaterialQuantity ?? Fixed.one;
-      return cost.multiplyByFixed(quantity);
+      cost = estimatedMaterialUnitCost ?? MoneyEx.zero;
+      quantity = estimatedMaterialQuantity ?? Fixed.one;
     }
+    return cost.multiplyByFixed(quantity);
   }
 
   // ignore: use_setters_to_change_properties
