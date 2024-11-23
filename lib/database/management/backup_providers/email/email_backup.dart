@@ -28,7 +28,7 @@ class EmailBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(String pathToBackupInStorage) {
+  Future<File> fetchBackup(Backup backup) {
     /// you can't retrieve emailed backups
     throw UnimplementedError();
   }
@@ -37,7 +37,7 @@ class EmailBackupProvider extends BackupProvider {
 
   /// Backups can not be retrieved from email, so this method
   /// returns an empty list.
-  Future<List<String>> getBackups() async => <String>[];
+  Future<List<Backup>> getBackups() async => <Backup>[];
 
   @override
   Future<BackupResult> store(
@@ -142,7 +142,16 @@ class EmailBackupProvider extends BackupProvider {
       throw BackupException('No backup file selected.');
     }
 
-    await performRestore(backupFile.path, AssetScriptSource(), databaseFactory);
+    await performRestore(
+        Backup(
+            id: 'not used',
+            when: DateTime.now(),
+            error: 'none',
+            pathTo: backupFile.path,
+            size: 'unknown',
+            status: 'good'),
+        AssetScriptSource(),
+        databaseFactory);
   }
 
   @override

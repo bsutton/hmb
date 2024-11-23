@@ -116,14 +116,14 @@ WHERE ti.id = ?
     // Get task cost and effort using the new getTaskCost method
     final taskEstimatedCharges = await getEstimateForTask(task, hourlyRate);
 
-    var totalEarnedLabour = Fixed.zero;
+    var totalEarnedLabour = MoneyEx.zero;
     var totalMaterialCharges = MoneyEx.zero;
 
     if (billingType == BillingType.timeAndMaterial) {
       final timeEntries = await DaoTimeEntry().getByTask(task.id);
       for (final timeEntry in timeEntries) {
         if ((includeBilled && timeEntry.billed) || !timeEntry.billed) {
-          totalEarnedLabour += timeEntry.hours;
+          totalEarnedLabour += hourlyRate.multiplyByFixed(timeEntry.hours);
         }
       }
 
@@ -140,14 +140,15 @@ WHERE ti.id = ?
       }
     } else // fixed price
     {
-      totalEarnedLabour = taskEstimatedCharges.estimatedLabour;
+      totalEarnedLabour = taskEstimatedCharges.estimatedLabourCharge;
       totalMaterialCharges += taskEstimatedCharges.estimatedMaterialsCharge;
     }
 
     return TaskAccruedValue(
         taskEstimatedValue: taskEstimatedCharges,
         earnedMaterialCharges: totalMaterialCharges,
-        earnedLabour: totalEarnedLabour);
+        earnedLabourCharges: totalEarnedLabour,
+        hourlyRate: hourlyRate);
   }
 
   /// Returns a estimates for each Task associated with [jobId]
@@ -170,7 +171,7 @@ WHERE ti.id = ?
   Future<TaskEstimatedValue> getEstimateForTask(
       Task task, Money hourlyRate) async {
     var estimatedMaterialsCharge = MoneyEx.zero;
-    var estimatedLabourCharge = Fixed.zero;
+    var estimatedLabourCharge = MoneyEx.zero;
 
     // Get checklist items for the task
     final taskItems = await DaoTaskItem().getByTask(task.id);
@@ -180,7 +181,8 @@ WHERE ti.id = ?
     for (final item in taskItems) {
       if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
         // Labour check list item
-        estimatedLabourCharge += item.estimatedLabourHours!;
+
+        estimatedLabourCharge += item.calcLabourCost(hourlyRate);
       } else if (item.itemTypeId == TaskItemTypeEnum.materialsBuy.id) {
         // Materials and tools to be purchased
         estimatedMaterialsCharge += item.estimatedMaterialUnitCost!
@@ -202,7 +204,7 @@ WHERE ti.id = ?
         task: task,
         hourlyRate: hourlyRate,
         estimatedMaterialsCharge: estimatedMaterialsCharge,
-        estimatedLabour: estimatedLabourCharge);
+        estimatedLabourCharge: estimatedLabourCharge);
   }
 
   // Future<Money> getTimeAndMaterialEarnings(Task task, Money hourlyRate)
@@ -302,7 +304,10 @@ class TaskAccruedValue {
   TaskAccruedValue(
       {required this.taskEstimatedValue,
       required this.earnedMaterialCharges,
-      required this.earnedLabour});
+      required this.earnedLabourCharges,
+      required Money hourlyRate})
+      : earnedLabourHours =
+            earnedLabourCharges.divideByFixed(hourlyRate.amount).amount;
   final TaskEstimatedValue taskEstimatedValue;
 
   /// The total worth of materials that have
@@ -319,19 +324,22 @@ class TaskAccruedValue {
   ///
   /// For Time and Materials
   /// This is taken from completed [TimeEntry]s
-  Fixed earnedLabour;
+  Money earnedLabourCharges;
+
+  /// This is a derived value becase if the item is estimated
+  /// in dollars we don't have an actual number of hours.
+  /// In this case we dived the charge by the tasks hourly rate.
+  Fixed earnedLabourHours;
+
+  Fixed get estimatedLabourHours => taskEstimatedValue.estimatedLabourHours;
 
   /// The total of labour changes and materials
-  Future<Money> get earned async =>
-      earnedMaterialCharges +
-      (await DaoTask().getHourlyRate(taskEstimatedValue.task))
-          .multiplyByFixed(earnedLabour);
+  Future<Money> get earned async => earnedMaterialCharges + earnedLabourCharges;
 
   /// The total of labour changes and materials
   Future<Money> get quoted async =>
       taskEstimatedValue.estimatedMaterialsCharge +
-      (await DaoTask().getHourlyRate(taskEstimatedValue.task))
-          .multiplyByFixed(taskEstimatedValue.estimatedLabour);
+      taskEstimatedValue.estimatedLabourCharge;
 
   Task get task => taskEstimatedValue.task;
 }
@@ -340,9 +348,10 @@ class TaskEstimatedValue {
   TaskEstimatedValue({
     required this.task,
     required this.estimatedMaterialsCharge,
-    required this.estimatedLabour,
+    required this.estimatedLabourCharge,
     required this.hourlyRate,
-  });
+  }) : estimatedLabourHours =
+            estimatedLabourCharge.divideByFixed(hourlyRate.amount).amount;
 
   Task task;
   Money hourlyRate;
@@ -353,10 +362,12 @@ class TaskEstimatedValue {
 
   /// Estimated labour (in hours) for the task taken
   /// from [CheckListItem]s of type [TaskItemTypeEnum.labour]
-  Fixed estimatedLabour;
+  Money estimatedLabourCharge;
 
-  Money get estimatedLabourCharge =>
-      hourlyRate.multiplyByFixed(estimatedLabour);
+  Fixed estimatedLabourHours;
+
+  // Money get estimatedLabourCharge =>
+  //     hourlyRate.multiplyByFixed(estimatedLabour);
 
   Money get total => estimatedMaterialsCharge + estimatedLabourCharge;
 }

@@ -31,7 +31,7 @@ abstract class BackupProvider {
       required int version});
 
   /// Retrieve a list of prior backups made by the backup provider.
-  Future<List<String>> getBackups();
+  Future<List<Backup>> getBackups();
 
   /// Delete a specific backup made by the backup provider.
   /// The pathTo is the path to the backup file on the providers
@@ -106,7 +106,7 @@ Database file not found at $pathToDatabase. No backup performed.''');
         }
       });
 
-  Future<void> performRestore(String pathToZipBackupFile, ScriptSource src,
+  Future<void> performRestore(Backup backup, ScriptSource src,
       HMBDatabaseFactory databaseFactory) async {
     await withTempDirAsync((tmpDir) async {
       final wasOpen = DatabaseHelper().isOpen();
@@ -121,9 +121,9 @@ Database file not found at $pathToDatabase. No backup performed.''');
         if (!exists(photosDir)) {
           createDir(photosDir, recursive: true);
         }
-        final backup = await fetchBackup(pathToZipBackupFile);
+        final backupFile = await fetchBackup(backup);
 
-        final dbPath = await extractFiles(backup, tmpDir);
+        final dbPath = await extractFiles(backupFile, tmpDir);
 
         if (dbPath == null) {
           throw BackupException('No database found in the zip file');
@@ -152,7 +152,7 @@ Database file not found at $pathToDatabase. No backup performed.''');
   /// it available on the local file system
   /// returning a [File] object to the local file.
   ///
-  Future<File> fetchBackup(String pathToBackupInStorage);
+  Future<File> fetchBackup(Backup backup);
 
   /// We can't use DaoPhoto as it uses June which is a flutter component
   /// and we need this to work from the cli.
@@ -322,11 +322,14 @@ class BackupResult {
 
 class Backup {
   Backup(
-      {required this.when,
+      {required this.id,
+      required this.when,
       required this.pathTo,
       required this.size,
       required this.status,
       required this.error});
+
+  String id;
   DateTime when;
   String pathTo;
   String size;

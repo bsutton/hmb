@@ -121,7 +121,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
             builder: (context, taskAccruedValue) => Row(
               children: [
                 HMBText(
-                    'Effort(hrs): ${taskAccruedValue!.earnedLabour.format('0.00')}/${taskAccruedValue.taskEstimatedValue.estimatedLabour.format('0.00')}'),
+                    'Effort(hrs): ${taskAccruedValue!.earnedLabourHours.format('0.00')}/${taskAccruedValue.taskEstimatedValue.estimatedLabourHours.format('0.00')}'),
                 HMBText(
                     ' Earnings: ${taskAccruedValue.earnedMaterialCharges}/${taskAccruedValue.taskEstimatedValue.estimatedMaterialsCharge}')
               ],

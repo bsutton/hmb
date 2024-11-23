@@ -103,33 +103,22 @@ class GoogleDriveBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(String pathToBackupInStorage) async {
-    try {
-      final driveApi = await getDriveApi();
-      final hmbFolderId = await getOrCreateFolderId('hmb');
-      final backupsFolderId =
-          await getOrCreateFolderId('backups', parentFolderId: hmbFolderId);
+  Future<File> fetchBackup(Backup backup) async {
+  try {
+    final driveApi = await getDriveApi();
 
-      final q = """
-'$backupsFolderId' in parents and name='$pathToBackupInStorage' and trashed=false""";
-      final filesList = await driveApi.files.list(q: q);
-      final files = filesList.files ?? [];
+    final media = (await driveApi.files.get(
+      backup.id,
+      downloadOptions: drive.DownloadOptions.fullMedia,
+    )) as drive.Media;
 
-      if (files.isEmpty) {
-        throw BackupException('Backup file not found: $pathToBackupInStorage');
-      }
-
-      final fileId = files.first.id!;
-      final media = (await driveApi.files.get(
-        fileId,
-        downloadOptions: drive.DownloadOptions.fullMedia,
-      )) as drive.Media;
-
-      return saveStreamToFile(media.stream, createTempFile());
-    } catch (e) {
-      throw BackupException('Error downloading backup from Google Drive: $e');
-    }
+    return saveStreamToFile(media.stream, createTempFile());
+  } catch (e) {
+    throw BackupException('Error downloading backup from Google Drive: $e');
   }
+}
+
+  
 
   Future<File> saveStreamToFile(
       Stream<List<int>> stream, String filePath) async {
@@ -148,23 +137,36 @@ class GoogleDriveBackupProvider extends BackupProvider {
     return File(filePath);
   }
 
-  @override
-  Future<List<String>> getBackups() async {
-    try {
-      final driveApi = await getDriveApi();
-      final hmbFolderId = await getOrCreateFolderId('hmb');
-      final backupsFolderId =
-          await getOrCreateFolderId('backups', parentFolderId: hmbFolderId);
+@override
+  Future<List<Backup>> getBackups() async {
+  try {
+    final driveApi = await getDriveApi();
+    final hmbFolderId = await getOrCreateFolderId('hmb');
+    final backupsFolderId =
+        await getOrCreateFolderId('backups', parentFolderId: hmbFolderId);
 
-      final q = "'$backupsFolderId' in parents and trashed=false";
-      final filesList = await driveApi.files.list(q: q);
-      final backupFiles = filesList.files ?? [];
+    final q = "'$backupsFolderId' in parents and trashed=false";
+    final filesList = await driveApi.files.list(
+      q: q,
+      $fields: 'files(id, name, size, createdTime)',
+    );
+    final backupFiles = filesList.files ?? [];
 
-      return backupFiles.map((file) => file.name ?? 'Unknown').toList();
-    } catch (e) {
-      throw BackupException('Error listing backups from Google Drive: $e');
-    }
+    return backupFiles
+        .map((file) => Backup(
+              id: file.id ?? '', // Include the file ID
+              when: file.createdTime ?? DateTime.now(),
+              size: file.size ?? 'unknown',
+              status: 'good',
+              pathTo: file.name ?? 'Unknown',
+              error: 'none',
+            ))
+        .toList();
+  } catch (e) {
+    throw BackupException('Error listing backups from Google Drive: $e');
   }
+}
+
 
   @override
   Future<BackupResult> store(

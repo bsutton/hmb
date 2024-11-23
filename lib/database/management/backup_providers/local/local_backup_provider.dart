@@ -24,11 +24,11 @@ class LocalBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(String pathToBackupInStorage) async =>
-      File(pathToBackupInStorage);
+  Future<File> fetchBackup(Backup backup) async =>
+      File(backup.pathTo);
 
   @override
-  Future<List<String>> getBackups() async {
+  Future<List<Backup>> getBackups() async {
     final backups = <String>[];
     final backupPath = await _pathToBackupDir;
     Log.d('Searching for backups in $backupPath');
@@ -37,7 +37,15 @@ class LocalBackupProvider extends BackupProvider {
       return true;
     });
 
-    return backups;
+    return backups
+        .map((filePath) => Backup(
+            id: 'not used',
+            when: stat(filePath).modified,
+            size: '${stat(filePath).size}',
+            status: 'good',
+            pathTo: filePath,
+            error: 'none'))
+        .toList();
   }
 
   @override

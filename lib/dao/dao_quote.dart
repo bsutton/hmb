@@ -106,7 +106,7 @@ class DaoQuote extends Dao<Quote> {
           quoteLine = QuoteLine.forInsert(
             quoteId: quoteId,
             description: 'Labour',
-            quantity: estimate.estimatedLabour,
+            quantity: estimate.estimatedLabourHours,
             unitPrice: job.hourlyRate!,
             lineTotal: lineTotal,
           );

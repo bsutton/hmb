@@ -17,12 +17,22 @@ class DevBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(String pathToBackupInStorage) async =>
-      File(pathToBackupInStorage);
+  Future<File> fetchBackup(Backup backup) async => File(backup.pathTo);
 
   @override
-  Future<List<String>> getBackups() async =>
-      find('*.zip', workingDirectory: _pathToBackups()).toList();
+  Future<List<Backup>> getBackups() async {
+    final paths = find('*.zip', workingDirectory: _pathToBackups()).toList();
+
+    return paths
+        .map((filePath) => Backup(
+            id: 'not used',
+            when: stat(filePath).modified,
+            size: '${stat(filePath).size}',
+            status: 'good',
+            pathTo: filePath,
+            error: 'none'))
+        .toList();
+  }
 
   String _pathToBackups() =>
       join(DartProject.self.pathToProjectRoot, 'backups');

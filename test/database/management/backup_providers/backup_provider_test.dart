@@ -64,7 +64,7 @@ void main() {
       expect(backupResult.success, isTrue);
       expect(File(backupResult.pathToBackup).existsSync(), isTrue);
 
-       await DatabaseHelper().closeDb();
+      await DatabaseHelper().closeDb();
 
       // Delete the original database and photo for testing restore
       final dbPath = await backupProvider.databasePath;
@@ -79,7 +79,13 @@ void main() {
 
       // Perform restore from the backup file
       await backupProvider.performRestore(
-        backupResult.pathToBackup,
+        Backup(
+            id: 'not used',
+            when: DateTime.now(),
+            pathTo: backupResult.pathToBackup,
+            size: 'unknown',
+            status: 'good',
+            error: 'none'),
         ProjectScriptSource(),
         databaseFactory,
       );

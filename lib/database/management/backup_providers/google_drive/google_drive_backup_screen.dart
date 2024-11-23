@@ -123,7 +123,7 @@ Backup uploaded to Google Drive successfully.''');
                           // Navigate to the backup selection screen
                           final selectedBackup = await Navigator.push(
                             context,
-                            MaterialPageRoute<String>(
+                            MaterialPageRoute<Backup>(
                               builder: (context) => BackupSelectionScreen(
                                   backupProvider: _provider),
                             ),

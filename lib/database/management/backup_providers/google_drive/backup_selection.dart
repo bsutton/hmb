@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
+import '../../../../util/format.dart';
 import '../../../../widgets/async_state.dart';
 import '../backup_provider.dart';
 
@@ -50,11 +51,13 @@ No backups available in ${backups!.location}'''));
               return ListView.builder(
                 itemCount: backups.backups.length,
                 itemBuilder: (context, index) {
-                  final pathToBackup = backups.backups[index];
+                  final backup = backups.backups[index];
                   return ListTile(
-                    title: Text(pathToBackup),
+                    title: Text(
+                        // ignore: lines_longer_than_80_chars
+                        '$backup ${formatDateTime(backup.when)} ${backup.size}'),
                     onTap: () {
-                      Navigator.pop(context, pathToBackup);
+                      Navigator.pop(context, backup);
                     },
                   );
                 },
@@ -67,6 +70,6 @@ No backups available in ${backups!.location}'''));
 
 class Backups {
   Backups(this.backups, this.location);
-  List<String> backups;
+  List<Backup> backups;
   String location;
 }

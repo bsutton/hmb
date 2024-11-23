@@ -18,12 +18,12 @@ class TestBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(String pathToBackupInStorage) {
+  Future<File> fetchBackup(Backup backup) {
     throw UnimplementedError();
   }
 
   @override
-  Future<List<String>> getBackups() {
+  Future<List<Backup>> getBackups() {
     throw UnimplementedError();
   }
 
