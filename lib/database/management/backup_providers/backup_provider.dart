@@ -5,6 +5,7 @@ import 'package:archive/archive_io.dart';
 import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../util/exceptions.dart';
 import '../../../util/sentry_noop.dart'
@@ -47,6 +48,8 @@ abstract class BackupProvider {
       withTempDirAsync((tmpDir) async {
         final datePart = formatDate(DateTime.now(), format: 'y-m-d');
         final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
+
+        await WakelockPlus.enable();
         final encoder = ZipFileEncoder();
         var open = false;
         try {
@@ -103,6 +106,8 @@ Database file not found at $pathToDatabase. No backup performed.''');
             encoder.closeSync();
           }
           rethrow;
+        } finally {
+          await WakelockPlus.disable();
         }
       });
 
@@ -110,6 +115,8 @@ Database file not found at $pathToDatabase. No backup performed.''');
       HMBDatabaseFactory databaseFactory) async {
     await withTempDirAsync((tmpDir) async {
       final wasOpen = DatabaseHelper().isOpen();
+
+      await WakelockPlus.enable();
 
       try {
         // Close the database if it is currently open
@@ -144,6 +151,8 @@ Database file not found at $pathToDatabase. No backup performed.''');
             backup: false);
       } catch (e) {
         throw BackupException('Error restoring database and photos: $e');
+      } finally {
+        await WakelockPlus.disable();
       }
     });
   }
