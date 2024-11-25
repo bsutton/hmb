@@ -1,4 +1,4 @@
-import 'package:dcli_core/dcli_core.dart';
+import 'package:dcli_core/dcli_core.dart' as core;
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
@@ -69,8 +69,8 @@ class DaoTask extends Dao<Task> {
           await PhotoMeta.fromPhoto(photo: photo).resolve();
 
       // Delete the photo file from the disk
-      if (exists(absolutePathToPhoto)) {
-        delete(absolutePathToPhoto);
+      if (core.exists(absolutePathToPhoto)) {
+        core.delete(absolutePathToPhoto);
       }
     }
   }
@@ -239,9 +239,7 @@ WHERE ti.id = ?
     final tasks = await getTasksByJob(id);
 
     for (final task in tasks) {
-      await DaoTimeEntry().deleteByTask(task.id, transaction);
-      await DaoTaskItem().deleteByTask(task, transaction);
-      await deleteTaskPhotos(task.id, transaction: transaction);
+      await delete(task.id, transaction);
     }
 
     // Delete tasks associated with the job
@@ -250,6 +248,15 @@ WHERE ti.id = ?
       where: 'job_id = ?',
       whereArgs: [id],
     );
+  }
+
+  @override
+  Future<int> delete(int id, [Transaction? transaction]) async {
+    await DaoTimeEntry().deleteByTask(id, transaction);
+    await DaoTaskItem().deleteByTask(id, transaction);
+    await deleteTaskPhotos(id, transaction: transaction);
+    await delete(id);
+    return id;
   }
 
   Future<Money> getHourlyRate(Task task) async =>

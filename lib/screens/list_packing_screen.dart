@@ -33,7 +33,7 @@ class TaskItemContext {
 }
 
 class _PackingScreenState extends AsyncState<PackingScreen, void> {
-  final taskItems = <TaskItemContext>[];
+  final taskItemsContexts = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
 
   @override
@@ -45,12 +45,15 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
     // Pass the selected jobs to filter the packing items
     final taskItems = await DaoTaskItem().getPackingItems(jobs: _selectedJobs);
 
-    final contexts = <TaskItemContext>[];
+    taskItemsContexts.clear();
+
     for (final taskItem in taskItems) {
-      final task = await DaoTask().getById(taskItem.id);
+      final task = await DaoTask().getById(taskItem.taskId);
+
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
-      contexts.add(TaskItemContext(task!, taskItem, billingType));
+      taskItemsContexts.add(TaskItemContext(task!, taskItem, billingType));
     }
+
     setState(() {});
   }
 
@@ -131,7 +134,7 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
               child: FutureBuilderEx<void>(
                 future: initialised,
                 builder: (context, _taskItems) {
-                  if (taskItems.isEmpty) {
+                  if (taskItemsContexts.isEmpty) {
                     return _showEmpty();
                   } else {
                     return LayoutBuilder(
@@ -140,9 +143,9 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
                           // Mobile layout
                           return ListView.builder(
                             padding: const EdgeInsets.all(8),
-                            itemCount: taskItems.length,
+                            itemCount: taskItemsContexts.length,
                             itemBuilder: (context, index) {
-                              final item = taskItems[index];
+                              final item = taskItemsContexts[index];
                               return _buildListItem(context, item);
                             },
                           );
@@ -155,9 +158,9 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
                               crossAxisCount: 2,
                               childAspectRatio: 3,
                             ),
-                            itemCount: taskItems.length,
+                            itemCount: taskItemsContexts.length,
                             itemBuilder: (context, index) {
-                              final itemContext = taskItems[index];
+                              final itemContext = taskItemsContexts[index];
                               return _buildListItem(context, itemContext);
                             },
                           );

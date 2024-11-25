@@ -28,13 +28,13 @@ where ti.task_id = ?
     return toList(data);
   }
 
-  Future<void> deleteByTask(Task task, [Transaction? transaction]) async {
+  Future<void> deleteByTask(int id, [Transaction? transaction]) async {
     final db = withinTransaction(transaction);
 
     await db.rawDelete('''
 DELETE FROM task_item
 WHERE task_id = ?
-''', [task.id]);
+''', [id]);
   }
 
   Future<void> markAsCompleted(BillingType billingType, TaskItem item,

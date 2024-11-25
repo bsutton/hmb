@@ -48,11 +48,11 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
       supplier: _selectedSupplier,
     );
 
-    final contexts = <TaskItemContext>[];
+    _taskItems.clear();
     for (final taskItem in taskItems) {
-      final task = await DaoTask().getById(taskItem.id);
+      final task = await DaoTask().getById(taskItem.taskId);
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
-      contexts.add(TaskItemContext(task!, taskItem, billingType));
+      _taskItems.add(TaskItemContext(task!, taskItem, billingType));
     }
     setState(() {});
   }

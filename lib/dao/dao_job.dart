@@ -252,7 +252,6 @@ where c.id =?
   }
 
   /// Calculates the total quoted price for the job.
-  // TODO(bsutton): should we create a 'quote' and take the amount from there?
   Future<Money> getFixedPriceTotal(Job job) async {
     final estimates = await DaoTask().getEstimatesForJob(job.id);
 
