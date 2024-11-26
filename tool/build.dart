@@ -100,7 +100,9 @@ void _runPubGet() {
 void installApk() {
   print(orange(
       'Make certain you have first run --build so you get the lastet apk'));
-  'flutter install'.run;
+  // 'flutter install'.run;
+
+  'adb install -r build/app/outputs/flutter-apk/app-release.apk'.run;
 }
 
 void buildApk() {
