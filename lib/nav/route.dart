@@ -11,6 +11,7 @@ import '../crud/system/system_contact_screen.dart';
 import '../crud/system/system_integration_screen.dart';
 import '../crud/tool/list_tool_screen.dart';
 import '../database/management/backup_providers/google_drive/google_drive_backup_screen.dart';
+import '../database/management/backup_providers/local/local_backup_screen.dart';
 import '../main.dart';
 import '../screens/about.dart';
 import '../screens/error.dart';
@@ -106,13 +107,13 @@ GoRouter get router => GoRouter(
                   const HomeWithDrawer(initialScreen: AboutScreen()),
             ),
             GoRoute(
-                path: 'system/backup',
+                path: 'system/backup/google',
                 builder: (_, __) => const HomeWithDrawer(
-                    // initialScreen: BackupScreen(pathToBackup: '')),
-                    initialScreen: GoogleDriveBackupScreen())
-                // initialScreen: BackupAuthGoogleScreen(pathToBackup: '')),
-                // initialScreen: BackupAuthGoogleScreenV1(pathToBackup: '')),
-                ),
+                    initialScreen: GoogleDriveBackupScreen())),
+            GoRoute(
+                path: 'system/backup/local',
+                builder: (_, __) =>
+                    const HomeWithDrawer(initialScreen: LocalBackupScreen())),
             GoRoute(
               path: 'system/wizard',
               builder: (_, __) =>

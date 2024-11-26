@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dcli_core/dcli_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
@@ -80,9 +81,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
   Future<void> deleteBackup(Backup backupToDelete) async {
     try {
       final driveApi = await getDriveApi();
-      final hmbFolderId = await getOrCreateFolderId('hmb');
-      final backupsFolderId =
-          await getOrCreateFolderId('backups', parentFolderId: hmbFolderId);
+      final backupsFolderId = await _getBackupFolder();
 
       final fileName = basename(backupToDelete.pathTo);
       final q = """
@@ -139,9 +138,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
   Future<List<Backup>> getBackups() async {
     try {
       final driveApi = await getDriveApi();
-      final hmbFolderId = await getOrCreateFolderId('hmb');
-      final backupsFolderId =
-          await getOrCreateFolderId('backups', parentFolderId: hmbFolderId);
+      final backupsFolderId = await _getBackupFolder();
 
       final q = "'$backupsFolderId' in parents and trashed=false";
       final filesList = await driveApi.files.list(
@@ -165,6 +162,18 @@ class GoogleDriveBackupProvider extends BackupProvider {
     }
   }
 
+  Future<String> _getBackupFolder() async {
+    var parentFolderId = await getOrCreateFolderId('hmb');
+
+    if (kDebugMode) {
+      parentFolderId =
+          await getOrCreateFolderId('debug', parentFolderId: parentFolderId);
+    }
+    final backupsFolderId =
+        await getOrCreateFolderId('backups', parentFolderId: parentFolderId);
+    return backupsFolderId;
+  }
+
   @override
   Future<BackupResult> store(
       {required String pathToDatabaseCopy,
@@ -172,9 +181,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
       required int version}) async {
     try {
       final driveApi = await getDriveApi();
-      final hmbFolderId = await getOrCreateFolderId('hmb');
-      final backupsFolderId =
-          await getOrCreateFolderId('backups', parentFolderId: hmbFolderId);
+      final backupsFolderId = await _getBackupFolder();
 
       final fileToUpload = File(pathToZippedBackup);
       final fileName = basename(pathToZippedBackup);
@@ -204,7 +211,11 @@ class GoogleDriveBackupProvider extends BackupProvider {
       join(await sql.getDatabasesPath(), 'handyman.db');
 
   @override
-  Future<String> get backupLocation async => 'Google Drive: /hmb/backups';
+  Future<String> get backupLocation async =>
+      'Google Drive: ${useDebugPath ? '/hmb/debug/backups/' : '/hmb/backups'}';
+
+  @override
+  set useDebugPath(bool bool) {}
 }
 
 class GoogleAuthClient extends http.BaseClient {

@@ -6,6 +6,7 @@ import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common/sqflite.dart' as sql;
 import 'package:strings/strings.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../dao/dao_system.dart';
 import '../../../../util/exceptions.dart';
@@ -142,7 +143,9 @@ class EmailBackupProvider extends BackupProvider {
       throw BackupException('No backup file selected.');
     }
 
-    await performRestore(
+    await WakelockPlus.enable();
+    try {
+      await performRestore(
         Backup(
             id: 'not used',
             when: DateTime.now(),
@@ -151,7 +154,11 @@ class EmailBackupProvider extends BackupProvider {
             size: 'unknown',
             status: 'good'),
         AssetScriptSource(),
-        databaseFactory);
+        databaseFactory,
+      );
+    } finally {
+      await WakelockPlus.disable();
+    }
   }
 
   @override

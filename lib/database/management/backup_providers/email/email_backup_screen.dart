@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../widgets/hmb_toast.dart';
 import '../../../factory/flutter_database_factory.dart';
@@ -62,6 +63,7 @@ class _BackupScreenState extends State<BackupScreen> {
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
                   onPressed: () async {
+                    await WakelockPlus.enable();
                     try {
                       await EmailBackupProvider(FlutterDatabaseFactory())
                           .performBackup(
@@ -76,6 +78,8 @@ class _BackupScreenState extends State<BackupScreen> {
                       if (context.mounted) {
                         HMBToast.error(e.toString());
                       }
+                    } finally {
+                      await WakelockPlus.disable();
                     }
                   },
                   icon: const Icon(Icons.backup, size: 24),

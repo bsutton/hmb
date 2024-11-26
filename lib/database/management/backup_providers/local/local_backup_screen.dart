@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -10,17 +8,16 @@ import '../../../versions/asset_script_source.dart';
 import '../backup_provider.dart';
 import '../backup_selection.dart';
 import '../local/local_backup_provider.dart';
-import 'google_drive_backup_provider.dart';
 
-class GoogleDriveBackupScreen extends StatefulWidget {
-  const GoogleDriveBackupScreen({super.key});
+class LocalBackupScreen extends StatefulWidget {
+  const LocalBackupScreen({super.key});
 
   @override
-  _GoogleDriveBackupScreenState createState() =>
-      _GoogleDriveBackupScreenState();
+  _LocalBackupScreenState createState() =>
+      _LocalBackupScreenState();
 }
 
-class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
+class _LocalBackupScreenState extends State<LocalBackupScreen> {
   bool _includePhotos = false;
   bool _isLoading = false; // To show a loading indicator during operations
   bool _useProductionPath = false; // Flag for production path in debug mode
@@ -212,10 +209,6 @@ Database restored from Google Drive successfully.''');
         ),
       );
 
-  BackupProvider _getProvider() {
-    if (Platform.isAndroid) {
-      return GoogleDriveBackupProvider(FlutterDatabaseFactory());
-    }
-    return LocalBackupProvider(FlutterDatabaseFactory());
-  }
+  BackupProvider _getProvider() =>
+      LocalBackupProvider(FlutterDatabaseFactory());
 }

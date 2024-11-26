@@ -27,38 +27,44 @@ class MyDrawer extends StatelessWidget {
         DrawerItem(title: 'Integration', route: '/system/integration'),
         DrawerItem(title: 'Setup Wizard', route: '/system/wizard'),
         DrawerItem(title: 'About/Support', route: '/system/about'),
-        DrawerItem(title: 'Backup', route: '/system/backup'),
+        DrawerItem(title: 'Backup', route: '', children: [
+          DrawerItem(title: 'Google', route: '/system/backup/google'),
+          DrawerItem(title: 'Local', route: '/system/backup/local'),
+        ])
       ],
     ),
   ];
 
   @override
   Widget build(BuildContext context) => Drawer(
-        child: ListView.builder(
-          itemCount: drawerItems.length,
-          itemBuilder: (context, index) {
-            final item = drawerItems[index];
-            return item.children != null
-                ? ExpansionTile(
-                    title: Text(item.title),
-                    children: item.children!
-                        .map((child) => ListTile(
-                              title: Text(child.title),
-                              onTap: () {
-                                Navigator.pop(context); // Close the drawer
-                                context.go(child.route);
-                              },
-                            ))
-                        .toList(),
-                  )
-                : ListTile(
-                    title: Text(item.title),
-                    onTap: () {
-                      Navigator.pop(context); // Close the drawer
-                      context.go(item.route);
-                    },
-                  );
-          },
+        child: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: drawerItems
+                .map((item) => _buildDrawerItem(item, context))
+                .toList(),
+          ),
         ),
       );
+
+  Widget _buildDrawerItem(DrawerItem item, BuildContext context) {
+    if (item.children != null && item.children!.isNotEmpty) {
+      return ExpansionTile(
+        title: Text(item.title),
+        children: item.children!
+            .map((child) => _buildDrawerItem(child, context))
+            .toList(),
+      );
+    } else {
+      return ListTile(
+        title: Text(item.title),
+        onTap: item.route.isNotEmpty
+            ? () {
+                Navigator.pop(context); // Close the drawer
+                context.go(item.route);
+              }
+            : null, // Disable tap if there's no route
+      );
+    }
+  }
 }
