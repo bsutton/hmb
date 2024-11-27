@@ -15,9 +15,15 @@ import '../dao/dao_task.dart';
 import '../dao/dao_task_item.dart';
 import '../dao/dao_task_item_type.dart';
 import '../dao/dao_tool.dart';
+import '../entity/task.dart';
+import '../entity/task_item.dart';
+import '../entity/task_item_type.dart';
 import '../entity/tool.dart';
 import '../util/format.dart';
+import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
+import '../util/percentage.dart';
+import '../util/units.dart';
 import '../widgets/async_state.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/select/hmb_droplist.dart';
@@ -145,6 +151,7 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Shopping List'),
@@ -158,27 +165,28 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   HMBDroplistMultiSelect<Job>(
-                      initialItems: () async => _selectedJobs,
-                      items: (filter) async => DaoJob().getActiveJobs(filter),
-                      format: (job) => job.summary,
-                      onChanged: (selectedJobs) async {
-                        _selectedJobs = selectedJobs;
-                        await _loadTaskItems();
-                      },
-                      title: 'Filter by Jobs',
-                      required: false),
+                    initialItems: () async => _selectedJobs,
+                    items: (filter) async => DaoJob().getActiveJobs(filter),
+                    format: (job) => job.summary,
+                    onChanged: (selectedJobs) async {
+                      _selectedJobs = selectedJobs;
+                      await _loadTaskItems();
+                    },
+                    title: 'Filter by Jobs',
+                    required: false,
+                  ),
                   const SizedBox(height: 10),
                   HMBDroplist<Supplier>(
-                      selectedItem: () async => _selectedSupplier,
-                      items: (filter) async =>
-                          DaoSupplier().getByFilter(filter),
-                      format: (supplier) => supplier.name,
-                      onChanged: (supplier) async {
-                        _selectedSupplier = supplier;
-                        await _loadTaskItems();
-                      },
-                      title: 'Filter by Supplier',
-                      required: false),
+                    selectedItem: () async => _selectedSupplier,
+                    items: (filter) async => DaoSupplier().getByFilter(filter),
+                    format: (supplier) => supplier.name,
+                    onChanged: (supplier) async {
+                      _selectedSupplier = supplier;
+                      await _loadTaskItems();
+                    },
+                    title: 'Filter by Supplier',
+                    required: false,
+                  ),
                 ],
               ),
             ),
@@ -225,7 +233,143 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
             ),
           ],
         ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _showAddItemDialog(context),
+          child: const Icon(Icons.add),
+        ),
       );
+
+  Future<void> _showAddItemDialog(BuildContext context) async {
+    Job? selectedJob;
+    Task? selectedTask;
+    TaskItemTypeEnum? selectedItemType;
+    final descriptionController = TextEditingController();
+    final quantityController = TextEditingController();
+    final unitCostController = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Add Shopping Item'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Job Selection Dropdown
+                HMBDroplist<Job>(
+                  title: 'Select Job',
+                  selectedItem: () async => selectedJob,
+                  items: (filter) async => DaoJob().getActiveJobs(filter),
+                  format: (job) => job.summary,
+                  onChanged: (job) {
+                    setState(() {
+                      selectedJob = job;
+                      selectedTask = null; // Reset task selection
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                // Task Selection Dropdown (dependent on selected job)
+                if (selectedJob != null)
+                  HMBDroplist<Task>(
+                    title: 'Select Task',
+                    selectedItem: () async => selectedTask,
+                    items: (filter) async =>
+                        DaoTask().getTasksByJob(selectedJob!.id),
+                    format: (task) => task.name,
+                    onChanged: (task) {
+                      setState(() {
+                        selectedTask = task;
+                      });
+                    },
+                  ),
+                const SizedBox(height: 10),
+                // Item Type Selection Dropdown
+                HMBDroplist<TaskItemTypeEnum>(
+                  title: 'Item Type',
+                  selectedItem: () async => selectedItemType,
+                  items: (filter) async => [
+                    TaskItemTypeEnum.toolsBuy,
+                    TaskItemTypeEnum.materialsBuy,
+                  ],
+                  format: (type) => type.description,
+                  onChanged: (type) {
+                    setState(() {
+                      selectedItemType = type;
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                // Description Input
+                HMBTextField(
+                  controller: descriptionController,
+                  labelText: 'Description',
+                ),
+                // Quantity Input
+                HMBTextField(
+                  controller: quantityController,
+                  labelText: 'Quantity',
+                  keyboardType: TextInputType.number,
+                ),
+                // Unit Cost Input
+                HMBTextField(
+                  controller: unitCostController,
+                  labelText: 'Unit Cost',
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (selectedJob != null &&
+                    selectedTask != null &&
+                    selectedItemType != null) {
+                  final quantity =
+                      Fixed.tryParse(quantityController.text) ?? Fixed.one;
+                  final unitCost = MoneyEx.tryParse(unitCostController.text);
+
+                  // Create and insert the new TaskItem
+                  final newItem = TaskItem.forInsert(
+                      taskId: selectedTask!.id,
+                      description: descriptionController.text,
+                      itemTypeId:
+                          (await DaoTaskItemType().getMaterialsBuy()).id,
+                      estimatedMaterialQuantity: quantity,
+                      estimatedMaterialUnitCost: unitCost,
+                      estimatedLabourCost: null,
+                      estimatedLabourHours: null,
+                      charge: null,
+                      dimension1: Fixed.zero,
+                      dimension2: Fixed.zero,
+                      dimension3: Fixed.zero,
+                      labourEntryMode: LabourEntryMode.hours,
+                      margin: Percentage.zero,
+                      measurementType: MeasurementType.length,
+                      units: Units.defaultUnits,
+                      url: '');
+
+                  await DaoTaskItem().insert(newItem);
+                  await _loadTaskItems();
+
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Center _showEmpty() => const Center(child: Text('''
 No Shopping Items found 
