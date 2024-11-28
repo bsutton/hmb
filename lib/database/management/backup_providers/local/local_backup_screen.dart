@@ -59,9 +59,7 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                     style: const TextStyle(fontSize: 18),
                   ),
                   const SizedBox(height: 8),
-                  CircularProgressIndicator(
-                    value: _stageCount > 0 ? _stageNo / _stageCount : null,
-                  ),
+                  const CircularProgressIndicator(),
                   const SizedBox(height: 16),
                   Text(
                     _stageDescription,
@@ -96,25 +94,25 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                       ],
                     ),
                   ),
-                   // Debug-only checkbox
-                      if (kDebugMode)
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text('Use production path for restore'),
-                              Checkbox(
-                                value: _useProductionPath,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _useProductionPath = value ?? false;
-                                  });
-                                },
-                              ),
-                            ],
+                  // Debug-only checkbox
+                  if (kDebugMode)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Use production path for restore'),
+                          Checkbox(
+                            value: _useProductionPath,
+                            onChanged: (value) {
+                              setState(() {
+                                _useProductionPath = value ?? false;
+                              });
+                            },
                           ),
-                        ),
+                        ],
+                      ),
+                    ),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: () async {

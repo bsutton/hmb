@@ -53,7 +53,7 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (_isLoading) ...[
-                  CircularProgressIndicator(value: _stageNo / _stageCount),
+                  const CircularProgressIndicator(),
                   const SizedBox(height: 16),
                   Text(
                     _stageDescription,
@@ -89,7 +89,7 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
                         if (mounted) {
                           HMBToast.info('Backup completed successfully.');
                         }
-                      // ignore: avoid_catches_without_on_clauses
+                        // ignore: avoid_catches_without_on_clauses
                       } catch (e) {
                         if (mounted) {
                           HMBToast.error('Error during backup: $e');
