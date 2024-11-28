@@ -1,20 +1,28 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:archive/archive_io.dart';
 import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 
 import '../../../util/exceptions.dart';
-import '../../../util/sentry_noop.dart'
-    if (dart.library.ui) 'package:sentry_flutter/sentry_flutter.dart';
 import '../../factory/hmb_database_factory.dart';
 import '../../versions/script_source.dart';
 import '../database_helper.dart';
+import 'zip_isolate.dart';
 
 abstract class BackupProvider {
   BackupProvider(this.databaseFactory);
+
+  final StreamController<ProgressUpdate> _progressController =
+      StreamController<ProgressUpdate>.broadcast();
+
+  Stream<ProgressUpdate> get progressStream => _progressController.stream;
+
+  void emitProgress(String stageDescription, int stageNo, int stageCount) {
+    _progressController
+        .add(ProgressUpdate(stageDescription, stageNo, stageCount));
+  }
 
   /// A descrive name of the provider we show to the
   /// user when offering a backup option.
@@ -40,72 +48,54 @@ abstract class BackupProvider {
 
   /// Closes the db, zip the backup file, store it and
   /// then reopen the db.
-  Future<BackupResult> performBackup(
-          {required int version,
-          required ScriptSource src,
-          bool includePhotos = false}) =>
+
+  // Modify performBackup to include progress tracking
+  // In BackupProvider class
+  Future<BackupResult> performBackup({
+    required int version,
+    required ScriptSource src,
+    bool includePhotos = false,
+  }) =>
       withTempDirAsync((tmpDir) async {
+        emitProgress('Initializing backup', 1, 6);
+
         final datePart = formatDate(DateTime.now(), format: 'y-m-d');
         final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
 
-        final encoder = ZipFileEncoder();
-        var open = false;
         try {
           final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
           final pathToDatabase = await databasePath;
 
           if (!exists(pathToDatabase)) {
-            print('''
-Database file not found at $pathToDatabase. No backup performed.''');
-            return BackupResult(
-                pathToBackup: pathToBackupFile,
-                pathToSource: '',
-                success: false);
+            emitProgress('Database file not found', 6, 6);
+            throw Exception('Database file not found');
           }
 
-          var photoFilePaths = <String>[];
-          if (includePhotos) {
-            photoFilePaths = await getAllPhotoPaths();
-          }
-
+          emitProgress('Copying database', 2, 6);
           await copyDatabaseTo(pathToBackupFile, src, this);
 
-          encoder.create(pathToZip);
-          open = true;
-          await encoder.addFile(File(pathToBackupFile));
+          emitProgress('Preparing to zip files', 3, 6);
 
-          // Now, if includePhotos is true, add the photo files to the zip
-          if (includePhotos) {
-            for (final relativePhotoPath in photoFilePaths) {
-              final fullPathToPhoto =
-                  join(await photosRootPath, relativePhotoPath);
-              if (exists(fullPathToPhoto)) {
-                final zipPath = join('photos', relativePhotoPath);
-                await encoder.addFile(File(fullPathToPhoto), zipPath);
-              } else {
-                print('Photo file not found: $fullPathToPhoto');
-              }
-            }
-          }
+          // Set up communication channels
+          await sendPhotosToZip(
+              this, pathToZip, pathToBackupFile, includePhotos);
 
-          encoder.closeSync();
-          open = false;
+          emitProgress('Storing backup', 5, 6);
+          final result = await store(
+            pathToZippedBackup: pathToZip,
+            pathToDatabaseCopy: pathToBackupFile,
+            version: version,
+          );
 
-          //after that some of code for making the zip files
-          return store(
-              pathToZippedBackup: pathToZip,
-              pathToDatabaseCopy: pathToBackupFile,
-              version: version);
-        } catch (e, st) {
-          if (Platform.isAndroid || Platform.isIOS) {
-            await Sentry.captureException(e, stackTrace: st);
-          }
-          if (open) {
-            encoder.closeSync();
-          }
+          emitProgress('Backup completed', 6, 6);
+          return result;
+        } catch (e) {
+          emitProgress('Error during backup', 6, 6);
           rethrow;
         }
       });
+
+// ProgressUpdate class
 
   Future<void> performRestore(
     Backup backup,
@@ -113,59 +103,68 @@ Database file not found at $pathToDatabase. No backup performed.''');
     HMBDatabaseFactory databaseFactory,
   ) async {
     await withTempDirAsync((tmpDir) async {
+      emitProgress('Initializing restore', 1, _restoreStageCount);
+
       final wasOpen = DatabaseHelper().isOpen();
 
       try {
         // Close the database if it is currently open
         if (wasOpen) {
+          emitProgress('Closing database', 2, _restoreStageCount);
           await DatabaseHelper().closeDb();
         }
 
         final photosDir = await photosRootPath;
         if (!exists(photosDir)) {
+          emitProgress('Creating photos directory', 3, _restoreStageCount);
           createDir(photosDir, recursive: true);
         }
+
+        emitProgress('Fetching backup file', 4, _restoreStageCount);
         final backupFile = await fetchBackup(backup);
 
-        final dbPath = await extractFiles(backupFile, tmpDir);
+        emitProgress('Extracting files from backup', 5, _restoreStageCount);
+        final dbPath =
+            await extractFiles(this, backupFile, tmpDir, 5, _restoreStageCount);
 
         if (dbPath == null) {
+          emitProgress(
+              'No database found in backup file', 6, _restoreStageCount);
           throw BackupException('No database found in the zip file');
         }
 
         // Restore the database file
+        emitProgress('Restoring database file', 7, _restoreStageCount);
         final appDbPath = await databasePath;
         if (exists(appDbPath)) {
           delete(appDbPath);
         }
         copy(dbPath, appDbPath);
 
+        emitProgress('Reopening database', 8, _restoreStageCount);
         // Reopen the database after restoring
         await DatabaseHelper().openDb(
-            src: src,
-            backupProvider: this,
-            databaseFactory: databaseFactory,
-            backup: false);
+          src: src,
+          backupProvider: this,
+          databaseFactory: databaseFactory,
+          backup: false,
+        );
+
+        emitProgress('Restore completed', 9, _restoreStageCount);
       } catch (e) {
+        emitProgress('Error during restore', 9, _restoreStageCount);
         throw BackupException('Error restoring database and photos: $e');
       }
     });
   }
+
+  static const int _restoreStageCount = 9;
 
   /// Fetchs the backup from storage and makes
   /// it available on the local file system
   /// returning a [File] object to the local file.
   ///
   Future<File> fetchBackup(Backup backup);
-
-  /// We can't use DaoPhoto as it uses June which is a flutter component
-  /// and we need this to work from the cli.
-  Future<List<String>> getAllPhotoPaths() async {
-    final db = DatabaseHelper.instance.database;
-    final List<Map<String, dynamic>> maps =
-        await db.query('photo', columns: ['filePath']);
-    return maps.map((map) => map['filePath'] as String).toList();
-  }
 
   /// Replaces the current database with the one in the backup file.
   Future<void> replaceDatabase(String pathToBackupFile, ScriptSource src,
@@ -196,48 +195,7 @@ Database file not found at $pathToDatabase. No backup performed.''');
     }
   }
 
-  /// All photos are stored under this path in the zip file
-  final zipPhotoRoot = 'photos/';
-
   Future<String> get photosRootPath;
-
-  Future<String?> extractFiles(File backupFile, String tmpDir) async {
-    final encoder = ZipDecoder();
-    String? dbPath;
-    // Extract the ZIP file contents to a temporary directory
-    final archive = encoder.decodeBuffer(InputFileStream(backupFile.path));
-
-    for (final file in archive) {
-      final filename = file.name;
-      final filePath = join(tmpDir, filename);
-
-      if (file.isFile) {
-        // If the file is the database extact it
-        // to a temp dir and return the path.
-        if (filename.endsWith('.db')) {
-          dbPath = filePath;
-          _expandZippedFileToDisk(filePath, file);
-        }
-
-        // Write files to the temporary directory
-        if (filename.startsWith(zipPhotoRoot)) {
-          final parts = split(filename);
-          final photoDestPath =
-              joinAll([await photosRootPath, ...parts.sublist(1)]);
-
-          _expandZippedFileToDisk(photoDestPath, file);
-        }
-      }
-    }
-
-    return dbPath;
-  }
-
-  void _expandZippedFileToDisk(String photoDestPath, ArchiveFile file) {
-    File(photoDestPath)
-      ..createSync(recursive: true)
-      ..writeAsBytesSync(file.content as List<int>);
-  }
 
   //i am amazing. u r not.
 
@@ -341,4 +299,11 @@ class Backup {
   String size;
   String status;
   String error;
+}
+
+class ProgressUpdate {
+  ProgressUpdate(this.stageDescription, this.stageNo, this.stageCount);
+  final String stageDescription;
+  final int stageNo;
+  final int stageCount;
 }

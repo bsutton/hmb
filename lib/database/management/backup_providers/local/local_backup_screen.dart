@@ -13,14 +13,16 @@ class LocalBackupScreen extends StatefulWidget {
   const LocalBackupScreen({super.key});
 
   @override
-  _LocalBackupScreenState createState() =>
-      _LocalBackupScreenState();
+  _LocalBackupScreenState createState() => _LocalBackupScreenState();
 }
 
 class _LocalBackupScreenState extends State<LocalBackupScreen> {
   bool _includePhotos = false;
-  bool _isLoading = false; // To show a loading indicator during operations
+  bool _isLoading = false; // Indicates operation in progress
   bool _useProductionPath = false; // Flag for production path in debug mode
+  String _stageDescription = ''; // Description of the current stage
+  int _stageNo = 0; // Current stage number
+  int _stageCount = 0; // Total number of stages
 
   late final BackupProvider _provider;
 
@@ -28,6 +30,13 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
   void initState() {
     super.initState();
     _provider = _getProvider();
+    _provider.progressStream.listen((update) {
+      setState(() {
+        _stageDescription = update.stageDescription;
+        _stageNo = update.stageNo;
+        _stageCount = update.stageCount;
+      });
+    });
   }
 
   @override
@@ -40,39 +49,54 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: _isLoading
-                ? const CircularProgressIndicator() // Show loading indicator
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const Text(
-                        'Backup and Restore Your Database',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isLoading) ...[
+                  // Show progress indicator with stageNo and stageCount
+                  Text(
+                    'Progress: $_stageNo / $_stageCount',
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 8),
+                  CircularProgressIndicator(
+                    value: _stageCount > 0 ? _stageNo / _stageCount : null,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _stageDescription,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ] else ...[
+                  const Text(
+                    'Backup and Restore Your Database',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 40),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('Include photos in backup'),
+                        Checkbox(
+                          value: _includePhotos,
+                          onChanged: (value) {
+                            setState(() {
+                              _includePhotos = value ?? false;
+                            });
+                          },
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 40),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('Include photos in backup'),
-                            Checkbox(
-                              value: _includePhotos,
-                              onChanged: (value) {
-                                setState(() {
-                                  _includePhotos = value ?? false;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Debug-only checkbox
+                      ],
+                    ),
+                  ),
+                   // Debug-only checkbox
                       if (kDebugMode)
                         Align(
                           alignment: Alignment.centerRight,
@@ -91,120 +115,120 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                             ],
                           ),
                         ),
-                      const SizedBox(height: 20),
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          setState(() {
-                            _isLoading = true;
-                          });
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      setState(() {
+                        _isLoading = true;
+                        _stageDescription = 'Starting backup...';
+                        _stageNo = 0;
+                        _stageCount = 0;
+                      });
 
-                          await WakelockPlus.enable();
-                          try {
-                            await _provider.performBackup(
-                              version: 1,
-                              src: AssetScriptSource(),
-                              includePhotos: _includePhotos,
-                            );
-                            if (context.mounted) {
-                              HMBToast.info('''
-Backup uploaded to Google Drive successfully.''');
-                            }
-                            // ignore: avoid_catches_without_on_clauses
-                          } catch (e) {
-                            if (context.mounted) {
-                              HMBToast.error('Error during backup: $e');
-                            }
-                          } finally {
-                            if (mounted) {
-                              setState(() {
-                                _isLoading = false;
-                              });
-                            }
-                            await WakelockPlus.disable();
-                          }
-                        },
-                        icon: const Icon(Icons.backup, size: 24),
-                        label: Text('Backup to ${_provider.name}'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue, // Button color
-                          foregroundColor: Colors.white, // Text color
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      await WakelockPlus.enable();
+                      try {
+                        await _provider.performBackup(
+                          version: 1,
+                          src: AssetScriptSource(),
+                          includePhotos: _includePhotos,
+                        );
+                        if (mounted) {
+                          HMBToast.info('Backup completed successfully.');
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          HMBToast.error('Error during backup: $e');
+                        }
+                      } finally {
+                        if (mounted) {
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        }
+                        await WakelockPlus.disable();
+                      }
+                    },
+                    icon: const Icon(Icons.backup, size: 24),
+                    label: Text('Backup to ${_provider.name}'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      const SizedBox(height: 20),
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          _provider.useDebugPath = !_useProductionPath;
-                          final selectedBackup = await Navigator.push(
-                            context,
-                            MaterialPageRoute<Backup>(
-                              builder: (context) => BackupSelectionScreen(
-                                  backupProvider: _provider),
-                            ),
+                      textStyle: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      _provider.useDebugPath = !_useProductionPath;
+                      final selectedBackup = await Navigator.push(
+                        context,
+                        MaterialPageRoute<Backup>(
+                          builder: (context) =>
+                              BackupSelectionScreen(backupProvider: _provider),
+                        ),
+                      );
+
+                      if (selectedBackup != null) {
+                        setState(() {
+                          _isLoading = true;
+                          _stageDescription = 'Starting restore...';
+                          _stageNo = 0;
+                          _stageCount = 0;
+                        });
+
+                        await WakelockPlus.enable();
+                        try {
+                          await _provider.performRestore(
+                            selectedBackup,
+                            AssetScriptSource(),
+                            FlutterDatabaseFactory(),
                           );
 
-                          if (selectedBackup != null) {
-                            setState(() {
-                              _isLoading = true;
-                            });
-
-                            await WakelockPlus.enable();
-                            try {
-                              // Pass the debug flag for production path
-                              await _provider.performRestore(
-                                selectedBackup,
-                                AssetScriptSource(),
-                                FlutterDatabaseFactory(),
-                              );
-
-                              if (context.mounted) {
-                                HMBToast.info('''
-Database restored from Google Drive successfully.''');
-                              }
-                              // ignore: avoid_catches_without_on_clauses
-                            } catch (e) {
-                              if (context.mounted) {
-                                HMBToast.error('Error during restore: $e');
-                              }
-                            } finally {
-                              if (mounted) {
-                                setState(() {
-                                  _isLoading = false;
-                                });
-                              }
-
-                              /// We only use the production path for restores
-                              /// never backups!
-                              _provider.useDebugPath = false;
-
-                              await WakelockPlus.disable();
-                            }
+                          if (mounted) {
+                            HMBToast.info('Restore completed successfully.');
                           }
-                        },
-                        icon: const Icon(Icons.restore, size: 24),
-                        label: Text('Restore from ${_provider.name}'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        } catch (e) {
+                          if (mounted) {
+                            HMBToast.error('Error during restore: $e');
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          }
+
+                          _provider.useDebugPath = false;
+
+                          await WakelockPlus.disable();
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.restore, size: 24),
+                    label: Text('Restore from ${_provider.name}'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                    ],
+                      textStyle: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
+                ],
+              ],
+            ),
           ),
         ),
       );
