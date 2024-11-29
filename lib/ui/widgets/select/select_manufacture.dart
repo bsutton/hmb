@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
-import '../../crud/manufacturer/edit_manufacturer_screen.dart';
 import '../../../dao/dao_manufacturer.dart';
 import '../../../entity/manufacturer.dart';
 import '../../../ui/widgets/hmb_add_button.dart';
+import '../../crud/manufacturer/edit_manufacturer_screen.dart';
 import 'hmb_droplist.dart';
 
 class SelectManufacturer extends StatefulWidget {

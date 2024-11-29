@@ -6,11 +6,11 @@ import '../../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../../entity/contact.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/entity.dart';
+import '../../../util/platform_ex.dart';
 import '../../dialog/message_template_dialog.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_name_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
-import '../../../util/platform_ex.dart';
 import '../base_nested/edit_nested_screen.dart';
 
 class ContactEditScreen<P extends Entity<P>> extends StatefulWidget {

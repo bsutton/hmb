@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
-import '../../crud/contact/edit_contact_screen.dart';
 import '../../../dao/dao_contact.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
 import '../../../entity/contact.dart';
 import '../../../entity/customer.dart';
 import '../../../ui/widgets/hmb_add_button.dart';
+import '../../crud/contact/edit_contact_screen.dart';
 import 'hmb_droplist.dart';
 
 /// Allows the user to select a Primary Contact from the contacts

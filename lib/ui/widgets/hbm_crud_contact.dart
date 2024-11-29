@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../crud/base_nested/list_nested_screen.dart';
-import '../crud/contact/list_contact_screen.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/contact.dart';
 import '../../entity/entity.dart';
+import '../crud/base_nested/list_nested_screen.dart';
+import '../crud/contact/list_contact_screen.dart';
 import 'hmb_child_crud_card.dart';
 
 class HMBCrudContact<P extends Entity<P>> extends StatefulWidget {

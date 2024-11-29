@@ -8,6 +8,7 @@ import '../../../dao/dao_job.dart';
 import '../../../dao/dao_job_status.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/job.dart';
+import '../../../util/format.dart';
 import '../../invoicing/list_invoice_screen.dart';
 import '../../quoting/list_quote_screen.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
@@ -19,7 +20,6 @@ import '../../widgets/text/hmb_phone_text.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../../widgets/text/hmb_text_themes.dart';
-import '../../../util/format.dart';
 import 'rapid/rapid_quote_entry_screen.dart';
 
 class JobCard extends StatefulWidget {

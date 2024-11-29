@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 
-import '../crud/check_list/list_task_item_screen.dart';
 import '../../entity/task.dart';
+import '../crud/check_list/list_task_item_screen.dart';
 import 'hmb_child_crud_card.dart';
 
 class HMBCrudTaskItem extends StatelessWidget {

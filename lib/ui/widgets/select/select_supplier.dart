@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
-import '../../crud/supplier/edit_supplier_screen.dart';
 import '../../../dao/dao_supplier.dart';
 import '../../../entity/supplier.dart';
 import '../../../ui/widgets/hmb_add_button.dart';
+import '../../crud/supplier/edit_supplier_screen.dart';
 import 'hmb_droplist.dart';
 
 class SelectSupplier extends StatefulWidget {

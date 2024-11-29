@@ -78,7 +78,10 @@ abstract class BackupProvider {
 
           // Set up communication channels
           await sendPhotosToZip(
-              this, pathToZip, pathToBackupFile, includePhotos);
+              provider: this,
+              pathToZip: pathToZip,
+              pathToBackupFile: pathToBackupFile,
+              includePhotos: includePhotos);
 
           emitProgress('Storing backup', 5, 6);
           final result = await store(

@@ -9,10 +9,10 @@ import '../../../dao/dao_time_entry.dart';
 import '../../../entity/job.dart';
 import '../../../entity/task.dart';
 import '../../../entity/time_entry.dart';
+import '../../../util/format.dart';
 import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/text/hmb_text.dart';
-import '../../../util/format.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_task_screen.dart';
 

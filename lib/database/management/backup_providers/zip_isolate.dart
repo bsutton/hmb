@@ -12,8 +12,11 @@ import 'backup_provider.dart';
 /// All photos are stored under this path in the zip file
 const zipPhotoRoot = 'photos/';
 
-Future<void> sendPhotosToZip(BackupProvider provider, String pathToZip,
-    String pathToBackupFile, bool includePhotos) async {
+Future<void> sendPhotosToZip(
+    {required BackupProvider provider,
+    required String pathToZip,
+    required String pathToBackupFile,
+    required bool includePhotos}) async {
   // Set up communication channels
   final receivePort = ReceivePort();
   final errorPort = ReceivePort();
@@ -98,11 +101,12 @@ Future<void> _zipFiles(_ZipParams params) async {
       }
     }
 
-    encoder.close();
+    await encoder.close();
 
     // Notify completion
     sendPort.send(ProgressUpdate(
         'Zipping completed', params.progressStageEnd, params.progressStageEnd));
+    // ignore: avoid_catches_without_on_clauses
   } catch (e) {
     // Send error back to the main isolate
     sendPort.send(ProgressUpdate('Error during zipping: $e',

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../crud/site/edit_site_screen.dart';
 import '../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../entity/entity.dart';
 import '../../entity/site.dart';
+import '../crud/site/edit_site_screen.dart';
 import 'hmb_add_button.dart';
 
 /// Displays the primary site of a parent

@@ -9,10 +9,10 @@ import '../../../entity/entity.dart';
 import '../../../entity/job.dart';
 import '../../../entity/task.dart';
 import '../../../entity/task_item.dart';
+import '../../../util/money_ex.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/text/hmb_text.dart';
-import '../../../util/money_ex.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_task_item_screen.dart';
 

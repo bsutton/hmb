@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:june/june.dart';
 
-import '../../crud/task/photo_crud.dart';
 import '../../../dao/dao_photo.dart';
 import '../../../entity/entity.dart';
 import '../../../util/photo_meta.dart';
+import '../../crud/task/photo_crud.dart';
 import 'captured_photo.dart';
 import 'photo_gallery.dart';
 

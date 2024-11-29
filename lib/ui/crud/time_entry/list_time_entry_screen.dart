@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao_time_entry.dart';
 import '../../../entity/task.dart';
 import '../../../entity/time_entry.dart';
-import '../../widgets/layout/hmb_row_gap.dart';
 import '../../../util/format.dart';
+import '../../widgets/layout/hmb_row_gap.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_time_entry_screen.dart';
 

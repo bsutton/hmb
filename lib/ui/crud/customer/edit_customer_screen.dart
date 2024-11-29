@@ -6,6 +6,8 @@ import '../../../dao/dao_system.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_site.dart';
 import '../../../entity/customer.dart';
+import '../../../util/money_ex.dart';
+import '../../../util/platform_ex.dart';
 import '../../widgets/fields/hmb_name_field.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -14,8 +16,6 @@ import '../../widgets/hmb_crud_site.dart';
 import '../../widgets/hmb_switch.dart';
 import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/select/hmb_droplist.dart';
-import '../../../util/money_ex.dart';
-import '../../../util/platform_ex.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 

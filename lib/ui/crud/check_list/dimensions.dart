@@ -8,12 +8,12 @@ import '../../../dao/dao_system.dart';
 import '../../../dao/dao_task_item_type.dart';
 import '../../../entity/task_item.dart';
 import '../../../entity/task_item_type.dart';
+import '../../../util/measurement_type.dart';
+import '../../../util/units.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/hmb_empty.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/text/hmb_text.dart';
-import '../../../util/measurement_type.dart';
-import '../../../util/units.dart';
 import 'edit_task_item_screen.dart';
 
 class DimensionWidget extends StatefulWidget {
