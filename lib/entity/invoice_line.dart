@@ -1,6 +1,6 @@
 import 'package:money2/money2.dart';
 
-import '../invoicing/xero/models/models.dart';
+import '../api/xero/models/xero_line_item.dart';
 import 'entity.dart';
 
 enum LineStatus {
@@ -123,7 +123,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
         quantity: quantity,
         unitAmount: unitPrice,
         lineTotal: lineTotal,
-        // TODO(bsutton): fix these so that they can be configured 
+        // TODO(bsutton): fix these so that they can be configured
         //from the system
         /// table.
         accountCode: '240',

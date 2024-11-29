@@ -19,13 +19,13 @@ import 'database/management/backup_providers/local/local_backup_provider.dart';
 import 'database/management/database_helper.dart';
 import 'database/versions/asset_script_source.dart';
 import 'installer/linux/install.dart' if (kIsWeb) 'util/web_stub.dart';
-import 'nav/route.dart';
-import 'screens/error.dart';
+import 'ui/error.dart';
+import 'ui/nav/route.dart';
+import 'ui/widgets/blocking_ui.dart';
+import 'ui/widgets/hmb_start_time_entry.dart';
+import 'ui/widgets/hmb_toast.dart';
+import 'ui/widgets/media/desktop_camera_delegate.dart';
 import 'util/log.dart';
-import 'widgets/blocking_ui.dart';
-import 'widgets/hmb_start_time_entry.dart';
-import 'widgets/hmb_toast.dart';
-import 'widgets/media/desktop_camera_delegate.dart';
 
 bool firstRun = false;
 

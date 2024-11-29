@@ -3,7 +3,7 @@ import 'package:june/june.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../entity/_index.g.dart';
-import '../invoicing/dialog_select_tasks.dart';
+import '../ui/invoicing/dialog_select_tasks.dart';
 import '../util/exceptions.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';

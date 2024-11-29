@@ -5,9 +5,9 @@ import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:strings/strings.dart';
 
+import '../api/xero/models/xero_contact.dart';
+import '../api/xero/xero_api.dart';
 import '../entity/_index.g.dart';
-import '../invoicing/xero/models/xero_contact.dart';
-import '../invoicing/xero/xero_api.dart';
 import '../util/exceptions.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';

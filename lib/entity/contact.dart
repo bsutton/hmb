@@ -1,6 +1,6 @@
 import 'package:strings/strings.dart';
 
-import '../invoicing/xero/models/xero_contact.dart';
+import '../api/xero/models/xero_contact.dart';
 import 'entity.dart';
 
 class Contact extends Entity<Contact> {

@@ -12,7 +12,7 @@ import 'package:sqflite_common/sqflite.dart' as sql;
 import '../../../../../util/exceptions.dart';
 import '../../../../../util/paths.dart'
     if (dart.library.ui) '../../../../util/paths_flutter.dart';
-import '../../../../widgets/hmb_toast.dart';
+import '../../../../ui/widgets/hmb_toast.dart';
 import '../backup_provider.dart';
 
 class GoogleDriveBackupProvider extends BackupProvider {
@@ -239,8 +239,6 @@ class AuthenticatedClient extends http.BaseClient {
       _client.send(request..headers.addAll(_headers));
 }
 
-
-
 // Future<void> backupDatabaseToGoogleDrive(
 //     drive.DriveApi driveApi, String dbPath) async {
 //   final file = drive.File();
@@ -266,8 +264,8 @@ class AuthenticatedClient extends http.BaseClient {
 // }
 
 // Stream transformer to track progress
-Stream<List<int>> trackProgress(
-    Stream<List<int>> source, int totalLength, void Function(double) onProgress) {
+Stream<List<int>> trackProgress(Stream<List<int>> source, int totalLength,
+    void Function(double) onProgress) {
   var bytesUploaded = 0;
 
   return source.transform(

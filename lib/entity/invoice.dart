@@ -1,9 +1,9 @@
 import 'package:money2/money2.dart';
 
+import '../api/xero/models/xero_invoice.dart';
 import '../dao/dao_contact.dart';
 import '../dao/dao_invoice_line.dart';
 import '../dao/dao_job.dart';
-import '../invoicing/xero/models/xero_invoice.dart';
 import '../util/exceptions.dart';
 import '../util/local_date.dart';
 import 'entity.dart';

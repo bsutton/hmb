@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import '../../../../widgets/hmb_toast.dart';
+import '../../../../ui/widgets/hmb_toast.dart';
 import '../../../factory/flutter_database_factory.dart';
 import '../../../versions/asset_script_source.dart';
 import '../backup_provider.dart';
@@ -133,6 +133,7 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                         if (mounted) {
                           HMBToast.info('Backup completed successfully.');
                         }
+                      // ignore: avoid_catches_without_on_clauses
                       } catch (e) {
                         if (mounted) {
                           HMBToast.error('Error during backup: $e');

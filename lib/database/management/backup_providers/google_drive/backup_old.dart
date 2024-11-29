@@ -7,7 +7,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
 
-import '../../../../widgets/hmb_toast.dart';
+import '../../../../ui/widgets/hmb_toast.dart';
 
 class BackupAuthGoogleScreenV1 extends StatefulWidget {
   const BackupAuthGoogleScreenV1({required this.pathToBackup, super.key});

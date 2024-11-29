@@ -9,10 +9,10 @@ import 'package:strings/strings.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../dao/dao_system.dart';
+import '../../../../ui/dialog/hmb_file_picker_linux.dart';
 import '../../../../util/exceptions.dart';
 import '../../../../util/paths.dart'
     if (dart.library.ui) '../../../../util/paths_flutter.dart';
-import '../../../../widgets/dialog/hmb_file_picker_linux.dart';
 import '../../../versions/asset_script_source.dart';
 import '../backup_provider.dart';
 
