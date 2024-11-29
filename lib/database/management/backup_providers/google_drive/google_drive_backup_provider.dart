@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dcli_core/dcli_core.dart';
@@ -236,4 +237,47 @@ class AuthenticatedClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) =>
       _client.send(request..headers.addAll(_headers));
+}
+
+
+
+// Future<void> backupDatabaseToGoogleDrive(
+//     drive.DriveApi driveApi, String dbPath) async {
+//   final file = drive.File();
+//   file.name = 'backup.db'; // Name of the file on Google Drive
+
+//   final dbFile = File(dbPath);
+//   final totalLength = dbFile.lengthSync();
+//   final dbContent = dbFile.openRead();
+
+//   // Wrap the stream with a progress tracker
+//   final progressStream = trackProgress(dbContent, totalLength, (progress) {
+//     print('Upload progress: ${progress.toStringAsFixed(2)}%');
+//   });
+
+//   final media = drive.Media(progressStream, totalLength);
+
+//   try {
+//     await driveApi.files.create(file, uploadMedia: media);
+//     print('File uploaded successfully!');
+//   } catch (e) {
+//     print('Upload failed: $e');
+//   }
+// }
+
+// Stream transformer to track progress
+Stream<List<int>> trackProgress(
+    Stream<List<int>> source, int totalLength, void Function(double) onProgress) {
+  var bytesUploaded = 0;
+
+  return source.transform(
+    StreamTransformer.fromHandlers(
+      handleData: (data, sink) {
+        bytesUploaded += data.length;
+        final progress = (bytesUploaded / totalLength) * 100;
+        onProgress(progress);
+        sink.add(data); // Pass data along to the next consumer
+      },
+    ),
+  );
 }
