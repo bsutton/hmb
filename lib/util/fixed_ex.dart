@@ -14,6 +14,8 @@ extension FixedEx on Fixed {
     return Fixed.tryParse(amount ?? '', scale: 3) ?? orElse;
   }
 
+  Fixed threeDigits() => Fixed.copyWith(this, scale: 3);
+
   static Fixed fromInt(int? amount) => Fixed.fromInt(amount ?? 0, scale: 3);
 
   static bool isZeroOrNull(Fixed? amount) => amount == null || amount.isZero;

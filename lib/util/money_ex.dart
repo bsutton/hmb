@@ -13,6 +13,8 @@ extension MoneyEx on Money {
 
   static Money fromInt(int? amount) =>
       Money.fromInt(amount ?? 0, isoCode: 'AUD', decimalDigits: 2);
+  
+  Money twoDigits() => this.copyWith(decimalDigits: 2);
 
   static Money? moneyOrNull(int? amount) {
     if (amount == null) {
