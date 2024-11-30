@@ -64,7 +64,7 @@ void main(List<String> args) async {
                     builder: (_) => BlockingUIRunner(
                       key: blockingUIKey,
                       slowAction: () => _initialise(context),
-                      label: 'Upgrade your database.',
+                      label: 'Upgrading your database.',
                       builder: (context) => MaterialApp.router(
                         title: 'Handyman',
                         theme: ThemeData(
