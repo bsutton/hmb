@@ -12,12 +12,26 @@ class LocalDate {
   /// required by json.
   LocalDate(int year, int month, int day) : date = DateTime(year, month, day);
 
+  /// Creates a [LocalDate] with todays date.
+  LocalDate.today() : date = stripTime(DateTime.now());
+
   /// Creates a ]LocalDate] by taking the date component of the past
   /// DateTime.
   LocalDate.fromDateTime(DateTime dateTime) : date = stripTime(dateTime);
 
-  /// Creates a [LocalDate] with todays date.
-  LocalDate.today() : date = stripTime(DateTime.now());
+  factory LocalDate.parse(String date) =>
+      LocalDate.fromDateTime(DateTime.parse(date));
+
+  static LocalDate? tryParse(String date) {
+    final dateTime = DateTime.tryParse(date);
+
+    if (dateTime == null) {
+      return null;
+    } else {
+      return LocalDate.fromDateTime(dateTime);
+    }
+  }
+
   final DateTime date;
 
   int get weekday => date.weekday;
