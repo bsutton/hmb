@@ -1,6 +1,5 @@
 import 'dart:async';
 
-
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../factory/hmb_database_factory.dart';
@@ -59,4 +58,22 @@ class DatabaseHelper {
   bool isOpen() => _database != null;
 
   Future<int> getVersion() async => database.getVersion();
+
+  Future<void> withOpenDatabase(HMBDatabaseFactory databaseFactory,
+      String pathToDb, Future<void> Function() action) async {
+    var wasOpen = false;
+    if (_database == null) {
+      _database = await databaseFactory.openDatabase(pathToDb,
+          options: OpenDatabaseOptions());
+      wasOpen = true;
+    }
+
+    try {
+      await action();
+    } finally {
+      if (wasOpen) {
+        await closeDb();
+      }
+    }
+  }
 }
