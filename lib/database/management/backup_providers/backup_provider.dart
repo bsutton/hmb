@@ -68,7 +68,7 @@ abstract class BackupProvider {
 
           if (!exists(pathToDatabase)) {
             emitProgress('Database file not found', 6, 6);
-            throw Exception('Database file not found');
+            throw Exception('Database file not found: $pathToDatabase');
           }
 
           emitProgress('Copying database', 2, 6);
@@ -76,12 +76,16 @@ abstract class BackupProvider {
 
           emitProgress('Preparing to zip files', 3, 6);
 
-          // Set up communication channels
-          await sendPhotosToZip(
-              provider: this,
-              pathToZip: pathToZip,
-              pathToBackupFile: pathToBackupFile,
-              includePhotos: includePhotos);
+          await DatabaseHelper()
+              .withOpenDatabase(databaseFactory, await databasePath, () async {
+            await getAllPhotoPaths();
+            // Set up communication channels
+            await zipBackup(
+                provider: this,
+                pathToZip: pathToZip,
+                pathToBackupFile: pathToBackupFile,
+                includePhotos: includePhotos);
+          });
 
           emitProgress('Storing backup', 5, 6);
           final result = await store(
