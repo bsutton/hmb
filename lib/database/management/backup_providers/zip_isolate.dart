@@ -12,7 +12,7 @@ import 'backup_provider.dart';
 /// All photos are stored under this path in the zip file
 const zipPhotoRoot = 'photos/';
 
-Future<void> sendPhotosToZip(
+Future<void> zipBackup(
     {required BackupProvider provider,
     required String pathToZip,
     required String pathToBackupFile,
