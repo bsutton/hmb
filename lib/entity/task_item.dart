@@ -3,7 +3,6 @@ import 'package:money2/money2.dart';
 import '../util/fixed_ex.dart';
 import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
-import '../util/percentage.dart';
 import '../util/units.dart';
 import 'entity.dart';
 import 'job.dart';
@@ -140,7 +139,8 @@ class TaskItem extends Entity<TaskItem> {
         estimatedLabourCost:
             MoneyEx.fromInt(map['estimated_labour_cost'] as int? ?? 0),
         charge: MoneyEx.moneyOrNull(map['charge'] as int?),
-        margin: Percentage.fromInt(map['margin'] as int? ?? 0, decimals: 3),
+        margin:
+            Percentage.fromInt(map['margin'] as int? ?? 0, decimalDigits: 3),
         completed: map['completed'] == 1,
         billed: map['billed'] == 1,
         invoiceLineId: map['invoice_line_id'] as int?,

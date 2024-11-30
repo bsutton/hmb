@@ -2,9 +2,9 @@
 
 import 'dart:async';
 
-import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:money2/money2.dart';
 
 import '../../dao/dao_supplier.dart';
 import '../../entity/job.dart';
@@ -22,7 +22,6 @@ import '../entity/tool.dart';
 import '../util/format.dart';
 import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
-import '../util/percentage.dart';
 import '../util/units.dart';
 import 'list_packing_screen.dart';
 import 'widgets/async_state.dart';

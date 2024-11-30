@@ -19,7 +19,6 @@ import '../../../entity/task_item_type.dart';
 import '../../../util/fixed_ex.dart';
 import '../../../util/measurement_type.dart';
 import '../../../util/money_ex.dart';
-import '../../../util/percentage.dart';
 import '../../../util/platform_ex.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_text_field.dart';

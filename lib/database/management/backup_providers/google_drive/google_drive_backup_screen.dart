@@ -21,8 +21,6 @@ class GoogleDriveBackupScreen extends StatefulWidget {
 class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
   bool _isLoading = false; // Indicates operation in progress
   String _stageDescription = ''; // Current stage of the operation
-  var _stageNo = 0; // Current progress percentage
-  var _stageCount = 0;
 
   late final BackupProvider _provider;
 
@@ -33,8 +31,6 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
     _provider.progressStream.listen((update) {
       setState(() {
         _stageDescription = update.stageDescription;
-        _stageNo = update.stageNo;
-        _stageCount = update.stageCount;
       });
     });
   }
@@ -76,7 +72,6 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
                       setState(() {
                         _isLoading = true;
                         _stageDescription = 'Starting backup...';
-                        _stageNo = 0;
                       });
 
                       await WakelockPlus.enable();

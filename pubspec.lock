@@ -474,10 +474,10 @@ packages:
     dependency: "direct main"
     description:
       name: fixed
-      sha256: "00fa3f0c6b3f38340edc843132050a2676e30bc70bff1168908a15dc7751be55"
+      sha256: "1a5cc7fa9f449b9ffa9177c7be96b236d54988fdd4de0ff1fd673ff6f55cc6d9"
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.0"
+    version: "5.2.0"
   fixnum:
     dependency: transitive
     description:
@@ -1029,11 +1029,10 @@ packages:
   money2:
     dependency: "direct main"
     description:
-      name: money2
-      sha256: cea51e7cb93548cfaab4b4b4c61cb0faf21d3eb719110bbb76877f63f1da8011
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.4.0"
+      path: "../money2"
+      relative: true
+    source: path
+    version: "5.4.1"
   native_synchronization_temp:
     dependency: transitive
     description:

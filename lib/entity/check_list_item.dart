@@ -2,7 +2,6 @@ import 'package:money2/money2.dart';
 
 import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
-import '../util/percentage.dart';
 import '../util/units.dart';
 import '_index.g.dart';
 import 'task_item.dart';
@@ -53,7 +52,8 @@ class CheckListItem extends Entity<CheckListItem> {
         estimatedLabourCost:
             MoneyEx.fromInt(map['estimated_labour_cost'] as int? ?? 0),
         charge: MoneyEx.moneyOrNull(map['charge'] as int?),
-        margin: Percentage.fromInt(map['margin'] as int? ?? 0, decimals: 3),
+        margin:
+            Percentage.fromInt(map['margin'] as int? ?? 0, decimalDigits: 3),
         completed: map['completed'] == 1,
         billed: map['billed'] == 1,
         invoiceLineId: map['invoice_line_id'] as int?,
@@ -267,28 +267,22 @@ class CheckListItem extends Entity<CheckListItem> {
             ?.copyWith(decimalDigits: 2)
             .minorUnits
             .toInt(),
-        'estimated_material_quantity': estimatedMaterialQuantity == null
-            ? null
-            : Fixed.copyWith(estimatedMaterialQuantity!, scale: 3)
-                .minorUnits
-                .toInt(),
-        'estimated_labour_hours': estimatedLabourHours == null
-            ? null
-            : Fixed.copyWith(estimatedLabourHours!, scale: 3)
-                .minorUnits
-                .toInt(),
+        'estimated_material_quantity':
+            estimatedMaterialQuantity?.copyWith(scale: 3).minorUnits.toInt(),
+        'estimated_labour_hours':
+            estimatedLabourHours?.copyWith(scale: 3).minorUnits.toInt(),
         'estimated_labour_cost':
             estimatedLabourCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
-        'margin': Fixed.copyWith(margin, scale: 3).minorUnits.toInt(),
+        'margin': margin.copyWith(scale: 3).minorUnits.toInt(),
         'charge': _charge?.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'labour_entry_mode': labourEntryMode.toSqlString(),
         'completed': completed ? 1 : 0,
         'billed': billed ? 1 : 0,
         'invoice_line_id': invoiceLineId,
         'measurement_type': measurementType.name,
-        'dimension1': Fixed.copyWith(dimension1, scale: 3).minorUnits.toInt(),
-        'dimension2': Fixed.copyWith(dimension2, scale: 3).minorUnits.toInt(),
-        'dimension3': Fixed.copyWith(dimension3, scale: 3).minorUnits.toInt(),
+        'dimension1': dimension1.copyWith(scale: 3).minorUnits.toInt(),
+        'dimension2': dimension2.copyWith(scale: 3).minorUnits.toInt(),
+        'dimension3': dimension3.copyWith(scale: 3).minorUnits.toInt(),
         'units': units.name,
         'url': url,
         'supplier_id': supplierId,
@@ -296,11 +290,8 @@ class CheckListItem extends Entity<CheckListItem> {
             ?.copyWith(decimalDigits: 2)
             .minorUnits
             .toInt(),
-        'actual_material_quantity': actualMaterialQuantity == null
-            ? null
-            : Fixed.copyWith(actualMaterialQuantity!, scale: 3)
-                .minorUnits
-                .toInt(),
+        'actual_material_quantity':
+            actualMaterialQuantity?.copyWith(scale: 3).minorUnits.toInt(),
         'actual_cost':
             actualCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'created_date': createdDate.toIso8601String(),

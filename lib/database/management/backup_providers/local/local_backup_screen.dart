@@ -193,6 +193,7 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                           if (mounted) {
                             HMBToast.info('Restore completed successfully.');
                           }
+                        // ignore: avoid_catches_without_on_clauses
                         } catch (e) {
                           if (mounted) {
                             HMBToast.error('Error during restore: $e');

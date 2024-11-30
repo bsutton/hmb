@@ -91,7 +91,7 @@ class QuoteLine extends Entity<QuoteLine> {
         'quote_id': quoteId,
         'quote_line_group_id': quoteLineGroupId,
         'description': description,
-        'quantity': Fixed.copyWith(quantity, scale: 2).minorUnits.toInt(),
+        'quantity': quantity.copyWith( scale: 2).minorUnits.toInt(),
         'unit_price': unitPrice.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'line_total': lineTotal.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'created_date': createdDate.toIso8601String(),

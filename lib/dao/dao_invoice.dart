@@ -76,7 +76,9 @@ class DaoInvoice extends Dao<Invoice> {
     await DaoInvoice().update(updatedInvoice);
   }
 
+  ///
   /// Uploads an invoice and returns the new Invoice Number
+  /// 
   Future<void> uploadInvoiceToXero(Invoice invoice, XeroApi xeroApi) async {
     // Fetch the job associated with the invoice
     final job = await DaoJob().getById(invoice.jobId);

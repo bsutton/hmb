@@ -3,7 +3,6 @@ import 'package:hmb/dao/_index.g.dart';
 import 'package:hmb/dao/dao_invoice_fixed_price.dart';
 import 'package:hmb/entity/_index.g.dart';
 import 'package:hmb/util/money_ex.dart';
-import 'package:hmb/util/percentage.dart';
 import 'package:money2/money2.dart';
 
 import '../../database/management/db_utility_test.dart';
