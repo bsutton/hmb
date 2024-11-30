@@ -1,11 +1,12 @@
 import 'package:money2/money2.dart';
 
 import '../entity/_index.g.dart';
+import '../entity/milestone.dart';
 import '../util/exceptions.dart';
 import '../util/local_date.dart';
 import '../util/money_ex.dart';
-import '../util/percentage.dart';
 import '_index.g.dart';
+import 'dao_milestone.dart';
 
 Future<Invoice> createFixedPriceInvoice(
   Job job,
@@ -53,4 +54,35 @@ Either precentage or progressAmount must be null and the other not null''');
   await DaoInvoice().update(updatedInvoice);
 
   return updatedInvoice;
+}
+
+Future<Invoice> createInvoiceFromMilestonePayment(
+    Milestone milestonePayment) async {
+  final job = await DaoJob().getJobForQuote(milestonePayment.quoteId);
+
+  final invoice = Invoice.forInsert(
+    jobId: job.id,
+    dueDate: LocalDate.today().add(const Duration(days: 1)),
+    totalAmount: milestonePayment.paymentAmount!,
+  );
+
+  final invoiceId = await DaoInvoice().insert(invoice);
+
+  // Create an InvoiceLine for this milestone
+  final invoiceLine = InvoiceLine.forInsert(
+    invoiceId: invoiceId,
+    description: milestonePayment.milestoneDescription ??
+        'Milestone Payment ${milestonePayment.milestoneNumber}',
+    quantity: Fixed.fromInt(1),
+    unitPrice: milestonePayment.paymentAmount!,
+    lineTotal: milestonePayment.paymentAmount!,
+  );
+
+  await DaoInvoiceLine().insert(invoiceLine);
+
+  // Update milestone payment status
+  final updatedMilestonePayment = milestonePayment.copyWith(status: 'invoiced');
+  await DaoMilestone().update(updatedMilestonePayment);
+
+  return invoice.copyWith(id: invoiceId);
 }

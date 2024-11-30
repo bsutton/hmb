@@ -62,13 +62,13 @@ class DatabaseHelper {
   Future<void> withOpenDatabase(HMBDatabaseFactory databaseFactory,
       String pathToDb, Future<void> Function() action) async {
     var wasOpen = false;
-    if (_database == null) {
-      _database = await databaseFactory.openDatabase(pathToDb,
-          options: OpenDatabaseOptions());
-      wasOpen = true;
-    }
-
     try {
+      if (_database == null) {
+        _database = await databaseFactory.openDatabase(pathToDb,
+            options: OpenDatabaseOptions());
+        wasOpen = true;
+      }
+
       await action();
     } finally {
       if (wasOpen) {

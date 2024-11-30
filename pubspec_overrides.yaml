@@ -1,4 +1,6 @@
 dependency_overrides:
+  money2:
+    path: ../money2
   # mailto:
   #   path: ../../mailto
   # future_builder_ex:

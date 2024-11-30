@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:strings/strings.dart';
 
 import 'local_time.dart';
 
@@ -89,11 +90,22 @@ class LocalDateConverter implements JsonConverter<LocalDate, String> {
   const LocalDateConverter();
 
   @override
-  LocalDate fromJson(String? json) => json == null
+  LocalDate fromJson(String? json) => Strings.isBlank(json)
       ? LocalDate.today()
-      : LocalDate.fromDateTime(DateTime.parse(json));
+      : LocalDate.fromDateTime(DateTime.parse(json!));
 
   @override
   String toJson(LocalDate? date) =>
       date == null ? '' : date.toDateTime().toIso8601String();
+}
+
+class LocalDateNullableConverter implements JsonConverter<LocalDate?, String?> {
+  const LocalDateNullableConverter();
+
+  @override
+  LocalDate? fromJson(String? json) =>
+      json == null ? null : LocalDate.fromDateTime(DateTime.parse(json));
+
+  @override
+  String? toJson(LocalDate? date) => date?.toDateTime().toIso8601String();
 }

@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:strings/strings.dart';
 
-import '../../../dao/dao_contact.dart';
 import '../../../dao/dao_customer.dart';
 import '../../../dao/dao_job.dart';
 import '../../../dao/dao_job_status.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/job.dart';
 import '../../../util/format.dart';
-import '../../invoicing/list_invoice_screen.dart';
-import '../../quoting/list_quote_screen.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
-import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/media/rich_editor.dart';
 import '../../widgets/text/hmb_email_text.dart';
@@ -20,7 +15,6 @@ import '../../widgets/text/hmb_phone_text.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../../widgets/text/hmb_text_themes.dart';
-import 'rapid/rapid_quote_entry_screen.dart';
 
 class JobCard extends StatefulWidget {
   const JobCard({required this.job, super.key});
@@ -68,18 +62,6 @@ class _JobCardState extends State<JobCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextButton(
-                    onPressed: () async {
-                      if (context.mounted) {
-                        await Navigator.push(
-                            context,
-                            MaterialPageRoute<void>(
-                                builder: (context) =>
-                                    RapidQuoteEntryScreen(job: job)));
-                      }
-                    },
-                    child: const Text('Rapid'),
-                  ),
                   HMBTextHeadline2(
                     customer?.name ?? 'Not Set',
                   ),
@@ -167,14 +149,6 @@ class _JobCardState extends State<JobCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ..._buildStatistics(stats),
-          const HMBSpacer(height: true),
-          Row(
-            children: [
-              _buildQuoteButton(context),
-              const HMBSpacer(width: true),
-              _buildInvoiceButton(context),
-            ],
-          ),
         ],
       );
 
@@ -188,45 +162,7 @@ class _JobCardState extends State<JobCard> {
             height: 33,
             child: Row(children: [..._buildStatistics(stats)]),
           ),
-          const HMBSpacer(height: true),
-          Row(children: [
-            _buildQuoteButton(context),
-            const HMBSpacer(width: true),
-            _buildInvoiceButton(context),
-          ]),
         ],
-      );
-
-  Widget _buildInvoiceButton(BuildContext context) => ElevatedButton(
-        onPressed: () async {
-          await Navigator.of(context).push(MaterialPageRoute<void>(
-            builder: (context) => InvoiceListScreen(job: job),
-          ));
-          await _refreshJob(); // Refresh the job after returning
-        },
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          textStyle: const TextStyle(fontSize: 16),
-        ),
-        child: const Text('Invoice'),
-      );
-
-  Widget _buildQuoteButton(BuildContext context) => ElevatedButton(
-        onPressed: () async => Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => FutureBuilderEx(
-              future: DaoContact().getByJob(job.id),
-              builder: (context, contacts) => QuoteListScreen(
-                  job: job,
-                  emailRecipients: contacts
-                          ?.map((contact) => Strings.trim(contact.emailAddress))
-                          .toList() ??
-                      [])),
-        )),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          textStyle: const TextStyle(fontSize: 16),
-        ),
-        child: const Text('Quote'),
       );
 
   List<Widget> _buildStatistics(JobStatistics remainingTasks) => [

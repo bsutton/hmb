@@ -16,6 +16,7 @@ import 'dao_customer.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
+import 'dao_milestone.dart';
 
 class DaoInvoice extends Dao<Invoice> {
   @override
@@ -45,6 +46,7 @@ class DaoInvoice extends Dao<Invoice> {
   Future<int> delete(int id, [Transaction? transaction]) async {
     await DaoInvoiceLine().deleteByInvoiceId(id);
     await DaoInvoiceLineGroup().deleteByInvoiceId(id);
+    await DaoMilestone().deleteByInvoiceId(id);
 
     return super.delete(id);
   }
@@ -78,7 +80,7 @@ class DaoInvoice extends Dao<Invoice> {
 
   ///
   /// Uploads an invoice and returns the new Invoice Number
-  /// 
+  ///
   Future<void> uploadInvoiceToXero(Invoice invoice, XeroApi xeroApi) async {
     // Fetch the job associated with the invoice
     final job = await DaoJob().getById(invoice.jobId);

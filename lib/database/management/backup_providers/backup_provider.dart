@@ -76,16 +76,12 @@ abstract class BackupProvider {
 
           emitProgress('Preparing to zip files', 3, 6);
 
-          await DatabaseHelper()
-              .withOpenDatabase(databaseFactory, await databasePath, () async {
-            await getAllPhotoPaths();
-            // Set up communication channels
-            await zipBackup(
-                provider: this,
-                pathToZip: pathToZip,
-                pathToBackupFile: pathToBackupFile,
-                includePhotos: includePhotos);
-          });
+          // Set up communication channels
+          await zipBackup(
+              provider: this,
+              pathToZip: pathToZip,
+              pathToBackupFile: pathToBackupFile,
+              includePhotos: includePhotos);
 
           emitProgress('Storing backup', 5, 6);
           final result = await store(

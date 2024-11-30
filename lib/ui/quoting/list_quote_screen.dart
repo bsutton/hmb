@@ -8,8 +8,10 @@ import '../../entity/quote.dart';
 import '../../entity/quote_line.dart';
 import '../../util/format.dart';
 import '../../util/money_ex.dart';
+import '../crud/milestone_payment/edit_milestone_payment.dart';
 import '../dialog/hmb_are_you_sure_dialog.dart';
 import '../invoicing/dialog_select_tasks.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/hmb_one_of.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/pdf_preview.dart';
@@ -134,12 +136,25 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
               child: Row(
                 children: [
                   _buildGenerateButton(quote),
+                  _buildInvoiceButton(quote),
                 ],
               ),
             )
           ],
         ),
       );
+
+  Widget _buildInvoiceButton(Quote quote) => HMBButton(
+      label: 'Convert To Invoice',
+      onPressed: () async {
+        if (mounted) {
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => EditMilestonesScreen(quoteId: quote.id),
+            ),
+          );
+        }
+      });
 
   ElevatedButton _buildGenerateButton(Quote quote) => ElevatedButton(
         onPressed: () async {

@@ -6,7 +6,6 @@ import 'package:archive/archive_io.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 
-import '../database_helper.dart';
 import 'backup_provider.dart';
 
 /// All photos are stored under this path in the zip file
@@ -26,15 +25,15 @@ Future<void> zipBackup(
   await Isolate.spawn<_ZipParams>(
     _zipFiles,
     _ZipParams(
-        sendPort: receivePort.sendPort,
-        pathToZip: pathToZip,
-        pathToBackupFile: pathToBackupFile,
-        includePhotos: includePhotos,
-        photosRootPath: await provider.photosRootPath,
-        zipPhotoRoot: zipPhotoRoot,
-        progressStageStart: 3,
-        progressStageEnd: 5,
-        photoFilePaths: await getAllPhotoPaths()),
+      sendPort: receivePort.sendPort,
+      pathToZip: pathToZip,
+      pathToBackupFile: pathToBackupFile,
+      includePhotos: includePhotos,
+      photosRootPath: await provider.photosRootPath,
+      zipPhotoRoot: zipPhotoRoot,
+      progressStageStart: 3,
+      progressStageEnd: 5,
+    ),
     onError: errorPort.sendPort,
     onExit: exitPort.sendPort,
   );
@@ -78,15 +77,18 @@ Future<void> _zipFiles(_ZipParams params) async {
     await encoder.addFile(File(params.pathToBackupFile));
 
     if (params.includePhotos) {
-      final totalPhotos = params.photoFilePaths.length;
       var processedPhotos = 0;
+      final totalPhotos =
+          (await findAsync('*', workingDirectory: params.photosRootPath)
+                  .toList())
+              .length;
+      await for (final item
+          in findAsync('*', workingDirectory: params.photosRootPath)) {
+        final relativePhotoPath =
+            relative(item.pathTo, from: params.photosRootPath);
+        final zipPath = join(params.zipPhotoRoot, relativePhotoPath);
+        await encoder.addFile(File(item.pathTo), zipPath);
 
-      for (final relativePhotoPath in params.photoFilePaths) {
-        final fullPathToPhoto = join(params.photosRootPath, relativePhotoPath);
-        if (exists(fullPathToPhoto)) {
-          final zipPath = join(params.zipPhotoRoot, relativePhotoPath);
-          await encoder.addFile(File(fullPathToPhoto), zipPath);
-        }
         processedPhotos++;
 
         // Emit progress for each photo
@@ -113,15 +115,6 @@ Future<void> _zipFiles(_ZipParams params) async {
         params.progressStageEnd, params.progressStageEnd));
     Isolate.exit();
   }
-}
-
-/// We can't use DaoPhoto as it uses June which is a flutter component
-/// and we need this to work from the cli.
-Future<List<String>> getAllPhotoPaths() async {
-  final db = DatabaseHelper.instance.database;
-  final List<Map<String, dynamic>> maps =
-      await db.query('photo', columns: ['filePath']);
-  return maps.map((map) => map['filePath'] as String).toList();
 }
 
 Future<String?> extractFiles(BackupProvider provider, File backupFile,
@@ -179,7 +172,6 @@ class _ZipParams {
     required this.zipPhotoRoot,
     required this.progressStageStart,
     required this.progressStageEnd,
-    required this.photoFilePaths,
   });
   final SendPort sendPort;
   final String pathToZip;
@@ -189,5 +181,4 @@ class _ZipParams {
   final String zipPhotoRoot;
   final int progressStageStart;
   final int progressStageEnd;
-  final List<String> photoFilePaths;
 }

@@ -1029,11 +1029,10 @@ packages:
   money2:
     dependency: "direct main"
     description:
-      name: money2
-      sha256: "92f7f3160751bc7a74d7bc4021173215503b756c20d48eeb57324c5ee6b61ee4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.4.2"
+      path: "../money2"
+      relative: true
+    source: path
+    version: "5.4.4"
   native_synchronization_temp:
     dependency: transitive
     description:

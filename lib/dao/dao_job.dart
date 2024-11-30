@@ -284,6 +284,11 @@ where c.id =?
     final invoice = (await DaoInvoice().getById(invoiceId))!;
     return (await getById(invoice.jobId))!;
   }
+
+  Future<Job> getJobForQuote(int quoteId) async {
+    final quote = (await DaoQuote().getById(quoteId))!;
+    return (await getById(quote.jobId))!;
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

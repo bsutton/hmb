@@ -14,10 +14,12 @@ import '../../../entity/job_status.dart';
 import '../../../util/format.dart';
 import '../../../util/money_ex.dart';
 import '../../../util/platform_ex.dart';
+import '../../invoicing/list_invoice_screen.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_child_crud_card.dart';
 import '../../widgets/layout/hmb_form_section.dart';
+import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/media/rich_editor.dart';
 import '../../widgets/select/hmb_droplist.dart';
@@ -27,16 +29,17 @@ import '../../widgets/select/select_customer.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import '../task/list_task_screen.dart';
+import 'rapid/quote_builder_screen.dart';
 
 class JobEditScreen extends StatefulWidget {
   const JobEditScreen({super.key, this.job});
   final Job? job;
 
   @override
-  JobEditScreenState createState() => JobEditScreenState();
+  _JobEditScreenState createState() => _JobEditScreenState();
 }
 
-class JobEditScreenState extends State<JobEditScreen>
+class _JobEditScreenState extends State<JobEditScreen>
     implements EntityState<Job> {
   late TextEditingController _summaryController;
   late RichEditorController _descriptionController;
@@ -104,51 +107,91 @@ class JobEditScreenState extends State<JobEditScreen>
   }
 
   @override
-  Widget build(BuildContext context) =>
-      JuneBuilder(() => SelectedCustomer()..customerId = widget.job?.customerId,
-          builder: (selectedCustomer) => FutureBuilderEx<Customer?>(
-              // ignore: discarded_futures
-              future: DaoCustomer().getById(selectedCustomer.customerId),
+  Widget build(BuildContext context) => JuneBuilder(
+        () => SelectedCustomer()..customerId = widget.job?.customerId,
+        builder: (selectedCustomer) => FutureBuilderEx<Customer?>(
+          // ignore: discarded_futures
+          future: DaoCustomer().getById(selectedCustomer.customerId),
 
-              /// get the job details
-              builder: (context, customer) => EntityEditScreen<Job>(
-                  entityName: 'Job',
-                  dao: DaoJob(),
-                  entityState: this,
-                  editor: (job) => Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            HMBFormSection(children: [
-                              _showSummary(),
-                              _chooseCustomer(),
-                              _chooseStatus(job),
-                              _chooseDate(),
-                              _chooseBillingType(),
-                              _showHourlyRate(),
-                              _showBookingFee(),
-                              SizedBox(
-                                height: 300,
-                                child: RichEditor(
-                                    controller: _descriptionController,
-                                    focusNode: _descriptionFocusNode,
-                                    key: UniqueKey()),
-                                // )
-                              ),
-                            ]),
+          /// get the job details
+          builder: (context, customer) => EntityEditScreen<Job>(
+            entityName: 'Job',
+            dao: DaoJob(),
+            entityState: this,
+            editor: (job) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const HMBSpacer(height: true),
+                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  if (job != null) _buildQuoteButton(context, job),
+                  const HMBSpacer(width: true),
+                  if (job != null) _buildInvoiceButton(context, job),
+                ]),
+                const HMBSpacer(height: true),
+                HMBFormSection(children: [
+                  _showSummary(),
+                  _chooseCustomer(),
+                  _chooseStatus(job),
+                  _chooseDate(),
+                  _chooseBillingType(),
+                  _showHourlyRate(),
+                  _showBookingFee(),
+                  SizedBox(
+                    height: 300,
+                    child: RichEditor(
+                        controller: _descriptionController,
+                        focusNode: _descriptionFocusNode,
+                        key: UniqueKey()),
+                  ),
+                ]),
 
-                            /// allow the user to select a contact for the job
-                            _chooseContact(customer, job),
+                // Allow the user to select a contact for the job
+                _chooseContact(customer, job),
 
-                            /// allow the user to select a site for the job
-                            _chooseSite(customer, job),
+                // Allow the user to select a site for the job
+                _chooseSite(customer, job),
 
-                            // Display task photos
-                            if (job != null) PhotoGallery.forJob(job: job),
+                // Display task photos
+                if (job != null) PhotoGallery.forJob(job: job),
 
-                            // Manage tasks
-                            _manageTasks(job),
-                          ]))));
+                // Manage tasks
+                _manageTasks(job),
+
+                // Remove the quote button (assuming it was here)
+              ],
+            ),
+          ),
+        ),
+      );
+
+  Widget _buildInvoiceButton(BuildContext context, Job job) => ElevatedButton(
+        onPressed: () async {
+          await Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (context) => InvoiceListScreen(job: job),
+          ));
+          setState(() {}); // Refresh the job after returning
+        },
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          textStyle: const TextStyle(fontSize: 16),
+        ),
+        child: const Text('Invoice'),
+      );
+
+  Widget _buildQuoteButton(BuildContext context, Job job) => ElevatedButton(
+        onPressed: () async {
+          await Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (context) => QuoteBuilderScreen(job: job),
+          ));
+          setState(() {}); // Refresh the job after returning
+        },
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          textStyle: const TextStyle(fontSize: 16),
+        ),
+        child: const Text('Quote'),
+      );
 
   Widget _showSummary() => HMBTextField(
         key: const Key('jobSummary'),

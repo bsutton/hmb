@@ -26,6 +26,7 @@ class _BackupSelectionScreenState
   Future<Backups> _loadBackups() async {
     try {
       final backups = await widget.backupProvider.getBackups();
+      backups.sort((a, b) => b.when.compareTo(a.when));
       return Backups(backups, await widget.backupProvider.backupLocation);
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
@@ -53,9 +54,8 @@ No backups available in ${backups!.location}'''));
                 itemBuilder: (context, index) {
                   final backup = backups.backups[index];
                   return ListTile(
-                    title: Text(
-                        // ignore: lines_longer_than_80_chars
-                        '$backup ${formatDateTime(backup.when)} ${backup.size}'),
+                    title:
+                        Text(' ${formatDateTime(backup.when)} ${backup.size}'),
                     onTap: () {
                       Navigator.pop(context, backup);
                     },

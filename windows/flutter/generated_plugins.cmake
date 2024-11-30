@@ -7,7 +7,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   camera_windows
   file_selector_windows
   flutter_secure_storage_windows
-  image_clipboard
   pasteboard
   permission_handler_windows
   printing
