@@ -1,8 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:pasteboard/pasteboard.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:strings/strings.dart';
+
+import '../hmb_toast.dart';
 
 class FullScreenPhotoViewer extends StatelessWidget {
   const FullScreenPhotoViewer({
@@ -59,13 +62,32 @@ class FullScreenPhotoViewer extends StatelessWidget {
               ),
             ),
 
-            /// close icon.
+            /// action icons (copy and close)
             Positioned(
               top: 40,
               right: 20,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Navigator.of(context).pop(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.content_copy,
+                        color: Colors.white, size: 30),
+                    onPressed: () async {
+                      try {
+                        await Pasteboard.writeFiles([imagePath]);
+                        HMBToast.info('Image copied to clipboard');
+                        // ignore: avoid_catches_without_on_clauses
+                      } catch (e) {
+                        HMBToast.error('Failed to copy image to clipboard');
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon:
+                        const Icon(Icons.close, color: Colors.white, size: 30),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
             ),
           ],

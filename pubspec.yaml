@@ -69,6 +69,7 @@ dependencies:
   oauth2: ^2.0.3
   package_info_plus: ^8.1.1
   parchment_delta: ^1.0.0
+  pasteboard: ^0.2.0
   path: ^1.9.0
   path_provider: ^2.0.0
   pdf: ^3.11.0

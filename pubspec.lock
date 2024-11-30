@@ -1029,10 +1029,11 @@ packages:
   money2:
     dependency: "direct main"
     description:
-      path: "../money2"
-      relative: true
-    source: path
-    version: "5.4.1"
+      name: money2
+      sha256: "92f7f3160751bc7a74d7bc4021173215503b756c20d48eeb57324c5ee6b61ee4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.4.2"
   native_synchronization_temp:
     dependency: transitive
     description:
@@ -1097,6 +1098,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  pasteboard:
+    dependency: "direct main"
+    description:
+      name: pasteboard
+      sha256: "1c8b6a8b3f1d12e55d4e9404433cda1b4abe66db6b17bc2d2fb5965772c04674"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.0"
   path:
     dependency: "direct main"
     description:
