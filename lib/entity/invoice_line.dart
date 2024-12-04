@@ -24,7 +24,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.lineTotal,
     required super.createdDate,
     required super.modifiedDate,
-    this.invoiceLineGroupId,
+    required this.invoiceLineGroupId,
     this.status = LineStatus.normal,
     this.fromBookingFee = false,
   }) : super();
@@ -35,7 +35,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.quantity,
     required this.unitPrice,
     required this.lineTotal,
-    this.invoiceLineGroupId,
+    required this.invoiceLineGroupId,
     this.status = LineStatus.normal,
     this.fromBookingFee = false,
   }) : super.forInsert();
@@ -47,7 +47,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.quantity,
     required this.unitPrice,
     required this.lineTotal,
-    this.invoiceLineGroupId,
+    required this.invoiceLineGroupId,
     this.status = LineStatus.normal,
     this.fromBookingFee = false,
   }) : super.forUpdate();
@@ -55,7 +55,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
   factory InvoiceLine.fromMap(Map<String, dynamic> map) => InvoiceLine(
         id: map['id'] as int,
         invoiceId: map['invoice_id'] as int,
-        invoiceLineGroupId: map['invoice_line_group_id'] as int?,
+        invoiceLineGroupId: map['invoice_line_group_id'] as int,
         description: map['description'] as String,
         quantity: Fixed.fromInt(map['quantity'] as int),
         unitPrice: Money.fromInt(map['unit_price'] as int, isoCode: 'AUD'),
@@ -68,7 +68,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
       );
 
   int invoiceId;
-  int? invoiceLineGroupId;
+  int invoiceLineGroupId;
   String description;
   Fixed quantity;
   Money unitPrice;

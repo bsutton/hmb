@@ -15,6 +15,7 @@ import '../crud/system/system_contact_screen.dart';
 import '../crud/system/system_integration_screen.dart';
 import '../crud/tool/list_tool_screen.dart';
 import '../error.dart';
+import '../invoicing/list_invoice_screen.dart';
 import '../list_packing_screen.dart';
 import '../list_shopping_screen.dart';
 import '../widgets/media/full_screen_photo_view.dart';
@@ -65,6 +66,21 @@ GoRouter get router => GoRouter(
               path: 'packing',
               builder: (_, __) =>
                   const HomeWithDrawer(initialScreen: PackingScreen()),
+            ),
+            GoRoute(
+              path: 'billing/quotes',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: InvoiceListScreen()),
+            ),
+            GoRoute(
+              path: 'billing/invoices',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: InvoiceListScreen()),
+            ),
+            GoRoute(
+              path: 'billing/estimator',
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: InvoiceListScreen()),
             ),
             GoRoute(
                 path: 'extras/tools',

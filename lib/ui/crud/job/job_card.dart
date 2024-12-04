@@ -187,8 +187,8 @@ class _JobCardState extends State<JobCard> {
           text:
               'Worked: ${remainingTasks.worked}/${remainingTasks.workedHours}hrs',
           bold: true,
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            await Navigator.push(
               context,
               MaterialPageRoute<void>(
                 builder: (context) => TimeEntryListScreen(job: job),

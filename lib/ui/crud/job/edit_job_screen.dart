@@ -14,7 +14,6 @@ import '../../../entity/job_status.dart';
 import '../../../util/format.dart';
 import '../../../util/money_ex.dart';
 import '../../../util/platform_ex.dart';
-import '../../invoicing/list_invoice_screen.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_child_crud_card.dart';
@@ -126,7 +125,7 @@ class _JobEditScreenState extends State<JobEditScreen>
                 Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                   if (job != null) _buildQuoteButton(context, job),
                   const HMBSpacer(width: true),
-                  if (job != null) _buildInvoiceButton(context, job),
+                  // if (job != null) _buildInvoiceButton(context, job),
                 ]),
                 const HMBSpacer(height: true),
                 HMBFormSection(children: [
@@ -165,19 +164,19 @@ class _JobEditScreenState extends State<JobEditScreen>
         ),
       );
 
-  Widget _buildInvoiceButton(BuildContext context, Job job) => ElevatedButton(
-        onPressed: () async {
-          await Navigator.of(context).push(MaterialPageRoute<void>(
-            builder: (context) => InvoiceListScreen(job: job),
-          ));
-          setState(() {}); // Refresh the job after returning
-        },
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          textStyle: const TextStyle(fontSize: 16),
-        ),
-        child: const Text('Invoice'),
-      );
+  // Widget _buildInvoiceButton(BuildContext context, Job job) => ElevatedButton(
+  //       onPressed: () async {
+  //         await Navigator.of(context).push(MaterialPageRoute<void>(
+  //           builder: (context) => InvoiceListScreen(job: job),
+  //         ));
+  //         setState(() {}); // Refresh the job after returning
+  //       },
+  //       style: ElevatedButton.styleFrom(
+  //         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+  //         textStyle: const TextStyle(fontSize: 16),
+  //       ),
+  //       child: const Text('Invoice'),
+  //     );
 
   Widget _buildQuoteButton(BuildContext context, Job job) => ElevatedButton(
         onPressed: () async {
