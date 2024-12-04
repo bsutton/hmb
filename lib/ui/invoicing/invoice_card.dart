@@ -3,9 +3,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
 
 import '../../dao/_index.g.dart';
-import '../../entity/invoice.dart';
-import '../../entity/invoice_line.dart';
-import '../../entity/invoice_line_group.dart';
+import '../../entity/_index.g.dart';
 import '../../util/format.dart';
 import 'generate_invoice_pdf_button.dart';
 
@@ -30,6 +28,11 @@ class InvoiceCard extends StatefulWidget {
 }
 
 class _InvoiceCardState extends State<InvoiceCard> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) => Container(
         color: Colors.grey[200],
@@ -69,24 +72,36 @@ class _InvoiceCardState extends State<InvoiceCard> {
           ],
         ),
       );
-
-  Widget _buildInvoiceTitle(Invoice invoice) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  Widget _buildInvoiceTitle(Invoice invoice) => FutureBuilderEx<JobAndCustomer>(
+        // ignore: discarded_futures
+        future: JobAndCustomer.fromInvoice(invoice),
+        builder: (context, jobAndCustomer) {
+          final jobName = jobAndCustomer!.job.summary;
+          final customerName = jobAndCustomer.customer.name;
+          return Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('''
-Invoice #${invoice.id} Issued: ${formatDate(invoice.createdDate)}'''),
+              Expanded(
+                // Prevents overflow
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Invoice #${widget.invoice.id} Issued: ${formatDate(widget.invoice.createdDate)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text('Customer: $customerName'),
+                    Text('Job: $jobName #${jobAndCustomer.job.id}'),
+                  ],
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
                 onPressed: widget.onDeleteInvoice,
               ),
             ],
-          ),
-          if (invoice.invoiceNum != null)
-            Text('Xero Invoice #${invoice.invoiceNum}'),
-        ],
+          );
+        },
       );
 
   Widget _buildInvoiceGroup(List<InvoiceLineGroup> invoiceLineGroups) =>
@@ -142,4 +157,20 @@ Invoice #${invoice.id} Issued: ${formatDate(invoice.createdDate)}'''),
             )
             .toList(),
       );
+}
+
+class JobAndCustomer {
+  JobAndCustomer({
+    required this.job,
+    required this.customer,
+  });
+
+  final Job job;
+  final Customer customer;
+
+  static Future<JobAndCustomer> fromInvoice(Invoice invoice) async {
+    final job = (await DaoJob().getById(invoice.jobId))!;
+    final customer = (await DaoCustomer().getById(job.customerId))!;
+    return JobAndCustomer(job: job, customer: customer);
+  }
 }
