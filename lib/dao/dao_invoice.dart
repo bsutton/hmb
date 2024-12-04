@@ -42,11 +42,38 @@ class DaoInvoice extends Dao<Invoice> {
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
+Future<List<Invoice>> getByFilter(String? filter) async {
+  final db = withoutTransaction();
+
+  if (Strings.isBlank(filter)) {
+    return getAll(orderByClause: 'modified_date desc');
+  }
+
+  final data = await db.rawQuery('''
+    SELECT i.*
+    FROM invoice i
+    LEFT JOIN job j ON i.job_id = j.id
+    LEFT JOIN customer c ON j.customer_id = c.id
+    WHERE i.invoice_num LIKE ? 
+       OR i.external_invoice_id LIKE ?
+       OR j.summary LIKE ?
+       OR c.name LIKE ?
+    ORDER BY i.modified_date DESC
+  ''', [
+    '%$filter%', // Filter for invoice_num
+    '%$filter%', // Filter for external_invoice_id
+    '%$filter%', // Filter for job summary
+    '%$filter%'  // Filter for customer name
+  ]);
+
+  return toList(data);
+}
+
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
     await DaoInvoiceLine().deleteByInvoiceId(id);
     await DaoInvoiceLineGroup().deleteByInvoiceId(id);
-    await DaoMilestone().deleteByInvoiceId(id);
+    await DaoMilestone().detachFromInvoice(id);
 
     return super.delete(id);
   }
