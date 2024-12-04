@@ -7,6 +7,7 @@ import '../../../dao/dao_job_status.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/job.dart';
 import '../../../util/format.dart';
+import '../../widgets/hmb_text_clickable.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/media/rich_editor.dart';
@@ -15,6 +16,7 @@ import '../../widgets/text/hmb_phone_text.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../../widgets/text/hmb_text_themes.dart';
+import 'list_time_entry.dart';
 
 class JobCard extends StatefulWidget {
   const JobCard({required this.job, super.key});
@@ -181,9 +183,19 @@ class _JobCardState extends State<JobCard> {
           bold: true,
         ),
         const SizedBox(width: 16), //
-        HMBText(
-            'Worked: ${remainingTasks.worked}/${remainingTasks.workedHours}hrs',
-            bold: true),
+        HMBTextClickable(
+          text:
+              'Worked: ${remainingTasks.worked}/${remainingTasks.workedHours}hrs',
+          bold: true,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) => TimeEntryListScreen(job: job),
+              ),
+            );
+          },
+        ),
       ];
 }
 
