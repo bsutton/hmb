@@ -345,6 +345,7 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
                       estimatedLabourCost: null,
                       estimatedLabourHours: null,
                       charge: null,
+                      chargeSet: false,
                       dimension1: Fixed.zero,
                       dimension2: Fixed.zero,
                       dimension3: Fixed.zero,

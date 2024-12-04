@@ -335,6 +335,8 @@ class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen, System>
         _buildMarginAndChargeFields(),
       ];
 
+  /// Materials or tools that we have in stock,
+  /// which we may optionally charge for.
   List<Widget> _buildStockFields() => [
         HMBTextField(
           controller: _estimatedMaterialUnitCostController,
@@ -403,6 +405,7 @@ class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen, System>
         estimatedLabourCost:
             MoneyEx.tryParse(_estimatedLabourCostController.text),
         charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
+        chargeSet: taskItem.chargeSet,
         margin: Percentage.tryParse(_marginController.text),
         completed: taskItem.completed,
         billed: false,
@@ -434,6 +437,7 @@ class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen, System>
         estimatedLabourCost:
             MoneyEx.tryParse(_estimatedLabourCostController.text),
         charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
+        chargeSet: false,
         margin: Percentage.tryParse(_marginController.text),
         labourEntryMode: _labourEntryMode,
         measurementType:

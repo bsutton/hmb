@@ -40,10 +40,10 @@ WHERE task_id = ?
   Future<void> markAsCompleted(BillingType billingType, TaskItem item,
       Money unitCost, Fixed quantity) async {
     item
+      ..completed = true
       ..actualMaterialUnitCost = unitCost
       ..actualMaterialQuantity = quantity
-      ..setCharge(item.calcMaterialCost(billingType))
-      ..completed = true;
+      ..setCharge(item.calcMaterialCost(billingType));
 
     await update(item);
   }
