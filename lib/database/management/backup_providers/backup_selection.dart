@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../ui/widgets/async_state.dart';
+import '../../../ui/widgets/text/hmb_text.dart';
 import '../../../util/format.dart';
 import 'backup_provider.dart';
 
@@ -49,18 +50,25 @@ class _BackupSelectionScreenState
               return Center(child: Text('''
 No backups available in ${backups!.location}'''));
             } else {
-              return ListView.builder(
-                itemCount: backups.backups.length,
-                itemBuilder: (context, index) {
-                  final backup = backups.backups[index];
-                  return ListTile(
-                    title:
-                        Text(' ${formatDateTime(backup.when)} ${backup.size}'),
-                    onTap: () {
-                      Navigator.pop(context, backup);
-                    },
-                  );
-                },
+              return Column(
+                children: [
+                  HMBText('Location: ${backups.location}'),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: backups.backups.length,
+                      itemBuilder: (context, index) {
+                        final backup = backups.backups[index];
+                        return ListTile(
+                          title: Text(
+                              ' ${formatDateTime(backup.when)} ${backup.size}'),
+                          onTap: () {
+                            Navigator.pop(context, backup);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
               );
             }
           },
