@@ -5,8 +5,6 @@ import 'package:money2/money2.dart';
 
 import '../../../dao/dao_invoice.dart';
 import '../../../entity/milestone.dart';
-import '../../../util/format.dart';
-import '../../../util/local_date.dart';
 import '../../../util/money_ex.dart';
 
 class MilestoneTile extends StatefulWidget {
@@ -33,7 +31,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
   late TextEditingController descriptionController;
   late TextEditingController percentageController;
   late TextEditingController amountController;
-  late TextEditingController dueDateController;
+  // late TextEditingController dueDateController;
 
   bool isEditable = true;
 
@@ -50,11 +48,11 @@ class _MilestoneTileState extends State<MilestoneTile> {
     amountController = TextEditingController(
       text: widget.milestone.paymentAmount.toString(),
     );
-    dueDateController = TextEditingController(
-      text: widget.milestone.dueDate == null
-          ? ''
-          : formatLocalDate(widget.milestone.dueDate!),
-    );
+    // dueDateController = TextEditingController(
+    //   text: widget.milestone.dueDate == null
+    //       ? ''
+    //       : formatLocalDate(widget.milestone.dueDate!),
+    // );
   }
 
   @override
@@ -62,7 +60,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
     descriptionController.dispose();
     percentageController.dispose();
     amountController.dispose();
-    dueDateController.dispose();
+    // dueDateController.dispose();
     super.dispose();
   }
 
@@ -87,20 +85,20 @@ class _MilestoneTileState extends State<MilestoneTile> {
     widget.onChanged(widget.milestone);
   }
 
-  Future<void> _onDueDateChanged() async {
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: widget.milestone.dueDate?.toDateTime() ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
+  // Future<void> _onDueDateChanged() async {
+  //   final pickedDate = await showDatePicker(
+  //     context: context,
+  //     initialDate: widget.milestone.dueDate?.toDateTime() ?? DateTime.now(),
+  //     firstDate: DateTime(2000),
+  //     lastDate: DateTime(2100),
+  //   );
 
-    if (pickedDate != null) {
-      widget.milestone.dueDate = LocalDate.fromDateTime(pickedDate);
-      dueDateController.text = widget.milestone.dueDate.toString();
-      widget.onChanged(widget.milestone);
-    }
-  }
+  //   if (pickedDate != null) {
+  //     widget.milestone.dueDate = LocalDate.fromDateTime(pickedDate);
+  //     dueDateController.text = widget.milestone.dueDate.toString();
+  //     widget.onChanged(widget.milestone);
+  //   }
+  // }
 
   void _onDeletePressed() {
     widget.onDelete(widget.milestone);
@@ -173,12 +171,14 @@ class _MilestoneTileState extends State<MilestoneTile> {
                   ),
                 ],
               ),
-              TextField(
-                controller: dueDateController,
-                decoration: const InputDecoration(labelText: 'Due Date'),
-                readOnly: true,
-                onTap: _onDueDateChanged,
-              ),
+              // removed as we are currently not using it and I don't think
+              // there is actually a valid use case.
+              // TextField(
+              //   controller: dueDateController,
+              //   decoration: const InputDecoration(labelText: 'Due Date'),
+              //   readOnly: true,
+              //   onTap: _onDueDateChanged,
+              // ),
             ],
           ),
           trailing: Wrap(
