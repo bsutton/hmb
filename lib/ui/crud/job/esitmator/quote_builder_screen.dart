@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
-import 'package:strings/strings.dart';
 
 import '../../../../dao/dao_contact.dart';
 import '../../../../dao/dao_task.dart';
@@ -259,15 +258,16 @@ class _QuoteBuilderScreenState extends AsyncState<QuoteBuilderScreen, void> {
 
   Widget _buildQuoteButton(Job job) => ElevatedButton(
         onPressed: () async => Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => FutureBuilderEx(
-              future: DaoContact().getByJob(job.id),
-              builder: (context, contacts) => QuoteListScreen(
-                  job: job,
-                  emailRecipients: contacts
-                          ?.map((contact) => Strings.trim(contact.emailAddress))
-                          .toList() ??
-                      [])),
-        )),
+            builder: (context) => FutureBuilderEx(
+                  future: DaoContact().getByJob(job.id),
+                  builder: (context, contacts) => const QuoteListScreen(
+                      // job: job,
+                      // emailRecipients: contacts
+                      //         ?.map((contact) => Strings.trim(contact.emailAddress))
+                      //         .toList() ??
+                      //     [])
+                      ),
+                ))),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           textStyle: const TextStyle(fontSize: 16),
