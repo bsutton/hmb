@@ -24,7 +24,14 @@ class DaoMilestone extends Dao<Milestone> {
   @override
   JuneStateCreator get juneRefresher => MilestonePaymentState.new;
 
-  Future<void> deleteByInvoiceId(int id) async {}
+  Future<void> detachFromInvoice(int id) async {
+    await db.update(
+      'milestone',
+      {'invoice_id': null}, // Set invoice_id to NULL
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }
 
 /// Used to notify the UI that the message template has changed.

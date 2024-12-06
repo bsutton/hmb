@@ -12,7 +12,7 @@ import '../../../util/money_ex.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/text/hmb_text.dart';
-import 'milestone_tile.dart';
+import '../milestone_payment/milestone_tile.dart';
 
 class EditMilestonesScreen extends StatefulWidget {
   const EditMilestonesScreen({required this.quoteId, super.key});
@@ -69,34 +69,62 @@ class _EditMilestonesScreenState
     );
     await DaoMilestone().insert(newMilestone);
     milestones.add(newMilestone);
-    _redistributeAmounts();
+    await _redistributeAmounts();
     setState(() {});
   }
 
-  void _redistributeAmounts() {
-    final uninvoicedMilestones =
-        milestones.where((m) => m.invoiceId == null).toList();
+  Future<void> _redistributeAmounts() async {
+    final uninvoicedMilestones = milestones.where((m) => m.invoiceId == null);
 
     if (uninvoicedMilestones.isEmpty) {
       return;
     }
 
-    final allocatedAmount = milestones.fold<Money>(
+    // Separate edited and unedited milestones
+    final editedMilestones =
+        uninvoicedMilestones.where((m) => m.edited).toList();
+    final uneditedMilestones =
+        uninvoicedMilestones.where((m) => !m.edited).toList();
+
+    // Calculate how much is already allocated by edited milestones
+    final allocatedByEdited = editedMilestones.fold<Money>(
       MoneyEx.zero,
-      (sum, m) => sum + (m.invoiceId != null ? m.paymentAmount! : MoneyEx.zero),
+      (sum, m) => sum + (m.paymentAmount ?? MoneyEx.zero),
     );
 
-    final remainingAmount = quote.totalAmount - allocatedAmount;
+    // Total amount we need to distribute = total quote - sum of invoiced and edited
+    final invoicedSum = uneditedMilestones.fold<Money>(
+      MoneyEx.zero,
+      (sum, m) =>
+          sum +
+          (m.invoiceId != null
+              ? m.paymentAmount ?? MoneyEx.zero
+              : MoneyEx.zero),
+    );
 
-    final amountPerMilestone = remainingAmount
-        .divideByFixed(Fixed.fromInt(uninvoicedMilestones.length, scale: 0));
+    final remainingForUnedited =
+        quote.totalAmount - allocatedByEdited - invoicedSum;
 
-    for (final milestone in uninvoicedMilestones) {
+    if (uneditedMilestones.isEmpty) {
+      // If no unedited milestones remain, just ensure totals are correct
+      _calculateTotals();
+      setState(() {});
+      return;
+    }
+
+    final count = uneditedMilestones.length;
+    final amountPerMilestone = count > 0
+        ? remainingForUnedited.divideByFixed(Fixed.fromInt(count, scale: 0))
+        : MoneyEx.zero;
+
+    for (final milestone in uneditedMilestones) {
       milestone
         ..paymentAmount = amountPerMilestone
         ..paymentPercentage =
             amountPerMilestone.percentageOf(quote.totalAmount);
+      await daoMilestonePayment.update(milestone);
     }
+
 
     _calculateTotals();
     setState(() {});
@@ -113,7 +141,7 @@ class _EditMilestonesScreenState
     }
 
     // Assume createInvoiceFromMilestonePayment is defined elsewhere
-    final invoice = await createInvoiceFromMilestonePayment(nextMilestone);
+    final invoice = await createInvoiceFromMilestone(nextMilestone);
     nextMilestone
       ..invoiceId = invoice.id
       ..status = 'invoiced';
@@ -158,6 +186,7 @@ class _EditMilestonesScreenState
         milestones.where((m) => m.invoiceId != null).length;
     if (oldIndex < invoicedMilestones || newIndex <= invoicedMilestones) {
       // Prevent reordering of invoiced milestones
+      HMBToast.info("You can't re-order invoiced milestones");
       return;
     }
 
@@ -178,6 +207,9 @@ class _EditMilestonesScreenState
   }
 
   Future<void> _onMilestoneChanged(Milestone milestone) async {
+    // The user changed this milestone, mark as edited if it's not already
+    milestone.edited = true;
+
     _calculateTotals();
     await DaoMilestone().update(milestone);
     setState(() {});
@@ -192,7 +224,7 @@ class _EditMilestonesScreenState
     if (milestone.id != 0) {
       await daoMilestonePayment.delete(milestone.id);
     }
-    _redistributeAmounts();
+    await _redistributeAmounts();
     setState(() {});
   }
 
@@ -235,6 +267,7 @@ class _EditMilestonesScreenState
                         quoteTotal: quote.totalAmount,
                         onChanged: _onMilestoneChanged,
                         onDelete: _onMilestoneDeleted,
+                        onInvoice: _onMilestoneInvoice,
                       );
                     }),
                   ),
@@ -258,4 +291,17 @@ class _EditMilestonesScreenState
               ],
             ),
           ));
+
+  Future<void> _onMilestoneInvoice(Milestone milestone) async {
+    // Logic to create an invoice and update the milestone
+    final invoice = await createInvoiceFromMilestone(milestone);
+
+    setState(() {
+      milestone.invoiceId = invoice.id;
+      final index = milestones.indexWhere((m) => m.id == milestone.id);
+      if (index != -1) {
+        milestones[index] = milestone;
+      }
+    });
+  }
 }
