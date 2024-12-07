@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
 
-import '../../../../dao/dao_contact.dart';
 import '../../../../dao/dao_task.dart';
 import '../../../../dao/dao_task_item.dart';
 import '../../../../entity/job.dart';
@@ -10,7 +9,6 @@ import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
 import '../../../../util/money_ex.dart';
-import '../../../quoting/list_quote_screen.dart';
 import '../../../widgets/async_state.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/media/photo_gallery.dart';
@@ -19,16 +17,18 @@ import '../../check_list/edit_task_item_screen.dart';
 import '../../check_list/list_task_item_screen.dart';
 import '../../task/edit_task_screen.dart';
 
-class QuoteBuilderScreen extends StatefulWidget {
-  const QuoteBuilderScreen({required this.job, super.key});
+class JobEstimateBuilderScreen extends StatefulWidget {
+  const JobEstimateBuilderScreen({required this.job, super.key});
 
   final Job job;
 
   @override
-  _QuoteBuilderScreenState createState() => _QuoteBuilderScreenState();
+  _JobEstimateBuilderScreenState createState() =>
+      _JobEstimateBuilderScreenState();
 }
 
-class _QuoteBuilderScreenState extends AsyncState<QuoteBuilderScreen, void> {
+class _JobEstimateBuilderScreenState
+    extends AsyncState<JobEstimateBuilderScreen, void> {
   List<Task> _tasks = [];
   Money _totalLabourCost = MoneyEx.zero;
   Money _totalMaterialsCost = MoneyEx.zero;
@@ -117,11 +117,10 @@ class _QuoteBuilderScreenState extends AsyncState<QuoteBuilderScreen, void> {
       future: initialised,
       builder: (context, _) => Scaffold(
             appBar: AppBar(
-              title: const Text('Quote Builder'),
+              title: const Text('Estimate Builder'),
             ),
             body: Column(
               children: [
-                _buildQuoteButton(widget.job),
                 _buildTotals(),
                 Expanded(
                   child: ListView.builder(
@@ -255,25 +254,6 @@ class _QuoteBuilderScreenState extends AsyncState<QuoteBuilderScreen, void> {
     }
     return TaskAndRate.fromTask(task);
   }
-
-  Widget _buildQuoteButton(Job job) => ElevatedButton(
-        onPressed: () async => Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => FutureBuilderEx(
-                  future: DaoContact().getByJob(job.id),
-                  builder: (context, contacts) => const QuoteListScreen(
-                      // job: job,
-                      // emailRecipients: contacts
-                      //         ?.map((contact) => Strings.trim(contact.emailAddress))
-                      //         .toList() ??
-                      //     [])
-                      ),
-                ))),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          textStyle: const TextStyle(fontSize: 16),
-        ),
-        child: const Text('Quotes'),
-      );
 }
 
 class ItemsAndRate {

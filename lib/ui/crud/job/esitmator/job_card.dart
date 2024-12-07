@@ -8,7 +8,6 @@ import '../../../../entity/job.dart';
 import '../../../../entity/task_item_type.dart';
 import '../../../../util/money_ex.dart';
 import '../../../invoicing/dialog_select_tasks.dart';
-import '../../../invoicing/select_job_dialog.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_toast.dart';
 import 'edit_job_estimate_screen.dart';
@@ -29,69 +28,75 @@ class JobCard extends StatefulWidget {
 
 class _JobCardState extends State<JobCard> {
   @override
-  Widget build(BuildContext context) => FutureBuilderEx<CompleteJobInfo>(
-        // ignore: discarded_futures
-        future: _loadCompleteJobInfo(widget.job),
-        builder: (context, info) {
-          final labourCost = info!.totals.labourCost;
-          final materialsCost = info.totals.materialsCost;
-          final combinedCost = labourCost + materialsCost;
+  Widget build(BuildContext context) => SizedBox(
+        height: 327,
+        child: FutureBuilderEx<CompleteJobInfo>(
+          future: _loadCompleteJobInfo(widget.job),
+          builder: (context, info) {
+            final labourCost = info!.totals.labourCost;
+            final materialsCost = info.totals.materialsCost;
+            final combinedCost = labourCost + materialsCost;
 
-          return Card(
-            margin: const EdgeInsets.all(8),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.job.summary,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+            return Card(
+              margin: const EdgeInsets.all(8),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.job.summary,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Customer: ${info.customerName}'),
-                  Text('Job Number: ${widget.job.id}'),
-                  Text('Status: ${info.statusName}'),
-                  const SizedBox(height: 16),
-                  Text('Labour: $labourCost'),
-                  Text('Materials: $materialsCost'),
-                  Text('Combined: $combinedCost'),
-                  const SizedBox(height: 16),
-                  HMBButton(
-                    label: 'Update Estimates',
-                    onPressed: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (context) => JobEstimateBuilderScreen(
-                            job: widget.job,
-                          ),
+                    const SizedBox(height: 8),
+                    Text('Customer: ${info.customerName}'),
+                    Text('Job Number: ${widget.job.id}'),
+                    if (info.quoteNumber != null)
+                      Text('Quote #: ${info.quoteNumber}'),
+                    Text('Status: ${info.statusName}'),
+                    const SizedBox(height: 16),
+                    Text('Labour: $labourCost'),
+                    Text('Materials: $materialsCost'),
+                    Text('Combined: $combinedCost'),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        HMBButton(
+                          label: 'Update Estimates',
+                          onPressed: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (context) =>
+                                    JobEstimateBuilderScreen(job: widget.job),
+                              ),
+                            );
+                            // After returning, refresh totals
+                            widget.onEstimatesUpdated();
+                          },
                         ),
-                      );
-                      // After returning, call onEstimatesUpdated to refresh
-                      widget.onEstimatesUpdated();
-                    },
-                  ),
-                ],
+                        const SizedBox(width: 16),
+                        HMBButton(
+                          label: 'Create Quote',
+                          onPressed: () async {
+                            await _createQuote();
+                            widget.onEstimatesUpdated();
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
 
   Future<void> _createQuote() async {
-    final job = await showDialog<Job?>(
-      context: context,
-      builder: (context) => const SelectJobDialog(),
-    );
-
-    if (job == null) {
-      return;
-    }
-
-    final invoiceOptions = await showQuote(context: context, job: job);
+    final invoiceOptions = await showQuote(context: context, job: widget.job);
 
     if (invoiceOptions != null) {
       try {
@@ -101,8 +106,8 @@ class _JobCardState extends State<JobCard> {
               acknowledgmentRequired: true);
           return;
         }
-        await DaoQuote().create(job, invoiceOptions);
-        // ignore: avoid_catches_without_on_clauses
+        await DaoQuote().create(widget.job, invoiceOptions);
+        HMBToast.info('Quote created successfully.');
       } catch (e) {
         HMBToast.error('Failed to create quote: $e',
             acknowledgmentRequired: true);
@@ -122,10 +127,21 @@ class _JobCardState extends State<JobCard> {
     final customerName = customer?.name ?? 'N/A';
     final statusName = jobStatus?.name ?? 'Unknown';
 
+    // Fetch the quotes for this job and pick the most recent one
+    final quotes = await DaoQuote().getByJobId(job.id);
+    String? quoteNumber;
+    if (quotes.isNotEmpty) {
+      // Sort quotes by modified date descending
+      quotes.sort((a, b) => b.modifiedDate.compareTo(a.modifiedDate));
+      final latestQuote = quotes.first;
+      quoteNumber = latestQuote.bestNumber;
+    }
+
     return CompleteJobInfo(
       totals: totals,
       customerName: customerName,
       statusName: statusName,
+      quoteNumber: quoteNumber,
     );
   }
 
@@ -141,10 +157,8 @@ class _JobCardState extends State<JobCard> {
 
       for (final item in items) {
         if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
-          // Labour cost
           totalLabour += item.calcLabourCost(hourlyRate);
         } else {
-          // Material cost
           totalMaterials += item.calcMaterialCost(billingType);
         }
       }
@@ -168,9 +182,11 @@ class CompleteJobInfo {
     required this.totals,
     required this.customerName,
     required this.statusName,
+    this.quoteNumber,
   });
 
   final JobTotals totals;
   final String customerName;
   final String statusName;
+  final String? quoteNumber;
 }

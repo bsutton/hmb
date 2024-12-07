@@ -5,9 +5,11 @@ import '../../database/management/backup_providers/local/local_backup_screen.dar
 import '../../main.dart';
 import '../about.dart';
 import '../crud/customer/list_customer_screen.dart';
+import '../crud/job/esitmator/list_job_estimates_screen.dart';
 import '../crud/job/list_job_screen.dart';
 import '../crud/manufacturer/list_manufacturer_screen.dart';
 import '../crud/message_template/list_message_template.dart';
+import '../crud/milestone/milestone_overview_screen.dart';
 import '../crud/supplier/list_supplier_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
@@ -18,6 +20,7 @@ import '../error.dart';
 import '../invoicing/list_invoice_screen.dart';
 import '../list_packing_screen.dart';
 import '../list_shopping_screen.dart';
+import '../quoting/list_quote_screen.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../wizard/system_wizard.dart';
 import 'home_with_drawer.dart';
@@ -70,7 +73,7 @@ GoRouter get router => GoRouter(
             GoRoute(
               path: 'billing/quotes',
               builder: (_, __) =>
-                  const HomeWithDrawer(initialScreen: InvoiceListScreen()),
+                  const HomeWithDrawer(initialScreen: QuoteListScreen()),
             ),
             GoRoute(
               path: 'billing/invoices',
@@ -80,7 +83,12 @@ GoRouter get router => GoRouter(
             GoRoute(
               path: 'billing/estimator',
               builder: (_, __) =>
-                  const HomeWithDrawer(initialScreen: InvoiceListScreen()),
+                  const HomeWithDrawer(initialScreen: JobEstimatesListScreen()),
+            ),
+            GoRoute(
+              path: 'billing/milestones',
+              builder: (_, __) => const HomeWithDrawer(
+                  initialScreen: MilestoneOverviewScreen()),
             ),
             GoRoute(
                 path: 'extras/tools',

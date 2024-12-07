@@ -406,7 +406,7 @@ class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen, System>
             MoneyEx.tryParse(_estimatedLabourCostController.text),
         charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
         chargeSet: taskItem.chargeSet,
-        margin: Percentage.tryParse(_marginController.text),
+        margin: Percentage.tryParse(_marginController.text)??Percentage.zero,
         completed: taskItem.completed,
         billed: false,
         labourEntryMode: _labourEntryMode,
@@ -438,7 +438,7 @@ class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen, System>
             MoneyEx.tryParse(_estimatedLabourCostController.text),
         charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
         chargeSet: false,
-        margin: Percentage.tryParse(_marginController.text),
+        margin: Percentage.tryParse(_marginController.text)??Percentage.zero,
         labourEntryMode: _labourEntryMode,
         measurementType:
             June.getState(SelectedMeasurementType.new).selectedOrDefault,

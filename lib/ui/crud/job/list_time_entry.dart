@@ -4,6 +4,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/_index.g.dart';
 import '../../../entity/_index.g.dart';
 import '../../../util/format.dart';
+import '../../widgets/async_state.dart';
 
 class TimeEntryListScreen extends StatefulWidget {
   const TimeEntryListScreen({required this.job, super.key});
@@ -14,13 +15,12 @@ class TimeEntryListScreen extends StatefulWidget {
   State<TimeEntryListScreen> createState() => _TimeEntryListScreenState();
 }
 
-class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
+class _TimeEntryListScreenState extends AsyncState<TimeEntryListScreen, void> {
   late Future<List<TimeEntry>> _timeEntries;
 
   @override
-  void initState() {
-    super.initState();
-    _refreshTimeEntries();
+  Future<void> asyncInitState() async {
+    await _refreshTimeEntries();
   }
 
   Future<void> _refreshTimeEntries() async {

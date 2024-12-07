@@ -24,12 +24,12 @@ class DaoMilestone extends Dao<Milestone> {
   @override
   JuneStateCreator get juneRefresher => MilestonePaymentState.new;
 
-  Future<void> detachFromInvoice(int id) async {
+  Future<void> detachFromInvoice(int invoiceId) async {
     await db.update(
       'milestone',
       {'invoice_id': null}, // Set invoice_id to NULL
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'invoice_id = ?',
+      whereArgs: [invoiceId],
     );
   }
 }

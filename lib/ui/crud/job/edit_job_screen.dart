@@ -28,7 +28,6 @@ import '../../widgets/select/select_customer.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import '../task/list_task_screen.dart';
-import 'rapid/quote_builder_screen.dart';
 
 class JobEditScreen extends StatefulWidget {
   const JobEditScreen({super.key, this.job});
@@ -122,12 +121,6 @@ class _JobEditScreenState extends State<JobEditScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const HMBSpacer(height: true),
-                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                  if (job != null) _buildQuoteButton(context, job),
-                  const HMBSpacer(width: true),
-                  // if (job != null) _buildInvoiceButton(context, job),
-                ]),
-                const HMBSpacer(height: true),
                 HMBFormSection(children: [
                   _showSummary(),
                   _chooseCustomer(),
@@ -162,34 +155,6 @@ class _JobEditScreenState extends State<JobEditScreen>
             ),
           ),
         ),
-      );
-
-  // Widget _buildInvoiceButton(BuildContext context, Job job) => ElevatedButton(
-  //       onPressed: () async {
-  //         await Navigator.of(context).push(MaterialPageRoute<void>(
-  //           builder: (context) => InvoiceListScreen(job: job),
-  //         ));
-  //         setState(() {}); // Refresh the job after returning
-  //       },
-  //       style: ElevatedButton.styleFrom(
-  //         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-  //         textStyle: const TextStyle(fontSize: 16),
-  //       ),
-  //       child: const Text('Invoice'),
-  //     );
-
-  Widget _buildQuoteButton(BuildContext context, Job job) => ElevatedButton(
-        onPressed: () async {
-          await Navigator.of(context).push(MaterialPageRoute<void>(
-            builder: (context) => QuoteBuilderScreen(job: job),
-          ));
-          setState(() {}); // Refresh the job after returning
-        },
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          textStyle: const TextStyle(fontSize: 16),
-        ),
-        child: const Text('Quote'),
       );
 
   Widget _showSummary() => HMBTextField(

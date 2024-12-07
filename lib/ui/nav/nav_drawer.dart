@@ -16,6 +16,7 @@ class MyDrawer extends StatelessWidget {
       DrawerItem(title: 'Quotes', route: '/billing/quotes'),
       DrawerItem(title: 'Invoices', route: '/billing/invoices'),
       DrawerItem(title: 'Estimator', route: '/billing/estimator'),
+      DrawerItem(title: 'Milestones', route: '/billing/milestones'),
     ]),
     DrawerItem(title: 'Extras', route: '', children: [
       DrawerItem(title: 'Tools', route: '/extras/tools'),

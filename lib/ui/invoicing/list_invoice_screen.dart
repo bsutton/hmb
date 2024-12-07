@@ -19,6 +19,7 @@ import '../../entity/invoice_line.dart';
 import '../../entity/job.dart';
 import '../../util/money_ex.dart';
 import '../dialog/hmb_are_you_sure_dialog.dart';
+import '../widgets/async_state.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/hmb_add_button.dart';
 import '../widgets/hmb_toast.dart';
@@ -35,7 +36,7 @@ class InvoiceListScreen extends StatefulWidget {
   _InvoiceListScreenState createState() => _InvoiceListScreenState();
 }
 
-class _InvoiceListScreenState extends State<InvoiceListScreen> {
+class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
   late Future<List<Invoice>> _invoices;
   final XeroApi _xeroApi = XeroApi();
 
@@ -45,9 +46,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   final TextEditingController _filterController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    _refreshInvoiceList();
+  Future<void> asyncInitState() async {
+    await _refreshInvoiceList();
   }
 
   Future<void> _refreshInvoiceList() async {
@@ -55,13 +55,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       _invoices = _fetchFilteredInvoices();
     });
   }
-
-  // Future<bool> hasBillableItems() async {
-  //   final hasBillableTasks = await DaoJob().hasBillableTasks(job);
-  //   final hasBillableBookingFee = await DaoJob().hasBillableBookingFee(job);
-
-  //   return Future.value(hasBillableTasks || hasBillableBookingFee);
-  // }
 
   Future<List<Invoice>> _fetchFilteredInvoices() async {
     var invoices = await DaoInvoice().getByFilter(filterText);

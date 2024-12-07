@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
@@ -10,6 +12,7 @@ import '../../../entity/quote.dart';
 import '../../../util/list_ex.dart';
 import '../../../util/money_ex.dart';
 import '../../widgets/async_state.dart';
+import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/text/hmb_text.dart';
 import 'milestone_tile.dart';
@@ -29,6 +32,7 @@ class _EditMilestonesScreenState
   final daoMilestonePayment = DaoMilestone();
   Money totalAllocated = MoneyEx.zero;
   String errorMessage = '';
+  int? editingMilestoneId; // Track which milestone is currently being edited
 
   @override
   Future<void> asyncInitState() async {
@@ -50,8 +54,13 @@ class _EditMilestonesScreenState
       return;
     }
     if (!difference.isZero) {
-      errorMessage =
-          'Total milestone amounts do not equal the quote total by $difference';
+      if (difference.isNegative) {
+        errorMessage =
+            'Total milestone amounts exceed the Quotation Total by ${-difference}';
+      } else {
+        errorMessage =
+            'Total milestone amounts are less than the Quote total by $difference';
+      }
     } else {
       errorMessage = '';
     }
@@ -60,7 +69,7 @@ class _EditMilestonesScreenState
   void _recalcAllocated() {
     totalAllocated = milestones.fold<Money>(
       MoneyEx.zero,
-      (sum, m) => sum + (m.paymentAmount ?? MoneyEx.zero),
+      (sum, m) => sum + (m.paymentAmount),
     );
   }
 
@@ -78,8 +87,7 @@ class _EditMilestonesScreenState
     setState(() {});
   }
 
-  /// Distribute amounts evenly amongst unedited
-  /// milestones.
+  /// Distribute amounts evenly amongst unedited milestones.
   Future<void> _redistributeAmounts() async {
     final uninvoicedMilestones = milestones.where((m) => m.invoiceId == null);
 
@@ -96,24 +104,20 @@ class _EditMilestonesScreenState
     // Calculate how much is already allocated by edited milestones
     final allocatedByEdited = editedMilestones.fold<Money>(
       MoneyEx.zero,
-      (sum, m) => sum + (m.paymentAmount ?? MoneyEx.zero),
+      (sum, m) => sum + (m.paymentAmount),
     );
 
-    // Total amount we need to distribute = total quote - sum of invoiced and edited
-    final invoicedSum = uneditedMilestones.fold<Money>(
+    // total quote - edited - invoiced
+    final invoicedSum = uninvoicedMilestones.fold<Money>(
       MoneyEx.zero,
       (sum, m) =>
-          sum +
-          (m.invoiceId != null
-              ? m.paymentAmount ?? MoneyEx.zero
-              : MoneyEx.zero),
+          sum + ((m.invoiceId != null) ? m.paymentAmount : MoneyEx.zero),
     );
 
     final remainingForUnedited =
         quote.totalAmount - allocatedByEdited - invoicedSum;
 
     if (uneditedMilestones.isEmpty) {
-      // If no unedited milestones remain, just ensure totals are correct
       _calculateTotals();
       setState(() {});
       return;
@@ -134,45 +138,20 @@ class _EditMilestonesScreenState
 
     _recalcAllocated();
 
-    /// ensure that the total milestones match the quote total.
     final difference = quote.totalAmount - totalAllocated;
-
     final lastMilestone =
         milestones.lastWhereOrNull((m) => m.invoiceId == null);
 
-    if (lastMilestone != null) {
+    if (lastMilestone != null && !lastMilestone.edited) {
       lastMilestone
-        ..paymentAmount =
-            (lastMilestone.paymentAmount ?? MoneyEx.zero) + difference
+        ..paymentAmount = (lastMilestone.paymentAmount) + difference
         ..paymentPercentage =
-            lastMilestone.paymentAmount!.percentageOf(quote.totalAmount);
+            lastMilestone.paymentAmount.percentageOf(quote.totalAmount);
 
       await daoMilestonePayment.update(lastMilestone);
     }
     _calculateTotals();
     setState(() {});
-  }
-
-  Future<void> _createInvoiceForNextMilestone() async {
-    final nextMilestone = milestones.firstWhereOrNull(
-      (m) => m.invoiceId == null,
-    );
-
-    if (nextMilestone == null) {
-      HMBToast.info('All Invoices have already been genearted.');
-      return;
-    }
-
-    // Assume createInvoiceFromMilestonePayment is defined elsewhere
-    final invoice = await createInvoiceFromMilestone(nextMilestone);
-    nextMilestone
-      ..invoiceId = invoice.id
-      ..status = 'invoiced';
-    await daoMilestonePayment.update(nextMilestone);
-    _calculateTotals();
-    setState(() {});
-    _showMessage(
-        'Invoice created for Milestone ${nextMilestone.milestoneNumber}.');
   }
 
   void _showMessage(String message) {
@@ -183,9 +162,8 @@ class _EditMilestonesScreenState
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
     final invoicedMilestones =
-        milestones.where((m) => m.invoiceId != null).length;
+        milestones.where((m) => m.invoiceId != null).length - 1;
     if (oldIndex < invoicedMilestones || newIndex <= invoicedMilestones) {
-      // Prevent reordering of invoiced milestones
       HMBToast.info("You can't re-order invoiced milestones");
       return;
     }
@@ -206,15 +184,17 @@ class _EditMilestonesScreenState
     setState(() {});
   }
 
-  Future<void> _onMilestoneChanged(Milestone milestone) async {
-    // The user changed this milestone, mark as edited if it's not already
-    milestone.edited = true;
+  /// Called by a tile when the user clicks 'save' on that tile.
+  /// We now apply changes and run redistribution if needed.
+  Future<void> _onMilestoneSave(Milestone milestone) async {
+    // The user has saved changes to a milestone.
+    // Update this milestone in DB
     await DaoMilestone().update(milestone);
 
-    /// refresh the widgets cache of milestones so
-    /// it has this change.
+    // Reload data so we have fresh state
     await _loadData();
 
+    // Redistribute or recalc totals as needed
     await _redistributeAmounts();
     setState(() {});
   }
@@ -232,6 +212,13 @@ class _EditMilestonesScreenState
     setState(() {});
   }
 
+  /// Called by a tile when it enters or leaves edit mode.
+  void _onEditingStatusChanged(Milestone milestone, bool isEditing) {
+    setState(() {
+      editingMilestoneId = isEditing ? milestone.id : null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
       future: initialised,
@@ -239,10 +226,10 @@ class _EditMilestonesScreenState
             appBar: AppBar(
               title: const Text('Edit Milestones'),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.receipt),
-                  tooltip: 'Create Invoice for Next Milestone',
-                  onPressed: _createInvoiceForNextMilestone,
+                HMBButtonAdd(
+                  enabled: true,
+                  toolTip: 'Add Milestone',
+                  onPressed: _addMilestone,
                 ),
               ],
             ),
@@ -262,50 +249,39 @@ class _EditMilestonesScreenState
                   ),
                 Expanded(
                   child: ReorderableListView(
+                    padding: const EdgeInsets.only(right: 28),
                     onReorder: _onReorder,
                     children: List.generate(milestones.length, (index) {
                       final milestone = milestones[index];
                       return MilestoneTile(
-                        key: ValueKey(milestone.hash),
+                        key: ValueKey(milestone.hashCode),
                         milestone: milestone,
                         quoteTotal: quote.totalAmount,
-                        onChanged: _onMilestoneChanged,
                         onDelete: _onMilestoneDeleted,
+                        onSave: _onMilestoneSave,
                         onInvoice: _onMilestoneInvoice,
+                        // If editingMilestoneId is set and not equal to this milestone's id,
+                        // then this tile is grayed out.
+                        isOtherTileEditing: editingMilestoneId != null &&
+                            editingMilestoneId != milestone.id,
+                        // Add the editing status changed callback
+                        onEditingStatusChanged: _onEditingStatusChanged,
                       );
                     }),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Milestone'),
-                    onPressed: _addMilestone,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: ElevatedButton(
-                    onPressed: _redistributeAmounts,
-                    child: const Text('Balance Totals'),
-                  ),
-                ),
-                const SizedBox(height: 16),
               ],
             ),
           ));
 
   Future<void> _onMilestoneInvoice(Milestone milestone) async {
-    // Logic to create an invoice and update the milestone
+    // Create invoice and update milestone
     final invoice = await createInvoiceFromMilestone(milestone);
+    milestone.invoiceId = invoice.id;
+    await DaoMilestone().update(milestone);
 
-    setState(() {
-      milestone.invoiceId = invoice.id;
-      final index = milestones.indexWhere((m) => m.id == milestone.id);
-      if (index != -1) {
-        milestones[index] = milestone;
-      }
-    });
+    // Refresh data
+    await _loadData();
+    setState(() {});
   }
 }

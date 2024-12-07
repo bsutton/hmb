@@ -11,6 +11,7 @@ import '../../../../entity/job.dart';
 import '../../../../entity/milestone.dart';
 import '../../../../entity/quote.dart';
 import '../../../../util/money_ex.dart';
+import '../../widgets/async_state.dart';
 import 'edit_milestone_payment.dart';
 
 class MilestoneOverviewScreen extends StatefulWidget {
@@ -21,12 +22,12 @@ class MilestoneOverviewScreen extends StatefulWidget {
       _MilestoneOverviewScreenState();
 }
 
-class _MilestoneOverviewScreenState extends State<MilestoneOverviewScreen> {
+class _MilestoneOverviewScreenState
+    extends AsyncState<MilestoneOverviewScreen, void> {
   late Future<List<QuoteMilestoneSummary>> _summaries;
 
   @override
-  void initState() {
-    super.initState();
+  Future<void> asyncInitState() async {
     _summaries = _fetchMilestoneSummaries();
   }
 
@@ -62,9 +63,25 @@ class _MilestoneOverviewScreenState extends State<MilestoneOverviewScreen> {
       }
 
       final quoteMilestones = entry.value;
+
+      // Total value of all milestones
       final totalValue = quoteMilestones.fold<Money>(
-          MoneyEx.zero, (sum, m) => sum + (m.paymentAmount ?? MoneyEx.zero));
+          MoneyEx.zero, (sum, m) => sum + (m.paymentAmount));
+
       final count = quoteMilestones.length;
+
+      // Calculate total invoiced to date
+      final invoicedValue = quoteMilestones.fold<Money>(
+          MoneyEx.zero,
+          (sum, m) =>
+              sum +
+              ((m.invoiceId != null )
+                  ? m.paymentAmount
+                  : MoneyEx.zero));
+
+      // Count how many milestones are invoiced
+      final invoicedCount =
+          quoteMilestones.where((m) => m.invoiceId != null).length;
 
       summaries.add(QuoteMilestoneSummary(
         quote: quote,
@@ -72,6 +89,8 @@ class _MilestoneOverviewScreenState extends State<MilestoneOverviewScreen> {
         customer: customer,
         totalValue: totalValue,
         milestoneCount: count,
+        invoicedValue: invoicedValue,
+        invoicedCount: invoicedCount,
       ));
     }
 
@@ -118,9 +137,11 @@ class _MilestoneOverviewScreenState extends State<MilestoneOverviewScreen> {
             children: [
               Text('Customer: ${summary.customer?.name ?? "N/A"}'),
               Text('Job #: ${summary.job.id}'),
-              Text('Milestones: ${summary.milestoneCount}'),
-              Text('Total Value: ${summary.totalValue}'),
               Text('Quote #: ${summary.quote.bestNumber}'),
+              Text('Milestones: ${summary.milestoneCount}'),
+              Text('Invoiced Milestones: ${summary.invoicedCount}'),
+              Text('Invoiced to date: ${summary.invoicedValue}'),
+              Text('Total Value: ${summary.totalValue}'),
             ],
           ),
           onTap: () async {
@@ -147,6 +168,8 @@ class QuoteMilestoneSummary {
     required this.customer,
     required this.totalValue,
     required this.milestoneCount,
+    required this.invoicedValue,
+    required this.invoicedCount,
   });
 
   final Quote quote;
@@ -154,4 +177,6 @@ class QuoteMilestoneSummary {
   final Customer? customer;
   final Money totalValue;
   final int milestoneCount;
+  final Money invoicedValue;
+  final int invoicedCount;
 }

@@ -1,15 +1,18 @@
+// ignore_for_file: avoid_catches_without_on_clauses
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
 
 import '../../dao/_index.g.dart';
+import '../../dao/dao_invoice_fixed_price.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/quote.dart';
 import '../../entity/quote_line.dart';
 import '../../util/format.dart';
-import '../crud/milestone_payment/edit_milestone_payment.dart';
-import '../widgets/hmb_button.dart';
+import '../crud/milestone/edit_milestone_payment.dart';
+import '../widgets/hmb_toast.dart';
 import '../widgets/media/pdf_preview.dart';
 import 'edit_quote_line_dialog.dart';
 import 'generate_quote_pdf.dart';
@@ -40,6 +43,7 @@ class _QuoteCardState extends State<QuoteCard> {
           subtitle: Text('Total: ${widget.quote.totalAmount}'),
           children: [
             FutureBuilderEx<JobQuote>(
+              // ignore: discarded_futures
               future: JobQuote.fromQuoteId(widget.quote.id),
               builder: (context, jobQuote) {
                 if (jobQuote!.groups.isEmpty) {
@@ -55,7 +59,10 @@ class _QuoteCardState extends State<QuoteCard> {
               child: Row(
                 children: [
                   _buildGenerateButton(widget.quote),
-                  _buildInvoiceButton(widget.quote),
+                  const SizedBox(width: 8),
+                  _buildMilestonesButton(widget.quote),
+                  const SizedBox(width: 8),
+                  _buildCreateInvoiceButton(widget.quote),
                 ],
               ),
             )
@@ -63,19 +70,8 @@ class _QuoteCardState extends State<QuoteCard> {
         ),
       );
 
-  Widget _buildInvoiceButton(Quote quote) => HMBButton(
-      label: 'Convert To Invoice',
-      onPressed: () async {
-        if (mounted) {
-          await Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (context) => EditMilestonesScreen(quoteId: quote.id),
-            ),
-          );
-        }
-      });
-
   Widget _buildQuoteTitle(Quote quote) => FutureBuilderEx<JobAndCustomer>(
+        // ignore: discarded_futures
         future: JobAndCustomer.fromQuote(quote),
         builder: (context, jobAndCustomer) {
           final jobName = jobAndCustomer!.job.summary;
@@ -84,6 +80,7 @@ class _QuoteCardState extends State<QuoteCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
+                // Prevents overflow
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -139,7 +136,8 @@ class _QuoteCardState extends State<QuoteCard> {
             (line) => ListTile(
               title: Text(line.description),
               subtitle: Text(
-                'Quantity: ${line.quantity}, Unit Price: ${line.unitPrice}, Status: ${line.status.toString().split('.').last}',
+                'Quantity: ${line.quantity}, Unit Price: ${line.unitPrice}, '
+                'Status: ${line.status.toString().split('.').last}',
               ),
               trailing: Text('Total: ${line.lineTotal}'),
               onTap: () async => widget.onEditQuote(widget.quote),
@@ -234,9 +232,8 @@ class _QuoteCardState extends State<QuoteCard> {
             final job = await DaoJob().getById(quote.jobId);
             final contacts = await DaoContact().getByJob(quote.jobId);
             final emailRecipients = contacts
-                    .map((contact) => Strings.trim(contact.emailAddress))
-                    .toList() ??
-                [];
+                .map((contact) => Strings.trim(contact.emailAddress))
+                .toList();
             if (mounted) {
               await Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -268,6 +265,32 @@ class _QuoteCardState extends State<QuoteCard> {
       await widget.onEditQuote(widget.quote);
     }
   }
+
+  ElevatedButton _buildMilestonesButton(Quote quote) => ElevatedButton(
+        onPressed: () async {
+          // Navigate to EditMilestonesScreen for milestone creation
+          if (mounted) {
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => EditMilestonesScreen(quoteId: quote.id),
+              ),
+            );
+          }
+        },
+        child: const Text('Create Milestones'),
+      );
+
+  ElevatedButton _buildCreateInvoiceButton(Quote quote) => ElevatedButton(
+        onPressed: () async {
+          try {
+            final invoice = await createFixedPriceInvoice(quote);
+            HMBToast.info('Invoice #${invoice.id} created successfully.');
+          } catch (e) {
+            HMBToast.error('Failed to create invoice: $e');
+          }
+        },
+        child: const Text('Create Invoice'),
+      );
 }
 
 class JobAndCustomer {

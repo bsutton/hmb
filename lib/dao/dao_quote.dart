@@ -1,6 +1,7 @@
 import 'package:fixed/fixed.dart';
 import 'package:june/june.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:strings/strings.dart';
 
 import '../entity/_index.g.dart';
 import '../ui/invoicing/dialog_select_tasks.dart';
@@ -32,6 +33,33 @@ class DaoQuote extends Dao<Quote> {
     final List<Map<String, dynamic>> maps = await db.query(tableName,
         where: 'job_id = ?', whereArgs: [jobId], orderBy: 'id desc');
     return List.generate(maps.length, (i) => fromMap(maps[i]));
+  }
+
+  Future<List<Quote>> getByFilter(String? filter) async {
+    final db = withoutTransaction();
+
+    if (Strings.isBlank(filter)) {
+      return getAll(orderByClause: 'modified_date desc');
+    }
+
+    final data = await db.rawQuery('''
+    SELECT q.*
+    FROM quote q
+    LEFT JOIN job j ON q.job_id = j.id
+    LEFT JOIN customer c ON j.customer_id = c.id
+    WHERE q.quote_num LIKE ? 
+       OR q.external_quote_id LIKE ?
+       OR j.summary LIKE ?
+       OR c.name LIKE ?
+    ORDER BY q.modified_date DESC
+  ''', [
+      '%$filter%', // Filter for quote_num
+      '%$filter%', // Filter for external_quote_id
+      '%$filter%', // Filter for job summary
+      '%$filter%' // Filter for customer name
+    ]);
+
+    return toList(data);
   }
 
   @override

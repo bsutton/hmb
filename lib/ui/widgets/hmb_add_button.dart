@@ -4,13 +4,18 @@ import 'package:flutter/material.dart';
 /// and allows the user to select/update the primary site.
 class HMBButtonAdd extends StatelessWidget {
   const HMBButtonAdd(
-      {required this.onPressed, required this.enabled, super.key});
+      {required this.onPressed,
+      required this.enabled,
+      super.key,
+      this.toolTip = 'Add'});
   final Future<void> Function() onPressed;
   final bool enabled;
 
+  final String toolTip;
+
   @override
   Widget build(BuildContext context) => Tooltip(
-        message: 'Add',
+        message: toolTip,
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: CircleAvatar(

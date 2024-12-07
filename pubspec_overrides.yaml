@@ -4,8 +4,10 @@ dependency_overrides:
   # mailto:
   #   path: ../../mailto
   # future_builder_ex:
-
   #   path: ../../future_builder_ex
+
+  # money:
+  #   path: ../money2
 
   # permission_handler: 
   #   path: ../../flutter-permission-handler/permission_handler

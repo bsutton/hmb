@@ -8,22 +8,28 @@ import 'package:money2/money2.dart';
 import '../../../dao/dao_invoice.dart';
 import '../../../entity/milestone.dart';
 import '../../../util/money_ex.dart';
+import '../../widgets/hmb_toast.dart';
 
 class MilestoneTile extends StatefulWidget {
   const MilestoneTile({
     required this.milestone,
     required this.quoteTotal,
-    required this.onChanged,
     required this.onDelete,
+    required this.onSave,
     required this.onInvoice,
+    required this.onEditingStatusChanged,
+    required this.isOtherTileEditing,
     super.key,
   });
 
   final Milestone milestone;
   final Money quoteTotal;
-  final ValueChanged<Milestone> onChanged;
   final ValueChanged<Milestone> onDelete;
-  final ValueChanged<Milestone> onInvoice;
+  final ValueChanged<Milestone> onSave;
+  final Future<void> Function(Milestone milestone) onInvoice;
+  // ignore: avoid_positional_boolean_parameters
+  final void Function(Milestone, bool) onEditingStatusChanged;
+  final bool isOtherTileEditing;
 
   @override
   _MilestoneTileState createState() => _MilestoneTileState();
@@ -35,7 +41,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
   late TextEditingController amountController;
 
   bool isEditable = true;
-  Timer? _debounceTimer;
+  bool isInEditMode = false; // Track if this tile is currently being edited
 
   @override
   void initState() {
@@ -57,61 +63,111 @@ class _MilestoneTileState extends State<MilestoneTile> {
     descriptionController.dispose();
     percentageController.dispose();
     amountController.dispose();
-    _debounceTimer?.cancel();
     super.dispose();
   }
 
-  void _scheduleOnChange() {
-    // Cancel any previous timers
-    _debounceTimer?.cancel();
-
-    // Schedule a new timer to trigger onChanged after a delay
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      widget.onChanged(widget.milestone);
-    });
+  void _enterEditMode() {
+    if (!isInEditMode) {
+      setState(() {
+        isInEditMode = true;
+      });
+      widget.onEditingStatusChanged(widget.milestone, true);
+    }
   }
 
   void _onDescriptionChanged() {
-    widget.milestone.milestoneDescription = descriptionController.text;
-    // If you do not want to delay description changes, call onChanged directly:
-    widget.onChanged(widget.milestone);
+    _enterEditMode();
   }
 
+  bool changing = false;
   void _onPercentageChanged() {
-    final percentage = Percentage.tryParse(percentageController.text);
-    widget.milestone.paymentPercentage = percentage;
-    widget.milestone.paymentAmount =
-        widget.quoteTotal.multipliedByPercentage(percentage);
-    amountController.text = widget.milestone.paymentAmount.toString();
+    _enterEditMode();
 
-    // Schedule the recalculation to happen after the user stops typing
-    _scheduleOnChange();
+    if (!changing) {
+      changing = true;
+      final percentage = Percentage.tryParse(percentageController.text);
+
+      /// Calc the amount based on the percentage just entered by the user.
+      final amount = widget.quoteTotal
+          .multipliedByPercentage(percentage ?? Percentage.zero);
+      amountController.text = amount.toString();
+      changing = false;
+    }
   }
 
   void _onAmountChanged() {
-    final amount = MoneyEx.tryParse(amountController.text);
-    widget.milestone.paymentPercentage = amount.percentageOf(widget.quoteTotal);
-    percentageController.text = widget.milestone.paymentPercentage.toString();
+    _enterEditMode();
 
-    // Also delay this recalculation
-    _scheduleOnChange();
+    if (!changing) {
+      changing = true;
+      final amount = MoneyEx.tryParse(amountController.text);
+
+      // Update the percentage based on the amount the user has just entered.
+      final percentage = amount.percentageOf(widget.quoteTotal);
+      percentageController.text = percentage.toString();
+      changing = false;
+    }
   }
 
   void _onDeletePressed() {
+    // Deletion doesn't require edit mode changes.
     widget.onDelete(widget.milestone);
   }
 
   Future<void> _onInvoicePressed() async {
-    widget.onInvoice(widget.milestone);
+    if (widget.milestone.paymentAmount <= MoneyEx.zero) {
+      HMBToast.error(
+          'You cannot invoice a milestone with a zero or negative amount.');
+      return;
+    }
 
+    // Invoicing doesn't require waiting for save.
+    await widget.onInvoice(widget.milestone);
+    HMBToast.info('Invoice created: #${widget.milestone.invoiceId}');
     setState(() {
       isEditable = false;
     });
-    widget.onChanged(widget.milestone);
+  }
+
+  void _onSavePressed() {
+    // User finished editing, apply changes
+
+    widget.milestone.milestoneDescription = descriptionController.text;
+
+    final amount = Money.tryParse(amountController.text, isoCode: 'AUD');
+    if (amount == null) {
+      HMBToast.error('The amount ${amountController.text} is invalid');
+      return;
+    }
+    amountController.text = amount.toString();
+    widget.milestone.paymentAmount = amount;
+
+    final percentage = Percentage.tryParse(percentageController.text);
+    if (percentage == null) {
+      HMBToast.error('The percentage ${percentageController.text} is invalid');
+      return;
+    }
+
+    percentageController.text = percentage.toString();
+    widget.milestone.paymentPercentage = percentage;
+
+    widget.milestone.edited = true;
+
+    setState(() {
+      isInEditMode = false;
+    });
+    widget.onEditingStatusChanged(widget.milestone, false);
+    widget.onSave(widget.milestone);
   }
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) {
+    final shouldDisable = widget.isOtherTileEditing;
+    final tileOpacity = shouldDisable ? 0.5 : 1.0;
+
+    return Opacity(
+      opacity: tileOpacity,
+      child: Card(
         key: widget.key,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: ListTile(
@@ -123,14 +179,14 @@ class _MilestoneTileState extends State<MilestoneTile> {
                 FutureBuilderEx(
                     // ignore: discarded_futures
                     future: DaoInvoice().getById(widget.milestone.invoiceId),
-                    builder: (contex, invoice) => Text(
-                          'Invoiced: ${invoice!.bestNumber}',
+                    builder: (context, invoice) => Text(
+                          'Invoice: ${invoice!.bestNumber}',
                           style: const TextStyle(color: Colors.green),
                         )),
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(labelText: 'Description'),
-                enabled: isEditable,
+                enabled: isEditable && !shouldDisable,
                 onChanged: (_) => _onDescriptionChanged(),
               ),
               Row(
@@ -142,7 +198,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
                           const InputDecoration(labelText: 'Percentage'),
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
-                      enabled: isEditable,
+                      enabled: isEditable && !shouldDisable,
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))
                       ],
@@ -156,7 +212,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
                       decoration: const InputDecoration(labelText: 'Amount'),
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
-                      enabled: isEditable,
+                      enabled: isEditable && !shouldDisable,
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))
                       ],
@@ -170,20 +226,30 @@ class _MilestoneTileState extends State<MilestoneTile> {
           trailing: Wrap(
             spacing: 8,
             children: [
-              if (isEditable)
+              if (isInEditMode)
                 IconButton(
-                  icon: const Icon(Icons.receipt, color: Colors.blue),
-                  onPressed: _onInvoicePressed,
-                  tooltip: 'Invoice this Milestone',
-                ),
-              if (isEditable)
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: _onDeletePressed,
-                  tooltip: 'Delete this Milestone',
-                ),
+                  icon: const Icon(Icons.save, color: Colors.green),
+                  onPressed: shouldDisable ? null : _onSavePressed,
+                  tooltip: 'Save changes',
+                )
+              else ...[
+                if (isEditable)
+                  IconButton(
+                    icon: const Icon(Icons.receipt, color: Colors.blue),
+                    onPressed: shouldDisable ? null : _onInvoicePressed,
+                    tooltip: 'Invoice this Milestone',
+                  ),
+                if (isEditable)
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: shouldDisable ? null : _onDeletePressed,
+                    tooltip: 'Delete this Milestone',
+                  ),
+              ],
             ],
           ),
         ),
-      );
+      ),
+    );
+  }
 }
