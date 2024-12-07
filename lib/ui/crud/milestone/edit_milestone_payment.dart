@@ -12,7 +12,7 @@ import '../../../util/money_ex.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/text/hmb_text.dart';
-import '../milestone_payment/milestone_tile.dart';
+import 'milestone_tile.dart';
 
 class EditMilestonesScreen extends StatefulWidget {
   const EditMilestonesScreen({required this.quoteId, super.key});
@@ -42,10 +42,7 @@ class _EditMilestonesScreenState
   }
 
   void _calculateTotals() {
-    totalAllocated = milestones.fold<Money>(
-      MoneyEx.zero,
-      (sum, m) => sum + (m.paymentAmount ?? MoneyEx.zero),
-    );
+    _recalcAllocated();
     final difference = quote.totalAmount - totalAllocated;
 
     if (milestones.isEmpty) {
@@ -53,10 +50,18 @@ class _EditMilestonesScreenState
       return;
     }
     if (!difference.isZero) {
-      errorMessage = 'Total milestone amounts do not equal the quote total.';
+      errorMessage =
+          'Total milestone amounts do not equal the quote total by $difference';
     } else {
       errorMessage = '';
     }
+  }
+
+  void _recalcAllocated() {
+    totalAllocated = milestones.fold<Money>(
+      MoneyEx.zero,
+      (sum, m) => sum + (m.paymentAmount ?? MoneyEx.zero),
+    );
   }
 
   Future<void> _addMilestone() async {
@@ -73,6 +78,8 @@ class _EditMilestonesScreenState
     setState(() {});
   }
 
+  /// Distribute amounts evenly amongst unedited
+  /// milestones.
   Future<void> _redistributeAmounts() async {
     final uninvoicedMilestones = milestones.where((m) => m.invoiceId == null);
 
@@ -125,7 +132,23 @@ class _EditMilestonesScreenState
       await daoMilestonePayment.update(milestone);
     }
 
+    _recalcAllocated();
 
+    /// ensure that the total milestones match the quote total.
+    final difference = quote.totalAmount - totalAllocated;
+
+    final lastMilestone =
+        milestones.lastWhereOrNull((m) => m.invoiceId == null);
+
+    if (lastMilestone != null) {
+      lastMilestone
+        ..paymentAmount =
+            (lastMilestone.paymentAmount ?? MoneyEx.zero) + difference
+        ..paymentPercentage =
+            lastMilestone.paymentAmount!.percentageOf(quote.totalAmount);
+
+      await daoMilestonePayment.update(lastMilestone);
+    }
     _calculateTotals();
     setState(() {});
   }
@@ -158,29 +181,6 @@ class _EditMilestonesScreenState
     );
   }
 
-  Future<void> _balanceTotals() async {
-    final difference = quote.totalAmount - totalAllocated;
-
-    final lastMilestone =
-        milestones.lastWhereOrNull((m) => m.invoiceId == null);
-
-    if (lastMilestone == null) {
-      HMBToast.info(
-          "You can't change totals after all invoices have been generated");
-      return;
-    }
-
-    lastMilestone
-      ..paymentAmount =
-          (lastMilestone.paymentAmount ?? MoneyEx.zero) + difference
-      ..paymentPercentage =
-          lastMilestone.paymentAmount!.percentageOf(quote.totalAmount);
-
-    await daoMilestonePayment.update(lastMilestone);
-    _calculateTotals();
-    setState(() {});
-  }
-
   Future<void> _onReorder(int oldIndex, int newIndex) async {
     final invoicedMilestones =
         milestones.where((m) => m.invoiceId != null).length;
@@ -209,9 +209,13 @@ class _EditMilestonesScreenState
   Future<void> _onMilestoneChanged(Milestone milestone) async {
     // The user changed this milestone, mark as edited if it's not already
     milestone.edited = true;
-
-    _calculateTotals();
     await DaoMilestone().update(milestone);
+
+    /// refresh the widgets cache of milestones so
+    /// it has this change.
+    await _loadData();
+
+    await _redistributeAmounts();
     setState(() {});
   }
 
@@ -262,7 +266,7 @@ class _EditMilestonesScreenState
                     children: List.generate(milestones.length, (index) {
                       final milestone = milestones[index];
                       return MilestoneTile(
-                        key: ValueKey(milestone.id),
+                        key: ValueKey(milestone.hash),
                         milestone: milestone,
                         quoteTotal: quote.totalAmount,
                         onChanged: _onMilestoneChanged,
@@ -283,7 +287,7 @@ class _EditMilestonesScreenState
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: ElevatedButton(
-                    onPressed: _balanceTotals,
+                    onPressed: _redistributeAmounts,
                     child: const Text('Balance Totals'),
                   ),
                 ),

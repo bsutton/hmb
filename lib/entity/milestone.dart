@@ -62,7 +62,7 @@ class Milestone extends Entity<Milestone> {
   String? milestoneDescription;
   LocalDate? dueDate;
   String status; // e.g., 'pending', 'invoiced', 'paid' - not currently used.
-  bool edited; 
+  bool edited;
 
   @override
   Map<String, dynamic> toMap() => {
@@ -71,7 +71,8 @@ class Milestone extends Entity<Milestone> {
         'invoice_id': invoiceId,
         'milestone_number': milestoneNumber,
         'payment_amount': paymentAmount?.twoDigits().minorUnits.toInt(),
-        'payment_percentage': paymentPercentage?.copyWith(scale: 2).minorUnits.toInt(),
+        'payment_percentage':
+            paymentPercentage?.copyWith(scale: 2).minorUnits.toInt(),
         'milestone_description': milestoneDescription,
         'due_date': const LocalDateNullableConverter().toJson(dueDate),
         'status': status,
@@ -100,7 +101,8 @@ class Milestone extends Entity<Milestone> {
         invoiceId: invoiceId ?? this.invoiceId,
         milestoneNumber: milestoneNumber ?? this.milestoneNumber,
         paymentAmount: paymentAmount?.twoDigits() ?? this.paymentAmount,
-        paymentPercentage: paymentPercentage?.copyWith(scale: 2) ?? this.paymentPercentage,
+        paymentPercentage:
+            paymentPercentage?.copyWith(scale: 2) ?? this.paymentPercentage,
         milestoneDescription: milestoneDescription ?? this.milestoneDescription,
         dueDate: dueDate ?? this.dueDate,
         status: status ?? this.status,
@@ -108,4 +110,19 @@ class Milestone extends Entity<Milestone> {
         createdDate: createdDate ?? this.createdDate,
         modifiedDate: modifiedDate ?? this.modifiedDate,
       );
+
+  int get hash => Object.hash(
+      id,
+      id,
+      quoteId,
+      milestoneNumber,
+      status,
+      edited,
+      createdDate,
+      modifiedDate,
+      invoiceId,
+      paymentAmount,
+      paymentPercentage,
+      milestoneDescription,
+      dueDate);
 }
