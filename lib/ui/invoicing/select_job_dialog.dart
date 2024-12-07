@@ -61,9 +61,13 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
                       final current = jobs[index];
                       return ListTile(
                         title: Text(current.job.summary),
-                        subtitle: Text('Customer: ${current.customer.name}'),
-                        trailing: Text(
-                          'Has billable items: ${current.hasBillables ? "Yes" : "No"}',
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Customer: ${current.customer.name}'),
+                            Text(
+                                'Has billable items: ${current.hasBillables ? "Yes" : "No"}')
+                          ],
                         ),
                         onTap: () => Navigator.pop(context, current.job),
                       );
