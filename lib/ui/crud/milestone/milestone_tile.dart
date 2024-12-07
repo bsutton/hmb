@@ -6,8 +6,11 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
 
 import '../../../dao/dao_invoice.dart';
+import '../../../entity/invoice.dart';
 import '../../../entity/milestone.dart';
 import '../../../util/money_ex.dart';
+import '../../invoicing/edit_invoice_screen.dart'; // Ensure InvoiceEditScreen is imported
+import '../../invoicing/invoice_details.dart';
 import '../../widgets/hmb_toast.dart';
 
 class MilestoneTile extends StatefulWidget {
@@ -42,6 +45,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
 
   bool isEditable = true;
   bool isInEditMode = false; // Track if this tile is currently being edited
+  bool changing = false;
 
   @override
   void initState() {
@@ -79,7 +83,6 @@ class _MilestoneTileState extends State<MilestoneTile> {
     _enterEditMode();
   }
 
-  bool changing = false;
   void _onPercentageChanged() {
     _enterEditMode();
 
@@ -121,7 +124,6 @@ class _MilestoneTileState extends State<MilestoneTile> {
       return;
     }
 
-    // Invoicing doesn't require waiting for save.
     await widget.onInvoice(widget.milestone);
     HMBToast.info('Invoice created: #${widget.milestone.invoiceId}');
     setState(() {
@@ -176,13 +178,38 @@ class _MilestoneTileState extends State<MilestoneTile> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (widget.milestone.invoiceId != null)
-                FutureBuilderEx(
+                FutureBuilderEx<Invoice?>(
                     // ignore: discarded_futures
                     future: DaoInvoice().getById(widget.milestone.invoiceId),
-                    builder: (context, invoice) => Text(
-                          'Invoice: ${invoice!.bestNumber}',
-                          style: const TextStyle(color: Colors.green),
-                        )),
+                    builder: (context, invoice) {
+                      final inv = invoice;
+                      if (inv == null) {
+                        return const Text('Not Invoiced');
+                      } else {
+                        // Make invoice number clickable to open InvoiceEditScreen
+                        return InkWell(
+                          onTap: () async {
+                            final invoiceDetails =
+                                await InvoiceDetails.load(inv.id);
+                            // Navigate to InvoiceEditScreen with this invoice
+                            if (context.mounted) {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (context) => InvoiceEditScreen(
+                                      invoiceDetails: invoiceDetails),
+                                ),
+                              );
+                            }
+                          },
+                          child: Text(
+                            'Invoice: ${inv.bestNumber}',
+                            style: const TextStyle(
+                                color: Colors.green,
+                                decoration: TextDecoration.underline),
+                          ),
+                        );
+                      }
+                    }),
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(labelText: 'Description'),
