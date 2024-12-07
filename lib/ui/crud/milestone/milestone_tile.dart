@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -31,9 +33,9 @@ class _MilestoneTileState extends State<MilestoneTile> {
   late TextEditingController descriptionController;
   late TextEditingController percentageController;
   late TextEditingController amountController;
-  // late TextEditingController dueDateController;
 
   bool isEditable = true;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -48,11 +50,6 @@ class _MilestoneTileState extends State<MilestoneTile> {
     amountController = TextEditingController(
       text: widget.milestone.paymentAmount.toString(),
     );
-    // dueDateController = TextEditingController(
-    //   text: widget.milestone.dueDate == null
-    //       ? ''
-    //       : formatLocalDate(widget.milestone.dueDate!),
-    // );
   }
 
   @override
@@ -60,12 +57,23 @@ class _MilestoneTileState extends State<MilestoneTile> {
     descriptionController.dispose();
     percentageController.dispose();
     amountController.dispose();
-    // dueDateController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _scheduleOnChange() {
+    // Cancel any previous timers
+    _debounceTimer?.cancel();
+
+    // Schedule a new timer to trigger onChanged after a delay
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      widget.onChanged(widget.milestone);
+    });
   }
 
   void _onDescriptionChanged() {
     widget.milestone.milestoneDescription = descriptionController.text;
+    // If you do not want to delay description changes, call onChanged directly:
     widget.onChanged(widget.milestone);
   }
 
@@ -75,41 +83,27 @@ class _MilestoneTileState extends State<MilestoneTile> {
     widget.milestone.paymentAmount =
         widget.quoteTotal.multipliedByPercentage(percentage);
     amountController.text = widget.milestone.paymentAmount.toString();
-    widget.onChanged(widget.milestone);
+
+    // Schedule the recalculation to happen after the user stops typing
+    _scheduleOnChange();
   }
 
   void _onAmountChanged() {
     final amount = MoneyEx.tryParse(amountController.text);
     widget.milestone.paymentPercentage = amount.percentageOf(widget.quoteTotal);
     percentageController.text = widget.milestone.paymentPercentage.toString();
-    widget.onChanged(widget.milestone);
+
+    // Also delay this recalculation
+    _scheduleOnChange();
   }
-
-  // Future<void> _onDueDateChanged() async {
-  //   final pickedDate = await showDatePicker(
-  //     context: context,
-  //     initialDate: widget.milestone.dueDate?.toDateTime() ?? DateTime.now(),
-  //     firstDate: DateTime(2000),
-  //     lastDate: DateTime(2100),
-  //   );
-
-  //   if (pickedDate != null) {
-  //     widget.milestone.dueDate = LocalDate.fromDateTime(pickedDate);
-  //     dueDateController.text = widget.milestone.dueDate.toString();
-  //     widget.onChanged(widget.milestone);
-  //   }
-  // }
 
   void _onDeletePressed() {
     widget.onDelete(widget.milestone);
   }
 
   Future<void> _onInvoicePressed() async {
-    // Assume the onInvoice callback handles creating an invoice
-    // for this milestone
     widget.onInvoice(widget.milestone);
 
-    // Mark the milestone as invoiced locally
     setState(() {
       isEditable = false;
     });
@@ -171,14 +165,6 @@ class _MilestoneTileState extends State<MilestoneTile> {
                   ),
                 ],
               ),
-              // removed as we are currently not using it and I don't think
-              // there is actually a valid use case.
-              // TextField(
-              //   controller: dueDateController,
-              //   decoration: const InputDecoration(labelText: 'Due Date'),
-              //   readOnly: true,
-              //   onTap: _onDueDateChanged,
-              // ),
             ],
           ),
           trailing: Wrap(
