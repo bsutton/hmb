@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/material.dart';
 
+import '../../../util/photo_meta.dart';
 import 'full_screen_photo_view.dart';
 
 class PhotoThumbnail extends StatelessWidget {
@@ -13,10 +14,22 @@ class PhotoThumbnail extends StatelessWidget {
     super.key,
   }) : hasPhoto = photoPath != null && exists(photoPath);
 
-  final String? photoPath;
+  factory PhotoThumbnail.fromPhotoMeta({
+    required PhotoMeta photoMeta,
+    required String title,
+     String? comment,
+    Key? key,
+  }) {
+    final photoPath = photoMeta.absolutePathTo;
+
+    return PhotoThumbnail(
+        photoPath: photoPath, title: title, comment: comment, key: key);
+  }
+
+  late final String? photoPath;
   final String title;
   final String? comment;
-  final bool hasPhoto;
+  late final bool hasPhoto;
 
   @override
   Widget build(BuildContext context) => GestureDetector(

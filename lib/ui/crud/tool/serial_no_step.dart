@@ -1,28 +1,40 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 
 import '../../../dao/dao_photo.dart';
+import '../../../dao/dao_tool.dart';
 import '../../../entity/tool.dart';
 import '../../widgets/hmb_toast.dart';
-import '../../widgets/media/captured_photo.dart';
-import '../../widgets/media/photo_controller.dart';
+import '../../widgets/wizard.dart';
 import '../../widgets/wizard_step.dart';
+import 'capture_photo.dart';
+import 'stock_take_wizard.dart';
 
 class SerialNumberStep extends WizardStep {
-  SerialNumberStep({required super.title});
+  SerialNumberStep(this.toolWizardState) : super(title: 'Serial No');
 
   final TextEditingController _serialNumberController = TextEditingController();
-  final PhotoController<Tool> _photoController =
-      PhotoController<Tool>(parent: null, parentType: ParentType.tool);
 
+  ToolWizardState toolWizardState;
   String? _serialPhotoPath;
 
   Future<void> _scanBarcode() async {
     if (_serialPhotoPath != null) {
       await _scanBarCodeFromfile(_serialPhotoPath!);
     }
+  }
+
+  @override
+  Future<void> onNext(BuildContext context, WizardStepTarget intendedStep,
+      {required bool userOriginated}) async {
+    final daoTool = DaoTool();
+    final tool = toolWizardState.tool!.copyWith(
+        serialNumber: _serialNumberController.text);
+    await daoTool.update(tool);
+    toolWizardState.tool = tool;
+
+    // ignore: use_build_context_synchronously
+    return super.onNext(context, intendedStep, userOriginated: userOriginated);
   }
 
   @override
@@ -39,39 +51,24 @@ class SerialNumberStep extends WizardStep {
               child: const Text('Scan Barcode'),
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('Capture Serial Number Photo'),
-              onPressed: () async => _takePhoto(
-                'Serial Photo',
-                (capturedPhoto) => setState(() {
-                  _serialPhotoPath = capturedPhoto.relativePath;
-                }),
-              ),
-            ),
-            if (_serialPhotoPath != null) ...[
-              const SizedBox(height: 16),
-              Text('Serial Number Photo:',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Image.file(File(_serialPhotoPath!)),
-            ],
+            CapturePhoto(
+                tool: toolWizardState.tool!,
+                comment: 'Serial Number',
+                title: 'Capture Serial Number',
+                onCaptured: (photo) async {
+                  final photoId = await DaoPhoto().insert(photo);
+                  toolWizardState.tool =
+                      toolWizardState.tool!.copyWith(serialNumberPhotoId: photoId);
+                  await DaoTool().update(toolWizardState.tool!);
+                  return photoId;
+                })
           ],
         ),
       );
 
-  Future<void> _takePhoto(
-      String title, void Function(CapturedPhoto) onCapture) async {
-    final capturedPhoto = await _photoController.takePhoto();
-    if (capturedPhoto != null) {
-      onCapture(capturedPhoto);
-    }
-  }
-
   @override
   void dispose() {
     _serialNumberController.dispose();
-    _photoController.dispose();
     super.dispose();
   }
 

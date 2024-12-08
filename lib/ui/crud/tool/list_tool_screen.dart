@@ -11,14 +11,50 @@ import '../base_full_screen/list_entity_screen.dart';
 import 'edit_tool_screen.dart';
 import 'stock_take_wizard.dart';
 
-class ToolListScreen extends StatelessWidget {
+class ToolListScreen extends StatefulWidget {
   const ToolListScreen({super.key});
+
+  @override
+  State<ToolListScreen> createState() => _ToolListScreenState();
+}
+
+class _ToolListScreenState extends State<ToolListScreen> {
+  int _refreshCounter = 0;
 
   Future<void> _startStockTake(BuildContext context) async {
     await Navigator.of(context).push(MaterialPageRoute<void>(
       builder: (_) => ToolStockTakeWizard(onFinish: (reason) async {
+        // Pop the wizard
         Navigator.of(context).pop();
-        // Optional: Add additional logic for after the stock take completes
+        // Refresh the list
+        setState(() {
+          _refreshCounter++;
+        });
+
+        // Show a dialog asking if the user wants to add another
+        final addAnother = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Add Another?'),
+            content: const Text(
+                'Would you like to run the stock take wizard again?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('No'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Yes'),
+              ),
+            ],
+          ),
+        );
+
+        // If the user chooses to add another, re-launch the wizard
+        if ((addAnother ?? false) && context.mounted) {
+          await _startStockTake(context);
+        }
       }),
     ));
   }
@@ -36,6 +72,7 @@ class ToolListScreen extends StatelessWidget {
           ],
         ),
         body: EntityListScreen<Tool>(
+          key: ValueKey(_refreshCounter),
           pageTitle: 'Tools',
           dao: DaoTool(),
           title: (entity) => HMBTextHeadline2(entity.name),

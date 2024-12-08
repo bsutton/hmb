@@ -4,7 +4,9 @@ import 'text/hmb_text_themes.dart';
 import 'wizard.dart';
 
 abstract class WizardStep {
-  WizardStep({required String title}) : _title = title;
+  WizardStep({
+    required String title,
+  }) : _title = title;
   final String _title;
   bool buildRequired = false;
 
