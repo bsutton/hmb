@@ -14,15 +14,14 @@ import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
 import '../dao/dao_task_item.dart';
 import '../dao/dao_task_item_type.dart';
-import '../dao/dao_tool.dart';
 import '../entity/task.dart';
 import '../entity/task_item.dart';
 import '../entity/task_item_type.dart';
-import '../entity/tool.dart';
 import '../util/format.dart';
 import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
 import '../util/units.dart';
+import 'crud/tool/stock_take_wizard.dart';
 import 'list_packing_screen.dart';
 import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
@@ -134,15 +133,15 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
             ),
           );
 
-          if (addTool ?? false) {
-            final tool = Tool.forInsert(
-              name: itemContext.taskItem.description,
-              cost: unitCost,
-              supplierId: itemContext.taskItem.supplierId,
-              datePurchased: DateTime.now(),
-              // Add any other relevant details
-            );
-            await DaoTool().insertTool(tool);
+          if ((addTool ?? false) && mounted) {
+            await ToolStockTakeWizard.start(
+                context: context,
+                onFinish: (reason) async {
+                  Navigator.of(context).pop();
+                },
+                cost: unitCost,
+                name: itemContext.taskItem.description,
+                offerAnother: false);
           }
         }
       }

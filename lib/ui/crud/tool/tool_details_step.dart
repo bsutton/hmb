@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money2/money2.dart';
 
 import '../../../dao/dao_tool.dart';
 import '../../../entity/tool.dart';
@@ -14,9 +15,16 @@ import '../category/select_category.dart';
 import 'stock_take_wizard.dart';
 
 class ToolDetailsStep extends WizardStep {
-  ToolDetailsStep(this.toolWizardState) : super(title: 'Details');
+  ToolDetailsStep(this.toolWizardState,
+      {required this.name, required this.cost})
+      : super(title: 'Details') {
+    nameController.text = name ?? '';
+    costController.text = cost?.toString() ?? '';
+  }
 
   final ToolWizardState toolWizardState;
+  final String? name;
+  final Money? cost;
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();

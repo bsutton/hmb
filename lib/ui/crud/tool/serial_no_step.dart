@@ -3,7 +3,6 @@ import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_tool.dart';
-import '../../../entity/tool.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/wizard.dart';
 import '../../widgets/wizard_step.dart';
@@ -28,8 +27,8 @@ class SerialNumberStep extends WizardStep {
   Future<void> onNext(BuildContext context, WizardStepTarget intendedStep,
       {required bool userOriginated}) async {
     final daoTool = DaoTool();
-    final tool = toolWizardState.tool!.copyWith(
-        serialNumber: _serialNumberController.text);
+    final tool = toolWizardState.tool!
+        .copyWith(serialNumber: _serialNumberController.text);
     await daoTool.update(tool);
     toolWizardState.tool = tool;
 
@@ -57,8 +56,8 @@ class SerialNumberStep extends WizardStep {
                 title: 'Capture Serial Number',
                 onCaptured: (photo) async {
                   final photoId = await DaoPhoto().insert(photo);
-                  toolWizardState.tool =
-                      toolWizardState.tool!.copyWith(serialNumberPhotoId: photoId);
+                  toolWizardState.tool = toolWizardState.tool!
+                      .copyWith(serialNumberPhotoId: photoId);
                   await DaoTool().update(toolWizardState.tool!);
                   return photoId;
                 })

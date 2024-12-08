@@ -22,41 +22,14 @@ class _ToolListScreenState extends State<ToolListScreen> {
   int _refreshCounter = 0;
 
   Future<void> _startStockTake(BuildContext context) async {
-    await Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => ToolStockTakeWizard(onFinish: (reason) async {
-        // Pop the wizard
-        Navigator.of(context).pop();
-        // Refresh the list
-        setState(() {
-          _refreshCounter++;
-        });
-
-        // Show a dialog asking if the user wants to add another
-        final addAnother = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Add Another?'),
-            content: const Text(
-                'Would you like to run the stock take wizard again?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('No'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Yes'),
-              ),
-            ],
-          ),
-        );
-
-        // If the user chooses to add another, re-launch the wizard
-        if ((addAnother ?? false) && context.mounted) {
-          await _startStockTake(context);
-        }
-      }),
-    ));
+    await ToolStockTakeWizard.start(context: context, 
+    offerAnother: true,
+    onFinish: (reason) async {
+      Navigator.of(context).pop();
+      setState(() {
+        _refreshCounter++;
+      });
+    });
   }
 
   @override

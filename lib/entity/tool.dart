@@ -98,6 +98,39 @@ class Tool extends Entity<Tool> {
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
+
+  Tool copyWith({
+    int? id,
+    String? name,
+    DateTime? createdDate,
+    DateTime? modifiedDate,
+    int? categoryId,
+    int? supplierId,
+    int? manufacturerId,
+    DateTime? datePurchased,
+    String? serialNumber,
+    int? receiptPhotoId,
+    int? serialNumberPhotoId,
+    int? warrantyPeriod,
+    Money? cost,
+    String? description,
+  }) =>
+      Tool(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        createdDate: createdDate ?? this.createdDate,
+        modifiedDate: modifiedDate ?? this.modifiedDate,
+        categoryId: categoryId ?? this.categoryId,
+        supplierId: supplierId ?? this.supplierId,
+        manufacturerId: manufacturerId ?? this.manufacturerId,
+        datePurchased: datePurchased ?? this.datePurchased,
+        serialNumber: serialNumber ?? this.serialNumber,
+        receiptPhotoId: receiptPhotoId ?? this.receiptPhotoId,
+        serialNumberPhotoId: serialNumberPhotoId ?? this.serialNumberPhotoId,
+        warrantyPeriod: warrantyPeriod ?? this.warrantyPeriod,
+        cost: cost ?? this.cost,
+        description: description ?? this.description,
+      );
 }
 
 Money? _moneyOrNull(int? amount) {
