@@ -58,6 +58,7 @@ class Wizard extends StatefulWidget {
 class WizardState extends State<Wizard> {
   static const double lineInset = 7;
   static const double lineWidth = 24;
+  bool onFinishCalled = false;
 
   final ScrollPhysics physics = const ClampingScrollPhysics();
   final bool _pageLoading = false;
@@ -77,7 +78,7 @@ class WizardState extends State<Wizard> {
     if (!isFirstVisible(_currentStepIndex)) {
       await _onBack();
     } else {
-      await widget.onFinished?.call(WizardCompletionReason.backedOut);
+      await _triggerOnFinished(WizardCompletionReason.backedOut);
     }
   }
 
@@ -128,7 +129,7 @@ class WizardState extends State<Wizard> {
 
         final result = await target.future;
         if (result == fakeLast) {
-          await widget.onFinished?.call(WizardCompletionReason.completed);
+          await _triggerOnFinished(WizardCompletionReason.completed);
         }
         // else the onNext must have failed and redirected to itself
         // or some other page.
@@ -330,6 +331,10 @@ class WizardState extends State<Wizard> {
     // This is a little hack, but there is no apparent way to hook
     // the cross fade completion so we just share a common duration.
     Future.delayed(crossFadeDuration, () async {
+      if (_keys[_currentStepIndex].currentContext == null) {
+        return;
+      }
+
       await Scrollable.ensureVisible(
         _keys[_currentStepIndex].currentContext!,
         curve: Curves.fastOutSlowIn,
@@ -471,12 +476,9 @@ class WizardState extends State<Wizard> {
         HMBButtonSecondary(
           label: widget.cancelLabel,
           onPressed: _inTransition || _pageLoading
-              // no steps back, so disable the button
               ? null
-              // add handler
               : () async {
-                  await widget.onFinished
-                      ?.call(WizardCompletionReason.cancelled);
+                  await _triggerOnFinished(WizardCompletionReason.cancelled);
                 },
         ),
         HMBButtonPrimary(
@@ -648,6 +650,20 @@ class WizardState extends State<Wizard> {
       Log.e(e.toString(), stackTrace: st);
       target.cancel();
     }
+  }
+
+  Future<void> _triggerOnFinished(WizardCompletionReason cancelled) async {
+    /// Stops onFinished being called recursively.
+    /// This can occur if during onFinish processing
+    /// Navigation.pop is called which we trap and then
+    /// try to call onFinished a second time which
+    /// always ends baddly.
+    if (onFinishCalled) {
+      return;
+    }
+    onFinishCalled = true;
+    await widget.onFinished?.call(WizardCompletionReason.cancelled);
+    onFinishCalled = false;
   }
 }
 
