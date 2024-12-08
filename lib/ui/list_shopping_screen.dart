@@ -373,8 +373,10 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
 
   Center _showEmpty() => const Center(child: Text('''
 No Shopping Items found 
-- Shopping items are taken from Task Check list items 
-that are marked as "Materials - buy" or "Tools - buy".'''));
+- Shopping items are taken from Task Items 
+that are marked as "Materials - buy" or "Tools - buy".
+If you were expecting to see items here - check the Job's Status is active.
+'''));
   Widget _buildListItem(BuildContext context, TaskItemContext itemContext) =>
       Card(
         margin: const EdgeInsets.symmetric(vertical: 8),

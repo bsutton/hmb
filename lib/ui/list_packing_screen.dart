@@ -179,8 +179,10 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
 
   Center _showEmpty() => const Center(child: Text('''
 No Packing Items found 
-- Packing items are taken from Task Check list items 
-that are marked as "Materials - stock" or "Tools - own".'''));
+- Packing items are taken from Task items 
+that are marked as "Materials - stock" or "Tools - own".
+If you were expecting to see items here - check the Job's Status is active.
+'''));
 
   Widget _buildListItem(
     BuildContext context,
