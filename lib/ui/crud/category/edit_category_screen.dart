@@ -44,7 +44,7 @@ class _CategoryEditScreenState extends State<CategoryEditScreen>
         entityName: 'Category',
         dao: DaoCategory(),
         entityState: this,
-        editor: (category) => Column(
+        editor: (category, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             HMBTextField(

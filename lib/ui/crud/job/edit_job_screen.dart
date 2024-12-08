@@ -116,7 +116,7 @@ class _JobEditScreenState extends State<JobEditScreen>
             entityName: 'Job',
             dao: DaoJob(),
             entityState: this,
-            editor: (job) => Column(
+            editor: (job, {required isNew}) => Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

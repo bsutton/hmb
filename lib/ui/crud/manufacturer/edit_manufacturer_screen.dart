@@ -44,7 +44,7 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
         entityName: 'Manufacturer',
         dao: DaoManufacturer(),
         entityState: this,
-        editor: (manufacturer) => Column(
+        editor: (manufacturer, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             HMBTextField(

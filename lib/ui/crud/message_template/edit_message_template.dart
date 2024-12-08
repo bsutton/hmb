@@ -47,7 +47,7 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
         entityName: 'Message Template',
         dao: DaoMessageTemplate(),
         entityState: this,
-        editor: (messageTemplate) => Column(
+        editor: (messageTemplate, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (messageTemplate?.owner == MessageTemplateOwner.user) ...[

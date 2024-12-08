@@ -81,7 +81,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
         entityName: 'Customer',
         dao: DaoCustomer(),
         entityState: this,
-        editor: (customer) => Column(
+        editor: (customer, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Column(

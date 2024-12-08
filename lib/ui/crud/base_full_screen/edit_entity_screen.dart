@@ -23,7 +23,7 @@ class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
   final String entityName;
   final Dao<E> dao;
 
-  final Widget Function(E? entity) editor;
+  final Widget Function(E? entity, {required bool isNew }) editor;
   final EntityState<E> entityState;
 
   @override
@@ -56,7 +56,8 @@ class EntityEditScreenState<E extends Entity<E>>
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(4),
-                    child: widget.editor(widget.entityState.currentEntity),
+                    child: widget.editor(widget.entityState.currentEntity,
+                        isNew: isNew),
                   ),
                 ),
               ],
@@ -117,4 +118,6 @@ class EntityEditScreenState<E extends Entity<E>>
       }
     }
   }
+
+  bool get isNew => widget.entityState.currentEntity == null;
 }

@@ -60,7 +60,7 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
         entityName: 'Supplier',
         dao: DaoSupplier(),
         entityState: this,
-        editor: (supplier) => Column(
+        editor: (supplier, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Column(
