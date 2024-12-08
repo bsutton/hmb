@@ -6,20 +6,21 @@ import 'package:image_picker/image_picker.dart';
 import 'package:june/june.dart';
 
 import '../../../dao/dao_photo.dart';
-import '../../../entity/entity.dart';
+import '../../../entity/_index.g.dart';
 import '../../../util/photo_meta.dart';
 import '../../crud/task/photo_crud.dart';
 import 'captured_photo.dart';
 import 'photo_gallery.dart';
 
 class PhotoController<E extends Entity<E>> {
-  PhotoController({required E? parent, required this.parentType})
+  PhotoController({required E? parent, required this.parentType, this.filter})
       : _entity = parent {
     unawaited(_loadPhotos());
   }
 
   E? _entity;
   ParentType parentType;
+  final bool Function(E, Photo)? filter;
   final List<PhotoMeta> _photos = [];
 
   E? get parent => _entity;
@@ -44,7 +45,10 @@ class PhotoController<E extends Entity<E>> {
       _completer.complete();
       return;
     }
-    _photos.addAll(await DaoPhoto.getMetaByParent(_entity!.id, parentType));
+    final meta = await DaoPhoto.getMetaByParent(_entity!.id, parentType);
+
+    _photos.addAll(
+        meta.where((photo) => filter?.call(_entity!, photo.photo) ?? true));
 
     // Initialize comment controllers if not already initialized
     if (_commentControllers.isEmpty) {

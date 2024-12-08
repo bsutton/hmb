@@ -1,4 +1,5 @@
 import 'package:money2/money2.dart';
+
 import '../util/money_ex.dart';
 import 'entity.dart';
 
@@ -13,8 +14,8 @@ class Tool extends Entity<Tool> {
     this.manufacturerId,
     this.datePurchased,
     this.serialNumber,
-    this.receiptPhotoPath,
-    this.serialNumberPhotoPath,
+    this.receiptPhotoId,
+    this.serialNumberPhotoId,
     this.warrantyPeriod,
     this.cost,
     this.description,
@@ -27,8 +28,8 @@ class Tool extends Entity<Tool> {
     this.manufacturerId,
     this.datePurchased,
     this.serialNumber,
-    this.receiptPhotoPath,
-    this.serialNumberPhotoPath,
+    this.receiptPhotoId,
+    this.serialNumberPhotoId,
     this.warrantyPeriod,
     this.cost,
     this.description,
@@ -42,8 +43,8 @@ class Tool extends Entity<Tool> {
     this.manufacturerId,
     this.datePurchased,
     this.serialNumber,
-    this.receiptPhotoPath,
-    this.serialNumberPhotoPath,
+    this.receiptPhotoId,
+    this.serialNumberPhotoId,
     this.warrantyPeriod,
     this.cost,
     this.description,
@@ -59,8 +60,8 @@ class Tool extends Entity<Tool> {
             ? DateTime.parse(map['datePurchased'] as String)
             : null,
         serialNumber: map['serialNumber'] as String?,
-        receiptPhotoPath: map['receiptPhotoPath'] as String?,
-        serialNumberPhotoPath: map['serialNumberPhotoPath'] as String?,
+        receiptPhotoId: map['receiptPhotoId'] as int?,
+        serialNumberPhotoId: map['serialNumberPhotoId'] as int?,
         warrantyPeriod: map['warrantyPeriod'] as int?,
         cost: _moneyOrNull(map['cost'] as int?),
         description: map['description'] as String?,
@@ -69,13 +70,13 @@ class Tool extends Entity<Tool> {
       );
 
   final String name;
-  final int? categoryId; // Foreign key reference to Category
+  final int? categoryId;
   final int? supplierId;
   final int? manufacturerId;
   final DateTime? datePurchased;
   final String? serialNumber;
-  final String? receiptPhotoPath;
-  final String? serialNumberPhotoPath;
+  final int? receiptPhotoId;
+  final int? serialNumberPhotoId;
   final int? warrantyPeriod;
   final Money? cost;
   final String? description;
@@ -89,8 +90,8 @@ class Tool extends Entity<Tool> {
         'manufacturerId': manufacturerId,
         'datePurchased': datePurchased?.toIso8601String(),
         'serialNumber': serialNumber,
-        'receiptPhotoPath': receiptPhotoPath,
-        'serialNumberPhotoPath': serialNumberPhotoPath,
+        'receiptPhotoId': receiptPhotoId,
+        'serialNumberPhotoId': serialNumberPhotoId,
         'warrantyPeriod': warrantyPeriod,
         'cost': cost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
         'description': description,

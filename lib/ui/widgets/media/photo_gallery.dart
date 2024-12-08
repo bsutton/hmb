@@ -6,8 +6,7 @@ import 'package:june/june.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_task.dart';
-import '../../../entity/job.dart';
-import '../../../entity/task.dart';
+import '../../../entity/_index.g.dart';
 import '../../../entity/tool.dart';
 import '../../../util/photo_meta.dart';
 import '../layout/hmb_placeholder.dart';
@@ -30,9 +29,14 @@ class PhotoGallery extends StatelessWidget {
         [...await DaoPhoto.getMetaByParent(task.id, ParentType.task)];
   }
 
-  PhotoGallery.forTool({required Tool tool, super.key}) {
+  /// the [filter] allow syou to control what photos are returned.
+  /// By default if no [filter] is passed then all photos for the tool
+  /// are returned.
+  PhotoGallery.forTool(
+      {required Tool tool, super.key, bool Function(Photo photo)? filter}) {
     _fetchPhotos = () async =>
         (await DaoPhoto().getByParent(tool.id, ParentType.tool))
+            .where((photo) => filter?.call(photo) ?? true)
             .map((photo) => PhotoMeta(
                 photo: photo, title: tool.name, comment: tool.description))
             .toList();

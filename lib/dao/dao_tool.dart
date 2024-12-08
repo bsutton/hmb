@@ -4,6 +4,7 @@ import 'package:strings/strings.dart';
 
 import '../entity/tool.dart';
 import 'dao.dart';
+import 'dao_photo.dart';
 
 class DaoTool extends Dao<Tool> {
   @override
@@ -59,6 +60,12 @@ order by t.name
 
   Future<void> deleteTool(int id, [Transaction? transaction]) async {
     final db = withinTransaction(transaction);
+
+    final photos = await DaoPhoto().getByParent(id, ParentType.tool);
+    for (final photo in photos) {
+      await DaoPhoto().delete(photo.id);
+    }
+
     await db.delete(tableName, where: 'id = ?', whereArgs: [id]);
   }
 

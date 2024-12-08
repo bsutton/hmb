@@ -60,7 +60,10 @@ class ToolListScreen extends StatelessWidget {
                 if (tool.warrantyPeriod != null)
                   HMBTextBody('Warranty: ${tool.warrantyPeriod} months'),
                 if (tool.cost != null) HMBTextBody('Cost: ${tool.cost}'),
-                PhotoGallery.forTool(tool: tool)
+                PhotoGallery.forTool(
+                    tool: tool,
+                    filter: (photo) => !(photo.id == tool.serialNumberPhotoId ||
+                        photo.id == tool.receiptPhotoId))
               ],
             );
           },

@@ -5,11 +5,14 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_tool.dart';
+import '../../../entity/_index.g.dart';
 import '../../../entity/tool.dart';
 import '../../../util/money_ex.dart';
+import '../../../util/photo_meta.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/grayed_out.dart';
 import '../../widgets/hmb_date_time_picker.dart';
 import '../../widgets/media/captured_photo.dart';
 import '../../widgets/media/photo_controller.dart';
@@ -37,8 +40,8 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
   late TextEditingController _costController;
   late PhotoController<Tool> _photoController;
 
-  String? _receiptPhotoPath;
-  String? _serialNumberPhotoPath;
+  int? _receiptPhotoId;
+  int? _serialNumberPhotoId;
 
   @override
   Tool? currentEntity;
@@ -62,10 +65,13 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
         TextEditingController(text: currentEntity?.cost?.toString());
     selectedDatePurchased = currentEntity?.datePurchased ?? DateTime.now();
     _photoController = PhotoController<Tool>(
-        parent: currentEntity, parentType: ParentType.tool);
+        parent: currentEntity,
+        parentType: ParentType.tool,
+        filter: (tool, photo) => !(photo.id == tool.serialNumberPhotoId ||
+            photo.id == tool.receiptPhotoId));
 
-    _receiptPhotoPath = currentEntity?.receiptPhotoPath;
-    _serialNumberPhotoPath = currentEntity?.serialNumberPhotoPath;
+    _receiptPhotoId = currentEntity?.receiptPhotoId;
+    _serialNumberPhotoId = currentEntity?.serialNumberPhotoId;
 
     if (currentEntity != null) {
       selectedSupplier.selected = currentEntity?.supplierId;
@@ -81,7 +87,7 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
             entityName: 'Tool',
             dao: DaoTool(),
             entityState: this,
-            editor: (tool) => Column(
+            editor: (tool, {required isNew}) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 HMBTextField(
@@ -142,23 +148,49 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
                 ),
                 const SizedBox(height: 16),
                 _buildPhotoField(
+                  enabled: !isNew,
                   context,
                   title: 'Serial Number Photo',
-                  photoPath: _serialNumberPhotoPath,
-                  onCapture: (capturedPhoto) {
+                  photoId: _serialNumberPhotoId,
+                  onCapture: (capturedPhoto) async {
+                    // Create a new Photo entity
+                    final newPhoto = Photo.forInsert(
+                      parentId: currentEntity?.id ?? 0,
+                      parentType: 'tool',
+                      filePath: capturedPhoto.relativePath,
+                      comment: 'Serial Number Photo',
+                    );
+
+                    // Insert the photo into the DB
+                    final photoId = await DaoPhoto().insert(newPhoto);
+
+                    // Update the state
                     setState(() {
-                      _serialNumberPhotoPath = capturedPhoto.relativePath;
+                      _serialNumberPhotoId = photoId;
                     });
                   },
                 ),
                 const SizedBox(height: 16),
                 _buildPhotoField(
                   context,
+                  enabled: !isNew,
                   title: 'Receipt Photo',
-                  photoPath: _receiptPhotoPath,
-                  onCapture: (path) {
+                  photoId: _receiptPhotoId,
+                  onCapture: (capturedPhoto) async {
+                    // Create a new Photo entity
+                    final newPhoto = Photo.forInsert(
+                      parentId: currentEntity?.id ?? 0,
+                      parentType: 'tool',
+                      filePath: capturedPhoto.relativePath,
+                      comment: 'Reciept Photo',
+                    );
+
+                    // Insert the photo into the DB
+                    final photoId = await DaoPhoto().insert(newPhoto);
+
+                    // Update the state
                     setState(() {
-                      _receiptPhotoPath = path.relativePath;
+                      _receiptPhotoId = photoId;
                     });
                   },
                 ),
@@ -174,48 +206,73 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
 
   Widget _buildPhotoField(BuildContext context,
           {required String title,
-          required String? photoPath,
+          required bool enabled,
+          required int? photoId,
           required void Function(CapturedPhoto) onCapture}) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.camera_alt),
-                label: const Text('Capture Photo'),
-                onPressed: () async {
-                  final capturedPhoto = await _photoController.takePhoto();
-                  if (capturedPhoto != null) {
-                    onCapture(capturedPhoto);
-                  }
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          PhotoThumbnail(photoPath: photoPath, title: title)
-        ],
+      GrayedOut(
+        grayedOut: !enabled,
+        child: FutureBuilderEx(
+            // ignore: discarded_futures
+            future: _getPhotoMeta(photoId),
+            builder: (context, photoMeta) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(title,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text('Capture Photo'),
+                          onPressed: () async {
+                            final capturedPhoto =
+                                await _photoController.takePhoto();
+                            if (capturedPhoto != null) {
+                              onCapture(capturedPhoto);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (photoMeta != null)
+                      PhotoThumbnail(
+                          photoPath: photoMeta.absolutePathTo, title: title)
+                  ],
+                )),
       );
+
+  Future<PhotoMeta?> _getPhotoMeta(int? photoId) async {
+    final photo = await DaoPhoto().getById(photoId);
+
+    if (photo != null) {
+      final meta = PhotoMeta.fromPhoto(photo: photo);
+      await meta.resolve();
+      return meta;
+    } else {
+      return null;
+    }
+  }
 
   @override
   Future<Tool> forUpdate(Tool tool) async {
     await _photoController.save();
     return Tool.forUpdate(
-        entity: tool,
-        name: _nameController.text,
-        categoryId: selectedCategory.categoryId,
-        description: _descriptionController.text,
-        serialNumber: _serialNumberController.text,
-        supplierId: selectedSupplier.selected,
-        manufacturerId: selectedManufacturer.manufacturerId,
-        warrantyPeriod: int.tryParse(_warrantyPeriodController.text),
-        cost: MoneyEx.tryParse(_costController.text),
-        receiptPhotoPath: _receiptPhotoPath,
-        serialNumberPhotoPath: _serialNumberPhotoPath,
-        datePurchased: selectedDatePurchased);
+      entity: tool,
+      name: _nameController.text,
+      categoryId: selectedCategory.categoryId,
+      description: _descriptionController.text,
+      serialNumber: _serialNumberController.text,
+      supplierId: selectedSupplier.selected,
+      manufacturerId: selectedManufacturer.manufacturerId,
+      warrantyPeriod: int.tryParse(_warrantyPeriodController.text),
+      cost: MoneyEx.tryParse(_costController.text),
+      receiptPhotoId: _receiptPhotoId,
+      serialNumberPhotoId: _serialNumberPhotoId,
+      datePurchased: selectedDatePurchased,
+    );
   }
 
   @override
@@ -228,8 +285,8 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
         manufacturerId: selectedManufacturer.manufacturerId,
         warrantyPeriod: int.tryParse(_warrantyPeriodController.text),
         cost: MoneyEx.tryParse(_costController.text),
-        receiptPhotoPath: _receiptPhotoPath,
-        serialNumberPhotoPath: _serialNumberPhotoPath,
+        receiptPhotoId: _receiptPhotoId,
+        serialNumberPhotoId: _serialNumberPhotoId,
         datePurchased: selectedDatePurchased,
       );
 
