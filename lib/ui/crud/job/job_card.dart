@@ -37,12 +37,12 @@ class _JobCardState extends State<JobCard> {
     job = widget.job;
   }
 
-  Future<void> _refreshJob() async {
-    final refreshedJob = await DaoJob().getById(job.id);
-    setState(() {
-      job = refreshedJob ?? job;
-    });
-  }
+  // Future<void> _refreshJob() async {
+  //   final refreshedJob = await DaoJob().getById(job.id);
+  //   setState(() {
+  //     job = refreshedJob ?? job;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
