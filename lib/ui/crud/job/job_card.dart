@@ -74,7 +74,7 @@ class _JobCardState extends State<JobCard> {
                   const SizedBox(height: 8),
                   HMBText(
                     '''
-# ${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
+Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
                   ),
                   const SizedBox(height: 8),
                   HMBText(
