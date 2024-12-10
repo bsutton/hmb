@@ -5,6 +5,7 @@ import 'package:strings/strings.dart';
 
 import '../entity/customer.dart';
 import '../entity/job.dart';
+import '../entity/job_status_enum.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_invoice.dart';
@@ -135,6 +136,26 @@ where t.id =?
     AND (j.summary LIKE ? OR j.description LIKE ?)
     ORDER BY j.modified_date DESC
     ''', [likeArg, likeArg]);
+
+    return toList(data);
+  }
+
+  /// Get Quotable Jobs - now filtered by `preStart` status
+  Future<List<Job>> getQuotableJobs(String? filter) async {
+    final db = withoutTransaction();
+    final likeArg = filter != null ? '%$filter%' : '%%';
+
+    // Use the enum's name property to match the `status_enum` column in the database
+    final preStartStatus = JobStatusEnum.preStart.name;
+
+    final data = await db.rawQuery('''
+    SELECT j.*
+    FROM job j
+    JOIN job_status js ON j.job_status_id = js.id
+    WHERE js.status_enum = ?
+    AND (j.summary LIKE ? OR j.description LIKE ?)
+    ORDER BY j.modified_date DESC
+  ''', [preStartStatus, likeArg, likeArg]);
 
     return toList(data);
   }
