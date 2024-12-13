@@ -4,10 +4,11 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao.dart';
 import '../../../entity/entities.dart';
 import '../../dialog/hmb_are_you_sure_dialog.dart';
-import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_add_button.dart';
+import '../../widgets/hmb_search.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
+import '../../widgets/layout/hmb_spacer.dart';
 
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   EntityListScreen({
@@ -63,9 +64,39 @@ class EntityListScreenState<T extends Entity<T>>
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           toolbarHeight: 80,
-          title: Text(widget.pageTitle),
+          title: Row(
+            children: [
+              Text(widget.pageTitle),
+              const HMBSpacer(
+                width: true,
+              ),
+              Expanded(
+                child: HMBSearch(
+                  onChanged: (newValue) async {
+                    filterOption = newValue;
+                    await _refreshEntityList();
+                  },
+                ),
+              ),
+              const HMBSpacer(
+                width: true,
+              ),
+              HMBButtonAdd(
+                enabled: true,
+                onPressed: () async {
+                  if (context.mounted) {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                          builder: (context) => widget.onEdit(null)),
+                    ).then((_) => _refreshEntityList());
+                  }
+                },
+              ),
+            ],
+          ),
           automaticallyImplyLeading: false,
-          actions: _commands(),
+          // actions: _commands(),
         ),
         body: Padding(
           padding: const EdgeInsets.all(8),
@@ -145,41 +176,7 @@ class EntityListScreenState<T extends Entity<T>>
         },
       );
 
-  List<Widget> _commands() => [
-        SizedBox(
-          width: 250,
-          height: 80,
-          child: HMBTextField(
-            leadingSpace: false,
-            labelText: 'Filters',
-            controller: filterController,
-            onChanged: (newValue) async {
-              filterOption = newValue;
-              await _refreshEntityList();
-            },
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.clear),
-          onPressed: () async {
-            filterController.clear();
-            filterOption = null;
-            await _refreshEntityList();
-          },
-        ),
-        HMBButtonAdd(
-          enabled: true,
-          onPressed: () async {
-            if (context.mounted) {
-              await Navigator.push(
-                context,
-                MaterialPageRoute<void>(
-                    builder: (context) => widget.onEdit(null)),
-              ).then((_) => _refreshEntityList());
-            }
-          },
-        )
-      ];
+  
 
   Future<void> _confirmDelete(Entity<T> entity) async {
     await areYouSure(
