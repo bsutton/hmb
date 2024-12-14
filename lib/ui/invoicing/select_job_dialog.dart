@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
+import '../../dao/dao_contact.dart';
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
 import '../../entity/customer.dart';
@@ -11,6 +12,11 @@ class SelectJobDialog extends StatefulWidget {
 
   @override
   _SelectJobDialogState createState() => _SelectJobDialogState();
+
+  static Future<Job?> show(BuildContext context) async => showDialog<Job?>(
+        context: context,
+        builder: (context) => const SelectJobDialog(),
+      );
 }
 
 class _SelectJobDialogState extends State<SelectJobDialog> {
@@ -51,100 +57,132 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
     return jobs.where((cj) {
       final customerName = cj.customer.name.toLowerCase();
       final jobSummary = cj.job.summary.toLowerCase();
+      final contactName = (cj.contactName ?? '').toLowerCase();
+
       return customerName.contains(_searchQuery) ||
-          jobSummary.contains(_searchQuery);
+          jobSummary.contains(_searchQuery) ||
+          contactName.contains(_searchQuery);
     }).toList();
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Select Job'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CheckboxListTile(
-              title: const Text('Show all jobs'),
-              value: showAllJobs,
-              onChanged: (value) {
-                setState(() {
-                  showAllJobs = value ?? false;
-                });
-              },
-            ),
-            CheckboxListTile(
-              title: const Text('Show jobs with no billable items'),
-              value: showJobsWithNoBillableItems,
-              onChanged: (value) {
-                setState(() {
-                  showJobsWithNoBillableItems = value ?? false;
-                });
-              },
-            ),
-            FutureBuilderEx<List<CustomerAndJob>>(
-              // ignore: discarded_futures
-              future: _fetchJobs(),
-              builder: (context, jobs) {
-                if (jobs == null || jobs.isEmpty) {
-                  return const Center(child: Text('No jobs found.'));
-                }
-
-                final filteredJobs = _filterJobs(jobs);
-
-                if (filteredJobs.isEmpty) {
-                  return const Center(
-                      child: Text('No matches for your search.'));
-                }
-
-                return SizedBox(
-                  width: double.maxFinite,
-                  height: 300,
-                  child: ListView.builder(
-                    itemCount: filteredJobs.length,
-                    itemBuilder: (context, index) {
-                      final current = filteredJobs[index];
-                      return ListTile(
-                        title: Text(current.job.summary),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Customer: ${current.customer.name}'),
-                            Text(
-                                'Has billable items: ${current.hasBillables ? "Yes" : "No"}')
-                          ],
-                        ),
-                        onTap: () => Navigator.pop(context, current.job),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                labelText: 'Search by Customer or Job Summary',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+  Widget build(BuildContext context) => Dialog(
+        // Remove default dialog padding to allow full-screen
+        insetPadding: EdgeInsets.zero,
+        backgroundColor: Theme.of(context).canvasColor,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Select Job'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+                tooltip: 'Close',
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            ],
           ),
-        ],
+          body: Column(
+            children: [
+              // Filters
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      title: const Text('Show all jobs'),
+                      value: showAllJobs,
+                      onChanged: (value) {
+                        setState(() {
+                          showAllJobs = value ?? false;
+                        });
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Show jobs with no billable items'),
+                      value: showJobsWithNoBillableItems,
+                      onChanged: (value) {
+                        setState(() {
+                          showJobsWithNoBillableItems = value ?? false;
+                        });
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    labelText: 'Search',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+
+              Expanded(
+                child: FutureBuilderEx<List<CustomerAndJob>>(
+                  // ignore: discarded_futures
+                  future: _fetchJobs(),
+                  builder: (context, jobs) {
+                    if (jobs == null || jobs.isEmpty) {
+                      return const Center(child: Text('No jobs found.'));
+                    }
+
+                    final filteredJobs = _filterJobs(jobs);
+
+                    if (filteredJobs.isEmpty) {
+                      return const Center(
+                          child: Text('No matches for your search.'));
+                    }
+
+                    return ListView.builder(
+                      itemCount: filteredJobs.length,
+                      itemBuilder: (context, index) {
+                        final current = filteredJobs[index];
+                        return ListTile(
+                          title: Text(current.job.summary),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Customer: ${current.customer.name}'),
+                              Text(
+                                  'Has billable items: ${current.hasBillables ? "Yes" : "No"}'),
+                              if (current.contactName != null)
+                                Text('Contact: ${current.contactName}')
+                            ],
+                          ),
+                          onTap: () => Navigator.pop(context, current.job),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       );
 }
 
 class CustomerAndJob {
-  CustomerAndJob(this.customer, this.job, {required this.hasBillables});
+  CustomerAndJob(
+    this.customer,
+    this.job, {
+    required this.hasBillables,
+    this.contactName,
+  });
 
   final Customer customer;
   final Job job;
   final bool hasBillables;
+  final String? contactName;
 
   static Future<List<CustomerAndJob>> getJobs({
     required bool showAllJobs,
@@ -155,7 +193,7 @@ class CustomerAndJob {
     if (showAllJobs) {
       jobs = await DaoJob().getAll();
     } else {
-      jobs = await DaoJob().getActiveJobs(null);
+      jobs = await DaoJob().getActiveJobs(null); // Fetch active jobs
     }
 
     final jobList = <CustomerAndJob>[];
@@ -167,13 +205,22 @@ class CustomerAndJob {
       }
 
       final hasBillables = await hasBillableItems(job);
-
       if (!showJobsWithNoBillableItems && !hasBillables) {
-        // Skip jobs without billables if not requested
         continue;
       }
 
-      jobList.add(CustomerAndJob(customer, job, hasBillables: hasBillables));
+      // Fetch the primary contact for the job
+      final contact = await DaoContact().getPrimaryForJob(job.id);
+      final contactName = contact?.fullname;
+
+      jobList.add(
+        CustomerAndJob(
+          customer,
+          job,
+          hasBillables: hasBillables,
+          contactName: contactName,
+        ),
+      );
     }
 
     return jobList;
