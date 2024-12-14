@@ -652,7 +652,7 @@ class WizardState extends State<Wizard> {
     }
   }
 
-  Future<void> _triggerOnFinished(WizardCompletionReason cancelled) async {
+  Future<void> _triggerOnFinished(WizardCompletionReason reason) async {
     /// Stops onFinished being called recursively.
     /// This can occur if during onFinish processing
     /// Navigation.pop is called which we trap and then
@@ -662,7 +662,7 @@ class WizardState extends State<Wizard> {
       return;
     }
     onFinishCalled = true;
-    await widget.onFinished?.call(WizardCompletionReason.cancelled);
+    await widget.onFinished?.call(reason);
     onFinishCalled = false;
   }
 }
