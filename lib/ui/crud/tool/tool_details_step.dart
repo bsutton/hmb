@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
+import 'package:strings/strings.dart';
 
 import '../../../dao/dao_tool.dart';
 import '../../../entity/tool.dart';
@@ -7,6 +8,7 @@ import '../../../util/money_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_date_time_picker.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/select/select_manufacture.dart';
 import '../../widgets/select/select_supplier.dart';
 import '../../widgets/wizard.dart';
@@ -16,14 +18,13 @@ import 'stock_take_wizard.dart';
 
 class ToolDetailsStep extends WizardStep {
   ToolDetailsStep(this.toolWizardState,
-      {required this.name, required this.cost})
-      : super(title: 'Details') {
+      {required String? name, required this.cost})
+      : super(title: 'Tool Details') {
     nameController.text = name ?? '';
     costController.text = cost?.toString() ?? '';
   }
 
   final ToolWizardState toolWizardState;
-  final String? name;
   final Money? cost;
 
   final TextEditingController nameController = TextEditingController();
@@ -40,6 +41,16 @@ class ToolDetailsStep extends WizardStep {
   @override
   Future<void> onNext(BuildContext context, WizardStepTarget intendedStep,
       {required bool userOriginated}) async {
+    if (Strings.isBlank(nameController.text)) {
+      HMBToast.error('You must enter a name');
+      intendedStep.cancel();
+      return;
+    }
+    if (selectedCategory.categoryId == null) {
+      HMBToast.error('You must select a Category');
+      intendedStep.cancel();
+      return;
+    }
     final daoTool = DaoTool();
     if (toolWizardState.tool == null) {
       final tool = Tool.forInsert(
