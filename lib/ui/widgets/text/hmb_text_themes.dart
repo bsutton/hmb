@@ -3,6 +3,101 @@ import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
 
+/// To be used as the page specific title
+class HMBPageTitle extends StatelessWidget {
+  const HMBPageTitle(this.text,
+      {super.key, this.color = HMBColors.textPrimary});
+  final String text;
+  final Color color;
+  static const fontSize = 26.0;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 8, bottom: 12),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w500,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+      );
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(StringProperty('text', text))
+      ..add(ColorProperty('color', color));
+  }
+}
+
+class HMBCardTitle extends StatelessWidget {
+  const HMBCardTitle(this.text,
+      {super.key, this.color = HMBColors.textPrimary});
+  final String text;
+  final Color color;
+  static const fontSize = 22.0;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 8, bottom: 12),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w500,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+      );
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(StringProperty('text', text))
+      ..add(ColorProperty('color', color));
+  }
+}
+
+/// The first heading withing the body of the card.
+class HMBCardHeading extends StatelessWidget {
+  const HMBCardHeading(this.text,
+      {super.key, this.color = HMBColors.textPrimary});
+  final String text;
+  final Color color;
+  static const fontSize = 20.0;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 8, bottom: 8),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w500,
+          ),
+          overflow: TextOverflow.ellipsis, // Handle overflow
+          maxLines: 1, // Limit to one line
+        ),
+      );
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(StringProperty('text', text))
+      ..add(ColorProperty('color', color));
+  }
+}
+
 ///
 /// Use this style on any page that has a full width heading at the
 /// top of the page.
@@ -246,7 +341,10 @@ class HMBTextButton extends StatelessWidget {
   final TextStyle style;
 
   @override
-  Widget build(BuildContext context) => Text(text.toUpperCase(), style: style);
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.all(4),
+        child: Text(text.toUpperCase(), style: style),
+      );
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
