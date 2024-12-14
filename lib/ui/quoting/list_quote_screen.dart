@@ -9,9 +9,11 @@ import '../../entity/quote.dart';
 import '../invoicing/dialog_select_tasks.dart';
 import '../invoicing/select_job_dialog.dart';
 import '../widgets/async_state.dart';
-import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/hmb_add_button.dart';
+import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/layout/hmb_spacer.dart';
+import '../widgets/text/hmb_text_themes.dart';
 import 'quote_card.dart';
 
 class QuoteListScreen extends StatefulWidget {
@@ -23,7 +25,6 @@ class QuoteListScreen extends StatefulWidget {
 
 class _QuoteListScreenState extends AsyncState<QuoteListScreen, void> {
   late Future<List<Quote>> _quotes;
-  final TextEditingController _filterController = TextEditingController();
 
   Job? selectedJob;
   Customer? selectedCustomer;
@@ -60,10 +61,7 @@ class _QuoteListScreenState extends AsyncState<QuoteListScreen, void> {
   }
 
   Future<void> _createQuote() async {
-    final job = await showDialog<Job?>(
-      context: context,
-      builder: (context) => const SelectJobDialog(),
-    );
+    final job = await SelectJobDialog.show(context);
 
     if (job == null) {
       return;
@@ -131,25 +129,23 @@ class _QuoteListScreenState extends AsyncState<QuoteListScreen, void> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Quotes'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _refreshQuoteList,
-            ),
-          ],
+          automaticallyImplyLeading: false,
+          title: Row(
+            children: [
+              const HMBPageTitle('Quotes'),
+              const HMBSpacer(width: true),
+              Expanded(
+                child: HMBSearch(
+                  // hint: 'Search quotes by number, job, or customer...',
+                  onChanged: (filter) async => _onFilterChanged(filter ?? ''),
+                ),
+              ),
+              HMBButtonAdd(onPressed: _createQuote, enabled: true),
+            ],
+          ),
         ),
         body: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: HMBTextField(
-                controller: _filterController,
-                labelText: 'Filters',
-                // hint: 'Search quotes by number, job, or customer...',
-                onChanged: (filter) async => _onFilterChanged(filter ?? ''),
-              ),
-            ),
             Expanded(
               child: FutureBuilderEx<List<Quote>>(
                 future: _quotes,
@@ -174,7 +170,5 @@ class _QuoteListScreenState extends AsyncState<QuoteListScreen, void> {
             ),
           ],
         ),
-        floatingActionButton:
-            HMBButtonAdd(onPressed: _createQuote, enabled: true),
       );
 }
