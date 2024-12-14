@@ -22,25 +22,33 @@ class _ToolListScreenState extends State<ToolListScreen> {
   int _refreshCounter = 0;
 
   Future<void> _startStockTake(BuildContext context) async {
-    await ToolStockTakeWizard.start(context: context, 
-    offerAnother: true,
-    onFinish: (reason) async {
-      Navigator.of(context).pop();
-      setState(() {
-        _refreshCounter++;
-      });
-    });
+    await ToolStockTakeWizard.start(
+        context: context,
+        offerAnother: true,
+        onFinish: (reason) async {
+          Navigator.of(context).pop();
+          setState(() {
+            _refreshCounter++;
+          });
+        });
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Tools'),
+          automaticallyImplyLeading: false,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.checklist),
-              onPressed: () async => _startStockTake(context),
-              tooltip: 'Start Tool Stock Take',
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: ElevatedButton.icon(
+                onPressed: () async => _startStockTake(context),
+                icon: const Icon(Icons.inventory),
+                label: const Text('Start Stock Take'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green, // Eye-catching color
+                  foregroundColor: Colors.white,
+                ),
+              ),
             ),
           ],
         ),

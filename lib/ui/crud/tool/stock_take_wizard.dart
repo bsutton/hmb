@@ -32,6 +32,10 @@ class ToolStockTakeWizard extends StatefulWidget {
           onFinish: (reason) async {
             await onFinish(reason);
 
+            if (reason == WizardCompletionReason.cancelled) {
+              return;
+            }
+
             if (!offerAnother || !context.mounted) {
               return;
             }
