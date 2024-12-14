@@ -69,6 +69,22 @@ where jo.id =?
     return fromMap(data.first);
   }
 
+  Future<Contact?> getPrimaryForQuote(int quoteId) async {
+    final db = withoutTransaction();
+    final data = await db.rawQuery('''
+      SELECT c.*
+      FROM contact c
+      JOIN job j ON c.id = j.contact_id
+      JOIN quote q ON j.id = q.job_id
+      WHERE q.id = ?
+    ''', [quoteId]);
+
+    if (data.isEmpty) {
+      return null;
+    }
+    return fromMap(data.first);
+  }
+
   ///
   /// returns the primary contact for the customer
   ///
