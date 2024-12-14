@@ -48,7 +48,7 @@ class _JobListScreenState extends State<JobListScreen> {
                       pageTitle: 'Jobs',
                       onEdit: (job) => JobEditScreen(job: job),
                       fetchList: (filter) async => _fetchJobs(filter),
-                      title: (job) => HMBTextHeadline(job.summary),
+                      title: (job) => HMBCardTitle(job.summary),
                       background: (job) async =>
                           (await DaoJobStatus().getById(job.jobStatusId))
                               ?.getColour() ??

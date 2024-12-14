@@ -14,6 +14,7 @@ import '../../util/format.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/pdf_preview.dart';
+import '../widgets/text/hmb_text_themes.dart';
 import 'edit_quote_line_dialog.dart';
 import 'generate_quote_pdf.dart';
 import 'job_quote.dart';
@@ -84,9 +85,8 @@ class _QuoteCardState extends State<QuoteCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    HMBCardHeading(
                       'Quote #${quote.id} Issued: ${formatDate(quote.createdDate)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text('Customer: $customerName'),
                     Text('Job: $jobName #${jobAndCustomer.job.id}'),

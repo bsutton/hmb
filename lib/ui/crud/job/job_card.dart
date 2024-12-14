@@ -64,7 +64,7 @@ class _JobCardState extends State<JobCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HMBTextHeadline2(
+                  HMBCardHeading(
                     customer?.name ?? 'Not Set',
                   ),
                   const SizedBox(height: 8),

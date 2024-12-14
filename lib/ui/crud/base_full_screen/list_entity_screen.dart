@@ -9,6 +9,7 @@ import '../../widgets/hmb_search.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/text/hmb_text_themes.dart';
 
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   EntityListScreen({
@@ -66,7 +67,7 @@ class EntityListScreenState<T extends Entity<T>>
           toolbarHeight: 80,
           title: Row(
             children: [
-              Text(widget.pageTitle),
+              HMBPageTitle(widget.pageTitle),
               const HMBSpacer(
                 width: true,
               ),

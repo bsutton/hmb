@@ -27,6 +27,7 @@ import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
 import 'widgets/select/hmb_droplist.dart';
 import 'widgets/select/hmb_droplist_multi.dart';
+import 'widgets/text/hmb_text_themes.dart';
 
 class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});
@@ -152,7 +153,7 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Shopping List'),
+          title: const HMBPageTitle('Shopping List'),
           automaticallyImplyLeading: false,
         ),
         body: Column(

@@ -18,6 +18,7 @@ import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
 import 'widgets/hmb_toast.dart';
 import 'widgets/select/hmb_droplist_multi.dart';
+import 'widgets/text/hmb_text_themes.dart';
 
 class PackingScreen extends StatefulWidget {
   const PackingScreen({super.key});
@@ -108,7 +109,7 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Packing List'),
+          title: const HMBPageTitle('Packing List'),
           automaticallyImplyLeading: false,
         ),
         body: Column(

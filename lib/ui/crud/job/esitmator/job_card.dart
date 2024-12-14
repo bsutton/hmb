@@ -31,6 +31,7 @@ class _JobCardState extends State<JobCard> {
   Widget build(BuildContext context) => SizedBox(
         height: 327,
         child: FutureBuilderEx<CompleteJobInfo>(
+          // ignore: discarded_futures
           future: _loadCompleteJobInfo(widget.job),
           builder: (context, info) {
             final labourCost = info!.totals.labourCost;

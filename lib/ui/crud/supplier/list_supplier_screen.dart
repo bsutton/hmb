@@ -21,7 +21,7 @@ class SupplierListScreen extends StatelessWidget {
   Widget build(BuildContext context) => EntityListScreen<Supplier>(
       pageTitle: 'Suppliers',
       dao: DaoSupplier(),
-      title: (entity) => HMBTextHeadline2(entity.name),
+      title: (entity) => HMBCardHeading(entity.name),
       fetchList: (filter) async => DaoSupplier().getByFilter(filter),
       onEdit: (supplier) => SupplierEditScreen(supplier: supplier),
       details: (entity) {

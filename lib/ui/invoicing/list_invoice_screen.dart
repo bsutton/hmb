@@ -12,10 +12,12 @@ import '../../entity/job.dart';
 import '../../util/format.dart';
 import '../../util/money_ex.dart';
 import '../widgets/async_state.dart';
-import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/hmb_add_button.dart';
+import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
+import '../widgets/text/hmb_text_themes.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_screen.dart';
 import 'invoice_details.dart';
@@ -71,10 +73,7 @@ class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
   }
 
   Future<void> _createInvoice() async {
-    final job = await showDialog<Job?>(
-      context: context,
-      builder: (context) => const SelectJobDialog(),
-    );
+    final job = await SelectJobDialog.show(context);
 
     if (job == null) {
       return;
@@ -121,9 +120,22 @@ class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           toolbarHeight: 80,
-          title: const Text('Invoices'),
+          title: Row(
+            children: [
+              const HMBPageTitle('Invoices'),
+              const HMBSpacer(width: true),
+              Expanded(
+                child: HMBSearch(
+                    // hint: 'Search quotes by number, job, or customer...',
+                    onChanged: (filter) async {
+                  filterText = filter;
+                  await _refreshInvoiceList();
+                }),
+              ),
+              HMBButtonAdd(onPressed: _createInvoice, enabled: true),
+            ],
+          ),
           automaticallyImplyLeading: false,
-          actions: _buildCommands(),
         ),
         body: Column(
           children: [
@@ -214,34 +226,6 @@ class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
           ],
         ),
       );
-
-  List<Widget> _buildCommands() => [
-        SizedBox(
-          width: 250,
-          height: 80,
-          child: HMBTextField(
-            leadingSpace: false,
-            labelText: 'Filters',
-            controller: _filterController,
-            onChanged: (newValue) async {
-              filterText = newValue;
-              await _refreshInvoiceList();
-            },
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.clear),
-          onPressed: () async {
-            _filterController.clear();
-            filterText = null;
-            await _refreshInvoiceList();
-          },
-        ),
-        HMBButtonAdd(
-          enabled: true,
-          onPressed: _createInvoice,
-        ),
-      ];
 
   @override
   void dispose() {
