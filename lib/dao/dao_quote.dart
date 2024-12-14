@@ -62,6 +62,18 @@ class DaoQuote extends Dao<Quote> {
     return toList(data);
   }
 
+    Future<List<Quote>> getQuotesWithoutMilestones() async {
+    final db = withoutTransaction();
+    final List<Map<String, dynamic>> data = await db.rawQuery('''
+      SELECT q.*
+      FROM quote q
+      LEFT JOIN milestone m ON q.id = m.quote_id
+      WHERE m.id IS NULL
+    ''');
+
+    return toList(data);
+  }
+
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
     await DaoQuoteLine().deleteByQuoteId(id);
