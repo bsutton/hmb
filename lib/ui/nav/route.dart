@@ -9,7 +9,7 @@ import '../crud/job/esitmator/list_job_estimates_screen.dart';
 import '../crud/job/list_job_screen.dart';
 import '../crud/manufacturer/list_manufacturer_screen.dart';
 import '../crud/message_template/list_message_template.dart';
-import '../crud/milestone/milestone_overview_screen.dart';
+import '../crud/milestone/list_milestone_screen.dart';
 import '../crud/supplier/list_supplier_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
@@ -87,8 +87,8 @@ GoRouter get router => GoRouter(
             ),
             GoRoute(
               path: 'billing/milestones',
-              builder: (_, __) => const HomeWithDrawer(
-                  initialScreen: MilestoneOverviewScreen()),
+              builder: (_, __) =>
+                  const HomeWithDrawer(initialScreen: ListMilestoneScreen()),
             ),
             GoRoute(
                 path: 'extras/tools',

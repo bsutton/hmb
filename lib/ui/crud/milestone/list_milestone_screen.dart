@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
+import 'package:strings/strings.dart';
 
 import '../../../../dao/dao_customer.dart';
 import '../../../../dao/dao_job.dart';
@@ -11,20 +12,25 @@ import '../../../../entity/job.dart';
 import '../../../../entity/milestone.dart';
 import '../../../../entity/quote.dart';
 import '../../../../util/money_ex.dart';
+import '../../quoting/select_quote_dialog.dart';
 import '../../widgets/async_state.dart';
+import '../../widgets/hmb_add_button.dart';
+import '../../widgets/hmb_search.dart';
+import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/text/hmb_text_themes.dart';
 import 'edit_milestone_payment.dart';
 
-class MilestoneOverviewScreen extends StatefulWidget {
-  const MilestoneOverviewScreen({super.key});
+class ListMilestoneScreen extends StatefulWidget {
+  const ListMilestoneScreen({super.key});
 
   @override
-  _MilestoneOverviewScreenState createState() =>
-      _MilestoneOverviewScreenState();
+  _ListMilestoneScreenState createState() => _ListMilestoneScreenState();
 }
 
-class _MilestoneOverviewScreenState
-    extends AsyncState<MilestoneOverviewScreen, void> {
+class _ListMilestoneScreenState extends AsyncState<ListMilestoneScreen, void> {
   late Future<List<QuoteMilestoneSummary>> _summaries;
+
+  String? filter;
 
   @override
   Future<void> asyncInitState() async {
@@ -74,16 +80,13 @@ class _MilestoneOverviewScreenState
       final invoicedValue = quoteMilestones.fold<Money>(
           MoneyEx.zero,
           (sum, m) =>
-              sum +
-              ((m.invoiceId != null )
-                  ? m.paymentAmount
-                  : MoneyEx.zero));
+              sum + ((m.invoiceId != null) ? m.paymentAmount : MoneyEx.zero));
 
       // Count how many milestones are invoiced
       final invoicedCount =
           quoteMilestones.where((m) => m.invoiceId != null).length;
 
-      summaries.add(QuoteMilestoneSummary(
+      final summary = QuoteMilestoneSummary(
         quote: quote,
         job: job,
         customer: customer,
@@ -91,7 +94,10 @@ class _MilestoneOverviewScreenState
         milestoneCount: count,
         invoicedValue: invoicedValue,
         invoicedCount: invoicedCount,
-      ));
+      );
+      if (summary.matches(filter)) {
+        summaries.add(summary);
+      }
     }
 
     return summaries;
@@ -100,7 +106,21 @@ class _MilestoneOverviewScreenState
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Milestone Overview'),
+          automaticallyImplyLeading: false,
+          title: Row(
+            children: [
+              const HMBPageTitle('Milestones'),
+              const HMBSpacer(width: true),
+              Expanded(
+                child: HMBSearch(onChanged: (filter) async {
+                  this.filter = filter?.toLowerCase();
+                  _summaries = _fetchMilestoneSummaries();
+                  setState(() {});
+                }),
+              ),
+              HMBButtonAdd(onPressed: _createMilestone, enabled: true),
+            ],
+          ),
         ),
         body: FutureBuilderEx<List<QuoteMilestoneSummary>>(
           future: _summaries,
@@ -159,6 +179,20 @@ class _MilestoneOverviewScreenState
           },
         ),
       );
+
+  Future<void> _createMilestone() async {
+    final quote = await SelectQuoteDialog.show(context);
+    if (mounted && quote != null) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => EditMilestonesScreen(quoteId: quote.id),
+        ),
+      );
+      setState(() {
+        _summaries = _fetchMilestoneSummaries();
+      });
+    }
+  }
 }
 
 class QuoteMilestoneSummary {
@@ -179,4 +213,20 @@ class QuoteMilestoneSummary {
   final int milestoneCount;
   final Money invoicedValue;
   final int invoicedCount;
+
+  bool matches(String? filter) {
+    if (Strings.isBlank(filter)) {
+      return true;
+    }
+
+    if (customer?.name.toLowerCase().contains(filter!) ?? false) {
+      return true;
+    }
+
+    if (job.summary.toLowerCase().contains(filter!)) {
+      return true;
+    }
+
+    return false;
+  }
 }
