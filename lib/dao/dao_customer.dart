@@ -50,6 +50,22 @@ order by c.modifiedDate desc
     return toList(data);
   }
 
+  Future<Customer?> getByQuote(int quoteId) async {
+    final db = withoutTransaction();
+    final data = await db.rawQuery('''
+      SELECT c.* 
+      FROM customer c
+      JOIN job j ON c.id = j.customer_id
+      JOIN quote q ON j.id = q.job_id
+      WHERE q.id = ?
+    ''', [quoteId]);
+
+    if (data.isEmpty) {
+      return null;
+    }
+    return fromMap(data.first);
+  }
+
   Future<Money> getHourlyRate(int customerId) async {
     final customer = await getById(customerId);
 
