@@ -133,7 +133,7 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                         if (mounted) {
                           HMBToast.info('Backup completed successfully.');
                         }
-                      // ignore: avoid_catches_without_on_clauses
+                        // ignore: avoid_catches_without_on_clauses
                       } catch (e) {
                         if (mounted) {
                           HMBToast.error('Error during backup: $e');
@@ -163,72 +163,75 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      _provider.useDebugPath = !_useProductionPath;
-                      final selectedBackup = await Navigator.push(
-                        context,
-                        MaterialPageRoute<Backup>(
-                          builder: (context) =>
-                              BackupSelectionScreen(backupProvider: _provider),
-                        ),
-                      );
-
-                      if (selectedBackup != null) {
-                        setState(() {
-                          _isLoading = true;
-                          _stageDescription = 'Starting restore...';
-                          _stageNo = 0;
-                          _stageCount = 0;
-                        });
-
-                        await WakelockPlus.enable();
-                        try {
-                          await _provider.performRestore(
-                            selectedBackup,
-                            AssetScriptSource(),
-                            FlutterDatabaseFactory(),
-                          );
-
-                          if (mounted) {
-                            HMBToast.info('Restore completed successfully.');
-                          }
-                        // ignore: avoid_catches_without_on_clauses
-                        } catch (e) {
-                          if (mounted) {
-                            HMBToast.error('Error during restore: $e');
-                          }
-                        } finally {
-                          if (mounted) {
-                            setState(() {
-                              _isLoading = false;
-                            });
-                          }
-
-                          _provider.useDebugPath = false;
-
-                          await WakelockPlus.disable();
-                        }
-                      }
-                    },
-                    icon: const Icon(Icons.restore, size: 24),
-                    label: Text('Restore from ${_provider.name}'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  _buildRestoreButton(context),
                 ],
               ],
             ),
+          ),
+        ),
+      );
+
+  ElevatedButton _buildRestoreButton(BuildContext context) =>
+      ElevatedButton.icon(
+        icon: const Icon(Icons.restore, size: 24),
+        label: Text('Restore from ${_provider.name}'),
+        onPressed: () async {
+          _provider.useDebugPath = !_useProductionPath;
+          final selectedBackup = await Navigator.push(
+            context,
+            MaterialPageRoute<Backup>(
+              builder: (context) =>
+                  BackupSelectionScreen(backupProvider: _provider),
+            ),
+          );
+
+          if (selectedBackup != null) {
+            setState(() {
+              _isLoading = true;
+              _stageDescription = 'Starting restore...';
+              _stageNo = 0;
+              _stageCount = 0;
+            });
+
+            await WakelockPlus.enable();
+            try {
+              await _provider.performRestore(
+                selectedBackup,
+                AssetScriptSource(),
+                FlutterDatabaseFactory(),
+              );
+
+              if (mounted) {
+                HMBToast.info('Restore completed successfully.');
+              }
+              // ignore: avoid_catches_without_on_clauses
+            } catch (e) {
+              if (mounted) {
+                HMBToast.error('Error during restore: $e');
+              }
+            } finally {
+              if (mounted) {
+                setState(() {
+                  _isLoading = false;
+                });
+              }
+
+              _provider.useDebugPath = false;
+
+              await WakelockPlus.disable();
+            }
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+          textStyle: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
         ),
       );
