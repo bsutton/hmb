@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -7,7 +5,7 @@ import '../../../../ui/widgets/hmb_toast.dart';
 import '../../../factory/flutter_database_factory.dart';
 import '../../../versions/asset_script_source.dart';
 import '../backup_provider.dart';
-import '../local/local_backup_provider.dart';
+import '../backup_selection.dart';
 import 'google_drive_backup_provider.dart';
 
 class GoogleDriveBackupScreen extends StatefulWidget {
@@ -21,6 +19,11 @@ class GoogleDriveBackupScreen extends StatefulWidget {
 class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
   bool _isLoading = false; // Indicates operation in progress
   String _stageDescription = ''; // Current stage of the operation
+
+  int _stageNo = 0; // Current stage number
+  int _stageCount = 0; // Total number of stages
+
+  bool _includePhotos = false;
 
   late final BackupProvider _provider;
 
@@ -67,52 +70,9 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 40),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      setState(() {
-                        _isLoading = true;
-                        _stageDescription = 'Starting backup...';
-                      });
-
-                      await WakelockPlus.enable();
-                      try {
-                        await _provider.performBackup(
-                          version: 1,
-                          src: AssetScriptSource(),
-                          includePhotos: true,
-                        );
-                        if (mounted) {
-                          HMBToast.info('Backup completed successfully.');
-                        }
-                        // ignore: avoid_catches_without_on_clauses
-                      } catch (e) {
-                        if (mounted) {
-                          HMBToast.error('Error during backup: $e');
-                        }
-                      } finally {
-                        if (mounted) {
-                          setState(() {
-                            _isLoading = false;
-                          });
-                        }
-                        await WakelockPlus.disable();
-                      }
-                    },
-                    icon: const Icon(Icons.backup, size: 24),
-                    label: Text('Backup to ${_provider.name}'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  _buildBackupButton(),
+                  const SizedBox(height: 40),
+                  _buildRestoreButton(context),
                 ],
               ],
             ),
@@ -120,10 +80,149 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
         ),
       );
 
-  BackupProvider _getProvider() {
-    if (Platform.isAndroid) {
-      return GoogleDriveBackupProvider(FlutterDatabaseFactory());
+  Widget _buildBackupButton() => Column(
+        children: [
+          ElevatedButton.icon(
+            icon: const Icon(Icons.backup, size: 24),
+            label: Text('Backup to ${_provider.name}'),
+            onPressed: () async {
+              await _performBackup(_includePhotos);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              textStyle: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 40),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize:
+                  MainAxisSize.min, // Shrink the Row to fit its children
+              children: [
+                const Text('Include photos in backup'),
+                Checkbox(
+                  value: _includePhotos,
+                  onChanged: (value) {
+                    setState(() {
+                      _includePhotos = value ?? false;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+
+  Future<void> _performBackup(bool includePhotos) async {
+    setState(() {
+      _isLoading = true;
+      _stageDescription = 'Starting backup...';
+    });
+
+    await WakelockPlus.enable();
+    try {
+      await _provider.performBackup(
+        version: 1,
+        src: AssetScriptSource(),
+        includePhotos: includePhotos,
+      );
+      if (mounted) {
+        HMBToast.info('Backup completed successfully.');
+      }
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      if (mounted) {
+        HMBToast.error('Error during backup: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      await WakelockPlus.disable();
     }
-    return LocalBackupProvider(FlutterDatabaseFactory());
+  }
+
+  ElevatedButton _buildRestoreButton(BuildContext context) =>
+      ElevatedButton.icon(
+        icon: const Icon(Icons.restore, size: 24),
+        label: Text('Restore from ${_provider.name}'),
+        onPressed: () async {
+          _provider.useDebugPath = !false;
+          final selectedBackup = await Navigator.push(
+            context,
+            MaterialPageRoute<Backup>(
+              builder: (context) =>
+                  BackupSelectionScreen(backupProvider: _provider),
+            ),
+          );
+
+          if (selectedBackup != null) {
+            setState(() {
+              _isLoading = true;
+              _stageDescription = 'Starting restore...';
+              _stageNo = 0;
+              _stageCount = 0;
+            });
+
+            await WakelockPlus.enable();
+            try {
+              await _provider.performRestore(
+                selectedBackup,
+                AssetScriptSource(),
+                FlutterDatabaseFactory(),
+              );
+
+              if (mounted) {
+                HMBToast.info('Restore completed successfully.');
+              }
+              // ignore: avoid_catches_without_on_clauses
+            } catch (e) {
+              if (mounted) {
+                HMBToast.error('Error during restore: $e');
+              }
+            } finally {
+              if (mounted) {
+                setState(() {
+                  _isLoading = false;
+                });
+              }
+
+              _provider.useDebugPath = false;
+
+              await WakelockPlus.disable();
+            }
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+          textStyle: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+
+  BackupProvider _getProvider() {
+    return GoogleDriveBackupProvider(FlutterDatabaseFactory());
+    // if (Platform.isAndroid) {
+    // }
+    // return LocalBackupProvider(FlutterDatabaseFactory());
   }
 }

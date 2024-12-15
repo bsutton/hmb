@@ -3,21 +3,22 @@ import 'package:june/june.dart';
 import '../entity/category.dart';
 import 'dao.dart';
 
-class DaoCategory extends Dao<Category> {
-  Future<List<Category>> getByFilter(String? filter) async {
+    class DaoCategory extends Dao<Category> {
 
-    if (filter == null || filter.isEmpty) {
-      return getAll(orderByClause: 'name');
-    }
-    final like = '''%$filter%''';
-    final data = await db.rawQuery('''
-      SELECT * FROM category 
-      WHERE name LIKE ? OR description LIKE ?
-      ORDER BY name
-    ''', [like, like]);
+      Future<List<Category>> getByFilter(String? filter) async {
 
-    return toList(data);
-  }
+        if (filter == null || filter.isEmpty) {
+          return getAll(orderByClause: 'name');
+        }
+        final like = '''%$filter%''';
+        final data = await db.rawQuery('''
+          SELECT * FROM category 
+          WHERE name LIKE ? OR description LIKE ?
+          ORDER BY name
+        ''', [like, like]);
+
+        return toList(data);
+      }
 
   @override
   Category fromMap(Map<String, dynamic> map) => Category.fromMap(map);

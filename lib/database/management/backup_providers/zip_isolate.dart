@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:archive/archive_io.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
+import 'package:sentry/sentry.dart';
 
 import 'backup_provider.dart';
 
@@ -40,7 +41,10 @@ Future<void> zipBackup(
 
   // Listen for progress updates from the isolate
   final completer = Completer<void>();
-  errorPort.listen((error) => completer.completeError(error as Object));
+  errorPort.listen((error) {
+    Sentry.captureException(error);
+    completer.completeError(error as Object);
+  });
   exitPort.listen((message) {
     if (!completer.isCompleted) {
       completer.complete();
@@ -58,12 +62,25 @@ Future<void> zipBackup(
 
   // Wait for the isolate to finish
   await completer.future;
+
+  receivePort.close();
+  errorPort.close();
+  exitPort.close();
 }
 
 // _ZipParams class
 
 // _zipFiles function
 Future<void> _zipFiles(_ZipParams params) async {
+  await Sentry.init(
+    (options) {
+      options
+        ..dsn =
+            'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
+        ..tracesSampleRate = 1.0;
+    },
+  );
+
   final encoder = ZipFileEncoder();
   final sendPort = params.sendPort;
 
@@ -71,23 +88,37 @@ Future<void> _zipFiles(_ZipParams params) async {
     encoder.create(params.pathToZip);
 
     // Emit progress: Zipping database
-    sendPort.send(ProgressUpdate('Zipping database', params.progressStageStart,
-        params.progressStageEnd));
+    sendPort.send(ProgressUpdate('Zipping database ${params.pathToBackupFile}',
+        params.progressStageStart, params.progressStageEnd));
 
     await encoder.addFile(File(params.pathToBackupFile));
 
     if (params.includePhotos) {
+      sendPort.send(ProgressUpdate('Adding photos ${params.photosRootPath}',
+          params.progressStageStart, params.progressStageEnd));
       var processedPhotos = 0;
-      final totalPhotos =
-          (await findAsync('*', workingDirectory: params.photosRootPath)
-                  .toList())
-              .length;
-      await for (final item
-          in findAsync('*', workingDirectory: params.photosRootPath)) {
+      final photos =
+          await findAsync('*.jpg', workingDirectory: params.photosRootPath)
+              .toList();
+      final totalPhotos = photos.length;
+      sendPort.send(ProgressUpdate('Found $totalPhotos photos',
+          params.progressStageStart, params.progressStageEnd));
+
+      for (final item in photos) {
+        // sendPort.send(ProgressUpdate('Adding photo $processedPhotos/$totalPhotos photos',
+        //     params.progressStageStart, params.progressStageEnd));
+
         final relativePhotoPath =
             relative(item.pathTo, from: params.photosRootPath);
         final zipPath = join(params.zipPhotoRoot, relativePhotoPath);
+
+        // sendPort.send(ProgressUpdate('Calling add file ${item.pathTo}',
+        //     params.progressStageStart, params.progressStageEnd));
+
         await encoder.addFile(File(item.pathTo), zipPath);
+
+        // sendPort.send(ProgressUpdate('add file completed ${item.pathTo}',
+        //     params.progressStageStart, params.progressStageEnd));
 
         processedPhotos++;
 
@@ -109,12 +140,15 @@ Future<void> _zipFiles(_ZipParams params) async {
     sendPort.send(ProgressUpdate(
         'Zipping completed', params.progressStageEnd, params.progressStageEnd));
     // ignore: avoid_catches_without_on_clauses
-  } catch (e) {
+  } catch (e, st) {
+    await Sentry.captureException(e, stackTrace: st);
     // Send error back to the main isolate
     sendPort.send(ProgressUpdate('Error during zipping: $e',
         params.progressStageEnd, params.progressStageEnd));
-    Isolate.exit();
   }
+
+  /// Isolate won't shutdown if we don't terminate sentry.
+  await Sentry.close();
 }
 
 Future<String?> extractFiles(BackupProvider provider, File backupFile,

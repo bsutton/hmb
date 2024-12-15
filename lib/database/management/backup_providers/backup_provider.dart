@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
+import 'package:sentry/sentry.dart';
 
 import '../../../util/exceptions.dart';
 import '../../factory/hmb_database_factory.dart';
@@ -48,9 +49,6 @@ abstract class BackupProvider {
 
   /// Closes the db, zip the backup file, store it and
   /// then reopen the db.
-
-  // Modify performBackup to include progress tracking
-  // In BackupProvider class
   Future<BackupResult> performBackup({
     required int version,
     required ScriptSource src,
@@ -92,7 +90,8 @@ abstract class BackupProvider {
 
           emitProgress('Backup completed', 6, 6);
           return result;
-        } catch (e) {
+        } catch (e, st) {
+          await Sentry.captureException(e, stackTrace: st);
           emitProgress('Error during backup', 6, 6);
           rethrow;
         }
@@ -306,6 +305,11 @@ class Backup {
 
 class ProgressUpdate {
   ProgressUpdate(this.stageDescription, this.stageNo, this.stageCount);
+
+  ProgressUpdate.upload(this.stageDescription)
+      : stageNo = 6,
+        stageCount = 7;
+
   final String stageDescription;
   final int stageNo;
   final int stageCount;
