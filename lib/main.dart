@@ -65,13 +65,15 @@ void main(List<String> args) async {
                       key: blockingUIKey,
                       slowAction: () => _initialise(context),
                       label: 'Upgrading your database.',
-                      builder: (context) => MaterialApp.router(
-                        title: 'Handyman',
-                        theme: ThemeData(
-                          primarySwatch: Colors.blue,
-                          visualDensity: VisualDensity.adaptivePlatformDensity,
-                        ),
-                        routerConfig: router,
+                      builder: (context) => JuneBuilder( HMBTitle.new,
+                        builder: ( title) => MaterialApp.router(
+                            title: title.title,
+                            theme: ThemeData(
+                              primarySwatch: Colors.blue,
+                              visualDensity: VisualDensity.adaptivePlatformDensity,
+                            ),
+                            routerConfig: router,
+                          )
                       ),
                     ),
                   ),
@@ -205,7 +207,14 @@ Future<String> get pathToHmbFiles async =>
 //   final String errorMessage;
 
 //   @override
-//   Widget build(BuildContext context) => MaterialApp(
+//   W
+//idget build(BuildContext context) => MaterialApp(
 //         home: ErrorScreen(errorMessage: errorMessage),
 //       );
 // }
+
+
+class HMBTitle extends JuneState {
+  
+  String title = 'HMB';
+}

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:june/june.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entities.dart';
+import '../../../main.dart';
 import '../../dialog/hmb_are_you_sure_dialog.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_search.dart';
@@ -49,6 +51,13 @@ class EntityListScreenState<T extends Entity<T>>
   void initState() {
     super.initState();
     filterController = TextEditingController();
+
+    /// Replace the top windows title with the current
+    /// cruds title.
+    June.getState(HMBTitle.new)
+      ..title = widget.pageTitle
+      ..setState();
+
     // ignore: discarded_futures
     entities = widget._fetchList(null);
   }
@@ -176,8 +185,6 @@ class EntityListScreenState<T extends Entity<T>>
           await _confirmDelete(entity);
         },
       );
-
-  
 
   Future<void> _confirmDelete(Entity<T> entity) async {
     await areYouSure(
