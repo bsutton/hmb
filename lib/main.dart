@@ -62,20 +62,17 @@ void main(List<String> args) async {
                   builder: (context) => JuneBuilder(
                     TimeEntryState.new,
                     builder: (_) => BlockingUIRunner(
-                      key: blockingUIKey,
-                      slowAction: () => _initialise(context),
-                      label: 'Upgrading your database.',
-                      builder: (context) => JuneBuilder( HMBTitle.new,
-                        builder: ( title) => MaterialApp.router(
-                            title: title.title,
-                            theme: ThemeData(
-                              primarySwatch: Colors.blue,
-                              visualDensity: VisualDensity.adaptivePlatformDensity,
-                            ),
-                            routerConfig: router,
-                          )
-                      ),
-                    ),
+                        key: blockingUIKey,
+                        slowAction: () => _initialise(context),
+                        label: 'Upgrading your database.',
+                        builder: (context) => MaterialApp.router(
+                              theme: ThemeData(
+                                primarySwatch: Colors.blue,
+                                visualDensity:
+                                    VisualDensity.adaptivePlatformDensity,
+                              ),
+                              routerConfig: router,
+                            )),
                   ),
                 ),
               ),
@@ -212,9 +209,3 @@ Future<String> get pathToHmbFiles async =>
 //         home: ErrorScreen(errorMessage: errorMessage),
 //       );
 // }
-
-
-class HMBTitle extends JuneState {
-  
-  String title = 'HMB';
-}

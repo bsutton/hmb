@@ -3,11 +3,10 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../../dao/_index.g.dart';
 import '../../../../entity/_index.g.dart';
+import '../../../../util/app_title.dart';
 import '../../../widgets/async_state.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toggle.dart';
-import '../../../widgets/layout/hmb_spacer.dart';
-import '../../../widgets/text/hmb_text_themes.dart';
 import 'job_card.dart'; // The JobCard from previous snippet
 
 class JobEstimatesListScreen extends StatefulWidget {
@@ -26,6 +25,7 @@ class _JobEstimatesListScreenState
 
   @override
   Future<void> asyncInitState() async {
+    setAppTitle('Estimates');
     await _refreshJobs();
   }
 
@@ -96,7 +96,7 @@ class _JobEstimatesListScreenState
     }).toList();
   }
 
-  final double _searchBarRowHeight = 50; // Adjust as needed for your search bar
+  final double _searchBarRowHeight = 80; // Adjust as needed for your search bar
   final double _switchRowHeight = 50; //
 
   @override
@@ -108,8 +108,6 @@ class _JobEstimatesListScreenState
             children: [
               Row(
                 children: [
-                  const HMBPageTitle('Estimates'),
-                  const HMBSpacer(width: true),
                   Expanded(
                     child: HMBSearch(
                       onChanged: (filter) async => _onSearchChanged(filter),

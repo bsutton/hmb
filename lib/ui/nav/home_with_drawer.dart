@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
+import '../../util/app_title.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/hmb_status_bar.dart';
 import 'nav_drawer.dart';
@@ -12,8 +13,11 @@ class HomeWithDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Handyman'),
-        ),
+            backgroundColor: Colors.blue,
+            title: JuneBuilder(
+              HMBTitle.new,
+              builder: (title) => Text(title.title),
+            )),
         drawer: MyDrawer(),
         body: Column(
           mainAxisSize: MainAxisSize.min,

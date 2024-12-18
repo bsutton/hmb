@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../util/app_title.dart';
 import 'billing_page.dart';
 import 'business_page.dart';
 import 'contact_page.dart';
@@ -19,6 +20,7 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
   @override
   void initState() {
     super.initState();
+    setAppTitle('HMB Setup Wizard');
   }
 
   void _nextStep() {
@@ -46,7 +48,7 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('HMB Setup Wizard'),
+        automaticallyImplyLeading: false,
         actions: [
           TextButton(
             onPressed: _skipStep,

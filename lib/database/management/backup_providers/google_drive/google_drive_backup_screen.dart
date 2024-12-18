@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../ui/widgets/hmb_toast.dart';
+import '../../../../util/app_title.dart';
 import '../../../factory/flutter_database_factory.dart';
 import '../../../versions/asset_script_source.dart';
 import '../backup_provider.dart';
@@ -30,6 +31,7 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
   @override
   void initState() {
     super.initState();
+    setAppTitle('Backup & Restore');
     _provider = _getProvider();
     _provider.progressStream.listen((update) {
       setState(() {
@@ -41,9 +43,7 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Backup & Restore'),
-          centerTitle: true,
-          backgroundColor: Colors.blue,
+          automaticallyImplyLeading: false,
         ),
         body: Center(
           child: Padding(

@@ -4,15 +4,26 @@ import 'package:url_launcher/url_launcher.dart'; // Add this import to handle UR
 
 import '../database/management/database_helper.dart';
 import '../src/version/version.g.dart';
+import '../util/app_title.dart';
 import '../util/exceptions.dart';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
+
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  @override
+  void initState() {
+    super.initState();
+    setAppTitle('About/Support');
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('About/Support'),
           automaticallyImplyLeading: false,
         ),
         body: Center(

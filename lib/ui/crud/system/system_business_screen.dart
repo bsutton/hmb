@@ -6,6 +6,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
+import '../../../util/app_title.dart';
 import '../../../util/measurement_type.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
@@ -33,6 +34,7 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
 
   bool initialised = false;
   Future<void> _initialize() async {
+    setAppTitle('Business Details');
     if (initialised) {
       return;
     }
@@ -86,7 +88,6 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Business Details'),
           automaticallyImplyLeading: false,
           actions: [
             IconButton(

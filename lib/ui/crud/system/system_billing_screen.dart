@@ -12,6 +12,7 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
+import '../../../util/app_title.dart';
 import '../../../util/money_ex.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_money_editing_controller.dart';
@@ -55,6 +56,7 @@ class _SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
 
   @override
   Future<void> asyncInitState() async {
+    setAppTitle('Billing');
     final system = await DaoSystem().get();
     _defaultHourlyRateController.money = system!.defaultHourlyRate;
     _defaultBookingFeeController.money = system.defaultBookingFee;
@@ -174,7 +176,6 @@ class _SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Billing'),
           automaticallyImplyLeading: false,
           actions: [
             IconButton(

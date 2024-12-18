@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../dao/dao_system.dart';
+import '../../../util/app_title.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -25,6 +26,7 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
   @override
   void initState() {
     super.initState();
+    setAppTitle('System Integrations');
     _initializeControllers();
   }
 
@@ -64,7 +66,6 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('System Integration'),
           automaticallyImplyLeading: false,
           actions: [
             IconButton(

@@ -9,15 +9,14 @@ import '../../dao/dao_time_entry.dart';
 import '../../entity/customer.dart';
 import '../../entity/invoice.dart';
 import '../../entity/job.dart';
+import '../../util/app_title.dart';
 import '../../util/format.dart';
 import '../../util/money_ex.dart';
 import '../widgets/async_state.dart';
 import '../widgets/hmb_add_button.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
-import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
-import '../widgets/text/hmb_text_themes.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_screen.dart';
 import 'invoice_details.dart';
@@ -40,6 +39,7 @@ class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
 
   @override
   Future<void> asyncInitState() async {
+    setAppTitle('Invoices');
     await _refreshInvoiceList();
   }
 
@@ -122,8 +122,6 @@ class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
           toolbarHeight: 80,
           title: Row(
             children: [
-              const HMBPageTitle('Invoices'),
-              const HMBSpacer(width: true),
               Expanded(
                 child: HMBSearch(
                     // hint: 'Search quotes by number, job, or customer...',

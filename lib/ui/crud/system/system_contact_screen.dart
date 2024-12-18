@@ -6,6 +6,7 @@ import 'package:mobile_number/mobile_number.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
+import '../../../util/app_title.dart';
 import '../../../util/platform_ex.dart';
 import '../../../util/sim_cards.dart';
 import '../../dialog/message_template_dialog.dart';
@@ -44,6 +45,7 @@ class _SystemContactInformationScreenState
   late final System system;
 
   Future<void> _initialize() async {
+    setAppTitle('Business Contacts');
     system = (await DaoSystem().get())!;
 
     _addressLine1Controller = TextEditingController(text: system.addressLine1);
@@ -108,7 +110,6 @@ class _SystemContactInformationScreenState
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Contact Information'),
           automaticallyImplyLeading: false,
           actions: [
             IconButton(

@@ -12,13 +12,13 @@ import '../entity/job.dart';
 import '../entity/task.dart';
 import '../entity/task_item.dart';
 import '../entity/task_item_type.dart';
+import '../util/app_title.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
 import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
 import 'widgets/hmb_toast.dart';
 import 'widgets/select/hmb_droplist_multi.dart';
-import 'widgets/text/hmb_text_themes.dart';
 
 class PackingScreen extends StatefulWidget {
   const PackingScreen({super.key});
@@ -41,6 +41,7 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
 
   @override
   Future<void> asyncInitState() async {
+    setAppTitle('Packing List');
     await _loadTaskItems();
   }
 
@@ -108,10 +109,6 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const HMBPageTitle('Packing List'),
-          automaticallyImplyLeading: false,
-        ),
         body: Column(
           children: [
             Padding(

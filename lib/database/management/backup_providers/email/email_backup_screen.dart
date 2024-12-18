@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../ui/widgets/hmb_toast.dart';
+import '../../../../util/app_title.dart';
 import '../../../factory/flutter_database_factory.dart';
 import '../../../versions/asset_script_source.dart';
 import 'email_backup.dart';
@@ -19,12 +20,14 @@ class _BackupScreenState extends State<BackupScreen> {
   bool _includePhotos = false;
 
   @override
+  void initState() {
+    super.initState();
+
+    setAppTitle('Backup & Restore');
+  }
+
+  @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Backup & Restore'),
-          centerTitle: true,
-          backgroundColor: Colors.blue,
-        ),
         body: Center(
           // Center the column vertically and horizontally
           child: Padding(

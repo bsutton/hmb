@@ -6,14 +6,13 @@ import '../../dao/dao_quote.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/quote.dart';
+import '../../util/app_title.dart';
 import '../invoicing/dialog_select_tasks.dart';
 import '../invoicing/select_job_dialog.dart';
 import '../widgets/async_state.dart';
 import '../widgets/hmb_add_button.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
-import '../widgets/layout/hmb_spacer.dart';
-import '../widgets/text/hmb_text_themes.dart';
 import 'quote_card.dart';
 
 class QuoteListScreen extends StatefulWidget {
@@ -32,6 +31,7 @@ class _QuoteListScreenState extends AsyncState<QuoteListScreen, void> {
 
   @override
   Future<void> asyncInitState() async {
+    setAppTitle('Quotes');
     await _refreshQuoteList();
   }
 
@@ -130,17 +130,21 @@ class _QuoteListScreenState extends AsyncState<QuoteListScreen, void> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: Row(
+          toolbarHeight: 80,
+          title: Column(
             children: [
-              const HMBPageTitle('Quotes'),
-              const HMBSpacer(width: true),
-              Expanded(
-                child: HMBSearch(
-                  // hint: 'Search quotes by number, job, or customer...',
-                  onChanged: (filter) async => _onFilterChanged(filter ?? ''),
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: HMBSearch(
+                      // hint: 'Search quotes by number, job, or customer...',
+                      onChanged: (filter) async =>
+                          _onFilterChanged(filter ?? ''),
+                    ),
+                  ),
+                  HMBButtonAdd(onPressed: _createQuote, enabled: true),
+                ],
               ),
-              HMBButtonAdd(onPressed: _createQuote, enabled: true),
             ],
           ),
         ),

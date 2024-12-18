@@ -17,6 +17,7 @@ import '../dao/dao_task_item_type.dart';
 import '../entity/task.dart';
 import '../entity/task_item.dart';
 import '../entity/task_item_type.dart';
+import '../util/app_title.dart';
 import '../util/format.dart';
 import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
@@ -27,7 +28,6 @@ import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
 import 'widgets/select/hmb_droplist.dart';
 import 'widgets/select/hmb_droplist_multi.dart';
-import 'widgets/text/hmb_text_themes.dart';
 
 class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});
@@ -45,6 +45,7 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
   @override
   Future<void> asyncInitState() async {
     await _loadTaskItems();
+    setAppTitle('Shopping');
   }
 
   Future<void> _loadTaskItems() async {
@@ -152,10 +153,6 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
   @override
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const HMBPageTitle('Shopping List'),
-          automaticallyImplyLeading: false,
-        ),
         body: Column(
           children: [
             Padding(

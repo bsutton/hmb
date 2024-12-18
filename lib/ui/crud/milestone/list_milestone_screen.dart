@@ -12,12 +12,11 @@ import '../../../../entity/job.dart';
 import '../../../../entity/milestone.dart';
 import '../../../../entity/quote.dart';
 import '../../../../util/money_ex.dart';
+import '../../../util/app_title.dart';
 import '../../quoting/select_quote_dialog.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_search.dart';
-import '../../widgets/layout/hmb_spacer.dart';
-import '../../widgets/text/hmb_text_themes.dart';
 import 'edit_milestone_payment.dart';
 
 class ListMilestoneScreen extends StatefulWidget {
@@ -34,6 +33,7 @@ class _ListMilestoneScreenState extends AsyncState<ListMilestoneScreen, void> {
 
   @override
   Future<void> asyncInitState() async {
+    setAppTitle('Milestones');
     _summaries = _fetchMilestoneSummaries();
   }
 
@@ -106,11 +106,10 @@ class _ListMilestoneScreenState extends AsyncState<ListMilestoneScreen, void> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
+          toolbarHeight: 80,
           automaticallyImplyLeading: false,
           title: Row(
             children: [
-              const HMBPageTitle('Milestones'),
-              const HMBSpacer(width: true),
               Expanded(
                 child: HMBSearch(onChanged: (filter) async {
                   this.filter = filter?.toLowerCase();

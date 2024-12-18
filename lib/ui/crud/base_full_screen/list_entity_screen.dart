@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:june/june.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entities.dart';
-import '../../../main.dart';
+import '../../../util/app_title.dart';
 import '../../dialog/hmb_are_you_sure_dialog.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_search.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/layout/hmb_spacer.dart';
-import '../../widgets/text/hmb_text_themes.dart';
 
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   EntityListScreen({
@@ -52,11 +50,7 @@ class EntityListScreenState<T extends Entity<T>>
     super.initState();
     filterController = TextEditingController();
 
-    /// Replace the top windows title with the current
-    /// cruds title.
-    June.getState(HMBTitle.new)
-      ..title = widget.pageTitle
-      ..setState();
+    setAppTitle(widget.pageTitle);
 
     // ignore: discarded_futures
     entities = widget._fetchList(null);
@@ -76,10 +70,6 @@ class EntityListScreenState<T extends Entity<T>>
           toolbarHeight: 80,
           title: Row(
             children: [
-              HMBPageTitle(widget.pageTitle),
-              const HMBSpacer(
-                width: true,
-              ),
               Expanded(
                 child: HMBSearch(
                   onChanged: (newValue) async {
