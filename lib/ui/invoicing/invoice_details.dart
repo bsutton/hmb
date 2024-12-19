@@ -1,5 +1,6 @@
 import '../../dao/_index.g.dart';
 import '../../entity/_index.g.dart';
+import '../../util/exceptions.dart';
 
 class InvoiceDetails {
   InvoiceDetails({
@@ -11,8 +12,11 @@ class InvoiceDetails {
 
   static Future<InvoiceDetails> load(int invoiceId) async {
     final invoice = await DaoInvoice().getById(invoiceId);
+    if (invoice == null) {
+      throw InvoiceException('Invoice $invoiceId no longer exists');
+    }
 
-    final job = await DaoJob().getById(invoice!.jobId);
+    final job = await DaoJob().getById(invoice.jobId);
     final customer = job?.customerId != null
         ? await DaoCustomer().getById(job!.customerId)
         : null;

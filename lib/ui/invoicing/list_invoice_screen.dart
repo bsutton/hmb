@@ -196,24 +196,36 @@ class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
                             },
                             child: Card(
                               margin: const EdgeInsets.all(8),
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Invoice #${details.invoice.id} Issued: ${formatDate(details.invoice.createdDate)}',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16),
-                                    ),
-                                    Text(
-                                        'Customer: ${details.customer?.name ?? "N/A"}'),
-                                    Text(
-                                        'Job: #${details.job.id} - ${details.job.summary} '),
-                                    Text(
-                                        'Xero: ${details.invoice.invoiceNum == null ? 'Not uploaded' : '#${details.invoice.invoiceNum}'}'),
-                                    Text(
-                                        'Total: ${details.invoice.totalAmount}')
-                                  ]),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Invoice #${details.invoice.id} Issued: ${formatDate(details.invoice.createdDate)}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16),
+                                      ),
+                                      Text(
+                                          'Customer: ${details.customer?.name ?? "N/A"}'),
+                                      Text(
+                                          'Job: #${details.job.id} - ${details.job.summary} '),
+                                      Text(
+                                          'Xero: ${details.invoice.invoiceNum == null ? 'Not uploaded' : '#${details.invoice.invoiceNum}'}'),
+                                      Text(
+                                          'Total: ${details.invoice.totalAmount}'),
+                                      // Display "Sent" if sent is true
+                                      if (details.invoice.sent)
+                                        const Text(
+                                          'Sent',
+                                          style: TextStyle(
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                    ]),
+                              ),
                             ));
                       },
                     );
