@@ -4,11 +4,12 @@ import 'package:strings/strings.dart';
 import '../../dao/_index.g.dart';
 import '../../entity/invoice.dart';
 import '../../util/format.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/media/pdf_preview.dart';
 import 'pdf/generate_invoice_pdf.dart';
 
-class GenerateInvoicePdfButton extends StatelessWidget {
-  const GenerateInvoicePdfButton({
+class buildSendButton extends StatelessWidget {
+  const buildSendButton({
     required this.context,
     required this.mounted,
     required this.invoice,
@@ -20,7 +21,8 @@ class GenerateInvoicePdfButton extends StatelessWidget {
   final Invoice invoice;
 
   @override
-  Widget build(BuildContext context) => ElevatedButton(
+  Widget build(BuildContext context) => HMBButton(
+        label: 'Send...',
         onPressed: () async {
           var billBookingFee = true;
           var displayCosts = true;
@@ -74,7 +76,6 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
             }
           }
         },
-        child: const Text('Preview PDF'),
       );
 
   Future<Map<String, bool>?> showInvoiceOptionsDialog(
@@ -129,11 +130,11 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
                 ],
               ),
               actions: [
-                TextButton(
+                HMBButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  label: 'Cancel',
                 ),
-                TextButton(
+                HMBButton(
                   onPressed: () {
                     Navigator.of(context).pop({
                       'displayCosts': tempDisplayCosts,
@@ -143,7 +144,7 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
                       'billBookingFee': billBookingFee
                     });
                   },
-                  child: const Text('OK'),
+                  label: 'OK',
                 ),
               ],
             ),

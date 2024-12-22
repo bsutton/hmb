@@ -5,6 +5,7 @@ import '../../../dao/dao_category.dart';
 import '../../../dao/dao_tool.dart';
 import '../../../entity/tool.dart';
 import '../../../util/format.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
@@ -40,14 +41,10 @@ class _ToolListScreenState extends State<ToolListScreen> {
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 16),
-              child: ElevatedButton.icon(
+              child: HMBButton.withIcon(
                 onPressed: () async => _startStockTake(context),
+                label: 'Start Stock Take',
                 icon: const Icon(Icons.inventory),
-                label: const Text('Start Stock Take'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green, // Eye-catching color
-                  foregroundColor: Colors.white,
-                ),
               ),
             ),
           ],
@@ -59,6 +56,7 @@ class _ToolListScreenState extends State<ToolListScreen> {
           title: (entity) => HMBTextHeadline2(entity.name),
           fetchList: (filter) async => DaoTool().getByFilter(filter),
           onEdit: (tool) => ToolEditScreen(tool: tool),
+          cardHeight: 470,
           details: (entity) {
             final tool = entity;
             return Column(

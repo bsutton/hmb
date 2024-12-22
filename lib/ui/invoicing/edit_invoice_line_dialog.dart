@@ -3,6 +3,7 @@ import 'package:money2/money2.dart';
 
 import '../../entity/invoice_line.dart';
 import '../../util/money_ex.dart';
+import '../widgets/hmb_button.dart';
 
 class EditInvoiceLineDialog extends StatefulWidget {
   const EditInvoiceLineDialog({required this.line, super.key});
@@ -69,14 +70,14 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
           ),
         ),
         actions: <Widget>[
-          TextButton(
-            child: const Text('Cancel'),
+          HMBButton(
+            label:'Cancel',
             onPressed: () {
               Navigator.of(context).pop();
             },
           ),
-          TextButton(
-            child: const Text('Save'),
+          HMBButton(
+            label: 'Save',
             onPressed: () {
               final quantity = Fixed.parse(_quantityController.text);
               final unitPrice =

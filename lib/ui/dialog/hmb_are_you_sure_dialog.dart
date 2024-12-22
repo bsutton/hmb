@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/hmb_button.dart';
+
 typedef OnConfirmed = Future<void> Function();
 
 Future<void> areYouSure(
@@ -13,13 +15,13 @@ Future<void> areYouSure(
       title: Text(title),
       content: Text(message),
       actions: [
-        TextButton(
+        HMBButton(
+          label: 'No',
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('No'),
         ),
-        TextButton(
+        HMBButton(
+          label: 'Yes',
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Yes'),
         ),
       ],
     ),

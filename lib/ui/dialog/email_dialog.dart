@@ -3,6 +3,7 @@ import 'package:flutter_email_sender/flutter_email_sender.dart';
 
 import '../../entity/system.dart';
 import '../../ui/widgets/hmb_toast.dart';
+import '../widgets/hmb_button.dart';
 
 class EmailDialog extends StatefulWidget {
   const EmailDialog({
@@ -84,14 +85,14 @@ ${widget.system.businessNumberLabel}: ${widget.system.businessNumber}
           ),
         ),
         actions: <Widget>[
-          TextButton(
-            child: const Text('Cancel'),
+          HMBButton(
+            label:'Cancel',
             onPressed: () {
               Navigator.of(context).pop(false);
             },
           ),
-          TextButton(
-            child: const Text('Send'),
+          HMBButton(
+            label:'Send...',
             onPressed: () async {
               if (_selectedRecipient != null) {
                 final email = Email(

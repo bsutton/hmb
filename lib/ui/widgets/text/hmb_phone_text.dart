@@ -7,6 +7,7 @@ import '../../../dao/dao_customer.dart';
 import '../../../dao/dao_site.dart';
 import '../../../entity/job.dart';
 import '../../../ui/widgets/dial_widget.dart';
+import '../../../util/hmb_theme.dart';
 import '../../../util/plus_space.dart';
 import '../../dialog/message_template_dialog.dart';
 import '../layout/hmb_placeholder.dart';
@@ -35,7 +36,7 @@ class HMBPhoneText extends StatelessWidget {
                 child: Text(
                   '${plusSpace(label)} $phoneNo',
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: const TextStyle(color: HMBColors.textPrimary),
                 ),
               ),
             ),

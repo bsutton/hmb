@@ -15,9 +15,11 @@ import '../../entity/invoice_line.dart';
 import '../../util/format.dart';
 import '../dialog/hmb_are_you_sure_dialog.dart';
 import '../widgets/async_state.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/surface.dart';
+import 'build_send_button.dart';
 import 'edit_invoice_line_dialog.dart';
-import 'generate_invoice_pdf_button.dart';
 import 'invoice_details.dart';
 
 class InvoiceEditScreen extends StatefulWidget {
@@ -66,66 +68,71 @@ class _InvoiceEditScreenState extends AsyncState<InvoiceEditScreen, void> {
             ),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Invoice #${invoice.id} Issued: ${formatDate(invoice.createdDate)}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  Text('Customer: ${customer?.name ?? "N/A"}'),
-                  Text('Job: ${job.summary} #${job.id}'),
-                  Text('Total: ${invoice.totalAmount}'),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: _uploadInvoiceToXero,
-                        child: const Text('Upload to Xero'),
-                      ),
-                      const SizedBox(width: 16),
-                      ElevatedButton(
-                        onPressed: _deleteInvoice,
-                        child: const Text('Delete Invoice'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  GenerateInvoicePdfButton(
-                      context: context, mounted: mounted, invoice: invoice),
-                  const SizedBox(height: 16),
-                  // Show all line groups and lines inline
-                  for (final group in lineGroups) ...[
-                    Text(group.group.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    for (final line in group.lines) ...[
-                      ListTile(
-                        title: Text(line.description),
-                        subtitle: Text(
-                          'Qty: ${line.quantity}, Unit: ${line.unitPrice}, Status: ${line.status.toString().split('.').last}',
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('Total: ${line.lineTotal}'),
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () async =>
-                                  _editInvoiceLine(context, line),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () async => _deleteInvoiceLine(line),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+              child: Surface(
+                elevation: SurfaceElevation.e6,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Invoice #${invoice.id} Issued: ${formatDate(invoice.createdDate)}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    Text('Customer: ${customer?.name ?? "N/A"}'),
+                    Text('Job: ${job.summary} #${job.id}'),
+                    Text('Total: ${invoice.totalAmount}'),
                     const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        HMBButton(
+                          label: 'Upload to Xero',
+                          onPressed: _uploadInvoiceToXero,
+                        ),
+                        const SizedBox(width: 16),
+                        HMBButton(
+                          label: 'Delete Invoice',
+                          onPressed: _deleteInvoice,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    buildSendButton(
+                        context: context, mounted: mounted, invoice: invoice),
+                    const SizedBox(height: 16),
+                    // Show all line groups and lines inline
+                    for (final group in lineGroups) ...[
+                      Text(group.group.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      for (final line in group.lines) ...[
+                        ListTile(
+                          title: Text(line.description),
+                          subtitle: Text(
+                            'Qty: ${line.quantity}, Unit: ${line.unitPrice}, Status: ${line.status.toString().split('.').last}',
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Total: ${line.lineTotal}'),
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () async =>
+                                    _editInvoiceLine(context, line),
+                              ),
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () async => _deleteInvoiceLine(line),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           );
@@ -216,12 +223,12 @@ Description: ${line.description}
 Quantity: ${line.quantity}
 Total: ${line.lineTotal}'''),
         actions: <Widget>[
-          TextButton(
-            child: const Text('Cancel'),
+          HMBButton(
+            label: 'Cancel',
             onPressed: () => Navigator.of(context).pop(false),
           ),
-          TextButton(
-            child: const Text('Delete'),
+          HMBButton(
+            label: 'Delete',
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],

@@ -9,6 +9,7 @@ import '../../util/measurement_type.dart';
 import '../widgets/async_state.dart';
 import '../widgets/fields/hmb_text_area.dart';
 import '../widgets/fields/hmb_text_field.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/select/hmb_droplist.dart';
 
@@ -159,13 +160,13 @@ class _WizardBusinessPageState extends AsyncState<WizardBusinessPage, void> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            ElevatedButton(
+                            HMBButton(
+                              label: 'Skip',
                               onPressed: widget.onNext,
-                              child: const Text('Skip'),
                             ),
-                            ElevatedButton(
+                            HMBButton(
+                              label: 'Next',
                               onPressed: _saveForm,
-                              child: const Text('Next'),
                             ),
                           ],
                         ),

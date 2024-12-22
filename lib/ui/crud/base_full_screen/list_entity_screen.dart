@@ -5,11 +5,11 @@ import '../../../dao/dao.dart';
 import '../../../entity/entities.dart';
 import '../../../util/app_title.dart';
 import '../../dialog/hmb_are_you_sure_dialog.dart';
-import '../../widgets/hmb_add_button.dart';
+import '../../widgets/hmb_colours.dart';
 import '../../widgets/hmb_search.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
-import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/surface.dart';
 
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   EntityListScreen({
@@ -18,6 +18,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     required this.pageTitle,
     required this.title,
     required this.details,
+    this.cardHeight = 300,
     this.background,
     Future<List<T>> Function(String? filter)? fetchList,
     super.key,
@@ -30,6 +31,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   final Widget Function(T entity) details;
   final Widget Function(T? entity) onEdit;
   final Future<Color> Function(T entity)? background;
+  final double cardHeight;
 
   late final Future<List<T>> Function(String? filter) _fetchList;
   final Dao<T> dao;
@@ -67,39 +69,27 @@ class EntityListScreenState<T extends Entity<T>>
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
+          backgroundColor: SurfaceElevation.e0.color,
           toolbarHeight: 80,
-          title: Row(
-            children: [
-              Expanded(
-                child: HMBSearch(
-                  onChanged: (newValue) async {
-                    filterOption = newValue;
-                    await _refreshEntityList();
-                  },
-                ),
-              ),
-              const HMBSpacer(
-                width: true,
-              ),
-              HMBButtonAdd(
-                enabled: true,
-                onPressed: () async {
-                  if (context.mounted) {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                          builder: (context) => widget.onEdit(null)),
-                    ).then((_) => _refreshEntityList());
-                  }
-                },
-              ),
-            ],
-          ),
+          title: Surface(
+              elevation: SurfaceElevation.e0,
+              child: HMBSearchWithAdd(onSearch: (newValue) async {
+                filterOption = newValue;
+                await _refreshEntityList();
+              }, onAdd: () async {
+                if (context.mounted) {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                        builder: (context) => widget.onEdit(null)),
+                  ).then((_) => _refreshEntityList());
+                }
+              })),
           automaticallyImplyLeading: false,
           // actions: _commands(),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(8),
+        body: Surface(
+          elevation: SurfaceElevation.e0,
           child: FutureBuilderEx<List<T>>(
             future: entities,
             waitingBuilder: (_) => const HMBPlaceHolder(height: 1137),
@@ -121,53 +111,15 @@ class EntityListScreenState<T extends Entity<T>>
       );
 
   Widget _buildListTiles(List<T> list) => ListView.builder(
-        controller: _scrollController,
-        // padding: const EdgeInsets.all(8),
+      controller: _scrollController,
+      // padding: const EdgeInsets.all(8),
 
-        itemCount: list.length,
-        itemBuilder: (context, index) {
-          final entity = list[index];
-          return FutureBuilderEx(
-              initialData: Colors.white,
-              // ignore: discarded_futures
-              future:
-                  // ignore: discarded_futures
-                  widget.background?.call(entity) ?? Future.value(Colors.white),
-              builder: (context, color) => Card(
-                    color: color,
-                    // margin: const EdgeInsets.symmetric(vertical: 8),
-                    elevation: 2,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(4),
-                      // widget.title(entity),
-                      title: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: widget.title(entity),
-                          ),
-                          _buildDeleteButton(entity),
-                        ],
-                      ),
-                      // subtitle: widget.subtile
-                      visualDensity: const VisualDensity(horizontal: -4),
-                      // may body of the card
-                      subtitle: widget.details(entity),
-
-                      onTap: () async {
-                        // Display the edit crud.
-                        if (context.mounted) {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute<void>(
-                                builder: (context) => widget.onEdit(entity)),
-                          ).then((_) => _refreshEntityList());
-                        }
-                      },
-                    ),
-                  ));
-        },
-      );
+      itemCount: list.length,
+      itemExtent: widget.cardHeight,
+      itemBuilder: (context, index) {
+        final entity = list[index];
+        return _buildCard(entity);
+      });
 
   IconButton _buildDeleteButton(T entity) => IconButton(
         icon: const Icon(Icons.delete, color: Colors.red),
@@ -183,6 +135,51 @@ class EntityListScreenState<T extends Entity<T>>
         message: 'Are you sure you want to delete this item?',
         onConfirmed: () async => _delete(entity));
   }
+
+  Widget _buildCard(T entity) => FutureBuilderEx(
+        initialData: HMBColours.cardBackground,
+        // ignore: discarded_futures
+        future:
+            // ignore: discarded_futures
+            widget.background?.call(entity) ??
+                Future.value(SurfaceElevation.e6.color),
+        builder: (context, color) => Padding(
+            padding: const EdgeInsets.all(8),
+            child: GestureDetector(
+                child: Surface(
+                  elevation: SurfaceElevation.e6,
+                  child: Column(children: [
+                    // contentPadding: const EdgeInsets.all(24),
+                    // widget.title(entity),
+                    // title:
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: widget.title(entity),
+                        ),
+                        _buildDeleteButton(entity),
+                      ],
+                    ),
+                    // subtitle: widget.subtile
+                    // visualDensity: const VisualDensity(horizontal: -4),
+                    // main body of the card
+                    // subtitle:
+
+                    widget.details(entity),
+                  ]),
+                ),
+                onTap: () async {
+                  // Display the edit crud.
+                  if (context.mounted) {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                          builder: (context) => widget.onEdit(entity)),
+                    ).then((_) => _refreshEntityList());
+                  }
+                })),
+      );
 
   @override
   void dispose() {

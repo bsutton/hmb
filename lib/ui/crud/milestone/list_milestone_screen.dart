@@ -15,7 +15,6 @@ import '../../../../util/money_ex.dart';
 import '../../../util/app_title.dart';
 import '../../quoting/select_quote_dialog.dart';
 import '../../widgets/async_state.dart';
-import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_search.dart';
 import 'edit_milestone_payment.dart';
 
@@ -106,21 +105,15 @@ class _ListMilestoneScreenState extends AsyncState<ListMilestoneScreen, void> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          toolbarHeight: 80,
-          automaticallyImplyLeading: false,
-          title: Row(
-            children: [
-              Expanded(
-                child: HMBSearch(onChanged: (filter) async {
+            toolbarHeight: 80,
+            automaticallyImplyLeading: false,
+            title: HMBSearchWithAdd(
+                onSearch: (filter) async {
                   this.filter = filter?.toLowerCase();
                   _summaries = _fetchMilestoneSummaries();
                   setState(() {});
-                }),
-              ),
-              HMBButtonAdd(onPressed: _createMilestone, enabled: true),
-            ],
-          ),
-        ),
+                },
+                onAdd: _createMilestone)),
         body: FutureBuilderEx<List<QuoteMilestoneSummary>>(
           future: _summaries,
           builder: (context, summaries) {

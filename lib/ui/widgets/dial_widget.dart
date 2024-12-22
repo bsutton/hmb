@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../util/clip_board.dart';
 import '../../util/platform_ex.dart';
 import '../dialog/message_template_dialog.dart';
+import 'hmb_button.dart';
 import 'hmb_toast.dart';
 
 class DialWidget extends StatelessWidget {
@@ -52,15 +53,15 @@ class DialWidget extends StatelessWidget {
         content:
             const Text('Would you like to make a call or send a text message?'),
         actions: <Widget>[
-          TextButton(
-            child: const Text('Call'),
+          HMBButton(
+            label: 'Call',
             onPressed: () {
               Navigator.of(context).pop();
               _call(context, phoneNo);
             },
           ),
-          TextButton(
-            child: const Text('Text'),
+          HMBButton(
+            label: 'Text',
             onPressed: () async {
               // await _showTextInputDialog(context, phoneNo);
               final template = await showMessageTemplateDialog(
@@ -80,8 +81,8 @@ class DialWidget extends StatelessWidget {
               }
             },
           ),
-          TextButton(
-            child: const Text('Cancel'),
+          HMBButton(
+            label: 'Cancel',
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -175,14 +176,14 @@ class DialWidget extends StatelessWidget {
             ),
           ),
           actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
+            HMBButton(
+              label: 'Cancel',
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
-            TextButton(
-              child: const Text('Send'),
+            HMBButton(
+              label: 'Send...',
               onPressed: () {
                 Navigator.of(context).pop(text);
               },

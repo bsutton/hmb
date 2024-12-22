@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../util/hmb_theme.dart';
+import '../surface.dart';
+
 class HMBDroplistDialog<T> extends StatefulWidget {
   const HMBDroplistDialog({
     required this.getItems,
@@ -94,53 +97,61 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
               )
             else if (_items != null)
               Expanded(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.6,
-                  ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _items!.length + (widget.allowClear ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (widget.allowClear && index == 0) {
-                        return ListTile(
-                          leading: const Icon(Icons.clear, color: Colors.red),
-                          title: const Text(
-                            'Clear selection',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
+                child: Surface(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.6,
+                    ),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _items!.length + (widget.allowClear ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (widget.allowClear && index == 0) {
+                          return ListTile(
+                            leading: const Icon(Icons.clear, color: Colors.red),
+                            title: const Text(
+                              'Clear selection',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
                             ),
-                          ),
-                          onTap: () => Navigator.of(context).pop(),
+                            onTap: () => Navigator.of(context).pop(),
+                          );
+                        }
+                        final item =
+                            _items![index - (widget.allowClear ? 1 : 0)];
+                        final isSelected = item == widget.selectedItem;
+                        return ListTile(
+                          selected: isSelected,
+                          selectedTileColor:
+                              Theme.of(context).primaryColor.withOpacity(0.1),
+                          title: Text(widget.formatItem(item),
+                              style: const TextStyle(
+                                  color: HMBColors.textPrimary)),
+                          onTap: () {
+                            Navigator.of(context).pop(item);
+                          },
                         );
-                      }
-                      final item = _items![index - (widget.allowClear ? 1 : 0)];
-                      final isSelected = item == widget.selectedItem;
-                      return ListTile(
-                        selected: isSelected,
-                        selectedTileColor:
-                            Theme.of(context).primaryColor.withOpacity(0.1),
-                        title: Text(widget.formatItem(item)),
-                        onTap: () {
-                          Navigator.of(context).pop(item);
-                        },
-                      );
-                    },
+                      },
+                    ),
                   ),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            Surface(
+              elevation: SurfaceElevation.e6,
               child: TextField(
                 controller: _searchController,
+                style: const TextStyle(color: HMBColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Search',
+                  labelStyle: const TextStyle(color: HMBColors.inputDecoration),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.clear),
+                    icon: const Icon(Icons.clear,
+                        color: HMBColors.inputDecoration),
                     onPressed: () {
                       setState(() {
                         _searchController.text = '';

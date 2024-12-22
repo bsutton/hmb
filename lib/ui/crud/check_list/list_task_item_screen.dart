@@ -11,6 +11,7 @@ import '../../../entity/task.dart';
 import '../../../entity/task_item.dart';
 import '../../../util/money_ex.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../base_nested/list_nested_screen.dart';
@@ -207,13 +208,13 @@ class _TaskItemListScreenState<P extends Entity<P>>
           ],
         ),
         actions: [
-          TextButton(
+          HMBButton(
+            label: 'Cancel',
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
           ),
-          TextButton(
+          HMBButton(
+            label: 'Complete',
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Complete'),
           ),
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../../../ui/widgets/hmb_button.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
 import '../../../../util/app_title.dart';
 import '../../../factory/flutter_database_factory.dart';
@@ -114,7 +115,8 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                       ),
                     ),
                   const SizedBox(height: 20),
-                  ElevatedButton.icon(
+                  HMBButton.withIcon(
+                    label: 'Backup to ${_provider.name}',
                     onPressed: () async {
                       setState(() {
                         _isLoading = true;
@@ -148,19 +150,6 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                       }
                     },
                     icon: const Icon(Icons.backup, size: 24),
-                    label: Text('Backup to ${_provider.name}'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 20),
                   _buildRestoreButton(context),
@@ -171,10 +160,9 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
         ),
       );
 
-  ElevatedButton _buildRestoreButton(BuildContext context) =>
-      ElevatedButton.icon(
+  HMBButton _buildRestoreButton(BuildContext context) => HMBButton.withIcon(
+        label: 'Restore from ${_provider.name}',
         icon: const Icon(Icons.restore, size: 24),
-        label: Text('Restore from ${_provider.name}'),
         onPressed: () async {
           _provider.useDebugPath = !_useProductionPath;
           final selectedBackup = await Navigator.push(
@@ -222,18 +210,6 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
             }
           }
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-          textStyle: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       );
 
   BackupProvider _getProvider() =>

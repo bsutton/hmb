@@ -13,6 +13,7 @@ import '../widgets/fields/hmb_money_editing_controller.dart';
 import '../widgets/fields/hmb_money_field.dart';
 import '../widgets/fields/hmb_text_area.dart';
 import '../widgets/fields/hmb_text_field.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/text/hmb_text.dart';
@@ -178,23 +179,23 @@ class _WizardBillingPageState extends State<WizardBillingPage> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        HMBText('Logo Path'),
-                        TextButton.icon(
+                        const HMBText('Logo Path'),
+                        HMBButton.withIcon(
+                          label: 'Upload Logo',
                           icon: const Icon(Icons.upload_file),
-                          label: const Text('Upload Logo'),
                           onPressed: _pickLogo,
                         ),
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            ElevatedButton(
+                            HMBButton(
+                              label: 'Skip',
                               onPressed: widget.onNext,
-                              child: const Text('Skip'),
                             ),
-                            ElevatedButton(
+                            HMBButton(
+                              label: 'Next',
                               onPressed: _saveForm,
-                              child: const Text('Next'),
                             ),
                           ],
                         ),

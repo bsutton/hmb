@@ -11,6 +11,7 @@ import '../../../dao/dao_photo.dart';
 import '../../../entity/entity.dart';
 import '../../../entity/photo.dart';
 import '../../../util/photo_meta.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/media/full_screen_photo_view.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_gallery.dart';
@@ -181,14 +182,14 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
             ],
           ),
           actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
+            HMBButton(
+              label: 'Cancel',
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
-            TextButton(
-              child: const Text('Delete'),
+            HMBButton(
+              label: 'Delete',
               onPressed: () async {
                 await widget.controller.deletePhoto(photoMeta);
                 if (context.mounted) {

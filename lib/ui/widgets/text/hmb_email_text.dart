@@ -5,6 +5,7 @@ import 'package:strings/strings.dart';
 import '../../../dao/dao_contact.dart';
 import '../../../entity/job.dart';
 import '../../../ui/widgets/mail_to_icon.dart';
+import '../../../util/hmb_theme.dart';
 import '../../../util/plus_space.dart';
 import '../layout/hmb_placeholder.dart';
 
@@ -24,7 +25,7 @@ class HMBEmailText extends StatelessWidget {
                 child: Text(
                   '${plusSpace(label)} ${email ?? ''}',
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: const TextStyle(color: HMBColors.textPrimary),
                 ),
               ),
             ),

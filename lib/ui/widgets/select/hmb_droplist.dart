@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../util/hmb_theme.dart';
 import '../layout/labeled_container.dart';
 import 'hmb_droplist_dialog.dart';
 
@@ -142,11 +143,13 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
                         fontSize: 16,
                         color: widget.state.hasError
                             ? Theme.of(context).colorScheme.error
-                            : Theme.of(context).textTheme.bodyLarge?.color ??
-                                Colors.black,
+                            : HMBColors.textPrimary,
                       ),
                     ),
-                  const Icon(Icons.arrow_drop_down),
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    color: HMBColors.dropboxArrow,
+                  ),
                 ],
               ),
             ),
@@ -155,8 +158,8 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
                 padding: const EdgeInsets.only(top: 4, left: 8),
                 child: Text(
                   widget.state.errorText ?? '',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
+                  style: const TextStyle(
+                    color: HMBColors.errorBackground,
                     fontSize: 12,
                   ),
                 ),

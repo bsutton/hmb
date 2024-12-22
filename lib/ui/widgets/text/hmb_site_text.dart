@@ -6,6 +6,7 @@ import '../../../dao/dao_site.dart';
 import '../../../entity/job.dart';
 import '../../../entity/site.dart';
 import '../../../ui/widgets/hmb_map_icon.dart';
+import '../../../util/hmb_theme.dart';
 import '../layout/hmb_placeholder.dart';
 
 class HMBSiteText extends StatelessWidget {
@@ -21,7 +22,7 @@ class HMBSiteText extends StatelessWidget {
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: const TextStyle(color: HMBColors.textPrimary),
               ),
             ),
           Expanded(
@@ -34,7 +35,7 @@ class HMBSiteText extends StatelessWidget {
                 site?.postcode
               ], separator: ', ', excludeEmpty: true),
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: const TextStyle(color: HMBColors.textPrimary),
             ),
           ),
           if (site != null) HMBMapIcon(site)

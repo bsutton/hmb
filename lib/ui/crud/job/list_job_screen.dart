@@ -5,6 +5,8 @@ import '../../../dao/dao_job.dart';
 import '../../../dao/dao_job_status.dart';
 import '../../../entity/job.dart';
 import '../../../entity/job_status_enum.dart';
+import '../../widgets/hmb_button.dart';
+import '../../widgets/surface.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_job_screen.dart';
@@ -20,43 +22,45 @@ class JobListScreen extends StatefulWidget {
 
 class _JobListScreenState extends State<JobListScreen> {
   @override
-  Widget build(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    June.getState(FilterState.new).toggle();
-                  });
-                },
-                child: Text(
-                    June.getState(FilterState.new).showOnHoldAndFinalised
+  Widget build(BuildContext context) => Surface(
+        elevation: SurfaceElevation.e0,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                HMBButtonPrimary(
+                    onPressed: () {
+                      setState(() {
+                        June.getState(FilterState.new).toggle();
+                      });
+                    },
+                    label: June.getState(FilterState.new).showOnHoldAndFinalised
                         ? 'Show PreStart & Progressing'
                         : 'Show OnHold & Finalised'),
-              ),
-            ],
-          ),
-          Flexible(
-            child: JuneBuilder(FilterState.new,
-                builder: (context) => EntityListScreen<Job>(
-                      key: ValueKey(June.getState(FilterState.new)
-                          .showOnHoldAndFinalised),
-                      dao: DaoJob(),
-                      pageTitle: 'Jobs',
-                      onEdit: (job) => JobEditScreen(job: job),
-                      fetchList: (filter) async => _fetchJobs(filter),
-                      title: (job) => HMBCardTitle(job.summary),
-                      background: (job) async =>
-                          (await DaoJobStatus().getById(job.jobStatusId))
-                              ?.getColour() ??
-                          Colors.white,
-                      details: (job) => JobCard(job: job),
-                    )),
-          ),
-        ],
+              ],
+            ),
+            Flexible(
+              child: JuneBuilder(FilterState.new,
+                  builder: (context) => EntityListScreen<Job>(
+                        key: ValueKey(June.getState(FilterState.new)
+                            .showOnHoldAndFinalised),
+                        dao: DaoJob(),
+                        pageTitle: 'Jobs',
+                        onEdit: (job) => JobEditScreen(job: job),
+                        fetchList: (filter) async => _fetchJobs(filter),
+                        title: (job) => HMBCardTitle(job.summary),
+                        cardHeight: 750,
+                        background: (job) async =>
+                            (await DaoJobStatus().getById(job.jobStatusId))
+                                ?.getColour() ??
+                            Colors.green,
+                        details: (job) => JobCard(job: job),
+                      )),
+            ),
+          ],
+        ),
       );
 
   Future<List<Job>> _fetchJobs(String? filter) async {

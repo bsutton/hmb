@@ -19,6 +19,7 @@ import '../../widgets/fields/hmb_money_editing_controller.dart';
 import '../../widgets/fields/hmb_money_field.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/text/hmb_text_themes.dart';
@@ -162,8 +163,8 @@ class _SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
           ),
         ),
         actions: [
-          TextButton(
-            child: const Text('Select'),
+          HMBButton(
+            label: 'Select',
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -261,12 +262,13 @@ class _SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
                             },
                           ),
                           const SizedBox(height: 20),
-                          TextButton.icon(
+                          HMBButton.withIcon(
+                            label: 'Upload Logo',
                             icon: const Icon(Icons.upload_file),
-                            label: const Text('Upload Logo'),
                             onPressed: _pickLogo,
                           ),
-                          if (Strings.isNotBlank(_logoFile)) ...[
+                          if (Strings.isNotBlank(_logoFile) &&
+                              exists(_logoFile!)) ...[
                             const SizedBox(height: 10),
                             Image.file(
                               File(_logoFile!),

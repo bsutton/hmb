@@ -5,7 +5,8 @@ import 'package:strings/strings.dart';
 import '../../dao/_index.g.dart';
 import '../../entity/_index.g.dart';
 import '../../util/format.dart';
-import 'generate_invoice_pdf_button.dart';
+import '../widgets/hmb_button.dart';
+import 'build_send_button.dart';
 
 class InvoiceCard extends StatefulWidget {
   const InvoiceCard({
@@ -57,14 +58,14 @@ class _InvoiceCardState extends State<InvoiceCard> {
               padding: const EdgeInsets.all(8),
               child: Row(
                 children: [
-                  GenerateInvoicePdfButton(
+                  buildSendButton(
                       context: context,
                       mounted: mounted,
                       invoice: widget.invoice),
                   if (Strings.isBlank(widget.invoice.invoiceNum))
-                    ElevatedButton(
+                    HMBButton(
+                      label: 'Upload to Xero',
                       onPressed: widget.onUploadInvoiceToXero,
-                      child: const Text('Upload to Xero'),
                     ),
                 ],
               ),

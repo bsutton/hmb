@@ -7,6 +7,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
 
+import '../../../../ui/widgets/hmb_button.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
 
 class BackupAuthGoogleScreenV1 extends StatefulWidget {
@@ -63,9 +64,9 @@ class _BackupAuthGoogleScreenV1State extends State<BackupAuthGoogleScreenV1> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       const SizedBox(height: 20),
-                      ElevatedButton(
+                      HMBButton(
                         onPressed: () async => _uploadFile(context),
-                        child: const Text('Upload File to Google Drive'),
+                        label: 'Upload File to Google Drive',
                       ),
                     ],
                   ),

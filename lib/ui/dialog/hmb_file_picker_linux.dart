@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
+import '../widgets/hmb_button.dart';
+
 class HMBFilePickerDialog {
   Future<String?> show(BuildContext context,
           {List<String>? allowedExtensions, bool showHidden = false}) async =>
@@ -164,13 +166,13 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
       ),
       actions: [
         if (_currentDirectory.path != _currentDirectory.parent.path)
-          TextButton(
+          HMBButton(
+            label:'Up',
             onPressed: _navigateToParent,
-            child: const Text('Up'),
           ),
-        TextButton(
+        HMBButton(
+          label: 'Cancel',
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
         ),
       ],
     );

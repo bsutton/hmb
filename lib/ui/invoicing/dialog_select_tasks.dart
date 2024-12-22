@@ -6,6 +6,7 @@ import '../../dao/dao_task.dart';
 import '../../entity/job.dart';
 import '../../entity/task.dart';
 import '../widgets/async_state.dart';
+import '../widgets/hmb_button.dart';
 
 enum Showing { showQuote, showInvoice }
 
@@ -185,11 +186,12 @@ class _DialogTaskSelectionState
                   ),
                 )),
         actions: [
-          TextButton(
+          HMBButton(
+            label: 'Cancel',
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          HMBButton(
+            label: 'OK',
             onPressed: () {
               final selectedTaskIds = _selectedTasks.entries
                   .where((entry) => entry.value)
@@ -200,7 +202,6 @@ class _DialogTaskSelectionState
                   billBookingFee: billBookingFee,
                   groupByTask: groupByTask));
             },
-            child: const Text('OK'),
           ),
         ],
       );

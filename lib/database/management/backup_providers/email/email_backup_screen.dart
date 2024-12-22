@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../../../ui/widgets/hmb_button.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
 import '../../../../util/app_title.dart';
 import '../../../factory/flutter_database_factory.dart';
@@ -64,7 +65,8 @@ class _BackupScreenState extends State<BackupScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton.icon(
+                HMBButton.withIcon(
+                  label: 'Backup & Email Database',
                   onPressed: () async {
                     await WakelockPlus.enable();
                     try {
@@ -86,22 +88,10 @@ class _BackupScreenState extends State<BackupScreen> {
                     }
                   },
                   icon: const Icon(Icons.backup, size: 24),
-                  label: const Text('Backup & Email Database'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue, // Button color
-                    foregroundColor: Colors.white, // Text color
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton.icon(
+                HMBButton.withIcon(
+                  label: 'Restore Database',
                   onPressed: () async {
                     try {
                       await EmailBackupProvider(FlutterDatabaseFactory())
@@ -114,19 +104,6 @@ class _BackupScreenState extends State<BackupScreen> {
                     }
                   },
                   icon: const Icon(Icons.restore, size: 24),
-                  label: const Text('Restore Database'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ),
               ],
             ),

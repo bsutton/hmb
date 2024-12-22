@@ -12,8 +12,10 @@ import '../../entity/quote.dart';
 import '../../entity/quote_line.dart';
 import '../../util/format.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/pdf_preview.dart';
+import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'edit_quote_line_dialog.dart';
 import 'generate_quote_pdf.dart';
@@ -37,36 +39,37 @@ class QuoteCard extends StatefulWidget {
 
 class _QuoteCardState extends State<QuoteCard> {
   @override
-  Widget build(BuildContext context) => Container(
-        color: Colors.grey[200],
+  Widget build(BuildContext context) => Surface(
+        elevation: SurfaceElevation.e6,
         child: ExpansionTile(
           title: _buildQuoteTitle(widget.quote),
           subtitle: Text('Total: ${widget.quote.totalAmount}'),
           children: [
             FutureBuilderEx<JobQuote>(
-              // ignore: discarded_futures
-              future: JobQuote.fromQuoteId(widget.quote.id),
-              builder: (context, jobQuote) {
-                if (jobQuote!.groups.isEmpty) {
-                  return const ListTile(
-                    title: Text('No quote lines found.'),
-                  );
-                }
-                return _buildQuoteGroup(jobQuote);
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  _buildGenerateButton(widget.quote),
-                  const SizedBox(width: 8),
-                  _buildMilestonesButton(widget.quote),
-                  const SizedBox(width: 8),
-                  _buildCreateInvoiceButton(widget.quote),
-                ],
-              ),
-            )
+                // ignore: discarded_futures
+                future: JobQuote.fromQuoteId(widget.quote.id),
+                builder: (context, jobQuote) => Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Row(
+                            children: [
+                              _buildSendButton(widget.quote),
+                              const SizedBox(width: 8),
+                              _buildMilestonesButton(widget.quote),
+                              const SizedBox(width: 8),
+                              _buildCreateInvoiceButton(widget.quote),
+                            ],
+                          ),
+                        ),
+                        if (jobQuote!.groups.isEmpty)
+                          const ListTile(
+                            title: Text('No quote lines found.'),
+                          )
+                        else
+                          _buildQuoteGroup(jobQuote)
+                      ],
+                    )),
           ],
         ),
       );
@@ -111,8 +114,8 @@ class _QuoteCardState extends State<QuoteCard> {
                   title: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(group.group.name),
-                        Text(group.total.toString())
+                        Expanded(child: HMBTextLine(group.group.name)),
+                        HMBTextLine(group.total.toString())
                       ]),
                   children: [
                     if (group.lines.isEmpty)
@@ -147,7 +150,8 @@ class _QuoteCardState extends State<QuoteCard> {
     );
   }
 
-  ElevatedButton _buildGenerateButton(Quote quote) => ElevatedButton(
+  HMBButton _buildSendButton(Quote quote) => HMBButton(
+        label: 'Send...',
         onPressed: () async {
           var displayCosts = true;
           var displayGroupHeaders = true;
@@ -196,11 +200,12 @@ class _QuoteCardState extends State<QuoteCard> {
                     ],
                   ),
                   actions: [
-                    TextButton(
+                    HMBButton(
+                      label: 'Cancel',
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
                     ),
-                    TextButton(
+                    HMBButton(
+                      label: 'OK',
                       onPressed: () {
                         Navigator.of(context).pop({
                           'displayCosts': tempDisplayCosts,
@@ -208,7 +213,6 @@ class _QuoteCardState extends State<QuoteCard> {
                           'displayItems': tempDisplayItems,
                         });
                       },
-                      child: const Text('OK'),
                     ),
                   ],
                 ),
@@ -250,7 +254,6 @@ class _QuoteCardState extends State<QuoteCard> {
             }
           }
         },
-        child: const Text('Preview PDF'),
       );
 
   Future<void> _editQuoteLine(BuildContext context, QuoteLine line) async {
@@ -266,7 +269,8 @@ class _QuoteCardState extends State<QuoteCard> {
     }
   }
 
-  ElevatedButton _buildMilestonesButton(Quote quote) => ElevatedButton(
+  HMBButton _buildMilestonesButton(Quote quote) => HMBButton(
+        label: 'Create Milestones',
         onPressed: () async {
           // Navigate to EditMilestonesScreen for milestone creation
           if (mounted) {
@@ -277,10 +281,10 @@ class _QuoteCardState extends State<QuoteCard> {
             );
           }
         },
-        child: const Text('Create Milestones'),
       );
 
-  ElevatedButton _buildCreateInvoiceButton(Quote quote) => ElevatedButton(
+  HMBButton _buildCreateInvoiceButton(Quote quote) => HMBButton(
+        label: 'Create Invoice',
         onPressed: () async {
           try {
             final invoice = await createFixedPriceInvoice(quote);
@@ -289,7 +293,6 @@ class _QuoteCardState extends State<QuoteCard> {
             HMBToast.error('Failed to create invoice: $e');
           }
         },
-        child: const Text('Create Invoice'),
       );
 }
 

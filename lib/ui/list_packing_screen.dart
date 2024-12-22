@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:strings/strings.dart';
 
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
@@ -15,10 +16,15 @@ import '../entity/task_item_type.dart';
 import '../util/app_title.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
+import 'widgets/add_task_item.dart';
 import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
+import 'widgets/hmb_button.dart';
+import 'widgets/hmb_colours.dart';
+import 'widgets/hmb_search.dart';
 import 'widgets/hmb_toast.dart';
 import 'widgets/select/hmb_droplist_multi.dart';
+import 'widgets/surface.dart';
 
 class PackingScreen extends StatefulWidget {
   const PackingScreen({super.key});
@@ -39,6 +45,8 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
   final taskItemsContexts = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
 
+  String? filter;
+
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Packing List');
@@ -55,7 +63,14 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
       final task = await DaoTask().getById(taskItem.taskId);
 
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
-      taskItemsContexts.add(TaskItemContext(task!, taskItem, billingType));
+
+      if (Strings.isBlank(filter)) {
+        taskItemsContexts.add(TaskItemContext(task!, taskItem, billingType));
+      } else {
+        if (taskItem.description.toLowerCase().contains(filter!)) {
+          taskItemsContexts.add(TaskItemContext(task!, taskItem, billingType));
+        }
+      }
     }
 
     setState(() {});
@@ -85,13 +100,13 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
           ],
         ),
         actions: [
-          TextButton(
+          HMBButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          TextButton(
+          HMBButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Complete'),
+            label: 'Complete',
           ),
         ],
       ),
@@ -109,69 +124,79 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  HMBDroplistMultiSelect<Job>(
-                    initialItems: () async => _selectedJobs,
-                    items: (filter) async => DaoJob().getActiveJobs(filter),
-                    format: (job) => job.summary,
-                    onChanged: (selectedJobs) async {
-                      _selectedJobs = selectedJobs;
+        backgroundColor: HMBColours.background,
+        body: Surface(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    HMBSearchWithAdd(onSearch: (filter) async {
+                      this.filter = filter;
                       await _loadTaskItems();
-                    },
-                    title: 'Filter by Jobs',
-                    required: false,
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: FutureBuilderEx<void>(
-                future: initialised,
-                builder: (context, _taskItems) {
-                  if (taskItemsContexts.isEmpty) {
-                    return _showEmpty();
-                  } else {
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        if (constraints.maxWidth < 600) {
-                          // Mobile layout
-                          return ListView.builder(
-                            padding: const EdgeInsets.all(8),
-                            itemCount: taskItemsContexts.length,
-                            itemBuilder: (context, index) {
-                              final item = taskItemsContexts[index];
-                              return _buildListItem(context, item);
-                            },
-                          );
-                        } else {
-                          // Desktop layout
-                          return GridView.builder(
-                            padding: const EdgeInsets.all(8),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 3,
-                            ),
-                            itemCount: taskItemsContexts.length,
-                            itemBuilder: (context, index) {
-                              final itemContext = taskItemsContexts[index];
-                              return _buildListItem(context, itemContext);
-                            },
-                          );
-                        }
+                    }, onAdd: () async {
+                      await showAddItemDialog(context, AddType.packing);
+                      await _loadTaskItems();
+                    }),
+                    HMBDroplistMultiSelect<Job>(
+                      initialItems: () async => _selectedJobs,
+                      items: (filter) async => DaoJob().getActiveJobs(filter),
+                      format: (job) => job.summary,
+                      onChanged: (selectedJobs) async {
+                        _selectedJobs = selectedJobs;
+                        await _loadTaskItems();
                       },
-                    );
-                  }
-                },
+                      title: 'Filter by Jobs',
+                      required: false,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              Expanded(
+                child: FutureBuilderEx<void>(
+                  future: initialised,
+                  builder: (context, _taskItems) {
+                    if (taskItemsContexts.isEmpty) {
+                      return _showEmpty();
+                    } else {
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (constraints.maxWidth < 600) {
+                            // Mobile layout
+                            return ListView.builder(
+                              padding: const EdgeInsets.all(8),
+                              itemCount: taskItemsContexts.length,
+                              itemBuilder: (context, index) {
+                                final item = taskItemsContexts[index];
+                                return _buildListItem(context, item);
+                              },
+                            );
+                          } else {
+                            // Desktop layout
+                            return GridView.builder(
+                              padding: const EdgeInsets.all(8),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 3,
+                              ),
+                              itemCount: taskItemsContexts.length,
+                              itemBuilder: (context, index) {
+                                final itemContext = taskItemsContexts[index];
+                                return _buildListItem(context, itemContext);
+                              },
+                            );
+                          }
+                        },
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       );
 
@@ -259,13 +284,13 @@ If you were expecting to see items here - check the Job's Status is active.
           'to the shopping list?',
         ),
         actions: [
-          TextButton(
+          HMBButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          TextButton(
+          HMBButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Confirm'),
+            label: 'Confirm',
           ),
         ],
       ),

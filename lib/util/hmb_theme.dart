@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class HMBTheme {
@@ -18,7 +17,7 @@ class HMBColors {
   static const Color primary = Color(0xFFBB86FC);
   static const Color accent = Color(0xFF03DAC5);
 
-  /// Colors created by creating two lays in gimp
+  /// Colors created by creating two layers in gimp
   /// bottom layer is Colors.green.
   /// Top layer is white and then we increase the
   /// top layers opacity to a given percentage
@@ -35,7 +34,7 @@ class HMBColors {
   static const Color headingBackground = Colors.purple;
 
   /// the color of most text such as body text.
-  static const Color textPrimary = Colors.black;
+  static const Color textPrimary = Colors.white;
 
   /// Used in headings
   static const Color textHeading = Colors.black;
@@ -43,11 +42,17 @@ class HMBColors {
   /// The color of text when used for a fields label.
   static const Color fieldLabel = Colors.purple;
 
+  static const Color buttonLabel = Colors.white;
+
   /// The color of text used for a chip. Some darker
   /// colored chips may need to use the light version
   /// of the chip text.
   static const Color chipTextColor = Colors.black;
   static const Color darkChipText = Colors.white;
+
+  static const Color dropboxArrow = Colors.white;
+
+  static const Color inputDecoration = Colors.white;
 
   /// List Cards
   static const Color listCardBackgroundSelected =
@@ -100,69 +105,4 @@ class HMBColors {
   static const Color surface12dp = Color(0xFF323232);
   static const Color surface16dp = Color(0xFF353535);
   static const Color surface24dp = Color(0xFF373737);
-}
-
-enum SurfaceElevation { e0, e1, e2, e3, e4, e6, e8, e12, e16, e24 }
-
-///
-/// Creates a Material design surface with a given [elevation].
-/// The default [elevation] is 4dp, the default [padding] is
-/// defined by [HMBTheme.padding].
-///
-/// A Surface is just a container using a defined color to give the
-/// illusion of an elevation for a dark theme.
-///
-class Surface extends StatelessWidget {
-  const Surface(
-      {required this.child,
-      super.key,
-      this.elevation = SurfaceElevation.e4,
-      this.padding});
-  final Widget child;
-  final SurfaceElevation elevation;
-  final EdgeInsetsGeometry? padding;
-  @override
-  Widget build(BuildContext context) {
-    EdgeInsetsGeometry? usePadding;
-    usePadding = padding;
-
-    return Container(
-        color: color(elevation), padding: usePadding, child: child);
-  }
-
-  static Color color(SurfaceElevation elevation) {
-    Color color;
-
-    switch (elevation) {
-      case SurfaceElevation.e0:
-        color = HMBColors.surface0dp;
-      case SurfaceElevation.e1:
-        color = HMBColors.surface1dp;
-      case SurfaceElevation.e2:
-        color = HMBColors.surface2dp;
-      case SurfaceElevation.e3:
-        color = HMBColors.surface3dp;
-      case SurfaceElevation.e4:
-        color = HMBColors.surface4dp;
-      case SurfaceElevation.e6:
-        color = HMBColors.surface6dp;
-      case SurfaceElevation.e8:
-        color = HMBColors.surface8dp;
-      case SurfaceElevation.e12:
-        color = HMBColors.surface12dp;
-      case SurfaceElevation.e16:
-        color = HMBColors.surface16dp;
-      case SurfaceElevation.e24:
-        color = HMBColors.surface24dp;
-    }
-    return color;
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(EnumProperty<SurfaceElevation>('elevation', elevation))
-      ..add(DiagnosticsProperty<EdgeInsetsGeometry?>('padding', padding));
-  }
 }

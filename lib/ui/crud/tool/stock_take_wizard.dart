@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
 import '../../../entity/tool.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/wizard.dart';
 import '../../widgets/wizard_step.dart';
 import 'receipt_step.dart';
@@ -48,13 +49,13 @@ class ToolStockTakeWizard extends StatefulWidget {
                 content: const Text(
                     'Would you like to run the stock take wizard again?'),
                 actions: [
-                  TextButton(
+                  HMBButton(
+                    label: 'No',
                     onPressed: () => Navigator.of(dialogContext).pop(false),
-                    child: const Text('No'),
                   ),
-                  ElevatedButton(
+                  HMBButton(
+                    label: 'Yes',
                     onPressed: () => Navigator.of(dialogContext).pop(true),
-                    child: const Text('Yes'),
                   ),
                 ],
               ),

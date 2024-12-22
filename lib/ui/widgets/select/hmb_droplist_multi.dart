@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../util/hmb_theme.dart';
 import '../layout/hmb_placeholder.dart';
 import '../layout/labeled_container.dart';
 import 'hmb_droplist_multi_dialog.dart';
@@ -131,11 +132,13 @@ class _HMBDroplistMultiSelectState<T>
                         fontSize: 13,
                         color: widget.state.hasError
                             ? Theme.of(context).colorScheme.error
-                            : Theme.of(context).textTheme.bodyLarge?.color ??
-                                Colors.black,
+                            : HMBColors.textPrimary,
                       ),
                     ),
-                  const Icon(Icons.arrow_drop_down),
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    color: HMBColors.dropboxArrow,
+                  ),
                 ],
               ),
             ),

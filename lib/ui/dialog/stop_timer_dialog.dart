@@ -9,6 +9,7 @@ import '../../ui/widgets/hmb_date_time_picker.dart';
 import '../../ui/widgets/hmb_toast.dart';
 import '../../util/format.dart';
 import '../widgets/fields/hmb_text_area.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/text/hmb_text.dart';
 import 'hmb_dialog.dart';
@@ -92,7 +93,7 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
           HMBText('Current Time: ${formatDateTime(DateTime.now())}'),
           if (widget.showTask) buildTaskDetails(),
           Row(children: [
-            HMBText(
+            const HMBText(
               'Start:',
               bold: true,
             ),
@@ -119,11 +120,12 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
         ],
       ),
       actions: [
-        TextButton(
+        HMBButton(
+          label: 'Cancel',
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
         ),
-        TextButton(
+        HMBButton(
+          label: 'OK',
           onPressed: () async {
             final stopDateTime = DateTime(
               selectedDate.year,
@@ -156,7 +158,6 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
               Navigator.pop(context, timeEntry);
             }
           },
-          child: const Text('OK'),
         ),
       ],
     );
@@ -171,13 +172,13 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
           content: Text(
               '''The time entry duration is ${duration.inHours} hours. Do you want to continue?'''),
           actions: [
-            TextButton(
+            HMBButton(
+              label: 'Cancel',
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
             ),
-            TextButton(
+            HMBButton(
+              label: 'Continue',
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Continue'),
             ),
           ],
         ),

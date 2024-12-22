@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../hmb_button.dart';
+
 class HMBDroplistMultiSelectDialog<T> extends StatefulWidget {
   const HMBDroplistMultiSelectDialog({
     required this.getItems,
@@ -154,9 +156,9 @@ class _HMBDroplistMultiSelectDialogState<T>
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: ElevatedButton(
+              child: HMBButton(
+                label: 'Done',
                 onPressed: () => Navigator.of(context).pop(_selectedItems),
-                child: const Text('Done'),
               ),
             ),
           ],

@@ -130,11 +130,11 @@ class HMBTextHeadline extends StatelessWidget {
       {super.key, this.color = HMBColors.textPrimary});
   final String text;
   final Color color;
-  static const fontSize = 30.0;
+  static const fontSize = 26.0;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 12),
+        padding: const EdgeInsets.only(top: 8, bottom: 8),
         child: Text(
           text,
           style: TextStyle(
@@ -265,6 +265,18 @@ class HMBTextBody extends StatelessWidget {
   }
 }
 
+class HMBTextLine extends StatelessWidget {
+  const HMBTextLine(this.text, {super.key, this.colour});
+
+  final String text;
+
+  final Color? colour;
+
+  @override
+  Widget build(BuildContext context) => Text(text,
+      overflow: TextOverflow.ellipsis, style: TextStyle(color: colour));
+}
+
 /// Use for text in a body section that needs to be bold.
 class HMBTextBodyBold extends StatelessWidget {
   HMBTextBodyBold(this.text, {super.key, this.color = HMBColors.textPrimary})
@@ -326,32 +338,6 @@ class HMBTextError extends StatelessWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(StringProperty('text', text));
-  }
-}
-
-///
-/// Text style used by buttons such as ButtonPrimary/ButtonSecondary
-///
-class HMBTextButton extends StatelessWidget {
-  HMBTextButton(this.text, {super.key, this.color = HMBColors.textPrimary})
-      : style = TextStyle(color: color, fontSize: fontSize);
-  static const fontSize = 16.0;
-  final String text;
-  final Color color;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(4),
-        child: Text(text.toUpperCase(), style: style),
-      );
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(StringProperty('text', text))
-      ..add(ColorProperty('color', color))
-      ..add(DiagnosticsProperty<TextStyle>('style', style));
   }
 }
 

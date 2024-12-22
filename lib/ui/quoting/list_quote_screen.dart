@@ -10,9 +10,10 @@ import '../../util/app_title.dart';
 import '../invoicing/dialog_select_tasks.dart';
 import '../invoicing/select_job_dialog.dart';
 import '../widgets/async_state.dart';
-import '../widgets/hmb_add_button.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/surface.dart';
 import 'quote_card.dart';
 
 class QuoteListScreen extends StatefulWidget {
@@ -96,12 +97,12 @@ class _QuoteListScreenState extends AsyncState<QuoteListScreen, void> {
         title: const Text('Delete Quote'),
         content: const Text('Are you sure you want to delete this quote?'),
         actions: [
-          TextButton(
-            child: const Text('Cancel'),
+          HMBButton(
+            label: 'Cancel',
             onPressed: () => Navigator.of(context).pop(false),
           ),
-          TextButton(
-            child: const Text('Delete'),
+          HMBButton(
+            label: 'Delete',
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],
@@ -129,50 +130,42 @@ class _QuoteListScreenState extends AsyncState<QuoteListScreen, void> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: false,
-          toolbarHeight: 80,
-          title: Column(
+            automaticallyImplyLeading: false,
+            toolbarHeight: 80,
+            title: HMBSearchWithAdd(
+              onSearch: (filter) async => _onFilterChanged(filter ?? ''),
+              onAdd: _createQuote,
+            )),
+        body: Surface(
+          child: Column(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: HMBSearch(
-                      // hint: 'Search quotes by number, job, or customer...',
-                      onChanged: (filter) async =>
-                          _onFilterChanged(filter ?? ''),
-                    ),
-                  ),
-                  HMBButtonAdd(onPressed: _createQuote, enabled: true),
-                ],
+              Expanded(
+                child: FutureBuilderEx<List<Quote>>(
+                  future: _quotes,
+                  builder: (context, quotes) {
+                    if (quotes!.isEmpty) {
+                      return const Center(child: Text('No quotes found.'));
+                    }
+
+                    return ListView.builder(
+                      itemCount: quotes.length,
+                      itemBuilder: (context, index) => Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: QuoteCard(
+                          quote: quotes[index],
+                          onDeleteQuote: () async =>
+                              _deleteQuote(quotes[index], context),
+                          onEditQuote: (quote) async {
+                            setState(_refreshQuoteList);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: FutureBuilderEx<List<Quote>>(
-                future: _quotes,
-                builder: (context, quotes) {
-                  if (quotes!.isEmpty) {
-                    return const Center(child: Text('No quotes found.'));
-                  }
-
-                  return ListView.builder(
-                    itemCount: quotes.length,
-                    itemBuilder: (context, index) => QuoteCard(
-                      quote: quotes[index],
-                      onDeleteQuote: () async =>
-                          _deleteQuote(quotes[index], context),
-                      onEditQuote: (quote) async {
-                        setState(_refreshQuoteList);
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
         ),
       );
 }

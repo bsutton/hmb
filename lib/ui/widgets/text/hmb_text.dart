@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../../util/hmb_theme.dart';
+
 class HMBText extends StatelessWidget {
   /// If [verticalPadding] is true, vertical padding is added before the text.
-  HMBText(
+  const HMBText(
     this.labelText, {
     super.key,
     this.verticalPadding = true,
     this.bold = false,
     this.underline = false,
     Color? color,
-  }) : color = color ?? Colors.grey[700];
+  }) : color = color ?? HMBColors.textPrimary;
 
   final String labelText;
   final bool verticalPadding;

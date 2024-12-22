@@ -9,6 +9,7 @@ import '../../ui/widgets/hmb_date_time_picker.dart';
 import '../../ui/widgets/hmb_toast.dart';
 import '../../util/format.dart';
 import '../widgets/fields/hmb_text_area.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/text/hmb_text.dart';
 import 'hmb_dialog.dart';
 
@@ -71,11 +72,12 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
         ],
       ),
       actions: [
-        TextButton(
+        HMBButton(
+          label:'Cancel',
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
         ),
-        TextButton(
+        HMBButton(
+          label:'OK',
           onPressed: () {
             final note = noteController.text;
             TimeEntry timeEntry;
@@ -92,7 +94,6 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
                 taskId: widget.task.id, startTime: selected, note: note);
             Navigator.pop(context, timeEntry);
           },
-          child: const Text('OK'),
         ),
       ],
     );

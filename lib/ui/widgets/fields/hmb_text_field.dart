@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../util/hmb_theme.dart';
+
 class HMBTextField extends StatelessWidget {
   const HMBTextField(
       {required this.controller,
       required this.labelText,
       this.keyboardType = TextInputType.text,
       this.required = false,
-      this.validator,
+    this.validator,
       this.focusNode,
       this.onChanged,
       super.key,
@@ -30,6 +32,7 @@ class HMBTextField extends StatelessWidget {
         children: [
           if (leadingSpace) const SizedBox(height: 16),
           TextFormField(
+            style: const TextStyle(color: HMBColors.textPrimary),
             onChanged: onChanged?.call,
             controller: controller,
             focusNode: focusNode,

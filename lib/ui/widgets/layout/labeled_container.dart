@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../util/hmb_theme.dart';
+
 class LabeledContainer extends StatelessWidget {
   const LabeledContainer({
     required this.labelText,
@@ -36,7 +38,7 @@ class LabeledContainer extends StatelessWidget {
             left: 10,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4),
-              color: Theme.of(context).cardColor,
+              color: HMBColors.surface4dp,
               child: Text(
                 labelText,
                 style: TextStyle(

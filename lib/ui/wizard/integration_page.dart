@@ -4,6 +4,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../widgets/fields/hmb_text_field.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 
 class WizardIntegrationPage extends StatefulWidget {
@@ -91,13 +92,13 @@ package and you need a Xero developer account.''',
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            ElevatedButton(
+                            HMBButton(
                               onPressed: widget.onNext,
-                              child: const Text('Skip'),
+                              label: 'Skip',
                             ),
-                            ElevatedButton(
+                            HMBButton(
+                              label: 'Finish',
                               onPressed: _saveForm,
-                              child: const Text('Finish'),
                             ),
                           ],
                         ),

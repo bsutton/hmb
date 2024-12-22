@@ -7,6 +7,7 @@ import '../../../../util/app_title.dart';
 import '../../../widgets/async_state.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toggle.dart';
+import '../../../widgets/layout/hmb_spacer.dart';
 import 'job_card.dart'; // The JobCard from previous snippet
 
 class JobEstimatesListScreen extends StatefulWidget {
@@ -157,9 +158,16 @@ class _JobEstimatesListScreenState
                     itemCount: filteredJobs.length,
                     itemBuilder: (context, index) {
                       final cj = filteredJobs[index];
-                      return JobCard(
-                        job: cj.job,
-                        onEstimatesUpdated: _refreshJobs,
+                      return Column(
+                        children: [
+                          const HMBSpacer(
+                            height: true,
+                          ),
+                          JobCard(
+                            job: cj.job,
+                            onEstimatesUpdated: _refreshJobs,
+                          ),
+                        ],
                       );
                     },
                   );

@@ -6,6 +6,7 @@ import '../database/management/database_helper.dart';
 import '../src/version/version.g.dart';
 import '../util/app_title.dart';
 import '../util/exceptions.dart';
+import 'widgets/hmb_button.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -78,12 +79,7 @@ class _AboutScreenState extends State<AboutScreen> {
           description,
           textAlign: TextAlign.center,
         ),
-        TextButton(
-          onPressed: () async => _launchURL(link),
-          child: Text(
-            label,
-            style: const TextStyle(color: Colors.blue),
-          ),
-        )
+        HMBLinkButton(
+            onPressed: () async => _launchURL(link), label: label, link: link)
       ];
 }

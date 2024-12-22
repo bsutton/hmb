@@ -11,6 +11,7 @@ import '../dialog/message_template_dialog.dart';
 import '../widgets/fields/hmb_email_field.dart';
 import '../widgets/fields/hmb_phone_field.dart';
 import '../widgets/fields/hmb_text_field.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/select/hmb_droplist.dart';
 
@@ -249,13 +250,13 @@ class _WizardContactPageState extends State<WizardContactPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            ElevatedButton(
+                            HMBButton(
+                              label: 'Skip',
                               onPressed: widget.onNext,
-                              child: const Text('Skip'),
                             ),
-                            ElevatedButton(
+                            HMBButton(
+                              label: 'Next',
                               onPressed: _saveForm,
-                              child: const Text('Next'),
                             ),
                           ],
                         ),

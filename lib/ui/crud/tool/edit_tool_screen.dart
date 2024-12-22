@@ -13,6 +13,7 @@ import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/grayed_out.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_date_time_picker.dart';
 import '../../widgets/media/captured_photo.dart';
 import '../../widgets/media/photo_controller.dart';
@@ -223,9 +224,9 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
                         Text(title,
                             style:
                                 const TextStyle(fontWeight: FontWeight.bold)),
-                        ElevatedButton.icon(
+                        HMBButton.withIcon(
+                          label: 'Capture Photo',
                           icon: const Icon(Icons.camera_alt),
-                          label: const Text('Capture Photo'),
                           onPressed: () async {
                             final capturedPhoto =
                                 await _photoController.takePhoto();

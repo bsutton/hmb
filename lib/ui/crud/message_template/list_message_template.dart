@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao_message_template.dart';
 import '../../../entity/message_template.dart';
+import '../../widgets/surface.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_message_template.dart';
@@ -32,23 +33,26 @@ class SmsTemplateDetails extends StatelessWidget {
   final MessageTemplate smsTemplate;
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Message:',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(smsTemplate.message),
-          const Divider(height: 20, thickness: 1),
-          Text(
-            '''
-Type: ${smsTemplate.owner == MessageTemplateOwner.system ? "System" : "User"}''',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
+  Widget build(BuildContext context) => Surface(
+        elevation: SurfaceElevation.e6,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Message:',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(smsTemplate.message),
+            const Divider(height: 20, thickness: 1),
+            Text(
+              '''
+    Type: ${smsTemplate.owner == MessageTemplateOwner.system ? "System" : "User"}''',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
       );
 }

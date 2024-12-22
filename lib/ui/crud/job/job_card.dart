@@ -6,11 +6,13 @@ import '../../../dao/dao_job.dart';
 import '../../../dao/dao_job_status.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/job.dart';
+import '../../../entity/job_status.dart';
 import '../../../util/format.dart';
 import '../../widgets/hmb_text_clickable.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/media/rich_editor.dart';
+import '../../widgets/surface.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
 import '../../widgets/text/hmb_site_text.dart';
@@ -46,59 +48,56 @@ class _JobCardState extends State<JobCard> {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
-        waitingBuilder: (context) => const HMBPlaceHolder(height: 583),
+        waitingBuilder: (context) => const HMBPlaceHolder(height: 594),
         // ignore: discarded_futures
         future: DaoJobStatus().getById(job.jobStatusId),
         builder: (context, jobStatus) => FutureBuilderEx<Customer?>(
-          waitingBuilder: (context) => const HMBPlaceHolder(height: 583),
+          waitingBuilder: (context) => const HMBPlaceHolder(height: 594),
           // ignore: discarded_futures
           future: DaoCustomer().getById(job.customerId),
-          builder: (context, customer) => Card(
-            margin: const EdgeInsets.all(8),
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  HMBCardHeading(
-                    customer?.name ?? 'Not Set',
-                  ),
-                  const SizedBox(height: 8),
-                  _buildContactPoints(),
-                  const SizedBox(height: 8),
-                  HMBJobSiteText(label: '', job: job),
-                  const SizedBox(height: 8),
-                  HMBText(
-                    '''
-Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
-                  ),
-                  const SizedBox(height: 8),
-                  HMBText(
-                    'Scheduled: ${formatDate(job.startDate)}',
-                  ),
-                  HMBText(
-                    'Description:',
-                    bold: true,
-                  ),
-                  HMBText(
-                    RichEditor.createParchment(job.description)
-                        .toPlainText()
-                        .split('\n')
-                        .first,
-                  ),
-                  const SizedBox(height: 8),
-                  PhotoGallery.forJob(job: job),
-                  const SizedBox(height: 16),
-                  buildStatistics(job),
-                ],
-              ),
-            ),
-          ),
+          builder: (context, customer) => Surface(
+              elevation: SurfaceElevation.e6,
+              // shape: RoundedRectangleBorder(
+              //   borderRadius: BorderRadius.circular(12),
+              // ),
+              child: _buildDetails(customer, jobStatus)),
         ),
+      );
+
+  Widget _buildDetails(Customer? customer, JobStatus? jobStatus) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HMBCardHeading(
+            customer?.name ?? 'Not Set',
+          ),
+          const SizedBox(height: 8),
+          _buildContactPoints(),
+          const SizedBox(height: 8),
+          HMBJobSiteText(label: '', job: job),
+          const SizedBox(height: 8),
+          HMBText(
+            '''
+Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
+          ),
+          const SizedBox(height: 8),
+          HMBText(
+            'Scheduled: ${formatDate(job.startDate)}',
+          ),
+          const HMBText(
+            'Description:',
+            bold: true,
+          ),
+          HMBText(
+            RichEditor.createParchment(job.description)
+                .toPlainText()
+                .split('\n')
+                .first,
+          ),
+          const SizedBox(height: 8),
+          PhotoGallery.forJob(job: job),
+          const SizedBox(height: 16),
+          buildStatistics(job),
+        ],
       );
 
   Widget _buildContactPoints() => LayoutBuilder(

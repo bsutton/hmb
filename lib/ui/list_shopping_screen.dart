@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
+import 'package:strings/strings.dart';
 
 import '../../dao/dao_supplier.dart';
 import '../../entity/job.dart';
@@ -14,20 +15,22 @@ import '../dao/dao_job.dart';
 import '../dao/dao_task.dart';
 import '../dao/dao_task_item.dart';
 import '../dao/dao_task_item_type.dart';
-import '../entity/task.dart';
-import '../entity/task_item.dart';
-import '../entity/task_item_type.dart';
+import '../entity/customer.dart';
 import '../util/app_title.dart';
 import '../util/format.dart';
-import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
-import '../util/units.dart';
 import 'crud/tool/stock_take_wizard.dart';
 import 'list_packing_screen.dart';
+import 'widgets/add_task_item.dart';
 import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
+import 'widgets/hmb_button.dart';
+import 'widgets/hmb_search.dart';
+import 'widgets/layout/hmb_spacer.dart';
 import 'widgets/select/hmb_droplist.dart';
 import 'widgets/select/hmb_droplist_multi.dart';
+import 'widgets/surface.dart';
+import 'widgets/text/hmb_text_themes.dart';
 
 class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});
@@ -41,6 +44,7 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
   late final _taskItems = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
   Supplier? _selectedSupplier;
+  String? filter;
 
   @override
   Future<void> asyncInitState() async {
@@ -58,7 +62,13 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
     for (final taskItem in taskItems) {
       final task = await DaoTask().getById(taskItem.taskId);
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
-      _taskItems.add(TaskItemContext(task!, taskItem, billingType));
+      if (Strings.isBlank(filter)) {
+        _taskItems.add(TaskItemContext(task!, taskItem, billingType));
+      } else {
+        if (taskItem.description.toLowerCase().contains(filter!)) {
+          _taskItems.add(TaskItemContext(task!, taskItem, billingType));
+        }
+      }
     }
     setState(() {});
   }
@@ -92,13 +102,13 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
           ],
         ),
         actions: [
-          TextButton(
+          HMBButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            label: 'Cancel',
           ),
-          TextButton(
+          HMBButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Complete'),
+            label: 'Complete',
           ),
         ],
       ),
@@ -123,13 +133,13 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
               content: const Text(
                   'Would you like to add this tool to your tool list?'),
               actions: [
-                TextButton(
+                HMBButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('No'),
+                  label: 'No',
                 ),
-                TextButton(
+                HMBButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Yes'),
+                  label: 'Yes',
                 ),
               ],
             ),
@@ -153,220 +163,95 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
   @override
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  HMBDroplistMultiSelect<Job>(
-                    initialItems: () async => _selectedJobs,
-                    items: (filter) async => DaoJob().getActiveJobs(filter),
-                    format: (job) => job.summary,
-                    onChanged: (selectedJobs) async {
-                      _selectedJobs = selectedJobs;
+        body: Surface(
+          elevation: SurfaceElevation.e6,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    HMBSearchWithAdd(onSearch: (filter) {
+                      this.filter = filter;
+                      _loadTaskItems();
+                    }, onAdd: () async {
+                      await showAddItemDialog(context, AddType.shopping);
                       await _loadTaskItems();
-                    },
-                    title: 'Filter by Jobs',
-                    required: false,
-                  ),
-                  const SizedBox(height: 10),
-                  HMBDroplist<Supplier>(
-                    selectedItem: () async => _selectedSupplier,
-                    items: (filter) async => DaoSupplier().getByFilter(filter),
-                    format: (supplier) => supplier.name,
-                    onChanged: (supplier) async {
-                      _selectedSupplier = supplier;
-                      await _loadTaskItems();
-                    },
-                    title: 'Filter by Supplier',
-                    required: false,
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: FutureBuilderEx<void>(
-                future: initialised,
-                builder: (context, _) {
-                  if (_taskItems.isEmpty) {
-                    return _showEmpty();
-                  } else {
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        if (constraints.maxWidth < 600) {
-                          // Mobile layout
-                          return ListView.builder(
-                            padding: const EdgeInsets.all(8),
-                            itemCount: _taskItems.length,
-                            itemBuilder: (context, index) {
-                              final item = _taskItems[index];
-                              return _buildListItem(context, item);
-                            },
-                          );
-                        } else {
-                          // Desktop layout
-                          return GridView.builder(
-                            padding: const EdgeInsets.all(8),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 3,
-                            ),
-                            itemCount: _taskItems.length,
-                            itemBuilder: (context, index) {
-                              final item = _taskItems[index];
-                              return _buildListItem(context, item);
-                            },
-                          );
-                        }
+                    }),
+                    HMBDroplistMultiSelect<Job>(
+                      initialItems: () async => _selectedJobs,
+                      items: (filter) async => DaoJob().getActiveJobs(filter),
+                      format: (job) => job.summary,
+                      onChanged: (selectedJobs) async {
+                        _selectedJobs = selectedJobs;
+                        await _loadTaskItems();
                       },
-                    );
-                  }
-                },
+                      title: 'Filter by Jobs',
+                      required: false,
+                    ),
+                    const SizedBox(height: 10),
+                    HMBDroplist<Supplier>(
+                      selectedItem: () async => _selectedSupplier,
+                      items: (filter) async =>
+                          DaoSupplier().getByFilter(filter),
+                      format: (supplier) => supplier.name,
+                      onChanged: (supplier) async {
+                        _selectedSupplier = supplier;
+                        await _loadTaskItems();
+                      },
+                      title: 'Supplier',
+                      required: false,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _showAddItemDialog(context),
-          child: const Icon(Icons.add),
+              Expanded(
+                child: FutureBuilderEx<void>(
+                  future: initialised,
+                  builder: (context, _) {
+                    if (_taskItems.isEmpty) {
+                      return _showEmpty();
+                    } else {
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (constraints.maxWidth < 600) {
+                            // Mobile layout
+                            return ListView.builder(
+                              padding: const EdgeInsets.all(8),
+                              itemCount: _taskItems.length,
+                              itemBuilder: (context, index) {
+                                final item = _taskItems[index];
+                                return _buildShoppingItem(context, item);
+                              },
+                            );
+                          } else {
+                            // Desktop layout
+                            return GridView.builder(
+                              padding: const EdgeInsets.all(8),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                // childAspectRatio: 3,
+                                mainAxisExtent: 256,
+                              ),
+                              itemCount: _taskItems.length,
+                              itemBuilder: (context, index) {
+                                final item = _taskItems[index];
+                                return _buildShoppingItem(context, item);
+                              },
+                            );
+                          }
+                        },
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       );
-
-  Future<void> _showAddItemDialog(BuildContext context) async {
-    Job? selectedJob;
-    Task? selectedTask;
-    TaskItemTypeEnum? selectedItemType;
-    final descriptionController = TextEditingController();
-    final quantityController = TextEditingController();
-    final unitCostController = TextEditingController();
-
-    await showDialog<void>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Add Shopping Item'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Job Selection Dropdown
-                HMBDroplist<Job>(
-                  title: 'Select Job',
-                  selectedItem: () async => selectedJob,
-                  items: (filter) async => DaoJob().getActiveJobs(filter),
-                  format: (job) => job.summary,
-                  onChanged: (job) {
-                    setState(() {
-                      selectedJob = job;
-                      selectedTask = null; // Reset task selection
-                    });
-                  },
-                ),
-                const SizedBox(height: 10),
-                // Task Selection Dropdown (dependent on selected job)
-                if (selectedJob != null)
-                  HMBDroplist<Task>(
-                    title: 'Select Task',
-                    selectedItem: () async => selectedTask,
-                    items: (filter) async =>
-                        DaoTask().getTasksByJob(selectedJob!.id),
-                    format: (task) => task.name,
-                    onChanged: (task) {
-                      setState(() {
-                        selectedTask = task;
-                      });
-                    },
-                  ),
-                const SizedBox(height: 10),
-                // Item Type Selection Dropdown
-                HMBDroplist<TaskItemTypeEnum>(
-                  title: 'Item Type',
-                  selectedItem: () async => selectedItemType,
-                  items: (filter) async => [
-                    TaskItemTypeEnum.toolsBuy,
-                    TaskItemTypeEnum.materialsBuy,
-                  ],
-                  format: (type) => type.description,
-                  onChanged: (type) {
-                    setState(() {
-                      selectedItemType = type;
-                    });
-                  },
-                ),
-                const SizedBox(height: 10),
-                // Description Input
-                HMBTextField(
-                  controller: descriptionController,
-                  labelText: 'Description',
-                ),
-                // Quantity Input
-                HMBTextField(
-                  controller: quantityController,
-                  labelText: 'Quantity',
-                  keyboardType: TextInputType.number,
-                ),
-                // Unit Cost Input
-                HMBTextField(
-                  controller: unitCostController,
-                  labelText: 'Unit Cost',
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (selectedJob != null &&
-                    selectedTask != null &&
-                    selectedItemType != null) {
-                  final quantity =
-                      Fixed.tryParse(quantityController.text) ?? Fixed.one;
-                  final unitCost = MoneyEx.tryParse(unitCostController.text);
-
-                  // Create and insert the new TaskItem
-                  final newItem = TaskItem.forInsert(
-                      taskId: selectedTask!.id,
-                      description: descriptionController.text,
-                      itemTypeId:
-                          (await DaoTaskItemType().getMaterialsBuy()).id,
-                      estimatedMaterialQuantity: quantity,
-                      estimatedMaterialUnitCost: unitCost,
-                      estimatedLabourCost: null,
-                      estimatedLabourHours: null,
-                      charge: null,
-                      chargeSet: false,
-                      dimension1: Fixed.zero,
-                      dimension2: Fixed.zero,
-                      dimension3: Fixed.zero,
-                      labourEntryMode: LabourEntryMode.hours,
-                      margin: Percentage.zero,
-                      measurementType: MeasurementType.length,
-                      units: Units.defaultUnits,
-                      url: '');
-
-                  await DaoTaskItem().insert(newItem);
-                  await _loadTaskItems();
-
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Center _showEmpty() => const Center(child: Text('''
 No Shopping Items found 
@@ -374,45 +259,65 @@ No Shopping Items found
 that are marked as "Materials - buy" or "Tools - buy".
 If you were expecting to see items here - check the Job's Status is active.
 '''));
-  Widget _buildListItem(BuildContext context, TaskItemContext itemContext) =>
-      Card(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        elevation: 2,
-        child: ListTile(
-          title: Text(itemContext.taskItem.description),
-          subtitle: FutureBuilderEx(
-            // Fetch the job associated with the task
-            future: DaoJob().getJobForTask(itemContext.task.id),
-            builder: (context, job) => FutureBuilderEx(
-              // Fetch the customer associated with the job
-              future: DaoCustomer().getByJob(job!.id),
-              builder: (context, customer) => FutureBuilderEx(
-                // Fetch the supplier associated with the checklist item
-                future: DaoSupplier().getById(itemContext.taskItem.supplierId),
-                builder: (context, supplier) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Customer: ${customer!.name}'),
-                    Text('Job: ${job.summary}'),
-                    Text('Task: ${itemContext.task.name}'),
-                    if (supplier != null) Text('Supplier: ${supplier.name}'),
-                    Text('''Scheduled Date: ${formatDate(job.startDate)}'''),
-                    Text(itemContext.taskItem.dimensions),
-                    if (itemContext.taskItem.completed)
-                      const Text(
-                        'Completed',
-                        style: TextStyle(color: Colors.green),
-                      ),
-                  ],
-                ),
+
+  /// build a card for each shipping item.
+  Widget _buildShoppingItem(
+          BuildContext context, TaskItemContext itemContext) =>
+      Column(
+        children: [
+          const HMBSpacer(height: true),
+          SurfaceCard(
+            title: itemContext.taskItem.description,
+            height: 240,
+            body: FutureBuilderEx(
+              // Fetch the job associated with the task
+              future: CustomerAndJob.fetch(itemContext),
+              builder: (context, details) => Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      HMBTextLine('Customer: ${details!.customer.name}'),
+                      HMBTextLine('Job: ${details.job.summary}'),
+                      HMBTextLine('Task: ${itemContext.task.name}'),
+                      if (details.supplier != null)
+                        HMBTextLine('Supplier: ${details.supplier!.name}'),
+                      HMBTextLine(
+                          '''Scheduled Date: ${formatDate(details.job.startDate)}'''),
+                      HMBTextLine(itemContext.taskItem.dimensions),
+                      if (itemContext.taskItem.completed)
+                        const HMBTextLine(
+                          'Completed',
+                          colour: Colors.green,
+                        ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.check, color: Colors.green),
+                    onPressed: () async => _markAsCompleted(itemContext),
+                  ),
+                ],
               ),
             ),
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.check, color: Colors.green),
             onPressed: () async => _markAsCompleted(itemContext),
           ),
-          onTap: () async => _markAsCompleted(itemContext),
-        ),
+        ],
       );
+}
+
+class CustomerAndJob {
+  CustomerAndJob._internal(this.customer, this.job, this.supplier);
+  static Future<CustomerAndJob> fetch(TaskItemContext itemContext) async {
+    final job = await DaoJob().getJobForTask(itemContext.task.id);
+    final customer = await DaoCustomer().getByJob(job!.id);
+    final supplier =
+        await DaoSupplier().getById(itemContext.taskItem.supplierId);
+
+    return CustomerAndJob._internal(customer!, job, supplier);
+  }
+
+  final Customer customer;
+  final Job job;
+  final Supplier? supplier;
 }

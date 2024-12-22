@@ -3,6 +3,7 @@ import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_tool.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/wizard.dart';
 import '../../widgets/wizard_step.dart';
@@ -45,9 +46,9 @@ class SerialNumberStep extends WizardStep {
               controller: _serialNumberController,
               decoration: const InputDecoration(labelText: 'Serial Number'),
             ),
-            ElevatedButton(
+            HMBButton(
+              label: 'Scan Barcode',
               onPressed: _scanBarcode,
-              child: const Text('Scan Barcode'),
             ),
             const SizedBox(height: 24),
             CapturePhoto(

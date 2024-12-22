@@ -13,7 +13,6 @@ import '../../util/app_title.dart';
 import '../../util/format.dart';
 import '../../util/money_ex.dart';
 import '../widgets/async_state.dart';
-import '../widgets/hmb_add_button.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/select/hmb_droplist.dart';
@@ -120,19 +119,12 @@ class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           toolbarHeight: 80,
-          title: Row(
-            children: [
-              Expanded(
-                child: HMBSearch(
-                    // hint: 'Search quotes by number, job, or customer...',
-                    onChanged: (filter) async {
-                  filterText = filter;
-                  await _refreshInvoiceList();
-                }),
-              ),
-              HMBButtonAdd(onPressed: _createInvoice, enabled: true),
-            ],
-          ),
+          title: HMBSearchWithAdd(
+              onSearch: (filter) async {
+                filterText = filter;
+                await _refreshInvoiceList();
+              },
+              onAdd: _createInvoice),
           automaticallyImplyLeading: false,
         ),
         body: Column(

@@ -5,6 +5,7 @@ import '../../../dao/_index.g.dart';
 import '../../../entity/_index.g.dart';
 import '../../../entity/tool.dart';
 import '../../../util/photo_meta.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/media/captured_photo.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_thumbnail.dart';
@@ -43,9 +44,9 @@ class _CapturePhotoState extends State<CapturePhoto> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              ElevatedButton.icon(
+              HMBButton.withIcon(
+                label: 'Capture Photo',
                 icon: const Icon(Icons.camera_alt),
-                label: const Text('Capture Photo'),
                 onPressed: () async => _takePhoto(
                   widget.title,
                   (capturedPhoto) async {

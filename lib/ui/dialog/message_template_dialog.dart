@@ -12,6 +12,7 @@ import '../../entity/supplier.dart';
 import '../../ui/widgets/async_state.dart';
 import '../../util/local_date.dart';
 import '../../util/local_time.dart';
+import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'message_placeholders/place_holder.dart';
@@ -261,12 +262,12 @@ class _MessageTemplateDialogState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(
+              HMBButton(
+                label: 'Cancel',
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
               ),
-              TextButton(
-                child: const Text('Select'),
+              HMBButton(
+                label: 'Select',
                 onPressed: () async {
                   if (_selectedTemplate != null) {
                     final values = <String, String>{};
