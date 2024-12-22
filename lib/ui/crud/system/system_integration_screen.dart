@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../util/app_title.dart';
@@ -56,7 +57,7 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
       await DaoSystem().update(system);
 
       if (mounted) {
-        Navigator.of(context).pop();
+        context.go('/jobs');
       }
     } else {
       HMBToast.error('Fix the errors and try again.');

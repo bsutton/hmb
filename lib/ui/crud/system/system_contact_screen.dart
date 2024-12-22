@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_number/mobile_number.dart';
 
 import '../../../dao/dao_system.dart';
@@ -100,7 +101,7 @@ class _SystemContactInformationScreenState
       await DaoSystem().update(system);
 
       if (mounted) {
-        Navigator.of(context).pop();
+        context.go('/jobs');
       }
     } else {
       HMBToast.error('Fix the errors and try again.');

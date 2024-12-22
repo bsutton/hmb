@@ -5,6 +5,7 @@ import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart'; // Import color picker
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' hide context;
 import 'package:path_provider/path_provider.dart';
@@ -118,7 +119,7 @@ class _SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
       await DaoSystem().update(system);
 
       if (mounted) {
-        Navigator.of(context).pop();
+        context.go('/jobs');
       }
     } else {
       HMBToast.error('Fix the errors and try again.');

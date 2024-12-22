@@ -1,6 +1,7 @@
 import 'package:country_code/country_code.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_number/mobile_number.dart';
 
 import '../../../dao/dao_system.dart';
@@ -159,7 +160,7 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
       await DaoSystem().update(widget.system);
 
       if (mounted) {
-        Navigator.of(context).pop();
+        context.go('/jobs');
       }
     } else {
       HMBToast.error('Fixed the errors and try again.');
