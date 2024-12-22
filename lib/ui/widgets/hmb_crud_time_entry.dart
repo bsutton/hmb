@@ -47,9 +47,7 @@ class HBMCrudTimeEntryState extends State<HBMCrudTimeEntry> {
   @override
   Widget build(BuildContext context) => Column(
         children: [
-          HMBStartTimeEntry(
-            task: widget.parent.parent,
-          ),
+          HMBStartTimeEntry(task: widget.parent.parent, onStart: (job) {}),
 
           HMBChildCrudCard(
               headline: 'Time Entries',

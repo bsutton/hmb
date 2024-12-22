@@ -9,6 +9,7 @@ import '../entity/job_status_enum.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';
 import 'dao_invoice.dart';
+import 'dao_job_status.dart';
 import 'dao_quote.dart';
 import 'dao_system.dart';
 import 'dao_task.dart';
@@ -62,7 +63,7 @@ class DaoJob extends Dao<Job> {
     return data.isNotEmpty ? fromMap(data.first) : null;
   }
 
-  Future<void> markActive(int jobId) async {
+  Future<Job> markActive(int jobId) async {
     final lastActive = await getLastActiveJob();
     if (lastActive != null) {
       if (lastActive.id != jobId) {
@@ -74,9 +75,18 @@ class DaoJob extends Dao<Job> {
 
     /// even if the job is active we want to update the last
     /// modified date so it comes up first in the job list.
-    job?.lastActive = true;
-    job?.modifiedDate = DateTime.now();
-    await update(job!);
+    job!.lastActive = true;
+    job.modifiedDate = DateTime.now();
+
+    final jobStatus = await DaoJobStatus().getById(job.jobStatusId);
+    if (jobStatus!.statusEnum == JobStatusEnum.preStart) {
+      final inProgress = await DaoJobStatus().getInProgress();
+
+      job.jobStatusId = inProgress!.id;
+    }
+    await update(job);
+
+    return job;
   }
 
   /// search for jobs given a user supplied filter string.

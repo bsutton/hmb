@@ -6,20 +6,22 @@ import 'package:june/june.dart';
 import '../../dao/dao_job.dart';
 import '../../dao/dao_task.dart';
 import '../../dao/dao_time_entry.dart';
+import '../../entity/job.dart';
 import '../../entity/task.dart';
 import '../../entity/time_entry.dart';
 import '../../util/format.dart';
 import '../dialog/start_timer_dialog.dart';
 import '../dialog/stop_timer_dialog.dart';
 
-
 class HMBStartTimeEntry extends StatefulWidget {
   const HMBStartTimeEntry({
     required this.task,
+    required this.onStart,
     super.key,
   });
 
   final Task? task;
+  final void Function(Job job) onStart;
 
   @override
   State<StatefulWidget> createState() => HMBStartTimeEntryState();
@@ -274,10 +276,12 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
 
       /// If we are running a time for a job then it must
       /// be the active job.
-      await DaoJob().markActive(task.jobId);
+      final job = await DaoJob().markActive(task.jobId);
       _startTimer(newTimeEntry);
       June.getState<TimeEntryState>(TimeEntryState.new)
           .setActiveTimeEntry(newTimeEntry, widget.task);
+
+      widget.onStart(job);
     }
   }
 

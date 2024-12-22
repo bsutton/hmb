@@ -14,6 +14,7 @@ import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../base_nested/list_nested_screen.dart';
+import '../job/edit_job_screen.dart';
 import 'edit_task_screen.dart';
 
 class TaskListScreen extends StatefulWidget {
@@ -127,7 +128,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
               ],
             ),
           ),
-          HMBStartTimeEntry(task: task)
+          HMBStartTimeEntry(
+              task: task,
+              onStart: (job) {
+                June.getState(SelectJobStatus.new)
+                  ..jobStatusId = job.jobStatusId
+                  ..setState();
+              })
         ],
       );
 
@@ -150,7 +157,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
               future: _getPhotoCount(task.id),
               builder: (context, photoCount) =>
                   Text('Photos: ${photoCount ?? 0}')), // Display photo count
-          HMBStartTimeEntry(task: task)
+          HMBStartTimeEntry(
+              task: task,
+              onStart: (job) {
+                June.getState(SelectJobStatus.new)
+                  ..jobStatusId = job.jobStatusId
+                  ..setState();
+              })
         ],
       );
 

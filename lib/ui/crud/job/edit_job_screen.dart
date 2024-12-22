@@ -238,15 +238,16 @@ class _JobEditScreenState extends State<JobEditScreen>
         }),
       );
 
-  Widget _chooseStatus(Job? job) => HMBDroplist<JobStatus>(
-      title: 'Status',
-      items: (filter) async =>
-          DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
-      selectedItem: () async => DaoJobStatus().getById(
-          job?.jobStatusId ?? June.getState(SelectJobStatus.new).jobStatusId),
-      onChanged: (status) =>
-          June.getState(SelectJobStatus.new).jobStatusId = status?.id,
-      format: (value) => value.name);
+  Widget _chooseStatus(Job? job) =>
+      JuneBuilder(() => SelectJobStatus()..jobStatusId = job?.jobStatusId,
+          builder: (jobStatus) => HMBDroplist<JobStatus>(
+              title: 'Status',
+              items: (filter) async =>
+                  DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
+              selectedItem: () async =>
+                  DaoJobStatus().getById(jobStatus.jobStatusId),
+              onChanged: (status) => jobStatus.jobStatusId = status?.id,
+              format: (value) => value.name));
 
   Widget _chooseDate() => Padding(
         padding: const EdgeInsets.all(8),
@@ -318,7 +319,7 @@ class _JobEditScreenState extends State<JobEditScreen>
   }
 }
 
-class SelectJobStatus {
+class SelectJobStatus extends JuneState {
   SelectJobStatus();
 
   int? jobStatusId;
