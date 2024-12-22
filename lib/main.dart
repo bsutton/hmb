@@ -25,11 +25,12 @@ import 'ui/widgets/blocking_ui.dart';
 import 'ui/widgets/hmb_start_time_entry.dart';
 import 'ui/widgets/hmb_toast.dart';
 import 'ui/widgets/media/desktop_camera_delegate.dart';
+import 'util/hmb_theme.dart';
 import 'util/log.dart';
 
 bool firstRun = false;
 
-void main(List<String> args) async {
+Future<void> main(List<String> args) async {
   Log.configure('.');
 
   // Ensure WidgetsFlutterBinding is initialized before any async code.
@@ -48,42 +49,68 @@ void main(List<String> args) async {
         ..profilesSampleRate = 1.0;
     },
     appRunner: () {
+      // Perform camera and deeplink init
       initCamera();
       initAppLinks();
 
+      // BlockingUIRunner key
       final blockingUIKey = GlobalKey();
 
-      runApp(ToastificationWrapper(
-        child: MaterialApp(
-          home: Column(
-            children: [
-              Expanded(
-                child: Builder(
-                  builder: (context) => JuneBuilder(
-                    TimeEntryState.new,
-                    builder: (_) => BlockingUIRunner(
-                        key: blockingUIKey,
-                        slowAction: () => _initialise(context),
-                        label: 'Upgrading your database.',
-                        builder: (context) => MaterialApp.router(
-                              theme: ThemeData(
-                                primarySwatch: Colors.blue,
-                                visualDensity:
-                                    VisualDensity.adaptivePlatformDensity,
-                              ),
-                              routerConfig: router,
-                            )),
+      runApp(
+        ToastificationWrapper(
+          child: MaterialApp.router(
+            theme: theme,
+            routerConfig: router,
+
+            // 1) Use `builder` to place your custom logic (BlockingUIRunner).
+            // 2) `child` is the routed screen from routerConfig.
+            builder: (context, child) => Stack(
+              children: [
+                // The main content, wrapped by your blocking logic:
+                JuneBuilder(
+                  TimeEntryState.new,
+                  builder: (_) => BlockingUIRunner(
+                    key: blockingUIKey,
+                    slowAction: () => _initialise(context),
+                    label: 'Upgrading your database.',
+                    builder: (context) => child ?? const SizedBox.shrink(),
                   ),
                 ),
-              ),
-              const BlockingOverlay(),
-            ],
+
+                // The overlay
+                const BlockingOverlay(),
+              ],
+            ),
           ),
         ),
-      ));
+      );
     },
   );
 }
+
+ThemeData get theme => ThemeData(
+      primaryColor: Colors.deepPurple,
+      brightness:
+          Brightness.dark, // This sets the overall theme brightness to dark
+      scaffoldBackgroundColor: HMBColors.defaultBackground,
+      buttonTheme: const ButtonThemeData(
+        buttonColor: Colors.deepPurple,
+        textTheme: ButtonTextTheme.primary,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        actionTextColor: HMBColors.accent,
+        backgroundColor: Colors.grey.shade800,
+        contentTextStyle: const TextStyle(color: Colors.white),
+      ),
+      colorScheme: ColorScheme.fromSwatch(
+        primarySwatch: Colors.deepPurple,
+        brightness:
+            Brightness.dark, // Add this line to match ThemeData brightness
+      )
+          .copyWith(secondary: HMBColors.accent)
+          .copyWith(surface: HMBColors.defaultBackground),
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+    );
 
 void initCamera() {
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
