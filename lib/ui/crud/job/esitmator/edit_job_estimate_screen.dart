@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
+import 'package:strings/strings.dart';
 
 import '../../../../dao/dao_task.dart';
 import '../../../../dao/dao_task_item.dart';
@@ -11,6 +12,7 @@ import '../../../../entity/task_item_type.dart';
 import '../../../../util/money_ex.dart';
 import '../../../widgets/async_state.dart';
 import '../../../widgets/hmb_button.dart';
+import '../../../widgets/hmb_search.dart';
 import '../../../widgets/media/photo_gallery.dart';
 import '../../../widgets/text/hmb_text_themes.dart';
 import '../../check_list/edit_task_item_screen.dart';
@@ -34,6 +36,8 @@ class _JobEstimateBuilderScreenState
   Money _totalMaterialsCost = MoneyEx.zero;
   Money _totalCombinedCost = MoneyEx.zero;
 
+  String filter = '';
+
   @override
   Future<void> asyncInitState() async {
     await _loadTasks();
@@ -44,6 +48,21 @@ class _JobEstimateBuilderScreenState
     _tasks = tasks;
     await _calculateTotals();
     setState(() {});
+  }
+
+  List<Task> filteredTasks() {
+    final filtered = <Task>[];
+
+    if (Strings.isBlank(filter)) {
+      return _tasks;
+    }
+    for (final task in _tasks) {
+      if (task.name.toLowerCase().contains(filter) ||
+          task.description.toLowerCase().contains(filter)) {
+        filtered.add(task);
+      }
+    }
+    return filtered;
   }
 
   Future<void> _calculateTotals() async {
@@ -115,29 +134,36 @@ class _JobEstimateBuilderScreenState
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
       future: initialised,
-      builder: (context, _) => Scaffold(
-            appBar: AppBar(
-              title: const Text('Estimate Builder'),
-            ),
-            body: Column(
-              children: [
-                _buildTotals(),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _tasks.length,
-                    itemBuilder: (context, index) {
-                      final task = _tasks[index];
-                      return _buildTaskCard(task);
-                    },
-                  ),
+      builder: (context, _) {
+        final tasks = filteredTasks();
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Estimate Builder'),
+          ),
+          body: Column(
+            children: [
+              _buildTotals(),
+              HMBSearch(
+                  onChanged: (filter) async => setState(() {
+                        this.filter = filter ?? '';
+                      })),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: tasks.length,
+                  itemBuilder: (context, index) {
+                    final task = tasks[index];
+                    return _buildTaskCard(task);
+                  },
                 ),
-              ],
-            ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: _addNewTask,
-              child: const Icon(Icons.add),
-            ),
-          ));
+              ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: _addNewTask,
+            child: const Icon(Icons.add),
+          ),
+        );
+      });
 
   Widget _buildTotals() => Card(
         margin: const EdgeInsets.all(8),
@@ -161,13 +187,16 @@ class _JobEstimateBuilderScreenState
               title: HMBTextHeadline(task.name),
               subtitle: HMBTextHeadline3(task.description),
               trailing: IconButton(
-                icon: const Icon(Icons.delete),
+                icon: const Icon(
+                  Icons.delete,
+                  color: Colors.red,
+                ),
                 onPressed: () async => _deleteTask(task),
               ),
               onTap: () async => _editTask(task),
             ),
-            _buildTaskItems(task),
             PhotoGallery.forTask(task: task),
+            _buildTaskItems(task),
             HMBButton(
               label: 'Add Item',
               onPressed: () async => _addItemToTask(task),
@@ -192,7 +221,10 @@ class _JobEstimateBuilderScreenState
         title: Text(item.description),
         subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
         trailing: IconButton(
-          icon: const Icon(Icons.delete),
+          icon: const Icon(
+            Icons.delete,
+            color: Colors.red,
+          ),
           onPressed: () async => _deleteItem(item),
         ),
         onTap: () async => _editItem(item, task),
