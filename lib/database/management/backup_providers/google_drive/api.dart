@@ -47,11 +47,11 @@ class GoogleDriveAuth {
 }
 
 class GoogleDriveApi {
-  GoogleDriveApi._GoogleDriveApi(this._authHeaders);
+  GoogleDriveApi._internal(this._authHeaders);
 
   static Future<GoogleDriveApi> fromHeaders(
       Map<String, String> authHeaders) async {
-    final api = GoogleDriveApi._GoogleDriveApi(authHeaders);
+    final api = GoogleDriveApi._internal(authHeaders);
     await api.init();
     return api;
   }
