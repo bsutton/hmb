@@ -10,6 +10,8 @@ import '../../../../util/money_ex.dart';
 import '../../../invoicing/dialog_select_tasks.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_toast.dart';
+import '../../../widgets/surface.dart';
+import '../../../widgets/text/hmb_text_themes.dart';
 import 'edit_job_estimate_screen.dart';
 
 class JobCard extends StatefulWidget {
@@ -38,58 +40,55 @@ class _JobCardState extends State<JobCard> {
             final materialsCost = info.totals.materialsCost;
             final combinedCost = labourCost + materialsCost;
 
-            return Card(
-              margin: const EdgeInsets.all(8),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.job.summary,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+            return Surface(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.job.summary,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  HMBTextLine('Customer: ${info.customerName}'),
+                  HMBTextLine('Job Number: ${widget.job.id}'),
+                  if (info.quoteNumber != null)
+                    HMBTextLine('Quote #: ${info.quoteNumber}'),
+                  HMBTextLine('Status: ${info.statusName}'),
+                  const SizedBox(height: 16),
+                  HMBTextLine('Labour: $labourCost'),
+                  HMBTextLine('Materials: $materialsCost'),
+                  HMBTextLine('Combined: $combinedCost'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      HMBButton(
+                        label: 'Update Estimates',
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (context) =>
+                                  JobEstimateBuilderScreen(job: widget.job),
+                            ),
+                          );
+                          // After returning, refresh totals
+                          widget.onEstimatesUpdated();
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text('Customer: ${info.customerName}'),
-                    Text('Job Number: ${widget.job.id}'),
-                    if (info.quoteNumber != null)
-                      Text('Quote #: ${info.quoteNumber}'),
-                    Text('Status: ${info.statusName}'),
-                    const SizedBox(height: 16),
-                    Text('Labour: $labourCost'),
-                    Text('Materials: $materialsCost'),
-                    Text('Combined: $combinedCost'),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        HMBButton(
-                          label: 'Update Estimates',
-                          onPressed: () async {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (context) =>
-                                    JobEstimateBuilderScreen(job: widget.job),
-                              ),
-                            );
-                            // After returning, refresh totals
-                            widget.onEstimatesUpdated();
-                          },
-                        ),
-                        const SizedBox(width: 16),
-                        HMBButton(
-                          label: 'Create Quote',
-                          onPressed: () async {
-                            await _createQuote();
-                            widget.onEstimatesUpdated();
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 16),
+                      HMBButton(
+                        label: 'Create Quote',
+                        onPressed: () async {
+                          await _createQuote();
+                          widget.onEstimatesUpdated();
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             );
           },
