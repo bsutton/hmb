@@ -11,6 +11,22 @@ class DaoJobStatus extends Dao<JobStatus> {
   JobStatus fromMap(Map<String, dynamic> map) => JobStatus.fromMap(map);
   @override
   JuneStateCreator get juneRefresher => JobStatusState.new;
+
+  Future<JobStatus?> getByName(String name) async {
+    final data = await db.query(
+      'job_status', // Table name
+      where: 'name = ?', // SQL WHERE clause
+      whereArgs: [name], // Arguments for the WHERE clause
+    );
+
+    if (data.isEmpty) {
+      return null; // Return null if no job status is found
+    }
+
+    return JobStatus.fromMap(data.first); // Convert the first row to JobStatus
+  }
+
+  Future<JobStatus?> getInProgress() async => getByName('In Progress');
 }
 
 /// Used to notify the UI that the time entry has changed.
