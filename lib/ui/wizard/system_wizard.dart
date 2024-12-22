@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../util/app_title.dart';
+import '../widgets/hmb_button.dart';
 import 'billing_page.dart';
 import 'business_page.dart';
 import 'contact_page.dart';
@@ -23,18 +25,22 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
     setAppTitle('HMB Setup Wizard');
   }
 
-  void _nextStep() {
+  Future<void> _nextStep() async {
     if (_currentStep < 3) {
       setState(() {
         _currentStep++;
       });
     } else {
-      Navigator.of(context).pop(); // Finish wizard
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(); // Finish wizard
+      } else {
+        context.go('/jobs');
+      }
     }
   }
 
-  void _skipStep() {
-    _nextStep();
+  Future<void> _skipStep() async {
+    await _nextStep();
   }
 
   @override
@@ -50,10 +56,9 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         actions: [
-          TextButton(
+          HMBButton(
+            label: 'Skip All',
             onPressed: _skipStep,
-            child:
-                const Text('Skip All', style: TextStyle(color: Colors.black)),
           ),
         ],
       ),
