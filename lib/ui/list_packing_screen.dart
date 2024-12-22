@@ -149,6 +149,7 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
                         await _loadTaskItems();
                       },
                       title: 'Filter by Jobs',
+                      backgroundColor: SurfaceElevation.e4.color,
                       required: false,
                     ),
                   ],

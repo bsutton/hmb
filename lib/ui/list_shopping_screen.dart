@@ -188,6 +188,7 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
                         await _loadTaskItems();
                       },
                       title: 'Filter by Jobs',
+                      backgroundColor: SurfaceElevation.e6.color,
                       required: false,
                     ),
                     const SizedBox(height: 10),

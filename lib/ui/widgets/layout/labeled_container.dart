@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../../util/hmb_theme.dart';
-
 class LabeledContainer extends StatelessWidget {
   const LabeledContainer({
     required this.labelText,
     required this.child,
+    required this.backgroundColor,
     this.isError = false,
     super.key,
   });
   final String labelText;
   final Widget child;
   final bool isError;
+  final Color backgroundColor;
 
   @override
   Widget build(BuildContext context) => Stack(
@@ -38,7 +38,7 @@ class LabeledContainer extends StatelessWidget {
             left: 10,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4),
-              color: HMBColors.surface4dp,
+              color: backgroundColor,
               child: Text(
                 labelText,
                 style: TextStyle(

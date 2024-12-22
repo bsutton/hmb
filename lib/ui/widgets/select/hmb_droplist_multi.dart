@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../util/hmb_theme.dart';
 import '../layout/hmb_placeholder.dart';
 import '../layout/labeled_container.dart';
+import '../surface.dart';
 import 'hmb_droplist_multi_dialog.dart';
 
 class HMBDroplistMultiSelect<T> extends FormField<List<T>> {
@@ -14,6 +15,7 @@ class HMBDroplistMultiSelect<T> extends FormField<List<T>> {
     required String Function(T) format,
     required void Function(List<T>) onChanged,
     required String title,
+    Color? backgroundColor,
     super.onSaved,
     super.initialValue,
     bool required = true,
@@ -28,6 +30,7 @@ class HMBDroplistMultiSelect<T> extends FormField<List<T>> {
             format: format,
             onChanged: onChanged,
             title: title,
+            backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
           ),
           validator: (value) {
             if (required && (value == null || value.isEmpty)) {
@@ -41,15 +44,15 @@ class HMBDroplistMultiSelect<T> extends FormField<List<T>> {
 }
 
 class _HMBDroplistMultiSelect<T> extends StatefulWidget {
-  const _HMBDroplistMultiSelect({
-    required this.state,
-    required this.initialItems,
-    required this.items,
-    required this.format,
-    required this.onChanged,
-    required this.title,
-    required super.key,
-  });
+  const _HMBDroplistMultiSelect(
+      {required this.state,
+      required this.initialItems,
+      required this.items,
+      required this.format,
+      required this.onChanged,
+      required this.title,
+      required super.key,
+      required this.backgroundColor});
 
   final FormFieldState<List<T>> state;
   final Future<List<T>> Function() initialItems;
@@ -57,6 +60,7 @@ class _HMBDroplistMultiSelect<T> extends StatefulWidget {
   final String Function(T) format;
   final void Function(List<T>) onChanged;
   final String title;
+  final Color backgroundColor;
 
   @override
   _HMBDroplistMultiSelectState<T> createState() =>
@@ -118,6 +122,7 @@ class _HMBDroplistMultiSelectState<T>
             LabeledContainer(
               labelText: widget.title,
               isError: widget.state.hasError,
+              backgroundColor: widget.backgroundColor,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

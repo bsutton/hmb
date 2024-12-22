@@ -203,7 +203,6 @@ Future<String?> _generateThumbnail(ThumbnailPaths paths) async {
 
   final thumbnail = img.copyResize(image, width: 80, height: 80);
   File(paths.target).writeAsBytesSync(img.encodeJpg(thumbnail));
-  print('completed thumbnail: ${paths.source}');
   return paths.target;
 }
 

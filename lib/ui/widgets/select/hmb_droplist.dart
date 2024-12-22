@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
 import '../layout/labeled_container.dart';
+import '../surface.dart';
 import 'hmb_droplist_dialog.dart';
 
 class HMBDroplist<T> extends FormField<T> {
@@ -14,6 +15,7 @@ class HMBDroplist<T> extends FormField<T> {
     required String Function(T) format,
     required void Function(T?) onChanged,
     required String title,
+    Color? backgroundColor,
     super.onSaved,
     super.initialValue,
     bool required = true,
@@ -27,6 +29,7 @@ class HMBDroplist<T> extends FormField<T> {
             format: format,
             onChanged: onChanged,
             title: title,
+            backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
             required: required,
           ),
           validator: (value) {
@@ -46,6 +49,7 @@ class _HMBDroplist<T> extends StatefulWidget {
     required this.format,
     required this.onChanged,
     required this.title,
+    required this.backgroundColor,
     required this.required,
     super.key,
   });
@@ -56,6 +60,7 @@ class _HMBDroplist<T> extends StatefulWidget {
   final String Function(T) format;
   final void Function(T?) onChanged;
   final String title;
+  final Color backgroundColor;
   final bool required;
 
   @override
@@ -124,6 +129,7 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
           children: [
             LabeledContainer(
               labelText: widget.title,
+              backgroundColor: widget.backgroundColor,
               isError: widget.state.hasError,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
