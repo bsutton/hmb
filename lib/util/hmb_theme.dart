@@ -95,14 +95,16 @@ class HMBColors {
 
   /// colors are based on:
   /// https://material.io/design/color/dark-theme.html#ui-application
-  static const Color surface0dp = Color(0xFF121212);
-  static const Color surface1dp = Color(0xFF1d1d1d);
-  static const Color surface2dp = Color(0xFF222222);
-  static const Color surface3dp = Color(0xFF242424);
-  static const Color surface4dp = Color(0xFF272727);
-  static const Color surface6dp = Color(0xFF2c2c2c);
-  static const Color surface8dp = Color(0xFF2d2d2d);
-  static const Color surface12dp = Color(0xFF323232);
-  static const Color surface16dp = Color(0xFF353535);
-  static const Color surface24dp = Color(0xFF373737);
+
+  static const Color surface0dp = Color(0xFF000000); // Pure black
+  static const Color surface1dp = Color(0xFF121212);
+  static const Color surface2dp = Color(0xFF1d1d1d);
+  static const Color surface3dp = Color(0xFF222222);
+  static const Color surface4dp = Color(0xFF242424);
+  static const Color surface6dp = Color(0xFF272727);
+  static const Color surface8dp = Color(0xFF2c2c2c);
+  static const Color surface12dp = Color(0xFF2d2d2d);
+  static const Color surface16dp = Color(0xFF323232);
+  static const Color surface24dp = Color(0xFF353535);
+  static const Color surface32dp = Color(0xFF373737);
 }
