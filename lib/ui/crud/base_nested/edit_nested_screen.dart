@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
 import '../../widgets/hmb_button.dart';
+import '../../widgets/layout/hmb_spacer.dart';
 
 abstract class NestedEntityState<E extends Entity<E>> {
   Future<E> forInsert();
@@ -14,7 +15,7 @@ abstract class NestedEntityState<E extends Entity<E>> {
 class NestedEntityEditScreen<C extends Entity<C>, P extends Entity<P>>
     extends StatefulWidget {
   const NestedEntityEditScreen({
-        required this.editor,
+    required this.editor,
     required this.onInsert,
     required this.entityName,
     required this.entityState,
@@ -82,10 +83,10 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
           onPressed: _save,
           label: 'Save',
         ),
+        const HMBSpacer(width: true),
         HMBButton(
             label: 'Save & Close', onPressed: () async => _save(close: true)),
-        const SizedBox(width: 5),
-        const SizedBox(width: 5),
+        const HMBSpacer(width: true),
         HMBButton(
           onPressed: () => Navigator.of(context).pop(),
           label: 'Cancel',

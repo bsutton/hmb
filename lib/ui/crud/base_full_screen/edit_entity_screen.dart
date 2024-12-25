@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
 import '../../widgets/hmb_button.dart';
+import '../../widgets/layout/hmb_spacer.dart';
 
 abstract class EntityState<E extends Entity<E>> {
   Future<E> forInsert();
@@ -23,7 +24,7 @@ class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
   final String entityName;
   final Dao<E> dao;
 
-  final Widget Function(E? entity, {required bool isNew }) editor;
+  final Widget Function(E? entity, {required bool isNew}) editor;
   final EntityState<E> entityState;
 
   @override
@@ -76,12 +77,12 @@ class EntityEditScreenState<E extends Entity<E>>
               onPressed: _save,
               label: 'Save',
             ),
-            const SizedBox(width: 5),
+            const HMBSpacer(width: true),
             HMBButton(
               label: 'Save & Close',
               onPressed: () async => _save(close: true),
             ),
-            const SizedBox(width: 5),
+            const HMBSpacer(width: true),
             HMBButton(
               onPressed: () => Navigator.of(context).pop(),
               label: 'Cancel',
