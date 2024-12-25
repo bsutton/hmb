@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 
@@ -86,14 +88,18 @@ ${widget.system.businessNumberLabel}: ${widget.system.businessNumber}
         ),
         actions: <Widget>[
           HMBButton(
-            label:'Cancel',
+            label: 'Cancel',
             onPressed: () {
               Navigator.of(context).pop(false);
             },
           ),
           HMBButton(
-            label:'Send...',
+            label: 'Send...',
             onPressed: () async {
+              if (!(Platform.isAndroid && Platform.isIOS)) {
+                HMBToast.error('This platform does not support sending emails');
+                return;
+              }
               if (_selectedRecipient != null) {
                 final email = Email(
                   body: _bodyController.text,
