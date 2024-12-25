@@ -255,7 +255,7 @@ WHERE ti.id = ?
     await DaoTimeEntry().deleteByTask(id, transaction);
     await DaoTaskItem().deleteByTask(id, transaction);
     await deleteTaskPhotos(id, transaction: transaction);
-    await delete(id);
+    await super.delete(id);
     return id;
   }
 
