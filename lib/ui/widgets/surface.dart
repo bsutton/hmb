@@ -34,14 +34,17 @@ class Surface extends StatelessWidget {
     required this.child,
     this.elevation = SurfaceElevation.e4,
     this.padding = const EdgeInsets.all(HMBTheme.padding),
+    this.margin = EdgeInsets.zero,
     super.key,
   });
   final Widget child;
   final SurfaceElevation elevation;
   final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
   @override
-  Widget build(BuildContext context) =>
-      Container(color: elevation.color, padding: padding, child: child);
+  Widget build(BuildContext context) => Container(
+      padding: margin,
+      child: Container(color: elevation.color, padding: padding, child: child));
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
