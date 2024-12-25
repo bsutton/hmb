@@ -24,7 +24,7 @@ class HMBStatusBar extends StatelessWidget {
       return Container();
     }
     return ColoredBox(
-      color: Colors.blueAccent,
+      color: Colors.purpleAccent,
       child: Row(
         children: [
           HMBStartTimeEntry(task: task, onStart: (_) => {}),

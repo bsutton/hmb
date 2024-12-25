@@ -13,7 +13,7 @@ class HomeWithDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-            backgroundColor: Colors.blue,
+            backgroundColor: Colors.purple,
             title: JuneBuilder(
               HMBTitle.new,
               builder: (title) => Text(title.title),
