@@ -9,11 +9,14 @@ import '../../../../entity/job.dart';
 import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
+import '../../../../util/hmb_theme.dart';
 import '../../../../util/money_ex.dart';
 import '../../../widgets/async_state.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_search.dart';
+import '../../../widgets/layout/hmb_spacer.dart';
 import '../../../widgets/media/photo_gallery.dart';
+import '../../../widgets/surface.dart';
 import '../../../widgets/text/hmb_text_themes.dart';
 import '../../check_list/edit_task_item_screen.dart';
 import '../../check_list/list_task_item_screen.dart';
@@ -125,10 +128,9 @@ class _JobEstimateBuilderScreenState
 
   Future<void> _deleteTask(Task task) async {
     await DaoTask().delete(task.id);
-    setState(() {
-      _tasks.removeWhere((t) => t.id == task.id);
-    });
+    _tasks.removeWhere((t) => t.id == task.id);
     await _calculateTotals();
+    setState(() {});
   }
 
   @override
@@ -142,11 +144,18 @@ class _JobEstimateBuilderScreenState
           ),
           body: Column(
             children: [
-              _buildTotals(),
-              HMBSearch(
-                  onChanged: (filter) async => setState(() {
-                        this.filter = filter ?? '';
-                      })),
+              SizedBox(
+                  height: 160, width: double.infinity, child: _buildTotals()),
+              Surface(
+                elevation: SurfaceElevation.e0,
+                child: HMBSearchWithAdd(
+                    hint: 'Add Task',
+                    onSearch: (filter) async => setState(() {
+                          this.filter = filter ?? '';
+                        }),
+                    onAdd: _addNewTask),
+              ),
+              const HMBSpacer(height: true),
               Expanded(
                 child: ListView.builder(
                   itemCount: tasks.length,
@@ -158,51 +167,53 @@ class _JobEstimateBuilderScreenState
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: _addNewTask,
-            child: const Icon(Icons.add),
-          ),
         );
       });
 
-  Widget _buildTotals() => Card(
-        margin: const EdgeInsets.all(8),
-        child: ListTile(
-          title: const Text('Totals'),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Labour: $_totalLabourCost'),
-              Text('Materials: $_totalMaterialsCost'),
-              Text('Combined: $_totalCombinedCost'),
-            ],
-          ),
+  Widget _buildTotals() => SurfaceCard(
+        elevation: SurfaceElevation.e0,
+        title: 'Totals',
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Labour: $_totalLabourCost'),
+            Text('Materials: $_totalMaterialsCost'),
+            Text('Combined: $_totalCombinedCost'),
+          ],
         ),
       );
 
-  Widget _buildTaskCard(Task task) => Card(
-        child: Column(
-          children: [
-            ListTile(
-              title: HMBTextHeadline(task.name),
-              subtitle: HMBTextHeadline3(task.description),
-              trailing: IconButton(
-                icon: const Icon(
-                  Icons.delete,
-                  color: Colors.red,
+  Widget _buildTaskCard(Task task) => Column(
+        children: [
+          Surface(
+            margin: const EdgeInsets.all(HMBTheme.padding),
+            child: Column(
+              children: [
+                ListTile(
+                  title: HMBTextHeadline3(task.name),
+                  subtitle: HMBTextHeadline3(task.description),
+                  trailing: IconButton(
+                    icon: const Icon(
+                      Icons.delete,
+                      color: Colors.red,
+                    ),
+                    onPressed: () async => _deleteTask(task),
+                  ),
+                  onTap: () async => _editTask(task),
                 ),
-                onPressed: () async => _deleteTask(task),
-              ),
-              onTap: () async => _editTask(task),
+                Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: PhotoGallery.forTask(task: task)),
+                _buildTaskItems(task),
+                HMBButton(
+                  label: 'Add Item',
+                  onPressed: () async => _addItemToTask(task),
+                ),
+              ],
             ),
-            PhotoGallery.forTask(task: task),
-            _buildTaskItems(task),
-            HMBButton(
-              label: 'Add Item',
-              onPressed: () async => _addItemToTask(task),
-            ),
-          ],
-        ),
+          ),
+          const HMBSpacer(height: true),
+        ],
       );
 
   Widget _buildTaskItems(Task task) => FutureBuilderEx<ItemsAndRate>(
