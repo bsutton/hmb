@@ -7,6 +7,8 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:photo_view/photo_view.dart';
 
 import '../../../util/photo_meta.dart';
+import '../layout/hmb_spacer.dart';
+import '../text/hmb_text_themes.dart';
 
 class PhotoCarousel extends StatefulWidget {
   const PhotoCarousel({
@@ -89,111 +91,57 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
                 _handleScroll(event.scrollDelta.dy);
               }
             },
-            child: Stack(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // The PageView displays one photo per page.
-                PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (index) =>
-                      setState(() => _currentIndex = index),
-                  itemCount: widget.photos.length,
-                  itemBuilder: (context, index) {
-                    final photoMeta = widget.photos[index];
-                    return PhotoView(
-                      imageProvider: FileImage(File(photoMeta.absolutePathTo)),
-                      backgroundDecoration:
-                          const BoxDecoration(color: Colors.black),
-                      minScale: PhotoViewComputedScale.contained,
-                      maxScale: PhotoViewComputedScale.covered * 2.0,
-                      initialScale: PhotoViewComputedScale.contained,
-                    );
-                  },
-                ),
-                // Title and optional comment at the top
-                Positioned(
-                  top: 40,
-                  left: 20,
-                  right: 20,
-                  child: Column(
+                _buildTitle(context),
+                Expanded(
+                  child: Stack(
                     children: [
-                      Text(
-                        widget.photos[_currentIndex].title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      if (widget.photos[_currentIndex].comment != null)
-                        Text(
-                          widget.photos[_currentIndex].comment!,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                    ],
-                  ),
-                ),
-                // Copy & Close buttons at the top right
-                Positioned(
-                  top: 40,
-                  right: 20,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.content_copy,
-                            color: Colors.white, size: 30),
-                        onPressed: () async {
-                          try {
-                            await Pasteboard.writeFiles([
-                              widget.photos[_currentIndex].absolutePathTo,
-                            ]);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Image copied to clipboard'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Failed to copy image to clipboard'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          }
+                      // The PageView displays one photo per page.
+                      PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) =>
+                            setState(() => _currentIndex = index),
+                        itemCount: widget.photos.length,
+                        itemBuilder: (context, index) {
+                          final photoMeta = widget.photos[index];
+                          return PhotoView(
+                            imageProvider:
+                                FileImage(File(photoMeta.absolutePathTo)),
+                            backgroundDecoration:
+                                const BoxDecoration(color: Colors.black),
+                            minScale: PhotoViewComputedScale.contained,
+                            maxScale: PhotoViewComputedScale.covered * 2.0,
+                            initialScale: PhotoViewComputedScale.contained,
+                          );
                         },
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close,
-                            color: Colors.white, size: 30),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
-                ),
-                // Previous & Next buttons at the bottom
-                Positioned(
-                  bottom: 40,
-                  left: 20,
-                  right: 20,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      FloatingActionButton(
-                        heroTag: 'previousPhotoBtn',
-                        onPressed: () => _scrollToIndex(_currentIndex - 1),
-                        child: const Icon(Icons.arrow_back),
-                      ),
-                      FloatingActionButton(
-                        heroTag: 'nextPhotoBtn',
-                        onPressed: () => _scrollToIndex(_currentIndex + 1),
-                        child: const Icon(Icons.arrow_forward),
+                      // Title and optional comment
+                      // Give extra space on the right (right: 80) so it doesn't overlap buttons.
+
+                      // Previous & Next FABs at the bottom
+                      Positioned(
+                        bottom: 40,
+                        left: 20,
+                        right: 20,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            FloatingActionButton(
+                              heroTag: 'previousPhotoBtn',
+                              onPressed: () =>
+                                  _scrollToIndex(_currentIndex - 1),
+                              child: const Icon(Icons.arrow_back),
+                            ),
+                            FloatingActionButton(
+                              heroTag: 'nextPhotoBtn',
+                              onPressed: () =>
+                                  _scrollToIndex(_currentIndex + 1),
+                              child: const Icon(Icons.arrow_forward),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -202,5 +150,55 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
             ),
           ),
         ),
+      );
+
+  Column _buildTitle(BuildContext context) => Column(
+        children: [
+          Row(children: [
+            const HMBSpacer(width: true),
+            Expanded(
+              child: HMBTextLine(
+                'Task: ${widget.photos[_currentIndex].title}',
+              ),
+            ),
+            _buildCopyClose(context)
+          ]),
+          HMBTextLine(
+            widget.photos[_currentIndex].comment ?? '',
+          ),
+        ],
+      );
+
+  Row _buildCopyClose(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.content_copy, color: Colors.white, size: 30),
+            onPressed: () async {
+              try {
+                await Pasteboard.writeFiles([
+                  widget.photos[_currentIndex].absolutePathTo,
+                ]);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Image copied to clipboard'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Failed to copy image to clipboard'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white, size: 30),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
       );
 }
