@@ -70,8 +70,8 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
         backgroundColor: Colors.black,
         body: Focus(
           autofocus: true,
-          onKey: (node, event) {
-            if (event is RawKeyDownEvent) {
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent) {
               // Right arrow => next photo
               if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
                 _scrollToIndex(_currentIndex + 1);
@@ -99,24 +99,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
                   child: Stack(
                     children: [
                       // The PageView displays one photo per page.
-                      PageView.builder(
-                        controller: _pageController,
-                        onPageChanged: (index) =>
-                            setState(() => _currentIndex = index),
-                        itemCount: widget.photos.length,
-                        itemBuilder: (context, index) {
-                          final photoMeta = widget.photos[index];
-                          return PhotoView(
-                            imageProvider:
-                                FileImage(File(photoMeta.absolutePathTo)),
-                            backgroundDecoration:
-                                const BoxDecoration(color: Colors.black),
-                            minScale: PhotoViewComputedScale.contained,
-                            maxScale: PhotoViewComputedScale.covered * 2.0,
-                            initialScale: PhotoViewComputedScale.contained,
-                          );
-                        },
-                      ),
+                      _buildPhoto(),
                       // Title and optional comment
                       // Give extra space on the right (right: 80) so it doesn't overlap buttons.
 
@@ -125,23 +108,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
                         bottom: 40,
                         left: 20,
                         right: 20,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            FloatingActionButton(
-                              heroTag: 'previousPhotoBtn',
-                              onPressed: () =>
-                                  _scrollToIndex(_currentIndex - 1),
-                              child: const Icon(Icons.arrow_back),
-                            ),
-                            FloatingActionButton(
-                              heroTag: 'nextPhotoBtn',
-                              onPressed: () =>
-                                  _scrollToIndex(_currentIndex + 1),
-                              child: const Icon(Icons.arrow_forward),
-                            ),
-                          ],
-                        ),
+                        child: _buildNextPrevButtons(),
                       ),
                     ],
                   ),
@@ -150,6 +117,60 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
             ),
           ),
         ),
+      );
+
+  PageView _buildPhoto() => PageView.builder(
+        controller: _pageController,
+        onPageChanged: (index) => setState(() => _currentIndex = index),
+        itemCount: widget.photos.length,
+        itemBuilder: (context, index) {
+          final photoMeta = widget.photos[index];
+          return PhotoView(
+            imageProvider: FileImage(File(photoMeta.absolutePathTo)),
+            backgroundDecoration: const BoxDecoration(color: Colors.black),
+            minScale: PhotoViewComputedScale.contained,
+            maxScale: PhotoViewComputedScale.covered * 2.0,
+            initialScale: PhotoViewComputedScale.contained,
+          );
+        },
+      );
+
+  Row _buildNextPrevButtons() => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Previous button
+          FloatingActionButton(
+            heroTag: 'previousPhotoBtn',
+            onPressed: _currentIndex == 0
+                ? null
+                : () => _scrollToIndex(_currentIndex - 1),
+            backgroundColor:
+                _currentIndex == 0 ? Colors.grey[700] : Colors.purple,
+            child: const Icon(Icons.arrow_back),
+          ),
+
+          // The new count Text, e.g. "2/5"
+          Text(
+            '${_currentIndex + 1}/${widget.photos.length}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          // Next button
+          FloatingActionButton(
+            heroTag: 'nextPhotoBtn',
+            onPressed: _currentIndex == widget.photos.length - 1
+                ? null
+                : () => _scrollToIndex(_currentIndex + 1),
+            backgroundColor: _currentIndex == widget.photos.length - 1
+                ? Colors.grey[700]
+                : Colors.purple,
+            child: const Icon(Icons.arrow_forward),
+          ),
+        ],
       );
 
   Column _buildTitle(BuildContext context) => Column(
