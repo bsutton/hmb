@@ -17,7 +17,7 @@ import '../../../util/compute_manager.dart';
 import '../../../util/exceptions.dart';
 import '../../../util/photo_meta.dart';
 import '../layout/hmb_placeholder.dart';
-import 'full_screen_photo_view.dart';
+import 'photo_carousel.dart';
 
 class PhotoGallery extends StatelessWidget {
   PhotoGallery.forJob({required Job job, super.key}) {
@@ -76,17 +76,34 @@ class PhotoGallery extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () async {
                         if (photoMeta.exists()) {
-                          // Fetch the task for this photo to get
-                          // the task name.
                           if (context.mounted) {
-                            await FullScreenPhotoViewer.show(
-                                context: context,
-                                imagePath: photoMeta.absolutePathTo,
-                                title: photoMeta.title,
-                                comment: photoMeta.comment);
+                            final index = photos.indexOf(photoMeta);
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (context) => PhotoCarousel(
+                                  photos: photos,
+                                  initialIndex: index,
+                                ),
+                              ),
+                            );
                           }
                         }
                       },
+
+                      // onTap: () async {
+                      //   if (photoMeta.exists()) {
+                      //     // Fetch the task for this photo to get
+                      //     // the task name.
+                      //     if (context.mounted) {
+                      //       await FullScreenPhotoViewer.show(
+                      //           context: context,
+                      //           imagePath: photoMeta.absolutePathTo,
+                      //           title: photoMeta.title,
+                      //           comment: photoMeta.comment);
+                      //     }
+                      //   }
+                      // },
                       child: FutureBuilderEx<String?>(
                         // ignore: discarded_futures
                         future: _getThumbnailPath(computeManager, photoMeta),
