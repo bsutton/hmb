@@ -129,6 +129,7 @@ class _JobEditScreenState extends State<JobEditScreen>
                   _chooseBillingType(),
                   _showHourlyRate(),
                   _showBookingFee(),
+                  const HMBSpacer(height: true),
                   SizedBox(
                     height: 300,
                     child: RichEditor(
@@ -136,13 +137,14 @@ class _JobEditScreenState extends State<JobEditScreen>
                         focusNode: _descriptionFocusNode,
                         key: UniqueKey()),
                   ),
+                  // Allow the user to select a contact for the job
+                  _chooseContact(customer, job),
+
+                  // Allow the user to select a site for the job
+                  _chooseSite(customer, job),
                 ]),
 
-                // Allow the user to select a contact for the job
-                _chooseContact(customer, job),
-
-                // Allow the user to select a site for the job
-                _chooseSite(customer, job),
+                const HMBSpacer(height: true),
 
                 // Display task photos
                 if (job != null) PhotoGallery.forJob(job: job),
