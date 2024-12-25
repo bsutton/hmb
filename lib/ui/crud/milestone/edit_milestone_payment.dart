@@ -228,7 +228,7 @@ class _EditMilestonesScreenState
               actions: [
                 HMBButtonAdd(
                   enabled: true,
-                  toolTip: 'Add Milestone',
+                  hint: 'Add Milestone',
                   onPressed: _addMilestone,
                 ),
               ],

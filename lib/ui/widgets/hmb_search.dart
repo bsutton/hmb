@@ -76,15 +76,19 @@ class HMBSearchState extends State<HMBSearch> {
 class HMBSearchWithAdd extends StatelessWidget {
   /// The filter value returned via [onSearch] is
   /// trimmed and converted to lower case.
-  const HMBSearchWithAdd(
-      {required this.onSearch,
-      required this.onAdd,
-      this.controller,
-      super.key});
+  const HMBSearchWithAdd({
+    required this.onSearch,
+    required this.onAdd,
+    this.controller,
+    this.hint = 'Add',
+    super.key,
+  });
 
   final void Function(String? filter) onSearch;
 
   final void Function() onAdd;
+
+  final String? hint;
 
   final HMBSearchController? controller;
 
@@ -99,7 +103,8 @@ class HMBSearchWithAdd extends StatelessWidget {
               controller: controller,
             ),
           ),
-          HMBButtonAdd(onPressed: () async => onAdd(), enabled: true),
+          HMBButtonAdd(
+              onPressed: () async => onAdd(), enabled: true, hint: hint),
         ],
       );
 }
