@@ -71,6 +71,7 @@ class EntityListScreenState<T extends Entity<T>>
         appBar: AppBar(
           backgroundColor: SurfaceElevation.e0.color,
           toolbarHeight: 80,
+          titleSpacing: 0,
           title: Surface(
               elevation: SurfaceElevation.e0,
               child: HMBSearchWithAdd(onSearch: (newValue) async {
@@ -144,7 +145,7 @@ class EntityListScreenState<T extends Entity<T>>
             widget.background?.call(entity) ??
                 Future.value(SurfaceElevation.e6.color),
         builder: (context, color) => Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
             child: GestureDetector(
                 child: Surface(
                   elevation: SurfaceElevation.e6,

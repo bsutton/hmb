@@ -17,6 +17,7 @@ import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/text/hmb_text.dart';
+import '../../widgets/text/hmb_text_block.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import 'list_time_entry.dart';
 
@@ -56,6 +57,7 @@ class _JobCardState extends State<JobCard> {
           // ignore: discarded_futures
           future: DaoCustomer().getById(job.customerId),
           builder: (context, customer) => Surface(
+              padding: EdgeInsets.zero,
               elevation: SurfaceElevation.e6,
               // shape: RoundedRectangleBorder(
               //   borderRadius: BorderRadius.circular(12),
@@ -87,12 +89,9 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
             'Description:',
             bold: true,
           ),
-          HMBText(
-            RichEditor.createParchment(job.description)
-                .toPlainText()
-                .split('\n')
-                .first,
-          ),
+          HMBTextBlock(RichEditor.createParchment(job.description)
+              .toPlainText()
+              .replaceAll('\n\n', '\n')),
           const SizedBox(height: 8),
           PhotoGallery.forJob(job: job),
           const SizedBox(height: 16),

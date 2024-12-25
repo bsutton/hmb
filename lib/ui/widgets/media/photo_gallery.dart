@@ -72,7 +72,7 @@ class PhotoGallery extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           children: photos
               .map((photoMeta) => Padding(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.only(right: 16),
                     child: GestureDetector(
                       onTap: () async {
                         if (photoMeta.exists()) {
