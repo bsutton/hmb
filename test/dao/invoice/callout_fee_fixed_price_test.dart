@@ -1,8 +1,6 @@
 // ignore_for_file: lines_longer_than_80_chars
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hmb/dao/_index.g.dart';
-import 'package:money2/money2.dart';
 
 import '../../database/management/db_utility_test.dart';
 
@@ -94,8 +92,8 @@ void main() {
   });
 }
 
-Future<void> _setSystemBookingFee(Money amount) async {
-  final system = await DaoSystem().get();
-  system!.defaultBookingFee = amount;
-  await DaoSystem().update(system);
-}
+// Future<void> _setSystemBookingFee(Money amount) async {
+//   final system = await DaoSystem().get();
+//   system!.defaultBookingFee = amount;
+//   await DaoSystem().update(system);
+// }

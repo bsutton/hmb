@@ -11,6 +11,7 @@ import '../../../dao/dao_photo.dart';
 import '../../../entity/entity.dart';
 import '../../../entity/photo.dart';
 import '../../../util/photo_meta.dart';
+import '../../widgets/color_ex.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/media/full_screen_photo_view.dart';
 import '../../widgets/media/photo_controller.dart';
@@ -128,7 +129,7 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
                     }
                   },
                   child: Container(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withSafeOpacity(0.5),
                     padding: const EdgeInsets.all(8),
                     child: const Icon(
                       Icons.fullscreen,

@@ -1,14 +1,13 @@
 import 'package:country_code/country_code.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_number/mobile_number.dart';
+
+// import 'package:mobile_number/mobile_number.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
 import '../../../util/money_ex.dart';
 import '../../../util/platform_ex.dart';
-import '../../../util/sim_cards.dart';
 import '../../dialog/message_template_dialog.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_money_editing_controller.dart';
@@ -16,7 +15,6 @@ import '../../widgets/fields/hmb_money_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
-import '../../widgets/select/hmb_droplist.dart';
 
 class SystemEditScreen extends StatefulWidget {
   const SystemEditScreen({required this.system, super.key});
@@ -279,31 +277,31 @@ class _SystemEditScreenState extends State<SystemEditScreen> {
                   controller: _businessNumberLabelController,
                   labelText: 'Business Number Label',
                 ),
-                FutureBuilderEx(
-                  // ignore: discarded_futures
-                  future: getSimCards(),
-                  builder: (context, cards) {
-                    if (cards == null || cards.isEmpty) {
-                      return const Text('No sim cards found');
-                    } else {
-                      return HMBDroplist<SimCard>(
-                        title: 'Sim Card',
-                        selectedItem: () async {
-                          final cards = await getSimCards();
-                          if (cards.isNotEmpty) {
-                            return cards[widget.system.simCardNo ?? 0];
-                          } else {
-                            return null;
-                          }
-                        },
-                        items: (filter) async => getSimCards(),
-                        format: (card) => card.displayName ?? 'Unnamed',
-                        onChanged: (card) =>
-                            widget.system.simCardNo = card?.slotIndex,
-                      );
-                    }
-                  },
-                ),
+                // FutureBuilderEx(
+                //   // ignore: discarded_futures
+                //   future: getSimCards(),
+                //   builder: (context, cards) {
+                //     if (cards == null || cards.isEmpty) {
+                //       return const Text('No sim cards found');
+                //     } else {
+                //       return HMBDroplist<SimCard>(
+                //         title: 'Sim Card',
+                //         selectedItem: () async {
+                //           final cards = await getSimCards();
+                //           if (cards.isNotEmpty) {
+                //             return cards[widget.system.simCardNo ?? 0];
+                //           } else {
+                //             return null;
+                //           }
+                //         },
+                //         items: (filter) async => getSimCards(),
+                //         format: (card) => card.displayName ?? 'Unnamed',
+                //         onChanged: (card) =>
+                //             widget.system.simCardNo = card?.slotIndex,
+                //       );
+                //     }
+                //   },
+                // ),
                 DropdownButtonFormField<String>(
                   value: _selectedCountryCode,
                   decoration: const InputDecoration(labelText: 'Country Code'),

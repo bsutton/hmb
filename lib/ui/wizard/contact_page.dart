@@ -1,19 +1,18 @@
 import 'package:country_code/country_code.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:mobile_number/mobile_number.dart';
+
+// import 'package:mobile_number/mobile_number.dart';
 
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/platform_ex.dart';
-import '../../util/sim_cards.dart';
 import '../dialog/message_template_dialog.dart';
 import '../widgets/fields/hmb_email_field.dart';
 import '../widgets/fields/hmb_phone_field.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
-import '../widgets/select/hmb_droplist.dart';
 
 class WizardContactPage extends StatefulWidget {
   const WizardContactPage({required this.onNext, super.key});
@@ -221,31 +220,31 @@ class _WizardContactPageState extends State<WizardContactPage> {
                             return null;
                           },
                         ),
-                        FutureBuilderEx(
-                          // ignore: discarded_futures
-                          future: getSimCards(),
-                          builder: (context, cards) {
-                            if (cards == null || cards.isEmpty) {
-                              return const Text('No sim cards found');
-                            } else {
-                              return HMBDroplist<SimCard>(
-                                title: 'Sim Card',
-                                selectedItem: () async {
-                                  final cards = await getSimCards();
-                                  if (cards.isNotEmpty) {
-                                    return cards[system.simCardNo ?? 0];
-                                  } else {
-                                    return null;
-                                  }
-                                },
-                                items: (filter) async => getSimCards(),
-                                format: (card) => card.displayName ?? 'Unnamed',
-                                onChanged: (card) =>
-                                    system.simCardNo = card?.slotIndex,
-                              );
-                            }
-                          },
-                        ),
+                        // FutureBuilderEx(
+                        //   // ignore: discarded_futures
+                        //   future: getSimCards(),
+                        //   builder: (context, cards) {
+                        //     if (cards == null || cards.isEmpty) {
+                        //       return const Text('No sim cards found');
+                        //     } else {
+                        //       return HMBDroplist<SimCard>(
+                        //         title: 'Sim Card',
+                        //         selectedItem: () async {
+                        //           final cards = await getSimCards();
+                        //           if (cards.isNotEmpty) {
+                        //             return cards[system.simCardNo ?? 0];
+                        //           } else {
+                        //             return null;
+                        //           }
+                        //         },
+                        //         items: (filter) async => getSimCards(),
+                        //         format: (card) => card.displayName ?? 'Unnamed',
+                        //         onChanged: (card) =>
+                        //             system.simCardNo = card?.slotIndex,
+                        //       );
+                        //     }
+                        //   },
+                        // ),
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

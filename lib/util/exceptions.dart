@@ -19,8 +19,6 @@ class XeroException extends HMBException {
   XeroException(super.message);
 }
 
-
 class InvalidPathException extends HMBException {
   InvalidPathException(super.message);
 }
-

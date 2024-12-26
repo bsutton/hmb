@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../color_ex.dart';
 import '../hmb_button.dart';
 
 class HMBDroplistMultiSelectDialog<T> extends StatefulWidget {
@@ -111,7 +112,7 @@ class _HMBDroplistMultiSelectDialogState<T>
                       return ListTile(
                         selected: isSelected,
                         selectedTileColor:
-                            Theme.of(context).primaryColor.withOpacity(0.1),
+                            Theme.of(context).primaryColor.withSafeOpacity(0.1),
                         title: Text(widget.formatItem(item)),
                         trailing: isSelected
                             ? const Icon(Icons.check, color: Colors.green)

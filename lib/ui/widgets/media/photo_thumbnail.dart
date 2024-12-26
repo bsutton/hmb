@@ -4,6 +4,7 @@ import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/material.dart';
 
 import '../../../util/photo_meta.dart';
+import '../color_ex.dart';
 import 'full_screen_photo_view.dart';
 
 class PhotoThumbnail extends StatelessWidget {
@@ -62,7 +63,7 @@ class PhotoThumbnail extends StatelessWidget {
               Positioned(
                 right: 0,
                 child: Container(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withSafeOpacity(0.5),
                   padding: const EdgeInsets.all(4),
                   child: const Icon(
                     Icons.fullscreen,

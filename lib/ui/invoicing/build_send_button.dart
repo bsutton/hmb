@@ -8,8 +8,8 @@ import '../widgets/hmb_button.dart';
 import '../widgets/media/pdf_preview.dart';
 import 'pdf/generate_invoice_pdf.dart';
 
-class buildSendButton extends StatelessWidget {
-  const buildSendButton({
+class BuildSendButton extends StatelessWidget {
+  const BuildSendButton({
     required this.context,
     required this.mounted,
     required this.invoice,
@@ -30,8 +30,13 @@ class buildSendButton extends StatelessWidget {
           var displayItems = true;
           var groupByTask = true; // Default to group by task
 
-          final result = await showInvoiceOptionsDialog(context, displayCosts,
-              displayGroupHeaders, displayItems, groupByTask, billBookingFee);
+          final result = await showInvoiceOptionsDialog(
+              context: context,
+              displayCosts: displayCosts,
+              displayGroupHeaders: displayGroupHeaders,
+              displayItems: displayItems,
+              groupByTask: groupByTask,
+              billBookingFee: billBookingFee);
 
           if (result != null && mounted) {
             billBookingFee = result['billBookingFee'] ?? true;
@@ -79,12 +84,12 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
       );
 
   Future<Map<String, bool>?> showInvoiceOptionsDialog(
-          BuildContext context,
-          bool displayCosts,
-          bool displayGroupHeaders,
-          bool displayItems,
-          bool groupByTask,
-          bool billBookingFee) =>
+          {required BuildContext context,
+          required bool displayCosts,
+          required bool displayGroupHeaders,
+          required bool displayItems,
+          required bool groupByTask,
+          required bool billBookingFee}) =>
       showDialog<Map<String, bool>>(
         context: context,
         builder: (context) {

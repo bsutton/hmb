@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../util/exceptions.dart';
 import '../../util/hmb_theme.dart';
+import 'color_ex.dart';
 import 'layout/hmb_empty.dart';
 import 'svg.dart';
 
@@ -75,8 +76,8 @@ class HMBButtonPrimary extends StatelessWidget {
   Widget build(BuildContext context) => ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
             backgroundColor: Colors.deepPurple,
-            disabledForegroundColor: Colors.grey.withOpacity(0.38),
-            disabledBackgroundColor: Colors.grey.withOpacity(0.12)),
+            disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
+            disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12)),
         onPressed: (enabled ? onPressed : null),
         label:
             Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
@@ -97,8 +98,8 @@ class HMBButtonSecondary extends StatelessWidget {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
             backgroundColor: Colors.purple,
-            disabledForegroundColor: Colors.grey.withOpacity(0.38),
-            disabledBackgroundColor: Colors.grey.withOpacity(0.12)),
+            disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
+            disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12)),
         child:
             Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
       );

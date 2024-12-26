@@ -3,16 +3,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
-import 'package:money2/money2.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_task.dart';
-import '../../../dao/dao_task_item.dart';
 import '../../../dao/dao_task_status.dart';
 import '../../../entity/job.dart';
 import '../../../entity/task.dart';
 import '../../../entity/task_status.dart';
-import '../../../util/money_ex.dart';
 import '../../../util/platform_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -20,7 +17,6 @@ import '../../widgets/hmb_crud_checklist_item.dart';
 import '../../widgets/hmb_crud_time_entry.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/select/hmb_droplist.dart';
-import '../../widgets/text/hmb_text.dart';
 import '../base_nested/edit_nested_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'photo_crud.dart';
@@ -59,9 +55,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   // BillingType _selectedBillingType = BillingType.timeAndMaterial;
 
-  Fixed _totalEffortInHours = Fixed.zero;
-  Money _totalMaterialsCost = MoneyEx.zero;
-  Money _totalToolsCost = MoneyEx.zero;
+  // Fixed _totalEffortInHours = Fixed.zero;
+  // Money _totalMaterialsCost = MoneyEx.zero;
+  // Money _totalToolsCost = MoneyEx.zero;
 
   @override
   void initState() {
@@ -82,7 +78,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     // _selectedBillingType = currentEntity?.billingType ?? widget.job.billingType;
 
     // ignore: discarded_futures
-    _calculateChecklistSummary(); // Calculate the effort/cost based on checklist items
+    // _calculateChecklistSummary(); // Calculate the effort/cost based on checklist items
 
     if (isNotMobile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -174,49 +170,49 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   //       format: (value) => value.display,
   //     );
 
-  // Calculate the checklist summary for effort or cost
-  Future<void> _calculateChecklistSummary() async {
-    _totalEffortInHours = Fixed.zero;
-    _totalMaterialsCost = MoneyEx.zero;
-    _totalToolsCost = MoneyEx.zero;
+  // // Calculate the checklist summary for effort or cost
+  // Future<void> _calculateChecklistSummary() async {
+  //   // _totalEffortInHours = Fixed.zero;
+  //   // _totalMaterialsCost = MoneyEx.zero;
+  //   // _totalToolsCost = MoneyEx.zero;
 
-    if (currentEntity == null) {
-      return;
-    }
-    final taskItems = await DaoTaskItem().getByTask(currentEntity!.id);
+  //   if (currentEntity == null) {
+  //     return;
+  //   }
+  //   final taskItems = await DaoTaskItem().getByTask(currentEntity!.id);
 
-    for (final item in taskItems) {
-      switch (item.itemTypeId) {
-        case 5: // Labour (Effort)
-          _totalEffortInHours += item.estimatedLabourHours!;
-        case 1: // Materials - buy
-          _totalMaterialsCost += item.estimatedMaterialUnitCost!
-              .multiplyByFixed(item.estimatedMaterialQuantity!);
-        case 3: // Tools - buy
-          _totalToolsCost += item.estimatedMaterialUnitCost!
-              .multiplyByFixed(item.estimatedMaterialQuantity!);
-      }
-    }
+  //   for (final item in taskItems) {
+  //     switch (item.itemTypeId) {
+  //       case 5: // Labour (Effort)
+  //         _totalEffortInHours += item.estimatedLabourHours!;
+  //       case 1: // Materials - buy
+  //         _totalMaterialsCost += item.estimatedMaterialUnitCost!
+  //             .multiplyByFixed(item.estimatedMaterialQuantity!);
+  //       case 3: // Tools - buy
+  //         _totalToolsCost += item.estimatedMaterialUnitCost!
+  //             .multiplyByFixed(item.estimatedMaterialQuantity!);
+  //     }
+  //   }
 
-    setState(() {}); // Update the UI with the calculated summary
-  }
+  //   setState(() {}); // Update the UI with the calculated summary
+  // }
 
   // Build the summary for effort (time and materials billing)
-  Widget _buildEffortSummary() => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          HMBText('Total Effort: $_totalEffortInHours hours', bold: true),
-        ],
-      );
+  // Widget _buildEffortSummary() => Column(
+  //       crossAxisAlignment: CrossAxisAlignment.stretch,
+  //       children: [
+  //         HMBText('Total Effort: $_totalEffortInHours hours', bold: true),
+  //       ],
+  //     );
 
-  // Build the summary for cost (fixed price billing)
-  Widget _buildCostSummary() => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          HMBText('Total Materials Cost: $_totalMaterialsCost'),
-          HMBText('Total Tools Cost: $_totalToolsCost'),
-        ],
-      );
+  // // Build the summary for cost (fixed price billing)
+  // Widget _buildCostSummary() => Column(
+  //       crossAxisAlignment: CrossAxisAlignment.stretch,
+  //       children: [
+  //         HMBText('Total Materials Cost: $_totalMaterialsCost'),
+  //         HMBText('Total Tools Cost: $_totalToolsCost'),
+  //       ],
+  //     );
 
   Widget _buildItemList(Task? task) => Flexible(
         child: SingleChildScrollView(

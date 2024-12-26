@@ -23,7 +23,6 @@ class GoogleDriveBackupProvider extends BackupProvider {
   @override
   Future<void> deleteBackup(Backup backupToDelete) async {
     try {
-      
       final driveApi = await GoogleDriveApi.selfAuth();
       final backupsFolderId = await driveApi.getBackupFolder();
 
@@ -161,7 +160,7 @@ Stream<List<int>> trackProgress(Stream<List<int>> source, int totalLength,
   );
 }
 
-class _UploadComplete {
-  _UploadComplete(this.fileId);
-  final String fileId;
-}
+// class _UploadComplete {
+//   _UploadComplete(this.fileId);
+//   final String fileId;
+// }

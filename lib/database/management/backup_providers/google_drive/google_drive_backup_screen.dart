@@ -195,10 +195,6 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
         },
       );
 
-  BackupProvider _getProvider() {
-    return GoogleDriveBackupProvider(FlutterDatabaseFactory());
-    // if (Platform.isAndroid) {
-    // }
-    // return LocalBackupProvider(FlutterDatabaseFactory());
-  }
+  BackupProvider _getProvider() =>
+      GoogleDriveBackupProvider(FlutterDatabaseFactory());
 }

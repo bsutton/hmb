@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
+import '../color_ex.dart';
 import '../surface.dart';
 
 class HMBDroplistDialog<T> extends StatefulWidget {
@@ -125,7 +126,7 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
                         return ListTile(
                           selected: isSelected,
                           selectedTileColor:
-                              Theme.of(context).primaryColor.withOpacity(0.1),
+                              Theme.of(context).primaryColor.withSafeOpacity(0.1),
                           title: Text(widget.formatItem(item),
                               style: const TextStyle(
                                   color: HMBColors.textPrimary)),

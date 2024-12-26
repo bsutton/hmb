@@ -58,7 +58,7 @@ class _InvoiceCardState extends State<InvoiceCard> {
               padding: const EdgeInsets.all(8),
               child: Row(
                 children: [
-                  buildSendButton(
+                  BuildSendButton(
                       context: context,
                       mounted: mounted,
                       invoice: widget.invoice),

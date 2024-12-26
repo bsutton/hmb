@@ -11,6 +11,7 @@ abstract class Source<T> {
 
   Widget field(MessageData data);
 
+  // ignore: use_setters_to_change_properties
   void setValue(T? newValue) {
     value = newValue;
     // if (onChanged != null) {

@@ -16,6 +16,7 @@ import '../../../entity/system.dart';
 import '../../../util/app_title.dart';
 import '../../../util/money_ex.dart';
 import '../../widgets/async_state.dart';
+import '../../widgets/color_ex.dart';
 import '../../widgets/fields/hmb_money_editing_controller.dart';
 import '../../widgets/fields/hmb_money_field.dart';
 import '../../widgets/fields/hmb_text_area.dart';
@@ -115,7 +116,7 @@ class _SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
         ..paymentOptions = _paymentOptionsController.text
         ..logoPath = _logoPathController.text
         ..logoAspectRatio = _logoAspectRatio
-        ..billingColour = _billingColour.value; // Save billing color
+        ..billingColour = _billingColour.toColorValue(); // Save billing color
 
       await DaoSystem().update(system);
 

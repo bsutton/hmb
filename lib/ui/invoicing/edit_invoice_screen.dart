@@ -96,7 +96,7 @@ class _InvoiceEditScreenState extends AsyncState<InvoiceEditScreen, void> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    buildSendButton(
+                    BuildSendButton(
                         context: context, mounted: mounted, invoice: invoice),
                     const SizedBox(height: 16),
                     // Show all line groups and lines inline
