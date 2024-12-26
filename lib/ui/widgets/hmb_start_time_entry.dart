@@ -106,13 +106,24 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
         startTask: widget.task!);
 
     var showStart = true;
+    TimeEntry? stoppedEntry;
 
     /// If there is a running timer we need to stop it.
     /// as there can only be one active timer
     /// we have no more work to do but stop this time.
     if (runningTimer != null) {
-      showStart =
+      stoppedEntry =
           await _stopDialog(runningTimer, startStopTimes.priorTaskStopTime!);
+
+      if (stoppedEntry == null) {
+        showStart = false;
+      } else {
+        /// The user stopped a running time so we need to update
+        /// the suggested start time to be just after the
+        /// last timer was stopped.
+        startStopTimes.startTime =
+            stoppedEntry.endTime!.add(const Duration(minutes: 1));
+      }
     }
 
     if (showStart) {
@@ -239,7 +250,8 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
   //   }
   // }
 
-  Future<bool> _stopDialog(TimeEntry activeEntry, DateTime stopTime) async {
+  Future<TimeEntry?> _stopDialog(
+      TimeEntry activeEntry, DateTime stopTime) async {
     final task = await DaoTask().getById(activeEntry.taskId);
 
     if (mounted) {
@@ -256,10 +268,10 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
 
         _timer?.cancel();
         setState(() {});
-        return true;
+        return stoppedTimeEntry;
       }
     }
-    return false;
+    return null;
   }
 
   void _initTimer(TimeEntry? timeEntry) {
@@ -274,7 +286,7 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
     if (newTimeEntry != null) {
       await DaoTimeEntry().insert(newTimeEntry);
 
-      /// If we are running a time for a job then it must
+      /// If we are running a timer for a job then it must
       /// be the active job.
       final job = await DaoJob().markActive(task.jobId);
       _startTimer(newTimeEntry);

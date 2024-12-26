@@ -102,6 +102,11 @@ ThemeData get theme => ThemeData(
         backgroundColor: Colors.grey.shade800,
         contentTextStyle: const TextStyle(color: Colors.white),
       ),
+      timePickerTheme: TimePickerThemeData(
+          confirmButtonStyle:
+              TextButton.styleFrom(foregroundColor: Colors.white),
+          cancelButtonStyle:
+              TextButton.styleFrom(foregroundColor: Colors.white)),
       colorScheme: ColorScheme.fromSwatch(
         primarySwatch: Colors.deepPurple,
         brightness:
