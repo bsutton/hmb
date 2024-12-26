@@ -1,19 +1,17 @@
 import 'entity.dart';
-import 'job.dart';
 
 class Task extends Entity<Task> {
-  Task(
-      {required super.id,
-      required this.jobId,
-      required this.name,
-      required this.description,
-      required this.taskStatusId,
-      required super.createdDate,
-      required super.modifiedDate,
-      // this.billingType =
-      //     BillingType.timeAndMaterial // New field for BillingType
-      })
-      : super();
+  Task({
+    required super.id,
+    required this.jobId,
+    required this.name,
+    required this.description,
+    required this.taskStatusId,
+    required super.createdDate,
+    required super.modifiedDate,
+    // this.billingType =
+    //     BillingType.timeAndMaterial // New field for BillingType
+  }) : super();
 
   factory Task.fromMap(Map<String, dynamic> map) => Task(
         id: map['id'] as int,
@@ -29,33 +27,31 @@ class Task extends Entity<Task> {
         //         BillingType.timeAndMaterial), // New field for BillingType
       );
 
-  Task.forInsert(
-      {required this.jobId,
-      required this.name,
-      required this.description,
-      required this.taskStatusId,
-      // this.billingType =
-      //     BillingType.timeAndMaterial // New field for BillingType
-      })
-      : super.forInsert();
+  Task.forInsert({
+    required this.jobId,
+    required this.name,
+    required this.description,
+    required this.taskStatusId,
+    // this.billingType =
+    //     BillingType.timeAndMaterial // New field for BillingType
+  }) : super.forInsert();
 
-  Task.forUpdate(
-      {required super.entity,
-      required this.jobId,
-      required this.name,
-      required this.description,
-      required this.taskStatusId,
-      // this.billingType =
-      //     BillingType.timeAndMaterial // New field for BillingType
-      })
-      : super.forUpdate();
+  Task.forUpdate({
+    required super.entity,
+    required this.jobId,
+    required this.name,
+    required this.description,
+    required this.taskStatusId,
+    // this.billingType =
+    //     BillingType.timeAndMaterial // New field for BillingType
+  }) : super.forUpdate();
 
   int jobId;
   String name;
   String description;
   int taskStatusId;
 
-  /// If [billingType] is null then take it from the Job.
+  // If [billingType] is null then take it from the Job.
   // BillingType? billingType;
 
   @override
