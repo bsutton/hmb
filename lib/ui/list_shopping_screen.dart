@@ -216,7 +216,7 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
                     } else {
                       return LayoutBuilder(
                         builder: (context, constraints) {
-                          if (constraints.maxWidth < 600) {
+                          if (constraints.maxWidth < 900) {
                             // Mobile layout
                             return ListView.builder(
                               padding: const EdgeInsets.all(8),
@@ -233,7 +233,7 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
-                                // childAspectRatio: 3,
+                                childAspectRatio: 1.5,
                                 mainAxisExtent: 256,
                               ),
                               itemCount: _taskItems.length,

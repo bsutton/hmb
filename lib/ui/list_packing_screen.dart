@@ -25,6 +25,7 @@ import 'widgets/hmb_search.dart';
 import 'widgets/hmb_toast.dart';
 import 'widgets/select/hmb_droplist_multi.dart';
 import 'widgets/surface.dart';
+import 'widgets/text/hmb_text_themes.dart';
 
 class PackingScreen extends StatefulWidget {
   const PackingScreen({super.key});
@@ -164,7 +165,7 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
                     } else {
                       return LayoutBuilder(
                         builder: (context, constraints) {
-                          if (constraints.maxWidth < 600) {
+                          if (constraints.maxWidth < 900) {
                             // Mobile layout
                             return ListView.builder(
                               padding: const EdgeInsets.all(8),
@@ -181,7 +182,10 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
-                                childAspectRatio: 3,
+                                childAspectRatio: 1.5,
+                                mainAxisSpacing:
+                                    16, // Added vertical spacing between items
+                                crossAxisSpacing: 16,
                               ),
                               itemCount: taskItemsContexts.length,
                               itemBuilder: (context, index) {
@@ -212,12 +216,12 @@ If you were expecting to see items here - check the Job's Status is active.
     BuildContext context,
     TaskItemContext itemContext,
   ) =>
-      Card(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        elevation: 2,
-        child: ListTile(
-          title: Text(itemContext.taskItem.description),
-          subtitle: FutureBuilderEx(
+      SurfaceCard(
+        height: 250,
+        onPressed: () async => _markAsCompleted(itemContext),
+        title: itemContext.taskItem.description,
+        body: Row(children: [
+          FutureBuilderEx(
             // ignore: discarded_futures
             future: DaoJob().getJobForTask(itemContext.task.id),
             builder: (context, job) => FutureBuilderEx(
@@ -226,11 +230,11 @@ If you were expecting to see items here - check the Job's Status is active.
               builder: (context, customer) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Customer: ${customer!.name}'),
-                  Text('Job: ${job.summary}'),
-                  Text('Task: ${itemContext.task.name}'),
-                  Text('''Scheduled Date: ${formatDate(job.startDate)}'''),
-                  Text('Dimensions: ${itemContext.taskItem.dimension1} '
+                  HMBTextLine('Customer: ${customer!.name}'),
+                  HMBTextLine('Job: ${job.summary}'),
+                  HMBTextLine('Task: ${itemContext.task.name}'),
+                  HMBTextLine('''Scheduled: ${formatDate(job.startDate)}'''),
+                  HMBTextLine('${itemContext.taskItem.dimension1} '
                       'x ${itemContext.taskItem.dimension2} '
                       'x ${itemContext.taskItem.dimension3} '
                       '${itemContext.taskItem.measurementType}'),
@@ -243,21 +247,23 @@ If you were expecting to see items here - check the Job's Status is active.
               ),
             ),
           ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.shopping_cart, color: Colors.blue),
-                onPressed: () async => _moveToShoppingList(itemContext),
-              ),
-              IconButton(
-                icon: const Icon(Icons.check, color: Colors.green),
-                onPressed: () async => _markAsCompleted(itemContext),
-              ),
-            ],
+          Expanded(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart, color: Colors.blue),
+                  onPressed: () async => _moveToShoppingList(itemContext),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.check, color: Colors.green),
+                  onPressed: () async => _markAsCompleted(itemContext),
+                ),
+              ],
+            ),
           ),
-          onTap: () async => _markAsCompleted(itemContext),
-        ),
+        ]),
       );
 
   Future<void> _moveToShoppingList(TaskItemContext itemContext) async {
