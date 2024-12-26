@@ -471,31 +471,34 @@ class WizardState extends State<Wizard> {
         ],
       ));
 
-  Widget _buildControls() =>
-      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        HMBButtonSecondary(
-          label: widget.cancelLabel,
-          onPressed: _inTransition || _pageLoading
-              ? null
-              : () async {
-                  await _triggerOnFinished(WizardCompletionReason.cancelled);
-                },
-        ),
-        HMBButtonPrimary(
-          label: 'Back',
-          // BACK BUTTON
-          onPressed:
-              isFirstVisible(_currentStepIndex) || _inTransition || _pageLoading
-                  // no steps back, so disable the button
-                  ? null
-                  // add handler
-                  : _onBack,
-        ),
-        // NEXT BUTTON
-        HMBButtonPrimary(
-            label: isLastVisible(_currentStepIndex) ? 'Done' : 'Next',
-            onPressed: _inTransition || _pageLoading ? null : _onNext),
-      ]);
+  Widget _buildControls() => Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+          HMBButtonSecondary(
+            label: widget.cancelLabel,
+            onPressed: _inTransition || _pageLoading
+                ? null
+                : () async {
+                    await _triggerOnFinished(WizardCompletionReason.cancelled);
+                  },
+          ),
+          HMBButtonPrimary(
+            label: 'Back',
+            // BACK BUTTON
+            onPressed: isFirstVisible(_currentStepIndex) ||
+                    _inTransition ||
+                    _pageLoading
+                // no steps back, so disable the button
+                ? null
+                // add handler
+                : _onBack,
+          ),
+          // NEXT BUTTON
+          HMBButtonPrimary(
+              label: isLastVisible(_currentStepIndex) ? 'Done' : 'Next',
+              onPressed: _inTransition || _pageLoading ? null : _onNext),
+        ]),
+      );
 
   /// Returns true if the given [index] is the index of the
   /// first step that is visible i.e. not hidden.
