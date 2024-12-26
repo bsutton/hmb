@@ -265,7 +265,8 @@ WHERE ti.id = ?
   Future<BillingType> getBillingType(Task task) async {
     final job = await DaoJob().getById(task.jobId);
 
-    return task.billingType ?? job?.billingType ?? BillingType.timeAndMaterial;
+    // return task.billingType ?? job?.billingType ?? BillingType.timeAndMaterial;
+    return job?.billingType ?? BillingType.timeAndMaterial;
   }
 
   Future<BillingType> getBillingTypeByTaskItem(TaskItem taskItem) async {

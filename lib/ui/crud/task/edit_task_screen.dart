@@ -26,9 +26,15 @@ import '../base_nested/list_nested_screen.dart';
 import 'photo_crud.dart';
 
 class TaskEditScreen extends StatefulWidget {
-  const TaskEditScreen({required this.job, super.key, this.task});
+  TaskEditScreen({required this.job, super.key, this.task}) {
+    billingType = job.billingType;
+  }
   final Job job;
   final Task? task;
+
+  /// for the moment we don't let tasks override
+  /// the billing type.
+  late final BillingType billingType;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -51,7 +57,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   @override
   Task? currentEntity;
 
-  BillingType _selectedBillingType = BillingType.timeAndMaterial;
+  // BillingType _selectedBillingType = BillingType.timeAndMaterial;
 
   Fixed _totalEffortInHours = Fixed.zero;
   Money _totalMaterialsCost = MoneyEx.zero;
@@ -73,7 +79,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
 
-    _selectedBillingType = currentEntity?.billingType ?? widget.job.billingType;
+    // _selectedBillingType = currentEntity?.billingType ?? widget.job.billingType;
 
     // ignore: discarded_futures
     _calculateChecklistSummary(); // Calculate the effort/cost based on checklist items
@@ -135,13 +141,13 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               focusNode: _descriptionFocusNode,
               labelText: 'Description',
             ),
-            _chooseBillingType(),
+            // _chooseBillingType(),
 
             // Display the summary based on billing type
-            if (_selectedBillingType == BillingType.timeAndMaterial)
-              _buildEffortSummary(), // Display effort summary
-            if (_selectedBillingType == BillingType.fixedPrice)
-              _buildCostSummary(), // Display cost summary
+            // if (_selectedBillingType == BillingType.timeAndMaterial)
+            //   _buildEffortSummary(), // Display effort summary
+            // if (_selectedBillingType == BillingType.fixedPrice)
+            //   _buildCostSummary(), // Display cost summary
 
             _buildItemList(task),
             HBMCrudTimeEntry(
@@ -156,17 +162,17 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         ),
       );
 
-  Widget _chooseBillingType() => HMBDroplist<BillingType>(
-        title: 'Billing Type',
-        items: (filter) async => BillingType.values,
-        selectedItem: () async => _selectedBillingType,
-        onChanged: (billingType) => setState(() {
-          _selectedBillingType = billingType!;
-          // ignore: lines_longer_than_80_chars, discarded_futures
-          _calculateChecklistSummary(); // Recalculate the summary when billing type changes
-        }),
-        format: (value) => value.display,
-      );
+  // Widget _chooseBillingType() => HMBDroplist<BillingType>(
+  //       title: 'Billing Type',
+  //       items: (filter) async => BillingType.values,
+  //       selectedItem: () async => _selectedBillingType,
+  //       onChanged: (billingType) => setState(() {
+  //         _selectedBillingType = billingType;
+  //         // ignore: lines_longer_than_80_chars, discarded_futures
+  //         _calculateChecklistSummary(); // Recalculate the summary when billing type changes
+  //       }),
+  //       format: (value) => value.display,
+  //     );
 
   // Calculate the checklist summary for effort or cost
   Future<void> _calculateChecklistSummary() async {
@@ -253,7 +259,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       name: _nameController.text,
       description: _descriptionController.text,
       taskStatusId: June.getState(SelectedTaskStatus.new).taskStatus!.id,
-      billingType: _selectedBillingType, // Retain the selected billing type
+      // billingType: _selectedBillingType, // Retain the selected billing type
     );
   }
 
@@ -263,7 +269,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         name: _nameController.text,
         description: _descriptionController.text,
         taskStatusId: June.getState(SelectedTaskStatus.new).taskStatus!.id,
-        billingType: _selectedBillingType, // Retain the selected billing type
+        // billingType: _selectedBillingType, // Retain the selected billing type
       );
 
   @override

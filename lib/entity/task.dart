@@ -10,8 +10,8 @@ class Task extends Entity<Task> {
       required this.taskStatusId,
       required super.createdDate,
       required super.modifiedDate,
-      this.billingType =
-          BillingType.timeAndMaterial // New field for BillingType
+      // this.billingType =
+      //     BillingType.timeAndMaterial // New field for BillingType
       })
       : super();
 
@@ -23,10 +23,10 @@ class Task extends Entity<Task> {
         taskStatusId: map['task_status_id'] as int,
         createdDate: DateTime.parse(map['createdDate'] as String),
         modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-        billingType: BillingType.values.firstWhere(
-            (e) => e.name == map['billing_type'],
-            orElse: () =>
-                BillingType.timeAndMaterial), // New field for BillingType
+        // billingType: BillingType.values.firstWhere(
+        //     (e) => e.name == map['billing_type'],
+        //     orElse: () =>
+        //         BillingType.timeAndMaterial), // New field for BillingType
       );
 
   Task.forInsert(
@@ -34,8 +34,8 @@ class Task extends Entity<Task> {
       required this.name,
       required this.description,
       required this.taskStatusId,
-      this.billingType =
-          BillingType.timeAndMaterial // New field for BillingType
+      // this.billingType =
+      //     BillingType.timeAndMaterial // New field for BillingType
       })
       : super.forInsert();
 
@@ -45,8 +45,8 @@ class Task extends Entity<Task> {
       required this.name,
       required this.description,
       required this.taskStatusId,
-      this.billingType =
-          BillingType.timeAndMaterial // New field for BillingType
+      // this.billingType =
+      //     BillingType.timeAndMaterial // New field for BillingType
       })
       : super.forUpdate();
 
@@ -56,7 +56,7 @@ class Task extends Entity<Task> {
   int taskStatusId;
 
   /// If [billingType] is null then take it from the Job.
-  BillingType? billingType;
+  // BillingType? billingType;
 
   @override
   Map<String, dynamic> toMap() => {
@@ -65,7 +65,7 @@ class Task extends Entity<Task> {
         'name': name,
         'description': description,
         'task_status_id': taskStatusId,
-        'billing_type': billingType?.name, // New field for BillingType
+        // 'billing_type': billingType?.name, // New field for BillingType
         'createdDate': createdDate.toIso8601String(),
         'modifiedDate': modifiedDate.toIso8601String(),
       };
