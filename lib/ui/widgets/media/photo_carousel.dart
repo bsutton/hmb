@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
@@ -42,11 +43,13 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
   }
 
   /// Moves the carousel to [newIndex] with animation.
-  void _scrollToIndex(int newIndex) {
-    if (newIndex < 0 || newIndex >= widget.photos.length) return;
+  Future<void> _scrollToIndex(int newIndex) async {
+    if (newIndex < 0 || newIndex >= widget.photos.length) {
+      return;
+    }
 
     setState(() => _currentIndex = newIndex);
-    _pageController.animateToPage(
+    await _pageController.animateToPage(
       newIndex,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -54,14 +57,14 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
   }
 
   /// Detects scroll direction (mouse wheel) and navigates accordingly.
-  void _handleScroll(double offset) {
+  Future<void> _handleScroll(double offset) async {
     // Scroll down => next photo
     if (offset < 0 && _currentIndex < widget.photos.length - 1) {
-      _scrollToIndex(_currentIndex + 1);
+      await _scrollToIndex(_currentIndex + 1);
     }
     // Scroll up => previous photo
     else if (offset > 0 && _currentIndex > 0) {
-      _scrollToIndex(_currentIndex - 1);
+      await _scrollToIndex(_currentIndex - 1);
     }
   }
 
@@ -74,21 +77,21 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
             if (event is KeyDownEvent) {
               // Right arrow => next photo
               if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                _scrollToIndex(_currentIndex + 1);
+                unawaited(_scrollToIndex(_currentIndex + 1));
                 return KeyEventResult.handled;
               }
               // Left arrow => previous photo
               else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                _scrollToIndex(_currentIndex - 1);
+                unawaited(_scrollToIndex(_currentIndex - 1));
                 return KeyEventResult.handled;
               }
             }
             return KeyEventResult.ignored;
           },
           child: Listener(
-            onPointerSignal: (event) {
+            onPointerSignal: (event) async {
               if (event is PointerScrollEvent) {
-                _handleScroll(event.scrollDelta.dy);
+                await _handleScroll(event.scrollDelta.dy);
               }
             },
             child: Column(
@@ -143,7 +146,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
             heroTag: 'previousPhotoBtn',
             onPressed: _currentIndex == 0
                 ? null
-                : () => _scrollToIndex(_currentIndex - 1),
+                : () async => _scrollToIndex(_currentIndex - 1),
             backgroundColor:
                 _currentIndex == 0 ? Colors.grey[700] : Colors.purple,
             child: const Icon(Icons.arrow_back),
@@ -164,7 +167,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
             heroTag: 'nextPhotoBtn',
             onPressed: _currentIndex == widget.photos.length - 1
                 ? null
-                : () => _scrollToIndex(_currentIndex + 1),
+                : () async => _scrollToIndex(_currentIndex + 1),
             backgroundColor: _currentIndex == widget.photos.length - 1
                 ? Colors.grey[700]
                 : Colors.purple,
@@ -200,19 +203,23 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
                 await Pasteboard.writeFiles([
                   widget.photos[_currentIndex].absolutePathTo,
                 ]);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Image copied to clipboard'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Image copied to clipboard'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Failed to copy image to clipboard'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to copy image to clipboard'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
               }
             },
           ),
