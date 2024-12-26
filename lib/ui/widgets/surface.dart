@@ -85,6 +85,6 @@ class SurfaceCard extends StatelessWidget {
             padding: padding,
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [HMBTextHeadline(title), Expanded(child: body)])),
+                children: [HMBTextHeadline(title), body])),
       );
 }
