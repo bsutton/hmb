@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
-import '../../widgets/hmb_button.dart';
-import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/save_and_close.dart';
 
 abstract class EntityState<E extends Entity<E>> {
   Future<E> forInsert();
@@ -68,28 +67,11 @@ class EntityEditScreenState<E extends Entity<E>>
       );
 
   /// Display the Save/Cancel Buttons.
-  Padding _commandButtons(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            HMBButton(
-              onPressed: _save,
-              label: 'Save',
-            ),
-            const HMBSpacer(width: true),
-            HMBButton(
-              label: 'Save & Close',
-              onPressed: () async => _save(close: true),
-            ),
-            const HMBSpacer(width: true),
-            HMBButton(
-              onPressed: () => Navigator.of(context).pop(),
-              label: 'Cancel',
-            ),
-          ],
-        ),
-      );
+  Widget _commandButtons(BuildContext context) => SaveAndClose(
+      onSave: _save,
+      onCancel: () async {
+        Navigator.of(context).pop();
+      });
 
   /// Save the entity
   Future<void> _save({bool close = false}) async {

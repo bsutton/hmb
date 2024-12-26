@@ -7,6 +7,7 @@ import '../../../dao/dao_system.dart';
 import '../../../util/app_title.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/save_and_close.dart';
 
 class SystemIntegrationScreen extends StatefulWidget {
   const SystemIntegrationScreen({super.key});
@@ -47,7 +48,7 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
     super.dispose();
   }
 
-  Future<void> _saveForm() async {
+  Future<void> _saveForm({required bool close}) async {
     if (_formKey.currentState!.validate()) {
       final system = await DaoSystem().get();
       // Save the form data
@@ -57,7 +58,10 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
       await DaoSystem().update(system);
 
       if (mounted) {
-        context.go('/jobs');
+        HMBToast.info('saved');
+        if (close) {
+          context.go('/jobs');
+        }
       }
     } else {
       HMBToast.error('Fix the errors and try again.');
@@ -66,34 +70,34 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.save, color: Colors.purple),
-              onPressed: _saveForm,
+        body: Column(
+          children: [
+            SaveAndClose(
+                onSave: ({required close}) async => _saveForm(close: close),
+                onCancel: () async => context.go('/jobs')),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    children: [
+                      HMBTextField(
+                        controller: _xeroClientIdController,
+                        labelText: 'Xero Client ID',
+                        keyboardType: TextInputType.number,
+                      ),
+                      HMBTextField(
+                        controller: _xeroClientSecretController,
+                        labelText: 'Xero Client Secret',
+                        keyboardType: TextInputType.number,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                HMBTextField(
-                  controller: _xeroClientIdController,
-                  labelText: 'Xero Client ID',
-                  keyboardType: TextInputType.number,
-                ),
-                HMBTextField(
-                  controller: _xeroClientSecretController,
-                  labelText: 'Xero Client Secret',
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-          ),
         ),
       );
 }

@@ -11,6 +11,7 @@ import '../../../util/app_title.dart';
 import '../../../util/measurement_type.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/save_and_close.dart';
 import '../../widgets/select/hmb_droplist.dart';
 
 class SystemBusinessScreen extends StatefulWidget {
@@ -63,7 +64,7 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
     super.dispose();
   }
 
-  Future<void> _saveForm() async {
+  Future<void> _saveForm({required bool close}) async {
     if (_formKey.currentState!.validate()) {
       final system = await DaoSystem().get();
       // Save the form data
@@ -79,7 +80,10 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
       await DaoSystem().update(system);
 
       if (mounted) {
-        context.go('/jobs');
+        HMBToast.info('saved');
+        if (close) {
+          context.go('/jobs');
+        }
       }
     } else {
       HMBToast.error('Fix the errors and try again.');
@@ -88,84 +92,84 @@ class _SystemBusinessScreenState extends State<SystemBusinessScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.save, color: Colors.purple),
-              onPressed: _saveForm,
-            ),
-          ],
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: FutureBuilderEx(
-            // ignore: discarded_futures
-            future: _initialize(),
-            builder: (context, _) => Form(
-              key: _formKey,
-              child: ListView(
-                children: [
-                  HMBTextField(
-                    controller: _businessNameController,
-                    labelText: 'Business Name',
+        body: Column(
+          children: [
+            SaveAndClose(
+                onSave: ({required close}) async => _saveForm(close: close),
+                onCancel: () async => context.go('/jobs')),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: FutureBuilderEx(
+                  // ignore: discarded_futures
+                  future: _initialize(),
+                  builder: (context, _) => Form(
+                    key: _formKey,
+                    child: ListView(
+                      children: [
+                        HMBTextField(
+                          controller: _businessNameController,
+                          labelText: 'Business Name',
+                        ),
+                        HMBTextField(
+                          controller: _businessNumberController,
+                          labelText: 'Business Number',
+                        ),
+                        HMBTextField(
+                          controller: _businessNumberLabelController,
+                          labelText: 'Business Number Label',
+                        ),
+                        DropdownButtonFormField<String>(
+                          value: _selectedCountryCode,
+                          decoration:
+                              const InputDecoration(labelText: 'Country Code'),
+                          items: _countryCodes
+                              .map((country) => DropdownMenuItem<String>(
+                                    value: country.alpha2,
+                                    child: Text(
+                                        '''${country.countryName} (${country.alpha2})'''),
+                                  ))
+                              .toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedCountryCode = newValue!;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select a country code';
+                            }
+                            return null;
+                          },
+                        ),
+                        HMBDroplist<PreferredUnitSystem>(
+                          title: 'Unit System',
+                          selectedItem: () async => system.preferredUnitSystem,
+                          format: (unit) => unit == PreferredUnitSystem.metric
+                              ? 'Metric'
+                              : 'Imperial',
+                          items: (filter) async => PreferredUnitSystem.values,
+                          onChanged: (value) {
+                            setState(() {
+                              system.preferredUnitSystem = value!;
+                            });
+                          },
+                        ),
+                        HMBTextField(
+                          controller: _webUrlController,
+                          labelText: 'Web URL',
+                        ),
+                        HMBTextField(
+                          controller: _termsUrlController,
+                          labelText: 'Terms URL',
+                        ),
+                      ],
+                    ),
                   ),
-                  HMBTextField(
-                    controller: _businessNumberController,
-                    labelText: 'Business Number',
-                  ),
-                  HMBTextField(
-                    controller: _businessNumberLabelController,
-                    labelText: 'Business Number Label',
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: _selectedCountryCode,
-                    decoration:
-                        const InputDecoration(labelText: 'Country Code'),
-                    items: _countryCodes
-                        .map((country) => DropdownMenuItem<String>(
-                              value: country.alpha2,
-                              child: Text(
-                                  '''${country.countryName} (${country.alpha2})'''),
-                            ))
-                        .toList(),
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedCountryCode = newValue!;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please select a country code';
-                      }
-                      return null;
-                    },
-                  ),
-                  HMBDroplist<PreferredUnitSystem>(
-                    title: 'Unit System',
-                    selectedItem: () async => system.preferredUnitSystem,
-                    format: (unit) => unit == PreferredUnitSystem.metric
-                        ? 'Metric'
-                        : 'Imperial',
-                    items: (filter) async => PreferredUnitSystem.values,
-                    onChanged: (value) {
-                      setState(() {
-                        system.preferredUnitSystem = value!;
-                      });
-                    },
-                  ),
-                  HMBTextField(
-                    controller: _webUrlController,
-                    labelText: 'Web URL',
-                  ),
-                  HMBTextField(
-                    controller: _termsUrlController,
-                    labelText: 'Terms URL',
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       );
 }
