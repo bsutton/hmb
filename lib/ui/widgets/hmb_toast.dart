@@ -17,17 +17,19 @@ class HMBToast {
 
   static void error(String text, {bool acknowledgmentRequired = false}) {
     toastification.show(
-        type: ToastificationType.error,
-        closeButtonShowType: acknowledgmentRequired
-            ? CloseButtonShowType.always
-            : CloseButtonShowType.onHover,
-        autoCloseDuration:
-            acknowledgmentRequired ? null : const Duration(seconds: 6),
-        description: Text(text,
-            maxLines: 6,
-            style: const TextStyle(color: Colors.black, fontSize: 18)),
-        alignment: Alignment.center,
-        style: ToastificationStyle.minimal,
-        backgroundColor: Colors.orangeAccent);
+      type: ToastificationType.error,
+      style: ToastificationStyle.minimal,
+      closeButtonShowType: CloseButtonShowType.always,
+      // acknowledgmentRequired ? null : const Duration(seconds: 6),
+      description: Text(
+        text,
+        maxLines: 6,
+        style: const TextStyle(color: Colors.black, fontSize: 18),
+      ),
+      icon: const Icon(Icons.error_outline),
+      alignment: Alignment.center,
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black, // Sets the close button color to black
+    );
   }
 }
