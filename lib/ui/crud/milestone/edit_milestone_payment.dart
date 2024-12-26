@@ -254,7 +254,7 @@ class _EditMilestonesScreenState
                     children: List.generate(milestones.length, (index) {
                       final milestone = milestones[index];
                       return MilestoneTile(
-                        key: ValueKey(milestone.hashCode),
+                        key: ValueKey(milestone.id),
                         milestone: milestone,
                         quoteTotal: quote.totalAmount,
                         onDelete: _onMilestoneDeleted,
