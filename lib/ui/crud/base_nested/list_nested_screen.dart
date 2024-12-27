@@ -8,6 +8,7 @@ import '../../../dao/dao.dart';
 import '../../../entity/entities.dart';
 import '../../dialog/hmb_are_you_sure_dialog.dart';
 import '../../widgets/hmb_add_button.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/layout/hmb_list_card.dart';
 
@@ -169,11 +170,19 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
             }
             if (list!.isEmpty) {
               return Center(
-                  child: Text(
-                'Click + to add a ${widget.entityNameSingular}.',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-              ));
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Click'),
+                    HMBButtonAdd(
+                        enabled: true,
+                        onPressed: () async {
+                          HMBToast.info('Not this one, the one to the right');
+                        }),
+                    Text('to add a ${widget.entityNameSingular}.'),
+                  ],
+                ),
+              );
             } else {
               return _displayColumn(list, context);
             }

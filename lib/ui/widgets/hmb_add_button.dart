@@ -9,7 +9,7 @@ class HMBButtonAdd extends StatelessWidget {
     this.hint = 'Add',
     super.key,
   });
-  final Future<void> Function() onPressed;
+  final Future<void> Function()? onPressed;
   final bool enabled;
 
   final String? hint;

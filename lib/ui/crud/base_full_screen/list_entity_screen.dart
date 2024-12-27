@@ -5,6 +5,7 @@ import '../../../dao/dao.dart';
 import '../../../entity/entities.dart';
 import '../../../util/app_title.dart';
 import '../../dialog/hmb_are_you_sure_dialog.dart';
+import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_colours.dart';
 import '../../widgets/hmb_search.dart';
 import '../../widgets/hmb_toast.dart';
@@ -97,10 +98,17 @@ class EntityListScreenState<T extends Entity<T>>
             builder: (context, list) {
               if (list == null || list.isEmpty) {
                 return Center(
-                  child: Text(
-                    'Click + to add ${widget.pageTitle}.',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w500),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('Click'),
+                      HMBButtonAdd(
+                          enabled: true,
+                          onPressed: () async {
+                            HMBToast.info('Not this one, the one to the right');
+                          }),
+                      Text('to add ${widget.pageTitle}.'),
+                    ],
                   ),
                 );
               } else {
