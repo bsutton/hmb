@@ -69,54 +69,56 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Colors.black,
-        body: Focus(
-          autofocus: true,
-          onKeyEvent: (node, event) {
-            if (event is KeyDownEvent) {
-              // Right arrow => next photo
-              if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                unawaited(_scrollToIndex(_currentIndex + 1));
-                return KeyEventResult.handled;
+  Widget build(BuildContext context) => SafeArea(
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Focus(
+            autofocus: true,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent) {
+                // Right arrow => next photo
+                if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                  unawaited(_scrollToIndex(_currentIndex + 1));
+                  return KeyEventResult.handled;
+                }
+                // Left arrow => previous photo
+                else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                  unawaited(_scrollToIndex(_currentIndex - 1));
+                  return KeyEventResult.handled;
+                }
               }
-              // Left arrow => previous photo
-              else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                unawaited(_scrollToIndex(_currentIndex - 1));
-                return KeyEventResult.handled;
-              }
-            }
-            return KeyEventResult.ignored;
-          },
-          child: Listener(
-            onPointerSignal: (event) async {
-              if (event is PointerScrollEvent) {
-                await _handleScroll(event.scrollDelta.dy);
-              }
+              return KeyEventResult.ignored;
             },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildTitle(context),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      // The PageView displays one photo per page.
-                      _buildPhoto(),
-                      // Title and optional comment
-                      // Give extra space on the right (right: 80) so it doesn't overlap buttons.
+            child: Listener(
+              onPointerSignal: (event) async {
+                if (event is PointerScrollEvent) {
+                  await _handleScroll(event.scrollDelta.dy);
+                }
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildTitle(context),
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        // The PageView displays one photo per page.
+                        _buildPhoto(),
+                        // Title and optional comment
+                        // Give extra space on the right (right: 80) so it doesn't overlap buttons.
 
-                      // Previous & Next FABs at the bottom
-                      Positioned(
-                        bottom: 40,
-                        left: 20,
-                        right: 20,
-                        child: _buildNextPrevButtons(),
-                      ),
-                    ],
+                        // Previous & Next FABs at the bottom
+                        Positioned(
+                          bottom: 40,
+                          left: 20,
+                          right: 20,
+                          child: _buildNextPrevButtons(),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
