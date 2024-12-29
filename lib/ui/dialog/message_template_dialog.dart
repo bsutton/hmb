@@ -16,6 +16,7 @@ import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'message_placeholders/place_holder.dart';
+import 'message_placeholders/placeholder_manager.dart';
 
 class MessageTemplateDialog extends StatefulWidget {
   const MessageTemplateDialog({required this.messageData, super.key});
@@ -67,7 +68,7 @@ class _MessageTemplateDialogState
   List<MessageTemplate> _templates = [];
   MessageTemplate? _selectedTemplate;
 
-  final Map<String, PlaceHolderField<dynamic>> placeholderFields = {};
+  final Map<String, PlaceHolder<dynamic, dynamic>> placeholders = {};
 
   late TabController _tabController;
   final TextEditingController _messageController = TextEditingController();
@@ -81,7 +82,7 @@ class _MessageTemplateDialogState
   Future<void> _loadTemplates() async {
     final templates = await DaoMessageTemplate().getByFilter(null);
     setState(() {
-      _templates = _filterTemplates(templates);
+    _templates = _filterTemplates(templates);
     });
   }
 
@@ -105,7 +106,7 @@ class _MessageTemplateDialogState
     return templates;
   }
 
-  void _initializePlaceholders() {
+  Future<void> _initializePlaceholders() async {
     if (_selectedTemplate != null) {
       final regExp = RegExp(r'\{\{(\w+)\}\}');
       final matches = regExp.allMatches(_selectedTemplate!.message);
@@ -114,22 +115,26 @@ class _MessageTemplateDialogState
       final newPlaceholders = matches.map((m) => m.group(1)!).toSet();
 
       // Remove placeholders that are no longer in the new template
-      placeholderFields.entries
+      placeholders.entries
           .where((field) => !newPlaceholders.contains(field.key))
           .toList()
-          .forEach(placeholderFields.remove);
+          .forEach(placeholders.remove);
 
       // Add new placeholders or keep existing ones
       for (final name in newPlaceholders) {
         // ignore: inference_failure_on_instance_creation
-        final placeholder = PlaceHolder.fromName(name);
+        final placeholder = await PlaceHolderManager()
+            .resolvePlaceholder(name, widget.messageData);
 
-        // final field = placeholder.field(widget.messageData);
-        // field.placeholder.listen = (value, reset) {
-        //   _reset(reset);
-        //   _refreshPreview();
-        // };
-        // placeholderFields[field.placeholder.name] = field;
+        if (placeholder != null) {
+          // final placeholderWidget = placeholder.source.field(widget.messageData);
+          // final widget = field(widget.messageData);
+          placeholder.listen = (value, reset) {
+            _reset(reset);
+            _refreshPreview();
+          };
+          placeholders[placeholder.name] = placeholder;
+        }
       }
     }
   }
@@ -143,9 +148,9 @@ class _MessageTemplateDialogState
     var previewMessage = _selectedTemplate!.message;
 
     // Replace other placeholders
-    for (final key in placeholderFields.keys) {
-      final field = placeholderFields[key];
-      final text = await field!.getValue(widget.messageData);
+    for (final key in placeholders.keys) {
+      final field = placeholders[key];
+      final text = await field!.value(widget.messageData);
       previewMessage = previewMessage.replaceAll(
           '{{$key}}', text.isNotEmpty ? text : '[$key]');
     }
@@ -186,22 +191,23 @@ class _MessageTemplateDialogState
                                   (template) => template.title.contains(filter))
                               .toList(),
                       format: (template) => template.title,
-                      onChanged: (template) {
-                        setState(() {
-                          _selectedTemplate = template;
-                          _initializePlaceholders();
-                          _messageController.text =
-                              _selectedTemplate?.message ?? '';
-                        });
+                      onChanged: (template) async {
+                        _selectedTemplate = template;
+                        await _initializePlaceholders();
+                        _messageController.text =
+                            _selectedTemplate?.message ?? '';
+                        setState(() {});
                       },
                       title: 'Choose a template',
                     ),
                     const SizedBox(height: 20),
                     if (_selectedTemplate != null)
                       Column(
-                        children: placeholderFields.values
-                            .where((field) => field.widget != null)
-                            .map((field) => field.widget)
+                        children: placeholders.values
+                            .where((field) =>
+                                field.source.widget(widget.messageData) != null)
+                            .map((field) =>
+                                field.source.widget(widget.messageData))
                             .whereType<Widget>()
                             .toList(),
                       ),
@@ -271,11 +277,9 @@ class _MessageTemplateDialogState
                 onPressed: () async {
                   if (_selectedTemplate != null) {
                     final values = <String, String>{};
-                    for (final MapEntry(:key, :value)
-                        in placeholderFields.entries) {
+                    for (final MapEntry(:key, :value) in placeholders.entries) {
                       final field = value;
-                      final fieldValue =
-                          await field.getValue(widget.messageData);
+                      final fieldValue = await field.value(widget.messageData);
                       values.addAll({key: fieldValue});
                     }
 
@@ -316,9 +320,9 @@ class _MessageTemplateDialogState
   }
 
   void _resetByScope(String scope) {
-    for (final placeholderField in placeholderFields.values) {
-      if (placeholderField.placeholder.key == scope) {
-        placeholderField.placeholder.setValue(null);
+    for (final placeholder in placeholders.values) {
+      if (placeholder.base == scope) {
+        placeholder.setValue(null);
       }
     }
   }

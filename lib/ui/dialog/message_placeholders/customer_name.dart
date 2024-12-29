@@ -1,14 +1,15 @@
+import '../../../entity/customer.dart';
 import '../message_template_dialog.dart';
 import 'customer_source.dart';
 import 'place_holder.dart';
 
-class CustomerName extends PlaceHolder<String> {
+class CustomerName extends PlaceHolder<String, Customer> {
   CustomerName({required this.customerSource})
-      : super(name: keyName, key: keyScope);
+      : super(name: tagName, base: tagBase, source: customerSource);
   final CustomerSource customerSource;
 
-  static String keyName = 'customer.name';
-  static String keyScope = 'customer';
+  static String tagName = 'customer.name';
+  static String tagBase = 'customer';
 
   @override
   Future<String> value(MessageData data) async =>

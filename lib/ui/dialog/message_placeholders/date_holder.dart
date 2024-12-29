@@ -1,13 +1,19 @@
 import '../../../util/format.dart';
 import '../../../util/local_date.dart';
 import '../message_template_dialog.dart';
+import 'date_source.dart';
 import 'place_holder.dart';
 
-class ServiceDate extends PlaceHolder<LocalDate> {
-  ServiceDate() : super(name: keyName, key: keyScope);
+class ServiceDate extends PlaceHolder<LocalDate, LocalDate> {
+  ServiceDate(this.dateSource)
+      : super(name: tagName, base: tagBase, source: dateSource);
 
-  static String keyName = 'service_date';
-  static String keyScope = 'service_date';
+  static String tagName = 'service_date';
+  static String tagBase = 'service_date';
+
+  static String label = 'Service Date';
+
+  final DateSource dateSource;
 
   LocalDate? serviceDate;
 
@@ -22,12 +28,17 @@ class ServiceDate extends PlaceHolder<LocalDate> {
   void setValue(LocalDate? value) => serviceDate = value;
 }
 
-class OriginalDate extends PlaceHolder<LocalDate> {
-  OriginalDate() : super(name: keyName, key: keyScope);
+class OriginalDate extends PlaceHolder<LocalDate, LocalDate> {
+  OriginalDate(this.dateSource)
+      : super(name: tagName, base: tagBase, source: dateSource);
 
-  static String keyName = 'original_date';
-  static String keyScope = 'original_date';
+  static String tagName = 'original_date';
+  static String tagBase = 'original_date';
+  static String label = 'Original Date';
+
   LocalDate? originalDate;
+
+  DateSource dateSource;
 
   @override
   Future<String> value(MessageData data) async =>
@@ -41,13 +52,16 @@ class OriginalDate extends PlaceHolder<LocalDate> {
   void setValue(LocalDate? value) => originalDate = value;
 }
 
-class AppointmentDate extends PlaceHolder<LocalDate> {
-  AppointmentDate() : super(name: keyName, key: keyScope);
+class AppointmentDate extends PlaceHolder<LocalDate, LocalDate> {
+  AppointmentDate(this.dateSource)
+      : super(name: tagName, base: tagBase, source: dateSource);
 
-  static String keyName = 'appointment_date';
-  static String keyScope = 'appointment_date';
+  static String tagName = 'appointment.date';
+  static String tagBase = 'appointment.date';
 
+  final DateSource dateSource;
   LocalDate? appointmentDate;
+
   @override
   Future<String> value(MessageData data) async =>
       formatLocalDate(data.appointmentDate ?? LocalDate.today());
@@ -60,11 +74,15 @@ class AppointmentDate extends PlaceHolder<LocalDate> {
   void setValue(LocalDate? value) => appointmentDate = value;
 }
 
-class DueDate extends PlaceHolder<LocalDate> {
-  DueDate() : super(name: keyName, key: keyScope);
+class DueDate extends PlaceHolder<LocalDate, LocalDate> {
+  DueDate(this.dateSource)
+      : super(name: tagName, base: tagBase, source: dateSource);
 
-  static String keyName = 'invoice.due_date';
-  static String keyScope = 'invoice.due_date';
+  static String tagName = 'invoice.due_date';
+  static String tagBase = 'invoice.due_date';
+  static String label = 'Due Date';
+
+  final DateSource dateSource;
 
   LocalDate? dueDate;
   @override

@@ -1,11 +1,15 @@
+import '../../../entity/job.dart';
 import '../message_template_dialog.dart';
 import 'job_source.dart';
 import 'place_holder.dart';
 
-class JobDescription extends PlaceHolder<String> {
+class JobDescription extends PlaceHolder<String, Job> {
   JobDescription({required this.jobSource})
-      : super(name: 'job.description', key: 'job');
+      : super(name: tagName, base: tagBase, source: jobSource);
 
+  static const String tagName = 'job.description';
+
+  static const String tagBase = 'job';
   final JobSource jobSource;
 
   @override

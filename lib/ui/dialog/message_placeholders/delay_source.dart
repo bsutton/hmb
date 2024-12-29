@@ -1,30 +1,40 @@
 import 'package:flutter/material.dart';
 
-import '../../../dao/dao_contact.dart';
 import '../../../entity/contact.dart';
-import '../../../entity/customer.dart';
-import '../../widgets/select/hmb_droplist.dart';
 import '../message_template_dialog.dart';
-import 'place_holder.dart';
 import 'source.dart';
 
-class ContactSource extends Source<Contact> {
-  ContactSource() : super(name: 'contact');
+class DelaySource extends Source<String> {
+  DelaySource() : super(name: 'delay');
 
   /// needs be taken from th emanager.
-  Customer? customer;
   Contact? contact;
+  String delay = periods[0];
 
+  static const periods = <String>[
+    '10 minutes',
+    '15 minutes',
+    '20 minutes',
+    '30 minutes',
+    '45 minutes',
+    '1 hour',
+    '1.5 hours',
+    '2 hours'
+  ];
+
+  /// Delay Period placeholder drop list
   @override
-  Widget widget(MessageData data) => HMBDroplist<Contact>(
-        title: 'Contact',
-        selectedItem: () async => contact,
-        items: (filter) async => DaoContact().getByFilter(customer!, filter),
-        format: (contact) => contact.fullname,
-        onChanged: (contact) {
-          this.contact = contact;
-          // Reset site and contact when customer changes
-          onChanged?.call(contact, ResetFields(site: true, contact: true));
+  Widget widget(MessageData data) => DropdownButtonFormField<String>(
+        decoration: const InputDecoration(labelText: 'Delay Period'),
+        value: periods[0],
+        items: periods
+            .map((period) => DropdownMenuItem<String>(
+                  value: period,
+                  child: Text(period),
+                ))
+            .toList(),
+        onChanged: (newValue) {
+          delay = newValue ?? '';
         },
       );
 }

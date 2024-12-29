@@ -17,7 +17,7 @@ class JobSource extends Source<Job> {
   final CustomerSource customerSource;
 
   @override
-  Widget field(MessageData data) => HMBDroplist<Job>(
+  Widget widget(MessageData data) => HMBDroplist<Job>(
         title: 'Job',
         selectedItem: () async => value,
         items: (filter) async {

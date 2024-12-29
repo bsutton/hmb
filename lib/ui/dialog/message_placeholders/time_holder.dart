@@ -1,16 +1,18 @@
-import 'package:strings/strings.dart';
-
-import '../../../ui/widgets/hmb_date_time_picker.dart';
 import '../../../util/format.dart';
 import '../../../util/local_time.dart';
 import '../message_template_dialog.dart';
 import 'place_holder.dart';
+import 'time_source.dart';
 
-class AppointmentTime extends PlaceHolder<LocalTime> {
-  AppointmentTime() : super(name: keyName, key: keyScope);
+class AppointmentTime extends PlaceHolder<LocalTime, LocalTime> {
+  AppointmentTime(this.timeSource)
+      : super(name: tagName, base: tagBase, source: TimeSource(label));
 
-  static String keyName = 'appointment_time';
-  static String keyScope = 'appointment_time';
+  static String tagName = 'appointment_time';
+  static String tagBase = 'appointment_time';
+  static String label = 'Appointment Time';
+
+  final TimeSource timeSource;
 
   LocalTime? appointmentTime;
   @override
@@ -23,24 +25,4 @@ class AppointmentTime extends PlaceHolder<LocalTime> {
 
   @override
   void setValue(LocalTime? value) => appointmentTime = value;
-}
-
-/// Date placeholder drop list
-PlaceHolderField<LocalTime> _buildTimePicker(
-    PlaceHolder<LocalTime> placeholder) {
-  final widget = HMBDateTimeField(
-    label: placeholder.name.toProperCase(),
-    initialDateTime: DateTime.now(),
-    onChanged: (datetime) {
-      final localTime = LocalTime.fromDateTime(datetime);
-      placeholder.setValue(localTime);
-      // controller.text = '${datetime.day}/${datetime.month}/${datetime.year}';
-      placeholder.onChanged?.call(localTime, ResetFields());
-    },
-    showDate: false,
-  );
-  return PlaceHolderField(
-      placeholder: placeholder,
-      widget: widget,
-      getValue: (data) async => placeholder.value(data));
 }

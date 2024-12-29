@@ -9,7 +9,7 @@ abstract class Source<T> {
   T? value;
   void Function(T? value, ResetFields resetFields)? onChanged;
 
-  Widget field(MessageData data);
+  Widget? widget(MessageData data);
 
   // ignore: use_setters_to_change_properties
   void setValue(T? newValue) {
