@@ -50,7 +50,8 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
         editor: (messageTemplate, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (messageTemplate?.owner == MessageTemplateOwner.user) ...[
+            if (messageTemplate == null ||
+                messageTemplate.owner == MessageTemplateOwner.user) ...[
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Title'),
