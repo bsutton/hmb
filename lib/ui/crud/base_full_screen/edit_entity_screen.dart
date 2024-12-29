@@ -17,6 +17,7 @@ class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
     required this.entityName,
     required this.entityState,
     required this.dao,
+    this.scrollController,
     super.key,
   });
 
@@ -25,17 +26,16 @@ class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
 
   final Widget Function(E? entity, {required bool isNew}) editor;
   final EntityState<E> entityState;
+  final ScrollController? scrollController;
 
   @override
   EntityEditScreenState createState() => EntityEditScreenState<E>();
 }
 
-/// The state of the EntityEditScreen.
 class EntityEditScreenState<E extends Entity<E>>
     extends State<EntityEditScreen<E>> {
   final _formKey = GlobalKey<FormState>();
 
-  /// Build the entity screen
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
@@ -52,9 +52,17 @@ class EntityEditScreenState<E extends Entity<E>>
               children: [
                 _commandButtons(context),
 
-                /// Inject the entity specific editor.
+                /// Inject the entity-specific editor.
                 Expanded(
                   child: SingleChildScrollView(
+                    key: PageStorageKey(
+
+                        /// the entity id's are not unique across tables
+                        /// so we use the createdDate which is in reality
+                        /// unique in all realworld scenarios.
+                        widget.entityState.currentEntity?.createdDate),
+                    // controller: widget.scrollController ??
+                    //     ScrollController(), // Attach the controller here
                     padding: const EdgeInsets.all(4),
                     child: widget.editor(widget.entityState.currentEntity,
                         isNew: isNew),
@@ -90,7 +98,6 @@ class EntityEditScreenState<E extends Entity<E>>
         await widget.dao.insert(newEntity);
         setState(() {
           widget.entityState.currentEntity = newEntity;
-          // widget.entityState.refresh();
         });
       }
 

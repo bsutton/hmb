@@ -51,6 +51,7 @@ class _JobEditScreenState extends State<JobEditScreen>
 
   late DateTime _selectedDate;
   BillingType _selectedBillingType = BillingType.timeAndMaterial;
+  late final ScrollController scrollController;
 
   @override
   Job? currentEntity;
@@ -61,6 +62,9 @@ class _JobEditScreenState extends State<JobEditScreen>
 
     currentEntity ??= widget.job;
     _selectedDate = widget.job?.startDate ?? DateTime.now();
+
+    scrollController = ScrollController();
+
     _summaryController = TextEditingController(text: widget.job?.summary ?? '');
     _descriptionController = RichEditorController(
         parchmentAsJsonString: widget.job?.description ?? '');
@@ -96,9 +100,7 @@ class _JobEditScreenState extends State<JobEditScreen>
         // to do this.
         // ignore: discarded_futures
         DaoJobStatus().getById(1).then((jobStatus) {
-          setState(() {
-            June.getState(SelectJobStatus.new).jobStatusId = jobStatus?.id;
-          });
+          June.getState(SelectJobStatus.new).jobStatusId = jobStatus?.id;
         });
       });
     }
@@ -115,6 +117,7 @@ class _JobEditScreenState extends State<JobEditScreen>
           builder: (context, customer) => EntityEditScreen<Job>(
             entityName: 'Job',
             dao: DaoJob(),
+            scrollController: scrollController,
             entityState: this,
             editor: (job, {required isNew}) => Column(
               mainAxisSize: MainAxisSize.min,
@@ -135,7 +138,7 @@ class _JobEditScreenState extends State<JobEditScreen>
                     child: RichEditor(
                         controller: _descriptionController,
                         focusNode: _descriptionFocusNode,
-                        key: UniqueKey()),
+                        key: ValueKey(job?.description)),
                   ),
                   // Allow the user to select a contact for the job
                   _chooseContact(customer, job),
@@ -208,37 +211,27 @@ class _JobEditScreenState extends State<JobEditScreen>
           builder: (state) => HMBSelectContact(
               selectedContact: state,
               customer: customer,
-              onSelected: (contact) => setState(() {
-                    setState(() {
-                      June.getState(SelectedContact.new).contactId =
-                          contact?.id;
-                    });
-                  })));
+              onSelected: (contact) =>
+                  June.getState(SelectedContact.new).contactId = contact?.id));
 
   JuneBuilder<SelectedSite> _chooseSite(Customer? customer, Job? job) =>
       JuneBuilder(() => SelectedSite()..siteId = job?.siteId,
           builder: (state) => HMBSelectSite(
               initialSite: state,
               customer: customer,
-              onSelected: (site) => setState(() {
-                    setState(() {
-                      June.getState(SelectedSite.new).siteId = site?.id;
-                    });
-                  })));
+              onSelected: (site) =>
+                  June.getState(SelectedSite.new).siteId = site?.id));
 
   Widget _chooseCustomer() => SelectCustomer(
-        selectedCustomer: June.getState(SelectedCustomer.new),
-        onSelected: (customer) => setState(() {
-          setState(() {
-            June.getState(SelectedCustomer.new).customerId = customer?.id;
+      selectedCustomer: June.getState(SelectedCustomer.new),
+      onSelected: (customer) {
+        June.getState(SelectedCustomer.new).customerId = customer?.id;
 
-            /// we have changed customers so the site and contact lists
-            /// are no longer valid.
-            June.getState(SelectedSite.new).siteId = null;
-            June.getState(SelectedContact.new).contactId = null;
-          });
-        }),
-      );
+        /// we have changed customers so the site and contact lists
+        /// are no longer valid.
+        June.getState(SelectedSite.new).siteId = null;
+        June.getState(SelectedContact.new).contactId = null;
+      });
 
   Widget _chooseStatus(Job? job) =>
       JuneBuilder(() => SelectJobStatus()..jobStatusId = job?.jobStatusId,
@@ -304,6 +297,7 @@ class _JobEditScreenState extends State<JobEditScreen>
 
   @override
   void dispose() {
+    scrollController.dispose();
     _summaryController.dispose();
     _descriptionController.dispose();
     _hourlyRateController.dispose();
