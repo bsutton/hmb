@@ -1,6 +1,5 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import '../../dao/dao_job.dart';
 import '../../entity/job.dart';
@@ -43,13 +42,7 @@ class _JobEventDialogState extends State<JobEventDialog> {
   late DateTime _startDate;
   late DateTime _endDate;
 
-  // DateTime? _startTime;
-  // DateTime? _endTime;
-
-  Color _color = Colors.blue;
-
   Job? _selectedJob;
-
   final _form = GlobalKey<FormState>();
 
   late final _titleNode = FocusNode();
@@ -101,7 +94,8 @@ class _JobEventDialogState extends State<JobEventDialog> {
                     label: 'Start Date',
                     initialDateTime: _startDate,
                     onChanged: (date) {
-                      if (date.isAfter(_endDate.withoutTime)) {
+                      // If new start date is after the current end date, shift end date
+                      if (date.isAfter(_endDate)) {
                         _endDate = date.add(const Duration(hours: 1));
                       }
                       _startDate = date;
@@ -116,38 +110,16 @@ class _JobEventDialogState extends State<JobEventDialog> {
                     initialDateTime: _endDate,
                     label: 'End Date',
                     onChanged: (date) {
-                      if (date.withoutTime.isBefore(_startDate.withoutTime)) {
+                      if (date.isBefore(_startDate)) {
                         ScaffoldMessenger.of(context)
                             .showSnackBar(const SnackBar(
                           content: Text('End date occurs before start date.'),
                         ));
                       } else {
-                        _endDate = date.withoutTime;
+                        _endDate = date;
                       }
                       setState(() {});
                     },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 15),
-            Row(
-              children: [
-                const Text(
-                  'Event Color: ',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () async {
-                    await _displayColorPicker();
-                    setState(() {});
-                  },
-                  child: CircleAvatar(
-                    radius: 15,
-                    backgroundColor: _color,
                   ),
                 ),
               ],
@@ -172,8 +144,10 @@ class _JobEventDialogState extends State<JobEventDialog> {
       );
 
   void _createEvent() {
+    // If form or required fields fail validation, do nothing.
     if (!(_form.currentState?.validate() ?? true)) return;
 
+    // If no job is selected, ask the user to pick one.
     if (_selectedJob == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Please select a job for the event.'),
@@ -183,46 +157,11 @@ class _JobEventDialogState extends State<JobEventDialog> {
 
     _form.currentState?.save();
 
-    final jobEvent = JobEvent(
-        job: _selectedJob!, start: _startDate, end: _endDate, color: _color);
+    // Create a new JobEvent object with the selected job and date range
+    final jobEvent =
+        JobEvent(job: _selectedJob!, start: _startDate, end: _endDate);
 
+    // Return this event back to the caller
     Navigator.of(context).pop(jobEvent);
-  }
-
-  void _resetForm() {
-    _form.currentState?.reset();
-    _startDate = DateTime.now().withoutTime;
-    _endDate = DateTime.now().withoutTime;
-    // _startTime = null;
-    // _endTime = null;
-    _color = Colors.blue;
-    _selectedJob = null;
-    setState(() {});
-  }
-
-  Future<void> _displayColorPicker() async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => SimpleDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        contentPadding: const EdgeInsets.all(20),
-        children: [
-          const Text(
-            'Select event color',
-            style: TextStyle(fontSize: 25),
-          ),
-          ColorPicker(
-            pickerColor: _color,
-            onColorChanged: (c) => _color = c,
-          ),
-          HMBButtonPrimary(
-            label: 'Select',
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
-      ),
-    );
   }
 }

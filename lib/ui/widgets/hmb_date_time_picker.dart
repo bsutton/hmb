@@ -1,15 +1,17 @@
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'layout/hmb_spacer.dart';
 import 'text/hmb_text.dart';
 
+// import 'layout/hmb_spacer.dart';
+// import 'text/hmb_text.dart';
 
 typedef OnChanged = void Function(DateTime newValue);
 
 /// Displays a Date and Time picker in separate fields.
 /// The value is passed to the [onChanged] callback.
-class HMBDateTimeField extends m.StatefulWidget {
+class HMBDateTimeField extends StatefulWidget {
   const HMBDateTimeField({
     required this.label,
     required this.initialDateTime,
@@ -31,10 +33,10 @@ class HMBDateTimeField extends m.StatefulWidget {
   _HMBDateTimeFieldState createState() => _HMBDateTimeFieldState();
 }
 
-class _HMBDateTimeFieldState extends m.State<HMBDateTimeField> {
+class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
   late DateTime selectedDateTime;
-  late m.TextEditingController dateController;
-  late m.TextEditingController timeController;
+  late TextEditingController dateController;
+  late TextEditingController timeController;
 
   final dateFormat = DateFormat('EEE, d MMM yyyy');
   final timeFormat = DateFormat('h:mm a');
@@ -44,33 +46,45 @@ class _HMBDateTimeFieldState extends m.State<HMBDateTimeField> {
     super.initState();
     selectedDateTime = widget.initialDateTime;
     dateController =
-        m.TextEditingController(text: dateFormat.format(selectedDateTime));
+        TextEditingController(text: dateFormat.format(selectedDateTime));
     timeController =
-        m.TextEditingController(text: timeFormat.format(selectedDateTime));
+        TextEditingController(text: timeFormat.format(selectedDateTime));
   }
 
   @override
-  void dispose() {
-    dateController.dispose();
-    timeController.dispose();
-    super.dispose();
+  void didUpdateWidget(covariant HMBDateTimeField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the parent changes the initial date/time, update this widget’s state.
+    if (widget.initialDateTime != oldWidget.initialDateTime) {
+      selectedDateTime = widget.initialDateTime;
+      // Schedule controller updates for *after* this frame finishes building
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateControllers();
+      });
+    }
+  }
+
+  /// Helper method to avoid duplicating controller update code.
+  void _updateControllers() {
+    dateController.text = dateFormat.format(selectedDateTime);
+    timeController.text = timeFormat.format(selectedDateTime);
   }
 
   @override
-  m.Widget build(m.BuildContext context) => m.Row(
-        crossAxisAlignment: m.CrossAxisAlignment.end,
-        children: <m.Widget>[
+  Widget build(BuildContext context) => Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
           HMBText(
             widget.label,
             bold: true,
           ),
           if (widget.showDate) const HMBSpacer(width: true),
           if (widget.showDate)
-            m.SizedBox(
+            SizedBox(
               width: 180,
-              child: m.TextFormField(
+              child: TextFormField(
                 readOnly: true,
-                decoration: const m.InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Select Date',
                 ),
                 controller: dateController,
@@ -94,11 +108,11 @@ class _HMBDateTimeFieldState extends m.State<HMBDateTimeField> {
             ),
           if (widget.showTime) const HMBSpacer(width: true),
           if (widget.showTime)
-            m.SizedBox(
+            SizedBox(
               width: 180,
-              child: m.TextFormField(
+              child: TextFormField(
                 readOnly: true,
-                decoration: const m.InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Select Time',
                 ),
                 controller: timeController,
@@ -123,20 +137,20 @@ class _HMBDateTimeFieldState extends m.State<HMBDateTimeField> {
         ],
       );
 
-  Future<m.TimeOfDay?> _showTimePicker(
-          m.BuildContext context, DateTime? currentValue) async =>
-      m.showTimePicker(
+  Future<TimeOfDay?> _showTimePicker(
+          BuildContext context, DateTime? currentValue) async =>
+      showTimePicker(
         context: context,
-        initialTime: m.TimeOfDay.fromDateTime(currentValue ?? DateTime.now()),
-        builder: (context, child) => m.MediaQuery(
-          data: m.MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+        initialTime: TimeOfDay.fromDateTime(currentValue ?? DateTime.now()),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
           child: child!,
         ),
       );
 
   Future<DateTime?> _showDatePicker(
-          m.BuildContext context, DateTime? currentValue) =>
-      m.showDatePicker(
+          BuildContext context, DateTime? currentValue) =>
+      showDatePicker(
         context: context,
         firstDate: DateTime(1900),
         initialDate: currentValue ?? DateTime.now(),
