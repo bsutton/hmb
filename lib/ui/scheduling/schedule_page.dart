@@ -1,14 +1,20 @@
+// schedule_page.dart
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:intl/intl.dart';
 
 import '../../dao/dao_customer.dart';
+import '../../dao/dao_job.dart';
+import '../../dao/dao_job_event.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
+import '../../entity/job_event.dart';
 import '../../util/app_title.dart';
 import '../../util/format.dart';
+import '../widgets/async_state.dart';
 import '../widgets/layout/hmb_spacer.dart';
+import '../widgets/media/rich_editor.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
@@ -23,12 +29,34 @@ class SchedulePage extends StatefulWidget {
 
 enum View { month, week, day }
 
-class _SchedulePageState extends State<SchedulePage> {
+class JobEventEx {
+  JobEventEx._(this.job, this.jobEvent);
+
+  static Future<JobEventEx> fromEvent(JobEvent jobEvent) async {
+    final job = await DaoJob().getById(jobEvent.jobId);
+
+    return JobEventEx._(job!, jobEvent);
+  }
+
+  final JobEvent jobEvent;
+  late final Job job;
+
+  CalendarEventData<JobEventEx> get eventData => CalendarEventData(
+        title: job.summary,
+        description: RichEditor.createParchment(job.description)
+            .toPlainText()
+            .replaceAll('\n\n', '\n'),
+        date: jobEvent.startDate.withoutTime,
+        startTime: jobEvent.startDate,
+        endTime: jobEvent.endDate,
+        event: this,
+      );
+}
+
+class _SchedulePageState extends AsyncState<SchedulePage, void> {
   View selectedView = View.month;
 
-  List<JobEvent> jobEvents = [];
-
-  late final EventController<JobEvent> eventController;
+  late final EventController<JobEventEx> eventController;
 
   @override
   void initState() {
@@ -38,44 +66,74 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-    eventController.dispose();
+  Future<void> asyncInitState() async {
+    await _loadEventsFromDb();
   }
 
   @override
-  Widget build(BuildContext context) => CalendarControllerProvider<JobEvent>(
-        controller: eventController,
-        child: Scaffold(
-            appBar: AppBar(
-                automaticallyImplyLeading: false,
-                toolbarHeight: 90,
-                actions: [
-                  HMBDroplist<View>(
-                      selectedItem: () async => selectedView,
-                      items: (filter) async => View.values,
-                      format: (view) => view.name,
-                      onChanged: (view) => setState(() {
-                            selectedView = view!;
-                          }),
-                      title: 'View')
-                ]),
-            body: Padding(
-              padding: const EdgeInsets.all(8),
-              child: switch (selectedView) {
-                View.month => _buildMonthView(context),
-                View.week => _buildWeekView(),
-                View.day => _buildDayView(),
-              },
-            )),
+  void dispose() {
+    eventController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadEventsFromDb() async {
+    final dao = DaoJobEvent();
+    final jobEvents = await dao.getAll();
+
+    final eventData = <CalendarEventData<JobEventEx>>[];
+    for (final jobEvent in jobEvents) {
+      eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData);
+    }
+
+    eventController
+      ..removeAll(eventController.allEvents)
+      ..addAll(eventData);
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilderEx(
+        future: initialised,
+        builder: (context, _) => CalendarControllerProvider<JobEventEx>(
+          controller: eventController,
+          child: Scaffold(
+            body: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: HMBDroplist<View>(
+                        selectedItem: () async => selectedView,
+                        items: (filter) async => View.values,
+                        format: (view) => view.name,
+                        onChanged: (view) => setState(() {
+                          selectedView = view!;
+                        }),
+                        title: 'View',
+                      ),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: switch (selectedView) {
+                    View.month => _buildMonthView(context),
+                    View.week => _buildWeekView(),
+                    View.day => _buildDayView(),
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
       );
 
   /// Day View
-  DayView<JobEvent> _buildDayView() {
-    late final DayView<JobEvent> dayView;
+  DayView<JobEventEx> _buildDayView() {
+    late final DayView<JobEventEx> dayView;
 
     // ignore: join_return_with_assignment
-    dayView = DayView<JobEvent>(
+    dayView = DayView<JobEventEx>(
       eventTileBuilder: (date, events, boundry, start, end) =>
           _dayTiles(dayView, events),
       fullDayEventBuilder: (events, date) =>
@@ -85,26 +143,28 @@ class _SchedulePageState extends State<SchedulePage> {
       onDateTap: (date) async {
         await _addEvent(context, date);
       },
+      onEventTap: (events, date) async => _onEventTap(context, events.first),
     );
 
     return dayView;
   }
 
   /// Week View
-  WeekView<JobEvent> _buildWeekView() => WeekView<JobEvent>(
+  WeekView<JobEventEx> _buildWeekView() => WeekView<JobEventEx>(
         headerStyle: _headerStyle(),
         backgroundColor: Colors.black,
         headerStringBuilder: _dateStringBuilder,
         onDateTap: (date) async {
           await _addEvent(context, date);
         },
+        onEventTap: (events, date) async => _onEventTap(context, events.first),
       );
 
   /// MonthView
-  MonthView<JobEvent> _buildMonthView(BuildContext context) {
-    late final MonthView<JobEvent> monthView;
+  MonthView<JobEventEx> _buildMonthView(BuildContext context) {
+    late final MonthView<JobEventEx> monthView;
     // ignore: join_return_with_assignment
-    monthView = MonthView<JobEvent>(
+    monthView = MonthView<JobEventEx>(
       headerStyle: _headerStyle(),
       headerStringBuilder: _dateStringBuilder,
       cellBuilder: (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
@@ -125,32 +185,33 @@ class _SchedulePageState extends State<SchedulePage> {
       onCellTap: (events, date) async {
         await _addEvent(context, date);
       },
-      onEventTap: (event, date) async {
-        final updatedEvent = await JobEventDialog.showEdit(context, event);
-        if (updatedEvent != null) {
-          eventController
-            ..remove(event)
-            ..add(updatedEvent.eventData);
-          setState(() {});
-        }
-      },
+      onEventTap: (event, date) async => _onEventTap(context, event),
     );
 
     return monthView;
   }
 
-  Future<void> _addEvent(BuildContext context, DateTime date) async {
-    final jobEvent = await JobEventDialog.showAdd(context: context, when: date);
-    if (jobEvent != null) {
-      setState(() {
-        jobEvents.add(jobEvent);
-        eventController.add(jobEvent.eventData);
-      });
+  /// onEventTap
+  Future<void> _onEventTap(
+      BuildContext context, CalendarEventData<JobEventEx> event) async {
+    {
+      // Show the edit dialog for this event
+      final updatedEvent = await JobEventDialog.showEdit(context, event);
+      if (updatedEvent == null) {
+        // Delete requested
+        if (event.event != null) {
+          await _deleteEvent(event.event!);
+        }
+      } else {
+        // Update requested
+        await _editExistingEvent(event, updatedEvent);
+      }
     }
   }
 
-  /// Build even tile for the day view.
-  Widget _dayTiles(DayView dayView, List<CalendarEventData<JobEvent>> events) {
+  /// Build each day tile
+  Widget _dayTiles(
+      DayView dayView, List<CalendarEventData<JobEventEx>> events) {
     final tiles = <Widget>[];
     for (final event in events) {
       final job = event.event!.job;
@@ -183,6 +244,7 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
+  /// header style
   HeaderStyle _headerStyle() => const HeaderStyle(
         headerTextStyle: TextStyle(
           color: Colors.white, // Set the text color for the header
@@ -204,19 +266,20 @@ class _SchedulePageState extends State<SchedulePage> {
       );
 
   String _dateStringBuilder(DateTime date, {DateTime? secondaryDate}) {
-    var formatted = DateFormat('yyyy/MM/dd').format(date);
+    var formatted = DateFormat('yyyy MMM dd').format(date);
 
-    if (secondaryDate != null) {
-      formatted = '$formatted ${DateFormat('yyyy/MM/dd').format(date)}';
+    if (secondaryDate != null && secondaryDate.compareTo(date) != 0) {
+      formatted =
+          '$formatted - ${DateFormat('yy MMM dd').format(secondaryDate)}';
     }
 
     return formatted;
   }
 
   Widget _cellBuilder(
-    MonthView<JobEvent> monthView,
+    MonthView<JobEventEx> monthView,
     DateTime date,
-    List<CalendarEventData<JobEvent>> events,
+    List<CalendarEventData<JobEventEx>> events,
     bool isToday,
     bool isInMonth,
     bool hideDaysNotInMonth,
@@ -239,10 +302,10 @@ class _SchedulePageState extends State<SchedulePage> {
 
   /// Render a list of event widgets
   List<Widget> _renderEvents(
-      MonthView<JobEvent> monthView,
+      MonthView<JobEventEx> monthView,
       DateTime date,
       bool isToday,
-      List<CalendarEventData<JobEvent>> events,
+      List<CalendarEventData<JobEventEx>> events,
       Color backgroundColour) {
     final widgets = <Widget>[];
 
@@ -264,15 +327,15 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   Widget _defaultCellBuilder(
-    MonthView monthView,
+    MonthView<JobEventEx> monthView,
     DateTime date,
-    List<CalendarEventData<JobEvent>> events,
+    List<CalendarEventData<JobEventEx>> events,
     bool isToday,
     bool isInMonth,
     bool hideDaysNotInMonth,
   ) {
     if (hideDaysNotInMonth) {
-      return FilledCell<JobEvent>(
+      return FilledCell<JobEventEx>(
         date: date,
         shouldHighlight: isToday,
         backgroundColor: isInMonth ? Colors.black : Colors.white60,
@@ -285,7 +348,7 @@ class _SchedulePageState extends State<SchedulePage> {
         hideDaysNotInMonth: hideDaysNotInMonth,
       );
     }
-    return FilledCell<JobEvent>(
+    return FilledCell<JobEventEx>(
       date: date,
       shouldHighlight: isToday,
       backgroundColor: isInMonth ? Colors.black : Colors.white60,
@@ -303,12 +366,12 @@ class _SchedulePageState extends State<SchedulePage> {
   //         List<Widget> widgets, CalendarEventData<JobEvent> event) =>
   //     SurfaceCard(title: event.event!.job.summary, body: const Text(''));
 
-  Widget _renderEvent(MonthView<JobEvent> monthView,
-          CalendarEventData<JobEvent> event, Color backgroundColour) =>
+  Widget _renderEvent(MonthView<JobEventEx> monthView,
+          CalendarEventData<JobEventEx> event, Color backgroundColour) =>
       GestureDetector(
         onTap: () async {
           if (monthView.onEventTap != null) {
-            monthView.onEventTap!(event, event.startTime!);
+            monthView.onEventTap?.call(event, event.startTime!);
           }
         },
         child: Text(
@@ -316,6 +379,51 @@ class _SchedulePageState extends State<SchedulePage> {
             style: TextStyle(
                 color: Colors.white, backgroundColor: backgroundColour)),
       );
+
+  Future<void> _addEvent(BuildContext context, DateTime date) async {
+    final jobEventEx =
+        await JobEventDialog.showAdd(context: context, when: date);
+    if (jobEventEx != null) {
+      // Insert to DB
+      final dao = DaoJobEvent();
+      final newId = await dao.insert(jobEventEx.jobEvent);
+      jobEventEx.jobEvent.id = newId;
+
+      // Add to our in-memory list & calendar
+      setState(() {
+        eventController.add(jobEventEx.eventData);
+      });
+    }
+  }
+
+  /// If the user updated an existing event
+  Future<void> _editExistingEvent(
+    CalendarEventData<JobEventEx> oldEvent,
+    JobEventEx updated,
+  ) async {
+    final dao = DaoJobEvent();
+
+    // 1) Update DB
+    await dao.update(updated.jobEvent);
+
+    // 2) Remove old from the calendar, re-add updated
+    eventController
+      ..remove(oldEvent)
+      ..add(updated.eventData);
+
+    setState(() {});
+  }
+
+  /// Delete an existing event from the DB
+  Future<void> _deleteEvent(JobEventEx event) async {
+    final dao = DaoJobEvent();
+    await dao.delete(event.jobEvent.id);
+
+    setState(() {
+      // Remove from local memory & calendar
+      eventController.remove(event.eventData);
+    });
+  }
 }
 
 class JobAndCustomer {
@@ -329,23 +437,4 @@ class JobAndCustomer {
 
   Job job;
   Customer customer;
-}
-
-class JobEvent {
-  JobEvent({
-    required this.job,
-    required this.start,
-    required this.end,
-  });
-  Job job;
-  DateTime start;
-  DateTime end;
-
-  CalendarEventData<JobEvent> get eventData => CalendarEventData(
-      title: job.summary,
-      description: job.description,
-      date: start.withoutTime,
-      startTime: start,
-      endTime: end,
-      event: this);
 }

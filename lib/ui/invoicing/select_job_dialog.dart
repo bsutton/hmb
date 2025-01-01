@@ -6,6 +6,7 @@ import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
+import '../widgets/surface.dart';
 
 class SelectJobDialog extends StatefulWidget {
   const SelectJobDialog({super.key});
@@ -40,8 +41,9 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
 
   @override
   void dispose() {
-    _searchController..removeListener(_onSearchChanged)
-    ..dispose();
+    _searchController
+      ..removeListener(_onSearchChanged)
+      ..dispose();
     super.dispose();
   }
 
@@ -146,9 +148,9 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
                       itemCount: filteredJobs.length,
                       itemBuilder: (context, index) {
                         final current = filteredJobs[index];
-                        return ListTile(
-                          title: Text(current.job.summary),
-                          subtitle: Column(
+                        return SurfaceCard(
+                          title: current.job.summary,
+                          body: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Customer: ${current.customer.name}'),
@@ -158,7 +160,7 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
                                 Text('Contact: ${current.contactName}')
                             ],
                           ),
-                          onTap: () => Navigator.pop(context, current.job),
+                          onPressed: () => Navigator.pop(context, current.job),
                         );
                       },
                     );

@@ -75,86 +75,107 @@ class _JobEventDialogState extends State<JobEventDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => Form(
-        key: _form,
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                HMBDroplist<Job>(
-                  selectedItem: () async => _selectedJob,
-                  items: (filter) async => DaoJob().getActiveJobs(filter),
-                  format: (job) => job.summary,
-                  onChanged: (job) => setState(() {
-                    _selectedJob = job;
-                  }),
-                  title: 'Select Job',
-                ),
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen =
+        screenWidth < 600; // Define threshold for small screens
+
+    return Form(
+      key: _form,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HMBDroplist<Job>(
+                selectedItem: () async => _selectedJob,
+                items: (filter) async => DaoJob().getActiveJobs(filter),
+                format: (job) => job.summary,
+                onChanged: (job) => setState(() {
+                  _selectedJob = job;
+                }),
+                title: 'Select Job',
+              ),
+              const SizedBox(height: 15),
+              if (isSmallScreen) ...[
+                // Vertical layout for small screens
+                _buildStartDate(),
                 const SizedBox(height: 15),
+                _buildEndDate(context),
+              ] else ...[
+                // Horizontal layout for larger screens
                 Row(
                   children: [
                     Expanded(
-                      child: HMBDateTimeField(
-                        showDate: false,
-                        label: 'Start Date',
-                        initialDateTime: _startDate,
-                        onChanged: (date) {
-                          if (date.isAfter(_endDate)) {
-                            _endDate = date.add(const Duration(hours: 1));
-                          }
-                          setState(() => _startDate = date);
-                        },
-                      ),
+                      child: _buildStartDate(),
                     ),
                     const SizedBox(width: 15),
                     Expanded(
-                      child: HMBDateTimeField(
-                        showDate: false,
-                        label: 'End Date',
-                        initialDateTime: _endDate,
-                        onChanged: (date) {
-                          if (date.isBefore(_startDate)) {
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(const SnackBar(
-                              content:
-                                  Text('End date occurs before start date.'),
-                            ));
-                            return;
-                          }
-                          setState(() => _endDate = date);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    HMBButtonSecondary(
-                      onPressed: () => Navigator.of(context).pop(),
-                      label: 'Cancel',
-                    ),
-                    const HMBSpacer(width: true),
-                    if (widget.isEditing) ...[
-                      HMBButtonSecondary(
-                        onPressed: _handleDelete,
-                        label: 'Delete',
-                      ),
-                      const HMBSpacer(width: true),
-                    ],
-                    HMBButtonPrimary(
-                      onPressed: _handleSave,
-                      label: widget.isEditing ? 'Update Event' : 'Add Event',
+                      child: _buildEndDate(context),
                     ),
                   ],
                 ),
               ],
-            ),
+              const SizedBox(height: 30),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  HMBButtonSecondary(
+                    onPressed: () => Navigator.of(context).pop(),
+                    label: 'Cancel',
+                  ),
+                  const HMBSpacer(width: true),
+                  if (widget.isEditing) ...[
+                    HMBButtonSecondary(
+                      onPressed: _handleDelete,
+                      label: 'Delete',
+                    ),
+                    const HMBSpacer(width: true),
+                  ],
+                  HMBButtonPrimary(
+                    onPressed: _handleSave,
+                    label: widget.isEditing ? 'Update Event' : 'Add Event',
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// End Date
+  HMBDateTimeField _buildEndDate(BuildContext context) => HMBDateTimeField(
+        showDate: false,
+        label: 'End Date',
+        initialDateTime: _endDate,
+        onChanged: (date) {
+          if (date.isBefore(_startDate)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('End date occurs before start date.'),
+              ),
+            );
+            return;
+          }
+          setState(() => _endDate = date);
+        },
+      );
+
+  /// Start Date
+  HMBDateTimeField _buildStartDate() => HMBDateTimeField(
+        showDate: false,
+        label: 'Start Date',
+        initialDateTime: _startDate,
+        onChanged: (date) {
+          if (date.isAfter(_endDate)) {
+            _endDate = date.add(const Duration(hours: 1));
+          }
+          setState(() => _startDate = date);
+        },
       );
 
   /// If the user taps “Delete,” we pop `null`

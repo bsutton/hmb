@@ -21,6 +21,7 @@ import '../invoicing/list_invoice_screen.dart';
 import '../list_packing_screen.dart';
 import '../list_shopping_screen.dart';
 import '../quoting/list_quote_screen.dart';
+import '../scheduling/schedule_page.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../wizard/system_wizard.dart';
 import 'home_with_drawer.dart';
@@ -77,6 +78,11 @@ GoRouter get router => GoRouter(
           path: '/packing',
           builder: (_, __) =>
               const HomeWithDrawer(initialScreen: PackingScreen()),
+        ),
+        GoRoute(
+          path: '/schedule',
+          builder: (_, __) => const HomeWithDrawer(
+              initialScreen: SchedulePage()),
         ),
         GoRoute(
           path: '/billing/quotes',
