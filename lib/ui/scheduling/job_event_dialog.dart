@@ -76,10 +76,14 @@ class _JobEventDialogState extends State<JobEventDialog> {
 
   @override
   @override
+  @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen =
         screenWidth < 600; // Define threshold for small screens
+
+    // Calculate the duration
+    final duration = _endDate.difference(_startDate);
 
     return Form(
       key: _form,
@@ -104,6 +108,7 @@ class _JobEventDialogState extends State<JobEventDialog> {
                 _buildStartDate(),
                 const SizedBox(height: 15),
                 _buildEndDate(context),
+                const SizedBox(height: 15),
               ] else ...[
                 // Horizontal layout for larger screens
                 Row(
@@ -117,7 +122,17 @@ class _JobEventDialogState extends State<JobEventDialog> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 15),
               ],
+              // Display the duration
+              Row(
+                children: [
+                  Text(
+                    'Duration: ${_formatDuration(duration)}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
               const SizedBox(height: 30),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -145,6 +160,13 @@ class _JobEventDialogState extends State<JobEventDialog> {
         ),
       ),
     );
+  }
+
+  /// Helper to format the duration
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes % 60;
+    return '${hours}h ${minutes}m';
   }
 
   /// End Date
