@@ -55,8 +55,10 @@ class JobEventEx {
 
 class _SchedulePageState extends AsyncState<SchedulePage, void> {
   View selectedView = View.month;
-
   late final EventController<JobEventEx> eventController;
+
+  final PageController _pageController = PageController();
+  DateTime currentDate = DateTime.now();
 
   @override
   void initState() {
@@ -73,6 +75,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   @override
   void dispose() {
     eventController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -116,11 +119,22 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                   ],
                 ),
                 Expanded(
-                  child: switch (selectedView) {
-                    View.month => _buildMonthView(context),
-                    View.week => _buildWeekView(),
-                    View.day => _buildDayView(),
-                  },
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        currentDate = _getDateForPage(index);
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final date = _getDateForPage(index);
+                      return switch (selectedView) {
+                        View.month => _buildMonthView(context, date),
+                        View.week => _buildWeekView(date),
+                        View.day => _buildDayView(date),
+                      };
+                    },
+                  ),
                 ),
               ],
             ),
@@ -128,16 +142,28 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
         ),
       );
 
+  /// Calculates the date for the given page index.
+  DateTime _getDateForPage(int pageIndex) {
+    final today = DateTime.now();
+    return switch (selectedView) {
+      View.month => DateTime(today.year, today.month + pageIndex),
+      View.week => today.add(Duration(days: 7 * pageIndex)),
+      View.day => today.add(Duration(days: pageIndex)),
+    };
+  }
+
   /// Day View
-  DayView<JobEventEx> _buildDayView() {
+  DayView<JobEventEx> _buildDayView(DateTime date) {
     late final DayView<JobEventEx> dayView;
 
     // ignore: join_return_with_assignment
     dayView = DayView<JobEventEx>(
+      key: ValueKey(date),
+      initialDay: date,
       eventTileBuilder: (date, events, boundry, start, end) =>
           _dayTiles(dayView, events),
       fullDayEventBuilder: (events, date) =>
-          const Text('full hi', style: TextStyle(color: Colors.white)),
+          const Text('Full Day Event', style: TextStyle(color: Colors.white)),
       headerStyle: _headerStyle(),
       backgroundColor: Colors.black,
       onDateTap: (date) async {
@@ -150,7 +176,9 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   }
 
   /// Week View
-  WeekView<JobEventEx> _buildWeekView() => WeekView<JobEventEx>(
+  WeekView<JobEventEx> _buildWeekView(DateTime date) => WeekView<JobEventEx>(
+        key: ValueKey(date),
+        initialDay: date,
         headerStyle: _headerStyle(),
         backgroundColor: Colors.black,
         headerStringBuilder: _dateStringBuilder,
@@ -160,11 +188,13 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
         onEventTap: (events, date) async => _onEventTap(context, events.first),
       );
 
-  /// MonthView
-  MonthView<JobEventEx> _buildMonthView(BuildContext context) {
+  /// Month View
+  MonthView<JobEventEx> _buildMonthView(BuildContext context, DateTime date) {
     late final MonthView<JobEventEx> monthView;
     // ignore: join_return_with_assignment
     monthView = MonthView<JobEventEx>(
+      key: ValueKey(date),
+      initialMonth: date,
       headerStyle: _headerStyle(),
       headerStringBuilder: _dateStringBuilder,
       cellBuilder: (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
@@ -265,6 +295,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
             EdgeInsets.symmetric(horizontal: 16), // Optional: Adjust padding
       );
 
+  /// Helper to format the date for headers
   String _dateStringBuilder(DateTime date, {DateTime? secondaryDate}) {
     var formatted = DateFormat('yyyy MMM dd').format(date);
 
