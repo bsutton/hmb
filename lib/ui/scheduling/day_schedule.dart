@@ -4,6 +4,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 // Example imports (replace with your actual ones):
 import '../../dao/dao_job_event.dart';
+import '../widgets/async_state.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'job_event_ex.dart';
@@ -25,14 +26,18 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
   State<DaySchedule> createState() => _DayScheduleState();
 }
 
-class _DayScheduleState extends State<DaySchedule> {
+class _DayScheduleState extends AsyncState<DaySchedule, void> {
   late final EventController<JobEventEx> _dayController;
 
   @override
   void initState() {
     super.initState();
     _dayController = EventController();
-    _loadEventsForDay();
+  }
+
+  @override
+  Future<void> asyncInitState() async {
+    await _loadEventsForDay();
   }
 
   @override
@@ -41,7 +46,7 @@ class _DayScheduleState extends State<DaySchedule> {
     super.dispose();
   }
 
-  /// Fetch events for [widget.initialDate] from DB
+  /// Fetch events for [DaySchedule.initialDate] from DB
   Future<void> _loadEventsForDay() async {
     // Set a date range: midnight -> midnight next day
     final start = DateTime(widget.initialDate.year, widget.initialDate.month,
@@ -57,40 +62,41 @@ class _DayScheduleState extends State<DaySchedule> {
       eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData);
     }
 
-    setState(() {
-      _dayController
-        ..clear()
-        ..addAll(eventData);
-    });
+    _dayController
+      ..clear()
+      ..addAll(eventData);
   }
 
   @override
   Widget build(BuildContext context) => CalendarControllerProvider<JobEventEx>(
         controller: _dayController,
-        child: DayView<JobEventEx>(
-          key: ValueKey(widget.initialDate),
-          initialDay: widget.initialDate,
-          dateStringBuilder: widget.dateStringBuilder,
-          eventTileBuilder: (date, events, boundary, start, end) =>
-              _buildDayTiles(events),
-          fullDayEventBuilder: (events, date) => const Text(
-            'Full Day Event',
-            style: TextStyle(color: Colors.white),
+        child: FutureBuilderEx(
+          future: initialised,
+          builder: (context, _) => DayView<JobEventEx>(
+            key: ValueKey(widget.initialDate),
+            initialDay: widget.initialDate,
+            dateStringBuilder: widget.dateStringBuilder,
+            eventTileBuilder: (date, events, boundary, start, end) =>
+                _buildDayTiles(events),
+            fullDayEventBuilder: (events, date) => const Text(
+              'Full Day Event',
+              style: TextStyle(color: Colors.white),
+            ),
+            headerStyle: widget.headerStyle(),
+            backgroundColor: Colors.black,
+            onDateTap: (date) async {
+              // Create new event
+              await widget.addEvent(context, date, widget.defaultJob);
+              // Refresh
+              await _loadEventsForDay();
+            },
+            onEventTap: (events, date) async {
+              // Only handle the first event in the list
+              await widget.onEventTap(context, events.first);
+              // Refresh
+              await _loadEventsForDay();
+            },
           ),
-          headerStyle: widget.headerStyle(),
-          backgroundColor: Colors.black,
-          onDateTap: (date) async {
-            // Create new event
-            await widget.addEvent(context, date, widget.defaultJob);
-            // Refresh
-            await _loadEventsForDay();
-          },
-          onEventTap: (events, date) async {
-            // Only handle the first event in the list
-            await widget.onEventTap(context, events.first);
-            // Refresh
-            await _loadEventsForDay();
-          },
         ),
       );
 

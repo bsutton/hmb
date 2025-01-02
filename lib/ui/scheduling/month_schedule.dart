@@ -1,9 +1,11 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao_job_event.dart';
 // Example imports (replace with your actual ones):
 import '../../util/format.dart'; // For formatTime() or similar
+import '../widgets/async_state.dart';
 import '../widgets/surface.dart';
 import 'job_event_ex.dart';
 import 'schedule_helper.dart';
@@ -19,14 +21,18 @@ class MonthSchedule extends StatefulWidget with ScheduleHelper {
   State<MonthSchedule> createState() => _MonthScheduleState();
 }
 
-class _MonthScheduleState extends State<MonthSchedule> {
+class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
   late final EventController<JobEventEx> _monthController;
 
   @override
   void initState() {
     super.initState();
     _monthController = EventController();
-    _loadEventsForMonth();
+  }
+
+  @override
+  Future<void> asyncInitState() async {
+    await _loadEventsForMonth();
   }
 
   @override
@@ -89,7 +95,8 @@ class _MonthScheduleState extends State<MonthSchedule> {
 
     return CalendarControllerProvider<JobEventEx>(
       controller: _monthController,
-      child: monthView,
+      child: FutureBuilderEx(
+          future: initialised, builder: (context, _) => monthView),
     );
   }
 

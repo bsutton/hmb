@@ -93,7 +93,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   }
 
   /// Initialize the page controller with the correct starting index:
-  /// - If [widget.initialEventId] is provided, fetch that event's date from DB.
+  /// - If [SchedulePage.initialEventId] is provided, fetch that event's date from DB.
   /// - Otherwise, use [DateTime.now()].
   Future<void> _initPage() async {
     currentDate = DateTime.now();

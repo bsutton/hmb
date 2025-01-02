@@ -1,8 +1,10 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 
 // Example imports (replace with your actual ones):
 import '../../dao/dao_job_event.dart';
+import '../widgets/async_state.dart';
 import 'job_event_ex.dart';
 import 'schedule_helper.dart';
 
@@ -21,14 +23,18 @@ class WeekSchedule extends StatefulWidget with ScheduleHelper {
   State<WeekSchedule> createState() => _WeekScheduleState();
 }
 
-class _WeekScheduleState extends State<WeekSchedule> {
+class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
   late final EventController<JobEventEx> _weekController;
 
   @override
   void initState() {
     super.initState();
     _weekController = EventController();
-    _loadEventsForWeek();
+  }
+
+  @override
+  Future<void> asyncInitState() async {
+    await _loadEventsForWeek();
   }
 
   @override
@@ -56,7 +62,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
     });
   }
 
-  /// Example of getting the Monday date from [widget.initialDate]
+  /// Example of getting the Monday date from [WeekSchedule.initialDate]
   DateTime _mondayOf(DateTime d) {
     // In Dart, Monday=1, Sunday=7
     final dayOfWeek = d.weekday;
@@ -68,20 +74,22 @@ class _WeekScheduleState extends State<WeekSchedule> {
   @override
   Widget build(BuildContext context) => CalendarControllerProvider<JobEventEx>(
         controller: _weekController,
-        child: WeekView<JobEventEx>(
-          key: ValueKey(widget.initialDate),
-          initialDay: widget.initialDate,
-          headerStyle: widget.headerStyle(),
-          backgroundColor: Colors.black,
-          headerStringBuilder: widget.dateStringBuilder,
-          onDateTap: (date) async {
-            await widget.addEvent(context, date, widget.defaultJob);
-            await _loadEventsForWeek();
-          },
-          onEventTap: (events, date) async {
-            await widget.onEventTap(context, events.first);
-            await _loadEventsForWeek();
-          },
-        ),
+        child: FutureBuilderEx(
+            future: initialised,
+            builder: (context, _) => WeekView<JobEventEx>(
+                  key: ValueKey(widget.initialDate),
+                  initialDay: widget.initialDate,
+                  headerStyle: widget.headerStyle(),
+                  backgroundColor: Colors.black,
+                  headerStringBuilder: widget.dateStringBuilder,
+                  onDateTap: (date) async {
+                    await widget.addEvent(context, date, widget.defaultJob);
+                    await _loadEventsForWeek();
+                  },
+                  onEventTap: (events, date) async {
+                    await widget.onEventTap(context, events.first);
+                    await _loadEventsForWeek();
+                  },
+                )),
       );
 }
