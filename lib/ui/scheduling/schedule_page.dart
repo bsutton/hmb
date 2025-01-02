@@ -8,6 +8,7 @@ import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../util/app_title.dart';
 import '../widgets/async_state.dart';
+import '../widgets/hmb_icon_button.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'day_schedule.dart';
 import 'desktop_swipe.dart';
@@ -21,18 +22,15 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
     required this.dialogMode,
     super.key,
     this.defaultView = ScheduleView.day,
-    DateTime? initialDate,
     this.defaultJob,
     this.initialEventId,
-  }) : initialDate = initialDate ?? DateTime.now();
+  }) ;
 
   final bool dialogMode;
 
   /// The view to show: day, week, or month
   final ScheduleView defaultView;
 
-  /// Which date to show first (e.g., "today" or the date of a next event)
-  final DateTime initialDate;
 
   /// If we came from a specific job, we can auto-populate that in the JobEventDialog
   final int? defaultJob;
@@ -54,7 +52,6 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   DateTime currentDate = DateTime.now();
 
   int? preSelectedJobId;
-  int? initialEventId;
 
   @override
   void initState() {
@@ -62,11 +59,8 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
     setAppTitle('Schedule');
     eventController = EventController();
 
-    // Initialize view and other parameters from widget
     selectedView = widget.defaultView;
-    currentDate = widget.initialDate;
     preSelectedJobId = widget.defaultJob;
-    initialEventId = widget.initialEventId;
   }
 
   @override
@@ -74,10 +68,10 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
     await _loadEventsFromDb();
 
     // Scroll to initial event if specified
-    if (initialEventId != null) {
+    if (widget.initialEventId != null) {
       final events = eventController
           .getEventsOnDay(currentDate)
-          .where((e) => e.event?.jobEvent.id == initialEventId)
+          .where((e) => e.event?.jobEvent.id == widget.initialEventId)
           .toList();
       if (events.isNotEmpty) {
         setState(() {
@@ -117,46 +111,17 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
             controller: eventController,
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: HMBDroplist<ScheduleView>(
-                        selectedItem: () async => selectedView,
-                        items: (filter) async => ScheduleView.values,
-                        format: (view) => view.name,
-                        onChanged: (view) => setState(() {
-                          selectedView = view!;
-                        }),
-                        title: 'View',
-                      ),
-                    ),
-                  ],
-                ),
+                navigation(),
                 Expanded(
                   child: DesktopSwipe(
                     onNext: () async {
-                      await _pageController.nextPage(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
+                      await onNextPage();
                     },
                     onPrevious: () async {
-                      await _pageController.previousPage(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
+                      await onPreviousPage();
                     },
                     onHome: () async {
-                      final today = DateTime.now();
-                      final todayIndex = _getPageIndexForDate(today);
-
-                      await _pageController.animateToPage(
-                        todayIndex,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
+                      await onHomePage();
                     },
                     child: PageView.builder(
                       key: ValueKey(selectedView),
@@ -188,11 +153,65 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                       },
                     ),
                   ),
-                ),
+                )
               ],
             ),
           ),
         ),
+      );
+
+  Future<void> onHomePage() async {
+    final today = DateTime.now();
+    final todayIndex = _getPageIndexForDate(today);
+
+    await _pageController.animateToPage(
+      todayIndex,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Future<void> onPreviousPage() async {
+    await _pageController.previousPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Future<void> onNextPage() async {
+    await _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  /// Show left/right nav buttons and the droplist for the view (day,week month)
+  Widget navigation() => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          HMBIconButton(
+              icon: const Icon(Icons.arrow_left),
+              onPressed: () async {
+                await onPreviousPage();
+              },
+              hint: 'left'),
+          HMBDroplist<ScheduleView>(
+            selectedItem: () async => selectedView,
+            items: (filter) async => ScheduleView.values,
+            format: (view) => view.name,
+            onChanged: (view) => setState(() {
+              selectedView = view!;
+            }),
+            title: 'View',
+          ),
+          HMBIconButton(
+            icon: const Icon(Icons.arrow_right),
+            onPressed: () async {
+              await onNextPage();
+            },
+            hint: 'right',
+          ),
+        ],
       );
 
   void onAdd(JobEventEx jobEventEx) {
@@ -227,8 +246,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
 
   /// Calculates the page index for a given date based on the selected view.
   int _getPageIndexForDate(DateTime date) {
-    final referenceDate =
-        DateTime.now(); // Change this to your reference start date if needed.
+    final referenceDate = DateTime.now();
 
     switch (selectedView) {
       case ScheduleView.day:
