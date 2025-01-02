@@ -267,7 +267,7 @@ class _JobEditScreenState extends State<JobEditScreen>
           await Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => SchedulePage(
                     defaultView: ScheduleView.week,
-                    initialDate: firstEvent?.startDate ?? DateTime.now(),
+                    initialEventId: firstEvent?.id,
                     defaultJob: jobId,
                     dialogMode: true,
                   ),
@@ -345,9 +345,8 @@ class _JobEditScreenState extends State<JobEditScreen>
               await Navigator.of(context).push(MaterialPageRoute<void>(
                   builder: (_) => SchedulePage(
                         defaultView: ScheduleView.week,
-                        initialDate: selectedEvent.startDate,
-                        defaultJob: jobId,
                         initialEventId: selectedEvent.id,
+                        defaultJob: jobId,
                         dialogMode: true,
                       ),
                   fullscreenDialog: true));

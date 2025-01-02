@@ -81,7 +81,7 @@ GoRouter get router => GoRouter(
         ),
         GoRoute(
           path: '/schedule',
-          builder: (_, __) => HomeWithDrawer(
+          builder: (_, __) => const HomeWithDrawer(
               initialScreen: SchedulePage(
             dialogMode: false,
           )),

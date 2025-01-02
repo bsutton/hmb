@@ -1,14 +1,17 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 
-import '../../util/format.dart';
+import '../../dao/dao_job_event.dart';
+// Example imports (replace with your actual ones):
+import '../../util/format.dart'; // For formatTime() or similar
 import '../widgets/surface.dart';
+import '../widgets/text/hmb_text_themes.dart';
 import 'job_event_ex.dart';
 import 'schedule_helper.dart';
 
-class MonthSchedule extends StatelessWidget with ScheduleHelper {
+/// A single-month view of events
+class MonthSchedule extends StatefulWidget with ScheduleHelper {
   const MonthSchedule(this.initialDate,
-
       {
         required this.defaultJob,
         required this.onAdd,
@@ -17,11 +20,52 @@ class MonthSchedule extends StatelessWidget with ScheduleHelper {
       super.key});
 
   final DateTime initialDate;
-   final int? defaultJob;
+  final int? defaultJob;
 
   final JobAddNotice onAdd;
   final JobUpdateNotice onUpdate;
   final JobDeleteNotice onDelete;
+
+  @override
+  State<MonthSchedule> createState() => _MonthScheduleState();
+}
+
+class _MonthScheduleState extends State<MonthSchedule> {
+  late final EventController<JobEventEx> _monthController;
+
+  @override
+  void initState() {
+    super.initState();
+    _monthController = EventController();
+    _loadEventsForMonth();
+  }
+
+  @override
+  void dispose() {
+    _monthController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadEventsForMonth() async {
+    final firstOfMonth =
+        DateTime(widget.initialDate.year, widget.initialDate.month);
+    final firstOfNextMonth =
+        DateTime(widget.initialDate.year, widget.initialDate.month + 1);
+
+    final dao = DaoJobEvent();
+    final jobEvents =
+        await dao.getEventsInRange(firstOfMonth, firstOfNextMonth);
+
+    final eventData = <CalendarEventData<JobEventEx>>[];
+    for (final jobEvent in jobEvents) {
+      eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData);
+    }
+
+    setState(() {
+      _monthController.removeAll(_monthController.allEvents);
+      _monthController.addAll(eventData);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,19 +74,12 @@ class MonthSchedule extends StatelessWidget with ScheduleHelper {
     late final MonthView<JobEventEx> monthView;
     // ignore: join_return_with_assignment
     monthView = MonthView<JobEventEx>(
-      key: ValueKey(initialDate),
-      initialMonth: initialDate,
-      headerStyle: headerStyle(),
-      headerStringBuilder: dateStringBuilder,
+      key: ValueKey(widget.initialDate),
+      initialMonth: widget.initialDate,
+      headerStyle: widget.headerStyle(),
+      headerStringBuilder: widget.dateStringBuilder,
       cellBuilder: (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
-          _cellBuilder(
-        monthView,
-        date,
-        events,
-        isToday,
-        isInMonth,
-        hideDaysNotInMonth,
-      ),
+          _cellBuilder(monthView, date, events, isToday, isInMonth, hideDaysNotInMonth),
       weekDayBuilder: (day) => Center(
         child: Text(
           ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day],
@@ -50,13 +87,20 @@ class MonthSchedule extends StatelessWidget with ScheduleHelper {
         ),
       ),
       onCellTap: (events, date) async {
-        await addEvent(context, date, defaultJob, onAdd);
+        await widget.addEvent(context, date, widget.defaultJob, widget.onAdd);
+        await _loadEventsForMonth();
       },
-      onEventTap: (event, date) async =>
-          onEventTap(context, event, onUpdate, onDelete),
-    );
+      onEventTap: (event, date) async {
+            await widget.onEventTap(
+                context, event, widget.onUpdate, widget.onDelete);
+            await _loadEventsForMonth();
+          },
+        );
 
-    return monthView;
+    return CalendarControllerProvider<JobEventEx>(
+        controller: _monthController,
+        child: monthView,
+      );
   }
 
   /// Build month view cell.
@@ -74,11 +118,8 @@ class MonthSchedule extends StatelessWidget with ScheduleHelper {
             ? Colors.black
             : Colors.grey[350]!;
 
-    final colour = isToday
-        ? SurfaceElevation.e4.color
-        : isInMonth
-            ? Colors.white
-            : Colors.black;
+    final colour = isToday 
+        ? Colors.yellow : (isInMonth ? Colors.white : Colors.black);
 
     return DecoratedBox(
         decoration: BoxDecoration(
@@ -118,7 +159,7 @@ class MonthSchedule extends StatelessWidget with ScheduleHelper {
     return widgets;
   }
 
-  /// build a single event widget.
+   /// build a single event widget.
   Widget _renderEvent(MonthView<JobEventEx> monthView,
           CalendarEventData<JobEventEx> event, Color backgroundColour) =>
       GestureDetector(

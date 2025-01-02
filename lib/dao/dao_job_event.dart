@@ -20,6 +20,29 @@ class DaoJobEvent extends Dao<JobEvent> {
     return toList(rows);
   }
 
+  Future<List<JobEvent>> getEventsInRange(DateTime start, DateTime end) async {
+    final db = withoutTransaction();
+
+    final results = await db.query(
+      tableName,
+      where:
+          '(start_date >= ? AND start_date < ?) OR (end_date > ? AND end_date <= ?)',
+      whereArgs: [
+        start.toIso8601String(),
+        end.toIso8601String(),
+        start.toIso8601String(),
+        end.toIso8601String(),
+      ],
+    );
+
+    // Convert each row into a JobEvent
+    final jobEvents = <JobEvent>[];
+    for (final row in results) {
+      jobEvents.add(JobEvent.fromMap(row));
+    }
+    return jobEvents;
+  }
+
   @override
   JobEventState Function() get juneRefresher =>
       JobEventState.new; // optional, if using June

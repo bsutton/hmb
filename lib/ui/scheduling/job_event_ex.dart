@@ -1,23 +1,24 @@
-// schedule_page.dart
-
 import 'package:calendar_view/calendar_view.dart';
+
 import '../../dao/dao_job.dart';
 import '../../entity/job.dart';
 import '../../entity/job_event.dart';
 import '../widgets/media/rich_editor.dart';
 
+/// Our extended class that includes the Job, etc.
 class JobEventEx {
-  JobEventEx._(this.job, this.jobEvent);
+  JobEventEx._({required this.jobEvent, required this.job});
 
   static Future<JobEventEx> fromEvent(JobEvent jobEvent) async {
     final job = await DaoJob().getById(jobEvent.jobId);
 
-    return JobEventEx._(job!, jobEvent);
+    return JobEventEx._(job: job!, jobEvent: jobEvent);
   }
 
   final JobEvent jobEvent;
-  late final Job job;
+  final Job job;
 
+  /// Convert to [CalendarEventData] for the calendar_view package
   CalendarEventData<JobEventEx> get eventData => CalendarEventData(
         title: job.summary,
         description: RichEditor.createParchment(job.description)
