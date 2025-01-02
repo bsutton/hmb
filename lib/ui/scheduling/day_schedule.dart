@@ -10,12 +10,14 @@ import 'schedule_page.dart';
 
 class DaySchedule extends StatelessWidget with ScheduleHelper {
   const DaySchedule(this.initialDate,
-      {required this.onAdd,
+      {required this.defaultJob,
+      required this.onAdd,
       required this.onUpdate,
       required this.onDelete,
       super.key});
 
   final DateTime initialDate;
+  final int? defaultJob;
 
   final JobAddNotice onAdd;
   final JobUpdateNotice onUpdate;
@@ -37,7 +39,7 @@ class DaySchedule extends StatelessWidget with ScheduleHelper {
       headerStyle: headerStyle(),
       backgroundColor: Colors.black,
       onDateTap: (date) async {
-        await addEvent(context, date, onAdd);
+        await addEvent(context, date, defaultJob, onAdd);
       },
       onEventTap: (events, date) async =>
           onEventTap(context, events.first, onUpdate, onDelete),

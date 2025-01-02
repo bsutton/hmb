@@ -22,7 +22,7 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
     super.key,
     this.defaultView = ScheduleView.day,
     DateTime? initialDate,
-    this.preSelectedJobId,
+    this.defaultJob,
     this.initialEventId,
   }) : initialDate = initialDate ?? DateTime.now();
 
@@ -35,7 +35,7 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
   final DateTime initialDate;
 
   /// If we came from a specific job, we can auto-populate that in the JobEventDialog
-  final int? preSelectedJobId;
+  final int? defaultJob;
 
   /// If we want the schedule to jump to a specific event
   final int? initialEventId;
@@ -64,7 +64,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
     // Use the passed-in arguments to initialize
     selectedView = widget.defaultView;
     currentDate = widget.initialDate;
-    preSelectedJobId = widget.preSelectedJobId;
+    preSelectedJobId = widget.defaultJob;
     initialEventId = widget.initialEventId;
   }
 
@@ -144,11 +144,20 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                     final date = _getDateForPage(index);
                     return switch (selectedView) {
                       ScheduleView.month => MonthSchedule(date,
-                          onAdd: onAdd, onUpdate: onUpdate, onDelete: onDelete),
+                          defaultJob: widget.defaultJob,
+                          onAdd: onAdd,
+                          onUpdate: onUpdate,
+                          onDelete: onDelete),
                       ScheduleView.week => WeekSchedule(date,
-                          onAdd: onAdd, onUpdate: onUpdate, onDelete: onDelete),
+                          defaultJob: widget.defaultJob,
+                          onAdd: onAdd,
+                          onUpdate: onUpdate,
+                          onDelete: onDelete),
                       ScheduleView.day => DaySchedule(date,
-                          onAdd: onAdd, onUpdate: onUpdate, onDelete: onDelete),
+                          defaultJob: widget.defaultJob,
+                          onAdd: onAdd,
+                          onUpdate: onUpdate,
+                          onDelete: onDelete),
                     };
                   },
                 ),

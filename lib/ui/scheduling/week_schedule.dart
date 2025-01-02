@@ -6,12 +6,16 @@ import 'schedule_helper.dart';
 
 class WeekSchedule extends StatelessWidget with ScheduleHelper {
   const WeekSchedule(this.initialDate,
-      {required this.onAdd,
+  
+      {
+        required this.defaultJob,
+        required this.onAdd,
       required this.onUpdate,
       required this.onDelete,
       super.key});
 
   final DateTime initialDate;
+  final int? defaultJob;
 
   final JobAddNotice onAdd;
   final JobUpdateNotice onUpdate;
@@ -21,13 +25,14 @@ class WeekSchedule extends StatelessWidget with ScheduleHelper {
   Widget build(BuildContext context) => WeekView<JobEventEx>(
         key: ValueKey(initialDate),
         initialDay: initialDate,
+        
         headerStyle: headerStyle(),
         backgroundColor: Colors.black,
         headerStringBuilder: dateStringBuilder,
         onDateTap: (date) async {
-          await addEvent(context, date, onAdd);
+          await addEvent(context, date, defaultJob, onAdd);
         },
         onEventTap: (events, date) async =>
-            onEventTap(context, events.first, onUpdate, onDelete),
+            onEventTap(context, events.first,  onUpdate, onDelete),
       );
 }

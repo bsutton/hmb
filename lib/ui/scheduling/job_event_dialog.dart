@@ -56,14 +56,14 @@ class JobEventDialog extends StatefulWidget {
   static Future<JobEventAddAction?> showAdd({
     required BuildContext context,
     required DateTime when,
-    int? preSelectedJobId,
+    required int? defaultJob, 
   }) =>
       showDialog<JobEventAddAction>(
         context: context,
         builder: (context) => Material(
           child: JobEventDialog.add(
             when: when,
-            preSelectedJobId: preSelectedJobId,
+            preSelectedJobId: defaultJob,
           ),
         ),
       );

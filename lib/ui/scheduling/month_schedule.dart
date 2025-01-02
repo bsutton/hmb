@@ -8,12 +8,16 @@ import 'schedule_helper.dart';
 
 class MonthSchedule extends StatelessWidget with ScheduleHelper {
   const MonthSchedule(this.initialDate,
-      {required this.onAdd,
+
+      {
+        required this.defaultJob,
+        required this.onAdd,
       required this.onUpdate,
       required this.onDelete,
       super.key});
 
   final DateTime initialDate;
+   final int? defaultJob;
 
   final JobAddNotice onAdd;
   final JobUpdateNotice onUpdate;
@@ -46,7 +50,7 @@ class MonthSchedule extends StatelessWidget with ScheduleHelper {
         ),
       ),
       onCellTap: (events, date) async {
-        await addEvent(context, date, onAdd);
+        await addEvent(context, date, defaultJob, onAdd);
       },
       onEventTap: (event, date) async =>
           onEventTap(context, event, onUpdate, onDelete),

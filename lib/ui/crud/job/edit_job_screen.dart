@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,14 +7,18 @@ import 'package:june/june.dart';
 
 import '../../../dao/dao_customer.dart';
 import '../../../dao/dao_job.dart';
+import '../../../dao/dao_job_event.dart';
 import '../../../dao/dao_job_status.dart';
 import '../../../dao/dao_system.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/job.dart';
+import '../../../entity/job_event.dart';
 import '../../../entity/job_status.dart';
+import '../../../util/app_title.dart';
 import '../../../util/format.dart';
 import '../../../util/money_ex.dart';
 import '../../../util/platform_ex.dart';
+import '../../scheduling/schedule_page.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_child_crud_card.dart';
@@ -28,6 +33,7 @@ import '../../widgets/select/select_customer.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import '../task/list_task_screen.dart';
+import 'list_job_screen.dart';
 
 class JobEditScreen extends StatefulWidget {
   const JobEditScreen({super.key, this.job});
@@ -128,7 +134,7 @@ class _JobEditScreenState extends State<JobEditScreen>
                   _showSummary(),
                   _chooseCustomer(),
                   _chooseStatus(job),
-                  _chooseDate(),
+                  if (widget.job != null) _buildScheduleButtons(),
                   _chooseBillingType(),
                   _showHourlyRate(),
                   _showBookingFee(),
@@ -244,27 +250,114 @@ class _JobEditScreenState extends State<JobEditScreen>
               onChanged: (status) => jobStatus.jobStatusId = status?.id,
               format: (value) => value.name));
 
-  Widget _chooseDate() => Padding(
-        padding: const EdgeInsets.all(8),
-        child: HMBButton(
-          onPressed: _selectDate,
-          label: 'Scheduled: ${formatDate(_selectedDate)}',
-        ),
+  Widget _buildScheduleButtons() => Padding(
+      padding: const EdgeInsets.all(8),
+      child: Row(children: [_buildScheduleButton(), _buildEventButton()]));
+
+  Widget _buildScheduleButton() => HMBButton(
+      label: 'Schedule',
+      onPressed: () async {
+        final jobId = widget.job!.id;
+
+        final firstEvent = await _getFirstEvent();
+
+        if (mounted) {
+          // Fetch upcoming events for that job
+          // If no events, just open schedule set to week/today
+          await Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => SchedulePage(
+                    defaultView: ScheduleView.week,
+                    initialDate: firstEvent?.startDate ?? DateTime.now(),
+                    defaultJob: jobId,
+                    dialogMode: true,
+                  ),
+              fullscreenDialog: true));
+
+          /// We need to reset the title as the Schedule Page
+          /// will have updated it.
+          setAppTitle(JobListScreen.pageTitle);
+        }
+      });
+
+  Future<JobEvent?> _getFirstEvent() async {
+    final now = DateTime.now();
+
+    final daoJobEvent = DaoJobEvent();
+    final jobEvents = await daoJobEvent.getByJob(widget.job!.id);
+    JobEvent? nextEvent;
+    for (final e in jobEvents) {
+      if (e.startDate.isAfter(now)) {
+        nextEvent = e;
+        break;
+      }
+    }
+    return nextEvent;
+  }
+
+  Widget _buildEventButton() => HMBButton(
+        label: 'Events',
+        onPressed: () async {
+          final jobId = widget.job!.id;
+          final daoJobEvent = DaoJobEvent();
+          final jobEvents = await daoJobEvent.getByJob(jobId);
+          // Find the next upcoming event
+          final now = DateTime.now();
+          JobEvent? nextEvent;
+          for (final e in jobEvents) {
+            if (e.startDate.isAfter(now)) {
+              nextEvent = e;
+              break;
+            }
+          }
+
+          if (mounted) {
+            // Display a droplist or a simple dialog?
+            // For demonstration, let's do a showDialog with the list:
+            final selectedEvent = await showDialog<JobEvent>(
+              context: context,
+              builder: (context) => SimpleDialog(
+                title: const Text('Select an Event'),
+                children: [
+                  // "Next Event" first, if any
+                  if (nextEvent != null)
+                    SimpleDialogOption(
+                      onPressed: () => Navigator.of(context).pop(nextEvent),
+                      child: Text(
+                          'Next Event: ${formatTime(nextEvent.startDate)}'),
+                    ),
+                  // Then list all
+                  for (final e in jobEvents)
+                    SimpleDialogOption(
+                      onPressed: () => Navigator.of(context).pop(e),
+                      child: Text(_eventDisplay(e)),
+                    ),
+                ],
+              ),
+            );
+
+            if (selectedEvent == null) {
+              // user cancelled
+              return;
+            }
+
+            if (mounted) {
+              // Now open schedule page showing that event’s date in Week view
+              await Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => SchedulePage(
+                        defaultView: ScheduleView.week,
+                        initialDate: selectedEvent.startDate,
+                        defaultJob: jobId,
+                        initialEventId: selectedEvent.id,
+                        dialogMode: true,
+                      ),
+                  fullscreenDialog: true));
+            }
+          }
+        },
       );
 
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2015, 8),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
+  String _eventDisplay(JobEvent e) =>
+      'Event on ${formatDate(e.startDate, format: 'dd/MM/yyyy hh:mm a')}';
 
   @override
   Future<Job> forUpdate(Job job) async => Job.forUpdate(

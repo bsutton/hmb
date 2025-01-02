@@ -16,6 +16,7 @@ mixin ScheduleHelper {
   Future<void> onEventTap(
     BuildContext context,
     CalendarEventData<JobEventEx> event,
+    
     JobUpdateNotice onUpdate,
     JobDeleteNotice onDelete,
   ) async {
@@ -33,9 +34,11 @@ mixin ScheduleHelper {
 
   /// Add new Job Event
   Future<void> addEvent(
-      BuildContext context, DateTime date, JobAddNotice onDone) async {
+      BuildContext context, DateTime date, 
+      int? defaultJob,
+      JobAddNotice onDone) async {
     final jobEventAction =
-        (await JobEventDialog.showAdd(context: context, when: date))!;
+        (await JobEventDialog.showAdd(context: context, defaultJob: defaultJob, when: date))!;
 
     final dao = DaoJobEvent();
     switch (jobEventAction.action) {
