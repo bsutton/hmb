@@ -59,7 +59,7 @@ class _DayScheduleState extends State<DaySchedule> {
 
     setState(() {
       _dayController
-        ..removeAll(_dayController.allEvents)
+        ..clear()
         ..addAll(eventData);
     });
   }

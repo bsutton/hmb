@@ -51,8 +51,9 @@ class _MonthScheduleState extends State<MonthSchedule> {
     }
 
     setState(() {
-      _monthController.removeAll(_monthController.allEvents);
-      _monthController.addAll(eventData);
+      _monthController
+        ..clear()
+        ..addAll(eventData);
     });
   }
 

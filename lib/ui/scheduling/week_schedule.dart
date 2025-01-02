@@ -51,7 +51,7 @@ class _WeekScheduleState extends State<WeekSchedule> {
 
     setState(() {
       _weekController
-        ..removeAll(_weekController.allEvents)
+        ..clear()
         ..addAll(eventData);
     });
   }

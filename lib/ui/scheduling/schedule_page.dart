@@ -96,19 +96,19 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   /// - If [widget.initialEventId] is provided, fetch that event's date from DB.
   /// - Otherwise, use [DateTime.now()].
   Future<void> _initPage() async {
-    var defaultDate = DateTime.now();
+    currentDate = DateTime.now();
 
     // If an initialEventId is provided, fetch the event’s start date
     if (widget.initialEventId != null) {
       final dao = DaoJobEvent();
       final event = await dao.getById(widget.initialEventId);
       if (event != null) {
-        defaultDate = event.startDate;
+        currentDate = event.startDate;
       }
     }
 
     // Calculate the initial page index from defaultDate
-    var initialIndex = _getPageIndexForDate(defaultDate);
+    var initialIndex = _getPageIndexForDate(currentDate);
     // Clamp if it's below 0 (i.e., date < 2000-01-01)
     if (initialIndex < 0) {
       initialIndex = 0;
@@ -117,11 +117,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
     // Create the PageController using that initial index
     _pageController = PageController(initialPage: initialIndex);
 
-    // Also set currentIndex and currentDate for our local state
-    setState(() {
-      // currentIndex = initialIndex;
-      currentDate = _getDateForPage(initialIndex);
-    });
+    setState(() {});
   }
 
   @override
