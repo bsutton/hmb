@@ -1,4 +1,3 @@
-// schedule_page.dart
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -11,6 +10,7 @@ import '../../util/app_title.dart';
 import '../widgets/async_state.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'day_schedule.dart';
+import 'desktop_swipe.dart';
 import 'job_event_ex.dart';
 import 'month_schedule.dart';
 import 'schedule_helper.dart';
@@ -61,7 +61,8 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
     super.initState();
     setAppTitle('Schedule');
     eventController = EventController();
-    // Use the passed-in arguments to initialize
+
+    // Initialize view and other parameters from widget
     selectedView = widget.defaultView;
     currentDate = widget.initialDate;
     preSelectedJobId = widget.defaultJob;
@@ -72,14 +73,17 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   Future<void> asyncInitState() async {
     await _loadEventsFromDb();
 
-    // If we have an initialEventId, scroll or jump to it.
+    // Scroll to initial event if specified
     if (initialEventId != null) {
-      final eventData = eventController
+      final events = eventController
           .getEventsOnDay(currentDate)
           .where((e) => e.event?.jobEvent.id == initialEventId)
           .toList();
-      // If found, you might do something like open DayView or set page offset
-      // Or call setState to highlight that date
+      if (events.isNotEmpty) {
+        setState(() {
+          currentDate = events.first.date;
+        });
+      }
     }
   }
 
@@ -106,76 +110,98 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: widget.dialogMode ? AppBar() : null,
-      body: FutureBuilderEx(
-        future: initialised,
-        builder: (context, _) => CalendarControllerProvider<JobEventEx>(
-          controller: eventController,
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: HMBDroplist<ScheduleView>(
-                      selectedItem: () async => selectedView,
-                      items: (filter) async => ScheduleView.values,
-                      format: (view) => view.name,
-                      onChanged: (view) => setState(() {
-                        selectedView = view!;
-                      }),
-                      title: 'View',
+        appBar: widget.dialogMode ? AppBar() : null,
+        body: FutureBuilderEx(
+          future: initialised,
+          builder: (context, _) => CalendarControllerProvider<JobEventEx>(
+            controller: eventController,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: HMBDroplist<ScheduleView>(
+                        selectedItem: () async => selectedView,
+                        items: (filter) async => ScheduleView.values,
+                        format: (view) => view.name,
+                        onChanged: (view) => setState(() {
+                          selectedView = view!;
+                        }),
+                        title: 'View',
+                      ),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: DesktopSwipe(
+                    onNext: () async {
+                      await _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    onPrevious: () async {
+                      await _pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    onHome: () async {
+                      final today = DateTime.now();
+                      final todayIndex = _getPageIndexForDate(today);
+
+                      await _pageController.animateToPage(
+                        todayIndex,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                    child: PageView.builder(
+                      key: ValueKey(selectedView),
+                      controller: _pageController,
+                      onPageChanged: (index) {
+                        setState(() {
+                          currentDate = _getDateForPage(index);
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final date = _getDateForPage(index);
+                        return switch (selectedView) {
+                          ScheduleView.month => MonthSchedule(date,
+                              defaultJob: widget.defaultJob,
+                              onAdd: onAdd,
+                              onUpdate: onUpdate,
+                              onDelete: onDelete),
+                          ScheduleView.week => WeekSchedule(date,
+                              defaultJob: widget.defaultJob,
+                              onAdd: onAdd,
+                              onUpdate: onUpdate,
+                              onDelete: onDelete),
+                          ScheduleView.day => DaySchedule(date,
+                              defaultJob: widget.defaultJob,
+                              onAdd: onAdd,
+                              onUpdate: onUpdate,
+                              onDelete: onDelete),
+                        };
+                      },
                     ),
                   ),
-                ],
-              ),
-              Expanded(
-                child: PageView.builder(
-                  key: ValueKey(
-                      selectedView), // ensure a rebuild when the view changes.
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      currentDate = _getDateForPage(index);
-                    });
-                  },
-                  itemBuilder: (context, index) {
-                    final date = _getDateForPage(index);
-                    return switch (selectedView) {
-                      ScheduleView.month => MonthSchedule(date,
-                          defaultJob: widget.defaultJob,
-                          onAdd: onAdd,
-                          onUpdate: onUpdate,
-                          onDelete: onDelete),
-                      ScheduleView.week => WeekSchedule(date,
-                          defaultJob: widget.defaultJob,
-                          onAdd: onAdd,
-                          onUpdate: onUpdate,
-                          onDelete: onDelete),
-                      ScheduleView.day => DaySchedule(date,
-                          defaultJob: widget.defaultJob,
-                          onAdd: onAdd,
-                          onUpdate: onUpdate,
-                          onDelete: onDelete),
-                    };
-                  },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ));
+      );
 
   void onAdd(JobEventEx jobEventEx) {
-    // Add to our in-memory list & calendar
     setState(() {
       eventController.add(jobEventEx.eventData);
     });
   }
 
   void onUpdate(JobEventEx oldJob, JobEventEx updatedJob) {
-    // 2) Remove old from the calendar, re-add updated
     eventController
       ..remove(oldJob.eventData)
       ..add(updatedJob.eventData);
@@ -185,12 +211,11 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
 
   void onDelete(JobEventEx jobEventEx) {
     setState(() {
-      // Remove from local memory & calendar
       eventController.remove(jobEventEx.eventData);
     });
   }
 
-  /// Calculates the date for the given page index.
+  /// Calculate the date for the given page index.
   DateTime _getDateForPage(int pageIndex) {
     final today = DateTime.now();
     return switch (selectedView) {
@@ -198,6 +223,22 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
       ScheduleView.week => today.add(Duration(days: 7 * pageIndex)),
       ScheduleView.day => today.add(Duration(days: pageIndex)),
     };
+  }
+
+  /// Calculates the page index for a given date based on the selected view.
+  int _getPageIndexForDate(DateTime date) {
+    final referenceDate =
+        DateTime.now(); // Change this to your reference start date if needed.
+
+    switch (selectedView) {
+      case ScheduleView.day:
+        return date.difference(referenceDate).inDays;
+      case ScheduleView.week:
+        return (date.difference(referenceDate).inDays / 7).floor();
+      case ScheduleView.month:
+        return (date.year - referenceDate.year) * 12 +
+            (date.month - referenceDate.month);
+    }
   }
 }
 
