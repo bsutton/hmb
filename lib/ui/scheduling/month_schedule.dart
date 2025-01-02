@@ -5,26 +5,15 @@ import '../../dao/dao_job_event.dart';
 // Example imports (replace with your actual ones):
 import '../../util/format.dart'; // For formatTime() or similar
 import '../widgets/surface.dart';
-import '../widgets/text/hmb_text_themes.dart';
 import 'job_event_ex.dart';
 import 'schedule_helper.dart';
 
 /// A single-month view of events
 class MonthSchedule extends StatefulWidget with ScheduleHelper {
-  const MonthSchedule(this.initialDate,
-      {
-        required this.defaultJob,
-        required this.onAdd,
-      required this.onUpdate,
-      required this.onDelete,
-      super.key});
+  const MonthSchedule(this.initialDate, {required this.defaultJob, super.key});
 
   final DateTime initialDate;
   final int? defaultJob;
-
-  final JobAddNotice onAdd;
-  final JobUpdateNotice onUpdate;
-  final JobDeleteNotice onDelete;
 
   @override
   State<MonthSchedule> createState() => _MonthScheduleState();
@@ -77,9 +66,10 @@ class _MonthScheduleState extends State<MonthSchedule> {
       key: ValueKey(widget.initialDate),
       initialMonth: widget.initialDate,
       headerStyle: widget.headerStyle(),
-      headerStringBuilder: widget.dateStringBuilder,
+      headerStringBuilder: widget.monthDateStringBuilder,
       cellBuilder: (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
-          _cellBuilder(monthView, date, events, isToday, isInMonth, hideDaysNotInMonth),
+          _cellBuilder(
+              monthView, date, events, isToday, isInMonth, hideDaysNotInMonth),
       weekDayBuilder: (day) => Center(
         child: Text(
           ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day],
@@ -87,20 +77,19 @@ class _MonthScheduleState extends State<MonthSchedule> {
         ),
       ),
       onCellTap: (events, date) async {
-        await widget.addEvent(context, date, widget.defaultJob, widget.onAdd);
+        await widget.addEvent(context, date, widget.defaultJob);
         await _loadEventsForMonth();
       },
       onEventTap: (event, date) async {
-            await widget.onEventTap(
-                context, event, widget.onUpdate, widget.onDelete);
-            await _loadEventsForMonth();
-          },
-        );
+        await widget.onEventTap(context, event);
+        await _loadEventsForMonth();
+      },
+    );
 
     return CalendarControllerProvider<JobEventEx>(
-        controller: _monthController,
-        child: monthView,
-      );
+      controller: _monthController,
+      child: monthView,
+    );
   }
 
   /// Build month view cell.
@@ -118,8 +107,8 @@ class _MonthScheduleState extends State<MonthSchedule> {
             ? Colors.black
             : Colors.grey[350]!;
 
-    final colour = isToday 
-        ? Colors.yellow : (isInMonth ? Colors.white : Colors.black);
+    final colour =
+        isToday ? Colors.yellow : (isInMonth ? Colors.white : Colors.black);
 
     return DecoratedBox(
         decoration: BoxDecoration(
@@ -159,7 +148,7 @@ class _MonthScheduleState extends State<MonthSchedule> {
     return widgets;
   }
 
-   /// build a single event widget.
+  /// build a single event widget.
   Widget _renderEvent(MonthView<JobEventEx> monthView,
           CalendarEventData<JobEventEx> event, Color backgroundColour) =>
       GestureDetector(

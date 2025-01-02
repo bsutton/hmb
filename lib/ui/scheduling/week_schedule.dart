@@ -11,18 +11,11 @@ class WeekSchedule extends StatefulWidget with ScheduleHelper {
   const WeekSchedule(
     this.initialDate, {
     required this.defaultJob,
-    required this.onAdd,
-    required this.onUpdate,
-    required this.onDelete,
     super.key,
   });
 
   final DateTime initialDate;
   final int? defaultJob;
-
-  final JobAddNotice onAdd;
-  final JobUpdateNotice onUpdate;
-  final JobDeleteNotice onDelete;
 
   @override
   State<WeekSchedule> createState() => _WeekScheduleState();
@@ -82,13 +75,11 @@ class _WeekScheduleState extends State<WeekSchedule> {
           backgroundColor: Colors.black,
           headerStringBuilder: widget.dateStringBuilder,
           onDateTap: (date) async {
-            await widget.addEvent(
-                context, date, widget.defaultJob, widget.onAdd);
+            await widget.addEvent(context, date, widget.defaultJob);
             await _loadEventsForWeek();
           },
           onEventTap: (events, date) async {
-            await widget.onEventTap(
-                context, events.first, widget.onUpdate, widget.onDelete);
+            await widget.onEventTap(context, events.first);
             await _loadEventsForWeek();
           },
         ),

@@ -13,7 +13,6 @@ import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'day_schedule.dart'; // Our DaySchedule stateful widget
 import 'desktop_swipe.dart';
-import 'job_event_ex.dart';
 import 'month_schedule.dart'; // Our MonthSchedule stateful widget
 import 'schedule_helper.dart';
 import 'week_schedule.dart'; // Our WeekSchedule stateful widget
@@ -151,7 +150,9 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                     onPageChanged: (index) {
                       print('moving to $index');
                       setState(() {
-                        currentDate = _getDateForPage(index);
+                        if (!_isOnCurrentPage(currentDate, index)) {
+                          currentDate = _getDateForPage(index);
+                        }
                       });
                     },
                     itemBuilder: (context, index) {
@@ -162,25 +163,16 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                           return MonthSchedule(
                             date,
                             defaultJob: widget.defaultJob,
-                            onAdd: onAdd,
-                            onUpdate: onUpdate,
-                            onDelete: onDelete,
                           );
                         case ScheduleView.week:
                           return WeekSchedule(
                             date,
                             defaultJob: widget.defaultJob,
-                            onAdd: onAdd,
-                            onUpdate: onUpdate,
-                            onDelete: onDelete,
                           );
                         case ScheduleView.day:
                           return DaySchedule(
                             date,
                             defaultJob: widget.defaultJob,
-                            onAdd: onAdd,
-                            onUpdate: onUpdate,
-                            onDelete: onDelete,
                           );
                       }
                     },
@@ -314,71 +306,123 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   /// so we need to offset the page indexes to an arbitrary
   /// point in time. The user will not be able to scroll back
   /// before this point in time.
-  static final DateTime referenceDate = DateTime(2000);
-
+  /// We need to align to a monday so that week alignment works as
+  /// expected.
+  static final DateTime referenceDate = DateTime(2000, 1, 3);
   DateTime _getDateForPage(int pageIndex) {
     switch (selectedView) {
       case ScheduleView.day:
-        // Day 0 = 2000-01-01
-        return referenceDate.add(Duration(days: pageIndex));
+        // day 0 => referenceDate
+        // day X => referenceDate + X days
+        return _alignDay(
+          referenceDate.add(Duration(days: pageIndex)),
+        );
 
       case ScheduleView.week:
-        // Week 0 = 2000-01-01
-        return referenceDate.add(Duration(days: pageIndex * 7));
+        // week 0 => referenceDate (aligned to Monday)
+        // week X => referenceDate + (X * 7 days),
+        final roughDate = referenceDate.add(Duration(days: pageIndex * 7));
+        return _alignWeekStart(roughDate);
 
       case ScheduleView.month:
-        // Month 0 = 2000-01 (January 2000)
-        // Month 1 = 2000-02 (February 2000)
-        // Month 12 = 2001-01, etc.
+        // month 0 => referenceDate's month
+        // month X => referenceDate + X months
         final totalMonths = pageIndex;
         final year = referenceDate.year + (totalMonths ~/ 12);
-        final month = referenceDate.month + (totalMonths % 12); // ref.month = 1
-        return DateTime(year, month);
+        final month = referenceDate.month + (totalMonths % 12);
+        // Always show the 1st of that month
+        return _alignMonthStart(DateTime(year, month));
     }
   }
 
-  /// Calculates the page index for a given date based on the selected view.
   int _getPageIndexForDate(DateTime date) {
-    // If date is before year 2000, clamp it or allow negative index
-    // For example, to clamp to 0:
-    if (date.isBefore(referenceDate)) return 0;
+    // If date is before our referenceDate, clamp to 0 to avoid negative indices
+    if (date.isBefore(referenceDate)) {
+      return 0;
+    }
 
     switch (selectedView) {
       case ScheduleView.day:
-        // difference in days from Jan 1, 2000
-        return date.difference(referenceDate).inDays;
+        final aligned = _alignDay(date);
+        return aligned.difference(referenceDate).inDays;
 
       case ScheduleView.week:
-        // difference in weeks from Jan 1, 2000
-        // integer division floors the value
-        return date.difference(referenceDate).inDays ~/ 7;
+        // Align to Monday before calculating the difference in days
+        final aligned = _alignWeekStart(date);
+        final daysSinceRef = aligned.difference(referenceDate).inDays;
+        // integer division → # of weeks since reference
+        return daysSinceRef ~/ 7;
 
       case ScheduleView.month:
-        // difference in months from Jan 2000
-        // e.g., Jan 2000 => 0, Feb 2000 => 1, Jan 2001 => 12
-        final yearDiff = date.year - referenceDate.year;
-        final monthDiff = date.month - referenceDate.month; // (1 - 1) for Jan
+        // Align to the 1st of the month
+        final aligned = _alignMonthStart(date);
+        final yearDiff = aligned.year - referenceDate.year;
+        final monthDiff = aligned.month - referenceDate.month;
         return yearDiff * 12 + monthDiff;
     }
   }
 
-  // -- EVENT CONTROLLER CALLBACKS -------------------------------------------
+  /// Checks if [dateToCheck] falls on the currently displayed page (day, week, month),
+  /// given your current [selectedView] and [currentPageIndex].
+  bool _isOnCurrentPage(DateTime dateToCheck, int currentPageIndex) {
+    final range = _getPageRange(currentPageIndex);
+    final start = range['start']!;
+    final end = range['end']!;
 
-  // These are the callbacks that you pass down to child widgets. Depending on
-  // your design, you might not need them in the parent if the child can do
-  // everything itself. But if you want them, here they are:
-
-  void onAdd(JobEventEx jobEventEx) {
-    // Example: No in-memory state to update here, because each child fetches
-    // its own events. If you want the parent to know, do so, then rely on
-    // child re-fetching from DB.
+    // Check: start <= dateToCheck < end
+    return !dateToCheck.isBefore(start) && dateToCheck.isBefore(end);
   }
 
-  void onUpdate(JobEventEx oldJob, JobEventEx updatedJob) {
-    // Same note as onAdd
+  /// Returns the start (inclusive) and end (exclusive) date range
+  /// for the given [pageIndex] in [selectedView].
+  ///
+  /// Day View:   [dayStart, dayStart + 1 day)
+  /// Week View:  [mondayStart, mondayStart + 7 days)
+  /// Month View: [monthStart, nextMonthStart)
+  ///
+  /// Assumes you have alignment helpers like _alignDay(), _alignWeekStart(), _alignMonthStart().
+  /// Also assumes _getDateForPage() is consistent with these alignments.
+  Map<String, DateTime> _getPageRange(int pageIndex) {
+    final date = _getDateForPage(pageIndex); // e.g., aligned date for that page
+
+    switch (selectedView) {
+      case ScheduleView.day:
+        final start = _alignDay(date);
+        final end = start.add(const Duration(days: 1));
+        return {'start': start, 'end': end};
+
+      case ScheduleView.week:
+        // If date is already aligned to Monday, we can do this directly
+        final start = _alignWeekStart(date);
+        final end = start.add(const Duration(days: 7));
+        return {'start': start, 'end': end};
+
+      case ScheduleView.month:
+        // If date is aligned to 1st of the month
+        final start = _alignMonthStart(date);
+        // The end is the 1st of the next month
+        final nextMonth = (start.month == 12)
+            ? DateTime(start.year + 1)
+            : DateTime(start.year, start.month + 1);
+        return {'start': start, 'end': nextMonth};
+    }
   }
 
-  void onDelete(JobEventEx jobEventEx) {
-    // Same note as onAdd
+  /// Aligns the given date to the start of the day (i.e., midnight).
+  DateTime _alignDay(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
+
+  /// Aligns the given date to the start of its week (assuming Monday=1).
+  /// If you want Monday as the first day of the week
+
+  DateTime _alignWeekStart(DateTime date) {
+    // Monday = 1, Tuesday=2, Wed=3, Thu=4, Fri=5, Sat=6, Sun=7
+    final dayOfWeek = date.weekday;
+    final diff = dayOfWeek - DateTime.monday; // e.g. for Wed=3, diff=2
+    return DateTime(date.year, date.month, date.day)
+        .subtract(Duration(days: diff));
   }
+
+  /// Aligns the given date to the first of the month.
+  DateTime _alignMonthStart(DateTime date) => DateTime(date.year, date.month);
 }

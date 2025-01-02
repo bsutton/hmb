@@ -16,57 +16,49 @@ mixin ScheduleHelper {
   Future<void> onEventTap(
     BuildContext context,
     CalendarEventData<JobEventEx> event,
-    
-    JobUpdateNotice onUpdate,
-    JobDeleteNotice onDelete,
   ) async {
     // Show the edit dialog for this event
     final jobEventAction = (await JobEventDialog.showEdit(context, event))!;
 
     switch (jobEventAction.action) {
       case EditAction.update:
-        await _editExistingEvent(event, jobEventAction.jobEvent!, onUpdate);
+        await _editExistingEvent(event, jobEventAction.jobEvent!);
       case EditAction.delete:
-        await _deleteEvent(event.event!, onDelete);
+        await _deleteEvent(event.event!);
       case EditAction.cancel:
     }
   }
 
   /// Add new Job Event
   Future<void> addEvent(
-      BuildContext context, DateTime date, 
-      int? defaultJob,
-      JobAddNotice onDone) async {
-    final jobEventAction =
-        (await JobEventDialog.showAdd(context: context, defaultJob: defaultJob, when: date))!;
+      BuildContext context, DateTime date, int? defaultJob) async {
+    final jobEventAction = (await JobEventDialog.showAdd(
+        context: context, defaultJob: defaultJob, when: date))!;
 
     final dao = DaoJobEvent();
     switch (jobEventAction.action) {
       case AddAction.add:
         final newId = await dao.insert(jobEventAction.jobEvent!.jobEvent);
         jobEventAction.jobEvent!.jobEvent.id = newId;
-        onDone(jobEventAction.jobEvent!);
       case AddAction.cancel:
     }
   }
 
   /// If the user updated an existing event
-  Future<void> _editExistingEvent(CalendarEventData<JobEventEx> oldEvent,
-      JobEventEx updated, JobUpdateNotice onDone) async {
+  Future<void> _editExistingEvent(
+      CalendarEventData<JobEventEx> oldEvent, JobEventEx updated) async {
     final dao = DaoJobEvent();
 
     // 1) Update DB
     await dao.update(updated.jobEvent);
-
-    onDone(oldEvent.event!, updated);
   }
 
   /// Delete an existing event from the DB
-  Future<void> _deleteEvent(JobEventEx event, JobDeleteNotice onDone) async {
+  Future<void> _deleteEvent(
+    JobEventEx event,
+  ) async {
     final dao = DaoJobEvent();
     await dao.delete(event.jobEvent.id);
-
-    onDone(event);
   }
 
   /// header style
@@ -97,6 +89,13 @@ mixin ScheduleHelper {
     if (secondaryDate != null && secondaryDate.compareTo(date) != 0) {
       formatted = '$formatted - ${formatDate(secondaryDate, format: 'y M d')}';
     }
+
+    return formatted;
+  }
+
+  /// Helper to format the date for headers
+  String monthDateStringBuilder(DateTime date, {DateTime? secondaryDate}) {
+    final formatted = formatDate(date, format: 'Y M');
 
     return formatted;
   }

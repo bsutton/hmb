@@ -15,18 +15,11 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
   const DaySchedule(
     this.initialDate, {
     required this.defaultJob,
-    required this.onAdd,
-    required this.onUpdate,
-    required this.onDelete,
     super.key,
   });
 
   final DateTime initialDate;
   final int? defaultJob;
-
-  final JobAddNotice onAdd;
-  final JobUpdateNotice onUpdate;
-  final JobDeleteNotice onDelete;
 
   @override
   State<DaySchedule> createState() => _DayScheduleState();
@@ -77,6 +70,7 @@ class _DayScheduleState extends State<DaySchedule> {
         child: DayView<JobEventEx>(
           key: ValueKey(widget.initialDate),
           initialDay: widget.initialDate,
+          dateStringBuilder: widget.dateStringBuilder,
           eventTileBuilder: (date, events, boundary, start, end) =>
               _buildDayTiles(events),
           fullDayEventBuilder: (events, date) => const Text(
@@ -87,15 +81,13 @@ class _DayScheduleState extends State<DaySchedule> {
           backgroundColor: Colors.black,
           onDateTap: (date) async {
             // Create new event
-            await widget.addEvent(
-                context, date, widget.defaultJob, widget.onAdd);
+            await widget.addEvent(context, date, widget.defaultJob);
             // Refresh
             await _loadEventsForDay();
           },
           onEventTap: (events, date) async {
             // Only handle the first event in the list
-            await widget.onEventTap(
-                context, events.first, widget.onUpdate, widget.onDelete);
+            await widget.onEventTap(context, events.first);
             // Refresh
             await _loadEventsForDay();
           },
