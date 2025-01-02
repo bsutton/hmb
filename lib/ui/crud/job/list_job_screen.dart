@@ -15,6 +15,8 @@ import 'job_card.dart';
 class JobListScreen extends StatefulWidget {
   const JobListScreen({super.key});
 
+  static const pageTitle = 'Jobs';
+
   @override
   // ignore: library_private_types_in_public_api
   _JobListScreenState createState() => _JobListScreenState();
@@ -47,7 +49,7 @@ class _JobListScreenState extends State<JobListScreen> {
                         key: ValueKey(June.getState(FilterState.new)
                             .showOnHoldAndFinalised),
                         dao: DaoJob(),
-                        pageTitle: 'Jobs',
+                        pageTitle: JobListScreen.pageTitle,
                         onEdit: (job) => JobEditScreen(job: job),
                         fetchList: (filter) async => _fetchJobs(filter),
                         title: (job) => HMBCardTitle(job.summary),

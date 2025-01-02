@@ -6,12 +6,28 @@ import '../../dao/dao_job.dart';
 import '../../dao/dao_job_status.dart';
 import '../../entity/job.dart';
 import '../../entity/job_event.dart';
+import '../../util/format.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'job_event_ex.dart';
-import 'schedule_page.dart';
+
+class JobEventUpdateAction {
+  JobEventUpdateAction(this.action, this.jobEvent);
+  JobEventEx? jobEvent;
+  EditAction action;
+}
+
+class JobEventAddAction {
+  JobEventAddAction(this.action, this.jobEvent);
+  JobEventEx? jobEvent;
+  AddAction action;
+}
+
+enum EditAction { delete, update, cancel }
+
+enum AddAction { add, cancel }
 
 /// The dialog for adding/editing job events
 class JobEventDialog extends StatefulWidget {
@@ -37,12 +53,12 @@ class JobEventDialog extends StatefulWidget {
   @override
   _JobEventDialogState createState() => _JobEventDialogState();
 
-  static Future<JobEventEx?> showAdd({
+  static Future<JobEventAddAction?> showAdd({
     required BuildContext context,
     required DateTime when,
     int? preSelectedJobId,
   }) =>
-      showDialog<JobEventEx>(
+      showDialog<JobEventAddAction>(
         context: context,
         builder: (context) => Material(
           child: JobEventDialog.add(
@@ -52,11 +68,11 @@ class JobEventDialog extends StatefulWidget {
         ),
       );
 
-  static Future<JobEventEx?> showEdit(
+  static Future<JobEventUpdateAction?> showEdit(
     BuildContext context,
     CalendarEventData<JobEventEx> event,
   ) =>
-      showDialog<JobEventEx>(
+      showDialog<JobEventUpdateAction>(
         context: context,
         builder: (context) =>
             Material(child: JobEventDialog.edit(event: event)),
@@ -98,8 +114,6 @@ class _JobEventDialogState extends State<JobEventDialog> {
   }
 
   @override
-  @override
-  @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen =
@@ -116,6 +130,7 @@ class _JobEventDialogState extends State<JobEventDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const SizedBox(height: 15),
               HMBDroplist<Job>(
                 selectedItem: () async => _selectedJob,
                 items: (filter) async => DaoJob().getActiveJobs(filter),
@@ -125,13 +140,20 @@ class _JobEventDialogState extends State<JobEventDialog> {
                 }),
                 title: 'Select Job',
               ),
-              const SizedBox(height: 15),
+              const HMBSpacer(height: true),
+              // Display event date
+              Text(
+                'Event Date: ${formatDate(_startDate)}',
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const HMBSpacer(height: true),
               if (isSmallScreen) ...[
                 // Vertical layout for small screens
                 _buildStartDate(),
-                const SizedBox(height: 15),
+                const HMBSpacer(height: true),
                 _buildEndDate(context),
-                const SizedBox(height: 15),
+                const HMBSpacer(height: true),
               ] else ...[
                 // Horizontal layout for larger screens
                 Row(
@@ -139,13 +161,13 @@ class _JobEventDialogState extends State<JobEventDialog> {
                     Expanded(
                       child: _buildStartDate(),
                     ),
-                    const SizedBox(width: 15),
+                    const HMBSpacer(height: true),
                     Expanded(
                       child: _buildEndDate(context),
                     ),
                   ],
                 ),
-                const SizedBox(height: 15),
+                const HMBSpacer(height: true),
               ],
               // Display the duration
               Row(
@@ -158,23 +180,33 @@ class _JobEventDialogState extends State<JobEventDialog> {
               ),
               const SizedBox(height: 30),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  HMBButtonSecondary(
-                    onPressed: () => Navigator.of(context).pop(),
-                    label: 'Cancel',
-                  ),
-                  const HMBSpacer(width: true),
-                  if (widget.isEditing) ...[
+                  // Delete button on the left
+                  if (widget.isEditing)
                     HMBButtonSecondary(
                       onPressed: _handleDelete,
                       label: 'Delete',
-                    ),
-                    const HMBSpacer(width: true),
-                  ],
-                  HMBButtonPrimary(
-                    onPressed: _handleSave,
-                    label: widget.isEditing ? 'Update Event' : 'Add Event',
+                    )
+                  else
+                    const SizedBox(), // Placeholder for alignment when not editing
+
+                  // Cancel and Save buttons on the right
+                  Row(
+                    children: [
+                      HMBButtonSecondary(
+                        onPressed: () => Navigator.of(context).pop(
+                            widget.isEditing
+                                ? JobEventUpdateAction(EditAction.cancel, null)
+                                : JobEventAddAction(AddAction.cancel, null)),
+                        label: 'Cancel',
+                      ),
+                      const HMBSpacer(width: true),
+                      HMBButtonPrimary(
+                        onPressed: _handleSave,
+                        label: widget.isEditing ? 'Update Event' : 'Add Event',
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -226,7 +258,8 @@ class _JobEventDialogState extends State<JobEventDialog> {
   /// If the user taps “Delete,” we pop `null`
   /// to indicate a delete request.
   void _handleDelete() {
-    Navigator.of(context).pop();
+    Navigator.of(context)
+        .pop(JobEventUpdateAction(EditAction.delete, widget.event!.event));
   }
 
   Future<void> _handleSave() async {
@@ -257,10 +290,15 @@ class _JobEventDialogState extends State<JobEventDialog> {
     }
     final jobEventEx = await JobEventEx.fromEvent(jobEvent);
 
-    _updateJobStatus();
+    await _updateJobStatus();
 
     if (mounted) {
-      Navigator.of(context).pop(jobEventEx);
+      if (widget.isEditing) {
+        Navigator.of(context)
+            .pop(JobEventUpdateAction(EditAction.update, jobEventEx));
+      } else {
+        Navigator.of(context).pop(JobEventAddAction(AddAction.add, jobEventEx));
+      }
     }
   }
 

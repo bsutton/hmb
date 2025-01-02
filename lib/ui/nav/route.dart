@@ -81,7 +81,10 @@ GoRouter get router => GoRouter(
         ),
         GoRoute(
           path: '/schedule',
-          builder: (_, __) => HomeWithDrawer(initialScreen: SchedulePage(fullscreen: false,)),
+          builder: (_, __) => HomeWithDrawer(
+              initialScreen: SchedulePage(
+            dialogMode: false,
+          )),
         ),
         GoRoute(
           path: '/billing/quotes',
