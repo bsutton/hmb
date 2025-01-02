@@ -268,6 +268,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   /// Jump to "today" for whichever view is active
   Future<void> onHomePage() async {
     final today = DateTime.now();
+    currentDate = today;
     final todayIndex = _getPageIndexForDate(today);
     await _pageController?.animateToPage(
       todayIndex,
