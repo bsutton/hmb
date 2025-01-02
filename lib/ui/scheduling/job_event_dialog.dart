@@ -3,28 +3,33 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 
 import '../../dao/dao_job.dart';
+import '../../dao/dao_job_status.dart';
 import '../../entity/job.dart';
 import '../../entity/job_event.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
+import 'job_event_ex.dart';
 import 'schedule_page.dart';
 
 /// The dialog for adding/editing job events
 class JobEventDialog extends StatefulWidget {
   JobEventDialog.edit({
     required CalendarEventData<JobEventEx> this.event,
+    this.preSelectedJobId,
     super.key,
   })  : when = event.date,
         isEditing = true;
 
   const JobEventDialog.add({
     required this.when,
+    this.preSelectedJobId,
     super.key,
   })  : event = null,
         isEditing = false;
 
+  final int? preSelectedJobId;
   final CalendarEventData<JobEventEx>? event;
   final DateTime? when;
   final bool isEditing;
@@ -35,10 +40,16 @@ class JobEventDialog extends StatefulWidget {
   static Future<JobEventEx?> showAdd({
     required BuildContext context,
     required DateTime when,
+    int? preSelectedJobId,
   }) =>
       showDialog<JobEventEx>(
         context: context,
-        builder: (context) => Material(child: JobEventDialog.add(when: when)),
+        builder: (context) => Material(
+          child: JobEventDialog.add(
+            when: when,
+            preSelectedJobId: preSelectedJobId,
+          ),
+        ),
       );
 
   static Future<JobEventEx?> showEdit(
@@ -63,7 +74,19 @@ class _JobEventDialogState extends State<JobEventDialog> {
     super.initState();
 
     if (widget.event == null) {
-      // Adding a new event
+      // If we have a preSelectedJobId, fetch that job from DB
+      if (widget.preSelectedJobId != null) {
+        // ignore: discarded_futures
+        DaoJob().getById(widget.preSelectedJobId).then((job) {
+          if (mounted && job != null) {
+            setState(() {
+              _selectedJob = job;
+            });
+          }
+        });
+      }
+
+      // default times
       _startDate = widget.when!;
       _endDate = widget.when!.add(const Duration(hours: 4));
     } else {
@@ -234,8 +257,38 @@ class _JobEventDialogState extends State<JobEventDialog> {
     }
     final jobEventEx = await JobEventEx.fromEvent(jobEvent);
 
+    _updateJobStatus();
+
     if (mounted) {
       Navigator.of(context).pop(jobEventEx);
+    }
+  }
+
+  Future<void> _updateJobStatus() async {
+    // Next, check the job’s status
+    final job = await DaoJob().getById(_selectedJob!.id);
+    if (job != null) {
+      final jobStatus = await DaoJobStatus().getById(job.jobStatusId);
+      if (jobStatus != null) {
+        final statusesThatShouldBecomeScheduled = [
+          'prospecting',
+          'quoting',
+          'awaiting approval',
+          'to be scheduled',
+          'on hold'
+        ];
+
+        // Convert the jobStatus name or statusEnum to lower, compare
+        final currentStatus = jobStatus.name.toLowerCase();
+        if (statusesThatShouldBecomeScheduled.contains(currentStatus)) {
+          // fetch the “Scheduled” status
+          final scheduledStatus = await DaoJobStatus().getByName('Scheduled');
+          if (scheduledStatus != null) {
+            job.jobStatusId = scheduledStatus.id;
+            await DaoJob().update(job);
+          }
+        }
+      }
     }
   }
 }
