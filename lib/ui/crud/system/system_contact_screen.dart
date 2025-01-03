@@ -16,6 +16,7 @@ import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/help_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/save_and_close.dart';
 
@@ -198,11 +199,14 @@ class SystemContactInformationScreenState
                     }
                     return null;
                   },
-                ),
+                ).help('From Email', '''
+The Email address that will be used when you send an email to your customer.'''),
                 HMBEmailField(
-                    controller: _emailAddressController!,
-                    required: true,
-                    labelText: 'Notice/Backup Email Address'),
+                        controller: _emailAddressController!,
+                        required: true,
+                        labelText: 'Notice/Backup Email Address')
+                    .help('Notice/Backup Eamil Address', '''
+The email address used to send you notices such as a successful backup.'''),
                 HMBTextField(
                   controller: _addressLine1Controller!,
                   labelText: 'Address Line 1',

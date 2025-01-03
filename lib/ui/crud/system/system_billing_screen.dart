@@ -21,6 +21,7 @@ import '../../widgets/fields/hmb_money_editing_controller.dart';
 import '../../widgets/fields/hmb_money_field.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/help_button.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/save_and_close.dart';
@@ -221,29 +222,47 @@ class SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
                       controller: _defaultHourlyRateController,
                       labelText: 'Default Hourly Rate',
                       fieldName: 'default hourly rate'),
-                  HMBMoneyField(
-                    controller: _defaultBookingFeeController,
-                    labelText: 'Default Booking Fee',
-                    fieldName: 'default Booking Fee',
+                  HelpWrapper(
+                    title: 'What is the Booking Fee',
+                    tooltip: 'Booking Fee',
+                    helpText: '''
+The booking fee can be applied as a surcharge to each Job.
+Sometime this is referred to as a Surcharge, Callout Fee or Admin Fee''',
+                    child: HMBMoneyField(
+                      controller: _defaultBookingFeeController,
+                      labelText: 'Default Booking Fee',
+                      fieldName: 'default Booking Fee',
+                    ),
                   ),
                   HMBTextField(
-                      controller: _bsbController,
-                      labelText: 'BSB',
-                      keyboardType: TextInputType.number),
+                          controller: _bsbController,
+                          labelText: 'BSB',
+                          keyboardType: TextInputType.number)
+                      .help('BSB', '''
+Enter the Bank State Branch (BSB) for your bank account 
+where customers will deposit payments.
+The BSB will appear on Invoices.'''),
                   HMBTextField(
                     controller: _accountNoController,
                     labelText: 'Account Number',
                     keyboardType: TextInputType.number,
-                  ),
+                  ).help('BSB', '''
+Your bank account no. where customers will deposit payments.
+The account no. will appear on invoices'''),
                   HMBTextField(
                     controller: _paymentTermsInDaysController,
                     labelText: 'Payment Terms (in Days)',
                     keyboardType: TextInputType.number,
-                  ),
+                  ).help('Payment Terms', '''
+Used to calculate the due date on invoices.
+The due date will be calculated as Today plus the enter Payment Terms'''),
                   HMBTextArea(
                     controller: _paymentOptionsController,
                     labelText: 'Payment Options',
-                  ),
+                  ).help('Payment Options', '''
+Appears on your invoice
+and can be use to communicate information to your customer on how to make a payment
+and what forms of payment you accept.'''),
                   const HMBTextHeadline2('Formatting for Invoices and Quotes'),
                   SwitchListTile(
                     title: const Text('Show BSB/Account'),
@@ -280,7 +299,8 @@ class SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
                         _logoAspectRatio = value ?? LogoAspectRatio.square;
                       });
                     },
-                  ),
+                  ).help('Logo Aspect Ration', '''
+The shape of your Logo. Your logo will appear on Invoices and Quotes.'''),
                   const SizedBox(height: 20),
                   HMBButton.withIcon(
                     label: 'Upload Logo',
@@ -308,7 +328,8 @@ class SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
                       ),
                     ),
                     onTap: _pickBillingColour,
-                  ),
+                  ).help('Billing Colour', '''
+The colour theme that will be used on you Invoices and Quotes.'''),
                 ],
               ),
             ),

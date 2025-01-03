@@ -10,7 +10,9 @@ import '../../../entity/system.dart';
 import '../../../util/app_title.dart';
 import '../../../util/measurement_type.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/help_button.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/save_and_close.dart';
 import '../../widgets/select/hmb_droplist.dart';
 
@@ -130,13 +132,44 @@ class SystemBusinessScreenState extends State<SystemBusinessScreen> {
                 controller: _businessNameController,
                 labelText: 'Business Name',
               ),
-              HMBTextField(
-                controller: _businessNumberController,
-                labelText: 'Business Number',
-              ),
-              HMBTextField(
-                controller: _businessNumberLabelController,
-                labelText: 'Business Number Label',
+              HelpWrapper(
+                  tooltip: 'Help for Business Number',
+                  title: 'What is a Business Number?',
+                  helpChild: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                          'Your government allocated business registration number.'),
+                      HMBSpacer(height: true),
+                      Text('Australia: ABN (e.g., 12 345 678 901)'),
+                      Text('United States: EIN (e.g., 12-3456789)'),
+                      Text('United Kingdom: CRN (e.g., 12345678)'),
+                      Text(
+                          'Other Countries: Enter your official registration number.'),
+                    ],
+                  ),
+                  child: HMBTextField(
+                    controller: _businessNumberController,
+                    labelText: 'Business Number',
+                  )),
+              HelpWrapper(
+                tooltip: 'Help for Business Number Label',
+                title: 'What is a Business Number Label?',
+                helpChild: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Your government allocated business number'),
+                    HMBSpacer(height: true),
+                    Text('Examples of labels:'),
+                    Text('Australia - ABN'),
+                    Text('United States - EIN'),
+                    Text('United Kingdom - CRN'),
+                  ],
+                ),
+                child: HMBTextField(
+                  controller: _businessNumberLabelController,
+                  labelText: 'Business Number Label',
+                ),
               ),
               DropdownButtonFormField<String>(
                 value: _selectedCountryCode,

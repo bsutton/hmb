@@ -11,6 +11,12 @@ extension ColorExtensions on Color {
     return withAlpha((opacity.clamp(0.0, 1.0) * 255).round());
   }
 
+  // int toColorValue() =>
+  //     (a.toInt() << 24) | (r.toInt() << 16) | (g.toInt() << 8) | b.toInt();
+
   int toColorValue() =>
-      (a.toInt() << 24) | (r.toInt() << 16) | (g.toInt() << 8) | b.toInt();
+      ((a * 255).toInt() << 24) |
+      ((r * 255).toInt() << 16) |
+      ((g * 255).toInt() << 8) |
+      (b * 255).toInt();
 }
