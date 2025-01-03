@@ -56,6 +56,7 @@ class SelectCustomerState extends State<SelectCustomer> {
               onChanged: _onCustomerChanged,
               items: (filter) async => _getCustomers(filter),
               format: (customer) => customer.name,
+              onAdd: _addCustomer,
             ),
           ),
           Center(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
 import '../color_ex.dart';
+import '../hmb_icon_button.dart';
 import '../surface.dart';
 
 class HMBDroplistDialog<T> extends StatefulWidget {
@@ -12,7 +13,8 @@ class HMBDroplistDialog<T> extends StatefulWidget {
     required this.formatItem,
     required this.title,
     this.selectedItem,
-    this.allowClear = false, // Allow clearing
+    this.allowClear = false,
+    this.onAdd, // Optional "Add" button callback
     super.key,
   });
 
@@ -20,7 +22,8 @@ class HMBDroplistDialog<T> extends StatefulWidget {
   final String Function(T) formatItem;
   final String title;
   final T? selectedItem;
-  final bool allowClear; // Allow clearing
+  final bool allowClear;
+  final Future<void> Function()? onAdd; // Optional "Add" button callback
 
   @override
   // ignore: library_private_types_in_public_api
@@ -53,6 +56,13 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
       _loading = true;
     });
     unawaited(_loadItems());
+  }
+
+  Future<void> _handleAdd() async {
+    if (widget.onAdd != null) {
+      await widget.onAdd!();
+      unawaited(_loadItems());
+    }
   }
 
   @override
@@ -125,8 +135,9 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
                         final isSelected = item == widget.selectedItem;
                         return ListTile(
                           selected: isSelected,
-                          selectedTileColor:
-                              Theme.of(context).primaryColor.withSafeOpacity(0.1),
+                          selectedTileColor: Theme.of(context)
+                              .primaryColor
+                              .withSafeOpacity(0.1),
                           title: Text(widget.formatItem(item),
                               style: const TextStyle(
                                   color: HMBColors.textPrimary)),
@@ -141,29 +152,48 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
               ),
             Surface(
               elevation: SurfaceElevation.e6,
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: HMBColors.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Search',
-                  labelStyle: const TextStyle(color: HMBColors.inputDecoration),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.clear,
-                        color: HMBColors.inputDecoration),
-                    onPressed: () {
-                      setState(() {
-                        _searchController.text = '';
-                        _filter = '';
-                        _loading = true;
-                      });
-                      unawaited(_loadItems());
-                    },
-                  ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        style: const TextStyle(color: HMBColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Search',
+                          labelStyle:
+                              const TextStyle(color: HMBColors.inputDecoration),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.clear,
+                                color: HMBColors.inputDecoration),
+                            onPressed: () {
+                              setState(() {
+                                _searchController.text = '';
+                                _filter = '';
+                                _loading = true;
+                              });
+                              unawaited(_loadItems());
+                            },
+                          ),
+                        ),
+                        onChanged: _onFilterChanged,
+                      ),
+                    ),
+                    if (widget.onAdd != null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: HMBIconButton(
+                          onPressed: _handleAdd,
+                          icon: const Icon(Icons.add),
+                          hint: 'Add ${widget.title}',
+                        ),
+                      ),
+                  ],
                 ),
-                onChanged: _onFilterChanged,
               ),
             ),
             const SizedBox(height: 16),

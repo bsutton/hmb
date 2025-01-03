@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
@@ -9,12 +8,12 @@ import 'hmb_droplist_dialog.dart';
 
 class HMBDroplist<T> extends FormField<T> {
   HMBDroplist({
-    required Future<T?> Function()
-        selectedItem, // Changed to a Future-returning function
+    required Future<T?> Function() selectedItem,
     required Future<List<T>> Function(String? filter) items,
     required String Function(T) format,
     required void Function(T?) onChanged,
     required String title,
+    Future<void> Function()? onAdd, // Add a callback for the "Add" button
     Color? backgroundColor,
     super.onSaved,
     super.initialValue,
@@ -24,13 +23,14 @@ class HMBDroplist<T> extends FormField<T> {
           autovalidateMode: AutovalidateMode.always,
           builder: (state) => _HMBDroplist<T>(
             state: state,
-            selectedItemFuture: selectedItem, // Pass the Future function
+            selectedItemFuture: selectedItem,
             items: items,
             format: format,
             onChanged: onChanged,
             title: title,
             backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
             required: required,
+            onAdd: onAdd, // Pass the "Add" callback
           ),
           validator: (value) {
             if (required && value == null) {
@@ -44,24 +44,26 @@ class HMBDroplist<T> extends FormField<T> {
 class _HMBDroplist<T> extends StatefulWidget {
   const _HMBDroplist({
     required this.state,
-    required this.selectedItemFuture, // Accept the Future function
+    required this.selectedItemFuture,
     required this.items,
     required this.format,
     required this.onChanged,
     required this.title,
     required this.backgroundColor,
     required this.required,
+    this.onAdd, // Optional "Add" callback
     super.key,
   });
 
   final FormFieldState<T> state;
-  final Future<T?> Function() selectedItemFuture; // Future-returning function
+  final Future<T?> Function() selectedItemFuture;
   final Future<List<T>> Function(String? filter) items;
   final String Function(T) format;
   final void Function(T?) onChanged;
   final String title;
   final Color backgroundColor;
   final bool required;
+  final Future<void> Function()? onAdd;
 
   @override
   _HMBDroplistState<T> createState() => _HMBDroplistState<T>();
@@ -87,7 +89,7 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
         });
       }
       widget.state.didChange(_selectedItem);
-      // ignore: avoid_catches_without_on_clauses
+// ignore: avoid_catches_without_on_clauses
     } catch (e) {
       print('Error loading selected item: $e');
     }
@@ -96,8 +98,14 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
   @override
   void didUpdateWidget(covariant _HMBDroplist<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reload selected item if the future function changes
     if (oldWidget.selectedItemFuture != widget.selectedItemFuture) {
+      unawaited(_loadSelectedItem());
+    }
+  }
+
+  Future<void> _handleAdd() async {
+    if (widget.onAdd != null) {
+      await widget.onAdd!();
       unawaited(_loadSelectedItem());
     }
   }
@@ -113,6 +121,7 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
               title: widget.title,
               selectedItem: _selectedItem,
               allowClear: !widget.required,
+              onAdd: widget.onAdd != null ? _handleAdd : null, // Pass the "Add" handler
             ),
           );
 
