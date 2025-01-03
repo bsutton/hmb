@@ -109,7 +109,7 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
           if (widget.showTime) const HMBSpacer(width: true),
           if (widget.showTime)
             SizedBox(
-              width: 180,
+              width: 100,
               child: TextFormField(
                 readOnly: true,
                 decoration: const InputDecoration(

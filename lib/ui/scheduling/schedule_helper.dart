@@ -93,6 +93,7 @@ mixin ScheduleHelper {
     return formatted;
   }
 
+
   /// Helper to format the date for headers
   String monthDateStringBuilder(DateTime date, {DateTime? secondaryDate}) {
     final formatted = formatDate(date, format: 'Y M');

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
+import '../util/local_time.dart';
 import '../util/measurement_type.dart';
 import 'entity.dart';
 
@@ -238,12 +239,7 @@ class System extends Entity<System> {
   String? surname;
   String? operatingHours; // <<--- New field
 
-  void setOperatingHours() {
-    final schedule = OperatingHours(days: [
-      OperatingDay(dayName: DayName.mon, start: '08:00', end: '17:00'),
-      OperatingDay(dayName: DayName.tue, start: '09:00', end: '18:00'),
-    ]);
-
+  void setOperatingHours(OperatingHours schedule) {
     operatingHours = schedule.toJson();
     // Save
     // `system` to the DB as usual
@@ -319,7 +315,6 @@ enum DayName {
   final String displayName;
   final String shortName;
 
-
   /// Returns the Dart enum name (e.g., "mon") as the JSON string.
   String toJson() => name;
 
@@ -336,6 +331,7 @@ class OperatingDay {
     required this.dayName,
     this.start,
     this.end,
+    this.open = true,
   });
 
   /// Construct from a JSON map, expecting:
@@ -346,47 +342,78 @@ class OperatingDay {
   /// }
   factory OperatingDay.fromJson(Map<String, dynamic> json) => OperatingDay(
         dayName: DayName.fromJson(json['dayName'] as String),
-        start: json['start'] as String?,
-        end: json['end'] as String?,
+        start: const LocalTimeConverter().fromJson(json['start'] as String?),
+        end: const LocalTimeConverter().fromJson(json['end'] as String?),
+        open: ((json['open'] as int?) ?? 1) == 1,
       );
   final DayName dayName;
-  final String? start; // e.g. "08:00"
-  final String? end;
+  LocalTime? start; // e.g. "08:00"
+  LocalTime? end;
+  bool open;
 
   /// Convert this OperatingDay instance back to a JSON-like map.
   Map<String, dynamic> toJson() => {
         'dayName': dayName.toJson(),
-        'start': start,
-        'end': end,
+        'start': const LocalTimeConverter().toJson(start),
+        'end': const LocalTimeConverter().toJson(end),
+        'open': open ? 1 : 0,
       };
 }
 
 class OperatingHours {
-  OperatingHours({required this.days});
+  OperatingHours({required this.days}) {
+    final missing = <DayName>[];
+    // back fill any missing days
+    // this is required when we first populate the system table
+    for (final day in DayName.values) {
+      if (!days.containsKey(day)) {
+        missing.add(day);
+      }
+    }
+
+    for (final missed in missing) {
+      days[missed] = OperatingDay(dayName: missed);
+    }
+  }
 
   /// Builds an OperatingHours instance from a JSON string.
   /// If the string is null/empty, returns an empty list.
   factory OperatingHours.fromJson(String? jsonStr) {
     if (jsonStr == null || jsonStr.isEmpty) {
-      return OperatingHours(days: []);
+      return OperatingHours(days: <DayName, OperatingDay>{});
     }
 
     final decoded = jsonDecode(jsonStr) as List<dynamic>;
-    // each item is a Map like:
-    // { "dayName": "Monday", "start": "08:00", "end": "17:00" }
-    final dayList = decoded
-        .map((item) => OperatingDay.fromJson(item as Map<String, dynamic>))
-        .toList();
+// Convert the decoded list into a Map keyed by `DayName`.
+    final dayMap = {
+      for (final item in decoded)
+        OperatingDay.fromJson(item as Map<String, dynamic>).dayName:
+            OperatingDay.fromJson(item),
+    };
 
-    return OperatingHours(days: dayList);
+    return OperatingHours(days: dayMap);
   }
 
-  /// A list of OperatingDay objects, one for each day you operate.
-  final List<OperatingDay> days;
+  /// A Map of  OperatingDay objects, one for each day you operate.
+  /// The key is the short day name. e.g. Mon
+  ///
+  final Map<DayName, OperatingDay> days;
+
+  /// An ordered list of the days that we are open - starting from monday
+  List<bool> get openList =>
+      days.values.map<bool>((hours) => hours.open).toList();
 
   /// Converts the OperatingHours instance back to a JSON string.
   String toJson() {
-    final listToEncode = days.map((day) => day.toJson()).toList();
+    // Convert the map values (OperatingDay) to a list of maps (JSON format).
+    final listToEncode =
+        days.values.map((operatingDay) => operatingDay.toJson()).toList();
     return jsonEncode(listToEncode);
+  }
+
+  OperatingDay day(int index) {
+    final dayName = DayName.values[index - 1];
+
+    return days[dayName]!;
   }
 }

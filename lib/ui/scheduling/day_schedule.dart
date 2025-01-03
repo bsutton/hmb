@@ -4,6 +4,9 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 // Example imports (replace with your actual ones):
 import '../../dao/dao_job_event.dart';
+import '../../dao/dao_system.dart';
+import '../../entity/system.dart';
+import '../../util/format.dart';
 import '../widgets/async_state.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/text/hmb_text_themes.dart';
@@ -13,7 +16,7 @@ import 'schedule_page.dart'; // so we have JobAddNotice, etc.
 
 /// A single-day view of events
 class DaySchedule extends StatefulWidget with ScheduleHelper {
-  const DaySchedule(
+  DaySchedule(
     this.initialDate, {
     required this.defaultJob,
     super.key,
@@ -28,6 +31,7 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
 
 class _DayScheduleState extends AsyncState<DaySchedule, void> {
   late final EventController<JobEventEx> _dayController;
+  late final System system;
 
   @override
   void initState() {
@@ -37,6 +41,7 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
 
   @override
   Future<void> asyncInitState() async {
+    system = (await DaoSystem().get())!;
     await _loadEventsForDay();
   }
 
@@ -73,9 +78,21 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
         child: FutureBuilderEx(
           future: initialised,
           builder: (context, _) => DayView<JobEventEx>(
+            startHour: system
+                    .getOperatingHours()
+                    .day(widget.initialDate.weekday)
+                    .start!
+                    .hour -
+                2,
+            endHour: system
+                    .getOperatingHours()
+                    .day(widget.initialDate.weekday)
+                    .end!
+                    .hour +
+                2,
             key: ValueKey(widget.initialDate),
             initialDay: widget.initialDate,
-            dateStringBuilder: widget.dateStringBuilder,
+            dateStringBuilder: dayTitle,
             eventTileBuilder: (date, events, boundary, start, end) =>
                 _buildDayTiles(events),
             fullDayEventBuilder: (events, date) => const Text(
@@ -132,5 +149,11 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
         ),
       ),
     );
+  }
+
+  String dayTitle(DateTime date, {DateTime? secondaryDate}) {
+    final formatted = formatDate(date, format: 'Y M d D');
+
+    return formatted;
   }
 }

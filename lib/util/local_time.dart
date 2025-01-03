@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:strings/strings.dart';
 
 import 'format.dart';
 import 'local_date.dart';
@@ -9,6 +10,14 @@ import 'local_date.dart';
 @immutable
 class LocalTime {
   const LocalTime({required this.hour, required this.minute, this.second = 0});
+
+  factory LocalTime.parse(String time) {
+    // Utility: convert "08:00" to TimeOfDay
+    final parts = time.split(':');
+    final hour = int.tryParse(parts[0]) ?? 0;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    return LocalTime(hour: hour, minute: minute);
+  }
 
   LocalTime.fromDateTime(DateTime dateTime)
       : hour = dateTime.hour,
@@ -70,7 +79,7 @@ class LocalTimeConverter implements JsonConverter<LocalTime, String> {
 
   @override
   // DateTime parse MUST have a date so pass 1900/1/1 and then strip the date component.
-  LocalTime fromJson(String? json) => json == null
+  LocalTime fromJson(String? json) => Strings.isBlank(json)
       ? LocalTime.now()
       : LocalTime.fromDateTime(DateTime.parse('1900-01-01 $json'));
 

@@ -540,7 +540,9 @@ class WizardState extends State<Wizard> {
   WizardStep? _priorStep(int currentStepIndex) {
     do {
       currentStepIndex--;
-      if (currentStepIndex < 0) return null;
+      if (currentStepIndex < 0) {
+        return null;
+      }
     } while (
         !steps[currentStepIndex].isActive || steps[currentStepIndex].hidden);
     return steps[currentStepIndex];
