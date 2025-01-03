@@ -6,7 +6,6 @@ import 'package:fleather/fleather.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -117,31 +116,6 @@ class _RichEditorState extends State<RichEditor> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final picker = ImagePicker();
-            final image = await picker.pickImage(source: ImageSource.gallery);
-            if (image != null) {
-              final selection = widget.controller.selection;
-              widget.controller.replaceText(
-                selection.baseOffset,
-                selection.extentOffset - selection.baseOffset,
-                EmbeddableObject('image', inline: false, data: {
-                  'source_type': kIsWeb ? 'url' : 'file',
-                  'source': image.path,
-                }),
-              );
-              widget.controller.replaceText(
-                selection.baseOffset + 1,
-                0,
-                '\n',
-                selection:
-                    TextSelection.collapsed(offset: selection.baseOffset + 2),
-              );
-            }
-          },
-          child: const Icon(Icons.add_a_photo),
-        ),
         body: FocusScope(
           node: FocusScopeNode(),
           child: Column(
