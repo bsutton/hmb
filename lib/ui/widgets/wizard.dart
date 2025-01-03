@@ -22,10 +22,10 @@ enum WizardCompletionReason {
 typedef WizardCompletion = Future<void> Function(WizardCompletionReason reason);
 
 /// Called each time the wizard is about to transition.
-/// The transition can be tiggered via an api call or a user action. The
-/// argument [userOriginated] is true if it was caused by a user action.
+/// The transition can be triggered via an API call or a user action.
+/// The argument [userOriginated] is true if it was caused by a user action.
 /// The [currentStep] is the step the wizard is currently showing
-///  when the transition started.
+/// when the transition started.
 /// The [targetStep] is the step the wizard is moving to.
 typedef Transition = void Function(
     {required WizardStep currentStep,
@@ -41,40 +41,35 @@ class Wizard extends StatefulWidget {
     this.onTransition,
     this.onFinished,
     this.cancelLabel = 'Cancel',
-  }) : assert(initialSteps.isNotEmpty, 'Must have at least one step') {
-    steps.addAll(initialSteps);
-  }
+  }) : assert(initialSteps.isNotEmpty, 'Must have at least one step');
+
   final WizardCompletion? onFinished;
   final Transition? onTransition;
   final List<WizardStep> initialSteps;
   final String cancelLabel;
 
-  final steps = <WizardStep>[];
-
   @override
-  State<StatefulWidget> createState() => WizardState();
+  State<Wizard> createState() => WizardState();
 }
 
 class WizardState extends State<Wizard> {
   static const double lineInset = 7;
   static const double lineWidth = 24;
-  bool onFinishCalled = false;
-
-  final ScrollPhysics physics = const ClampingScrollPhysics();
-  final bool _pageLoading = false;
-
-  final bool _inTransition = false;
-
-  late WizardStep _currentStep;
-
-  /// Holds the index into the widget.initialSteps list of the current step.
-  int _currentStepIndex = 0;
-
-  late List<GlobalKey> _keys;
-
   static const Duration crossFadeDuration = Duration(milliseconds: 500);
 
-  Future<void> popInvoked(BuildContext context) async {
+  final ScrollPhysics physics = const ClampingScrollPhysics();
+
+  late final List<WizardStep> steps;
+  late final List<GlobalKey> _keys;
+
+  late WizardStep _currentStep;
+  int _currentStepIndex = 0;
+
+  bool onFinishCalled = false;
+  final bool _pageLoading = false;
+  final bool _inTransition = false;
+
+  Future<void> _popInvoked(BuildContext context) async {
     if (!isFirstVisible(_currentStepIndex)) {
       await _onBack();
     } else {
@@ -86,15 +81,16 @@ class WizardState extends State<Wizard> {
   void initState() {
     super.initState();
 
-    for (final step in widget.initialSteps) {
+    steps = [...widget.initialSteps];
+    for (final step in steps) {
       step.wizardState = this;
     }
 
-    _currentStep = widget.initialSteps[0];
-    _currentStep.buildRequired = true;
+    _currentStep = steps[0];
+    _currentStepIndex = 0;
 
     _keys = List<GlobalKey>.generate(
-      widget.steps.length,
+      steps.length,
       (i) => GlobalKey(),
     );
   }
@@ -104,13 +100,16 @@ class WizardState extends State<Wizard> {
         canPop: isFirstVisible(_currentStepIndex),
         onPopInvokedWithResult: (didPop, result) async {
           if (didPop) {
-            await popInvoked(context);
+            await _popInvoked(context);
           }
         },
         child: Material(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [Expanded(child: _buildBody()), _buildControls()],
+            children: [
+              Expanded(child: _buildBody()),
+              _buildControls(),
+            ],
           ),
         ),
       );
@@ -118,26 +117,20 @@ class WizardState extends State<Wizard> {
   Future<void> _onNext() async {
     BlockingUI().run<void>(() async {
       if (isLastVisible(_currentStepIndex)) {
-        // We call nextStep to allow the page to do any 'exit' completion work.
-        // We use current_step as the target as we have no actual next
-        // page. The current_step is just used so we know when onNext completes.
-        final WizardStep fakeLast = FakeLastStep();
+        final fakeLast = FakeLastStep();
         final target = WizardStepTarget(this, fakeLast);
-        _currentStep.buildRequired = true;
 
-        await _safeOnNext(context, _currentStep, target, userOriginated: true);
+        await _safeOnNext(context, _currentStep, target,
+            userOriginated: true); // might redirect
 
         final result = await target.future;
         if (result == fakeLast) {
           await _triggerOnFinished(WizardCompletionReason.completed);
         }
-        // else the onNext must have failed and redirected to itself
-        // or some other page.
       } else {
-        final nextStep = _nextStep(_currentStepIndex);
-
-        if (nextStep != null) {
-          await _transitionForward(nextStep, userOriginated: true);
+        final next = _nextStep(_currentStepIndex);
+        if (next != null) {
+          await _transitionForward(next, userOriginated: true);
         }
       }
     });
@@ -145,9 +138,9 @@ class WizardState extends State<Wizard> {
 
   Future<void> _onBack() async {
     BlockingUI().run<void>(() async {
-      final priorStep = _priorStep(_currentStepIndex);
-      if (priorStep != null) {
-        await _transitionBackwards(priorStep, userOriginated: true);
+      final prior = _priorStep(_currentStepIndex);
+      if (prior != null) {
+        await _transitionBackwards(prior, userOriginated: true);
       }
     });
   }
@@ -156,60 +149,56 @@ class WizardState extends State<Wizard> {
       {required bool userOriginated}) async {
     _hideKeyboard();
 
-    final target = WizardStepTarget(this, targetStep);
-    _currentStep.buildRequired = true;
-    await _safeOnNext(context, _currentStep, target,
+    final transitionTarget = WizardStepTarget(this, targetStep);
+    await _safeOnNext(context, _currentStep, transitionTarget,
         userOriginated: userOriginated);
 
-    var nextStep = await target.future;
+    var nextStep = await transitionTarget.future;
+    if (nextStep == _currentStep) {
+      // user canceled or stayed - we are not moving.
+      Log.d('_transitionForward rejected by onNext');
+      return;
+    }
 
-    // Check if we can transition and get the new step as
-    // onNext can redirect us.
-    if (nextStep != _currentStep) {
-      // yes we are moving.
+    // if user redirected us backwards, handle that
+    if (!isAfter(nextStep)) {
+      await _transitionBackwards(nextStep, userOriginated: userOriginated);
+      return;
+    }
 
-      // onNext decided to send us backwards so our work is now done.
-      if (!isAfter(nextStep)) {
-        await _transitionBackwards(nextStep, userOriginated: userOriginated);
-        return;
+    // try stepping forward
+    WizardStep? tryStep;
+    var firstpass = true;
+    do {
+      // first pass we use nextStep acquired above.
+      if (firstpass) {
+        firstpass = false;
+      } else {
+        // nextStep was updated
+        if (!isAfter(tryStep!)) {
+          await _transitionBackwards(tryStep, userOriginated: userOriginated);
+          return;
+        }
+        nextStep = tryStep;
       }
 
-      WizardStep? tryStep;
-      var firstpass = true;
-      do {
-        // first pass we use nextStep acquired above.
-        if (firstpass) {
-          firstpass = false;
-        } else {
-          if (!isAfter(tryStep!)) {
-            await _transitionBackwards(tryStep, userOriginated: userOriginated);
-            return;
-          }
-          nextStep = tryStep;
-        }
+      final entryTarget = WizardStepTarget(this, nextStep);
+      if (mounted) {
+        await _safeOnEntry(context, nextStep, _currentStep, entryTarget,
+            userOriginated: userOriginated);
+      }
+      tryStep = await entryTarget.future;
+    } while (nextStep != tryStep);
 
-        nextStep.buildRequired = true;
-        final entryTarget = WizardStepTarget(this, nextStep);
-        if (mounted) {
-          await _safeOnEntry(context, nextStep, _currentStep, entryTarget,
-              userOriginated: userOriginated);
-        }
-        tryStep = await entryTarget.future;
-      } while (nextStep != tryStep);
+    // onEntry is happy to let us in.
+    widget.onTransition?.call(
+        currentStep: _currentStep,
+        targetStep: nextStep,
+        userOriginated: userOriginated);
 
-      // onEntry is happy to let us in.
-      widget.onTransition?.call(
-          currentStep: _currentStep,
-          targetStep: nextStep,
-          userOriginated: userOriginated);
-
-      _currentStep = nextStep;
-      _currentStepIndex = _indexOf(nextStep);
-      _showStep();
-    } else {
-      // we are not moving.
-      Log.d('_transitionForward rejected by onNext');
-    }
+    _currentStep = nextStep;
+    _currentStepIndex = _indexOf(nextStep);
+    _showStep();
   }
 
   Future<void> _transitionBackwards(WizardStep targetStep,
@@ -218,59 +207,59 @@ class WizardState extends State<Wizard> {
 
     // Check if we can transition and get the new step
     // as onBack can redirect us.
-    _currentStep.buildRequired = true;
-    final target = WizardStepTarget(this, targetStep);
-    await _safeOnPrev(context, _currentStep, target,
+
+    final transitionTarget = WizardStepTarget(this, targetStep);
+    await _safeOnPrev(context, _currentStep, transitionTarget,
         userOriginated: userOriginated);
 
-    var prevStep = await target.future;
-
-    if (prevStep != _currentStep) {
-      // yes we are moving.
-
-      // onPrev decided to send us backwards so our work is now done.
-      if (isAfter(prevStep)) {
-        await _transitionForward(prevStep, userOriginated: userOriginated);
-        return;
-      }
-
-      WizardStep? tryStep;
-      var firstpass = true;
-      // loop until onEntry returns itself rather than another
-      // step that it wants to redirect us to.
-      do {
-        // first pass we use prevStep acquired above.
-        if (firstpass) {
-          firstpass = false;
-        } else {
-          if (isAfter(tryStep!)) {
-            await _transitionForward(tryStep, userOriginated: userOriginated);
-            return;
-          }
-          prevStep = tryStep;
-        }
-        prevStep.buildRequired = true;
-        final entryTarget = WizardStepTarget(this, prevStep);
-        if (mounted) {
-          await _safeOnEntry(context, prevStep, _currentStep, entryTarget,
-              userOriginated: userOriginated);
-        }
-        tryStep = await entryTarget.future;
-      } while (prevStep != tryStep);
-
-      // onEntry is happy to let us in.
-      widget.onTransition?.call(
-          currentStep: _currentStep,
-          targetStep: prevStep,
-          userOriginated: userOriginated);
-
-      _currentStep = prevStep;
-      _currentStepIndex = _indexOf(prevStep);
-      _showStep();
-    } else {
+    var prevStep = await transitionTarget.future;
+    if (prevStep == _currentStep) {
       // we are not moving.
       Log.d('_transitionBackwards rejected by onPrev');
+      return;
     }
+
+    // if user is sending us forward from onPrev
+    if (isAfter(prevStep)) {
+      await _transitionForward(prevStep, userOriginated: userOriginated);
+      return;
+    }
+
+    // try stepping backward
+    WizardStep? tryStep;
+    var firstpass = true;
+    // loop until onEntry returns itself rather than another
+    // step that it wants to redirect us to.
+    do {
+      // first pass we use prevStep acquired above.
+      if (firstpass) {
+        firstpass = false;
+      } else {
+        if (isAfter(tryStep!)) {
+          await _transitionForward(tryStep, userOriginated: userOriginated);
+          return;
+        }
+        prevStep = tryStep;
+      }
+
+      final entryTarget = WizardStepTarget(this, prevStep);
+      if (mounted) {
+        await _safeOnEntry(context, prevStep, _currentStep, entryTarget,
+            userOriginated: userOriginated);
+      }
+      tryStep = await entryTarget.future;
+    } while (prevStep != tryStep);
+
+    // onEntry is happy to let us in.
+    widget.onTransition?.call(
+      currentStep: _currentStep,
+      targetStep: prevStep,
+      userOriginated: userOriginated,
+    );
+
+    _currentStep = prevStep;
+    _currentStepIndex = _indexOf(prevStep);
+    _showStep();
   }
 
   /// Allows you to force a jump to a specific step.
@@ -284,42 +273,40 @@ class WizardState extends State<Wizard> {
   Future<void> jumpToStep(WizardStep jumpToStep,
       {required bool userOriginated, bool checkCanSkip = true}) async {
     BlockingUI().run<void>(() async {
-      if (jumpToStep.isActive &&
-          jumpToStep != _currentStep &&
-          !jumpToStep.hidden) {
+      if (!jumpToStep.isActive ||
+          jumpToStep == _currentStep ||
+          jumpToStep.hidden) {
+        return;
+      }
+      if (isAfter(jumpToStep)) {
         Log.d('wizard jump forward');
-        // Is the jumpToStep after the current step?
-        if (isAfter(jumpToStep)) {
-          Log.d('jumpto is after');
-          // we are moving forward so
-          // check each intermediary step to ensure that it can be skipped.
-          var targetStep = jumpToStep;
-          var targetStepIndex = _currentStepIndex;
-          Log.d('target_index=$targetStepIndex');
-
-          if (checkCanSkip) {
-            Log.d('skipping ${targetStep.title}');
-            do {
-              targetStep = _nextStep(targetStepIndex)!;
-              targetStepIndex = _indexOf(targetStep);
-            } while (targetStep.canSkip(context) &&
-                !isLastVisible(targetStepIndex) &&
-                targetStep != jumpToStep);
-          }
-          await _transitionForward(targetStep, userOriginated: userOriginated);
-        } else {
-          Log.d('wizard jump backwards');
-          await _transitionBackwards(jumpToStep,
-              userOriginated: userOriginated);
+        // we are moving forward so
+        // check each intermediary step to ensure that it can be skipped.
+        if (checkCanSkip) {
+          var idx = _currentStepIndex;
+          WizardStep? s;
+          do {
+            if (s != null) {
+              Log.d('skipping ${s.title}');
+            }
+            s = _nextStep(idx);
+            if (s == null) {
+              return;
+            }
+            idx = _indexOf(s);
+          } while (
+              s.canSkip(context) && !isLastVisible(idx) && s != jumpToStep);
         }
+        await _transitionForward(jumpToStep, userOriginated: userOriginated);
+      } else {
+        // jump backward
+        await _transitionBackwards(jumpToStep, userOriginated: userOriginated);
       }
     });
   }
 
-  void _hideKeyboard() {
-    // remove the onscreen keyboard.
-    FocusScope.of(context).unfocus();
-  }
+  // remove the onscreen keyboard.
+  void _hideKeyboard() => FocusScope.of(context).unfocus();
 
   void _showStep() {
     setState(() {
@@ -331,32 +318,30 @@ class WizardState extends State<Wizard> {
     // This is a little hack, but there is no apparent way to hook
     // the cross fade completion so we just share a common duration.
     Future.delayed(crossFadeDuration, () async {
-      if (_keys[_currentStepIndex].currentContext == null) {
-        return;
+      if (_keys[_currentStepIndex].currentContext != null) {
+        await Scrollable.ensureVisible(
+          _keys[_currentStepIndex].currentContext!,
+          curve: Curves.fastOutSlowIn,
+          duration: kThemeAnimationDuration,
+        );
       }
-
-      await Scrollable.ensureVisible(
-        _keys[_currentStepIndex].currentContext!,
-        curve: Curves.fastOutSlowIn,
-        duration: kThemeAnimationDuration,
-      );
     });
   }
 
   Widget _buildBody() {
-    final pages = _buildPages();
+    final steps = _buildSteps();
     return ListView(
       shrinkWrap: true,
       physics: physics,
-      children: pages,
+      children: steps,
     );
   }
 
-  Widget buildStepHeading(WizardStep step, int stepNo) => GrayedOut(
+  Widget _buildStepHeading(WizardStep step, int stepNo) => GrayedOut(
       grayedOut: step != _currentStep,
-      child: Row(children: [buildNo(step, stepNo), step.title]));
+      child: Row(children: [_buildNo(stepNo), step.title]));
 
-  Widget buildNo(WizardStep step, int stepNo) => SizedBox(
+  Widget _buildNo(int stepNo) => SizedBox(
       height: 60,
       child: Column(children: [
         _buildLine(!isFirstVisible(stepNo)),
@@ -380,15 +365,16 @@ class WizardState extends State<Wizard> {
         color: Colors.grey.shade400,
       );
 
-  Widget buildStepBody(WizardStep step) {
-    if (step.buildRequired) {
-      final width = MediaQuery.of(context).size.width - lineInset - lineWidth;
+  /// Show the step's build if it's the current step; otherwise show a placeholder.
+  Widget buildStepBody(WizardStep step, int index) {
+    final isCurrentStep = _isCurrent(index);
 
-      // height required for phone edit return SizedBox(width: width,
-      // height: 100, child: step.build(context));
+    if (isCurrentStep) {
+      final width = MediaQuery.of(context).size.width - lineInset - lineWidth;
       return SizedBox(width: width, child: step.build(context));
     } else {
-      return const SizedBox(width: 1, height: 1);
+      // If not current, collapse or show nothing
+      return const SizedBox.shrink();
     }
   }
 
@@ -398,22 +384,22 @@ class WizardState extends State<Wizard> {
     }
   }
 
-  List<Widget> _buildPages() {
+  List<Widget> _buildSteps() {
     final children = <Widget>[];
 
     var stepNo = 0;
-    for (var i = 0; i < widget.initialSteps.length; i += 1) {
-      final step = widget.initialSteps[i];
+    for (var i = 0; i < steps.length; i++) {
+      final step = steps[i];
       if (step.hidden) {
         continue;
       }
       children.add(Column(
         key: _keys[i],
-        children: <Widget>[
+        children: [
           Material(
             child: InkWell(
               onTap: () async => jumpToStep(step, userOriginated: true),
-              child: buildStepHeading(step, stepNo),
+              child: _buildStepHeading(step, stepNo),
             ),
           ),
           _buildVerticalBody(step, i),
@@ -421,56 +407,61 @@ class WizardState extends State<Wizard> {
       ));
       stepNo++;
     }
-
     return children;
   }
 
   Widget _buildVerticalBody(WizardStep step, int index) => Align(
-      alignment: Alignment.centerLeft,
-      child: Stack(
-        children: <Widget>[
-          // left hand line between step circles for the body of each step.
-          PositionedDirectional(
-            start: lineInset,
-            top: 0,
-            bottom: 0,
-            child: SizedBox(
-              width: lineWidth,
-              child: Center(
-                child: SizedBox(
-                  width: isLastVisible(index) ? 0.0 : 2.0,
-                  child: Container(
-                    color: Colors.grey.shade400,
+        alignment: Alignment.centerLeft,
+        child: Stack(
+          children: [
+            // vertical line on the left side
+            PositionedDirectional(
+              start: lineInset,
+              top: 0,
+              bottom: 0,
+              child: SizedBox(
+                width: lineWidth,
+                child: Center(
+                  child: SizedBox(
+                    width: isLastVisible(index) ? 0.0 : 2.0,
+                    child: Container(
+                      color: Colors.grey.shade400,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          // The body of the step.
-          // first child is a zero sized container so we expand/collapse
-          // the step [secondChild] to/from the zero container.
-          AnimatedCrossFade(
-            firstChild: Container(height: 0),
-            secondChild: Container(
-              margin: const EdgeInsetsDirectional.only(
-                start: 30,
-              ),
-              child: FittedBox(
+            // The body of the step.
+            // first child is a zero sized container so we expand/collapse
+            // the step [secondChild] to/from the zero container.
+            AnimatedCrossFade(
+              firstChild: Container(height: 0),
+              secondChild: Container(
+                margin: const EdgeInsetsDirectional.only(
+                  start: 30,
+                ),
+                child: FittedBox(
                   fit: BoxFit.cover,
                   alignment: Alignment.centerLeft,
-                  child: buildStepBody(step)),
+                  // Build the step's real widget if this step is current
+                  child: buildStepBody(step, index),
+                ),
+              ),
+              firstCurve: const Interval(0, 0.1, curve: Curves.fastOutSlowIn),
+              secondCurve: const Interval(0, 1, curve: Curves.fastOutSlowIn),
+              sizeCurve: Curves.fastOutSlowIn,
+              crossFadeState: _isCurrent(index)
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: crossFadeDuration,
             ),
-            firstCurve: const Interval(0, 0.1, curve: Curves.fastOutSlowIn),
-            secondCurve: const Interval(0, 1, curve: Curves.fastOutSlowIn),
-            sizeCurve: Curves.fastOutSlowIn,
-            crossFadeState: _isCurrent(index)
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            duration: crossFadeDuration,
-          ),
-        ],
-      ));
+          ],
+        ),
+      );
 
+  ///
+  /// BUILD CONTROLS
+  ///
   Widget _buildControls() => Padding(
         padding: const EdgeInsets.all(8),
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
@@ -500,14 +491,15 @@ class WizardState extends State<Wizard> {
         ]),
       );
 
-  /// Returns true if the given [index] is the index of the
-  /// first step that is visible i.e. not hidden.
+  ///
+  /// STEP NAVIGATION
+  ///
   bool isFirstVisible(int index) => index == _firstVisible();
 
   /// Returns the index of the first step that is currently visible
   int _firstVisible() {
     var index = 0;
-    while (widget.steps[index].hidden) {
+    while (index < steps.length && steps[index].hidden) {
       index++;
     }
     return index;
@@ -519,8 +511,8 @@ class WizardState extends State<Wizard> {
 
   /// Returns the index of the last step that is currently visible
   int _lastVisible() {
-    var index = widget.steps.length - 1;
-    while (widget.steps[index].hidden) {
+    var index = steps.length - 1;
+    while (index >= 0 && steps[index].hidden) {
       index--;
     }
     return index;
@@ -528,66 +520,47 @@ class WizardState extends State<Wizard> {
 
   bool _isCurrent(int index) => index == _currentStepIndex;
 
-  WizardStep? nextStep() => _nextStep(_currentStepIndex);
-
   /// Searches forward through the set of steps until
   /// it finds an active and visible step
   /// Returns null if no active next step exists.
   WizardStep? _nextStep(int currentStepIndex) {
-    WizardStep? nextStep;
     do {
-      nextStep = currentStepIndex + 1 > widget.initialSteps.length
-          ? null
-          : widget.initialSteps[currentStepIndex + 1];
       currentStepIndex++;
-    } while (!(nextStep?.isActive ?? false) || (nextStep?.hidden ?? true));
-
-    return nextStep;
+      if (currentStepIndex >= steps.length) {
+        return null;
+      }
+    } while (
+        !steps[currentStepIndex].isActive || steps[currentStepIndex].hidden);
+    return steps[currentStepIndex];
   }
 
   /// Searches backward through the set of steps until
   /// it finds an active and visible step
   /// Returns null if no prior step exists.
   WizardStep? _priorStep(int currentStepIndex) {
-    WizardStep? priorStep;
     do {
-      priorStep = currentStepIndex - 1 < 0
-          ? null
-          : widget.initialSteps[currentStepIndex - 1];
       currentStepIndex--;
-    } while (!(priorStep?.isActive ?? false) || (priorStep?.hidden ?? true));
-
-    return priorStep;
+      if (currentStepIndex < 0) return null;
+    } while (
+        !steps[currentStepIndex].isActive || steps[currentStepIndex].hidden);
+    return steps[currentStepIndex];
   }
 
-  WizardStep? priorStep() => _priorStep(_currentStepIndex);
-
-  /// True if the [targetStep] is after the current step.
-  bool isAfter(WizardStep targetStep) {
-    final index = _indexOf(targetStep);
-
-    return index > _currentStepIndex;
-  }
-
-  /// Throws an [ArgumentError] if the step doesn't exist.
+  bool isAfter(WizardStep step) => _indexOf(step) > _currentStepIndex;
   int _indexOf(WizardStep step) {
-    for (var i = 0; i < widget.steps.length; i++) {
-      if (step == widget.steps[i]) {
-        return i;
-      }
+    final idx = steps.indexOf(step);
+    if (idx < 0) {
+      throw ArgumentError.value(step, 'step not found in wizard steps');
     }
-
-    throw ArgumentError.value(step, 'Given step is not in the list of steps');
+    return idx;
   }
 
   void reorderStep({required WizardStep move, required WizardStep after}) {
     setState(() {
       final removeIndex = _indexOf(move);
-      widget.steps.removeAt(removeIndex);
-
-      var insertAt = 0;
-      insertAt = _indexOf(after);
-      widget.steps.insert(insertAt + 1, move);
+      steps.removeAt(removeIndex);
+      final insertAt = _indexOf(after);
+      steps.insert(insertAt + 1, move);
     });
   }
 
@@ -623,7 +596,7 @@ class WizardState extends State<Wizard> {
       BuildContext context, WizardStep step, WizardStepTarget target,
       {required bool userOriginated}) async {
     try {
-      await step.onNext(context, target, userOriginated: true);
+      await step.onNext(context, target, userOriginated: userOriginated);
 
       // ignore: avoid_catches_without_on_clauses
     } catch (e, st) {
@@ -689,12 +662,14 @@ class WizardStepTarget {
   /// returns the prior step in the wizard.
   /// Use this with a call to redirect to change the
   /// flow.
-  WizardStep? priorStep() => _wizardstate.priorStep();
+  WizardStep? priorStep() =>
+      _wizardstate._priorStep(_wizardstate._currentStepIndex);
 
   /// returns the next step in the wizard.
   /// Use this with a call to redirect to change the
   /// flow.
-  WizardStep? nextStep() => _wizardstate.nextStep();
+  WizardStep? nextStep() =>
+      _wizardstate._nextStep(_wizardstate._currentStepIndex);
 
   /// Cancel the transition.
   /// onNext and onPrev will not transition to a
@@ -710,14 +685,5 @@ class WizardStepTarget {
 class FakeLastStep extends WizardStep {
   FakeLastStep() : super(title: 'FakeLastStep');
   @override
-  Widget build(BuildContext context) => const Text('Will never been shown');
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
-
-/// Used to cancel a transition.
-// class FakeCancelStep extends WizardStep {
-//   FakeCancelStep() : super(title: 'FakeCancelStep');
-//   @override
-//   Widget build(BuildContext context) {
-//     return Text('Will never been shown');
-//   }
-// }

@@ -7,18 +7,20 @@ import '../../../dao/dao_system.dart';
 import '../../../util/app_title.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/save_and_close.dart';
 
 class SystemIntegrationScreen extends StatefulWidget {
-  const SystemIntegrationScreen({super.key});
+  const SystemIntegrationScreen({super.key, this.showButtons = true});
+
+  final bool showButtons;
 
   @override
   // ignore: library_private_types_in_public_api
-  _SystemIntegrationScreenState createState() =>
-      _SystemIntegrationScreenState();
+  SystemIntegrationScreenState createState() => SystemIntegrationScreenState();
 }
 
-class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
+class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _xeroClientIdController = TextEditingController();
@@ -48,7 +50,7 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
     super.dispose();
   }
 
-  Future<void> _saveForm({required bool close}) async {
+  Future<bool> save({required bool close}) async {
     if (_formKey.currentState!.validate()) {
       final system = await DaoSystem().get();
       // Save the form data
@@ -63,39 +65,57 @@ class _SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
           context.go('/jobs');
         }
       }
+      return true;
     } else {
       HMBToast.error('Fix the errors and try again.');
+      return false;
     }
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    if (widget.showButtons) {
+      return Scaffold(
         body: Column(
           children: [
             SaveAndClose(
-                onSave: ({required close}) async => _saveForm(close: close),
+                onSave: ({required close}) async => save(close: close),
                 onCancel: () async => context.go('/jobs')),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    children: [
-                      HMBTextField(
-                        controller: _xeroClientIdController,
-                        labelText: 'Xero Client ID',
-                        keyboardType: TextInputType.number,
-                      ),
-                      HMBTextField(
-                        controller: _xeroClientSecretController,
-                        labelText: 'Xero Client Secret',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ],
-                  ),
-                ),
+                child: ListView(children: [_buildForm()]),
               ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      /// For when the form is displayed in the system wizard
+      return _buildForm();
+    }
+  }
+
+  Form _buildForm() => Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            const Text(
+              '''
+HMB can generate and (optionally) upload invoices to the Xero Accounting package.
+To take advantage of this feature you need to use Xero as your accounting
+package and you need a Xero developer account.''',
+            ),
+            const HMBSpacer(height: true),
+            HMBTextField(
+              controller: _xeroClientIdController,
+              labelText: 'Xero Client ID',
+              keyboardType: TextInputType.number,
+            ),
+            HMBTextField(
+              controller: _xeroClientSecretController,
+              labelText: 'Xero Client Secret',
+              keyboardType: TextInputType.number,
             ),
           ],
         ),

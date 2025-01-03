@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:country_code/country_code.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import '../../../entity/system.dart';
 import '../../../util/app_title.dart';
 import '../../../util/platform_ex.dart';
 import '../../dialog/message_template_dialog.dart';
+import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -18,34 +20,39 @@ import '../../widgets/hmb_toast.dart';
 import '../../widgets/save_and_close.dart';
 
 class SystemContactInformationScreen extends StatefulWidget {
-  const SystemContactInformationScreen({super.key});
+  const SystemContactInformationScreen({super.key, this.showButtons = true});
 
+  final bool showButtons;
   @override
   // ignore: library_private_types_in_public_api
-  _SystemContactInformationScreenState createState() =>
-      _SystemContactInformationScreenState();
+  SystemContactInformationScreenState createState() =>
+      SystemContactInformationScreenState();
 }
 
-class _SystemContactInformationScreenState
-    extends State<SystemContactInformationScreen> {
+class SystemContactInformationScreenState
+    extends AsyncState<SystemContactInformationScreen, void> {
   final _formKey = GlobalKey<FormState>();
 
-  late TextEditingController _addressLine1Controller;
-  late TextEditingController _addressLine2Controller;
-  late TextEditingController _suburbController;
-  late TextEditingController _stateController;
-  late TextEditingController _postcodeController;
-  late TextEditingController _mobileNumberController;
-  late TextEditingController _landLineController;
-  late TextEditingController _officeNumberController;
-  late TextEditingController _fromEmailController;
-  late TextEditingController _emailAddressController;
-  late TextEditingController _firstNameController; // New controller
-  late TextEditingController _surnameController; // New controller
+  late TextEditingController? _addressLine1Controller;
+  late TextEditingController? _addressLine2Controller;
+  late TextEditingController? _suburbController;
+  late TextEditingController? _stateController;
+  late TextEditingController? _postcodeController;
+  late TextEditingController? _mobileNumberController;
+  late TextEditingController? _landLineController;
+  late TextEditingController? _officeNumberController;
+  late TextEditingController? _fromEmailController;
+  late TextEditingController? _emailAddressController;
+  late TextEditingController? _firstNameController; // New controller
+  late TextEditingController? _surnameController; // New controller
+
+  late String _selectedCountryCode;
+  late List<CountryCode> _countryCodes;
 
   late final System system;
 
-  Future<void> _initialize() async {
+  @override
+  Future<void> asyncInitState() async {
     setAppTitle('Business Contacts');
     system = (await DaoSystem().get())!;
 
@@ -61,42 +68,46 @@ class _SystemContactInformationScreenState
     _emailAddressController = TextEditingController(text: system.emailAddress);
     _firstNameController = TextEditingController(text: system.firstname);
     _surnameController = TextEditingController(text: system.surname);
+
+    _selectedCountryCode = system.countryCode ?? 'AU';
+    _countryCodes = CountryCode.values;
   }
 
   @override
   void dispose() {
-    _addressLine1Controller.dispose();
-    _addressLine2Controller.dispose();
-    _suburbController.dispose();
-    _stateController.dispose();
-    _postcodeController.dispose();
-    _mobileNumberController.dispose();
-    _landLineController.dispose();
-    _officeNumberController.dispose();
-    _fromEmailController.dispose();
-    _emailAddressController.dispose();
-    _firstNameController.dispose(); // Dispose
-    _surnameController.dispose(); // Dispose
+    _addressLine1Controller?.dispose();
+    _addressLine2Controller?.dispose();
+    _suburbController?.dispose();
+    _stateController?.dispose();
+    _postcodeController?.dispose();
+    _mobileNumberController?.dispose();
+    _landLineController?.dispose();
+    _officeNumberController?.dispose();
+    _fromEmailController?.dispose();
+    _emailAddressController?.dispose();
+    _firstNameController?.dispose(); // Dispose
+    _surnameController?.dispose(); // Dispose
     super.dispose();
   }
 
-  Future<void> _saveForm({required bool close}) async {
+  Future<bool> save({required bool close}) async {
     if (_formKey.currentState!.validate()) {
       final system = await DaoSystem().get();
       // Save the form data
       system!
-        ..firstname = _firstNameController.text // Save first name
-        ..surname = _surnameController.text // Save surname
-        ..addressLine1 = _addressLine1Controller.text
-        ..addressLine2 = _addressLine2Controller.text
-        ..suburb = _suburbController.text
-        ..state = _stateController.text
-        ..postcode = _postcodeController.text
-        ..mobileNumber = _mobileNumberController.text
-        ..landLine = _landLineController.text
-        ..officeNumber = _officeNumberController.text
-        ..fromEmail = _fromEmailController.text
-        ..emailAddress = _emailAddressController.text;
+        ..firstname = _firstNameController?.text // Save first name
+        ..surname = _surnameController?.text // Save surname
+        ..addressLine1 = _addressLine1Controller?.text
+        ..addressLine2 = _addressLine2Controller?.text
+        ..suburb = _suburbController?.text
+        ..state = _stateController?.text
+        ..postcode = _postcodeController?.text
+        ..countryCode = _selectedCountryCode
+        ..mobileNumber = _mobileNumberController?.text
+        ..landLine = _landLineController?.text
+        ..officeNumber = _officeNumberController?.text
+        ..fromEmail = _fromEmailController?.text
+        ..emailAddress = _emailAddressController?.text;
 
       await DaoSystem().update(system);
       if (mounted) {
@@ -105,131 +116,163 @@ class _SystemContactInformationScreenState
           context.go('/jobs');
         }
       }
+      return true;
     } else {
       HMBToast.error('Fix the errors and try again.');
+      return false;
     }
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    if (widget.showButtons) {
+      return Scaffold(
         body: Column(
           children: [
             SaveAndClose(
-                onSave: ({required close}) async => _saveForm(close: close),
+                onSave: ({required close}) async => save(close: close),
                 onCancel: () async => context.go('/jobs')),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: FutureBuilderEx(
-                    // ignore: discarded_futures
-                    future: _initialize(),
-                    builder: (context, _) => Form(
-                          key: _formKey,
-                          child: ListView(
-                            children: [
-                              HMBTextField(
-                                controller: _firstNameController,
-                                labelText: 'First Name',
-                                required: true,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your first name';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              HMBTextField(
-                                controller: _surnameController,
-                                labelText: 'Surname',
-                                required: true,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your surname';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              HMBPhoneField(
-                                  controller: _mobileNumberController,
-                                  labelText: 'Mobile Number',
-                                  messageData: MessageData()),
-                              HMBPhoneField(
-                                  controller: _landLineController,
-                                  labelText: 'Land Line',
-                                  messageData: MessageData()),
-                              HMBPhoneField(
-                                  controller: _officeNumberController,
-                                  labelText: 'Office Number',
-                                  messageData: MessageData()),
-                              HMBEmailField(
-                                autofocus: isNotMobile,
-                                controller: _fromEmailController,
-                                labelText: 'From Email',
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter a from email';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              HMBEmailField(
-                                  controller: _emailAddressController,
-                                  required: true,
-                                  labelText: 'Notice/Backup Email Address'),
-                              HMBTextField(
-                                controller: _addressLine1Controller,
-                                labelText: 'Address Line 1',
-                                keyboardType: TextInputType.streetAddress,
-                              ),
-                              HMBTextField(
-                                  controller: _addressLine2Controller,
-                                  labelText: 'Address Line 2',
-                                  keyboardType: TextInputType.streetAddress),
-                              HMBTextField(
-                                controller: _suburbController,
-                                labelText: 'Suburb',
-                                keyboardType: TextInputType.name,
-                              ),
-                              HMBTextField(
-                                controller: _stateController,
-                                labelText: 'State',
-                                keyboardType: TextInputType.name,
-                              ),
-                              HMBTextField(
-                                  controller: _postcodeController,
-                                  labelText: 'Post/Zip code',
-                                  keyboardType: TextInputType.number),
-                              // FutureBuilderEx(
-                              //   // ignore: discarded_futures
-                              //   future: getSimCards(),
-                              //   builder: (context, cards) {
-                              //     if (cards == null || cards.isEmpty) {
-                              //       return const Text('No sim cards found');
-                              //     } else {
-                              //       return HMBDroplist<SimCard>(
-                              //         title: 'Sim Card',
-                              //         selectedItem: () async {
-                              //           final cards = await getSimCards();
-                              //           if (cards.isNotEmpty) {
-                              //             return cards[system.simCardNo ?? 0];
-                              //           } else {
-                              //             return null;
-                              //           }
-                              //         },
-                              //         items: (filter) async => getSimCards(),
-                              //         format: (card) => card.displayName ?? 'Unnamed',
-                              //         onChanged: (card) =>
-                              //             system.simCardNo = card?.slotIndex,
-                              //       );
-                              //     }
-                              //   },
-                              // ),
-                            ],
-                          ),
-                        )),
+                child: ListView(children: [_buildForm()]),
               ),
             ),
           ],
         ),
       );
+    } else {
+      /// For when the form is displayed in the system wizard
+      return _buildForm();
+    }
+  }
+
+  FutureBuilderEx<void> _buildForm() => FutureBuilderEx(
+      // ignore: discarded_futures
+      future: initialised,
+      builder: (context, _) => Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                HMBTextField(
+                  controller: _firstNameController!,
+                  labelText: 'First Name',
+                  required: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your first name';
+                    }
+                    return null;
+                  },
+                ),
+                HMBTextField(
+                  controller: _surnameController!,
+                  labelText: 'Surname',
+                  required: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your surname';
+                    }
+                    return null;
+                  },
+                ),
+                HMBPhoneField(
+                    controller: _mobileNumberController!,
+                    labelText: 'Mobile Number',
+                    messageData: MessageData()),
+                HMBPhoneField(
+                    controller: _landLineController!,
+                    labelText: 'Land Line',
+                    messageData: MessageData()),
+                HMBPhoneField(
+                    controller: _officeNumberController!,
+                    labelText: 'Office Number',
+                    messageData: MessageData()),
+                HMBEmailField(
+                  autofocus: isNotMobile,
+                  controller: _fromEmailController!,
+                  labelText: 'From Email',
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a from email';
+                    }
+                    return null;
+                  },
+                ),
+                HMBEmailField(
+                    controller: _emailAddressController!,
+                    required: true,
+                    labelText: 'Notice/Backup Email Address'),
+                HMBTextField(
+                  controller: _addressLine1Controller!,
+                  labelText: 'Address Line 1',
+                  keyboardType: TextInputType.streetAddress,
+                ),
+                HMBTextField(
+                    controller: _addressLine2Controller!,
+                    labelText: 'Address Line 2',
+                    keyboardType: TextInputType.streetAddress),
+                HMBTextField(
+                  controller: _suburbController!,
+                  labelText: 'Suburb',
+                  keyboardType: TextInputType.name,
+                ),
+                HMBTextField(
+                  controller: _stateController!,
+                  labelText: 'State',
+                  keyboardType: TextInputType.name,
+                ),
+                HMBTextField(
+                    controller: _postcodeController!,
+                    labelText: 'Post/Zip code',
+                    keyboardType: TextInputType.number),
+
+                DropdownButtonFormField<String>(
+                  value: _selectedCountryCode,
+                  decoration: const InputDecoration(labelText: 'Country Code'),
+                  items: _countryCodes
+                      .map((country) => DropdownMenuItem<String>(
+                            value: country.alpha2,
+                            child: Text(
+                                '${country.countryName} (${country.alpha2})'),
+                          ))
+                      .toList(),
+                  onChanged: (newValue) {
+                    _selectedCountryCode = newValue!;
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select a country code';
+                    }
+                    return null;
+                  },
+                ),
+                // FutureBuilderEx(
+                //   // ignore: discarded_futures
+                //   future: getSimCards(),
+                //   builder: (context, cards) {
+                //     if (cards == null || cards.isEmpty) {
+                //       return const Text('No sim cards found');
+                //     } else {
+                //       return HMBDroplist<SimCard>(
+                //         title: 'Sim Card',
+                //         selectedItem: () async {
+                //           final cards = await getSimCards();
+                //           if (cards.isNotEmpty) {
+                //             return cards[system.simCardNo ?? 0];
+                //           } else {
+                //             return null;
+                //           }
+                //         },
+                //         items: (filter) async => getSimCards(),
+                //         format: (card) => card.displayName ?? 'Unnamed',
+                //         onChanged: (card) =>
+                //             system.simCardNo = card?.slotIndex,
+                //       );
+                //     }
+                //   },
+                // ),
+              ],
+            ),
+          ));
 }

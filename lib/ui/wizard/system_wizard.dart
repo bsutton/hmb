@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../util/app_title.dart';
-import '../widgets/hmb_button.dart';
+import '../../util/log.dart';
+import '../widgets/wizard.dart';
 import 'billing_page.dart';
 import 'business_page.dart';
 import 'contact_page.dart';
@@ -17,52 +18,52 @@ class FirstRunWizard extends StatefulWidget {
 }
 
 class _FirstRunWizardState extends State<FirstRunWizard> {
-  int _currentStep = 0;
-
   @override
   void initState() {
     super.initState();
-    setAppTitle('HMB Setup Wizard');
-  }
-
-  Future<void> _nextStep() async {
-    if (_currentStep < 3) {
-      setState(() {
-        _currentStep++;
-      });
-    } else {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop(); // Finish wizard
-      } else {
-        context.go('/jobs');
-      }
-    }
-  }
-
-  Future<void> _skipStep() async {
-    await _nextStep();
+    setAppTitle('HMB Setup Wizard'); // optional title setter
   }
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      WizardBusinessPage(onNext: _nextStep),
-      WizardBillingPage(onNext: _nextStep),
-      WizardContactPage(onNext: _nextStep),
-      WizardIntegrationPage(onNext: _skipStep),
+    // The wizard steps we want to show
+    final steps = [
+      BusinessWizardStep(),
+      BillingWizardStep(),
+      ContactWizardStep(),
+      IntegrationWizardStep(),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        actions: [
-          HMBButton(
-            label: 'Skip All',
-            onPressed: _skipStep,
-          ),
-        ],
-      ),
-      body: screens[_currentStep],
+    return Wizard(
+      initialSteps: steps,
+      onTransition: (
+          {required currentStep,
+          required targetStep,
+          required userOriginated}) {
+        Log.d(
+            'Wizard transition from ${currentStep.title} to ${targetStep.title}.');
+      },
+      onFinished: (reason) async {
+        switch (reason) {
+          case WizardCompletionReason.cancelled:
+            // e.g. user clicked Cancel button
+            Log.d('Wizard cancelled by user.');
+          case WizardCompletionReason.completed:
+            // e.g. user got to last step and clicked Next
+            Log.d('Wizard completed successfully.');
+          case WizardCompletionReason.backedOut:
+            // e.g. user used hardware back button from the first step
+            Log.d('Wizard closed using device back button.');
+        }
+
+        // After the wizard is done or cancelled, go somewhere
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        } else {
+          // If you have a named route for jobs, e.g.:
+          context.go('/jobs');
+        }
+      },
     );
   }
 }
