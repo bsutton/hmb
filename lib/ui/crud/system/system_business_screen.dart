@@ -20,17 +20,20 @@ class SystemBusinessScreen extends StatefulWidget {
   const SystemBusinessScreen({super.key, this.showButtons = true});
 
   final bool showButtons;
+
   @override
-  // ignore: library_private_types_in_public_api
   SystemBusinessScreenState createState() => SystemBusinessScreenState();
 }
 
 class SystemBusinessScreenState extends State<SystemBusinessScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final System system;
+
+  late System system;
+
   late String _selectedCountryCode;
   late List<CountryCode> _countryCodes;
 
+  // Existing TextEditingControllers
   late TextEditingController _businessNameController;
   late TextEditingController _businessNumberController;
   late TextEditingController _businessNumberLabelController;
@@ -38,11 +41,31 @@ class SystemBusinessScreenState extends State<SystemBusinessScreen> {
   late TextEditingController _termsUrlController;
 
   bool initialised = false;
+  // -------------------------------------------
+  // 1. Keep a list for toggling day selection
+  // -------------------------------------------
+  final List<bool> _selectedDays = List.generate(7, (_) => false);
+
+  // 2. Keep a Map of start/end times for each day
+  final Map<DayName, TimeOfDay?> _startTimes = {};
+  final Map<DayName, TimeOfDay?> _endTimes = {};
+
+  // 3. In a known order for easy indexing
+  final List<DayName> _dayOrder = [
+    DayName.mon,
+    DayName.tue,
+    DayName.wed,
+    DayName.thu,
+    DayName.fri,
+    DayName.sat,
+    DayName.sun,
+  ];
+
   Future<void> _initialize() async {
-    setAppTitle('Business Details');
     if (initialised) {
       return;
     }
+    setAppTitle('Business Details');
     initialised = true;
     system = (await DaoSystem().get())!;
     _countryCodes = CountryCode.values;
@@ -55,10 +78,31 @@ class SystemBusinessScreenState extends State<SystemBusinessScreen> {
         TextEditingController(text: system.businessNumberLabel);
     _webUrlController = TextEditingController(text: system.webUrl);
     _termsUrlController = TextEditingController(text: system.termsUrl);
+
+    // 2. Load existing OperatingHours from System, if any
+    final existing = OperatingHours.fromJson(system.operatingHours);
+
+    // For each OperatingDay in the existing schedule, populate local state
+    for (final od in existing.days) {
+      // Find the index in _dayOrder
+      final i = _dayOrder.indexOf(od.dayName);
+      if (i >= 0) {
+        _selectedDays[i] = true;
+
+        // Parse the string "08:00" into TimeOfDay if needed
+        if (od.start != null) {
+          _startTimes[od.dayName] = _stringToTimeOfDay(od.start!);
+        }
+        if (od.end != null) {
+          _endTimes[od.dayName] = _stringToTimeOfDay(od.end!);
+        }
+      }
+    }
   }
 
   @override
   void dispose() {
+    // Dispose of controllers
     _businessNameController.dispose();
     _businessNumberController.dispose();
     _businessNumberLabelController.dispose();
@@ -67,31 +111,93 @@ class SystemBusinessScreenState extends State<SystemBusinessScreen> {
     super.dispose();
   }
 
+// --------------------------------
+  // Final Save Logic
+  // --------------------------------
   Future<bool> save({required bool close}) async {
-    if (_formKey.currentState!.validate()) {
-      final system = await DaoSystem().get();
-      // Save the form data
-      system!
-        ..businessName = _businessNameController.text
-        ..businessNumber = _businessNumberController.text
-        ..businessNumberLabel = _businessNumberLabelController.text
-        ..webUrl = _webUrlController.text
-        ..termsUrl = _termsUrlController.text
-        ..countryCode = _selectedCountryCode
-        ..preferredUnitSystem = system.preferredUnitSystem;
-
-      await DaoSystem().update(system);
-
-      if (mounted) {
-        HMBToast.info('saved');
-        if (close) {
-          context.go('/jobs');
-        }
-      }
-      return true;
-    } else {
+    if (!_formKey.currentState!.validate()) {
       HMBToast.error('Fix the errors and try again.');
       return false;
+    }
+
+    // 1. Update fields in the System
+    final localSystem = await DaoSystem().get();
+    if (localSystem == null) {
+      return false;
+    }
+
+    localSystem
+      ..businessName = _businessNameController.text
+      ..businessNumber = _businessNumberController.text
+      ..businessNumberLabel = _businessNumberLabelController.text
+      ..webUrl = _webUrlController.text
+      ..termsUrl = _termsUrlController.text
+      ..countryCode = _selectedCountryCode;
+
+    // 2. Build up an OperatingHours object from local UI state
+    final selectedDays = <OperatingDay>[];
+    for (var i = 0; i < _dayOrder.length; i++) {
+      if (_selectedDays[i]) {
+        final dayEnum = _dayOrder[i];
+        final startTod = _startTimes[dayEnum];
+        final endTod = _endTimes[dayEnum];
+
+        // Convert TimeOfDay to "HH:mm" strings
+        final startStr =
+            (startTod != null) ? _timeOfDayToString(startTod) : null;
+        final endStr = (endTod != null) ? _timeOfDayToString(endTod) : null;
+
+        selectedDays.add(
+          OperatingDay(dayName: dayEnum, start: startStr, end: endStr),
+        );
+      }
+    }
+
+    final oh = OperatingHours(days: selectedDays);
+    localSystem.operatingHours = oh.toJson();
+
+    // 3. Update in DB
+    await DaoSystem().update(localSystem);
+
+    if (mounted) {
+      HMBToast.info('saved');
+      if (close) {
+        context.go('/jobs');
+      }
+    }
+    return true;
+  }
+
+  // Utility: convert "08:00" to TimeOfDay
+  TimeOfDay _stringToTimeOfDay(String timeStr) {
+    final parts = timeStr.split(':');
+    final hour = int.tryParse(parts[0]) ?? 0;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  // Utility: convert TimeOfDay to "08:00" string
+  String _timeOfDayToString(TimeOfDay tod) {
+    final hourStr = tod.hour.toString().padLeft(2, '0');
+    final minStr = tod.minute.toString().padLeft(2, '0');
+    return '$hourStr:$minStr';
+  }
+
+  Future<void> _selectTime(
+      BuildContext context, DayName dayName, bool isStart) async {
+    final initialTime = TimeOfDay.now();
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+    );
+    if (selectedTime != null) {
+      setState(() {
+        if (isStart) {
+          _startTimes[dayName] = selectedTime;
+        } else {
+          _endTimes[dayName] = selectedTime;
+        }
+      });
     }
   }
 
@@ -115,19 +221,88 @@ class SystemBusinessScreenState extends State<SystemBusinessScreen> {
         ),
       );
     } else {
-      /// For when the form is displayed in the system wizard
+      // For when the form is displayed in a wizard flow
       return _buildForm();
     }
   }
 
+  // --------------------------------
+  // Build your Operating Hours UI
+  // --------------------------------
+  Widget _buildOperatingHours() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Operating Days and Hours',
+              style: TextStyle(fontSize: 16)),
+          const SizedBox(height: 8),
+          ToggleButtons(
+            isSelected: _selectedDays,
+            onPressed: (index) {
+              setState(() {
+                _selectedDays[index] = !_selectedDays[index];
+              });
+            },
+            children: _dayOrder.map((d) => Text(d.shortName)).toList(),
+          ),
+          const SizedBox(height: 16),
+          Column(
+            children: List.generate(_dayOrder.length, (index) {
+              if (!_selectedDays[index]) {
+                return const SizedBox.shrink();
+              }
+              final day = _dayOrder[index];
+              final start = _startTimes[day];
+              final end = _endTimes[day];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    day.displayName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () async =>
+                              _selectTime(context, day, true),
+                          child: Text(
+                            start != null
+                                ? _timeOfDayToString(start)
+                                : 'Start Time',
+                          ),
+                        ),
+                      ),
+                      const Text(' to '),
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () async =>
+                              _selectTime(context, day, false),
+                          child: Text(
+                            end != null ? _timeOfDayToString(end) : 'End Time',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                ],
+              );
+            }),
+          ),
+        ],
+      );
+
+  // --------------------------------
+  // Build the entire Form
+  // --------------------------------
   FutureBuilderEx<void> _buildForm() => FutureBuilderEx(
         // ignore: discarded_futures
         future: _initialize(),
         builder: (context, _) => Form(
           key: _formKey,
           child: Column(
-            // shrinkWrap: true,
-            // physics: const NeverScrollableScrollPhysics(),
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               HMBTextField(
                 controller: _businessNameController,
@@ -179,7 +354,7 @@ class SystemBusinessScreenState extends State<SystemBusinessScreen> {
                     .map((country) => DropdownMenuItem<String>(
                           value: country.alpha2,
                           child: Text(
-                              '''${country.countryName} (${country.alpha2})'''),
+                              '${country.countryName} (${country.alpha2})'),
                         ))
                     .toList(),
                 onChanged: (newValue) {
@@ -214,6 +389,10 @@ class SystemBusinessScreenState extends State<SystemBusinessScreen> {
                 controller: _termsUrlController,
                 labelText: 'Terms URL',
               ),
+
+              // New Operating Hours Section
+              const SizedBox(height: 16),
+              _buildOperatingHours(),
             ],
           ),
         ),

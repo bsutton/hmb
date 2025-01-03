@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
@@ -67,6 +69,7 @@ class System extends Entity<System> {
     required this.surname, // New field
     required super.createdDate,
     required super.modifiedDate,
+    this.operatingHours, // <<--- New field for operating days/hours
   }) : super();
 
   System.forInsert({
@@ -104,6 +107,7 @@ class System extends Entity<System> {
     this.logoAspectRatio = LogoAspectRatio.square,
     this.firstname, // New field
     this.surname, // New field
+    this.operatingHours, // <<--- New field for operating days/hours
   }) : super.forInsert();
 
   System.forUpdate({
@@ -142,6 +146,7 @@ class System extends Entity<System> {
     required this.paymentOptions,
     this.firstname, // New field
     this.surname, // New field
+    this.operatingHours, // <<--- New field for operating days/hours
   }) : super.forUpdate();
 
   factory System.fromMap(Map<String, dynamic> map) => System(
@@ -160,12 +165,14 @@ class System extends Entity<System> {
         emailAddress: map['email_address'] as String?,
         webUrl: map['web_url'] as String?,
         defaultHourlyRate: Money.fromInt(
-            map['default_hourly_rate'] as int? ?? 0,
-            isoCode: 'AUD'),
+          map['default_hourly_rate'] as int? ?? 0,
+          isoCode: 'AUD',
+        ),
         termsUrl: map['terms_url'] as String?,
         defaultBookingFee: Money.fromInt(
-            map['default_booking_fee'] as int? ?? 0,
-            isoCode: 'AUD'),
+          map['default_booking_fee'] as int? ?? 0,
+          isoCode: 'AUD',
+        ),
         simCardNo: map['sim_card_no'] as int?,
         xeroClientId: map['xero_client_id'] as String?,
         xeroClientSecret: map['xero_client_secret'] as String?,
@@ -180,19 +187,18 @@ class System extends Entity<System> {
             ? PreferredUnitSystem.metric
             : PreferredUnitSystem.imperial,
         logoPath: map['logo_path'] as String? ?? '',
-        logoAspectRatio: LogoAspectRatio.fromName(
-            map['logo_aspect_ratio'] as String?),
-        billingColour:
-            map['billing_colour'] as int? ?? 0xFF000000, // Default color black
+        logoAspectRatio:
+            LogoAspectRatio.fromName(map['logo_aspect_ratio'] as String?),
+        billingColour: map['billing_colour'] as int? ?? 0xFF000000,
         paymentTermsInDays: map['payment_terms_in_days'] as int? ?? 3,
         paymentOptions: map['payment_options'] as String? ?? '',
-        firstname: map['firstname'] as String?, // New field
-        surname: map['surname'] as String?, // New field
-        createdDate:
-            DateTime.tryParse((map['created_date']) as String? ?? '') ??
-                DateTime.now(),
+        firstname: map['firstname'] as String?,
+        surname: map['surname'] as String?,
+        operatingHours: map['operating_hours'] as String?, // <<--- New field
+        createdDate: DateTime.tryParse(map['created_date'] as String? ?? '') ??
+            DateTime.now(),
         modifiedDate:
-            DateTime.tryParse((map['modified_date']) as String? ?? '') ??
+            DateTime.tryParse(map['modified_date'] as String? ?? '') ??
                 DateTime.now(),
       );
 
@@ -228,8 +234,22 @@ class System extends Entity<System> {
   int billingColour;
   int paymentTermsInDays;
   String paymentOptions;
-  String? firstname; // New field
-  String? surname; // New field
+  String? firstname;
+  String? surname;
+  String? operatingHours; // <<--- New field
+
+  void setOperatingHours() {
+    final schedule = OperatingHours(days: [
+      OperatingDay(dayName: DayName.mon, start: '08:00', end: '17:00'),
+      OperatingDay(dayName: DayName.tue, start: '09:00', end: '18:00'),
+    ]);
+
+    operatingHours = schedule.toJson();
+    // Save
+    // `system` to the DB as usual
+  }
+
+  OperatingHours getOperatingHours() => OperatingHours.fromJson(operatingHours);
 
   String? get bestPhone => Strings.isNotBlank(mobileNumber)
       ? mobileNumber
@@ -278,9 +298,95 @@ class System extends Entity<System> {
         'billing_colour': billingColour,
         'payment_terms_in_days': paymentTermsInDays,
         'payment_options': paymentOptions,
-        'firstname': firstname, // New field
-        'surname': surname, // New field
+        'firstname': firstname,
+        'surname': surname,
+        'operating_hours': operatingHours, // <<--- New field
         'created_date': createdDate.toIso8601String(),
         'modified_date': modifiedDate.toIso8601String(),
       };
+}
+
+enum DayName {
+  mon('Monday', 'Mon'),
+  tue('Tuesday', 'Tue'),
+  wed('Wednesday', 'Wed'),
+  thu('Thursday', 'Thu'),
+  fri('Friday', 'Fri'),
+  sat('Saturday', 'Sat'),
+  sun('Sunday', 'Sun');
+
+  const DayName(this.displayName, this.shortName);
+  final String displayName;
+  final String shortName;
+
+
+  /// Returns the Dart enum name (e.g., "mon") as the JSON string.
+  String toJson() => name;
+
+  /// Looks up the appropriate DayName based on the enum name string (e.g., "mon").
+  /// Throws a StateError if the provided dayStr doesn't match any known enum.
+  static DayName fromJson(String dayStr) =>
+      DayName.values.firstWhere((e) => e.name == dayStr);
+}
+
+class OperatingDay {
+  // e.g. "17:00"
+
+  OperatingDay({
+    required this.dayName,
+    this.start,
+    this.end,
+  });
+
+  /// Construct from a JSON map, expecting:
+  /// {
+  ///   "dayName": "mon",
+  ///   "start": "08:00",
+  ///   "end": "17:00"
+  /// }
+  factory OperatingDay.fromJson(Map<String, dynamic> json) => OperatingDay(
+        dayName: DayName.fromJson(json['dayName'] as String),
+        start: json['start'] as String?,
+        end: json['end'] as String?,
+      );
+  final DayName dayName;
+  final String? start; // e.g. "08:00"
+  final String? end;
+
+  /// Convert this OperatingDay instance back to a JSON-like map.
+  Map<String, dynamic> toJson() => {
+        'dayName': dayName.toJson(),
+        'start': start,
+        'end': end,
+      };
+}
+
+class OperatingHours {
+  OperatingHours({required this.days});
+
+  /// Builds an OperatingHours instance from a JSON string.
+  /// If the string is null/empty, returns an empty list.
+  factory OperatingHours.fromJson(String? jsonStr) {
+    if (jsonStr == null || jsonStr.isEmpty) {
+      return OperatingHours(days: []);
+    }
+
+    final decoded = jsonDecode(jsonStr) as List<dynamic>;
+    // each item is a Map like:
+    // { "dayName": "Monday", "start": "08:00", "end": "17:00" }
+    final dayList = decoded
+        .map((item) => OperatingDay.fromJson(item as Map<String, dynamic>))
+        .toList();
+
+    return OperatingHours(days: dayList);
+  }
+
+  /// A list of OperatingDay objects, one for each day you operate.
+  final List<OperatingDay> days;
+
+  /// Converts the OperatingHours instance back to a JSON string.
+  String toJson() {
+    final listToEncode = days.map((day) => day.toJson()).toList();
+    return jsonEncode(listToEncode);
+  }
 }
