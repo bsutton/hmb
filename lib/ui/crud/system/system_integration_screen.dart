@@ -80,6 +80,7 @@ class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
           children: [
             SaveAndClose(
                 onSave: ({required close}) async => save(close: close),
+                showSaveOnly: false,
                 onCancel: () async => context.go('/jobs')),
             Expanded(
               child: Padding(

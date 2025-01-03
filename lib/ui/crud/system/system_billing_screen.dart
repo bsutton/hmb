@@ -193,6 +193,7 @@ class SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
           children: [
             SaveAndClose(
                 onSave: ({required close}) async => save(close: close),
+                showSaveOnly: false,
                 onCancel: () async => context.go('/jobs')),
             Expanded(
               child: Padding(

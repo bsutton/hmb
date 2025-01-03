@@ -4,10 +4,18 @@ import 'hmb_button.dart';
 import 'layout/hmb_spacer.dart';
 
 class SaveAndClose extends StatelessWidget {
-  const SaveAndClose({required this.onSave, required this.onCancel, super.key});
+  /// The [showSaveOnly] argument controls whether the 'Save' button
+  /// will be displayed. We normally only display the save button
+  /// during the insert phase of a CRUD.
+  const SaveAndClose(
+      {required this.onSave,
+      required this.showSaveOnly,
+      required this.onCancel,
+      super.key});
 
   final Future<void> Function({required bool close}) onSave;
   final Future<void> Function() onCancel;
+  final bool showSaveOnly;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -15,10 +23,11 @@ class SaveAndClose extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            HMBButton(
-              onPressed: () async => onSave(close: false),
-              label: 'Save',
-            ),
+            if (showSaveOnly)
+              HMBButton(
+                onPressed: () async => onSave(close: false),
+                label: 'Save',
+              ),
             const HMBSpacer(width: true),
             HMBButton(
               label: 'Save & Close',
