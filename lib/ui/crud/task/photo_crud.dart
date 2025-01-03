@@ -13,6 +13,7 @@ import '../../../entity/photo.dart';
 import '../../../util/photo_meta.dart';
 import '../../widgets/color_ex.dart';
 import '../../widgets/hmb_button.dart';
+import '../../widgets/hmb_icon_button.dart';
 import '../../widgets/media/full_screen_photo_view.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_gallery.dart';
@@ -61,8 +62,14 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
   }
 
   /// Build the take photo button
-  Widget _buildAddButton(E? parent, List<PhotoMeta>? photoMetas) => IconButton(
-        icon: const Icon(Icons.camera_alt),
+  Widget _buildAddButton(E? parent, List<PhotoMeta>? photoMetas) =>
+      HMBIconButton(
+        icon: const Icon(
+          Icons.camera_alt,
+          size: 32,
+        ),
+        size: HMBIconButtonSize.large,
+        hint: 'Take a photo and attach it to the task.',
         onPressed: () async {
           final capturedPhoto = await widget.controller.takePhoto();
           if (capturedPhoto != null) {
