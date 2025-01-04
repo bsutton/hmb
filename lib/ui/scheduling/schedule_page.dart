@@ -12,6 +12,7 @@ import '../../entity/system.dart';
 import '../../util/app_title.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/local_date.dart';
+import '../../util/platform_ex.dart';
 import '../widgets/async_state.dart';
 import '../widgets/hmb_icon_button.dart';
 import '../widgets/hmb_toast.dart';
@@ -163,15 +164,15 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                     key: ValueKey(selectedView),
                     controller: _pageController,
                     onPageChanged: _onPageChanged,
-                    
                     itemBuilder: (context, index) {
                       final date = _getDateForPage(index);
 
                       switch (selectedView) {
                         case ScheduleView.month:
-                          return MonthSchedule(date,
-                              defaultJob: widget.defaultJob,
-                              showExtendedHours: showExtendedHours);
+                          return MonthSchedule(
+                            date,
+                            defaultJob: widget.defaultJob,
+                          );
                         case ScheduleView.week:
                           return WeekSchedule(date,
                               defaultJob: widget.defaultJob,
@@ -247,11 +248,12 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Left navigation button
-            HMBIconButton(
-              icon: const Icon(Icons.arrow_left, color: Colors.white),
-              onPressed: onPreviousPage,
-              hint: 'Previous',
-            ),
+            if (isNotMobile)
+              HMBIconButton(
+                icon: const Icon(Icons.arrow_left, color: Colors.white),
+                onPressed: onPreviousPage,
+                hint: 'Previous',
+              ),
 
             Column(
               children: [
@@ -314,11 +316,12 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
             const HMBSpacer(width: true),
 
             // Right navigation button
-            HMBIconButton(
-              icon: const Icon(Icons.arrow_right, color: Colors.white),
-              onPressed: onNextPage,
-              hint: 'Next',
-            ),
+            if (isNotMobile)
+              HMBIconButton(
+                icon: const Icon(Icons.arrow_right, color: Colors.white),
+                onPressed: onNextPage,
+                hint: 'Next',
+              ),
           ],
         ),
       );
