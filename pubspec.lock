@@ -146,10 +146,10 @@ packages:
     dependency: "direct main"
     description:
       name: calendar_view
-      sha256: b3f05995b3447ebe4a3473259e919c28ba7ff718ca7f0ab8bf2b14394439d30c
+      sha256: d2dfde139a8305f8bd248fca8ef5710a5e02a69bd3be96282abca7d67b44b110
       url: "https://onepub.dev/api/jbbxpsdavu/"
     source: hosted
-    version: "1.3.0"
+    version: "1.3.2"
   camera_platform_interface:
     dependency: "direct main"
     description:
