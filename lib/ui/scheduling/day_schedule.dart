@@ -113,6 +113,9 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
             dateStringBuilder: dayTitle,
             // eventTileBuilder: (date, events, boundary, start, end) =>
             //     _buildDayTiles(events),
+            timeStringBuilder: (date, {secondaryDate}) =>
+                formatTime(date, 'ha').toLowerCase(),
+            timeLineWidth: 58,
             fullDayEventBuilder: (events, date) => const Text(
               'Full Day Event',
               style: TextStyle(color: Colors.white),

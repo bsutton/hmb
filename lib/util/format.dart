@@ -33,14 +33,14 @@ String formatDuration(Duration duration, {bool seconds = false}) {
   return result;
 }
 
-String formatLocalDate(LocalDate date, [String pattern = 'yyyy/MM/dd']) =>
-    DateFormat(pattern).format(date.toDateTime());
+String formatLocalDate(LocalDate date, [String format = 'yyyy/MM/dd']) =>
+    DateFormat(format).format(date.toDateTime());
 
-String formatLocalTime(LocalTime time, [String pattern = 'h:mm:ss a']) =>
-    formatTime(time.toDateTime(), pattern);
+String formatLocalTime(LocalTime time, [String format = 'h:mm:ss a']) =>
+    formatTime(time.toDateTime(), format);
 
-String formatTime(DateTime date, [String pattern = 'h:mm:ss a']) =>
-    DateFormat(pattern).format(date);
+String formatTime(DateTime date, [String format = 'h:mm:ss a']) =>
+    DateFormat(format).format(date);
 
 DateFormat dateFormat = DateFormat('yyyy-MM-dd hh:mm a');
 
