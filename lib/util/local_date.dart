@@ -87,6 +87,8 @@ class LocalDate {
   @override
   int get hashCode => date.hashCode;
 
+  bool get isToday => date.toLocalDate() == LocalDate.today();
+
   LocalDate subtract(Duration duration) =>
       date.subtract(duration).toLocalDate();
 

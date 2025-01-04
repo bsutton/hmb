@@ -163,6 +163,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                     key: ValueKey(selectedView),
                     controller: _pageController,
                     onPageChanged: _onPageChanged,
+                    
                     itemBuilder: (context, index) {
                       final date = _getDateForPage(index);
 
@@ -189,7 +190,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
         ),
       );
 
-  void _onPageChanged(int pageIndex) {
+  Future<void> _onPageChanged(int pageIndex) async {
     // If we just called jumpToPage() internally, skip this invocation.
     if (_isAdjustingPage) {
       _isAdjustingPage = false;
@@ -205,17 +206,17 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
     final targetDate = _getDateForPage(pageIndex);
 
     // Only skip closed days if we are in DAY view & not showExtendedHours
-    if (selectedView == ScheduleView.day &&
-        !showExtendedHours &&
-        !operatingHours.isOpen(targetDate)) {
+    if (selectedView == ScheduleView.day && !showExtendedHours) {
       final newDate = isForward
-          ? operatingHours.getNextOpenDate(targetDate)
-          : operatingHours.getPreviousOpenDate(targetDate);
+          ? (await operatingHours.getNextOpenDate(targetDate))
+          : (await operatingHours.getPreviousOpenDate(targetDate));
 
       final newIndex = _getPageIndexForDate(newDate);
       if (newIndex != pageIndex) {
         // Prevent re-entrant calls
         _isAdjustingPage = true;
+
+        /// skip the target date
         _lastPageIndex = newIndex;
         _pageController!.jumpToPage(newIndex);
         return;

@@ -15,6 +15,11 @@ String formatDateTime(DateTime dateTime, {bool seconds = false}) {
   return DateTimeFormat.format(dateTime, format: format);
 }
 
+String formatDateTimeAM(DateTime dateTime, {bool seconds = false}) {
+  final format = 'D, j M, h:i${seconds ? ':s' : ''} a';
+  return DateTimeFormat.format(dateTime, format: format);
+}
+
 String formatDuration(Duration duration, {bool seconds = false}) {
   final hours = duration.inHours;
   final minutes = duration.inMinutes.remainder(60);

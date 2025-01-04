@@ -160,16 +160,21 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
 
   /// build a single event widget.
   Widget _renderEvent(MonthView<JobEventEx> monthView,
-          CalendarEventData<JobEventEx> event, Color backgroundColour) =>
-      GestureDetector(
-        onTap: () async {
-          if (monthView.onEventTap != null) {
-            monthView.onEventTap?.call(event, event.startTime!);
-          }
-        },
-        child: Text(
-            '${formatTime(event.startTime!, 'h:mm a')} ${event.event!.job.summary}',
-            style: TextStyle(
-                color: Colors.white, backgroundColor: backgroundColour)),
-      );
+      CalendarEventData<JobEventEx> event, Color backgroundColour) {
+    var fontColor = Colors.white;
+    if (widget.defaultJob == event.event!.job.id) {
+      fontColor = Colors.orange;
+    }
+    return GestureDetector(
+      onTap: () async {
+        if (monthView.onEventTap != null) {
+          monthView.onEventTap?.call(event, event.startTime!);
+        }
+      },
+      child: Text(
+          '${formatTime(event.startTime!, 'h:mm a')} ${event.event!.job.summary}',
+          style:
+              TextStyle(color: fontColor, backgroundColor: backgroundColour)),
+    );
+  }
 }

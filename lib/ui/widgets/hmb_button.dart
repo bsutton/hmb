@@ -13,6 +13,7 @@ class HMBButton extends StatelessWidget {
     required this.onPressed,
     this.enabled = true,
     super.key,
+    this.color = HMBColors.buttonLabel,
   }) : icon = null;
 
   const HMBButton.withIcon({
@@ -20,6 +21,7 @@ class HMBButton extends StatelessWidget {
     required this.onPressed,
     required this.icon,
     this.enabled = true,
+    this.color = HMBColors.buttonLabel,
     super.key,
   });
 
@@ -27,20 +29,20 @@ class HMBButton extends StatelessWidget {
   final Icon? icon;
   final void Function() onPressed;
   final bool enabled;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     if (icon != null) {
       return ElevatedButton.icon(
         onPressed: (enabled ? onPressed : null),
-        label:
-            Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
+        label: Text(label, style: TextStyle(color: color)),
         icon: icon,
       );
     }
     return ElevatedButton(
       onPressed: onPressed,
-      child: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
+      child: Text(label, style: TextStyle(color: color)),
     );
   }
 }

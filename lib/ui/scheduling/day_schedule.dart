@@ -12,6 +12,7 @@ import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
 import '../widgets/layout/hmb_spacer.dart';
+import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'job_event_ex.dart';
 import 'schedule_helper.dart';
@@ -37,6 +38,8 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
 class _DayScheduleState extends AsyncState<DaySchedule, void> {
   late final EventController<JobEventEx> _dayController;
   late final System system;
+  late final OperatingHours operatingHours;
+  late final bool hasEventsInExtendedHours;
 
   @override
   void initState() {
@@ -47,6 +50,7 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
   @override
   Future<void> asyncInitState() async {
     system = (await DaoSystem().get())!;
+    operatingHours = system.getOperatingHours();
     await _loadEventsForDay();
   }
 
@@ -73,9 +77,22 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
     final jobEvents = await dao.getEventsInRange(start, end);
 
     final eventData = <CalendarEventData<JobEventEx>>[];
+    var _hasEventsInExtendedHours = false;
     for (final jobEvent in jobEvents) {
-      eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData);
+      var fontColor = Colors.white;
+      if (widget.defaultJob == jobEvent.jobId) {
+        fontColor = Colors.orange;
+      }
+
+      _hasEventsInExtendedHours = _hasEventsInExtendedHours ||
+          !operatingHours.inOperatingHours(jobEvent);
+
+      eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData.copyWith(
+          titleStyle: TextStyle(color: fontColor, fontSize: 13),
+          descriptionStyle: TextStyle(color: fontColor, fontSize: 13),
+          color: SurfaceElevation.e16.color));
     }
+    hasEventsInExtendedHours = _hasEventsInExtendedHours;
 
     _dayController
       ..clear()
@@ -93,8 +110,8 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
             key: ValueKey(widget.initialDate),
             initialDay: widget.initialDate.toDateTime(),
             dateStringBuilder: dayTitle,
-            eventTileBuilder: (date, events, boundary, start, end) =>
-                _buildDayTiles(events),
+            // eventTileBuilder: (date, events, boundary, start, end) =>
+            //     _buildDayTiles(events),
             fullDayEventBuilder: (events, date) => const Text(
               'Full Day Event',
               style: TextStyle(color: Colors.white),
@@ -128,7 +145,7 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
 
   /// The opening hours starting time (hour only)
   int _getEndHour() {
-    if (widget.showExtendedHours) {
+    if (widget.showExtendedHours || hasEventsInExtendedHours) {
       return 24;
     }
     return min(
@@ -143,7 +160,7 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
 
   /// The opening hours finishing time (hour only)
   int _getStartHour() {
-    if (widget.showExtendedHours) {
+    if (widget.showExtendedHours || hasEventsInExtendedHours) {
       return 0;
     }
     return max(

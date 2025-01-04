@@ -10,6 +10,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
+import '../widgets/surface.dart';
 import 'job_event_ex.dart';
 import 'schedule_helper.dart';
 
@@ -34,6 +35,8 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
   late final EventController<JobEventEx> _weekController;
   late final System system;
   late final bool showWeekends;
+  late final OperatingHours operatingHours;
+  late bool hasEventsInExtendedHours;
 
   @override
   void initState() {
@@ -44,8 +47,9 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
   @override
   Future<void> asyncInitState() async {
     system = (await DaoSystem().get())!;
+    operatingHours = system.getOperatingHours();
 
-    showWeekends = system.getOperatingHours().openOnWeekEnd();
+    showWeekends = operatingHours.openOnWeekEnd();
 
     await _loadEventsForWeek();
   }
@@ -63,13 +67,24 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
     final dao = DaoJobEvent();
     final jobEvents = await dao.getEventsInRange(startOfWeek, endOfWeek);
 
+    var _hasEventsInExtendedHours = false;
+
     final eventData = <CalendarEventData<JobEventEx>>[];
     for (final jobEvent in jobEvents) {
+      var fontColor = Colors.white;
+      if (widget.defaultJob == jobEvent.jobId) {
+        fontColor = Colors.orange;
+      }
+      _hasEventsInExtendedHours = _hasEventsInExtendedHours ||
+          !operatingHours.inOperatingHours(jobEvent);
+
       eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData.copyWith(
-            titleStyle: const TextStyle(fontSize: 13),
-            descriptionStyle: const TextStyle(fontSize: 13),
-          ));
+          titleStyle: TextStyle(color: fontColor, fontSize: 13),
+          descriptionStyle: TextStyle(color: fontColor, fontSize: 13),
+          color: SurfaceElevation.e16.color));
     }
+
+    hasEventsInExtendedHours = _hasEventsInExtendedHours;
 
     /// Occasionally when moving this can get called
     /// after we are demounted.
@@ -102,7 +117,9 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
                   key: ValueKey(widget.initialDate),
                   initialDay: widget.initialDate.toDateTime(),
                   headerStyle: widget.headerStyle(),
-                  showWeekends: showWeekends,
+                  showWeekends: widget.showExtendedHours ||
+                      showWeekends ||
+                      hasEventsInExtendedHours,
                   backgroundColor: Colors.black,
                   headerStringBuilder: widget.dateStringBuilder,
                   eventTileBuilder: _defaultEventTileBuilder,
@@ -118,18 +135,16 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
       );
 
   int _getEndHour() {
-    if (widget.showExtendedHours) {
+    if (widget.showExtendedHours || hasEventsInExtendedHours) {
       return 24;
     }
     return min(24, _getLatestFinish(widget.initialDate) + 2);
   }
 
   int _getStartHour() {
-    if (widget.showExtendedHours) {
-      print('extended');
+    if (widget.showExtendedHours || hasEventsInExtendedHours) {
       return 0;
     }
-    print('not extended');
     return max(0, _getEarliestStart(widget.initialDate) - 2);
   }
 
