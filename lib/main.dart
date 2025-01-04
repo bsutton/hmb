@@ -27,6 +27,7 @@ import 'ui/widgets/hmb_toast.dart';
 import 'ui/widgets/media/desktop_camera_delegate.dart';
 import 'util/hmb_theme.dart';
 import 'util/log.dart';
+import 'util/platform_ex.dart';
 
 bool firstRun = false;
 
@@ -57,6 +58,7 @@ Future<void> main(List<String> args) async {
       final blockingUIKey = GlobalKey();
 
       runApp(
+        // Wrap the entire app with a Container and DecoratedBox
         ToastificationWrapper(
           child: MaterialApp.router(
             theme: theme,
@@ -67,13 +69,19 @@ Future<void> main(List<String> args) async {
             builder: (context, child) => Stack(
               children: [
                 // The main content, wrapped by your blocking logic:
-                JuneBuilder(
-                  TimeEntryState.new,
-                  builder: (_) => BlockingUIRunner(
-                    key: blockingUIKey,
-                    slowAction: () => _initialise(context),
-                    label: 'Upgrading your database.',
-                    builder: (context) => child ?? const SizedBox.shrink(),
+                DecoratedBox(
+                  position: DecorationPosition.foreground,
+                  decoration: BoxDecoration(
+                      border: Border.all(
+                          color: isMobile ? Colors.black : Colors.white)),
+                  child: JuneBuilder(
+                    TimeEntryState.new,
+                    builder: (_) => BlockingUIRunner(
+                      key: blockingUIKey,
+                      slowAction: () => _initialise(context),
+                      label: 'Upgrading your database.',
+                      builder: (context) => child ?? const SizedBox.shrink(),
+                    ),
                   ),
                 ),
 
