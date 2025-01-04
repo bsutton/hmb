@@ -13,8 +13,7 @@ import 'schedule_helper.dart';
 
 /// A single-month view of events
 class MonthSchedule extends StatefulWidget with ScheduleHelper {
-  const MonthSchedule(this.initialDate,
-      {required this.defaultJob, required bool showExtendedHours, super.key});
+  const MonthSchedule(this.initialDate, {required this.defaultJob, super.key});
 
   final LocalDate initialDate;
   final int? defaultJob;

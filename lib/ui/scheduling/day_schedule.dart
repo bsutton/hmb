@@ -10,6 +10,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
+import '../../util/local_time.dart';
 import '../widgets/async_state.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/surface.dart';
@@ -39,7 +40,7 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
   late final EventController<JobEventEx> _dayController;
   late final System system;
   late final OperatingHours operatingHours;
-  late final bool hasEventsInExtendedHours;
+  bool hasEventsInExtendedHours = false;
 
   @override
   void initState() {
@@ -150,10 +151,11 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
     }
     return min(
         24,
-        system
-                .getOperatingHours()
-                .day(DayName.fromDate(widget.initialDate))
-                .end!
+        (system
+                        .getOperatingHours()
+                        .day(DayName.fromDate(widget.initialDate))
+                        .end ??
+                    const LocalTime(hour: 17, minute: 0))
                 .hour +
             2);
   }
@@ -165,10 +167,11 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
     }
     return max(
         0,
-        system
-                .getOperatingHours()
-                .day(DayName.fromDate(widget.initialDate))
-                .start!
+        (system
+                        .getOperatingHours()
+                        .day(DayName.fromDate(widget.initialDate))
+                        .start ??
+                    const LocalTime(hour: 9, minute: 0))
                 .hour -
             2);
   }
