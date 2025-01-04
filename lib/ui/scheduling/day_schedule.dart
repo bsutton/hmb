@@ -52,7 +52,6 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
 
   @override
   void didUpdateWidget(DaySchedule old) {
-    print('changed: showExtended ${widget.showExtendedHours}');
     super.didUpdateWidget(old);
   }
 

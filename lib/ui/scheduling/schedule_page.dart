@@ -77,6 +77,12 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   /// The date that corresponds to the currently displayed page
   LocalDate currentDate = LocalDate.today();
 
+  /// Keep track of the last page index so we know if user is going forward or backward.
+  int _lastPageIndex = 0;
+
+  /// A guard to prevent infinite `_onPageChanged` loops if we call jumpToPage inside it.
+  bool _isAdjustingPage = false;
+
   late final OperatingHours operatingHours;
 
   /// e.g., if you want to highlight a certain job ID
@@ -184,19 +190,42 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
       );
 
   void _onPageChanged(int pageIndex) {
-    setState(() {
-      var targetDate = _getDateForPage(pageIndex);
-      if (!showExtendedHours) {
-        if (!operatingHours.isOpen(targetDate)) {
-          targetDate = operatingHours.getNextOpenDate(targetDate);
+    // If we just called jumpToPage() internally, skip this invocation.
+    if (_isAdjustingPage) {
+      _isAdjustingPage = false;
+      return;
+    }
 
-          final index = _getPageIndexForDate(targetDate);
-          _pageController!.jumpToPage(index);
-        }
+    // Determine if user swiped forward or backward
+    final direction = pageIndex - _lastPageIndex;
+    _lastPageIndex = pageIndex; // Update immediately
+    final isForward = direction > 0;
+
+    // Get the date that PageView is *trying* to display
+    final targetDate = _getDateForPage(pageIndex);
+
+    // Only skip closed days if we are in DAY view & not showExtendedHours
+    if (selectedView == ScheduleView.day &&
+        !showExtendedHours &&
+        !operatingHours.isOpen(targetDate)) {
+      final newDate = isForward
+          ? operatingHours.getNextOpenDate(targetDate)
+          : operatingHours.getPreviousOpenDate(targetDate);
+
+      final newIndex = _getPageIndexForDate(newDate);
+      if (newIndex != pageIndex) {
+        // Prevent re-entrant calls
+        _isAdjustingPage = true;
+        _lastPageIndex = newIndex;
+        _pageController!.jumpToPage(newIndex);
+        return;
       }
-      if (!_isOnCurrentPage(currentDate, pageIndex)) {
-        currentDate = _getDateForPage(pageIndex);
-      }
+    }
+
+    // If we're here, either the date is open or we’re in week/month view.
+    // Just update your state to reflect the new date.
+    setState(() {
+      currentDate = targetDate;
     });
   }
 

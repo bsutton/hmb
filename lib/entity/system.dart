@@ -460,4 +460,19 @@ class OperatingHours {
     // If no open day is found within the next 7 days (unlikely), throw an error
     throw StateError('No open days found within the next week.');
   }
+
+  /// Example implementation for going backward to the previous open date.
+  /// Similar logic to getNextOpenDate but in reverse.
+  LocalDate getPreviousOpenDate(LocalDate fromDate) {
+    // Try up to 7 days backward (or whatever limit you prefer)
+    var date = fromDate;
+    for (var i = 0; i < 7; i++) {
+      if (isOpen(date)) {
+        return date;
+      }
+      date = date.subtract(const Duration(days: 1));
+    }
+    // If everything is closed for a whole week, handle gracefully or throw:
+    throw StateError('No open day found within the past 7 days.');
+  }
 }
