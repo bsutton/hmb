@@ -56,7 +56,7 @@ class JobEventDialog extends StatefulWidget {
   static Future<JobEventAddAction?> showAdd({
     required BuildContext context,
     required DateTime when,
-    required int? defaultJob, 
+    required int? defaultJob,
   }) =>
       showDialog<JobEventAddAction>(
         context: context,
@@ -280,13 +280,13 @@ class _JobEventDialogState extends State<JobEventDialog> {
     if (widget.isEditing) {
       jobEvent = widget.event!.event!.jobEvent.copyWith(
         jobId: _selectedJob!.id,
-        startDate: _startDate,
-        endDate: _endDate,
+        start: _startDate,
+        end: _endDate,
       );
     } else {
       /// new job event.
       jobEvent = JobEvent.forInsert(
-          jobId: _selectedJob!.id, startDate: _startDate, endDate: _endDate);
+          jobId: _selectedJob!.id, start: _startDate, end: _endDate);
     }
     final jobEventEx = await JobEventEx.fromEvent(jobEvent);
 

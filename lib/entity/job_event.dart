@@ -8,8 +8,8 @@ import 'entity.dart';
 class JobEvent extends Entity<JobEvent> {
   JobEvent({
     required this.jobId,
-    required this.startDate,
-    required this.endDate,
+    required this.start,
+    required this.end,
     required super.id,
     required super.createdDate,
     required super.modifiedDate,
@@ -17,8 +17,8 @@ class JobEvent extends Entity<JobEvent> {
 
   JobEvent.forInsert({
     required this.jobId,
-    required this.startDate,
-    required this.endDate,
+    required this.start,
+    required this.end,
   }) : super.forInsert() {
     createdDate = DateTime.now();
     modifiedDate = DateTime.now();
@@ -27,8 +27,8 @@ class JobEvent extends Entity<JobEvent> {
   JobEvent.forUpdate({
     required super.entity, // the existing primary key
     required this.jobId,
-    required this.startDate,
-    required this.endDate,
+    required this.start,
+    required this.end,
   }) : super.forUpdate() {
     modifiedDate = DateTime.now();
   }
@@ -36,8 +36,8 @@ class JobEvent extends Entity<JobEvent> {
   factory JobEvent.fromMap(Map<String, dynamic> map) => JobEvent(
         id: map['id'] as int,
         jobId: map['job_id'] as int,
-        startDate: DateTime.parse(map['start_date'] as String),
-        endDate: DateTime.parse(map['end_date'] as String),
+        start: DateTime.parse(map['start_date'] as String),
+        end: DateTime.parse(map['end_date'] as String),
         createdDate: DateTime.parse(map['created_date'] as String),
         modifiedDate: DateTime.parse(map['modified_date'] as String),
       );
@@ -46,29 +46,29 @@ class JobEvent extends Entity<JobEvent> {
   Map<String, dynamic> toMap() => {
         'id': id,
         'job_id': jobId,
-        'start_date': startDate.toIso8601String(),
-        'end_date': endDate.toIso8601String(),
+        'start_date': start.toIso8601String(),
+        'end_date': end.toIso8601String(),
         'created_date': createdDate.toIso8601String(),
         'modified_date': modifiedDate.toIso8601String(),
       };
 
   int jobId;
-  DateTime startDate;
-  DateTime endDate;
+  DateTime start;
+  DateTime end;
 
   JobEvent copyWith({
     int? id,
     int? jobId,
-    DateTime? startDate,
-    DateTime? endDate,
+    DateTime? start,
+    DateTime? end,
     DateTime? createdDate,
     DateTime? modifiedDate,
   }) =>
       JobEvent(
         id: id ?? this.id,
         jobId: jobId ?? this.jobId,
-        startDate: startDate ?? this.startDate,
-        endDate: endDate ?? this.endDate,
+        start: start ?? this.start,
+        end: end ?? this.end,
         createdDate: createdDate ?? this.createdDate,
         modifiedDate: modifiedDate ?? this.modifiedDate,
       );

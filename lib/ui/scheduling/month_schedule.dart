@@ -5,6 +5,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../dao/dao_job_event.dart';
 // Example imports (replace with your actual ones):
 import '../../util/format.dart'; // For formatTime() or similar
+import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
 import '../widgets/surface.dart';
 import 'job_event_ex.dart';
@@ -14,7 +15,7 @@ import 'schedule_helper.dart';
 class MonthSchedule extends StatefulWidget with ScheduleHelper {
   const MonthSchedule(this.initialDate, {required this.defaultJob, super.key});
 
-  final DateTime initialDate;
+  final LocalDate initialDate;
   final int? defaultJob;
 
   @override
@@ -43,9 +44,9 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
 
   Future<void> _loadEventsForMonth() async {
     final firstOfMonth =
-        DateTime(widget.initialDate.year, widget.initialDate.month);
+        LocalDate(widget.initialDate.year, widget.initialDate.month);
     final firstOfNextMonth =
-        DateTime(widget.initialDate.year, widget.initialDate.month + 1);
+        LocalDate(widget.initialDate.year, widget.initialDate.month + 1);
 
     final dao = DaoJobEvent();
     final jobEvents =
@@ -71,7 +72,7 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
     // ignore: join_return_with_assignment
     monthView = MonthView<JobEventEx>(
       key: ValueKey(widget.initialDate),
-      initialMonth: widget.initialDate,
+      initialMonth: widget.initialDate.toDateTime(),
       headerStyle: widget.headerStyle(),
       headerStringBuilder: widget.monthDateStringBuilder,
       cellBuilder: (date, events, isToday, isInMonth, hideDaysNotInMonth) =>

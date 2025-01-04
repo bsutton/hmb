@@ -24,9 +24,9 @@ class JobEventEx {
         description: RichEditor.createParchment(job.description)
             .toPlainText()
             .replaceAll('\n\n', '\n'),
-        date: jobEvent.startDate.withoutTime,
-        startTime: jobEvent.startDate,
-        endTime: jobEvent.endDate,
+        date: jobEvent.start.withoutTime,
+        startTime: jobEvent.start,
+        endTime: jobEvent.end,
         event: this,
       );
 }

@@ -1,5 +1,6 @@
 // dao_job_event.dart
 import '../entity/job_event.dart';
+import '../util/local_date.dart';
 import 'dao.dart';
 
 class DaoJobEvent extends Dao<JobEvent> {
@@ -20,7 +21,7 @@ class DaoJobEvent extends Dao<JobEvent> {
     return toList(rows);
   }
 
-  Future<List<JobEvent>> getEventsInRange(DateTime start, DateTime end) async {
+  Future<List<JobEvent>> getEventsInRange(LocalDate start, LocalDate end) async {
     final db = withoutTransaction();
 
     final results = await db.query(

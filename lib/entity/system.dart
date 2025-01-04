@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
+import '../util/local_date.dart';
 import '../util/local_time.dart';
 import '../util/measurement_type.dart';
 import 'entity.dart';
@@ -322,6 +323,10 @@ enum DayName {
   /// Throws a StateError if the provided dayStr doesn't match any known enum.
   static DayName fromJson(String dayStr) =>
       DayName.values.firstWhere((e) => e.name == dayStr);
+
+  static DayName fromIndex(int index) => DayName.values[index];
+
+  static DayName fromDate(LocalDate when) => DayName.values[when.weekday - 1];
 }
 
 class OperatingDay {
@@ -399,6 +404,9 @@ class OperatingHours {
   ///
   final Map<DayName, OperatingDay> days;
 
+  /// True if at least one day of the week is marked as open.
+  bool noOpenDays() => openList.where((open) => open).toList().isEmpty;
+
   /// An ordered list of the days that we are open - starting from monday
   List<bool> get openList =>
       days.values.map<bool>((hours) => hours.open).toList();
@@ -411,9 +419,9 @@ class OperatingHours {
     return jsonEncode(listToEncode);
   }
 
-  OperatingDay day(int index) {
-    final dayName = DayName.values[index - 1];
+  OperatingDay day(DayName dayName) => days[dayName]!;
 
-    return days[dayName]!;
-  }
+  /// True if the opening hours incude sat or sun
+  bool openOnWeekEnd() =>
+      openList[DayName.sat.index] || openList[DayName.sun.index];
 }

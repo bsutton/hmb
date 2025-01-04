@@ -22,6 +22,7 @@ import '../../scheduling/schedule_page.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_child_crud_card.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/media/photo_gallery.dart';
@@ -257,6 +258,11 @@ class _JobEditScreenState extends State<JobEditScreen>
   Widget _buildScheduleButton() => HMBButton(
       label: 'Schedule',
       onPressed: () async {
+        if ((await DaoSystem().get())!.getOperatingHours().noOpenDays()) {
+          HMBToast.error(
+              "Before you Schedule a job, you must first set your opening hours from the 'System | Business' page.");
+          return;
+        }
         final jobId = widget.job!.id;
 
         final firstEvent = await _getFirstEvent();
@@ -286,7 +292,7 @@ class _JobEditScreenState extends State<JobEditScreen>
     final jobEvents = await daoJobEvent.getByJob(widget.job!.id);
     JobEvent? nextEvent;
     for (final e in jobEvents) {
-      if (e.startDate.isAfter(now)) {
+      if (e.start.isAfter(now)) {
         nextEvent = e;
         break;
       }
@@ -304,7 +310,7 @@ class _JobEditScreenState extends State<JobEditScreen>
           final now = DateTime.now();
           JobEvent? nextEvent;
           for (final e in jobEvents) {
-            if (e.startDate.isAfter(now)) {
+            if (e.start.isAfter(now)) {
               nextEvent = e;
               break;
             }
@@ -322,8 +328,7 @@ class _JobEditScreenState extends State<JobEditScreen>
                   if (nextEvent != null)
                     SimpleDialogOption(
                       onPressed: () => Navigator.of(context).pop(nextEvent),
-                      child: Text(
-                          'Next Event: ${formatTime(nextEvent.startDate)}'),
+                      child: Text('Next Event: ${formatTime(nextEvent.start)}'),
                     ),
                   // Then list all
                   for (final e in jobEvents)
@@ -356,7 +361,7 @@ class _JobEditScreenState extends State<JobEditScreen>
       );
 
   String _eventDisplay(JobEvent e) =>
-      'Event on ${formatDate(e.startDate, format: 'dd/MM/yyyy hh:mm a')}';
+      'Event on ${formatDate(e.start, format: 'dd/MM/yyyy hh:mm a')}';
 
   @override
   Future<Job> forUpdate(Job job) async => Job.forUpdate(

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -7,6 +9,7 @@ import '../../dao/dao_job_event.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../util/format.dart';
+import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/text/hmb_text_themes.dart';
@@ -22,7 +25,7 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
     super.key,
   });
 
-  final DateTime initialDate;
+  final LocalDate initialDate;
   final int? defaultJob;
 
   @override
@@ -54,7 +57,7 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
   /// Fetch events for [DaySchedule.initialDate] from DB
   Future<void> _loadEventsForDay() async {
     // Set a date range: midnight -> midnight next day
-    final start = DateTime(widget.initialDate.year, widget.initialDate.month,
+    final start = LocalDate(widget.initialDate.year, widget.initialDate.month,
         widget.initialDate.day);
     final end = start.add(const Duration(days: 1));
 
@@ -78,20 +81,10 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
         child: FutureBuilderEx(
           future: initialised,
           builder: (context, _) => DayView<JobEventEx>(
-            startHour: system
-                    .getOperatingHours()
-                    .day(widget.initialDate.weekday)
-                    .start!
-                    .hour -
-                2,
-            endHour: system
-                    .getOperatingHours()
-                    .day(widget.initialDate.weekday)
-                    .end!
-                    .hour +
-                2,
+            startHour: _getStartHour(),
+            endHour: _getEndHour(),
             key: ValueKey(widget.initialDate),
-            initialDay: widget.initialDate,
+            initialDay: widget.initialDate.toDateTime(),
             dateStringBuilder: dayTitle,
             eventTileBuilder: (date, events, boundary, start, end) =>
                 _buildDayTiles(events),
@@ -101,21 +94,50 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
             ),
             headerStyle: widget.headerStyle(),
             backgroundColor: Colors.black,
-            onDateTap: (date) async {
-              // Create new event
-              await widget.addEvent(context, date, widget.defaultJob);
-              // Refresh
-              await _loadEventsForDay();
-            },
-            onEventTap: (events, date) async {
-              // Only handle the first event in the list
-              await widget.onEventTap(context, events.first);
-              // Refresh
-              await _loadEventsForDay();
-            },
+            onDateTap: _onDateTap,
+            onEventTap: _onEventTap,
           ),
         ),
       );
+
+  Future<void> _onEventTap(
+      List<CalendarEventData<JobEventEx>> events, DateTime date) async {
+    {
+      // Only handle the first event in the list
+      await widget.onEventTap(context, events.first);
+      // Refresh
+      await _loadEventsForDay();
+    }
+  }
+
+  Future<void> _onDateTap(DateTime date) async {
+    {
+      // Create new event
+      await widget.addEvent(context, date, widget.defaultJob);
+      // Refresh
+      await _loadEventsForDay();
+    }
+  }
+
+  /// The opening hours starting time (hour only)
+  int _getEndHour() => min(
+      24,
+      system
+              .getOperatingHours()
+              .day(DayName.fromDate(widget.initialDate))
+              .end!
+              .hour +
+          2);
+
+  /// The opening hours finishing time (hour only)
+  int _getStartHour() => max(
+      0,
+      system
+              .getOperatingHours()
+              .day(DayName.fromDate(widget.initialDate))
+              .start!
+              .hour -
+          2);
 
   /// Build the event widgets for each timeslot in the day
   Widget _buildDayTiles(List<CalendarEventData<JobEventEx>> events) => Column(

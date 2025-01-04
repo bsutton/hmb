@@ -1,9 +1,14 @@
+import 'dart:math';
+
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 // Example imports (replace with your actual ones):
 import '../../dao/dao_job_event.dart';
+import '../../dao/dao_system.dart';
+import '../../entity/system.dart';
+import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
 import 'job_event_ex.dart';
 import 'schedule_helper.dart';
@@ -16,7 +21,7 @@ class WeekSchedule extends StatefulWidget with ScheduleHelper {
     super.key,
   });
 
-  final DateTime initialDate;
+  final LocalDate initialDate;
   final int? defaultJob;
 
   @override
@@ -25,6 +30,8 @@ class WeekSchedule extends StatefulWidget with ScheduleHelper {
 
 class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
   late final EventController<JobEventEx> _weekController;
+  late final System system;
+  late final bool showWeekends;
 
   @override
   void initState() {
@@ -34,6 +41,10 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
 
   @override
   Future<void> asyncInitState() async {
+    system = (await DaoSystem().get())!;
+
+    showWeekends = system.getOperatingHours().openOnWeekEnd();
+
     await _loadEventsForWeek();
   }
 
@@ -63,12 +74,12 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
   }
 
   /// Example of getting the Monday date from [WeekSchedule.initialDate]
-  DateTime _mondayOf(DateTime d) {
+  LocalDate _mondayOf(LocalDate d) {
     // In Dart, Monday=1, Sunday=7
     final dayOfWeek = d.weekday;
     final difference =
         dayOfWeek - DateTime.monday; // how many days since Monday
-    return DateTime(d.year, d.month, d.day - difference);
+    return LocalDate(d.year, d.month, d.day - difference);
   }
 
   @override
@@ -77,9 +88,13 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
         child: FutureBuilderEx(
             future: initialised,
             builder: (context, _) => WeekView<JobEventEx>(
+                  startHour: max(0, _getEarliestStart(widget.initialDate) - 2),
+                  endHour: min(24, _getLatestFinish(widget.initialDate) + 2),
                   key: ValueKey(widget.initialDate),
-                  initialDay: widget.initialDate,
+                  initialDay: widget.initialDate.toDateTime(),
                   headerStyle: widget.headerStyle(),
+                  heightPerMinute: 1.5,
+                  showWeekends: showWeekends,
                   backgroundColor: Colors.black,
                   headerStringBuilder: widget.dateStringBuilder,
                   onDateTap: (date) async {
@@ -92,4 +107,54 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
                   },
                 )),
       );
+
+  /// find the latest finishing hour across the week.
+  int _getLatestFinish(LocalDate dayInWeek) {
+    final operatingHours = system.getOperatingHours();
+    final weekDays = _getDaysInCurrentWeek(dayInWeek);
+
+    var latestHour = 0; // Initialize to the earliest possible hour.
+    for (final day in weekDays) {
+      final operatingDay = operatingHours.days[DayName.fromDate(day)];
+      if (operatingDay!.open) {
+        if (operatingDay.end != null) {
+          final endHour = operatingDay.end!.hour;
+          if (endHour > latestHour) {
+            latestHour = endHour;
+          }
+        }
+      }
+    }
+    return latestHour;
+  }
+
+  /// find the earliest starting hour across the week.
+  int _getEarliestStart(LocalDate dayInWeek) {
+    final operatingHours = system.getOperatingHours();
+    final weekDays = _getDaysInCurrentWeek(dayInWeek);
+
+    int? earliestHour; // Use null to find the first valid hour.
+    for (final day in weekDays) {
+      final operatingDay = operatingHours.days[DayName.fromDate(day)];
+      if (operatingDay!.open) {
+        if (operatingDay.start != null) {
+          final startHour = operatingDay.start!.hour;
+          if (earliestHour == null || startHour < earliestHour) {
+            earliestHour = startHour;
+          }
+        }
+      }
+    }
+    return earliestHour ?? 0; // Default to 0 if no valid start times exist.
+  }
+
+  /// Get the days of the current week.
+  List<LocalDate> _getDaysInCurrentWeek(LocalDate referenceDate) {
+    final startOfWeek =
+        referenceDate.subtract(Duration(days: referenceDate.weekday - 1));
+    return List<LocalDate>.generate(
+      7,
+      (index) => startOfWeek.add(Duration(days: index)),
+    );
+  }
 }

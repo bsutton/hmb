@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:go_router/go_router.dart';
 
 // -- Example imports. Adapt for your project:
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job_event.dart';
+import '../../dao/dao_system.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../util/app_title.dart';
+import '../../util/date_time_ex.dart';
+import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
 import '../widgets/hmb_icon_button.dart';
+import '../widgets/hmb_toast.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'day_schedule.dart'; // Our DaySchedule stateful widget
@@ -67,7 +72,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   late final PageController? _pageController;
 
   /// The date that corresponds to the currently displayed page
-  DateTime currentDate = DateTime.now();
+  LocalDate currentDate = LocalDate.today();
 
   /// e.g., if you want to highlight a certain job ID
   int? preSelectedJobId;
@@ -78,17 +83,19 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
 
     selectedView = widget.defaultView;
     preSelectedJobId = widget.defaultJob;
+
     super.initState();
   }
 
   @override
   Future<void> asyncInitState() async {
-    // If you need to do something *before* building the UI, do it here.
-    // For example, if you need to fetch something once for the entire page,
-    // or check if widget.initialEventId should do something special.
-    //
-    // Since each child (DaySchedule, etc.) will fetch its own events,
-    // we do not fetch anything else here.
+    if ((await DaoSystem().get())!.getOperatingHours().noOpenDays()) {
+      HMBToast.error(
+          "Before you Schedule a job, you must first set your opening hours from the 'System | Business' page.");
+      if (mounted) {
+        context.go('/jobs');
+      }
+    }
     await _initPage();
   }
 
@@ -96,14 +103,14 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   /// - If [SchedulePage.initialEventId] is provided, fetch that event's date from DB.
   /// - Otherwise, use [DateTime.now()].
   Future<void> _initPage() async {
-    currentDate = DateTime.now();
+    currentDate = LocalDate.today();
 
     // If an initialEventId is provided, fetch the event’s start date
     if (widget.initialEventId != null) {
       final dao = DaoJobEvent();
       final event = await dao.getById(widget.initialEventId);
       if (event != null) {
-        currentDate = event.startDate;
+        currentDate = event.start.toLocalDate();
       }
     }
 
@@ -144,7 +151,6 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                     key: ValueKey(selectedView),
                     controller: _pageController,
                     onPageChanged: (index) {
-                      print('moving to $index');
                       setState(() {
                         if (!_isOnCurrentPage(currentDate, index)) {
                           currentDate = _getDateForPage(index);
@@ -238,12 +244,11 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
 
                   /// Calcuate the correct page index
                   /// so the new view shows the same date range.
-                  print('PrePage: ${_pageController!.page}');
+
                   final newPage = _getPageIndexForDate(currentDate);
 
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _pageController.jumpToPage(newPage);
-                    print('JumpTo: $newPage');
+                    _pageController!.jumpToPage(newPage);
                   });
                 }),
                 title: 'View',
@@ -263,7 +268,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
 
   /// Jump to "today" for whichever view is active
   Future<void> onHomePage() async {
-    final today = DateTime.now();
+    final today = LocalDate.today();
     currentDate = today;
     final todayIndex = _getPageIndexForDate(today);
     await _pageController?.animateToPage(
@@ -275,19 +280,10 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
 
   /// Go to the previous page in the PageView
   Future<void> onPreviousPage() async {
-    int? currentIndex = _pageController?.page?.round() ?? 0;
-
-    print('Navigated to page index: ${currentIndex - 1}');
-    print('Navigated to date: ${_getDateForPage(currentIndex - 1)}');
-
     await _pageController?.previousPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
-
-    currentIndex = _pageController?.page?.round();
-
-    print('updated page index: $currentIndex');
   }
 
   /// Go to the next page in the PageView
@@ -305,8 +301,8 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   /// before this point in time.
   /// We need to align to a monday so that week alignment works as
   /// expected.
-  static final DateTime referenceDate = DateTime(2000, 1, 3);
-  DateTime _getDateForPage(int pageIndex) {
+  static final referenceDate = LocalDate(2000, 1, 3);
+  LocalDate _getDateForPage(int pageIndex) {
     switch (selectedView) {
       case ScheduleView.day:
         // day 0 => referenceDate
@@ -328,11 +324,11 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
         final year = referenceDate.year + (totalMonths ~/ 12);
         final month = referenceDate.month + (totalMonths % 12);
         // Always show the 1st of that month
-        return _alignMonthStart(DateTime(year, month));
+        return _alignMonthStart(LocalDate(year, month));
     }
   }
 
-  int _getPageIndexForDate(DateTime date) {
+  int _getPageIndexForDate(LocalDate date) {
     // If date is before our referenceDate, clamp to 0 to avoid negative indices
     if (date.isBefore(referenceDate)) {
       return 0;
@@ -361,7 +357,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
 
   /// Checks if [dateToCheck] falls on the currently displayed page (day, week, month),
   /// given your current [selectedView] and [currentPageIndex].
-  bool _isOnCurrentPage(DateTime dateToCheck, int currentPageIndex) {
+  bool _isOnCurrentPage(LocalDate dateToCheck, int currentPageIndex) {
     final range = _getPageRange(currentPageIndex);
     final start = range['start']!;
     final end = range['end']!;
@@ -379,7 +375,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   ///
   /// Assumes you have alignment helpers like _alignDay(), _alignWeekStart(), _alignMonthStart().
   /// Also assumes _getDateForPage() is consistent with these alignments.
-  Map<String, DateTime> _getPageRange(int pageIndex) {
+  Map<String, LocalDate> _getPageRange(int pageIndex) {
     final date = _getDateForPage(pageIndex); // e.g., aligned date for that page
 
     switch (selectedView) {
@@ -399,27 +395,28 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
         final start = _alignMonthStart(date);
         // The end is the 1st of the next month
         final nextMonth = (start.month == 12)
-            ? DateTime(start.year + 1)
-            : DateTime(start.year, start.month + 1);
+            ? LocalDate(start.year + 1)
+            : LocalDate(start.year, start.month + 1);
         return {'start': start, 'end': nextMonth};
     }
   }
 
   /// Aligns the given date to the start of the day (i.e., midnight).
-  DateTime _alignDay(DateTime date) =>
-      DateTime(date.year, date.month, date.day);
+  LocalDate _alignDay(LocalDate date) =>
+      LocalDate(date.year, date.month, date.day);
 
   /// Aligns the given date to the start of its week (assuming Monday=1).
   /// If you want Monday as the first day of the week
 
-  DateTime _alignWeekStart(DateTime date) {
+  LocalDate _alignWeekStart(LocalDate date) {
     // Monday = 1, Tuesday=2, Wed=3, Thu=4, Fri=5, Sat=6, Sun=7
     final dayOfWeek = date.weekday;
     final diff = dayOfWeek - DateTime.monday; // e.g. for Wed=3, diff=2
-    return DateTime(date.year, date.month, date.day)
+    return LocalDate(date.year, date.month, date.day)
         .subtract(Duration(days: diff));
   }
 
   /// Aligns the given date to the first of the month.
-  DateTime _alignMonthStart(DateTime date) => DateTime(date.year, date.month);
+  LocalDate _alignMonthStart(LocalDate date) =>
+      LocalDate(date.year, date.month);
 }

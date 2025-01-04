@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:strings/strings.dart';
 
+import 'date_time_ex.dart';
 import 'local_time.dart';
 
 /// Provides a class which wraps a DateTime but just supplies the date
@@ -11,7 +12,8 @@ class LocalDate {
   /// Creates a [LocalDate] with the date set to today's date.
   /// This is the same as calling [LocalDate()].
   /// required by json.
-  LocalDate(int year, int month, int day) : date = DateTime(year, month, day);
+  LocalDate(int year, [int month = 1, int day = 1])
+      : date = DateTime(year, month, day);
 
   /// Creates a [LocalDate] with todays date.
   LocalDate.today() : date = stripTime(DateTime.now());
@@ -84,6 +86,13 @@ class LocalDate {
 
   @override
   int get hashCode => date.hashCode;
+
+  LocalDate subtract(Duration duration) =>
+      date.subtract(duration).toLocalDate();
+
+  String toIso8601String() => date.toIso8601String();
+
+  Duration difference(LocalDate other) => date.difference(other.toDateTime());
 }
 
 class LocalDateConverter implements JsonConverter<LocalDate, String> {
