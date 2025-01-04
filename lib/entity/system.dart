@@ -326,7 +326,10 @@ enum DayName {
 
   static DayName fromIndex(int index) => DayName.values[index];
 
-  static DayName fromDate(LocalDate when) => DayName.values[when.weekday - 1];
+  static DayName fromDate(LocalDate when) => DayName.fromWeekDay(when.weekday);
+
+  /// From the 1 based [dayOfWeek] where Monday is 1.
+  static DayName fromWeekDay(int dayOfWeek) => DayName.values[dayOfWeek - 1];
 }
 
 class OperatingDay {
@@ -404,13 +407,6 @@ class OperatingHours {
   ///
   final Map<DayName, OperatingDay> days;
 
-  /// True if at least one day of the week is marked as open.
-  bool noOpenDays() => openList.where((open) => open).toList().isEmpty;
-
-  /// An ordered list of the days that we are open - starting from monday
-  List<bool> get openList =>
-      days.values.map<bool>((hours) => hours.open).toList();
-
   /// Converts the OperatingHours instance back to a JSON string.
   String toJson() {
     // Convert the map values (OperatingDay) to a list of maps (JSON format).
@@ -419,9 +415,49 @@ class OperatingHours {
     return jsonEncode(listToEncode);
   }
 
+  /// Get the [OperatingDay] for the [dayName]
   OperatingDay day(DayName dayName) => days[dayName]!;
+
+  /// True if at least one day of the week is marked as open.
+  bool noOpenDays() => openList.where((open) => open).toList().isEmpty;
+
+  /// An ordered list of the days that we are open - starting from monday
+  List<bool> get openList =>
+      days.values.map<bool>((hours) => hours.open).toList();
 
   /// True if the opening hours incude sat or sun
   bool openOnWeekEnd() =>
       openList[DayName.sat.index] || openList[DayName.sun.index];
+
+  bool isOpen(LocalDate targetDate) {
+    final dayOfWeek = targetDate.date.weekday;
+
+    return isDayOfWeekOpen(dayOfWeek);
+  }
+
+  bool isDayOfWeekOpen(int dayOfWeek) {
+    final dayName = DayName.fromWeekDay(dayOfWeek);
+    final operatingDay = day(dayName);
+
+    return operatingDay.open;
+  }
+
+  LocalDate getNextOpenDate(LocalDate currentDate) {
+    // Start from the current date
+    var date = currentDate;
+
+    // Loop for a maximum of 7 days (one week) to find the next open day
+    for (var i = 0; i < 7; i++) {
+      // Check if the current day is open
+      if (isOpen(date)) {
+        return date; // Return the first open day
+      }
+
+      // Move to the next day
+      date = date.add(const Duration(days: 1));
+    }
+
+    // If no open day is found within the next 7 days (unlikely), throw an error
+    throw StateError('No open days found within the next week.');
+  }
 }

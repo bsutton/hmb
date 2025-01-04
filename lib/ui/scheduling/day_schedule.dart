@@ -22,11 +22,13 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
   DaySchedule(
     this.initialDate, {
     required this.defaultJob,
+    required this.showExtendedHours,
     super.key,
   });
 
   final LocalDate initialDate;
   final int? defaultJob;
+  final bool showExtendedHours;
 
   @override
   State<DaySchedule> createState() => _DayScheduleState();
@@ -46,6 +48,12 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
   Future<void> asyncInitState() async {
     system = (await DaoSystem().get())!;
     await _loadEventsForDay();
+  }
+
+  @override
+  void didUpdateWidget(DaySchedule old) {
+    print('changed: showExtended ${widget.showExtendedHours}');
+    super.didUpdateWidget(old);
   }
 
   @override
@@ -120,24 +128,34 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
   }
 
   /// The opening hours starting time (hour only)
-  int _getEndHour() => min(
-      24,
-      system
-              .getOperatingHours()
-              .day(DayName.fromDate(widget.initialDate))
-              .end!
-              .hour +
-          2);
+  int _getEndHour() {
+    if (widget.showExtendedHours) {
+      return 24;
+    }
+    return min(
+        24,
+        system
+                .getOperatingHours()
+                .day(DayName.fromDate(widget.initialDate))
+                .end!
+                .hour +
+            2);
+  }
 
   /// The opening hours finishing time (hour only)
-  int _getStartHour() => max(
-      0,
-      system
-              .getOperatingHours()
-              .day(DayName.fromDate(widget.initialDate))
-              .start!
-              .hour -
-          2);
+  int _getStartHour() {
+    if (widget.showExtendedHours) {
+      return 0;
+    }
+    return max(
+        0,
+        system
+                .getOperatingHours()
+                .day(DayName.fromDate(widget.initialDate))
+                .start!
+                .hour -
+            2);
+  }
 
   /// Build the event widgets for each timeslot in the day
   Widget _buildDayTiles(List<CalendarEventData<JobEventEx>> events) => Column(

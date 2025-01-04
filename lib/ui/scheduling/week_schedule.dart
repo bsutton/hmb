@@ -18,11 +18,13 @@ class WeekSchedule extends StatefulWidget with ScheduleHelper {
   const WeekSchedule(
     this.initialDate, {
     required this.defaultJob,
+    required this.showExtendedHours,
     super.key,
   });
 
   final LocalDate initialDate;
   final int? defaultJob;
+  final bool showExtendedHours;
 
   @override
   State<WeekSchedule> createState() => _WeekScheduleState();
@@ -88,8 +90,8 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
         child: FutureBuilderEx(
             future: initialised,
             builder: (context, _) => WeekView<JobEventEx>(
-                  startHour: max(0, _getEarliestStart(widget.initialDate) - 2),
-                  endHour: min(24, _getLatestFinish(widget.initialDate) + 2),
+                  startHour: _getStartHour(),
+                  endHour: _getEndHour(),
                   key: ValueKey(widget.initialDate),
                   initialDay: widget.initialDate.toDateTime(),
                   headerStyle: widget.headerStyle(),
@@ -107,6 +109,22 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
                   },
                 )),
       );
+
+  int _getEndHour() {
+    if (widget.showExtendedHours) {
+      return 24;
+    }
+    return min(24, _getLatestFinish(widget.initialDate) + 2);
+  }
+
+  int _getStartHour() {
+    if (widget.showExtendedHours) {
+      print('extended');
+      return 0;
+    }
+    print('not extended');
+    return max(0, _getEarliestStart(widget.initialDate) - 2);
+  }
 
   /// find the latest finishing hour across the week.
   int _getLatestFinish(LocalDate dayInWeek) {

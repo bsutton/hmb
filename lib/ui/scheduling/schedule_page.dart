@@ -8,12 +8,14 @@ import '../../dao/dao_job_event.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
+import '../../entity/system.dart';
 import '../../util/app_title.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
 import '../widgets/hmb_icon_button.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/hmb_toggle.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'day_schedule.dart'; // Our DaySchedule stateful widget
@@ -67,12 +69,15 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
 
 class _SchedulePageState extends AsyncState<SchedulePage, void> {
   late ScheduleView selectedView;
+  bool showExtendedHours = false;
 
   /// Controls which page index is showing in the PageView
   late final PageController? _pageController;
 
   /// The date that corresponds to the currently displayed page
   LocalDate currentDate = LocalDate.today();
+
+  late final OperatingHours operatingHours;
 
   /// e.g., if you want to highlight a certain job ID
   int? preSelectedJobId;
@@ -89,7 +94,8 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
 
   @override
   Future<void> asyncInitState() async {
-    if ((await DaoSystem().get())!.getOperatingHours().noOpenDays()) {
+    operatingHours = (await DaoSystem().get())!.getOperatingHours();
+    if (operatingHours.noOpenDays()) {
       HMBToast.error(
           "Before you Schedule a job, you must first set your opening hours from the 'System | Business' page.");
       if (mounted) {
@@ -150,32 +156,23 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                   child: PageView.builder(
                     key: ValueKey(selectedView),
                     controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        if (!_isOnCurrentPage(currentDate, index)) {
-                          currentDate = _getDateForPage(index);
-                        }
-                      });
-                    },
+                    onPageChanged: _onPageChanged,
                     itemBuilder: (context, index) {
                       final date = _getDateForPage(index);
 
                       switch (selectedView) {
                         case ScheduleView.month:
-                          return MonthSchedule(
-                            date,
-                            defaultJob: widget.defaultJob,
-                          );
+                          return MonthSchedule(date,
+                              defaultJob: widget.defaultJob,
+                              showExtendedHours: showExtendedHours);
                         case ScheduleView.week:
-                          return WeekSchedule(
-                            date,
-                            defaultJob: widget.defaultJob,
-                          );
+                          return WeekSchedule(date,
+                              defaultJob: widget.defaultJob,
+                              showExtendedHours: showExtendedHours);
                         case ScheduleView.day:
-                          return DaySchedule(
-                            date,
-                            defaultJob: widget.defaultJob,
-                          );
+                          return DaySchedule(date,
+                              defaultJob: widget.defaultJob,
+                              showExtendedHours: showExtendedHours);
                       }
                     },
                   ),
@@ -185,6 +182,23 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
           ),
         ),
       );
+
+  void _onPageChanged(int pageIndex) {
+    setState(() {
+      var targetDate = _getDateForPage(pageIndex);
+      if (!showExtendedHours) {
+        if (!operatingHours.isOpen(targetDate)) {
+          targetDate = operatingHours.getNextOpenDate(targetDate);
+
+          final index = _getPageIndexForDate(targetDate);
+          _pageController!.jumpToPage(index);
+        }
+      }
+      if (!_isOnCurrentPage(currentDate, pageIndex)) {
+        currentDate = _getDateForPage(pageIndex);
+      }
+    });
+  }
 
   // -- NAVIGATION UTILS -----------------------------------------------------
 
@@ -209,27 +223,40 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
               hint: 'Previous',
             ),
 
-            const HMBSpacer(width: true),
-
-            // Today button
-            TextButton.icon(
-              onPressed: onHomePage, // Go to today's date
-              icon: const Icon(Icons.today, color: Colors.blue),
-              label: const Text(
-                'Today',
-                style:
-                    TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-              ),
-              style: TextButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                backgroundColor:
-                    Colors.grey[900], // Slightly lighter than black
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.blue.shade300),
+            Column(
+              children: [
+                TextButton.icon(
+                  onPressed: onHomePage, // Go to today's date
+                  icon: const Icon(Icons.today, color: Colors.blue),
+                  label: const Text(
+                    'Today',
+                    style: TextStyle(
+                        color: Colors.blue, fontWeight: FontWeight.bold),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    backgroundColor:
+                        Colors.grey[900], // Slightly lighter than black
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: Colors.blue.shade300),
+                    ),
+                  ),
                 ),
-              ),
+                const HMBSpacer(height: true),
+
+                // Today button
+                HMBToggle(
+                    label: 'Extended',
+                    tooltip: 'Show full 24 hrs',
+                    initialValue: false,
+                    onChanged: (value) {
+                      setState(() {
+                        showExtendedHours = value;
+                      });
+                    }),
+              ],
             ),
             const HMBSpacer(width: true),
 
