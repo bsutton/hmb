@@ -352,7 +352,7 @@ class _JobEditScreenState extends State<JobEditScreen>
       showDialog<JobEvent>(
         context: context,
         builder: (context) => SimpleDialog(
-          title: const Text('Select an Event'),
+          title: const Text('Open an Event'),
           children: [
             // "Next Event" first, if any
             SimpleDialogOption(
