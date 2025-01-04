@@ -65,14 +65,21 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
 
     final eventData = <CalendarEventData<JobEventEx>>[];
     for (final jobEvent in jobEvents) {
-      eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData);
+      eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData.copyWith(
+            titleStyle: const TextStyle(fontSize: 13),
+            descriptionStyle: const TextStyle(fontSize: 13),
+          ));
     }
 
-    setState(() {
-      _weekController
-        ..clear()
-        ..addAll(eventData);
-    });
+    /// Occasionally when moving this can get called
+    /// after we are demounted.
+    if (mounted) {
+      setState(() {
+        _weekController
+          ..clear()
+          ..addAll(eventData);
+      });
+    }
   }
 
   /// Example of getting the Monday date from [WeekSchedule.initialDate]
@@ -95,10 +102,10 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
                   key: ValueKey(widget.initialDate),
                   initialDay: widget.initialDate.toDateTime(),
                   headerStyle: widget.headerStyle(),
-                  heightPerMinute: 1.5,
                   showWeekends: showWeekends,
                   backgroundColor: Colors.black,
                   headerStringBuilder: widget.dateStringBuilder,
+                  eventTileBuilder: _defaultEventTileBuilder,
                   onDateTap: (date) async {
                     await widget.addEvent(context, date, widget.defaultJob);
                     await _loadEventsForWeek();
@@ -174,5 +181,58 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
       7,
       (index) => startOfWeek.add(Duration(days: index)),
     );
+  }
+
+  Widget _defaultEventTileBuilder(
+    DateTime date,
+    List<CalendarEventData<JobEventEx>> events,
+    Rect boundary,
+    DateTime startDuration,
+    DateTime endDuration,
+  ) =>
+      DefaultEventTile(
+        date: date,
+        events: events,
+        boundary: boundary,
+        startDuration: startDuration,
+        endDuration: endDuration,
+      );
+}
+
+/// This will be used in day and week view
+class DefaultEventTile<T> extends StatelessWidget {
+  const DefaultEventTile({
+    required this.date,
+    required this.events,
+    required this.boundary,
+    required this.startDuration,
+    required this.endDuration,
+    super.key,
+  });
+
+  final DateTime date;
+  final List<CalendarEventData<T>> events;
+  final Rect boundary;
+  final DateTime startDuration;
+  final DateTime endDuration;
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isNotEmpty) {
+      final event = events[0];
+      return RoundedEventTile(
+        borderRadius: BorderRadius.circular(10),
+        title: event.title,
+        totalEvents: events.length - 1,
+        description: event.description,
+        padding: const EdgeInsets.all(10),
+        backgroundColor: event.color,
+        margin: const EdgeInsets.all(2),
+        titleStyle: event.titleStyle,
+        descriptionStyle: event.descriptionStyle,
+      );
+    } else {
+      return const SizedBox.shrink();
+    }
   }
 }
