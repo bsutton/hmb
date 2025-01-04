@@ -3,10 +3,13 @@ import 'dart:convert';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
+import '../dao/dao_job_event.dart';
+import '../util/date_time_ex.dart';
 import '../util/local_date.dart';
 import '../util/local_time.dart';
 import '../util/measurement_type.dart';
 import 'entity.dart';
+import 'job_event.dart';
 
 enum LogoAspectRatio {
   square(100, 100),
@@ -429,10 +432,21 @@ class OperatingHours {
   bool openOnWeekEnd() =>
       openList[DayName.sat.index] || openList[DayName.sun.index];
 
-  bool isOpen(LocalDate targetDate) {
+  Future<bool> isOpen(LocalDate targetDate) async {
     final dayOfWeek = targetDate.date.weekday;
 
-    return isDayOfWeekOpen(dayOfWeek);
+    var open = isDayOfWeekOpen(dayOfWeek);
+
+    if (!open) {
+      /// if the day isn't normally open we still need
+      /// to check for events scheduled out of normal hours.
+
+      /// special check for an event on the out of hours day.
+      open = (await DaoJobEvent()
+              .getEventsInRange(targetDate, targetDate.addDays(1)))
+          .isNotEmpty;
+    }
+    return open;
   }
 
   bool isDayOfWeekOpen(int dayOfWeek) {
@@ -442,14 +456,14 @@ class OperatingHours {
     return operatingDay.open;
   }
 
-  LocalDate getNextOpenDate(LocalDate currentDate) {
+  Future<LocalDate> getNextOpenDate(LocalDate currentDate) async {
     // Start from the current date
     var date = currentDate;
 
     // Loop for a maximum of 7 days (one week) to find the next open day
     for (var i = 0; i < 7; i++) {
       // Check if the current day is open
-      if (isOpen(date)) {
+      if (await isOpen(date)) {
         return date; // Return the first open day
       }
 
@@ -463,16 +477,64 @@ class OperatingHours {
 
   /// Example implementation for going backward to the previous open date.
   /// Similar logic to getNextOpenDate but in reverse.
-  LocalDate getPreviousOpenDate(LocalDate fromDate) {
+  Future<LocalDate> getPreviousOpenDate(LocalDate fromDate) async {
     // Try up to 7 days backward (or whatever limit you prefer)
     var date = fromDate;
     for (var i = 0; i < 7; i++) {
-      if (isOpen(date)) {
+      if (await isOpen(date)) {
         return date;
       }
       date = date.subtract(const Duration(days: 1));
     }
     // If everything is closed for a whole week, handle gracefully or throw:
     throw StateError('No open day found within the past 7 days.');
+  }
+
+  /// True if the [event] is fully within the normal operating hours.
+
+  bool inOperatingHours(JobEvent event) {
+    // 1) Check if the event is on a single day.
+    //    If it spans multiple calendar days, return false (or handle specially).
+    if (event.start != event.end) {
+      return false;
+    }
+
+    // 2) Ensure that day is open in OperatingHours.
+    //    If it's closed, return false right away.
+    final dayOfWeek = event.start.weekday; // Monday=1, Sunday=7
+    if (!isDayOfWeekOpen(dayOfWeek)) {
+      return false;
+    }
+
+    // 3) Retrieve the OperatingDay for that weekday.
+    final dayName = DayName.fromWeekDay(dayOfWeek);
+    final operatingDay = day(dayName);
+
+    // If, for some reason, `operatingDay.open` is false, return false.
+    if (!operatingDay.open) {
+      return false;
+    }
+
+    // 4) Compare the event’s time range to the day’s start/end times.
+    //    If either start or end is null, treat as “no configured hours,” i.e., closed.
+    if (operatingDay.start == null || operatingDay.end == null) {
+      return false;
+    }
+
+    // 5) Check that the event starts after (or exactly at) opening
+    //    AND ends before (or exactly at) closing.
+    final eventStart = event.start.toLocalTime();
+    final eventEnd = event.end.toLocalTime();
+    final openTime = operatingDay.start!;
+    final closeTime = operatingDay.end!;
+
+    final startsTooEarly = eventStart.isBefore(openTime);
+    final endsTooLate = eventEnd.isAfter(closeTime);
+
+    if (startsTooEarly || endsTooLate) {
+      return false;
+    }
+
+    return true;
   }
 }
