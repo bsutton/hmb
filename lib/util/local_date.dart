@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:strings/strings.dart';
+import 'package:time_machine/time_machine.dart' as tm;
 
 import 'date_time_ex.dart';
 import 'local_time.dart';
@@ -95,6 +96,13 @@ class LocalDate {
   String toIso8601String() => date.toIso8601String();
 
   Duration difference(LocalDate other) => date.difference(other.toDateTime());
+
+  LocalDate addMonths(int months) {
+    final tmDate =
+        tm.LocalDate(date.year, date.month, date.day).addMonths(months);
+
+    return LocalDate(tmDate.year, tmDate.monthOfYear, tmDate.dayOfMonth);
+  }
 }
 
 class LocalDateConverter implements JsonConverter<LocalDate, String> {

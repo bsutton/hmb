@@ -8,6 +8,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../dao/dao_job_event.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
+import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../../util/local_time.dart';
@@ -25,12 +26,16 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
     this.initialDate, {
     required this.defaultJob,
     required this.showExtendedHours,
+    required this.onPageChange,
+    required this.dayKey,
     super.key,
   });
 
   final LocalDate initialDate;
   final int? defaultJob;
   final bool showExtendedHours;
+  final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
+  final Key dayKey;
 
   @override
   State<DaySchedule> createState() => _DayScheduleState();
@@ -41,10 +46,12 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
   late final System system;
   late final OperatingHours operatingHours;
   bool hasEventsInExtendedHours = false;
+  late LocalDate currentDate;
 
   @override
   void initState() {
     super.initState();
+    currentDate = widget.initialDate;
     _dayController = EventController();
   }
 
@@ -56,21 +63,15 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
   }
 
   @override
-  void didUpdateWidget(DaySchedule old) {
-    super.didUpdateWidget(old);
-  }
-
-  @override
   void dispose() {
     _dayController.dispose();
     super.dispose();
   }
 
-  /// Fetch events for [DaySchedule.initialDate] from DB
+  /// Fetch events for [currentDate] from DB
   Future<void> _loadEventsForDay() async {
     // Set a date range: midnight -> midnight next day
-    final start = LocalDate(widget.initialDate.year, widget.initialDate.month,
-        widget.initialDate.day);
+    final start = currentDate;
     final end = start.add(const Duration(days: 1));
 
     final dao = DaoJobEvent();
@@ -95,9 +96,11 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
     }
     hasEventsInExtendedHours = _hasEventsInExtendedHours;
 
-    _dayController
-      ..clear()
-      ..addAll(eventData);
+    if (mounted) {
+      _dayController
+        ..clear()
+        ..addAll(eventData);
+    }
   }
 
   @override
@@ -106,10 +109,12 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
         child: FutureBuilderEx(
           future: initialised,
           builder: (context, _) => DayView<JobEventEx>(
+            onPageChange: (date, _) async => _onPageChange(date),
             startHour: _getStartHour(),
             endHour: _getEndHour(),
-            key: ValueKey(widget.initialDate),
-            initialDay: widget.initialDate.toDateTime(),
+            key: widget.dayKey,
+            // key: ValueKey(currentDate),
+            initialDay: currentDate.toDateTime(),
             dateStringBuilder: dayTitle,
             // eventTileBuilder: (date, events, boundary, start, end) =>
             //     _buildDayTiles(events),
@@ -127,6 +132,17 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
           ),
         ),
       );
+
+  Future<void> _onPageChange(DateTime date) async {
+    {
+      currentDate = await widget.onPageChange(date.toLocalDate());
+
+      /// force a refresh of the view so that the
+      /// start/end hour range is re-evaluated for the
+      /// current day.
+      await _loadEventsForDay();
+    }
+  }
 
   Future<void> _onEventTap(
       List<CalendarEventData<JobEventEx>> events, DateTime date) async {
@@ -154,10 +170,7 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
     }
     return min(
         24,
-        (system
-                        .getOperatingHours()
-                        .day(DayName.fromDate(widget.initialDate))
-                        .end ??
+        (system.getOperatingHours().day(DayName.fromDate(currentDate)).end ??
                     const LocalTime(hour: 17, minute: 0))
                 .hour +
             2);
@@ -170,22 +183,19 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
     }
     return max(
         0,
-        (system
-                        .getOperatingHours()
-                        .day(DayName.fromDate(widget.initialDate))
-                        .start ??
+        (system.getOperatingHours().day(DayName.fromDate(currentDate)).start ??
                     const LocalTime(hour: 9, minute: 0))
                 .hour -
             2);
   }
 
-  /// Build the event widgets for each timeslot in the day
-  Widget _buildDayTiles(List<CalendarEventData<JobEventEx>> events) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final event in events) _buildEventCard(event),
-        ],
-      );
+  // /// Build the event widgets for each timeslot in the day
+  // Widget _buildDayTiles(List<CalendarEventData<JobEventEx>> events) => Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         for (final event in events) _buildEventCard(event),
+  //       ],
+  //     );
 
   /// A card for each event, using a [FutureBuilderEx] to fetch job+customer
   Widget _buildEventCard(CalendarEventData<JobEventEx> event) {
@@ -214,7 +224,13 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
   }
 
   String dayTitle(DateTime date, {DateTime? secondaryDate}) {
-    final formatted = formatDate(date, format: 'Y M d D');
+    final today = LocalDate.today();
+    String formatted;
+    if (today.year == date.year) {
+      formatted = formatDate(date, format: 'M d D');
+    } else {
+      formatted = formatDate(date, format: 'Y M d D');
+    }
 
     return formatted;
   }

@@ -1,3 +1,4 @@
+import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
@@ -12,9 +13,7 @@ import '../../entity/system.dart';
 import '../../util/app_title.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/local_date.dart';
-import '../../util/platform_ex.dart';
 import '../widgets/async_state.dart';
-import '../widgets/hmb_icon_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/hmb_toggle.dart';
 import '../widgets/layout/hmb_spacer.dart';
@@ -72,14 +71,21 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   late ScheduleView selectedView;
   bool showExtendedHours = false;
 
+  final monthKey = GlobalKey<MonthViewState>();
+  final weekKey = GlobalKey<WeekViewState>();
+  final dayKey = GlobalKey<DayViewState>();
+
   /// Controls which page index is showing in the PageView
-  late final PageController? _pageController;
+  // late final PageController? _pageControllerX;
 
-  /// The date that corresponds to the currently displayed page
-  LocalDate currentDate = LocalDate.today();
+  /// The date that corresponds to the first date on currently displayed page
+  LocalDate currentFirstDateOnPage = LocalDate.today();
 
-  /// Keep track of the last page index so we know if user is going forward or backward.
-  int _lastPageIndex = 0;
+  /// The current date that the user is focused on.
+  /// Used to help select the [currentFirstDateOnPage] when
+  /// moving from a broader date range (e.g. month) to a narrow
+  /// date range (e.g. day)
+  LocalDate focusDate = LocalDate.today();
 
   /// A guard to prevent infinite `_onPageChanged` loops if we call jumpToPage inside it.
   bool _isAdjustingPage = false;
@@ -116,33 +122,34 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   /// - If [SchedulePage.initialEventId] is provided, fetch that event's date from DB.
   /// - Otherwise, use [DateTime.now()].
   Future<void> _initPage() async {
-    currentDate = LocalDate.today();
+    currentFirstDateOnPage =
+        await operatingHours.getNextOpenDate(LocalDate.today());
 
     // If an initialEventId is provided, fetch the event’s start date
     if (widget.initialEventId != null) {
       final dao = DaoJobEvent();
       final event = await dao.getById(widget.initialEventId);
       if (event != null) {
-        currentDate = event.start.toLocalDate();
+        currentFirstDateOnPage = event.start.toLocalDate();
       }
     }
 
-    // Calculate the initial page index from defaultDate
-    var initialIndex = _getPageIndexForDate(currentDate);
-    // Clamp if it's below 0 (i.e., date < 2000-01-01)
-    if (initialIndex < 0) {
-      initialIndex = 0;
+    if (currentFirstDateOnPage.isBefore(referenceDate)) {
+      currentFirstDateOnPage = referenceDate;
     }
 
+    focusDate = currentFirstDateOnPage;
+    print('focusDate: $focusDate');
+
     // Create the PageController using that initial index
-    _pageController = PageController(initialPage: initialIndex);
+    // _pageControllerX = PageController(initialPage: initialIndex);
 
     setState(() {});
   }
 
   @override
   void dispose() {
-    _pageController?.dispose();
+    // _pageControllerX?.dispose();
     super.dispose();
   }
 
@@ -159,31 +166,8 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                 child: DesktopSwipe(
                   onNext: onNextPage,
                   onPrevious: onPreviousPage,
-                  onHome: onHomePage,
-                  child: PageView.builder(
-                    key: ValueKey(selectedView),
-                    controller: _pageController,
-                    onPageChanged: _onPageChanged,
-                    itemBuilder: (context, index) {
-                      final date = _getDateForPage(index);
-
-                      switch (selectedView) {
-                        case ScheduleView.month:
-                          return MonthSchedule(
-                            date,
-                            defaultJob: widget.defaultJob,
-                          );
-                        case ScheduleView.week:
-                          return WeekSchedule(date,
-                              defaultJob: widget.defaultJob,
-                              showExtendedHours: showExtendedHours);
-                        case ScheduleView.day:
-                          return DaySchedule(date,
-                              defaultJob: widget.defaultJob,
-                              showExtendedHours: showExtendedHours);
-                      }
-                    },
-                  ),
+                  onHome: onTodayPage,
+                  child: _buildCalendar(),
                 ),
               ),
             ],
@@ -191,20 +175,69 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
         ),
       );
 
-  Future<void> _onPageChanged(int pageIndex) async {
-    // If we just called jumpToPage() internally, skip this invocation.
+  Widget _buildCalendar() {
+    final calendarViews = <Widget>[
+      MonthSchedule(
+          monthKey: monthKey,
+          currentFirstDateOnPage,
+          onPageChange: (date) async => _onPageChanged(date),
+          defaultJob: widget.defaultJob,
+          showWeekends: showExtendedHours),
+      WeekSchedule(
+        currentFirstDateOnPage,
+        weekKey: weekKey,
+        defaultJob: widget.defaultJob,
+        onPageChange: (date) async => _onPageChanged(date),
+        showExtendedHours: showExtendedHours,
+      ),
+      DaySchedule(
+        dayKey: dayKey,
+        currentFirstDateOnPage,
+        defaultJob: widget.defaultJob,
+        showExtendedHours: showExtendedHours,
+        onPageChange: (date) async => _onPageChanged(date),
+      ),
+    ];
+
+    // Find the selected view and remove it from the list
+    Widget selectedWidget;
+    switch (selectedView) {
+      case ScheduleView.month:
+        selectedWidget = calendarViews.removeAt(0);
+      case ScheduleView.week:
+        selectedWidget = calendarViews.removeAt(1);
+      case ScheduleView.day:
+        selectedWidget = calendarViews.removeAt(2);
+    }
+
+    // Create a new list with the selected view at the beginning
+    final orderedViews = [
+      Positioned.fill(
+          child: Visibility(
+              maintainState: true, visible: false, child: calendarViews[0])),
+      Positioned.fill(
+          child: Visibility(
+              maintainState: true, visible: false, child: calendarViews[1])),
+
+      /// last widget is on top
+      Positioned.fill(child: selectedWidget),
+    ];
+
+    return Stack(children: orderedViews);
+  }
+
+  Future<LocalDate> _onPageChanged(LocalDate targetDate) async {
+    print('page changed to $targetDate');
+    // If we just called jumpToDate() internally, skip this invocation.
     if (_isAdjustingPage) {
       _isAdjustingPage = false;
-      return;
+      return currentFirstDateOnPage;
     }
 
     // Determine if user swiped forward or backward
-    final direction = pageIndex - _lastPageIndex;
-    _lastPageIndex = pageIndex; // Update immediately
-    final isForward = direction > 0;
+    final isForward = targetDate.isAfter(currentFirstDateOnPage);
 
-    // Get the date that PageView is *trying* to display
-    final targetDate = _getDateForPage(pageIndex);
+    var skipTo = false;
 
     // Only skip closed days if we are in DAY view & not showExtendedHours
     if (selectedView == ScheduleView.day && !showExtendedHours) {
@@ -212,23 +245,72 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
           ? (await operatingHours.getNextOpenDate(targetDate))
           : (await operatingHours.getPreviousOpenDate(targetDate));
 
-      final newIndex = _getPageIndexForDate(newDate);
-      if (newIndex != pageIndex) {
-        // Prevent re-entrant calls
-        _isAdjustingPage = true;
-
-        /// skip the target date
-        _lastPageIndex = newIndex;
-        _pageController!.jumpToPage(newIndex);
-        return;
+      if (newDate != targetDate) {
+        /// skip to the next/prev open date.
+        targetDate = newDate;
+        skipTo = true;
       }
     }
 
     // If we're here, either the date is open or we’re in week/month view.
     // Just update your state to reflect the new date.
     setState(() {
-      currentDate = targetDate;
+      currentFirstDateOnPage = targetDate;
     });
+
+    if (skipTo) {
+      // Prevent re-entrant calls
+      _isAdjustingPage = true;
+
+      await _jumpToDate(targetDate);
+    }
+    focusDate = currentFirstDateOnPage;
+    return currentFirstDateOnPage;
+  }
+
+  Future<void> _jumpToDate(LocalDate targetDate) async {
+    const duration = Duration(milliseconds: 300);
+    const curve = Curves.easeInOut;
+
+    switch (selectedView) {
+      case ScheduleView.month:
+        await monthKey.currentState!.animateToMonth(targetDate.toDateTime(),
+            duration: duration, curve: curve);
+      case ScheduleView.week:
+        await weekKey.currentState!.animateToWeek(targetDate.toDateTime(),
+            duration: duration, curve: curve);
+      case ScheduleView.day:
+        await dayKey.currentState!.animateToDate(targetDate.toDateTime(),
+            duration: duration, curve: curve);
+    }
+  }
+
+  void previousPage() {
+    const duration = Duration(milliseconds: 300);
+    const curve = Curves.easeInOut;
+
+    switch (selectedView) {
+      case ScheduleView.month:
+        monthKey.currentState!.previousPage(duration: duration, curve: curve);
+      case ScheduleView.week:
+        weekKey.currentState!.previousPage(duration: duration, curve: curve);
+      case ScheduleView.day:
+        dayKey.currentState!.previousPage(duration: duration, curve: curve);
+    }
+  }
+
+  void nextPage() {
+    const duration = Duration(milliseconds: 300);
+    const curve = Curves.easeInOut;
+
+    switch (selectedView) {
+      case ScheduleView.month:
+        monthKey.currentState!.nextPage(duration: duration, curve: curve);
+      case ScheduleView.week:
+        weekKey.currentState!.nextPage(duration: duration, curve: curve);
+      case ScheduleView.day:
+        dayKey.currentState!.nextPage(duration: duration, curve: curve);
+    }
   }
 
   // -- NAVIGATION UTILS -----------------------------------------------------
@@ -236,60 +318,50 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   /// Show the left, right, and view droplist
   /// Show the navigation bar with left, right, view dropdown, and today button
   /// Show the navigation bar with left, right, view dropdown, and today button
-  Widget _navigationRow() => Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.black, // Dark background for the navigation bar
-          border: Border(
-            bottom: BorderSide(color: Colors.grey[700]!), // Subtle border
-          ),
-        ),
+  Widget _navigationRow() => Padding(
+        padding: const EdgeInsets.only(left: 8, right: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Left navigation button
-            if (isNotMobile)
-              HMBIconButton(
-                icon: const Icon(Icons.arrow_left, color: Colors.white),
-                onPressed: onPreviousPage,
-                hint: 'Previous',
+            // // Left navigation button
+            // if (isNotMobile)
+            //   HMBIconButton(
+            //     icon: const Icon(Icons.arrow_left, color: Colors.white),
+            //     onPressed: onPreviousPage,
+            //     hint: 'Previous',
+            //   ),
+
+            TextButton.icon(
+              onPressed: onTodayPage, // Go to today's date
+              icon: const Icon(Icons.today, color: Colors.blue),
+              label: const Text(
+                'Today',
+                style:
+                    TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
               ),
-
-            Column(
-              children: [
-                TextButton.icon(
-                  onPressed: onHomePage, // Go to today's date
-                  icon: const Icon(Icons.today, color: Colors.blue),
-                  label: const Text(
-                    'Today',
-                    style: TextStyle(
-                        color: Colors.blue, fontWeight: FontWeight.bold),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    backgroundColor:
-                        Colors.grey[900], // Slightly lighter than black
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: Colors.blue.shade300),
-                    ),
-                  ),
+              style: TextButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                backgroundColor:
+                    Colors.grey[900], // Slightly lighter than black
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: Colors.blue.shade300),
                 ),
-                const HMBSpacer(height: true),
-
-                // Today button
-                HMBToggle(
-                    label: 'Extended',
-                    tooltip: 'Show full 24 hrs',
-                    initialValue: false,
-                    onChanged: (value) {
-                      setState(() {
-                        showExtendedHours = value;
-                      });
-                    }),
-              ],
+              ),
             ),
+            const HMBSpacer(width: true),
+
+            // Extended hours button
+            HMBToggle(
+                label: 'Extended',
+                tooltip: 'Show full 24 hrs',
+                initialValue: false,
+                onChanged: (value) {
+                  setState(() {
+                    showExtendedHours = value;
+                  });
+                }),
             const HMBSpacer(width: true),
 
             // Dropdown to select view type (Day, Week, Month)
@@ -298,60 +370,52 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                 selectedItem: () async => selectedView,
                 items: (filter) async => ScheduleView.values,
                 format: (view) => view.name,
-                onChanged: (view) => setState(() {
+                onChanged: (view) async {
+                  focusDate = await _adjustFocusDate(selectedView);
                   selectedView = view!;
 
-                  /// Calcuate the correct page index
-                  /// so the new view shows the same date range.
-
-                  final newPage = _getPageIndexForDate(currentDate);
-
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _pageController!.jumpToPage(newPage);
+                  /// Force the new view to the same date
+                  WidgetsBinding.instance.scheduleFrameCallback((_) async {
+                    await _jumpToDate(currentFirstDateOnPage);
                   });
-                }),
+                  setState(() {});
+                },
                 title: 'View',
               ),
             ),
-            const HMBSpacer(width: true),
 
-            // Right navigation button
-            if (isNotMobile)
-              HMBIconButton(
-                icon: const Icon(Icons.arrow_right, color: Colors.white),
-                onPressed: onNextPage,
-                hint: 'Next',
-              ),
+            // // Right navigation button
+            // if (isNotMobile)
+            //   HMBIconButton(
+            //     icon: const Icon(Icons.arrow_right, color: Colors.white),
+            //     onPressed: onNextPage,
+            //     hint: 'Next',
+            //   ),
           ],
         ),
       );
 
   /// Jump to "today" for whichever view is active
-  Future<void> onHomePage() async {
-    final today = LocalDate.today();
-    currentDate = today;
-    final todayIndex = _getPageIndexForDate(today);
-    await _pageController?.animateToPage(
-      todayIndex,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+  Future<void> onTodayPage() async {
+    if (showExtendedHours) {
+      currentFirstDateOnPage = LocalDate.today();
+    } else {
+      currentFirstDateOnPage =
+          await operatingHours.getNextOpenDate(LocalDate.today());
+    }
+    print('moving to $currentFirstDateOnPage');
+    await _jumpToDate(currentFirstDateOnPage);
+    setState(() {});
   }
 
   /// Go to the previous page in the PageView
   Future<void> onPreviousPage() async {
-    await _pageController?.previousPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    previousPage();
   }
 
   /// Go to the next page in the PageView
   Future<void> onNextPage() async {
-    await _pageController?.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    nextPage();
   }
 
   /// Calculate the date for the given page index.
@@ -361,73 +425,73 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   /// before this point in time.
   /// We need to align to a monday so that week alignment works as
   /// expected.
-  static final referenceDate = LocalDate(2000, 1, 3);
-  LocalDate _getDateForPage(int pageIndex) {
-    switch (selectedView) {
-      case ScheduleView.day:
-        // day 0 => referenceDate
-        // day X => referenceDate + X days
-        return _alignDay(
-          referenceDate.add(Duration(days: pageIndex)),
-        );
+  final referenceDate = LocalDate(2000, 1, 3);
+  // LocalDate _getDateForPage(int pageIndex) {
+  //   switch (selectedView) {
+  //     case ScheduleView.day:
+  //       // day 0 => referenceDate
+  //       // day X => referenceDate + X days
+  //       return _alignDay(
+  //         referenceDate.add(Duration(days: pageIndex)),
+  //       );
 
-      case ScheduleView.week:
-        // week 0 => referenceDate (aligned to Monday)
-        // week X => referenceDate + (X * 7 days),
-        final roughDate = referenceDate.add(Duration(days: pageIndex * 7));
-        return _alignWeekStart(roughDate);
+  //     case ScheduleView.week:
+  //       // week 0 => referenceDate (aligned to Monday)
+  //       // week X => referenceDate + (X * 7 days),
+  //       final roughDate = referenceDate.add(Duration(days: pageIndex * 7));
+  //       return _alignWeekStart(roughDate);
 
-      case ScheduleView.month:
-        // month 0 => referenceDate's month
-        // month X => referenceDate + X months
-        final totalMonths = pageIndex;
-        final year = referenceDate.year + (totalMonths ~/ 12);
-        final month = referenceDate.month + (totalMonths % 12);
-        // Always show the 1st of that month
-        return _alignMonthStart(LocalDate(year, month));
-    }
-  }
+  //     case ScheduleView.month:
+  //       // month 0 => referenceDate's month
+  //       // month X => referenceDate + X months
+  //       final totalMonths = pageIndex;
+  //       final year = referenceDate.year + (totalMonths ~/ 12);
+  //       final month = referenceDate.month + (totalMonths % 12);
+  //       // Always show the 1st of that month
+  //       return _alignMonthStart(LocalDate(year, month));
+  //   }
+  // }
 
-  int _getPageIndexForDate(LocalDate date) {
-    // If date is before our referenceDate, clamp to 0 to avoid negative indices
-    if (date.isBefore(referenceDate)) {
-      return 0;
-    }
+  // int _getPageIndexForDate(LocalDate date) {
+  //   // If date is before our referenceDate, clamp to 0 to avoid negative indices
+  //   if (date.isBefore(referenceDate)) {
+  //     return 0;
+  //   }
 
-    switch (selectedView) {
-      case ScheduleView.day:
-        final aligned = _alignDay(date);
-        return aligned.difference(referenceDate).inDays;
+  //   switch (selectedView) {
+  //     case ScheduleView.day:
+  //       final aligned = _alignDay(date);
+  //       return aligned.difference(referenceDate).inDays;
 
-      case ScheduleView.week:
-        // Align to Monday before calculating the difference in days
-        final aligned = _alignWeekStart(date);
-        final daysSinceRef = aligned.difference(referenceDate).inDays;
-        // integer division → # of weeks since reference
-        return daysSinceRef ~/ 7;
+  //     case ScheduleView.week:
+  //       // Align to Monday before calculating the difference in days
+  //       final aligned = _alignWeekStart(date);
+  //       final daysSinceRef = aligned.difference(referenceDate).inDays;
+  //       // integer division → # of weeks since reference
+  //       return daysSinceRef ~/ 7;
 
-      case ScheduleView.month:
-        // Align to the 1st of the month
-        final aligned = _alignMonthStart(date);
-        final yearDiff = aligned.year - referenceDate.year;
-        final monthDiff = aligned.month - referenceDate.month;
-        return yearDiff * 12 + monthDiff;
-    }
-  }
+  //     case ScheduleView.month:
+  //       // Align to the 1st of the month
+  //       final aligned = _alignMonthStart(date);
+  //       final yearDiff = aligned.year - referenceDate.year;
+  //       final monthDiff = aligned.month - referenceDate.month;
+  //       return yearDiff * 12 + monthDiff;
+  //   }
+  // }
 
   /// Checks if [dateToCheck] falls on the currently displayed page (day, week, month),
-  /// given your current [selectedView] and [currentPageIndex].
-  bool _isOnCurrentPage(LocalDate dateToCheck, int currentPageIndex) {
-    final range = _getPageRange(currentPageIndex);
-    final start = range['start']!;
-    final end = range['end']!;
+  /// given your current [fromView] and [currentPageIndex].
+  // bool _isOnCurrentPage(LocalDate dateToCheck, int currentPageIndex) {
+  //   final range = _getPageRange(currentPageIndex);
+  //   final start = range['start']!;
+  //   final end = range['end']!;
 
-    // Check: start <= dateToCheck < end
-    return !dateToCheck.isBefore(start) && dateToCheck.isBefore(end);
-  }
+  //   // Check: start <= dateToCheck < end
+  //   return !dateToCheck.isBefore(start) && dateToCheck.isBefore(end);
+  // }
 
   /// Returns the start (inclusive) and end (exclusive) date range
-  /// for the given [pageIndex] in [selectedView].
+  /// for the given [pageIndex] in [fromView].
   ///
   /// Day View:   [dayStart, dayStart + 1 day)
   /// Week View:  [mondayStart, mondayStart + 7 days)
@@ -435,48 +499,83 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   ///
   /// Assumes you have alignment helpers like _alignDay(), _alignWeekStart(), _alignMonthStart().
   /// Also assumes _getDateForPage() is consistent with these alignments.
-  Map<String, LocalDate> _getPageRange(int pageIndex) {
-    final date = _getDateForPage(pageIndex); // e.g., aligned date for that page
+  // Map<String, LocalDate> _getPageRange(int pageIndex) {
+  //   final date = _getDateForPage(pageIndex); // e.g., aligned date for that page
 
-    switch (selectedView) {
-      case ScheduleView.day:
-        final start = _alignDay(date);
-        final end = start.add(const Duration(days: 1));
-        return {'start': start, 'end': end};
+  //   switch (selectedView) {
+  //     case ScheduleView.day:
+  //       final start = _alignDay(date);
+  //       final end = start.add(const Duration(days: 1));
+  //       return {'start': start, 'end': end};
 
-      case ScheduleView.week:
-        // If date is already aligned to Monday, we can do this directly
-        final start = _alignWeekStart(date);
-        final end = start.add(const Duration(days: 7));
-        return {'start': start, 'end': end};
+  //     case ScheduleView.week:
+  //       // If date is already aligned to Monday, we can do this directly
+  //       final start = _alignWeekStart(date);
+  //       final end = start.add(const Duration(days: 7));
+  //       return {'start': start, 'end': end};
 
-      case ScheduleView.month:
-        // If date is aligned to 1st of the month
-        final start = _alignMonthStart(date);
-        // The end is the 1st of the next month
-        final nextMonth = (start.month == 12)
-            ? LocalDate(start.year + 1)
-            : LocalDate(start.year, start.month + 1);
-        return {'start': start, 'end': nextMonth};
-    }
-  }
+  //     case ScheduleView.month:
+  //       // If date is aligned to 1st of the month
+  //       final start = _alignMonthStart(date);
+  //       // The end is the 1st of the next month
+  //       final nextMonth = (start.month == 12)
+  //           ? LocalDate(start.year + 1)
+  //           : LocalDate(start.year, start.month + 1);
+  //       return {'start': start, 'end': nextMonth};
+  //   }
+  // }
 
   /// Aligns the given date to the start of the day (i.e., midnight).
-  LocalDate _alignDay(LocalDate date) =>
-      LocalDate(date.year, date.month, date.day);
+  // LocalDate _alignDay(LocalDate date) =>
+  //     LocalDate(date.year, date.month, date.day);
 
   /// Aligns the given date to the start of its week (assuming Monday=1).
   /// If you want Monday as the first day of the week
 
-  LocalDate _alignWeekStart(LocalDate date) {
-    // Monday = 1, Tuesday=2, Wed=3, Thu=4, Fri=5, Sat=6, Sun=7
-    final dayOfWeek = date.weekday;
-    final diff = dayOfWeek - DateTime.monday; // e.g. for Wed=3, diff=2
-    return LocalDate(date.year, date.month, date.day)
-        .subtract(Duration(days: diff));
-  }
+  // LocalDate _alignWeekStart(LocalDate date) {
+  //   // Monday = 1, Tuesday=2, Wed=3, Thu=4, Fri=5, Sat=6, Sun=7
+  //   final dayOfWeek = date.weekday;
+  //   final diff = dayOfWeek - DateTime.monday; // e.g. for Wed=3, diff=2
+  //   return LocalDate(date.year, date.month, date.day)
+  //       .subtract(Duration(days: diff));
+  // }
 
-  /// Aligns the given date to the first of the month.
-  LocalDate _alignMonthStart(LocalDate date) =>
-      LocalDate(date.year, date.month);
+  Future<LocalDate> _adjustFocusDate(
+    ScheduleView fromView,
+  ) async {
+    final rangeStart = currentFirstDateOnPage;
+    final LocalDate rangeEnd;
+
+    // Determine the end of the range based on the selected view
+    switch (fromView) {
+      case ScheduleView.month:
+        rangeEnd = currentFirstDateOnPage.addMonths(1).subtractDays(1);
+      case ScheduleView.week:
+        rangeEnd = currentFirstDateOnPage.addDays(6);
+      case ScheduleView.day:
+        rangeEnd = currentFirstDateOnPage; // Day view has a single-day range
+    }
+
+    LocalDate revisedDate;
+
+    // If focusDate is within the range, return focusDate
+    if (focusDate.isAfterOrEqual(rangeStart) &&
+        focusDate.isBeforeOrEqual(rangeEnd)) {
+      revisedDate = focusDate;
+    } else {
+      // Otherwise, return the start of the range
+      revisedDate = rangeStart;
+    }
+
+    if (!(await operatingHours.isOpen(revisedDate))) {
+      revisedDate = await operatingHours.getNextOpenDate(revisedDate);
+    }
+
+    if (focusDate != revisedDate) {
+      // we must have changed pages so the first date
+      // must change.
+      currentFirstDateOnPage = revisedDate;
+    }
+    return revisedDate;
+  }
 }

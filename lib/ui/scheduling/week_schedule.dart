@@ -8,6 +8,8 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../dao/dao_job_event.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
+import '../../util/date_time_ex.dart';
+import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
 import '../widgets/surface.dart';
@@ -18,14 +20,18 @@ import 'schedule_helper.dart';
 class WeekSchedule extends StatefulWidget with ScheduleHelper {
   const WeekSchedule(
     this.initialDate, {
+    required this.onPageChange,
     required this.defaultJob,
     required this.showExtendedHours,
+    required this.weekKey,
     super.key,
   });
 
   final LocalDate initialDate;
   final int? defaultJob;
   final bool showExtendedHours;
+  final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
+  final Key weekKey;
 
   @override
   State<WeekSchedule> createState() => _WeekScheduleState();
@@ -37,10 +43,12 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
   late final bool showWeekends;
   late final OperatingHours operatingHours;
   late bool hasEventsInExtendedHours;
+  late LocalDate currentDate;
 
   @override
   void initState() {
     super.initState();
+    currentDate = widget.initialDate;
     _weekController = EventController();
   }
 
@@ -55,13 +63,19 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
   }
 
   @override
+  void didUpdateWidget(covariant WeekSchedule oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    currentDate = widget.initialDate;
+  }
+
+  @override
   void dispose() {
     _weekController.dispose();
     super.dispose();
   }
 
   Future<void> _loadEventsForWeek() async {
-    final startOfWeek = _mondayOf(widget.initialDate);
+    final startOfWeek = _mondayOf(currentDate);
     final endOfWeek = startOfWeek.add(const Duration(days: 7));
 
     final dao = DaoJobEvent();
@@ -97,13 +111,13 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
     }
   }
 
-  /// Example of getting the Monday date from [WeekSchedule.initialDate]
-  LocalDate _mondayOf(LocalDate d) {
+  /// Get the Monday date from [baseDate]
+  LocalDate _mondayOf(LocalDate baseDate) {
     // In Dart, Monday=1, Sunday=7
-    final dayOfWeek = d.weekday;
+    final dayOfWeek = baseDate.weekday;
     final difference =
         dayOfWeek - DateTime.monday; // how many days since Monday
-    return LocalDate(d.year, d.month, d.day - difference);
+    return LocalDate(baseDate.year, baseDate.month, baseDate.day - difference);
   }
 
   @override
@@ -112,17 +126,24 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
         child: FutureBuilderEx(
             future: initialised,
             builder: (context, _) => WeekView<JobEventEx>(
+                  key: widget.weekKey,
+
                   startHour: _getStartHour(),
                   endHour: _getEndHour(),
-                  key: ValueKey(widget.initialDate),
-                  initialDay: widget.initialDate.toDateTime(),
+                  // key: ValueKey(currentDate),
+                  initialDay: currentDate.toDateTime(),
                   headerStyle: widget.headerStyle(),
+                  timeLineWidth: 60,
+                  timeLineStringBuilder: (date, {secondaryDate}) =>
+                      formatTime(date, 'ha').toLowerCase(),
+                  weekTitleHeight: 60,
                   showWeekends: widget.showExtendedHours ||
                       showWeekends ||
                       hasEventsInExtendedHours,
                   backgroundColor: Colors.black,
                   headerStringBuilder: widget.dateStringBuilder,
                   eventTileBuilder: _defaultEventTileBuilder,
+                  onPageChange: (date, index) async => _onPageChange(date),
                   onDateTap: (date) async {
                     await widget.addEvent(context, date, widget.defaultJob);
                     await _loadEventsForWeek();
@@ -134,18 +155,25 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
                 )),
       );
 
+  Future<void> _onPageChange(DateTime date) async {
+    final revisedDate = await widget.onPageChange(date.toLocalDate());
+
+    currentDate = revisedDate;
+    await _loadEventsForWeek();
+  }
+
   int _getEndHour() {
     if (widget.showExtendedHours || hasEventsInExtendedHours) {
       return 24;
     }
-    return min(24, _getLatestFinish(widget.initialDate) + 2);
+    return min(24, _getLatestFinish(currentDate) + 2);
   }
 
   int _getStartHour() {
     if (widget.showExtendedHours || hasEventsInExtendedHours) {
       return 0;
     }
-    return max(0, _getEarliestStart(widget.initialDate) - 2);
+    return max(0, _getEarliestStart(currentDate) - 2);
   }
 
   /// find the latest finishing hour across the week.

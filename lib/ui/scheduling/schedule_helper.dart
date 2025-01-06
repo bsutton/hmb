@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../dao/dao_job_event.dart';
 import '../../util/format.dart';
+import '../../util/local_date.dart';
 import 'job_event_dialog.dart';
 import 'job_event_ex.dart';
 
@@ -63,9 +64,11 @@ mixin ScheduleHelper {
 
   /// header style
   HeaderStyle headerStyle() => const HeaderStyle(
+        leftIconConfig: IconDataConfig(color: Colors.white),
+        rightIconConfig: IconDataConfig(color: Colors.white),
         headerTextStyle: TextStyle(
           color: Colors.white, // Set the text color for the header
-          fontSize: 20,
+          fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
         decoration: BoxDecoration(
@@ -84,19 +87,35 @@ mixin ScheduleHelper {
 
   /// Helper to format the date for headers
   String dateStringBuilder(DateTime date, {DateTime? secondaryDate}) {
-    var formatted = formatDate(date, format: 'Y M d');
-
+    final today = LocalDate.today();
+    String formatted;
+    if (today.year == date.year) {
+      /// If we are in the current year suppress the year.
+      formatted = formatDate(date, format: 'M d');
+    } else {
+      formatted = formatDate(date, format: 'Y M d');
+    }
     if (secondaryDate != null && secondaryDate.compareTo(date) != 0) {
-      formatted = '$formatted - ${formatDate(secondaryDate, format: 'y M d')}';
+      if (secondaryDate.month == date.month) {
+        formatted = '$formatted - ${formatDate(secondaryDate, format: 'd')}';
+      } else {
+        formatted = '$formatted - ${formatDate(secondaryDate, format: 'M d')}';
+      }
     }
 
     return formatted;
   }
 
-
   /// Helper to format the date for headers
   String monthDateStringBuilder(DateTime date, {DateTime? secondaryDate}) {
-    final formatted = formatDate(date, format: 'Y M');
+    final today = LocalDate.today();
+    String formatted;
+    if (today.year == date.year) {
+      /// If we are in the current year suppress the year.
+      formatted = formatDate(date, format: 'M');
+    } else {
+      formatted = formatDate(date, format: 'Y M');
+    }
 
     return formatted;
   }

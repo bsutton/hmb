@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao_job_event.dart';
-// Example imports (replace with your actual ones):
+import '../../util/date_time_ex.dart';
 import '../../util/format.dart'; // For formatTime() or similar
 import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
@@ -13,10 +13,18 @@ import 'schedule_helper.dart';
 
 /// A single-month view of events
 class MonthSchedule extends StatefulWidget with ScheduleHelper {
-  const MonthSchedule(this.initialDate, {required this.defaultJob, super.key});
+  const MonthSchedule(this.initialDate,
+      {required this.onPageChange,
+      required this.defaultJob,
+      required this.monthKey,
+      required this.showWeekends,
+      super.key});
 
   final LocalDate initialDate;
   final int? defaultJob;
+  final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
+  final Key monthKey;
+  final bool showWeekends;
 
   @override
   State<MonthSchedule> createState() => _MonthScheduleState();
@@ -25,14 +33,19 @@ class MonthSchedule extends StatefulWidget with ScheduleHelper {
 class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
   late final EventController<JobEventEx> _monthController;
 
+  late LocalDate currentDate;
+  late bool showWeekends;
+
   @override
   void initState() {
     super.initState();
+    showWeekends = widget.showWeekends;
     _monthController = EventController();
   }
 
   @override
   Future<void> asyncInitState() async {
+    currentDate = widget.initialDate;
     await _loadEventsForMonth();
   }
 
@@ -43,18 +56,20 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
   }
 
   Future<void> _loadEventsForMonth() async {
-    final firstOfMonth =
-        LocalDate(widget.initialDate.year, widget.initialDate.month);
-    final firstOfNextMonth =
-        LocalDate(widget.initialDate.year, widget.initialDate.month + 1);
+    final firstOfMonth = LocalDate(currentDate.year, currentDate.month);
+    final firstOfNextMonth = LocalDate(currentDate.year, currentDate.month + 1);
 
     final dao = DaoJobEvent();
     final jobEvents =
         await dao.getEventsInRange(firstOfMonth, firstOfNextMonth);
 
+    showWeekends = false;
     final eventData = <CalendarEventData<JobEventEx>>[];
     for (final jobEvent in jobEvents) {
       eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData);
+      if (jobEvent.start.isWeekEnd) {
+        showWeekends = true;
+      }
     }
 
     setState(() {
@@ -71,10 +86,13 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
     late final MonthView<JobEventEx> monthView;
     // ignore: join_return_with_assignment
     monthView = MonthView<JobEventEx>(
-      key: ValueKey(widget.initialDate),
-      initialMonth: widget.initialDate.toDateTime(),
+      showWeekends: showWeekends,
+      // key: ValueKey(widget.initialDate),
+      key: widget.monthKey,
+      initialMonth: currentDate.toDateTime(),
       headerStyle: widget.headerStyle(),
       headerStringBuilder: widget.monthDateStringBuilder,
+      onPageChange: (date, index) async => _onePageChange(date),
       cellBuilder: (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
           _cellBuilder(
               monthView, date, events, isToday, isInMonth, hideDaysNotInMonth),
@@ -99,6 +117,13 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
       child: FutureBuilderEx(
           future: initialised, builder: (context, _) => monthView),
     );
+  }
+
+  Future<void> _onePageChange(DateTime date) async {
+    final revisedDate = await widget.onPageChange(date.toLocalDate());
+
+    currentDate = revisedDate;
+    await _loadEventsForMonth();
   }
 
   /// Build month view cell.
