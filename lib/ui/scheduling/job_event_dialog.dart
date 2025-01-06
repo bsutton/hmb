@@ -154,59 +154,16 @@ class _JobEventDialogState extends State<JobEventDialog> {
               _buildEventDate(context),
 
               const HMBSpacer(height: true),
-              if (isSmallScreen) ...[
-                // Vertical layout for small screens
-                _buildStartDate(),
-                const HMBSpacer(height: true),
-                _buildEndDate(context),
-                const HMBSpacer(height: true),
-              ] else ...[
-                // Horizontal layout for larger screens
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStartDate(),
-                    ),
-                    const HMBSpacer(height: true),
-                    Expanded(
-                      child: _buildEndDate(context),
-                    ),
-                  ],
-                ),
-                const HMBSpacer(height: true),
-              ],
+              ..._buildStartEndDates(isSmallScreen),
 
               // Display the duration
-              Row(
-                children: [
-                  Text(
-                    'Duration: ${_formatDuration(duration)}',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ],
-              ),
+              _buildDuration(duration),
 
               // Status dropdown
-              DropdownButtonFormField<JobEventStatus>(
-                value: _status,
-                decoration: const InputDecoration(labelText: 'Status'),
-                items: JobEventStatus.values
-                    .map((status) => DropdownMenuItem(
-                          value: status,
-                          child: Text(Strings.toProperCase(status.name)),
-                        ))
-                    .toList(),
-                onChanged: (value) => setState(() => _status = value!),
-              ),
+              _buildStatus(),
               const HMBSpacer(height: true),
               // Notes field
-              TextFormField(
-                initialValue: _notes,
-                decoration: const InputDecoration(labelText: 'Notes'),
-                maxLines: 3,
-                onChanged: (value) => _notes = value,
-              ),
-              const HMBSpacer(height: true),
+              _buildNotes(),
               const HMBSpacer(height: true),
               if (_noticeSentDate != null)
                 Text('Notice sent on: ${formatDateTime(_noticeSentDate!)}'),
@@ -219,43 +176,73 @@ class _JobEventDialogState extends State<JobEventDialog> {
                   child: const Text('Send Notice'),
                 ),
               const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Delete button on the left
-                  if (widget.isEditing)
-                    HMBButtonSecondary(
-                      onPressed: _handleDelete,
-                      label: 'Delete',
-                    )
-                  else
-                    const SizedBox(), // Placeholder for alignment when not editing
-
-                  // Cancel and Save buttons on the right
-                  Row(
-                    children: [
-                      HMBButtonSecondary(
-                        onPressed: () => Navigator.of(context).pop(
-                            widget.isEditing
-                                ? JobEventUpdateAction(EditAction.cancel, null)
-                                : JobEventAddAction(AddAction.cancel, null)),
-                        label: 'Cancel',
-                      ),
-                      const HMBSpacer(width: true),
-                      HMBButtonPrimary(
-                        onPressed: _handleSave,
-                        label: widget.isEditing ? 'Update Event' : 'Add Event',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              _buildButtons(context),
             ],
           ),
         ),
       ),
     );
   }
+
+  TextFormField _buildNotes() => TextFormField(
+        initialValue: _notes,
+        decoration: const InputDecoration(labelText: 'Notes'),
+        maxLines: 3,
+        onChanged: (value) => _notes = value,
+      );
+
+  DropdownButtonFormField<JobEventStatus> _buildStatus() =>
+      DropdownButtonFormField<JobEventStatus>(
+        value: _status,
+        decoration: const InputDecoration(labelText: 'Status'),
+        items: JobEventStatus.values
+            .map((status) => DropdownMenuItem(
+                  value: status,
+                  child: Text(Strings.toProperCase(status.name)),
+                ))
+            .toList(),
+        onChanged: (value) => setState(() => _status = value!),
+      );
+
+  Row _buildDuration(Duration duration) => Row(
+        children: [
+          Text(
+            'Duration: ${_formatDuration(duration)}',
+            style: const TextStyle(fontSize: 16),
+          ),
+        ],
+      );
+
+  Row _buildButtons(BuildContext context) => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Delete button on the left
+          if (widget.isEditing)
+            HMBButtonSecondary(
+              onPressed: _handleDelete,
+              label: 'Delete',
+            )
+          else
+            const SizedBox(), // Placeholder for alignment when not editing
+
+          // Cancel and Save buttons on the right
+          Row(
+            children: [
+              HMBButtonSecondary(
+                onPressed: () => Navigator.of(context).pop(widget.isEditing
+                    ? JobEventUpdateAction(EditAction.cancel, null)
+                    : JobEventAddAction(AddAction.cancel, null)),
+                label: 'Cancel',
+              ),
+              const HMBSpacer(width: true),
+              HMBButtonPrimary(
+                onPressed: _handleSave,
+                label: widget.isEditing ? 'Update Event' : 'Add Event',
+              ),
+            ],
+          ),
+        ],
+      );
 
   /// Helper to format the duration
   String _formatDuration(Duration duration) {
@@ -550,6 +537,34 @@ class _JobEventDialogState extends State<JobEventDialog> {
     setState(() {
       _noticeSentDate = DateTime.now();
     });
+  }
+
+  List<Widget> _buildStartEndDates(bool isSmallScreen) {
+    if (isSmallScreen) {
+      return <Widget>[
+        // Vertical layout for small screens
+        _buildStartDate(),
+        const HMBSpacer(height: true),
+        _buildEndDate(context),
+        const HMBSpacer(height: true),
+      ];
+    } else {
+      return <Widget>[
+        // Horizontal layout for larger screens
+        Row(
+          children: [
+            Expanded(
+              child: _buildStartDate(),
+            ),
+            const HMBSpacer(height: true),
+            Expanded(
+              child: _buildEndDate(context),
+            ),
+          ],
+        ),
+        const HMBSpacer(height: true),
+      ];
+    }
   }
 }
 
