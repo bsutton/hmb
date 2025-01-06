@@ -85,7 +85,7 @@ class JobEventDialog extends StatefulWidget {
 class _JobEventDialogState extends State<JobEventDialog> {
   late DateTime _startDate;
   late DateTime _endDate;
-  JobEventStatus _status = JobEventStatus.proposed; // Default status
+  JobEventStatus _status = JobEventStatus.tentative; // Default status
   String? _notes;
   Job? _selectedJob;
   final _form = GlobalKey<FormState>();
