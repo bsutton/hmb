@@ -81,7 +81,7 @@ class JobEvent extends Entity<JobEvent> {
         'job_id': jobId,
         'start_date': start.toIso8601String(),
         'end_date': end.toIso8601String(),
-        'status': status.index,
+        'status': status.name,
         'notes': notes,
         'notice_sent_date': noticeSentDate?.toIso8601String(),
         'created_date': createdDate.toIso8601String(),
