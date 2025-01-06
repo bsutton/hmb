@@ -111,10 +111,16 @@ ThemeData get theme => ThemeData(
         contentTextStyle: const TextStyle(color: Colors.white),
       ),
       timePickerTheme: TimePickerThemeData(
-          confirmButtonStyle:
-              TextButton.styleFrom(foregroundColor: Colors.white),
-          cancelButtonStyle:
-              TextButton.styleFrom(foregroundColor: Colors.white)),
+        confirmButtonStyle: TextButton.styleFrom(foregroundColor: Colors.white),
+        cancelButtonStyle: TextButton.styleFrom(foregroundColor: Colors.white),
+      ),
+      textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(foregroundColor: Colors.white)),
+      dialogTheme: const DialogTheme(
+        titleTextStyle: TextStyle(
+            color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+        contentTextStyle: TextStyle(color: Colors.white),
+      ),
       colorScheme: ColorScheme.fromSwatch(
         primarySwatch: Colors.deepPurple,
         brightness:
