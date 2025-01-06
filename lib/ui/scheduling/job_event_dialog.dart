@@ -151,11 +151,8 @@ class _JobEventDialogState extends State<JobEventDialog> {
               ),
               const HMBSpacer(height: true),
               // Display event date
-              Text(
-                'Event Date: ${formatDate(_startDate)}',
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              _buildEventDate(context),
+
               const HMBSpacer(height: true),
               if (isSmallScreen) ...[
                 // Vertical layout for small screens
@@ -266,6 +263,20 @@ class _JobEventDialogState extends State<JobEventDialog> {
     final minutes = duration.inMinutes % 60;
     return '${hours}h ${minutes}m';
   }
+
+  HMBDateTimeField _buildEventDate(BuildContext context) => HMBDateTimeField(
+      showTime: false,
+      label: 'Event Date',
+      initialDateTime: _startDate,
+      onChanged: (date) {
+        setState(() {
+          _startDate = DateTime(date.year, date.month, date.day,
+              _startDate.hour, _startDate.minute);
+
+          _endDate = DateTime(
+              date.year, date.month, date.day, _endDate.hour, _endDate.minute);
+        });
+      });
 
   /// End Date
   HMBDateTimeField _buildEndDate(BuildContext context) => HMBDateTimeField(
