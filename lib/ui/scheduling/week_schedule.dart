@@ -12,7 +12,6 @@ import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
-import '../widgets/surface.dart';
 import 'job_event_ex.dart';
 import 'schedule_helper.dart';
 
@@ -93,9 +92,9 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
           !operatingHours.inOperatingHours(jobEvent);
 
       eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData.copyWith(
-          titleStyle: TextStyle(color: fontColor, fontSize: 13),
-          descriptionStyle: TextStyle(color: fontColor, fontSize: 13),
-          color: SurfaceElevation.e16.color));
+            titleStyle: TextStyle(color: fontColor, fontSize: 13),
+            descriptionStyle: TextStyle(color: fontColor, fontSize: 13),
+          ));
     }
 
     hasEventsInExtendedHours = _hasEventsInExtendedHours;
