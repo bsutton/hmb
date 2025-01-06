@@ -67,6 +67,15 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
   State<SchedulePage> createState() => _SchedulePageState();
 }
 
+/// Calculate the date for the given page index.
+/// The PageView controller doesn't accept -ve page index
+/// so we need to offset the page indexes to an arbitrary
+/// point in time. The user will not be able to scroll back
+/// before this point in time.
+/// We need to align to a monday so that week alignment works as
+/// expected.
+final _referenceDate = LocalDate(2000, 1, 3);
+
 class _SchedulePageState extends AsyncState<SchedulePage, void> {
   late ScheduleView selectedView;
   bool showExtendedHours = false;
@@ -134,8 +143,8 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
       }
     }
 
-    if (currentFirstDateOnPage.isBefore(referenceDate)) {
-      currentFirstDateOnPage = referenceDate;
+    if (currentFirstDateOnPage.isBefore(_referenceDate)) {
+      currentFirstDateOnPage = _referenceDate;
     }
 
     focusDate = currentFirstDateOnPage;
@@ -325,14 +334,6 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // // Left navigation button
-            // if (isNotMobile)
-            //   HMBIconButton(
-            //     icon: const Icon(Icons.arrow_left, color: Colors.white),
-            //     onPressed: onPreviousPage,
-            //     hint: 'Previous',
-            //   ),
-
             TextButton.icon(
               onPressed: onTodayPage, // Go to today's date
               icon: const Icon(Icons.today, color: Colors.blue),
@@ -385,14 +386,6 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
                 title: 'View',
               ),
             ),
-
-            // // Right navigation button
-            // if (isNotMobile)
-            //   HMBIconButton(
-            //     icon: const Icon(Icons.arrow_right, color: Colors.white),
-            //     onPressed: onNextPage,
-            //     hint: 'Next',
-            //   ),
           ],
         ),
       );
@@ -421,128 +414,6 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   Future<void> onNextPage() async {
     nextPage();
   }
-
-  /// Calculate the date for the given page index.
-  /// The PageView controller doesn't accept -ve page index
-  /// so we need to offset the page indexes to an arbitrary
-  /// point in time. The user will not be able to scroll back
-  /// before this point in time.
-  /// We need to align to a monday so that week alignment works as
-  /// expected.
-  final referenceDate = LocalDate(2000, 1, 3);
-  // LocalDate _getDateForPage(int pageIndex) {
-  //   switch (selectedView) {
-  //     case ScheduleView.day:
-  //       // day 0 => referenceDate
-  //       // day X => referenceDate + X days
-  //       return _alignDay(
-  //         referenceDate.add(Duration(days: pageIndex)),
-  //       );
-
-  //     case ScheduleView.week:
-  //       // week 0 => referenceDate (aligned to Monday)
-  //       // week X => referenceDate + (X * 7 days),
-  //       final roughDate = referenceDate.add(Duration(days: pageIndex * 7));
-  //       return _alignWeekStart(roughDate);
-
-  //     case ScheduleView.month:
-  //       // month 0 => referenceDate's month
-  //       // month X => referenceDate + X months
-  //       final totalMonths = pageIndex;
-  //       final year = referenceDate.year + (totalMonths ~/ 12);
-  //       final month = referenceDate.month + (totalMonths % 12);
-  //       // Always show the 1st of that month
-  //       return _alignMonthStart(LocalDate(year, month));
-  //   }
-  // }
-
-  // int _getPageIndexForDate(LocalDate date) {
-  //   // If date is before our referenceDate, clamp to 0 to avoid negative indices
-  //   if (date.isBefore(referenceDate)) {
-  //     return 0;
-  //   }
-
-  //   switch (selectedView) {
-  //     case ScheduleView.day:
-  //       final aligned = _alignDay(date);
-  //       return aligned.difference(referenceDate).inDays;
-
-  //     case ScheduleView.week:
-  //       // Align to Monday before calculating the difference in days
-  //       final aligned = _alignWeekStart(date);
-  //       final daysSinceRef = aligned.difference(referenceDate).inDays;
-  //       // integer division → # of weeks since reference
-  //       return daysSinceRef ~/ 7;
-
-  //     case ScheduleView.month:
-  //       // Align to the 1st of the month
-  //       final aligned = _alignMonthStart(date);
-  //       final yearDiff = aligned.year - referenceDate.year;
-  //       final monthDiff = aligned.month - referenceDate.month;
-  //       return yearDiff * 12 + monthDiff;
-  //   }
-  // }
-
-  /// Checks if [dateToCheck] falls on the currently displayed page (day, week, month),
-  /// given your current [fromView] and [currentPageIndex].
-  // bool _isOnCurrentPage(LocalDate dateToCheck, int currentPageIndex) {
-  //   final range = _getPageRange(currentPageIndex);
-  //   final start = range['start']!;
-  //   final end = range['end']!;
-
-  //   // Check: start <= dateToCheck < end
-  //   return !dateToCheck.isBefore(start) && dateToCheck.isBefore(end);
-  // }
-
-  /// Returns the start (inclusive) and end (exclusive) date range
-  /// for the given [pageIndex] in [fromView].
-  ///
-  /// Day View:   [dayStart, dayStart + 1 day)
-  /// Week View:  [mondayStart, mondayStart + 7 days)
-  /// Month View: [monthStart, nextMonthStart)
-  ///
-  /// Assumes you have alignment helpers like _alignDay(), _alignWeekStart(), _alignMonthStart().
-  /// Also assumes _getDateForPage() is consistent with these alignments.
-  // Map<String, LocalDate> _getPageRange(int pageIndex) {
-  //   final date = _getDateForPage(pageIndex); // e.g., aligned date for that page
-
-  //   switch (selectedView) {
-  //     case ScheduleView.day:
-  //       final start = _alignDay(date);
-  //       final end = start.add(const Duration(days: 1));
-  //       return {'start': start, 'end': end};
-
-  //     case ScheduleView.week:
-  //       // If date is already aligned to Monday, we can do this directly
-  //       final start = _alignWeekStart(date);
-  //       final end = start.add(const Duration(days: 7));
-  //       return {'start': start, 'end': end};
-
-  //     case ScheduleView.month:
-  //       // If date is aligned to 1st of the month
-  //       final start = _alignMonthStart(date);
-  //       // The end is the 1st of the next month
-  //       final nextMonth = (start.month == 12)
-  //           ? LocalDate(start.year + 1)
-  //           : LocalDate(start.year, start.month + 1);
-  //       return {'start': start, 'end': nextMonth};
-  //   }
-  // }
-
-  /// Aligns the given date to the start of the day (i.e., midnight).
-  // LocalDate _alignDay(LocalDate date) =>
-  //     LocalDate(date.year, date.month, date.day);
-
-  /// Aligns the given date to the start of its week (assuming Monday=1).
-  /// If you want Monday as the first day of the week
-
-  // LocalDate _alignWeekStart(LocalDate date) {
-  //   // Monday = 1, Tuesday=2, Wed=3, Thu=4, Fri=5, Sat=6, Sun=7
-  //   final dayOfWeek = date.weekday;
-  //   final diff = dayOfWeek - DateTime.monday; // e.g. for Wed=3, diff=2
-  //   return LocalDate(date.year, date.month, date.day)
-  //       .subtract(Duration(days: diff));
-  // }
 
   Future<LocalDate> _adjustFocusDate(
     ScheduleView fromView,
