@@ -9,6 +9,7 @@ import '../../dao/dao_job_event.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
+import '../../entity/operating_hours.dart';
 import '../../entity/system.dart';
 import '../../util/app_title.dart';
 import '../../util/date_time_ex.dart';

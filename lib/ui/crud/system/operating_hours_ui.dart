@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../entity/operating_hours.dart';
 import '../../../entity/system.dart';
 import '../../../util/local_time.dart';
 import '../../widgets/hmb_date_time_picker.dart';

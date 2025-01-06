@@ -7,6 +7,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 // Example imports (replace with your actual ones):
 import '../../dao/dao_job_event.dart';
 import '../../dao/dao_system.dart';
+import '../../entity/operating_hours.dart';
 import '../../entity/system.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
