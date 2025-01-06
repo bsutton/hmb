@@ -495,7 +495,7 @@ class OperatingHours {
   bool inOperatingHours(JobEvent event) {
     // 1) Check if the event is on a single day.
     //    If it spans multiple calendar days, return false (or handle specially).
-    if (event.start != event.end) {
+    if (event.start.toLocalDate() != event.end.toLocalDate()) {
       return false;
     }
 
