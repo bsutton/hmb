@@ -1,6 +1,6 @@
 dependency_overrides:
-  money2:
-    path: ../money2
+  calendar_view:
+    path: ../flutter_calendar_view
   # mailto:
   #   path: ../../mailto
   # future_builder_ex:

@@ -227,12 +227,11 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   }
 
   Future<LocalDate> _onPageChanged(LocalDate targetDate) async {
-    print('page changed to $targetDate');
     // If we just called jumpToDate() internally, skip this invocation.
     if (_isAdjustingPage) {
-      _isAdjustingPage = false;
       return currentFirstDateOnPage;
     }
+    print('onPageChanged targetDate $targetDate');
 
     // Determine if user swiped forward or backward
     final isForward = targetDate.isAfter(currentFirstDateOnPage);
@@ -262,9 +261,12 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
       // Prevent re-entrant calls
       _isAdjustingPage = true;
 
+      print('onPageChanged jumpToDate $targetDate');
       await _jumpToDate(targetDate);
+      _isAdjustingPage = false;
     }
     focusDate = currentFirstDateOnPage;
+    print('onPageChanged currentFirstDateOnPage $currentFirstDateOnPage');
     return currentFirstDateOnPage;
   }
 
@@ -404,7 +406,9 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
           await operatingHours.getNextOpenDate(LocalDate.today());
     }
     print('moving to $currentFirstDateOnPage');
+    _isAdjustingPage = true;
     await _jumpToDate(currentFirstDateOnPage);
+    _isAdjustingPage = false;
     setState(() {});
   }
 

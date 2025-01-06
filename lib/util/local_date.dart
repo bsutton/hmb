@@ -4,6 +4,7 @@ import 'package:strings/strings.dart';
 import 'package:time_machine/time_machine.dart' as tm;
 
 import 'date_time_ex.dart';
+import 'format.dart';
 import 'local_time.dart';
 
 /// Provides a class which wraps a DateTime but just supplies the date
@@ -103,6 +104,9 @@ class LocalDate {
 
     return LocalDate(tmDate.year, tmDate.monthOfYear, tmDate.dayOfMonth);
   }
+
+  @override
+  String toString() => formatLocalDate(this);
 }
 
 class LocalDateConverter implements JsonConverter<LocalDate, String> {
