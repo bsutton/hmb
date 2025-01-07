@@ -103,9 +103,9 @@ class SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
     if (_formKey.currentState!.validate()) {
       final system = await DaoSystem().get();
       // Save the form data
-      system.defaultHourlyRate =
-          MoneyEx.tryParse(_defaultHourlyRateController.text);
       system
+        ..defaultHourlyRate =
+            MoneyEx.tryParse(_defaultHourlyRateController.text)
         ..defaultBookingFee =
             MoneyEx.tryParse(_defaultBookingFeeController.text)
         ..bsb = _bsbController.text

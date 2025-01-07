@@ -54,8 +54,9 @@ class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
     if (_formKey.currentState!.validate()) {
       final system = await DaoSystem().get();
       // Save the form data
-      system.xeroClientId = _xeroClientIdController.text;
-      system.xeroClientSecret = _xeroClientSecretController.text;
+      system
+        ..xeroClientId = _xeroClientIdController.text
+        ..xeroClientSecret = _xeroClientSecretController.text;
 
       await DaoSystem().update(system);
 
