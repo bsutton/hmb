@@ -59,7 +59,7 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
 
   @override
   Future<void> asyncInitState() async {
-    system = (await DaoSystem().get())!;
+    system = await DaoSystem().get();
     operatingHours = system.getOperatingHours();
     await _loadEventsForDay();
   }

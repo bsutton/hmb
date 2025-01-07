@@ -52,7 +52,7 @@ class SystemBusinessScreenState extends AsyncState<SystemBusinessScreen, void> {
   Future<void> asyncInitState() async {
     setAppTitle('Business Details');
 
-    system = (await DaoSystem().get())!;
+    system = await DaoSystem().get();
 
     // 1. Populate existing fields
     _countryCodes = CountryCode.values;
@@ -207,9 +207,6 @@ class SystemBusinessScreenState extends AsyncState<SystemBusinessScreen, void> {
 
     // 1. Update fields in the System
     final localSystem = await DaoSystem().get();
-    if (localSystem == null) {
-      return false;
-    }
 
     localSystem
       ..businessName = _businessNameController!.text

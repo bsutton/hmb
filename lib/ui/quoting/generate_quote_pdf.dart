@@ -19,7 +19,7 @@ Future<File> generateQuotePdf(
   required bool displayGroupHeaders,
 }) async {
   final pdf = pw.Document();
-  final system = (await DaoSystem().get())!;
+  final system = await DaoSystem().get();
 
   final lines = await DaoQuoteLine().getByQuoteId(quote.id);
 

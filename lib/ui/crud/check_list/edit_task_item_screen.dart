@@ -125,7 +125,7 @@ class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen, System>
     June.getState(SelectedMeasurementType.new).selected = selectedDimensionType;
 
     final defaultDimensionType =
-        system!.preferredUnitSystem == PreferredUnitSystem.metric
+        system.preferredUnitSystem == PreferredUnitSystem.metric
             ? selectedDimensionType.defaultMetric
             : selectedDimensionType.defaultImperial;
 

@@ -203,7 +203,7 @@ MeasurementType getDefaultMeasurementType() => MeasurementType.length;
 Future<Units> getDefaultUnitForMeasurementType(
     MeasurementType measurementType) async {
   final system = await DaoSystem().get();
-  if ((system?.preferredUnitSystem ?? PreferredUnitSystem.metric) ==
+  if ((system.preferredUnitSystem ) ==
       PreferredUnitSystem.metric) {
     return measurementType.defaultMetric;
   } else {
@@ -214,7 +214,7 @@ Future<Units> getDefaultUnitForMeasurementType(
 Future<List<Units>> getUnitsForMeasurementType(
     MeasurementType measurementType) async {
   final system = await DaoSystem().get();
-  if ((system?.preferredUnitSystem ?? PreferredUnitSystem.metric) ==
+  if ((system.preferredUnitSystem ) ==
       PreferredUnitSystem.metric) {
     return measurementType.metric;
   } else {

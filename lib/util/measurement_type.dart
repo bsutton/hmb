@@ -109,7 +109,7 @@ Future<List<Units>> getUnitsForMeasurementType(
     MeasurementType measurementType) async {
   final system = await DaoSystem().get();
 
-  return system!.preferredUnitSystem == PreferredUnitSystem.metric
+  return system.preferredUnitSystem == PreferredUnitSystem.metric
       ? measurementType.metric
       : measurementType.imperial;
 }
@@ -118,7 +118,7 @@ Future<Units> getDefaultUnitForMeasurementType(
     MeasurementType measurementType) async {
   final system = await DaoSystem().get();
 
-  switch (system!.preferredUnitSystem) {
+  switch (system.preferredUnitSystem) {
     case PreferredUnitSystem.imperial:
       return measurementType.defaultImperial;
     case PreferredUnitSystem.metric:

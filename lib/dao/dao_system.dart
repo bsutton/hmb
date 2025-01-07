@@ -11,7 +11,7 @@ class DaoSystem extends Dao<System> {
   @override
   System fromMap(Map<String, dynamic> map) => System.fromMap(map);
 
-  Future<System?> get() async => getById(1);
+  Future<System> get() async => (await getById(1))!;
 
   @override
   String get tableName => 'system';
@@ -21,7 +21,7 @@ class DaoSystem extends Dao<System> {
   Future<Money> getHourlyRate() async {
     final system = await get();
 
-    return system?.defaultHourlyRate ?? Money.parse('100', isoCode: 'AUD');
+    return system.defaultHourlyRate ?? Money.parse('100', isoCode: 'AUD');
   }
 }
 

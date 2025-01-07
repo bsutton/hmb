@@ -67,7 +67,7 @@ Future<String> formatPhone(String? phone) async {
   String formatted;
 
   try {
-    final phoneNumber = phoneUtil.parse(phone, system!.countryCode ?? 'AU');
+    final phoneNumber = phoneUtil.parse(phone, system.countryCode ?? 'AU');
     formatted = phoneUtil.format(phoneNumber, PhoneNumberFormat.national);
     // ignore: avoid_catches_without_on_clauses
   } catch (e) {

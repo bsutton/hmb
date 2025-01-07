@@ -103,7 +103,7 @@ class _JobEditScreenState extends State<JobEditScreen>
       DaoSystem().get().then((system) {
         setState(() {
           _hourlyRateController.text =
-              system!.defaultHourlyRate?.amount.toString() ?? '0.00';
+              system.defaultHourlyRate?.amount.toString() ?? '0.00';
           _bookingFeeController.text =
               system.defaultBookingFee?.amount.toString() ?? '0.00';
         });
@@ -267,7 +267,7 @@ class _JobEditScreenState extends State<JobEditScreen>
   Widget _buildScheduleButton() => HMBButton(
       label: 'Schedule',
       onPressed: () async {
-        if ((await DaoSystem().get())!.getOperatingHours().noOpenDays()) {
+        if ((await DaoSystem().get()).getOperatingHours().noOpenDays()) {
           HMBToast.error(
               "Before you Schedule a job, you must first set your opening hours from the 'System | Business' page.");
           return;

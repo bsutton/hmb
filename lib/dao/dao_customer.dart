@@ -71,7 +71,7 @@ order by c.modifiedDate desc
 
     Money hourlyRate;
     if (customer?.hourlyRate == null) {
-      hourlyRate = (await DaoSystem().get())?.defaultHourlyRate ??
+      hourlyRate = (await DaoSystem().get()).defaultHourlyRate ??
           Money.fromInt(0, isoCode: 'AUD');
     } else {
       hourlyRate = customer?.hourlyRate ?? Money.fromInt(0, isoCode: 'AUD');

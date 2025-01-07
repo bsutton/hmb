@@ -232,7 +232,7 @@ where t.id =?
 
     final system = await DaoSystem().get();
 
-    if (system != null && system.defaultBookingFee != null) {
+    if (system.defaultBookingFee != null) {
       return system.defaultBookingFee!;
     }
 

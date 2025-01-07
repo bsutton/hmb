@@ -65,7 +65,7 @@ class SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
   Future<void> asyncInitState() async {
     setAppTitle('Billing');
     final system = await DaoSystem().get();
-    _defaultHourlyRateController.money = system!.defaultHourlyRate;
+    _defaultHourlyRateController.money = system.defaultHourlyRate;
     _defaultBookingFeeController.money = system.defaultBookingFee;
     _logoFile = system.logoPath;
     _logoAspectRatio = system.logoAspectRatio;
@@ -103,7 +103,7 @@ class SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
     if (_formKey.currentState!.validate()) {
       final system = await DaoSystem().get();
       // Save the form data
-      system!.defaultHourlyRate =
+      system.defaultHourlyRate =
           MoneyEx.tryParse(_defaultHourlyRateController.text);
       system
         ..defaultBookingFee =

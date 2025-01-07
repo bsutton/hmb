@@ -17,7 +17,7 @@ Future<File> generateInvoicePdf(
   required bool displayGroupHeaders,
 }) async {
   final pdf = pw.Document();
-  final system = (await DaoSystem().get())!;
+  final system = await DaoSystem().get();
   final lines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
 
   // Calculate the total amount from lines, excluding noChargeHidden lines

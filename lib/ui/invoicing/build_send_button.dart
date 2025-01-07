@@ -63,7 +63,7 @@ class BuildSendButton extends StatelessWidget {
                           '''Invoice #${invoice.bestNumber} ${job.summary}''',
                       filePath: filePath.path,
                       emailSubject:
-                          '''${system!.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
+                          '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
                       emailBody: '''
 ${contact!.firstName.trim()},
 Please find the attached invoice for your job.

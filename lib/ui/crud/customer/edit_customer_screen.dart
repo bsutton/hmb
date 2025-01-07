@@ -62,7 +62,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
       DaoSystem().get().then((system) {
         setState(() {
           _hourlyRateController.text =
-              system!.defaultHourlyRate?.amount.toString() ?? '0.00';
+              system.defaultHourlyRate?.amount.toString() ?? '0.00';
         });
       });
     }

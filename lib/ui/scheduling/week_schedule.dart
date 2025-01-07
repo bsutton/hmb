@@ -54,7 +54,7 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
 
   @override
   Future<void> asyncInitState() async {
-    system = (await DaoSystem().get())!;
+    system = await DaoSystem().get();
     operatingHours = system.getOperatingHours();
 
     showWeekends = operatingHours.openOnWeekEnd();

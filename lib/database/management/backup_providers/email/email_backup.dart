@@ -96,7 +96,7 @@ class EmailBackupProvider extends BackupProvider {
     try {
       final system = await DaoSystem().get();
 
-      if (Strings.isBlank(system?.emailAddress)) {
+      if (Strings.isBlank(system.emailAddress)) {
         throw BackupException(
             'Please enter the Notice/Backup Email address on the System page.');
       }
@@ -105,7 +105,7 @@ class EmailBackupProvider extends BackupProvider {
         body: 'Attached is the HMB database backup.',
         subject: 'HMB Database Backup',
         recipients: [
-          system!.emailAddress!
+          system.emailAddress!
         ], // Replace with the recipient's email address
         attachmentPaths: [pathToZippedBackup],
       );

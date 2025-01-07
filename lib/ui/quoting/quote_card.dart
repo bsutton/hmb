@@ -244,7 +244,7 @@ class _QuoteCardState extends State<QuoteCard> {
                   builder: (context) => PdfPreviewScreen(
                     title: '''Quote #${quote.bestNumber} ${job!.summary}''',
                     filePath: filePath.path,
-                    emailSubject: '${system!.businessName ?? 'Your'} quote',
+                    emailSubject: '${system.businessName ?? 'Your'} quote',
                     emailBody: 'Please find the attached Quotation',
                     emailRecipients: emailRecipients,
                     onSent: () async {},

@@ -39,6 +39,6 @@ class SignatureHolder extends PlaceHolder<String, String> {
   Future<String> _fetchSignature() async {
     final system = await DaoSystem().get();
     return '''
-${system?.firstname ?? ''} ${system?.surname ?? ''}\n${system?.businessName ?? ''}''';
+${system.firstname ?? ''} ${system.surname ?? ''}\n${system.businessName ?? ''}''';
   }
 }

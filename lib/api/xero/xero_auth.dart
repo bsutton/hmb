@@ -147,8 +147,7 @@ class XeroAuth2 {
   Future<XeroCredentials> _fetchCredentials() async {
     final system = await DaoSystem().get();
 
-    if (system == null ||
-        Strings.isBlank(system.xeroClientId) ||
+    if (Strings.isBlank(system.xeroClientId) ||
         Strings.isBlank(system.xeroClientSecret)) {
       throw InvoiceException('''
 The Xero credentials are not set. Go to the System screen and set them.''');

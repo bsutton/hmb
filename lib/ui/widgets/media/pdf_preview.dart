@@ -37,7 +37,7 @@ class PdfPreviewScreen extends StatelessWidget {
         context: context,
         builder: (context) => EmailDialog(
           emailRecipients: emailRecipients,
-          system: system!,
+          system: system,
           filePath: filePath,
           subject: emailSubject,
           body: emailBody,

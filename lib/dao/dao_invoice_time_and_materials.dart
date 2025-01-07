@@ -28,7 +28,7 @@ Future<Invoice> createTimeAndMaterialsInvoice(
       jobId: job.id,
       totalAmount: totalAmount,
       dueDate:
-          LocalDate.today().add(Duration(days: system!.paymentTermsInDays)));
+          LocalDate.today().add(Duration(days: system.paymentTermsInDays)));
 
   final invoiceId = await DaoInvoice().insert(invoice);
 

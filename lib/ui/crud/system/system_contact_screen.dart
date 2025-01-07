@@ -55,7 +55,7 @@ class SystemContactInformationScreenState
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Business Contacts');
-    system = (await DaoSystem().get())!;
+    system = await DaoSystem().get();
 
     _addressLine1Controller = TextEditingController(text: system.addressLine1);
     _addressLine2Controller = TextEditingController(text: system.addressLine2);
@@ -95,7 +95,7 @@ class SystemContactInformationScreenState
     if (_formKey.currentState!.validate()) {
       final system = await DaoSystem().get();
       // Save the form data
-      system!
+      system
         ..firstname = _firstNameController?.text // Save first name
         ..surname = _surnameController?.text // Save surname
         ..addressLine1 = _addressLine1Controller?.text
