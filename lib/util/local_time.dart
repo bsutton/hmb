@@ -71,7 +71,24 @@ class LocalTime {
       DateTime(date.year, date.month, date.day, hour, minute, second);
 
   @override
+  bool operator ==(covariant LocalTime other) {
+    /// hour == 0 an hour == 24 are both 12 am.
+    final thisHour = hour == 0 ? 24 : hour;
+    final otherHour = other.hour == 0 ? 24 : other.hour;
+
+    return thisHour == otherHour &&
+        minute == other.minute &&
+        second == other.second;
+  }
+
+  @override
   String toString() => formatLocalTime(this);
+
+  @override
+  int get hashCode =>
+
+      /// hour == 0 an hour == 24 are both 12 am.
+      Object.hashAll([if (hour == 0) 24 else hour, minute, second]);
 }
 
 class LocalTimeConverter implements JsonConverter<LocalTime, String> {

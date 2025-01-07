@@ -1,13 +1,18 @@
 // job_event.dart (Entity)
 
+import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
 import 'entity.dart';
 
 enum JobEventStatus {
-  proposed,
-  confirmed,
-  tentative;
+  tentative(Colors.orange),
+  proposed(Colors.blue),
+  confirmed(Colors.green);
+
+  const JobEventStatus(this.color);
+
+  final Color color;
 
   static JobEventStatus fromName(String name) {
     switch (name) {

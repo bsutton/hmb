@@ -1,5 +1,4 @@
 import 'package:calendar_view/calendar_view.dart';
-import 'package:flutter/material.dart';
 
 import '../../dao/dao_job.dart';
 import '../../entity/job.dart';
@@ -28,11 +27,10 @@ class JobEventEx {
         date: jobEvent.start.withoutTime,
         startTime: jobEvent.start,
         endTime: jobEvent.end,
-        color: jobEvent.status == JobEventStatus.confirmed
-            ? Colors.green
-            : jobEvent.status == JobEventStatus.tentative
-                ? Colors.orange
-                : Colors.blue,
+        color: jobEvent.status.color,
         event: this,
       );
+
+  int get durationInMinutes =>
+      jobEvent.end.difference(jobEvent.start).inMinutes;
 }

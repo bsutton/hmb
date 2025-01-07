@@ -166,14 +166,14 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
     if (widget.showExtendedHours || hasEventsInExtendedHours) {
       return 24;
     }
-    return min(24, _getLatestFinish(currentDate) + 2);
+    return min(24, _getLatestFinish(currentDate) + 1);
   }
 
   int _getStartHour() {
     if (widget.showExtendedHours || hasEventsInExtendedHours) {
       return 0;
     }
-    return max(0, _getEarliestStart(currentDate) - 2);
+    return max(0, _getEarliestStart(currentDate) - 1);
   }
 
   /// find the latest finishing hour across the week.

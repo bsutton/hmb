@@ -14,6 +14,7 @@ import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../../util/local_time.dart';
 import '../widgets/async_state.dart';
+import '../widgets/circle.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
@@ -71,6 +72,7 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
 
   /// Fetch events for [currentDate] from DB
   Future<void> _loadEventsForDay() async {
+    print('loadingDays');
     // Set a date range: midnight -> midnight next day
     final start = currentDate;
     final end = start.add(const Duration(days: 1));
@@ -96,11 +98,13 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
           color: SurfaceElevation.e16.color));
     }
     hasEventsInExtendedHours = _hasEventsInExtendedHours;
+    print('extened hours: $hasEventsInExtendedHours');
 
     if (mounted) {
       _dayController
         ..clear()
         ..addAll(eventData);
+      setState(() {});
     }
   }
 
@@ -109,28 +113,44 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
         controller: _dayController,
         child: FutureBuilderEx(
           future: initialised,
-          builder: (context, _) => DayView<JobEventEx>(
-            onPageChange: (date, _) async => _onPageChange(date),
-            startHour: _getStartHour(),
-            endHour: _getEndHour(),
-            key: widget.dayKey,
-            // key: ValueKey(currentDate),
-            initialDay: currentDate.toDateTime(),
-            dateStringBuilder: dayTitle,
-            // eventTileBuilder: (date, events, boundary, start, end) =>
-            //     _buildDayTiles(events),
-            timeStringBuilder: (date, {secondaryDate}) =>
-                formatTime(date, 'ha').toLowerCase(),
-            timeLineWidth: 58,
-            fullDayEventBuilder: (events, date) => const Text(
-              'Full Day Event',
-              style: TextStyle(color: Colors.white),
-            ),
-            headerStyle: widget.headerStyle(),
-            backgroundColor: Colors.black,
-            onDateTap: _onDateTap,
-            onEventTap: _onEventTap,
-          ),
+          builder: (context, _) {
+            late final DayView<JobEventEx> dayView;
+
+            // ignore: join_return_with_assignment
+            dayView = DayView<JobEventEx>(
+              onPageChange: (date, _) async => _onPageChange(date),
+              startHour: _getStartHour(),
+              endHour: _getEndHour(),
+              key: widget.dayKey,
+              // key: ValueKey(currentDate),
+              initialDay: currentDate.toDateTime(),
+              dateStringBuilder: dayTitle,
+              // eventTileBuilder: (date, events, boundary, start, end) =>
+              //     _buildDayTiles(events),
+              timeStringBuilder: (date, {secondaryDate}) =>
+                  formatTime(date, 'ha').toLowerCase(),
+              heightPerMinute: 1.5,
+
+              eventTileBuilder: (
+                date,
+                events,
+                boundary,
+                startDuration,
+                endDuration,
+              ) =>
+                  _buildEventCard(dayView, events.first),
+              timeLineWidth: 58,
+              fullDayEventBuilder: (events, date) => const Text(
+                'Full Day Event',
+                style: TextStyle(color: Colors.white),
+              ),
+              headerStyle: widget.headerStyle(),
+              backgroundColor: Colors.black,
+              onDateTap: _onDateTap,
+              onEventTap: _onEventTap,
+            );
+            return dayView;
+          },
         ),
       );
 
@@ -199,25 +219,37 @@ class _DayScheduleState extends AsyncState<DaySchedule, void> {
   //     );
 
   /// A card for each event, using a [FutureBuilderEx] to fetch job+customer
-  Widget _buildEventCard(CalendarEventData<JobEventEx> event) {
+  Widget _buildEventCard(DayView view, CalendarEventData<JobEventEx> event) {
     final job = event.event?.job;
     if (job == null) {
       return const SizedBox();
     }
 
+    final jobEvent = event.event;
+
     return FutureBuilderEx<JobAndCustomer>(
       // ignore: discarded_futures
       future: JobAndCustomer.fetch(job),
-      builder: (context, jobAndCustomer) => Card(
-        color: Colors.blue,
-        child: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: Row(
-            children: [
-              HMBTextLine(jobAndCustomer!.job.summary),
-              const HMBSpacer(width: true),
-              HMBTextLine(jobAndCustomer.customer.name),
-            ],
+      builder: (context, jobAndCustomer) => SizedBox(
+        height: view.heightPerMinute * (jobEvent?.durationInMinutes ?? 15),
+        child: Card(
+          color: SurfaceElevation.e6.color,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Align(
+                alignment: Alignment.topLeft,
+                child: Row(
+                  children: [
+                    if (jobEvent != null)
+                      Circle(
+                          color: jobEvent.jobEvent.status.color,
+                          child: const Text('')),
+                    const SizedBox(width: 5),
+                    HMBTextLine(jobAndCustomer!.job.summary),
+                    const HMBSpacer(width: true),
+                    HMBTextLine(jobAndCustomer.customer.name),
+                  ],
+                )),
           ),
         ),
       ),

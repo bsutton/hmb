@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
@@ -21,6 +22,7 @@ import '../../../util/local_date.dart';
 import '../../../util/money_ex.dart';
 import '../../../util/platform_ex.dart';
 import '../../scheduling/schedule_page.dart';
+import '../../widgets/circle.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_child_crud_card.dart';
@@ -314,11 +316,9 @@ class _JobEditScreenState extends State<JobEditScreen>
           future: DaoJobEvent().getByJob(widget.job!.id),
           builder: (context, jobEvents) {
             final nextEvent = _nextEvent(jobEvents!);
-            return HMBButton(
-              label: 'Events: ${_nextEventWhen(jobEvents)}',
-              color: nextEvent != null && _isToday(nextEvent.start)
-                  ? Colors.orangeAccent
-                  : Colors.white,
+            final nextEventWhen =
+                nextEvent == null ? '' : formatDateTimeAM(nextEvent.start);
+            return ElevatedButton(
               onPressed: () async {
                 // Find the next upcoming event
                 if (mounted) {
@@ -345,29 +345,59 @@ class _JobEditScreenState extends State<JobEditScreen>
                   }
                 }
               },
+              child: Row(
+                children: [
+                  if (nextEvent != null)
+                    Circle(
+                        color: nextEvent.status.color, child: const Text('')),
+                  const SizedBox(width: 5),
+                  Text('Events: $nextEventWhen',
+                      style: TextStyle(
+                        color: nextEvent != null && _isToday(nextEvent.start)
+                            ? Colors.orangeAccent
+                            : Colors.white,
+                      ))
+                ],
+              ),
             );
           }));
 
-  Future<JobEvent?> showEventDialog(List<JobEvent> jobEvents) async =>
-      showDialog<JobEvent>(
-        context: context,
-        builder: (context) => SimpleDialog(
-          title: const Text('Open an Event'),
-          children: [
-            // "Next Event" first, if any
+  ///
+  /// show event Dialog
+  ///
+  Future<JobEvent?> showEventDialog(List<JobEvent> jobEvents) async {
+    final today = DateTime.now().withoutTime;
+    return showDialog<JobEvent>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Open an Event'),
+        children: [
+          // "Next Event" first, if any
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(context).pop(_nextEvent(jobEvents)),
+            child: Text('Next Event: ${_nextEventWhen(jobEvents)}'),
+          ),
+
+          // Then list all
+          for (final jobEvent in jobEvents)
             SimpleDialogOption(
-              onPressed: () => Navigator.of(context).pop(_nextEvent(jobEvents)),
-              child: Text('Next Event: ${_nextEventWhen(jobEvents)}'),
-            ),
-            // Then list all
-            for (final e in jobEvents)
-              SimpleDialogOption(
-                onPressed: () => Navigator.of(context).pop(e),
-                child: Text(_eventDisplay(e)),
+              onPressed: () => Navigator.of(context).pop(jobEvent),
+              child: Row(
+                children: [
+                  Circle(color: jobEvent.status.color, child: const Text('')),
+                  const SizedBox(width: 5),
+                  Text(_eventDisplay(jobEvent),
+                      style: TextStyle(
+                          decoration: (jobEvent.start.isBefore(today))
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none)),
+                ],
               ),
-          ],
-        ),
-      );
+            ),
+        ],
+      ),
+    );
+  }
 
   String _nextEventWhen(List<JobEvent> jobEvents) {
     final next = _nextEventDate(jobEvents);
@@ -390,7 +420,7 @@ class _JobEditScreenState extends State<JobEditScreen>
 
   bool _isToday(DateTime nextEvent) => nextEvent.toLocalDate().isToday;
 
-  String _eventDisplay(JobEvent e) => '◌ ${formatDateTimeAM(e.start)}';
+  String _eventDisplay(JobEvent e) => formatDateTimeAM(e.start);
 
   @override
   Future<Job> forUpdate(Job job) async => Job.forUpdate(

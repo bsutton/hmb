@@ -7,6 +7,7 @@ import '../../util/date_time_ex.dart';
 import '../../util/format.dart'; // For formatTime() or similar
 import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
+import '../widgets/circle.dart';
 import '../widgets/surface.dart';
 import 'job_event_ex.dart';
 import 'schedule_helper.dart';
@@ -163,21 +164,18 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
       List<CalendarEventData<JobEventEx>> events,
       Color backgroundColour,
       {required Color color}) {
-    final widgets = <Widget>[];
-
-    if (events.isEmpty) {
-      widgets.add(Center(
+    final widgets = <Widget>[
+      Center(
         child: Text(
           '${date.day}',
           style: TextStyle(
-            color: isToday ? Colors.yellow : color, // Text color
+            color: isToday ? Colors.purpleAccent : color, // Text color
           ),
         ),
-      ));
-    } else {
-      for (final event in events) {
-        widgets.add(_renderEvent(monthView, event, backgroundColour));
-      }
+      )
+    ];
+    for (final event in events) {
+      widgets.add(_renderEvent(monthView, event, backgroundColour));
     }
     return widgets;
   }
@@ -195,10 +193,16 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
           monthView.onEventTap?.call(event, event.startTime!);
         }
       },
-      child: Text(
-          '${formatTime(event.startTime!, 'h:mm a')} ${event.event!.job.summary}',
-          style:
-              TextStyle(color: fontColor, backgroundColor: backgroundColour)),
+      child: Row(
+        children: [
+          Circle(
+              color: event.event?.jobEvent.status.color ?? Colors.white,
+              child: const Text('')),
+          Text('${formatTime(event.startTime!, 'h:mm a').toLowerCase()} ',
+              style: TextStyle(
+                  color: fontColor, backgroundColor: backgroundColour)),
+        ],
+      ),
     );
   }
 }

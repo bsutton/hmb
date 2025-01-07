@@ -9,7 +9,9 @@ import '../../dao/dao_job_status.dart';
 import '../../entity/contact.dart';
 import '../../entity/job.dart';
 import '../../entity/job_event.dart';
+import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
+import '../../util/local_time.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
 import '../widgets/layout/hmb_spacer.dart';
@@ -198,7 +200,22 @@ class _JobEventDialogState extends State<JobEventDialog> {
         items: JobEventStatus.values
             .map((status) => DropdownMenuItem(
                   value: status,
-                  child: Text(Strings.toProperCase(status.name)),
+                  child: Row(
+                    children: [
+                      // Colored circle
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: status.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8), // Spacing
+                      // Text
+                      Text(Strings.toProperCase(status.name)),
+                    ],
+                  ),
                 ))
             .toList(),
         onChanged: (value) => setState(() => _status = value!),
@@ -254,7 +271,9 @@ class _JobEventDialogState extends State<JobEventDialog> {
   HMBDateTimeField _buildEventDate(BuildContext context) => HMBDateTimeField(
       showTime: false,
       label: 'Event Date',
+      labelWidth: 100,
       initialDateTime: _startDate,
+      width: 200,
       onChanged: (date) {
         setState(() {
           _startDate = DateTime(date.year, date.month, date.day,
@@ -263,31 +282,42 @@ class _JobEventDialogState extends State<JobEventDialog> {
           _endDate = DateTime(
               date.year, date.month, date.day, _endDate.hour, _endDate.minute);
         });
+      },
+      validator: (date) {
+        if (date == null) {
+          return 'You must select a Start Date';
+        }
+        return null;
       });
 
   /// End Date
   HMBDateTimeField _buildEndDate(BuildContext context) => HMBDateTimeField(
-        showDate: false,
-        label: 'End Date',
-        initialDateTime: _endDate,
-        onChanged: (date) {
-          if (date.isBefore(_startDate)) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('End date occurs before start date.'),
-              ),
-            );
-            return;
-          }
-          setState(() => _endDate = date);
-        },
-      );
+      showDate: false,
+      label: 'End Date',
+      labelWidth: 100,
+      initialDateTime: _endDate,
+      width: 200,
+      onChanged: (date) {
+        setState(() => _endDate = date);
+      },
+      validator: (date) {
+        if (date == null) {
+          return 'You must select and End Date';
+        }
+        if (date.isBefore(_startDate)) {
+          return 'Must be before start date.';
+        } else {
+          return null;
+        }
+      });
 
   /// Start Date
   HMBDateTimeField _buildStartDate() => HMBDateTimeField(
         showDate: false,
         label: 'Start Date',
+        labelWidth: 100,
         initialDateTime: _startDate,
+        width: 200,
         onChanged: (date) {
           if (date.isAfter(_endDate)) {
             _endDate = date.add(const Duration(hours: 1));
@@ -303,6 +333,7 @@ class _JobEventDialogState extends State<JobEventDialog> {
         .pop(JobEventUpdateAction(EditAction.delete, widget.event!.event));
   }
 
+  /// Save Event
   Future<void> _handleSave() async {
     if (!(_form.currentState?.validate() ?? true)) {
       return;
@@ -313,6 +344,19 @@ class _JobEventDialogState extends State<JobEventDialog> {
         const SnackBar(content: Text('Please select a job for the event.')),
       );
       return;
+    }
+
+    if (_startDate.isAfterOrEqual(_endDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('The end time must be after the start time.')));
+      return;
+    }
+
+    /// To ensure that the end date is on the same day as the start
+    /// date, if the user chooses 12am (midnight) as the end date
+    /// we roll it back 1 minute so it falls on the same day.
+    if (_endDate.toLocalTime() == const LocalTime(hour: 24, minute: 00)) {
+      _endDate = _endDate.subtract(const Duration(minutes: 1));
     }
 
     // Check for overlapping events

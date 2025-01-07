@@ -8,4 +8,6 @@ extension DateTimeEx on DateTime {
 
   bool get isWeekEnd =>
       weekday - 1 == DayName.sat.index || weekday - 1 == DayName.sun.index;
+
+  bool isAfterOrEqual(DateTime other) => isAfter(other) || this == other;
 }
