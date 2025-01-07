@@ -43,7 +43,6 @@ class MonthSchedule extends StatefulWidget with ScheduleHelper {
 
 class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
   late final EventController<JobEventEx> _monthController;
-  CalendarEventData<JobEventEx>? _draggingEvent;
 
   late LocalDate currentDate;
   late bool showWeekends;
@@ -213,12 +212,6 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
       fontColor = Colors.orange;
     }
     return GestureDetector(
-      onLongPressStart: (details) async {
-        setState(() {
-          _draggingEvent = event;
-        });
-        await _showDraggingAvatar(context, event, details.globalPosition);
-      },
       onTap: () async {
         if (monthView.onEventTap != null) {
           monthView.onEventTap?.call(event, event.startTime!);
@@ -236,97 +229,5 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
         ],
       ),
     );
-  }
-
-  Future<void> _showDraggingAvatar(BuildContext context,
-      CalendarEventData<JobEventEx> event, Offset initialPosition) async {
-    // Create an overlay entry for the drag avatar
-    OverlayEntry? overlayEntry;
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        left: initialPosition.dx,
-        top: initialPosition.dy,
-        child: Material(
-          elevation: 8,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            color: event.color.withOpacity(0.8),
-            child: Text(event.title),
-          ),
-        ),
-      ),
-    );
-
-    // Insert the overlay entry
-    Overlay.of(context).insert(overlayEntry);
-
-    // Handle drag updates
-    void onDragUpdate(DragUpdateDetails details) {
-      overlayEntry?.markNeedsBuild();
-    }
-
-    // Handle drag end
-    void onDragEnd(DraggableDetails details) {
-      overlayEntry?.remove();
-      overlayEntry = null;
-
-      // Determine the drop target and update the event
-      final dropDate = _determineDropDate(details.offset);
-      if (dropDate != null) {
-        _updateEventDate(event, dropDate);
-      }
-
-      setState(() {
-        _draggingEvent = null;
-      });
-    }
-
-    // Show the drag avatar and start listening for updates
-    await showDialog(
-      context: context,
-      barrierColor: Colors.transparent,
-      builder: (context) => Draggable(
-        feedback:
-            const SizedBox.shrink(), // We are already showing a custom avatar
-        onDragUpdate: onDragUpdate,
-        onDragEnd: onDragEnd,
-        child: const SizedBox.shrink(), // This child is not used, but required
-      ),
-    );
-  }
-
-  DateTime? _determineDropDate(Offset offset) {
-    final monthView =
-        widget.monthKey.currentContext?.findRenderObject() as RenderBox?;
-    if (monthView == null) return null;
-
-    final localOffset = monthView.globalToLocal(offset);
-    final cellSize = monthView.size.width / 7; // Assuming 7 days a week
-    final row = (localOffset.dy / cellSize).floor();
-    final col = (localOffset.dx / cellSize).floor();
-
-    // Calculate the new date based on the row and column
-    // This is a simplified example and may need adjustments
-    final initialDate = DateTime(currentDate.year, currentDate.month);
-    final day = row * 7 + col - initialDate.weekday + 1;
-    return DateTime(currentDate.year, currentDate.month, day);
-  }
-
-  void _updateEventDate(CalendarEventData<JobEventEx> event, DateTime newDate) {
-    // Update the event's date in your data source
-    // ...
-
-    // Update the event in the EventController
-    setState(() {
-      _monthController.remove(event);
-      final updatedEvent = event.copyWith(
-        date: newDate,
-        startTime: DateTime(newDate.year, newDate.month, newDate.day,
-            event.startTime!.hour, event.startTime!.minute),
-        endTime: DateTime(newDate.year, newDate.month, newDate.day,
-            event.endTime!.hour, event.endTime!.minute),
-      );
-      _monthController.add(updatedEvent);
-    });
   }
 }
