@@ -14,20 +14,27 @@ import '../widgets/circle.dart';
 import '../widgets/surface.dart';
 import 'job_event_ex.dart';
 import 'schedule_helper.dart';
+import 'schedule_page.dart';
 
 /// A single-month view of events
 class MonthSchedule extends StatefulWidget with ScheduleHelper {
-  const MonthSchedule(this.initialDate,
-      {required this.onPageChange,
-      required this.defaultJob,
-      required this.monthKey,
-      required this.showWeekends,
-      super.key});
+  const MonthSchedule(
+    this.initialDate, {
+    required this.onPageChange,
+    required this.defaultJob,
+    required this.monthKey,
+    required this.showWeekends,
+    required this.schedulePageState,
+    super.key,
+  });
 
   final LocalDate initialDate;
   final int? defaultJob;
   final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
+
   final GlobalKey<MonthViewState<JobEventEx>> monthKey;
+  final SchedulePageState schedulePageState;
+
   final bool showWeekends;
 
   @override
@@ -179,11 +186,15 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
       Color backgroundColour,
       {required Color color}) {
     final widgets = <Widget>[
-      Center(
-        child: Text(
-          '${date.day}',
-          style: TextStyle(
-            color: isToday ? Colors.purpleAccent : color, // Text color
+      GestureDetector(
+        onTap: () => widget.schedulePageState
+            .showDateOnView(ScheduleView.week, date.toLocalDate()),
+        child: Center(
+          child: Text(
+            '${date.day}',
+            style: TextStyle(
+              color: isToday ? Colors.purpleAccent : color, // Text color
+            ),
           ),
         ),
       )

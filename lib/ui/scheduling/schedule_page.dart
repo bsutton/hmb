@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -27,6 +29,15 @@ import 'week_schedule.dart'; // Our WeekSchedule stateful widget
 
 /// The enum for the three possible views
 enum ScheduleView { month, week, day }
+
+/// Calculate the date for the given page index.
+/// The PageView controller doesn't accept -ve page index
+/// so we need to offset the page indexes to an arbitrary
+/// point in time. The user will not be able to scroll back
+/// before this point in time.
+/// We need to align to a monday so that week alignment works as
+/// expected.
+final _referenceDate = LocalDate(2000, 1, 3);
 
 /// A convenience data class for combining a [Job] and its [Customer].
 class JobAndCustomer {
@@ -65,19 +76,13 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
   final int? initialEventId;
 
   @override
-  State<SchedulePage> createState() => _SchedulePageState();
+  State<SchedulePage> createState() => SchedulePageState();
 }
 
-/// Calculate the date for the given page index.
-/// The PageView controller doesn't accept -ve page index
-/// so we need to offset the page indexes to an arbitrary
-/// point in time. The user will not be able to scroll back
-/// before this point in time.
-/// We need to align to a monday so that week alignment works as
-/// expected.
-final _referenceDate = LocalDate(2000, 1, 3);
-
-class _SchedulePageState extends AsyncState<SchedulePage, void> {
+///
+/// [SchedulePageState]
+///
+class SchedulePageState extends AsyncState<SchedulePage, void> {
   late ScheduleView selectedView;
   bool showExtendedHours = false;
 
@@ -126,6 +131,11 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
       }
     }
     await _initPage();
+  }
+
+  void showDateOnView(ScheduleView view, LocalDate date) {
+    selectedView = view;
+    unawaited(_onPageChanged(date));
   }
 
   /// Initialize the page controller with the correct starting index:
@@ -188,6 +198,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   Widget _buildCalendar() {
     final calendarViews = <Widget>[
       MonthSchedule(
+          schedulePageState: this,                                                                                                                                                                                                                                                                                                                                              
           monthKey: monthKey,
           currentFirstDateOnPage,
           onPageChange: (date) async => _onPageChanged(date),
