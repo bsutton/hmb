@@ -1,7 +1,9 @@
 import 'dart:convert';
+
 import '../dao/dao_job_event.dart';
 import '../util/date_time_ex.dart';
 import '../util/local_date.dart';
+import '../util/local_time.dart';
 import 'job_event.dart';
 import 'operating_day.dart';
 import 'system.dart';
@@ -172,4 +174,9 @@ class OperatingHours {
 
     return true;
   }
+
+  /// Returns the opening time for the given date
+  /// or 7am if no stated openting time.
+  LocalTime openingTime(LocalDate date) =>
+      day(DayName.fromDate(date)).start ?? const LocalTime(hour: 7, minute: 0);
 }

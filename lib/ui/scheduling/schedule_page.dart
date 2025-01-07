@@ -20,6 +20,7 @@ import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'day_schedule.dart'; // Our DaySchedule stateful widget
 import 'desktop_swipe.dart';
+import 'job_event_ex.dart';
 import 'month_schedule.dart'; // Our MonthSchedule stateful widget
 import 'schedule_helper.dart';
 import 'week_schedule.dart'; // Our WeekSchedule stateful widget
@@ -80,7 +81,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
   late ScheduleView selectedView;
   bool showExtendedHours = false;
 
-  final monthKey = GlobalKey<MonthViewState>();
+  final monthKey = GlobalKey<MonthViewState<JobEventEx>>();
   final weekKey = GlobalKey<WeekViewState>();
   final dayKey = GlobalKey<DayViewState>();
 
@@ -116,7 +117,7 @@ class _SchedulePageState extends AsyncState<SchedulePage, void> {
 
   @override
   Future<void> asyncInitState() async {
-    operatingHours = (await DaoSystem().get())!.getOperatingHours();
+    operatingHours = (await DaoSystem().get()).getOperatingHours();
     if (operatingHours.noOpenDays()) {
       HMBToast.error(
           "Before you Schedule a job, you must first set your opening hours from the 'System | Business' page.");
