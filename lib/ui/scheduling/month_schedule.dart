@@ -216,6 +216,7 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
       child: Row(
         children: [
           Circle(
+              diameter: 15,
               color: event.event?.jobEvent.status.color ?? Colors.white,
               child: const Text('')),
           Text('${formatTime(event.startTime!, 'h:mm a').toLowerCase()} ',
