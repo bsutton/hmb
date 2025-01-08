@@ -102,6 +102,7 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
           ]),
           HMBDateTimeField(
             label: 'Stop:',
+            mode: HMBDateTimeFieldMode.dateAndTime,
             initialDateTime: selectedDate,
             onChanged: (date) {
               setState(() {

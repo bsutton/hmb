@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 // Example imports (replace with your actual ones):
-import '../../dao/dao_job_event.dart';
+import '../../dao/dao_job_activity.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/operating_hours.dart';
 import '../../entity/system.dart';
@@ -13,10 +13,10 @@ import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
-import 'job_event_ex.dart';
+import 'job_activity_ex.dart';
 import 'schedule_helper.dart';
 
-/// A single-week view of events
+/// A single-week view of activities
 class WeekSchedule extends StatefulWidget with ScheduleHelper {
   const WeekSchedule(
     this.initialDate, {
@@ -38,11 +38,11 @@ class WeekSchedule extends StatefulWidget with ScheduleHelper {
 }
 
 class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
-  late final EventController<JobEventEx> _weekController;
+  late final EventController<JobActivityEx> _weekController;
   late final System system;
   late final bool showWeekends;
   late final OperatingHours operatingHours;
-  late bool hasEventsInExtendedHours;
+  late bool hasActivitiesInExtendedHours;
   late LocalDate currentDate;
 
   @override
@@ -59,7 +59,7 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
 
     showWeekends = operatingHours.openOnWeekEnd();
 
-    await _loadEventsForWeek();
+    await _loadActivitiesForWeek();
   }
 
   @override
@@ -74,31 +74,32 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
     super.dispose();
   }
 
-  Future<void> _loadEventsForWeek() async {
+  Future<void> _loadActivitiesForWeek() async {
     final startOfWeek = _mondayOf(currentDate);
     final endOfWeek = startOfWeek.add(const Duration(days: 7));
 
-    final dao = DaoJobEvent();
-    final jobEvents = await dao.getEventsInRange(startOfWeek, endOfWeek);
+    final dao = DaoJobActivity();
+    final jobActivities = await dao.getActivitiesInRange(startOfWeek, endOfWeek);
 
-    var _hasEventsInExtendedHours = false;
+    var _hasActivitiesInExtendedHours = false;
 
-    final eventData = <CalendarEventData<JobEventEx>>[];
-    for (final jobEvent in jobEvents) {
+    final eventData = <CalendarEventData<JobActivityEx>>[];
+    for (final jobActivity in jobActivities) {
       var fontColor = Colors.white;
-      if (widget.defaultJob == jobEvent.jobId) {
+      if (widget.defaultJob == jobActivity.jobId) {
         fontColor = Colors.orange;
       }
-      _hasEventsInExtendedHours = _hasEventsInExtendedHours ||
-          !operatingHours.inOperatingHours(jobEvent);
+      _hasActivitiesInExtendedHours = _hasActivitiesInExtendedHours ||
+          !operatingHours.inOperatingHours(jobActivity);
 
-      eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData.copyWith(
-            titleStyle: TextStyle(color: fontColor, fontSize: 13),
-            descriptionStyle: TextStyle(color: fontColor, fontSize: 13),
-          ));
+      eventData
+          .add((await JobActivityEx.fromActivity(jobActivity)).eventData.copyWith(
+                titleStyle: TextStyle(color: fontColor, fontSize: 13),
+                descriptionStyle: TextStyle(color: fontColor, fontSize: 13),
+              ));
     }
 
-    hasEventsInExtendedHours = _hasEventsInExtendedHours;
+    hasActivitiesInExtendedHours = _hasActivitiesInExtendedHours;
 
     /// Occasionally when moving this can get called
     /// after we are demounted.
@@ -121,11 +122,12 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
   }
 
   @override
-  Widget build(BuildContext context) => CalendarControllerProvider<JobEventEx>(
+  Widget build(BuildContext context) =>
+      CalendarControllerProvider<JobActivityEx>(
         controller: _weekController,
         child: FutureBuilderEx(
             future: initialised,
-            builder: (context, _) => WeekView<JobEventEx>(
+            builder: (context, _) => WeekView<JobActivityEx>(
                   key: widget.weekKey,
 
                   startHour: _getStartHour(),
@@ -139,18 +141,18 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
                   weekTitleHeight: 60,
                   showWeekends: widget.showExtendedHours ||
                       showWeekends ||
-                      hasEventsInExtendedHours,
+                      hasActivitiesInExtendedHours,
                   backgroundColor: Colors.black,
                   headerStringBuilder: widget.dateStringBuilder,
                   eventTileBuilder: _defaultEventTileBuilder,
                   onPageChange: (date, index) async => _onPageChange(date),
                   onDateTap: (date) async {
-                    await widget.addEvent(context, date, widget.defaultJob);
-                    await _loadEventsForWeek();
+                    await widget.addActivity(context, date, widget.defaultJob);
+                    await _loadActivitiesForWeek();
                   },
                   onEventTap: (events, date) async {
-                    await widget.onEventTap(context, events.first);
-                    await _loadEventsForWeek();
+                    await widget.onActivityTap(context, events.first);
+                    await _loadActivitiesForWeek();
                   },
                 )),
       );
@@ -159,18 +161,18 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
     final revisedDate = await widget.onPageChange(date.toLocalDate());
 
     currentDate = revisedDate;
-    await _loadEventsForWeek();
+    await _loadActivitiesForWeek();
   }
 
   int _getEndHour() {
-    if (widget.showExtendedHours || hasEventsInExtendedHours) {
+    if (widget.showExtendedHours || hasActivitiesInExtendedHours) {
       return 24;
     }
     return min(24, _getLatestFinish(currentDate) + 1);
   }
 
   int _getStartHour() {
-    if (widget.showExtendedHours || hasEventsInExtendedHours) {
+    if (widget.showExtendedHours || hasActivitiesInExtendedHours) {
       return 0;
     }
     return max(0, _getEarliestStart(currentDate) - 1);
@@ -228,7 +230,7 @@ class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
 
   Widget _defaultEventTileBuilder(
     DateTime date,
-    List<CalendarEventData<JobEventEx>> events,
+    List<CalendarEventData<JobActivityEx>> events,
     Rect boundary,
     DateTime startDuration,
     DateTime endDuration,

@@ -2,7 +2,7 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../dao/dao_job_event.dart';
+import '../../dao/dao_job_activity.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/operating_hours.dart';
 import '../../entity/system.dart';
@@ -12,11 +12,11 @@ import '../../util/local_date.dart';
 import '../widgets/async_state.dart';
 import '../widgets/circle.dart';
 import '../widgets/surface.dart';
-import 'job_event_ex.dart';
+import 'job_activity_ex.dart';
 import 'schedule_helper.dart';
 import 'schedule_page.dart';
 
-/// A single-month view of events
+/// A single-month view of activities
 class MonthSchedule extends StatefulWidget with ScheduleHelper {
   const MonthSchedule(
     this.initialDate, {
@@ -32,7 +32,7 @@ class MonthSchedule extends StatefulWidget with ScheduleHelper {
   final int? defaultJob;
   final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
 
-  final GlobalKey<MonthViewState<JobEventEx>> monthKey;
+  final GlobalKey<MonthViewState<JobActivityEx>> monthKey;
   final SchedulePageState schedulePageState;
 
   final bool showWeekends;
@@ -42,7 +42,7 @@ class MonthSchedule extends StatefulWidget with ScheduleHelper {
 }
 
 class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
-  late final EventController<JobEventEx> _monthController;
+  late final EventController<JobActivityEx> _monthController;
 
   late LocalDate currentDate;
   late bool showWeekends;
@@ -61,7 +61,7 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
     system = await DaoSystem().get();
     operatingHours = system.getOperatingHours();
     currentDate = widget.initialDate;
-    await _loadEventsForMonth();
+    await _loadActivitiesForMonth();
   }
 
   @override
@@ -70,19 +70,19 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
     super.dispose();
   }
 
-  Future<void> _loadEventsForMonth() async {
+  Future<void> _loadActivitiesForMonth() async {
     final firstOfMonth = LocalDate(currentDate.year, currentDate.month);
     final firstOfNextMonth = LocalDate(currentDate.year, currentDate.month + 1);
 
-    final dao = DaoJobEvent();
-    final jobEvents =
-        await dao.getEventsInRange(firstOfMonth, firstOfNextMonth);
+    final dao = DaoJobActivity();
+    final jobActivites =
+        await dao.getActivitiesInRange(firstOfMonth, firstOfNextMonth);
 
     showWeekends = false;
-    final eventData = <CalendarEventData<JobEventEx>>[];
-    for (final jobEvent in jobEvents) {
-      eventData.add((await JobEventEx.fromEvent(jobEvent)).eventData);
-      if (jobEvent.start.isWeekEnd) {
+    final eventData = <CalendarEventData<JobActivityEx>>[];
+    for (final jobActivity in jobActivites) {
+      eventData.add((await JobActivityEx.fromActivity(jobActivity)).eventData);
+      if (jobActivity.start.isWeekEnd) {
         showWeekends = true;
       }
     }
@@ -95,15 +95,16 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
   }
 
   @override
-  Widget build(BuildContext context) => CalendarControllerProvider<JobEventEx>(
+  Widget build(BuildContext context) =>
+      CalendarControllerProvider<JobActivityEx>(
         controller: _monthController,
         child: FutureBuilderEx(
             future: initialised,
             builder: (context, _) {
               /// Month View
-              late final MonthView<JobEventEx> monthView;
+              late final MonthView<JobActivityEx> monthView;
               // ignore: join_return_with_assignment
-              monthView = MonthView<JobEventEx>(
+              monthView = MonthView<JobActivityEx>(
                 showWeekends: showWeekends,
                 // key: ValueKey(widget.initialDate),
                 key: widget.monthKey,
@@ -127,13 +128,13 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
                   /// starting time for the event.
                   final openingTime =
                       operatingHours.openingTime(date.toLocalDate());
-                  await widget.addEvent(
+                  await widget.addActivity(
                       context, date.withTime(openingTime), widget.defaultJob);
-                  await _loadEventsForMonth();
+                  await _loadActivitiesForMonth();
                 },
                 onEventTap: (event, date) async {
-                  await widget.onEventTap(context, event);
-                  await _loadEventsForMonth();
+                  await widget.onActivityTap(context, event);
+                  await _loadActivitiesForMonth();
                 },
               );
               return monthView;
@@ -144,14 +145,14 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
     final revisedDate = await widget.onPageChange(date.toLocalDate());
 
     currentDate = revisedDate;
-    await _loadEventsForMonth();
+    await _loadActivitiesForMonth();
   }
 
   /// Build month view cell.
   Widget _cellBuilder(
-    MonthView<JobEventEx> monthView,
+    MonthView<JobActivityEx> monthView,
     DateTime date,
-    List<CalendarEventData<JobEventEx>> events,
+    List<CalendarEventData<JobActivityEx>> events,
     bool isToday,
     bool isInMonth,
     bool hideDaysNotInMonth,
@@ -171,17 +172,17 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
           border: Border.all(color: Colors.grey[700]!), // Optional cell border
         ),
         child: Column(
-            children: _renderEvents(
+            children: _renderActivities(
                 monthView, date, isToday, events, backgroundColour,
                 color: colour)));
   }
 
   /// Render a list of event widgets
-  List<Widget> _renderEvents(
-      MonthView<JobEventEx> monthView,
+  List<Widget> _renderActivities(
+      MonthView<JobActivityEx> monthView,
       DateTime date,
       bool isToday,
-      List<CalendarEventData<JobEventEx>> events,
+      List<CalendarEventData<JobActivityEx>> events,
       Color backgroundColour,
       {required Color color}) {
     final widgets = <Widget>[
@@ -199,14 +200,14 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
       )
     ];
     for (final event in events) {
-      widgets.add(_renderEvent(monthView, event, backgroundColour));
+      widgets.add(_renderActivity(monthView, event, backgroundColour));
     }
     return widgets;
   }
 
-  /// build a single event widget.
-  Widget _renderEvent(MonthView<JobEventEx> monthView,
-      CalendarEventData<JobEventEx> event, Color backgroundColour) {
+  /// build a single activity widget.
+  Widget _renderActivity(MonthView<JobActivityEx> monthView,
+      CalendarEventData<JobActivityEx> event, Color backgroundColour) {
     var fontColor = Colors.white;
     if (widget.defaultJob == event.event!.job.id) {
       fontColor = Colors.orange;
@@ -221,7 +222,7 @@ class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
         children: [
           Circle(
               diameter: 15,
-              color: event.event?.jobEvent.status.color ?? Colors.white,
+              color: event.event?.jobActivity.status.color ?? Colors.white,
               child: const Text('')),
           Text('${formatTime(event.startTime!, 'h:mm a').toLowerCase()} ',
               style: TextStyle(

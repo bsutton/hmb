@@ -27,6 +27,9 @@ class ContactSource extends Source<Contact> {
           onChanged?.call(contact, ResetFields(site: true, contact: true));
         },
       );
+
+  @override
+  Contact? get value => contact;
 }
 
 // /// Contact placeholder drop list

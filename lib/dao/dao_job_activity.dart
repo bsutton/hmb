@@ -1,16 +1,15 @@
-// dao_job_event.dart
-import '../entity/job_event.dart';
+import '../entity/job_activity.dart';
 import '../util/local_date.dart';
 import 'dao.dart';
 
-class DaoJobEvent extends Dao<JobEvent> {
+class DaoJobActivity extends Dao<JobActivity> {
   @override
-  String get tableName => 'job_event';
+  String get tableName => 'job_activity';
 
   @override
-  JobEvent fromMap(Map<String, dynamic> map) => JobEvent.fromMap(map);
+  JobActivity fromMap(Map<String, dynamic> map) => JobActivity.fromMap(map);
 
-  Future<List<JobEvent>> getByJob(int jobId) async {
+  Future<List<JobActivity>> getByJob(int jobId) async {
     final db = withoutTransaction();
     final rows = await db.query(
       tableName,
@@ -21,7 +20,8 @@ class DaoJobEvent extends Dao<JobEvent> {
     return toList(rows);
   }
 
-  Future<List<JobEvent>> getEventsInRange(LocalDate start, LocalDate end) async {
+  Future<List<JobActivity>> getActivitiesInRange(
+      LocalDate start, LocalDate end) async {
     final db = withoutTransaction();
 
     final results = await db.query(
@@ -37,14 +37,14 @@ class DaoJobEvent extends Dao<JobEvent> {
     );
 
     // Convert each row into a JobEvent
-    final jobEvents = <JobEvent>[];
+    final jobEvents = <JobActivity>[];
     for (final row in results) {
-      jobEvents.add(JobEvent.fromMap(row));
+      jobEvents.add(JobActivity.fromMap(row));
     }
     return jobEvents;
   }
 
   @override
-  JobEventState Function() get juneRefresher =>
-      JobEventState.new; // optional, if using June
+  JobActivityState Function() get juneRefresher =>
+      JobActivityState.new; // optional, if using June
 }

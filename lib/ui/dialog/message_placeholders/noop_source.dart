@@ -10,4 +10,7 @@ class NoopSource extends Source<String> {
 
   @override
   Widget? widget(MessageData data) => null;
+
+  @override
+  String? get value => text;
 }

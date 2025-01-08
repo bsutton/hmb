@@ -61,6 +61,7 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
           HMBText('Current Time: ${formatDateTime(DateTime.now())}'),
           if (widget.showTask) buildTaskDetails(),
           HMBDateTimeField(
+            mode: HMBDateTimeFieldMode.dateAndTime,
               label: 'Time:',
               initialDateTime: selected,
               onChanged: (dateTime) => selected = dateTime),

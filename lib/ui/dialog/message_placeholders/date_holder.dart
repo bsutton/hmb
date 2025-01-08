@@ -8,8 +8,8 @@ class ServiceDate extends PlaceHolder<LocalDate, LocalDate> {
   ServiceDate(this.dateSource)
       : super(name: tagName, base: tagBase, source: dateSource);
 
-  static String tagName = 'service_date';
-  static String tagBase = 'service_date';
+  static String tagName = 'date.service';
+  static String tagBase = 'date.service';
 
   static String label = 'Service Date';
 
@@ -32,8 +32,8 @@ class OriginalDate extends PlaceHolder<LocalDate, LocalDate> {
   OriginalDate(this.dateSource)
       : super(name: tagName, base: tagBase, source: dateSource);
 
-  static String tagName = 'original_date';
-  static String tagBase = 'original_date';
+  static String tagName = 'activity.original_date';
+  static String tagBase = 'activity.original_date';
   static String label = 'Original Date';
 
   LocalDate? originalDate;
@@ -56,8 +56,10 @@ class AppointmentDate extends PlaceHolder<LocalDate, LocalDate> {
   AppointmentDate(this.dateSource)
       : super(name: tagName, base: tagBase, source: dateSource);
 
-  static String tagName = 'appointment.date';
-  static String tagBase = 'appointment.date';
+  static String tagName = 'activity.start_date';
+  static String tagBase = 'activity.start_date';
+  static String label = 'Original Date';
+
 
   final DateSource dateSource;
   LocalDate? appointmentDate;

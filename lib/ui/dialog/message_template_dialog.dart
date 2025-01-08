@@ -14,7 +14,6 @@ import '../../util/local_date.dart';
 import '../../util/local_time.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_droplist.dart';
-import '../widgets/text/hmb_text_themes.dart';
 import 'message_placeholders/place_holder.dart';
 import 'message_placeholders/placeholder_manager.dart';
 
@@ -82,7 +81,7 @@ class _MessageTemplateDialogState
   Future<void> _loadTemplates() async {
     final templates = await DaoMessageTemplate().getByFilter(null);
     setState(() {
-    _templates = _filterTemplates(templates);
+      _templates = _filterTemplates(templates);
     });
   }
 
@@ -92,15 +91,15 @@ class _MessageTemplateDialogState
       return templates;
     } else if (widget.messageData.customer != null) {
       return templates
-          .where((t) => t.message.contains('{{customer_}}'))
+          .where((t) => t.message.contains('{{customer.}}'))
           .toList();
     } else if (widget.messageData.supplier != null) {
       return templates
-          .where((t) => t.message.contains('{{supplier_}}'))
+          .where((t) => t.message.contains('{{supplier.}}'))
           .toList();
     } else if (widget.messageData.contact != null) {
       return templates
-          .where((t) => t.message.contains('{{contact_}}'))
+          .where((t) => t.message.contains('{{contact.}}'))
           .toList();
     }
     return templates;
@@ -108,7 +107,7 @@ class _MessageTemplateDialogState
 
   Future<void> _initializePlaceholders() async {
     if (_selectedTemplate != null) {
-      final regExp = RegExp(r'\{\{(\w+)\}\}');
+      final regExp = RegExp(r'\{\{(\w+(?:\.\w+)?)\}\}');
       final matches = regExp.allMatches(_selectedTemplate!.message);
 
       // Get the list of placeholders in the new template
@@ -155,6 +154,14 @@ class _MessageTemplateDialogState
           '{{$key}}', text.isNotEmpty ? text : '[$key]');
     }
 
+    /// the sql message_template
+    final lines = previewMessage.split('\n');
+
+    final spans = <TextSpan>[];
+    for (final line in lines) {
+      spans.add(TextSpan(text: '$line\n'));
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -162,7 +169,7 @@ class _MessageTemplateDialogState
         borderRadius: BorderRadius.circular(8),
       ),
       child: SingleChildScrollView(
-        child: HMBTextBody(previewMessage),
+        child: RichText(text: TextSpan(children: spans)),
       ),
     );
   }
@@ -183,6 +190,7 @@ class _MessageTemplateDialogState
                 child: Column(
                   children: [
                     HMBDroplist<MessageTemplate>(
+                      title: 'Choose a template',
                       selectedItem: () async => _selectedTemplate,
                       items: (filter) async => filter == null
                           ? _templates
@@ -198,7 +206,6 @@ class _MessageTemplateDialogState
                             _selectedTemplate?.message ?? '';
                         setState(() {});
                       },
-                      title: 'Choose a template',
                     ),
                     const SizedBox(height: 20),
                     if (_selectedTemplate != null)

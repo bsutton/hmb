@@ -25,6 +25,9 @@ class CustomerSource extends Source<Customer> {
         },
       );
 
+  @override
+  Customer? get value => customer;
+
 // /// Customer placeholder drop list
 // PlaceHolderField<Customer> _buildCustomerDroplist(
 //     CustomerName placeholder, MessageData data) {

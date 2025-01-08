@@ -19,4 +19,7 @@ class TextSource extends Source<String> {
           text = value;
         },
       );
+
+  @override
+  String? get value => text;
 }

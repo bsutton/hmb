@@ -16,18 +16,20 @@ class SiteSource extends Source<Site> {
 
   @override
   Widget widget(MessageData data) => HMBDroplist<Site>(
-        title: 'Site',
-        selectedItem: () async => value,
-        items: (filter) async {
-          if (site != null) {
-            return DaoSite().getByCustomer(customer?.id);
-          } else {
-            return [];
-          }
-        },
-        format: (site) => site.address,
-        onChanged: setValue,
-      );
+      title: 'Site',
+      selectedItem: () async => value,
+      items: (filter) async {
+        if (site != null) {
+          return DaoSite().getByCustomer(customer?.id);
+        } else {
+          return [];
+        }
+      },
+      format: (site) => site.address,
+      onChanged: (site) => this.site = site);
+
+  @override
+  Site? get value => site;
 }
 
 // /// Site placeholder drop list

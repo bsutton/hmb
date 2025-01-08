@@ -133,7 +133,7 @@ class ToolDetailsStep extends WizardStep {
                       const TextInputType.numberWithOptions(decimal: true),
                 ),
                 HMBDateTimeField(
-                  showTime: false,
+                  mode: HMBDateTimeFieldMode.dateOnly,
                   label: 'Date Purchased',
                   initialDateTime: selectedDatePurchased,
                   onChanged: (date) => selectedDatePurchased = date,

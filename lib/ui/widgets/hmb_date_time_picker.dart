@@ -7,6 +7,8 @@ import 'text/hmb_text.dart';
 typedef OnChanged = void Function(DateTime newValue);
 typedef Validator = String? Function(DateTime?);
 
+enum HMBDateTimeFieldMode { dateOnly, timeOnly, dateAndTime }
+
 /// Displays a Date and Time picker in separate fields.
 /// The value is passed to the [onChanged] callback.
 class HMBDateTimeField extends StatefulWidget {
@@ -14,23 +16,20 @@ class HMBDateTimeField extends StatefulWidget {
     required this.label,
     required this.initialDateTime,
     required this.onChanged,
+    required this.mode,
     this.validator,
     this.width = 180,
-    this.showTime = true,
-    this.showDate = true,
     super.key,
     this.labelWidth = double.infinity,
-  }) : assert(showTime || showDate,
-            'You must have at least one of showTime or showDate as true');
+  });
 
   final String label;
   final DateTime initialDateTime;
   final OnChanged onChanged;
   final Validator? validator;
-  final bool showTime;
-  final bool showDate;
   final double width;
   final double labelWidth;
+  final HMBDateTimeFieldMode mode;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -82,8 +81,7 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
               bold: true,
             ),
           ),
-          if (widget.showDate) const HMBSpacer(width: true),
-          if (widget.showDate)
+          if (widget.mode != HMBDateTimeFieldMode.timeOnly)
             SizedBox(
               width: widget.width,
               child: FormField<DateTime>(
@@ -119,8 +117,9 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
                 ),
               ),
             ),
-          if (widget.showTime) const HMBSpacer(width: true),
-          if (widget.showTime)
+          if (widget.mode == HMBDateTimeFieldMode.dateAndTime)
+            const HMBSpacer(width: true),
+          if (widget.mode != HMBDateTimeFieldMode.dateOnly)
             SizedBox(
               width: widget.width,
               child: FormField<DateTime>(

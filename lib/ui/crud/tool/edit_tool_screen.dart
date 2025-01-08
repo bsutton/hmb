@@ -140,7 +140,7 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
                       const TextInputType.numberWithOptions(decimal: true),
                 ),
                 HMBDateTimeField(
-                  showTime: false,
+                  mode: HMBDateTimeFieldMode.dateOnly,
                   label: 'Date Purchased',
                   initialDateTime: selectedDatePurchased,
                   onChanged: (datePurchased) async {

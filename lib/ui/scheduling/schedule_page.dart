@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 
 // -- Example imports. Adapt for your project:
 import '../../dao/dao_customer.dart';
-import '../../dao/dao_job_event.dart';
+import '../../dao/dao_job_activity.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
@@ -22,7 +22,7 @@ import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'day_schedule.dart'; // Our DaySchedule stateful widget
 import 'desktop_swipe.dart';
-import 'job_event_ex.dart';
+import 'job_activity_ex.dart';
 import 'month_schedule.dart'; // Our MonthSchedule stateful widget
 import 'schedule_helper.dart';
 import 'week_schedule.dart'; // Our WeekSchedule stateful widget
@@ -60,7 +60,7 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
     super.key,
     this.defaultView = ScheduleView.day,
     this.defaultJob,
-    this.initialEventId,
+    this.initialActivityId,
   });
 
   /// If true, we show an [AppBar], otherwise we might show a different UI
@@ -69,11 +69,11 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
   /// The initial view to show: day, week, or month
   final ScheduleView defaultView;
 
-  /// If we came from a specific job, auto-populate in the event dialog
+  /// If we came from a specific job, auto-populate in the activity dialog
   final int? defaultJob;
 
-  /// If we want the schedule to jump to a specific event
-  final int? initialEventId;
+  /// If we want the schedule to jump to a specific activity
+  final int? initialActivityId;
 
   @override
   State<SchedulePage> createState() => SchedulePageState();
@@ -86,7 +86,7 @@ class SchedulePageState extends AsyncState<SchedulePage, void> {
   late ScheduleView selectedView;
   bool showExtendedHours = false;
 
-  final monthKey = GlobalKey<MonthViewState<JobEventEx>>();
+  final monthKey = GlobalKey<MonthViewState<JobActivityEx>>();
   final weekKey = GlobalKey<WeekViewState>();
   final dayKey = GlobalKey<DayViewState>();
 
@@ -139,18 +139,18 @@ class SchedulePageState extends AsyncState<SchedulePage, void> {
   }
 
   /// Initialize the page controller with the correct starting index:
-  /// - If [SchedulePage.initialEventId] is provided, fetch that event's date from DB.
+  /// - If [SchedulePage.initialActivityId] is provided, fetch that activities' date from DB.
   /// - Otherwise, use [DateTime.now()].
   Future<void> _initPage() async {
     currentFirstDateOnPage =
         await operatingHours.getNextOpenDate(LocalDate.today());
 
-    // If an initialEventId is provided, fetch the event’s start date
-    if (widget.initialEventId != null) {
-      final dao = DaoJobEvent();
-      final event = await dao.getById(widget.initialEventId);
-      if (event != null) {
-        currentFirstDateOnPage = event.start.toLocalDate();
+    // If an initialActivityId is provided, fetch the activities' start date
+    if (widget.initialActivityId != null) {
+      final dao = DaoJobActivity();
+      final activity = await dao.getById(widget.initialActivityId);
+      if (activity != null) {
+        currentFirstDateOnPage = activity.start.toLocalDate();
       }
     }
 
@@ -198,7 +198,7 @@ class SchedulePageState extends AsyncState<SchedulePage, void> {
   Widget _buildCalendar() {
     final calendarViews = <Widget>[
       MonthSchedule(
-          schedulePageState: this,                                                                                                                                                                                                                                                                                                                                              
+          schedulePageState: this,
           monthKey: monthKey,
           currentFirstDateOnPage,
           onPageChange: (date) async => _onPageChanged(date),

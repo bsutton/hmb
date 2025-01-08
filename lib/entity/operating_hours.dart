@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import '../dao/dao_job_event.dart';
+import '../dao/dao_job_activity.dart';
 import '../util/date_time_ex.dart';
 import '../util/local_date.dart';
 import '../util/local_time.dart';
-import 'job_event.dart';
+import 'job_activity.dart';
 import 'operating_day.dart';
 import 'system.dart';
 
@@ -76,11 +76,11 @@ class OperatingHours {
 
     if (!open) {
       /// if the day isn't normally open we still need
-      /// to check for events scheduled out of normal hours.
+      /// to check for activities scheduled out of normal hours.
 
-      /// special check for an event on the out of hours day.
-      open = (await DaoJobEvent()
-              .getEventsInRange(targetDate, targetDate.addDays(1)))
+      /// special check for an activiity on the out of hours day.
+      open = (await DaoJobActivity()
+              .getActivitiesInRange(targetDate, targetDate.addDays(1)))
           .isNotEmpty;
     }
     return open;
@@ -127,18 +127,18 @@ class OperatingHours {
     throw StateError('No open day found within the past 7 days.');
   }
 
-  /// True if the [event] is fully within the normal operating hours.
+  /// True if the [activity] is fully within the normal operating hours.
 
-  bool inOperatingHours(JobEvent event) {
-    // 1) Check if the event is on a single day.
+  bool inOperatingHours(JobActivity activity) {
+    // 1) Check if the activity is on a single day.
     //    If it spans multiple calendar days, return false (or handle specially).
-    if (event.start.toLocalDate() != event.end.toLocalDate()) {
+    if (activity.start.toLocalDate() != activity.end.toLocalDate()) {
       return false;
     }
 
     // 2) Ensure that day is open in OperatingHours.
     //    If it's closed, return false right away.
-    final dayOfWeek = event.start.weekday; // Monday=1, Sunday=7
+    final dayOfWeek = activity.start.weekday; // Monday=1, Sunday=7
     if (!isDayOfWeekOpen(dayOfWeek)) {
       return false;
     }
@@ -152,21 +152,21 @@ class OperatingHours {
       return false;
     }
 
-    // 4) Compare the event’s time range to the day’s start/end times.
+    // 4) Compare the activities time range to the day’s start/end times.
     //    If either start or end is null, treat as “no configured hours,” i.e., closed.
     if (operatingDay.start == null || operatingDay.end == null) {
       return false;
     }
 
-    // 5) Check that the event starts after (or exactly at) opening
+    // 5) Check that the activity starts after (or exactly at) opening
     //    AND ends before (or exactly at) closing.
-    final eventStart = event.start.toLocalTime();
-    final eventEnd = event.end.toLocalTime();
+    final activityStart = activity.start.toLocalTime();
+    final activityEnd = activity.end.toLocalTime();
     final openTime = operatingDay.start!;
     final closeTime = operatingDay.end!;
 
-    final startsTooEarly = eventStart.isBefore(openTime);
-    final endsTooLate = eventEnd.isAfter(closeTime);
+    final startsTooEarly = activityStart.isBefore(openTime);
+    final endsTooLate = activityEnd.isAfter(closeTime);
 
     if (startsTooEarly || endsTooLate) {
       return false;

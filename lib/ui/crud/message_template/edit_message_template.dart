@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao_message_template.dart';
 import '../../../entity/message_template.dart';
+import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 
@@ -58,12 +59,10 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
                 keyboardType: TextInputType.text,
                 textInputAction: TextInputAction.next,
               ),
-              TextFormField(
+              HMBTextArea(
                 controller: _messageController,
-                decoration: const InputDecoration(labelText: 'Message'),
-                keyboardType: TextInputType.multiline,
+                labelText: 'Message',
                 maxLines: 5,
-                textInputAction: TextInputAction.done,
               ),
             ] else ...[
               ListTile(

@@ -8,12 +8,12 @@ import 'package:june/june.dart';
 
 import '../../../dao/dao_customer.dart';
 import '../../../dao/dao_job.dart';
-import '../../../dao/dao_job_event.dart';
+import '../../../dao/dao_job_activity.dart';
 import '../../../dao/dao_job_status.dart';
 import '../../../dao/dao_system.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/job.dart';
-import '../../../entity/job_event.dart';
+import '../../../entity/job_activity.dart';
 import '../../../entity/job_status.dart';
 import '../../../util/app_title.dart';
 import '../../../util/date_time_ex.dart';
@@ -260,7 +260,7 @@ class _JobEditScreenState extends State<JobEditScreen>
         child: Row(children: [
           _buildScheduleButton(),
           const HMBSpacer(width: true),
-          _buildEventButton()
+          _buildActivityButton()
         ]),
       );
 
@@ -274,15 +274,15 @@ class _JobEditScreenState extends State<JobEditScreen>
         }
         final jobId = widget.job!.id;
 
-        final firstEvent = await _getFirstEvent();
+        final firstActivity = await _getFirstActivity();
 
         if (mounted) {
-          // Fetch upcoming events for that job
-          // If no events, just open schedule set to week/today
+          // Fetch upcoming activity for that job
+          // If no activities, just open schedule set to week/today
           await Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => SchedulePage(
                     defaultView: ScheduleView.week,
-                    initialEventId: firstEvent?.id,
+                    initialActivityId: firstActivity?.id,
                     defaultJob: jobId,
                     dialogMode: true,
                   ),
@@ -291,47 +291,47 @@ class _JobEditScreenState extends State<JobEditScreen>
           /// We need to reset the title as the Schedule Page
           /// will have updated it.
           setAppTitle(JobListScreen.pageTitle);
-          June.getState(EventJobsState.new).setState();
+          June.getState(ActivityJobsState.new).setState();
         }
       });
 
-  Future<JobEvent?> _getFirstEvent() async {
+  Future<JobActivity?> _getFirstActivity() async {
     final now = DateTime.now();
 
-    final daoJobEvent = DaoJobEvent();
-    final jobEvents = await daoJobEvent.getByJob(widget.job!.id);
-    JobEvent? nextEvent;
-    for (final e in jobEvents) {
+    final daoJobActivity = DaoJobActivity();
+    final jobActivities = await daoJobActivity.getByJob(widget.job!.id);
+    JobActivity? nextActivity;
+    for (final e in jobActivities) {
       if (e.start.isAfter(now)) {
-        nextEvent = e;
+        nextActivity = e;
         break;
       }
     }
-    return nextEvent;
+    return nextActivity;
   }
 
-  Widget _buildEventButton() => JuneBuilder(EventJobsState.new,
+  Widget _buildActivityButton() => JuneBuilder(ActivityJobsState.new,
       builder: (context) => FutureBuilderEx(
           // ignore: discarded_futures
-          future: DaoJobEvent().getByJob(widget.job!.id),
-          builder: (context, jobEvents) {
-            final nextEvent = _nextEvent(jobEvents!);
-            final nextEventWhen =
-                nextEvent == null ? '' : formatDateTimeAM(nextEvent.start);
+          future: DaoJobActivity().getByJob(widget.job!.id),
+          builder: (context, jobActivities) {
+            final nextActivity = _nextAcitivty(jobActivities!);
+            final nextActivityWhen =
+                nextActivity == null ? '' : formatDateTimeAM(nextActivity.start);
             return ElevatedButton(
               onPressed: () async {
-                // Find the next upcoming event
+                // Find the next upcoming activity
                 if (mounted) {
                   // Display a droplist or a simple dialog?
                   // For demonstration, let's do a showDialog with the list:
-                  final selectedEvent = await showEventDialog(jobEvents);
+                  final selectedActivity = await showActivityDialog(jobActivities);
 
-                  if (context.mounted && selectedEvent != null) {
-                    // Now open schedule page showing that event’s date in Week view
+                  if (context.mounted && selectedActivity != null) {
+                    // Now open schedule page showing that activities date in Week view
                     await Navigator.of(context).push(MaterialPageRoute<void>(
                         builder: (_) => SchedulePage(
                               defaultView: ScheduleView.week,
-                              initialEventId: selectedEvent.id,
+                              initialActivityId: selectedActivity.id,
                               defaultJob: widget.job?.id,
                               dialogMode: true,
                             ),
@@ -340,20 +340,20 @@ class _JobEditScreenState extends State<JobEditScreen>
                     /// We need to reset the title as the Schedule Page
                     /// will have updated it.
                     setAppTitle(JobListScreen.pageTitle);
-                    // refresh the list of events.
-                    June.getState(EventJobsState.new).setState();
+                    // refresh the list of activities.
+                    June.getState(ActivityJobsState.new).setState();
                   }
                 }
               },
               child: Row(
                 children: [
-                  if (nextEvent != null)
+                  if (nextActivity != null)
                     Circle(
-                        color: nextEvent.status.color, child: const Text('')),
+                        color: nextActivity.status.color, child: const Text('')),
                   const SizedBox(width: 5),
-                  Text('Events: $nextEventWhen',
+                  Text('Activities: $nextActivityWhen',
                       style: TextStyle(
-                        color: nextEvent != null && _isToday(nextEvent.start)
+                        color: nextActivity != null && _isToday(nextActivity.start)
                             ? Colors.orangeAccent
                             : Colors.white,
                       ))
@@ -363,32 +363,32 @@ class _JobEditScreenState extends State<JobEditScreen>
           }));
 
   ///
-  /// show event Dialog
+  /// show activity Dialog
   ///
-  Future<JobEvent?> showEventDialog(List<JobEvent> jobEvents) async {
+  Future<JobActivity?> showActivityDialog(List<JobActivity> jobActivities) async {
     final today = DateTime.now().withoutTime;
-    return showDialog<JobEvent>(
+    return showDialog<JobActivity>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Open an Event'),
+        title: const Text('Open an Activity'),
         children: [
-          // "Next Event" first, if any
+          // "Next Activity" first, if any
           SimpleDialogOption(
-            onPressed: () => Navigator.of(context).pop(_nextEvent(jobEvents)),
-            child: Text('Next Event: ${_nextEventWhen(jobEvents)}'),
+            onPressed: () => Navigator.of(context).pop(_nextAcitivty(jobActivities)),
+            child: Text('Next Activity: ${_nextAcctivityWhen(jobActivities)}'),
           ),
 
           // Then list all
-          for (final jobEvent in jobEvents)
+          for (final jobActivity in jobActivities)
             SimpleDialogOption(
-              onPressed: () => Navigator.of(context).pop(jobEvent),
+              onPressed: () => Navigator.of(context).pop(jobActivity),
               child: Row(
                 children: [
-                  Circle(color: jobEvent.status.color, child: const Text('')),
+                  Circle(color: jobActivity.status.color, child: const Text('')),
                   const SizedBox(width: 5),
-                  Text(_eventDisplay(jobEvent),
+                  Text(_activityDisplay(jobActivity),
                       style: TextStyle(
-                          decoration: (jobEvent.start.isBefore(today))
+                          decoration: (jobActivity.start.isBefore(today))
                               ? TextDecoration.lineThrough
                               : TextDecoration.none)),
                 ],
@@ -399,17 +399,17 @@ class _JobEditScreenState extends State<JobEditScreen>
     );
   }
 
-  String _nextEventWhen(List<JobEvent> jobEvents) {
-    final next = _nextEventDate(jobEvents);
+  String _nextAcctivityWhen(List<JobActivity> jobActivities) {
+    final next = _nextActivityDate(jobActivities);
     return next == null ? '' : formatDateTimeAM(next);
   }
 
-  DateTime? _nextEventDate(List<JobEvent> jobEvents) =>
-      _nextEvent(jobEvents)?.start;
+  DateTime? _nextActivityDate(List<JobActivity> jobActivities) =>
+      _nextAcitivty(jobActivities)?.start;
 
-  JobEvent? _nextEvent(List<JobEvent> jobEvents) {
+  JobActivity? _nextAcitivty(List<JobActivity> jobActivities) {
     final today = LocalDate.today();
-    for (final e in jobEvents) {
+    for (final e in jobActivities) {
       if (e.start.toLocalDate().isAfter(today) ||
           e.start.toLocalDate() == today) {
         return e;
@@ -418,9 +418,9 @@ class _JobEditScreenState extends State<JobEditScreen>
     return null;
   }
 
-  bool _isToday(DateTime nextEvent) => nextEvent.toLocalDate().isToday;
+  bool _isToday(DateTime nextActivity) => nextActivity.toLocalDate().isToday;
 
-  String _eventDisplay(JobEvent e) => formatDateTimeAM(e.start);
+  String _activityDisplay(JobActivity e) => formatDateTimeAM(e.start);
 
   @override
   Future<Job> forUpdate(Job job) async => Job.forUpdate(
@@ -477,4 +477,4 @@ class SelectJobStatus extends JuneState {
   int? jobStatusId;
 }
 
-class EventJobsState extends JuneState {}
+class ActivityJobsState extends JuneState {}

@@ -19,7 +19,7 @@ class DateSource extends Source<LocalDate> {
       /// Date placeholder drop list
 
       HMBDateTimeField(
-        showTime: false,
+        mode: HMBDateTimeFieldMode.dateOnly,
         label: label.toProperCase(),
         initialDateTime: DateTime.now(),
         onChanged: (datetime) {
@@ -28,8 +28,10 @@ class DateSource extends Source<LocalDate> {
           // controller.text = '${datetime.day}/${datetime.month}/${datetime.year}';
           // placeholder.onChanged?.call(localTime, ResetFields());
         },
-        showDate: false,
       );
+
+  @override
+  LocalDate? get value => date;
 
   //  HMBDroplist<Site>(
   //       title: 'Site',

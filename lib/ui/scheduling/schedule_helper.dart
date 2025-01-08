@@ -1,65 +1,67 @@
 import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 
-import '../../dao/dao_job_event.dart';
+import '../../dao/dao_job_activity.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
-import 'job_event_dialog.dart';
-import 'job_event_ex.dart';
+import 'job_activity_dialog.dart';
+import 'job_activity_ex.dart';
 
-typedef JobAddNotice = void Function(JobEventEx jobEventEx);
+typedef JobAddNotice = void Function(JobActivityEx jobActivityEx);
 typedef JobUpdateNotice = void Function(
-    JobEventEx oldJob, JobEventEx updatedJob);
-typedef JobDeleteNotice = void Function(JobEventEx jobEventEx);
+    JobActivityEx oldJob, JobActivityEx updatedJob);
+typedef JobDeleteNotice = void Function(JobActivityEx jobActivityEx);
 
 mixin ScheduleHelper {
   /// onEventTap
-  Future<void> onEventTap(
+  Future<void> onActivityTap(
     BuildContext context,
-    CalendarEventData<JobEventEx> event,
+    CalendarEventData<JobActivityEx> event,
   ) async {
-    // Show the edit dialog for this event
-    final jobEventAction = (await JobEventDialog.showEdit(context, event))!;
+    // Show the edit dialog for this activity
+    final jobActivityAction =
+        (await JobActivityDialog.showEdit(context, event))!;
 
-    switch (jobEventAction.action) {
+    switch (jobActivityAction.action) {
       case EditAction.update:
-        await _editExistingEvent(event, jobEventAction.jobEvent!);
+        await _editExistingActivity(event, jobActivityAction.jobActivity!);
       case EditAction.delete:
-        await _deleteEvent(event.event!);
+        await _deleteActivity(event.event!);
       case EditAction.cancel:
     }
   }
 
-  /// Add new Job Event
-  Future<void> addEvent(
+  /// Add new Job activity
+  Future<void> addActivity(
       BuildContext context, DateTime date, int? defaultJob) async {
-    final jobEventAction = (await JobEventDialog.showAdd(
+    final jobActivityAction = (await JobActivityDialog.showAdd(
         context: context, defaultJob: defaultJob, when: date))!;
 
-    final dao = DaoJobEvent();
-    switch (jobEventAction.action) {
+    final dao = DaoJobActivity();
+    switch (jobActivityAction.action) {
       case AddAction.add:
-        final newId = await dao.insert(jobEventAction.jobEvent!.jobEvent);
-        jobEventAction.jobEvent!.jobEvent.id = newId;
+        final newId =
+            await dao.insert(jobActivityAction.jobActivity!.jobActivity);
+        jobActivityAction.jobActivity!.jobActivity.id = newId;
       case AddAction.cancel:
     }
   }
 
-  /// If the user updated an existing event
-  Future<void> _editExistingEvent(
-      CalendarEventData<JobEventEx> oldEvent, JobEventEx updated) async {
-    final dao = DaoJobEvent();
+  /// If the user updated an existing activity
+  Future<void> _editExistingActivity(
+      CalendarEventData<JobActivityEx> oldEvent, JobActivityEx updated) async {
+    final dao = DaoJobActivity();
 
     // 1) Update DB
-    await dao.update(updated.jobEvent);
+    await dao.update(updated.jobActivity);
   }
 
-  /// Delete an existing event from the DB
-  Future<void> _deleteEvent(
-    JobEventEx event,
+  /// Delete an existing activity from the DB
+  Future<void> _deleteActivity(
+    JobActivityEx activity,
   ) async {
-    final dao = DaoJobEvent();
-    await dao.delete(event.jobEvent.id);
+    final dao = DaoJobActivity();
+    await dao.delete(activity.jobActivity.id);
   }
 
   /// header style

@@ -4,11 +4,11 @@ import 'package:strings/strings.dart';
 
 import '../../dao/dao_contact.dart';
 import '../../dao/dao_job.dart';
-import '../../dao/dao_job_event.dart';
+import '../../dao/dao_job_activity.dart';
 import '../../dao/dao_job_status.dart';
 import '../../entity/contact.dart';
 import '../../entity/job.dart';
-import '../../entity/job_event.dart';
+import '../../entity/job_activity.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_time.dart';
@@ -16,17 +16,17 @@ import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
-import 'job_event_ex.dart';
+import 'job_activity_ex.dart';
 
-class JobEventUpdateAction {
-  JobEventUpdateAction(this.action, this.jobEvent);
-  JobEventEx? jobEvent;
+class JobActivityUpdateAction {
+  JobActivityUpdateAction(this.action, this.jobActivity);
+  JobActivityEx? jobActivity;
   EditAction action;
 }
 
-class JobEventAddAction {
-  JobEventAddAction(this.action, this.jobEvent);
-  JobEventEx? jobEvent;
+class JobActivityAddAction {
+  JobActivityAddAction(this.action, this.jobActivity);
+  JobActivityEx? jobActivity;
   AddAction action;
 }
 
@@ -35,15 +35,15 @@ enum EditAction { delete, update, cancel }
 enum AddAction { add, cancel }
 
 /// The dialog for adding/editing job events
-class JobEventDialog extends StatefulWidget {
-  JobEventDialog.edit({
-    required CalendarEventData<JobEventEx> this.event,
+class JobActivityDialog extends StatefulWidget {
+  JobActivityDialog.edit({
+    required CalendarEventData<JobActivityEx> this.event,
     this.preSelectedJobId,
     super.key,
   })  : when = event.date,
         isEditing = true;
 
-  const JobEventDialog.add({
+  const JobActivityDialog.add({
     required this.when,
     this.preSelectedJobId,
     super.key,
@@ -51,43 +51,43 @@ class JobEventDialog extends StatefulWidget {
         isEditing = false;
 
   final int? preSelectedJobId;
-  final CalendarEventData<JobEventEx>? event;
+  final CalendarEventData<JobActivityEx>? event;
   final DateTime? when;
   final bool isEditing;
 
   @override
-  _JobEventDialogState createState() => _JobEventDialogState();
+  _JobActivityDialogState createState() => _JobActivityDialogState();
 
-  static Future<JobEventAddAction?> showAdd({
+  static Future<JobActivityAddAction?> showAdd({
     required BuildContext context,
     required DateTime when,
     required int? defaultJob,
   }) =>
-      showDialog<JobEventAddAction>(
+      showDialog<JobActivityAddAction>(
         context: context,
         builder: (context) => Material(
-          child: JobEventDialog.add(
+          child: JobActivityDialog.add(
             when: when,
             preSelectedJobId: defaultJob,
           ),
         ),
       );
 
-  static Future<JobEventUpdateAction?> showEdit(
+  static Future<JobActivityUpdateAction?> showEdit(
     BuildContext context,
-    CalendarEventData<JobEventEx> event,
+    CalendarEventData<JobActivityEx> event,
   ) =>
-      showDialog<JobEventUpdateAction>(
+      showDialog<JobActivityUpdateAction>(
         context: context,
         builder: (context) =>
-            Material(child: JobEventDialog.edit(event: event)),
+            Material(child: JobActivityDialog.edit(event: event)),
       );
 }
 
-class _JobEventDialogState extends State<JobEventDialog> {
+class _JobActivityDialogState extends State<JobActivityDialog> {
   late DateTime _startDate;
   late DateTime _endDate;
-  JobEventStatus _status = JobEventStatus.tentative; // Default status
+  JobActivityStatus _status = JobActivityStatus.tentative; // Default status
   String? _notes;
   Job? _selectedJob;
   final _form = GlobalKey<FormState>();
@@ -118,9 +118,9 @@ class _JobEventDialogState extends State<JobEventDialog> {
       _startDate = widget.event!.startTime ?? DateTime.now();
       _endDate = widget.event!.endTime ?? DateTime.now();
       _selectedJob = widget.event?.event!.job;
-      _status = widget.event!.event!.jobEvent.status;
-      _notes = widget.event!.event!.jobEvent.notes;
-      _noticeSentDate = widget.event!.event!.jobEvent.noticeSentDate;
+      _status = widget.event!.event!.jobActivity.status;
+      _notes = widget.event!.event!.jobActivity.notes;
+      _noticeSentDate = widget.event!.event!.jobActivity.noticeSentDate;
     }
   }
 
@@ -193,11 +193,11 @@ class _JobEventDialogState extends State<JobEventDialog> {
         onChanged: (value) => _notes = value,
       );
 
-  DropdownButtonFormField<JobEventStatus> _buildStatus() =>
-      DropdownButtonFormField<JobEventStatus>(
+  DropdownButtonFormField<JobActivityStatus> _buildStatus() =>
+      DropdownButtonFormField<JobActivityStatus>(
         value: _status,
         decoration: const InputDecoration(labelText: 'Status'),
-        items: JobEventStatus.values
+        items: JobActivityStatus.values
             .map((status) => DropdownMenuItem(
                   value: status,
                   child: Row(
@@ -247,8 +247,8 @@ class _JobEventDialogState extends State<JobEventDialog> {
             children: [
               HMBButtonSecondary(
                 onPressed: () => Navigator.of(context).pop(widget.isEditing
-                    ? JobEventUpdateAction(EditAction.cancel, null)
-                    : JobEventAddAction(AddAction.cancel, null)),
+                    ? JobActivityUpdateAction(EditAction.cancel, null)
+                    : JobActivityAddAction(AddAction.cancel, null)),
                 label: 'Cancel',
               ),
               const HMBSpacer(width: true),
@@ -269,7 +269,7 @@ class _JobEventDialogState extends State<JobEventDialog> {
   }
 
   HMBDateTimeField _buildEventDate(BuildContext context) => HMBDateTimeField(
-      showTime: false,
+      mode: HMBDateTimeFieldMode.dateOnly,
       label: 'Event Date',
       labelWidth: 100,
       initialDateTime: _startDate,
@@ -292,8 +292,8 @@ class _JobEventDialogState extends State<JobEventDialog> {
 
   /// End Date
   HMBDateTimeField _buildEndDate(BuildContext context) => HMBDateTimeField(
-      showDate: false,
-      label: 'End Date',
+      mode: HMBDateTimeFieldMode.timeOnly,
+      label: 'End Time',
       labelWidth: 100,
       initialDateTime: _endDate,
       width: 200,
@@ -313,8 +313,8 @@ class _JobEventDialogState extends State<JobEventDialog> {
 
   /// Start Date
   HMBDateTimeField _buildStartDate() => HMBDateTimeField(
-        showDate: false,
-        label: 'Start Date',
+        mode: HMBDateTimeFieldMode.timeOnly,
+        label: 'Start Time',
         labelWidth: 100,
         initialDateTime: _startDate,
         width: 200,
@@ -330,7 +330,7 @@ class _JobEventDialogState extends State<JobEventDialog> {
   /// to indicate a delete request.
   void _handleDelete() {
     Navigator.of(context)
-        .pop(JobEventUpdateAction(EditAction.delete, widget.event!.event));
+        .pop(JobActivityUpdateAction(EditAction.delete, widget.event!.event));
   }
 
   /// Save Event
@@ -372,7 +372,7 @@ class _JobEventDialogState extends State<JobEventDialog> {
           title: const Text('Event Overlap'),
           content: Text(
             'This event overlaps with another event: ${overlappingEvent.job.summary} '
-            '(${formatDateTime(overlappingEvent.jobEvent.start)} - ${formatDateTime(overlappingEvent.jobEvent.end)}). '
+            '(${formatDateTime(overlappingEvent.jobActivity.start)} - ${formatDateTime(overlappingEvent.jobActivity.end)}). '
             'Do you want to continue?',
           ),
           actions: [
@@ -395,9 +395,9 @@ class _JobEventDialogState extends State<JobEventDialog> {
 
     _form.currentState?.save();
 
-    late JobEvent jobEvent;
+    late JobActivity jobEvent;
     if (widget.isEditing) {
-      jobEvent = widget.event!.event!.jobEvent.copyWith(
+      jobEvent = widget.event!.event!.jobActivity.copyWith(
         jobId: _selectedJob!.id,
         start: _startDate,
         end: _endDate,
@@ -407,7 +407,7 @@ class _JobEventDialogState extends State<JobEventDialog> {
       );
     } else {
       /// new job event.
-      jobEvent = JobEvent.forInsert(
+      jobEvent = JobActivity.forInsert(
         jobId: _selectedJob!.id,
         start: _startDate,
         end: _endDate,
@@ -416,29 +416,31 @@ class _JobEventDialogState extends State<JobEventDialog> {
         noticeSentDate: _noticeSentDate,
       );
     }
-    final jobEventEx = await JobEventEx.fromEvent(jobEvent);
+    final jobEventEx = await JobActivityEx.fromActivity(jobEvent);
 
     await _updateJobStatus();
 
     if (mounted) {
       if (widget.isEditing) {
         Navigator.of(context)
-            .pop(JobEventUpdateAction(EditAction.update, jobEventEx));
+            .pop(JobActivityUpdateAction(EditAction.update, jobEventEx));
       } else {
-        Navigator.of(context).pop(JobEventAddAction(AddAction.add, jobEventEx));
+        Navigator.of(context)
+            .pop(JobActivityAddAction(AddAction.add, jobEventEx));
       }
     }
   }
 
-  Future<JobEventEx?> _checkForOverlappingEvents() async {
-    final jobEvents = await DaoJobEvent().getByJob(_selectedJob!.id);
+  Future<JobActivityEx?> _checkForOverlappingEvents() async {
+    final jobEvents = await DaoJobActivity().getByJob(_selectedJob!.id);
     for (final event in jobEvents) {
       if ((_startDate.isBefore(event.end) && _startDate.isAfter(event.start)) ||
           (_endDate.isAfter(event.start) && _endDate.isBefore(event.end)) ||
           (_startDate.isBefore(event.start) && _endDate.isAfter(event.end))) {
         // Exclude the current event being edited from overlap check
-        if (!widget.isEditing || event.id != widget.event?.event?.jobEvent.id) {
-          return JobEventEx.fromEvent(event);
+        if (!widget.isEditing ||
+            event.id != widget.event?.event?.jobActivity.id) {
+          return JobActivityEx.fromActivity(event);
         }
       }
     }

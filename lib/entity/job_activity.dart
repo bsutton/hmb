@@ -1,35 +1,33 @@
-// job_event.dart (Entity)
-
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
 import 'entity.dart';
 
-enum JobEventStatus {
+enum JobActivityStatus {
   tentative(Colors.orange),
   proposed(Colors.blue),
   confirmed(Colors.green);
 
-  const JobEventStatus(this.color);
+  const JobActivityStatus(this.color);
 
   final Color color;
 
-  static JobEventStatus fromName(String name) {
+  static JobActivityStatus fromName(String name) {
     switch (name) {
       case 'proposed':
-        return JobEventStatus.proposed;
+        return JobActivityStatus.proposed;
       case 'confirmed':
-        return JobEventStatus.confirmed;
+        return JobActivityStatus.confirmed;
       case 'tentative':
-        return JobEventStatus.tentative;
+        return JobActivityStatus.tentative;
       default:
-        return JobEventStatus.proposed;
+        return JobActivityStatus.proposed;
     }
   }
 }
 
-class JobEvent extends Entity<JobEvent> {
-  JobEvent({
+class JobActivity extends Entity<JobActivity> {
+  JobActivity({
     required this.jobId,
     required this.start,
     required this.end,
@@ -41,11 +39,11 @@ class JobEvent extends Entity<JobEvent> {
     this.noticeSentDate,
   }) : super();
 
-  JobEvent.forInsert({
+  JobActivity.forInsert({
     required this.jobId,
     required this.start,
     required this.end,
-    this.status = JobEventStatus.proposed, // Default status
+    this.status = JobActivityStatus.proposed, // Default status
     this.notes,
     this.noticeSentDate,
   }) : super.forInsert() {
@@ -53,25 +51,25 @@ class JobEvent extends Entity<JobEvent> {
     modifiedDate = DateTime.now();
   }
 
-  JobEvent.forUpdate({
+  JobActivity.forUpdate({
     required super.entity, // the existing primary key
     required this.jobId,
     required this.start,
     required this.end,
-    this.status = JobEventStatus.proposed, // Default status
+    this.status = JobActivityStatus.proposed, // Default status
     this.notes,
     this.noticeSentDate,
   }) : super.forUpdate() {
     modifiedDate = DateTime.now();
   }
 
-  factory JobEvent.fromMap(Map<String, dynamic> map) => JobEvent(
+  factory JobActivity.fromMap(Map<String, dynamic> map) => JobActivity(
         id: map['id'] as int,
         jobId: map['job_id'] as int,
         start: DateTime.parse(map['start_date'] as String),
         end: DateTime.parse(map['end_date'] as String),
-        status: JobEventStatus.fromName(
-            map['status'] as String? ?? JobEventStatus.proposed.name),
+        status: JobActivityStatus.fromName(
+            map['status'] as String? ?? JobActivityStatus.proposed.name),
         notes: map['notes'] as String?,
         noticeSentDate: map['notice_sent_date'] == null
             ? null
@@ -96,22 +94,22 @@ class JobEvent extends Entity<JobEvent> {
   int jobId;
   DateTime start;
   DateTime end;
-  JobEventStatus status;
+  JobActivityStatus status;
   String? notes;
   DateTime? noticeSentDate;
 
-  JobEvent copyWith({
+  JobActivity copyWith({
     int? id,
     int? jobId,
     DateTime? start,
     DateTime? end,
-    JobEventStatus? status,
+    JobActivityStatus? status,
     String? notes,
     DateTime? noticeSentDate,
     DateTime? createdDate,
     DateTime? modifiedDate,
   }) =>
-      JobEvent(
+      JobActivity(
         id: id ?? this.id,
         jobId: jobId ?? this.jobId,
         start: start ?? this.start,
@@ -125,6 +123,6 @@ class JobEvent extends Entity<JobEvent> {
 }
 
 /// Optional if you have a "JuneState" system.
-class JobEventState extends JuneState {
-  JobEventState();
+class JobActivityState extends JuneState {
+  JobActivityState();
 }

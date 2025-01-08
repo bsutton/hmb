@@ -43,6 +43,8 @@ class PlaceHolderManager {
     placeholders[DelayPeriod.tagName] = DelayPeriod(DelaySource());
     placeholders[AppointmentTime.tagName] =
         AppointmentTime(TimeSource(AppointmentTime.label));
+    placeholders[AppointmentDate.tagName] =
+        AppointmentDate(DateSource(AppointmentDate.label));
     placeholders[DueDate.tagName] = DueDate(DateSource(DueDate.label));
     placeholders[OriginalDate.tagName] =
         OriginalDate(DateSource(OriginalDate.label));

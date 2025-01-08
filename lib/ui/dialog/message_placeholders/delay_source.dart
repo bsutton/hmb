@@ -37,6 +37,9 @@ class DelaySource extends Source<String> {
           delay = newValue ?? '';
         },
       );
+
+  @override
+  String? get value => delay;
 }
 
 // /// Contact placeholder drop list

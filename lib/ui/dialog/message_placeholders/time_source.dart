@@ -30,8 +30,11 @@ class TimeSource extends Source<LocalTime> {
           // controller.text = '${datetime.day}/${datetime.month}/${datetime.year}';
           // placeholder.onChanged?.call(localTime, ResetFields());
         },
-        showDate: false,
+        mode: HMBDateTimeFieldMode.timeOnly,
       );
+
+  @override
+  LocalTime? get value => localTime;
 
   //  HMBDroplist<Site>(
   //       title: 'Site',
