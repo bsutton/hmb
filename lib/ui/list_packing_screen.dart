@@ -19,6 +19,7 @@ import '../util/money_ex.dart';
 import 'widgets/add_task_item.dart';
 import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
+import 'widgets/help_button.dart';
 import 'widgets/hmb_button.dart';
 import 'widgets/hmb_colours.dart';
 import 'widgets/hmb_search.dart';
@@ -152,7 +153,10 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
                       title: 'Filter by Jobs',
                       backgroundColor: SurfaceElevation.e4.color,
                       required: false,
-                    ),
+                    ).help('Filter by Job', '''
+Allows you to filter the packing list to items from specific Jobs.
+
+If your Job isn't showing then you need to update it's status to an Active one such as 'Scheduled, In Progress...' '''),
                   ],
                 ),
               ),
@@ -207,9 +211,11 @@ class _PackingScreenState extends AsyncState<PackingScreen, void> {
 
   Center _showEmpty() => const Center(child: Text('''
 No Packing Items found 
-- Packing items are taken from Task items 
+
+- A Job must be Active (Scheduled, In Progress...) for items to appearPacking items are taken from Task items 
 that are marked as "Materials - stock" or "Tools - own".
-If you were expecting to see items here - check the Job's Status is active.
+
+
 '''));
 
   Widget _buildListItem(

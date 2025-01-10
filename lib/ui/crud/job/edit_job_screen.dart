@@ -24,6 +24,7 @@ import '../../../util/platform_ex.dart';
 import '../../scheduling/schedule_page.dart';
 import '../../widgets/circle.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/help_button.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_child_crud_card.dart';
 import '../../widgets/hmb_toast.dart';
@@ -192,7 +193,21 @@ class _JobEditScreenState extends State<JobEditScreen>
           _selectedBillingType = billingType!;
         }),
         format: (value) => value.display,
-      );
+      ).help('Billing Type', '''
+
+Time and Materials (Cost Plus)
+
+Bill the customer based on hours tracked and Task Items purchased.
+You can progressively invoice the customer during the Job.
+
+Navigate to Billing | Invoices
+
+Fixed Price
+Bills the customer a pre-agreed amount.
+
+You can create Milestone Invoices as the Job progresses.
+Navigate to Billing | Milestones.
+''');
   Widget _showHourlyRate() => HMBTextField(
         key: const Key('hourlyRate'),
         controller: _hourlyRateController,
@@ -207,7 +222,10 @@ class _JobEditScreenState extends State<JobEditScreen>
         focusNode: _bookingFeeFocusNode,
         labelText: 'Booking Fee',
         keyboardType: TextInputType.number,
-      );
+      ).help('Booking Fee', '''
+A once off fee applied to this Job.
+
+You can set a default booking fee from System | Billing screen''');
 
   Widget _manageTasks(Job? job) => HMBChildCrudCard(
         // headline: 'Tasks',
@@ -316,15 +334,17 @@ class _JobEditScreenState extends State<JobEditScreen>
           future: DaoJobActivity().getByJob(widget.job!.id),
           builder: (context, jobActivities) {
             final nextActivity = _nextAcitivty(jobActivities!);
-            final nextActivityWhen =
-                nextActivity == null ? '' : formatDateTimeAM(nextActivity.start);
+            final nextActivityWhen = nextActivity == null
+                ? ''
+                : formatDateTimeAM(nextActivity.start);
             return ElevatedButton(
               onPressed: () async {
                 // Find the next upcoming activity
                 if (mounted) {
                   // Display a droplist or a simple dialog?
                   // For demonstration, let's do a showDialog with the list:
-                  final selectedActivity = await showActivityDialog(jobActivities);
+                  final selectedActivity =
+                      await showActivityDialog(jobActivities);
 
                   if (context.mounted && selectedActivity != null) {
                     // Now open schedule page showing that activities date in Week view
@@ -349,13 +369,15 @@ class _JobEditScreenState extends State<JobEditScreen>
                 children: [
                   if (nextActivity != null)
                     Circle(
-                        color: nextActivity.status.color, child: const Text('')),
+                        color: nextActivity.status.color,
+                        child: const Text('')),
                   const SizedBox(width: 5),
                   Text('Activities: $nextActivityWhen',
                       style: TextStyle(
-                        color: nextActivity != null && _isToday(nextActivity.start)
-                            ? Colors.orangeAccent
-                            : Colors.white,
+                        color:
+                            nextActivity != null && _isToday(nextActivity.start)
+                                ? Colors.orangeAccent
+                                : Colors.white,
                       ))
                 ],
               ),
@@ -365,7 +387,8 @@ class _JobEditScreenState extends State<JobEditScreen>
   ///
   /// show activity Dialog
   ///
-  Future<JobActivity?> showActivityDialog(List<JobActivity> jobActivities) async {
+  Future<JobActivity?> showActivityDialog(
+      List<JobActivity> jobActivities) async {
     final today = DateTime.now().withoutTime;
     return showDialog<JobActivity>(
       context: context,
@@ -374,7 +397,8 @@ class _JobEditScreenState extends State<JobEditScreen>
         children: [
           // "Next Activity" first, if any
           SimpleDialogOption(
-            onPressed: () => Navigator.of(context).pop(_nextAcitivty(jobActivities)),
+            onPressed: () =>
+                Navigator.of(context).pop(_nextAcitivty(jobActivities)),
             child: Text('Next Activity: ${_nextAcctivityWhen(jobActivities)}'),
           ),
 
@@ -384,7 +408,8 @@ class _JobEditScreenState extends State<JobEditScreen>
               onPressed: () => Navigator.of(context).pop(jobActivity),
               child: Row(
                 children: [
-                  Circle(color: jobActivity.status.color, child: const Text('')),
+                  Circle(
+                      color: jobActivity.status.color, child: const Text('')),
                   const SizedBox(width: 5),
                   Text(_activityDisplay(jobActivity),
                       style: TextStyle(

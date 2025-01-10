@@ -24,6 +24,7 @@ import 'list_packing_screen.dart';
 import 'widgets/add_task_item.dart';
 import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
+import 'widgets/help_button.dart';
 import 'widgets/hmb_button.dart';
 import 'widgets/hmb_search.dart';
 import 'widgets/layout/hmb_spacer.dart';
@@ -190,7 +191,10 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
                       title: 'Filter by Jobs',
                       backgroundColor: SurfaceElevation.e6.color,
                       required: false,
-                    ),
+                    ).help('Filter by Job', '''
+Allows you to filter the shopping list to items from specific Jobs.
+
+If your Job isn't showing then you need to update it's status to an Active one such as 'Scheduled, In Progress...' '''),
                     const SizedBox(height: 10),
                     HMBDroplist<Supplier>(
                       selectedItem: () async => _selectedSupplier,
@@ -203,7 +207,8 @@ class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
                       },
                       title: 'Supplier',
                       required: false,
-                    ),
+                    ).help('Filter by Supplier',
+                        'When adding Task Items, if you enter the supplier you can filter by supplier'),
                   ],
                 ),
               ),
