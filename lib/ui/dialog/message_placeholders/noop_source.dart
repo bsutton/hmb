@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../message_template_dialog.dart';
+import '../source_context.dart';
 import 'source.dart';
 
 class NoopSource extends Source<String> {
@@ -9,8 +9,18 @@ class NoopSource extends Source<String> {
   String? text;
 
   @override
-  Widget? widget(MessageData data) => null;
+  Widget? widget() => null;
 
   @override
   String? get value => text;
+
+  @override
+  void dependencyChanged(Source<dynamic> source, SourceContext sourceContext) {
+    //NOOP
+  }
+
+  @override
+  void revise(SourceContext sourceContext) {
+    // NOOP
+  }
 }

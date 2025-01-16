@@ -4,7 +4,7 @@ import '../../../dao/dao_contact.dart';
 import '../../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../../entity/contact.dart';
 import '../../../entity/entity.dart';
-import '../../dialog/message_template_dialog.dart';
+import '../../dialog/source_context.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
 import '../base_nested/list_nested_screen.dart';
@@ -47,7 +47,7 @@ class ContactListScreen<P extends Entity<P>> extends StatelessWidget {
           HMBPhoneText(
               label: '',
               phoneNo: contact.bestPhone,
-              messageData: MessageData(contact: contact)),
+              sourceContext: SourceContext(contact: contact)),
           HMBEmailText(label: '', email: contact.emailAddress)
         ]);
       });

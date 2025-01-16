@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../message_template_dialog.dart';
+import '../source_context.dart';
 import 'source.dart';
 
 class TextSource extends Source<String> {
@@ -12,14 +12,25 @@ class TextSource extends Source<String> {
   String? text;
 
   @override
-  Widget widget(MessageData data) => TextFormField(
+  Widget widget() => TextFormField(
         controller: controller,
         decoration: InputDecoration(labelText: label),
         onChanged: (value) {
           text = value;
+          onChanged(value, ResetFields());
         },
       );
 
   @override
   String? get value => text;
+
+  @override
+  void dependencyChanged(Source<dynamic> source, SourceContext sourceContext) {
+    // NO OP
+  }
+
+  @override
+  void revise(SourceContext sourceContext) {
+    // NO OP
+  }
 }

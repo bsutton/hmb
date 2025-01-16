@@ -7,7 +7,7 @@ import '../../../entity/contact.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/entity.dart';
 import '../../../util/platform_ex.dart';
-import '../../dialog/message_template_dialog.dart';
+import '../../dialog/source_context.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_name_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
@@ -105,15 +105,15 @@ class _ContactEditScreenState extends State<ContactEditScreen>
             HMBPhoneField(
                 controller: _mobileNumberController,
                 labelText: 'Mobile Number',
-                messageData: MessageData(contact: contact)),
+                sourceContext: SourceContext(contact: contact)),
             HMBPhoneField(
                 controller: _landlineController,
                 labelText: 'Landline',
-                messageData: MessageData(contact: contact)),
+                sourceContext: SourceContext(contact: contact)),
             HMBPhoneField(
                 controller: _officeNumberController,
                 labelText: 'Office Number',
-                messageData: MessageData(contact: contact)),
+                sourceContext: SourceContext(contact: contact)),
             HMBEmailField(
               controller: _emailaddressController,
               labelText: 'Email',

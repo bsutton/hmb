@@ -1,37 +1,51 @@
 import 'package:flutter/material.dart';
 
 import '../../../dao/dao_job.dart';
+import '../../../entity/customer.dart';
 import '../../../entity/job.dart';
 import '../../widgets/select/hmb_droplist.dart';
-import '../message_template_dialog.dart';
-import 'customer_source.dart';
+import '../source_context.dart';
 import 'source.dart';
 
 class JobSource extends Source<Job> {
-  JobSource({required this.customerSource}) : super(name: 'job') {
-    customerSource.onChanged = (customer, resetFields) {
-      // Reset job value when customer changes
-      job = null;
-    };
-  }
-  final CustomerSource customerSource;
+  JobSource() : super(name: 'job');
+  final customerNotifier = ValueNotifier<CustomerJob>(CustomerJob(null, null));
 
   Job? job;
 
   @override
-  Widget widget(MessageData data) => HMBDroplist<Job>(
-      title: 'Job',
-      selectedItem: () async => value,
-      items: (filter) async {
-        if (customerSource.value != null) {
-          return DaoJob().getByCustomer(customerSource.value!);
-        } else {
-          return [];
-        }
-      },
-      format: (job) => job.summary,
-      onChanged: (job) => this.job = job);
+  Widget widget() => ValueListenableBuilder(
+      valueListenable: customerNotifier,
+      builder: (context, customerJob, _) => HMBDroplist<Job>(
+          title: 'Job',
+          selectedItem: () async => customerJob.job,
+          items: (filter) async => DaoJob().getByCustomer(customerJob.customer),
+          format: (job) => customerJob.job?.summary ?? '',
+          onChanged: (job) {
+            this.job = job;
+            onChanged(job, ResetFields(contact: true, site: true));
+          }));
 
   @override
   Job? get value => job;
+
+  @override
+  void dependencyChanged(Source<dynamic> source, SourceContext sourceContext) {
+    if (source == this) {
+      return;
+    }
+    customerNotifier.value =
+        CustomerJob(sourceContext.customer, sourceContext.job);
+  }
+
+  @override
+  void revise(SourceContext sourceContext) {
+    sourceContext.job = job;
+  }
+}
+
+class CustomerJob {
+  CustomerJob(this.customer, this.job);
+  Customer? customer;
+  Job? job;
 }

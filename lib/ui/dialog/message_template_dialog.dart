@@ -3,60 +3,30 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../entity/message_template.dart';
 import '../../dao/dao_message_template.dart';
-import '../../entity/contact.dart';
-import '../../entity/customer.dart';
-import '../../entity/invoice.dart';
-import '../../entity/job.dart';
-import '../../entity/site.dart';
-import '../../entity/supplier.dart';
 import '../../ui/widgets/async_state.dart';
-import '../../util/local_date.dart';
-import '../../util/local_time.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_droplist.dart';
+import 'message_placeholders/noop_source.dart';
 import 'message_placeholders/place_holder.dart';
 import 'message_placeholders/placeholder_manager.dart';
+import 'message_placeholders/source.dart';
+import 'source_context.dart';
 
 class MessageTemplateDialog extends StatefulWidget {
-  const MessageTemplateDialog({required this.messageData, super.key});
+  const MessageTemplateDialog({required this.sourceContext, super.key});
 
-  final MessageData messageData;
+  final SourceContext sourceContext;
 
   @override
   _MessageTemplateDialogState createState() => _MessageTemplateDialogState();
 }
 
-class MessageData {
-  MessageData({
-    this.customer,
-    this.job,
-    this.contact,
-    this.supplier,
-    this.site,
-    this.invoice,
-    this.delayPeriod,
-    this.originalDate,
-    this.appointmentDate,
-    this.appointmentTime,
-  });
-  Customer? customer;
-  Job? job;
-  Contact? contact;
-  Supplier? supplier;
-  Site? site;
-  Invoice? invoice;
-  String? delayPeriod;
-  LocalDate? originalDate;
-  LocalDate? appointmentDate;
-  LocalTime? appointmentTime;
-}
-
 Future<SelectedMessageTemplate?> showMessageTemplateDialog(BuildContext context,
-        {required MessageData messageData}) async =>
+        {required SourceContext sourceContext}) async =>
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => MessageTemplateDialog(
-          messageData: messageData,
+          sourceContext: sourceContext,
         ),
       ),
     );
@@ -67,7 +37,7 @@ class _MessageTemplateDialogState
   List<MessageTemplate> _templates = [];
   MessageTemplate? _selectedTemplate;
 
-  final Map<String, PlaceHolder<dynamic, dynamic>> placeholders = {};
+  final Map<String, PlaceHolder<dynamic>> placeholders = {};
 
   late TabController _tabController;
   final TextEditingController _messageController = TextEditingController();
@@ -75,6 +45,7 @@ class _MessageTemplateDialogState
   @override
   Future<void> asyncInitState() async {
     _tabController = TabController(length: 2, vsync: this);
+    await widget.sourceContext.resolveEntities();
     await _loadTemplates();
   }
 
@@ -87,17 +58,17 @@ class _MessageTemplateDialogState
 
   List<MessageTemplate> _filterTemplates(List<MessageTemplate> templates) {
     // Filter based on the screen type
-    if (widget.messageData.job != null) {
+    if (widget.sourceContext.job != null) {
       return templates;
-    } else if (widget.messageData.customer != null) {
+    } else if (widget.sourceContext.customer != null) {
       return templates
           .where((t) => t.message.contains('{{customer.}}'))
           .toList();
-    } else if (widget.messageData.supplier != null) {
+    } else if (widget.sourceContext.supplier != null) {
       return templates
           .where((t) => t.message.contains('{{supplier.}}'))
           .toList();
-    } else if (widget.messageData.contact != null) {
+    } else if (widget.sourceContext.contact != null) {
       return templates
           .where((t) => t.message.contains('{{contact.}}'))
           .toList();
@@ -123,13 +94,18 @@ class _MessageTemplateDialogState
       for (final name in newPlaceholders) {
         // ignore: inference_failure_on_instance_creation
         final placeholder = await PlaceHolderManager()
-            .resolvePlaceholder(name, widget.messageData);
+            .resolvePlaceholder(name, widget.sourceContext);
 
         if (placeholder != null) {
-          // final placeholderWidget = placeholder.source.field(widget.messageData);
-          // final widget = field(widget.messageData);
+          /// provide each source with an initial value
+          placeholder.source
+              .dependencyChanged(NoopSource(), widget.sourceContext);
+
+          // listen to source changes and propergate them to
+          // other sources and the preview window.
           placeholder.listen = (value, reset) {
-            _reset(reset);
+            placeholder.source.revise(widget.sourceContext);
+            _reset(placeholder.source, reset);
             _refreshPreview();
           };
           placeholders[placeholder.name] = placeholder;
@@ -146,10 +122,10 @@ class _MessageTemplateDialogState
 
     var previewMessage = _selectedTemplate!.message;
 
-    // Replace other placeholders
+    // Replace  placeholders keys with the actual value
     for (final key in placeholders.keys) {
-      final field = placeholders[key];
-      final text = await field!.value(widget.messageData);
+      final placeholder = placeholders[key];
+      final text = await placeholder!.value();
       previewMessage = previewMessage.replaceAll(
           '{{$key}}', text.isNotEmpty ? text : '[$key]');
     }
@@ -208,16 +184,7 @@ class _MessageTemplateDialogState
                       },
                     ),
                     const SizedBox(height: 20),
-                    if (_selectedTemplate != null)
-                      Column(
-                        children: placeholders.values
-                            .where((field) =>
-                                field.source.widget(widget.messageData) != null)
-                            .map((field) =>
-                                field.source.widget(widget.messageData))
-                            .whereType<Widget>()
-                            .toList(),
-                      ),
+                    if (_selectedTemplate != null) _buildSourceWidgets(),
                   ],
                 ),
               ),
@@ -286,7 +253,7 @@ class _MessageTemplateDialogState
                     final values = <String, String>{};
                     for (final MapEntry(:key, :value) in placeholders.entries) {
                       final field = value;
-                      final fieldValue = await field.value(widget.messageData);
+                      final fieldValue = await field.value();
                       values.addAll({key: fieldValue});
                     }
 
@@ -305,31 +272,47 @@ class _MessageTemplateDialogState
         ),
       );
 
+  Column _buildSourceWidgets() {
+    final uniqueWidgets = <String, Widget>{};
+
+    for (final placeholder in placeholders.values) {
+      final widget = placeholder.source.widget();
+      if (widget != null) {
+        // Use the placeholder base name as a unique key
+        uniqueWidgets[placeholder.base] = widget;
+      }
+    }
+
+    return Column(
+      children: uniqueWidgets.values.toList(),
+    );
+  }
+
   void _refreshPreview() {
     setState(() {});
   }
 
-  void _reset(ResetFields reset) {
+  void _reset(Source<dynamic> source, ResetFields reset) {
     if (reset.contact) {
-      _resetByScope('contact');
+      _resetByScope(source, 'contact');
     }
     if (reset.customer) {
-      _resetByScope('customer');
+      _resetByScope(source, 'customer');
     }
 
     if (reset.job) {
-      _resetByScope('job');
+      _resetByScope(source, 'job');
     }
 
     if (reset.site) {
-      _resetByScope('site');
+      _resetByScope(source, 'site');
     }
   }
 
-  void _resetByScope(String scope) {
+  void _resetByScope(Source<dynamic> source, String scope) {
     for (final placeholder in placeholders.values) {
       if (placeholder.base == scope) {
-        placeholder.setValue(null);
+        placeholder.source.dependencyChanged(source, widget.sourceContext);
       }
     }
   }

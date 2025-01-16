@@ -20,7 +20,6 @@ class HMBDateTimeField extends StatefulWidget {
     this.validator,
     this.width = 180,
     super.key,
-    this.labelWidth = double.infinity,
   });
 
   final String label;
@@ -28,7 +27,6 @@ class HMBDateTimeField extends StatefulWidget {
   final OnChanged onChanged;
   final Validator? validator;
   final double width;
-  final double labelWidth;
   final HMBDateTimeFieldMode mode;
 
   @override
@@ -74,13 +72,11 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
   Widget build(BuildContext context) => Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
-          SizedBox(
-            width: widget.labelWidth,
-            child: HMBText(
-              widget.label,
-              bold: true,
-            ),
+          HMBText(
+            widget.label,
+            bold: true,
           ),
+          const HMBSpacer(width: true),
           if (widget.mode != HMBDateTimeFieldMode.timeOnly)
             SizedBox(
               width: widget.width,

@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../../../ui/widgets/dial_widget.dart';
-import '../../dialog/message_template_dialog.dart';
+import '../../dialog/source_context.dart';
 
 class HMBPhoneField extends StatelessWidget {
   const HMBPhoneField(
       {required this.labelText,
       required this.controller,
-      required this.messageData,
+      required this.sourceContext,
       this.validator,
       super.key});
 
   final TextEditingController controller;
   final String labelText;
   final String? Function(String? value)? validator;
-  final MessageData messageData;
+  final SourceContext sourceContext;
 
   @override
   Widget build(BuildContext context) => TextFormField(
@@ -22,7 +22,7 @@ class HMBPhoneField extends StatelessWidget {
       keyboardType: TextInputType.phone,
       decoration: InputDecoration(
         labelText: labelText,
-        suffixIcon: DialWidget(controller.text, messageData: messageData),
+        suffixIcon: DialWidget(controller.text, sourceContext: sourceContext),
       ),
       validator: validator);
 }

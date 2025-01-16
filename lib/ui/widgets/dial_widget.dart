@@ -10,14 +10,15 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../util/clip_board.dart';
 import '../../util/platform_ex.dart';
 import '../dialog/message_template_dialog.dart';
+import '../dialog/source_context.dart';
 import 'hmb_button.dart';
 import 'hmb_toast.dart';
 
 class DialWidget extends StatelessWidget {
-  const DialWidget(this.phoneNo, {required this.messageData, super.key});
+  const DialWidget(this.phoneNo, {required this.sourceContext, super.key});
   final String phoneNo;
 
-  final MessageData messageData;
+  final SourceContext sourceContext;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -66,7 +67,7 @@ class DialWidget extends StatelessWidget {
               // await _showTextInputDialog(context, phoneNo);
               final template = await showMessageTemplateDialog(
                 context,
-                messageData: messageData,
+                sourceContext: sourceContext,
               );
               if (context.mounted) {
                 if (template != null) {

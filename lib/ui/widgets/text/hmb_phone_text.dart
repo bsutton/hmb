@@ -9,7 +9,7 @@ import '../../../entity/job.dart';
 import '../../../ui/widgets/dial_widget.dart';
 import '../../../util/hmb_theme.dart';
 import '../../../util/plus_space.dart';
-import '../../dialog/message_template_dialog.dart';
+import '../../dialog/source_context.dart';
 import '../layout/hmb_placeholder.dart';
 
 /// Displays the label and phoneNum.
@@ -18,12 +18,12 @@ import '../layout/hmb_placeholder.dart';
 class HMBPhoneText extends StatelessWidget {
   const HMBPhoneText(
       {required this.phoneNo,
-      required this.messageData,
+      required this.sourceContext,
       this.label,
       super.key});
   final String? label;
   final String? phoneNo;
-  final MessageData messageData;
+  final SourceContext sourceContext;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -43,7 +43,7 @@ class HMBPhoneText extends StatelessWidget {
           if (Strings.isNotBlank(phoneNo))
             Align(
               alignment: Alignment.centerRight,
-              child: DialWidget(phoneNo!, messageData: messageData),
+              child: DialWidget(phoneNo!, sourceContext: sourceContext),
             ),
         ],
       );
@@ -57,24 +57,26 @@ class HMBJobPhoneText extends StatelessWidget {
   final Job job;
 
   @override
-  Widget build(BuildContext context) => FutureBuilderEx<MessageData>(
+  Widget build(BuildContext context) => FutureBuilderEx<SourceContext>(
       waitingBuilder: (_) => const HMBPlaceHolder(height: 40),
       // ignore: discarded_futures
       future: getData(job),
-      builder: (context, data) {
-        final phoneNo = data!.contact?.bestPhone;
+      builder: (context, sourceContext) {
+        final phoneNo = sourceContext!.contact?.bestPhone;
         return HMBPhoneText(
           phoneNo: phoneNo,
-          messageData: data,
+          sourceContext: sourceContext,
         );
       });
 
-  Future<MessageData> getData(Job job) async {
+  Future<SourceContext> getData(Job job) async {
     final contact = await DaoContact().getById(job.contactId);
     final site = await DaoSite().getById(job.siteId);
     final customer = await DaoCustomer().getById(job.customerId);
 
-    return MessageData(
+    return  SourceContext(
         job: job, contact: contact, site: site, customer: customer);
+
+
   }
 }

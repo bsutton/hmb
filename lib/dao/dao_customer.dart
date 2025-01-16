@@ -81,6 +81,44 @@ order by c.modifiedDate desc
 
   @override
   JuneStateCreator get juneRefresher => CustomerState.new;
+
+  /// Get the customer associated with the given contact ID.
+  Future<Customer?> getByContact(int contactId) async {
+    final db = withoutTransaction();
+
+    final data = await db.rawQuery('''
+      SELECT c.*
+      FROM customer c
+      LEFT JOIN customer_contacts cc ON c.id = cc.customer_id
+      WHERE cc.contact_id = ?
+      LIMIT 1
+    ''', [contactId]);
+
+    if (data.isEmpty) {
+      return null;
+    }
+
+    return fromMap(data.first);
+  }
+
+  /// Get the customer associated with the given site ID.
+  Future<Customer?> getBySite(int siteId) async {
+    final db = withoutTransaction();
+
+    final data = await db.rawQuery('''
+      SELECT c.*
+      FROM customer c
+      LEFT JOIN customer_sites cs ON c.id = cs.customer_id
+      WHERE cs.site_id = ?
+      LIMIT 1
+    ''', [siteId]);
+
+    if (data.isEmpty) {
+      return null;
+    }
+
+    return fromMap(data.first);
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

@@ -36,7 +36,15 @@ UPDATE message_template
 SET message = REPLACE(message, '\n', CHAR(10));
 
 UPDATE message_template
-SET message = REPLACE(message, '{{event.', '{{activity.');
+SET message = REPLACE(message, '{{event.', '{{job_activity.');
+
+UPDATE message_template
+SET message = REPLACE(message, '{{site}}', '{{site.address}}')
+WHERE message LIKE '%{{site}}%';
 
 -- Rename the table
 ALTER TABLE job_event RENAME TO job_activity;
+
+
+
+

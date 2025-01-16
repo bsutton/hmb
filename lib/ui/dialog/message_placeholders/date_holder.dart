@@ -1,11 +1,10 @@
 import '../../../util/format.dart';
 import '../../../util/local_date.dart';
-import '../message_template_dialog.dart';
 import 'date_source.dart';
 import 'place_holder.dart';
 
-class ServiceDate extends PlaceHolder<LocalDate, LocalDate> {
-  ServiceDate(this.dateSource)
+class ServiceDate extends PlaceHolder<LocalDate> {
+  ServiceDate({required this.dateSource})
       : super(name: tagName, base: tagBase, source: dateSource);
 
   static String tagName = 'date.service';
@@ -15,69 +14,12 @@ class ServiceDate extends PlaceHolder<LocalDate, LocalDate> {
 
   final DateSource dateSource;
 
-  LocalDate? serviceDate;
-
   @override
-  Future<String> value(MessageData data) async => formatLocalDate(serviceDate!);
-
-// @override
-//   PlaceHolderField<LocalDate> field(MessageData data)
-//=> _buildDatePicker(this);
-
-  @override
-  void setValue(LocalDate? value) => serviceDate = value;
+  Future<String> value() async => formatLocalDate(dateSource.date!);
 }
 
-class OriginalDate extends PlaceHolder<LocalDate, LocalDate> {
-  OriginalDate(this.dateSource)
-      : super(name: tagName, base: tagBase, source: dateSource);
-
-  static String tagName = 'activity.original_date';
-  static String tagBase = 'activity.original_date';
-  static String label = 'Original Date';
-
-  LocalDate? originalDate;
-
-  DateSource dateSource;
-
-  @override
-  Future<String> value(MessageData data) async =>
-      formatLocalDate(data.originalDate!);
-
-  // @override
-  // PlaceHolderField<LocalDate> field(MessageData data)
-  // => _buildDatePicker(this);
-
-  @override
-  void setValue(LocalDate? value) => originalDate = value;
-}
-
-class AppointmentDate extends PlaceHolder<LocalDate, LocalDate> {
-  AppointmentDate(this.dateSource)
-      : super(name: tagName, base: tagBase, source: dateSource);
-
-  static String tagName = 'activity.start_date';
-  static String tagBase = 'activity.start_date';
-  static String label = 'Original Date';
-
-
-  final DateSource dateSource;
-  LocalDate? appointmentDate;
-
-  @override
-  Future<String> value(MessageData data) async =>
-      formatLocalDate(data.appointmentDate ?? LocalDate.today());
-
-  // @override
-  // PlaceHolderField<LocalDate> field(MessageData data)
-  //=> _buildDatePicker(this);
-
-  @override
-  void setValue(LocalDate? value) => appointmentDate = value;
-}
-
-class DueDate extends PlaceHolder<LocalDate, LocalDate> {
-  DueDate(this.dateSource)
+class DueDate extends PlaceHolder<LocalDate> {
+  DueDate({required this.dateSource})
       : super(name: tagName, base: tagBase, source: dateSource);
 
   static String tagName = 'invoice.due_date';
@@ -86,35 +28,7 @@ class DueDate extends PlaceHolder<LocalDate, LocalDate> {
 
   final DateSource dateSource;
 
-  LocalDate? dueDate;
   @override
-  Future<String> value(MessageData data) async =>
-      formatLocalDate(data.invoice?.dueDate ?? LocalDate.today());
-
-  // @override
-  // PlaceHolderField<LocalDate> field(MessageData data) =>
-  //     throw UnimplementedError();
-
-  @override
-  void setValue(LocalDate? value) => dueDate = value;
+  Future<String> value() async =>
+      formatLocalDate(dateSource.date ?? LocalDate.today());
 }
-
-/// Date placeholder drop list
-// PlaceHolderField<LocalDate> _buildDatePicker(
-//     PlaceHolder<LocalDate> placeholder) {
-//   final widget = HMBDateTimeField(
-//     label: placeholder.name.toProperCase(),
-//     initialDateTime: DateTime.now(),
-//     onChanged: (datetime) {
-//       final localDate = LocalDate.fromDateTime(datetime);
-//       placeholder.setValue(localDate);
-//       // controller.text = '${datetime.day}/${datetime.month}/${datetime.year}';
-//       placeholder.onChanged?.call(localDate, ResetFields());
-//     },
-//     showTime: false,
-//   );
-//   return PlaceHolderField(
-//       placeholder: placeholder,
-//       widget: widget,
-//       getValue: (data) async => placeholder.value(data));
-// }

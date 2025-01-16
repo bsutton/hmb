@@ -4,57 +4,53 @@ import '../../../dao/dao_contact.dart';
 import '../../../entity/contact.dart';
 import '../../../entity/customer.dart';
 import '../../widgets/select/hmb_droplist.dart';
-import '../message_template_dialog.dart';
-import 'place_holder.dart';
+import '../source_context.dart';
 import 'source.dart';
 
 class ContactSource extends Source<Contact> {
   ContactSource() : super(name: 'contact');
+  final customerNotifier =
+      ValueNotifier<CustomerContact>(CustomerContact(null, null));
 
-  /// needs be taken from th emanager.
-  Customer? customer;
   Contact? contact;
 
   @override
-  Widget widget(MessageData data) => HMBDroplist<Contact>(
-        title: 'Contact',
-        selectedItem: () async => contact,
-        items: (filter) async => DaoContact().getByFilter(customer!, filter),
-        format: (contact) => contact.fullname,
-        onChanged: (contact) {
-          this.contact = contact;
-          // Reset site and contact when customer changes
-          onChanged?.call(contact, ResetFields(site: true, contact: true));
-        },
-      );
+  Widget widget() => ValueListenableBuilder(
+      valueListenable: customerNotifier,
+      builder: (context, customerContact, _) => HMBDroplist<Contact>(
+            title: 'Contact',
+            selectedItem: () async => customerContact.contact,
+            items: (filter) async =>
+                DaoContact().getByFilter(customerContact.customer!, filter),
+            format: (contact) => contact.fullname,
+            onChanged: (contact) {
+              this.contact = contact;
+              // Reset site and contact when customer changes
+              onChanged.call(contact, ResetFields(site: true, contact: true));
+            },
+          ));
 
   @override
   Contact? get value => contact;
+
+  @override
+  void dependencyChanged(Source<dynamic> source, SourceContext sourceContext) {
+    if (source == this) {
+      return;
+    }
+    customerNotifier.value =
+        CustomerContact(sourceContext.customer, sourceContext.contact);
+    contact = null;
+  }
+
+  @override
+  void revise(SourceContext sourceContext) {
+    sourceContext.contact = contact;
+  }
 }
 
-// /// Contact placeholder drop list
-// Widget _buildContactDroplist(ContactName placeholder, MessageData data) {
-//   placeholder.setValue(data.contact);
-
-//   return HMBDroplist<Contact>(
-//     title: 'Contact',
-//     selectedItem: () async => placeholder.contact,
-//     items: (filter) async {
-//       if (data.job != null && data.job!.contactId != null) {
-//         final contact = await DaoContact().getById(data.job!.contactId);
-//         return [contact!];
-//       } else {
-//         final customer = await DaoCustomer().getById(data.job!.customerId);
-//         return DaoContact().getByFilter(customer!, filter);
-//       }
-//     },
-//     format: (contact) => contact.fullname,
-//     onChanged: (contact) {
-//       placeholder.contact = contact;
-//       // Reset site and contact when contact changes
-//       assert(placeholder.onChanged != null, 'You must call listen');
-//       placeholder.onChanged
-//           ?.call(contact, ResetFields(site: true, contact: true));
-//     },
-//   );
-// }
+class CustomerContact {
+  CustomerContact(this.customer, this.contact);
+  Customer? customer;
+  Contact? contact;
+}

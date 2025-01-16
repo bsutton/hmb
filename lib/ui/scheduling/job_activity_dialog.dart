@@ -271,7 +271,6 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   HMBDateTimeField _buildEventDate(BuildContext context) => HMBDateTimeField(
       mode: HMBDateTimeFieldMode.dateOnly,
       label: 'Event Date',
-      labelWidth: 100,
       initialDateTime: _startDate,
       width: 200,
       onChanged: (date) {
@@ -294,7 +293,6 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   HMBDateTimeField _buildEndDate(BuildContext context) => HMBDateTimeField(
       mode: HMBDateTimeFieldMode.timeOnly,
       label: 'End Time',
-      labelWidth: 100,
       initialDateTime: _endDate,
       width: 200,
       onChanged: (date) {
@@ -315,7 +313,6 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   HMBDateTimeField _buildStartDate() => HMBDateTimeField(
         mode: HMBDateTimeFieldMode.timeOnly,
         label: 'Start Time',
-        labelWidth: 100,
         initialDateTime: _startDate,
         width: 200,
         onChanged: (date) {

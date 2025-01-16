@@ -9,7 +9,10 @@ class DaoJobActivity extends Dao<JobActivity> {
   @override
   JobActivity fromMap(Map<String, dynamic> map) => JobActivity.fromMap(map);
 
-  Future<List<JobActivity>> getByJob(int jobId) async {
+  Future<List<JobActivity>> getByJob(int? jobId) async {
+    if (jobId == null) {
+      return [];
+    }
     final db = withoutTransaction();
     final rows = await db.query(
       tableName,
@@ -44,7 +47,23 @@ class DaoJobActivity extends Dao<JobActivity> {
     return jobEvents;
   }
 
+  Future<JobActivity?> getMostRecentByJob(int jobId) async {
+    final db = withoutTransaction();
+    final data = await db.rawQuery('''
+    SELECT *
+    FROM job_activity
+    WHERE job_id = ?
+    ORDER BY start_date DESC
+    LIMIT 1
+  ''', [jobId]);
+
+    if (data.isEmpty) {
+      return null;
+    }
+
+    return fromMap(data.first);
+  }
+
   @override
-  JobActivityState Function() get juneRefresher =>
-      JobActivityState.new; // optional, if using June
+  JobActivityState Function() get juneRefresher => JobActivityState.new;
 }

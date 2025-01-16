@@ -240,7 +240,10 @@ where t.id =?
   }
 
   /// Get all the jobs for the given customer.
-  Future<List<Job>> getByCustomer(Customer customer) async {
+  Future<List<Job>> getByCustomer(Customer? customer) async {
+    if (customer == null) {
+      return [];
+    }
     final db = withoutTransaction();
 
     final data = await db.rawQuery('''

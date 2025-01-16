@@ -11,7 +11,7 @@ import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
 import '../../../util/app_title.dart';
 import '../../../util/platform_ex.dart';
-import '../../dialog/message_template_dialog.dart';
+import '../../dialog/source_context.dart';
 import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
@@ -181,15 +181,15 @@ class SystemContactInformationScreenState
                 HMBPhoneField(
                     controller: _mobileNumberController!,
                     labelText: 'Mobile Number',
-                    messageData: MessageData()),
+                    sourceContext: SourceContext()),
                 HMBPhoneField(
                     controller: _landLineController!,
                     labelText: 'Land Line',
-                    messageData: MessageData()),
+                    sourceContext: SourceContext()),
                 HMBPhoneField(
                     controller: _officeNumberController!,
                     labelText: 'Office Number',
-                    messageData: MessageData()),
+                    sourceContext: SourceContext()),
                 HMBEmailField(
                   autofocus: isNotMobile,
                   controller: _fromEmailController!,

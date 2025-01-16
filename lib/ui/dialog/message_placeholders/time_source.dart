@@ -3,32 +3,22 @@ import 'package:strings/strings.dart';
 
 import '../../../util/local_time.dart';
 import '../../widgets/hmb_date_time_picker.dart';
-import '../message_template_dialog.dart';
+import '../source_context.dart';
 import 'source.dart';
 
 class TimeSource extends Source<LocalTime> {
-  TimeSource(this.label)
-      : super(
-          name: 'time',
-        );
+  TimeSource({required this.label}) : super(name: 'time');
 
   final String label;
 
   LocalTime? localTime;
 
   @override
-  Widget widget(MessageData data) =>
-
-      /// Date placeholder drop list
-
-      HMBDateTimeField(
+  Widget widget() => HMBDateTimeField(
         label: label.toProperCase(),
         initialDateTime: DateTime.now(),
         onChanged: (datetime) {
           localTime = LocalTime.fromDateTime(datetime);
-          // placeholder.setValue(localTime);
-          // controller.text = '${datetime.day}/${datetime.month}/${datetime.year}';
-          // placeholder.onChanged?.call(localTime, ResetFields());
         },
         mode: HMBDateTimeFieldMode.timeOnly,
       );
@@ -36,44 +26,13 @@ class TimeSource extends Source<LocalTime> {
   @override
   LocalTime? get value => localTime;
 
-  //  HMBDroplist<Site>(
-  //       title: 'Site',
-  //       selectedItem: () async => value,
-  //       items: (filter) async {
-  //         if (timeSource.value != null) {
-  //           return DaoSite().getByCustomer(customer?.id);
-  //         } else {
-  //           return [];
-  //         }
-  //       },
-  //       format: (site) => site.address,
-  //       onChanged: setValue,
-  //     );
-}
+  @override
+  void dependencyChanged(Source<dynamic> source, SourceContext sourceContext) {
+    // NO OP
+  }
 
-// /// Site placeholder drop list
-// PlaceHolderField<Site> _buildSiteDroplist(
-//     SiteHolder siteHolder, MessageData data) {
-//   final droplist = HMBDroplist<Site>(
-//     title: siteHolder.name.toCapitalised(),
-//     selectedItem: () async => siteHolder.site = data.site,
-//     items: (filter) async {
-//       if (data.customer != null) {
-//         // Fetch sites associated with the selected customer
-//         return DaoSite().getByFilter(data.customer!.id, filter);
-//       } else {
-//         // Fetch all sites
-//         return DaoSite().getAll();
-//       }
-//     },
-//     format: (site) => site.address,
-//     onChanged: (site) {
-//       siteHolder.site = site;
-//       siteHolder.onChanged?.call(site, ResetFields());
-//     },
-//   );
-//   return PlaceHolderField<Site>(
-//     placeholder: siteHolder,
-//     widget: droplist,
-//     getValue: (data) async => siteHolder.value(data),
-//   );
+  @override
+  void revise(SourceContext sourceContext) {
+    // NO OP
+  }
+}
