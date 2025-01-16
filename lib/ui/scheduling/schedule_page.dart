@@ -82,7 +82,7 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
 ///
 /// [SchedulePageState]
 ///
-class SchedulePageState extends AsyncState<SchedulePage, void> {
+class SchedulePageState extends AsyncState<SchedulePage> {
   late ScheduleView selectedView;
   bool showExtendedHours = false;
 

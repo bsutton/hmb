@@ -38,7 +38,7 @@ class SystemBillingScreen extends StatefulWidget {
   SystemBillingScreenState createState() => SystemBillingScreenState();
 }
 
-class SystemBillingScreenState extends AsyncState<SystemBillingScreen, void> {
+class SystemBillingScreenState extends AsyncState<SystemBillingScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late final HMBMoneyEditingController _defaultHourlyRateController =

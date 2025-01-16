@@ -32,7 +32,7 @@ class ToolEditScreen extends StatefulWidget {
   _ToolEditScreenState createState() => _ToolEditScreenState();
 }
 
-class _ToolEditScreenState extends AsyncState<ToolEditScreen, void>
+class _ToolEditScreenState extends AsyncState<ToolEditScreen>
     implements EntityState<Tool> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;

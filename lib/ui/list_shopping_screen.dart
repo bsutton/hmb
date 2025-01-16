@@ -41,7 +41,7 @@ class ShoppingScreen extends StatefulWidget {
   _ShoppingScreenState createState() => _ShoppingScreenState();
 }
 
-class _ShoppingScreenState extends AsyncState<ShoppingScreen, void> {
+class _ShoppingScreenState extends AsyncState<ShoppingScreen> {
   late final _taskItems = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
   Supplier? _selectedSupplier;

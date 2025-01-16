@@ -88,7 +88,7 @@ class InvoiceOptions {
 }
 
 class _DialogTaskSelectionState
-    extends AsyncState<DialogTaskSelection, List<TaskSelector>> {
+    extends AsyncState<DialogTaskSelection> {
   // late List<TaskEstimates> _tasks;
   final Map<int, bool> _selectedTasks = {};
   bool _selectAll = true;
@@ -97,7 +97,7 @@ class _DialogTaskSelectionState
   bool groupByTask = false;
 
   @override
-  Future<List<TaskSelector>> asyncInitState() async {
+  Future<void> asyncInitState() async {
     billBookingFee = canBillBookingFee =
         widget.job.billingType == BillingType.timeAndMaterial &&
             !widget.job.bookingFeeInvoiced;
@@ -107,7 +107,6 @@ class _DialogTaskSelectionState
       _selectedTasks[accuredValue.task.id] = true;
     }
 
-    return widget.taskSelectors;
   }
 
   void _toggleSelectAll(bool? value) {
@@ -133,9 +132,9 @@ class _DialogTaskSelectionState
   @override
   Widget build(BuildContext context) => AlertDialog(
         title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
-        content: FutureBuilderEx<List<TaskSelector>>(
+        content: FutureBuilderEx<void>(
             future: initialised,
-            builder: (context, taskSelectors) => SingleChildScrollView(
+            builder: (context, _) => SingleChildScrollView(
                   child: Column(
                     children: [
                       DropdownButton<bool>(
@@ -173,7 +172,7 @@ class _DialogTaskSelectionState
                           value: _selectAll,
                           onChanged: _toggleSelectAll,
                         ),
-                      for (final taskSelector in taskSelectors!)
+                      for (final taskSelector in widget.taskSelectors)
                         CheckboxListTile(
                           title: Text(taskSelector.description),
                           subtitle:

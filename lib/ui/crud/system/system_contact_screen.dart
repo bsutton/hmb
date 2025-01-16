@@ -31,7 +31,7 @@ class SystemContactInformationScreen extends StatefulWidget {
 }
 
 class SystemContactInformationScreenState
-    extends AsyncState<SystemContactInformationScreen, void> {
+    extends AsyncState<SystemContactInformationScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController? _addressLine1Controller;

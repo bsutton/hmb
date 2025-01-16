@@ -32,7 +32,7 @@ Future<SelectedMessageTemplate?> showMessageTemplateDialog(BuildContext context,
     );
 
 class _MessageTemplateDialogState
-    extends AsyncState<MessageTemplateDialog, void>
+    extends AsyncState<MessageTemplateDialog>
     with SingleTickerProviderStateMixin {
   List<MessageTemplate> _templates = [];
   MessageTemplate? _selectedTemplate;

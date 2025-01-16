@@ -37,7 +37,7 @@ class WeekSchedule extends StatefulWidget with ScheduleHelper {
   State<WeekSchedule> createState() => _WeekScheduleState();
 }
 
-class _WeekScheduleState extends AsyncState<WeekSchedule, void> {
+class _WeekScheduleState extends AsyncState<WeekSchedule> {
   late final EventController<JobActivityEx> _weekController;
   late final System system;
   late final bool showWeekends;

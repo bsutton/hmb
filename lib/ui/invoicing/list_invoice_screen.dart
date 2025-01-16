@@ -28,7 +28,7 @@ class InvoiceListScreen extends StatefulWidget {
   _InvoiceListScreenState createState() => _InvoiceListScreenState();
 }
 
-class _InvoiceListScreenState extends AsyncState<InvoiceListScreen, void> {
+class _InvoiceListScreenState extends AsyncState<InvoiceListScreen> {
   late Future<List<InvoiceDetails>> _invoices;
 
   Job? selectedJob;

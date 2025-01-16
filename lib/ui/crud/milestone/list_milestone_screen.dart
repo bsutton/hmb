@@ -25,7 +25,7 @@ class ListMilestoneScreen extends StatefulWidget {
   _ListMilestoneScreenState createState() => _ListMilestoneScreenState();
 }
 
-class _ListMilestoneScreenState extends AsyncState<ListMilestoneScreen, void> {
+class _ListMilestoneScreenState extends AsyncState<ListMilestoneScreen> {
   late Future<List<QuoteMilestoneSummary>> _summaries;
 
   String? filter;

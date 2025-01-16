@@ -31,7 +31,7 @@ class InvoiceEditScreen extends StatefulWidget {
   State<InvoiceEditScreen> createState() => _InvoiceEditScreenState();
 }
 
-class _InvoiceEditScreenState extends AsyncState<InvoiceEditScreen, void> {
+class _InvoiceEditScreenState extends AsyncState<InvoiceEditScreen> {
   final XeroApi _xeroApi = XeroApi();
   late final int invoiceId;
   late Future<InvoiceDetails> _invoiceDetails;

@@ -52,7 +52,7 @@ class TaskItemEditScreen extends StatefulWidget {
   }
 }
 
-class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen, System>
+class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen>
     implements NestedEntityState<TaskItem> {
   late TextEditingController _descriptionController;
   late TextEditingController _estimatedMaterialUnitCostController;

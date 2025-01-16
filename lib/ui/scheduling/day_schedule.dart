@@ -42,7 +42,7 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
   State<DaySchedule> createState() => _DayScheduleState();
 }
 
-class _DayScheduleState extends AsyncState<DaySchedule, void> {
+class _DayScheduleState extends AsyncState<DaySchedule> {
   late final EventController<JobActivityEx> _dayController;
   late final System system;
   late final OperatingHours operatingHours;

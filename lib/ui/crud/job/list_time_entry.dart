@@ -15,7 +15,7 @@ class TimeEntryListScreen extends StatefulWidget {
   State<TimeEntryListScreen> createState() => _TimeEntryListScreenState();
 }
 
-class _TimeEntryListScreenState extends AsyncState<TimeEntryListScreen, void> {
+class _TimeEntryListScreenState extends AsyncState<TimeEntryListScreen> {
   late Future<List<TimeEntry>> _timeEntries;
 
   @override

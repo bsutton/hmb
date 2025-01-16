@@ -43,7 +43,7 @@ class TaskItemContext {
   BillingType billingType;
 }
 
-class _PackingScreenState extends AsyncState<PackingScreen, void> {
+class _PackingScreenState extends AsyncState<PackingScreen> {
   final taskItemsContexts = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
 

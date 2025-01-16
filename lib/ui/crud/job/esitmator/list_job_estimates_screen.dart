@@ -18,7 +18,7 @@ class JobEstimatesListScreen extends StatefulWidget {
 }
 
 class _JobEstimatesListScreenState
-    extends AsyncState<JobEstimatesListScreen, void> {
+    extends AsyncState<JobEstimatesListScreen> {
   late Future<List<CustomerAndJob>> _jobs;
   bool showOnlyActiveJobs = true;
 

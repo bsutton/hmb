@@ -11,7 +11,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 ///
 /// You can then override the 'asyncInitState' method to do some
 /// asynchrounus initialisation.
-/// You can see if async initialisation is complete by 
+/// You can see if async initialisation is complete by
 /// check 'initialised'.
 /// This is usually passed to a [FutureBuilderEx]:
 /// ```dart
@@ -20,24 +20,21 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 ///   return FutureBuilderEx(future: initialised, ....)
 /// }
 /// ```
-/// 
+///
 /// Any items that are to be disposed should be called in the standard
-/// [initState] as in some cases the [dispose] can be called before 
+/// [initState] as in some cases the [dispose] can be called before
 /// asyncInitState has run.
-abstract class AsyncState<T extends StatefulWidget, R> extends State<T> {
-  final _initialised = Completer<R>();
+abstract class AsyncState<T extends StatefulWidget> extends State<T> {
+  final _initialised = Completer<void>();
 
   @override
   void initState() {
     super.initState();
 
-    unawaited(asyncInitState().then<R>((r) {
-      _initialised.complete(r);
-      return r;
-    }));
+    unawaited(asyncInitState().then<void>(_initialised.complete));
   }
 
-  Future<R> asyncInitState();
+  Future<void> asyncInitState();
 
-  Future<R> get initialised => _initialised.future;
+  Future<void> get initialised => _initialised.future;
 }

@@ -33,7 +33,7 @@ class JobEstimateBuilderScreen extends StatefulWidget {
 }
 
 class _JobEstimateBuilderScreenState
-    extends AsyncState<JobEstimateBuilderScreen, void> {
+    extends AsyncState<JobEstimateBuilderScreen> {
   List<Task> _tasks = [];
   Money _totalLabourCost = MoneyEx.zero;
   Money _totalMaterialsCost = MoneyEx.zero;

@@ -41,7 +41,7 @@ class MonthSchedule extends StatefulWidget with ScheduleHelper {
   State<MonthSchedule> createState() => _MonthScheduleState();
 }
 
-class _MonthScheduleState extends AsyncState<MonthSchedule, void> {
+class _MonthScheduleState extends AsyncState<MonthSchedule> {
   late final EventController<JobActivityEx> _monthController;
 
   late LocalDate currentDate;

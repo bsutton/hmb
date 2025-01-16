@@ -26,7 +26,7 @@ class EditMilestonesScreen extends StatefulWidget {
 }
 
 class _EditMilestonesScreenState
-    extends AsyncState<EditMilestonesScreen, void> {
+    extends AsyncState<EditMilestonesScreen> {
   late Quote quote;
   List<Milestone> milestones = [];
   final daoMilestonePayment = DaoMilestone();

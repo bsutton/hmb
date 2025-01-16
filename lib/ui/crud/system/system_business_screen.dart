@@ -28,7 +28,7 @@ class SystemBusinessScreen extends StatefulWidget {
   SystemBusinessScreenState createState() => SystemBusinessScreenState();
 }
 
-class SystemBusinessScreenState extends AsyncState<SystemBusinessScreen, void> {
+class SystemBusinessScreenState extends AsyncState<SystemBusinessScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late System system;

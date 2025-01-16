@@ -23,7 +23,7 @@ class QuoteListScreen extends StatefulWidget {
   _QuoteListScreenState createState() => _QuoteListScreenState();
 }
 
-class _QuoteListScreenState extends AsyncState<QuoteListScreen, void> {
+class _QuoteListScreenState extends AsyncState<QuoteListScreen> {
   late Future<List<Quote>> _quotes;
 
   Job? selectedJob;
