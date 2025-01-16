@@ -96,7 +96,7 @@ ${widget.system.businessNumberLabel}: ${widget.system.businessNumber}
           HMBButton(
             label: 'Send...',
             onPressed: () async {
-              if (!(Platform.isAndroid && Platform.isIOS)) {
+              if (!(Platform.isAndroid || Platform.isIOS)) {
                 HMBToast.error('This platform does not support sending emails');
                 return;
               }
