@@ -16,7 +16,7 @@ class BackupSelectionScreen extends StatefulWidget {
 }
 
 class _BackupSelectionScreenState
-    extends AsyncState<BackupSelectionScreen, void> {
+    extends AsyncState<BackupSelectionScreen> {
   late Future<Backups> _backupsFuture;
 
   @override
