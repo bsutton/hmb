@@ -64,6 +64,24 @@ class DaoJobActivity extends Dao<JobActivity> {
     return fromMap(data.first);
   }
 
+  Future<JobActivity?> getNextActivityByJob(int jobId) async {
+  final db = withoutTransaction();
+  final data = await db.rawQuery('''
+    SELECT *
+    FROM job_activity
+    WHERE job_id = ?
+      AND start_date > ?
+    ORDER BY start_date ASC
+    LIMIT 1
+  ''', [jobId, DateTime.now().toIso8601String()]);
+
+  if (data.isEmpty) {
+    return null;
+  }
+
+  return fromMap(data.first);
+}
+
   @override
   JobActivityState Function() get juneRefresher => JobActivityState.new;
 }

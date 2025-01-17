@@ -3,11 +3,16 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao_customer.dart';
 import '../../../dao/dao_job.dart';
+import '../../../dao/dao_job_activity.dart';
 import '../../../dao/dao_job_status.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/job.dart';
+import '../../../entity/job_activity.dart';
 import '../../../entity/job_status.dart';
+import '../../../util/date_time_ex.dart';
 import '../../../util/format.dart';
+import '../../../util/local_date.dart';
+import '../../widgets/async_state.dart';
 import '../../widgets/hmb_text_clickable.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/media/photo_gallery.dart';
@@ -31,13 +36,13 @@ class JobCard extends StatefulWidget {
   _JobCardState createState() => _JobCardState();
 }
 
-class _JobCardState extends State<JobCard> {
+class _JobCardState extends AsyncState<JobCard> {
   late Job job;
-
+  late final JobActivity? nextActivity;
   @override
-  void initState() {
-    super.initState();
+  Future<void> asyncInitState() async {
     job = widget.job;
+    nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
   }
 
   // Future<void> _refreshJob() async {
@@ -82,9 +87,7 @@ class _JobCardState extends State<JobCard> {
 Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
           ),
           const SizedBox(height: 8),
-          HMBText(
-            'Scheduled: ${formatDate(job.startDate)}',
-          ),
+          _buildNextActivity(),
           const HMBText(
             'Description:',
             bold: true,
@@ -98,6 +101,25 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
           buildStatistics(job),
         ],
       );
+
+  Widget _buildNextActivity() {
+    String activity;
+    var text = Colors.white;
+    if (nextActivity == null) {
+      activity = 'Not Scheduled';
+      text = Colors.red;
+    } else if (nextActivity!.start.toLocalDate() == LocalDate.today()) {
+      activity = formatTime(nextActivity!.start, 'h:mm a');
+      text = Colors.orange;
+    } else {
+      activity = formatDateTime(nextActivity!.start);
+    }
+
+    return HMBText(
+      'Next Activity: $activity',
+      color: text,
+    );
+  }
 
   Widget _buildContactPoints() => LayoutBuilder(
         builder: (context, constraints) {
