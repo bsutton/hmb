@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:country_code/country_code.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../dao/dao_system.dart';
@@ -10,7 +10,6 @@ import '../../../entity/system.dart';
 // Import your new classes/enums
 import '../../../util/app_title.dart';
 import '../../../util/measurement_type.dart';
-import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_toast.dart';
@@ -28,7 +27,7 @@ class SystemBusinessScreen extends StatefulWidget {
   SystemBusinessScreenState createState() => SystemBusinessScreenState();
 }
 
-class SystemBusinessScreenState extends AsyncState<SystemBusinessScreen> {
+class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late System system;
@@ -92,10 +91,9 @@ class SystemBusinessScreenState extends AsyncState<SystemBusinessScreen> {
   // --------------------------------
   // Build the entire Form
   // --------------------------------
-  FutureBuilderEx<void> _buildForm() => FutureBuilderEx(
-        // ignore: discarded_futures
-        future: initialised,
-        builder: (context, _) => Form(
+  Widget _buildForm() => DeferredBuilder(
+        this,
+        builder: (context) => Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

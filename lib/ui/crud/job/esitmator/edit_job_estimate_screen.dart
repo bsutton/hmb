@@ -1,3 +1,4 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
@@ -11,7 +12,6 @@ import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
 import '../../../../util/hmb_theme.dart';
 import '../../../../util/money_ex.dart';
-import '../../../widgets/async_state.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/layout/hmb_spacer.dart';
@@ -33,7 +33,7 @@ class JobEstimateBuilderScreen extends StatefulWidget {
 }
 
 class _JobEstimateBuilderScreenState
-    extends AsyncState<JobEstimateBuilderScreen> {
+    extends DeferredState<JobEstimateBuilderScreen> {
   List<Task> _tasks = [];
   Money _totalLabourCost = MoneyEx.zero;
   Money _totalMaterialsCost = MoneyEx.zero;
@@ -134,9 +134,8 @@ class _JobEstimateBuilderScreenState
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilderEx(
-      future: initialised,
-      builder: (context, _) {
+  Widget build(BuildContext context) =>
+      DeferredBuilder(this, builder: (context) {
         final tasks = filteredTasks();
         return Scaffold(
           appBar: AppBar(

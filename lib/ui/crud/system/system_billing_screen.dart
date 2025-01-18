@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dcli_core/dcli_core.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart'; // Import color picker
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' hide context;
@@ -15,7 +15,6 @@ import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
 import '../../../util/app_title.dart';
 import '../../../util/money_ex.dart';
-import '../../widgets/async_state.dart';
 import '../../widgets/color_ex.dart';
 import '../../widgets/fields/hmb_money_editing_controller.dart';
 import '../../widgets/fields/hmb_money_field.dart';
@@ -38,7 +37,7 @@ class SystemBillingScreen extends StatefulWidget {
   SystemBillingScreenState createState() => SystemBillingScreenState();
 }
 
-class SystemBillingScreenState extends AsyncState<SystemBillingScreen> {
+class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late final HMBMoneyEditingController _defaultHourlyRateController =
@@ -210,9 +209,8 @@ class SystemBillingScreenState extends AsyncState<SystemBillingScreen> {
     }
   }
 
-  FutureBuilderEx<void> _buildForm() => FutureBuilderEx(
-      future: initialised,
-      builder: (context, _) => Padding(
+  Widget _buildForm() => DeferredBuilder(this,
+      builder: (context) => Padding(
             padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,

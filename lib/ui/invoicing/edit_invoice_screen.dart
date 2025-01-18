@@ -1,3 +1,4 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -14,7 +15,6 @@ import '../../dao/dao_time_entry.dart';
 import '../../entity/invoice_line.dart';
 import '../../util/format.dart';
 import '../dialog/hmb_are_you_sure_dialog.dart';
-import '../widgets/async_state.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/surface.dart';
@@ -31,7 +31,7 @@ class InvoiceEditScreen extends StatefulWidget {
   State<InvoiceEditScreen> createState() => _InvoiceEditScreenState();
 }
 
-class _InvoiceEditScreenState extends AsyncState<InvoiceEditScreen> {
+class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   final XeroApi _xeroApi = XeroApi();
   late final int invoiceId;
   late Future<InvoiceDetails> _invoiceDetails;

@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:calendar_view/calendar_view.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 
 // -- Example imports. Adapt for your project:
@@ -15,7 +15,6 @@ import '../../entity/operating_hours.dart';
 import '../../util/app_title.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/local_date.dart';
-import '../widgets/async_state.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/hmb_toggle.dart';
 import '../widgets/layout/hmb_spacer.dart';
@@ -82,7 +81,7 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
 ///
 /// [SchedulePageState]
 ///
-class SchedulePageState extends AsyncState<SchedulePage> {
+class SchedulePageState extends DeferredState<SchedulePage> {
   late ScheduleView selectedView;
   bool showExtendedHours = false;
 
@@ -177,9 +176,9 @@ class SchedulePageState extends AsyncState<SchedulePage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: widget.dialogMode ? AppBar() : null,
-        body: FutureBuilderEx(
-          future: initialised,
-          builder: (context, _) => Column(
+        body: DeferredBuilder(
+          this,
+          builder: (context) => Column(
             children: [
               _navigationRow(),
               Expanded(

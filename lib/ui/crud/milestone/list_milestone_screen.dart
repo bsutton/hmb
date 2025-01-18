@@ -1,3 +1,4 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
@@ -14,7 +15,6 @@ import '../../../../entity/quote.dart';
 import '../../../../util/money_ex.dart';
 import '../../../util/app_title.dart';
 import '../../quoting/select_quote_dialog.dart';
-import '../../widgets/async_state.dart';
 import '../../widgets/hmb_search.dart';
 import 'edit_milestone_payment.dart';
 
@@ -25,7 +25,7 @@ class ListMilestoneScreen extends StatefulWidget {
   _ListMilestoneScreenState createState() => _ListMilestoneScreenState();
 }
 
-class _ListMilestoneScreenState extends AsyncState<ListMilestoneScreen> {
+class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
   late Future<List<QuoteMilestoneSummary>> _summaries;
 
   String? filter;

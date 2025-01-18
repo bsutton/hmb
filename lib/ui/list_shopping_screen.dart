@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
@@ -22,7 +23,6 @@ import '../util/money_ex.dart';
 import 'crud/tool/stock_take_wizard.dart';
 import 'list_packing_screen.dart';
 import 'widgets/add_task_item.dart';
-import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
 import 'widgets/help_button.dart';
 import 'widgets/hmb_button.dart';
@@ -41,7 +41,7 @@ class ShoppingScreen extends StatefulWidget {
   _ShoppingScreenState createState() => _ShoppingScreenState();
 }
 
-class _ShoppingScreenState extends AsyncState<ShoppingScreen> {
+class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
   late final _taskItems = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
   Supplier? _selectedSupplier;
@@ -213,9 +213,9 @@ If your Job isn't showing then you need to update it's status to an Active one s
                 ),
               ),
               Expanded(
-                child: FutureBuilderEx<void>(
-                  future: initialised,
-                  builder: (context, _) {
+                child: DeferredBuilder(
+                  this,
+                  builder: (context) {
                     if (_taskItems.isEmpty) {
                       return _showEmpty();
                     } else {

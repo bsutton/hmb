@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -9,7 +10,6 @@ import '../../../entity/_index.g.dart';
 import '../../../entity/tool.dart';
 import '../../../util/money_ex.dart';
 import '../../../util/photo_meta.dart';
-import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/grayed_out.dart';
@@ -32,7 +32,7 @@ class ToolEditScreen extends StatefulWidget {
   _ToolEditScreenState createState() => _ToolEditScreenState();
 }
 
-class _ToolEditScreenState extends AsyncState<ToolEditScreen>
+class _ToolEditScreenState extends DeferredState<ToolEditScreen>
     implements EntityState<Tool> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
@@ -82,9 +82,8 @@ class _ToolEditScreenState extends AsyncState<ToolEditScreen>
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilderEx(
-      future: initialised,
-      builder: (context, _) => EntityEditScreen<Tool>(
+  Widget build(BuildContext context) => DeferredBuilder(this,
+      builder: (context) => EntityEditScreen<Tool>(
             entityName: 'Tool',
             dao: DaoTool(),
             entityState: this,

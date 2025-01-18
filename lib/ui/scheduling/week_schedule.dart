@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:calendar_view/calendar_view.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 
 // Example imports (replace with your actual ones):
 import '../../dao/dao_job_activity.dart';
@@ -12,7 +12,6 @@ import '../../entity/system.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
-import '../widgets/async_state.dart';
 import 'job_activity_ex.dart';
 import 'schedule_helper.dart';
 
@@ -37,7 +36,7 @@ class WeekSchedule extends StatefulWidget with ScheduleHelper {
   State<WeekSchedule> createState() => _WeekScheduleState();
 }
 
-class _WeekScheduleState extends AsyncState<WeekSchedule> {
+class _WeekScheduleState extends DeferredState<WeekSchedule> {
   late final EventController<JobActivityEx> _weekController;
   late final System system;
   late final bool showWeekends;
@@ -79,7 +78,8 @@ class _WeekScheduleState extends AsyncState<WeekSchedule> {
     final endOfWeek = startOfWeek.add(const Duration(days: 7));
 
     final dao = DaoJobActivity();
-    final jobActivities = await dao.getActivitiesInRange(startOfWeek, endOfWeek);
+    final jobActivities =
+        await dao.getActivitiesInRange(startOfWeek, endOfWeek);
 
     var _hasActivitiesInExtendedHours = false;
 
@@ -92,8 +92,8 @@ class _WeekScheduleState extends AsyncState<WeekSchedule> {
       _hasActivitiesInExtendedHours = _hasActivitiesInExtendedHours ||
           !operatingHours.inOperatingHours(jobActivity);
 
-      eventData
-          .add((await JobActivityEx.fromActivity(jobActivity)).eventData.copyWith(
+      eventData.add(
+          (await JobActivityEx.fromActivity(jobActivity)).eventData.copyWith(
                 titleStyle: TextStyle(color: fontColor, fontSize: 13),
                 descriptionStyle: TextStyle(color: fontColor, fontSize: 13),
               ));
@@ -125,9 +125,8 @@ class _WeekScheduleState extends AsyncState<WeekSchedule> {
   Widget build(BuildContext context) =>
       CalendarControllerProvider<JobActivityEx>(
         controller: _weekController,
-        child: FutureBuilderEx(
-            future: initialised,
-            builder: (context, _) => WeekView<JobActivityEx>(
+        child: DeferredBuilder(this,
+            builder: (context) => WeekView<JobActivityEx>(
                   key: widget.weekKey,
 
                   startHour: _getStartHour(),

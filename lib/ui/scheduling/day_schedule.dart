@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:calendar_view/calendar_view.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -12,7 +13,6 @@ import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../../util/local_time.dart';
-import '../widgets/async_state.dart';
 import '../widgets/circle.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/surface.dart';
@@ -42,7 +42,7 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
   State<DaySchedule> createState() => _DayScheduleState();
 }
 
-class _DayScheduleState extends AsyncState<DaySchedule> {
+class _DayScheduleState extends DeferredState<DaySchedule> {
   late final EventController<JobActivityEx> _dayController;
   late final System system;
   late final OperatingHours operatingHours;
@@ -112,9 +112,9 @@ class _DayScheduleState extends AsyncState<DaySchedule> {
   Widget build(BuildContext context) =>
       CalendarControllerProvider<JobActivityEx>(
         controller: _dayController,
-        child: FutureBuilderEx(
-          future: initialised,
-          builder: (context, _) {
+        child: DeferredBuilder(
+          this,
+          builder: (context) {
             late final DayView<JobActivityEx> dayView;
 
             // ignore: join_return_with_assignment

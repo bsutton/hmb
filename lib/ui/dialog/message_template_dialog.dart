@@ -1,9 +1,9 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../entity/message_template.dart';
 import '../../dao/dao_message_template.dart';
-import '../../ui/widgets/async_state.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'message_placeholders/noop_source.dart';
@@ -31,8 +31,7 @@ Future<SelectedMessageTemplate?> showMessageTemplateDialog(BuildContext context,
       ),
     );
 
-class _MessageTemplateDialogState
-    extends AsyncState<MessageTemplateDialog>
+class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     with SingleTickerProviderStateMixin {
   List<MessageTemplate> _templates = [];
   MessageTemplate? _selectedTemplate;

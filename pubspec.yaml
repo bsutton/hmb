@@ -12,7 +12,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.6.33
+version: 0.6.35
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
@@ -33,6 +33,7 @@ dependencies:
   datetime_picker_formfield: ^2.0.1
   dcli: ^6.0.5
   dcli_core: ^6.0.3
+  deferred_state: ^1.0.0
   direct_caller_sim_choice: ^1.0.5
   dlibphonenumber: ^1.1.18
   email_validator: ^3.0.0
@@ -49,7 +50,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   flutter_secure_storage_linux: ^1.2.1
   flutter_svg: ^2.0.14
-  future_builder_ex: ^4.0.0
+  future_builder_ex: ^5.0.0
   go_router: ^14.2.0
   google_mlkit_barcode_scanning: ^0.13.0
   google_sign_in: ^6.2.1

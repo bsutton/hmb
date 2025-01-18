@@ -1,3 +1,4 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -12,7 +13,6 @@ import '../../entity/job.dart';
 import '../../util/app_title.dart';
 import '../../util/format.dart';
 import '../../util/money_ex.dart';
-import '../widgets/async_state.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/select/hmb_droplist.dart';
@@ -28,7 +28,7 @@ class InvoiceListScreen extends StatefulWidget {
   _InvoiceListScreenState createState() => _InvoiceListScreenState();
 }
 
-class _InvoiceListScreenState extends AsyncState<InvoiceListScreen> {
+class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
   late Future<List<InvoiceDetails>> _invoices;
 
   Job? selectedJob;

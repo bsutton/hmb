@@ -1,7 +1,7 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../../ui/widgets/async_state.dart';
 import '../../../ui/widgets/text/hmb_text.dart';
 import '../../../util/format.dart';
 import 'backup_provider.dart';
@@ -15,8 +15,7 @@ class BackupSelectionScreen extends StatefulWidget {
   _BackupSelectionScreenState createState() => _BackupSelectionScreenState();
 }
 
-class _BackupSelectionScreenState
-    extends AsyncState<BackupSelectionScreen> {
+class _BackupSelectionScreenState extends DeferredState<BackupSelectionScreen> {
   late Future<Backups> _backupsFuture;
 
   @override

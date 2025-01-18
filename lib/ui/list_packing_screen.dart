@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -17,7 +18,6 @@ import '../util/app_title.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
 import 'widgets/add_task_item.dart';
-import 'widgets/async_state.dart';
 import 'widgets/fields/hmb_text_field.dart';
 import 'widgets/help_button.dart';
 import 'widgets/hmb_button.dart';
@@ -43,7 +43,7 @@ class TaskItemContext {
   BillingType billingType;
 }
 
-class _PackingScreenState extends AsyncState<PackingScreen> {
+class _PackingScreenState extends DeferredState<PackingScreen> {
   final taskItemsContexts = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
 
@@ -161,9 +161,9 @@ If your Job isn't showing then you need to update it's status to an Active one s
                 ),
               ),
               Expanded(
-                child: FutureBuilderEx<void>(
-                  future: initialised,
-                  builder: (context, _taskItems) {
+                child: DeferredBuilder(
+                  this,
+                  builder: (context) {
                     if (taskItemsContexts.isEmpty) {
                       return _showEmpty();
                     } else {

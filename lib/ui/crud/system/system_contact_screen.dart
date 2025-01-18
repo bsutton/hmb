@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:country_code/country_code.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 
 // import 'package:mobile_number/mobile_number.dart';
@@ -12,7 +12,6 @@ import '../../../entity/system.dart';
 import '../../../util/app_title.dart';
 import '../../../util/platform_ex.dart';
 import '../../dialog/source_context.dart';
-import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -31,7 +30,7 @@ class SystemContactInformationScreen extends StatefulWidget {
 }
 
 class SystemContactInformationScreenState
-    extends AsyncState<SystemContactInformationScreen> {
+    extends DeferredState<SystemContactInformationScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController? _addressLine1Controller;
@@ -149,10 +148,8 @@ class SystemContactInformationScreenState
     }
   }
 
-  FutureBuilderEx<void> _buildForm() => FutureBuilderEx(
-      // ignore: discarded_futures
-      future: initialised,
-      builder: (context, _) => Form(
+  DeferredBuilder _buildForm() => DeferredBuilder(this,
+      builder: (context) => Form(
             key: _formKey,
             child: Column(
               children: [

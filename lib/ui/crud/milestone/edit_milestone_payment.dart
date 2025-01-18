@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
 
 import '../../../dao/dao_invoice_fixed_price.dart';
@@ -11,7 +11,6 @@ import '../../../entity/milestone.dart';
 import '../../../entity/quote.dart';
 import '../../../util/list_ex.dart';
 import '../../../util/money_ex.dart';
-import '../../widgets/async_state.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/text/hmb_text.dart';
@@ -25,8 +24,7 @@ class EditMilestonesScreen extends StatefulWidget {
   _EditMilestonesScreenState createState() => _EditMilestonesScreenState();
 }
 
-class _EditMilestonesScreenState
-    extends AsyncState<EditMilestonesScreen> {
+class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   late Quote quote;
   List<Milestone> milestones = [];
   final daoMilestonePayment = DaoMilestone();
@@ -220,9 +218,8 @@ class _EditMilestonesScreenState
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilderEx(
-      future: initialised,
-      builder: (context, _) => Scaffold(
+  Widget build(BuildContext context) => DeferredBuilder(this,
+      builder: (context) => Scaffold(
             appBar: AppBar(
               title: const Text('Edit Milestones'),
               actions: [

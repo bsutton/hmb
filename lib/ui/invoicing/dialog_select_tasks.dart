@@ -1,11 +1,10 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
 
 import '../../dao/dao_task.dart';
 import '../../entity/job.dart';
 import '../../entity/task.dart';
-import '../widgets/async_state.dart';
 import '../widgets/hmb_button.dart';
 
 enum Showing { showQuote, showInvoice }
@@ -87,8 +86,7 @@ class InvoiceOptions {
   bool groupByTask;
 }
 
-class _DialogTaskSelectionState
-    extends AsyncState<DialogTaskSelection> {
+class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   // late List<TaskEstimates> _tasks;
   final Map<int, bool> _selectedTasks = {};
   bool _selectAll = true;
@@ -106,7 +104,6 @@ class _DialogTaskSelectionState
     for (final accuredValue in widget.taskSelectors) {
       _selectedTasks[accuredValue.task.id] = true;
     }
-
   }
 
   void _toggleSelectAll(bool? value) {
@@ -132,9 +129,8 @@ class _DialogTaskSelectionState
   @override
   Widget build(BuildContext context) => AlertDialog(
         title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
-        content: FutureBuilderEx<void>(
-            future: initialised,
-            builder: (context, _) => SingleChildScrollView(
+        content: DeferredBuilder(this,
+            builder: (context) => SingleChildScrollView(
                   child: Column(
                     children: [
                       DropdownButton<bool>(

@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 
@@ -20,7 +20,6 @@ import '../../../util/fixed_ex.dart';
 import '../../../util/measurement_type.dart';
 import '../../../util/money_ex.dart';
 import '../../../util/platform_ex.dart';
-import '../../widgets/async_state.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/select_supplier.dart';
@@ -52,7 +51,7 @@ class TaskItemEditScreen extends StatefulWidget {
   }
 }
 
-class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen>
+class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     implements NestedEntityState<TaskItem> {
   late TextEditingController _descriptionController;
   late TextEditingController _estimatedMaterialUnitCostController;
@@ -157,9 +156,9 @@ class _TaskItemEditScreenState extends AsyncState<TaskItemEditScreen>
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilderEx(
-        future: initialised,
-        builder: (context, system) => NestedEntityEditScreen<TaskItem, Task>(
+  Widget build(BuildContext context) => DeferredBuilder(
+        this,
+        builder: (context) => NestedEntityEditScreen<TaskItem, Task>(
           key: globalKey,
           entityName: 'Task Item',
           dao: DaoTaskItem(),

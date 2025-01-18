@@ -1,3 +1,4 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -12,7 +13,6 @@ import '../../../entity/job_status.dart';
 import '../../../util/date_time_ex.dart';
 import '../../../util/format.dart';
 import '../../../util/local_date.dart';
-import '../../widgets/async_state.dart';
 import '../../widgets/hmb_text_clickable.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/media/photo_gallery.dart';
@@ -36,7 +36,7 @@ class JobCard extends StatefulWidget {
   _JobCardState createState() => _JobCardState();
 }
 
-class _JobCardState extends AsyncState<JobCard> {
+class _JobCardState extends DeferredState<JobCard> {
   late Job job;
   late final JobActivity? nextActivity;
   @override

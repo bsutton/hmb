@@ -1,3 +1,4 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -9,7 +10,6 @@ import '../../entity/quote.dart';
 import '../../util/app_title.dart';
 import '../invoicing/dialog_select_tasks.dart';
 import '../invoicing/select_job_dialog.dart';
-import '../widgets/async_state.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
@@ -23,7 +23,7 @@ class QuoteListScreen extends StatefulWidget {
   _QuoteListScreenState createState() => _QuoteListScreenState();
 }
 
-class _QuoteListScreenState extends AsyncState<QuoteListScreen> {
+class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   late Future<List<Quote>> _quotes;
 
   Job? selectedJob;
