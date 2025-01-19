@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
 
+/// Displays a multi-line block of text
 class HMBTextBlock extends StatelessWidget {
   /// If [verticalPadding] is true, vertical padding is added before the text.
   const HMBTextBlock(
-    this.labelText, {
+    this.textBlock, {
     super.key,
     this.verticalPadding = true,
     this.bold = false,
@@ -14,7 +15,7 @@ class HMBTextBlock extends StatelessWidget {
     Color? color,
   }) : color = color ?? HMBColors.textPrimary;
 
-  final String labelText;
+  final String textBlock;
   final bool verticalPadding;
   final bool bold;
   final bool underline;
@@ -25,7 +26,7 @@ class HMBTextBlock extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: EdgeInsets.only(top: verticalPadding ? 8.0 : 0.0),
         child: Text(
-          labelText,
+          textBlock,
           softWrap: true,
           maxLines: maxLines,
           overflow: TextOverflow.ellipsis,
