@@ -9,7 +9,7 @@ class DaoBase<T extends Entity<T>> {
   /// from a non-flutter app - e.g. CLI apps.
   factory DaoBase.direct(Database db, String tableName,
       T Function(Map<String, dynamic> map) fromMap) {
-    final dao = DaoBase<T>(db, (_) {})
+    final dao = DaoBase<T>(db, (_, __) {})
       .._tableName = tableName
       .._fromMap = fromMap;
     return dao;
@@ -17,7 +17,7 @@ class DaoBase<T extends Entity<T>> {
 
   Database db;
 
-  final void Function(DaoBase<T> dao) _notify;
+  final void Function(DaoBase<T> dao, int? entityId) _notify;
 
   late T Function(Map<String, dynamic> map) _fromMap;
   late String _tableName;
@@ -39,7 +39,7 @@ class DaoBase<T extends Entity<T>> {
     final id = await executor.insert(_tableName, entity.toMap()..remove('id'));
     entity.id = id;
 
-    _notify(this);
+    _notify(this, id);
 
     return id;
   }
@@ -77,7 +77,7 @@ class DaoBase<T extends Entity<T>> {
       where: 'id = ?',
       whereArgs: [entity.id],
     );
-    _notify(this);
+    _notify(this, id);
     return id;
   }
 
@@ -89,7 +89,7 @@ class DaoBase<T extends Entity<T>> {
       where: 'id = ?',
       whereArgs: [id],
     );
-    _notify(this);
+    _notify(this, id);
     return rowsDeleted;
   }
 

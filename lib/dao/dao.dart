@@ -14,12 +14,12 @@ abstract class Dao<T extends Entity<T>> extends DaoBase<T> {
     super.mapper = fromMap;
   }
 
-  static void _notifier(DaoBase dao) {
-    (dao as Dao)._notify();
+  static void _notifier(DaoBase dao, int? entityId) {
+    (dao as Dao)._notify(entityId);
   }
 
-  void _notify() {
-    June.getState(juneRefresher).setState();
+  void _notify(int? entityId) {
+    June.getState(juneRefresher).setState([if (entityId != null) entityId]);
   }
 
   /// A callback which provides the [Dao]p with the ability to notify
