@@ -58,7 +58,7 @@ class _JobListScreenState extends State<JobListScreen> {
                             (await DaoJobStatus().getById(job.jobStatusId))
                                 ?.getColour() ??
                             Colors.green,
-                        details: (job) => JobCard(job: job),
+                        details: (job) => JobCard(job: job, key: ValueKey(job.hashCode)),
                       )),
             ),
           ],

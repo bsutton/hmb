@@ -45,6 +45,14 @@ class _JobCardState extends DeferredState<JobCard> {
     nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
   }
 
+  @override
+  void didUpdateWidget(JobCard old) {
+    if (job != widget.job) {
+      job = widget.job;
+    }
+    super.didUpdateWidget(old);
+  }
+
   // Future<void> _refreshJob() async {
   //   final refreshedJob = await DaoJob().getById(job.id);
   //   setState(() {
@@ -64,9 +72,6 @@ class _JobCardState extends DeferredState<JobCard> {
           builder: (context, customer) => Surface(
               padding: EdgeInsets.zero,
               elevation: SurfaceElevation.e6,
-              // shape: RoundedRectangleBorder(
-              //   borderRadius: BorderRadius.circular(12),
-              // ),
               child: _buildDetails(customer, jobStatus)),
         ),
       );

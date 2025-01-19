@@ -1,3 +1,4 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -6,10 +7,8 @@ import '../../../entity/entities.dart';
 import '../../../util/app_title.dart';
 import '../../dialog/hmb_are_you_sure_dialog.dart';
 import '../../widgets/hmb_add_button.dart';
-import '../../widgets/hmb_colours.dart';
 import '../../widgets/hmb_search.dart';
 import '../../widgets/hmb_toast.dart';
-import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/surface.dart';
 
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
@@ -38,12 +37,12 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   final Dao<T> dao;
 
   @override
-  EntityListScreenState createState() => EntityListScreenState<T>();
+  EntityListScreenState<T> createState() => EntityListScreenState<T>();
 }
 
 class EntityListScreenState<T extends Entity<T>>
-    extends State<EntityListScreen<T>> {
-  late Future<List<T>> entities;
+    extends DeferredState<EntityListScreen<T>> {
+  late List<T> entityList = [];
   String? filterOption;
   late final TextEditingController filterController;
   final ScrollController _scrollController = ScrollController();
@@ -54,17 +53,49 @@ class EntityListScreenState<T extends Entity<T>>
     filterController = TextEditingController();
 
     setAppTitle(widget.pageTitle);
-
-    // ignore: discarded_futures
-    entities = widget._fetchList(null);
   }
 
-  Future<void> _refreshEntityList() async {
+  @override
+  Future<void> asyncInitState() async {
+    await _fetchEntities();
+  }
+
+  Future<void> _fetchEntities([String? filter]) async {
+    final list = await widget._fetchList(filter);
     if (mounted) {
       setState(() {
-        entities = widget._fetchList(filterOption);
+        entityList = list;
       });
     }
+  }
+
+  /// Called when we want to refresh the entire list (e.g., after the user searches).
+  Future<void> _refreshEntityList() async {
+    // Re-fetch from the database (or custom fetch) with the current filter.
+    if (mounted) {
+      await _fetchEntities(filterOption);
+    }
+  }
+
+  /// Insert or update a **single** entity in memory (partial refresh).
+  void _partialRefresh(T updatedEntity) {
+    final idx = entityList.indexWhere((e) => e.id == updatedEntity.id);
+    setState(() {
+      if (idx == -1) {
+        // If it's a newly created entity, add it
+        entityList.add(updatedEntity);
+      } else {
+        // If it's an existing entity, update in-place
+        entityList[idx] = updatedEntity;
+      }
+    });
+  }
+
+  /// Remove the entity from our in-memory list.
+  void _removeFromList(T entity) {
+    setState(() {
+      entityList.removeWhere((e) => e.id == entity.id);
+    });
   }
 
   @override
@@ -74,61 +105,63 @@ class EntityListScreenState<T extends Entity<T>>
           toolbarHeight: 80,
           titleSpacing: 0,
           title: Surface(
-              elevation: SurfaceElevation.e0,
-              child: HMBSearchWithAdd(onSearch: (newValue) async {
+            elevation: SurfaceElevation.e0,
+            child: HMBSearchWithAdd(
+              onSearch: (newValue) async {
                 filterOption = newValue;
                 await _refreshEntityList();
-              }, onAdd: () async {
+              },
+              onAdd: () async {
                 if (context.mounted) {
-                  await Navigator.push(
+                  final newEntity = await Navigator.push<T?>(
                     context,
-                    MaterialPageRoute<void>(
-                        builder: (context) => widget.onEdit(null)),
-                  ).then((_) => _refreshEntityList());
+                    MaterialPageRoute(
+                      builder: (context) => widget.onEdit(null),
+                    ),
+                  );
+                  if (newEntity != null) {
+                    _partialRefresh(newEntity);
+                  }
                 }
-              })),
+              },
+            ),
+          ),
           automaticallyImplyLeading: false,
           // actions: _commands(),
         ),
         body: Surface(
           elevation: SurfaceElevation.e0,
-          child: FutureBuilderEx<List<T>>(
-            future: entities,
-            waitingBuilder: (_) => const HMBPlaceHolder(height: 1137),
-            builder: (context, list) {
-              if (list == null || list.isEmpty) {
-                return Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('Click'),
-                      HMBButtonAdd(
-                          enabled: true,
-                          onPressed: () async {
-                            HMBToast.info('Not this one, the one to the right');
-                          }),
-                      Text('to add ${widget.pageTitle}.'),
-                    ],
-                  ),
-                );
-              } else {
-                return _buildListTiles(list);
-              }
-            },
-          ),
+          child: _buildList(),
         ),
       );
 
-  Widget _buildListTiles(List<T> list) => ListView.builder(
+  Widget _buildList() {
+    if (entityList.isEmpty) {
+      return Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Click'),
+            HMBButtonAdd(
+              enabled: true,
+              onPressed: () async =>
+                  HMBToast.info('Not this one, the one to the right'),
+            ),
+            Text('to add ${widget.pageTitle}.'),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
       controller: _scrollController,
-      // padding: const EdgeInsets.all(8),
-
-      itemCount: list.length,
+      itemCount: entityList.length,
       itemExtent: widget.cardHeight,
       itemBuilder: (context, index) {
-        final entity = list[index];
+        final entity = entityList[index];
         return _buildCard(entity);
-      });
+      },
+    );
+  }
 
   IconButton _buildDeleteButton(T entity) => IconButton(
         icon: const Icon(Icons.delete, color: Colors.red),
@@ -137,58 +170,58 @@ class EntityListScreenState<T extends Entity<T>>
         },
       );
 
-  Future<void> _confirmDelete(Entity<T> entity) async {
-    await areYouSure(
-        context: context,
-        title: 'Delete Confirmation',
-        message: 'Are you sure you want to delete this item?',
-        onConfirmed: () async => _delete(entity));
-  }
-
-  Widget _buildCard(T entity) => FutureBuilderEx(
-        initialData: HMBColours.cardBackground,
+  Widget _buildCard(T entity) => FutureBuilderEx<Color>(
+        initialData: SurfaceElevation.e6.color,
         // ignore: discarded_futures
-        future:
-            // ignore: discarded_futures
-            widget.background?.call(entity) ??
-                Future.value(SurfaceElevation.e6.color),
-        builder: (context, color) => Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 8),
-            child: GestureDetector(
-                child: Surface(
-                  elevation: SurfaceElevation.e6,
-                  child: Column(children: [
-                    // contentPadding: const EdgeInsets.all(24),
-                    // widget.title(entity),
-                    // title:
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: widget.title(entity),
-                        ),
-                        _buildDeleteButton(entity),
-                      ],
-                    ),
-                    // subtitle: widget.subtile
-                    // visualDensity: const VisualDensity(horizontal: -4),
-                    // main body of the card
-                    // subtitle:
-
-                    widget.details(entity),
-                  ]),
+        future: widget.background?.call(entity) ??
+            Future.value(SurfaceElevation.e6.color),
+        builder: (context, cardColor) => Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 8),
+          child: GestureDetector(
+            onTap: () async {
+              // Navigate to the edit screen
+              final updatedEntity = await Navigator.push<T?>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => widget.onEdit(entity),
                 ),
-                onTap: () async {
-                  // Display the edit crud.
-                  if (context.mounted) {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                          builder: (context) => widget.onEdit(entity)),
-                    ).then((_) => _refreshEntityList());
-                  }
-                })),
+              );
+              // If user successfully saved or created a new entity
+              if (updatedEntity != null) {
+                _partialRefresh(updatedEntity);
+              }
+            },
+            child: Surface(
+              elevation: SurfaceElevation.e6,
+              child: Column(
+                children: [
+                  // Title row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(child: widget.title(entity)),
+                      _buildDeleteButton(entity),
+                    ],
+                  ),
+                  // Body (details)
+                  Expanded(
+                    child: widget.details(entity),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       );
+
+  Future<void> _confirmDelete(T entity) async {
+    await areYouSure(
+      context: context,
+      title: 'Delete Confirmation',
+      message: 'Are you sure you want to delete this item?',
+      onConfirmed: () async => _delete(entity),
+    );
+  }
 
   @override
   void dispose() {
@@ -197,10 +230,10 @@ class EntityListScreenState<T extends Entity<T>>
     super.dispose();
   }
 
-  Future<void> _delete(Entity<T> entity) async {
+  Future<void> _delete(T entity) async {
     try {
       await widget.dao.delete(entity.id);
-      await _refreshEntityList();
+      _removeFromList(entity);
     }
     // ignore: avoid_catches_without_on_clauses
     catch (e) {
