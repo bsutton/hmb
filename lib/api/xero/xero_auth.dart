@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,8 +20,8 @@ class XeroException implements Exception {
 }
 
 /// Holds the Xero clientId/clientSecret from your database/system config.
-class XeroCredentials {
-  XeroCredentials({
+class XeroSecretIdentity {
+  XeroSecretIdentity({
     required this.clientId,
     required this.clientSecret,
   });
@@ -36,6 +37,11 @@ class XeroAuth2 {
   }
 
   XeroAuth2._();
+
+  /// somewhere to store credentials so we don't have to
+  /// auth every time
+  static const _credentialsKey = 'xero_credentials';
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   /// The path suffix for finalizing OAuth.
   /// Desktop will use http://localhost:<port>/xero/auth_complete
@@ -64,28 +70,14 @@ class XeroAuth2 {
   /// 2) Otherwise, tries to refresh if expired.
   /// 3) Otherwise, does a full OAuth flow (desktop=local server, mobile=app link).
   Future<void> login() async {
-    // If we have an existing client and it's not expired, use it.
-    if (client != null && !client!.credentials.isExpired) {
-      log('Access token is valid, no login required.');
+    if (await isLoggedIn()) {
       return;
     }
-
-    // If the token is expired, attempt to refresh it.
-    if (client != null && client!.credentials.isExpired) {
-      try {
-        log('Access token expired, attempting to refresh.');
-        await refreshToken();
-        log('Token refreshed successfully.');
-        return;
-        // ignore: avoid_catches_without_on_clauses
-      } catch (e) {
-        log('Token refresh failed: $e. Proceeding to full login.');
-      }
-    }
+    log('No valid saved credentials, starting full OAuth flow.');
 
     final loginComplete = Completer<void>();
 
-    final credentials = await _fetchCredentials();
+    final credentials = await _fetchSecretIdentity();
 
     final authorizationEndpoint =
         Uri.parse('https://login.xero.com/identity/connect/authorize');
@@ -150,6 +142,7 @@ class XeroAuth2 {
     try {
       client =
           await grant!.handleAuthorizationResponse(responseUri.queryParameters);
+      await _saveCredentials(client!.credentials); // Save the credentials
       log('Login completed successfully');
       loginComplete.complete();
     } catch (e) {
@@ -166,16 +159,18 @@ class XeroAuth2 {
     }
     if (client!.credentials.isExpired) {
       client = await client!.refreshCredentials();
+      await _saveCredentials(client!.credentials); // Save refreshed credentials
     }
   }
 
   /// Logs out by clearing the client.
   Future<void> logout() async {
     client = null;
+    await _clearSavedCredentials();
   }
 
   /// Loads the Xero client credentials from your database/system settings.
-  Future<XeroCredentials> _fetchCredentials() async {
+  Future<XeroSecretIdentity> _fetchSecretIdentity() async {
     final system = await DaoSystem().get();
 
     if (Strings.isBlank(system.xeroClientId) ||
@@ -183,10 +178,63 @@ class XeroAuth2 {
       throw InvoiceException('''
 The Xero credentials are not set. Navigate to the System | Integration screen and set them.''');
     }
-    return XeroCredentials(
+    return XeroSecretIdentity(
       clientId: system.xeroClientId!,
       clientSecret: system.xeroClientSecret!,
     );
+  }
+
+  Future<void> _saveCredentials(oauth2.Credentials credentials) async {
+    await _secureStorage.write(
+      key: _credentialsKey,
+      value: credentials.toJson(),
+    );
+  }
+
+  Future<oauth2.Credentials?> _loadSavedCredentials() async {
+    final json = await _secureStorage.read(key: _credentialsKey);
+    if (json == null) return null;
+    try {
+      return oauth2.Credentials.fromJson(json);
+    } catch (e) {
+      log('Failed to parse saved credentials: $e');
+      return null;
+    }
+  }
+
+  Future<void> _clearSavedCredentials() async {
+    await _secureStorage.delete(key: _credentialsKey);
+  }
+
+  /// Check if we have saved credentials or a refresh
+  /// token or simply that the client is already valid.
+  Future<bool> isLoggedIn() async {
+    final savedCredentials = await _loadSavedCredentials();
+
+    // If we have an existing client and it's not expired, use it.
+    if (client != null && !client!.credentials.isExpired) {
+      log('Access token is valid, no login required.');
+      return true;
+    }
+
+    if (savedCredentials != null) {
+      client = oauth2.Client(savedCredentials);
+      if (!client!.credentials.isExpired) {
+        log('Loaded saved credentials, no login required.');
+        return true;
+      } else {
+        try {
+          log('Saved credentials expired, attempting to refresh.');
+          await refreshToken();
+          log('Token refreshed successfully.');
+          await _saveCredentials(client!.credentials);
+          return true;
+        } catch (e) {
+          log('Token refresh failed: $e. Proceeding to full login.');
+        }
+      }
+    }
+    return false;
   }
 }
 
