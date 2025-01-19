@@ -36,6 +36,8 @@ import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/hmb_select_contact.dart';
 import '../../widgets/select/hmb_select_site.dart';
 import '../../widgets/select/select_customer.dart';
+import '../../widgets/text/hmb_expanding_text_block.dart';
+import '../../widgets/text/hmb_text.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import '../task/list_task_screen.dart';
@@ -64,6 +66,9 @@ class _JobEditScreenState extends State<JobEditScreen>
   late DateTime _selectedDate;
   BillingType _selectedBillingType = BillingType.timeAndMaterial;
   late final ScrollController scrollController;
+  // there has to be a better way but I can get the
+  // HMBTextBlock to see the description change.
+  int descriptionVersion = 0;
 
   @override
   Job? currentEntity;
@@ -145,13 +150,14 @@ class _JobEditScreenState extends State<JobEditScreen>
                   _showHourlyRate(),
                   _showBookingFee(),
                   const HMBSpacer(height: true),
-                  SizedBox(
-                    height: 300,
-                    child: RichEditor(
-                        controller: _descriptionController,
-                        focusNode: _descriptionFocusNode,
-                        key: ValueKey(job?.description)),
-                  ),
+                  _buildDescription(job),
+                  // SizedBox(
+                  //   height: 300,
+                  //   child: RichEditor(
+                  //       controller: _descriptionController,
+                  //       focusNode: _descriptionFocusNode,
+                  //       key: ValueKey(job?.description)),
+                  // ),
                   // Allow the user to select a contact for the job
                   _chooseContact(customer, job),
 
@@ -493,6 +499,108 @@ You can set a default booking fee from System | Billing screen''');
   @override
   void refresh() {
     setState(() {});
+  }
+
+  Widget _buildDescription(Job? job) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Display the description with formatting
+                const HMBText(
+                  'Description:',
+                  bold: true,
+                ),
+                Container(
+                  // This enforces a minimum height of 300 pixels
+                  // but allows the container to grow based on the text length.
+                  constraints: const BoxConstraints(minHeight: 200),
+                  child: HMBExpandingTextBlock(
+                    // Convert your RichEditor content to plain text as before
+                    RichEditor.createParchment(
+                      jsonEncode(_descriptionController.document),
+                    ).toPlainText().replaceAll('\n\n', '\n'),
+                    key: ValueKey(descriptionVersion),
+                  ),
+                ),
+
+                // RichEditor(
+                //   controller: _descriptionController,
+                //   focusNode: _descriptionFocusNode,
+                //   key: ValueKey(job?.description),
+                //   readOnly: true,
+                // ),
+
+                // Add an edit button
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () async {
+              await _showDescriptionDialog();
+              setState(() {
+                descriptionVersion++;
+              });
+            },
+          ),
+        ],
+      );
+
+  Future<void> _showDescriptionDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Edit Description',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: RichEditor(
+                  controller: _descriptionController,
+                  focusNode: FocusNode(), // New focus node for dialog editor
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Save and update the description
+                      setState(() {
+                        // currentEntity = currentEntity?.copyWith(
+                        //   description: jsonEncode(_descriptionController
+                        //       .document
+                        //       .toDelta()
+                        //       .toJson()),
+                        // );
+                      });
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
