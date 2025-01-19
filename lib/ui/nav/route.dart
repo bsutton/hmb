@@ -22,12 +22,16 @@ import '../list_packing_screen.dart';
 import '../list_shopping_screen.dart';
 import '../quoting/list_quote_screen.dart';
 import '../scheduling/schedule_page.dart';
+import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../wizard/system_wizard.dart';
 import 'home_with_drawer.dart';
 
 GoRouter get router => GoRouter(
       debugLogDiagnostics: true,
+      onException: (context, state, router) {
+        HMBToast.error('Route Error: ${state.error}');
+      },
       routes: [
         // 1) Root route that redirects to either the Wizard or the Jobs screen
         GoRoute(
@@ -161,6 +165,7 @@ GoRouter get router => GoRouter(
           builder: (_, __) =>
               const HomeWithDrawer(initialScreen: FirstRunWizard()),
         ),
+
         GoRoute(
           path: '/photo_viewer',
           builder: (context, state) {
