@@ -314,8 +314,10 @@ class TaskAccruedValue {
       required this.earnedMaterialCharges,
       required this.earnedLabourCharges,
       required Money hourlyRate})
-      : earnedLabourHours =
-            earnedLabourCharges.divideByFixed(hourlyRate.amount).amount;
+      : earnedLabourHours = hourlyRate == MoneyEx.zero
+            ? Fixed.zero
+            : earnedLabourCharges.divideByFixed(hourlyRate.amount).amount;
+
   final TaskEstimatedValue taskEstimatedValue;
 
   /// The total worth of materials that have
