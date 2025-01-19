@@ -358,8 +358,9 @@ class TaskEstimatedValue {
     required this.estimatedMaterialsCharge,
     required this.estimatedLabourCharge,
     required this.hourlyRate,
-  }) : estimatedLabourHours =
-            estimatedLabourCharge.divideByFixed(hourlyRate.amount).amount;
+  }) : estimatedLabourHours = hourlyRate == MoneyEx.zero
+            ? Fixed.zero
+            : estimatedLabourCharge.divideByFixed(hourlyRate.amount).amount;
 
   Task task;
   Money hourlyRate;
