@@ -63,7 +63,6 @@ class _JobEditScreenState extends State<JobEditScreen>
   late FocusNode _hourlyRateFocusNode;
   late FocusNode _bookingFeeFocusNode;
 
-  late DateTime _selectedDate;
   BillingType _selectedBillingType = BillingType.timeAndMaterial;
   late final ScrollController scrollController;
   // there has to be a better way but I can get the
@@ -78,7 +77,6 @@ class _JobEditScreenState extends State<JobEditScreen>
     super.initState();
 
     currentEntity ??= widget.job;
-    _selectedDate = widget.job?.startDate ?? DateTime.now();
 
     scrollController = ScrollController();
 
@@ -459,7 +457,6 @@ You can set a default booking fee from System | Billing screen''');
         customerId: June.getState(SelectedCustomer.new).customerId,
         summary: _summaryController.text,
         description: jsonEncode(_descriptionController.document),
-        startDate: _selectedDate,
         siteId: June.getState(SelectedSite.new).siteId,
         contactId: June.getState(SelectedContact.new).contactId,
         jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
@@ -473,7 +470,6 @@ You can set a default booking fee from System | Billing screen''');
         customerId: June.getState(SelectedCustomer.new).customerId,
         summary: _summaryController.text,
         description: jsonEncode(_descriptionController.document),
-        startDate: _selectedDate,
         siteId: June.getState(SelectedSite.new).siteId,
         contactId: June.getState(SelectedContact.new).contactId,
         jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,

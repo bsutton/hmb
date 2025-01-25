@@ -99,7 +99,6 @@ Future<Job> createJob(DateTime now, BillingType billingType,
       customerId: 1, // Assuming a customer ID
       summary: summary,
       description: 'This is a T&M job',
-      startDate: now,
       siteId: 1, // Assuming a site ID
       contactId: 1, // Assuming a contact ID
       jobStatusId: 1, // Assuming job status ID

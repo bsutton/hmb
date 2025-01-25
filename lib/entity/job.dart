@@ -17,7 +17,6 @@ class Job extends Entity<Job> {
     required this.customerId,
     required this.summary,
     required this.description,
-    required this.startDate,
     required this.siteId,
     required this.contactId,
     required this.jobStatusId,
@@ -34,7 +33,6 @@ class Job extends Entity<Job> {
     required this.customerId,
     required this.summary,
     required this.description,
-    required this.startDate,
     required this.siteId,
     required this.contactId,
     required this.jobStatusId,
@@ -50,7 +48,6 @@ class Job extends Entity<Job> {
     required this.customerId,
     required this.summary,
     required this.description,
-    required this.startDate,
     required this.siteId,
     required this.contactId,
     required this.jobStatusId,
@@ -66,7 +63,6 @@ class Job extends Entity<Job> {
         customerId: map['customer_id'] as int?,
         summary: map['summary'] as String,
         description: map['description'] as String,
-        startDate: DateTime.parse(map['start_date'] as String),
         siteId: map['site_id'] as int?,
         contactId: map['contact_id'] as int?,
         jobStatusId: map['job_status_id'] as int?,
@@ -90,10 +86,9 @@ class Job extends Entity<Job> {
         'customer_id': customerId,
         'summary': summary,
         'description': description,
-        'start_date': startDate.toIso8601String(),
         'site_id': siteId,
-        'job_status_id': jobStatusId,
         'contact_id': contactId,
+        'job_status_id': jobStatusId,
         'hourly_rate': hourlyRate?.minorUnits.toInt(),
         'booking_fee': bookingFee?.minorUnits.toInt(),
         'last_active': lastActive ? 1 : 0,
@@ -104,7 +99,6 @@ class Job extends Entity<Job> {
       };
 
   int? customerId;
-  DateTime startDate;
   String summary;
   String description;
   int? siteId;

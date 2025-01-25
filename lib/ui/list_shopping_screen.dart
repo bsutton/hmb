@@ -13,10 +13,12 @@ import '../../entity/job.dart';
 import '../../entity/supplier.dart';
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
+import '../dao/dao_job_activity.dart';
 import '../dao/dao_task.dart';
 import '../dao/dao_task_item.dart';
 import '../dao/dao_task_item_type.dart';
 import '../entity/customer.dart';
+import '../entity/job_activity.dart';
 import '../util/app_title.dart';
 import '../util/format.dart';
 import '../util/money_ex.dart';
@@ -290,7 +292,7 @@ If you were expecting to see items here - check the Job's Status is active.
                       if (details.supplier != null)
                         HMBTextLine('Supplier: ${details.supplier!.name}'),
                       HMBTextLine(
-                          '''Scheduled Date: ${formatDate(details.job.startDate)}'''),
+                          '''Scheduled Date: ${details.dateOfNextActivity()}'''),
                       HMBTextLine(itemContext.taskItem.dimensions),
                       if (itemContext.taskItem.completed)
                         const HMBTextLine(
@@ -313,17 +315,27 @@ If you were expecting to see items here - check the Job's Status is active.
 }
 
 class CustomerAndJob {
-  CustomerAndJob._internal(this.customer, this.job, this.supplier);
+  CustomerAndJob._internal(
+      this.customer, this.job, this.supplier, this.nextActivity);
   static Future<CustomerAndJob> fetch(TaskItemContext itemContext) async {
     final job = await DaoJob().getJobForTask(itemContext.task.id);
     final customer = await DaoCustomer().getByJob(job!.id);
     final supplier =
         await DaoSupplier().getById(itemContext.taskItem.supplierId);
+    final nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
 
-    return CustomerAndJob._internal(customer!, job, supplier);
+    return CustomerAndJob._internal(customer!, job, supplier, nextActivity);
   }
 
   final Customer customer;
   final Job job;
   final Supplier? supplier;
+  JobActivity? nextActivity;
+
+  String dateOfNextActivity() {
+    if (nextActivity == null) {
+      return 'Not Scheduled';
+    }
+    return formatDate(nextActivity!.start);
+  }
 }
