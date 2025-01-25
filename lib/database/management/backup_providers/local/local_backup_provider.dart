@@ -24,8 +24,7 @@ class LocalBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<File> fetchBackup(Backup backup) async =>
-      File(backup.pathTo);
+  Future<File> fetchBackup(Backup backup) async => File(backup.pathTo);
 
   @override
   Future<List<Backup>> getBackups() async {
@@ -63,7 +62,7 @@ class LocalBackupProvider extends BackupProvider {
     }
 
     /// db file path with .bak and date/time/added
-    final pathToBackupFile = '$pathToBackupDir.$version.$datePart.zip';
+    final pathToBackupFile = join(pathToBackupDir, '$version.$datePart.zip');
 
     move(pathToZippedBackup, pathToBackupFile);
 
