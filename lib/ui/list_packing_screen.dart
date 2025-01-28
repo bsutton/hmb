@@ -8,9 +8,12 @@ import 'package:strings/strings.dart';
 
 import '../dao/dao_customer.dart';
 import '../dao/dao_job.dart';
+import '../dao/dao_job_activity.dart';
 import '../dao/dao_task.dart';
 import '../dao/dao_task_item.dart';
+import '../entity/customer.dart';
 import '../entity/job.dart';
+import '../entity/job_activity.dart';
 import '../entity/task.dart';
 import '../entity/task_item.dart';
 import '../entity/task_item_type.dart';
@@ -212,8 +215,8 @@ If your Job isn't showing then you need to update it's status to an Active one s
   Center _showEmpty() => const Center(child: Text('''
 No Packing Items found 
 
-- A Job must be Active (Scheduled, In Progress...) for items to appearPacking items are taken from Task items 
-that are marked as "Materials - stock" or "Tools - own".
+- A Job must be Active (Scheduled, In Progress...) for items to appear.
+Packing items are taken from Task items that are marked as "Materials - stock" or "Tools - own".
 
 
 '''));
@@ -229,28 +232,24 @@ that are marked as "Materials - stock" or "Tools - own".
         body: Row(children: [
           FutureBuilderEx(
             // ignore: discarded_futures
-            future: DaoJob().getJobForTask(itemContext.task.id),
-            builder: (context, job) => FutureBuilderEx(
-              // ignore: discarded_futures
-              future: DaoCustomer().getByJob(job!.id),
-              builder: (context, customer) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  HMBTextLine('Customer: ${customer!.name}'),
-                  HMBTextLine('Job: ${job.summary}'),
-                  HMBTextLine('Task: ${itemContext.task.name}'),
-                  HMBTextLine('''Scheduled: ${formatDate(job.startDate)}'''),
-                  HMBTextLine('${itemContext.taskItem.dimension1} '
-                      'x ${itemContext.taskItem.dimension2} '
-                      'x ${itemContext.taskItem.dimension3} '
-                      '${itemContext.taskItem.measurementType}'),
-                  if (itemContext.taskItem.completed)
-                    const Text(
-                      'Completed',
-                      style: TextStyle(color: Colors.green),
-                    ),
-                ],
-              ),
+            future: JobDetail.get(itemContext.task),
+            builder: (context, jobDetail) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HMBTextLine('Customer: ${jobDetail!.customer.name}'),
+                HMBTextLine('Job: ${jobDetail.job.summary}'),
+                HMBTextLine('Task: ${itemContext.task.name}'),
+                HMBTextLine('''Scheduled: ${jobDetail.dateOfNextActivity()}'''),
+                HMBTextLine('${itemContext.taskItem.dimension1} '
+                    'x ${itemContext.taskItem.dimension2} '
+                    'x ${itemContext.taskItem.dimension3} '
+                    '${itemContext.taskItem.measurementType}'),
+                if (itemContext.taskItem.completed)
+                  const Text(
+                    'Completed',
+                    style: TextStyle(color: Colors.green),
+                  ),
+              ],
             ),
           ),
           Expanded(
@@ -323,5 +322,30 @@ that are marked as "Materials - stock" or "Tools - own".
 
     // Show confirmation
     HMBToast.info('Item moved to shopping list.');
+  }
+}
+
+class JobDetail {
+  JobDetail._(this.job, this.nextActivity, this.customer);
+
+  static Future<JobDetail> get(Task task) async {
+    final job = await DaoJob().getJobForTask(task.id);
+
+    final nextActivity = await DaoJobActivity().getNextActivityByJob(job!.id);
+
+    final customer = (await DaoCustomer().getByJob(job.id))!;
+
+    return JobDetail._(job, nextActivity, customer);
+  }
+
+  Job job;
+  JobActivity? nextActivity;
+  Customer customer;
+
+  String dateOfNextActivity() {
+    if (nextActivity == null) {
+      return 'Not Scheduled';
+    }
+    return formatDate(nextActivity!.start);
   }
 }
