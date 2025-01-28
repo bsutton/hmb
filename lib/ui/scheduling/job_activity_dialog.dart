@@ -11,9 +11,11 @@ import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
+import '../../util/local_date.dart';
 import '../../util/local_time.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
+import '../widgets/hmb_toast.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'job_activity_ex.dart';
@@ -85,8 +87,10 @@ class JobActivityDialog extends StatefulWidget {
 }
 
 class _JobActivityDialogState extends State<JobActivityDialog> {
-  late DateTime _startDate;
-  late DateTime _endDate;
+  late LocalDate _eventDate;
+  late LocalTime _startTime;
+  late LocalTime _endTime;
+
   JobActivityStatus _status = JobActivityStatus.tentative; // Default status
   String? _notes;
   Job? _selectedJob;
@@ -111,12 +115,14 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
       }
 
       // default times
-      _startDate = widget.when!;
-      _endDate = widget.when!.add(const Duration(hours: 4));
+      _eventDate = widget.when!.toLocalDate();
+      _startTime = widget.when!.toLocalTime();
+      _endTime = _startTime.addDuration(const Duration(hours: 4));
     } else {
       // Editing an existing event
-      _startDate = widget.event!.startTime ?? DateTime.now();
-      _endDate = widget.event!.endTime ?? DateTime.now();
+      _eventDate = (widget.event!.startTime ?? DateTime.now()).toLocalDate();
+      _startTime = (widget.event!.startTime ?? DateTime.now()).toLocalTime();
+      _endTime = (widget.event!.endTime ?? DateTime.now()).toLocalTime();
       _selectedJob = widget.event?.event!.job;
       _status = widget.event!.event!.jobActivity.status;
       _notes = widget.event!.event!.jobActivity.notes;
@@ -131,7 +137,7 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
         screenWidth < 600; // Define threshold for small screens
 
     // Calculate the duration
-    final duration = _endDate.difference(_startDate);
+    final duration = _endTime.difference(_startTime);
 
     return Form(
       key: _form,
@@ -271,15 +277,11 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   HMBDateTimeField _buildEventDate(BuildContext context) => HMBDateTimeField(
       mode: HMBDateTimeFieldMode.dateOnly,
       label: 'Event Date',
-      initialDateTime: _startDate,
+      initialDateTime: _eventDate.toDateTime(),
       width: 200,
       onChanged: (date) {
         setState(() {
-          _startDate = DateTime(date.year, date.month, date.day,
-              _startDate.hour, _startDate.minute);
-
-          _endDate = DateTime(
-              date.year, date.month, date.day, _endDate.hour, _endDate.minute);
+          _eventDate = date.toLocalDate();
         });
       },
       validator: (date) {
@@ -293,17 +295,18 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   HMBDateTimeField _buildEndDate(BuildContext context) => HMBDateTimeField(
       mode: HMBDateTimeFieldMode.timeOnly,
       label: 'End Time',
-      initialDateTime: _endDate,
+      initialDateTime: _endTime.toDateTime(),
       width: 200,
       onChanged: (date) {
-        setState(() => _endDate = date);
+        setState(() => _endTime = date.toLocalTime());
       },
       validator: (date) {
         if (date == null) {
-          return 'You must select and End Date';
+          return 'You must select an End Date';
         }
-        if (date.isBefore(_startDate)) {
-          return 'Must be before start date.';
+        final endTime = date.toLocalTime();
+        if (endTime.isBefore(_startTime)) {
+          return 'Must be after start date.';
         } else {
           return null;
         }
@@ -313,13 +316,14 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   HMBDateTimeField _buildStartDate() => HMBDateTimeField(
         mode: HMBDateTimeFieldMode.timeOnly,
         label: 'Start Time',
-        initialDateTime: _startDate,
+        initialDateTime: _startTime.toDateTime(),
         width: 200,
         onChanged: (date) {
-          if (date.isAfter(_endDate)) {
-            _endDate = date.add(const Duration(hours: 1));
+          _startTime = date.toLocalTime();
+          if (_startTime.isAfter(_endTime)) {
+            _endTime = _startTime.addDuration(const Duration(hours: 1));
           }
-          setState(() => _startDate = date);
+          setState(() => {});
         },
       );
 
@@ -337,23 +341,29 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     }
 
     if (_selectedJob == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a job for the event.')),
-      );
+      HMBToast.error('Please select a job for the event.');
+
       return;
     }
 
-    if (_startDate.isAfterOrEqual(_endDate)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('The end time must be after the start time.')));
+    if (_startTime.isAfterOrEqual(_endTime)) {
+      HMBToast.error('The end time must be after the start time.');
+      return;
+    }
+
+    if (_startTime.atDate(_eventDate).isBefore(DateTime.now())) {
+      HMBToast.error('The Start date and time must be in the future..');
       return;
     }
 
     /// To ensure that the end date is on the same day as the start
     /// date, if the user chooses 12am (midnight) as the end date
     /// we roll it back 1 minute so it falls on the same day.
-    if (_endDate.toLocalTime() == const LocalTime(hour: 24, minute: 00)) {
-      _endDate = _endDate.subtract(const Duration(minutes: 1));
+    if (_endTime == const LocalTime(hour: 24, minute: 00)) {
+      _endTime = _endTime
+          .atDate(_eventDate)
+          .subtract(const Duration(minutes: 1))
+          .toLocalTime();
     }
 
     // Check for overlapping events
@@ -396,8 +406,8 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     if (widget.isEditing) {
       jobEvent = widget.event!.event!.jobActivity.copyWith(
         jobId: _selectedJob!.id,
-        start: _startDate,
-        end: _endDate,
+        start: _startTime.atDate(_eventDate),
+        end: _endTime.atDate(_eventDate),
         status: _status,
         notes: _notes,
         noticeSentDate: _noticeSentDate,
@@ -406,8 +416,8 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
       /// new job event.
       jobEvent = JobActivity.forInsert(
         jobId: _selectedJob!.id,
-        start: _startDate,
-        end: _endDate,
+        start: _startTime.atDate(_eventDate),
+        end: _endTime.atDate(_eventDate),
         status: _status,
         notes: _notes,
         noticeSentDate: _noticeSentDate,
@@ -431,9 +441,11 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   Future<JobActivityEx?> _checkForOverlappingEvents() async {
     final jobEvents = await DaoJobActivity().getByJob(_selectedJob!.id);
     for (final event in jobEvents) {
-      if ((_startDate.isBefore(event.end) && _startDate.isAfter(event.start)) ||
-          (_endDate.isAfter(event.start) && _endDate.isBefore(event.end)) ||
-          (_startDate.isBefore(event.start) && _endDate.isAfter(event.end))) {
+      final startDate = _startTime.atDate(_eventDate);
+      final endDate = _endTime.atDate(_eventDate);
+      if ((startDate.isBefore(event.end) && startDate.isAfter(event.start)) ||
+          (endDate.isAfter(event.start) && endDate.isBefore(event.end)) ||
+          (startDate.isBefore(event.start) && endDate.isAfter(event.end))) {
         // Exclude the current event being edited from overlap check
         if (!widget.isEditing ||
             event.id != widget.event?.event?.jobActivity.id) {
