@@ -27,7 +27,7 @@ class HMBEmailField extends StatelessWidget {
         autofocus: isNotMobile,
         decoration: InputDecoration(
           labelText: labelText,
-          suffixIcon: MailToIcon(controller.text),
+          suffixIcon: HMBMailToIcon(controller.text),
         ),
         validator: (value) {
           if (required && (value == null || value.isEmpty)) {

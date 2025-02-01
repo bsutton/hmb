@@ -4,9 +4,9 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao_contact.dart';
 import '../../../entity/job.dart';
-import '../../../ui/widgets/mail_to_icon.dart';
 import '../../../util/hmb_theme.dart';
 import '../../../util/plus_space.dart';
+import '../hmb_mail_to_icon.dart';
 import '../layout/hmb_placeholder.dart';
 
 class HMBEmailText extends StatelessWidget {
@@ -32,7 +32,7 @@ class HMBEmailText extends StatelessWidget {
           if (Strings.isNotBlank(email))
             Align(
               alignment: Alignment.centerRight,
-              child: MailToIcon(email),
+              child: HMBMailToIcon(email),
             ),
         ],
       );

@@ -6,10 +6,10 @@ import '../../../dao/dao_contact.dart';
 import '../../../dao/dao_customer.dart';
 import '../../../dao/dao_site.dart';
 import '../../../entity/job.dart';
-import '../../../ui/widgets/dial_widget.dart';
 import '../../../util/hmb_theme.dart';
 import '../../../util/plus_space.dart';
 import '../../dialog/source_context.dart';
+import '../hmb_phone_icon.dart';
 import '../layout/hmb_placeholder.dart';
 
 /// Displays the label and phoneNum.
@@ -43,7 +43,7 @@ class HMBPhoneText extends StatelessWidget {
           if (Strings.isNotBlank(phoneNo))
             Align(
               alignment: Alignment.centerRight,
-              child: DialWidget(phoneNo!, sourceContext: sourceContext),
+              child: HMBPhoneIcon(phoneNo!, sourceContext: sourceContext),
             ),
         ],
       );
@@ -74,9 +74,7 @@ class HMBJobPhoneText extends StatelessWidget {
     final site = await DaoSite().getById(job.siteId);
     final customer = await DaoCustomer().getById(job.customerId);
 
-    return  SourceContext(
+    return SourceContext(
         job: job, contact: contact, site: site, customer: customer);
-
-
   }
 }

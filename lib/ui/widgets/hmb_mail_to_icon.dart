@@ -7,8 +7,8 @@ import 'package:url_launcher/url_launcher_string.dart';
 import '../../util/clip_board.dart';
 import 'hmb_toast.dart';
 
-class MailToIcon extends StatelessWidget {
-  const MailToIcon(this.email, {super.key});
+class HMBMailToIcon extends StatelessWidget {
+  const HMBMailToIcon(this.email, {super.key});
   final String? email;
 
   @override

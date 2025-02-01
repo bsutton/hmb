@@ -14,8 +14,8 @@ import '../dialog/source_context.dart';
 import 'hmb_button.dart';
 import 'hmb_toast.dart';
 
-class DialWidget extends StatelessWidget {
-  const DialWidget(this.phoneNo, {required this.sourceContext, super.key});
+class HMBPhoneIcon extends StatelessWidget {
+  const HMBPhoneIcon(this.phoneNo, {required this.sourceContext, super.key});
   final String phoneNo;
 
   final SourceContext sourceContext;

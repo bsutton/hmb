@@ -22,7 +22,7 @@ class HMBPhoneField extends StatelessWidget {
       keyboardType: TextInputType.phone,
       decoration: InputDecoration(
         labelText: labelText,
-        suffixIcon: DialWidget(controller.text, sourceContext: sourceContext),
+        suffixIcon: HMBPhoneIcon(controller.text, sourceContext: sourceContext),
       ),
       validator: validator);
 }
