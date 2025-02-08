@@ -89,6 +89,11 @@ class LocalTime {
 
       /// hour == 0 an hour == 24 are both 12 am.
       Object.hashAll([if (hour == 0) 24 else hour, minute, second]);
+
+  Duration difference(LocalTime startTime) {
+    final today = LocalDate.today();
+    return atDate(today).difference(startTime.atDate(today));
+  }
 }
 
 class LocalTimeConverter implements JsonConverter<LocalTime, String> {
