@@ -8,10 +8,12 @@ import 'package:go_router/go_router.dart';
 // -- Example imports. Adapt for your project:
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job_activity.dart';
+import '../../dao/dao_site.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/operating_hours.dart';
+import '../../entity/site.dart';
 import '../../util/app_title.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/local_date.dart';
@@ -40,15 +42,17 @@ final _referenceDate = LocalDate(2000, 1, 3);
 
 /// A convenience data class for combining a [Job] and its [Customer].
 class JobAndCustomer {
-  JobAndCustomer(this.job, this.customer);
+  JobAndCustomer(this.job, this.customer, this.site);
 
   static Future<JobAndCustomer> fetch(Job job) async {
     final customer = await DaoCustomer().getByJob(job.id);
-    return JobAndCustomer(job, customer!);
+    final site = await DaoSite().getByJob(job);
+    return JobAndCustomer(job, customer!, site!);
   }
 
   final Job job;
   final Customer customer;
+  final Site site;
 }
 
 /// The main schedule page. This is the "shell" that holds a [PageView] of either

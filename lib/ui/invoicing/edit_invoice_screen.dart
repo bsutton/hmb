@@ -189,8 +189,11 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       await _reloadInvoice();
       setState(() {});
     } catch (e, st) {
-      await Sentry.captureException(e,
-          stackTrace: st, hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}));
+      if (!e.toString().contains('You must provide an email address for')) {
+        await Sentry.captureException(e,
+            stackTrace: st,
+            hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}));
+      }
       HMBToast.error('Failed to upload invoice: $e',
           acknowledgmentRequired: true);
     }

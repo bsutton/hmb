@@ -5,6 +5,7 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
+import '../../dao/_index.g.dart';
 import '../../dao/dao_job_activity.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/operating_hours.dart';
@@ -14,6 +15,9 @@ import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../../util/local_time.dart';
 import '../widgets/circle.dart';
+import '../widgets/hmb_mail_to_icon.dart';
+import '../widgets/hmb_map_icon.dart';
+import '../widgets/hmb_phone_icon.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
@@ -228,16 +232,26 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
             padding: const EdgeInsets.only(left: 8),
             child: Align(
                 alignment: Alignment.topLeft,
-                child: Row(
+                child: Column(
                   children: [
-                    if (jobActivity != null)
-                      Circle(
-                          color: jobActivity.jobActivity.status.color,
-                          child: const Text('')),
-                    const SizedBox(width: 5),
-                    HMBTextLine(jobAndCustomer!.job.summary),
-                    const HMBSpacer(width: true),
-                    HMBTextLine(jobAndCustomer.customer.name),
+                    Row(
+                      children: [
+                        if (jobActivity != null)
+                          Circle(
+                              color: jobActivity.jobActivity.status.color,
+                              child: const Text('')),
+                        const SizedBox(width: 5),
+                        HMBTextLine(jobAndCustomer!.job.summary),
+                        const HMBSpacer(width: true),
+                        HMBTextLine(jobAndCustomer.customer.name),
+                      ],
+                    ),
+                    Row(children: [
+                      HMBMapIcon(jobAndCustomer.site),
+                      HMBPhoneIcon(DaoJob().get jobAndCustomer.job.),
+                      HMBMailToIcon(
+                          labelText: labelText, controller: controller)
+                    ])
                   ],
                 )),
           ),
