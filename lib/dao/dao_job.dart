@@ -7,15 +7,7 @@ import '../entity/customer.dart';
 import '../entity/job.dart';
 import '../entity/job_status_enum.dart';
 import '../util/money_ex.dart';
-import 'dao.dart';
-import 'dao_invoice.dart';
-import 'dao_job_status.dart';
-import 'dao_quote.dart';
-import 'dao_system.dart';
-import 'dao_task.dart';
-import 'dao_task_item.dart';
-import 'dao_task_status.dart';
-import 'dao_time_entry.dart';
+import 'dao.g.dart';
 
 class DaoJob extends Dao<Job> {
   @override
@@ -268,6 +260,20 @@ where c.id =?
     }
 
     return false;
+  }
+
+  Future<String?> getBestPhoneNumber(Job job) async {
+    String? bestPhone;
+    if (job.contactId != null) {
+      bestPhone = (await DaoContact().getPrimaryForJob(job.id))?.bestPhone;
+    }
+
+    if (bestPhone == null) {
+      final customer = await DaoCustomer().getByJob(job.id);
+      bestPhone =
+          (await DaoContact().getPrimaryForCustomer(customer!.id))?.bestPhone;
+    }
+    return bestPhone;
   }
 
   @override
