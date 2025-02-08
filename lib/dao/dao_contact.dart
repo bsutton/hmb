@@ -152,16 +152,6 @@ where cu.id =?
     if (jobId == null) {
       return [];
     }
-//     final data = await db.rawQuery('''
-// select co.*
-// from contact co
-// join job_contact cc
-//   on co.id = cc.contact_id
-// join job cu
-//   on cc.job_id = cu.id
-// where cu.id =?
-// ''', [jobId]);
-
     final data = await db.rawQuery('''
 select co.* 
 from contact co
