@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
 
-import '../../dao/_index.g.dart';
-import '../../dao/dao_invoice_fixed_price.dart';
+import '../../dao/dao.g.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/quote.dart';
@@ -14,12 +13,11 @@ import '../../util/format.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/media/pdf_preview.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
-import 'edit_quote_line_dialog.dart';
-import 'generate_quote_pdf.dart';
-import 'job_quote.dart';
+import 'quoting.g.dart';
 
 class QuoteCard extends StatefulWidget {
   const QuoteCard({
@@ -39,26 +37,47 @@ class QuoteCard extends StatefulWidget {
 
 class _QuoteCardState extends State<QuoteCard> {
   @override
+  void initState() {
+    quote = widget.quote;
+
+    super.initState();
+  }
+
+  late Quote quote;
+
+  @override
   Widget build(BuildContext context) => Surface(
         elevation: SurfaceElevation.e6,
         child: ExpansionTile(
-          title: _buildQuoteTitle(widget.quote),
-          subtitle: Text('Total: ${widget.quote.totalAmount}'),
+          title: _buildQuoteTitle(quote),
+          subtitle: Text('Total: ${quote.totalAmount}'),
           children: [
             FutureBuilderEx<JobQuote>(
                 // ignore: discarded_futures
-                future: JobQuote.fromQuoteId(widget.quote.id),
+                future: JobQuote.fromQuoteId(quote.id),
                 builder: (context, jobQuote) => Column(
                       children: [
+                        // First row with Send, Milestones and Invoice buttons.
                         Padding(
                           padding: const EdgeInsets.all(8),
                           child: Row(
                             children: [
-                              _buildSendButton(widget.quote),
+                              _buildSendButton(quote),
                               const SizedBox(width: 8),
-                              _buildMilestonesButton(widget.quote),
+                              _buildApprovedButton(quote),
                               const SizedBox(width: 8),
-                              _buildCreateInvoiceButton(widget.quote),
+                              _buildRejectedButton(quote),
+                            ],
+                          ),
+                        ),
+                        // New row with Approved and Rejected buttons.
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Row(
+                            children: [
+                              _buildMilestonesButton(quote),
+                              const SizedBox(width: 8),
+                              _buildCreateInvoiceButton(quote),
                             ],
                           ),
                         ),
@@ -93,6 +112,17 @@ class _QuoteCardState extends State<QuoteCard> {
                     ),
                     Text('Customer: $customerName'),
                     Text('Job: $jobName #${jobAndCustomer.job.id}'),
+                    // Optionally show current state:
+                    Row(
+                      children: [
+                        Text('State: ${quote.state.name}'),
+                        const HMBSpacer(width: true),
+                        if (quote.state == QuoteState.sent)
+                          Text(formatDate(quote.dateSent!)),
+                        if (quote.state == QuoteState.approved)
+                          Text(formatDate(quote.dateApproved!))
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -143,7 +173,7 @@ class _QuoteCardState extends State<QuoteCard> {
                 'Status: ${line.status.toString().split('.').last}',
               ),
               trailing: Text('Total: ${line.lineTotal}'),
-              onTap: () async => widget.onEditQuote(widget.quote),
+              onTap: () async => widget.onEditQuote(quote),
             ),
           )
           .toList(),
@@ -247,7 +277,14 @@ class _QuoteCardState extends State<QuoteCard> {
                     emailSubject: '${system.businessName ?? 'Your'} quote',
                     emailBody: 'Please find the attached Quotation',
                     emailRecipients: emailRecipients,
-                    onSent: () async {},
+                    onSent: () async {
+                      if (quote.state != QuoteState.approved) {
+                        /// if already approved this is just a resend.
+                        await DaoQuote().markQuoteSent(quote.id);
+                        this.quote = (await DaoQuote().getById(quote.id))!;
+                        setState(() {});
+                      }
+                    },
                   ),
                 ),
               );
@@ -265,9 +302,40 @@ class _QuoteCardState extends State<QuoteCard> {
     if (editedLine != null) {
       await DaoQuoteLine().update(editedLine);
       await DaoQuote().recalculateTotal(editedLine.quoteId);
-      await widget.onEditQuote(widget.quote);
+      await widget.onEditQuote(quote);
     }
   }
+
+  HMBButton _buildApprovedButton(Quote quote) => HMBButton(
+        label: 'Approved',
+        onPressed: () async {
+          try {
+            // Calls the DAO to update the state to "approved".
+            await DaoQuote().approveQuote(quote.id);
+            HMBToast.info('Quote approved successfully.');
+            // Optionally, trigger a rebuild if needed.
+            this.quote = (await DaoQuote().getById(quote.id))!;
+            setState(() {});
+          } catch (e) {
+            HMBToast.error('Failed to approve quote: $e');
+          }
+        },
+      );
+
+  HMBButton _buildRejectedButton(Quote quote) => HMBButton(
+        label: 'Rejected',
+        onPressed: () async {
+          try {
+            // Calls the DAO to update the state to "rejected".
+            await DaoQuote().rejectQuote(quote.id);
+            HMBToast.info('Quote rejected successfully.');
+            this.quote = (await DaoQuote().getById(quote.id))!;
+            setState(() {});
+          } catch (e) {
+            HMBToast.error('Failed to reject quote: $e');
+          }
+        },
+      );
 
   HMBButton _buildMilestonesButton(Quote quote) => HMBButton(
         label: 'Create Milestones',

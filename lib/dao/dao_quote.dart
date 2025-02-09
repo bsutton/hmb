@@ -62,7 +62,7 @@ class DaoQuote extends Dao<Quote> {
     return toList(data);
   }
 
-    Future<List<Quote>> getQuotesWithoutMilestones() async {
+  Future<List<Quote>> getQuotesWithoutMilestones() async {
     final db = withoutTransaction();
     final List<Map<String, dynamic>> data = await db.rawQuery('''
       SELECT q.*
@@ -208,9 +208,6 @@ class DaoQuote extends Dao<Quote> {
     return quoteLineGroup;
   }
 
-  @override
-  JuneStateCreator get juneRefresher => QuoteState.new;
-
   Future<void> recalculateTotal(int quoteId) async {
     final lines = await DaoQuoteLine().getByQuoteId(quoteId);
     var total = MoneyEx.zero;
@@ -222,9 +219,73 @@ class DaoQuote extends Dao<Quote> {
     final updatedQuote = quote!.copyWith(totalAmount: total);
     await DaoQuote().update(updatedQuote);
   }
+
+  /// Updates the quote's state (and the modified_date).
+  Future<int> updateState(
+    int quoteId,
+    QuoteState newState, {
+    Transaction? transaction,
+  }) async {
+    final db = withinTransaction(transaction);
+    return db.update(
+      tableName,
+      {
+        'state': newState.name,
+        'modified_date': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [quoteId],
+    );
+  }
+
+  /// Approve quote
+  Future<int> approveQuote(
+    int quoteId, {
+    Transaction? transaction,
+  }) async {
+    final db = withinTransaction(transaction);
+    return db.update(
+      tableName,
+      {
+        'state': QuoteState.approved.name,
+        'date_approved': DateTime.now().toIso8601String(),
+        'modified_date': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [quoteId],
+    );
+  }
+
+  /// Reject quote
+  Future<int> rejectQuote(
+    int quoteId, {
+    Transaction? transaction,
+  }) async =>
+      updateState(quoteId, QuoteState.rejected, transaction: transaction);
+
+  /// quote sent
+  Future<int> markQuoteSent(
+    int quoteId, {
+    Transaction? transaction,
+  }) async {
+    final db = withinTransaction(transaction);
+    return db.update(
+      tableName,
+      {
+        'state': QuoteState.sent.name,
+        'date_sent': DateTime.now().toIso8601String(),
+        'modified_date': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [quoteId],
+    );
+  }
+
+  @override
+  JuneStateCreator get juneRefresher => QuoteStateNotifier.new;
 }
 
 /// Used to notify the UI that the quote has changed.
-class QuoteState extends JuneState {
-  QuoteState();
+class QuoteStateNotifier extends JuneState {
+  QuoteStateNotifier();
 }
