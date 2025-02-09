@@ -48,12 +48,12 @@ class JobAndCustomer {
 
     final phoneNo = await DaoJob().getBestPhoneNumber(job);
     final emailAddress = await DaoJob().getBestEmail(job);
-    return JobAndCustomer(job, customer!, site!, phoneNo, emailAddress);
+    return JobAndCustomer(job, customer!, site, phoneNo, emailAddress);
   }
 
   final Job job;
   final Customer customer;
-  final Site site;
+  final Site? site;
   final String? bestPhoneNo;
   final String? bestEmailAddress;
 }

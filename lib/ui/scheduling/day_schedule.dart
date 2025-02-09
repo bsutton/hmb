@@ -17,7 +17,6 @@ import '../widgets/circle.dart';
 import '../widgets/hmb_mail_to_icon.dart';
 import '../widgets/hmb_map_icon.dart';
 import '../widgets/hmb_phone_icon.dart';
-import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'job_activity_ex.dart';
@@ -241,7 +240,10 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
                               child: const Text('')),
                         const SizedBox(width: 5),
                         HMBTextLine(jobAndCustomer!.job.summary),
-                        const HMBSpacer(width: true),
+                      ],
+                    ),
+                    Row(
+                      children: [
                         HMBTextLine(jobAndCustomer.customer.name),
                       ],
                     ),
