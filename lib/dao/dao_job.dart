@@ -335,13 +335,13 @@ where c.id =?
   }
 
   Future<Job> getJobForInvoice(int invoiceId) async {
-    final invoice = (await DaoInvoice().getById(invoiceId))!;
-    return (await getById(invoice.jobId))!;
+    final invoice = await DaoInvoice().getById(invoiceId);
+    return (await getById(invoice!.jobId))!;
   }
 
   Future<Job> getJobForQuote(int quoteId) async {
-    final quote = (await DaoQuote().getById(quoteId))!;
-    return (await getById(quote.jobId))!;
+    final quote = await DaoQuote().getById(quoteId);
+    return (await getById(quote!.jobId))!;
   }
 }
 
