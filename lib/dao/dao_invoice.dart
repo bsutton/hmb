@@ -7,7 +7,7 @@ import 'package:strings/strings.dart';
 
 import '../api/xero/models/xero_contact.dart';
 import '../api/xero/xero_api.dart';
-import '../entity/_index.g.dart';
+import '../entity/entity.g.dart';
 import '../util/exceptions.dart';
 import '../util/money_ex.dart';
 import 'dao.dart';

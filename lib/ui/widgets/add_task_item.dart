@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
 import '../../dao/dao.g.dart';
-import '../../entity/_index.g.dart';
-import '../../entity/task_item.dart';
+import '../../entity/entity.g.dart';
 import '../../util/measurement_type.dart';
 import '../../util/money_ex.dart';
 import '../../util/units.dart';

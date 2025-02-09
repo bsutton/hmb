@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:june/june.dart';
 
 import '../../../dao/dao_photo.dart';
-import '../../../entity/_index.g.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/photo_meta.dart';
 import '../../crud/task/photo_crud.dart';
 import 'captured_photo.dart';

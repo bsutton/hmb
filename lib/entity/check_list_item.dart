@@ -3,8 +3,7 @@ import 'package:money2/money2.dart';
 import '../util/measurement_type.dart';
 import '../util/money_ex.dart';
 import '../util/units.dart';
-import '_index.g.dart';
-import 'task_item.dart';
+import 'entity.g.dart';
 
 class CheckListItem extends Entity<CheckListItem> {
   CheckListItem({

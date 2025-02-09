@@ -2,7 +2,7 @@ import 'package:fixed/fixed.dart';
 import 'package:june/june.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../entity/_index.g.dart';
+import '../entity/entity.g.dart';
 import '../util/date_time_ex.dart';
 import '../util/local_date.dart';
 import 'dao.dart';

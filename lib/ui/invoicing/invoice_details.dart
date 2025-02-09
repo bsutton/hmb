@@ -1,5 +1,5 @@
 import '../../dao/dao.g.dart';
-import '../../entity/_index.g.dart';
+import '../../entity/entity.g.dart';
 import '../../util/exceptions.dart';
 
 class InvoiceDetails {

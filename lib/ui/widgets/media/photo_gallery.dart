@@ -11,8 +11,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_task.dart';
-import '../../../entity/_index.g.dart';
-import '../../../entity/tool.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/compute_manager.dart';
 import '../../../util/exceptions.dart';
 import '../../../util/photo_meta.dart';

@@ -2,8 +2,7 @@ import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
-import '../entity/_index.g.dart';
-import '../entity/task_item.dart';
+import '../entity/entity.g.dart';
 import 'dao.dart';
 
 class DaoTaskItem extends Dao<TaskItem> {

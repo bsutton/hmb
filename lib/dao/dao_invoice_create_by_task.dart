@@ -1,10 +1,7 @@
 import 'package:money2/money2.dart';
 
-import '../entity/_index.g.dart';
-import '../entity/task_item.dart';
-import '../util/format.dart';
-import '../util/local_date.dart';
-import '../util/money_ex.dart';
+import '../entity/entity.g.dart';
+import '../util/util.g.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_task.dart';

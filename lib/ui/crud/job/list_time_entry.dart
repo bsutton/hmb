@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao.g.dart';
-import '../../../entity/_index.g.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/format.dart';
 
 class TimeEntryListScreen extends StatefulWidget {

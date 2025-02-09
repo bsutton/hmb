@@ -1,6 +1,6 @@
 import 'package:fixed/fixed.dart';
 
-import '../entity/_index.g.dart';
+import '../entity/entity.g.dart';
 import '../util/exceptions.dart';
 import '../util/local_date.dart';
 import '../util/money_ex.dart';

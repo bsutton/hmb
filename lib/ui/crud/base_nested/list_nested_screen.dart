@@ -5,7 +5,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 
 import '../../../dao/dao.dart';
-import '../../../entity/entities.dart';
+import '../../../entity/entity.g.dart';
 import '../../dialog/hmb_are_you_sure_dialog.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_toast.dart';

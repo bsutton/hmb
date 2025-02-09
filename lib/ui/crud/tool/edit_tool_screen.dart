@@ -6,8 +6,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_tool.dart';
-import '../../../entity/_index.g.dart';
-import '../../../entity/tool.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/money_ex.dart';
 import '../../../util/photo_meta.dart';
 import '../../widgets/fields/hmb_text_area.dart';

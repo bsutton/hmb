@@ -2,8 +2,7 @@
 
 import 'package:money2/money2.dart';
 
-import '../entity/_index.g.dart';
-import '../entity/milestone.dart';
+import '../entity/entity.g.dart';
 import '../util/exceptions.dart';
 import '../util/local_date.dart';
 import '../util/money_ex.dart';

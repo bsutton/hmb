@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao.g.dart';
-import '../../../entity/_index.g.dart';
-import '../../../entity/tool.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/photo_meta.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/media/captured_photo.dart';
