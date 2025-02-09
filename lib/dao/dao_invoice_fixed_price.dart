@@ -7,7 +7,7 @@ import '../entity/milestone.dart';
 import '../util/exceptions.dart';
 import '../util/local_date.dart';
 import '../util/money_ex.dart';
-import '_index.g.dart';
+import 'dao.g.dart';
 
 Future<Invoice> createFixedPriceInvoice(
   Quote quote,

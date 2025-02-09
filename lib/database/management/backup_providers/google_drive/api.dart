@@ -9,6 +9,7 @@ import 'package:http/http.dart';
 
 import '../../../../../util/exceptions.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
+import 'backup.dart';
 
 class GoogleDriveAuth {
   late final Map<String, String> _authHeaders;
@@ -132,16 +133,6 @@ class GoogleAuthClient extends http.BaseClient {
   GoogleAuthClient(this._headers);
   final Map<String, String> _headers;
   final http.Client _client = http.Client();
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) =>
-      _client.send(request..headers.addAll(_headers));
-}
-
-class AuthenticatedClient extends http.BaseClient {
-  AuthenticatedClient(this._client, this._headers);
-  final http.Client _client;
-  final Map<String, String> _headers;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) =>

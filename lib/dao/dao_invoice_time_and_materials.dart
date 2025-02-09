@@ -4,9 +4,7 @@ import '../entity/_index.g.dart';
 import '../util/exceptions.dart';
 import '../util/local_date.dart';
 import '../util/money_ex.dart';
-import '_index.g.dart';
-import 'dao_invoice_create_by_date.dart';
-import 'dao_invoice_create_by_task.dart';
+import 'dao.g.dart';
 
 Future<Invoice> createTimeAndMaterialsInvoice(
     Job job, List<int> selectedTaskIds,

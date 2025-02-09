@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
-import '../../../ui/widgets/mail_to_icon.dart';
 import '../../../util/platform_ex.dart';
+import '../hmb_mail_to_icon.dart';
 
 class HMBEmailField extends StatelessWidget {
   const HMBEmailField(

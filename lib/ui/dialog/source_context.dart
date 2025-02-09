@@ -1,5 +1,4 @@
-import '../../dao/_index.g.dart';
-import '../../dao/dao_job_activity.dart';
+import '../../dao/dao.g.dart';
 import '../../entity/contact.dart';
 import '../../entity/customer.dart';
 import '../../entity/invoice.dart';
@@ -77,7 +76,6 @@ class SourceContext {
       customer ??= await DaoCustomer().getByContact(contact!.id);
       // try by site
       customer ??= await DaoCustomer().getBySite(site!.id);
-
     } while (currentHash != (newHash = _buildHash()));
   }
 

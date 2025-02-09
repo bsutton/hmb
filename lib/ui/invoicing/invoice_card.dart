@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
 
-import '../../dao/_index.g.dart';
+import '../../dao/dao.g.dart';
 import '../../entity/_index.g.dart';
 import '../../util/format.dart';
 import '../widgets/hmb_button.dart';

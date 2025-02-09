@@ -2,7 +2,7 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../../dao/_index.g.dart';
+import '../../../dao/dao.g.dart';
 import '../../../entity/_index.g.dart';
 import '../../../util/format.dart';
 

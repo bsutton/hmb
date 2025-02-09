@@ -1,5 +1,4 @@
-import 'package:hmb/dao/_index.g.dart';
-import 'package:hmb/dao/dao_task_item.dart';
+import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/_index.g.dart';
 import 'package:hmb/entity/task_item.dart';
 import 'package:hmb/util/measurement_type.dart';

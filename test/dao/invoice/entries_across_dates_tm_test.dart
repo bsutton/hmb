@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hmb/dao/_index.g.dart';
-import 'package:hmb/dao/dao_invoice_time_and_materials.dart';
+import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/_index.g.dart';
 import 'package:hmb/util/format.dart';
 import 'package:hmb/util/local_date.dart';

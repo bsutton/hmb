@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
 
-import '../../../../dao/_index.g.dart';
-import '../../../../dao/dao_task_item.dart';
+import '../../../../dao/dao.g.dart';
 import '../../../../entity/job.dart';
 import '../../../../entity/task_item_type.dart';
 import '../../../../util/money_ex.dart';

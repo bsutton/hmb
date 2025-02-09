@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../../dao/_index.g.dart';
+import '../../../dao/dao.g.dart';
 import '../../../entity/_index.g.dart';
 import '../../../entity/tool.dart';
 import '../../../util/photo_meta.dart';
@@ -57,7 +57,7 @@ class _CapturePhotoState extends State<CapturePhoto> {
                       filePath: capturedPhoto.relativePath,
                       comment: widget.comment,
                     );
-                    photoId = await  widget.onCaptured(newPhoto);
+                    photoId = await widget.onCaptured(newPhoto);
 
                     setState(() {});
                   },

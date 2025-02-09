@@ -6,8 +6,6 @@
 //
 export 'api.dart';
 export 'backup.dart';
-export 'backup_all.dart';
-export 'backup_old.dart';
 export 'google_drive.g.dart';
 export 'google_drive_backup_provider.dart';
 export 'google_drive_backup_screen.dart';

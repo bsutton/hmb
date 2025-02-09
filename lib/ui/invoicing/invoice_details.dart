@@ -1,4 +1,4 @@
-import '../../dao/_index.g.dart';
+import '../../dao/dao.g.dart';
 import '../../entity/_index.g.dart';
 import '../../util/exceptions.dart';
 

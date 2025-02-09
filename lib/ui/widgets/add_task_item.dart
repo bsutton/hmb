@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
-import '../../dao/_index.g.dart';
-import '../../dao/dao_task_item.dart';
+import '../../dao/dao.g.dart';
 import '../../entity/_index.g.dart';
 import '../../entity/task_item.dart';
 import '../../util/measurement_type.dart';
@@ -145,7 +144,7 @@ Future<void> _addTaskItem(
     final newItem = TaskItem.forInsert(
         taskId: selectedTask.id,
         description: descriptionController.text,
-        itemTypeId: selectedItemType.id, 
+        itemTypeId: selectedItemType.id,
         estimatedMaterialQuantity: quantity,
         estimatedMaterialUnitCost: unitCost,
         estimatedLabourCost: null,
