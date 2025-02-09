@@ -193,7 +193,9 @@ The Xero credentials are not set. Navigate to the System | Integration screen an
 
   Future<oauth2.Credentials?> _loadSavedCredentials() async {
     final json = await _secureStorage.read(key: _credentialsKey);
-    if (json == null) return null;
+    if (json == null) {
+      return null;
+    }
     try {
       return oauth2.Credentials.fromJson(json);
     } catch (e) {

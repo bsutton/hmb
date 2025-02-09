@@ -43,7 +43,7 @@ class LocalServerRedirectHandler extends RedirectHandler {
       InternetAddress.loopbackIPv4,
       port,
     );
-    log('listening on http://${server!.address.host}:${server!.port}');
+    _log('listening on http://${server!.address.host}:${server!.port}');
 
     server!.listen((request) async {
       if (request.uri.path == '/${XeroAuth2.redirectPath}') {
@@ -75,7 +75,7 @@ class LocalServerRedirectHandler extends RedirectHandler {
   // Close the stream controller when no longer needed
   @override
   Future<void> stop() async {
-    log('Stopping');
+    _log('Stopping');
     running = false;
 
     /// we let the server close gracefully so the
@@ -88,7 +88,7 @@ class LocalServerRedirectHandler extends RedirectHandler {
   Stream<Uri> get stream => _authStreamController.stream;
 }
 
-void log(String text) {
+void _log(String text) {
   print('LocalHostServer: $text');
 }
 

@@ -124,9 +124,9 @@ Future<Money> emitMaterialsByTask(
     final task = await DaoTask().getById(taskId);
     final billingType = await DaoTask().getBillingType(task!);
     var groupCreated = false;
-    final taskItem = await DaoTaskItem().getByTask(taskId);
+    final taskItems = await DaoTaskItem().getByTask(taskId);
     var invoiceLineGroupId = -1;
-    for (final item in taskItem) {
+    for (final item in taskItems) {
       final itemType = TaskItemTypeEnum.fromId(item.itemTypeId);
       if (item.billed ||
           !item.completed ||
