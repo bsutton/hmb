@@ -5,35 +5,30 @@ import 'dart:async';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
-import '../../dao/dao_supplier.dart';
-import '../../entity/job.dart';
-import '../../entity/supplier.dart';
-import '../dao/dao_customer.dart';
-import '../dao/dao_job.dart';
-import '../dao/dao_job_activity.dart';
-import '../dao/dao_task.dart';
-import '../dao/dao_task_item.dart';
-import '../dao/dao_task_item_type.dart';
-import '../entity/customer.dart';
-import '../entity/job_activity.dart';
-import '../util/app_title.dart';
-import '../util/format.dart';
-import '../util/money_ex.dart';
-import 'crud/tool/stock_take_wizard.dart';
+import '../../../dao/dao_supplier.dart';
+import '../../../entity/job.dart';
+import '../../../entity/supplier.dart';
+import '../../dao/dao_customer.dart';
+import '../../dao/dao_job.dart';
+import '../../dao/dao_job_activity.dart';
+import '../../dao/dao_task.dart';
+import '../../dao/dao_task_item.dart';
+import '../../entity/customer.dart';
+import '../../entity/job_activity.dart';
+import '../../util/app_title.dart';
+import '../../util/format.dart';
+import '../widgets/add_task_item.dart';
+import '../widgets/help_button.dart';
+import '../widgets/hmb_search.dart';
+import '../widgets/layout/hmb_spacer.dart';
+import '../widgets/select/hmb_droplist.dart';
+import '../widgets/select/hmb_droplist_multi.dart';
+import '../widgets/surface.dart';
+import '../widgets/text/hmb_text_themes.dart';
 import 'list_packing_screen.dart';
-import 'widgets/add_task_item.dart';
-import 'widgets/fields/hmb_text_field.dart';
-import 'widgets/help_button.dart';
-import 'widgets/hmb_button.dart';
-import 'widgets/hmb_search.dart';
-import 'widgets/layout/hmb_spacer.dart';
-import 'widgets/select/hmb_droplist.dart';
-import 'widgets/select/hmb_droplist_multi.dart';
-import 'widgets/surface.dart';
-import 'widgets/text/hmb_text_themes.dart';
+import 'mark_as_complete.dart';
 
 class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});
@@ -74,93 +69,6 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
       }
     }
     setState(() {});
-  }
-
-  Future<void> _markAsCompleted(TaskItemContext itemContext) async {
-    final costController = TextEditingController();
-    final quantityController = TextEditingController();
-
-    costController.text =
-        itemContext.taskItem.estimatedMaterialUnitCost.toString();
-    quantityController.text =
-        itemContext.taskItem.estimatedMaterialQuantity.toString();
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Complete Item'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HMBTextField(
-              controller: costController,
-              labelText: 'Cost per item (optional)',
-              keyboardType: TextInputType.number,
-            ),
-            HMBTextField(
-              controller: quantityController,
-              labelText: 'Quantity (optional)',
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          HMBButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            label: 'Cancel',
-          ),
-          HMBButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            label: 'Complete',
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed ?? false) {
-      final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
-      final unitCost = MoneyEx.tryParse(costController.text);
-
-      await DaoTaskItem().markAsCompleted(
-          itemContext.billingType, itemContext.taskItem, unitCost, quantity);
-      await _loadTaskItems();
-
-      // Check if item type is "Tool - buy" and prompt to add to tool list
-      if (itemContext.taskItem.itemTypeId ==
-          (await DaoTaskItemType().getToolsBuy()).id) {
-        if (mounted) {
-          final addTool = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Add Tool to Tool List?'),
-              content: const Text(
-                  'Would you like to add this tool to your tool list?'),
-              actions: [
-                HMBButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  label: 'No',
-                ),
-                HMBButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  label: 'Yes',
-                ),
-              ],
-            ),
-          );
-
-          if ((addTool ?? false) && mounted) {
-            await ToolStockTakeWizard.start(
-                context: context,
-                onFinish: (reason) async {
-                  Navigator.of(context).pop();
-                },
-                cost: unitCost,
-                name: itemContext.taskItem.description,
-                offerAnother: false);
-          }
-        }
-      }
-    }
   }
 
   @override
@@ -303,12 +211,18 @@ If you were expecting to see items here - check the Job's Status is active.
                   ),
                   IconButton(
                     icon: const Icon(Icons.check, color: Colors.green),
-                    onPressed: () async => _markAsCompleted(itemContext),
+                    onPressed: () async {
+                      await markAsCompleted(itemContext, context);
+                      await _loadTaskItems();
+                    },
                   ),
                 ],
               ),
             ),
-            onPressed: () async => _markAsCompleted(itemContext),
+            onPressed: () async {
+              await markAsCompleted(itemContext, context);
+              await _loadTaskItems();
+            },
           ),
         ],
       );
