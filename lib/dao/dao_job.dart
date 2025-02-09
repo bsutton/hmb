@@ -276,6 +276,20 @@ where c.id =?
     return bestPhone;
   }
 
+  Future<String?> getBestEmail(Job job) async {
+    String? bestEmail;
+    if (job.contactId != null) {
+      bestEmail = (await DaoContact().getPrimaryForJob(job.id))?.emailAddress;
+    }
+
+    if (bestEmail == null) {
+      final customer = await DaoCustomer().getByJob(job.id);
+      bestEmail = (await DaoContact().getPrimaryForCustomer(customer!.id))
+          ?.emailAddress;
+    }
+    return bestEmail;
+  }
+
   @override
   JuneStateCreator get juneRefresher => JobState.new;
 
