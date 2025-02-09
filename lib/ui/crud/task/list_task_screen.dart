@@ -69,7 +69,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       : 'Show Completed Tasks',
                   initialValue: June.getState(ShowCompletedTasksState.new)
                       .showCompletedTasks,
-                  onChanged: (value) {
+                  onToggled: (value) {
                     setState(() {
                       June.getState(ShowCompletedTasksState.new).toggle();
                     });

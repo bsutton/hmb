@@ -2,7 +2,7 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../../../dao/_index.g.dart';
+import '../../../../dao/dao.g.dart';
 import '../../../../entity/_index.g.dart';
 import '../../../../util/app_title.dart';
 import '../../../widgets/hmb_search.dart';
@@ -123,7 +123,7 @@ class _JobEstimatesListScreenState
                   HMBToggle(
                     label: 'Show All Jobs',
                     initialValue: !showOnlyActiveJobs,
-                    onChanged: (value) async {
+                    onToggled: (value) async {
                       setState(() {
                         showOnlyActiveJobs = !value;
                       });

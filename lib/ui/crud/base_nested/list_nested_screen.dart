@@ -139,7 +139,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
             label: 'Show details',
             tooltip: 'Show/Hide full card details',
             initialValue: cardDetail == CardDetail.full,
-            onChanged: (on) {
+            onToggled: (on) {
               setState(() {
                 cardDetail = on ? CardDetail.full : CardDetail.summary;
               });

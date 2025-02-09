@@ -2,22 +2,21 @@ import 'package:flutter/material.dart';
 
 import 'text/hmb_text_themes.dart';
 
-
 // ignore: avoid_positional_boolean_parameters
-typedef OnChanged = void Function(bool on);
+typedef OnToggled = void Function(bool on);
 
 class HMBToggle extends StatefulWidget {
   const HMBToggle({
     required this.label,
     required this.tooltip,
     required this.initialValue,
-    required this.onChanged,
+    required this.onToggled,
     super.key,
   });
   final String label;
   final bool initialValue;
   final String tooltip;
-  final OnChanged onChanged;
+  final OnToggled onToggled;
 
   @override
   State<HMBToggle> createState() => _HMBToggleState();
@@ -39,7 +38,7 @@ class _HMBToggleState extends State<HMBToggle> {
             tooltip: widget.tooltip,
             onPressed: () {
               on = !on;
-              widget.onChanged(on);
+              widget.onToggled(on);
             },
             iconSize: 25,
             icon: Icon(on ? Icons.toggle_on : Icons.toggle_off),
