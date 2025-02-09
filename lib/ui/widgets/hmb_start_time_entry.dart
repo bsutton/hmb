@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
@@ -27,58 +28,50 @@ class HMBStartTimeEntry extends StatefulWidget {
   State<StatefulWidget> createState() => HMBStartTimeEntryState();
 }
 
-class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
+class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   Timer? _timer;
-  late Future<TimeEntry?> _initialEntry;
+  late TimeEntry? timeEntry;
 
   @override
-  void initState() {
-    super.initState();
-    final completer = Completer<TimeEntry?>();
-    _initialEntry = completer.future;
-    // ignore: discarded_futures
-    DaoTimeEntry().getActiveEntry().then((entry) {
-      if (entry != null && entry.taskId == widget.task?.id) {
-        completer.complete(entry);
-      } else {
-        completer.complete(null);
-      }
-      if (mounted) {
-        setState(() {
-          _initTimer(entry);
-          if (entry != null) {
-            final task = widget.task;
-            June.getState<TimeEntryState>(TimeEntryState.new)
-                .setActiveTimeEntry(entry, task);
-          }
-        });
-      }
-    });
+  Future<void> asyncInitState() async {
+    final entry = await DaoTimeEntry().getActiveEntry();
+
+    if (entry != null && entry.taskId == widget.task?.id) {
+      timeEntry = entry;
+    } else {
+      timeEntry = null;
+    }
+    if (mounted) {
+      setState(() {
+        _initTimer(entry);
+        if (entry != null) {
+          final task = widget.task;
+          June.getState<TimeEntryState>(TimeEntryState.new)
+              .setActiveTimeEntry(entry, task);
+        }
+      });
+    }
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilder(
-      future: _initialEntry,
-      builder: (context, snapshot) {
-        final timeEntry = snapshot.data;
-        return GestureDetector(
-          child: Row(
-            children: [
-              IconButton(
-                padding: const EdgeInsets.only(top: 8, bottom: 8),
-                visualDensity: const VisualDensity(horizontal: -4),
-                icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
-                onPressed: () async => timeEntry != null
-                    ? _stop(widget.task)
-                    : _start(widget.task),
-              ),
-              _buildElapsedTime(timeEntry)
-            ],
-          ),
-          onTap: () async =>
-              timeEntry != null ? _stop(widget.task) : _start(widget.task),
-        );
-      });
+  Widget build(BuildContext context) => DeferredBuilder(this,
+      builder: (context) => GestureDetector(
+            child: Row(
+              children: [
+                IconButton(
+                  padding: const EdgeInsets.only(top: 8, bottom: 8),
+                  visualDensity: const VisualDensity(horizontal: -4),
+                  icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
+                  onPressed: () async => timeEntry != null
+                      ? _stop(widget.task)
+                      : _start(widget.task),
+                ),
+                _buildElapsedTime(timeEntry)
+              ],
+            ),
+            onTap: () async =>
+                timeEntry != null ? _stop(widget.task) : _start(widget.task),
+          ));
 
   Future<void> _stop(Task? task) async {
     final runningTimer = await DaoTimeEntry().getActiveEntry();
@@ -204,7 +197,7 @@ class HMBStartTimeEntryState extends State<HMBStartTimeEntry> {
         /// that has just been stopped we should start the new timer
         /// from the prior one (plus 1 minute) - we can't overlap
         /// tasks on the same job as the customer won't like this.
-        final stopTime = priorEntry.endTime!;
+        final stopTime = priorEntry.endTime;
         final startTime = priorEntry.endTime!.add(const Duration(minutes: 1));
         return StopStartTime(priorTaskStopTime: stopTime, startTime: startTime);
       }
