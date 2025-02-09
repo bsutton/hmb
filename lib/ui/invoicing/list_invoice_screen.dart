@@ -13,6 +13,8 @@ import '../../entity/job.dart';
 import '../../util/app_title.dart';
 import '../../util/format.dart';
 import '../../util/money_ex.dart';
+import '../crud/job/job.g.dart';
+import '../widgets/hmb_link_internal.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/select/hmb_droplist.dart';
@@ -202,8 +204,12 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
                                       ),
                                       Text(
                                           'Customer: ${details.customer?.name ?? "N/A"}'),
-                                      Text(
-                                          'Job: #${details.job.id} - ${details.job.summary} '),
+                                      HMBLinkInternal(
+                                        label:
+                                            'Job: #${details.job.id} - ${details.job.summary} ',
+                                        navigateTo: () async =>
+                                            JobEditScreen(job: details.job),
+                                      ),
                                       Text(
                                           'Xero: ${details.invoice.invoiceNum == null ? 'Not uploaded' : '#${details.invoice.invoiceNum}'}'),
                                       Text(

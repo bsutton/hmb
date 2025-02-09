@@ -11,6 +11,7 @@ import '../../../entity/milestone.dart';
 import '../../../util/money_ex.dart';
 import '../../invoicing/edit_invoice_screen.dart'; // Ensure InvoiceEditScreen is imported
 import '../../invoicing/invoice_details.dart';
+import '../../widgets/hmb_link_internal.dart';
 import '../../widgets/hmb_toast.dart';
 
 class MilestoneTile extends StatefulWidget {
@@ -187,27 +188,14 @@ class _MilestoneTileState extends State<MilestoneTile> {
                         return const Text('Not Invoiced');
                       } else {
                         // Make invoice number clickable to open InvoiceEditScreen
-                        return InkWell(
-                          onTap: () async {
-                            final invoiceDetails =
-                                await InvoiceDetails.load(inv.id);
-                            // Navigate to InvoiceEditScreen with this invoice
-                            if (context.mounted) {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (context) => InvoiceEditScreen(
-                                      invoiceDetails: invoiceDetails),
-                                ),
-                              );
-                            }
-                          },
-                          child: Text(
-                            'Invoice: ${inv.bestNumber}',
-                            style: const TextStyle(
-                                color: Colors.green,
-                                decoration: TextDecoration.underline),
-                          ),
-                        );
+                        return HMBLinkInternal(
+                            label: 'Invoice: ${inv.bestNumber}',
+                            navigateTo: () async {
+                              final invoiceDetails =
+                                  await InvoiceDetails.load(inv.id);
+                              return InvoiceEditScreen(
+                                  invoiceDetails: invoiceDetails);
+                            });
                       }
                     }),
               TextField(
