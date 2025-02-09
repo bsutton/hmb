@@ -6,10 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 // -- Example imports. Adapt for your project:
-import '../../dao/dao_customer.dart';
-import '../../dao/dao_job_activity.dart';
-import '../../dao/dao_site.dart';
-import '../../dao/dao_system.dart';
+import '../../dao/dao.g.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/operating_hours.dart';
@@ -42,17 +39,23 @@ final _referenceDate = LocalDate(2000, 1, 3);
 
 /// A convenience data class for combining a [Job] and its [Customer].
 class JobAndCustomer {
-  JobAndCustomer(this.job, this.customer, this.site);
+  JobAndCustomer(this.job, this.customer, this.site, this.bestPhoneNo,
+      this.bestEmailAddress);
 
   static Future<JobAndCustomer> fetch(Job job) async {
     final customer = await DaoCustomer().getByJob(job.id);
     final site = await DaoSite().getByJob(job);
-    return JobAndCustomer(job, customer!, site!);
+
+    final phoneNo = await DaoJob().getBestPhoneNumber(job);
+    final emailAddress = await DaoJob().getBestEmail(job);
+    return JobAndCustomer(job, customer!, site!, phoneNo, emailAddress);
   }
 
   final Job job;
   final Customer customer;
   final Site site;
+  final String? bestPhoneNo;
+  final String? bestEmailAddress;
 }
 
 /// The main schedule page. This is the "shell" that holds a [PageView] of either
@@ -375,7 +378,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
                 label: 'Extended',
                 tooltip: 'Show full 24 hrs',
                 initialValue: false,
-                onChanged: (value) {
+                onToggled: (value) {
                   setState(() {
                     showExtendedHours = value;
                   });

@@ -5,15 +5,14 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../dao/_index.g.dart';
-import '../../dao/dao_job_activity.dart';
-import '../../dao/dao_system.dart';
+import '../../dao/dao.g.dart';
 import '../../entity/operating_hours.dart';
 import '../../entity/system.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../../util/local_time.dart';
+import '../dialog/dialog.g.dart';
 import '../widgets/circle.dart';
 import '../widgets/hmb_mail_to_icon.dart';
 import '../widgets/hmb_map_icon.dart';
@@ -248,9 +247,11 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
                     ),
                     Row(children: [
                       HMBMapIcon(jobAndCustomer.site),
-                      HMBPhoneIcon(DaoJob().get jobAndCustomer.job.),
-                      HMBMailToIcon(
-                          labelText: labelText, controller: controller)
+                      HMBPhoneIcon(jobAndCustomer.bestPhoneNo ?? '',
+                          sourceContext: SourceContext(
+                              job: jobAndCustomer.job,
+                              customer: jobAndCustomer.customer)),
+                      HMBMailToIcon(jobAndCustomer.bestEmailAddress)
                     ])
                   ],
                 )),
