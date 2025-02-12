@@ -10,6 +10,5 @@ export 'list_tool_screen.dart';
 export 'receipt_step.dart';
 export 'serial_no_step.dart';
 export 'stock_take_wizard.dart';
-export 'tool.g.dart';
 export 'tool_details_step.dart';
 export 'tool_photo_step.dart';

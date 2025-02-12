@@ -7,6 +7,5 @@
 export 'app_link_redirect_handler.dart';
 export 'local_server_redirect_handler.dart';
 export 'redirect_handler.dart';
-export 'xero.g.dart';
 export 'xero_api.dart';
 export 'xero_auth.dart';

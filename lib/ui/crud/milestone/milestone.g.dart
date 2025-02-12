@@ -6,5 +6,4 @@
 //
 export 'edit_milestone_payment.dart';
 export 'list_milestone_screen.dart';
-export 'milestone.g.dart';
 export 'milestone_tile.dart';

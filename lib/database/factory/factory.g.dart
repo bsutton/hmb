@@ -5,6 +5,5 @@
 // https://onepub.dev
 //
 export 'cli_database_factory.dart';
-export 'factory.g.dart';
 export 'flutter_database_factory.dart';
 export 'hmb_database_factory.dart';

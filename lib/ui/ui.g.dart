@@ -6,6 +6,4 @@
 //
 export 'about.dart';
 export 'error.dart';
-export 'task_items/list_packing_screen.dart';
-export 'task_items/list_shopping_screen.dart';
 export 'ui.g.dart';

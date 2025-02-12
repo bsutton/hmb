@@ -18,7 +18,6 @@ export 'job_cost.dart';
 export 'job_descripion.dart';
 export 'job_source.dart';
 export 'job_summary.dart';
-export 'message_placeholders.g.dart';
 export 'noop_source.dart';
 export 'place_holder.dart';
 export 'placeholder_manager.dart';

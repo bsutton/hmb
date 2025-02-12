@@ -9,4 +9,3 @@ export 'db_upgrade.dart';
 export 'post_upgrade_77.dart';
 export 'project_script_source.dart';
 export 'script_source.dart';
-export 'versions.g.dart';

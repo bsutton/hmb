@@ -14,4 +14,3 @@ export 'hmb_site_text.dart';
 export 'hmb_text.dart';
 export 'hmb_text_block.dart';
 export 'hmb_text_themes.dart';
-export 'text.g.dart';

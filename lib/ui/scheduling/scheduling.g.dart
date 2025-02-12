@@ -11,5 +11,4 @@ export 'job_activity_ex.dart';
 export 'month_schedule.dart';
 export 'schedule_helper.dart';
 export 'schedule_page.dart';
-export 'scheduling.g.dart';
 export 'week_schedule.dart';

@@ -4,7 +4,6 @@
 // barrel_create is sponsored by OnePub the dart private repository
 // https://onepub.dev
 //
-export 'dialog.g.dart';
 export 'email_dialog.dart';
 export 'hmb_are_you_sure_dialog.dart';
 export 'hmb_dialog.dart';

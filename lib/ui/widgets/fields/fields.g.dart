@@ -4,7 +4,6 @@
 // barrel_create is sponsored by OnePub the dart private repository
 // https://onepub.dev
 //
-export 'fields.g.dart';
 export 'hmb_email_field.dart';
 export 'hmb_fixed_field.dart';
 export 'hmb_money_editing_controller.dart';

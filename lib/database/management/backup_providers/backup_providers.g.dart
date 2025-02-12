@@ -5,6 +5,5 @@
 // https://onepub.dev
 //
 export 'backup_provider.dart';
-export 'backup_providers.g.dart';
 export 'backup_selection.dart';
 export 'zip_isolate.dart';

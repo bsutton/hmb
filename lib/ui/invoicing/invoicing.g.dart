@@ -10,6 +10,5 @@ export 'edit_invoice_line_dialog.dart';
 export 'edit_invoice_screen.dart';
 export 'invoice_card.dart';
 export 'invoice_details.dart';
-export 'invoicing.g.dart';
 export 'list_invoice_screen.dart';
 export 'select_job_dialog.dart';

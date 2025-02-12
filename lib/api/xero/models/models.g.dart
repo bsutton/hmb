@@ -6,7 +6,6 @@
 //
 export 'app_link_redirect_handler.dart';
 export 'models.dart';
-export 'models.g.dart';
 export 'xero_contact.dart';
 export 'xero_invoice.dart';
 export 'xero_line_item.dart';

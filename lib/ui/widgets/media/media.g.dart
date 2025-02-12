@@ -7,7 +7,6 @@
 export 'captured_photo.dart';
 export 'desktop_camera_delegate.dart';
 export 'full_screen_photo_view.dart';
-export 'media.g.dart';
 export 'pdf_preview.dart';
 export 'photo_carousel.dart';
 export 'photo_controller.dart';

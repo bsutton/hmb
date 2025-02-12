@@ -7,4 +7,3 @@
 export 'edit_task_screen.dart';
 export 'list_task_screen.dart';
 export 'photo_crud.dart';
-export 'task.g.dart';

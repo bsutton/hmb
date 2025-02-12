@@ -9,4 +9,3 @@ export 'business_page.dart';
 export 'contact_page.dart';
 export 'integration_page.dart';
 export 'system_wizard.dart';
-export 'wizard.g.dart';
