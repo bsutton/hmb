@@ -61,6 +61,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
                 IconButton(
                   padding: const EdgeInsets.only(top: 8, bottom: 8),
                   visualDensity: const VisualDensity(horizontal: -4),
+                  // start / stop icon
                   icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
                   onPressed: () async => timeEntry != null
                       ? _stop(widget.task)
@@ -122,6 +123,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
     if (showStart) {
       /// there is no other timer running so just start the new timer
       await _startDialog(widget.task!, startStopTimes.startTime);
+      setState(() {});
     }
   }
 

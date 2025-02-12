@@ -111,7 +111,7 @@ class _JobEditScreenState extends State<JobEditScreen>
           _bookingFeeController.text =
               system.defaultBookingFee?.amount.toString() ?? '0.00';
         });
-        // Hard coded id of the 'Prospecting' status, probably not a great way
+        // Hard coded id of the 'Prospecting' status (1), probably not a great way
         // to do this.
         // ignore: discarded_futures
         DaoJobStatus().getById(1).then((jobStatus) {
