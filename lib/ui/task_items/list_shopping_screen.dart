@@ -30,6 +30,58 @@ import '../widgets/text/hmb_text_themes.dart';
 import 'list_packing_screen.dart';
 import 'mark_as_complete.dart';
 
+enum ScheduleFilter {
+  all,
+  today,
+  nextThreeDays,
+  week;
+
+  String get displayName {
+    switch (this) {
+      case ScheduleFilter.all:
+        return 'All';
+      case ScheduleFilter.today:
+        return 'Today';
+      case ScheduleFilter.nextThreeDays:
+        return 'Next 3 Days';
+      case ScheduleFilter.week:
+        return 'This Week';
+    }
+  }
+
+  /// Returns true if [scheduledDate] falls within the period defined by this filter.
+  bool includes(DateTime scheduledDate, {DateTime? now}) {
+    now ??= DateTime.now();
+
+    switch (this) {
+      case ScheduleFilter.all:
+        return true;
+      case ScheduleFilter.today:
+        return scheduledDate.year == now.year &&
+            scheduledDate.month == now.month &&
+            scheduledDate.day == now.day;
+      case ScheduleFilter.nextThreeDays:
+        // Exclude today and include dates within the next 3 days.
+        final start =
+            DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+        final end =
+            DateTime(now.year, now.month, now.day).add(const Duration(days: 3));
+        return scheduledDate
+                .isAfter(start.subtract(const Duration(microseconds: 1))) &&
+            scheduledDate.isBefore(end.add(const Duration(microseconds: 1)));
+      case ScheduleFilter.week:
+        // Exclude today and include dates within the next 7 days.
+        final start =
+            DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+        final end =
+            DateTime(now.year, now.month, now.day).add(const Duration(days: 7));
+        return scheduledDate
+                .isAfter(start.subtract(const Duration(microseconds: 1))) &&
+            scheduledDate.isBefore(end.add(const Duration(microseconds: 1)));
+    }
+  }
+}
+
 class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});
 
@@ -38,11 +90,17 @@ class ShoppingScreen extends StatefulWidget {
   _ShoppingScreenState createState() => _ShoppingScreenState();
 }
 
+bool isSameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
+// -----------------------------------------------------------------------------
+// In your _ShoppingScreenState, add a field for the schedule filter:
 class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
   late final _taskItems = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
   Supplier? _selectedSupplier;
   String? filter;
+  ScheduleFilter _selectedScheduleFilter = ScheduleFilter.all; // New filter
 
   @override
   Future<void> asyncInitState() async {
@@ -60,18 +118,62 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
     for (final taskItem in taskItems) {
       final task = await DaoTask().getById(taskItem.taskId);
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
-      if (Strings.isBlank(filter)) {
-        _taskItems.add(TaskItemContext(task!, taskItem, billingType));
-      } else {
-        if (taskItem.description.toLowerCase().contains(filter!)) {
-          _taskItems.add(TaskItemContext(task!, taskItem, billingType));
+
+      // Apply text filter if present
+      if (!Strings.isBlank(filter)) {
+        if (!taskItem.description
+            .toLowerCase()
+            .contains(filter!.toLowerCase())) {
+          continue;
         }
       }
+
+      // Apply schedule filter (if not "All")
+      if (_selectedScheduleFilter != ScheduleFilter.all) {
+        final job = await DaoJob().getJobForTask(task!.id);
+        if (job == null) {
+          continue;
+        }
+        final nextActivity =
+            await DaoJobActivity().getNextActivityByJob(job.id);
+        if (nextActivity == null) {
+          continue;
+        }
+        final scheduledDate = nextActivity.start;
+        final now = DateTime.now();
+
+        var include = false;
+        switch (_selectedScheduleFilter) {
+          case ScheduleFilter.today:
+            include = isSameDay(scheduledDate, now);
+          case ScheduleFilter.nextThreeDays:
+            // Only include if scheduledDate is after today and within the next 3 days.
+            if (!isSameDay(scheduledDate, now) &&
+                scheduledDate.isAfter(now) &&
+                scheduledDate.isBefore(now.add(const Duration(days: 3)))) {
+              include = true;
+            }
+          case ScheduleFilter.week:
+            // Include if scheduledDate is after today and within the next 7 days.
+            if (!isSameDay(scheduledDate, now) &&
+                scheduledDate.isAfter(now) &&
+                scheduledDate.isBefore(now.add(const Duration(days: 7)))) {
+              include = true;
+            }
+
+          case ScheduleFilter.all:
+            include = true;
+        }
+        if (!include) {
+          continue;
+        }
+      }
+
+      _taskItems.add(TaskItemContext(task!, taskItem, billingType));
     }
     setState(() {});
   }
 
-  @override
   @override
   Widget build(BuildContext context) => Scaffold(
         body: Surface(
@@ -104,7 +206,7 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
                     ).help('Filter by Job', '''
 Allows you to filter the shopping list to items from specific Jobs.
 
-If your Job isn't showing then you need to update it's status to an Active one such as 'Scheduled, In Progress...' '''),
+If your Job isn't showing then you need to update its status to an Active one such as 'Scheduled, In Progress...' '''),
                     const SizedBox(height: 10),
                     HMBDroplist<Supplier>(
                       selectedItem: () async => _selectedSupplier,
@@ -119,6 +221,20 @@ If your Job isn't showing then you need to update it's status to an Active one s
                       required: false,
                     ).help('Filter by Supplier',
                         'When adding Task Items, if you enter the supplier you can filter by supplier'),
+                    const SizedBox(height: 10),
+                    // New Schedule Filter Dropdown
+                    HMBDroplist<ScheduleFilter>(
+                      selectedItem: () async => _selectedScheduleFilter,
+                      items: (filter) async => ScheduleFilter.values,
+                      format: (schedule) => schedule.displayName,
+                      onChanged: (schedule) async {
+                        _selectedScheduleFilter = schedule!;
+                        await _loadTaskItems();
+                      },
+                      title: 'Schedule',
+                      required: false,
+                    ).help('Filter by Schedule',
+                        'Filter shopping items by job scheduled date (Today, Next 3 Days, or This Week)'),
                   ],
                 ),
               ),

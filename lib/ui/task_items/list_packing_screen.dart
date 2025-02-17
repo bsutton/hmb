@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
@@ -19,9 +18,7 @@ import '../../entity/task_item.dart';
 import '../../entity/task_item_type.dart';
 import '../../util/app_title.dart';
 import '../../util/format.dart';
-import '../../util/money_ex.dart';
 import '../widgets/add_task_item.dart';
-import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/help_button.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_colours.dart';
@@ -30,6 +27,7 @@ import '../widgets/hmb_toast.dart';
 import '../widgets/select/hmb_droplist_multi.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
+import 'mark_as_complete.dart';
 
 class PackingScreen extends StatefulWidget {
   const PackingScreen({super.key});
@@ -79,52 +77,6 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
     }
 
     setState(() {});
-  }
-
-  Future<void> _markAsCompleted(TaskItemContext itemContext) async {
-    final costController = TextEditingController();
-    final quantityController = TextEditingController();
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Complete Item'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HMBTextField(
-              controller: costController,
-              labelText: 'Cost per item (optional)',
-              keyboardType: TextInputType.number,
-            ),
-            HMBTextField(
-              controller: quantityController,
-              labelText: 'Quantity (optional)',
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          HMBButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            label: 'Cancel',
-          ),
-          HMBButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            label: 'Complete',
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed ?? false) {
-      final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
-      final unitCost = MoneyEx.tryParse(costController.text);
-
-      await DaoTaskItem().markAsCompleted(
-          itemContext.billingType, itemContext.taskItem, unitCost, quantity);
-      await _loadTaskItems();
-    }
   }
 
   @override
@@ -227,7 +179,7 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
   ) =>
       SurfaceCard(
         height: 250,
-        onPressed: () async => _markAsCompleted(itemContext),
+        onPressed: () async => markAsCompleted(itemContext, context),
         title: itemContext.taskItem.description,
         body: Row(children: [
           FutureBuilderEx(
@@ -263,7 +215,7 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
                 ),
                 IconButton(
                   icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () async => _markAsCompleted(itemContext),
+                  onPressed: () async => markAsCompleted(itemContext, context),
                 ),
               ],
             ),

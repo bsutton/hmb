@@ -2,6 +2,8 @@ import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 
 import '../../dao/dao.g.dart';
+import '../../entity/task_item.dart';
+import '../../entity/task_item_type.dart';
 import '../../util/util.g.dart';
 import '../crud/tool/tool.g.dart';
 import '../widgets/fields/fields.g.dart';
@@ -13,10 +15,32 @@ Future<void> markAsCompleted(
   final costController = TextEditingController();
   final quantityController = TextEditingController();
 
-  costController.text =
-      itemContext.taskItem.estimatedMaterialUnitCost.toString();
-  quantityController.text =
-      itemContext.taskItem.estimatedMaterialQuantity.toString();
+  final taskItem = itemContext.taskItem;
+
+  final itemType = TaskItemTypeEnum.fromId(taskItem.itemTypeId);
+
+/// TODO: need to rework this as part of allowing  a T&M job
+/// to invoice a Fixed priced task.
+  switch (itemType) {
+    case TaskItemTypeEnum.materialsBuy:
+    case TaskItemTypeEnum.materialsStock:
+    case TaskItemTypeEnum.toolsBuy:
+    case TaskItemTypeEnum.toolsOwn:
+      costController.text =
+          itemContext.taskItem.estimatedMaterialUnitCost.toString();
+      quantityController.text =
+          itemContext.taskItem.estimatedMaterialQuantity.toString();
+    case TaskItemTypeEnum.labour:
+      if (taskItem.labourEntryMode == LabourEntryMode.hours) {
+        costController.text =
+            itemContext.taskItem.estimatedLabourCost.toString();
+        quantityController.text = '1.00';
+      } else {
+        costController.text =
+            itemContext.taskItem.estimatedLabourCost.toString();
+        quantityController.text = '1.00';
+      }
+  }
 
   final confirmed = await showDialog<bool>(
     context: context,
