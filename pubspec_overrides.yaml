@@ -1,6 +1,6 @@
 dependency_overrides:
-  calendar_view:
-    path: ../flutter_calendar_view
+  # calendar_view:
+  #   path: ../flutter_calendar_view
   # mailto:
   #   path: ../../mailto
   # future_builder_ex:
