@@ -29,8 +29,11 @@ import 'hmb_start_time_entry.dart';
 // }
 
 class HBMCrudTimeEntry extends StatefulWidget {
-  const HBMCrudTimeEntry(
-      {required this.parentTitle, required this.parent, super.key});
+  const HBMCrudTimeEntry({
+    required this.parentTitle,
+    required this.parent,
+    super.key,
+  });
 
   final String parentTitle;
   final Parent<Task> parent;
@@ -46,17 +49,16 @@ class HBMCrudTimeEntryState extends State<HBMCrudTimeEntry> {
 
   @override
   Widget build(BuildContext context) => Column(
-        children: [
-          HMBStartTimeEntry(task: widget.parent.parent, onStart: (job) {}),
+    children: [
+      HMBStartTimeEntry(task: widget.parent.parent, onStart: (job) {}),
 
-          HMBChildCrudCard(
-              headline: 'Time Entries',
-              crudListScreen: TimeEntryListScreen(
-                parent: widget.parent,
-              )),
-          // )
-        ],
-      );
+      HMBChildCrudCard(
+        headline: 'Time Entries',
+        crudListScreen: TimeEntryListScreen(parent: widget.parent),
+      ),
+      // )
+    ],
+  );
 }
 
 // FutureBuilder<List<TimeEntry>>(

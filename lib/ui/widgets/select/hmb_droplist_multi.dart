@@ -21,38 +21,40 @@ class HMBDroplistMultiSelect<T> extends FormField<List<T>> {
     bool required = true,
     super.key,
   }) : super(
-          autovalidateMode: AutovalidateMode.always,
-          builder: (state) => _HMBDroplistMultiSelect<T>(
-            key: ValueKey(initialItems),
-            state: state,
-            initialItems: initialItems,
-            items: items,
-            format: format,
-            onChanged: onChanged,
-            title: title,
-            backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
-          ),
-          validator: (value) {
-            if (required && (value == null || value.isEmpty)) {
-              return 'Please select at least one item';
-            }
-            return null;
-          },
-        );
+         autovalidateMode: AutovalidateMode.always,
+         builder:
+             (state) => _HMBDroplistMultiSelect<T>(
+               key: ValueKey(initialItems),
+               state: state,
+               initialItems: initialItems,
+               items: items,
+               format: format,
+               onChanged: onChanged,
+               title: title,
+               backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
+             ),
+         validator: (value) {
+           if (required && (value == null || value.isEmpty)) {
+             return 'Please select at least one item';
+           }
+           return null;
+         },
+       );
 
   static Widget placeHolder() => const HMBPlaceHolder(height: 30);
 }
 
 class _HMBDroplistMultiSelect<T> extends StatefulWidget {
-  const _HMBDroplistMultiSelect(
-      {required this.state,
-      required this.initialItems,
-      required this.items,
-      required this.format,
-      required this.onChanged,
-      required this.title,
-      required super.key,
-      required this.backgroundColor});
+  const _HMBDroplistMultiSelect({
+    required this.state,
+    required this.initialItems,
+    required this.items,
+    required this.format,
+    required this.onChanged,
+    required this.title,
+    required super.key,
+    required this.backgroundColor,
+  });
 
   final FormFieldState<List<T>> state;
   final Future<List<T>> Function() initialItems;
@@ -95,70 +97,69 @@ class _HMBDroplistMultiSelectState<T>
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: () async {
-          final selectedItems = await showDialog<List<T>>(
-            context: context,
-            builder: (context) => HMBDroplistMultiSelectDialog<T>(
+    onTap: () async {
+      final selectedItems = await showDialog<List<T>>(
+        context: context,
+        builder:
+            (context) => HMBDroplistMultiSelectDialog<T>(
               getItems: widget.items,
               formatItem: widget.format,
               title: widget.title,
               selectedItems: _selectedItems,
             ),
-          );
+      );
 
-          if (selectedItems != null) {
-            if (mounted) {
-              setState(() {
-                _selectedItems = selectedItems;
-              });
-            }
-            widget.state.didChange(selectedItems);
-            widget.onChanged(selectedItems);
-          }
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            LabeledContainer(
-              labelText: widget.title,
-              isError: widget.state.hasError,
-              backgroundColor: widget.backgroundColor,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (_loading)
-                    const CircularProgressIndicator()
-                  else
-                    Text(
-                      _selectedItems.isNotEmpty
-                          ? _selectedItems.map(widget.format).join(', ')
-                          : 'Select ${widget.title}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: widget.state.hasError
+      if (selectedItems != null) {
+        if (mounted) {
+          setState(() {
+            _selectedItems = selectedItems;
+          });
+        }
+        widget.state.didChange(selectedItems);
+        widget.onChanged(selectedItems);
+      }
+    },
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        LabeledContainer(
+          labelText: widget.title,
+          isError: widget.state.hasError,
+          backgroundColor: widget.backgroundColor,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (_loading)
+                const CircularProgressIndicator()
+              else
+                Text(
+                  _selectedItems.isNotEmpty
+                      ? _selectedItems.map(widget.format).join(', ')
+                      : 'Select ${widget.title}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color:
+                        widget.state.hasError
                             ? Theme.of(context).colorScheme.error
                             : HMBColors.textPrimary,
-                      ),
-                    ),
-                  const Icon(
-                    Icons.arrow_drop_down,
-                    color: HMBColors.dropboxArrow,
-                  ),
-                ],
-              ),
-            ),
-            if (widget.state.hasError)
-              Padding(
-                padding: const EdgeInsets.only(top: 4, left: 8),
-                child: Text(
-                  widget.state.errorText ?? '',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontSize: 12,
                   ),
                 ),
-              ),
-          ],
+              const Icon(Icons.arrow_drop_down, color: HMBColors.dropboxArrow),
+            ],
+          ),
         ),
-      );
+        if (widget.state.hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 8),
+            child: Text(
+              widget.state.errorText ?? '',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontSize: 12,
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 }

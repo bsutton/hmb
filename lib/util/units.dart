@@ -33,11 +33,11 @@ abstract class Units {
   // Calculation functions
   Fixed linearCalc(Fixed value) => value; // 1D calculation
   Fixed areaCalc(Fixed d1, Fixed d2) =>
-      (d1 * d2).copyWith( scale: 3); // 2D calculation
+      (d1 * d2).copyWith(scale: 3); // 2D calculation
   Fixed volumeCalc(Fixed d1, Fixed d2, Fixed d3) =>
-      (d1 * d2 * d3).copyWith( scale: 3); // 3D calculation
+      (d1 * d2 * d3).copyWith(scale: 3); // 3D calculation
 
-// Define named variables for each unit with labels
+  // Define named variables for each unit with labels
 
   /// linear units
   static const Units mm = Units1D('mm', labels: ['Length']);
@@ -48,23 +48,44 @@ abstract class Units {
   static const Units inch = Units1D('in', labels: ['Length']);
 
   /// area units
-  static const Units m2 =
-      Units2D('m²', measure: 'm', labels: ['Length', 'Width']);
-  static const Units cm2 =
-      Units2D('cm²', measure: 'cm', labels: ['Length', 'Width']);
-  static const Units mm2 =
-      Units2D('mm²', measure: 'mm', labels: ['Length', 'Width']);
-  static const Units yd2 =
-      Units2D('yd²', measure: 'yd', labels: ['Length', 'Width']);
-  static const Units ft2 =
-      Units2D('ft²', measure: 'ft', labels: ['Length', 'Width']);
+  static const Units m2 = Units2D(
+    'm²',
+    measure: 'm',
+    labels: ['Length', 'Width'],
+  );
+  static const Units cm2 = Units2D(
+    'cm²',
+    measure: 'cm',
+    labels: ['Length', 'Width'],
+  );
+  static const Units mm2 = Units2D(
+    'mm²',
+    measure: 'mm',
+    labels: ['Length', 'Width'],
+  );
+  static const Units yd2 = Units2D(
+    'yd²',
+    measure: 'yd',
+    labels: ['Length', 'Width'],
+  );
+  static const Units ft2 = Units2D(
+    'ft²',
+    measure: 'ft',
+    labels: ['Length', 'Width'],
+  );
 
   /// Volume units
-  static const Units m3 =
-      Units3D('m³', measure: 'm', labels: ['Height', 'Width', 'Depth']);
+  static const Units m3 = Units3D(
+    'm³',
+    measure: 'm',
+    labels: ['Height', 'Width', 'Depth'],
+  );
   static const Units liters = Units1D('litres', labels: ['Volume']);
-  static const Units ft3 =
-      Units3D('ft³', measure: 'ft³', labels: ['Height', 'Width', 'Depth']);
+  static const Units ft3 = Units3D(
+    'ft³',
+    measure: 'ft³',
+    labels: ['Height', 'Width', 'Depth'],
+  );
   static const Units gallons = Units1D('gallons', labels: ['Volume']);
 
   /// Weight
@@ -127,9 +148,10 @@ class Units3D extends Units {
       '''${labels[0]}: ${values[0]} $measure, ${labels[1]}: ${values[1]} $measure, ${labels[2]}: ${values[2]} $measure Total: ${_calc(values)} $name''';
 
   @override
-  Fixed _calc(List<Fixed> values) => values.length < 3
-      ? Fixed.zero
-      : volumeCalc(values[0], values[1], values[2]);
+  Fixed _calc(List<Fixed> values) =>
+      values.length < 3
+          ? Fixed.zero
+          : volumeCalc(values[0], values[1], values[2]);
 }
 
 // Map of unit names to Units objects

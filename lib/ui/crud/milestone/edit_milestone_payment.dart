@@ -122,29 +122,33 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     }
 
     final count = uneditedMilestones.length;
-    final amountPerMilestone = count > 0
-        ? remainingForUnedited.divideByFixed(Fixed.fromInt(count, scale: 0))
-        : MoneyEx.zero;
+    final amountPerMilestone =
+        count > 0
+            ? remainingForUnedited.divideByFixed(Fixed.fromInt(count, scale: 0))
+            : MoneyEx.zero;
 
     for (final milestone in uneditedMilestones) {
       milestone
         ..paymentAmount = amountPerMilestone
-        ..paymentPercentage =
-            amountPerMilestone.percentageOf(quote.totalAmount);
+        ..paymentPercentage = amountPerMilestone.percentageOf(
+          quote.totalAmount,
+        );
       await daoMilestonePayment.update(milestone);
     }
 
     _recalcAllocated();
 
     final difference = quote.totalAmount - totalAllocated;
-    final lastMilestone =
-        milestones.lastWhereOrNull((m) => m.invoiceId == null);
+    final lastMilestone = milestones.lastWhereOrNull(
+      (m) => m.invoiceId == null,
+    );
 
     if (lastMilestone != null && !lastMilestone.edited) {
       lastMilestone
         ..paymentAmount = (lastMilestone.paymentAmount) + difference
-        ..paymentPercentage =
-            lastMilestone.paymentAmount.percentageOf(quote.totalAmount);
+        ..paymentPercentage = lastMilestone.paymentAmount.percentageOf(
+          quote.totalAmount,
+        );
 
       await daoMilestonePayment.update(lastMilestone);
     }
@@ -153,9 +157,9 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
@@ -218,58 +222,62 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => DeferredBuilder(this,
-      builder: (context) => Scaffold(
-            appBar: AppBar(
-              title: const Text('Edit Milestones'),
-              actions: [
-                HMBButtonAdd(
-                  enabled: true,
-                  hint: 'Add Milestone',
-                  onPressed: _addMilestone,
-                ),
-              ],
-            ),
-            body: Column(
-              children: [
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder:
+        (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Edit Milestones'),
+            actions: [
+              HMBButtonAdd(
+                enabled: true,
+                hint: 'Add Milestone',
+                onPressed: _addMilestone,
+              ),
+            ],
+          ),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: HMBText('Quote Total: ${quote.totalAmount}'),
+              ),
+              if (errorMessage.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: HMBText('Quote Total: ${quote.totalAmount}'),
-                ),
-                if (errorMessage.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      errorMessage,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                Expanded(
-                  child: ReorderableListView(
-                    padding: const EdgeInsets.only(right: 28),
-                    onReorder: _onReorder,
-                    children: List.generate(milestones.length, (index) {
-                      final milestone = milestones[index];
-                      return MilestoneTile(
-                        key: ValueKey(milestone.id),
-                        milestone: milestone,
-                        quoteTotal: quote.totalAmount,
-                        onDelete: _onMilestoneDeleted,
-                        onSave: _onMilestoneSave,
-                        onInvoice: _onMilestoneInvoice,
-                        // If editingMilestoneId is set and not equal to this milestone's id,
-                        // then this tile is grayed out.
-                        isOtherTileEditing: editingMilestoneId != null &&
-                            editingMilestoneId != milestone.id,
-                        // Add the editing status changed callback
-                        onEditingStatusChanged: _onEditingStatusChanged,
-                      );
-                    }),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    errorMessage,
+                    style: const TextStyle(color: Colors.red),
                   ),
                 ),
-              ],
-            ),
-          ));
+              Expanded(
+                child: ReorderableListView(
+                  padding: const EdgeInsets.only(right: 28),
+                  onReorder: _onReorder,
+                  children: List.generate(milestones.length, (index) {
+                    final milestone = milestones[index];
+                    return MilestoneTile(
+                      key: ValueKey(milestone.id),
+                      milestone: milestone,
+                      quoteTotal: quote.totalAmount,
+                      onDelete: _onMilestoneDeleted,
+                      onSave: _onMilestoneSave,
+                      onInvoice: _onMilestoneInvoice,
+                      // If editingMilestoneId is set and not equal to this milestone's id,
+                      // then this tile is grayed out.
+                      isOtherTileEditing:
+                          editingMilestoneId != null &&
+                          editingMilestoneId != milestone.id,
+                      // Add the editing status changed callback
+                      onEditingStatusChanged: _onEditingStatusChanged,
+                    );
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ),
+  );
 
   Future<void> _onMilestoneInvoice(Milestone milestone) async {
     // Create invoice and update milestone

@@ -22,8 +22,11 @@ class DaoTask extends Dao<Task> {
   Future<List<Task>> getTasksByJob(int jobId) async {
     final db = withoutTransaction();
 
-    final results =
-        await db.query(tableName, where: 'job_id = ?', whereArgs: [jobId]);
+    final results = await db.query(
+      tableName,
+      where: 'job_id = ?',
+      whereArgs: [jobId],
+    );
 
     final tasks = <Task>[];
     for (final result in results) {
@@ -39,23 +42,23 @@ class DaoTask extends Dao<Task> {
     return task;
   }
 
-//   Future<Task> getTaskForCheckListItem(CheckListItem item) async {
-//     final db = withoutTransaction();
+  //   Future<Task> getTaskForCheckListItem(CheckListItem item) async {
+  //     final db = withoutTransaction();
 
-//     final data = await db.rawQuery('''
-// select t.*
-// from task_item cli
-// join check_list cl
-//   on cli.check_list_id = cl.id
-// join task_check_list tcl
-//   on tcl.check_list_id = cl.id
-// join task t
-//   on tcl.task_id = t.id
-// where cli.id =?
-// ''', [item.id]);
+  //     final data = await db.rawQuery('''
+  // select t.*
+  // from task_item cli
+  // join check_list cl
+  //   on cli.check_list_id = cl.id
+  // join task_check_list tcl
+  //   on tcl.check_list_id = cl.id
+  // join task t
+  //   on tcl.task_id = t.id
+  // where cli.id =?
+  // ''', [item.id]);
 
-//     return toList(data).first;
-//   }
+  //     return toList(data).first;
+  //   }
 
   Future<void> deleteTaskPhotos(int taskId, {Transaction? transaction}) async {
     final photos = await DaoPhoto().getByParent(taskId, ParentType.task);
@@ -76,12 +79,15 @@ class DaoTask extends Dao<Task> {
   Future<Task> getTaskForItem(TaskItem item) async {
     final db = withoutTransaction();
 
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 SELECT t.*
 FROM task t
 JOIN task_item ti ON t.id = ti.task_id
 WHERE ti.id = ?
-''', [item.id]);
+''',
+      [item.id],
+    );
 
     if (data.isNotEmpty) {
       return Task.fromMap(data.first);
@@ -90,14 +96,17 @@ WHERE ti.id = ?
     }
   }
 
-  Future<List<TaskAccruedValue>> getAccruedValueForJob(
-      {required int jobId, required bool includedBilled}) async {
+  Future<List<TaskAccruedValue>> getAccruedValueForJob({
+    required int jobId,
+    required bool includedBilled,
+  }) async {
     final tasks = await DaoTask().getTasksByJob(jobId);
 
     final value = <TaskAccruedValue>[];
     for (final task in tasks) {
-      value.add(await getAccruedValueForTask(
-          task: task, includeBilled: includedBilled));
+      value.add(
+        await getAccruedValueForTask(task: task, includeBilled: includedBilled),
+      );
     }
 
     return value;
@@ -106,8 +115,10 @@ WHERE ti.id = ?
   /// If [includeBilled] is true then we return the accured value since
   /// the [Job] started. If [includeBilled] is false then we only
   /// include labour/materials that haven't been billed.
-  Future<TaskAccruedValue> getAccruedValueForTask(
-      {required Task task, required bool includeBilled}) async {
+  Future<TaskAccruedValue> getAccruedValueForTask({
+    required Task task,
+    required bool includeBilled,
+  }) async {
     final hourlyRate = await DaoTask().getHourlyRate(task);
     final billingType = await DaoTask().getBillingType(task);
 
@@ -130,9 +141,9 @@ WHERE ti.id = ?
         if (item.itemTypeId == TaskItemTypeEnum.materialsBuy.id) {
           if ((includeBilled && item.billed) || !item.billed) {
             // Materials and tools to be purchased
-            totalMaterialCharges +=
-                (item.actualMaterialUnitCost ?? MoneyEx.zero)
-                    .multiplyByFixed(item.actualMaterialQuantity ?? Fixed.one);
+            totalMaterialCharges += (item.actualMaterialUnitCost ??
+                    MoneyEx.zero)
+                .multiplyByFixed(item.actualMaterialQuantity ?? Fixed.one);
           }
         }
       }
@@ -143,10 +154,11 @@ WHERE ti.id = ?
     }
 
     return TaskAccruedValue(
-        taskEstimatedValue: taskEstimatedCharges,
-        earnedMaterialCharges: totalMaterialCharges,
-        earnedLabourCharges: totalEarnedLabour,
-        hourlyRate: hourlyRate);
+      taskEstimatedValue: taskEstimatedCharges,
+      earnedMaterialCharges: totalMaterialCharges,
+      earnedLabourCharges: totalEarnedLabour,
+      hourlyRate: hourlyRate,
+    );
   }
 
   /// Returns a estimates for each Task associated with [jobId]
@@ -167,7 +179,9 @@ WHERE ti.id = ?
   }
 
   Future<TaskEstimatedValue> getEstimateForTask(
-      Task task, Money hourlyRate) async {
+    Task task,
+    Money hourlyRate,
+  ) async {
     var estimatedMaterialsCharge = MoneyEx.zero;
     var estimatedLabourCharge = MoneyEx.zero;
 
@@ -193,16 +207,18 @@ WHERE ti.id = ?
       final timeEntries = await DaoTimeEntry().getByTask(task.id);
       for (final entry in timeEntries.where((entry) => !entry.billed)) {
         final duration = entry.duration.inMinutes / 60;
-        estimatedMaterialsCharge +=
-            hourlyRate.multiplyByFixed(Fixed.fromNum(duration));
+        estimatedMaterialsCharge += hourlyRate.multiplyByFixed(
+          Fixed.fromNum(duration),
+        );
       }
     }
 
     return TaskEstimatedValue(
-        task: task,
-        hourlyRate: hourlyRate,
-        estimatedMaterialsCharge: estimatedMaterialsCharge,
-        estimatedLabourCharge: estimatedLabourCharge);
+      task: task,
+      hourlyRate: hourlyRate,
+      estimatedMaterialsCharge: estimatedMaterialsCharge,
+      estimatedLabourCharge: estimatedLabourCharge,
+    );
   }
 
   // Future<Money> getTimeAndMaterialEarnings(Task task, Money hourlyRate)
@@ -241,11 +257,7 @@ WHERE ti.id = ?
     }
 
     // Delete tasks associated with the job
-    await db.delete(
-      'task',
-      where: 'job_id = ?',
-      whereArgs: [id],
-    );
+    await db.delete('task', where: 'job_id = ?', whereArgs: [id]);
   }
 
   @override
@@ -270,7 +282,8 @@ WHERE ti.id = ?
   Future<BillingType> getBillingTypeByTaskItem(TaskItem taskItem) async {
     final db = withoutTransaction();
 
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 SELECT 
   t.billing_type AS task_billing_type,
   j.billing_type AS job_billing_type
@@ -278,7 +291,9 @@ FROM task_item ti
 JOIN task t ON ti.task_id = t.id
 JOIN job j ON t.job_id = j.id
 WHERE ti.id = ?
-''', [taskItem.id]);
+''',
+      [taskItem.id],
+    );
 
     if (data.isNotEmpty) {
       final taskBillingType = data.first['task_billing_type'] as String?;
@@ -307,14 +322,15 @@ class TaskState extends JuneState {
 /// For FixedPrice this is based on the estimates
 /// for Time and Materials this is based on actuals.
 class TaskAccruedValue {
-  TaskAccruedValue(
-      {required this.taskEstimatedValue,
-      required this.earnedMaterialCharges,
-      required this.earnedLabourCharges,
-      required Money hourlyRate})
-      : earnedLabourHours = hourlyRate == MoneyEx.zero
-            ? Fixed.zero
-            : earnedLabourCharges.divideByFixed(hourlyRate.amount).amount;
+  TaskAccruedValue({
+    required this.taskEstimatedValue,
+    required this.earnedMaterialCharges,
+    required this.earnedLabourCharges,
+    required Money hourlyRate,
+  }) : earnedLabourHours =
+           hourlyRate == MoneyEx.zero
+               ? Fixed.zero
+               : earnedLabourCharges.divideByFixed(hourlyRate.amount).amount;
 
   final TaskEstimatedValue taskEstimatedValue;
 
@@ -358,9 +374,10 @@ class TaskEstimatedValue {
     required this.estimatedMaterialsCharge,
     required this.estimatedLabourCharge,
     required this.hourlyRate,
-  }) : estimatedLabourHours = hourlyRate == MoneyEx.zero
-            ? Fixed.zero
-            : estimatedLabourCharge.divideByFixed(hourlyRate.amount).amount;
+  }) : estimatedLabourHours =
+           hourlyRate == MoneyEx.zero
+               ? Fixed.zero
+               : estimatedLabourCharge.divideByFixed(hourlyRate.amount).amount;
 
   Task task;
   Money hourlyRate;

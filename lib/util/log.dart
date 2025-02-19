@@ -11,19 +11,27 @@ class Log extends Logger {
   Log();
 
   Log._internal(String currentWorkingDirectory)
-      : super(printer: MyLogPrinter(currentWorkingDirectory));
+    : super(printer: MyLogPrinter(currentWorkingDirectory));
 
   ///
-  factory Log.color(String message, AnsiColor color,
-      {dynamic error, StackTrace? stackTrace}) {
+  factory Log.color(
+    String message,
+    AnsiColor color, {
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {
     autoInit();
     _self.d(color.apply(message), error: error, stackTrace: stackTrace);
     return _self;
   }
 
   ///
-  factory Log.d(String message,
-      {dynamic error, StackTrace? stackTrace, bool supressDuplicates = false}) {
+  factory Log.d(
+    String message, {
+    dynamic error,
+    StackTrace? stackTrace,
+    bool supressDuplicates = false,
+  }) {
     autoInit();
     var suppress = false;
 
@@ -96,25 +104,28 @@ class Log extends Logger {
   }
 
   ///
-  void color(String message, AnsiColor color,
-      {dynamic error, StackTrace? stackTrace}) {
+  void color(
+    String message,
+    AnsiColor color, {
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {
     autoInit();
     Log.i(color.apply(message), error: error, stackTrace: stackTrace);
   }
 
-  static void autoInit() {
-    
-  }
+  static void autoInit() {}
 
-  /// Call this method to prep the logger so that we 
+  /// Call this method to prep the logger so that we
   static void configure(String currentWorkingDirectory) {
     _self = Log._internal(currentWorkingDirectory);
 
     final frames = StackTraceImpl();
 
     for (final frame in frames.frames) {
-      _localPath = frame.sourceFile.path
-          .substring(frame.sourceFile.path.lastIndexOf('/'));
+      _localPath = frame.sourceFile.path.substring(
+        frame.sourceFile.path.lastIndexOf('/'),
+      );
       break;
     }
   }
@@ -162,11 +173,14 @@ class MyLogPrinter extends LogPrinter {
 
     final line = '${frame.sourceFile} : $details : ${frame.lineNo}';
 
-    print(color(
+    print(
+      color(
         event.level,
         '$formattedDate ${event.level.name} '
         '| $line'
-        '::: ${event.message}'));
+        '::: ${event.message}',
+      ),
+    );
 
     if (event.error != null) {
       print(color(event.level, '${event.error}'));

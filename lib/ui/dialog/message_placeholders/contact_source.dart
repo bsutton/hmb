@@ -9,26 +9,30 @@ import 'source.dart';
 
 class ContactSource extends Source<Contact> {
   ContactSource() : super(name: 'contact');
-  final customerNotifier =
-      ValueNotifier<CustomerContact>(CustomerContact(null, null));
+  final customerNotifier = ValueNotifier<CustomerContact>(
+    CustomerContact(null, null),
+  );
 
   Contact? contact;
 
   @override
   Widget widget() => ValueListenableBuilder(
-      valueListenable: customerNotifier,
-      builder: (context, customerContact, _) => HMBDroplist<Contact>(
-            title: 'Contact',
-            selectedItem: () async => customerContact.contact,
-            items: (filter) async =>
-                DaoContact().getByFilter(customerContact.customer!, filter),
-            format: (contact) => contact.fullname,
-            onChanged: (contact) {
-              this.contact = contact;
-              // Reset site and contact when customer changes
-              onChanged.call(contact, ResetFields(site: true, contact: true));
-            },
-          ));
+    valueListenable: customerNotifier,
+    builder:
+        (context, customerContact, _) => HMBDroplist<Contact>(
+          title: 'Contact',
+          selectedItem: () async => customerContact.contact,
+          items:
+              (filter) async =>
+                  DaoContact().getByFilter(customerContact.customer!, filter),
+          format: (contact) => contact.fullname,
+          onChanged: (contact) {
+            this.contact = contact;
+            // Reset site and contact when customer changes
+            onChanged.call(contact, ResetFields(site: true, contact: true));
+          },
+        ),
+  );
 
   @override
   Contact? get value => contact;
@@ -38,8 +42,10 @@ class ContactSource extends Source<Contact> {
     if (source == this) {
       return;
     }
-    customerNotifier.value =
-        CustomerContact(sourceContext.customer, sourceContext.contact);
+    customerNotifier.value = CustomerContact(
+      sourceContext.customer,
+      sourceContext.contact,
+    );
     contact = null;
   }
 

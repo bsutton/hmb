@@ -79,32 +79,42 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
 
     currentEntity ??= widget.taskItem;
 
-    _descriptionController =
-        TextEditingController(text: currentEntity?.description);
+    _descriptionController = TextEditingController(
+      text: currentEntity?.description,
+    );
     _estimatedMaterialUnitCostController = TextEditingController(
-        text: currentEntity?.estimatedMaterialUnitCost.toString());
+      text: currentEntity?.estimatedMaterialUnitCost.toString(),
+    );
     _estimatedMaterialQuantityController = TextEditingController(
-        text:
-            (currentEntity?.estimatedMaterialQuantity ?? Fixed.one).toString());
+      text: (currentEntity?.estimatedMaterialQuantity ?? Fixed.one).toString(),
+    );
     _estimatedLabourHoursController = TextEditingController(
-        text: currentEntity?.estimatedLabourHours.toString());
+      text: currentEntity?.estimatedLabourHours.toString(),
+    );
 
     _estimatedLabourCostController = TextEditingController(
-        text: currentEntity?.estimatedLabourCost.toString());
+      text: currentEntity?.estimatedLabourCost.toString(),
+    );
 
-    _marginController =
-        TextEditingController(text: currentEntity?.margin.toString());
+    _marginController = TextEditingController(
+      text: currentEntity?.margin.toString(),
+    );
     _chargeController = TextEditingController(
-        text: currentEntity
-            ?.getCharge(widget.billingType, widget.hourlyRate)
-            .toString());
+      text:
+          currentEntity
+              ?.getCharge(widget.billingType, widget.hourlyRate)
+              .toString(),
+    );
 
-    _dimension1Controller =
-        TextEditingController(text: currentEntity?.dimension1.toString());
-    _dimension2Controller =
-        TextEditingController(text: currentEntity?.dimension2.toString());
-    _dimension3Controller =
-        TextEditingController(text: currentEntity?.dimension3.toString());
+    _dimension1Controller = TextEditingController(
+      text: currentEntity?.dimension1.toString(),
+    );
+    _dimension2Controller = TextEditingController(
+      text: currentEntity?.dimension2.toString(),
+    );
+    _dimension3Controller = TextEditingController(
+      text: currentEntity?.dimension3.toString(),
+    );
 
     _urlController = TextEditingController(text: currentEntity?.url);
     _labourEntryMode = currentEntity?.labourEntryMode ?? LabourEntryMode.hours;
@@ -157,55 +167,59 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
 
   @override
   Widget build(BuildContext context) => DeferredBuilder(
-        this,
-        builder: (context) => NestedEntityEditScreen<TaskItem, Task>(
+    this,
+    builder:
+        (context) => NestedEntityEditScreen<TaskItem, Task>(
           key: globalKey,
           entityName: 'Task Item',
           dao: DaoTaskItem(),
           onInsert: (taskItem) async => DaoTaskItem().insert(taskItem!),
           entityState: this,
-          editor: (taskItem) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              HMBTextField(
-                controller: _descriptionController,
-                focusNode: _descriptionFocusNode,
-                autofocus: isNotMobile,
-                labelText: 'Description',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the description';
-                  }
-                  return null;
-                },
+          editor:
+              (taskItem) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  HMBTextField(
+                    controller: _descriptionController,
+                    focusNode: _descriptionFocusNode,
+                    autofocus: isNotMobile,
+                    labelText: 'Description',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the description';
+                      }
+                      return null;
+                    },
+                  ),
+                  _chooseItemType(taskItem),
+                  if (June.getState(SelectedCheckListItemType.new).selected !=
+                      0) ...[
+                    _chooseSupplier(taskItem),
+                    ..._buildFieldsBasedOnItemType(),
+                    HMBTextField(
+                      controller: _urlController,
+                      labelText: 'Reference URL',
+                      keyboardType: TextInputType.url,
+                    ),
+                    DimensionWidget(
+                      dimension1Controller: _dimension1Controller,
+                      dimension2Controller: _dimension2Controller,
+                      dimension3Controller: _dimension3Controller,
+                      taskItem: taskItem,
+                    ),
+                  ],
+                ],
               ),
-              _chooseItemType(taskItem),
-              if (June.getState(SelectedCheckListItemType.new).selected !=
-                  0) ...[
-                _chooseSupplier(taskItem),
-                ..._buildFieldsBasedOnItemType(),
-                HMBTextField(
-                  controller: _urlController,
-                  labelText: 'Reference URL',
-                  keyboardType: TextInputType.url,
-                ),
-                DimensionWidget(
-                  dimension1Controller: _dimension1Controller,
-                  dimension2Controller: _dimension2Controller,
-                  dimension3Controller: _dimension3Controller,
-                  taskItem: taskItem,
-                ),
-              ],
-            ],
-          ),
         ),
-      );
+  );
 
   HMBDroplist<TaskItemType> _chooseItemType(TaskItem? taskItem) =>
       HMBDroplist<TaskItemType>(
         title: 'Item Type',
-        selectedItem: () async => DaoTaskItemType()
-            .getById(June.getState(SelectedCheckListItemType.new).selected),
+        selectedItem:
+            () async => DaoTaskItemType().getById(
+              June.getState(SelectedCheckListItemType.new).selected,
+            ),
         items: (filter) async => DaoTaskItemType().getByFilter(filter),
         format: (checklistItemType) => checklistItemType.name,
         onChanged: (itemType) {
@@ -219,11 +233,13 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   HMBDroplist<Supplier> _chooseSupplier(TaskItem? taskItem) =>
       HMBDroplist<Supplier>(
         title: 'Supplier',
-        selectedItem: () async =>
-            June.getState(SelectedSupplier.new).selected != 0
-                ? DaoSupplier()
-                    .getById(June.getState(SelectedSupplier.new).selected)
-                : null,
+        selectedItem:
+            () async =>
+                June.getState(SelectedSupplier.new).selected != 0
+                    ? DaoSupplier().getById(
+                      June.getState(SelectedSupplier.new).selected,
+                    )
+                    : null,
         items: (filter) async => DaoSupplier().getByFilter(filter),
         format: (supplier) => supplier.name,
         onChanged: (supplier) {
@@ -252,136 +268,142 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   }
 
   List<Widget> _buildLabourFields() => [
-        HMBDroplist<LabourEntryMode>(
-            title: 'Labour Entry Mode',
-            selectedItem: () async => _labourEntryMode,
-            items: (filter) async => LabourEntryMode.values,
-            format: LabourEntryMode.getDisplay,
-            onChanged: (mode) {
-              setState(() {
-                _labourEntryMode = mode ?? LabourEntryMode.hours;
-              });
-            },
-            required: false),
-        if (_labourEntryMode == LabourEntryMode.hours)
-          HMBTextField(
-            controller: _estimatedLabourHoursController,
-            labelText: 'Estimated Hours',
-            keyboardType: TextInputType.number,
-            onChanged: (value) {
-              _calculateEstimatedCostFromHours(value);
-              _calculateChargeFromMargin(_marginController.text);
-            },
-          )
-        else
-          HMBTextField(
-            controller: _estimatedLabourCostController,
-            labelText: 'Estimated Cost',
-            keyboardType: TextInputType.number,
-            onChanged: (value) =>
-                _calculateChargeFromMargin(_marginController.text),
-          ),
-        _buildMarginAndChargeFields(),
-      ];
+    HMBDroplist<LabourEntryMode>(
+      title: 'Labour Entry Mode',
+      selectedItem: () async => _labourEntryMode,
+      items: (filter) async => LabourEntryMode.values,
+      format: LabourEntryMode.getDisplay,
+      onChanged: (mode) {
+        setState(() {
+          _labourEntryMode = mode ?? LabourEntryMode.hours;
+        });
+      },
+      required: false,
+    ),
+    if (_labourEntryMode == LabourEntryMode.hours)
+      HMBTextField(
+        controller: _estimatedLabourHoursController,
+        labelText: 'Estimated Hours',
+        keyboardType: TextInputType.number,
+        onChanged: (value) {
+          _calculateEstimatedCostFromHours(value);
+          _calculateChargeFromMargin(_marginController.text);
+        },
+      )
+    else
+      HMBTextField(
+        controller: _estimatedLabourCostController,
+        labelText: 'Estimated Cost',
+        keyboardType: TextInputType.number,
+        onChanged:
+            (value) => _calculateChargeFromMargin(_marginController.text),
+      ),
+    _buildMarginAndChargeFields(),
+  ];
 
   void _calculateChargeFromMargin(String? marginValue) {
     final margin = FixedEx.tryParse(marginValue).divide(100);
-    final estimatedLabourHours =
-        FixedEx.tryParse(_estimatedLabourHoursController.text);
+    final estimatedLabourHours = FixedEx.tryParse(
+      _estimatedLabourHoursController.text,
+    );
 
-    final unitCost =
-        MoneyEx.tryParse(_estimatedMaterialUnitCostController.text);
+    final unitCost = MoneyEx.tryParse(
+      _estimatedMaterialUnitCostController.text,
+    );
 
-    final estimatedLabourCost =
-        MoneyEx.tryParse(_estimatedLabourCostController.text);
+    final estimatedLabourCost = MoneyEx.tryParse(
+      _estimatedLabourCostController.text,
+    );
 
-    final estimatedMaterialQuantity =
-        FixedEx.tryParse(_estimatedMaterialQuantityController.text);
+    final estimatedMaterialQuantity = FixedEx.tryParse(
+      _estimatedMaterialQuantityController.text,
+    );
 
     var charge = MoneyEx.tryParse(_chargeController.text);
 
     charge = DaoTaskItem().calculateCharge(
-        itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
-        margin: margin,
-        labourEntryMode: _labourEntryMode,
-        estimatedLabourHours: estimatedLabourHours,
-        hourlyRate: widget.hourlyRate,
-        estimatedMaterialUnitCost: unitCost,
-        estimatedLabourCost: estimatedLabourCost,
-        estimatedMaterialQuantity: estimatedMaterialQuantity,
-        charge: charge);
+      itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
+      margin: margin,
+      labourEntryMode: _labourEntryMode,
+      estimatedLabourHours: estimatedLabourHours,
+      hourlyRate: widget.hourlyRate,
+      estimatedMaterialUnitCost: unitCost,
+      estimatedLabourCost: estimatedLabourCost,
+      estimatedMaterialQuantity: estimatedMaterialQuantity,
+      charge: charge,
+    );
 
     _chargeController.text = charge.toString();
   }
 
   List<Widget> _buildBuyFields() => [
-        HMBTextField(
-          controller: _estimatedMaterialUnitCostController,
-          labelText: 'Estimated Unit Cost',
-          keyboardType: TextInputType.number,
-          onChanged: (value) {
-            _calculateChargeFromMargin(_marginController.text);
-          },
-        ),
-        HMBTextField(
-          controller: _estimatedMaterialQuantityController,
-          labelText: 'Quantity',
-          keyboardType: TextInputType.number,
-          onChanged: (value) {
-            _calculateChargeFromMargin(_marginController.text);
-          },
-        ),
-        _buildMarginAndChargeFields(),
-      ];
+    HMBTextField(
+      controller: _estimatedMaterialUnitCostController,
+      labelText: 'Estimated Unit Cost',
+      keyboardType: TextInputType.number,
+      onChanged: (value) {
+        _calculateChargeFromMargin(_marginController.text);
+      },
+    ),
+    HMBTextField(
+      controller: _estimatedMaterialQuantityController,
+      labelText: 'Quantity',
+      keyboardType: TextInputType.number,
+      onChanged: (value) {
+        _calculateChargeFromMargin(_marginController.text);
+      },
+    ),
+    _buildMarginAndChargeFields(),
+  ];
 
   /// Materials or tools that we have in stock,
   /// which we may optionally charge for.
   List<Widget> _buildStockFields() => [
-        HMBTextField(
-          controller: _estimatedMaterialUnitCostController,
-          labelText: 'Unit Cost',
-          keyboardType: TextInputType.number,
-          onChanged: (value) {
-            _calculateChargeFromMargin(_marginController.text);
-          },
-        ),
-        HMBTextField(
-          controller: _estimatedMaterialQuantityController,
-          labelText: 'Quantity',
-          keyboardType: TextInputType.number,
-          onChanged: (value) {
-            _calculateChargeFromMargin(_marginController.text);
-          },
-        ),
-        HMBTextField(
-          controller: _chargeController,
-          labelText: 'Charge',
-          keyboardType: TextInputType.number,
-          onChanged: (value) {
-            _calculateChargeFromMargin(_marginController.text);
-          },
-        ),
-      ];
+    HMBTextField(
+      controller: _estimatedMaterialUnitCostController,
+      labelText: 'Unit Cost',
+      keyboardType: TextInputType.number,
+      onChanged: (value) {
+        _calculateChargeFromMargin(_marginController.text);
+      },
+    ),
+    HMBTextField(
+      controller: _estimatedMaterialQuantityController,
+      labelText: 'Quantity',
+      keyboardType: TextInputType.number,
+      onChanged: (value) {
+        _calculateChargeFromMargin(_marginController.text);
+      },
+    ),
+    HMBTextField(
+      controller: _chargeController,
+      labelText: 'Charge',
+      keyboardType: TextInputType.number,
+      onChanged: (value) {
+        _calculateChargeFromMargin(_marginController.text);
+      },
+    ),
+  ];
 
   Widget _buildMarginAndChargeFields() => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          HMBTextField(
-            controller: _marginController,
-            labelText: 'Margin (%)',
-            keyboardType: TextInputType.number,
-            onChanged: _calculateChargeFromMargin,
-          ),
-          HMBTextField(
-            controller: _chargeController,
-            labelText: 'Charge',
-            keyboardType: TextInputType.number,
-            onChanged: (value) {
-              _calculateChargeFromMargin(_marginController.text);
-            },
-          ),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      HMBTextField(
+        controller: _marginController,
+        labelText: 'Margin (%)',
+        keyboardType: TextInputType.number,
+        onChanged: _calculateChargeFromMargin,
+      ),
+      HMBTextField(
+        controller: _chargeController,
+        labelText: 'Charge',
+        keyboardType: TextInputType.number,
+        onChanged: (value) {
+          _calculateChargeFromMargin(_marginController.text);
+        },
+      ),
+    ],
+  );
 
   void _calculateEstimatedCostFromHours(String? hoursValue) {
     final estimatedHours = FixedEx.tryParse(hoursValue);
@@ -391,66 +413,70 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
 
   @override
   Future<TaskItem> forUpdate(TaskItem taskItem) async => TaskItem.forUpdate(
-        entity: taskItem,
-        taskId: taskItem.taskId,
-        description: _descriptionController.text,
-        itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
-        estimatedMaterialUnitCost:
-            MoneyEx.tryParse(_estimatedMaterialUnitCostController.text),
-        estimatedMaterialQuantity:
-            FixedEx.tryParse(_estimatedMaterialQuantityController.text),
-        estimatedLabourHours:
-            FixedEx.tryParse(_estimatedLabourHoursController.text),
-        estimatedLabourCost:
-            MoneyEx.tryParse(_estimatedLabourCostController.text),
-        charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
-        chargeSet: taskItem.chargeSet,
-        margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
-        completed: taskItem.completed,
-        billed: false,
-        labourEntryMode: _labourEntryMode,
-        measurementType:
-            June.getState(SelectedMeasurementType.new).selectedOrDefault,
-        dimension1:
-            Fixed.tryParse(_dimension1Controller.text, scale: 3) ?? Fixed.zero,
-        dimension2:
-            Fixed.tryParse(_dimension2Controller.text, scale: 3) ?? Fixed.zero,
-        dimension3:
-            Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
-        units: June.getState(SelectedUnits.new).selectedOrDefault,
-        url: _urlController.text,
-        supplierId: June.getState(SelectedSupplier.new).selected,
-      );
+    entity: taskItem,
+    taskId: taskItem.taskId,
+    description: _descriptionController.text,
+    itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
+    estimatedMaterialUnitCost: MoneyEx.tryParse(
+      _estimatedMaterialUnitCostController.text,
+    ),
+    estimatedMaterialQuantity: FixedEx.tryParse(
+      _estimatedMaterialQuantityController.text,
+    ),
+    estimatedLabourHours: FixedEx.tryParse(
+      _estimatedLabourHoursController.text,
+    ),
+    estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
+    charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
+    chargeSet: taskItem.chargeSet,
+    margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
+    completed: taskItem.completed,
+    billed: false,
+    labourEntryMode: _labourEntryMode,
+    measurementType:
+        June.getState(SelectedMeasurementType.new).selectedOrDefault,
+    dimension1:
+        Fixed.tryParse(_dimension1Controller.text, scale: 3) ?? Fixed.zero,
+    dimension2:
+        Fixed.tryParse(_dimension2Controller.text, scale: 3) ?? Fixed.zero,
+    dimension3:
+        Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
+    units: June.getState(SelectedUnits.new).selectedOrDefault,
+    url: _urlController.text,
+    supplierId: June.getState(SelectedSupplier.new).selected,
+  );
 
   @override
   Future<TaskItem> forInsert() async => TaskItem.forInsert(
-        taskId: widget.parent!.id,
-        description: _descriptionController.text,
-        itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
-        estimatedMaterialUnitCost:
-            MoneyEx.tryParse(_estimatedMaterialUnitCostController.text),
-        estimatedMaterialQuantity:
-            FixedEx.tryParse(_estimatedMaterialQuantityController.text),
-        estimatedLabourHours:
-            FixedEx.tryParse(_estimatedLabourHoursController.text),
-        estimatedLabourCost:
-            MoneyEx.tryParse(_estimatedLabourCostController.text),
-        charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
-        chargeSet: false,
-        margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
-        labourEntryMode: _labourEntryMode,
-        measurementType:
-            June.getState(SelectedMeasurementType.new).selectedOrDefault,
-        dimension1:
-            Fixed.tryParse(_dimension1Controller.text, scale: 3) ?? Fixed.zero,
-        dimension2:
-            Fixed.tryParse(_dimension2Controller.text, scale: 3) ?? Fixed.zero,
-        dimension3:
-            Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
-        units: June.getState(SelectedUnits.new).selectedOrDefault,
-        url: _urlController.text,
-        supplierId: June.getState(SelectedSupplier.new).selected,
-      );
+    taskId: widget.parent!.id,
+    description: _descriptionController.text,
+    itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
+    estimatedMaterialUnitCost: MoneyEx.tryParse(
+      _estimatedMaterialUnitCostController.text,
+    ),
+    estimatedMaterialQuantity: FixedEx.tryParse(
+      _estimatedMaterialQuantityController.text,
+    ),
+    estimatedLabourHours: FixedEx.tryParse(
+      _estimatedLabourHoursController.text,
+    ),
+    estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
+    charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
+    chargeSet: false,
+    margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
+    labourEntryMode: _labourEntryMode,
+    measurementType:
+        June.getState(SelectedMeasurementType.new).selectedOrDefault,
+    dimension1:
+        Fixed.tryParse(_dimension1Controller.text, scale: 3) ?? Fixed.zero,
+    dimension2:
+        Fixed.tryParse(_dimension2Controller.text, scale: 3) ?? Fixed.zero,
+    dimension3:
+        Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
+    units: June.getState(SelectedUnits.new).selectedOrDefault,
+    url: _urlController.text,
+    supplierId: June.getState(SelectedSupplier.new).selected,
+  );
 
   @override
   void refresh() {

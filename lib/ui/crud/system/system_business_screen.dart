@@ -58,16 +58,19 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
     _selectedCountryCode = system.countryCode ?? 'AU';
 
     _businessNameController = TextEditingController(text: system.businessName);
-    _businessNumberController =
-        TextEditingController(text: system.businessNumber);
-    _businessNumberLabelController =
-        TextEditingController(text: system.businessNumberLabel);
+    _businessNumberController = TextEditingController(
+      text: system.businessNumber,
+    );
+    _businessNumberLabelController = TextEditingController(
+      text: system.businessNumberLabel,
+    );
     _webUrlController = TextEditingController(text: system.webUrl);
     _termsUrlController = TextEditingController(text: system.termsUrl);
 
     // 2. Load existing OperatingHours from System, if any
-    _operatingHoursController =
-        OperatingHoursController(operatingHours: system.getOperatingHours());
+    _operatingHoursController = OperatingHoursController(
+      operatingHours: system.getOperatingHours(),
+    );
   }
 
   @override
@@ -92,8 +95,9 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
   // Build the entire Form
   // --------------------------------
   Widget _buildForm() => DeferredBuilder(
-        this,
-        builder: (context) => Form(
+    this,
+    builder:
+        (context) => Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,13 +114,15 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                        'Your government allocated business registration number.'),
+                      'Your government allocated business registration number.',
+                    ),
                     HMBSpacer(height: true),
                     Text('Australia: ABN (e.g., 12 345 678 901)'),
                     Text('United States: EIN (e.g., 12-3456789)'),
                     Text('United Kingdom: CRN (e.g., 12345678)'),
                     Text(
-                        'Other Countries: Enter your official registration number.'),
+                      'Other Countries: Enter your official registration number.',
+                    ),
                   ],
                 ),
                 child: HMBTextField(
@@ -146,13 +152,17 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
               DropdownButtonFormField<String>(
                 value: _selectedCountryCode,
                 decoration: const InputDecoration(labelText: 'Country Code'),
-                items: _countryCodes
-                    .map((country) => DropdownMenuItem<String>(
-                          value: country.alpha2,
-                          child: Text(
-                              '${country.countryName} (${country.alpha2})'),
-                        ))
-                    .toList(),
+                items:
+                    _countryCodes
+                        .map(
+                          (country) => DropdownMenuItem<String>(
+                            value: country.alpha2,
+                            child: Text(
+                              '${country.countryName} (${country.alpha2})',
+                            ),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (newValue) {
                   setState(() {
                     _selectedCountryCode = newValue!;
@@ -168,8 +178,11 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
               HMBDroplist<PreferredUnitSystem>(
                 title: 'Unit System',
                 selectedItem: () async => system.preferredUnitSystem,
-                format: (unit) =>
-                    unit == PreferredUnitSystem.metric ? 'Metric' : 'Imperial',
+                format:
+                    (unit) =>
+                        unit == PreferredUnitSystem.metric
+                            ? 'Metric'
+                            : 'Imperial',
                 items: (filter) async => PreferredUnitSystem.values,
                 onChanged: (value) {
                   setState(() {
@@ -192,7 +205,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
             ],
           ),
         ),
-      );
+  );
 
   // --------------------------------
   // Final Save Logic

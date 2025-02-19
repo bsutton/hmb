@@ -36,107 +36,108 @@ class _InvoiceCardState extends State<InvoiceCard> {
 
   @override
   Widget build(BuildContext context) => Container(
-        color: Colors.grey[200],
-        child: ExpansionTile(
-          title: _buildInvoiceTitle(widget.invoice),
-          subtitle: Text('Total: ${widget.invoice.totalAmount}'),
-          children: [
-            FutureBuilderEx<List<InvoiceLineGroup>>(
-              // ignore: discarded_futures
-              future: DaoInvoiceLineGroup().getByInvoiceId(widget.invoice.id),
-              builder: (context, invoiceLineGroups) {
-                if (invoiceLineGroups!.isEmpty) {
-                  return const ListTile(
-                    title: Text('No invoice lines found.'),
-                  );
-                }
+    color: Colors.grey[200],
+    child: ExpansionTile(
+      title: _buildInvoiceTitle(widget.invoice),
+      subtitle: Text('Total: ${widget.invoice.totalAmount}'),
+      children: [
+        FutureBuilderEx<List<InvoiceLineGroup>>(
+          // ignore: discarded_futures
+          future: DaoInvoiceLineGroup().getByInvoiceId(widget.invoice.id),
+          builder: (context, invoiceLineGroups) {
+            if (invoiceLineGroups!.isEmpty) {
+              return const ListTile(title: Text('No invoice lines found.'));
+            }
 
-                return _buildInvoiceGroup(invoiceLineGroups);
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  BuildSendButton(
-                      context: context,
-                      mounted: mounted,
-                      invoice: widget.invoice),
-                  if (Strings.isBlank(widget.invoice.invoiceNum))
-                    HMBButton(
-                      label: 'Upload to Xero',
-                      onPressed: widget.onUploadInvoiceToXero,
-                    ),
-                ],
-              ),
-            ),
-          ],
+            return _buildInvoiceGroup(invoiceLineGroups);
+          },
         ),
-      );
-  Widget _buildInvoiceTitle(Invoice invoice) => FutureBuilderEx<JobAndCustomer>(
-        // ignore: discarded_futures
-        future: JobAndCustomer.fromInvoice(invoice),
-        builder: (context, jobAndCustomer) {
-          final jobName = jobAndCustomer!.job.summary;
-          final customerName = jobAndCustomer.customer.name;
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
             children: [
-              Expanded(
-                // Prevents overflow
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Invoice #${widget.invoice.id} Issued: ${formatDate(widget.invoice.createdDate)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text('Customer: $customerName'),
-                    Text('Job: $jobName #${jobAndCustomer.job.id}'),
-                  ],
+              BuildSendButton(
+                context: context,
+                mounted: mounted,
+                invoice: widget.invoice,
+              ),
+              if (Strings.isBlank(widget.invoice.invoiceNum))
+                HMBButton(
+                  label: 'Upload to Xero',
+                  onPressed: widget.onUploadInvoiceToXero,
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: widget.onDeleteInvoice,
-              ),
             ],
-          );
-        },
+          ),
+        ),
+      ],
+    ),
+  );
+  Widget _buildInvoiceTitle(Invoice invoice) => FutureBuilderEx<JobAndCustomer>(
+    // ignore: discarded_futures
+    future: JobAndCustomer.fromInvoice(invoice),
+    builder: (context, jobAndCustomer) {
+      final jobName = jobAndCustomer!.job.summary;
+      final customerName = jobAndCustomer.customer.name;
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            // Prevents overflow
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Invoice #${widget.invoice.id} Issued: ${formatDate(widget.invoice.createdDate)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text('Customer: $customerName'),
+                Text('Job: $jobName #${jobAndCustomer.job.id}'),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: widget.onDeleteInvoice,
+          ),
+        ],
       );
+    },
+  );
 
   Widget _buildInvoiceGroup(List<InvoiceLineGroup> invoiceLineGroups) =>
       Padding(
         padding: const EdgeInsets.only(left: 16),
         child: Column(
-          children: invoiceLineGroups
-              .map(
-                (group) => ExpansionTile(
-                  title: Text(group.name),
-                  children: [
-                    FutureBuilderEx<List<InvoiceLine>>(
-                      future:
+          children:
+              invoiceLineGroups
+                  .map(
+                    (group) => ExpansionTile(
+                      title: Text(group.name),
+                      children: [
+                        FutureBuilderEx<List<InvoiceLine>>(
+                          future:
                           // ignore: discarded_futures
                           DaoInvoiceLine().getByInvoiceLineGroupId(group.id),
-                      builder: (context, invoiceLines) {
-                        if (invoiceLines!.isEmpty) {
-                          return const ListTile(
-                            title: Text('No invoice lines found.'),
-                          );
-                        }
+                          builder: (context, invoiceLines) {
+                            if (invoiceLines!.isEmpty) {
+                              return const ListTile(
+                                title: Text('No invoice lines found.'),
+                              );
+                            }
 
-                        return _buildInvoiceLines(invoiceLines);
-                      },
+                            return _buildInvoiceLines(invoiceLines);
+                          },
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              )
-              .toList(),
+                  )
+                  .toList(),
         ),
       );
 
   Widget _buildInvoiceLines(List<InvoiceLine> invoiceLines) => Column(
-        children: invoiceLines
+    children:
+        invoiceLines
             .map(
               (line) => ListTile(
                 title: Text(line.description),
@@ -157,14 +158,11 @@ class _InvoiceCardState extends State<InvoiceCard> {
               ),
             )
             .toList(),
-      );
+  );
 }
 
 class JobAndCustomer {
-  JobAndCustomer({
-    required this.job,
-    required this.customer,
-  });
+  JobAndCustomer({required this.job, required this.customer});
 
   final Job job;
   final Customer customer;

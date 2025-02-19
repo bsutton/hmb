@@ -7,7 +7,6 @@
 // import 'package:hmb/entity/job.dart';
 // import 'package:mockito/mockito.dart';
 
-
 // // Create mock classes for the DAOs you interact with
 // class MockDaoJob extends Mock implements DaoJob {}
 

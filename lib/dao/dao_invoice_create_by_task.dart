@@ -11,7 +11,10 @@ import 'dao_time_entry.dart';
 /// Group by Task then Dates within that task, followed by materials
 /// associated with that task.
 Future<Money> createByTask(
-    int invoiceId, Job job, List<int> selectedTaskIds) async {
+  int invoiceId,
+  Job job,
+  List<int> selectedTaskIds,
+) async {
   var totalAmount = MoneyEx.zero;
 
   final tasks = await DaoTask().getTasksByJob(job.id);
@@ -28,24 +31,36 @@ Future<Money> createByTask(
       name: task.name,
     );
 
-    final invoiceLineGroupId =
-        await DaoInvoiceLineGroup().insert(invoiceLineGroup);
+    final invoiceLineGroupId = await DaoInvoiceLineGroup().insert(
+      invoiceLineGroup,
+    );
 
     final labourForDays = await collectLabourPerDay(task);
 
     // Add time entries (labour) grouped by date
     if (job.billingType == BillingType.timeAndMaterial) {
       totalAmount += await _timeAndMaterialsLabour(
-          labourForDays, job, invoiceId, invoiceLineGroupId, task);
+        labourForDays,
+        job,
+        invoiceId,
+        invoiceLineGroupId,
+        task,
+      );
     } else {
       totalAmount += await _fixedPriceLabour(
-          labourForDays, job, invoiceId, invoiceLineGroupId, task);
+        labourForDays,
+        job,
+        invoiceId,
+        invoiceLineGroupId,
+        task,
+      );
     }
 
     // Add materials
     final taskItesm = await DaoTaskItem().getByTask(task.id);
-    for (final item
-        in taskItesm.where((item) => !item.billed && item.completed)) {
+    for (final item in taskItesm.where(
+      (item) => !item.billed && item.completed,
+    )) {
       Money unitCost;
       Fixed quantity;
 
@@ -86,8 +101,9 @@ Future<Money> _timeAndMaterialsLabour(
   var totalAmount = MoneyEx.zero;
   // Add time entries (labour) grouped by date
   for (final labourForDay in labourForDays) {
-    final lineTotal =
-        job.hourlyRate!.multiplyByFixed(labourForDay.durationInHours);
+    final lineTotal = job.hourlyRate!.multiplyByFixed(
+      labourForDay.durationInHours,
+    );
 
     if (lineTotal.isZero) {
       continue;
@@ -128,8 +144,9 @@ Future<Money> _fixedPriceLabour(
 
   // Add time entries (labour) grouped by date
   for (final labourForDay in labourForDays) {
-    final lineTotal =
-        job.hourlyRate!.multiplyByFixed(labourForDay.durationInHours);
+    final lineTotal = job.hourlyRate!.multiplyByFixed(
+      labourForDay.durationInHours,
+    );
 
     if (lineTotal.isZero) {
       continue;

@@ -15,19 +15,21 @@ class CustomerSource extends Source<Customer> {
 
   @override
   Widget widget() => ValueListenableBuilder(
-      valueListenable: customerNotifier,
-      builder: (context, customer, _) => HMBDroplist<Customer>(
-            title: 'Customer',
-            selectedItem: () async => customer,
-            items: (filter) async => DaoCustomer().getByFilter(filter),
-            format: (customer) => customer.name,
-            onChanged: (customer) {
-              this.customer = customer;
-              customerNotifier.value = customer;
-              // Reset site and contact when customer changes
-              onChanged.call(customer, ResetFields(site: true, contact: true));
-            },
-          ));
+    valueListenable: customerNotifier,
+    builder:
+        (context, customer, _) => HMBDroplist<Customer>(
+          title: 'Customer',
+          selectedItem: () async => customer,
+          items: (filter) async => DaoCustomer().getByFilter(filter),
+          format: (customer) => customer.name,
+          onChanged: (customer) {
+            this.customer = customer;
+            customerNotifier.value = customer;
+            // Reset site and contact when customer changes
+            onChanged.call(customer, ResetFields(site: true, contact: true));
+          },
+        ),
+  );
 
   @override
   Customer? get value => customer;

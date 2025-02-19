@@ -9,8 +9,8 @@ class PhotoMeta {
   PhotoMeta({required this.photo, required this.title, required this.comment});
 
   PhotoMeta.fromPhoto({required this.photo})
-      : comment = photo.comment,
-        title = '';
+    : comment = photo.comment,
+      title = '';
 
   final Photo photo;
   final String title;

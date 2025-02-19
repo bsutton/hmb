@@ -12,18 +12,20 @@ class HMBLinkInternal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-        onTap: () async {
-          final widget = await navigateTo();
-          if (context.mounted) {
-            await Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (context) => widget),
-            );
-          }
-        },
-        child: Text(
-          label,
-          style: const TextStyle(
-              color: Colors.green, decoration: TextDecoration.underline),
-        ),
-      );
+    onTap: () async {
+      final widget = await navigateTo();
+      if (context.mounted) {
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (context) => widget));
+      }
+    },
+    child: Text(
+      label,
+      style: const TextStyle(
+        color: Colors.green,
+        decoration: TextDecoration.underline,
+      ),
+    ),
+  );
 }

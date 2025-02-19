@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 class HMBFormSection extends StatelessWidget {
-  const HMBFormSection(
-      {required this.children, super.key, this.leadingSpace = true});
+  const HMBFormSection({
+    required this.children,
+    super.key,
+    this.leadingSpace = true,
+  });
 
   final bool leadingSpace;
 
@@ -10,5 +13,7 @@ class HMBFormSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: children,
+  );
 }

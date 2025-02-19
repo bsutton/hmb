@@ -39,9 +39,11 @@ String orange(String text, {AnsiColor bgcolor = AnsiColor.none}) =>
     AnsiColor._apply(AnsiColor.orange, text, bgcolor: bgcolor);
 
 ///
-String grey(String text,
-        {double level = 0.5, AnsiColor bgcolor = AnsiColor.none}) =>
-    AnsiColor._apply(AnsiColor.grey(level: level), text, bgcolor: bgcolor);
+String grey(
+  String text, {
+  double level = 0.5,
+  AnsiColor bgcolor = AnsiColor.none,
+}) => AnsiColor._apply(AnsiColor.grey(level: level), text, bgcolor: bgcolor);
 
 ///
 class AnsiColor {
@@ -66,9 +68,11 @@ class AnsiColor {
   String apply(String text, {AnsiColor bgcolor = none}) =>
       _apply(this, text, bgcolor: bgcolor);
 
-  static String _apply(AnsiColor color, String text,
-          {AnsiColor bgcolor = none}) =>
-      '${_fg(color.code)}${_bg(bgcolor.code)}$text$_reset';
+  static String _apply(
+    AnsiColor color,
+    String text, {
+    AnsiColor bgcolor = none,
+  }) => '${_fg(color.code)}${_bg(bgcolor.code)}$text$_reset';
 
   static String get _reset => '$esc${resetCode}m';
 

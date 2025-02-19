@@ -18,13 +18,17 @@ class PhotoThumbnail extends StatelessWidget {
   factory PhotoThumbnail.fromPhotoMeta({
     required PhotoMeta photoMeta,
     required String title,
-     String? comment,
+    String? comment,
     Key? key,
   }) {
     final photoPath = photoMeta.absolutePathTo;
 
     return PhotoThumbnail(
-        photoPath: photoPath, title: title, comment: comment, key: key);
+      photoPath: photoPath,
+      title: title,
+      comment: comment,
+      key: key,
+    );
   }
 
   late final String? photoPath;
@@ -34,52 +38,50 @@ class PhotoThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: () async {
-          if (hasPhoto) {
-            await _showFullScreenPhoto(context);
-          }
-        },
-        child: Stack(
-          children: [
-            if (hasPhoto)
-              Image.file(
-                File(photoPath!),
-                width: 100, // Thumbnail size, adjust as needed
-                height: 100,
-                fit: BoxFit.cover,
-              )
-            else
-              Container(
-                width: 100,
-                height: 100,
-                color: Colors.grey,
-                child: const Icon(
-                  Icons.broken_image,
-                  color: Colors.white,
-                  size: 40,
-                ),
-              ),
-            if (hasPhoto)
-              Positioned(
-                right: 0,
-                child: Container(
-                  color: Colors.black.withSafeOpacity(0.5),
-                  padding: const EdgeInsets.all(4),
-                  child: const Icon(
-                    Icons.fullscreen,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      );
+    onTap: () async {
+      if (hasPhoto) {
+        await _showFullScreenPhoto(context);
+      }
+    },
+    child: Stack(
+      children: [
+        if (hasPhoto)
+          Image.file(
+            File(photoPath!),
+            width: 100, // Thumbnail size, adjust as needed
+            height: 100,
+            fit: BoxFit.cover,
+          )
+        else
+          Container(
+            width: 100,
+            height: 100,
+            color: Colors.grey,
+            child: const Icon(
+              Icons.broken_image,
+              color: Colors.white,
+              size: 40,
+            ),
+          ),
+        if (hasPhoto)
+          Positioned(
+            right: 0,
+            child: Container(
+              color: Colors.black.withSafeOpacity(0.5),
+              padding: const EdgeInsets.all(4),
+              child: const Icon(Icons.fullscreen, color: Colors.white),
+            ),
+          ),
+      ],
+    ),
+  );
 
   Future<void> _showFullScreenPhoto(BuildContext context) async {
     await FullScreenPhotoViewer.show(
-        context: context,
-        imagePath: photoPath!,
-        title: title,
-        comment: comment);
+      context: context,
+      imagePath: photoPath!,
+      title: title,
+      comment: comment,
+    );
   }
 }

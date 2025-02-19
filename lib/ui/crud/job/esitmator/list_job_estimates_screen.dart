@@ -102,81 +102,77 @@ class _JobEstimatesListScreenState
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          toolbarHeight: _searchBarRowHeight + _switchRowHeight,
-          title: Column(
+    appBar: AppBar(
+      automaticallyImplyLeading: false,
+      toolbarHeight: _searchBarRowHeight + _switchRowHeight,
+      title: Column(
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: HMBSearch(
-                      onChanged: (filter) async => _onSearchChanged(filter),
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                // New Row for the Switch
-                mainAxisAlignment: MainAxisAlignment.end, // Align to the right
-                children: [
-                  HMBToggle(
-                    label: 'Show All Jobs',
-                    initialValue: !showOnlyActiveJobs,
-                    onToggled: (value) async {
-                      setState(() {
-                        showOnlyActiveJobs = !value;
-                      });
-                      await _refreshJobs();
-                    },
-                    tooltip: '',
-                  ),
-                ],
+              Expanded(
+                child: HMBSearch(
+                  onChanged: (filter) async => _onSearchChanged(filter),
+                ),
               ),
             ],
           ),
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: FutureBuilderEx<List<CustomerAndJob>>(
-                future: _jobs,
-                builder: (context, jobs) {
-                  if (jobs == null || jobs.isEmpty) {
-                    return const Center(
-                        child: Text(
-                            'No jobs found. Only Jobs with a status of Quoting or Prospecting are shown'));
-                  }
+          Row(
+            // New Row for the Switch
+            mainAxisAlignment: MainAxisAlignment.end, // Align to the right
+            children: [
+              HMBToggle(
+                label: 'Show All Jobs',
+                initialValue: !showOnlyActiveJobs,
+                onToggled: (value) async {
+                  setState(() {
+                    showOnlyActiveJobs = !value;
+                  });
+                  await _refreshJobs();
+                },
+                tooltip: '',
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+    body: Column(
+      children: [
+        Expanded(
+          child: FutureBuilderEx<List<CustomerAndJob>>(
+            future: _jobs,
+            builder: (context, jobs) {
+              if (jobs == null || jobs.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'No jobs found. Only Jobs with a status of Quoting or Prospecting are shown',
+                  ),
+                );
+              }
 
-                  final filteredJobs = _filterJobs(jobs);
-                  if (filteredJobs.isEmpty) {
-                    return const Center(
-                        child: Text('No matches for your search.'));
-                  }
+              final filteredJobs = _filterJobs(jobs);
+              if (filteredJobs.isEmpty) {
+                return const Center(child: Text('No matches for your search.'));
+              }
 
-                  return ListView.builder(
-                    itemCount: filteredJobs.length,
-                    itemBuilder: (context, index) {
-                      final cj = filteredJobs[index];
-                      return Column(
-                        children: [
-                          const HMBSpacer(
-                            height: true,
-                          ),
-                          JobCard(
-                            job: cj.job,
-                            onEstimatesUpdated: _refreshJobs,
-                          ),
-                        ],
-                      );
-                    },
+              return ListView.builder(
+                itemCount: filteredJobs.length,
+                itemBuilder: (context, index) {
+                  final cj = filteredJobs[index];
+                  return Column(
+                    children: [
+                      const HMBSpacer(height: true),
+                      JobCard(job: cj.job, onEstimatesUpdated: _refreshJobs),
+                    ],
                   );
                 },
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class CustomerAndJob {

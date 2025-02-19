@@ -5,7 +5,7 @@ import '../../../util/money_ex.dart';
 
 class HMBMoneyEditingController extends TextEditingController {
   HMBMoneyEditingController({Money? money})
-      : super(text: money == null || money.isZero ? '' : money.format('#.##'));
+    : super(text: money == null || money.isZero ? '' : money.format('#.##'));
 
   Money? get money => MoneyEx.tryParse(text);
 

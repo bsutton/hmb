@@ -14,11 +14,12 @@ import '../widgets/text/hmb_text.dart';
 import 'hmb_dialog.dart';
 
 class StartTimerDialog extends StatefulWidget {
-  const StartTimerDialog(
-      {required this.task,
-      required this.showTask,
-      required this.startTime,
-      super.key});
+  const StartTimerDialog({
+    required this.task,
+    required this.showTask,
+    required this.startTime,
+    super.key,
+  });
   final Task task;
   final bool showTask;
   final DateTime startTime;
@@ -26,15 +27,20 @@ class StartTimerDialog extends StatefulWidget {
   @override
   State<StartTimerDialog> createState() => _StartTimerDialogState();
 
-  static Future<TimeEntry?> show(BuildContext context,
-          {required Task task,
-          required DateTime startTime,
-          bool showTask = false}) =>
-      showDialog<TimeEntry>(
-        context: context,
-        builder: (context) => StartTimerDialog(
-            task: task, showTask: showTask, startTime: startTime),
-      );
+  static Future<TimeEntry?> show(
+    BuildContext context, {
+    required Task task,
+    required DateTime startTime,
+    bool showTask = false,
+  }) => showDialog<TimeEntry>(
+    context: context,
+    builder:
+        (context) => StartTimerDialog(
+          task: task,
+          showTask: showTask,
+          startTime: startTime,
+        ),
+  );
 }
 
 class _StartTimerDialogState extends State<StartTimerDialog> {
@@ -62,9 +68,10 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
           if (widget.showTask) buildTaskDetails(),
           HMBDateTimeField(
             mode: HMBDateTimeFieldMode.dateAndTime,
-              label: 'Time:',
-              initialDateTime: selected,
-              onChanged: (dateTime) => selected = dateTime),
+            label: 'Time:',
+            initialDateTime: selected,
+            onChanged: (dateTime) => selected = dateTime,
+          ),
           HMBTextArea(
             controller: noteController,
             focusNode: noteFocusNode,
@@ -73,26 +80,28 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
         ],
       ),
       actions: [
+        HMBButton(label: 'Cancel', onPressed: () => Navigator.pop(context)),
         HMBButton(
-          label:'Cancel',
-          onPressed: () => Navigator.pop(context),
-        ),
-        HMBButton(
-          label:'OK',
+          label: 'OK',
           onPressed: () {
             final note = noteController.text;
             TimeEntry timeEntry;
 
             /// start time must be in the past or within the next
             /// fifteen minutes.
-            if (selected
-                .isAfter(DateTime.now().add(const Duration(minutes: 15)))) {
+            if (selected.isAfter(
+              DateTime.now().add(const Duration(minutes: 15)),
+            )) {
               HMBToast.error(
-                  'Start Time must be in the past or within 15min of now.');
+                'Start Time must be in the past or within 15min of now.',
+              );
               return;
             }
             timeEntry = TimeEntry.forInsert(
-                taskId: widget.task.id, startTime: selected, note: note);
+              taskId: widget.task.id,
+              startTime: selected,
+              note: note,
+            );
             Navigator.pop(context, timeEntry);
           },
         ),
@@ -100,23 +109,26 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
     );
   }
 
-  Widget buildTaskDetails() => Column(children: [
-        FutureBuilderEx(
-            // ignore: discarded_futures
-            future: DaoJob().getById(widget.task.jobId),
-            builder: (context, job) => Column(
-                  children: [
-                    FutureBuilderEx(
-                        // ignore: discarded_futures
-                        future: DaoCustomer().getById(job!.customerId),
-                        builder: (context, customer) => Column(
-                              children: [
-                                Text(customer!.name),
-                                Text(job.summary),
-                              ],
-                            )),
-                  ],
-                )),
-        Text(widget.task.description)
-      ]);
+  Widget buildTaskDetails() => Column(
+    children: [
+      FutureBuilderEx(
+        // ignore: discarded_futures
+        future: DaoJob().getById(widget.task.jobId),
+        builder:
+            (context, job) => Column(
+              children: [
+                FutureBuilderEx(
+                  // ignore: discarded_futures
+                  future: DaoCustomer().getById(job!.customerId),
+                  builder:
+                      (context, customer) => Column(
+                        children: [Text(customer!.name), Text(job.summary)],
+                      ),
+                ),
+              ],
+            ),
+      ),
+      Text(widget.task.description),
+    ],
+  );
 }

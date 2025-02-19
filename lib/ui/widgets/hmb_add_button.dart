@@ -18,8 +18,9 @@ class HMBButtonAdd extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBIconButton(
-      onPressed: onPressed,
-      enabled: enabled,
-      hint: hint,
-      icon: const Icon(Icons.add));
+    onPressed: onPressed,
+    enabled: enabled,
+    hint: hint,
+    icon: const Icon(Icons.add),
+  );
 }

@@ -15,18 +15,20 @@ class SiteSource extends Source<Site> {
 
   @override
   Widget widget() => ValueListenableBuilder(
-        valueListenable: customerNotifier,
-        builder: (context, customer, _) => HMBDroplist<Site>(
-            key: ValueKey(customer),
-            title: 'Site',
-            selectedItem: () async => value,
-            items: (filter) async => DaoSite().getByCustomer(customer?.id),
-            format: (site) => site.address,
-            onChanged: (site) {
-              this.site = site;
-              onChanged(site, ResetFields());
-            }),
-      );
+    valueListenable: customerNotifier,
+    builder:
+        (context, customer, _) => HMBDroplist<Site>(
+          key: ValueKey(customer),
+          title: 'Site',
+          selectedItem: () async => value,
+          items: (filter) async => DaoSite().getByCustomer(customer?.id),
+          format: (site) => site.address,
+          onChanged: (site) {
+            this.site = site;
+            onChanged(site, ResetFields());
+          },
+        ),
+  );
 
   @override
   Site? get value => site;

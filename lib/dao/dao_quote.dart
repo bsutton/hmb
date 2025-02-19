@@ -23,15 +23,21 @@ class DaoQuote extends Dao<Quote> {
   @override
   Future<List<Quote>> getAll({String? orderByClause}) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps =
-        await db.query(tableName, orderBy: 'modified_date desc');
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableName,
+      orderBy: 'modified_date desc',
+    );
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
   Future<List<Quote>> getByJobId(int jobId) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(tableName,
-        where: 'job_id = ?', whereArgs: [jobId], orderBy: 'id desc');
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableName,
+      where: 'job_id = ?',
+      whereArgs: [jobId],
+      orderBy: 'id desc',
+    );
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
@@ -42,7 +48,8 @@ class DaoQuote extends Dao<Quote> {
       return getAll(orderByClause: 'modified_date desc');
     }
 
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
     SELECT q.*
     FROM quote q
     LEFT JOIN job j ON q.job_id = j.id
@@ -52,12 +59,14 @@ class DaoQuote extends Dao<Quote> {
        OR j.summary LIKE ?
        OR c.name LIKE ?
     ORDER BY q.modified_date DESC
-  ''', [
-      '%$filter%', // Filter for quote_num
-      '%$filter%', // Filter for external_quote_id
-      '%$filter%', // Filter for job summary
-      '%$filter%' // Filter for customer name
-    ]);
+  ''',
+      [
+        '%$filter%', // Filter for quote_num
+        '%$filter%', // Filter for external_quote_id
+        '%$filter%', // Filter for job summary
+        '%$filter%', // Filter for customer name
+      ],
+    );
 
     return toList(data);
   }
@@ -101,10 +110,7 @@ class DaoQuote extends Dao<Quote> {
     var totalAmount = MoneyEx.zero;
 
     // Create quote
-    final quote = Quote.forInsert(
-      jobId: job.id,
-      totalAmount: totalAmount,
-    );
+    final quote = Quote.forInsert(jobId: job.id, totalAmount: totalAmount);
 
     final quoteId = await DaoQuote().insert(quote);
 
@@ -157,8 +163,9 @@ class DaoQuote extends Dao<Quote> {
 
       if (quoteLine != null) {
         quoteLineGroup ??= await _createQuoteLineGroup(estimate.task, quoteId);
-        await DaoQuoteLine()
-            .insert(quoteLine.copyWith(quoteLineGroupId: quoteLineGroup.id));
+        await DaoQuoteLine().insert(
+          quoteLine.copyWith(quoteLineGroupId: quoteLineGroup.id),
+        );
       }
 
       /// Materials based billing
@@ -168,8 +175,9 @@ class DaoQuote extends Dao<Quote> {
         if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
           continue;
         }
-        final lineTotal = item.estimatedMaterialUnitCost!
-            .multiplyByFixed(item.estimatedMaterialQuantity!);
+        final lineTotal = item.estimatedMaterialUnitCost!.multiplyByFixed(
+          item.estimatedMaterialQuantity!,
+        );
         quoteLineGroup ??= await _createQuoteLineGroup(estimate.task, quoteId);
 
         final quoteLine = QuoteLine.forInsert(
@@ -187,10 +195,7 @@ class DaoQuote extends Dao<Quote> {
     }
 
     // Update the quote total amount
-    final updatedQuote = quote.copyWith(
-      id: quoteId,
-      totalAmount: totalAmount,
-    );
+    final updatedQuote = quote.copyWith(id: quoteId, totalAmount: totalAmount);
     await DaoQuote().update(updatedQuote);
 
     return updatedQuote;
@@ -239,10 +244,7 @@ class DaoQuote extends Dao<Quote> {
   }
 
   /// Approve quote
-  Future<int> approveQuote(
-    int quoteId, {
-    Transaction? transaction,
-  }) async {
+  Future<int> approveQuote(int quoteId, {Transaction? transaction}) async {
     final db = withinTransaction(transaction);
     return db.update(
       tableName,
@@ -257,17 +259,11 @@ class DaoQuote extends Dao<Quote> {
   }
 
   /// Reject quote
-  Future<int> rejectQuote(
-    int quoteId, {
-    Transaction? transaction,
-  }) async =>
+  Future<int> rejectQuote(int quoteId, {Transaction? transaction}) async =>
       updateState(quoteId, QuoteState.rejected, transaction: transaction);
 
   /// quote sent
-  Future<int> markQuoteSent(
-    int quoteId, {
-    Transaction? transaction,
-  }) async {
+  Future<int> markQuoteSent(int quoteId, {Transaction? transaction}) async {
     final db = withinTransaction(transaction);
     return db.update(
       tableName,

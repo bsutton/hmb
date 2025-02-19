@@ -5,12 +5,16 @@ import 'package:hmb/util/units.dart';
 import 'package:money2/money2.dart';
 
 Future<TimeEntry> createTimeEntry(
-    Task task, DateTime now, Duration duration) async {
+  Task task,
+  DateTime now,
+  Duration duration,
+) async {
   // Insert a time entry for the task - 2hrs
   var timeEntry = TimeEntry.forInsert(
-      taskId: task.id,
-      startTime: now.subtract(duration),
-      note: 'Worked on Task 1');
+    taskId: task.id,
+    startTime: now.subtract(duration),
+    note: 'Worked on Task 1',
+  );
   await DaoTimeEntry().insert(timeEntry);
   timeEntry = timeEntry.copyWith(endTime: timeEntry.startTime.add(duration));
   await DaoTimeEntry().update(timeEntry);
@@ -60,8 +64,13 @@ Future<TaskItem> insertLabourEstimates(
   return labourItem;
 }
 
-Future<TaskItem> insertMaterials(Task? task, Fixed quantity, Money unitCost,
-    Percentage margin, TaskItemType checkListItemType) async {
+Future<TaskItem> insertMaterials(
+  Task? task,
+  Fixed quantity,
+  Money unitCost,
+  Percentage margin,
+  TaskItemType checkListItemType,
+) async {
   final completedMaterialItem = TaskItem.forInsert(
     taskId: task!.id,
     description: 'Completed Material Item',
@@ -88,21 +97,25 @@ Future<TaskItem> insertMaterials(Task? task, Fixed quantity, Money unitCost,
   return completedMaterialItem;
 }
 
-Future<Job> createJob(DateTime now, BillingType billingType,
-    {required Money hourlyRate,
-    Money? bookingFee,
-    String summary = 'Time and Materials Job'}) async {
+Future<Job> createJob(
+  DateTime now,
+  BillingType billingType, {
+  required Money hourlyRate,
+  Money? bookingFee,
+  String summary = 'Time and Materials Job',
+}) async {
   // Insert a job with time and materials billing type
   final job = Job.forInsert(
-      customerId: 1, // Assuming a customer ID
-      summary: summary,
-      description: 'This is a T&M job',
-      siteId: 1, // Assuming a site ID
-      contactId: 1, // Assuming a contact ID
-      jobStatusId: 1, // Assuming job status ID
-      hourlyRate: hourlyRate, // $50 per hour
-      bookingFee: bookingFee, // $100 Booking Fee
-      billingType: billingType);
+    customerId: 1, // Assuming a customer ID
+    summary: summary,
+    description: 'This is a T&M job',
+    siteId: 1, // Assuming a site ID
+    contactId: 1, // Assuming a contact ID
+    jobStatusId: 1, // Assuming job status ID
+    hourlyRate: hourlyRate, // $50 per hour
+    bookingFee: bookingFee, // $100 Booking Fee
+    billingType: billingType,
+  );
   await DaoJob().insert(job);
 
   return job;

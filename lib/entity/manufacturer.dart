@@ -30,15 +30,15 @@ class Manufacturer extends Entity<Manufacturer> {
   }) : super.forUpdate();
 
   factory Manufacturer.fromMap(Map<String, dynamic> map) => Manufacturer(
-        id: map['id'] as int,
-        name: map['name'] as String,
-        description: map['description'] as String?,
-        contactNumber: map['contactNumber'] as String?,
-        email: map['email'] as String?,
-        address: map['address'] as String?,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-      );
+    id: map['id'] as int,
+    name: map['name'] as String,
+    description: map['description'] as String?,
+    contactNumber: map['contactNumber'] as String?,
+    email: map['email'] as String?,
+    address: map['address'] as String?,
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+  );
 
   String name;
   String? description;
@@ -48,13 +48,13 @@ class Manufacturer extends Entity<Manufacturer> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'contactNumber': contactNumber,
-        'email': email,
-        'address': address,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'contactNumber': contactNumber,
+    'email': email,
+    'address': address,
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+  };
 }

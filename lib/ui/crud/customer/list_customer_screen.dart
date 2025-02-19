@@ -20,34 +20,42 @@ class CustomerListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => EntityListScreen<Customer>(
-      pageTitle: 'Customers',
-      dao: DaoCustomer(),
-      title: (entity) => HMBCardHeading(entity.name),
-      fetchList: (filter) async => DaoCustomer().getByFilter(filter),
-      onEdit: (customer) => CustomerEditScreen(customer: customer),
-      details: (entity) {
-        final customer = entity;
-        return FutureBuilderEx(
-            waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
-            // ignore: discarded_futures
-            future: DaoSite().getPrimaryForCustomer(customer.id),
-            builder: (context, site) => FutureBuilderEx(
-                waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
-                // ignore: discarded_futures
-                future: DaoContact().getPrimaryForCustomer(customer.id),
-                builder: (context, contact) => Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ContactText(
-                              label: 'Primary Contact:', contact: contact),
-                          HMBPhoneText(
-                              label: '',
-                              phoneNo: contact?.bestPhone,
-                              sourceContext: SourceContext(
-                                  contact: contact, customer: customer)),
-                          HMBEmailText(label: '', email: contact?.emailAddress),
-                          HMBSiteText(label: '', site: site)
-                        ])));
-      });
+    pageTitle: 'Customers',
+    dao: DaoCustomer(),
+    title: (entity) => HMBCardHeading(entity.name),
+    fetchList: (filter) async => DaoCustomer().getByFilter(filter),
+    onEdit: (customer) => CustomerEditScreen(customer: customer),
+    details: (entity) {
+      final customer = entity;
+      return FutureBuilderEx(
+        waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
+        // ignore: discarded_futures
+        future: DaoSite().getPrimaryForCustomer(customer.id),
+        builder:
+            (context, site) => FutureBuilderEx(
+              waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
+              // ignore: discarded_futures
+              future: DaoContact().getPrimaryForCustomer(customer.id),
+              builder:
+                  (context, contact) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ContactText(label: 'Primary Contact:', contact: contact),
+                      HMBPhoneText(
+                        label: '',
+                        phoneNo: contact?.bestPhone,
+                        sourceContext: SourceContext(
+                          contact: contact,
+                          customer: customer,
+                        ),
+                      ),
+                      HMBEmailText(label: '', email: contact?.emailAddress),
+                      HMBSiteText(label: '', site: site),
+                    ],
+                  ),
+            ),
+      );
+    },
+  );
 }

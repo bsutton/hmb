@@ -23,13 +23,16 @@ class DaoCustomer extends Dao<Customer> {
     if (jobId == null) {
       return null;
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select c.* 
 from job j
 join customer c
   on c.id = j.customer_id
 where j.id =? 
-''', [jobId]);
+''',
+      [jobId],
+    );
 
     return toList(data).first;
   }
@@ -40,25 +43,31 @@ where j.id =?
     if (Strings.isBlank(filter)) {
       return getAll(orderByClause: 'modifiedDate desc');
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select c.* 
 from customer c
 where c.name like ?
 order by c.modifiedDate desc
-''', ['''%$filter%''']);
+''',
+      ['''%$filter%'''],
+    );
 
     return toList(data);
   }
 
   Future<Customer?> getByQuote(int quoteId) async {
     final db = withoutTransaction();
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
       SELECT c.* 
       FROM customer c
       JOIN job j ON c.id = j.customer_id
       JOIN quote q ON j.id = q.job_id
       WHERE q.id = ?
-    ''', [quoteId]);
+    ''',
+      [quoteId],
+    );
 
     if (data.isEmpty) {
       return null;
@@ -71,7 +80,8 @@ order by c.modifiedDate desc
 
     Money hourlyRate;
     if (customer?.hourlyRate == null) {
-      hourlyRate = (await DaoSystem().get()).defaultHourlyRate ??
+      hourlyRate =
+          (await DaoSystem().get()).defaultHourlyRate ??
           Money.fromInt(0, isoCode: 'AUD');
     } else {
       hourlyRate = customer?.hourlyRate ?? Money.fromInt(0, isoCode: 'AUD');
@@ -86,13 +96,16 @@ order by c.modifiedDate desc
   Future<Customer?> getByContact(int contactId) async {
     final db = withoutTransaction();
 
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
       SELECT c.*
       FROM customer c
       LEFT JOIN customer_contacts cc ON c.id = cc.customer_id
       WHERE cc.contact_id = ?
       LIMIT 1
-    ''', [contactId]);
+    ''',
+      [contactId],
+    );
 
     if (data.isEmpty) {
       return null;
@@ -105,13 +118,16 @@ order by c.modifiedDate desc
   Future<Customer?> getBySite(int siteId) async {
     final db = withoutTransaction();
 
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
       SELECT c.*
       FROM customer c
       LEFT JOIN customer_sites cs ON c.id = cs.customer_id
       WHERE cs.site_id = ?
       LIMIT 1
-    ''', [siteId]);
+    ''',
+      [siteId],
+    );
 
     if (data.isEmpty) {
       return null;

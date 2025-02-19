@@ -15,13 +15,13 @@ class TimeSource extends Source<LocalTime> {
 
   @override
   Widget widget() => HMBDateTimeField(
-        label: label.toProperCase(),
-        initialDateTime: DateTime.now(),
-        onChanged: (datetime) {
-          localTime = LocalTime.fromDateTime(datetime);
-        },
-        mode: HMBDateTimeFieldMode.timeOnly,
-      );
+    label: label.toProperCase(),
+    initialDateTime: DateTime.now(),
+    onChanged: (datetime) {
+      localTime = LocalTime.fromDateTime(datetime);
+    },
+    mode: HMBDateTimeFieldMode.timeOnly,
+  );
 
   @override
   LocalTime? get value => localTime;

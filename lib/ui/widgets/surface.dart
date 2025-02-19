@@ -14,8 +14,7 @@ enum SurfaceElevation {
   e8(HMBColors.surface8dp),
   e12(HMBColors.surface12dp),
   e16(HMBColors.surface16dp),
-  e24(HMBColors.surface24dp),
-  ;
+  e24(HMBColors.surface24dp);
 
   const SurfaceElevation(this.color);
   final Color color;
@@ -43,8 +42,9 @@ class Surface extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
   @override
   Widget build(BuildContext context) => Container(
-      padding: margin,
-      child: Container(color: elevation.color, padding: padding, child: child));
+    padding: margin,
+    child: Container(color: elevation.color, padding: padding, child: child),
+  );
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -78,13 +78,15 @@ class SurfaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onPressed,
-        child: Container(
-            height: height,
-            color: elevation.color,
-            padding: padding,
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [HMBTextHeadline(title), body])),
-      );
+    onTap: onPressed,
+    child: Container(
+      height: height,
+      color: elevation.color,
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [HMBTextHeadline(title), body],
+      ),
+    ),
+  );
 }

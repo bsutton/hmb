@@ -12,8 +12,11 @@ class BusinessWizardStep extends WizardStep {
   final _stateKey = GlobalKey<SystemBusinessScreenState>();
 
   @override
-  Future<void> onNext(BuildContext context, WizardStepTarget intendedStep,
-      {required bool userOriginated}) async {
+  Future<void> onNext(
+    BuildContext context,
+    WizardStepTarget intendedStep, {
+    required bool userOriginated,
+  }) async {
     if (await _stateKey.currentState!.save(close: false)) {
       intendedStep.confirm();
     } else {

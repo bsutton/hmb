@@ -17,9 +17,11 @@ import '../category/select_category.dart';
 import 'stock_take_wizard.dart';
 
 class ToolDetailsStep extends WizardStep {
-  ToolDetailsStep(this.toolWizardState,
-      {required String? name, required this.cost})
-      : super(title: 'Tool Details') {
+  ToolDetailsStep(
+    this.toolWizardState, {
+    required String? name,
+    required this.cost,
+  }) : super(title: 'Tool Details') {
     nameController.text = name ?? '';
     costController.text = cost?.toString() ?? '';
   }
@@ -39,8 +41,11 @@ class ToolDetailsStep extends WizardStep {
   DateTime selectedDatePurchased = DateTime.now();
 
   @override
-  Future<void> onNext(BuildContext context, WizardStepTarget intendedStep,
-      {required bool userOriginated}) async {
+  Future<void> onNext(
+    BuildContext context,
+    WizardStepTarget intendedStep, {
+    required bool userOriginated,
+  }) async {
     if (Strings.isBlank(nameController.text)) {
       HMBToast.error('You must enter a name');
       intendedStep.cancel();
@@ -54,26 +59,28 @@ class ToolDetailsStep extends WizardStep {
     final daoTool = DaoTool();
     if (toolWizardState.tool == null) {
       final tool = Tool.forInsert(
-          name: nameController.text,
-          description: descriptionController.text,
-          categoryId: selectedCategory.categoryId,
-          supplierId: selectedSupplier.selected,
-          manufacturerId: selectedManufacturer.manufacturerId,
-          datePurchased: selectedDatePurchased,
-          warrantyPeriod: int.tryParse(warrantyPeriodController.text),
-          cost: MoneyEx.tryParse(costController.text));
+        name: nameController.text,
+        description: descriptionController.text,
+        categoryId: selectedCategory.categoryId,
+        supplierId: selectedSupplier.selected,
+        manufacturerId: selectedManufacturer.manufacturerId,
+        datePurchased: selectedDatePurchased,
+        warrantyPeriod: int.tryParse(warrantyPeriodController.text),
+        cost: MoneyEx.tryParse(costController.text),
+      );
       await daoTool.insert(tool);
       toolWizardState.tool = tool;
     } else {
       final tool = toolWizardState.tool!.copyWith(
-          name: nameController.text,
-          description: descriptionController.text,
-          categoryId: selectedCategory.categoryId,
-          supplierId: selectedSupplier.selected,
-          manufacturerId: selectedManufacturer.manufacturerId,
-          datePurchased: selectedDatePurchased,
-          warrantyPeriod: int.tryParse(warrantyPeriodController.text),
-          cost: MoneyEx.tryParse(costController.text));
+        name: nameController.text,
+        description: descriptionController.text,
+        categoryId: selectedCategory.categoryId,
+        supplierId: selectedSupplier.selected,
+        manufacturerId: selectedManufacturer.manufacturerId,
+        datePurchased: selectedDatePurchased,
+        warrantyPeriod: int.tryParse(warrantyPeriodController.text),
+        cost: MoneyEx.tryParse(costController.text),
+      );
       await daoTool.update(tool);
       toolWizardState.tool = tool;
     }
@@ -83,64 +90,65 @@ class ToolDetailsStep extends WizardStep {
 
   @override
   Widget build(BuildContext context) => Material(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                HMBTextField(
-                  controller: nameController,
-                  labelText: 'Name',
-                  required: true,
-                ),
-                SelectCategory(
-                  selectedCategory: selectedCategory,
-                  onSelected: (category) {
-                    setState(() {
-                      selectedCategory.categoryId = category?.id;
-                    });
-                  },
-                ),
-                HMBTextArea(
-                  controller: descriptionController,
-                  labelText: 'Description',
-                ),
-                SelectSupplier(
-                  selectedSupplier: selectedSupplier,
-                  onSelected: (supplier) {
-                    setState(() {
-                      selectedSupplier.selected = supplier?.id;
-                    });
-                  },
-                ),
-                SelectManufacturer(
-                  selectedManufacturer: selectedManufacturer,
-                  onSelected: (manufacturer) {
-                    setState(() {
-                      selectedManufacturer.manufacturerId = manufacturer?.id;
-                    });
-                  },
-                ),
-                HMBTextField(
-                  controller: warrantyPeriodController,
-                  labelText: 'Warranty Period (months)',
-                  keyboardType: TextInputType.number,
-                ),
-                HMBTextField(
-                  controller: costController,
-                  labelText: 'Cost',
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                ),
-                HMBDateTimeField(
-                  mode: HMBDateTimeFieldMode.dateOnly,
-                  label: 'Date Purchased',
-                  initialDateTime: selectedDatePurchased,
-                  onChanged: (date) => selectedDatePurchased = date,
-                ),
-              ],
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            HMBTextField(
+              controller: nameController,
+              labelText: 'Name',
+              required: true,
             ),
-          ),
+            SelectCategory(
+              selectedCategory: selectedCategory,
+              onSelected: (category) {
+                setState(() {
+                  selectedCategory.categoryId = category?.id;
+                });
+              },
+            ),
+            HMBTextArea(
+              controller: descriptionController,
+              labelText: 'Description',
+            ),
+            SelectSupplier(
+              selectedSupplier: selectedSupplier,
+              onSelected: (supplier) {
+                setState(() {
+                  selectedSupplier.selected = supplier?.id;
+                });
+              },
+            ),
+            SelectManufacturer(
+              selectedManufacturer: selectedManufacturer,
+              onSelected: (manufacturer) {
+                setState(() {
+                  selectedManufacturer.manufacturerId = manufacturer?.id;
+                });
+              },
+            ),
+            HMBTextField(
+              controller: warrantyPeriodController,
+              labelText: 'Warranty Period (months)',
+              keyboardType: TextInputType.number,
+            ),
+            HMBTextField(
+              controller: costController,
+              labelText: 'Cost',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
+            HMBDateTimeField(
+              mode: HMBDateTimeFieldMode.dateOnly,
+              label: 'Date Purchased',
+              initialDateTime: selectedDatePurchased,
+              onChanged: (date) => selectedDatePurchased = date,
+            ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }

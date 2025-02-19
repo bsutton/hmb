@@ -6,8 +6,10 @@ extension ColorExtensions on Color {
   ///
   /// Throws an assertion error if the opacity is out of range.
   Color withSafeOpacity(double opacity) {
-    assert(opacity >= 0.0 && opacity <= 1.0,
-        'Opacity must be between 0.0 and 1.0.');
+    assert(
+      opacity >= 0.0 && opacity <= 1.0,
+      'Opacity must be between 0.0 and 1.0.',
+    );
     return withAlpha((opacity.clamp(0.0, 1.0) * 255).round());
   }
 

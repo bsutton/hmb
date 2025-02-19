@@ -4,9 +4,7 @@ import 'text/hmb_text_themes.dart';
 import 'wizard.dart';
 
 abstract class WizardStep {
-  WizardStep({
-    required String title,
-  }) : _title = title;
+  WizardStep({required String title}) : _title = title;
   final String _title;
   bool buildRequired = false;
 
@@ -69,8 +67,11 @@ abstract class WizardStep {
   /// , [self.cancel()] or [self.redirect(alternateStep)] otherwise
   /// the UI will lock up.
   Future<void> onEntry(
-      BuildContext context, WizardStep priorStep, WizardStepTarget self,
-      {required bool userOriginated}) async {
+    BuildContext context,
+    WizardStep priorStep,
+    WizardStepTarget self, {
+    required bool userOriginated,
+  }) async {
     self.confirm();
   }
 
@@ -79,8 +80,11 @@ abstract class WizardStep {
   /// [intendedStep] is the step the wizard is transitioning to.
   /// You can veto the transition by calling [intendedStep].cancel or call
   /// [intendedStep].redirect to set an alternate step to move to.
-  Future<void> onNext(BuildContext context, WizardStepTarget intendedStep,
-      {required bool userOriginated}) async {
+  Future<void> onNext(
+    BuildContext context,
+    WizardStepTarget intendedStep, {
+    required bool userOriginated,
+  }) async {
     intendedStep.confirm();
   }
 
@@ -89,8 +93,11 @@ abstract class WizardStep {
   /// [intendedStep] is the step the wizard is transitioning to.
   /// You can veto the transition by calling [intendedStep].cancel or call
   /// [intendedStep].redirect to set an alternate step to move to.
-  Future<void> onPrev(BuildContext context, WizardStepTarget intendedStep,
-      {required bool userOriginated}) async {
+  Future<void> onPrev(
+    BuildContext context,
+    WizardStepTarget intendedStep, {
+    required bool userOriginated,
+  }) async {
     intendedStep.confirm();
   }
 

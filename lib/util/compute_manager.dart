@@ -27,7 +27,9 @@ class ComputeManager {
   final Queue<ComputeTask> _taskQueue = Queue();
 
   Future<String?> enqueueCompute(
-      ComputeCallback<ThumbnailPaths, String?> function, ThumbnailPaths message) async {
+    ComputeCallback<ThumbnailPaths, String?> function,
+    ThumbnailPaths message,
+  ) async {
     final completer = Completer<String?>();
     final task = ComputeTask(function, message, completer);
     _taskQueue.add(task);
@@ -46,8 +48,11 @@ class ComputeManager {
 
   Future<void> _runTask(ComputeTask task) async {
     try {
-      final result =
-          await compute(task.function, task.data, debugLabel: 'ComputeTask');
+      final result = await compute(
+        task.function,
+        task.data,
+        debugLabel: 'ComputeTask',
+      );
       task.completer.complete(result);
     } catch (e, st) {
       task.completer.completeError(e, st);

@@ -21,10 +21,7 @@ class XeroException implements Exception {
 
 /// Holds the Xero clientId/clientSecret from your database/system config.
 class XeroSecretIdentity {
-  XeroSecretIdentity({
-    required this.clientId,
-    required this.clientSecret,
-  });
+  XeroSecretIdentity({required this.clientId, required this.clientSecret});
   final String clientId;
   final String clientSecret;
 }
@@ -79,8 +76,9 @@ class XeroAuth2 {
 
     final credentials = await _fetchSecretIdentity();
 
-    final authorizationEndpoint =
-        Uri.parse('https://login.xero.com/identity/connect/authorize');
+    final authorizationEndpoint = Uri.parse(
+      'https://login.xero.com/identity/connect/authorize',
+    );
     final tokenEndpoint = Uri.parse('https://identity.xero.com/connect/token');
 
     final redirectHandler = initRedirectHandler(); // mobile or desktop
@@ -132,7 +130,9 @@ class XeroAuth2 {
 
   /// Completes the authorization, exchanging the code for a token.
   Future<void> completeLogin(
-      Completer<void> loginComplete, Uri responseUri) async {
+    Completer<void> loginComplete,
+    Uri responseUri,
+  ) async {
     log('completeLogin with: $responseUri');
     if (grant == null) {
       log('Grant not initialized');
@@ -140,8 +140,9 @@ class XeroAuth2 {
       throw XeroException('Grant not initialized');
     }
     try {
-      client =
-          await grant!.handleAuthorizationResponse(responseUri.queryParameters);
+      client = await grant!.handleAuthorizationResponse(
+        responseUri.queryParameters,
+      );
       await _saveCredentials(client!.credentials); // Save the credentials
       log('Login completed successfully');
       loginComplete.complete();
@@ -175,8 +176,10 @@ class XeroAuth2 {
 
     if (Strings.isBlank(system.xeroClientId) ||
         Strings.isBlank(system.xeroClientSecret)) {
-      throw InvoiceException('''
-The Xero credentials are not set. Navigate to the System | Integration screen and set them.''');
+      throw InvoiceException(
+        '''
+The Xero credentials are not set. Navigate to the System | Integration screen and set them.''',
+      );
     }
     return XeroSecretIdentity(
       clientId: system.xeroClientId!,

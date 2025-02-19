@@ -18,13 +18,22 @@ Future<InvoiceOptions?> showQuote({
 
   if (context.mounted) {
     final invoiceOptions = await showDialog<InvoiceOptions>(
-        context: context,
-        builder: (context) => DialogTaskSelection(
+      context: context,
+      builder:
+          (context) => DialogTaskSelection(
             job: job,
-            taskSelectors: estimates
-                .map((estimate) => TaskSelector(
-                    estimate.task, estimate.task.name, estimate.total))
-                .toList()));
+            taskSelectors:
+                estimates
+                    .map(
+                      (estimate) => TaskSelector(
+                        estimate.task,
+                        estimate.task.name,
+                        estimate.total,
+                      ),
+                    )
+                    .toList(),
+          ),
+    );
 
     return invoiceOptions;
   }
@@ -36,20 +45,24 @@ Future<InvoiceOptions?> showInvoice({
   required BuildContext context,
   required Job job,
 }) async {
-  final values = await DaoTask()
-      .getAccruedValueForJob(jobId: job.id, includedBilled: false);
+  final values = await DaoTask().getAccruedValueForJob(
+    jobId: job.id,
+    includedBilled: false,
+  );
 
   final selectors = <TaskSelector>[];
   for (final value in values) {
-    selectors
-        .add(TaskSelector(value.task, value.task.name, await value.earned));
+    selectors.add(
+      TaskSelector(value.task, value.task.name, await value.earned),
+    );
   }
 
   if (context.mounted) {
     final invoiceOptions = await showDialog<InvoiceOptions>(
-        context: context,
-        builder: (context) =>
-            DialogTaskSelection(job: job, taskSelectors: selectors));
+      context: context,
+      builder:
+          (context) => DialogTaskSelection(job: job, taskSelectors: selectors),
+    );
     return invoiceOptions;
   }
   return null;
@@ -59,8 +72,11 @@ Future<InvoiceOptions?> showInvoice({
 /// and allow them to select which tasks they want to
 /// work on.
 class DialogTaskSelection extends StatefulWidget {
-  const DialogTaskSelection(
-      {required this.job, required this.taskSelectors, super.key});
+  const DialogTaskSelection({
+    required this.job,
+    required this.taskSelectors,
+    super.key,
+  });
   final Job job;
   final List<TaskSelector> taskSelectors;
 
@@ -77,10 +93,11 @@ class TaskSelector {
 }
 
 class InvoiceOptions {
-  InvoiceOptions(
-      {required this.selectedTaskIds,
-      required this.billBookingFee,
-      required this.groupByTask});
+  InvoiceOptions({
+    required this.selectedTaskIds,
+    required this.billBookingFee,
+    required this.groupByTask,
+  });
   List<int> selectedTaskIds = [];
   bool billBookingFee = true;
   bool groupByTask;
@@ -96,8 +113,9 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
   @override
   Future<void> asyncInitState() async {
-    billBookingFee = canBillBookingFee =
-        widget.job.billingType == BillingType.timeAndMaterial &&
+    billBookingFee =
+        canBillBookingFee =
+            widget.job.billingType == BillingType.timeAndMaterial &&
             !widget.job.bookingFeeInvoiced;
 
     /// Mark all tasks as selected.
@@ -128,78 +146,83 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
-        content: DeferredBuilder(this,
-            builder: (context) => SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      DropdownButton<bool>(
-                        value: groupByTask,
-                        items: const [
-                          DropdownMenuItem(
-                            value: true,
-                            child: Text('Group by Task/Date'),
-                          ),
-                          DropdownMenuItem(
-                            value: false,
-                            child: Text('Group by Date/Task'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            groupByTask = value ?? true;
-                          });
-                        },
-                        isExpanded: true,
-                      ),
-                      const SizedBox(height: 20),
-                      if (canBillBookingFee)
-                        CheckboxListTile(
-                            title: const Text('Bill booking Fee'),
-                            value: billBookingFee,
-                            onChanged: (value) {
-                              setState(() {
-                                billBookingFee = value ?? true;
-                              });
-                            }),
-                      if (_selectedTasks.isNotEmpty)
-                        CheckboxListTile(
-                          title: const Text('Select All'),
-                          value: _selectAll,
-                          onChanged: _toggleSelectAll,
-                        ),
-                      for (final taskSelector in widget.taskSelectors)
-                        CheckboxListTile(
-                          title: Text(taskSelector.description),
-                          subtitle:
-                              Text('''Total Cost: ${taskSelector.value}'''),
-                          value: _selectedTasks[taskSelector.task.id] ?? false,
-                          onChanged: (value) => _toggleIndividualTask(
-                              taskSelector.task.id, value),
-                        ),
-                    ],
+    title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
+    content: DeferredBuilder(
+      this,
+      builder:
+          (context) => SingleChildScrollView(
+            child: Column(
+              children: [
+                DropdownButton<bool>(
+                  value: groupByTask,
+                  items: const [
+                    DropdownMenuItem(
+                      value: true,
+                      child: Text('Group by Task/Date'),
+                    ),
+                    DropdownMenuItem(
+                      value: false,
+                      child: Text('Group by Date/Task'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      groupByTask = value ?? true;
+                    });
+                  },
+                  isExpanded: true,
+                ),
+                const SizedBox(height: 20),
+                if (canBillBookingFee)
+                  CheckboxListTile(
+                    title: const Text('Bill booking Fee'),
+                    value: billBookingFee,
+                    onChanged: (value) {
+                      setState(() {
+                        billBookingFee = value ?? true;
+                      });
+                    },
                   ),
-                )),
-        actions: [
-          HMBButton(
-            label: 'Cancel',
-            onPressed: () => Navigator.of(context).pop(),
+                if (_selectedTasks.isNotEmpty)
+                  CheckboxListTile(
+                    title: const Text('Select All'),
+                    value: _selectAll,
+                    onChanged: _toggleSelectAll,
+                  ),
+                for (final taskSelector in widget.taskSelectors)
+                  CheckboxListTile(
+                    title: Text(taskSelector.description),
+                    subtitle: Text('''Total Cost: ${taskSelector.value}'''),
+                    value: _selectedTasks[taskSelector.task.id] ?? false,
+                    onChanged:
+                        (value) =>
+                            _toggleIndividualTask(taskSelector.task.id, value),
+                  ),
+              ],
+            ),
           ),
-          HMBButton(
-            label: 'OK',
-            onPressed: () {
-              final selectedTaskIds = _selectedTasks.entries
+    ),
+    actions: [
+      HMBButton(label: 'Cancel', onPressed: () => Navigator.of(context).pop()),
+      HMBButton(
+        label: 'OK',
+        onPressed: () {
+          final selectedTaskIds =
+              _selectedTasks.entries
                   .where((entry) => entry.value)
                   .map((entry) => entry.key)
                   .toList();
-              Navigator.of(context).pop(InvoiceOptions(
-                  selectedTaskIds: selectedTaskIds,
-                  billBookingFee: billBookingFee,
-                  groupByTask: groupByTask));
-            },
-          ),
-        ],
-      );
+          Navigator.of(context).pop(
+            InvoiceOptions(
+              selectedTaskIds: selectedTaskIds,
+              billBookingFee: billBookingFee,
+              groupByTask: groupByTask,
+            ),
+          );
+        },
+      ),
+    ],
+  );
 
   Future<Money> cost(TaskAccruedValue taskCost, Showing showing) async {
     switch (showing) {

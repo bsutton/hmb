@@ -17,14 +17,10 @@ class HMBTextClickable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onPressed,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: HMBText(
-            text,
-            bold: bold,
-            underline: true,
-          ),
-        ),
-      );
+    onTap: onPressed,
+    child: MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: HMBText(text, bold: bold, underline: true),
+    ),
+  );
 }

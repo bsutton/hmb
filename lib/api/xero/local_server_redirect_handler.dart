@@ -39,10 +39,7 @@ class LocalServerRedirectHandler extends RedirectHandler {
     }
 
     running = true;
-    server = await HttpServer.bind(
-      InternetAddress.loopbackIPv4,
-      port,
-    );
+    server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
     _log('listening on http://${server!.address.host}:${server!.port}');
 
     server!.listen((request) async {

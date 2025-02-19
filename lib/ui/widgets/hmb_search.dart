@@ -6,11 +6,12 @@ import 'hmb_add_button.dart';
 /// I fyou need to be able to programatically clear the filter
 /// then pass in a [HMBSearchController]
 class HMBSearch extends StatefulWidget {
-  const HMBSearch(
-      {required this.onChanged,
-      this.label = 'Search',
-      super.key,
-      this.controller});
+  const HMBSearch({
+    required this.onChanged,
+    this.label = 'Search',
+    super.key,
+    this.controller,
+  });
 
   final Future<void> Function(String? filter) onChanged;
 
@@ -50,27 +51,29 @@ class HMBSearchState extends State<HMBSearch> {
   }
 
   @override
-  Widget build(BuildContext context) => Row(children: [
-        Expanded(
-          child: HMBTextField(
-            leadingSpace: false,
-            labelText: widget.label,
-            controller: filterController!,
-            onChanged: (newValue) async {
-              filter = newValue;
-              await widget.onChanged(filter);
-            },
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.clear),
-          onPressed: () async {
-            filterController?.clear();
-            filter = null;
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: HMBTextField(
+          leadingSpace: false,
+          labelText: widget.label,
+          controller: filterController!,
+          onChanged: (newValue) async {
+            filter = newValue;
             await widget.onChanged(filter);
           },
-        )
-      ]);
+        ),
+      ),
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () async {
+          filterController?.clear();
+          filter = null;
+          await widget.onChanged(filter);
+        },
+      ),
+    ],
+  );
 }
 
 class HMBSearchWithAdd extends StatelessWidget {
@@ -94,19 +97,18 @@ class HMBSearchWithAdd extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          Expanded(
-            child: HMBSearch(
-              onChanged: (filter) async {
-                onSearch(filter?.trim().toLowerCase());
-              },
-              controller: controller,
-            ),
-          ),
-          HMBButtonAdd(
-              onPressed: () async => onAdd(), enabled: true, hint: hint),
-        ],
-      );
+    children: [
+      Expanded(
+        child: HMBSearch(
+          onChanged: (filter) async {
+            onSearch(filter?.trim().toLowerCase());
+          },
+          controller: controller,
+        ),
+      ),
+      HMBButtonAdd(onPressed: () async => onAdd(), enabled: true, hint: hint),
+    ],
+  );
 }
 
 class HMBSearchController extends TextEditingController {}

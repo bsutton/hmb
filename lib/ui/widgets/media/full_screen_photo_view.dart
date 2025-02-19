@@ -21,89 +21,94 @@ class FullScreenPhotoViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            PhotoView(
-              imageProvider: FileImage(File(imagePath)),
-              backgroundDecoration: const BoxDecoration(color: Colors.black),
-              minScale: PhotoViewComputedScale.contained,
-              maxScale: PhotoViewComputedScale.covered * 2.0,
-              initialScale: PhotoViewComputedScale.contained,
-            ),
-            Positioned(
-              top: 40,
-              left: 20,
-              right: 20,
-              child: Column(
-                children: [
-                  /// title
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  /// comment
-                  if (Strings.isNotBlank(comment))
-                    Text(
-                      comment!,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                ],
-              ),
-            ),
-
-            /// action icons (copy and close)
-            Positioned(
-              top: 40,
-              right: 20,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.content_copy,
-                        color: Colors.white, size: 30),
-                    onPressed: () async {
-                      try {
-                        await Pasteboard.writeFiles([imagePath]);
-                        HMBToast.info('Image copied to clipboard');
-                        // ignore: avoid_catches_without_on_clauses
-                      } catch (e) {
-                        HMBToast.error('Failed to copy image to clipboard');
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon:
-                        const Icon(Icons.close, color: Colors.white, size: 30),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    backgroundColor: Colors.black,
+    body: Stack(
+      children: [
+        PhotoView(
+          imageProvider: FileImage(File(imagePath)),
+          backgroundDecoration: const BoxDecoration(color: Colors.black),
+          minScale: PhotoViewComputedScale.contained,
+          maxScale: PhotoViewComputedScale.covered * 2.0,
+          initialScale: PhotoViewComputedScale.contained,
         ),
-      );
+        Positioned(
+          top: 40,
+          left: 20,
+          right: 20,
+          child: Column(
+            children: [
+              /// title
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
 
-  static Future<void> show(
-      {required BuildContext context,
-      required String imagePath,
-      required String title,
-      required String? comment}) async {
+              /// comment
+              if (Strings.isNotBlank(comment))
+                Text(
+                  comment!,
+                  style: const TextStyle(color: Colors.white70, fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+            ],
+          ),
+        ),
+
+        /// action icons (copy and close)
+        Positioned(
+          top: 40,
+          right: 20,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.content_copy,
+                  color: Colors.white,
+                  size: 30,
+                ),
+                onPressed: () async {
+                  try {
+                    await Pasteboard.writeFiles([imagePath]);
+                    HMBToast.info('Image copied to clipboard');
+                    // ignore: avoid_catches_without_on_clauses
+                  } catch (e) {
+                    HMBToast.error('Failed to copy image to clipboard');
+                  }
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  static Future<void> show({
+    required BuildContext context,
+    required String imagePath,
+    required String title,
+    required String? comment,
+  }) async {
     await Navigator.push(
       context,
       MaterialPageRoute<void>(
-          builder: (context) => FullScreenPhotoViewer(
-              imagePath: imagePath, title: title, comment: comment)),
+        builder:
+            (context) => FullScreenPhotoViewer(
+              imagePath: imagePath,
+              title: title,
+              comment: comment,
+            ),
+      ),
     );
   }
 }

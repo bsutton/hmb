@@ -10,21 +10,30 @@ import 'package:path/path.dart';
 /// dev database
 
 void main(List<String> args) async {
-  final parser = ArgParser()
-    ..addFlag('help', abbr: 'h')
-    ..addFlag('test', abbr: 't', help: 'Connect to the test fixtures db');
+  final parser =
+      ArgParser()
+        ..addFlag('help', abbr: 'h')
+        ..addFlag('test', abbr: 't', help: 'Connect to the test fixtures db');
 
   final results = parser.parse(args);
-  if (results['help'] as bool ) {
+  if (results['help'] as bool) {
     print(parser.usage);
     exit(0);
   }
-  var pathToDb = join(DartProject.self.pathToDartToolDir, 'sqflite_common_ffi',
-      'databases', 'handyman.db');
+  var pathToDb = join(
+    DartProject.self.pathToDartToolDir,
+    'sqflite_common_ffi',
+    'databases',
+    'handyman.db',
+  );
 
   if (results['test'] as bool) {
     pathToDb = join(
-        DartProject.self.pathToTestDir, 'fixture', 'db', 'handyman_test.db');
+      DartProject.self.pathToTestDir,
+      'fixture',
+      'db',
+      'handyman_test.db',
+    );
   }
 
   'sqlite3 $pathToDb'.start(terminal: true);

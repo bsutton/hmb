@@ -20,25 +20,26 @@ class HMBDroplist<T> extends FormField<T> {
     bool required = true,
     super.key,
   }) : super(
-          autovalidateMode: AutovalidateMode.always,
-          builder: (state) => _HMBDroplist<T>(
-            state: state,
-            selectedItemFuture: selectedItem,
-            items: items,
-            format: format,
-            onChanged: onChanged,
-            title: title,
-            backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
-            required: required,
-            onAdd: onAdd, // Pass the "Add" callback
-          ),
-          validator: (value) {
-            if (required && value == null) {
-              return 'Please select an item';
-            }
-            return null;
-          },
-        );
+         autovalidateMode: AutovalidateMode.always,
+         builder:
+             (state) => _HMBDroplist<T>(
+               state: state,
+               selectedItemFuture: selectedItem,
+               items: items,
+               format: format,
+               onChanged: onChanged,
+               title: title,
+               backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
+               required: required,
+               onAdd: onAdd, // Pass the "Add" callback
+             ),
+         validator: (value) {
+           if (required && value == null) {
+             return 'Please select an item';
+           }
+           return null;
+         },
+       );
 }
 
 class _HMBDroplist<T> extends StatefulWidget {
@@ -89,7 +90,7 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
         });
       }
       widget.state.didChange(_selectedItem);
-// ignore: avoid_catches_without_on_clauses
+      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       print('Error loading selected item: $e');
     }
@@ -112,74 +113,76 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: () async {
-          final selectedItem = await showDialog<T>(
-            context: context,
-            builder: (context) => HMBDroplistDialog<T>(
+    onTap: () async {
+      final selectedItem = await showDialog<T>(
+        context: context,
+        builder:
+            (context) => HMBDroplistDialog<T>(
               getItems: widget.items,
               formatItem: widget.format,
               title: widget.title,
               selectedItem: _selectedItem,
               allowClear: !widget.required,
-              onAdd: widget.onAdd != null ? _handleAdd : null, // Pass the "Add" handler
+              onAdd:
+                  widget.onAdd != null
+                      ? _handleAdd
+                      : null, // Pass the "Add" handler
             ),
-          );
+      );
 
-          if (selectedItem != null || !widget.required) {
-            setState(() {
-              _selectedItem = selectedItem;
-            });
-            widget.state.didChange(_selectedItem);
-            widget.onChanged(_selectedItem);
-          }
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            LabeledContainer(
-              labelText: widget.title,
-              backgroundColor: widget.backgroundColor,
-              isError: widget.state.hasError,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (_loading)
-                    const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else
-                    Text(
-                      _selectedItem != null
-                          ? widget.format(_selectedItem as T)
-                          : 'Select a ${widget.title}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: widget.state.hasError
+      if (selectedItem != null || !widget.required) {
+        setState(() {
+          _selectedItem = selectedItem;
+        });
+        widget.state.didChange(_selectedItem);
+        widget.onChanged(_selectedItem);
+      }
+    },
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        LabeledContainer(
+          labelText: widget.title,
+          backgroundColor: widget.backgroundColor,
+          isError: widget.state.hasError,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (_loading)
+                const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Text(
+                  _selectedItem != null
+                      ? widget.format(_selectedItem as T)
+                      : 'Select a ${widget.title}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color:
+                        widget.state.hasError
                             ? Theme.of(context).colorScheme.error
                             : HMBColors.textPrimary,
-                      ),
-                    ),
-                  const Icon(
-                    Icons.arrow_drop_down,
-                    color: HMBColors.dropboxArrow,
-                  ),
-                ],
-              ),
-            ),
-            if (widget.state.hasError)
-              Padding(
-                padding: const EdgeInsets.only(top: 4, left: 8),
-                child: Text(
-                  widget.state.errorText ?? '',
-                  style: const TextStyle(
-                    color: HMBColors.errorBackground,
-                    fontSize: 12,
                   ),
                 ),
-              ),
-          ],
+              const Icon(Icons.arrow_drop_down, color: HMBColors.dropboxArrow),
+            ],
+          ),
         ),
-      );
+        if (widget.state.hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 8),
+            child: Text(
+              widget.state.errorText ?? '',
+              style: const TextStyle(
+                color: HMBColors.errorBackground,
+                fontSize: 12,
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 }

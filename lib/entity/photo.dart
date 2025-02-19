@@ -27,14 +27,14 @@ class Photo extends Entity<Photo> {
   }) : super.forUpdate();
 
   factory Photo.fromMap(Map<String, dynamic> map) => Photo(
-        id: map['id'] as int,
-        parentId: map['parentId'] as int,
-        parentType: map['parentType'] as String,
-        filePath: map['filePath'] as String,
-        comment: map['comment'] as String,
-        createdDate: DateTime.parse(map['created_date'] as String),
-        modifiedDate: DateTime.parse(map['modified_date'] as String),
-      );
+    id: map['id'] as int,
+    parentId: map['parentId'] as int,
+    parentType: map['parentType'] as String,
+    filePath: map['filePath'] as String,
+    comment: map['comment'] as String,
+    createdDate: DateTime.parse(map['created_date'] as String),
+    modifiedDate: DateTime.parse(map['modified_date'] as String),
+  );
 
   int parentId;
   String parentType;
@@ -43,12 +43,12 @@ class Photo extends Entity<Photo> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'parentId': parentId,
-        'parentType': parentType,
-        'filePath': filePath,
-        'comment': comment,
-        'created_date': createdDate.toIso8601String(),
-        'modified_date': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'parentId': parentId,
+    'parentType': parentType,
+    'filePath': filePath,
+    'comment': comment,
+    'created_date': createdDate.toIso8601String(),
+    'modified_date': modifiedDate.toIso8601String(),
+  };
 }

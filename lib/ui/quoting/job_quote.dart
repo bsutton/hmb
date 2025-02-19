@@ -7,10 +7,7 @@ import '../../entity/quote_line_group.dart';
 import '../../util/money_ex.dart';
 
 class JobQuote {
-  JobQuote({
-    required this.quoteId,
-    required this.groups,
-  });
+  JobQuote({required this.quoteId, required this.groups});
   final int quoteId;
   final List<QuoteLineGroupWithLines> groups;
 
@@ -23,23 +20,15 @@ class JobQuote {
       }).toList(),
     );
 
-    return JobQuote(
-      quoteId: quoteId,
-      groups: groupsWithLines,
-    );
+    return JobQuote(quoteId: quoteId, groups: groupsWithLines);
   }
 }
 
 class QuoteLineGroupWithLines {
-  QuoteLineGroupWithLines({
-    required this.group,
-    required this.lines,
-  });
+  QuoteLineGroupWithLines({required this.group, required this.lines});
   final QuoteLineGroup group;
   final List<QuoteLine> lines;
 
-  Money get total => lines.fold(
-        MoneyEx.zero,
-        (running, line) => running + line.lineTotal,
-      );
+  Money get total =>
+      lines.fold(MoneyEx.zero, (running, line) => running + line.lineTotal);
 }

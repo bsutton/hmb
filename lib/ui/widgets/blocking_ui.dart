@@ -75,14 +75,18 @@ import 'tick_builder.dart';
 class BlockingOverlay extends StatelessWidget {
   const BlockingOverlay({super.key});
   @override
-  Widget build(BuildContext context) => JuneBuilder(BlockingUI.new,
-      builder: (blockingUI) => FutureBuilderEx<void>(
+  Widget build(BuildContext context) => JuneBuilder(
+    BlockingUI.new,
+    builder:
+        (blockingUI) => FutureBuilderEx<void>(
           // ignore: discarded_futures
           future: blockingUI.waitForAllActions,
           waitingBuilder: (context) => _BlockingOverlayWidget(blockingUI),
-          builder: (context, _) =>
-              const SizedBox.shrink() // widget.builder(context),
-          ));
+          builder:
+              (context, _) =>
+                  const SizedBox.shrink(), // widget.builder(context),
+        ),
+  );
 }
 
 /// The [_BlockingOverlayWidget] should NOT be used directly.
@@ -104,10 +108,12 @@ class _BlockingOverlayWidget extends StatefulWidget {
   ///  [TopOrTailPlacement.bottom]
   /// placement otherwise you can see the help icon below the
   ///  progress indicator.
-  const _BlockingOverlayWidget(this.blockingUI,
-      {super.key,
-      this.placement = TopOrTailPlacement.bottom,
-      this.hideHelpIcon = true});
+  const _BlockingOverlayWidget(
+    this.blockingUI, {
+    super.key,
+    this.placement = TopOrTailPlacement.bottom,
+    this.hideHelpIcon = true,
+  });
 
   final BlockingUI blockingUI;
 
@@ -140,67 +146,80 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
 
       return Material(
         child: TickBuilder(
-            limit: 100,
-            interval: const Duration(milliseconds: 100),
-            builder: (context, index) {
-              final showProgress =
-                  DateTime.now().difference(widget.blockingUI.startTime!) >
-                      const Duration(milliseconds: 500);
+          limit: 100,
+          interval: const Duration(milliseconds: 100),
+          builder: (context, index) {
+            final showProgress =
+                DateTime.now().difference(widget.blockingUI.startTime!) >
+                const Duration(milliseconds: 500);
 
-              // show label if we have been here more than 1 second.
-              final showLabel =
-                  DateTime.now().difference(widget.blockingUI.startTime!) >
-                      const Duration(milliseconds: 1000);
+            // show label if we have been here more than 1 second.
+            final showLabel =
+                DateTime.now().difference(widget.blockingUI.startTime!) >
+                const Duration(milliseconds: 1000);
 
-              return SizedBox(
-                  height: height,
-                  width: width,
-                  child: Stack(children: [
-                    // hide the help icon by drawing a container over it.
-                    if (showProgress && widget.hideHelpIcon)
-                      Positioned(
-                          bottom: 5,
-                          right: HMBTheme.padding,
-                          child: Container(
-                              height: 40,
-                              width: 40,
-                              color: Colors.transparent)), // .appBarColor)),
-                    // cover the entire screen with an overlay.
+            return SizedBox(
+              height: height,
+              width: width,
+              child: Stack(
+                children: [
+                  // hide the help icon by drawing a container over it.
+                  if (showProgress && widget.hideHelpIcon)
                     Positioned(
-                        bottom: 0,
-                        left: 0,
-                        height: height,
-                        width: width,
-                        child: Opacity(
-                            opacity: (showProgress ? 0.6 : 0),
-                            child: Container(color: Colors.grey))),
+                      bottom: 5,
+                      right: HMBTheme.padding,
+                      child: Container(
+                        height: 40,
+                        width: 40,
+                        color: Colors.transparent,
+                      ),
+                    ), // .appBarColor)),
+                  // cover the entire screen with an overlay.
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    height: height,
+                    width: width,
+                    child: Opacity(
+                      opacity: (showProgress ? 0.6 : 0),
+                      child: Container(color: Colors.grey),
+                    ),
+                  ),
 
-                    // draw the progress indicator
-                    if (showProgress)
-                      TopOrTail(
-                          placement: widget.placement,
-                          child: GestureDetector(
-                              onTap: cancelRun,
-                              child: const CircularProgressIndicator())),
-                    if (showLabel)
-                      Positioned(
-                          bottom: HMBTheme.padding,
-                          left: 0,
-                          width: width,
-                          child: GestureDetector(
-                              onTap: cancelRun,
-                              child: Center(
-                                  child: Chip(
-                                label:
-                                    (widget.blockingUI.topAction.label == null
-                                        ? HMBTextChip('Just a moment...')
-                                        : HMBTextChip('''
+                  // draw the progress indicator
+                  if (showProgress)
+                    TopOrTail(
+                      placement: widget.placement,
+                      child: GestureDetector(
+                        onTap: cancelRun,
+                        child: const CircularProgressIndicator(),
+                      ),
+                    ),
+                  if (showLabel)
+                    Positioned(
+                      bottom: HMBTheme.padding,
+                      left: 0,
+                      width: width,
+                      child: GestureDetector(
+                        onTap: cancelRun,
+                        child: Center(
+                          child: Chip(
+                            label:
+                                (widget.blockingUI.topAction.label == null
+                                    ? HMBTextChip('Just a moment...')
+                                    : HMBTextChip('''
         Just a moment: ${widget.blockingUI.topAction.label}''')),
-                                backgroundColor: Colors.yellow,
-                                elevation: 7,
-                              ))))
-                  ]));
-            }),
+                            backgroundColor: Colors.yellow,
+                            elevation: 7,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
       );
     } else {
       return Container();
@@ -218,8 +237,12 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
 /// is displayed.
 ///
 class BlockingUIRunner extends StatefulWidget {
-  const BlockingUIRunner(
-      {required this.slowAction, required this.builder, this.label, super.key});
+  const BlockingUIRunner({
+    required this.slowAction,
+    required this.builder,
+    this.label,
+    super.key,
+  });
 
   final WidgetBuilder builder;
   final Future<void> Function() slowAction;
@@ -238,8 +261,9 @@ class _BlockingUIRunnerState extends State<BlockingUIRunner> {
     super.initState();
     if (!_initialised) {
       _initialised = true;
-      completer = June.getState(BlockingUI.new)
-          .run(widget.slowAction, label: widget.label);
+      completer = June.getState(
+        BlockingUI.new,
+      ).run(widget.slowAction, label: widget.label);
 
       // ignore: discarded_futures
       completer.future.whenComplete(() => setState(() {}));
@@ -336,7 +360,8 @@ class BlockingUI extends JuneState {
     /// Rebuild the future that lets us monitor all runners.
     // ignore:  discarded_futures
     _waitForAllActions = Future.wait<dynamic>(
-        actions.stack.map((runner) => runner.completer.future).toList());
+      actions.stack.map((runner) => runner.completer.future).toList(),
+    );
     // to ensure we don't try to call set start during a build
     Future.delayed(Duration.zero, refresh);
   }
@@ -374,8 +399,8 @@ class BlockingUI extends JuneState {
 /// purposes.
 class ActionRunner<T> {
   ActionRunner(this.label, this.slowAction, this.end)
-      : completer = CompleterEx<T>(debugName: label),
-        stackTrace = StackTraceImpl(skipFrames: 2);
+    : completer = CompleterEx<T>(debugName: label),
+      stackTrace = StackTraceImpl(skipFrames: 2);
   final String? label;
 
   final Future<T> Function() slowAction;
@@ -396,11 +421,11 @@ class ActionRunner<T> {
         .catchError(completer.completeError)
         // ignore: discarded_futures
         .whenComplete(() {
-      /// If an error occurs we will aready be complete.
-      if (!completer.isCompleted) {
-        completer.complete();
-      }
-      end();
-    });
+          /// If an error occurs we will aready be complete.
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+          end();
+        });
   }
 }

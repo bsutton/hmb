@@ -49,95 +49,98 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx<InvoiceDetails>(
-        future: _invoiceDetails,
-        waitingBuilder: (_) => const Center(child: CircularProgressIndicator()),
-        builder: (context, details) {
-          if (details == null) {
-            return const Center(child: Text('No invoice details found.'));
-          }
+    future: _invoiceDetails,
+    waitingBuilder: (_) => const Center(child: CircularProgressIndicator()),
+    builder: (context, details) {
+      if (details == null) {
+        return const Center(child: Text('No invoice details found.'));
+      }
 
-          final invoice = details.invoice;
-          final job = details.job;
-          final customer = details.customer;
-          final lineGroups = details.lineGroups;
+      final invoice = details.invoice;
+      final job = details.job;
+      final customer = details.customer;
+      final lineGroups = details.lineGroups;
 
-          // Show all details without expansions
-          return Scaffold(
-            appBar: AppBar(
-              title: Text('Edit Invoice #${invoice.id}'),
-            ),
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Surface(
-                elevation: SurfaceElevation.e6,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      // Show all details without expansions
+      return Scaffold(
+        appBar: AppBar(title: Text('Edit Invoice #${invoice.id}')),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Surface(
+            elevation: SurfaceElevation.e6,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Invoice #${invoice.id} Issued: ${formatDate(invoice.createdDate)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text('Customer: ${customer?.name ?? "N/A"}'),
+                Text('Job: ${job.summary} #${job.id}'),
+                Text('Total: ${invoice.totalAmount}'),
+                const SizedBox(height: 16),
+                Row(
                   children: [
-                    Text(
-                      'Invoice #${invoice.id} Issued: ${formatDate(invoice.createdDate)}',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16),
+                    HMBButton(
+                      label: 'Upload to Xero',
+                      onPressed: _uploadInvoiceToXero,
                     ),
-                    Text('Customer: ${customer?.name ?? "N/A"}'),
-                    Text('Job: ${job.summary} #${job.id}'),
-                    Text('Total: ${invoice.totalAmount}'),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        HMBButton(
-                          label: 'Upload to Xero',
-                          onPressed: _uploadInvoiceToXero,
-                        ),
-                        const SizedBox(width: 16),
-                        HMBButton(
-                          label: 'Delete Invoice',
-                          onPressed: _deleteInvoice,
-                        ),
-                      ],
+                    const SizedBox(width: 16),
+                    HMBButton(
+                      label: 'Delete Invoice',
+                      onPressed: _deleteInvoice,
                     ),
-                    const SizedBox(height: 16),
-                    BuildSendButton(
-                        context: context, mounted: mounted, invoice: invoice),
-                    const SizedBox(height: 16),
-                    // Show all line groups and lines inline
-                    for (final group in lineGroups) ...[
-                      Text(group.group.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      for (final line in group.lines) ...[
-                        ListTile(
-                          title: Text(line.description),
-                          subtitle: Text(
-                            'Qty: ${line.quantity}, Unit: ${line.unitPrice}, Status: ${line.status.toString().split('.').last}',
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('Total: ${line.lineTotal}'),
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () async =>
-                                    _editInvoiceLine(context, line),
-                              ),
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () async => _deleteInvoiceLine(line),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                    ],
                   ],
                 ),
-              ),
+                const SizedBox(height: 16),
+                BuildSendButton(
+                  context: context,
+                  mounted: mounted,
+                  invoice: invoice,
+                ),
+                const SizedBox(height: 16),
+                // Show all line groups and lines inline
+                for (final group in lineGroups) ...[
+                  Text(
+                    group.group.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  for (final line in group.lines) ...[
+                    ListTile(
+                      title: Text(line.description),
+                      subtitle: Text(
+                        'Qty: ${line.quantity}, Unit: ${line.unitPrice}, Status: ${line.status.toString().split('.').last}',
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Total: ${line.lineTotal}'),
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            onPressed:
+                                () async => _editInvoiceLine(context, line),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () async => _deleteInvoiceLine(line),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                ],
+              ],
             ),
-          );
-        },
+          ),
+        ),
       );
+    },
+  );
 
   Future<void> _deleteInvoice() async {
     await areYouSure(
@@ -153,7 +156,8 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
             await _xeroApi.login();
             if (sent) {
               HMBToast.error(
-                  'This invoice has been sent to the customer and cannot be deleted');
+                'This invoice has been sent to the customer and cannot be deleted',
+              );
             } else {
               await _xeroApi.deleteInvoice(invoiceDetails.invoice);
             }
@@ -190,12 +194,16 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       setState(() {});
     } catch (e, st) {
       if (!e.toString().contains('You must provide an email address for')) {
-        await Sentry.captureException(e,
-            stackTrace: st,
-            hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}));
+        await Sentry.captureException(
+          e,
+          stackTrace: st,
+          hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}),
+        );
       }
-      HMBToast.error('Failed to upload invoice: $e',
-          acknowledgmentRequired: true);
+      HMBToast.error(
+        'Failed to upload invoice: $e',
+        acknowledgmentRequired: true,
+      );
     }
   }
 
@@ -216,26 +224,27 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   Future<void> _deleteInvoiceLine(InvoiceLine line) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Invoice Line'),
-        content: Text('''
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Invoice Line'),
+            content: Text('''
 Are you sure you want to delete this invoice line?
 
 Details:
 Description: ${line.description}
 Quantity: ${line.quantity}
 Total: ${line.lineTotal}'''),
-        actions: <Widget>[
-          HMBButton(
-            label: 'Cancel',
-            onPressed: () => Navigator.of(context).pop(false),
+            actions: <Widget>[
+              HMBButton(
+                label: 'Cancel',
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              HMBButton(
+                label: 'Delete',
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
           ),
-          HMBButton(
-            label: 'Delete',
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
     );
 
     if (confirmed ?? false) {
@@ -245,8 +254,9 @@ Total: ${line.lineTotal}'''),
 
         await DaoInvoiceLine().delete(line.id);
 
-        final remainingLines = await DaoInvoiceLine()
-            .getByInvoiceLineGroupId(line.invoiceLineGroupId);
+        final remainingLines = await DaoInvoiceLine().getByInvoiceLineGroupId(
+          line.invoiceLineGroupId,
+        );
 
         if (remainingLines.isEmpty) {
           await DaoInvoiceLineGroup().delete(line.invoiceLineGroupId);
@@ -256,8 +266,10 @@ Total: ${line.lineTotal}'''),
         await _reloadInvoice();
         setState(() {});
       } catch (e) {
-        HMBToast.error('Failed to delete invoice line: $e',
-            acknowledgmentRequired: true);
+        HMBToast.error(
+          'Failed to delete invoice line: $e',
+          acknowledgmentRequired: true,
+        );
       }
     }
   }

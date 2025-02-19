@@ -66,11 +66,14 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     currentEntity ??= widget.task;
 
     _nameController = TextEditingController(text: currentEntity?.name);
-    _descriptionController =
-        TextEditingController(text: currentEntity?.description);
+    _descriptionController = TextEditingController(
+      text: currentEntity?.description,
+    );
 
     _photoController = PhotoController<Task>(
-        parent: currentEntity, parentType: ParentType.task);
+      parent: currentEntity,
+      parentType: ParentType.task,
+    );
 
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
@@ -115,13 +118,14 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   @override
   Widget build(BuildContext context) => NestedEntityEditScreen<Task, Job>(
-        entityName: 'Task',
-        dao: DaoTask(),
-        onInsert: (task) async {
-          await _insertTask(task!);
-        },
-        entityState: this,
-        editor: (task) => Column(
+    entityName: 'Task',
+    dao: DaoTask(),
+    onInsert: (task) async {
+      await _insertTask(task!);
+    },
+    entityState: this,
+    editor:
+        (task) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -137,6 +141,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               focusNode: _descriptionFocusNode,
               labelText: 'Description',
             ),
+
             // _chooseBillingType(),
 
             // Display the summary based on billing type
@@ -144,19 +149,16 @@ class _TaskEditScreenState extends State<TaskEditScreen>
             //   _buildEffortSummary(), // Display effort summary
             // if (_selectedBillingType == BillingType.fixedPrice)
             //   _buildCostSummary(), // Display cost summary
-
             _buildItemList(task),
-            HBMCrudTimeEntry(
-              parentTitle: 'Task',
-              parent: Parent(task),
-            ),
+            HBMCrudTimeEntry(parentTitle: 'Task', parent: Parent(task)),
             PhotoCrud<Task>(
-                parentName: 'Task',
-                parentType: ParentType.task,
-                controller: _photoController),
+              parentName: 'Task',
+              parentType: ParentType.task,
+              controller: _photoController,
+            ),
           ],
         ),
-      );
+  );
 
   // Widget _chooseBillingType() => HMBDroplist<BillingType>(
   //       title: 'Billing Type',
@@ -215,30 +217,25 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   //     );
 
   Widget _buildItemList(Task? task) => Flexible(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              HMBCrudTaskItem(
-                task: task,
-              ),
-            ],
-          ),
-        ),
-      );
+    child: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [HMBCrudTaskItem(task: task)],
+      ),
+    ),
+  );
 
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
-        title: 'Task Status',
-        selectedItem: () async =>
-            June.getState(SelectedTaskStatus.new).taskStatus,
-        items: (filter) async => DaoTaskStatus().getByFilter(filter),
-        format: (item) => item.name,
-        onChanged: (item) {
-          setState(() {
-            June.getState(SelectedTaskStatus.new).taskStatus = item;
-          });
-        },
-      );
+    title: 'Task Status',
+    selectedItem: () async => June.getState(SelectedTaskStatus.new).taskStatus,
+    items: (filter) async => DaoTaskStatus().getByFilter(filter),
+    format: (item) => item.name,
+    onChanged: (item) {
+      setState(() {
+        June.getState(SelectedTaskStatus.new).taskStatus = item;
+      });
+    },
+  );
 
   Future<void> _insertTask(Task task) async {
     await DaoTask().insert(task);
@@ -261,12 +258,12 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   @override
   Future<Task> forInsert() async => Task.forInsert(
-        jobId: widget.job.id,
-        name: _nameController.text,
-        description: _descriptionController.text,
-        taskStatusId: June.getState(SelectedTaskStatus.new).taskStatus!.id,
-        // billingType: _selectedBillingType, // Retain the selected billing type
-      );
+    jobId: widget.job.id,
+    name: _nameController.text,
+    description: _descriptionController.text,
+    taskStatusId: June.getState(SelectedTaskStatus.new).taskStatus!.id,
+    // billingType: _selectedBillingType, // Retain the selected billing type
+  );
 
   @override
   void refresh() {

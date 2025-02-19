@@ -55,8 +55,9 @@ class HMBColors {
   static const Color inputDecoration = Colors.white;
 
   /// List Cards
-  static const Color listCardBackgroundSelected =
-      Color(0xFF9C27B0); // 0xFFBA68C8); // Colors.purple[300];
+  static const Color listCardBackgroundSelected = Color(
+    0xFF9C27B0,
+  ); // 0xFFBA68C8); // Colors.purple[300];
   static const Color listCardBackgroundInActive = green20;
   static const Color listCardText = Colors.black;
 

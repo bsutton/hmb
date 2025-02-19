@@ -58,10 +58,10 @@ class _TaskItemListScreenState<P extends Entity<P>>
         June.getState(ShowCompltedItems.new).showCompletedTasks;
 
     return FutureBuilderEx(
-        // ignore: discarded_futures
-        future: getTaskAndRate(widget.task),
-        builder: (context, taskAndRate) => NestedEntityListScreen<TaskItem,
-                Task>(
+      // ignore: discarded_futures
+      future: getTaskAndRate(widget.task),
+      builder:
+          (context, taskAndRate) => NestedEntityListScreen<TaskItem, Task>(
             key: ValueKey(showCompleted),
             parent: Parent(widget.task), // widget.parent,
             parentTitle: 'Task',
@@ -73,7 +73,8 @@ class _TaskItemListScreenState<P extends Entity<P>>
             // ignore: discarded_futures
             fetchList: () async => _fetchItems(showCompleted),
             title: (taskItem) => Text(taskItem.description) as Widget,
-            onEdit: (taskItem) => TaskItemEditScreen(
+            onEdit:
+                (taskItem) => TaskItemEditScreen(
                   parent: widget.task,
                   taskItem: taskItem,
                   billingType:
@@ -83,36 +84,50 @@ class _TaskItemListScreenState<P extends Entity<P>>
             details: (entity, details) {
               final taskItem = entity;
               return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ..._buildFieldsBasedOnItemType(
-                        taskItem, taskAndRate!.billingType, taskAndRate.rate),
-                    HMBText(taskItem.dimensions),
-                    if (taskItem.completed)
-                      const Text(
-                        'Completed',
-                        style: TextStyle(color: Colors.green),
-                      )
-                    else
-                      IconButton(
-                          icon: const Icon(Icons.check, color: Colors.green),
-                          onPressed: () async => markAsCompleted(
-                              TaskItemContext(widget.task!, taskItem,
-                                  taskAndRate.billingType),
-                              context)),
-                  ]);
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ..._buildFieldsBasedOnItemType(
+                    taskItem,
+                    taskAndRate!.billingType,
+                    taskAndRate.rate,
+                  ),
+                  HMBText(taskItem.dimensions),
+                  if (taskItem.completed)
+                    const Text(
+                      'Completed',
+                      style: TextStyle(color: Colors.green),
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.check, color: Colors.green),
+                      onPressed:
+                          () async => markAsCompleted(
+                            TaskItemContext(
+                              widget.task!,
+                              taskItem,
+                              taskAndRate.billingType,
+                            ),
+                            context,
+                          ),
+                    ),
+                ],
+              );
             },
-            filterBar: (entity) => Row(
+            filterBar:
+                (entity) => Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     HMBToggle(
                       label: 'Show Completed',
-                      tooltip: showCompleted
-                          ? 'Show Only Non-Completed Tasks'
-                          : 'Show Completed Tasks',
-                      initialValue: June.getState(ShowCompltedItems.new)
-                          .showCompletedTasks,
+                      tooltip:
+                          showCompleted
+                              ? 'Show Only Non-Completed Tasks'
+                              : 'Show Completed Tasks',
+                      initialValue:
+                          June.getState(
+                            ShowCompltedItems.new,
+                          ).showCompletedTasks,
                       onToggled: (value) {
                         setState(() {
                           June.getState(ShowCompltedItems.new).toggle();
@@ -120,7 +135,9 @@ class _TaskItemListScreenState<P extends Entity<P>>
                       },
                     ),
                   ],
-                )));
+                ),
+          ),
+    );
   }
 
   Future<List<TaskItem>> _fetchItems(bool showCompleted) async {
@@ -132,7 +149,10 @@ class _TaskItemListScreenState<P extends Entity<P>>
   }
 
   List<Widget> _buildFieldsBasedOnItemType(
-      TaskItem taskItem, BillingType billingType, Money hourlyRate) {
+    TaskItem taskItem,
+    BillingType billingType,
+    Money hourlyRate,
+  ) {
     switch (taskItem.itemTypeId) {
       case 5: // Labour
         return _buildLabourFields(taskItem, billingType, hourlyRate);
@@ -148,34 +168,50 @@ class _TaskItemListScreenState<P extends Entity<P>>
   }
 
   List<Widget> _buildLabourFields(
-          TaskItem checkListItem, BillingType billingType, Money hourlyRate) =>
-      [
-        if (checkListItem.labourEntryMode == LabourEntryMode.hours)
-          HMBText('Est: Hours: ${checkListItem.estimatedLabourHours} '
-              'Cost: ${checkListItem.estimatedLabourCost} '),
-        HMBText('Charge: ${checkListItem.getCharge(billingType, hourlyRate)} '
-            'Margin (%): ${checkListItem.margin}'),
-      ];
+    TaskItem checkListItem,
+    BillingType billingType,
+    Money hourlyRate,
+  ) => [
+    if (checkListItem.labourEntryMode == LabourEntryMode.hours)
+      HMBText(
+        'Est: Hours: ${checkListItem.estimatedLabourHours} '
+        'Cost: ${checkListItem.estimatedLabourCost} ',
+      ),
+    HMBText(
+      'Charge: ${checkListItem.getCharge(billingType, hourlyRate)} '
+      'Margin (%): ${checkListItem.margin}',
+    ),
+  ];
 
   List<Widget> _buildBuyFields(
-          TaskItem checkListItem, BillingType billingType, Money hourlyRate) =>
-      [
-        HMBText('Est: Unit Cost: ${checkListItem.estimatedMaterialUnitCost} '
-            'Qty: ${checkListItem.estimatedMaterialQuantity} '),
-        HMBText('Margin (%): ${checkListItem.margin} '
-            'Charge: ${checkListItem.getCharge(billingType, hourlyRate)}'),
-      ];
+    TaskItem checkListItem,
+    BillingType billingType,
+    Money hourlyRate,
+  ) => [
+    HMBText(
+      'Est: Unit Cost: ${checkListItem.estimatedMaterialUnitCost} '
+      'Qty: ${checkListItem.estimatedMaterialQuantity} ',
+    ),
+    HMBText(
+      'Margin (%): ${checkListItem.margin} '
+      'Charge: ${checkListItem.getCharge(billingType, hourlyRate)}',
+    ),
+  ];
 
   List<Widget> _buildStockFields(
-          TaskItem checkListItem, BillingType billingType, Money hourlyRate) =>
-      [
-        HMBText(
-          'Unit Charge: ${checkListItem.estimatedMaterialUnitCost} '
-          'Qty: ${checkListItem.estimatedMaterialQuantity} ',
-        ),
-        HMBText('Margin (%): ${checkListItem.margin} '
-            'Charge: ${checkListItem.getCharge(billingType, hourlyRate)}'),
-      ];
+    TaskItem checkListItem,
+    BillingType billingType,
+    Money hourlyRate,
+  ) => [
+    HMBText(
+      'Unit Charge: ${checkListItem.estimatedMaterialUnitCost} '
+      'Qty: ${checkListItem.estimatedMaterialQuantity} ',
+    ),
+    HMBText(
+      'Margin (%): ${checkListItem.margin} '
+      'Charge: ${checkListItem.getCharge(billingType, hourlyRate)}',
+    ),
+  ];
 }
 
 class ShowCompltedItems extends JuneState {

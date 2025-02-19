@@ -11,25 +11,26 @@ class ManufacturerListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => EntityListScreen<Manufacturer>(
-      pageTitle: 'Manufacturers',
-      dao: DaoManufacturer(),
-      title: (entity) => HMBTextHeadline2(entity.name),
-      fetchList: (filter) async => DaoManufacturer().getByFilter(filter),
-      onEdit: (manufacturer) =>
-          ManufacturerEditScreen(manufacturer: manufacturer),
-      details: (entity) {
-        final manufacturer = entity;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            HMBTextBody(manufacturer.description ?? ''),
-            if (manufacturer.contactNumber != null)
-              HMBTextBody('Contact: ${manufacturer.contactNumber}'),
-            if (manufacturer.email != null)
-              HMBTextBody('Email: ${manufacturer.email}'),
-            if (manufacturer.address != null)
-              HMBTextBody('Address: ${manufacturer.address}'),
-          ],
-        );
-      });
+    pageTitle: 'Manufacturers',
+    dao: DaoManufacturer(),
+    title: (entity) => HMBTextHeadline2(entity.name),
+    fetchList: (filter) async => DaoManufacturer().getByFilter(filter),
+    onEdit:
+        (manufacturer) => ManufacturerEditScreen(manufacturer: manufacturer),
+    details: (entity) {
+      final manufacturer = entity;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HMBTextBody(manufacturer.description ?? ''),
+          if (manufacturer.contactNumber != null)
+            HMBTextBody('Contact: ${manufacturer.contactNumber}'),
+          if (manufacturer.email != null)
+            HMBTextBody('Email: ${manufacturer.email}'),
+          if (manufacturer.address != null)
+            HMBTextBody('Address: ${manufacturer.address}'),
+        ],
+      );
+    },
+  );
 }

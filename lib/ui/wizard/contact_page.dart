@@ -10,8 +10,11 @@ class ContactWizardStep extends WizardStep {
   final stateKey = GlobalKey<SystemContactInformationScreenState>();
 
   @override
-  Future<void> onNext(BuildContext context, WizardStepTarget intendedStep,
-      {required bool userOriginated}) async {
+  Future<void> onNext(
+    BuildContext context,
+    WizardStepTarget intendedStep, {
+    required bool userOriginated,
+  }) async {
     if (await stateKey.currentState!.save(close: false)) {
       intendedStep.confirm();
     } else {
@@ -20,5 +23,6 @@ class ContactWizardStep extends WizardStep {
   }
 
   @override
-  Widget build(BuildContext context) => SystemContactInformationScreen(key: stateKey, showButtons: false);
+  Widget build(BuildContext context) =>
+      SystemContactInformationScreen(key: stateKey, showButtons: false);
 }

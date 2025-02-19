@@ -31,29 +31,42 @@ class PhotoGallery extends StatelessWidget {
   }
 
   PhotoGallery.forTask({required Task task, super.key}) {
-    _fetchPhotos = () async =>
-        [...await DaoPhoto.getMetaByParent(task.id, ParentType.task)];
+    _fetchPhotos =
+        () async => [
+          ...await DaoPhoto.getMetaByParent(task.id, ParentType.task),
+        ];
   }
 
   /// the [filter] allows you to control what photos are returned.
   /// By default, if no [filter] is passed, then all photos for the tool
   /// are returned.
-  PhotoGallery.forTool(
-      {required Tool tool, super.key, bool Function(Photo photo)? filter}) {
-    _fetchPhotos = () async =>
-        (await DaoPhoto().getByParent(tool.id, ParentType.tool))
-            .where((photo) => filter?.call(photo) ?? true)
-            .map((photo) => PhotoMeta(
-                photo: photo, title: tool.name, comment: tool.description))
-            .toList();
+  PhotoGallery.forTool({
+    required Tool tool,
+    super.key,
+    bool Function(Photo photo)? filter,
+  }) {
+    _fetchPhotos =
+        () async =>
+            (await DaoPhoto().getByParent(tool.id, ParentType.tool))
+                .where((photo) => filter?.call(photo) ?? true)
+                .map(
+                  (photo) => PhotoMeta(
+                    photo: photo,
+                    title: tool.name,
+                    comment: tool.description,
+                  ),
+                )
+                .toList();
   }
   final computeManager = ComputeManager();
 
   late final Future<List<PhotoMeta>> Function() _fetchPhotos;
 
   @override
-  Widget build(BuildContext context) => JuneBuilder(PhotoGalleryState.new,
-      builder: (context) => FutureBuilderEx<List<PhotoMeta>>(
+  Widget build(BuildContext context) => JuneBuilder(
+    PhotoGalleryState.new,
+    builder:
+        (context) => FutureBuilderEx<List<PhotoMeta>>(
           waitingBuilder: (context) => const HMBPlaceHolder(height: 100),
           // ignore: discarded_futures
           future: _fetchPhotos(),
@@ -63,109 +76,118 @@ class PhotoGallery extends StatelessWidget {
             } else {
               return buildGallery(photos, context);
             }
-          }));
+          },
+        ),
+  );
 
   Widget buildGallery(List<PhotoMeta> photos, BuildContext context) => SizedBox(
-        height: 100,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: photos
-              .map((photoMeta) => Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: GestureDetector(
-                      onTap: () async {
-                        if (photoMeta.exists()) {
-                          if (context.mounted) {
-                            final index = photos.indexOf(photoMeta);
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(
-                                builder: (context) => PhotoCarousel(
-                                  photos: photos,
-                                  initialIndex: index,
-                                ),
-                              ),
-                            );
-                          }
+    height: 100,
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      children:
+          photos
+              .map(
+                (photoMeta) => Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    onTap: () async {
+                      if (photoMeta.exists()) {
+                        if (context.mounted) {
+                          final index = photos.indexOf(photoMeta);
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder:
+                                  (context) => PhotoCarousel(
+                                    photos: photos,
+                                    initialIndex: index,
+                                  ),
+                            ),
+                          );
                         }
-                      },
+                      }
+                    },
 
-                      // onTap: () async {
-                      //   if (photoMeta.exists()) {
-                      //     // Fetch the task for this photo to get
-                      //     // the task name.
-                      //     if (context.mounted) {
-                      //       await FullScreenPhotoViewer.show(
-                      //           context: context,
-                      //           imagePath: photoMeta.absolutePathTo,
-                      //           title: photoMeta.title,
-                      //           comment: photoMeta.comment);
-                      //     }
-                      //   }
-                      // },
-                      child: FutureBuilderEx<String?>(
-                        // ignore: discarded_futures
-                        future: _getThumbnailPath(computeManager, photoMeta),
+                    // onTap: () async {
+                    //   if (photoMeta.exists()) {
+                    //     // Fetch the task for this photo to get
+                    //     // the task name.
+                    //     if (context.mounted) {
+                    //       await FullScreenPhotoViewer.show(
+                    //           context: context,
+                    //           imagePath: photoMeta.absolutePathTo,
+                    //           title: photoMeta.title,
+                    //           comment: photoMeta.comment);
+                    //     }
+                    //   }
+                    // },
+                    child: FutureBuilderEx<String?>(
+                      // ignore: discarded_futures
+                      future: _getThumbnailPath(computeManager, photoMeta),
 
-                        waitingBuilder: (context) => Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey,
-                          child: const Icon(
-                            Icons.image,
-                            color: Colors.white,
-                            size: 40,
+                      waitingBuilder:
+                          (context) => Container(
+                            width: 80,
+                            height: 80,
+                            color: Colors.grey,
+                            child: const Icon(
+                              Icons.image,
+                              color: Colors.white,
+                              size: 40,
+                            ),
                           ),
-                        ),
-                        errorBuilder: (context, error) => Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey,
-                          child: const Icon(
-                            Icons.error,
-                            color: Colors.white,
-                            size: 40,
+                      errorBuilder:
+                          (context, error) => Container(
+                            width: 80,
+                            height: 80,
+                            color: Colors.grey,
+                            child: const Icon(
+                              Icons.error,
+                              color: Colors.white,
+                              size: 40,
+                            ),
                           ),
-                        ),
 
-                        builder: (context, path) => Stack(
-                          children: [
-                            Image.file(
-                              File(path!),
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(
+                      builder:
+                          (context, path) => Stack(
+                            children: [
+                              Image.file(
+                                File(path!),
                                 width: 80,
                                 height: 80,
-                                color: Colors.grey,
-                                child: const Icon(
-                                  Icons.broken_image,
-                                  color: Colors.white,
-                                  size: 40,
+                                fit: BoxFit.cover,
+                                errorBuilder:
+                                    (context, error, stackTrace) => Container(
+                                      width: 80,
+                                      height: 80,
+                                      color: Colors.grey,
+                                      child: const Icon(
+                                        Icons.broken_image,
+                                        color: Colors.white,
+                                        size: 40,
+                                      ),
+                                    ),
+                              ),
+                              const Positioned(
+                                bottom: 8,
+                                right: 0,
+                                child: ColoredBox(
+                                  color: Colors.black45,
+                                  child: Icon(
+                                    Icons.zoom_out_map,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const Positioned(
-                              bottom: 8,
-                              right: 0,
-                              child: ColoredBox(
-                                color: Colors.black45,
-                                child: Icon(
-                                  Icons.zoom_out_map,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                            ],
+                          ),
                     ),
-                  ))
+                  ),
+                ),
+              )
               .toList(),
-        ),
-      );
+    ),
+  );
 
   static void notify() {
     June.getState(PhotoGalleryState.new).setState();
@@ -175,13 +197,17 @@ class PhotoGallery extends StatelessWidget {
 class PhotoGalleryState extends JuneState {}
 
 Future<String?> _getThumbnailPath(
-    ComputeManager computeManager, PhotoMeta meta) async {
+  ComputeManager computeManager,
+  PhotoMeta meta,
+) async {
   await meta.resolve();
 
   final absolutePath = meta.absolutePathTo;
   final thumbnailDir = await _getThumbnailDirectory();
-  final thumbnailPath =
-      p.join(thumbnailDir, '${p.basenameWithoutExtension(absolutePath)}.jpg');
+  final thumbnailPath = p.join(
+    thumbnailDir,
+    '${p.basenameWithoutExtension(absolutePath)}.jpg',
+  );
 
   if (!core.exists(absolutePath)) {
     throw InvalidPathException(absolutePath);
@@ -192,8 +218,10 @@ Future<String?> _getThumbnailPath(
   } else {
     // Generate thumbnail in a background isolate
 
-    return computeManager.enqueueCompute(_generateThumbnail,
-        ThumbnailPaths(source: absolutePath, target: thumbnailPath));
+    return computeManager.enqueueCompute(
+      _generateThumbnail,
+      ThumbnailPaths(source: absolutePath, target: thumbnailPath),
+    );
   }
 }
 

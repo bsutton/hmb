@@ -81,146 +81,159 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: HMBColours.background,
-        body: Surface(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    HMBSearchWithAdd(onSearch: (filter) async {
-                      this.filter = filter;
-                      await _loadTaskItems();
-                    }, onAdd: () async {
-                      await showAddItemDialog(context, AddType.packing);
-                      await _loadTaskItems();
-                    }),
-                    HMBDroplistMultiSelect<Job>(
-                      initialItems: () async => _selectedJobs,
-                      items: (filter) async => DaoJob().getActiveJobs(filter),
-                      format: (job) => job.summary,
-                      onChanged: (selectedJobs) async {
-                        _selectedJobs = selectedJobs;
-                        await _loadTaskItems();
-                      },
-                      title: 'Filter by Jobs',
-                      backgroundColor: SurfaceElevation.e4.color,
-                      required: false,
-                    ).help('Filter by Job', '''
+    backgroundColor: HMBColours.background,
+    body: Surface(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HMBSearchWithAdd(
+                  onSearch: (filter) async {
+                    this.filter = filter;
+                    await _loadTaskItems();
+                  },
+                  onAdd: () async {
+                    await showAddItemDialog(context, AddType.packing);
+                    await _loadTaskItems();
+                  },
+                ),
+                HMBDroplistMultiSelect<Job>(
+                  initialItems: () async => _selectedJobs,
+                  items: (filter) async => DaoJob().getActiveJobs(filter),
+                  format: (job) => job.summary,
+                  onChanged: (selectedJobs) async {
+                    _selectedJobs = selectedJobs;
+                    await _loadTaskItems();
+                  },
+                  title: 'Filter by Jobs',
+                  backgroundColor: SurfaceElevation.e4.color,
+                  required: false,
+                ).help(
+                  'Filter by Job',
+                  '''
 Allows you to filter the packing list to items from specific Jobs.
 
-If your Job isn't showing then you need to update it's status to an Active one such as 'Scheduled, In Progress...' '''),
-                  ],
+If your Job isn't showing then you need to update it's status to an Active one such as 'Scheduled, In Progress...' ''',
                 ),
-              ),
-              Expanded(
-                child: DeferredBuilder(
-                  this,
-                  builder: (context) {
-                    if (taskItemsContexts.isEmpty) {
-                      return _showEmpty();
-                    } else {
-                      return LayoutBuilder(
-                        builder: (context, constraints) {
-                          if (constraints.maxWidth < 900) {
-                            // Mobile layout
-                            return ListView.builder(
-                              padding: const EdgeInsets.all(8),
-                              itemCount: taskItemsContexts.length,
-                              itemBuilder: (context, index) {
-                                final item = taskItemsContexts[index];
-                                return _buildListItem(context, item);
-                              },
-                            );
-                          } else {
-                            // Desktop layout
-                            return GridView.builder(
-                              padding: const EdgeInsets.all(8),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
+              ],
+            ),
+          ),
+          Expanded(
+            child: DeferredBuilder(
+              this,
+              builder: (context) {
+                if (taskItemsContexts.isEmpty) {
+                  return _showEmpty();
+                } else {
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth < 900) {
+                        // Mobile layout
+                        return ListView.builder(
+                          padding: const EdgeInsets.all(8),
+                          itemCount: taskItemsContexts.length,
+                          itemBuilder: (context, index) {
+                            final item = taskItemsContexts[index];
+                            return _buildListItem(context, item);
+                          },
+                        );
+                      } else {
+                        // Desktop layout
+                        return GridView.builder(
+                          padding: const EdgeInsets.all(8),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
                                 childAspectRatio: 1.5,
                                 mainAxisSpacing:
                                     16, // Added vertical spacing between items
                                 crossAxisSpacing: 16,
                               ),
-                              itemCount: taskItemsContexts.length,
-                              itemBuilder: (context, index) {
-                                final itemContext = taskItemsContexts[index];
-                                return _buildListItem(context, itemContext);
-                              },
-                            );
-                          }
-                        },
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
+                          itemCount: taskItemsContexts.length,
+                          itemBuilder: (context, index) {
+                            final itemContext = taskItemsContexts[index];
+                            return _buildListItem(context, itemContext);
+                          },
+                        );
+                      }
+                    },
+                  );
+                }
+              },
+            ),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 
-  Center _showEmpty() => const Center(child: Text('''
+  Center _showEmpty() => const Center(
+    child: Text('''
 No Packing Items found 
 
 - A Job must be Active (Scheduled, In Progress...) for items to appear.
 Packing items are taken from Task items that are marked as "Materials - stock" or "Tools - own".
 
 
-'''));
+'''),
+  );
 
-  Widget _buildListItem(
-    BuildContext context,
-    TaskItemContext itemContext,
-  ) =>
+  Widget _buildListItem(BuildContext context, TaskItemContext itemContext) =>
       SurfaceCard(
         height: 250,
         onPressed: () async => markAsCompleted(itemContext, context),
         title: itemContext.taskItem.description,
-        body: Row(children: [
-          FutureBuilderEx(
-            // ignore: discarded_futures
-            future: JobDetail.get(itemContext.task),
-            builder: (context, jobDetail) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                HMBTextLine('Customer: ${jobDetail!.customer.name}'),
-                HMBTextLine('Job: ${jobDetail.job.summary}'),
-                HMBTextLine('Task: ${itemContext.task.name}'),
-                HMBTextLine('''Scheduled: ${jobDetail.dateOfNextActivity()}'''),
-                HMBTextLine('${itemContext.taskItem.dimension1} '
-                    'x ${itemContext.taskItem.dimension2} '
-                    'x ${itemContext.taskItem.dimension3} '
-                    '${itemContext.taskItem.measurementType}'),
-                if (itemContext.taskItem.completed)
-                  const Text(
-                    'Completed',
-                    style: TextStyle(color: Colors.green),
+        body: Row(
+          children: [
+            FutureBuilderEx(
+              // ignore: discarded_futures
+              future: JobDetail.get(itemContext.task),
+              builder:
+                  (context, jobDetail) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      HMBTextLine('Customer: ${jobDetail!.customer.name}'),
+                      HMBTextLine('Job: ${jobDetail.job.summary}'),
+                      HMBTextLine('Task: ${itemContext.task.name}'),
+                      HMBTextLine(
+                        '''Scheduled: ${jobDetail.dateOfNextActivity()}''',
+                      ),
+                      HMBTextLine(
+                        '${itemContext.taskItem.dimension1} '
+                        'x ${itemContext.taskItem.dimension2} '
+                        'x ${itemContext.taskItem.dimension3} '
+                        '${itemContext.taskItem.measurementType}',
+                      ),
+                      if (itemContext.taskItem.completed)
+                        const Text(
+                          'Completed',
+                          style: TextStyle(color: Colors.green),
+                        ),
+                    ],
                   ),
-              ],
             ),
-          ),
-          Expanded(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.shopping_cart, color: Colors.blue),
-                  onPressed: () async => _moveToShoppingList(itemContext),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () async => markAsCompleted(itemContext, context),
-                ),
-              ],
+            Expanded(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart, color: Colors.blue),
+                    onPressed: () async => _moveToShoppingList(itemContext),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.check, color: Colors.green),
+                    onPressed:
+                        () async => markAsCompleted(itemContext, context),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
       );
 
   Future<void> _moveToShoppingList(TaskItemContext itemContext) async {
@@ -241,23 +254,24 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Move to Shopping List'),
-        content: Text(
-          'Are you sure you want to move "${itemContext.taskItem.description}" '
-          'to the shopping list?',
-        ),
-        actions: [
-          HMBButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            label: 'Cancel',
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Move to Shopping List'),
+            content: Text(
+              'Are you sure you want to move "${itemContext.taskItem.description}" '
+              'to the shopping list?',
+            ),
+            actions: [
+              HMBButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                label: 'Cancel',
+              ),
+              HMBButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                label: 'Confirm',
+              ),
+            ],
           ),
-          HMBButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            label: 'Confirm',
-          ),
-        ],
-      ),
     );
 
     // If the user cancels, do nothing

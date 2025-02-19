@@ -33,52 +33,61 @@ class CheckListItem extends Entity<CheckListItem> {
     this.actualMaterialUnitCost,
     this.actualMaterialQuantity,
     this.actualCost,
-  })  : _charge = charge,
-        super();
+  }) : _charge = charge,
+       super();
 
   factory CheckListItem.fromMap(Map<String, dynamic> map) => CheckListItem(
-        id: map['id'] as int,
-        checkListId: map['check_list_id'] as int,
-        description: map['description'] as String,
-        itemTypeId: map['item_type_id'] as int,
-        estimatedMaterialUnitCost:
-            MoneyEx.fromInt(map['estimated_material_unit_cost'] as int?),
-        estimatedMaterialQuantity: Fixed.fromInt(
-            map['estimated_material_quantity'] as int? ?? 0,
-            scale: 3),
-        estimatedLabourHours:
-            Fixed.fromInt(map['estimated_labour_hours'] as int? ?? 0, scale: 3),
-        estimatedLabourCost:
-            MoneyEx.fromInt(map['estimated_labour_cost'] as int? ?? 0),
-        charge: MoneyEx.moneyOrNull(map['charge'] as int?),
-        margin:
-            Percentage.fromInt(map['margin'] as int? ?? 0, decimalDigits: 3),
-        completed: map['completed'] == 1,
-        billed: map['billed'] == 1,
-        invoiceLineId: map['invoice_line_id'] as int?,
-        measurementType: MeasurementType.fromName(
-                map['measurement_type'] as String? ??
-                    MeasurementType.defaultMeasurementType.name) ??
-            MeasurementType.defaultMeasurementType,
-        dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
-        dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
-        dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
-        units: Units.fromName(
-                map['units'] as String? ?? Units.defaultUnits.name) ??
-            Units.defaultUnits,
-        url: map['url'] as String? ?? '',
-        supplierId: map['supplier_id'] as int?,
-        labourEntryMode:
-            LabourEntryMode.fromString(map['labour_entry_mode'] as String),
-        createdDate: DateTime.parse(map['created_date'] as String),
-        modifiedDate: DateTime.parse(map['modified_date'] as String),
-        actualMaterialUnitCost:
-            MoneyEx.fromInt(map['actual_material_unit_cost'] as int? ?? 0),
-        actualMaterialQuantity: Fixed.fromInt(
-            map['actual_material_quantity'] as int? ?? 0,
-            scale: 3),
-        actualCost: MoneyEx.fromInt(map['actual_cost'] as int? ?? 0),
-      );
+    id: map['id'] as int,
+    checkListId: map['check_list_id'] as int,
+    description: map['description'] as String,
+    itemTypeId: map['item_type_id'] as int,
+    estimatedMaterialUnitCost: MoneyEx.fromInt(
+      map['estimated_material_unit_cost'] as int?,
+    ),
+    estimatedMaterialQuantity: Fixed.fromInt(
+      map['estimated_material_quantity'] as int? ?? 0,
+      scale: 3,
+    ),
+    estimatedLabourHours: Fixed.fromInt(
+      map['estimated_labour_hours'] as int? ?? 0,
+      scale: 3,
+    ),
+    estimatedLabourCost: MoneyEx.fromInt(
+      map['estimated_labour_cost'] as int? ?? 0,
+    ),
+    charge: MoneyEx.moneyOrNull(map['charge'] as int?),
+    margin: Percentage.fromInt(map['margin'] as int? ?? 0, decimalDigits: 3),
+    completed: map['completed'] == 1,
+    billed: map['billed'] == 1,
+    invoiceLineId: map['invoice_line_id'] as int?,
+    measurementType:
+        MeasurementType.fromName(
+          map['measurement_type'] as String? ??
+              MeasurementType.defaultMeasurementType.name,
+        ) ??
+        MeasurementType.defaultMeasurementType,
+    dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
+    dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
+    dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
+    units:
+        Units.fromName(map['units'] as String? ?? Units.defaultUnits.name) ??
+        Units.defaultUnits,
+    url: map['url'] as String? ?? '',
+    supplierId: map['supplier_id'] as int?,
+    labourEntryMode: LabourEntryMode.fromString(
+      map['labour_entry_mode'] as String,
+    ),
+    createdDate: DateTime.parse(map['created_date'] as String),
+    modifiedDate: DateTime.parse(map['modified_date'] as String),
+    actualMaterialUnitCost: MoneyEx.fromInt(
+      map['actual_material_unit_cost'] as int? ?? 0,
+    ),
+    actualMaterialQuantity: Fixed.fromInt(
+      map['actual_material_quantity'] as int? ?? 0,
+      scale: 3,
+    ),
+    actualCost: MoneyEx.fromInt(map['actual_cost'] as int? ?? 0),
+  );
 
   CheckListItem.forInsert({
     required this.checkListId,
@@ -104,36 +113,36 @@ class CheckListItem extends Entity<CheckListItem> {
     this.actualMaterialUnitCost,
     this.actualMaterialQuantity,
     this.actualCost,
-  })  : _charge = charge,
-        super.forInsert();
+  }) : _charge = charge,
+       super.forInsert();
 
-  CheckListItem.forUpdate(
-      {required super.entity,
-      required this.checkListId,
-      required this.description,
-      required this.itemTypeId,
-      required this.estimatedMaterialUnitCost,
-      required this.estimatedLabourHours,
-      required this.estimatedMaterialQuantity,
-      required this.estimatedLabourCost,
-      required this.margin,
-      required Money? charge,
-      required this.completed,
-      required this.billed,
-      required this.measurementType,
-      required this.dimension1,
-      required this.dimension2,
-      required this.dimension3,
-      required this.units,
-      required this.url,
-      required this.labourEntryMode,
-      this.invoiceLineId,
-      this.supplierId,
-      this.actualMaterialUnitCost,
-      this.actualMaterialQuantity,
-      this.actualCost})
-      : _charge = charge,
-        super.forUpdate();
+  CheckListItem.forUpdate({
+    required super.entity,
+    required this.checkListId,
+    required this.description,
+    required this.itemTypeId,
+    required this.estimatedMaterialUnitCost,
+    required this.estimatedLabourHours,
+    required this.estimatedMaterialQuantity,
+    required this.estimatedLabourCost,
+    required this.margin,
+    required Money? charge,
+    required this.completed,
+    required this.billed,
+    required this.measurementType,
+    required this.dimension1,
+    required this.dimension2,
+    required this.dimension3,
+    required this.units,
+    required this.url,
+    required this.labourEntryMode,
+    this.invoiceLineId,
+    this.supplierId,
+    this.actualMaterialUnitCost,
+    this.actualMaterialQuantity,
+    this.actualCost,
+  }) : _charge = charge,
+       super.forUpdate();
 
   LabourEntryMode labourEntryMode;
 
@@ -189,8 +198,9 @@ class CheckListItem extends Entity<CheckListItem> {
       case TaskItemTypeEnum.materialsStock:
       case TaskItemTypeEnum.toolsBuy:
       case TaskItemTypeEnum.toolsOwn:
-        return calcMaterialCost(billingType)
-            .multiplyByFixed(Fixed.one + margin);
+        return calcMaterialCost(
+          billingType,
+        ).multiplyByFixed(Fixed.one + margin);
       case TaskItemTypeEnum.labour:
         return calcLabourCost(hourlyRate).multiplyByFixed(Fixed.one + margin);
     }
@@ -206,8 +216,9 @@ class CheckListItem extends Entity<CheckListItem> {
   /// the actual cost.
   Money calcMaterialCost(BillingType billingType) {
     if (billingType == BillingType.fixedPrice) {
-      return (estimatedMaterialUnitCost ?? MoneyEx.zero)
-          .multiplyByFixed(estimatedMaterialQuantity ?? Fixed.one);
+      return (estimatedMaterialUnitCost ?? MoneyEx.zero).multiplyByFixed(
+        estimatedMaterialQuantity ?? Fixed.one,
+      );
     } else {
       final cost =
           actualMaterialUnitCost ?? estimatedMaterialUnitCost ?? MoneyEx.zero;
@@ -242,8 +253,9 @@ class CheckListItem extends Entity<CheckListItem> {
 
   bool get hasCost =>
       estimatedMaterialUnitCost != null &&
-      estimatedMaterialUnitCost!
-              .multiplyByFixed(estimatedMaterialQuantity ?? Fixed.one) >
+      estimatedMaterialUnitCost!.multiplyByFixed(
+            estimatedMaterialQuantity ?? Fixed.one,
+          ) >
           MoneyEx.zero;
 
   String get dimensions {
@@ -258,44 +270,42 @@ class CheckListItem extends Entity<CheckListItem> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'check_list_id': checkListId,
-        'description': description,
-        'item_type_id': itemTypeId,
-        'estimated_material_unit_cost': estimatedMaterialUnitCost
+    'id': id,
+    'check_list_id': checkListId,
+    'description': description,
+    'item_type_id': itemTypeId,
+    'estimated_material_unit_cost':
+        estimatedMaterialUnitCost
             ?.copyWith(decimalDigits: 2)
             .minorUnits
             .toInt(),
-        'estimated_material_quantity':
-            estimatedMaterialQuantity?.copyWith(scale: 3).minorUnits.toInt(),
-        'estimated_labour_hours':
-            estimatedLabourHours?.copyWith(scale: 3).minorUnits.toInt(),
-        'estimated_labour_cost':
-            estimatedLabourCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
-        'margin': margin.copyWith(scale: 3).minorUnits.toInt(),
-        'charge': _charge?.copyWith(decimalDigits: 2).minorUnits.toInt(),
-        'labour_entry_mode': labourEntryMode.toSqlString(),
-        'completed': completed ? 1 : 0,
-        'billed': billed ? 1 : 0,
-        'invoice_line_id': invoiceLineId,
-        'measurement_type': measurementType.name,
-        'dimension1': dimension1.copyWith(scale: 3).minorUnits.toInt(),
-        'dimension2': dimension2.copyWith(scale: 3).minorUnits.toInt(),
-        'dimension3': dimension3.copyWith(scale: 3).minorUnits.toInt(),
-        'units': units.name,
-        'url': url,
-        'supplier_id': supplierId,
-        'actual_material_unit_cost': actualMaterialUnitCost
-            ?.copyWith(decimalDigits: 2)
-            .minorUnits
-            .toInt(),
-        'actual_material_quantity':
-            actualMaterialQuantity?.copyWith(scale: 3).minorUnits.toInt(),
-        'actual_cost':
-            actualCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
-        'created_date': createdDate.toIso8601String(),
-        'modified_date': modifiedDate.toIso8601String(),
-      };
+    'estimated_material_quantity':
+        estimatedMaterialQuantity?.copyWith(scale: 3).minorUnits.toInt(),
+    'estimated_labour_hours':
+        estimatedLabourHours?.copyWith(scale: 3).minorUnits.toInt(),
+    'estimated_labour_cost':
+        estimatedLabourCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'margin': margin.copyWith(scale: 3).minorUnits.toInt(),
+    'charge': _charge?.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'labour_entry_mode': labourEntryMode.toSqlString(),
+    'completed': completed ? 1 : 0,
+    'billed': billed ? 1 : 0,
+    'invoice_line_id': invoiceLineId,
+    'measurement_type': measurementType.name,
+    'dimension1': dimension1.copyWith(scale: 3).minorUnits.toInt(),
+    'dimension2': dimension2.copyWith(scale: 3).minorUnits.toInt(),
+    'dimension3': dimension3.copyWith(scale: 3).minorUnits.toInt(),
+    'units': units.name,
+    'url': url,
+    'supplier_id': supplierId,
+    'actual_material_unit_cost':
+        actualMaterialUnitCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'actual_material_quantity':
+        actualMaterialQuantity?.copyWith(scale: 3).minorUnits.toInt(),
+    'actual_cost': actualCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'created_date': createdDate.toIso8601String(),
+    'modified_date': modifiedDate.toIso8601String(),
+  };
   CheckListItem copyWith({
     int? id,
     int? checkListId,
@@ -322,38 +332,37 @@ class CheckListItem extends Entity<CheckListItem> {
     Money? actualMaterialUnitCost,
     Fixed? actualMaterialQuantity,
     Money? actualCost,
-  }) =>
-      CheckListItem(
-        id: id ?? this.id,
-        checkListId: checkListId ?? this.checkListId,
-        description: description ?? this.description,
-        itemTypeId: itemTypeId ?? this.itemTypeId,
-        estimatedMaterialUnitCost:
-            estimatedMaterialCost ?? estimatedMaterialUnitCost,
-        estimatedLabourHours: estimatedLabour ?? estimatedLabourHours,
-        estimatedMaterialQuantity:
-            estimatedMaterialQuantity ?? this.estimatedMaterialQuantity,
-        estimatedLabourCost: estimatedLabourCost ?? this.estimatedLabourCost,
-        charge: charge ?? _charge,
-        margin: margin ?? this.margin,
-        completed: completed ?? this.completed,
-        billed: billed ?? this.billed,
-        invoiceLineId: invoiceLineId ?? this.invoiceLineId,
-        createdDate: createdDate ?? this.createdDate,
-        modifiedDate: modifiedDate ?? this.modifiedDate,
-        measurementType: dimensionType ?? measurementType,
-        dimension1: dimension1 ?? this.dimension1,
-        dimension2: dimension2 ?? this.dimension2,
-        dimension3: dimension3 ?? this.dimension3,
-        units: units ?? this.units,
-        labourEntryMode: labourEntryMode ?? this.labourEntryMode,
-        url: url ?? this.url,
-        actualMaterialUnitCost:
-            actualMaterialUnitCost ?? this.actualMaterialUnitCost,
-        actualMaterialQuantity:
-            actualMaterialQuantity ?? this.actualMaterialQuantity,
-        actualCost: actualCost ?? this.actualCost,
-      );
+  }) => CheckListItem(
+    id: id ?? this.id,
+    checkListId: checkListId ?? this.checkListId,
+    description: description ?? this.description,
+    itemTypeId: itemTypeId ?? this.itemTypeId,
+    estimatedMaterialUnitCost:
+        estimatedMaterialCost ?? estimatedMaterialUnitCost,
+    estimatedLabourHours: estimatedLabour ?? estimatedLabourHours,
+    estimatedMaterialQuantity:
+        estimatedMaterialQuantity ?? this.estimatedMaterialQuantity,
+    estimatedLabourCost: estimatedLabourCost ?? this.estimatedLabourCost,
+    charge: charge ?? _charge,
+    margin: margin ?? this.margin,
+    completed: completed ?? this.completed,
+    billed: billed ?? this.billed,
+    invoiceLineId: invoiceLineId ?? this.invoiceLineId,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+    measurementType: dimensionType ?? measurementType,
+    dimension1: dimension1 ?? this.dimension1,
+    dimension2: dimension2 ?? this.dimension2,
+    dimension3: dimension3 ?? this.dimension3,
+    units: units ?? this.units,
+    labourEntryMode: labourEntryMode ?? this.labourEntryMode,
+    url: url ?? this.url,
+    actualMaterialUnitCost:
+        actualMaterialUnitCost ?? this.actualMaterialUnitCost,
+    actualMaterialQuantity:
+        actualMaterialQuantity ?? this.actualMaterialQuantity,
+    actualCost: actualCost ?? this.actualCost,
+  );
 
   @override
   String toString() =>

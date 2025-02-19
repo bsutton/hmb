@@ -59,13 +59,13 @@ class TaskStatus extends Entity<TaskStatus> {
   }) : super.forUpdate();
 
   factory TaskStatus.fromMap(Map<String, dynamic> map) => TaskStatus(
-        id: map['id'] as int,
-        name: map['name'] as String,
-        description: map['description'] as String,
-        colorCode: map['color_code'] as String,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-      );
+    id: map['id'] as int,
+    name: map['name'] as String,
+    description: map['description'] as String,
+    colorCode: map['color_code'] as String,
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+  );
 
   String name;
   String description;
@@ -73,13 +73,13 @@ class TaskStatus extends Entity<TaskStatus> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'color_code': colorCode,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'color_code': colorCode,
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+  };
 
   bool isComplete() {
     switch (name) {

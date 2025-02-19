@@ -13,16 +13,22 @@ class DaoInvoiceLineGroup extends Dao<InvoiceLineGroup> {
       InvoiceLineGroup.fromMap(map);
 
   @override
-  Future<List<InvoiceLineGroup>> getAll(
-      {String? orderByClause, Transaction? transaction}) async {
+  Future<List<InvoiceLineGroup>> getAll({
+    String? orderByClause,
+    Transaction? transaction,
+  }) async {
     final db = withinTransaction(transaction);
-    final List<Map<String, dynamic>> maps =
-        await db.query(tableName, orderBy: 'modified_date desc');
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableName,
+      orderBy: 'modified_date desc',
+    );
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
-  Future<List<InvoiceLineGroup>> getByInvoiceId(int invoiceId,
-      [Transaction? transaction]) async {
+  Future<List<InvoiceLineGroup>> getByInvoiceId(
+    int invoiceId, [
+    Transaction? transaction,
+  ]) async {
     final db = withinTransaction(transaction);
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
@@ -35,8 +41,10 @@ class DaoInvoiceLineGroup extends Dao<InvoiceLineGroup> {
   @override
   JuneStateCreator get juneRefresher => InvoiceLineGroupState.new;
 
-  Future<void> deleteByInvoiceId(int invoiceId,
-      [Transaction? transaction]) async {
+  Future<void> deleteByInvoiceId(
+    int invoiceId, [
+    Transaction? transaction,
+  ]) async {
     final db = withinTransaction(transaction);
 
     await db.delete(tableName, where: 'invoice_id =?', whereArgs: [invoiceId]);

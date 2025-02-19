@@ -16,24 +16,25 @@ class DelaySource extends Source<String> {
     '45 minutes',
     '1 hour',
     '1.5 hours',
-    '2 hours'
+    '2 hours',
   ];
 
   /// Delay Period placeholder drop list
   @override
   Widget widget() => DropdownButtonFormField<String>(
-        decoration: const InputDecoration(labelText: 'Delay Period'),
-        value: periods[0],
-        items: periods
-            .map((period) => DropdownMenuItem<String>(
-                  value: period,
-                  child: Text(period),
-                ))
+    decoration: const InputDecoration(labelText: 'Delay Period'),
+    value: periods[0],
+    items:
+        periods
+            .map(
+              (period) =>
+                  DropdownMenuItem<String>(value: period, child: Text(period)),
+            )
             .toList(),
-        onChanged: (newValue) {
-          delay = newValue ?? '';
-        },
-      );
+    onChanged: (newValue) {
+      delay = newValue ?? '';
+    },
+  );
 
   @override
   String? get value => delay;

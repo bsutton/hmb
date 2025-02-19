@@ -35,15 +35,15 @@ class Customer extends Entity<Customer> {
   }) : super.forUpdate();
 
   factory Customer.fromMap(Map<String, dynamic> map) => Customer(
-        id: map['id'] as int,
-        name: map['name'] as String,
-        description: map['description'] as String?,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-        disbarred: map['disbarred'] as int == 1,
-        customerType: CustomerType.values[map['customerType'] as int],
-        hourlyRate: MoneyEx.fromInt(map['default_hourly_rate'] as int?),
-      );
+    id: map['id'] as int,
+    name: map['name'] as String,
+    description: map['description'] as String?,
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+    disbarred: map['disbarred'] as int == 1,
+    customerType: CustomerType.values[map['customerType'] as int],
+    hourlyRate: MoneyEx.fromInt(map['default_hourly_rate'] as int?),
+  );
 
   String name;
   String? description;
@@ -53,13 +53,13 @@ class Customer extends Entity<Customer> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-        'disbarred': disbarred ? 1 : 0,
-        'customerType': customerType.index,
-        'default_hourly_rate': hourlyRate.minorUnits.toInt(),
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+    'disbarred': disbarred ? 1 : 0,
+    'customerType': customerType.index,
+    'default_hourly_rate': hourlyRate.minorUnits.toInt(),
+  };
 }

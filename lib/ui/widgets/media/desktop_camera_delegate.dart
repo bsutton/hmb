@@ -15,9 +15,10 @@ class DesktopCameraDelegate extends ImagePickerCameraDelegate {
   StreamSubscription<CameraErrorEvent>? _errorStreamSubscription;
 
   @override
-  Future<XFile?> takePhoto(
-      {ImagePickerCameraDelegateOptions options =
-          const ImagePickerCameraDelegateOptions()}) async {
+  Future<XFile?> takePhoto({
+    ImagePickerCameraDelegateOptions options =
+        const ImagePickerCameraDelegateOptions(),
+  }) async {
     if (_isTakingPhoto) {
       HMBToast.error('Camera is currently busy.');
       return null;
@@ -78,11 +79,12 @@ class DesktopCameraDelegate extends ImagePickerCameraDelegate {
     // Cancel any previous subscription to avoid duplicate listeners
     unawaited(_errorStreamSubscription?.cancel());
 
-    _errorStreamSubscription =
-        CameraPlatform.instance.onCameraError(_cameraId).listen((errorEvent) {
-      HMBToast.error('Camera error detected: ${errorEvent.description}');
-      unawaited(_resetCamera());
-    });
+    _errorStreamSubscription = CameraPlatform.instance
+        .onCameraError(_cameraId)
+        .listen((errorEvent) {
+          HMBToast.error('Camera error detected: ${errorEvent.description}');
+          unawaited(_resetCamera());
+        });
   }
 
   Future<void> _resetCamera() async {
@@ -102,9 +104,10 @@ class DesktopCameraDelegate extends ImagePickerCameraDelegate {
   }
 
   @override
-  Future<XFile?> takeVideo(
-      {ImagePickerCameraDelegateOptions options =
-          const ImagePickerCameraDelegateOptions()}) {
+  Future<XFile?> takeVideo({
+    ImagePickerCameraDelegateOptions options =
+        const ImagePickerCameraDelegateOptions(),
+  }) {
     throw UnimplementedError('Video capture is not yet supported on Windows.');
   }
 

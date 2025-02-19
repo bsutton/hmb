@@ -22,74 +22,83 @@ class HMBPhoneIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, // added line
-        mainAxisSize: MainAxisSize.min, // added line
-        children: [
-          IconButton(
-            iconSize: 22,
-            icon: const Icon(Icons.phone),
-            onPressed: () async => Strings.isEmpty(phoneNo)
-                ? null
-                : _showOptions(context, phoneNo),
-            color: Strings.isEmpty(phoneNo) ? Colors.grey : Colors.blue,
-            tooltip: 'Call or Text',
-          ),
-          IconButton(
-            iconSize: 22,
-            icon: const Icon(Icons.copy),
-            onPressed: () async => Strings.isEmpty(phoneNo)
-                ? null
-                : clipboardCopyTo(context, phoneNo),
-            color: Strings.isEmpty(phoneNo) ? Colors.grey : Colors.blue,
-            tooltip: 'Copy Phone No. to the Clipboard',
-          ),
-        ],
-      );
+    mainAxisAlignment: MainAxisAlignment.spaceBetween, // added line
+    mainAxisSize: MainAxisSize.min, // added line
+    children: [
+      IconButton(
+        iconSize: 22,
+        icon: const Icon(Icons.phone),
+        onPressed:
+            () async =>
+                Strings.isEmpty(phoneNo)
+                    ? null
+                    : _showOptions(context, phoneNo),
+        color: Strings.isEmpty(phoneNo) ? Colors.grey : Colors.blue,
+        tooltip: 'Call or Text',
+      ),
+      IconButton(
+        iconSize: 22,
+        icon: const Icon(Icons.copy),
+        onPressed:
+            () async =>
+                Strings.isEmpty(phoneNo)
+                    ? null
+                    : clipboardCopyTo(context, phoneNo),
+        color: Strings.isEmpty(phoneNo) ? Colors.grey : Colors.blue,
+        tooltip: 'Copy Phone No. to the Clipboard',
+      ),
+    ],
+  );
 
   Future<void> _showOptions(BuildContext context, String phoneNo) async {
     await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Contact Options'),
-        content:
-            const Text('Would you like to make a call or send a text message?'),
-        actions: <Widget>[
-          HMBButton(
-            label: 'Call',
-            onPressed: () {
-              Navigator.of(context).pop();
-              _call(context, phoneNo);
-            },
-          ),
-          HMBButton(
-            label: 'Text',
-            onPressed: () async {
-              // await _showTextInputDialog(context, phoneNo);
-              final template = await showMessageTemplateDialog(
-                context,
-                sourceContext: sourceContext,
-              );
-              if (context.mounted) {
-                if (template != null) {
-                  if (context.mounted) {
-                    await _sendText(
-                        context, phoneNo, template.getFormattedMessage());
-                  }
-                }
-                if (context.mounted) {
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Contact Options'),
+            content: const Text(
+              'Would you like to make a call or send a text message?',
+            ),
+            actions: <Widget>[
+              HMBButton(
+                label: 'Call',
+                onPressed: () {
                   Navigator.of(context).pop();
-                }
-              }
-            },
+                  _call(context, phoneNo);
+                },
+              ),
+              HMBButton(
+                label: 'Text',
+                onPressed: () async {
+                  // await _showTextInputDialog(context, phoneNo);
+                  final template = await showMessageTemplateDialog(
+                    context,
+                    sourceContext: sourceContext,
+                  );
+                  if (context.mounted) {
+                    if (template != null) {
+                      if (context.mounted) {
+                        await _sendText(
+                          context,
+                          phoneNo,
+                          template.getFormattedMessage(),
+                        );
+                      }
+                    }
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  }
+                },
+              ),
+              HMBButton(
+                label: 'Cancel',
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
           ),
-          HMBButton(
-            label: 'Cancel',
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      ),
     );
   }
 
@@ -114,11 +123,15 @@ class HMBPhoneIcon extends StatelessWidget {
   }
 
   Future<void> _sendText(
-      BuildContext context, String phoneNo, String messageText) async {
-    final smsLaunchUri =
-        Uri(scheme: 'sms', path: phoneNo, queryParameters: <String, String>{
-      'body': messageText,
-    });
+    BuildContext context,
+    String phoneNo,
+    String messageText,
+  ) async {
+    final smsLaunchUri = Uri(
+      scheme: 'sms',
+      path: phoneNo,
+      queryParameters: <String, String>{'body': messageText},
+    );
 
     await launchUrl(smsLaunchUri);
   }
@@ -159,7 +172,9 @@ class HMBPhoneIcon extends StatelessWidget {
   // }
 
   Future<void> _showTextInputDialog(
-      BuildContext context, String phoneNo) async {
+    BuildContext context,
+    String phoneNo,
+  ) async {
     final messageText = await showDialog<String>(
       context: context,
       builder: (context) {

@@ -34,16 +34,17 @@ class JobStatus extends Entity<JobStatus> {
   }) : super.forUpdate();
 
   factory JobStatus.fromMap(Map<String, dynamic> map) => JobStatus(
-        id: map['id'] as int,
-        name: map['name'] as String,
-        description: map['description'] as String,
-        colorCode: map['color_code'] as String,
-        hidden: (map['hidden'] as int?) ?? 0,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-        statusEnum: JobStatusEnumExtension.fromName(
-            map['status_enum'] as String? ?? ''),
-      );
+    id: map['id'] as int,
+    name: map['name'] as String,
+    description: map['description'] as String,
+    colorCode: map['color_code'] as String,
+    hidden: (map['hidden'] as int?) ?? 0,
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+    statusEnum: JobStatusEnumExtension.fromName(
+      map['status_enum'] as String? ?? '',
+    ),
+  );
 
   String name;
   String description;
@@ -53,15 +54,15 @@ class JobStatus extends Entity<JobStatus> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'color_code': colorCode,
-        'hidden': hidden,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-        'status_enum': statusEnum.name,
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'color_code': colorCode,
+    'hidden': hidden,
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+    'status_enum': statusEnum.name,
+  };
 
   Color getColour() => hexToColor(colorCode);
 

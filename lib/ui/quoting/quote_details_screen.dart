@@ -41,12 +41,11 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Quote Details'),
-        ),
-        body: DeferredBuilder(
-          this,
-          builder: (context) => SingleChildScrollView(
+    appBar: AppBar(title: const Text('Quote Details')),
+    body: DeferredBuilder(
+      this,
+      builder:
+          (context) => SingleChildScrollView(
             child: Surface(
               margin: const EdgeInsets.all(8),
               child: Column(
@@ -58,9 +57,13 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Quote #${_quote.id}',
-                            style: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text(
+                          'Quote #${_quote.id}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         Text('Issued: ${formatDate(_quote.createdDate)}'),
                         Text('Job ID: ${_quote.jobId}'),
                         Row(
@@ -73,7 +76,8 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                             if (_quote.state.name == 'approved' &&
                                 _quote.dateApproved != null)
                               Text(
-                                  'Approved: ${formatDate(_quote.dateApproved!)}'),
+                                'Approved: ${formatDate(_quote.dateApproved!)}',
+                              ),
                           ],
                         ),
                       ],
@@ -99,61 +103,74 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                                     displayGroupHeaders;
                                 var tempDisplayItems = displayItems;
                                 return StatefulBuilder(
-                                  builder: (context, setState) => AlertDialog(
-                                    title: const Text('Select Quote Options'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        CheckboxListTile(
-                                          title: const Text('Display Costs'),
-                                          value: tempDisplayCosts,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              tempDisplayCosts = value ?? true;
-                                            });
-                                          },
+                                  builder:
+                                      (context, setState) => AlertDialog(
+                                        title: const Text(
+                                          'Select Quote Options',
                                         ),
-                                        CheckboxListTile(
-                                          title: const Text(
-                                              'Display Group Headers'),
-                                          value: tempDisplayGroupHeaders,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              tempDisplayGroupHeaders =
-                                                  value ?? true;
-                                            });
-                                          },
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            CheckboxListTile(
+                                              title: const Text(
+                                                'Display Costs',
+                                              ),
+                                              value: tempDisplayCosts,
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  tempDisplayCosts =
+                                                      value ?? true;
+                                                });
+                                              },
+                                            ),
+                                            CheckboxListTile(
+                                              title: const Text(
+                                                'Display Group Headers',
+                                              ),
+                                              value: tempDisplayGroupHeaders,
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  tempDisplayGroupHeaders =
+                                                      value ?? true;
+                                                });
+                                              },
+                                            ),
+                                            CheckboxListTile(
+                                              title: const Text(
+                                                'Display Items',
+                                              ),
+                                              value: tempDisplayItems,
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  tempDisplayItems =
+                                                      value ?? true;
+                                                });
+                                              },
+                                            ),
+                                          ],
                                         ),
-                                        CheckboxListTile(
-                                          title: const Text('Display Items'),
-                                          value: tempDisplayItems,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              tempDisplayItems = value ?? true;
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                    actions: [
-                                      HMBButton(
-                                        label: 'Cancel',
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(),
+                                        actions: [
+                                          HMBButton(
+                                            label: 'Cancel',
+                                            onPressed:
+                                                () =>
+                                                    Navigator.of(context).pop(),
+                                          ),
+                                          HMBButton(
+                                            label: 'OK',
+                                            onPressed: () {
+                                              Navigator.of(context).pop({
+                                                'displayCosts':
+                                                    tempDisplayCosts,
+                                                'displayGroupHeaders':
+                                                    tempDisplayGroupHeaders,
+                                                'displayItems':
+                                                    tempDisplayItems,
+                                              });
+                                            },
+                                          ),
+                                        ],
                                       ),
-                                      HMBButton(
-                                        label: 'OK',
-                                        onPressed: () {
-                                          Navigator.of(context).pop({
-                                            'displayCosts': tempDisplayCosts,
-                                            'displayGroupHeaders':
-                                                tempDisplayGroupHeaders,
-                                            'displayItems': tempDisplayItems,
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
                                 );
                               },
                             );
@@ -170,31 +187,35 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                               );
                               final system = await DaoSystem().get();
                               final job = await DaoJob().getById(_quote.jobId);
-                              final contacts =
-                                  await DaoContact().getByJob(_quote.jobId);
+                              final contacts = await DaoContact().getByJob(
+                                _quote.jobId,
+                              );
                               final emailRecipients =
                                   contacts.map((c) => c.emailAddress).toList();
                               if (context.mounted) {
                                 await Navigator.of(context).push(
                                   MaterialPageRoute<void>(
-                                    builder: (context) => PdfPreviewScreen(
-                                      title:
-                                          'Quote #${_quote.id} ${job!.summary}',
-                                      filePath: filePath.path,
-                                      emailSubject:
-                                          '${system.businessName ?? 'Your'} Quote',
-                                      emailBody:
-                                          'Please find the attached quote',
-                                      emailRecipients: emailRecipients,
-                                      onSent: () async {
-                                        if (_quote.state.name != 'approved') {
-                                          await DaoQuote()
-                                              .markQuoteSent(_quote.id);
-                                          await _loadQuote();
-                                          setState(() {});
-                                        }
-                                      },
-                                    ),
+                                    builder:
+                                        (context) => PdfPreviewScreen(
+                                          title:
+                                              'Quote #${_quote.id} ${job!.summary}',
+                                          filePath: filePath.path,
+                                          emailSubject:
+                                              '${system.businessName ?? 'Your'} Quote',
+                                          emailBody:
+                                              'Please find the attached quote',
+                                          emailRecipients: emailRecipients,
+                                          onSent: () async {
+                                            if (_quote.state.name !=
+                                                'approved') {
+                                              await DaoQuote().markQuoteSent(
+                                                _quote.id,
+                                              );
+                                              await _loadQuote();
+                                              setState(() {});
+                                            }
+                                          },
+                                        ),
                                   ),
                                 );
                               }
@@ -207,8 +228,10 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                           onPressed: () async {
                             await Navigator.of(context).push(
                               MaterialPageRoute<void>(
-                                builder: (context) =>
-                                    EditMilestonesScreen(quoteId: _quote.id),
+                                builder:
+                                    (context) => EditMilestonesScreen(
+                                      quoteId: _quote.id,
+                                    ),
                               ),
                             );
                           },
@@ -218,10 +241,12 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                           label: 'Create Invoice',
                           onPressed: () async {
                             try {
-                              final invoice =
-                                  await createFixedPriceInvoice(_quote);
+                              final invoice = await createFixedPriceInvoice(
+                                _quote,
+                              );
                               HMBToast.info(
-                                  'Invoice #${invoice.id} created successfully.');
+                                'Invoice #${invoice.id} created successfully.',
+                              );
                             } catch (e) {
                               HMBToast.error('Failed to create invoice: $e');
                             }
@@ -242,37 +267,50 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                         );
                       }
                       return Column(
-                        children: jobQuote.groups
-                            .map((group) => ExpansionTile(
-                                  title: Text(
-                                      '${group.group.name} - ${group.total}'),
-                                  children: group.lines
-                                      .map((line) => ListTile(
-                                            title: Text(line.description),
-                                            subtitle: Text(
-                                              'Quantity: ${line.quantity}, Unit Price: ${line.unitPrice}, Total: ${line.lineTotal}',
-                                            ),
-                                            onTap: () async {
-                                              final editedLine =
-                                                  await showDialog<QuoteLine>(
-                                                context: context,
-                                                builder: (context) =>
-                                                    EditQuoteLineDialog(
-                                                        line: line),
-                                              );
-                                              if (editedLine != null) {
-                                                await DaoQuoteLine()
-                                                    .update(editedLine);
-                                                await DaoQuote()
-                                                    .recalculateTotal(
-                                                        editedLine.quoteId);
-                                                await _refresh();
-                                              }
-                                            },
-                                          ))
-                                      .toList(),
-                                ))
-                            .toList(),
+                        children:
+                            jobQuote.groups
+                                .map(
+                                  (group) => ExpansionTile(
+                                    title: Text(
+                                      '${group.group.name} - ${group.total}',
+                                    ),
+                                    children:
+                                        group.lines
+                                            .map(
+                                              (line) => ListTile(
+                                                title: Text(line.description),
+                                                subtitle: Text(
+                                                  'Quantity: ${line.quantity}, Unit Price: ${line.unitPrice}, Total: ${line.lineTotal}',
+                                                ),
+                                                onTap: () async {
+                                                  final editedLine =
+                                                      await showDialog<
+                                                        QuoteLine
+                                                      >(
+                                                        context: context,
+                                                        builder:
+                                                            (context) =>
+                                                                EditQuoteLineDialog(
+                                                                  line: line,
+                                                                ),
+                                                      );
+                                                  if (editedLine != null) {
+                                                    await DaoQuoteLine().update(
+                                                      editedLine,
+                                                    );
+                                                    await DaoQuote()
+                                                        .recalculateTotal(
+                                                          editedLine.quoteId,
+                                                        );
+                                                    await _refresh();
+                                                  }
+                                                },
+                                              ),
+                                            )
+                                            .toList(),
+                                  ),
+                                )
+                                .toList(),
                       );
                     },
                   ),
@@ -280,6 +318,6 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
               ),
             ),
           ),
-        ),
-      );
+    ),
+  );
 }

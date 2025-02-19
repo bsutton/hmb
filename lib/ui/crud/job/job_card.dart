@@ -62,50 +62,48 @@ class _JobCardState extends DeferredState<JobCard> {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
-        waitingBuilder: (context) => const HMBPlaceHolder(height: 594),
-        // ignore: discarded_futures
-        future: DaoJobStatus().getById(job.jobStatusId),
-        builder: (context, jobStatus) => FutureBuilderEx<Customer?>(
+    waitingBuilder: (context) => const HMBPlaceHolder(height: 594),
+    // ignore: discarded_futures
+    future: DaoJobStatus().getById(job.jobStatusId),
+    builder:
+        (context, jobStatus) => FutureBuilderEx<Customer?>(
           waitingBuilder: (context) => const HMBPlaceHolder(height: 594),
           // ignore: discarded_futures
           future: DaoCustomer().getById(job.customerId),
-          builder: (context, customer) => Surface(
-              padding: EdgeInsets.zero,
-              elevation: SurfaceElevation.e6,
-              child: _buildDetails(customer, jobStatus)),
+          builder:
+              (context, customer) => Surface(
+                padding: EdgeInsets.zero,
+                elevation: SurfaceElevation.e6,
+                child: _buildDetails(customer, jobStatus),
+              ),
         ),
-      );
+  );
 
   Widget _buildDetails(Customer? customer, JobStatus? jobStatus) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          HMBCardHeading(
-            customer?.name ?? 'Not Set',
-          ),
-          const SizedBox(height: 8),
-          _buildContactPoints(),
-          const SizedBox(height: 8),
-          HMBJobSiteText(label: '', job: job),
-          const SizedBox(height: 8),
-          HMBText(
-            '''
-Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
-          ),
-          const SizedBox(height: 8),
-          _buildNextActivity(),
-          const HMBText(
-            'Description:',
-            bold: true,
-          ),
-          HMBTextBlock(RichEditor.createParchment(job.description)
-              .toPlainText()
-              .replaceAll('\n\n', '\n')),
-          const SizedBox(height: 8),
-          PhotoGallery.forJob(job: job),
-          const SizedBox(height: 16),
-          buildStatistics(job),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      HMBCardHeading(customer?.name ?? 'Not Set'),
+      const SizedBox(height: 8),
+      _buildContactPoints(),
+      const SizedBox(height: 8),
+      HMBJobSiteText(label: '', job: job),
+      const SizedBox(height: 8),
+      HMBText('''
+Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
+      const SizedBox(height: 8),
+      _buildNextActivity(),
+      const HMBText('Description:', bold: true),
+      HMBTextBlock(
+        RichEditor.createParchment(
+          job.description,
+        ).toPlainText().replaceAll('\n\n', '\n'),
+      ),
+      const SizedBox(height: 8),
+      PhotoGallery.forJob(job: job),
+      const SizedBox(height: 16),
+      buildStatistics(job),
+    ],
+  );
 
   Widget _buildNextActivity() {
     String activity;
@@ -120,63 +118,61 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
       activity = formatDateTime(nextActivity!.start);
     }
 
-    return HMBText(
-      'Next Activity: $activity',
-      color: text,
-    );
+    return HMBText('Next Activity: $activity', color: text);
   }
 
   Widget _buildContactPoints() => LayoutBuilder(
-        builder: (context, constraints) {
-          final isMobile = constraints.maxWidth < 600;
-          return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: (isMobile
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        HMBJobPhoneText(job: job),
-                        HMBJobEmailText(job: job),
-                      ],
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        HMBJobPhoneText(job: job),
-                        Expanded(child: HMBJobEmailText(job: job))
-                      ],
-                    )));
-        },
+    builder: (context, constraints) {
+      final isMobile = constraints.maxWidth < 600;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child:
+            (isMobile
+                ? Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    HMBJobPhoneText(job: job),
+                    HMBJobEmailText(job: job),
+                  ],
+                )
+                : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    HMBJobPhoneText(job: job),
+                    Expanded(child: HMBJobEmailText(job: job)),
+                  ],
+                )),
       );
+    },
+  );
 
   FutureBuilderEx<JobStatistics> buildStatistics(Job job) => FutureBuilderEx(
-        waitingBuilder: (_) => const HMBPlaceHolder(height: 97),
-        // ignore: discarded_futures
-        future: DaoJob().getJobStatistics(job),
-        builder: (context, remainingTasks) {
-          if (remainingTasks == null) {
-            return const CircularProgressIndicator();
-          }
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final isMobile = constraints.maxWidth < 800;
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: isMobile
+    waitingBuilder: (_) => const HMBPlaceHolder(height: 97),
+    // ignore: discarded_futures
+    future: DaoJob().getJobStatistics(job),
+    builder: (context, remainingTasks) {
+      if (remainingTasks == null) {
+        return const CircularProgressIndicator();
+      }
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final isMobile = constraints.maxWidth < 800;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child:
+                isMobile
                     ? _buildMobileLayout(remainingTasks, context)
                     : _buildDesktopLayout(remainingTasks, context),
-              );
-            },
           );
         },
       );
+    },
+  );
 
   Widget _buildMobileLayout(JobStatistics stats, BuildContext context) =>
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ..._buildStatistics(stats),
-        ],
+        children: [..._buildStatistics(stats)],
       );
 
   Widget _buildDesktopLayout(JobStatistics stats, BuildContext context) =>
@@ -193,35 +189,34 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}''',
       );
 
   List<Widget> _buildStatistics(JobStatistics remainingTasks) => [
-        HMBText(
-          'Tasks: ${remainingTasks.completedTasks}/${remainingTasks.totalTasks}',
-          bold: true,
-        ),
-        const SizedBox(width: 16), //
-        HMBText(
-          'Est. Effort(hrs): ${remainingTasks.completedEffort.format('0.00')}/${remainingTasks.totalEffort.format('0.00')}',
-          bold: true,
-        ),
-        const SizedBox(width: 16), //
-        HMBText(
-          'Earnings: ${remainingTasks.earnedCost}/${remainingTasks.totalCost}',
-          bold: true,
-        ),
-        const SizedBox(width: 16), //
-        HMBTextClickable(
-          text:
-              'Worked: ${remainingTasks.worked}/${remainingTasks.workedHours}hrs',
-          bold: true,
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (context) => TimeEntryListScreen(job: job),
-              ),
-            );
-          },
-        ),
-      ];
+    HMBText(
+      'Tasks: ${remainingTasks.completedTasks}/${remainingTasks.totalTasks}',
+      bold: true,
+    ),
+    const SizedBox(width: 16), //
+    HMBText(
+      'Est. Effort(hrs): ${remainingTasks.completedEffort.format('0.00')}/${remainingTasks.totalEffort.format('0.00')}',
+      bold: true,
+    ),
+    const SizedBox(width: 16), //
+    HMBText(
+      'Earnings: ${remainingTasks.earnedCost}/${remainingTasks.totalCost}',
+      bold: true,
+    ),
+    const SizedBox(width: 16), //
+    HMBTextClickable(
+      text: 'Worked: ${remainingTasks.worked}/${remainingTasks.workedHours}hrs',
+      bold: true,
+      onPressed: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (context) => TimeEntryListScreen(job: job),
+          ),
+        );
+      },
+    ),
+  ];
 }
 
 class InvoiceScreenArguments {

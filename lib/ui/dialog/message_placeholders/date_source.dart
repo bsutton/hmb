@@ -15,14 +15,14 @@ class DateSource extends Source<LocalDate> {
 
   @override
   Widget widget() => HMBDateTimeField(
-        mode: HMBDateTimeFieldMode.dateOnly,
-        label: label.toProperCase(),
-        initialDateTime: DateTime.now(),
-        onChanged: (datetime) {
-          date = LocalDate.fromDateTime(datetime);
-          super.onChanged(value, ResetFields());
-        },
-      );
+    mode: HMBDateTimeFieldMode.dateOnly,
+    label: label.toProperCase(),
+    initialDateTime: DateTime.now(),
+    onChanged: (datetime) {
+      date = LocalDate.fromDateTime(datetime);
+      super.onChanged(value, ResetFields());
+    },
+  );
 
   @override
   LocalDate? get value => date;

@@ -16,8 +16,9 @@ class ProjectScriptSource implements ScriptSource {
   Future<List<String>> upgradeScripts() async {
     final project = DartProject.self;
     final jsonString =
-        read(join(project.pathToProjectRoot, ScriptSource.pathToIndex))
-            .toParagraph();
+        read(
+          join(project.pathToProjectRoot, ScriptSource.pathToIndex),
+        ).toParagraph();
 
     return List<String>.from(json.decode(jsonString) as List);
   }

@@ -17,13 +17,16 @@ class DaoTaskStatus extends Dao<TaskStatus> {
     }
 
     final likeArg = '''%$filter%''';
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select ts.*
 from task_status ts 
 where ts.name like ?
 or ts.description like ?
 order by ordinal
-''', [likeArg, likeArg]);
+''',
+      [likeArg, likeArg],
+    );
 
     return toList(data);
   }
@@ -31,14 +34,19 @@ order by ordinal
   Future<TaskStatus> getByEnum(TaskStatusEnum taskStatusEnum) async {
     final db = withoutTransaction();
 
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select ts.*
 from task_status ts 
 where ts.name = ?
-''', [taskStatusEnum.colValue]);
+''',
+      [taskStatusEnum.colValue],
+    );
     final list = toList(data);
-    assert(list.length == 1,
-        '''The TaskStatusEnum must have a corresponding entry in the task_status table''');
+    assert(
+      list.length == 1,
+      '''The TaskStatusEnum must have a corresponding entry in the task_status table''',
+    );
 
     return toList(data).first;
   }

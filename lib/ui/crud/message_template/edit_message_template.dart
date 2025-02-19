@@ -29,10 +29,12 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
   void initState() {
     super.initState();
     currentEntity ??= widget.messageTemplate;
-    _titleController =
-        TextEditingController(text: widget.messageTemplate?.title);
-    _messageController =
-        TextEditingController(text: widget.messageTemplate?.message);
+    _titleController = TextEditingController(
+      text: widget.messageTemplate?.title,
+    );
+    _messageController = TextEditingController(
+      text: widget.messageTemplate?.message,
+    );
     _enabled = widget.messageTemplate?.enabled ?? true;
   }
 
@@ -45,10 +47,11 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
 
   @override
   Widget build(BuildContext context) => EntityEditScreen<MessageTemplate>(
-        entityName: 'Message Template',
-        dao: DaoMessageTemplate(),
-        entityState: this,
-        editor: (messageTemplate, {required isNew}) => Column(
+    entityName: 'Message Template',
+    dao: DaoMessageTemplate(),
+    entityState: this,
+    editor:
+        (messageTemplate, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (messageTemplate == null ||
@@ -67,8 +70,9 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
             ] else ...[
               ListTile(
                 title: Text(_titleController.text),
-                subtitle:
-                    const HMBTextHeadline('System templates cannot be edited!'),
+                subtitle: const HMBTextHeadline(
+                  'System templates cannot be edited!',
+                ),
               ),
             ],
             SwitchListTile(
@@ -82,7 +86,7 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
             ),
           ],
         ),
-      );
+  );
 
   @override
   Future<MessageTemplate> forUpdate(MessageTemplate messageTemplate) async =>
@@ -98,10 +102,11 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
 
   @override
   Future<MessageTemplate> forInsert() async => MessageTemplate.forInsert(
-      title: _titleController.text,
-      message: _messageController.text,
-      enabled: _enabled,
-      messageType: MessageType.sms);
+    title: _titleController.text,
+    message: _messageController.text,
+    enabled: _enabled,
+    messageType: MessageType.sms,
+  );
 
   @override
   void refresh() {

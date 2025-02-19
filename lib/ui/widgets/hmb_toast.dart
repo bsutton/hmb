@@ -6,13 +6,11 @@ import 'package:toastification/toastification.dart';
 class HMBToast {
   static void info(String text) {
     toastification.show(
-        type: ToastificationType.info,
-        style: ToastificationStyle.minimal,
-        autoCloseDuration: const Duration(seconds: 6),
-        description: Text(
-          text,
-          maxLines: 6,
-        ));
+      type: ToastificationType.info,
+      style: ToastificationStyle.minimal,
+      autoCloseDuration: const Duration(seconds: 6),
+      description: Text(text, maxLines: 6),
+    );
   }
 
   static void error(String text, {bool acknowledgmentRequired = false}) {

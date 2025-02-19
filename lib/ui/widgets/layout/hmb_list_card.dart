@@ -6,15 +6,16 @@ typedef Allowed = bool Function();
 typedef OnRefresh = Future<void> Function();
 
 class HMBCrudListCard extends StatelessWidget {
-  const HMBCrudListCard(
-      {required this.child,
-      required this.title,
-      required this.onDelete,
-      required this.onEdit,
-      required this.onRefresh,
-      this.canEdit,
-      this.canDelete,
-      super.key});
+  const HMBCrudListCard({
+    required this.child,
+    required this.title,
+    required this.onDelete,
+    required this.onEdit,
+    required this.onRefresh,
+    this.canEdit,
+    this.canDelete,
+    super.key,
+  });
 
   final Widget child;
   final OnDelete onDelete;
@@ -26,31 +27,34 @@ class HMBCrudListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        child: Card(
-            semanticContainer: false,
-            elevation: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    child: Card(
+      semanticContainer: false,
+      elevation: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(child: title),
-                        Visibility(
-                            visible: canDelete?.call() ?? true,
-                            child: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () async => onDelete(),
-                            )),
-                      ]),
+                Expanded(child: title),
+                Visibility(
+                  visible: canDelete?.call() ?? true,
+                  child: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () async => onDelete(),
+                  ),
                 ),
-                child,
               ],
-            )),
-        onTap: () async => canEdit?.call() ?? true ? _pushEdit(context) : null,
-      );
+            ),
+          ),
+          child,
+        ],
+      ),
+    ),
+    onTap: () async => canEdit?.call() ?? true ? _pushEdit(context) : null,
+  );
 
   Future<void> _pushEdit(BuildContext context) async {
     {

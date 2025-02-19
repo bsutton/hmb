@@ -2,10 +2,7 @@ import 'entity.dart';
 
 enum MessageTemplateOwner { user, system }
 
-enum MessageType {
-  sms,
-  email,
-}
+enum MessageType { sms, email }
 
 class MessageTemplate extends Entity<MessageTemplate> {
   MessageTemplate({
@@ -41,16 +38,16 @@ class MessageTemplate extends Entity<MessageTemplate> {
   }) : super.forUpdate();
 
   factory MessageTemplate.fromMap(Map<String, dynamic> map) => MessageTemplate(
-        id: map['id'] as int,
-        title: map['title'] as String,
-        message: map['message'] as String,
-        messageType: MessageType.values.byName(map['message_type'] as String),
-        owner: MessageTemplateOwner.values[map['owner'] as int],
-        enabled: map['enabled'] as int == 1,
-        ordinal: map['ordinal'] as int,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-      );
+    id: map['id'] as int,
+    title: map['title'] as String,
+    message: map['message'] as String,
+    messageType: MessageType.values.byName(map['message_type'] as String),
+    owner: MessageTemplateOwner.values[map['owner'] as int],
+    enabled: map['enabled'] as int == 1,
+    ordinal: map['ordinal'] as int,
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+  );
 
   String title;
   String message;
@@ -61,16 +58,16 @@ class MessageTemplate extends Entity<MessageTemplate> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'title': title,
-        'message': message,
-        'message_type': messageType.name, // Store the enum as a string
-        'owner': owner.index,
-        'enabled': enabled ? 1 : 0,
-        'ordinal': ordinal,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'message': message,
+    'message_type': messageType.name, // Store the enum as a string
+    'owner': owner.index,
+    'enabled': enabled ? 1 : 0,
+    'ordinal': ordinal,
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+  };
 
   // copyWith method
   MessageTemplate copyWith({
@@ -82,16 +79,15 @@ class MessageTemplate extends Entity<MessageTemplate> {
     int? ordinal,
     DateTime? createdDate,
     DateTime? modifiedDate,
-  }) =>
-      MessageTemplate(
-        id: id,
-        title: title ?? this.title,
-        message: message ?? this.message,
-        messageType: messageType ?? this.messageType,
-        owner: owner ?? this.owner,
-        enabled: enabled ?? this.enabled,
-        ordinal: ordinal ?? this.ordinal,
-        createdDate: createdDate ?? this.createdDate,
-        modifiedDate: modifiedDate ?? this.modifiedDate,
-      );
+  }) => MessageTemplate(
+    id: id,
+    title: title ?? this.title,
+    message: message ?? this.message,
+    messageType: messageType ?? this.messageType,
+    owner: owner ?? this.owner,
+    enabled: enabled ?? this.enabled,
+    ordinal: ordinal ?? this.ordinal,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+  );
 }

@@ -35,12 +35,14 @@ class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
   }
 
   void _initializeControllers() {
-    unawaited(DaoSystem().get().then((system) {
-      _xeroClientIdController.text = system.xeroClientId ?? '';
-      _xeroClientSecretController.text = system.xeroClientSecret ?? '';
+    unawaited(
+      DaoSystem().get().then((system) {
+        _xeroClientIdController.text = system.xeroClientId ?? '';
+        _xeroClientSecretController.text = system.xeroClientSecret ?? '';
 
-      setState(() {});
-    }));
+        setState(() {});
+      }),
+    );
   }
 
   @override
@@ -80,9 +82,10 @@ class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
         body: Column(
           children: [
             SaveAndClose(
-                onSave: ({required close}) async => save(close: close),
-                showSaveOnly: false,
-                onCancel: () async => context.go('/jobs')),
+              onSave: ({required close}) async => save(close: close),
+              showSaveOnly: false,
+              onCancel: () async => context.go('/jobs'),
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -99,27 +102,25 @@ class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
   }
 
   Form _buildForm() => Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            const Text(
-              '''
+    key: _formKey,
+    child: Column(
+      children: [
+        const Text('''
 HMB can generate and (optionally) upload invoices to the Xero Accounting package.
 To take advantage of this feature you need to use Xero as your accounting
-package and you need a Xero developer account.''',
-            ),
-            const HMBSpacer(height: true),
-            HMBTextField(
-              controller: _xeroClientIdController,
-              labelText: 'Xero Client ID',
-              keyboardType: TextInputType.number,
-            ),
-            HMBTextField(
-              controller: _xeroClientSecretController,
-              labelText: 'Xero Client Secret',
-              keyboardType: TextInputType.number,
-            ),
-          ],
+package and you need a Xero developer account.'''),
+        const HMBSpacer(height: true),
+        HMBTextField(
+          controller: _xeroClientIdController,
+          labelText: 'Xero Client ID',
+          keyboardType: TextInputType.number,
         ),
-      );
+        HMBTextField(
+          controller: _xeroClientSecretController,
+          labelText: 'Xero Client Secret',
+          keyboardType: TextInputType.number,
+        ),
+      ],
+    ),
+  );
 }

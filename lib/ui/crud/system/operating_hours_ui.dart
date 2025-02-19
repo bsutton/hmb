@@ -45,8 +45,10 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Operating Days and Hours',
-              style: TextStyle(fontSize: 16)),
+          const Text(
+            'Operating Days and Hours',
+            style: TextStyle(fontSize: 16),
+          ),
           const SizedBox(height: 8),
           ToggleButtons(
             isSelected: widget.controller.operatingHours.openList,
@@ -75,12 +77,16 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
 
                 final operatingHours = widget.controller.operatingHours;
                 final day = operatingHours.days[DayName.values[index]]!;
-                final start = day.start ??
+                final start =
+                    day.start ??
                     LocalTime.fromDateTime(
-                        DateTime.now().copyWith(hour: 9, minute: 0));
-                final end = day.end ??
+                      DateTime.now().copyWith(hour: 9, minute: 0),
+                    );
+                final end =
+                    day.end ??
                     LocalTime.fromDateTime(
-                        DateTime.now().copyWith(hour: 17, minute: 0));
+                      DateTime.now().copyWith(hour: 17, minute: 0),
+                    );
 
                 {
                   return Column(
@@ -98,8 +104,9 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                             child: HMBDateTimeField(
                               initialDateTime: start.toDateTime(),
                               mode: HMBDateTimeFieldMode.timeOnly,
-                              onChanged: (date) async =>
-                                  day.start = LocalTime.fromDateTime(date),
+                              onChanged:
+                                  (date) async =>
+                                      day.start = LocalTime.fromDateTime(date),
                               label: 'Start',
                             ),
                           ),
@@ -108,8 +115,9 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                             child: HMBDateTimeField(
                               initialDateTime: end.toDateTime(),
                               mode: HMBDateTimeFieldMode.timeOnly,
-                              onChanged: (date) async =>
-                                  day.end = LocalTime.fromDateTime(date),
+                              onChanged:
+                                  (date) async =>
+                                      day.end = LocalTime.fromDateTime(date),
                               label: 'End',
                             ),
                           ),

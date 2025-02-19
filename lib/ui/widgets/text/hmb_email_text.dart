@@ -16,26 +16,23 @@ class HMBEmailText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (Strings.isNotBlank(email))
-            Flexible(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '${plusSpace(label)} ${email ?? ''}',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: HMBColors.textPrimary),
-                ),
-              ),
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (Strings.isNotBlank(email))
+        Flexible(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${plusSpace(label)} ${email ?? ''}',
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: HMBColors.textPrimary),
             ),
-          if (Strings.isNotBlank(email))
-            Align(
-              alignment: Alignment.centerRight,
-              child: HMBMailToIcon(email),
-            ),
-        ],
-      );
+          ),
+        ),
+      if (Strings.isNotBlank(email))
+        Align(alignment: Alignment.centerRight, child: HMBMailToIcon(email)),
+    ],
+  );
 }
 
 class HMBJobEmailText extends StatelessWidget {
@@ -45,9 +42,11 @@ class HMBJobEmailText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
-      waitingBuilder: (_) => const HMBPlaceHolder(height: 40),
-      // ignore: discarded_futures
-      future: DaoContact().getPrimaryForJob(job.id),
-      builder: (context, contact) =>
-          HMBEmailText(email: contact?.emailAddress, label: label));
+    waitingBuilder: (_) => const HMBPlaceHolder(height: 40),
+    // ignore: discarded_futures
+    future: DaoContact().getPrimaryForJob(job.id),
+    builder:
+        (context, contact) =>
+            HMBEmailText(email: contact?.emailAddress, label: label),
+  );
 }

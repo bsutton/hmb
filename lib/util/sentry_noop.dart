@@ -4,6 +4,8 @@ library;
 
 // ignore: avoid_classes_with_only_static_members
 class Sentry {
-  static Future<void> captureException(Object e,
-      {StackTrace? stackTrace}) async {}
+  static Future<void> captureException(
+    Object e, {
+    StackTrace? stackTrace,
+  }) async {}
 }

@@ -74,8 +74,10 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
     final firstOfNextMonth = LocalDate(currentDate.year, currentDate.month + 1);
 
     final dao = DaoJobActivity();
-    final jobActivites =
-        await dao.getActivitiesInRange(firstOfMonth, firstOfNextMonth);
+    final jobActivites = await dao.getActivitiesInRange(
+      firstOfMonth,
+      firstOfNextMonth,
+    );
 
     showWeekends = false;
     final eventData = <CalendarEventData<JobActivityEx>>[];
@@ -97,45 +99,60 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
   Widget build(BuildContext context) =>
       CalendarControllerProvider<JobActivityEx>(
         controller: _monthController,
-        child: DeferredBuilder(this, builder: (context) {
-          /// Month View
-          late final MonthView<JobActivityEx> monthView;
-          // ignore: join_return_with_assignment
-          monthView = MonthView<JobActivityEx>(
-            showWeekends: showWeekends,
-            // key: ValueKey(widget.initialDate),
-            key: widget.monthKey,
-            initialMonth: currentDate.toDateTime(),
-            headerStyle: widget.headerStyle(),
-            headerStringBuilder: widget.monthDateStringBuilder,
-            onPageChange: (date, index) async => _onePageChange(date),
-            cellBuilder:
-                (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
-                    _cellBuilder(monthView, date, events, isToday, isInMonth,
-                        hideDaysNotInMonth),
-            weekDayBuilder: (day) => Center(
-              child: Text(
-                ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day],
-                style:
-                    const TextStyle(color: Colors.white), // Weekday text color
-              ),
-            ),
-            onCellTap: (events, date) async {
-              /// [date] is always midnight so lets show a more reasonable
-              /// starting time for the event.
-              final openingTime =
-                  operatingHours.openingTime(date.toLocalDate());
-              await widget.addActivity(
-                  context, date.withTime(openingTime), widget.defaultJob);
-              await _loadActivitiesForMonth();
-            },
-            onEventTap: (event, date) async {
-              await widget.onActivityTap(context, event);
-              await _loadActivitiesForMonth();
-            },
-          );
-          return monthView;
-        }),
+        child: DeferredBuilder(
+          this,
+          builder: (context) {
+            /// Month View
+            late final MonthView<JobActivityEx> monthView;
+            // ignore: join_return_with_assignment
+            monthView = MonthView<JobActivityEx>(
+              showWeekends: showWeekends,
+              // key: ValueKey(widget.initialDate),
+              key: widget.monthKey,
+              initialMonth: currentDate.toDateTime(),
+              headerStyle: widget.headerStyle(),
+              headerStringBuilder: widget.monthDateStringBuilder,
+              onPageChange: (date, index) async => _onePageChange(date),
+              cellBuilder:
+                  (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
+                      _cellBuilder(
+                        monthView,
+                        date,
+                        events,
+                        isToday,
+                        isInMonth,
+                        hideDaysNotInMonth,
+                      ),
+              weekDayBuilder:
+                  (day) => Center(
+                    child: Text(
+                      ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day],
+                      style: const TextStyle(
+                        color: Colors.white,
+                      ), // Weekday text color
+                    ),
+                  ),
+              onCellTap: (events, date) async {
+                /// [date] is always midnight so lets show a more reasonable
+                /// starting time for the event.
+                final openingTime = operatingHours.openingTime(
+                  date.toLocalDate(),
+                );
+                await widget.addActivity(
+                  context,
+                  date.withTime(openingTime),
+                  widget.defaultJob,
+                );
+                await _loadActivitiesForMonth();
+              },
+              onEventTap: (event, date) async {
+                await widget.onActivityTap(context, event);
+                await _loadActivitiesForMonth();
+              },
+            );
+            return monthView;
+          },
+        ),
       );
 
   Future<void> _onePageChange(DateTime date) async {
@@ -154,9 +171,10 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
     bool isInMonth,
     bool hideDaysNotInMonth,
   ) {
-    final backgroundColour = isToday
-        ? SurfaceElevation.e4.color
-        : isInMonth
+    final backgroundColour =
+        isToday
+            ? SurfaceElevation.e4.color
+            : isInMonth
             ? Colors.black
             : Colors.grey[350]!;
 
@@ -164,28 +182,39 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
         isToday ? Colors.yellow : (isInMonth ? Colors.white : Colors.black);
 
     return DecoratedBox(
-        decoration: BoxDecoration(
-          color: backgroundColour, // Cell background
-          border: Border.all(color: Colors.grey[700]!), // Optional cell border
+      decoration: BoxDecoration(
+        color: backgroundColour, // Cell background
+        border: Border.all(color: Colors.grey[700]!), // Optional cell border
+      ),
+      child: Column(
+        children: _renderActivities(
+          monthView,
+          date,
+          isToday,
+          events,
+          backgroundColour,
+          color: colour,
         ),
-        child: Column(
-            children: _renderActivities(
-                monthView, date, isToday, events, backgroundColour,
-                color: colour)));
+      ),
+    );
   }
 
   /// Render a list of event widgets
   List<Widget> _renderActivities(
-      MonthView<JobActivityEx> monthView,
-      DateTime date,
-      bool isToday,
-      List<CalendarEventData<JobActivityEx>> events,
-      Color backgroundColour,
-      {required Color color}) {
+    MonthView<JobActivityEx> monthView,
+    DateTime date,
+    bool isToday,
+    List<CalendarEventData<JobActivityEx>> events,
+    Color backgroundColour, {
+    required Color color,
+  }) {
     final widgets = <Widget>[
       GestureDetector(
-        onTap: () => widget.schedulePageState
-            .showDateOnView(ScheduleView.week, date.toLocalDate()),
+        onTap:
+            () => widget.schedulePageState.showDateOnView(
+              ScheduleView.week,
+              date.toLocalDate(),
+            ),
         child: Center(
           child: Text(
             '${date.day}',
@@ -194,7 +223,7 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
             ),
           ),
         ),
-      )
+      ),
     ];
     for (final event in events) {
       widgets.add(_renderActivity(monthView, event, backgroundColour));
@@ -203,8 +232,11 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
   }
 
   /// build a single activity widget.
-  Widget _renderActivity(MonthView<JobActivityEx> monthView,
-      CalendarEventData<JobActivityEx> event, Color backgroundColour) {
+  Widget _renderActivity(
+    MonthView<JobActivityEx> monthView,
+    CalendarEventData<JobActivityEx> event,
+    Color backgroundColour,
+  ) {
     var fontColor = Colors.white;
     if (widget.defaultJob == event.event!.job.id) {
       fontColor = Colors.orange;
@@ -218,12 +250,17 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
       child: Row(
         children: [
           Circle(
-              diameter: 15,
-              color: event.event?.jobActivity.status.color ?? Colors.white,
-              child: const Text('')),
-          Text('${formatTime(event.startTime!, 'h:mm a').toLowerCase()} ',
-              style: TextStyle(
-                  color: fontColor, backgroundColor: backgroundColour)),
+            diameter: 15,
+            color: event.event?.jobActivity.status.color ?? Colors.white,
+            child: const Text(''),
+          ),
+          Text(
+            '${formatTime(event.startTime!, 'h:mm a').toLowerCase()} ',
+            style: TextStyle(
+              color: fontColor,
+              backgroundColor: backgroundColour,
+            ),
+          ),
         ],
       ),
     );

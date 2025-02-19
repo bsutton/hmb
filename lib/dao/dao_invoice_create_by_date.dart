@@ -51,20 +51,22 @@ Future<Money> createByDate(
       }
 
       if (!groupCreated) {
-        invoiceLineGroupId =
-            await _createInvoiceGroupForDate(invoiceId, workDate);
+        invoiceLineGroupId = await _createInvoiceGroupForDate(
+          invoiceId,
+          workDate,
+        );
         groupCreated = true;
       }
 
       // Create an invoice line with the total hours in the description
       final invoiceLine = InvoiceLine.forInsert(
-          invoiceId: invoiceId,
-          description: 'Labour: ${taskForDate.task.name}',
-          quantity: taskForDate.durationInHours,
-          unitPrice: job.hourlyRate!,
-          lineTotal:
-              job.hourlyRate!.multiplyByFixed(taskForDate.durationInHours),
-          invoiceLineGroupId: invoiceLineGroupId);
+        invoiceId: invoiceId,
+        description: 'Labour: ${taskForDate.task.name}',
+        quantity: taskForDate.durationInHours,
+        unitPrice: job.hourlyRate!,
+        lineTotal: job.hourlyRate!.multiplyByFixed(taskForDate.durationInHours),
+        invoiceLineGroupId: invoiceLineGroupId,
+      );
 
       // Sum the duration for all time entries for the [workDate]
       totalDurationForDate += taskForDate.durationInHours;
@@ -103,19 +105,25 @@ Future<Money> createByDate(
 }
 
 Future<int> _createInvoiceGroupForDate(
-    int invoiceId, LocalDate workDate) async {
+  int invoiceId,
+  LocalDate workDate,
+) async {
   final invoiceLineGroup = InvoiceLineGroup.forInsert(
     invoiceId: invoiceId,
     name: formatLocalDate(workDate),
   );
-  final invoiceLineGroupId =
-      await DaoInvoiceLineGroup().insert(invoiceLineGroup);
+  final invoiceLineGroupId = await DaoInvoiceLineGroup().insert(
+    invoiceLineGroup,
+  );
   return invoiceLineGroupId;
 }
 
 // Add materials at the end of the invoice, grouped under their respective tasks
 Future<Money> emitMaterialsByTask(
-    Job job, int invoiceId, List<int> selectedTaskIds) async {
+  Job job,
+  int invoiceId,
+  List<int> selectedTaskIds,
+) async {
   var totalAmount = MoneyEx.zero;
 
   final hourlyRate = await DaoJob().getHourlyRate(job.id);
@@ -139,14 +147,18 @@ Future<Money> emitMaterialsByTask(
       if (!groupCreated) {
         final task = await DaoTask().getById(taskId);
         final invoiceLineGroup = InvoiceLineGroup.forInsert(
-            invoiceId: invoiceId, name: 'Materials for ${task!.name}');
-        invoiceLineGroupId =
-            await DaoInvoiceLineGroup().insert(invoiceLineGroup);
+          invoiceId: invoiceId,
+          name: 'Materials for ${task!.name}',
+        );
+        invoiceLineGroupId = await DaoInvoiceLineGroup().insert(
+          invoiceLineGroup,
+        );
         groupCreated = true;
       }
 
-      final lineTotal = item.actualMaterialUnitCost!
-          .multiplyByFixed(item.actualMaterialQuantity!);
+      final lineTotal = item.actualMaterialUnitCost!.multiplyByFixed(
+        item.actualMaterialQuantity!,
+      );
 
       final invoiceLine = InvoiceLine.forInsert(
         invoiceId: invoiceId,
@@ -204,8 +216,10 @@ class TaskEntries {
   final List<TimeEntry> _timeEntries = [];
 
   Fixed get durationInHours {
-    final hours =
-        _timeEntries.fold(Duration.zero, (sum, value) => sum + value.duration);
+    final hours = _timeEntries.fold(
+      Duration.zero,
+      (sum, value) => sum + value.duration,
+    );
 
     return Fixed.fromNum(hours.inMinutes / 60, scale: 2);
   }

@@ -35,16 +35,16 @@ class Site extends Entity<Site> {
   }) : super.forUpdate();
 
   factory Site.fromMap(Map<String, dynamic> map) => Site(
-        id: map['id'] as int,
-        addressLine1: map['addressLine1'] as String,
-        addressLine2: map['addressLine2'] as String,
-        suburb: map['suburb'] as String,
-        state: map['state'] as String,
-        postcode: map['postcode'] as String,
-        accessDetails: map['accessDetails'] as String?, // New field
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-      );
+    id: map['id'] as int,
+    addressLine1: map['addressLine1'] as String,
+    addressLine2: map['addressLine2'] as String,
+    suburb: map['suburb'] as String,
+    state: map['state'] as String,
+    postcode: map['postcode'] as String,
+    accessDetails: map['accessDetails'] as String?, // New field
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+  );
   String addressLine1;
   String addressLine2;
   String suburb;
@@ -54,22 +54,24 @@ class Site extends Entity<Site> {
   /// Hold info such as pin codes for lock boxes.
   String? accessDetails;
 
-  String get address =>
-      Strings.join([addressLine1, addressLine2, suburb, state, postcode],
-          separator: ', ', excludeEmpty: true);
+  String get address => Strings.join(
+    [addressLine1, addressLine2, suburb, state, postcode],
+    separator: ', ',
+    excludeEmpty: true,
+  );
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'addressLine1': addressLine1,
-        'addressLine2': addressLine2,
-        'suburb': suburb,
-        'state': state,
-        'postcode': postcode,
-        'accessDetails': accessDetails, // New field
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'addressLine1': addressLine1,
+    'addressLine2': addressLine2,
+    'suburb': suburb,
+    'state': state,
+    'postcode': postcode,
+    'accessDetails': accessDetails, // New field
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+  };
 
   String abbreviated() => '$addressLine1, $suburb';
 

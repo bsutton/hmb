@@ -14,8 +14,12 @@ import '../../widgets/fields/hmb_phone_field.dart';
 import '../base_nested/edit_nested_screen.dart';
 
 class ContactEditScreen<P extends Entity<P>> extends StatefulWidget {
-  const ContactEditScreen(
-      {required this.parent, required this.daoJoin, super.key, this.contact});
+  const ContactEditScreen({
+    required this.parent,
+    required this.daoJoin,
+    super.key,
+    this.contact,
+  });
   final DaoJoinAdaptor daoJoin;
   final P parent;
   final Contact? contact;
@@ -47,16 +51,20 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   void initState() {
     super.initState();
     currentEntity ??= widget.contact;
-    _firstNameController =
-        TextEditingController(text: currentEntity?.firstName);
+    _firstNameController = TextEditingController(
+      text: currentEntity?.firstName,
+    );
     _surnameController = TextEditingController(text: currentEntity?.surname);
-    _mobileNumberController =
-        TextEditingController(text: currentEntity?.mobileNumber);
+    _mobileNumberController = TextEditingController(
+      text: currentEntity?.mobileNumber,
+    );
     _landlineController = TextEditingController(text: currentEntity?.landLine);
-    _officeNumberController =
-        TextEditingController(text: currentEntity?.officeNumber);
-    _emailaddressController =
-        TextEditingController(text: currentEntity?.emailAddress);
+    _officeNumberController = TextEditingController(
+      text: currentEntity?.officeNumber,
+    );
+    _emailaddressController = TextEditingController(
+      text: currentEntity?.emailAddress,
+    );
 
     _firstNameFocusNode = FocusNode();
   }
@@ -78,70 +86,75 @@ class _ContactEditScreenState extends State<ContactEditScreen>
       NestedEntityEditScreen<Contact, Customer>(
         entityName: 'Contact',
         dao: DaoContact(),
-        onInsert: (contact) async =>
-            widget.daoJoin.insertForParent(contact!, widget.parent),
+        onInsert:
+            (contact) async =>
+                widget.daoJoin.insertForParent(contact!, widget.parent),
         entityState: this,
-        editor: (contact) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            HMBNameField(
-              controller: _firstNameController,
-              focusNode: _firstNameFocusNode,
-              autofocus: isNotMobile,
-              labelText: 'First Name',
-              keyboardType: TextInputType.name,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter the first name';
-                }
-                return null;
-              },
+        editor:
+            (contact) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                HMBNameField(
+                  controller: _firstNameController,
+                  focusNode: _firstNameFocusNode,
+                  autofocus: isNotMobile,
+                  labelText: 'First Name',
+                  keyboardType: TextInputType.name,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the first name';
+                    }
+                    return null;
+                  },
+                ),
+                HMBNameField(
+                  controller: _surnameController,
+                  labelText: 'Surname',
+                  keyboardType: TextInputType.name,
+                ),
+                HMBPhoneField(
+                  controller: _mobileNumberController,
+                  labelText: 'Mobile Number',
+                  sourceContext: SourceContext(contact: contact),
+                ),
+                HMBPhoneField(
+                  controller: _landlineController,
+                  labelText: 'Landline',
+                  sourceContext: SourceContext(contact: contact),
+                ),
+                HMBPhoneField(
+                  controller: _officeNumberController,
+                  labelText: 'Office Number',
+                  sourceContext: SourceContext(contact: contact),
+                ),
+                HMBEmailField(
+                  controller: _emailaddressController,
+                  labelText: 'Email',
+                ),
+              ],
             ),
-            HMBNameField(
-              controller: _surnameController,
-              labelText: 'Surname',
-              keyboardType: TextInputType.name,
-            ),
-            HMBPhoneField(
-                controller: _mobileNumberController,
-                labelText: 'Mobile Number',
-                sourceContext: SourceContext(contact: contact)),
-            HMBPhoneField(
-                controller: _landlineController,
-                labelText: 'Landline',
-                sourceContext: SourceContext(contact: contact)),
-            HMBPhoneField(
-                controller: _officeNumberController,
-                labelText: 'Office Number',
-                sourceContext: SourceContext(contact: contact)),
-            HMBEmailField(
-              controller: _emailaddressController,
-              labelText: 'Email',
-            ),
-          ],
-        ),
       );
 
   @override
   Future<Contact> forUpdate(Contact contact) async => Contact.forUpdate(
-        entity: contact,
-        firstName: _firstNameController.text,
-        surname: _surnameController.text,
-        mobileNumber: _mobileNumberController.text,
-        landLine: _landlineController.text,
-        officeNumber: _officeNumberController.text,
-        emailAddress: _emailaddressController.text,
-      );
+    entity: contact,
+    firstName: _firstNameController.text,
+    surname: _surnameController.text,
+    mobileNumber: _mobileNumberController.text,
+    landLine: _landlineController.text,
+    officeNumber: _officeNumberController.text,
+    emailAddress: _emailaddressController.text,
+  );
 
   @override
   Future<Contact> forInsert() async => Contact.forInsert(
-        firstName: _firstNameController.text,
-        surname: _surnameController.text,
-        mobileNumber: _mobileNumberController.text,
-        landLine: _landlineController.text,
-        officeNumber: _officeNumberController.text,
-        emailAddress: _emailaddressController.text,
-      );
+    firstName: _firstNameController.text,
+    surname: _surnameController.text,
+    mobileNumber: _mobileNumberController.text,
+    landLine: _landlineController.text,
+    officeNumber: _officeNumberController.text,
+    emailAddress: _emailaddressController.text,
+  );
   @override
   void refresh() {
     setState(() {});

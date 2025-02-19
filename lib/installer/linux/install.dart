@@ -10,9 +10,10 @@ Future<void> linuxInstaller() async {
 }
 
 Future<void> _installDeepLinkHander() async {
-  var desktopLauncher =
-      await rootBundle.loadString('assets/installer/linux/hmb.desktop');
-final String pathToExe;
+  var desktopLauncher = await rootBundle.loadString(
+    'assets/installer/linux/hmb.desktop',
+  );
+  final String pathToExe;
 
   if (DartScript.self.isCompiled) {
     pathToExe = DartScript.self.pathToExe;
@@ -25,7 +26,9 @@ final String pathToExe;
   }
   desktopLauncher = desktopLauncher.replaceAll(r'$exec$', pathToExe);
   desktopLauncher = desktopLauncher.replaceAll(
-      r'$workingDir$', DartProject.self.pathToProjectRoot);
+    r'$workingDir$',
+    DartProject.self.pathToProjectRoot,
+  );
 
   final pathTo = join(HOME, '.local', 'share', 'applications', 'hmb.desktop');
   await File(pathTo).writeAsString(desktopLauncher);
@@ -37,6 +40,5 @@ final String pathToExe;
       // creates an entry in ~/.config/mimeapps.list
       .command('xdg-mime default hmb.desktop x-scheme-handler/hmb')
       // required by oidc for the secure storage pacakge.
-  
       .exitCode();
 }

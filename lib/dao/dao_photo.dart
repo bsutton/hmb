@@ -21,8 +21,10 @@ class DaoPhoto extends Dao<Photo> {
 
   Future<List<String>> getAllPhotoPaths() async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps =
-        await db.query('photo', columns: ['filePath']);
+    final List<Map<String, dynamic>> maps = await db.query(
+      'photo',
+      columns: ['filePath'],
+    );
     return maps.map((map) => map['filePath'] as String).toList();
   }
 
@@ -39,21 +41,31 @@ class DaoPhoto extends Dao<Photo> {
     final task = await DaoTask().getById(taskId);
     final photos = <PhotoMeta>[];
     final taskPhotos = await DaoPhoto().getByParent(task!.id, ParentType.task);
-    photos.addAll(taskPhotos.map(
-        (photo) => PhotoMeta(photo: photo, title: task.name, comment: null)));
+    photos.addAll(
+      taskPhotos.map(
+        (photo) => PhotoMeta(photo: photo, title: task.name, comment: null),
+      ),
+    );
     return photos;
   }
 
   static Future<List<PhotoMeta>> getByTool(int toolId) async {
     final tool = await DaoTool().getById(toolId);
     return (await DaoPhoto().getByParent(tool!.id, ParentType.tool))
-        .map((photo) => PhotoMeta(
-            photo: photo, title: tool.name, comment: tool.description))
+        .map(
+          (photo) => PhotoMeta(
+            photo: photo,
+            title: tool.name,
+            comment: tool.description,
+          ),
+        )
         .toList();
   }
 
   static Future<List<PhotoMeta>> getMetaByParent(
-      int parentId, ParentType parentType) async {
+    int parentId,
+    ParentType parentType,
+  ) async {
     switch (parentType) {
       case ParentType.task:
         return getByTask(parentId);

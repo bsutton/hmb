@@ -15,9 +15,9 @@ class SelectJobDialog extends StatefulWidget {
   _SelectJobDialogState createState() => _SelectJobDialogState();
 
   static Future<Job?> show(BuildContext context) async => showDialog<Job?>(
-        context: context,
-        builder: (context) => const SelectJobDialog(),
-      );
+    context: context,
+    builder: (context) => const SelectJobDialog(),
+  );
 }
 
 class _SelectJobDialogState extends State<SelectJobDialog> {
@@ -48,9 +48,9 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
   }
 
   Future<List<CustomerAndJob>> _fetchJobs() => CustomerAndJob.getJobs(
-        showAllJobs: showAllJobs,
-        showJobsWithNoBillableItems: showJobsWithNoBillableItems,
-      );
+    showAllJobs: showAllJobs,
+    showJobsWithNoBillableItems: showJobsWithNoBillableItems,
+  );
 
   List<CustomerAndJob> _filterJobs(List<CustomerAndJob> jobs) {
     if (_searchQuery.isEmpty) {
@@ -69,108 +69,109 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
 
   @override
   Widget build(BuildContext context) => Dialog(
-        // Remove default dialog padding to allow full-screen
-        insetPadding: EdgeInsets.zero,
-        backgroundColor: Theme.of(context).canvasColor,
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Select Job'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-                tooltip: 'Close',
-              ),
-            ],
+    // Remove default dialog padding to allow full-screen
+    insetPadding: EdgeInsets.zero,
+    backgroundColor: Theme.of(context).canvasColor,
+    child: Scaffold(
+      appBar: AppBar(
+        title: const Text('Select Job'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+            tooltip: 'Close',
           ),
-          body: Column(
-            children: [
-              // Filters
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  children: [
-                    CheckboxListTile(
-                      title: const Text('Show all jobs'),
-                      value: showAllJobs,
-                      onChanged: (value) {
-                        setState(() {
-                          showAllJobs = value ?? false;
-                        });
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Show jobs with no billable items'),
-                      value: showJobsWithNoBillableItems,
-                      onChanged: (value) {
-                        setState(() {
-                          showJobsWithNoBillableItems = value ?? false;
-                        });
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                    ),
-                  ],
+        ],
+      ),
+      body: Column(
+        children: [
+          // Filters
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                CheckboxListTile(
+                  title: const Text('Show all jobs'),
+                  value: showAllJobs,
+                  onChanged: (value) {
+                    setState(() {
+                      showAllJobs = value ?? false;
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
                 ),
-              ),
-
-              // Search bar
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    labelText: 'Search',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                  ),
+                CheckboxListTile(
+                  title: const Text('Show jobs with no billable items'),
+                  value: showJobsWithNoBillableItems,
+                  onChanged: (value) {
+                    setState(() {
+                      showJobsWithNoBillableItems = value ?? false;
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
                 ),
+              ],
+            ),
+          ),
+
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                labelText: 'Search',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
               ),
+            ),
+          ),
 
-              Expanded(
-                child: FutureBuilderEx<List<CustomerAndJob>>(
-                  // ignore: discarded_futures
-                  future: _fetchJobs(),
-                  builder: (context, jobs) {
-                    if (jobs == null || jobs.isEmpty) {
-                      return const Center(child: Text('No jobs found.'));
-                    }
+          Expanded(
+            child: FutureBuilderEx<List<CustomerAndJob>>(
+              // ignore: discarded_futures
+              future: _fetchJobs(),
+              builder: (context, jobs) {
+                if (jobs == null || jobs.isEmpty) {
+                  return const Center(child: Text('No jobs found.'));
+                }
 
-                    final filteredJobs = _filterJobs(jobs);
+                final filteredJobs = _filterJobs(jobs);
 
-                    if (filteredJobs.isEmpty) {
-                      return const Center(
-                          child: Text('No matches for your search.'));
-                    }
+                if (filteredJobs.isEmpty) {
+                  return const Center(
+                    child: Text('No matches for your search.'),
+                  );
+                }
 
-                    return ListView.builder(
-                      itemCount: filteredJobs.length,
-                      itemBuilder: (context, index) {
-                        final current = filteredJobs[index];
-                        return SurfaceCard(
-                          title: current.job.summary,
-                          body: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Customer: ${current.customer.name}'),
-                              Text(
-                                  'Has billable items: ${current.hasBillables ? "Yes" : "No"}'),
-                              if (current.contactName != null)
-                                Text('Contact: ${current.contactName}')
-                            ],
+                return ListView.builder(
+                  itemCount: filteredJobs.length,
+                  itemBuilder: (context, index) {
+                    final current = filteredJobs[index];
+                    return SurfaceCard(
+                      title: current.job.summary,
+                      body: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Customer: ${current.customer.name}'),
+                          Text(
+                            'Has billable items: ${current.hasBillables ? "Yes" : "No"}',
                           ),
-                          onPressed: () => Navigator.pop(context, current.job),
-                        );
-                      },
+                          if (current.contactName != null)
+                            Text('Contact: ${current.contactName}'),
+                        ],
+                      ),
+                      onPressed: () => Navigator.pop(context, current.job),
                     );
                   },
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }
 
 class CustomerAndJob {

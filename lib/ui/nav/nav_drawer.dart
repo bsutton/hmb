@@ -13,16 +13,24 @@ class MyDrawer extends StatelessWidget {
     DrawerItem(title: 'Shopping', route: '/shopping'),
     DrawerItem(title: 'Packing', route: '/packing'),
     DrawerItem(title: 'Schedule', route: '/schedule'),
-    DrawerItem(title: 'Billing', route: '', children: [
-      DrawerItem(title: 'Quotes', route: '/billing/quotes'),
-      DrawerItem(title: 'Invoices', route: '/billing/invoices'),
-      DrawerItem(title: 'Estimator', route: '/billing/estimator'),
-      DrawerItem(title: 'Milestones', route: '/billing/milestones'),
-    ]),
-    DrawerItem(title: 'Extras', route: '', children: [
-      DrawerItem(title: 'Tools', route: '/extras/tools'),
-      DrawerItem(title: 'Manufacturers', route: '/extras/manufacturers'),
-    ]),
+    DrawerItem(
+      title: 'Billing',
+      route: '',
+      children: [
+        DrawerItem(title: 'Quotes', route: '/billing/quotes'),
+        DrawerItem(title: 'Invoices', route: '/billing/invoices'),
+        DrawerItem(title: 'Estimator', route: '/billing/estimator'),
+        DrawerItem(title: 'Milestones', route: '/billing/milestones'),
+      ],
+    ),
+    DrawerItem(
+      title: 'Extras',
+      route: '',
+      children: [
+        DrawerItem(title: 'Tools', route: '/extras/tools'),
+        DrawerItem(title: 'Manufacturers', route: '/extras/manufacturers'),
+      ],
+    ),
     DrawerItem(
       title: 'System',
       route: '',
@@ -34,43 +42,48 @@ class MyDrawer extends StatelessWidget {
         DrawerItem(title: 'Integration', route: '/system/integration'),
         DrawerItem(title: 'Setup Wizard', route: '/system/wizard'),
         DrawerItem(title: 'About/Support', route: '/system/about'),
-        DrawerItem(title: 'Backup', route: '', children: [
-          DrawerItem(title: 'Google', route: '/system/backup/google'),
-          DrawerItem(title: 'Local', route: '/system/backup/local'),
-        ])
+        DrawerItem(
+          title: 'Backup',
+          route: '',
+          children: [
+            DrawerItem(title: 'Google', route: '/system/backup/google'),
+            DrawerItem(title: 'Local', route: '/system/backup/local'),
+          ],
+        ),
       ],
     ),
   ];
 
   @override
   Widget build(BuildContext context) => Drawer(
-        child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: drawerItems
-                .map((item) => _buildDrawerItem(item, context))
-                .toList(),
-          ),
-        ),
-      );
+    child: SafeArea(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children:
+            drawerItems.map((item) => _buildDrawerItem(item, context)).toList(),
+      ),
+    ),
+  );
 
   Widget _buildDrawerItem(DrawerItem item, BuildContext context) {
     if (item.children != null && item.children!.isNotEmpty) {
       return ExpansionTile(
         title: Text(item.title),
-        children: item.children!
-            .map((child) => _buildDrawerItem(child, context))
-            .toList(),
+        children:
+            item.children!
+                .map((child) => _buildDrawerItem(child, context))
+                .toList(),
       );
     } else {
       return ListTile(
         title: Text(item.title),
-        onTap: item.route.isNotEmpty
-            ? () {
-                Navigator.pop(context); // Close the drawer
-                context.go(item.route);
-              }
-            : null, // Disable tap if there's no route
+        onTap:
+            item.route.isNotEmpty
+                ? () {
+                  Navigator.pop(context); // Close the drawer
+                  context.go(item.route);
+                }
+                : null, // Disable tap if there's no route
       );
     }
   }

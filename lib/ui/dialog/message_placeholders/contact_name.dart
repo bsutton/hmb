@@ -4,7 +4,7 @@ import 'place_holder.dart';
 
 class ContactName extends PlaceHolder<Contact> {
   ContactName({required this.contactSource})
-      : super(name: tagName, base: tagbase, source: contactSource);
+    : super(name: tagName, base: tagbase, source: contactSource);
   final ContactSource contactSource;
 
   static String tagName = 'contact.name';

@@ -14,18 +14,18 @@ class Task extends Entity<Task> {
   }) : super();
 
   factory Task.fromMap(Map<String, dynamic> map) => Task(
-        id: map['id'] as int,
-        jobId: map['job_id'] as int,
-        name: map['name'] as String,
-        description: map['description'] as String,
-        taskStatusId: map['task_status_id'] as int,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-        // billingType: BillingType.values.firstWhere(
-        //     (e) => e.name == map['billing_type'],
-        //     orElse: () =>
-        //         BillingType.timeAndMaterial), // New field for BillingType
-      );
+    id: map['id'] as int,
+    jobId: map['job_id'] as int,
+    name: map['name'] as String,
+    description: map['description'] as String,
+    taskStatusId: map['task_status_id'] as int,
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+    // billingType: BillingType.values.firstWhere(
+    //     (e) => e.name == map['billing_type'],
+    //     orElse: () =>
+    //         BillingType.timeAndMaterial), // New field for BillingType
+  );
 
   Task.forInsert({
     required this.jobId,
@@ -56,15 +56,15 @@ class Task extends Entity<Task> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'job_id': jobId,
-        'name': name,
-        'description': description,
-        'task_status_id': taskStatusId,
-        // 'billing_type': billingType?.name, // New field for BillingType
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'job_id': jobId,
+    'name': name,
+    'description': description,
+    'task_status_id': taskStatusId,
+    // 'billing_type': billingType?.name, // New field for BillingType
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+  };
 
   @override
   String toString() =>

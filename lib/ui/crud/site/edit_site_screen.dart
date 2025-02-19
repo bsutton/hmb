@@ -46,25 +46,29 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     super.initState();
 
     currentEntity ??= widget.site;
-    _addressLine1Controller =
-        TextEditingController(text: currentEntity?.addressLine1);
-    _addressLine2Controller =
-        TextEditingController(text: currentEntity?.addressLine2);
+    _addressLine1Controller = TextEditingController(
+      text: currentEntity?.addressLine1,
+    );
+    _addressLine2Controller = TextEditingController(
+      text: currentEntity?.addressLine2,
+    );
     _suburbController = TextEditingController(text: currentEntity?.suburb);
     _stateController = TextEditingController(text: currentEntity?.state);
     _postcodeController = TextEditingController(text: currentEntity?.postcode);
-    _accessDetailsController =
-        TextEditingController(text: currentEntity?.accessDetails); // New field
+    _accessDetailsController = TextEditingController(
+      text: currentEntity?.accessDetails,
+    ); // New field
   }
 
   @override
   Widget build(BuildContext context) => NestedEntityEditScreen<Site, Customer>(
-        entityName: 'Site',
-        dao: DaoSite(),
-        entityState: this,
-        onInsert: (site) async =>
-            widget.daoJoin.insertForParent(site!, widget.parent),
-        editor: (site) => Column(
+    entityName: 'Site',
+    dao: DaoSite(),
+    entityState: this,
+    onInsert:
+        (site) async => widget.daoJoin.insertForParent(site!, widget.parent),
+    editor:
+        (site) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Add other form fields for the new fields
@@ -96,27 +100,28 @@ class _SiteEditScreenState extends State<SiteEditScreen>
             ),
           ],
         ),
-      );
+  );
 
   @override
   Future<Site> forUpdate(Site site) async => Site.forUpdate(
-      entity: site,
-      addressLine1: _addressLine1Controller.text,
-      addressLine2: _addressLine2Controller.text,
-      suburb: _suburbController.text,
-      state: _stateController.text,
-      postcode: _postcodeController.text,
-      accessDetails: _accessDetailsController.text); // New field
+    entity: site,
+    addressLine1: _addressLine1Controller.text,
+    addressLine2: _addressLine2Controller.text,
+    suburb: _suburbController.text,
+    state: _stateController.text,
+    postcode: _postcodeController.text,
+    accessDetails: _accessDetailsController.text,
+  ); // New field
 
   @override
   Future<Site> forInsert() async => Site.forInsert(
-        addressLine1: _addressLine1Controller.text,
-        addressLine2: _addressLine2Controller.text,
-        suburb: _suburbController.text,
-        state: _stateController.text,
-        postcode: _postcodeController.text,
-        accessDetails: _accessDetailsController.text, // New field
-      );
+    addressLine1: _addressLine1Controller.text,
+    addressLine2: _addressLine2Controller.text,
+    suburb: _suburbController.text,
+    state: _stateController.text,
+    postcode: _postcodeController.text,
+    accessDetails: _accessDetailsController.text, // New field
+  );
 
   @override
   void refresh() {

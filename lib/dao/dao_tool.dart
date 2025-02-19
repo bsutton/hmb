@@ -28,7 +28,8 @@ class DaoTool extends Dao<Tool> {
     }
 
     final like = '''%$filter%''';
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select t.* 
 from tool t
 join category c
@@ -38,7 +39,9 @@ or c.name like ?
 or t.serialNumber like ?
 or t.description like ?
 order by t.name
-''', [like, like, like, like]);
+''',
+      [like, like, like, like],
+    );
 
     return toList(data);
   }

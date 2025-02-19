@@ -13,21 +13,22 @@ class ReceiptStep extends WizardStep {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            CapturePhoto(
-                tool: wizard.tool!,
-                comment: 'Receipt',
-                title: 'Capture Receipt',
-                onCaptured: (photo) async {
-                  final photoId = await DaoPhoto().insert(photo);
-                  wizard.tool = wizard.tool!.copyWith(receiptPhotoId: photoId);
-                  await DaoTool().update(wizard.tool!);
-                  return photoId;
-                })
-          ],
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      children: [
+        const SizedBox(height: 24),
+        CapturePhoto(
+          tool: wizard.tool!,
+          comment: 'Receipt',
+          title: 'Capture Receipt',
+          onCaptured: (photo) async {
+            final photoId = await DaoPhoto().insert(photo);
+            wizard.tool = wizard.tool!.copyWith(receiptPhotoId: photoId);
+            await DaoTool().update(wizard.tool!);
+            return photoId;
+          },
         ),
-      );
+      ],
+    ),
+  );
 }

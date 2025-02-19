@@ -31,29 +31,39 @@ class LocalBackupProvider extends BackupProvider {
     final backups = <String>[];
     final backupPath = await _pathToBackupDir;
     Log.d('Searching for backups in $backupPath');
-    find('*.zip', workingDirectory: backupPath, progress: (item) {
-      backups.add(item.pathTo);
-      return true;
-    });
+    find(
+      '*.zip',
+      workingDirectory: backupPath,
+      progress: (item) {
+        backups.add(item.pathTo);
+        return true;
+      },
+    );
 
     return backups
-        .map((filePath) => Backup(
+        .map(
+          (filePath) => Backup(
             id: 'not used',
             when: stat(filePath).modified,
             size: '${stat(filePath).size}',
             status: 'good',
             pathTo: filePath,
-            error: 'none'))
+            error: 'none',
+          ),
+        )
         .toList();
   }
 
   @override
-  Future<BackupResult> store(
-      {required String pathToDatabaseCopy,
-      required String pathToZippedBackup,
-      required int version}) async {
-    final datePart =
-        DateTimeFormat.format(DateTime.now(), format: 'Y-j-d-H-i-s-');
+  Future<BackupResult> store({
+    required String pathToDatabaseCopy,
+    required String pathToZippedBackup,
+    required int version,
+  }) async {
+    final datePart = DateTimeFormat.format(
+      DateTime.now(),
+      format: 'Y-j-d-H-i-s-',
+    );
 
     final pathToBackupDir = await _pathToBackupDir;
 
@@ -67,9 +77,10 @@ class LocalBackupProvider extends BackupProvider {
     move(pathToZippedBackup, pathToBackupFile);
 
     return BackupResult(
-        pathToBackup: pathToBackupFile,
-        pathToSource: await databasePath,
-        success: true);
+      pathToBackup: pathToBackupFile,
+      pathToSource: await databasePath,
+      success: true,
+    );
   }
 
   @override

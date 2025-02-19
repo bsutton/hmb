@@ -30,69 +30,70 @@ class JobCard extends StatefulWidget {
 class _JobCardState extends State<JobCard> {
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: 327,
-        child: FutureBuilderEx<CompleteJobInfo>(
-          // ignore: discarded_futures
-          future: _loadCompleteJobInfo(widget.job),
-          builder: (context, info) {
-            final labourCost = info!.totals.labourCost;
-            final materialsCost = info.totals.materialsCost;
-            final combinedCost = labourCost + materialsCost;
+    height: 327,
+    child: FutureBuilderEx<CompleteJobInfo>(
+      // ignore: discarded_futures
+      future: _loadCompleteJobInfo(widget.job),
+      builder: (context, info) {
+        final labourCost = info!.totals.labourCost;
+        final materialsCost = info.totals.materialsCost;
+        final combinedCost = labourCost + materialsCost;
 
-            return Surface(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        return Surface(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.job.summary,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              HMBTextLine('Customer: ${info.customerName}'),
+              HMBTextLine('Job Number: ${widget.job.id}'),
+              if (info.quoteNumber != null)
+                HMBTextLine('Quote #: ${info.quoteNumber}'),
+              HMBTextLine('Status: ${info.statusName}'),
+              const SizedBox(height: 16),
+              HMBTextLine('Labour: $labourCost'),
+              HMBTextLine('Materials: $materialsCost'),
+              HMBTextLine('Combined: $combinedCost'),
+              const SizedBox(height: 16),
+              Row(
                 children: [
-                  Text(
-                    widget.job.summary,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  HMBTextLine('Customer: ${info.customerName}'),
-                  HMBTextLine('Job Number: ${widget.job.id}'),
-                  if (info.quoteNumber != null)
-                    HMBTextLine('Quote #: ${info.quoteNumber}'),
-                  HMBTextLine('Status: ${info.statusName}'),
-                  const SizedBox(height: 16),
-                  HMBTextLine('Labour: $labourCost'),
-                  HMBTextLine('Materials: $materialsCost'),
-                  HMBTextLine('Combined: $combinedCost'),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      HMBButton(
-                        label: 'Update Estimates',
-                        onPressed: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (context) =>
+                  HMBButton(
+                    label: 'Update Estimates',
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder:
+                              (context) =>
                                   JobEstimateBuilderScreen(job: widget.job),
-                            ),
-                          );
-                          // After returning, refresh totals
-                          widget.onEstimatesUpdated();
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      HMBButton(
-                        label: 'Create Quote',
-                        onPressed: () async {
-                          await _createQuote();
-                          widget.onEstimatesUpdated();
-                        },
-                      ),
-                    ],
+                        ),
+                      );
+                      // After returning, refresh totals
+                      widget.onEstimatesUpdated();
+                    },
+                  ),
+                  const SizedBox(width: 16),
+                  HMBButton(
+                    label: 'Create Quote',
+                    onPressed: () async {
+                      await _createQuote();
+                      widget.onEstimatesUpdated();
+                    },
                   ),
                 ],
               ),
-            );
-          },
-        ),
-      );
+            ],
+          ),
+        );
+      },
+    ),
+  );
 
   Future<void> _createQuote() async {
     final invoiceOptions = await showQuote(context: context, job: widget.job);
@@ -101,27 +102,33 @@ class _JobCardState extends State<JobCard> {
       try {
         if (!invoiceOptions.billBookingFee &&
             invoiceOptions.selectedTaskIds.isEmpty) {
-          HMBToast.error('You must select a task or the booking Fee',
-              acknowledgmentRequired: true);
+          HMBToast.error(
+            'You must select a task or the booking Fee',
+            acknowledgmentRequired: true,
+          );
           return;
         }
         await DaoQuote().create(widget.job, invoiceOptions);
         HMBToast.info('Quote created successfully.');
       } catch (e) {
-        HMBToast.error('Failed to create quote: $e',
-            acknowledgmentRequired: true);
+        HMBToast.error(
+          'Failed to create quote: $e',
+          acknowledgmentRequired: true,
+        );
       }
     }
   }
 
   Future<CompleteJobInfo> _loadCompleteJobInfo(Job job) async {
     final totals = await _loadJobTotals(job);
-    final customer = job.customerId != null
-        ? await DaoCustomer().getById(job.customerId)
-        : null;
-    final jobStatus = job.jobStatusId != null
-        ? await DaoJobStatus().getById(job.jobStatusId)
-        : null;
+    final customer =
+        job.customerId != null
+            ? await DaoCustomer().getById(job.customerId)
+            : null;
+    final jobStatus =
+        job.jobStatusId != null
+            ? await DaoJobStatus().getById(job.jobStatusId)
+            : null;
 
     final customerName = customer?.name ?? 'N/A';
     final statusName = jobStatus?.name ?? 'Unknown';

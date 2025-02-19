@@ -20,9 +20,9 @@ class LocalTime {
   }
 
   LocalTime.fromDateTime(DateTime dateTime)
-      : hour = dateTime.hour,
-        minute = dateTime.minute,
-        second = dateTime.second;
+    : hour = dateTime.hour,
+      minute = dateTime.minute,
+      second = dateTime.second;
   final int hour;
   final int minute;
   final int second;
@@ -34,14 +34,15 @@ class LocalTime {
   }
 
   static DateTime stripDate(DateTime dateTime) => DateTime(
-      0,
-      0,
-      0,
-      dateTime.hour,
-      dateTime.minute,
-      dateTime.second,
-      dateTime.millisecond,
-      dateTime.microsecond);
+    0,
+    0,
+    0,
+    dateTime.hour,
+    dateTime.minute,
+    dateTime.second,
+    dateTime.millisecond,
+    dateTime.microsecond,
+  );
 
   // ignore: prefer_constructors_over_static_methods
   static LocalTime now() {
@@ -86,9 +87,8 @@ class LocalTime {
 
   @override
   int get hashCode =>
-
-      /// hour == 0 an hour == 24 are both 12 am.
-      Object.hashAll([if (hour == 0) 24 else hour, minute, second]);
+  /// hour == 0 an hour == 24 are both 12 am.
+  Object.hashAll([if (hour == 0) 24 else hour, minute, second]);
 
   Duration difference(LocalTime startTime) {
     final today = LocalDate.today();
@@ -101,9 +101,10 @@ class LocalTimeConverter implements JsonConverter<LocalTime, String> {
 
   @override
   // DateTime parse MUST have a date so pass 1900/1/1 and then strip the date component.
-  LocalTime fromJson(String? json) => Strings.isBlank(json)
-      ? LocalTime.now()
-      : LocalTime.fromDateTime(DateTime.parse('1900-01-01 $json'));
+  LocalTime fromJson(String? json) =>
+      Strings.isBlank(json)
+          ? LocalTime.now()
+          : LocalTime.fromDateTime(DateTime.parse('1900-01-01 $json'));
 
   @override
   String toJson(LocalTime? time) =>

@@ -42,32 +42,39 @@ class PlaceHolderManager {
     placeholders[JobSummary.tagName] = JobSummary(jobSource: jobSource);
 
     // Customer
-    placeholders[CustomerName.tagName] =
-        CustomerName(customerSource: customerSource);
+    placeholders[CustomerName.tagName] = CustomerName(
+      customerSource: customerSource,
+    );
 
     // Contact
-    placeholders[ContactName.tagName] =
-        ContactName(contactSource: contactSource);
+    placeholders[ContactName.tagName] = ContactName(
+      contactSource: contactSource,
+    );
 
     // Delay
     placeholders[DelayPeriod.tagName] = DelayPeriod(delaySource: DelaySource());
 
     // Job Activity
-    placeholders[JobActivityTime.tagName] =
-        JobActivityTime(source: jobActivitySource);
-    placeholders[JobActivityDate.tagName] =
-        JobActivityDate(source: jobActivitySource);
-    placeholders[OriginalDate.tagName] =
-        OriginalDate(dateSource: DateSource(label: OriginalDate.label));
+    placeholders[JobActivityTime.tagName] = JobActivityTime(
+      source: jobActivitySource,
+    );
+    placeholders[JobActivityDate.tagName] = JobActivityDate(
+      source: jobActivitySource,
+    );
+    placeholders[OriginalDate.tagName] = OriginalDate(
+      dateSource: DateSource(label: OriginalDate.label),
+    );
 
     // Invoice
-    placeholders[DueDate.tagName] =
-        DueDate(dateSource: DateSource(label: DueDate.label));
+    placeholders[DueDate.tagName] = DueDate(
+      dateSource: DateSource(label: DueDate.label),
+    );
 
     /// Service Date - is this no really just job activity
     /// or do we leave if someone doesn't use job activityes.
-    placeholders[ServiceDate.tagName] =
-        ServiceDate(dateSource: DateSource(label: ServiceDate.label));
+    placeholders[ServiceDate.tagName] = ServiceDate(
+      dateSource: DateSource(label: ServiceDate.label),
+    );
 
     /// Site
     placeholders[SiteHolder.tagName] = SiteHolder(siteSource: siteSource);
@@ -85,13 +92,14 @@ class PlaceHolderManager {
   final Map<String, PlaceHolder<dynamic>> placeholders = {};
 
   List<Widget> buildFields(SourceContext data) => [
-        customerSource.widget(),
-        jobSource.widget(),
-        // Add fields for other sources in the correct order
-      ];
+    customerSource.widget(),
+    jobSource.widget(),
+    // Add fields for other sources in the correct order
+  ];
 
   // ignore: strict_raw_type
   Future<PlaceHolder?> resolvePlaceholder(
-          String name, SourceContext data) async =>
-      placeholders[name];
+    String name,
+    SourceContext data,
+  ) async => placeholders[name];
 }

@@ -34,7 +34,7 @@ class XeroApi {
         'Xero-tenant-id': tenantId,
       },
       body: jsonEncode({
-        'Invoices': [xeroInvoice.toJson()]
+        'Invoices': [xeroInvoice.toJson()],
       }),
     );
     return response;
@@ -92,13 +92,14 @@ class XeroApi {
 
     await markApproved(invoice);
     final response = await http.post(
-        Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}/Email'),
-        headers: {
-          'Authorization': 'Bearer ${xeroAuth.accessToken}',
-          'Content-Type': 'application/json',
-          'Xero-tenant-id': tenantId,
-        },
-        body: '');
+      Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}/Email'),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
+        'Xero-tenant-id': tenantId,
+      },
+      body: '',
+    );
     if (response.statusCode != 204) {
       throw Exception('Error sending invoice: ${response.body}');
     }
@@ -130,7 +131,7 @@ class XeroApi {
     return response;
   }
 
-  /// Mark the invoice in xero as sent. 
+  /// Mark the invoice in xero as sent.
   Future<http.Response> markAsSent(Invoice invoice) async {
     final tenantId = await getTenantId();
     final response = await http.post(
@@ -176,7 +177,7 @@ class XeroApi {
         'Xero-tenant-id': tenantId,
       },
       body: jsonEncode({
-        'Contacts': [contact]
+        'Contacts': [contact],
       }),
     );
     return response;
@@ -189,9 +190,7 @@ class XeroApi {
 
     final response = await http.get(
       Uri.parse('https://api.xero.com/connections'),
-      headers: {
-        'Authorization': 'Bearer ${xeroAuth.accessToken}',
-      },
+      headers: {'Authorization': 'Bearer ${xeroAuth.accessToken}'},
     );
 
     if (response.statusCode == 200) {

@@ -19,7 +19,8 @@ class AppLinkRedirectHandler extends RedirectHandler {
 
     /// android and IOS
     return Uri.parse(
-        'https://ivanhoehandyman.com.au/${XeroAuth2.redirectPath}');
+      'https://ivanhoehandyman.com.au/${XeroAuth2.redirectPath}',
+    );
   }
 
   @override

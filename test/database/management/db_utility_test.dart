@@ -15,7 +15,12 @@ Future<Database> setupTestDb() async {
   final project = DartProject.self;
   // Path to the clean database in the fixtures directory
   final cleanDbPath = join(
-      project.pathToProjectRoot, 'test', 'fixture', 'db', 'handyman_test.db');
+    project.pathToProjectRoot,
+    'test',
+    'fixture',
+    'db',
+    'handyman_test.db',
+  );
 
   // Path where the test database will be copied to and used
   testDbPath = join(createTempDir(), 'handyman_test_temp.db');
@@ -33,10 +38,11 @@ Future<Database> setupTestDb() async {
 
   // Open the copied database for testing
   await DatabaseHelper().initDatabase(
-      src: ProjectScriptSource(),
-      backupProvider: TestBackupProvider(CliDatabaseFactory(), testDbPath),
-      databaseFactory: CliDatabaseFactory(),
-      backup: false);
+    src: ProjectScriptSource(),
+    backupProvider: TestBackupProvider(CliDatabaseFactory(), testDbPath),
+    databaseFactory: CliDatabaseFactory(),
+    backup: false,
+  );
   testDb = await openDatabase(testDbPath);
 
   return testDb!;

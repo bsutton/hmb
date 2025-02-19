@@ -49,10 +49,12 @@ class GoogleDriveBackupProvider extends BackupProvider {
     try {
       final driveApi = await GoogleDriveApi.selfAuth();
 
-      final media = (await driveApi.files.get(
-        backup.id,
-        downloadOptions: drive.DownloadOptions.fullMedia,
-      )) as drive.Media;
+      final media =
+          (await driveApi.files.get(
+                backup.id,
+                downloadOptions: drive.DownloadOptions.fullMedia,
+              ))
+              as drive.Media;
 
       return saveStreamToFile(media.stream, createTempFile());
     } catch (e) {
@@ -61,7 +63,9 @@ class GoogleDriveBackupProvider extends BackupProvider {
   }
 
   Future<File> saveStreamToFile(
-      Stream<List<int>> stream, String filePath) async {
+    Stream<List<int>> stream,
+    String filePath,
+  ) async {
     // Open the file in write mode
     final file = File(filePath);
     final sink = file.openWrite();
@@ -91,14 +95,16 @@ class GoogleDriveBackupProvider extends BackupProvider {
       final backupFiles = filesList.files ?? [];
 
       return backupFiles
-          .map((file) => Backup(
-                id: file.id ?? '', // Include the file ID
-                when: file.createdTime?.toLocal() ?? DateTime.now(),
-                size: file.size ?? 'unknown',
-                status: 'good',
-                pathTo: file.name ?? 'Unknown',
-                error: 'none',
-              ))
+          .map(
+            (file) => Backup(
+              id: file.id ?? '', // Include the file ID
+              when: file.createdTime?.toLocal() ?? DateTime.now(),
+              size: file.size ?? 'unknown',
+              status: 'good',
+              pathTo: file.name ?? 'Unknown',
+              error: 'none',
+            ),
+          )
           .toList();
     } catch (e) {
       throw BackupException('Error listing backups from Google Drive: $e');
@@ -106,15 +112,18 @@ class GoogleDriveBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<BackupResult> store(
-      {required String pathToDatabaseCopy,
-      required String pathToZippedBackup,
-      required int version}) async {
+  Future<BackupResult> store({
+    required String pathToDatabaseCopy,
+    required String pathToZippedBackup,
+    required int version,
+  }) async {
     try {
       emitProgress('Starting Google Drive upload', 5, 6);
 
-      final uploader =
-          ZipUploader(pathToZip: pathToZippedBackup, provider: this);
+      final uploader = ZipUploader(
+        pathToZip: pathToZippedBackup,
+        provider: this,
+      );
       await uploader.upload();
 
       return BackupResult(
@@ -144,8 +153,11 @@ class GoogleDriveBackupProvider extends BackupProvider {
 }
 
 // Stream transformer to track progress
-Stream<List<int>> trackProgress(Stream<List<int>> source, int totalLength,
-    void Function(double) onProgress) {
+Stream<List<int>> trackProgress(
+  Stream<List<int>> source,
+  int totalLength,
+  void Function(double) onProgress,
+) {
   var bytesUploaded = 0;
 
   return source.transform(

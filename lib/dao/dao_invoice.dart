@@ -28,28 +28,33 @@ class DaoInvoice extends Dao<Invoice> {
   @override
   Future<List<Invoice>> getAll({String? orderByClause}) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps =
-        await db.query(tableName, orderBy: 'modified_date desc');
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableName,
+      orderBy: 'modified_date desc',
+    );
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
-  Future<List<Invoice>> getByJobId(
-    int jobId,
-  ) async {
+  Future<List<Invoice>> getByJobId(int jobId) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(tableName,
-        where: 'job_id = ?', whereArgs: [jobId], orderBy: 'id desc');
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableName,
+      where: 'job_id = ?',
+      whereArgs: [jobId],
+      orderBy: 'id desc',
+    );
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
-Future<List<Invoice>> getByFilter(String? filter) async {
-  final db = withoutTransaction();
+  Future<List<Invoice>> getByFilter(String? filter) async {
+    final db = withoutTransaction();
 
-  if (Strings.isBlank(filter)) {
-    return getAll(orderByClause: 'modified_date desc');
-  }
+    if (Strings.isBlank(filter)) {
+      return getAll(orderByClause: 'modified_date desc');
+    }
 
-  final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
     SELECT i.*
     FROM invoice i
     LEFT JOIN job j ON i.job_id = j.id
@@ -59,15 +64,17 @@ Future<List<Invoice>> getByFilter(String? filter) async {
        OR j.summary LIKE ?
        OR c.name LIKE ?
     ORDER BY i.modified_date DESC
-  ''', [
-    '%$filter%', // Filter for invoice_num
-    '%$filter%', // Filter for external_invoice_id
-    '%$filter%', // Filter for job summary
-    '%$filter%'  // Filter for customer name
-  ]);
+  ''',
+      [
+        '%$filter%', // Filter for invoice_num
+        '%$filter%', // Filter for external_invoice_id
+        '%$filter%', // Filter for job summary
+        '%$filter%', // Filter for customer name
+      ],
+    );
 
-  return toList(data);
-}
+    return toList(data);
+  }
 
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
@@ -79,8 +86,9 @@ Future<List<Invoice>> getByFilter(String? filter) async {
   }
 
   Future<void> deleteByJob(int jobId, {Transaction? transaction}) async {
-    await withinTransaction(transaction)
-        .delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
+    await withinTransaction(
+      transaction,
+    ).delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
   }
 
   @override
@@ -136,25 +144,29 @@ You must provide an email address for the Contact ${contact.fullname}''');
       } else {
         // Create the contact in Xero if it doesn't exist
         final xeroContact = XeroContact.fromContact(contact);
-        final createContactResponse =
-            await xeroApi.createContact(xeroContact.toJson());
+        final createContactResponse = await xeroApi.createContact(
+          xeroContact.toJson(),
+        );
 
         if (createContactResponse.statusCode == 200) {
           // ignore: avoid_dynamic_calls
           xeroContactId =
               // ignore: avoid_dynamic_calls
               (jsonDecode(createContactResponse.body)['Contacts'] as List)
-                  .first['ContactID'] as String;
+                      .first['ContactID']
+                  as String;
           // Update the local contact with the Xero contact ID
-          await DaoContact()
-              .update(contact.copyWith(xeroContactId: xeroContactId));
+          await DaoContact().update(
+            contact.copyWith(xeroContactId: xeroContactId),
+          );
         } else {
           throw Exception('Failed to create contact in Xero');
         }
       }
     } else {
       throw InvoiceException(
-          '''Failed to fetch contact from Xero Error: ${contactResponse.reasonPhrase}''');
+        '''Failed to fetch contact from Xero Error: ${contactResponse.reasonPhrase}''',
+      );
     }
 
     // Create the invoice in Xero
@@ -163,7 +175,8 @@ You must provide an email address for the Contact ${contact.fullname}''');
     final createInvoiceResponse = await xeroApi.uploadInvoice(xeroInvoice);
     if (createInvoiceResponse.statusCode != 200) {
       throw Exception(
-          'Failed to create invoice in Xero: ${createInvoiceResponse.body}');
+        'Failed to create invoice in Xero: ${createInvoiceResponse.body}',
+      );
     }
     final responseBody = jsonDecode(createInvoiceResponse.body);
     // ignore: avoid_dynamic_calls
@@ -171,8 +184,10 @@ You must provide an email address for the Contact ${contact.fullname}''');
     // ignore: avoid_dynamic_calls
     final invoiceId = responseBody['Invoices'][0]['InvoiceID'] as String;
 
-    final completedInvoice =
-        invoice.copyWith(invoiceNum: invoiceNum, externalInvoiceId: invoiceId);
+    final completedInvoice = invoice.copyWith(
+      invoiceNum: invoiceNum,
+      externalInvoiceId: invoiceId,
+    );
 
     await DaoInvoice().update(completedInvoice);
   }

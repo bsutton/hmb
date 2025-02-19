@@ -12,32 +12,30 @@ class HomeWithDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-            backgroundColor: Colors.purple,
-            title: JuneBuilder(
-              HMBTitle.new,
-              builder: (title) => Text(title.title),
-            )),
-        drawer: MyDrawer(),
-        body: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            JuneBuilder<TimeEntryState>(
-              TimeEntryState.new,
-              builder: (context) {
-                final state = June.getState<TimeEntryState>(TimeEntryState.new);
-                if (state.activeTimeEntry != null) {
-                  return HMBStatusBar(
-                    activeTimeEntry: state.activeTimeEntry,
-                    task: state.task,
-                    onTimeEntryEnded: state.clearActiveTimeEntry,
-                  );
-                }
-                return Container();
-              },
-            ),
-            Flexible(child: initialScreen),
-          ],
+    appBar: AppBar(
+      backgroundColor: Colors.purple,
+      title: JuneBuilder(HMBTitle.new, builder: (title) => Text(title.title)),
+    ),
+    drawer: MyDrawer(),
+    body: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        JuneBuilder<TimeEntryState>(
+          TimeEntryState.new,
+          builder: (context) {
+            final state = June.getState<TimeEntryState>(TimeEntryState.new);
+            if (state.activeTimeEntry != null) {
+              return HMBStatusBar(
+                activeTimeEntry: state.activeTimeEntry,
+                task: state.task,
+                onTimeEntryEnded: state.clearActiveTimeEntry,
+              );
+            }
+            return Container();
+          },
         ),
-      );
+        Flexible(child: initialScreen),
+      ],
+    ),
+  );
 }

@@ -1,9 +1,4 @@
-enum JobStatusEnum {
-  finalised,
-  preStart,
-  progressing,
-  onHold,
-}
+enum JobStatusEnum { finalised, preStart, progressing, onHold }
 
 extension JobStatusEnumExtension on JobStatusEnum {
   String get name {

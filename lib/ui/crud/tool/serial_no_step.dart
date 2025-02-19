@@ -25,11 +25,15 @@ class SerialNumberStep extends WizardStep {
   }
 
   @override
-  Future<void> onNext(BuildContext context, WizardStepTarget intendedStep,
-      {required bool userOriginated}) async {
+  Future<void> onNext(
+    BuildContext context,
+    WizardStepTarget intendedStep, {
+    required bool userOriginated,
+  }) async {
     final daoTool = DaoTool();
-    final tool = toolWizardState.tool!
-        .copyWith(serialNumber: _serialNumberController.text);
+    final tool = toolWizardState.tool!.copyWith(
+      serialNumber: _serialNumberController.text,
+    );
     await daoTool.update(tool);
     toolWizardState.tool = tool;
 
@@ -39,32 +43,31 @@ class SerialNumberStep extends WizardStep {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _serialNumberController,
-              decoration: const InputDecoration(labelText: 'Serial Number'),
-            ),
-            HMBButton(
-              label: 'Scan Barcode',
-              onPressed: _scanBarcode,
-            ),
-            const SizedBox(height: 24),
-            CapturePhoto(
-                tool: toolWizardState.tool!,
-                comment: 'Serial Number',
-                title: 'Capture Serial Number',
-                onCaptured: (photo) async {
-                  final photoId = await DaoPhoto().insert(photo);
-                  toolWizardState.tool = toolWizardState.tool!
-                      .copyWith(serialNumberPhotoId: photoId);
-                  await DaoTool().update(toolWizardState.tool!);
-                  return photoId;
-                })
-          ],
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      children: [
+        TextField(
+          controller: _serialNumberController,
+          decoration: const InputDecoration(labelText: 'Serial Number'),
         ),
-      );
+        HMBButton(label: 'Scan Barcode', onPressed: _scanBarcode),
+        const SizedBox(height: 24),
+        CapturePhoto(
+          tool: toolWizardState.tool!,
+          comment: 'Serial Number',
+          title: 'Capture Serial Number',
+          onCaptured: (photo) async {
+            final photoId = await DaoPhoto().insert(photo);
+            toolWizardState.tool = toolWizardState.tool!.copyWith(
+              serialNumberPhotoId: photoId,
+            );
+            await DaoTool().update(toolWizardState.tool!);
+            return photoId;
+          },
+        ),
+      ],
+    ),
+  );
 
   @override
   void dispose() {

@@ -34,8 +34,12 @@ class RichEditorController {
     }
   }
 
-  void replaceText(int index, int length, Object data,
-      {TextSelection? selection}) {
+  void replaceText(
+    int index,
+    int length,
+    Object data, {
+    TextSelection? selection,
+  }) {
     controller.replaceText(index, length, data, selection: selection);
   }
 
@@ -45,8 +49,11 @@ class RichEditorController {
 }
 
 class RichEditor extends StatefulWidget {
-  const RichEditor(
-      {required this.controller, required this.focusNode, super.key});
+  const RichEditor({
+    required this.controller,
+    required this.focusNode,
+    super.key,
+  });
 
   final RichEditorController controller;
   final FocusNode focusNode;
@@ -73,9 +80,7 @@ class RichEditor extends StatefulWidget {
     // from the example and are probably not needed.
     final heuristics = ParchmentHeuristics(
       formatRules: [],
-      insertRules: [
-        ForceNewlineForInsertsAroundInlineImageRule(),
-      ],
+      insertRules: [ForceNewlineForInsertsAroundInlineImageRule()],
       deleteRules: [],
     ).merge(ParchmentHeuristics.fallback);
     // create the parchment
@@ -84,14 +89,9 @@ class RichEditor extends StatefulWidget {
     if (json == null) {
       /// Either no json or invalid json passed
       /// so create an empty document.
-      doc = ParchmentDocument(
-        heuristics: heuristics,
-      );
+      doc = ParchmentDocument(heuristics: heuristics);
     } else {
-      doc = ParchmentDocument.fromJson(
-        json,
-        heuristics: heuristics,
-      );
+      doc = ParchmentDocument.fromJson(json, heuristics: heuristics);
     }
     return doc;
   }
@@ -116,39 +116,40 @@ class _RichEditorState extends State<RichEditor> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: FocusScope(
-          node: FocusScopeNode(),
-          child: Column(
-            children: [
-              FleatherToolbar.basic(controller: widget.controller.controller),
-              Divider(height: 1, thickness: 1, color: Colors.grey.shade200),
-              Expanded(
-                child: FleatherEditor(
-                  key: UniqueKey(),
-                  controller: widget.controller.controller,
-                  focusNode: widget.focusNode,
-                  padding: EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    bottom: MediaQuery.of(context).padding.bottom,
-                  ),
-                  onLaunchUrl: _launchUrl,
-                  embedBuilder: _embedBuilder,
-                  spellCheckConfiguration: _getSpellCheckService(context),
-                ),
+    body: FocusScope(
+      node: FocusScopeNode(),
+      child: Column(
+        children: [
+          FleatherToolbar.basic(controller: widget.controller.controller),
+          Divider(height: 1, thickness: 1, color: Colors.grey.shade200),
+          Expanded(
+            child: FleatherEditor(
+              key: UniqueKey(),
+              controller: widget.controller.controller,
+              focusNode: widget.focusNode,
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom,
               ),
-            ],
+              onLaunchUrl: _launchUrl,
+              embedBuilder: _embedBuilder,
+              spellCheckConfiguration: _getSpellCheckService(context),
+            ),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 
   /// Spell checker only supported on Android and iOS.
   SpellCheckConfiguration? _getSpellCheckService(BuildContext context) {
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       return SpellCheckConfiguration(
-          spellCheckService: DefaultSpellCheckService(),
-          misspelledSelectionColor: Colors.red,
-          misspelledTextStyle: DefaultTextStyle.of(context).style);
+        spellCheckService: DefaultSpellCheckService(),
+        misspelledSelectionColor: Colors.red,
+        misspelledTextStyle: DefaultTextStyle.of(context).style,
+      );
     } else {
       return null;
     }
@@ -159,8 +160,10 @@ class _RichEditorState extends State<RichEditor> {
       final data = node.value.data;
       // Icons.rocket_launch_outlined
       return Icon(
-        IconData(int.parse(data['codePoint'] as String),
-            fontFamily: data['fontFamily'] as String),
+        IconData(
+          int.parse(data['codePoint'] as String),
+          fontFamily: data['fontFamily'] as String,
+        ),
         color: Color(int.parse(data['color'] as String)),
         size: 18,
       );

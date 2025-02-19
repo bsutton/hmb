@@ -49,13 +49,17 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
 
     currentEntity ??= widget.timeEntry;
     _startTimeController = TextEditingController(
-        text: currentEntity != null
-            ? _formatDateTime(currentEntity!.startTime)
-            : '');
+      text:
+          currentEntity != null
+              ? _formatDateTime(currentEntity!.startTime)
+              : '',
+    );
     _endTimeController = TextEditingController(
-        text: currentEntity?.endTime != null
-            ? _formatDateTime(currentEntity!.endTime!)
-            : '');
+      text:
+          currentEntity?.endTime != null
+              ? _formatDateTime(currentEntity!.endTime!)
+              : '',
+    );
     _noteController = TextEditingController(text: currentEntity?.note ?? '');
 
     _startTimeFocusNode = FocusNode();
@@ -79,7 +83,9 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
   }
 
   Future<DateTime?> _selectDateTime(
-      BuildContext context, DateTime? initialDate) async {
+    BuildContext context,
+    DateTime? initialDate,
+  ) async {
     final selectedDate = await showDatePicker(
       context: context,
       initialDate: initialDate ?? DateTime.now(),
@@ -91,10 +97,13 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
       final selectedTime = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(initialDate ?? DateTime.now()),
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-          child: child!,
-        ),
+        builder:
+            (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(alwaysUse24HourFormat: false),
+              child: child!,
+            ),
       );
 
       if (selectedTime != null) {
@@ -113,17 +122,20 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
 
   @override
   Widget build(BuildContext context) => NestedEntityEditScreen<TimeEntry, Task>(
-        entityName: 'Time Entry',
-        dao: DaoTimeEntry(),
-        onInsert: (timeEntry) async => DaoTimeEntry().insert(timeEntry!),
-        entityState: this,
-        editor: (timeEntry) => Column(
+    entityName: 'Time Entry',
+    dao: DaoTimeEntry(),
+    onInsert: (timeEntry) async => DaoTimeEntry().insert(timeEntry!),
+    entityState: this,
+    editor:
+        (timeEntry) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             GestureDetector(
               onTap: () async {
                 final selectedDateTime = await _selectDateTime(
-                    context, _parseDateTime(_startTimeController.text));
+                  context,
+                  _parseDateTime(_startTimeController.text),
+                );
                 if (selectedDateTime != null) {
                   _startTimeController.text = _formatDateTime(selectedDateTime);
                 }
@@ -135,16 +147,20 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
                   labelText: 'Start Time',
                   keyboardType: TextInputType.datetime,
                   required: true,
-                  validator: (value) => (_parseDateTime(value) == null)
-                      ? 'You must enter a valid Start Time'
-                      : null,
+                  validator:
+                      (value) =>
+                          (_parseDateTime(value) == null)
+                              ? 'You must enter a valid Start Time'
+                              : null,
                 ),
               ),
             ),
             GestureDetector(
               onTap: () async {
                 final selectedDateTime = await _selectDateTime(
-                    context, _parseDateTime(_endTimeController.text));
+                  context,
+                  _parseDateTime(_endTimeController.text),
+                );
                 if (selectedDateTime != null) {
                   _endTimeController.text = _formatDateTime(selectedDateTime);
                 }
@@ -158,12 +174,15 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
                   required: true,
 
                   /// end time must be after start time.
-                  validator: (value) => (Strings.isNotBlank(value) &&
-                          (!_parseDateTime(value)!.isAfter(
-                              _parseDateTime(_startTimeController.text) ??
-                                  DateTime.now())))
-                      ? 'End time must be after start time'
-                      : null,
+                  validator:
+                      (value) =>
+                          (Strings.isNotBlank(value) &&
+                                  (!_parseDateTime(value)!.isAfter(
+                                    _parseDateTime(_startTimeController.text) ??
+                                        DateTime.now(),
+                                  )))
+                              ? 'End time must be after start time'
+                              : null,
                 ),
               ),
             ),
@@ -174,24 +193,27 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
             ),
           ],
         ),
-      );
+  );
 
   @override
   Future<TimeEntry> forUpdate(TimeEntry timeEntry) async => TimeEntry.forUpdate(
-      entity: timeEntry,
-      taskId: widget.task.id,
-      startTime: _parseDateTime(_startTimeController.text)!,
-      endTime: _endTimeController.text.isNotEmpty
-          ? _parseDateTime(_endTimeController.text)
-          : null,
-      note: _noteController.text);
+    entity: timeEntry,
+    taskId: widget.task.id,
+    startTime: _parseDateTime(_startTimeController.text)!,
+    endTime:
+        _endTimeController.text.isNotEmpty
+            ? _parseDateTime(_endTimeController.text)
+            : null,
+    note: _noteController.text,
+  );
 
   @override
   Future<TimeEntry> forInsert() async => TimeEntry.forInsert(
-      taskId: widget.task.id,
-      startTime: _dateTimeFormat.parse(_startTimeController.text),
-      endTime: _dateTimeFormat.parse(_endTimeController.text),
-      note: _noteController.text);
+    taskId: widget.task.id,
+    startTime: _dateTimeFormat.parse(_startTimeController.text),
+    endTime: _dateTimeFormat.parse(_endTimeController.text),
+    note: _noteController.text,
+  );
 
   @override
   void refresh() {

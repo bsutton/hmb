@@ -11,10 +11,8 @@ class InvoiceLineGroup extends Entity<InvoiceLineGroup> {
     required super.modifiedDate,
   }) : super();
 
-  InvoiceLineGroup.forInsert({
-    required this.invoiceId,
-    required this.name,
-  }) : super.forInsert();
+  InvoiceLineGroup.forInsert({required this.invoiceId, required this.name})
+    : super.forInsert();
 
   InvoiceLineGroup.forUpdate({
     required super.entity,
@@ -40,21 +38,20 @@ class InvoiceLineGroup extends Entity<InvoiceLineGroup> {
     String? name,
     DateTime? createdDate,
     DateTime? modifiedDate,
-  }) =>
-      InvoiceLineGroup(
-        id: id ?? this.id,
-        invoiceId: invoiceId ?? this.invoiceId,
-        name: name ?? this.name,
-        createdDate: createdDate ?? this.createdDate,
-        modifiedDate: modifiedDate ?? this.modifiedDate,
-      );
+  }) => InvoiceLineGroup(
+    id: id ?? this.id,
+    invoiceId: invoiceId ?? this.invoiceId,
+    name: name ?? this.name,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+  );
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'invoice_id': invoiceId,
-        'name': name,
-        'created_date': createdDate.toIso8601String(),
-        'modified_date': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'invoice_id': invoiceId,
+    'name': name,
+    'created_date': createdDate.toIso8601String(),
+    'modified_date': modifiedDate.toIso8601String(),
+  };
 }

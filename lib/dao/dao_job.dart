@@ -19,11 +19,7 @@ class DaoJob extends Dao<Job> {
     await DaoQuote().deleteByJob(id, transaction: transaction);
 
     // Delete the job itself
-    return db.delete(
-      tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return db.delete(tableName, where: 'id = ?', whereArgs: [id]);
   }
 
   @override
@@ -36,8 +32,10 @@ class DaoJob extends Dao<Job> {
   @override
   Future<List<Job>> getAll({String? orderByClause}) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps =
-        await db.query(tableName, orderBy: 'modified_date desc');
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableName,
+      orderBy: 'modified_date desc',
+    );
     final list = List.generate(maps.length, (i) => fromMap(maps[i]));
 
     return list;
@@ -90,7 +88,8 @@ class DaoJob extends Dao<Job> {
     }
 
     final likeArg = '''%$filter%''';
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select j.*
 from job j
 join customer c
@@ -102,7 +101,9 @@ or j.description like ?
 or c.name like ?
 or js.name like ?
 order by j.modified_date desc
-''', [likeArg, likeArg, likeArg, likeArg]);
+''',
+      [likeArg, likeArg, likeArg, likeArg],
+    );
 
     return toList(data);
   }
@@ -114,13 +115,16 @@ order by j.modified_date desc
       return null;
     }
 
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select j.* 
 from task t
 join job j
   on t.job_id = j.id
 where t.id =?
-''', [taskId]);
+''',
+      [taskId],
+    );
 
     return toList(data).first;
   }
@@ -130,14 +134,17 @@ where t.id =?
     final db = withoutTransaction();
     final likeArg = filter != null ? '''%$filter%''' : '%%';
 
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
     SELECT j.*
     FROM job j
     JOIN job_status js ON j.job_status_id = js.id
     WHERE js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment', 'Completed', 'To be Billed')
     AND (j.summary LIKE ? OR j.description LIKE ?)
     ORDER BY j.modified_date DESC
-    ''', [likeArg, likeArg]);
+    ''',
+      [likeArg, likeArg],
+    );
 
     return toList(data);
   }
@@ -150,14 +157,17 @@ where t.id =?
     // Use the enum's name property to match the `status_enum` column in the database
     final preStartStatus = JobStatusEnum.preStart.name;
 
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
     SELECT j.*
     FROM job j
     JOIN job_status js ON j.job_status_id = js.id
     WHERE js.status_enum = ?
     AND (j.summary LIKE ? OR j.description LIKE ?)
     ORDER BY j.modified_date DESC
-  ''', [preStartStatus, likeArg, likeArg]);
+  ''',
+      [preStartStatus, likeArg, likeArg],
+    );
 
     return toList(data);
   }
@@ -183,14 +193,16 @@ where t.id =?
       // Calculate effort and cost from checklist items
       for (final item in taskItems) {
         totalEffort += item.estimatedLabourHours!;
-        totalCost += item.estimatedMaterialUnitCost!
-            .multiplyByFixed(item.estimatedMaterialQuantity!);
+        totalCost += item.estimatedMaterialUnitCost!.multiplyByFixed(
+          item.estimatedMaterialQuantity!,
+        );
 
         // If the task is completed, add to completed effort and earned cost
         if ((status?.isComplete() ?? false) && item.completed) {
           completedEffort += item.estimatedLabourHours!;
-          earnedCost += item.estimatedMaterialUnitCost!
-              .multiplyByFixed(item.estimatedMaterialQuantity!);
+          earnedCost += item.estimatedMaterialUnitCost!.multiplyByFixed(
+            item.estimatedMaterialQuantity!,
+          );
         }
       }
 
@@ -201,20 +213,22 @@ where t.id =?
       // Calculate worked hours from time entries
       final timeEntries = await DaoTimeEntry().getByTask(task.id);
       for (final timeEntry in timeEntries) {
-        workedHours +=
-            Fixed.fromInt((timeEntry.duration.inMinutes / 60.0 * 100).toInt());
+        workedHours += Fixed.fromInt(
+          (timeEntry.duration.inMinutes / 60.0 * 100).toInt(),
+        );
       }
     }
 
     return JobStatistics(
-        totalTasks: totalTasks,
-        completedTasks: completedTasks,
-        totalEffort: totalEffort,
-        completedEffort: completedEffort,
-        totalCost: totalCost,
-        earnedCost: earnedCost,
-        workedHours: workedHours,
-        worked: job.hourlyRate!.multiplyByFixed(workedHours));
+      totalTasks: totalTasks,
+      completedTasks: completedTasks,
+      totalEffort: totalEffort,
+      completedEffort: completedEffort,
+      totalCost: totalCost,
+      earnedCost: earnedCost,
+      workedHours: workedHours,
+      worked: job.hourlyRate!.multiplyByFixed(workedHours),
+    );
   }
 
   Future<Money> getBookingFee(Job job) async {
@@ -238,20 +252,25 @@ where t.id =?
     }
     final db = withoutTransaction();
 
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select j.* 
 from job j
 join customer c
   on j.customer_id = c.id
 where c.id =?
-''', [customer.id]);
+''',
+      [customer.id],
+    );
 
     return toList(data);
   }
 
   Future<bool> hasBillableTasks(Job job) async {
-    final tasksAccruedValue = await DaoTask()
-        .getAccruedValueForJob(jobId: job.id, includedBilled: false);
+    final tasksAccruedValue = await DaoTask().getAccruedValueForJob(
+      jobId: job.id,
+      includedBilled: false,
+    );
 
     for (final task in tasksAccruedValue) {
       if ((await task.earned) > MoneyEx.zero) {
@@ -284,8 +303,10 @@ where c.id =?
 
     if (bestEmail == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestEmail = (await DaoContact().getPrimaryForCustomer(customer!.id))
-          ?.emailAddress;
+      bestEmail =
+          (await DaoContact().getPrimaryForCustomer(
+            customer!.id,
+          ))?.emailAddress;
     }
     return bestEmail;
   }

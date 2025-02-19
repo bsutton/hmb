@@ -27,8 +27,10 @@ Future<File> generateQuotePdf(
   final jobQuote = await JobQuote.fromQuoteId(quote.id);
 
   // Calculate the total amount from the lines
-  final totalAmount =
-      lines.fold(MoneyEx.zero, (sum, line) => sum + line.lineTotal);
+  final totalAmount = lines.fold(
+    MoneyEx.zero,
+    (sum, line) => sum + line.lineTotal,
+  );
 
   final phone = await formatPhone(system.bestPhone);
 
@@ -42,81 +44,85 @@ Future<File> generateQuotePdf(
     pw.MultiPage(
       pageTheme: pw.PageTheme(
         margin: pw.EdgeInsets.zero,
-        buildBackground: (context) => pw.Stack(
-          children: [
-            // Top coloured band with business name
-            pw.Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: pw.Container(
-                height: 28, // 1cm height
-                color: systemColor,
-                child: pw.Padding(
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 8),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text(
-                        system.businessName ?? '',
-                        style: pw.TextStyle(
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.white,
-                        ),
+        buildBackground:
+            (context) => pw.Stack(
+              children: [
+                // Top coloured band with business name
+                pw.Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: pw.Container(
+                    height: 28, // 1cm height
+                    color: systemColor,
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 8),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text(
+                            system.businessName ?? '',
+                            style: pw.TextStyle(
+                              fontSize: 18,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-            // Bottom coloured band with T&C link
-            pw.Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: pw.Container(
-                height: 28, // 1cm height
-                color: systemColor,
-                child: pw.Padding(
-                    padding: const pw.EdgeInsets.only(left: 10, right: 10),
-                    child: pw.Row(
+                // Bottom coloured band with T&C link
+                pw.Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: pw.Container(
+                    height: 28, // 1cm height
+                    color: systemColor,
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.only(left: 10, right: 10),
+                      child: pw.Row(
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
                           pw.RichText(
                             text: pw.TextSpan(
-                                text: 'This quote is subject to our ',
-                                style:
-                                    const pw.TextStyle(color: PdfColors.white),
-                                children: [
-                                  pw.WidgetSpan(
-                                    child: pw.UrlLink(
-                                      child: pw.Text(
-                                        'Terms and Conditions',
-                                        style: const pw.TextStyle(
-                                          color: PdfColors.blue,
-                                          decoration:
-                                              pw.TextDecoration.underline,
-                                        ),
+                              text: 'This quote is subject to our ',
+                              style: const pw.TextStyle(color: PdfColors.white),
+                              children: [
+                                pw.WidgetSpan(
+                                  child: pw.UrlLink(
+                                    child: pw.Text(
+                                      'Terms and Conditions',
+                                      style: const pw.TextStyle(
+                                        color: PdfColors.blue,
+                                        decoration: pw.TextDecoration.underline,
                                       ),
-                                      destination: system.termsUrl ?? '',
                                     ),
+                                    destination: system.termsUrl ?? '',
                                   ),
-                                  const pw.TextSpan(
-                                    text: ' and is valid for 30 days',
-                                  ),
-                                ]),
+                                ),
+                                const pw.TextSpan(
+                                  text: ' and is valid for 30 days',
+                                ),
+                              ],
+                            ),
                           ),
                           pw.Text(
                             '${context.pageNumber} of ${context.pagesCount}',
                             style: const pw.TextStyle(
-                                fontSize: 12, color: PdfColors.white),
+                              fontSize: 12,
+                              color: PdfColors.white,
+                            ),
                           ),
-                        ])),
-              ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
       ),
       header: (context) {
         if (context.pageNumber == 1) {
@@ -131,32 +137,34 @@ Future<File> generateQuotePdf(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.SizedBox(height: 16),
-                            pw.Text(
-                              'Quote: ${quote.bestNumber}',
-                              style: pw.TextStyle(
-                                fontSize: 18,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
-                            ),
-                            pw.Text('Date: ${formatDate(quote.createdDate)}'),
-                          ]),
-
-                      // business logo
-                      if (logo != null)
-                        pw.Align(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Padding(
-                            padding: const pw.EdgeInsets.only(top: 6),
-                            child: logo,
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.SizedBox(height: 16),
+                        pw.Text(
+                          'Quote: ${quote.bestNumber}',
+                          style: pw.TextStyle(
+                            fontSize: 18,
+                            fontWeight: pw.FontWeight.bold,
                           ),
                         ),
-                    ]),
+                        pw.Text('Date: ${formatDate(quote.createdDate)}'),
+                      ],
+                    ),
+
+                    // business logo
+                    if (logo != null)
+                      pw.Align(
+                        alignment: pw.Alignment.centerRight,
+                        child: pw.Padding(
+                          padding: const pw.EdgeInsets.only(top: 6),
+                          child: logo,
+                        ),
+                      ),
+                  ],
+                ),
                 pw.Divider(),
                 pw.Text(
                   'Business Details:',
@@ -170,7 +178,8 @@ Future<File> generateQuotePdf(
                 pw.Text('Email: ${system.emailAddress}'),
                 pw.Text('Phone: $phone'),
                 pw.Text(
-                    '${system.businessNumberLabel}: ${system.businessNumber}'),
+                  '${system.businessNumberLabel}: ${system.businessNumber}',
+                ),
                 pw.Divider(),
               ],
             ),
@@ -187,7 +196,8 @@ Future<File> generateQuotePdf(
           for (final group in jobQuote.groups) {
             content
               ..add(pw.SizedBox(height: 10)) // Add 10 units of space
-              ..add(pw.Row(
+              ..add(
+                pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text(
@@ -204,18 +214,22 @@ Future<File> generateQuotePdf(
                           fontSize: 14,
                           fontWeight: pw.FontWeight.bold,
                         ),
-                      )
-                  ]));
+                      ),
+                  ],
+                ),
+              );
             // Items from the task if requested.
             if (displayItems) {
               for (final line in group.lines) {
-                content.add(pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(line.description),
-                    if (displayCosts) pw.Text(line.lineTotal.toString()),
-                  ],
-                ));
+                content.add(
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(line.description),
+                      if (displayCosts) pw.Text(line.lineTotal.toString()),
+                    ],
+                  ),
+                );
               }
             }
           }
@@ -245,10 +259,7 @@ Future<File> generateQuotePdf(
           if (showPaymentLink || showAccount)
             pw.Text(
               'Payment Details:',
-              style: pw.TextStyle(
-                fontSize: 16,
-                fontWeight: pw.FontWeight.bold,
-              ),
+              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
             ),
           if (showAccount) ...[
             pw.Text('BSB: ${system.bsb}'),
@@ -270,15 +281,17 @@ Future<File> generateQuotePdf(
 
         return [
           pw.Padding(
-              padding: const pw.EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 80, // Ensure space from top band
-                bottom: 60, // Ensure space from bottom band
-              ),
-              child: pw.Column(
-                  children: content,
-                  crossAxisAlignment: pw.CrossAxisAlignment.start))
+            padding: const pw.EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 80, // Ensure space from top band
+              bottom: 60, // Ensure space from bottom band
+            ),
+            child: pw.Column(
+              children: content,
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+            ),
+          ),
         ]; // Indent for body content
       },
     ),
@@ -304,7 +317,9 @@ Future<pw.Widget?> _getLogo(System system) async {
   }
   final image = pw.MemoryImage(await file.readAsBytes());
 
-  return pw.Image(image,
-      width: system.logoAspectRatio.width.toDouble(),
-      height: system.logoAspectRatio.height.toDouble());
+  return pw.Image(
+    image,
+    width: system.logoAspectRatio.width.toDouble(),
+    height: system.logoAspectRatio.height.toDouble(),
+  );
 }

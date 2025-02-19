@@ -7,11 +7,12 @@ class SaveAndClose extends StatelessWidget {
   /// The [showSaveOnly] argument controls whether the 'Save' button
   /// will be displayed. We normally only display the save button
   /// during the insert phase of a CRUD.
-  const SaveAndClose(
-      {required this.onSave,
-      required this.showSaveOnly,
-      required this.onCancel,
-      super.key});
+  const SaveAndClose({
+    required this.onSave,
+    required this.showSaveOnly,
+    required this.onCancel,
+    super.key,
+  });
 
   final Future<void> Function({required bool close}) onSave;
   final Future<void> Function() onCancel;
@@ -19,26 +20,20 @@ class SaveAndClose extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (showSaveOnly)
-              HMBButton(
-                onPressed: () async => onSave(close: false),
-                label: 'Save',
-              ),
-            const HMBSpacer(width: true),
-            HMBButton(
-              label: 'Save & Close',
-              onPressed: () async => onSave(close: true),
-            ),
-            const HMBSpacer(width: true),
-            HMBButton(
-              onPressed: onCancel,
-              label: 'Cancel',
-            ),
-          ],
+    padding: const EdgeInsets.all(16),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (showSaveOnly)
+          HMBButton(onPressed: () async => onSave(close: false), label: 'Save'),
+        const HMBSpacer(width: true),
+        HMBButton(
+          label: 'Save & Close',
+          onPressed: () async => onSave(close: true),
         ),
-      );
+        const HMBSpacer(width: true),
+        HMBButton(onPressed: onCancel, label: 'Cancel'),
+      ],
+    ),
+  );
 }

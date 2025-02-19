@@ -13,13 +13,13 @@ class TextSource extends Source<String> {
 
   @override
   Widget widget() => TextFormField(
-        controller: controller,
-        decoration: InputDecoration(labelText: label),
-        onChanged: (value) {
-          text = value;
-          onChanged(value, ResetFields());
-        },
-      );
+    controller: controller,
+    decoration: InputDecoration(labelText: label),
+    onChanged: (value) {
+      text = value;
+      onChanged(value, ResetFields());
+    },
+  );
 
   @override
   String? get value => text;

@@ -53,8 +53,8 @@ class HMBButtonPrimary extends StatelessWidget {
     required this.onPressed,
     super.key,
     this.enabled = true,
-  })  : svg = null,
-        svgColor = null;
+  }) : svg = null,
+       svgColor = null;
 
   const HMBButtonPrimary.withSvg({
     required this.label,
@@ -76,43 +76,48 @@ class HMBButtonPrimary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepPurple,
-            disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
-            disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12)),
-        onPressed: (enabled ? onPressed : null),
-        label:
-            Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
-        icon: svg == null
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.deepPurple,
+      disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
+      disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12),
+    ),
+    onPressed: (enabled ? onPressed : null),
+    label: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
+    icon:
+        svg == null
             ? const HMBEmpty()
             : Svg(svg!, height: 24, width: 24, color: svgColor),
-      );
+  );
 }
 
 class HMBButtonSecondary extends StatelessWidget {
-  const HMBButtonSecondary(
-      {required this.label, required this.onPressed, super.key});
+  const HMBButtonSecondary({
+    required this.label,
+    required this.onPressed,
+    super.key,
+  });
   final String label;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) => ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.purple,
-            disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
-            disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12)),
-        child:
-            Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
-      );
+    onPressed: onPressed,
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.purple,
+      disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
+      disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12),
+    ),
+    child: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
+  );
 }
 
 class HMBLinkButton extends StatelessWidget {
-  const HMBLinkButton(
-      {required this.label,
-      required this.onPressed,
-      required this.link,
-      super.key});
+  const HMBLinkButton({
+    required this.label,
+    required this.onPressed,
+    required this.link,
+    super.key,
+  });
 
   final String label;
   final String link;
@@ -120,12 +125,9 @@ class HMBLinkButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextButton(
-        onPressed: () async => _launchURL(link),
-        child: Text(
-          label,
-          style: const TextStyle(color: Colors.blue),
-        ),
-      );
+    onPressed: () async => _launchURL(link),
+    child: Text(label, style: const TextStyle(color: Colors.blue)),
+  );
 
   Future<void> _launchURL(String url) async {
     final uri = Uri.parse(url);

@@ -66,29 +66,34 @@ Future<void> main(List<String> args) async {
 
             // 1) Use `builder` to place your custom logic (BlockingUIRunner).
             // 2) `child` is the routed screen from routerConfig.
-            builder: (context, child) => Stack(
-              children: [
-                // The main content, wrapped by your blocking logic:
-                DecoratedBox(
-                  position: DecorationPosition.foreground,
-                  decoration: BoxDecoration(
-                      border: Border.all(
-                          color: isMobile ? Colors.black : Colors.white)),
-                  child: JuneBuilder(
-                    TimeEntryState.new,
-                    builder: (_) => BlockingUIRunner(
-                      key: blockingUIKey,
-                      slowAction: () => _initialise(context),
-                      label: 'Upgrading your database.',
-                      builder: (context) => child ?? const SizedBox.shrink(),
+            builder:
+                (context, child) => Stack(
+                  children: [
+                    // The main content, wrapped by your blocking logic:
+                    DecoratedBox(
+                      position: DecorationPosition.foreground,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isMobile ? Colors.black : Colors.white,
+                        ),
+                      ),
+                      child: JuneBuilder(
+                        TimeEntryState.new,
+                        builder:
+                            (_) => BlockingUIRunner(
+                              key: blockingUIKey,
+                              slowAction: () => _initialise(context),
+                              label: 'Upgrading your database.',
+                              builder:
+                                  (context) => child ?? const SizedBox.shrink(),
+                            ),
+                      ),
                     ),
-                  ),
-                ),
 
-                // The overlay
-                const BlockingOverlay(),
-              ],
-            ),
+                    // The overlay
+                    const BlockingOverlay(),
+                  ],
+                ),
           ),
         ),
       );
@@ -97,39 +102,42 @@ Future<void> main(List<String> args) async {
 }
 
 ThemeData get theme => ThemeData(
-      primaryColor: Colors.deepPurple,
-      brightness:
-          Brightness.dark, // This sets the overall theme brightness to dark
-      scaffoldBackgroundColor: HMBColors.defaultBackground,
-      buttonTheme: const ButtonThemeData(
-        buttonColor: Colors.deepPurple,
-        textTheme: ButtonTextTheme.primary,
-      ),
-      snackBarTheme: SnackBarThemeData(
-        actionTextColor: HMBColors.accent,
-        backgroundColor: Colors.grey.shade800,
-        contentTextStyle: const TextStyle(color: Colors.white),
-      ),
-      timePickerTheme: TimePickerThemeData(
-        confirmButtonStyle: TextButton.styleFrom(foregroundColor: Colors.white),
-        cancelButtonStyle: TextButton.styleFrom(foregroundColor: Colors.white),
-      ),
-      textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(foregroundColor: Colors.white)),
-      dialogTheme: const DialogTheme(
-        titleTextStyle: TextStyle(
-            color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-        contentTextStyle: TextStyle(color: Colors.white),
-      ),
-      colorScheme: ColorScheme.fromSwatch(
+  primaryColor: Colors.deepPurple,
+  brightness: Brightness.dark, // This sets the overall theme brightness to dark
+  scaffoldBackgroundColor: HMBColors.defaultBackground,
+  buttonTheme: const ButtonThemeData(
+    buttonColor: Colors.deepPurple,
+    textTheme: ButtonTextTheme.primary,
+  ),
+  snackBarTheme: SnackBarThemeData(
+    actionTextColor: HMBColors.accent,
+    backgroundColor: Colors.grey.shade800,
+    contentTextStyle: const TextStyle(color: Colors.white),
+  ),
+  timePickerTheme: TimePickerThemeData(
+    confirmButtonStyle: TextButton.styleFrom(foregroundColor: Colors.white),
+    cancelButtonStyle: TextButton.styleFrom(foregroundColor: Colors.white),
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(foregroundColor: Colors.white),
+  ),
+  dialogTheme: const DialogTheme(
+    titleTextStyle: TextStyle(
+      color: Colors.white,
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+    ),
+    contentTextStyle: TextStyle(color: Colors.white),
+  ),
+  colorScheme: ColorScheme.fromSwatch(
         primarySwatch: Colors.deepPurple,
         brightness:
             Brightness.dark, // Add this line to match ThemeData brightness
       )
-          .copyWith(secondary: HMBColors.accent)
-          .copyWith(surface: HMBColors.defaultBackground),
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-    );
+      .copyWith(secondary: HMBColors.accent)
+      .copyWith(surface: HMBColors.defaultBackground),
+  visualDensity: VisualDensity.adaptivePlatformDensity,
+);
 
 void initCamera() {
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
@@ -170,12 +178,14 @@ Future<void> _initialise(BuildContext context) async {
 
       if (context.mounted) {
         await showDialog<void>(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => FullScreenDialog(
-                  content: ErrorScreen(errorMessage: e.toString()),
-                  title: 'Database Error',
-                ));
+          context: context,
+          barrierDismissible: false,
+          builder:
+              (_) => FullScreenDialog(
+                content: ErrorScreen(errorMessage: e.toString()),
+                title: 'Database Error',
+              ),
+        );
       }
       rethrow;
     }
@@ -186,22 +196,25 @@ Future<void> _initDb(BuildContext context) async {
   final backupProvider = LocalBackupProvider(FlutterDatabaseFactory());
   try {
     await DatabaseHelper().initDatabase(
-        src: AssetScriptSource(),
-        backupProvider: backupProvider,
-        backup: !kIsWeb,
-        databaseFactory: FlutterDatabaseFactory());
+      src: AssetScriptSource(),
+      backupProvider: backupProvider,
+      backup: !kIsWeb,
+      databaseFactory: FlutterDatabaseFactory(),
+    );
     print('Database located at: ${await backupProvider.databasePath}');
     // ignore: avoid_catches_without_on_clauses
   } catch (e, st) {
     HMBToast.error(
-        'Db open failed. Try rebooting your phone or restore the db $e');
+      'Db open failed. Try rebooting your phone or restore the db $e',
+    );
 
     unawaited(Sentry.captureException(e, stackTrace: st));
     if (context.mounted) {
       await Navigator.push(
         context,
         MaterialPageRoute<void>(
-            builder: (context) => const GoogleDriveBackupScreen()),
+          builder: (context) => const GoogleDriveBackupScreen(),
+        ),
       );
     }
   }

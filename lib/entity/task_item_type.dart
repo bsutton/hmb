@@ -43,14 +43,14 @@ class TaskItemType extends Entity<TaskItemType> {
   }) : super.forUpdate();
 
   factory TaskItemType.fromMap(Map<String, dynamic> map) => TaskItemType(
-        id: map['id'] as int,
-        name: map['name'] as String,
-        description: map['description'] as String,
-        toPurchase: map['to_purchase'] as int == 1,
-        colorCode: map['color_code'] as String,
-        createdDate: DateTime.parse(map['created_date'] as String),
-        modifiedDate: DateTime.parse(map['modified_date'] as String),
-      );
+    id: map['id'] as int,
+    name: map['name'] as String,
+    description: map['description'] as String,
+    toPurchase: map['to_purchase'] as int == 1,
+    colorCode: map['color_code'] as String,
+    createdDate: DateTime.parse(map['created_date'] as String),
+    modifiedDate: DateTime.parse(map['modified_date'] as String),
+  );
 
   String name;
   String description;
@@ -59,12 +59,12 @@ class TaskItemType extends Entity<TaskItemType> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'to_purchase': toPurchase ? 1 : 0,
-        'color_code': colorCode,
-        'created_date': createdDate.toIso8601String(),
-        'modified_date': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'to_purchase': toPurchase ? 1 : 0,
+    'color_code': colorCode,
+    'created_date': createdDate.toIso8601String(),
+    'modified_date': modifiedDate.toIso8601String(),
+  };
 }

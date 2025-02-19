@@ -100,40 +100,35 @@ class EntityListScreenState<T extends Entity<T>>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          backgroundColor: SurfaceElevation.e0.color,
-          toolbarHeight: 80,
-          titleSpacing: 0,
-          title: Surface(
-            elevation: SurfaceElevation.e0,
-            child: HMBSearchWithAdd(
-              onSearch: (newValue) async {
-                filterOption = newValue;
-                await _refreshEntityList();
-              },
-              onAdd: () async {
-                if (context.mounted) {
-                  final newEntity = await Navigator.push<T?>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => widget.onEdit(null),
-                    ),
-                  );
-                  if (newEntity != null) {
-                    _partialRefresh(newEntity);
-                  }
-                }
-              },
-            ),
-          ),
-          automaticallyImplyLeading: false,
-          // actions: _commands(),
+    appBar: AppBar(
+      backgroundColor: SurfaceElevation.e0.color,
+      toolbarHeight: 80,
+      titleSpacing: 0,
+      title: Surface(
+        elevation: SurfaceElevation.e0,
+        child: HMBSearchWithAdd(
+          onSearch: (newValue) async {
+            filterOption = newValue;
+            await _refreshEntityList();
+          },
+          onAdd: () async {
+            if (context.mounted) {
+              final newEntity = await Navigator.push<T?>(
+                context,
+                MaterialPageRoute(builder: (context) => widget.onEdit(null)),
+              );
+              if (newEntity != null) {
+                _partialRefresh(newEntity);
+              }
+            }
+          },
         ),
-        body: Surface(
-          elevation: SurfaceElevation.e0,
-          child: _buildList(),
-        ),
-      );
+      ),
+      automaticallyImplyLeading: false,
+      // actions: _commands(),
+    ),
+    body: Surface(elevation: SurfaceElevation.e0, child: _buildList()),
+  );
 
   Widget _buildList() {
     if (entityList.isEmpty) {
@@ -144,8 +139,9 @@ class EntityListScreenState<T extends Entity<T>>
             const Text('Click'),
             HMBButtonAdd(
               enabled: true,
-              onPressed: () async =>
-                  HMBToast.info('Not this one, the one to the right'),
+              onPressed:
+                  () async =>
+                      HMBToast.info('Not this one, the one to the right'),
             ),
             Text('to add ${widget.pageTitle}.'),
           ],
@@ -164,27 +160,27 @@ class EntityListScreenState<T extends Entity<T>>
   }
 
   IconButton _buildDeleteButton(T entity) => IconButton(
-        icon: const Icon(Icons.delete, color: Colors.red),
-        onPressed: () async {
-          await _confirmDelete(entity);
-        },
-      );
+    icon: const Icon(Icons.delete, color: Colors.red),
+    onPressed: () async {
+      await _confirmDelete(entity);
+    },
+  );
 
   Widget _buildCard(T entity) => FutureBuilderEx<Color>(
-        initialData: SurfaceElevation.e6.color,
-        // ignore: discarded_futures
-        future: widget.background?.call(entity) ??
-            Future.value(SurfaceElevation.e6.color),
-        builder: (context, cardColor) => Padding(
+    initialData: SurfaceElevation.e6.color,
+    // ignore: discarded_futures
+    future:
+        widget.background?.call(entity) ??
+        Future.value(SurfaceElevation.e6.color),
+    builder:
+        (context, cardColor) => Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 8),
           child: GestureDetector(
             onTap: () async {
               // Navigate to the edit screen
               final updatedEntity = await Navigator.push<T?>(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => widget.onEdit(entity),
-                ),
+                MaterialPageRoute(builder: (context) => widget.onEdit(entity)),
               );
               // If user successfully saved or created a new entity
               if (updatedEntity != null) {
@@ -204,15 +200,13 @@ class EntityListScreenState<T extends Entity<T>>
                     ],
                   ),
                   // Body (details)
-                  Expanded(
-                    child: widget.details(entity),
-                  ),
+                  Expanded(child: widget.details(entity)),
                 ],
               ),
             ),
           ),
         ),
-      );
+  );
 
   Future<void> _confirmDelete(T entity) async {
     await areYouSure(

@@ -41,7 +41,8 @@ class SelectSupplierState extends State<SelectSupplier> {
     final supplier = await Navigator.push<Supplier>(
       context,
       MaterialPageRoute<Supplier>(
-          builder: (context) => const SupplierEditScreen()),
+        builder: (context) => const SupplierEditScreen(),
+      ),
     );
     if (supplier != null) {
       setState(() {
@@ -53,25 +54,20 @@ class SelectSupplierState extends State<SelectSupplier> {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          Expanded(
-            child: HMBDroplist<Supplier>(
-              title: widget.isRequired ? 'Supplier *' : 'Supplier',
-              selectedItem: _getInitialSupplier,
-              onChanged: _onSupplierChanged,
-              items: (filter) async => _getSuppliers(filter),
-              format: (supplier) => supplier.name,
-              required: widget.isRequired,
-            ),
-          ),
-          Center(
-            child: HMBButtonAdd(
-              enabled: true,
-              onPressed: _addSupplier,
-            ),
-          ),
-        ],
-      );
+    children: [
+      Expanded(
+        child: HMBDroplist<Supplier>(
+          title: widget.isRequired ? 'Supplier *' : 'Supplier',
+          selectedItem: _getInitialSupplier,
+          onChanged: _onSupplierChanged,
+          items: (filter) async => _getSuppliers(filter),
+          format: (supplier) => supplier.name,
+          required: widget.isRequired,
+        ),
+      ),
+      Center(child: HMBButtonAdd(enabled: true, onPressed: _addSupplier)),
+    ],
+  );
 }
 
 class SelectedSupplier extends JuneState {

@@ -13,11 +13,12 @@ import 'hmb_droplist.dart';
 /// owned by a customer and associate them with another
 /// entity e.g. a job.
 class HMBSelectContact extends StatefulWidget {
-  const HMBSelectContact(
-      {required this.selectedContact,
-      required this.customer,
-      super.key,
-      this.onSelected});
+  const HMBSelectContact({
+    required this.selectedContact,
+    required this.customer,
+    super.key,
+    this.onSelected,
+  });
 
   /// The customer that owns the contact.
   final Customer? customer;
@@ -46,8 +47,12 @@ class HMBSelectContactState extends State<HMBSelectContact> {
     final contact = await Navigator.push<Contact>(
       context,
       MaterialPageRoute<Contact>(
-          builder: (context) => ContactEditScreen<Customer>(
-              parent: widget.customer!, daoJoin: JoinAdaptorCustomerContact())),
+        builder:
+            (context) => ContactEditScreen<Customer>(
+              parent: widget.customer!,
+              daoJoin: JoinAdaptorCustomerContact(),
+            ),
+      ),
     );
     if (contact != null) {
       setState(() {
@@ -74,10 +79,7 @@ class HMBSelectContactState extends State<HMBSelectContact> {
               required: false,
             ),
           ),
-          HMBButtonAdd(
-            enabled: true,
-            onPressed: _addContact,
-          ),
+          HMBButtonAdd(enabled: true, onPressed: _addContact),
         ],
       );
     }

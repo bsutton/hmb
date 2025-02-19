@@ -15,10 +15,10 @@ class SelectQuoteDialog extends StatefulWidget {
   @override
   _SelectQuoteDialogState createState() => _SelectQuoteDialogState();
 
-    static Future<Quote?> show(BuildContext context) async => showDialog<Quote?>(
-        context: context,
-        builder: (context) => const SelectQuoteDialog(),
-      );
+  static Future<Quote?> show(BuildContext context) async => showDialog<Quote?>(
+    context: context,
+    builder: (context) => const SelectQuoteDialog(),
+  );
 }
 
 class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
@@ -49,9 +49,9 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
   }
 
   Future<List<CustomerAndQuote>> _fetchQuotes() => CustomerAndQuote.getQuotes(
-        showAllQuotes: showAllQuotes,
-        showQuotesWithNoBillableItems: showQuotesWithNoBillableItems,
-      );
+    showAllQuotes: showAllQuotes,
+    showQuotesWithNoBillableItems: showQuotesWithNoBillableItems,
+  );
 
   List<CustomerAndQuote> _filterQuotes(List<CustomerAndQuote> quotes) {
     if (_searchQuery.isEmpty) {
@@ -70,115 +70,110 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
 
   @override
   Widget build(BuildContext context) => Dialog(
-        // Remove default dialog padding to allow full-screen
-        insetPadding: EdgeInsets.zero,
-        backgroundColor: Theme.of(context).canvasColor,
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Select Quote'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-                tooltip: 'Close',
-              ),
-            ],
+    // Remove default dialog padding to allow full-screen
+    insetPadding: EdgeInsets.zero,
+    backgroundColor: Theme.of(context).canvasColor,
+    child: Scaffold(
+      appBar: AppBar(
+        title: const Text('Select Quote'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+            tooltip: 'Close',
           ),
-          body: Column(
-            children: [
-              // Filters
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  children: [
-                    CheckboxListTile(
-                      title: const Text('Show all quotes'),
-                      value: showAllQuotes,
-                      onChanged: (value) {
-                        setState(() {
-                          showAllQuotes = value ?? false;
-                        });
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Show quotes with no billable items'),
-                      value: showQuotesWithNoBillableItems,
-                      onChanged: (value) {
-                        setState(() {
-                          showQuotesWithNoBillableItems = value ?? false;
-                        });
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                    ),
-                  ],
+        ],
+      ),
+      body: Column(
+        children: [
+          // Filters
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                CheckboxListTile(
+                  title: const Text('Show all quotes'),
+                  value: showAllQuotes,
+                  onChanged: (value) {
+                    setState(() {
+                      showAllQuotes = value ?? false;
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
                 ),
-              ),
-
-              // Search bar
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    labelText: 'Search',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                  ),
+                CheckboxListTile(
+                  title: const Text('Show quotes with no billable items'),
+                  value: showQuotesWithNoBillableItems,
+                  onChanged: (value) {
+                    setState(() {
+                      showQuotesWithNoBillableItems = value ?? false;
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
                 ),
+              ],
+            ),
+          ),
+
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                labelText: 'Search',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
               ),
+            ),
+          ),
 
-              Expanded(
-                child: FutureBuilderEx<List<CustomerAndQuote>>(
-                  // ignore: discarded_futures
-                  future: _fetchQuotes(),
-                  builder: (context, quotes) {
-                    if (quotes == null || quotes.isEmpty) {
-                      return const Center(child: Text('No quotes found.'));
-                    }
+          Expanded(
+            child: FutureBuilderEx<List<CustomerAndQuote>>(
+              // ignore: discarded_futures
+              future: _fetchQuotes(),
+              builder: (context, quotes) {
+                if (quotes == null || quotes.isEmpty) {
+                  return const Center(child: Text('No quotes found.'));
+                }
 
-                    final filteredQuotes = _filterQuotes(quotes);
+                final filteredQuotes = _filterQuotes(quotes);
 
-                    if (filteredQuotes.isEmpty) {
-                      return const Center(
-                          child: Text('No matches for your search.'));
-                    }
+                if (filteredQuotes.isEmpty) {
+                  return const Center(
+                    child: Text('No matches for your search.'),
+                  );
+                }
 
-                    return ListView.builder(
-                      itemCount: filteredQuotes.length,
-                      itemBuilder: (context, index) {
-                        final current = filteredQuotes[index];
-                        return ListTile(
-                          title: Text(current.job.summary),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Customer: ${current.customer.name}'),
-                              if (current.contactName != null)
-                                Text('Contact: ${current.contactName}')
-                            ],
-                          ),
-                          onTap: () => Navigator.pop(context, current.quote),
-                        );
-                      },
+                return ListView.builder(
+                  itemCount: filteredQuotes.length,
+                  itemBuilder: (context, index) {
+                    final current = filteredQuotes[index];
+                    return ListTile(
+                      title: Text(current.job.summary),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Customer: ${current.customer.name}'),
+                          if (current.contactName != null)
+                            Text('Contact: ${current.contactName}'),
+                        ],
+                      ),
+                      onTap: () => Navigator.pop(context, current.quote),
                     );
                   },
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }
 
 class CustomerAndQuote {
-  CustomerAndQuote(
-    this.customer,
-    this.quote,
-    this.job, {
-    this.contactName,
-  });
+  CustomerAndQuote(this.customer, this.quote, this.job, {this.contactName});
 
   final Customer customer;
   final Job job;
@@ -213,12 +208,7 @@ class CustomerAndQuote {
       final contactName = contact?.fullname;
 
       quoteList.add(
-        CustomerAndQuote(
-          customer,
-          quote,
-          job!,
-          contactName: contactName,
-        ),
+        CustomerAndQuote(customer, quote, job!, contactName: contactName),
       );
     }
 

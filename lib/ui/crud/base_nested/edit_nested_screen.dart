@@ -44,49 +44,54 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-            title: Text(widget.entityState.currentEntity != null
-                ? 'Edit ${widget.entityName}'
-                : 'Add ${widget.entityName}'),
-            automaticallyImplyLeading: false),
-        body: Column(
-          children: [
-            _commandButtons(context),
-            Flexible(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(4),
+    appBar: AppBar(
+      title: Text(
+        widget.entityState.currentEntity != null
+            ? 'Edit ${widget.entityName}'
+            : 'Add ${widget.entityName}',
+      ),
+      automaticallyImplyLeading: false,
+    ),
+    body: Column(
+      children: [
+        _commandButtons(context),
+        Flexible(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(4),
 
-                        /// Inject the entity specific editor.
-                        child: widget.editor(widget.entityState.currentEntity),
-                      ),
-                    ),
-                  ],
+                    /// Inject the entity specific editor.
+                    child: widget.editor(widget.entityState.currentEntity),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 
   Widget _commandButtons(BuildContext context) => SaveAndClose(
-      onSave: _save,
-      showSaveOnly: widget.entityState.currentEntity == null,
-      onCancel: () async {
-        Navigator.of(context).pop();
-      });
+    onSave: _save,
+    showSaveOnly: widget.entityState.currentEntity == null,
+    onCancel: () async {
+      Navigator.of(context).pop();
+    },
+  );
 
   Future<void> _save({bool close = false}) async {
     if (_formKey.currentState!.validate()) {
       if (widget.entityState.currentEntity != null) {
-        final updatedEntity = await widget.entityState
-            .forUpdate(widget.entityState.currentEntity!);
+        final updatedEntity = await widget.entityState.forUpdate(
+          widget.entityState.currentEntity!,
+        );
         await widget.dao.update(updatedEntity);
         setState(() {
           widget.entityState.currentEntity = updatedEntity;

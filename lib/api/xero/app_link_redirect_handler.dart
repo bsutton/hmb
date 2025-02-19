@@ -14,9 +14,8 @@ class AppLinkRedirectHandler extends RedirectHandler {
   late final StreamController<Uri> _streamController;
 
   @override
-  Uri get redirectUri => Uri.parse(
-        'https://ivanhoehandyman.com.au/${XeroAuth2.redirectPath}',
-      );
+  Uri get redirectUri =>
+      Uri.parse('https://ivanhoehandyman.com.au/${XeroAuth2.redirectPath}');
 
   late StreamSubscription<Uri> subscription;
 

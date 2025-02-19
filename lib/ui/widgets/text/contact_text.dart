@@ -10,15 +10,17 @@ class ContactText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          children: [
-            if (contact != null)
-              Text(label, style: const TextStyle(color: HMBColors.textPrimary)),
-            if (contact != null)
-              Text('${contact?.firstName} ${contact?.surname}',
-                  style: const TextStyle(color: HMBColors.textPrimary))
-          ],
-        ),
-      );
+    padding: const EdgeInsets.all(4),
+    child: Row(
+      children: [
+        if (contact != null)
+          Text(label, style: const TextStyle(color: HMBColors.textPrimary)),
+        if (contact != null)
+          Text(
+            '${contact?.firstName} ${contact?.surname}',
+            style: const TextStyle(color: HMBColors.textPrimary),
+          ),
+      ],
+    ),
+  );
 }

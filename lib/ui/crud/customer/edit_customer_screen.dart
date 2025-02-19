@@ -49,10 +49,12 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
     super.initState();
     currentEntity ??= widget.customer;
     _nameController = TextEditingController(text: widget.customer?.name);
-    _descriptionController =
-        TextEditingController(text: widget.customer?.description);
+    _descriptionController = TextEditingController(
+      text: widget.customer?.description,
+    );
     _hourlyRateController = TextEditingController(
-        text: widget.customer?.hourlyRate.amount.toString() ?? '0');
+      text: widget.customer?.hourlyRate.amount.toString() ?? '0',
+    );
     _disbarred = widget.customer?.disbarred ?? false;
     _selectedCustomerType =
         widget.customer?.customerType ?? CustomerType.residential;
@@ -78,10 +80,11 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
 
   @override
   Widget build(BuildContext context) => EntityEditScreen<Customer>(
-        entityName: 'Customer',
-        dao: DaoCustomer(),
-        entityState: this,
-        editor: (customer, {required isNew}) => Column(
+    entityName: 'Customer',
+    dao: DaoCustomer(),
+    entityState: this,
+    editor:
+        (customer, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Column(
@@ -111,13 +114,14 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
                       required: true,
                     ),
                     HMBSwitch(
-                        labelText: 'Disbarred',
-                        initialValue: _disbarred,
-                        onChanged: (value) {
-                          setState(() {
-                            _disbarred = value;
-                          });
-                        }),
+                      labelText: 'Disbarred',
+                      initialValue: _disbarred,
+                      onChanged: (value) {
+                        setState(() {
+                          _disbarred = value;
+                        });
+                      },
+                    ),
                     HMBDroplist<CustomerType>(
                       selectedItem: () async => _selectedCustomerType,
                       items: (filter) async => CustomerType.values,
@@ -135,31 +139,34 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
                   daoJoin: JoinAdaptorCustomerContact(),
                 ),
                 HBMCrudSite(
-                    parentTitle: 'Customer',
-                    daoJoin: JoinAdaptorCustomerSite(),
-                    parent: Parent(customer)),
+                  parentTitle: 'Customer',
+                  daoJoin: JoinAdaptorCustomerSite(),
+                  parent: Parent(customer),
+                ),
               ],
             ),
           ],
         ),
-      );
+  );
 
   @override
   Future<Customer> forUpdate(Customer customer) async => Customer.forUpdate(
-      entity: customer,
-      name: _nameController.text,
-      description: _descriptionController.text,
-      disbarred: _disbarred,
-      customerType: _selectedCustomerType,
-      hourlyRate: MoneyEx.tryParse(_hourlyRateController.text));
+    entity: customer,
+    name: _nameController.text,
+    description: _descriptionController.text,
+    disbarred: _disbarred,
+    customerType: _selectedCustomerType,
+    hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
+  );
 
   @override
   Future<Customer> forInsert() async => Customer.forInsert(
-      name: _nameController.text,
-      description: _descriptionController.text,
-      disbarred: _disbarred,
-      customerType: _selectedCustomerType,
-      hourlyRate: MoneyEx.tryParse(_hourlyRateController.text));
+    name: _nameController.text,
+    description: _descriptionController.text,
+    disbarred: _disbarred,
+    customerType: _selectedCustomerType,
+    hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
+  );
   @override
   void refresh() {
     setState(() {});

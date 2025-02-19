@@ -38,57 +38,63 @@ class EntityEditScreenState<E extends Entity<E>>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text(widget.entityState.currentEntity != null
-              ? 'Edit ${widget.entityName}'
-              : 'Add ${widget.entityName}'),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _commandButtons(context),
+    appBar: AppBar(
+      title: Text(
+        widget.entityState.currentEntity != null
+            ? 'Edit ${widget.entityName}'
+            : 'Add ${widget.entityName}',
+      ),
+    ),
+    body: Padding(
+      padding: const EdgeInsets.all(4),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _commandButtons(context),
 
-                /// Inject the entity-specific editor.
-                Expanded(
-                  child: SingleChildScrollView(
-                    key: PageStorageKey(
-
-                        /// the entity id's are not unique across tables
-                        /// so we use the createdDate which is in reality
-                        /// unique in all realworld scenarios.
-                        widget.entityState.currentEntity?.createdDate),
-                    // controller: widget.scrollController ??
-                    //     ScrollController(), // Attach the controller here
-                    padding: const EdgeInsets.all(4),
-                    child: widget.editor(widget.entityState.currentEntity,
-                        isNew: isNew),
-                  ),
+            /// Inject the entity-specific editor.
+            Expanded(
+              child: SingleChildScrollView(
+                key: PageStorageKey(
+                  /// the entity id's are not unique across tables
+                  /// so we use the createdDate which is in reality
+                  /// unique in all realworld scenarios.
+                  widget.entityState.currentEntity?.createdDate,
                 ),
-              ],
+                // controller: widget.scrollController ??
+                //     ScrollController(), // Attach the controller here
+                padding: const EdgeInsets.all(4),
+                child: widget.editor(
+                  widget.entityState.currentEntity,
+                  isNew: isNew,
+                ),
+              ),
             ),
-          ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 
   /// Display the Save/Cancel Buttons.
   Widget _commandButtons(BuildContext context) => SaveAndClose(
-      onSave: _save,
-      showSaveOnly: isNew,
-      onCancel: () async {
-        Navigator.of(context).pop();
-      });
+    onSave: _save,
+    showSaveOnly: isNew,
+    onCancel: () async {
+      Navigator.of(context).pop();
+    },
+  );
 
   /// Save the entity
   Future<void> _save({bool close = false}) async {
     if (_formKey.currentState!.validate()) {
       if (widget.entityState.currentEntity != null) {
         // Update existing entity
-        final updatedEntity = await widget.entityState
-            .forUpdate(widget.entityState.currentEntity!);
+        final updatedEntity = await widget.entityState.forUpdate(
+          widget.entityState.currentEntity!,
+        );
         await widget.dao.update(updatedEntity);
         setState(() {
           widget.entityState.currentEntity = updatedEntity;

@@ -23,9 +23,7 @@ class BackupAuthGoogleScreenV1 extends StatefulWidget {
 
 class _BackupAuthGoogleScreenV1State extends State<BackupAuthGoogleScreenV1> {
   _BackupAuthGoogleScreenV1State()
-      : _googleSignIn = GoogleSignIn(
-          scopes: [drive.DriveApi.driveFileScope],
-        );
+    : _googleSignIn = GoogleSignIn(scopes: [drive.DriveApi.driveFileScope]);
 
   GoogleSignInAccount? _currentUser;
 
@@ -43,35 +41,37 @@ class _BackupAuthGoogleScreenV1State extends State<BackupAuthGoogleScreenV1> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Backup File to Google Drive'),
-          automaticallyImplyLeading: false,
-          actions: [
-            if (_currentUser != null)
-              IconButton(
-                icon: const Icon(Icons.exit_to_app),
-                onPressed: _googleSignIn.signOut,
-              )
-          ],
-        ),
-        body: FutureBuilderEx(
-            // ignore: discarded_futures
-            future: _signin(context),
-            waitingBuilder: (context) =>
-                const Center(child: CircularProgressIndicator()),
-            builder: (context, auth) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const SizedBox(height: 20),
-                      HMBButton(
-                        onPressed: () async => _uploadFile(context),
-                        label: 'Upload File to Google Drive',
-                      ),
-                    ],
-                  ),
-                )),
-      );
+    appBar: AppBar(
+      title: const Text('Backup File to Google Drive'),
+      automaticallyImplyLeading: false,
+      actions: [
+        if (_currentUser != null)
+          IconButton(
+            icon: const Icon(Icons.exit_to_app),
+            onPressed: _googleSignIn.signOut,
+          ),
+      ],
+    ),
+    body: FutureBuilderEx(
+      // ignore: discarded_futures
+      future: _signin(context),
+      waitingBuilder:
+          (context) => const Center(child: CircularProgressIndicator()),
+      builder:
+          (context, auth) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const SizedBox(height: 20),
+                HMBButton(
+                  onPressed: () async => _uploadFile(context),
+                  label: 'Upload File to Google Drive',
+                ),
+              ],
+            ),
+          ),
+    ),
+  );
 
   Future<void> _uploadFile(BuildContext context) async {
     final authHeaders = await _currentUser?.authHeaders;

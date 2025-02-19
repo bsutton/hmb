@@ -34,7 +34,8 @@ class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
   }
 
   @override
-  Future<Database> openDatabase(String path,
-          {required OpenDatabaseOptions options}) async =>
-      databaseFactory.openDatabase(path, options: options);
+  Future<Database> openDatabase(
+    String path, {
+    required OpenDatabaseOptions options,
+  }) async => databaseFactory.openDatabase(path, options: options);
 }

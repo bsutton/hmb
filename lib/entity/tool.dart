@@ -51,23 +51,24 @@ class Tool extends Entity<Tool> {
   }) : super.forUpdate(entity: entity);
 
   factory Tool.fromMap(Map<String, dynamic> map) => Tool(
-        id: map['id'] as int,
-        name: map['name'] as String,
-        categoryId: map['categoryId'] as int?,
-        supplierId: map['supplierId'] as int?,
-        manufacturerId: map['manufacturerId'] as int?,
-        datePurchased: map['datePurchased'] != null
+    id: map['id'] as int,
+    name: map['name'] as String,
+    categoryId: map['categoryId'] as int?,
+    supplierId: map['supplierId'] as int?,
+    manufacturerId: map['manufacturerId'] as int?,
+    datePurchased:
+        map['datePurchased'] != null
             ? DateTime.parse(map['datePurchased'] as String)
             : null,
-        serialNumber: map['serialNumber'] as String?,
-        receiptPhotoId: map['receiptPhotoId'] as int?,
-        serialNumberPhotoId: map['serialNumberPhotoId'] as int?,
-        warrantyPeriod: map['warrantyPeriod'] as int?,
-        cost: _moneyOrNull(map['cost'] as int?),
-        description: map['description'] as String?,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-      );
+    serialNumber: map['serialNumber'] as String?,
+    receiptPhotoId: map['receiptPhotoId'] as int?,
+    serialNumberPhotoId: map['serialNumberPhotoId'] as int?,
+    warrantyPeriod: map['warrantyPeriod'] as int?,
+    cost: _moneyOrNull(map['cost'] as int?),
+    description: map['description'] as String?,
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+  );
 
   final String name;
   final int? categoryId;
@@ -83,21 +84,21 @@ class Tool extends Entity<Tool> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'categoryId': categoryId,
-        'supplierId': supplierId,
-        'manufacturerId': manufacturerId,
-        'datePurchased': datePurchased?.toIso8601String(),
-        'serialNumber': serialNumber,
-        'receiptPhotoId': receiptPhotoId,
-        'serialNumberPhotoId': serialNumberPhotoId,
-        'warrantyPeriod': warrantyPeriod,
-        'cost': cost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
-        'description': description,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'categoryId': categoryId,
+    'supplierId': supplierId,
+    'manufacturerId': manufacturerId,
+    'datePurchased': datePurchased?.toIso8601String(),
+    'serialNumber': serialNumber,
+    'receiptPhotoId': receiptPhotoId,
+    'serialNumberPhotoId': serialNumberPhotoId,
+    'warrantyPeriod': warrantyPeriod,
+    'cost': cost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'description': description,
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+  };
 
   Tool copyWith({
     int? id,
@@ -114,23 +115,22 @@ class Tool extends Entity<Tool> {
     int? warrantyPeriod,
     Money? cost,
     String? description,
-  }) =>
-      Tool(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        createdDate: createdDate ?? this.createdDate,
-        modifiedDate: modifiedDate ?? this.modifiedDate,
-        categoryId: categoryId ?? this.categoryId,
-        supplierId: supplierId ?? this.supplierId,
-        manufacturerId: manufacturerId ?? this.manufacturerId,
-        datePurchased: datePurchased ?? this.datePurchased,
-        serialNumber: serialNumber ?? this.serialNumber,
-        receiptPhotoId: receiptPhotoId ?? this.receiptPhotoId,
-        serialNumberPhotoId: serialNumberPhotoId ?? this.serialNumberPhotoId,
-        warrantyPeriod: warrantyPeriod ?? this.warrantyPeriod,
-        cost: cost ?? this.cost,
-        description: description ?? this.description,
-      );
+  }) => Tool(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+    categoryId: categoryId ?? this.categoryId,
+    supplierId: supplierId ?? this.supplierId,
+    manufacturerId: manufacturerId ?? this.manufacturerId,
+    datePurchased: datePurchased ?? this.datePurchased,
+    serialNumber: serialNumber ?? this.serialNumber,
+    receiptPhotoId: receiptPhotoId ?? this.receiptPhotoId,
+    serialNumberPhotoId: serialNumberPhotoId ?? this.serialNumberPhotoId,
+    warrantyPeriod: warrantyPeriod ?? this.warrantyPeriod,
+    cost: cost ?? this.cost,
+    description: description ?? this.description,
+  );
 }
 
 Money? _moneyOrNull(int? amount) {

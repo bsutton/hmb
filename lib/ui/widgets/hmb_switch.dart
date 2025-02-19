@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 class HMBSwitch extends StatelessWidget {
-  const HMBSwitch(
-      {required this.labelText,
-      required this.initialValue,
-      required this.onChanged,
-      this.autofocus = false,
-      this.focusNode,
-      super.key,
-      this.leadingSpace = true});
+  const HMBSwitch({
+    required this.labelText,
+    required this.initialValue,
+    required this.onChanged,
+    this.autofocus = false,
+    this.focusNode,
+    super.key,
+    this.leadingSpace = true,
+  });
 
   final bool? initialValue;
   final FocusNode? focusNode;
@@ -21,14 +22,14 @@ class HMBSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        children: [
-          if (leadingSpace) const SizedBox(height: 16),
-          SwitchListTile(
-            focusNode: focusNode,
-            title: Text(labelText),
-            value: initialValue ?? false,
-            onChanged: onChanged,
-          ),
-        ],
-      );
+    children: [
+      if (leadingSpace) const SizedBox(height: 16),
+      SwitchListTile(
+        focusNode: focusNode,
+        title: Text(labelText),
+        value: initialValue ?? false,
+        onChanged: onChanged,
+      ),
+    ],
+  );
 }

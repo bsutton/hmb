@@ -35,13 +35,14 @@ class PdfPreviewScreen extends StatelessWidget {
     if (context.mounted) {
       final sent = await showDialog<bool>(
         context: context,
-        builder: (context) => EmailDialog(
-          emailRecipients: emailRecipients,
-          system: system,
-          filePath: filePath,
-          subject: emailSubject,
-          body: emailBody,
-        ),
+        builder:
+            (context) => EmailDialog(
+              emailRecipients: emailRecipients,
+              system: system,
+              filePath: filePath,
+              subject: emailSubject,
+              body: emailBody,
+            ),
       );
       if (sent ?? false) {
         await onSent();
@@ -51,38 +52,38 @@ class PdfPreviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text(title),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.email),
-              onPressed: () async => _showEmailDialog(context),
-            ),
-          ],
+    appBar: AppBar(
+      title: Text(title),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.email),
+          onPressed: () async => _showEmailDialog(context),
         ),
-        body: Center(
-          child: Column(
-            children: [
-              Expanded(
-                child: PdfViewer.file(
-                  filePath,
-                  params: PdfViewerParams(
-                    linkHandlerParams: PdfLinkHandlerParams(
-                      onLinkTap: (link) async {
-                        // handle URL or Dest
-                        if (link.url != null) {
-                          await launchUrl(link.url!);
-                        }
-                        // else if (link.dest != null) {
-                        //   controller.goToDest(link.dest);
-                        // }
-                      },
-                    ),
-                  ),
+      ],
+    ),
+    body: Center(
+      child: Column(
+        children: [
+          Expanded(
+            child: PdfViewer.file(
+              filePath,
+              params: PdfViewerParams(
+                linkHandlerParams: PdfLinkHandlerParams(
+                  onLinkTap: (link) async {
+                    // handle URL or Dest
+                    if (link.url != null) {
+                      await launchUrl(link.url!);
+                    }
+                    // else if (link.dest != null) {
+                    //   controller.goToDest(link.dest);
+                    // }
+                  },
                 ),
-              )
-            ],
+              ),
+            ),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }

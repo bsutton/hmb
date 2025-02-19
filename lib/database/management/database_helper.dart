@@ -22,10 +22,11 @@ class DatabaseHelper {
     required HMBDatabaseFactory databaseFactory,
   }) async {
     await openDb(
-        src: src,
-        backupProvider: backupProvider,
-        databaseFactory: databaseFactory,
-        backup: backup);
+      src: src,
+      backupProvider: backupProvider,
+      databaseFactory: databaseFactory,
+      backup: backup,
+    );
   }
 
   Future<void> openDb({
@@ -37,16 +38,21 @@ class DatabaseHelper {
     final path = await backupProvider.databasePath;
     final targetVersion = await getLatestVersion(src);
     print('target db version: $targetVersion');
-    _database = await databaseFactory.openDatabase(path,
-        options: OpenDatabaseOptions(
-            version: targetVersion,
-            onUpgrade: (db, oldVersion, newVersion) => upgradeDb(
-                db: db,
-                backup: backup,
-                oldVersion: oldVersion,
-                newVersion: newVersion,
-                src: src,
-                backupProvider: backupProvider)));
+    _database = await databaseFactory.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: targetVersion,
+        onUpgrade:
+            (db, oldVersion, newVersion) => upgradeDb(
+              db: db,
+              backup: backup,
+              oldVersion: oldVersion,
+              newVersion: newVersion,
+              src: src,
+              backupProvider: backupProvider,
+            ),
+      ),
+    );
   }
 
   Future<void> closeDb() async {
@@ -59,13 +65,18 @@ class DatabaseHelper {
 
   Future<int> getVersion() async => database.getVersion();
 
-  Future<void> withOpenDatabase(HMBDatabaseFactory databaseFactory,
-      String pathToDb, Future<void> Function() action) async {
+  Future<void> withOpenDatabase(
+    HMBDatabaseFactory databaseFactory,
+    String pathToDb,
+    Future<void> Function() action,
+  ) async {
     var wasOpen = false;
     try {
       if (_database == null) {
-        _database = await databaseFactory.openDatabase(pathToDb,
-            options: OpenDatabaseOptions());
+        _database = await databaseFactory.openDatabase(
+          pathToDb,
+          options: OpenDatabaseOptions(),
+        );
         wasOpen = true;
       }
 

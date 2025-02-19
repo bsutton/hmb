@@ -28,12 +28,16 @@ class TestBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<BackupResult> store(
-      {required String pathToDatabaseCopy,
-      required String pathToZippedBackup,
-      required int version}) async {
-    var pathToBackupFile = join(DartProject.self.pathToProjectRoot, 'backups',
-        basename(pathToZippedBackup));
+  Future<BackupResult> store({
+    required String pathToDatabaseCopy,
+    required String pathToZippedBackup,
+    required int version,
+  }) async {
+    var pathToBackupFile = join(
+      DartProject.self.pathToProjectRoot,
+      'backups',
+      basename(pathToZippedBackup),
+    );
 
     var count = 1;
     while (exists(pathToBackupFile)) {
@@ -44,9 +48,10 @@ class TestBackupProvider extends BackupProvider {
     move(pathToZippedBackup, pathToBackupFile);
 
     return BackupResult(
-        pathToBackup: pathToBackupFile,
-        pathToSource: await databasePath,
-        success: true);
+      pathToBackup: pathToBackupFile,
+      pathToSource: await databasePath,
+      success: true,
+    );
   }
 
   @override

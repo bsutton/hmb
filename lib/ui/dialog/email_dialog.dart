@@ -56,68 +56,71 @@ ${widget.system.businessNumberLabel}: ${widget.system.businessNumber}
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Send Email'),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: <Widget>[
-              DropdownButton<String>(
-                value: _selectedRecipient,
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedRecipient = newValue;
-                  });
-                },
-                items: widget.emailRecipients
-                    .map((recipient) => DropdownMenuItem<String>(
-                          value: recipient,
-                          child: Text(recipient),
-                        ))
+    title: const Text('Send Email'),
+    content: SingleChildScrollView(
+      child: ListBody(
+        children: <Widget>[
+          DropdownButton<String>(
+            value: _selectedRecipient,
+            onChanged: (newValue) {
+              setState(() {
+                _selectedRecipient = newValue;
+              });
+            },
+            items:
+                widget.emailRecipients
+                    .map(
+                      (recipient) => DropdownMenuItem<String>(
+                        value: recipient,
+                        child: Text(recipient),
+                      ),
+                    )
                     .toList(),
-              ),
-              TextField(
-                controller: _subjectController,
-                decoration: const InputDecoration(labelText: 'Subject'),
-              ),
-              TextField(
-                controller: _bodyController,
-                decoration: const InputDecoration(labelText: 'Body'),
-                maxLines: 5,
-              ),
-            ],
           ),
-        ),
-        actions: <Widget>[
-          HMBButton(
-            label: 'Cancel',
-            onPressed: () {
-              Navigator.of(context).pop(false);
-            },
+          TextField(
+            controller: _subjectController,
+            decoration: const InputDecoration(labelText: 'Subject'),
           ),
-          HMBButton(
-            label: 'Send...',
-            onPressed: () async {
-              if (!(Platform.isAndroid || Platform.isIOS)) {
-                HMBToast.error('This platform does not support sending emails');
-                return;
-              }
-              if (_selectedRecipient != null) {
-                final email = Email(
-                  body: _bodyController.text,
-                  subject: _subjectController.text,
-                  recipients: [_selectedRecipient!],
-                  attachmentPaths: [widget.filePath],
-                );
-
-                await FlutterEmailSender.send(email);
-                HMBToast.info('Email sent successfully');
-                if (context.mounted) {
-                  Navigator.of(context).pop(true);
-                }
-              } else {
-                HMBToast.info('Please select a recipient');
-              }
-            },
+          TextField(
+            controller: _bodyController,
+            decoration: const InputDecoration(labelText: 'Body'),
+            maxLines: 5,
           ),
         ],
-      );
+      ),
+    ),
+    actions: <Widget>[
+      HMBButton(
+        label: 'Cancel',
+        onPressed: () {
+          Navigator.of(context).pop(false);
+        },
+      ),
+      HMBButton(
+        label: 'Send...',
+        onPressed: () async {
+          if (!(Platform.isAndroid || Platform.isIOS)) {
+            HMBToast.error('This platform does not support sending emails');
+            return;
+          }
+          if (_selectedRecipient != null) {
+            final email = Email(
+              body: _bodyController.text,
+              subject: _subjectController.text,
+              recipients: [_selectedRecipient!],
+              attachmentPaths: [widget.filePath],
+            );
+
+            await FlutterEmailSender.send(email);
+            HMBToast.info('Email sent successfully');
+            if (context.mounted) {
+              Navigator.of(context).pop(true);
+            }
+          } else {
+            HMBToast.info('Please select a recipient');
+          }
+        },
+      ),
+    ],
+  );
 }

@@ -31,21 +31,23 @@ class Milestone extends Entity<Milestone> {
   }) : super.forInsert();
 
   factory Milestone.fromMap(Map<String, dynamic> map) => Milestone(
-        id: map['id'] as int,
-        quoteId: map['quote_id'] as int,
-        invoiceId: map['invoice_id'] as int?,
-        milestoneNumber: map['milestone_number'] as int,
-        paymentAmount: MoneyEx.fromInt(map['payment_amount'] as int),
-        paymentPercentage: Percentage.fromInt(map['payment_percentage'] as int),
-        milestoneDescription: map['milestone_description'] as String?,
-        dueDate: map['due_date'] != null
-            ? const LocalDateNullableConverter()
-                .fromJson(map['due_date'] as String)
+    id: map['id'] as int,
+    quoteId: map['quote_id'] as int,
+    invoiceId: map['invoice_id'] as int?,
+    milestoneNumber: map['milestone_number'] as int,
+    paymentAmount: MoneyEx.fromInt(map['payment_amount'] as int),
+    paymentPercentage: Percentage.fromInt(map['payment_percentage'] as int),
+    milestoneDescription: map['milestone_description'] as String?,
+    dueDate:
+        map['due_date'] != null
+            ? const LocalDateNullableConverter().fromJson(
+              map['due_date'] as String,
+            )
             : null,
-        edited: (map['edited'] as int) == 1,
-        createdDate: DateTime.parse(map['created_date'] as String),
-        modifiedDate: DateTime.parse(map['modified_date'] as String),
-      );
+    edited: (map['edited'] as int) == 1,
+    createdDate: DateTime.parse(map['created_date'] as String),
+    modifiedDate: DateTime.parse(map['modified_date'] as String),
+  );
 
   int quoteId;
   int? invoiceId;
@@ -58,19 +60,19 @@ class Milestone extends Entity<Milestone> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'quote_id': quoteId,
-        'invoice_id': invoiceId,
-        'milestone_number': milestoneNumber,
-        'payment_amount': paymentAmount.twoDigits().minorUnits.toInt(),
-        'payment_percentage':
-            paymentPercentage.copyWith(scale: 2).minorUnits.toInt(),
-        'milestone_description': milestoneDescription,
-        'due_date': const LocalDateNullableConverter().toJson(dueDate),
-        'edited': edited ? 1 : 0,
-        'created_date': createdDate.toIso8601String(),
-        'modified_date': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'quote_id': quoteId,
+    'invoice_id': invoiceId,
+    'milestone_number': milestoneNumber,
+    'payment_amount': paymentAmount.twoDigits().minorUnits.toInt(),
+    'payment_percentage':
+        paymentPercentage.copyWith(scale: 2).minorUnits.toInt(),
+    'milestone_description': milestoneDescription,
+    'due_date': const LocalDateNullableConverter().toJson(dueDate),
+    'edited': edited ? 1 : 0,
+    'created_date': createdDate.toIso8601String(),
+    'modified_date': modifiedDate.toIso8601String(),
+  };
 
   Milestone copyWith({
     int? id,
@@ -84,33 +86,33 @@ class Milestone extends Entity<Milestone> {
     bool? edited,
     DateTime? createdDate,
     DateTime? modifiedDate,
-  }) =>
-      Milestone(
-        id: id ?? this.id,
-        quoteId: quoteId ?? this.quoteId,
-        invoiceId: invoiceId ?? this.invoiceId,
-        milestoneNumber: milestoneNumber ?? this.milestoneNumber,
-        paymentAmount: paymentAmount?.twoDigits() ?? this.paymentAmount,
-        paymentPercentage:
-            paymentPercentage?.copyWith(scale: 2) ?? this.paymentPercentage,
-        milestoneDescription: milestoneDescription ?? this.milestoneDescription,
-        dueDate: dueDate ?? this.dueDate,
-        edited: edited ?? this.edited,
-        createdDate: createdDate ?? this.createdDate,
-        modifiedDate: modifiedDate ?? this.modifiedDate,
-      );
+  }) => Milestone(
+    id: id ?? this.id,
+    quoteId: quoteId ?? this.quoteId,
+    invoiceId: invoiceId ?? this.invoiceId,
+    milestoneNumber: milestoneNumber ?? this.milestoneNumber,
+    paymentAmount: paymentAmount?.twoDigits() ?? this.paymentAmount,
+    paymentPercentage:
+        paymentPercentage?.copyWith(scale: 2) ?? this.paymentPercentage,
+    milestoneDescription: milestoneDescription ?? this.milestoneDescription,
+    dueDate: dueDate ?? this.dueDate,
+    edited: edited ?? this.edited,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+  );
 
   int get hash => Object.hash(
-      id,
-      id,
-      quoteId,
-      milestoneNumber,
-      edited,
-      createdDate,
-      modifiedDate,
-      invoiceId,
-      paymentAmount,
-      paymentPercentage,
-      milestoneDescription,
-      dueDate);
+    id,
+    id,
+    quoteId,
+    milestoneNumber,
+    edited,
+    createdDate,
+    modifiedDate,
+    invoiceId,
+    paymentAmount,
+    paymentPercentage,
+    milestoneDescription,
+    dueDate,
+  );
 }

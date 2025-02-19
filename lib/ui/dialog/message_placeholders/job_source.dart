@@ -15,8 +15,9 @@ class JobSource extends Source<Job> {
 
   @override
   Widget widget() => ValueListenableBuilder(
-      valueListenable: customerNotifier,
-      builder: (context, customerJob, _) => HMBDroplist<Job>(
+    valueListenable: customerNotifier,
+    builder:
+        (context, customerJob, _) => HMBDroplist<Job>(
           title: 'Job',
           selectedItem: () async => customerJob.job,
           items: (filter) async => DaoJob().getByCustomer(customerJob.customer),
@@ -24,7 +25,9 @@ class JobSource extends Source<Job> {
           onChanged: (job) {
             this.job = job;
             onChanged(job, ResetFields(contact: true, site: true));
-          }));
+          },
+        ),
+  );
 
   @override
   Job? get value => job;
@@ -34,8 +37,10 @@ class JobSource extends Source<Job> {
     if (source == this) {
       return;
     }
-    customerNotifier.value =
-        CustomerJob(sourceContext.customer, sourceContext.job);
+    customerNotifier.value = CustomerJob(
+      sourceContext.customer,
+      sourceContext.job,
+    );
   }
 
   @override

@@ -16,28 +16,28 @@ class HMBChildCrudCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        children: [
-          const HMBSpacer(height: true),
-          Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            color: Colors.deepPurpleAccent,
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (headline != null)
-                    Text(
-                      headline!,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                  const SizedBox(height: 16),
-                  crudListScreen
-                ],
-              ),
-            ),
+    children: [
+      const HMBSpacer(height: true),
+      Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        color: Colors.deepPurpleAccent,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (headline != null)
+                Text(
+                  headline!,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              const SizedBox(height: 16),
+              crudListScreen,
+            ],
           ),
-        ],
-      );
+        ),
+      ),
+    ],
+  );
 }

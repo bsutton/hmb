@@ -19,8 +19,12 @@ class DaoTimeEntry extends Dao<TimeEntry> {
     if (taskId == null) {
       return [];
     }
-    final results = await db.query(tableName,
-        where: 'task_id = ?', whereArgs: [taskId], orderBy: 'start_time desc');
+    final results = await db.query(
+      tableName,
+      where: 'task_id = ?',
+      whereArgs: [taskId],
+      orderBy: 'start_time desc',
+    );
     return results.map(TimeEntry.fromMap).toList();
   }
 
@@ -29,8 +33,11 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   Future<TimeEntry?> getActiveEntry() async {
     final db = withoutTransaction();
 
-    final results = await db.query(tableName,
-        where: 'end_time is null', orderBy: 'start_time desc');
+    final results = await db.query(
+      tableName,
+      where: 'end_time is null',
+      orderBy: 'start_time desc',
+    );
     final list = results.map(TimeEntry.fromMap);
     assert(list.length <= 1, 'There should only ever by one active entry');
     return list.firstOrNull;
@@ -61,18 +68,17 @@ class DaoTimeEntry extends Dao<TimeEntry> {
 
   Future<List<TimeEntry>> getByInvoiceLineId(int invoiceLineId) async {
     final db = withoutTransaction();
-    final results = await db.query(tableName,
-        where: 'invoice_line_id = ?', whereArgs: [invoiceLineId]);
+    final results = await db.query(
+      tableName,
+      where: 'invoice_line_id = ?',
+      whereArgs: [invoiceLineId],
+    );
     return results.map(TimeEntry.fromMap).toList();
   }
 
   Future<void> deleteByTask(int id, [Transaction? transaction]) async {
     final db = withinTransaction(transaction);
-    await db.delete(
-      tableName,
-      where: 'task_id =?',
-      whereArgs: [id],
-    );
+    await db.delete(tableName, where: 'task_id =?', whereArgs: [id]);
   }
 
   /// Get the set of [TimeEntry]s for the given job.
@@ -82,17 +88,22 @@ class DaoTimeEntry extends Dao<TimeEntry> {
     if (jobId == null) {
       return [];
     }
-    final results = await db.rawQuery('''
+    final results = await db.rawQuery(
+      '''
       select * from $tableName
       where task_id in (select id from task where job_id =?)
       order by end_time desc
-''', [jobId]);
+''',
+      [jobId],
+    );
     return results.map(TimeEntry.fromMap).toList();
   }
 
   /// Get the non-billed labour for the given [task] in the given [date]
   Future<LabourForTaskOnDate> getLabourForDate(
-      Task task, LocalDate date) async {
+    Task task,
+    LocalDate date,
+  ) async {
     final timeEntries = await getByTask(task.id);
 
     final matched = <TimeEntry>[];
@@ -148,8 +159,10 @@ class DbTimeEntryChanged extends JuneState {
 /// that haven't yet been billed.
 class LabourForTaskOnDate {
   LabourForTaskOnDate(this.task, this.date, this.timeEntries) {
-    hours =
-        timeEntries.fold(Duration.zero, (sum, value) => sum + value.duration);
+    hours = timeEntries.fold(
+      Duration.zero,
+      (sum, value) => sum + value.duration,
+    );
   }
   Task task;
   LocalDate date;

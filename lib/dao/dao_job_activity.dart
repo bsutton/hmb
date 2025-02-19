@@ -24,7 +24,9 @@ class DaoJobActivity extends Dao<JobActivity> {
   }
 
   Future<List<JobActivity>> getActivitiesInRange(
-      LocalDate start, LocalDate end) async {
+    LocalDate start,
+    LocalDate end,
+  ) async {
     final db = withoutTransaction();
 
     final results = await db.query(
@@ -49,13 +51,16 @@ class DaoJobActivity extends Dao<JobActivity> {
 
   Future<JobActivity?> getMostRecentByJob(int jobId) async {
     final db = withoutTransaction();
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
     SELECT *
     FROM job_activity
     WHERE job_id = ?
     ORDER BY start_date DESC
     LIMIT 1
-  ''', [jobId]);
+  ''',
+      [jobId],
+    );
 
     if (data.isEmpty) {
       return null;
@@ -65,22 +70,25 @@ class DaoJobActivity extends Dao<JobActivity> {
   }
 
   Future<JobActivity?> getNextActivityByJob(int jobId) async {
-  final db = withoutTransaction();
-  final data = await db.rawQuery('''
+    final db = withoutTransaction();
+    final data = await db.rawQuery(
+      '''
     SELECT *
     FROM job_activity
     WHERE job_id = ?
       AND start_date > ?
     ORDER BY start_date ASC
     LIMIT 1
-  ''', [jobId, DateTime.now().toIso8601String()]);
+  ''',
+      [jobId, DateTime.now().toIso8601String()],
+    );
 
-  if (data.isEmpty) {
-    return null;
+    if (data.isEmpty) {
+      return null;
+    }
+
+    return fromMap(data.first);
   }
-
-  return fromMap(data.first);
-}
 
   @override
   JobActivityState Function() get juneRefresher => JobActivityState.new;

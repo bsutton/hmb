@@ -32,17 +32,17 @@ class _HMBToggleState extends State<HMBToggle> {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          HMBTextLabel(widget.label),
-          IconButton(
-            tooltip: widget.tooltip,
-            onPressed: () {
-              on = !on;
-              widget.onToggled(on);
-            },
-            iconSize: 25,
-            icon: Icon(on ? Icons.toggle_on : Icons.toggle_off),
-          ),
-        ],
-      );
+    children: [
+      HMBTextLabel(widget.label),
+      IconButton(
+        tooltip: widget.tooltip,
+        onPressed: () {
+          on = !on;
+          widget.onToggled(on);
+        },
+        iconSize: 25,
+        icon: Icon(on ? Icons.toggle_on : Icons.toggle_off),
+      ),
+    ],
+  );
 }

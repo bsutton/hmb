@@ -10,10 +10,11 @@ class CategoryListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => EntityListScreen<Category>(
-      pageTitle: 'Categories',
-      dao: DaoCategory(),
-      title: (entity) => HMBTextHeadline2(entity.name),
-      fetchList: (filter) async => DaoCategory().getByFilter(filter),
-      onEdit: (category) => CategoryEditScreen(category: category),
-      details: (entity) => HMBTextBody(entity.description ?? ''));
+    pageTitle: 'Categories',
+    dao: DaoCategory(),
+    title: (entity) => HMBTextHeadline2(entity.name),
+    fetchList: (filter) async => DaoCategory().getByFilter(filter),
+    onEdit: (category) => CategoryEditScreen(category: category),
+    details: (entity) => HMBTextBody(entity.description ?? ''),
+  );
 }

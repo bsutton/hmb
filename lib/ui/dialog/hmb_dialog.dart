@@ -20,25 +20,25 @@ class HMBDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Dialog(
-        insetPadding: insetPadding,
-        // Controls the padding outside the dialog
-        child: Padding(
-          padding: EdgeInsets.zero,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AlertDialog(
-                  titlePadding: titlePadding,
-                  contentPadding: contentPadding,
-                  insetPadding: EdgeInsets.zero,
-                  title: title,
-                  content: content,
-                  actions: actions,
-                ),
-              ],
+    insetPadding: insetPadding,
+    // Controls the padding outside the dialog
+    child: Padding(
+      padding: EdgeInsets.zero,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AlertDialog(
+              titlePadding: titlePadding,
+              contentPadding: contentPadding,
+              insetPadding: EdgeInsets.zero,
+              title: title,
+              content: content,
+              actions: actions,
             ),
-          ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }

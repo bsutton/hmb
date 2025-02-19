@@ -95,9 +95,7 @@ class _JobEstimateBuilderScreenState
 
   Future<void> _addNewTask() async {
     final newTask = await Navigator.of(context).push<Task>(
-      MaterialPageRoute(
-        builder: (context) => TaskEditScreen(job: widget.job),
-      ),
+      MaterialPageRoute(builder: (context) => TaskEditScreen(job: widget.job)),
     );
 
     if (newTask != null) {
@@ -134,127 +132,144 @@ class _JobEstimateBuilderScreenState
   }
 
   @override
-  Widget build(BuildContext context) =>
-      DeferredBuilder(this, builder: (context) {
-        final tasks = filteredTasks();
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Estimate Builder'),
-          ),
-          body: Column(
-            children: [
-              SizedBox(
-                  height: 160, width: double.infinity, child: _buildTotals()),
-              Surface(
-                elevation: SurfaceElevation.e0,
-                child: HMBSearchWithAdd(
-                    hint: 'Add Task',
-                    onSearch: (filter) async => setState(() {
-                          this.filter = filter ?? '';
-                        }),
-                    onAdd: _addNewTask),
-              ),
-              const HMBSpacer(height: true),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-                    return _buildTaskCard(task);
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      });
-
-  Widget _buildTotals() => SurfaceCard(
-        elevation: SurfaceElevation.e0,
-        title: 'Totals',
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder: (context) {
+      final tasks = filteredTasks();
+      return Scaffold(
+        appBar: AppBar(title: const Text('Estimate Builder')),
         body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Labour: $_totalLabourCost'),
-            Text('Materials: $_totalMaterialsCost'),
-            Text('Combined: $_totalCombinedCost'),
+            SizedBox(
+              height: 160,
+              width: double.infinity,
+              child: _buildTotals(),
+            ),
+            Surface(
+              elevation: SurfaceElevation.e0,
+              child: HMBSearchWithAdd(
+                hint: 'Add Task',
+                onSearch:
+                    (filter) async => setState(() {
+                      this.filter = filter ?? '';
+                    }),
+                onAdd: _addNewTask,
+              ),
+            ),
+            const HMBSpacer(height: true),
+            Expanded(
+              child: ListView.builder(
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  final task = tasks[index];
+                  return _buildTaskCard(task);
+                },
+              ),
+            ),
           ],
         ),
       );
+    },
+  );
+
+  Widget _buildTotals() => SurfaceCard(
+    elevation: SurfaceElevation.e0,
+    title: 'Totals',
+    body: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Labour: $_totalLabourCost'),
+        Text('Materials: $_totalMaterialsCost'),
+        Text('Combined: $_totalCombinedCost'),
+      ],
+    ),
+  );
 
   Widget _buildTaskCard(Task task) => Column(
-        children: [
-          Surface(
-            margin: const EdgeInsets.all(HMBTheme.padding),
-            child: Column(
-              children: [
-                ListTile(
-                  title: HMBTextHeadline3(task.name),
-                  subtitle: HMBTextHeadline3(task.description),
-                  trailing: IconButton(
-                    icon: const Icon(
-                      Icons.delete,
-                      color: Colors.red,
-                    ),
-                    onPressed: () async => _deleteTask(task),
-                  ),
-                  onTap: () async => _editTask(task),
-                ),
-                Padding(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: PhotoGallery.forTask(task: task)),
-                _buildTaskItems(task),
-                HMBButton(
-                  label: 'Add Item',
-                  onPressed: () async => _addItemToTask(task),
-                ),
-              ],
+    children: [
+      Surface(
+        margin: const EdgeInsets.all(HMBTheme.padding),
+        child: Column(
+          children: [
+            ListTile(
+              title: HMBTextHeadline3(task.name),
+              subtitle: HMBTextHeadline3(task.description),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () async => _deleteTask(task),
+              ),
+              onTap: () async => _editTask(task),
             ),
-          ),
-          const HMBSpacer(height: true),
-        ],
-      );
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: PhotoGallery.forTask(task: task),
+            ),
+            _buildTaskItems(task),
+            HMBButton(
+              label: 'Add Item',
+              onPressed: () async => _addItemToTask(task),
+            ),
+          ],
+        ),
+      ),
+      const HMBSpacer(height: true),
+    ],
+  );
 
   Widget _buildTaskItems(Task task) => FutureBuilderEx<ItemsAndRate>(
-      // ignore: discarded_futures
-      future: ItemsAndRate.fromTask(task),
-      builder: (context, itemAndRate) => Column(
-            children: itemAndRate!.items
-                .map((item) => _buildItemTile(item, task,
-                    itemAndRate.hourlyRate, itemAndRate.billingType))
-                .toList(),
-          ));
-
-  Widget _buildItemTile(TaskItem item, Task task, Money hourlyRate,
-          BillingType billingType) =>
-      ListTile(
-        title: Text(item.description),
-        subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
-        trailing: IconButton(
-          icon: const Icon(
-            Icons.delete,
-            color: Colors.red,
-          ),
-          onPressed: () async => _deleteItem(item),
+    // ignore: discarded_futures
+    future: ItemsAndRate.fromTask(task),
+    builder:
+        (context, itemAndRate) => Column(
+          children:
+              itemAndRate!.items
+                  .map(
+                    (item) => _buildItemTile(
+                      item,
+                      task,
+                      itemAndRate.hourlyRate,
+                      itemAndRate.billingType,
+                    ),
+                  )
+                  .toList(),
         ),
-        onTap: () async => _editItem(item, task),
-      );
+  );
+
+  Widget _buildItemTile(
+    TaskItem item,
+    Task task,
+    Money hourlyRate,
+    BillingType billingType,
+  ) => ListTile(
+    title: Text(item.description),
+    subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
+    trailing: IconButton(
+      icon: const Icon(Icons.delete, color: Colors.red),
+      onPressed: () async => _deleteItem(item),
+    ),
+    onTap: () async => _editItem(item, task),
+  );
 
   Future<void> _addItemToTask(Task task) async {
     TaskItem? newItem;
 
-    newItem = await Navigator.of(context).push<TaskItem>(MaterialPageRoute(
-        builder: (context) => FutureBuilderEx(
+    newItem = await Navigator.of(context).push<TaskItem>(
+      MaterialPageRoute(
+        builder:
+            (context) => FutureBuilderEx(
               // ignore: discarded_futures
               future: getTaskAndRate(task),
-              builder: (context, taskAndRate) => TaskItemEditScreen(
-                parent: task,
-                taskItem: newItem,
-                billingType:
-                    taskAndRate?.billingType ?? BillingType.timeAndMaterial,
-                hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
-              ),
-            )));
+              builder:
+                  (context, taskAndRate) => TaskItemEditScreen(
+                    parent: task,
+                    taskItem: newItem,
+                    billingType:
+                        taskAndRate?.billingType ?? BillingType.timeAndMaterial,
+                    hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
+                  ),
+            ),
+      ),
+    );
     if (newItem != null) {
       await _calculateTotals();
       setState(() {});
@@ -264,17 +279,19 @@ class _JobEstimateBuilderScreenState
   Future<void> _editItem(TaskItem item, Task task) async {
     final updatedItem = await Navigator.of(context).push<TaskItem>(
       MaterialPageRoute(
-        builder: (context) => FutureBuilderEx(
-          // ignore: discarded_futures
-          future: getTaskAndRate(task),
-          builder: (context, taskAndRate) => TaskItemEditScreen(
-            parent: task,
-            taskItem: item,
-            billingType:
-                taskAndRate?.billingType ?? BillingType.timeAndMaterial,
-            hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
-          ),
-        ),
+        builder:
+            (context) => FutureBuilderEx(
+              // ignore: discarded_futures
+              future: getTaskAndRate(task),
+              builder:
+                  (context, taskAndRate) => TaskItemEditScreen(
+                    parent: task,
+                    taskItem: item,
+                    billingType:
+                        taskAndRate?.billingType ?? BillingType.timeAndMaterial,
+                    hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
+                  ),
+            ),
       ),
     );
 
@@ -309,6 +326,9 @@ class ItemsAndRate {
     final hourlyRate = await DaoTask().getHourlyRate(task);
     final billingType = await DaoTask().getBillingType(task);
     return ItemsAndRate(
-        await DaoTaskItem().getByTask(task.id), hourlyRate, billingType);
+      await DaoTaskItem().getByTask(task.id),
+      hourlyRate,
+      billingType,
+    );
   }
 }

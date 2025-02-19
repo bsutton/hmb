@@ -37,13 +37,19 @@ class CapturedPhoto {
   Future<String?> get absolutePath async =>
       join(await getPhotosRootPath(), relativePath);
 
-  static Future<CapturedPhoto> fromAbsolute(
-      {required String absolutePathToPhoto}) async {
-    final relativePathToPhoto =
-        relative(absolutePathToPhoto, from: await getPhotosRootPath());
+  static Future<CapturedPhoto> fromAbsolute({
+    required String absolutePathToPhoto,
+  }) async {
+    final relativePathToPhoto = relative(
+      absolutePathToPhoto,
+      from: await getPhotosRootPath(),
+    );
 
-    assert(relativePathToPhoto != absolutePathToPhoto, '''
-The relative call failed probably because $relativePathToPhoto isn't relative to $absolutePathToPhoto''');
+    assert(
+      relativePathToPhoto != absolutePathToPhoto,
+      '''
+The relative call failed probably because $relativePathToPhoto isn't relative to $absolutePathToPhoto''',
+    );
 
     return CapturedPhoto(relativePath: relativePathToPhoto);
   }

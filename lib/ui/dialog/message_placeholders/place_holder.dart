@@ -3,11 +3,7 @@ import 'source.dart';
 abstract class PlaceHolder<S> {
   /// [base] e.g. job
   /// [name] e.g. job.cost
-  PlaceHolder({
-    required this.name,
-    required this.base,
-    required this.source,
-  });
+  PlaceHolder({required this.name, required this.base, required this.source});
 
   // factory PlaceHolder.fromName(String name) {
   //   final placeholder = placeHolders[name];

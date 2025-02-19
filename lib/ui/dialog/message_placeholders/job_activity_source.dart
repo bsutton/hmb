@@ -16,19 +16,25 @@ class JobActivitySource extends Source<JobActivity> {
 
   @override
   Widget widget() => ValueListenableBuilder(
-      valueListenable: notifier,
-      builder: (context, jobAndActivity, _) => HMBDroplist<JobActivity>(
+    valueListenable: notifier,
+    builder:
+        (context, jobAndActivity, _) => HMBDroplist<JobActivity>(
           title: 'Activity',
           selectedItem: () async => jobAndActivity.jobActivity,
-          items: (filter) async =>
-              DaoJobActivity().getByJob(jobAndActivity.job?.id),
-          format: (jobActivity) => jobAndActivity.jobActivity != null
-              ? formatDate(jobAndActivity.jobActivity!.start)
-              : '',
+          items:
+              (filter) async =>
+                  DaoJobActivity().getByJob(jobAndActivity.job?.id),
+          format:
+              (jobActivity) =>
+                  jobAndActivity.jobActivity != null
+                      ? formatDate(jobAndActivity.jobActivity!.start)
+                      : '',
           onChanged: (jobActivity) {
             this.jobActivity = jobActivity;
             onChanged(jobActivity, ResetFields(contact: true, site: true));
-          }));
+          },
+        ),
+  );
 
   @override
   JobActivity? get value => jobActivity;
@@ -38,8 +44,10 @@ class JobActivitySource extends Source<JobActivity> {
     if (source == this) {
       return;
     }
-    notifier.value =
-        JobAndActivity(sourceContext.jobActivity, sourceContext.job);
+    notifier.value = JobAndActivity(
+      sourceContext.jobActivity,
+      sourceContext.job,
+    );
   }
 
   @override

@@ -21,7 +21,8 @@ class Invoice extends Entity<Invoice> {
     LocalDate? dueDate,
     this.sent = false,
   }) : super() {
-    this.dueDate = dueDate ??
+    this.dueDate =
+        dueDate ??
         LocalDate.fromDateTime(createdDate.add(const Duration(days: 1)));
   }
 
@@ -43,18 +44,19 @@ class Invoice extends Entity<Invoice> {
   }) : super.forUpdate();
 
   factory Invoice.fromMap(Map<String, dynamic> map) => Invoice(
-        id: map['id'] as int,
-        jobId: map['job_id'] as int,
-        totalAmount: Money.fromInt(map['total_amount'] as int, isoCode: 'AUD'),
-        createdDate: DateTime.parse(map['created_date'] as String),
-        modifiedDate: DateTime.parse(map['modified_date'] as String),
-        invoiceNum: map['invoice_num'] as String?,
-        externalInvoiceId: map['external_invoice_id'] as String?,
-        dueDate: map['due_date'] != null
+    id: map['id'] as int,
+    jobId: map['job_id'] as int,
+    totalAmount: Money.fromInt(map['total_amount'] as int, isoCode: 'AUD'),
+    createdDate: DateTime.parse(map['created_date'] as String),
+    modifiedDate: DateTime.parse(map['modified_date'] as String),
+    invoiceNum: map['invoice_num'] as String?,
+    externalInvoiceId: map['external_invoice_id'] as String?,
+    dueDate:
+        map['due_date'] != null
             ? const LocalDateConverter().fromJson(map['due_date'] as String)
             : null,
-        sent: (map['sent'] as int) == 1, // Convert to boolean
-      );
+    sent: (map['sent'] as int) == 1, // Convert to boolean
+  );
 
   int jobId;
   Money totalAmount;
@@ -78,54 +80,56 @@ class Invoice extends Entity<Invoice> {
     String? externalInvoiceId,
     LocalDate? dueDate,
     bool? sent,
-  }) =>
-      Invoice(
-        id: id ?? this.id,
-        jobId: jobId ?? this.jobId,
-        totalAmount: totalAmount ?? this.totalAmount,
-        createdDate: createdDate ?? this.createdDate,
-        modifiedDate: modifiedDate ?? this.modifiedDate,
-        invoiceNum: invoiceNum ?? this.invoiceNum,
-        externalInvoiceId: externalInvoiceId ?? this.externalInvoiceId,
-        dueDate: dueDate ?? this.dueDate,
-        sent: sent ?? this.sent,
-      );
+  }) => Invoice(
+    id: id ?? this.id,
+    jobId: jobId ?? this.jobId,
+    totalAmount: totalAmount ?? this.totalAmount,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+    invoiceNum: invoiceNum ?? this.invoiceNum,
+    externalInvoiceId: externalInvoiceId ?? this.externalInvoiceId,
+    dueDate: dueDate ?? this.dueDate,
+    sent: sent ?? this.sent,
+  );
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'job_id': jobId,
-        'total_amount': totalAmount.minorUnits.toInt(),
-        'created_date': createdDate.toIso8601String(),
-        'modified_date': modifiedDate.toIso8601String(),
-        'invoice_num': invoiceNum,
-        'external_invoice_id': externalInvoiceId,
-        'due_date': const LocalDateConverter().toJson(dueDate),
-        'sent': sent ? 1 : 0, // Convert boolean to int
-      };
+    'id': id,
+    'job_id': jobId,
+    'total_amount': totalAmount.minorUnits.toInt(),
+    'created_date': createdDate.toIso8601String(),
+    'modified_date': modifiedDate.toIso8601String(),
+    'invoice_num': invoiceNum,
+    'external_invoice_id': externalInvoiceId,
+    'due_date': const LocalDateConverter().toJson(dueDate),
+    'sent': sent ? 1 : 0, // Convert boolean to int
+  };
 
   Future<XeroInvoice> toXeroInvoice(Invoice invoice) async {
     final job = await DaoJob().getById(invoice.jobId);
     final contact = await DaoContact().getPrimaryForJob(job?.id);
     if (contact == null) {
       throw InvoiceException(
-          '''You must assign a Contact to the Job before you can upload an invoice''');
+        '''You must assign a Contact to the Job before you can upload an invoice''',
+      );
     }
     final xeroContact = contact.toXeroContact();
 
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
 
     final xeroInvoice = XeroInvoice(
-        reference: job!.summary,
-        type: 'ACCREC',
-        contact: xeroContact,
-        issueDate: LocalDate.fromDateTime(invoice.createdDate),
-        dueDate: invoice.dueDate,
-        lineItems: invoiceLines
-            .where((line) => line.status == LineStatus.normal)
-            .map((line) => line.toXeroLineItem())
-            .toList(),
-        lineAmountTypes: 'Inclusive'); // All amounts are inclusive of tax.
+      reference: job!.summary,
+      type: 'ACCREC',
+      contact: xeroContact,
+      issueDate: LocalDate.fromDateTime(invoice.createdDate),
+      dueDate: invoice.dueDate,
+      lineItems:
+          invoiceLines
+              .where((line) => line.status == LineStatus.normal)
+              .map((line) => line.toXeroLineItem())
+              .toList(),
+      lineAmountTypes: 'Inclusive',
+    ); // All amounts are inclusive of tax.
     return xeroInvoice;
   }
 }

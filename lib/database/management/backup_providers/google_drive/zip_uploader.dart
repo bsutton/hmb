@@ -12,10 +12,7 @@ import '../backup_provider.dart';
 import 'api.dart';
 
 class ZipUploader {
-  ZipUploader({
-    required this.pathToZip,
-    required this.provider,
-  });
+  ZipUploader({required this.pathToZip, required this.provider});
 
   String pathToZip;
 
@@ -34,11 +31,7 @@ class ZipUploader {
     // Listen for progress updates from the isolate
     receivePort.listen((message) {
       if (message is ProgressUpdate) {
-        provider.emitProgress(
-          message.stageDescription,
-          5,
-          6,
-        );
+        provider.emitProgress(message.stageDescription, 5, 6);
       }
     });
 
@@ -59,10 +52,11 @@ class ZipUploader {
     await Isolate.spawn(
       _uploadFile,
       _UploadParams(
-          pathToZippedBackup: pathToZip,
-          sendPort: receivePort.sendPort,
-          token: RootIsolateToken.instance!,
-          authHeaders: driveAuth.authHeaders),
+        pathToZippedBackup: pathToZip,
+        sendPort: receivePort.sendPort,
+        token: RootIsolateToken.instance!,
+        authHeaders: driveAuth.authHeaders,
+      ),
       onError: errorPort.sendPort,
       onExit: exitPort.sendPort,
     );
@@ -82,14 +76,12 @@ class ZipUploader {
     try {
       BackgroundIsolateBinaryMessenger.ensureInitialized(params.token);
 
-      await Sentry.init(
-        (options) {
-          options
-            ..dsn =
-                'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
-            ..tracesSampleRate = 1.0;
-        },
-      );
+      await Sentry.init((options) {
+        options
+          ..dsn =
+              'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
+          ..tracesSampleRate = 1.0;
+      });
 
       final fileToUpload = File(pathToZippedBackup);
       final fileName = basename(pathToZippedBackup);
@@ -110,8 +102,11 @@ class ZipUploader {
 
       // final client = http.Client();
       // Get the upload URL for this file.
-      final uploadUrl =
-          await initiateResumableUpload(fileName, backupsFolderId, driveApi);
+      final uploadUrl = await initiateResumableUpload(
+        fileName,
+        backupsFolderId,
+        driveApi,
+      );
 
       // Upload the file in chunks
       while (start < fileSize) {
@@ -127,14 +122,17 @@ class ZipUploader {
         };
 
         // Send the chunk
-        final request = http.Request('PUT', Uri.parse(uploadUrl))
-          ..headers.addAll(headers)
-          ..bodyBytes = await http.ByteStream(chunkStream).toBytes();
+        final request =
+            http.Request('PUT', Uri.parse(uploadUrl))
+              ..headers.addAll(headers)
+              ..bodyBytes = await http.ByteStream(chunkStream).toBytes();
 
         final progress = (bytesSent / fileSize) * 100;
-        sendPort.send(ProgressUpdate.upload(
-          'Uploading backup: ${progress.toStringAsFixed(0)}%',
-        ));
+        sendPort.send(
+          ProgressUpdate.upload(
+            'Uploading backup: ${progress.toStringAsFixed(0)}%',
+          ),
+        );
 
         final response = await driveApi.send(request);
 
@@ -143,8 +141,9 @@ class ZipUploader {
           // Chunk uploaded successfully
           final range = response.headers['range'];
           start = _parseRange(range);
-          bytesSent += await http.ByteStream(chunkStream)
-              .fold<int>(0, (previous, element) => previous + element.length);
+          bytesSent += await http.ByteStream(
+            chunkStream,
+          ).fold<int>(0, (previous, element) => previous + element.length);
         } else if (response.statusCode == 200 || response.statusCode == 201) {
           // Upload completed successfully
           sendPort.send(ProgressUpdate.upload('Upload complete'));
@@ -152,8 +151,11 @@ class ZipUploader {
           break; // Exit the loop as the upload is complete
         } else {
           // Handle errors or resume from where it left off
-          sendPort.send(ProgressUpdate.upload(
-              'Failed to upload chunk. Status code: ${response.statusCode}'));
+          sendPort.send(
+            ProgressUpdate.upload(
+              'Failed to upload chunk. Status code: ${response.statusCode}',
+            ),
+          );
           return;
         }
       }
@@ -177,23 +179,26 @@ class ZipUploader {
     GoogleDriveApi api,
   ) async {
     final uri = Uri.parse(
-        'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable');
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',
+    );
     final metadata = {
       'name': fileName,
       'parents': [folderId],
     };
 
-    final request = http.Request('POST', uri)
-      ..headers['Content-Type'] = 'application/json; charset=UTF-8'
-      // ..headers['Authorization'] = 'Bearer $accessToken'
-      ..body = jsonEncode(metadata);
+    final request =
+        http.Request('POST', uri)
+          ..headers['Content-Type'] = 'application/json; charset=UTF-8'
+          // ..headers['Authorization'] = 'Bearer $accessToken'
+          ..body = jsonEncode(metadata);
 
     final response = await api.send(request);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       final body = await response.stream.bytesToString();
       throw Exception(
-          'Failed to initiate resumable upload. Status: ${response.statusCode}, Body: $body');
+        'Failed to initiate resumable upload. Status: ${response.statusCode}, Body: $body',
+      );
     }
 
     // The 'Location' header contains the resumable upload URL

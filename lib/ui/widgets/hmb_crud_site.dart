@@ -23,10 +23,11 @@ class HBMCrudSite<P extends Entity<P>> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBChildCrudCard(
-      headline: 'Sites',
-      crudListScreen: SiteListScreen(
-        daoJoin: daoJoin,
-        parent: parent,
-        parentTitle: parentTitle,
-      ));
+    headline: 'Sites',
+    crudListScreen: SiteListScreen(
+      daoJoin: daoJoin,
+      parent: parent,
+      parentTitle: parentTitle,
+    ),
+  );
 }

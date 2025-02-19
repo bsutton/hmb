@@ -5,26 +5,29 @@ import '../../../util/hmb_theme.dart';
 
 /// To be used as the page specific title
 class HMBPageTitle extends StatelessWidget {
-  const HMBPageTitle(this.text,
-      {super.key, this.color = HMBColors.textPrimary});
+  const HMBPageTitle(
+    this.text, {
+    super.key,
+    this.color = HMBColors.textPrimary,
+  });
   final String text;
   final Color color;
   static const fontSize = 26.0;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 12),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontSize: fontSize,
-            fontWeight: FontWeight.w500,
-          ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-      );
+    padding: const EdgeInsets.only(top: 8, bottom: 12),
+    child: Text(
+      text,
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w500,
+      ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    ),
+  );
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -36,26 +39,29 @@ class HMBPageTitle extends StatelessWidget {
 }
 
 class HMBCardTitle extends StatelessWidget {
-  const HMBCardTitle(this.text,
-      {super.key, this.color = HMBColors.textPrimary});
+  const HMBCardTitle(
+    this.text, {
+    super.key,
+    this.color = HMBColors.textPrimary,
+  });
   final String text;
   final Color color;
   static const fontSize = 22.0;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 12),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontSize: fontSize,
-            fontWeight: FontWeight.w500,
-          ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-      );
+    padding: const EdgeInsets.only(top: 8, bottom: 12),
+    child: Text(
+      text,
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w500,
+      ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    ),
+  );
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -68,26 +74,29 @@ class HMBCardTitle extends StatelessWidget {
 
 /// The first heading withing the body of the card.
 class HMBCardHeading extends StatelessWidget {
-  const HMBCardHeading(this.text,
-      {super.key, this.color = HMBColors.textPrimary});
+  const HMBCardHeading(
+    this.text, {
+    super.key,
+    this.color = HMBColors.textPrimary,
+  });
   final String text;
   final Color color;
   static const fontSize = 20.0;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 8),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontSize: fontSize,
-            fontWeight: FontWeight.w500,
-          ),
-          overflow: TextOverflow.ellipsis, // Handle overflow
-          maxLines: 1, // Limit to one line
-        ),
-      );
+    padding: const EdgeInsets.only(top: 8, bottom: 8),
+    child: Text(
+      text,
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w500,
+      ),
+      overflow: TextOverflow.ellipsis, // Handle overflow
+      maxLines: 1, // Limit to one line
+    ),
+  );
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -103,19 +112,27 @@ class HMBCardHeading extends StatelessWidget {
 /// top of the page.
 ///
 class HMBTextPageHeading extends StatelessWidget {
-  HMBTextPageHeading(String text,
-      {super.key, this.color = HMBColors.textPrimary})
-      : text = text.toUpperCase();
+  HMBTextPageHeading(
+    String text, {
+    super.key,
+    this.color = HMBColors.textPrimary,
+  }) : text = text.toUpperCase();
   final String text;
   final Color color;
   static const fontSize = 30.0;
 
   @override
   Widget build(BuildContext context) => FittedBox(
-      fit: BoxFit.fitWidth,
-      child: Text(text,
-          style: TextStyle(
-              color: color, fontSize: fontSize, fontWeight: FontWeight.w500)));
+    fit: BoxFit.fitWidth,
+    child: Text(
+      text,
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+  );
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -126,26 +143,29 @@ class HMBTextPageHeading extends StatelessWidget {
 }
 
 class HMBTextHeadline extends StatelessWidget {
-  const HMBTextHeadline(this.text,
-      {super.key, this.color = HMBColors.textPrimary});
+  const HMBTextHeadline(
+    this.text, {
+    super.key,
+    this.color = HMBColors.textPrimary,
+  });
   final String text;
   final Color color;
   static const fontSize = 26.0;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 8),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontSize: fontSize,
-            fontWeight: FontWeight.w500,
-          ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-      );
+    padding: const EdgeInsets.only(top: 8, bottom: 8),
+    child: Text(
+      text,
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w500,
+      ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    ),
+  );
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -157,26 +177,29 @@ class HMBTextHeadline extends StatelessWidget {
 }
 
 class HMBTextHeadline2 extends StatelessWidget {
-  const HMBTextHeadline2(this.text,
-      {super.key, this.color = HMBColors.textPrimary});
+  const HMBTextHeadline2(
+    this.text, {
+    super.key,
+    this.color = HMBColors.textPrimary,
+  });
   final String text;
   final Color color;
   static const fontSize = 26.0;
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 8),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontSize: fontSize,
-            fontWeight: FontWeight.w500,
-          ),
-          overflow: TextOverflow.ellipsis, // Handle overflow
-          maxLines: 1, // Limit to one line
-        ),
-      );
+    padding: const EdgeInsets.only(top: 8, bottom: 8),
+    child: Text(
+      text,
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w500,
+      ),
+      overflow: TextOverflow.ellipsis, // Handle overflow
+      maxLines: 1, // Limit to one line
+    ),
+  );
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -189,7 +212,7 @@ class HMBTextHeadline2 extends StatelessWidget {
 
 class HMBTextHeadline3 extends StatelessWidget {
   HMBTextHeadline3(this.text, {super.key, this.color = HMBColors.textPrimary})
-      : style = TextStyle(fontSize: fontSize, color: color);
+    : style = TextStyle(fontSize: fontSize, color: color);
   final String text;
   final Color color;
   static const fontSize = 22.0;
@@ -198,9 +221,9 @@ class HMBTextHeadline3 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(8),
-        child: Text(text, style: style),
-      );
+    padding: const EdgeInsets.all(8),
+    child: Text(text, style: style),
+  );
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -215,10 +238,15 @@ class HMBTextHeadline3 extends StatelessWidget {
 /// This is normally used as a heading for a paragraph which
 /// uses the TextHMBBody style.
 class HMBTextSectionHeading extends StatelessWidget {
-  HMBTextSectionHeading(this.text,
-      {super.key, this.color = HMBColors.textPrimary})
-      : style = TextStyle(
-            fontSize: fontSize, color: color, fontWeight: FontWeight.bold);
+  HMBTextSectionHeading(
+    this.text, {
+    super.key,
+    this.color = HMBColors.textPrimary,
+  }) : style = TextStyle(
+         fontSize: fontSize,
+         color: color,
+         fontWeight: FontWeight.bold,
+       );
   final String text;
   final Color color;
   static const fontSize = 18.0;
@@ -227,7 +255,9 @@ class HMBTextSectionHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.all(10), child: Text(text, style: style));
+    padding: const EdgeInsets.all(10),
+    child: Text(text, style: style),
+  );
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -243,7 +273,7 @@ class HMBTextSectionHeading extends StatelessWidget {
 ///  standard font/styling for the body of a document.
 class HMBTextBody extends StatelessWidget {
   HMBTextBody(this.text, {super.key, this.color = HMBColors.textPrimary})
-      : _style = style.copyWith(color: color);
+    : _style = style.copyWith(color: color);
   static const fontSize = 16.0;
   static const TextStyle style = TextStyle(fontSize: fontSize);
 
@@ -253,9 +283,9 @@ class HMBTextBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(8),
-        child: Text(text, style: _style),
-      );
+    padding: const EdgeInsets.all(8),
+    child: Text(text, style: _style),
+  );
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -273,15 +303,21 @@ class HMBTextLine extends StatelessWidget {
   final Color? colour;
 
   @override
-  Widget build(BuildContext context) => Text(text,
-      overflow: TextOverflow.ellipsis, style: TextStyle(color: colour));
+  Widget build(BuildContext context) => Text(
+    text,
+    overflow: TextOverflow.ellipsis,
+    style: TextStyle(color: colour),
+  );
 }
 
 /// Use for text in a body section that needs to be bold.
 class HMBTextBodyBold extends StatelessWidget {
   HMBTextBodyBold(this.text, {super.key, this.color = HMBColors.textPrimary})
-      : style = TextStyle(
-            color: color, fontSize: fontSize, fontWeight: FontWeight.bold);
+    : style = TextStyle(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: FontWeight.bold,
+      );
   final String text;
   final Color color;
   final TextStyle style;
@@ -307,8 +343,10 @@ class HMBTextNotice extends StatelessWidget {
   const HMBTextNotice(this.text, {super.key});
   static const fontSize = 14.0;
   final String text;
-  static const TextStyle noticeStyle =
-      TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold);
+  static const TextStyle noticeStyle = TextStyle(
+    fontSize: fontSize,
+    fontWeight: FontWeight.bold,
+  );
 
   @override
   Widget build(BuildContext context) => Text(text, style: noticeStyle);
@@ -327,10 +365,11 @@ class HMBTextError extends StatelessWidget {
   static const fontSize = 14.0;
   final String text;
   static const TextStyle noticeStyle = TextStyle(
-      fontSize: fontSize,
-      fontWeight: FontWeight.bold,
-      color: HMBColors.errorText,
-      backgroundColor: HMBColors.errorBackground);
+    fontSize: fontSize,
+    fontWeight: FontWeight.bold,
+    color: HMBColors.errorText,
+    backgroundColor: HMBColors.errorBackground,
+  );
 
   @override
   Widget build(BuildContext context) => Text(text, style: noticeStyle);
@@ -344,7 +383,7 @@ class HMBTextError extends StatelessWidget {
 /// Use for Form Field labels.
 class HMBTextLabel extends StatelessWidget {
   HMBTextLabel(this.text, {super.key, this.color = HMBColors.textPrimary})
-      : style = TextStyle(color: color, fontSize: fontSize);
+    : style = TextStyle(color: color, fontSize: fontSize);
   static const fontSize = 16.0;
   final String text;
   final Color color;
@@ -366,8 +405,11 @@ class HMBTextLabel extends StatelessWidget {
 /// Use this for text that is displayed in the likes of a ListView
 ///
 class HMBTextListItem extends StatelessWidget {
-  const HMBTextListItem(this.text,
-      {super.key, this.color = HMBColors.listCardText});
+  const HMBTextListItem(
+    this.text, {
+    super.key,
+    this.color = HMBColors.listCardText,
+  });
   final String text;
   final Color? color;
   static const fontSize = 16.0;
@@ -389,13 +431,18 @@ class HMBTextListItem extends StatelessWidget {
 /// Use this for text that is displayed in the likes of a ListView
 ///
 class HMBTextListItemBold extends StatelessWidget {
-  const HMBTextListItemBold(this.text,
-      {super.key, this.color = HMBColors.listCardText});
+  const HMBTextListItemBold(
+    this.text, {
+    super.key,
+    this.color = HMBColors.listCardText,
+  });
   static const fontSize = 16.0;
   final String text;
   final Color color;
-  static const TextStyle style =
-      TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold);
+  static const TextStyle style = TextStyle(
+    fontSize: fontSize,
+    fontWeight: FontWeight.bold,
+  );
 
   @override
   Widget build(BuildContext context) =>
@@ -415,7 +462,7 @@ class HMBTextListItemBold extends StatelessWidget {
 /// Ancillary text will be displayed in a lighter font color
 class HMBUTextAncillary extends StatelessWidget {
   HMBUTextAncillary(this.text, {super.key, this.color = Colors.grey})
-      : style = TextStyle(color: color, fontSize: fontSize);
+    : style = TextStyle(color: color, fontSize: fontSize);
   static const fontSize = 16.0;
   final String text;
   final Color color;
@@ -423,7 +470,9 @@ class HMBUTextAncillary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.all(8), child: Text(text, style: style));
+    padding: const EdgeInsets.all(8),
+    child: Text(text, style: style),
+  );
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -438,7 +487,7 @@ class HMBUTextAncillary extends StatelessWidget {
 /// Used for the text within chips.
 class HMBTextChip extends StatelessWidget {
   HMBTextChip(this.text, {super.key, this.color = HMBColors.chipTextColor})
-      : _style = style.copyWith(color: color);
+    : _style = style.copyWith(color: color);
   static const fontSize = 15.0;
   static const TextStyle style = TextStyle(fontSize: fontSize);
 
@@ -460,8 +509,14 @@ class HMBTextChip extends StatelessWidget {
 enum Position { start, end }
 
 class HMBTextIcon extends StatelessWidget {
-  const HMBTextIcon(this.text, this.icon,
-      {super.key, this.position = Position.start, this.iconColor, this.color});
+  const HMBTextIcon(
+    this.text,
+    this.icon, {
+    super.key,
+    this.position = Position.start,
+    this.iconColor,
+    this.color,
+  });
   static const fontSize = HMBTextListItem.fontSize;
   final String text;
   final IconData icon;
@@ -472,19 +527,25 @@ class HMBTextIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (position == Position.start) {
-      return Row(children: [
-        Icon(icon, color: iconColor),
-        Padding(
+      return Row(
+        children: [
+          Icon(icon, color: iconColor),
+          Padding(
             padding: const EdgeInsets.only(left: 5),
-            child: HMBTextListItem(text, color: color))
-      ]);
+            child: HMBTextListItem(text, color: color),
+          ),
+        ],
+      );
     } else {
-      return Row(children: [
-        Padding(
+      return Row(
+        children: [
+          Padding(
             padding: const EdgeInsets.only(right: 5),
-            child: HMBTextListItem(text, color: color)),
-        Icon(icon, color: iconColor)
-      ]);
+            child: HMBTextListItem(text, color: color),
+          ),
+          Icon(icon, color: iconColor),
+        ],
+      );
     }
   }
 

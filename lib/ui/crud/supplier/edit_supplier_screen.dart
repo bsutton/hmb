@@ -45,22 +45,26 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
 
     currentEntity ??= widget.supplier;
     _nameController = TextEditingController(text: widget.supplier?.name);
-    _businessNumberController =
-        TextEditingController(text: widget.supplier?.businessNumber);
-    _descriptionController =
-        TextEditingController(text: widget.supplier?.description);
+    _businessNumberController = TextEditingController(
+      text: widget.supplier?.businessNumber,
+    );
+    _descriptionController = TextEditingController(
+      text: widget.supplier?.description,
+    );
     _bsbController = TextEditingController(text: widget.supplier?.bsb);
-    _accountNumberController =
-        TextEditingController(text: widget.supplier?.accountNumber);
+    _accountNumberController = TextEditingController(
+      text: widget.supplier?.accountNumber,
+    );
     _serviceController = TextEditingController(text: widget.supplier?.service);
   }
 
   @override
   Widget build(BuildContext context) => EntityEditScreen<Supplier>(
-        entityName: 'Supplier',
-        dao: DaoSupplier(),
-        entityState: this,
-        editor: (supplier, {required isNew}) => Column(
+    entityName: 'Supplier',
+    dao: DaoSupplier(),
+    entityState: this,
+    editor:
+        (supplier, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Column(
@@ -104,39 +108,41 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
                   ],
                 ),
                 HMBCrudContact(
-                    parentTitle: 'Supplier',
-                    parent: Parent(supplier),
-                    daoJoin: JoinAdaptorSupplierContact()),
+                  parentTitle: 'Supplier',
+                  parent: Parent(supplier),
+                  daoJoin: JoinAdaptorSupplierContact(),
+                ),
                 HBMCrudSite(
-                    parentTitle: 'Supplier',
-                    daoJoin: JoinAdaptorSupplierSite(),
-                    parent: Parent(supplier)),
+                  parentTitle: 'Supplier',
+                  daoJoin: JoinAdaptorSupplierSite(),
+                  parent: Parent(supplier),
+                ),
               ],
             ),
           ],
         ),
-      );
+  );
 
   @override
   Future<Supplier> forUpdate(Supplier supplier) async => Supplier.forUpdate(
-        entity: supplier,
-        name: _nameController.text,
-        businessNumber: _businessNumberController.text,
-        description: _descriptionController.text,
-        bsb: _bsbController.text,
-        accountNumber: _accountNumberController.text,
-        service: _serviceController.text,
-      );
+    entity: supplier,
+    name: _nameController.text,
+    businessNumber: _businessNumberController.text,
+    description: _descriptionController.text,
+    bsb: _bsbController.text,
+    accountNumber: _accountNumberController.text,
+    service: _serviceController.text,
+  );
 
   @override
   Future<Supplier> forInsert() async => Supplier.forInsert(
-        name: _nameController.text,
-        businessNumber: _businessNumberController.text,
-        description: _descriptionController.text,
-        bsb: _bsbController.text,
-        accountNumber: _accountNumberController.text,
-        service: _serviceController.text,
-      );
+    name: _nameController.text,
+    businessNumber: _businessNumberController.text,
+    description: _descriptionController.text,
+    bsb: _bsbController.text,
+    accountNumber: _accountNumberController.text,
+    service: _serviceController.text,
+  );
 
   @override
   void refresh() {

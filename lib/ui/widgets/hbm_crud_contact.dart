@@ -27,15 +27,17 @@ class HMBCrudContact<P extends Entity<P>> extends StatefulWidget {
 class _HMBCrudContactState<P extends Entity<P>>
     extends State<HMBCrudContact<P>> {
   @override
-  Widget build(BuildContext context) => widget.parent.parent == null
-      ? const Center(child: Text('Save the parent first'))
-      : HMBChildCrudCard(
-          headline: 'Contacts',
-          crudListScreen: ContactListScreen(
+  Widget build(BuildContext context) =>
+      widget.parent.parent == null
+          ? const Center(child: Text('Save the parent first'))
+          : HMBChildCrudCard(
+            headline: 'Contacts',
+            crudListScreen: ContactListScreen(
               daoJoin: widget.daoJoin,
               parent: widget.parent,
-              parentTitle: widget.parentTitle),
-        );
+              parentTitle: widget.parentTitle,
+            ),
+          );
 
   @override
   void didUpdateWidget(covariant HMBCrudContact<P> oldWidget) {

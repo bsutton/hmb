@@ -21,15 +21,14 @@ class MessageTemplateDialog extends StatefulWidget {
   _MessageTemplateDialogState createState() => _MessageTemplateDialogState();
 }
 
-Future<SelectedMessageTemplate?> showMessageTemplateDialog(BuildContext context,
-        {required SourceContext sourceContext}) async =>
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => MessageTemplateDialog(
-          sourceContext: sourceContext,
-        ),
-      ),
-    );
+Future<SelectedMessageTemplate?> showMessageTemplateDialog(
+  BuildContext context, {
+  required SourceContext sourceContext,
+}) async => Navigator.of(context).push(
+  MaterialPageRoute(
+    builder: (context) => MessageTemplateDialog(sourceContext: sourceContext),
+  ),
+);
 
 class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     with SingleTickerProviderStateMixin {
@@ -92,13 +91,17 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
       // Add new placeholders or keep existing ones
       for (final name in newPlaceholders) {
         // ignore: inference_failure_on_instance_creation
-        final placeholder = await PlaceHolderManager()
-            .resolvePlaceholder(name, widget.sourceContext);
+        final placeholder = await PlaceHolderManager().resolvePlaceholder(
+          name,
+          widget.sourceContext,
+        );
 
         if (placeholder != null) {
           /// provide each source with an initial value
-          placeholder.source
-              .dependencyChanged(NoopSource(), widget.sourceContext);
+          placeholder.source.dependencyChanged(
+            NoopSource(),
+            widget.sourceContext,
+          );
 
           // listen to source changes and propergate them to
           // other sources and the preview window.
@@ -126,7 +129,9 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
       final placeholder = placeholders[key];
       final text = await placeholder!.value();
       previewMessage = previewMessage.replaceAll(
-          '{{$key}}', text.isNotEmpty ? text : '[$key]');
+        '{{$key}}',
+        text.isNotEmpty ? text : '[$key]',
+      );
     }
 
     /// the sql message_template
@@ -153,123 +158,123 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   @override
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Message Template'),
-        ),
-        body: Column(
-          children: [
-            // The top part with template selection and placeholders
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    HMBDroplist<MessageTemplate>(
-                      title: 'Choose a template',
-                      selectedItem: () async => _selectedTemplate,
-                      items: (filter) async => filter == null
-                          ? _templates
-                          : _templates
-                              .where(
-                                  (template) => template.title.contains(filter))
-                              .toList(),
-                      format: (template) => template.title,
-                      onChanged: (template) async {
-                        _selectedTemplate = template;
-                        await _initializePlaceholders();
-                        _messageController.text =
-                            _selectedTemplate?.message ?? '';
-                        setState(() {});
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    if (_selectedTemplate != null) _buildSourceWidgets(),
-                  ],
+    appBar: AppBar(title: const Text('Message Template')),
+    body: Column(
+      children: [
+        // The top part with template selection and placeholders
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                HMBDroplist<MessageTemplate>(
+                  title: 'Choose a template',
+                  selectedItem: () async => _selectedTemplate,
+                  items:
+                      (filter) async =>
+                          filter == null
+                              ? _templates
+                              : _templates
+                                  .where(
+                                    (template) =>
+                                        template.title.contains(filter),
+                                  )
+                                  .toList(),
+                  format: (template) => template.title,
+                  onChanged: (template) async {
+                    _selectedTemplate = template;
+                    await _initializePlaceholders();
+                    _messageController.text = _selectedTemplate?.message ?? '';
+                    setState(() {});
+                  },
                 ),
-              ),
-            ),
-            // The TabBar
-            TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'Edit'),
-                Tab(text: 'Preview'),
+                const SizedBox(height: 20),
+                if (_selectedTemplate != null) _buildSourceWidgets(),
               ],
             ),
-            // The TabBarView inside an Expanded widget
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // First Tab: Edit Message
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextFormField(
-                      controller: _messageController,
-                      maxLines: null,
-                      expands: true,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Edit Message',
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTemplate = _selectedTemplate?.copyWith(
-                            message: value,
-                          );
-                        });
-                      },
-                    ),
-                  ),
-                  // Second Tab: Preview Message
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: SingleChildScrollView(
-                        child: FutureBuilderEx(
-                            // ignore: discarded_futures
-                            future: _buildPreview(),
-                            builder: (context, widget) => widget!)),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
-        // Buttons at the bottom
-        bottomNavigationBar: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+        // The TabBar
+        TabBar(
+          controller: _tabController,
+          tabs: const [Tab(text: 'Edit'), Tab(text: 'Preview')],
+        ),
+        // The TabBarView inside an Expanded widget
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
             children: [
-              HMBButton(
-                label: 'Cancel',
-                onPressed: () => Navigator.of(context).pop(),
+              // First Tab: Edit Message
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextFormField(
+                  controller: _messageController,
+                  maxLines: null,
+                  expands: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Edit Message',
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedTemplate = _selectedTemplate?.copyWith(
+                        message: value,
+                      );
+                    });
+                  },
+                ),
               ),
-              HMBButton(
-                label: 'Select',
-                onPressed: () async {
-                  if (_selectedTemplate != null) {
-                    final values = <String, String>{};
-                    for (final MapEntry(:key, :value) in placeholders.entries) {
-                      final field = value;
-                      final fieldValue = await field.value();
-                      values.addAll({key: fieldValue});
-                    }
-
-                    final selectedMessageTemplate = SelectedMessageTemplate(
-                      template: _selectedTemplate!,
-                      values: values,
-                    );
-                    if (context.mounted) {
-                      Navigator.of(context).pop(selectedMessageTemplate);
-                    }
-                  }
-                },
+              // Second Tab: Preview Message
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: SingleChildScrollView(
+                  child: FutureBuilderEx(
+                    // ignore: discarded_futures
+                    future: _buildPreview(),
+                    builder: (context, widget) => widget!,
+                  ),
+                ),
               ),
             ],
           ),
         ),
-      );
+      ],
+    ),
+    // Buttons at the bottom
+    bottomNavigationBar: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          HMBButton(
+            label: 'Cancel',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          HMBButton(
+            label: 'Select',
+            onPressed: () async {
+              if (_selectedTemplate != null) {
+                final values = <String, String>{};
+                for (final MapEntry(:key, :value) in placeholders.entries) {
+                  final field = value;
+                  final fieldValue = await field.value();
+                  values.addAll({key: fieldValue});
+                }
+
+                final selectedMessageTemplate = SelectedMessageTemplate(
+                  template: _selectedTemplate!,
+                  values: values,
+                );
+                if (context.mounted) {
+                  Navigator.of(context).pop(selectedMessageTemplate);
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    ),
+  );
 
   Column _buildSourceWidgets() {
     final uniqueWidgets = <String, Widget>{};
@@ -282,9 +287,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
       }
     }
 
-    return Column(
-      children: uniqueWidgets.values.toList(),
-    );
+    return Column(children: uniqueWidgets.values.toList());
   }
 
   void _refreshPreview() {
@@ -318,10 +321,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
 }
 
 class SelectedMessageTemplate {
-  SelectedMessageTemplate({
-    required this.template,
-    required this.values,
-  });
+  SelectedMessageTemplate({required this.template, required this.values});
 
   final MessageTemplate template;
   final Map<String, String> values;

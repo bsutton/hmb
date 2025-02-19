@@ -14,12 +14,12 @@ class HMBFixed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        children: [
-          if (verticalPadding) const SizedBox(height: 8),
-          Text(
-            '$label $amount',
-            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-          ),
-        ],
-      );
+    children: [
+      if (verticalPadding) const SizedBox(height: 8),
+      Text(
+        '$label $amount',
+        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+      ),
+    ],
+  );
 }

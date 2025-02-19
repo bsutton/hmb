@@ -71,10 +71,12 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _bsbController.text = system.bsb ?? '';
     _accountNoController.text = system.accountNo ?? '';
     _paymentLinkUrlController.text = system.paymentLinkUrl ?? '';
-    _paymentTermsInDaysController =
-        TextEditingController(text: system.paymentTermsInDays.toString());
-    _paymentOptionsController =
-        TextEditingController(text: system.paymentOptions);
+    _paymentTermsInDaysController = TextEditingController(
+      text: system.paymentTermsInDays.toString(),
+    );
+    _paymentOptionsController = TextEditingController(
+      text: system.paymentOptions,
+    );
 
     _logoPathController.text = system.logoPath;
     _logoAspectRatio = system.logoAspectRatio;
@@ -103,10 +105,12 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
       final system = await DaoSystem().get();
       // Save the form data
       system
-        ..defaultHourlyRate =
-            MoneyEx.tryParse(_defaultHourlyRateController.text)
-        ..defaultBookingFee =
-            MoneyEx.tryParse(_defaultBookingFeeController.text)
+        ..defaultHourlyRate = MoneyEx.tryParse(
+          _defaultHourlyRateController.text,
+        )
+        ..defaultBookingFee = MoneyEx.tryParse(
+          _defaultBookingFeeController.text,
+        )
         ..bsb = _bsbController.text
         ..accountNo = _accountNoController.text
         ..paymentLinkUrl = _paymentLinkUrlController.text
@@ -160,27 +164,28 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   Future<void> _pickBillingColour() async {
     await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Pick Billing Colour'),
-        content: SingleChildScrollView(
-          child: BlockPicker(
-            pickerColor: _billingColour,
-            onColorChanged: (color) {
-              setState(() {
-                _billingColour = color;
-              });
-            },
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Pick Billing Colour'),
+            content: SingleChildScrollView(
+              child: BlockPicker(
+                pickerColor: _billingColour,
+                onColorChanged: (color) {
+                  setState(() {
+                    _billingColour = color;
+                  });
+                },
+              ),
+            ),
+            actions: [
+              HMBButton(
+                label: 'Select',
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
           ),
-        ),
-        actions: [
-          HMBButton(
-            label: 'Select',
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      ),
     );
   }
 
@@ -191,9 +196,10 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         body: Column(
           children: [
             SaveAndClose(
-                onSave: ({required close}) async => save(close: close),
-                showSaveOnly: false,
-                onCancel: () async => context.go('/jobs')),
+              onSave: ({required close}) async => save(close: close),
+              showSaveOnly: false,
+              onCancel: () async => context.go('/jobs'),
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -209,128 +215,132 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     }
   }
 
-  Widget _buildForm() => DeferredBuilder(this,
-      builder: (context) => Padding(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  HMBMoneyField(
-                      controller: _defaultHourlyRateController,
-                      labelText: 'Default Hourly Rate',
-                      fieldName: 'default hourly rate'),
-                  HelpWrapper(
-                    title: 'What is the Booking Fee',
-                    tooltip: 'Booking Fee',
-                    helpText: '''
+  Widget _buildForm() => DeferredBuilder(
+    this,
+    builder:
+        (context) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HMBMoneyField(
+                  controller: _defaultHourlyRateController,
+                  labelText: 'Default Hourly Rate',
+                  fieldName: 'default hourly rate',
+                ),
+                HelpWrapper(
+                  title: 'What is the Booking Fee',
+                  tooltip: 'Booking Fee',
+                  helpText: '''
 The booking fee can be applied as a surcharge to each Job.
 Sometime this is referred to as a Surcharge, Callout Fee or Admin Fee''',
-                    child: HMBMoneyField(
-                      controller: _defaultBookingFeeController,
-                      labelText: 'Default Booking Fee',
-                      fieldName: 'default Booking Fee',
-                    ),
+                  child: HMBMoneyField(
+                    controller: _defaultBookingFeeController,
+                    labelText: 'Default Booking Fee',
+                    fieldName: 'default Booking Fee',
                   ),
-                  HMBTextField(
-                          controller: _bsbController,
-                          labelText: 'BSB',
-                          keyboardType: TextInputType.number)
-                      .help('BSB', '''
+                ),
+                HMBTextField(
+                  controller: _bsbController,
+                  labelText: 'BSB',
+                  keyboardType: TextInputType.number,
+                ).help('BSB', '''
 Enter the Bank State Branch (BSB) for your bank account 
 where customers will deposit payments.
 The BSB will appear on Invoices.'''),
-                  HMBTextField(
-                    controller: _accountNoController,
-                    labelText: 'Account Number',
-                    keyboardType: TextInputType.number,
-                  ).help('BSB', '''
+                HMBTextField(
+                  controller: _accountNoController,
+                  labelText: 'Account Number',
+                  keyboardType: TextInputType.number,
+                ).help('BSB', '''
 Your bank account no. where customers will deposit payments.
 The account no. will appear on invoices'''),
-                  HMBTextField(
-                    controller: _paymentTermsInDaysController,
-                    labelText: 'Payment Terms (in Days)',
-                    keyboardType: TextInputType.number,
-                  ).help('Payment Terms', '''
+                HMBTextField(
+                  controller: _paymentTermsInDaysController,
+                  labelText: 'Payment Terms (in Days)',
+                  keyboardType: TextInputType.number,
+                ).help('Payment Terms', '''
 Used to calculate the due date on invoices.
 The due date will be calculated as Today plus the enter Payment Terms'''),
-                  HMBTextArea(
-                    controller: _paymentOptionsController,
-                    labelText: 'Payment Options',
-                  ).help('Payment Options', '''
+                HMBTextArea(
+                  controller: _paymentOptionsController,
+                  labelText: 'Payment Options',
+                ).help('Payment Options', '''
 Appears on your invoice
 and can be use to communicate information to your customer on how to make a payment
 and what forms of payment you accept.'''),
-                  const HMBTextHeadline2('Formatting for Invoices and Quotes'),
-                  SwitchListTile(
-                    title: const Text('Show BSB/Account'),
-                    value: _showBsbAccountOnInvoice,
-                    onChanged: (value) {
-                      setState(() {
-                        _showBsbAccountOnInvoice = value;
-                      });
-                    },
+                const HMBTextHeadline2('Formatting for Invoices and Quotes'),
+                SwitchListTile(
+                  title: const Text('Show BSB/Account'),
+                  value: _showBsbAccountOnInvoice,
+                  onChanged: (value) {
+                    setState(() {
+                      _showBsbAccountOnInvoice = value;
+                    });
+                  },
+                ),
+                SwitchListTile(
+                  title: const Text('Show Payment Link'),
+                  value: _showPaymentLinkOnInvoice,
+                  onChanged: (value) {
+                    setState(() {
+                      _showPaymentLinkOnInvoice = value;
+                    });
+                  },
+                ),
+                if (_showPaymentLinkOnInvoice)
+                  HMBTextField(
+                    controller: _paymentLinkUrlController,
+                    labelText: 'Payment Link URL',
+                    keyboardType: TextInputType.url,
                   ),
-                  SwitchListTile(
-                    title: const Text('Show Payment Link'),
-                    value: _showPaymentLinkOnInvoice,
-                    onChanged: (value) {
-                      setState(() {
-                        _showPaymentLinkOnInvoice = value;
-                      });
-                    },
-                  ),
-                  if (_showPaymentLinkOnInvoice)
-                    HMBTextField(
-                      controller: _paymentLinkUrlController,
-                      labelText: 'Payment Link URL',
-                      keyboardType: TextInputType.url,
-                    ),
-                  const SizedBox(height: 20),
-                  HMBDroplist<LogoAspectRatio>(
-                    title: 'Logo Aspect Ratio',
-                    selectedItem: () async => _logoAspectRatio,
-                    items: (filter) async => LogoAspectRatio.values,
-                    format: (logoType) => logoType.name,
-                    onChanged: (value) {
-                      setState(() {
-                        _logoAspectRatio = value ?? LogoAspectRatio.square;
-                      });
-                    },
-                  ).help('Logo Aspect Ration', '''
+                const SizedBox(height: 20),
+                HMBDroplist<LogoAspectRatio>(
+                  title: 'Logo Aspect Ratio',
+                  selectedItem: () async => _logoAspectRatio,
+                  items: (filter) async => LogoAspectRatio.values,
+                  format: (logoType) => logoType.name,
+                  onChanged: (value) {
+                    setState(() {
+                      _logoAspectRatio = value ?? LogoAspectRatio.square;
+                    });
+                  },
+                ).help('Logo Aspect Ration', '''
 The shape of your Logo. Your logo will appear on Invoices and Quotes.'''),
-                  const SizedBox(height: 20),
-                  HMBButton.withIcon(
-                    label: 'Upload Logo',
-                    icon: const Icon(Icons.upload_file),
-                    onPressed: _pickLogo,
+                const SizedBox(height: 20),
+                HMBButton.withIcon(
+                  label: 'Upload Logo',
+                  icon: const Icon(Icons.upload_file),
+                  onPressed: _pickLogo,
+                ),
+                if (Strings.isNotBlank(_logoFile) && exists(_logoFile!)) ...[
+                  const SizedBox(height: 10),
+                  Image.file(
+                    File(_logoFile!),
+                    width: _logoAspectRatio.width.toDouble(),
+                    height: _logoAspectRatio.height.toDouble(),
                   ),
-                  if (Strings.isNotBlank(_logoFile) && exists(_logoFile!)) ...[
-                    const SizedBox(height: 10),
-                    Image.file(
-                      File(_logoFile!),
-                      width: _logoAspectRatio.width.toDouble(),
-                      height: _logoAspectRatio.height.toDouble(),
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  ListTile(
-                    title: const Text('Billing Colour'),
-                    trailing: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: _billingColour,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(),
-                      ),
-                    ),
-                    onTap: _pickBillingColour,
-                  ).help('Billing Colour', '''
-The colour theme that will be used on you Invoices and Quotes.'''),
                 ],
-              ),
+                const SizedBox(height: 20),
+                ListTile(
+                  title: const Text('Billing Colour'),
+                  trailing: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: _billingColour,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(),
+                    ),
+                  ),
+                  onTap: _pickBillingColour,
+                ).help('Billing Colour', '''
+The colour theme that will be used on you Invoices and Quotes.'''),
+              ],
             ),
-          ));
+          ),
+        ),
+  );
 }

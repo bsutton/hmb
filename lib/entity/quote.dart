@@ -61,22 +61,24 @@ class Quote extends Entity<Quote> {
   }) : super.forUpdate();
 
   factory Quote.fromMap(Map<String, dynamic> map) => Quote(
-        id: map['id'] as int,
-        jobId: map['job_id'] as int,
-        totalAmount: Money.fromInt(map['total_amount'] as int, isoCode: 'AUD'),
-        createdDate: DateTime.parse(map['created_date'] as String),
-        modifiedDate: DateTime.parse(map['modified_date'] as String),
-        quoteNum: map['quote_num'] as String?,
-        externalQuoteId: map['external_quote_id'] as String?,
-        // Convert the stored string to a Dart enum
-        state: QuoteState.fromString(map['state'] as String),
-        dateSent: map['date_sent'] != null
+    id: map['id'] as int,
+    jobId: map['job_id'] as int,
+    totalAmount: Money.fromInt(map['total_amount'] as int, isoCode: 'AUD'),
+    createdDate: DateTime.parse(map['created_date'] as String),
+    modifiedDate: DateTime.parse(map['modified_date'] as String),
+    quoteNum: map['quote_num'] as String?,
+    externalQuoteId: map['external_quote_id'] as String?,
+    // Convert the stored string to a Dart enum
+    state: QuoteState.fromString(map['state'] as String),
+    dateSent:
+        map['date_sent'] != null
             ? DateTime.parse(map['date_sent'] as String)
             : null,
-        dateApproved: map['date_approved'] != null
+    dateApproved:
+        map['date_approved'] != null
             ? DateTime.parse(map['date_approved'] as String)
             : null,
-      );
+  );
 
   int jobId;
   Money totalAmount;
@@ -100,31 +102,30 @@ class Quote extends Entity<Quote> {
     QuoteState? state,
     DateTime? dateSent,
     DateTime? dateApproved,
-  }) =>
-      Quote(
-        id: id ?? this.id,
-        jobId: jobId ?? this.jobId,
-        totalAmount: totalAmount ?? this.totalAmount,
-        createdDate: createdDate ?? this.createdDate,
-        modifiedDate: modifiedDate ?? this.modifiedDate,
-        quoteNum: quoteNum ?? this.quoteNum,
-        externalQuoteId: externalQuoteId ?? this.externalQuoteId,
-        state: state ?? this.state,
-        dateSent: dateSent ?? this.dateSent,
-        dateApproved: dateApproved ?? this.dateApproved,
-      );
+  }) => Quote(
+    id: id ?? this.id,
+    jobId: jobId ?? this.jobId,
+    totalAmount: totalAmount ?? this.totalAmount,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+    quoteNum: quoteNum ?? this.quoteNum,
+    externalQuoteId: externalQuoteId ?? this.externalQuoteId,
+    state: state ?? this.state,
+    dateSent: dateSent ?? this.dateSent,
+    dateApproved: dateApproved ?? this.dateApproved,
+  );
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'job_id': jobId,
-        'total_amount': totalAmount.minorUnits.toInt(),
-        'created_date': createdDate.toIso8601String(),
-        'modified_date': modifiedDate.toIso8601String(),
-        'quote_num': quoteNum,
-        'external_quote_id': externalQuoteId,
-        'state': state.name,
-        'date_sent': dateSent?.toIso8601String(),
-        'date_approved': dateApproved?.toIso8601String(),
-      };
+    'id': id,
+    'job_id': jobId,
+    'total_amount': totalAmount.minorUnits.toInt(),
+    'created_date': createdDate.toIso8601String(),
+    'modified_date': modifiedDate.toIso8601String(),
+    'quote_num': quoteNum,
+    'external_quote_id': externalQuoteId,
+    'state': state.name,
+    'date_sent': dateSent?.toIso8601String(),
+    'date_approved': dateApproved?.toIso8601String(),
+  };
 }

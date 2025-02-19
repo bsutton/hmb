@@ -8,8 +8,11 @@ import '../../crud/customer/edit_customer_screen.dart';
 import 'hmb_droplist.dart';
 
 class SelectCustomer extends StatefulWidget {
-  const SelectCustomer(
-      {required this.selectedCustomer, super.key, this.onSelected});
+  const SelectCustomer({
+    required this.selectedCustomer,
+    super.key,
+    this.onSelected,
+  });
   final SelectedCustomer selectedCustomer;
 
   final void Function(Customer? customer)? onSelected;
@@ -36,7 +39,8 @@ class SelectCustomerState extends State<SelectCustomer> {
     final customer = await Navigator.push<Customer>(
       context,
       MaterialPageRoute<Customer>(
-          builder: (context) => const CustomerEditScreen()),
+        builder: (context) => const CustomerEditScreen(),
+      ),
     );
     if (customer != null) {
       setState(() {
@@ -48,25 +52,20 @@ class SelectCustomerState extends State<SelectCustomer> {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          Expanded(
-            child: HMBDroplist<Customer>(
-              title: 'Customer',
-              selectedItem: _getInitialCustomer,
-              onChanged: _onCustomerChanged,
-              items: (filter) async => _getCustomers(filter),
-              format: (customer) => customer.name,
-              onAdd: _addCustomer,
-            ),
-          ),
-          Center(
-            child: HMBButtonAdd(
-              enabled: true,
-              onPressed: _addCustomer,
-            ),
-          ),
-        ],
-      );
+    children: [
+      Expanded(
+        child: HMBDroplist<Customer>(
+          title: 'Customer',
+          selectedItem: _getInitialCustomer,
+          onChanged: _onCustomerChanged,
+          items: (filter) async => _getCustomers(filter),
+          format: (customer) => customer.name,
+          onAdd: _addCustomer,
+        ),
+      ),
+      Center(child: HMBButtonAdd(enabled: true, onPressed: _addCustomer)),
+    ],
+  );
 }
 
 class SelectedCustomer extends JuneState {

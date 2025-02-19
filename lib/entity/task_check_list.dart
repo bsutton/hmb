@@ -9,10 +9,8 @@ class TaskCheckList extends Entity<TaskCheckList> {
     required super.modifiedDate,
   }) : super();
 
-  TaskCheckList.forInsert({
-    required this.taskId,
-    required this.checkListId,
-  }) : super.forInsert();
+  TaskCheckList.forInsert({required this.taskId, required this.checkListId})
+    : super.forInsert();
 
   TaskCheckList.forUpdate({
     required super.entity,
@@ -21,22 +19,22 @@ class TaskCheckList extends Entity<TaskCheckList> {
   }) : super.forUpdate();
 
   factory TaskCheckList.fromMap(Map<String, dynamic> map) => TaskCheckList(
-        id: map['id'] as int,
-        taskId: map['task_id'] as int,
-        checkListId: map['check_list_id'] as int,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-      );
+    id: map['id'] as int,
+    taskId: map['task_id'] as int,
+    checkListId: map['check_list_id'] as int,
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+  );
 
   int taskId;
   int checkListId;
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'task_id': taskId,
-        'check_list_id': checkListId,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'task_id': taskId,
+    'check_list_id': checkListId,
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+  };
 }

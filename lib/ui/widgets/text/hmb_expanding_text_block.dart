@@ -22,17 +22,16 @@ class HMBExpandingTextBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.only(top: verticalPadding ? 8.0 : 0.0),
-        child: Text(
-          textBlock,
-          softWrap: true,
-          style: TextStyle(
-            fontSize: 14,
-            color: color,
-            fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-            decoration:
-                underline ? TextDecoration.underline : TextDecoration.none,
-          ),
-        ),
-      );
+    padding: EdgeInsets.only(top: verticalPadding ? 8.0 : 0.0),
+    child: Text(
+      textBlock,
+      softWrap: true,
+      style: TextStyle(
+        fontSize: 14,
+        color: color,
+        fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+        decoration: underline ? TextDecoration.underline : TextDecoration.none,
+      ),
+    ),
+  );
 }

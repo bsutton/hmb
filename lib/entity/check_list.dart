@@ -3,7 +3,7 @@ import 'entity.dart';
 enum CheckListType {
   owned, // owned by an entity such as task
   global, // not attached to any entity
-  defaultList
+  defaultList,
 
   /// Used to populate new checklists from a default set of items
 }
@@ -32,13 +32,13 @@ class CheckList extends Entity<CheckList> {
   }) : super.forUpdate();
 
   factory CheckList.fromMap(Map<String, dynamic> map) => CheckList(
-        id: map['id'] as int,
-        name: map['name'] as String,
-        description: map['description'] as String,
-        listType: CheckListType.values[(map['list_type'] as int) - 1],
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-      );
+    id: map['id'] as int,
+    name: map['name'] as String,
+    description: map['description'] as String,
+    listType: CheckListType.values[(map['list_type'] as int) - 1],
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+  );
 
   String name;
   String description;
@@ -46,11 +46,11 @@ class CheckList extends Entity<CheckList> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'list_type': listType.index + 1,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'list_type': listType.index + 1,
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+  };
 }

@@ -7,14 +7,13 @@ import '../crud/check_list/list_task_item_screen.dart';
 import 'hmb_child_crud_card.dart';
 
 class HMBCrudTaskItem extends StatelessWidget {
-  const HMBCrudTaskItem({
-    required this.task,
-    super.key,
-  });
+  const HMBCrudTaskItem({required this.task, super.key});
 
   final Task? task;
 
   @override
   Widget build(BuildContext context) => HMBChildCrudCard(
-      headline: 'Items', crudListScreen: TaskItemListScreen(task: task));
+    headline: 'Items',
+    crudListScreen: TaskItemListScreen(task: task),
+  );
 }

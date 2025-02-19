@@ -19,19 +19,31 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'lib/version_properties.dart';
 
 void main(List<String> args) async {
-  final parser = ArgParser()
-    ..addFlag('assets',
-        abbr: 'a',
-        help:
-            '''Update the list of assets - important to run for db upgrade scripts''')
-    ..addFlag('build',
-        abbr: 'b',
-        help: 'build the apk suitable for installing the app via USB')
-    ..addFlag('install',
-        abbr: 'i', help: 'install the apk to a device connected via USB')
-    ..addFlag('release', abbr: 'r', help: '''
-Create a signed release appbundle suitable to upload to Google Play store.''')
-    ..addFlag('help', abbr: 'h', help: 'Shows the help message');
+  final parser =
+      ArgParser()
+        ..addFlag(
+          'assets',
+          abbr: 'a',
+          help:
+              '''Update the list of assets - important to run for db upgrade scripts''',
+        )
+        ..addFlag(
+          'build',
+          abbr: 'b',
+          help: 'build the apk suitable for installing the app via USB',
+        )
+        ..addFlag(
+          'install',
+          abbr: 'i',
+          help: 'install the apk to a device connected via USB',
+        )
+        ..addFlag(
+          'release',
+          abbr: 'r',
+          help: '''
+Create a signed release appbundle suitable to upload to Google Play store.''',
+        )
+        ..addFlag('help', abbr: 'h', help: 'Shows the help message');
 
   final results = parser.parse(args);
 
@@ -98,32 +110,37 @@ void _runPubGet() {
 }
 
 void installApk() {
-  print(orange(
-      'Make certain you have first run --build so you get the lastet apk'));
+  print(
+    orange('Make certain you have first run --build so you get the lastet apk'),
+  );
   // 'flutter install'.run;
 
   'adb install -r build/app/outputs/flutter-apk/app-release.apk'.run;
 }
 
 void buildApk() {
-// TODO(bsutton): the rich text editor includes random icons
-// so tree shaking of icons isn't possible. Can we fix this?
+  // TODO(bsutton): the rich text editor includes random icons
+  // so tree shaking of icons isn't possible. Can we fix this?
   'flutter build apk --no-tree-shake-icons'.run;
 }
 
 void buildAppBundle(Version newVersion) {
-// TODO(bsutton): the rich text editor includes random icons
-// so tree shaking of icons isn't possible. Can we fix this?
+  // TODO(bsutton): the rich text editor includes random icons
+  // so tree shaking of icons isn't possible. Can we fix this?
 
   'flutter build appbundle --release --no-tree-shake-icons'.start();
 
-  final targetPath =
-      join(DartProject.self.pathToProjectRoot, 'hmb-$newVersion.aab');
+  final targetPath = join(
+    DartProject.self.pathToProjectRoot,
+    'hmb-$newVersion.aab',
+  );
   if (exists(targetPath)) {
     delete(targetPath);
   }
-  move(join('build', 'app', 'outputs', 'bundle', 'release', 'app-release.aab'),
-      targetPath);
+  move(
+    join('build', 'app', 'outputs', 'bundle', 'release', 'app-release.aab'),
+    targetPath,
+  );
   print(orange('Moved the bundle to $targetPath'));
 }
 
@@ -131,20 +148,26 @@ void buildAppBundle(Version newVersion) {
 /// The lists is held in assets/sql/upgrade_list.json
 Future<void> updateAssetList() async {
   final pathToAssets = join(
-      DartProject.self.pathToProjectRoot, 'assets', 'sql', 'upgrade_scripts');
+    DartProject.self.pathToProjectRoot,
+    'assets',
+    'sql',
+    'upgrade_scripts',
+  );
   final assetFiles = find('v*.sql', workingDirectory: pathToAssets).toList();
 
   final posix = path.posix;
-  final relativePaths = assetFiles
-
-      /// We are creating asset path which must us the posix path delimiter \
-      .map((path) {
-    final rel = relative(path, from: DartProject.self.pathToProjectRoot);
-    return posix.joinAll(split(rel));
-  }).toList()
-    ..sort((a, b) =>
-        extractVerionForSQLUpgradeScript(b) -
-        extractVerionForSQLUpgradeScript(a));
+  final relativePaths =
+      assetFiles
+        /// We are creating asset path which must us the posix path delimiter \
+        .map((path) {
+          final rel = relative(path, from: DartProject.self.pathToProjectRoot);
+          return posix.joinAll(split(rel));
+        }).toList()
+        ..sort(
+          (a, b) =>
+              extractVerionForSQLUpgradeScript(b) -
+              extractVerionForSQLUpgradeScript(a),
+        );
 
   var jsonContent = jsonEncode(relativePaths);
 
@@ -166,8 +189,13 @@ Future<void> updateAssetList() async {
 
 /// Method to create a new clean database for unit testing.
 Future<void> createCleanTestDatabase() async {
-  final testDbPath =
-      join(Directory.current.path, 'test', 'fixture', 'db', 'handyman_test.db');
+  final testDbPath = join(
+    Directory.current.path,
+    'test',
+    'fixture',
+    'db',
+    'handyman_test.db',
+  );
 
   // Ensure the directory exists
   final dbDir = dirname(testDbPath);
@@ -177,16 +205,21 @@ Future<void> createCleanTestDatabase() async {
 
   final databaseFactory = CliDatabaseFactory();
   final src = ProjectScriptSource();
-  final db = await databaseFactory.openDatabase(testDbPath,
-      options: OpenDatabaseOptions(
-          version: await getLatestVersion(src),
-          onUpgrade: (db, oldVersion, newVersion) => upgradeDb(
-              db: db,
-              oldVersion: oldVersion,
-              newVersion: newVersion,
-              backup: true,
-              src: src,
-              backupProvider: DevBackupProvider(databaseFactory))));
+  final db = await databaseFactory.openDatabase(
+    testDbPath,
+    options: OpenDatabaseOptions(
+      version: await getLatestVersion(src),
+      onUpgrade:
+          (db, oldVersion, newVersion) => upgradeDb(
+            db: db,
+            oldVersion: oldVersion,
+            newVersion: newVersion,
+            backup: true,
+            src: src,
+            backupProvider: DevBackupProvider(databaseFactory),
+          ),
+    ),
+  );
 
   print('Clean test database created at: $testDbPath');
   await db.close();

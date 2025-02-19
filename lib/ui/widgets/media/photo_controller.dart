@@ -14,7 +14,7 @@ import 'photo_gallery.dart';
 
 class PhotoController<E extends Entity<E>> {
   PhotoController({required E? parent, required this.parentType, this.filter})
-      : _entity = parent {
+    : _entity = parent {
     unawaited(_loadPhotos());
   }
 
@@ -48,7 +48,8 @@ class PhotoController<E extends Entity<E>> {
     final meta = await DaoPhoto.getMetaByParent(_entity!.id, parentType);
 
     _photos.addAll(
-        meta.where((photo) => filter?.call(_entity!, photo.photo) ?? true));
+      meta.where((photo) => filter?.call(_entity!, photo.photo) ?? true),
+    );
 
     // Initialize comment controllers if not already initialized
     if (_commentControllers.isEmpty) {

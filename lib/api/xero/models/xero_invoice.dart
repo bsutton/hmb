@@ -22,14 +22,14 @@ class XeroInvoice {
 
   /// toJson
   Map<String, dynamic> toJson() => {
-        'Reference': reference,
-        'Type': type,
-        'Contact': contact.toJson(),
-        'LineItems': lineItems.map((item) => item.toJson()).toList(),
-        'Date': const LocalDateConverter().toJson(issueDate),
-        'DueDate': const LocalDateConverter().toJson(dueDate),
-        'LineAmountTypes': lineAmountTypes,
-      };
+    'Reference': reference,
+    'Type': type,
+    'Contact': contact.toJson(),
+    'LineItems': lineItems.map((item) => item.toJson()).toList(),
+    'Date': const LocalDateConverter().toJson(issueDate),
+    'DueDate': const LocalDateConverter().toJson(dueDate),
+    'LineAmountTypes': lineAmountTypes,
+  };
 
   // /// Send an invoice to Xero
   // static Future<void> create(XeroApi api, XeroInvoice invoice) async {

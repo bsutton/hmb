@@ -16,37 +16,38 @@ import '../layout/hmb_placeholder.dart';
 /// If the phoneNum is null then we display nothing.
 
 class HMBPhoneText extends StatelessWidget {
-  const HMBPhoneText(
-      {required this.phoneNo,
-      required this.sourceContext,
-      this.label,
-      super.key});
+  const HMBPhoneText({
+    required this.phoneNo,
+    required this.sourceContext,
+    this.label,
+    super.key,
+  });
   final String? label;
   final String? phoneNo;
   final SourceContext sourceContext;
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (Strings.isNotBlank(phoneNo))
-            Flexible(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '${plusSpace(label)} $phoneNo',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: HMBColors.textPrimary),
-                ),
-              ),
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (Strings.isNotBlank(phoneNo))
+        Flexible(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${plusSpace(label)} $phoneNo',
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: HMBColors.textPrimary),
             ),
-          if (Strings.isNotBlank(phoneNo))
-            Align(
-              alignment: Alignment.centerRight,
-              child: HMBPhoneIcon(phoneNo!, sourceContext: sourceContext),
-            ),
-        ],
-      );
+          ),
+        ),
+      if (Strings.isNotBlank(phoneNo))
+        Align(
+          alignment: Alignment.centerRight,
+          child: HMBPhoneIcon(phoneNo!, sourceContext: sourceContext),
+        ),
+    ],
+  );
 }
 
 /// Displays the label and phoneNum.
@@ -58,16 +59,14 @@ class HMBJobPhoneText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx<SourceContext>(
-      waitingBuilder: (_) => const HMBPlaceHolder(height: 40),
-      // ignore: discarded_futures
-      future: getData(job),
-      builder: (context, sourceContext) {
-        final phoneNo = sourceContext!.contact?.bestPhone;
-        return HMBPhoneText(
-          phoneNo: phoneNo,
-          sourceContext: sourceContext,
-        );
-      });
+    waitingBuilder: (_) => const HMBPlaceHolder(height: 40),
+    // ignore: discarded_futures
+    future: getData(job),
+    builder: (context, sourceContext) {
+      final phoneNo = sourceContext!.contact?.bestPhone;
+      return HMBPhoneText(phoneNo: phoneNo, sourceContext: sourceContext);
+    },
+  );
 
   Future<SourceContext> getData(Job job) async {
     final contact = await DaoContact().getById(job.contactId);
@@ -75,6 +74,10 @@ class HMBJobPhoneText extends StatelessWidget {
     final customer = await DaoCustomer().getById(job.customerId);
 
     return SourceContext(
-        job: job, contact: contact, site: site, customer: customer);
+      job: job,
+      contact: contact,
+      site: site,
+      customer: customer,
+    );
   }
 }

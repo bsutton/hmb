@@ -12,14 +12,16 @@ class Svg extends StatelessWidget {
   /// renders as expected).
   /// The default sizes here are a hack around the problem.
   ///
-  const Svg(this.filename,
-      {super.key,
-      this.label,
-      this.width = 80,
-      this.height = 80,
-      this.location = LOCATION.icons,
-      this.onTap,
-      this.color});
+  const Svg(
+    this.filename, {
+    super.key,
+    this.label,
+    this.width = 80,
+    this.height = 80,
+    this.location = LOCATION.icons,
+    this.onTap,
+    this.color,
+  });
   final String filename;
   final String? label;
   final double width;
@@ -34,7 +36,7 @@ class Svg extends StatelessWidget {
   @override
   Widget build(BuildContext context) => buildSvg();
 
-/*
+  /*
     return FittedBox(`
       fit: BoxFit.scaleDown,
       child: buildTree()
@@ -48,11 +50,13 @@ class Svg extends StatelessWidget {
 
   Widget buildAsset() {
     final finalPath = getPath(filename);
-    return SvgPicture.asset(finalPath,
-        semanticsLabel: label,
-        width: width,
-        height: height,
-        colorFilter: ColorFilter.mode(color!, BlendMode.src));
+    return SvgPicture.asset(
+      finalPath,
+      semanticsLabel: label,
+      width: width,
+      height: height,
+      colorFilter: ColorFilter.mode(color!, BlendMode.src),
+    );
   }
 
   String getPath(String filename) {

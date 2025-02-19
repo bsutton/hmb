@@ -35,16 +35,16 @@ class EmailBackupProvider extends BackupProvider {
   }
 
   @override
-
   /// Backups can not be retrieved from email, so this method
   /// returns an empty list.
   Future<List<Backup>> getBackups() async => <Backup>[];
 
   @override
-  Future<BackupResult> store(
-      {required String pathToDatabaseCopy,
-      required String pathToZippedBackup,
-      required int version}) async {
+  Future<BackupResult> store({
+    required String pathToDatabaseCopy,
+    required String pathToZippedBackup,
+    required int version,
+  }) async {
     if (!(Platform.isAndroid || Platform.isIOS)) {
       throw BackupException('Email backup is not supported on this platform.');
     }
@@ -52,9 +52,10 @@ class EmailBackupProvider extends BackupProvider {
     // await copyDatabase(context
     await sendEmailWithAttachment(pathToZippedBackup);
     return BackupResult(
-        pathToSource: pathToDatabaseCopy,
-        pathToBackup: pathToZippedBackup,
-        success: true);
+      pathToSource: pathToDatabaseCopy,
+      pathToBackup: pathToZippedBackup,
+      success: true,
+    );
   }
 
   // Future<void> backup(BuildContext context) async {
@@ -98,14 +99,15 @@ class EmailBackupProvider extends BackupProvider {
 
       if (Strings.isBlank(system.emailAddress)) {
         throw BackupException(
-            'Please enter the Notice/Backup Email address on the System page.');
+          'Please enter the Notice/Backup Email address on the System page.',
+        );
       }
 
       final email = Email(
         body: 'Attached is the HMB database backup.',
         subject: 'HMB Database Backup',
         recipients: [
-          system.emailAddress!
+          system.emailAddress!,
         ], // Replace with the recipient's email address
         attachmentPaths: [pathToZippedBackup],
       );
@@ -147,12 +149,13 @@ class EmailBackupProvider extends BackupProvider {
     try {
       await performRestore(
         Backup(
-            id: 'not used',
-            when: DateTime.now(),
-            error: 'none',
-            pathTo: backupFile.path,
-            size: 'unknown',
-            status: 'good'),
+          id: 'not used',
+          when: DateTime.now(),
+          error: 'none',
+          pathTo: backupFile.path,
+          size: 'unknown',
+          status: 'good',
+        ),
         AssetScriptSource(),
         databaseFactory,
       );

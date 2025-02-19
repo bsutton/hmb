@@ -29,7 +29,8 @@ class DaoContact extends Dao<Contact> {
     if (customerId == null) {
       return null;
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select co.* 
 from contact co
 join customer_contact cc
@@ -37,7 +38,9 @@ join customer_contact cc
 join customer cu
   on cc.customer_id = cu.id
 where cu.id =? 
-and cc.`primary` = 1''', [customerId]);
+and cc.`primary` = 1''',
+      [customerId],
+    );
 
     if (data.isEmpty) {
       return (await DaoContact().getByCustomer(customerId)).firstOrNull;
@@ -54,13 +57,16 @@ and cc.`primary` = 1''', [customerId]);
     if (jobId == null) {
       return null;
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select co.* 
 from contact co
 join job jo
   on co.id = jo.contact_id
 where jo.id =? 
-''', [jobId]);
+''',
+      [jobId],
+    );
 
     if (data.isEmpty) {
       final job = await DaoJob().getById(jobId);
@@ -71,13 +77,16 @@ where jo.id =?
 
   Future<Contact?> getPrimaryForQuote(int quoteId) async {
     final db = withoutTransaction();
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
       SELECT c.*
       FROM contact c
       JOIN job j ON c.id = j.contact_id
       JOIN quote q ON j.id = q.job_id
       WHERE q.id = ?
-    ''', [quoteId]);
+    ''',
+      [quoteId],
+    );
 
     if (data.isEmpty) {
       return null;
@@ -90,7 +99,8 @@ where jo.id =?
   ///
   Future<Contact?> getPrimaryForSupplier(Supplier supplier) async {
     final db = withoutTransaction();
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select co.* 
 from contact co
 join supplier_contact sc
@@ -98,7 +108,9 @@ join supplier_contact sc
 join supplier su
   on sc.supplier_id = su.id
 where su.id =? 
-and sc.`primary` = 1''', [supplier.id]);
+and sc.`primary` = 1''',
+      [supplier.id],
+    );
 
     if (data.isEmpty) {
       return (await DaoContact().getBySupplier(supplier)).firstOrNull;
@@ -112,7 +124,8 @@ and sc.`primary` = 1''', [supplier.id]);
     if (customerId == null) {
       return [];
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select co.* 
 from contact co
 join customer_contact cc
@@ -120,7 +133,9 @@ join customer_contact cc
 join customer cu
   on cc.customer_id = cu.id
 where cu.id =? 
-''', [customerId]);
+''',
+      [customerId],
+    );
 
     return toList(data);
   }
@@ -133,7 +148,8 @@ where cu.id =?
     if (supplier == null) {
       return [];
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select co.* 
 from contact co
 join supplier_contact cc
@@ -141,7 +157,9 @@ join supplier_contact cc
 join supplier cu
   on cc.supplier_id = cu.id
 where cu.id =? 
-''', [supplier.id]);
+''',
+      [supplier.id],
+    );
 
     return toList(data);
   }
@@ -152,13 +170,16 @@ where cu.id =?
     if (jobId == null) {
       return [];
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select co.* 
 from contact co
 join job jo
   on co.id = jo.contact_id
 where jo.id =? 
-''', [jobId]);
+''',
+      [jobId],
+    );
 
     return toList(data);
   }
@@ -200,7 +221,8 @@ where jo.id =?
     if (Strings.isBlank(filter)) {
       return getAll(orderByClause: 'modifiedDate desc');
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select c.* 
 form contact c
 join customer_contact cc
@@ -209,7 +231,9 @@ join customer cu
   on cc.customer_id = cu.id
 where c.name like ?
 order by c.modifiedDate desc
-''', ['''%$filter%''']);
+''',
+      ['''%$filter%'''],
+    );
 
     return toList(data);
   }

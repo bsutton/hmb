@@ -39,8 +39,13 @@ final _referenceDate = LocalDate(2000, 1, 3);
 
 /// A convenience data class for combining a [Job] and its [Customer].
 class JobAndCustomer {
-  JobAndCustomer(this.job, this.customer, this.site, this.bestPhoneNo,
-      this.bestEmailAddress);
+  JobAndCustomer(
+    this.job,
+    this.customer,
+    this.site,
+    this.bestPhoneNo,
+    this.bestEmailAddress,
+  );
 
   static Future<JobAndCustomer> fetch(Job job) async {
     final customer = await DaoCustomer().getByJob(job.id);
@@ -131,7 +136,8 @@ class SchedulePageState extends DeferredState<SchedulePage> {
     operatingHours = (await DaoSystem().get()).getOperatingHours();
     if (operatingHours.noOpenDays()) {
       HMBToast.error(
-          "Before you Schedule a job, you must first set your opening hours from the 'System | Business' page.");
+        "Before you Schedule a job, you must first set your opening hours from the 'System | Business' page.",
+      );
       if (mounted) {
         context.go('/jobs');
       }
@@ -148,8 +154,9 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   /// - If [SchedulePage.initialActivityId] is provided, fetch that activities' date from DB.
   /// - Otherwise, use [DateTime.now()].
   Future<void> _initPage() async {
-    currentFirstDateOnPage =
-        await operatingHours.getNextOpenDate(LocalDate.today());
+    currentFirstDateOnPage = await operatingHours.getNextOpenDate(
+      LocalDate.today(),
+    );
 
     // If an initialActivityId is provided, fetch the activities' start date
     if (widget.initialActivityId != null) {
@@ -182,10 +189,11 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   // BUILD
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: widget.dialogMode ? AppBar() : null,
-        body: DeferredBuilder(
-          this,
-          builder: (context) => Column(
+    appBar: widget.dialogMode ? AppBar() : null,
+    body: DeferredBuilder(
+      this,
+      builder:
+          (context) => Column(
             children: [
               _navigationRow(),
               Expanded(
@@ -198,18 +206,19 @@ class SchedulePageState extends DeferredState<SchedulePage> {
               ),
             ],
           ),
-        ),
-      );
+    ),
+  );
 
   Widget _buildCalendar() {
     final calendarViews = <Widget>[
       MonthSchedule(
-          schedulePageState: this,
-          monthKey: monthKey,
-          currentFirstDateOnPage,
-          onPageChange: (date) async => _onPageChanged(date),
-          defaultJob: widget.defaultJob,
-          showWeekends: showExtendedHours),
+        schedulePageState: this,
+        monthKey: monthKey,
+        currentFirstDateOnPage,
+        onPageChange: (date) async => _onPageChanged(date),
+        defaultJob: widget.defaultJob,
+        showWeekends: showExtendedHours,
+      ),
       WeekSchedule(
         currentFirstDateOnPage,
         weekKey: weekKey,
@@ -240,11 +249,19 @@ class SchedulePageState extends DeferredState<SchedulePage> {
     // Create a new list with the selected view at the beginning
     final orderedViews = [
       Positioned.fill(
-          child: Visibility(
-              maintainState: true, visible: false, child: calendarViews[0])),
+        child: Visibility(
+          maintainState: true,
+          visible: false,
+          child: calendarViews[0],
+        ),
+      ),
       Positioned.fill(
-          child: Visibility(
-              maintainState: true, visible: false, child: calendarViews[1])),
+        child: Visibility(
+          maintainState: true,
+          visible: false,
+          child: calendarViews[1],
+        ),
+      ),
 
       /// last widget is on top
       Positioned.fill(child: selectedWidget),
@@ -267,9 +284,10 @@ class SchedulePageState extends DeferredState<SchedulePage> {
 
     // Only skip closed days if we are in DAY view & not showExtendedHours
     if (selectedView == ScheduleView.day && !showExtendedHours) {
-      final newDate = isForward
-          ? (await operatingHours.getNextOpenDate(targetDate))
-          : (await operatingHours.getPreviousOpenDate(targetDate));
+      final newDate =
+          isForward
+              ? (await operatingHours.getNextOpenDate(targetDate))
+              : (await operatingHours.getPreviousOpenDate(targetDate));
 
       if (newDate != targetDate) {
         /// skip to the next/prev open date.
@@ -303,14 +321,23 @@ class SchedulePageState extends DeferredState<SchedulePage> {
 
     switch (selectedView) {
       case ScheduleView.month:
-        await monthKey.currentState!.animateToMonth(targetDate.toDateTime(),
-            duration: duration, curve: curve);
+        await monthKey.currentState!.animateToMonth(
+          targetDate.toDateTime(),
+          duration: duration,
+          curve: curve,
+        );
       case ScheduleView.week:
-        await weekKey.currentState!.animateToWeek(targetDate.toDateTime(),
-            duration: duration, curve: curve);
+        await weekKey.currentState!.animateToWeek(
+          targetDate.toDateTime(),
+          duration: duration,
+          curve: curve,
+        );
       case ScheduleView.day:
-        await dayKey.currentState!.animateToDate(targetDate.toDateTime(),
-            duration: duration, curve: curve);
+        await dayKey.currentState!.animateToDate(
+          targetDate.toDateTime(),
+          duration: duration,
+          curve: curve,
+        );
     }
   }
 
@@ -348,73 +375,72 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   /// Show the navigation bar with left, right, view dropdown, and today button
   /// Show the navigation bar with left, right, view dropdown, and today button
   Widget _navigationRow() => Padding(
-        padding: const EdgeInsets.only(left: 8, right: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            TextButton.icon(
-              onPressed: onTodayPage, // Go to today's date
-              icon: const Icon(Icons.today, color: Colors.blue),
-              label: const Text(
-                'Today',
-                style:
-                    TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-              ),
-              style: TextButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                backgroundColor:
-                    Colors.grey[900], // Slightly lighter than black
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.blue.shade300),
-                ),
-              ),
+    padding: const EdgeInsets.only(left: 8, right: 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        TextButton.icon(
+          onPressed: onTodayPage, // Go to today's date
+          icon: const Icon(Icons.today, color: Colors.blue),
+          label: const Text(
+            'Today',
+            style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+          ),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            backgroundColor: Colors.grey[900], // Slightly lighter than black
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: Colors.blue.shade300),
             ),
-            const HMBSpacer(width: true),
-
-            // Extended hours button
-            HMBToggle(
-                label: 'Extended',
-                tooltip: 'Show full 24 hrs',
-                initialValue: false,
-                onToggled: (value) {
-                  setState(() {
-                    showExtendedHours = value;
-                  });
-                }),
-            const HMBSpacer(width: true),
-
-            // Dropdown to select view type (Day, Week, Month)
-            Flexible(
-              child: HMBDroplist<ScheduleView>(
-                selectedItem: () async => selectedView,
-                items: (filter) async => ScheduleView.values,
-                format: (view) => view.name,
-                onChanged: (view) async {
-                  focusDate = await _adjustFocusDate(selectedView);
-                  selectedView = view!;
-
-                  /// Force the new view to the same date
-                  WidgetsBinding.instance.scheduleFrameCallback((_) async {
-                    await _jumpToDate(currentFirstDateOnPage);
-                  });
-                  setState(() {});
-                },
-                title: 'View',
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+        const HMBSpacer(width: true),
+
+        // Extended hours button
+        HMBToggle(
+          label: 'Extended',
+          tooltip: 'Show full 24 hrs',
+          initialValue: false,
+          onToggled: (value) {
+            setState(() {
+              showExtendedHours = value;
+            });
+          },
+        ),
+        const HMBSpacer(width: true),
+
+        // Dropdown to select view type (Day, Week, Month)
+        Flexible(
+          child: HMBDroplist<ScheduleView>(
+            selectedItem: () async => selectedView,
+            items: (filter) async => ScheduleView.values,
+            format: (view) => view.name,
+            onChanged: (view) async {
+              focusDate = await _adjustFocusDate(selectedView);
+              selectedView = view!;
+
+              /// Force the new view to the same date
+              WidgetsBinding.instance.scheduleFrameCallback((_) async {
+                await _jumpToDate(currentFirstDateOnPage);
+              });
+              setState(() {});
+            },
+            title: 'View',
+          ),
+        ),
+      ],
+    ),
+  );
 
   /// Jump to "today" for whichever view is active
   Future<void> onTodayPage() async {
     if (showExtendedHours) {
       currentFirstDateOnPage = LocalDate.today();
     } else {
-      currentFirstDateOnPage =
-          await operatingHours.getNextOpenDate(LocalDate.today());
+      currentFirstDateOnPage = await operatingHours.getNextOpenDate(
+        LocalDate.today(),
+      );
     }
     print('moving to $currentFirstDateOnPage');
     _isAdjustingPage = true;
@@ -433,9 +459,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
     nextPage();
   }
 
-  Future<LocalDate> _adjustFocusDate(
-    ScheduleView fromView,
-  ) async {
+  Future<LocalDate> _adjustFocusDate(ScheduleView fromView) async {
     final rangeStart = currentFirstDateOnPage;
     final LocalDate rangeEnd;
 

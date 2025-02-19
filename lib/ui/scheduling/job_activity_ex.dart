@@ -20,16 +20,16 @@ class JobActivityEx {
 
   /// Convert to [CalendarEventData] for the calendar_view package
   CalendarEventData<JobActivityEx> get eventData => CalendarEventData(
-        title: job.summary,
-        description: RichEditor.createParchment(job.description)
-            .toPlainText()
-            .replaceAll('\n\n', '\n'),
-        date: jobActivity.start.withoutTime,
-        startTime: jobActivity.start,
-        endTime: jobActivity.end,
-        color: jobActivity.status.color,
-        event: this,
-      );
+    title: job.summary,
+    description: RichEditor.createParchment(
+      job.description,
+    ).toPlainText().replaceAll('\n\n', '\n'),
+    date: jobActivity.start.withoutTime,
+    startTime: jobActivity.start,
+    endTime: jobActivity.end,
+    color: jobActivity.status.color,
+    event: this,
+  );
 
   int get durationInMinutes =>
       jobActivity.end.difference(jobActivity.start).inMinutes;

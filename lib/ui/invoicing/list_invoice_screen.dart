@@ -98,18 +98,23 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
           if (invoiceOptions.selectedTaskIds.isNotEmpty ||
               invoiceOptions.billBookingFee) {
             await createTimeAndMaterialsInvoice(
-                job, invoiceOptions.selectedTaskIds,
-                groupByTask: invoiceOptions.groupByTask,
-                billBookingFee: invoiceOptions.billBookingFee);
+              job,
+              invoiceOptions.selectedTaskIds,
+              groupByTask: invoiceOptions.groupByTask,
+              billBookingFee: invoiceOptions.billBookingFee,
+            );
 
             await _refreshInvoiceList();
           } else {
             HMBToast.info(
-                'You must select at least one Task or the Booking Fee to invoice');
+              'You must select at least one Task or the Booking Fee to invoice',
+            );
           }
         } catch (e) {
-          HMBToast.error('Failed to create invoice: $e',
-              acknowledgmentRequired: true);
+          HMBToast.error(
+            'Failed to create invoice: $e',
+            acknowledgmentRequired: true,
+          );
         }
 
         await _refreshInvoiceList();
@@ -119,121 +124,125 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          toolbarHeight: 80,
-          title: HMBSearchWithAdd(
-              onSearch: (filter) async {
-                filterText = filter;
-                await _refreshInvoiceList();
-              },
-              onAdd: _createInvoice),
-          automaticallyImplyLeading: false,
-        ),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                children: [
-                  HMBDroplist<Job>(
-                    title: 'Filter by Job',
-                    items: (filter) async => DaoJob().getActiveJobs(filter),
-                    format: (job) => job.summary,
-                    required: false,
-                    selectedItem: () async => selectedJob,
-                    onChanged: (job) async {
-                      setState(() {
-                        selectedJob = job;
-                      });
-                      await _refreshInvoiceList();
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  HMBDroplist<Customer>(
-                    title: 'Filter by Customer',
-                    items: (filter) async => DaoCustomer().getByFilter(filter),
-                    format: (customer) => customer.name,
-                    required: false,
-                    selectedItem: () async => selectedCustomer,
-                    onChanged: (customer) async {
-                      setState(() {
-                        selectedCustomer = customer;
-                      });
-                      await _refreshInvoiceList();
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: FutureBuilderEx<List<InvoiceDetails>>(
-                future: _invoices,
-                builder: (context, invoices) {
-                  if (invoices == null || invoices.isEmpty) {
-                    return const Center(
-                      child: Text('No invoices found.'),
-                    );
-                  } else {
-                    return ListView.builder(
-                      itemCount: invoices.length,
-                      itemBuilder: (context, index) {
-                        final details = invoices[index];
-                        return InkWell(
-                            onTap: () async {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (context) => InvoiceEditScreen(
-                                      invoiceDetails: details),
-                                ),
-                              );
-                              await _refreshInvoiceList();
-                            },
-                            child: Card(
-                              margin: const EdgeInsets.all(8),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Invoice #${details.invoice.id} Issued: ${formatDate(details.invoice.createdDate)}',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16),
-                                      ),
-                                      Text(
-                                          'Customer: ${details.customer?.name ?? "N/A"}'),
-                                      HMBLinkInternal(
-                                        label:
-                                            'Job: #${details.job.id} - ${details.job.summary} ',
-                                        navigateTo: () async =>
-                                            JobEditScreen(job: details.job),
-                                      ),
-                                      Text(
-                                          'Xero: ${details.invoice.invoiceNum == null ? 'Not uploaded' : '#${details.invoice.invoiceNum}'}'),
-                                      Text(
-                                          'Total: ${details.invoice.totalAmount}'),
-                                      // Display "Sent" if sent is true
-                                      if (details.invoice.sent)
-                                        const Text(
-                                          'Sent',
-                                          style: TextStyle(
-                                              color: Colors.green,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                    ]),
-                              ),
-                            ));
-                      },
-                    );
-                  }
+    appBar: AppBar(
+      toolbarHeight: 80,
+      title: HMBSearchWithAdd(
+        onSearch: (filter) async {
+          filterText = filter;
+          await _refreshInvoiceList();
+        },
+        onAdd: _createInvoice,
+      ),
+      automaticallyImplyLeading: false,
+    ),
+    body: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            children: [
+              HMBDroplist<Job>(
+                title: 'Filter by Job',
+                items: (filter) async => DaoJob().getActiveJobs(filter),
+                format: (job) => job.summary,
+                required: false,
+                selectedItem: () async => selectedJob,
+                onChanged: (job) async {
+                  setState(() {
+                    selectedJob = job;
+                  });
+                  await _refreshInvoiceList();
                 },
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              HMBDroplist<Customer>(
+                title: 'Filter by Customer',
+                items: (filter) async => DaoCustomer().getByFilter(filter),
+                format: (customer) => customer.name,
+                required: false,
+                selectedItem: () async => selectedCustomer,
+                onChanged: (customer) async {
+                  setState(() {
+                    selectedCustomer = customer;
+                  });
+                  await _refreshInvoiceList();
+                },
+              ),
+            ],
+          ),
         ),
-      );
+        Expanded(
+          child: FutureBuilderEx<List<InvoiceDetails>>(
+            future: _invoices,
+            builder: (context, invoices) {
+              if (invoices == null || invoices.isEmpty) {
+                return const Center(child: Text('No invoices found.'));
+              } else {
+                return ListView.builder(
+                  itemCount: invoices.length,
+                  itemBuilder: (context, index) {
+                    final details = invoices[index];
+                    return InkWell(
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder:
+                                (context) =>
+                                    InvoiceEditScreen(invoiceDetails: details),
+                          ),
+                        );
+                        await _refreshInvoiceList();
+                      },
+                      child: Card(
+                        margin: const EdgeInsets.all(8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Invoice #${details.invoice.id} Issued: ${formatDate(details.invoice.createdDate)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                'Customer: ${details.customer?.name ?? "N/A"}',
+                              ),
+                              HMBLinkInternal(
+                                label:
+                                    'Job: #${details.job.id} - ${details.job.summary} ',
+                                navigateTo:
+                                    () async => JobEditScreen(job: details.job),
+                              ),
+                              Text(
+                                'Xero: ${details.invoice.invoiceNum == null ? 'Not uploaded' : '#${details.invoice.invoiceNum}'}',
+                              ),
+                              Text('Total: ${details.invoice.totalAmount}'),
+                              // Display "Sent" if sent is true
+                              if (details.invoice.sent)
+                                const Text(
+                                  'Sent',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+            },
+          ),
+        ),
+      ],
+    ),
+  );
 
   @override
   void dispose() {

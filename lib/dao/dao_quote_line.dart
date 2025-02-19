@@ -14,24 +14,32 @@ class DaoQuoteLine extends Dao<QuoteLine> {
   @override
   Future<List<QuoteLine>> getAll({String? orderByClause}) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps =
-        await db.query(tableName, orderBy: 'modified_date desc');
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableName,
+      orderBy: 'modified_date desc',
+    );
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
   Future<List<QuoteLine>> getByQuoteId(int quoteId) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(tableName,
-        where: 'quote_id = ?', whereArgs: [quoteId], orderBy: 'id desc');
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableName,
+      where: 'quote_id = ?',
+      whereArgs: [quoteId],
+      orderBy: 'id desc',
+    );
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
   Future<List<QuoteLine>> getByQuoteLineGroupId(int quoteLineGroupId) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(tableName,
-        where: 'quote_line_group_id = ?',
-        whereArgs: [quoteLineGroupId],
-        orderBy: 'id desc');
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableName,
+      where: 'quote_line_group_id = ?',
+      whereArgs: [quoteLineGroupId],
+      orderBy: 'id desc',
+    );
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
@@ -40,11 +48,16 @@ class DaoQuoteLine extends Dao<QuoteLine> {
     return db.delete(tableName, where: 'quote_id = ?', whereArgs: [quoteId]);
   }
 
-  Future<int> deleteByQuoteLineGroupId(int quoteLineGroupId,
-      [Transaction? transaction]) async {
+  Future<int> deleteByQuoteLineGroupId(
+    int quoteLineGroupId, [
+    Transaction? transaction,
+  ]) async {
     final db = withinTransaction(transaction);
-    return db.delete(tableName,
-        where: 'quote_line_group_id = ?', whereArgs: [quoteLineGroupId]);
+    return db.delete(
+      tableName,
+      where: 'quote_line_group_id = ?',
+      whereArgs: [quoteLineGroupId],
+    );
   }
 
   @override

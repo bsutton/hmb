@@ -18,8 +18,11 @@ import '../job/edit_job_screen.dart';
 import 'edit_task_screen.dart';
 
 class TaskListScreen extends StatefulWidget {
-  const TaskListScreen(
-      {required this.parent, required this.extended, super.key});
+  const TaskListScreen({
+    required this.parent,
+    required this.extended,
+    super.key,
+  });
   final Parent<Job> parent;
   final bool extended;
 
@@ -59,31 +62,38 @@ class _TaskListScreenState extends State<TaskListScreen> {
             // ignore: discarded_futures
             fetchList: _fetchTasks,
             title: (entity) => Text(entity.name),
-            filterBar: (entity) => Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                HMBToggle(
-                  label: 'Show Completed',
-                  tooltip: showCompleted
-                      ? 'Show Only Non-Completed Tasks'
-                      : 'Show Completed Tasks',
-                  initialValue: June.getState(ShowCompletedTasksState.new)
-                      .showCompletedTasks,
-                  onToggled: (value) {
-                    setState(() {
-                      June.getState(ShowCompletedTasksState.new).toggle();
-                    });
-                  },
+            filterBar:
+                (entity) => Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    HMBToggle(
+                      label: 'Show Completed',
+                      tooltip:
+                          showCompleted
+                              ? 'Show Only Non-Completed Tasks'
+                              : 'Show Completed Tasks',
+                      initialValue:
+                          June.getState(
+                            ShowCompletedTasksState.new,
+                          ).showCompletedTasks,
+                      onToggled: (value) {
+                        setState(() {
+                          June.getState(ShowCompletedTasksState.new).toggle();
+                        });
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            onEdit: (task) =>
-                TaskEditScreen(job: widget.parent.parent!, task: task),
+            onEdit:
+                (task) =>
+                    TaskEditScreen(job: widget.parent.parent!, task: task),
             onDelete: (task) async => DaoTask().delete(task!.id),
             onInsert: (task) async => DaoTask().insert(task!),
-            details: (task, details) => details == CardDetail.full
-                ? _buildFullTasksDetails(task)
-                : _buildTaskSummary(task),
+            details:
+                (task, details) =>
+                    details == CardDetail.full
+                        ? _buildFullTasksDetails(task)
+                        : _buildTaskSummary(task),
             extended: widget.extended,
           ),
         ),
@@ -108,64 +118,78 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Column _buildFullTasksDetails(Task task) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          FutureBuilderEx(
-              // ignore: discarded_futures
-              future: DaoTaskStatus().getById(task.taskStatusId),
-              builder: (context, status) => Text(status?.name ?? 'Not Set')),
-          FutureBuilderEx(
-            future: DaoTask()
-                // ignore: discarded_futures
-                .getAccruedValueForTask(task: task, includeBilled: true),
-            builder: (context, taskAccruedValue) => Row(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      FutureBuilderEx(
+        // ignore: discarded_futures
+        future: DaoTaskStatus().getById(task.taskStatusId),
+        builder: (context, status) => Text(status?.name ?? 'Not Set'),
+      ),
+      FutureBuilderEx(
+        future: DaoTask()
+        // ignore: discarded_futures
+        .getAccruedValueForTask(task: task, includeBilled: true),
+        builder:
+            (context, taskAccruedValue) => Row(
               children: [
                 HMBText(
-                    'Effort(hrs): ${taskAccruedValue!.earnedLabourHours.format('0.00')}/${taskAccruedValue.taskEstimatedValue.estimatedLabourHours.format('0.00')}'),
+                  'Effort(hrs): ${taskAccruedValue!.earnedLabourHours.format('0.00')}/${taskAccruedValue.taskEstimatedValue.estimatedLabourHours.format('0.00')}',
+                ),
                 HMBText(
-                    ' Earnings: ${taskAccruedValue.earnedMaterialCharges}/${taskAccruedValue.taskEstimatedValue.estimatedMaterialsCharge}')
+                  ' Earnings: ${taskAccruedValue.earnedMaterialCharges}/${taskAccruedValue.taskEstimatedValue.estimatedMaterialsCharge}',
+                ),
               ],
             ),
-          ),
-          HMBStartTimeEntry(
-              task: task,
-              onStart: (job) {
-                June.getState(SelectJobStatus.new)
-                  ..jobStatusId = job.jobStatusId
-                  ..setState();
-              })
-        ],
-      );
+      ),
+      HMBStartTimeEntry(
+        task: task,
+        onStart: (job) {
+          June.getState(SelectJobStatus.new)
+            ..jobStatusId = job.jobStatusId
+            ..setState();
+        },
+      ),
+    ],
+  );
 
   Column _buildTaskSummary(Task task) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          FutureBuilderEx(
-              // ignore: discarded_futures
-              future: DaoTaskStatus().getById(task.taskStatusId),
-              builder: (context, status) => Text(status?.name ?? 'Not Set')),
-          FutureBuilderEx(
-              // ignore: discarded_futures
-              future: DaoTimeEntry().getByTask(task.id),
-              builder: (context, timeEntries) => Text(formatDuration(
-                  timeEntries!.fold<Duration>(
-                      Duration.zero, (a, b) => a + b.duration)))),
-          FutureBuilderEx<int>(
-              // ignore: discarded_futures
-              future: _getPhotoCount(task.id),
-              builder: (context, photoCount) =>
-                  Text('Photos: ${photoCount ?? 0}')), // Display photo count
-          HMBStartTimeEntry(
-              task: task,
-              onStart: (job) {
-                June.getState(SelectJobStatus.new)
-                  ..jobStatusId = job.jobStatusId
-                  ..setState();
-              })
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      FutureBuilderEx(
+        // ignore: discarded_futures
+        future: DaoTaskStatus().getById(task.taskStatusId),
+        builder: (context, status) => Text(status?.name ?? 'Not Set'),
+      ),
+      FutureBuilderEx(
+        // ignore: discarded_futures
+        future: DaoTimeEntry().getByTask(task.id),
+        builder:
+            (context, timeEntries) => Text(
+              formatDuration(
+                timeEntries!.fold<Duration>(
+                  Duration.zero,
+                  (a, b) => a + b.duration,
+                ),
+              ),
+            ),
+      ),
+      FutureBuilderEx<int>(
+        // ignore: discarded_futures
+        future: _getPhotoCount(task.id),
+        builder: (context, photoCount) => Text('Photos: ${photoCount ?? 0}'),
+      ), // Display photo count
+      HMBStartTimeEntry(
+        task: task,
+        onStart: (job) {
+          June.getState(SelectJobStatus.new)
+            ..jobStatusId = job.jobStatusId
+            ..setState();
+        },
+      ),
+    ],
+  );
 
   Future<int> _getPhotoCount(int taskId) async =>
       (await DaoPhoto().getByParent(taskId, ParentType.task)).length;

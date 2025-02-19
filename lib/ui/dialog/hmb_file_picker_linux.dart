@@ -6,10 +6,16 @@ import 'package:path/path.dart' as p;
 import '../widgets/hmb_button.dart';
 
 class HMBFilePickerDialog {
-  Future<String?> show(BuildContext context,
-          {List<String>? allowedExtensions, bool showHidden = false}) async =>
-      _pickFileFromDirectory(context, Directory.current,
-          allowedExtensions: allowedExtensions, showHidden: showHidden);
+  Future<String?> show(
+    BuildContext context, {
+    List<String>? allowedExtensions,
+    bool showHidden = false,
+  }) async => _pickFileFromDirectory(
+    context,
+    Directory.current,
+    allowedExtensions: allowedExtensions,
+    showHidden: showHidden,
+  );
 
   Future<String?> _pickFileFromDirectory(
     BuildContext context,
@@ -21,15 +27,16 @@ class HMBFilePickerDialog {
 
     await showDialog<void>(
       context: context,
-      builder: (context) => _FilePickerDialog(
-        directory: directory,
-        allowedExtensions: allowedExtensions,
-        showHidden: showHidden,
-        onFileSelected: (filePath) {
-          selectedFilePath = filePath;
-          Navigator.pop(context);
-        },
-      ),
+      builder:
+          (context) => _FilePickerDialog(
+            directory: directory,
+            allowedExtensions: allowedExtensions,
+            showHidden: showHidden,
+            onFileSelected: (filePath) {
+              selectedFilePath = filePath;
+              Navigator.pop(context);
+            },
+          ),
     );
 
     return selectedFilePath;
@@ -66,23 +73,26 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
 
   void _listFiles() {
     setState(() {
-      _files = _currentDirectory.listSync().where((entity) {
-        final isHidden = p.basename(entity.path).startsWith('.');
+      _files =
+          _currentDirectory.listSync().where((entity) {
+            final isHidden = p.basename(entity.path).startsWith('.');
 
-        if (!widget.showHidden && isHidden) {
-          return false;
-        }
+            if (!widget.showHidden && isHidden) {
+              return false;
+            }
 
-        if (entity is File) {
-          if (widget.allowedExtensions != null) {
-            final extension =
-                p.extension(entity.path).toLowerCase().replaceAll('.', '');
-            return widget.allowedExtensions!.contains(extension);
-          }
-        }
+            if (entity is File) {
+              if (widget.allowedExtensions != null) {
+                final extension = p
+                    .extension(entity.path)
+                    .toLowerCase()
+                    .replaceAll('.', '');
+                return widget.allowedExtensions!.contains(extension);
+              }
+            }
 
-        return true;
-      }).toList();
+            return true;
+          }).toList();
     });
   }
 
@@ -126,18 +136,22 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: breadcrumbs
-                  .map((breadcrumb) => GestureDetector(
-                        onTap: () => _navigateToDirectory(breadcrumb.directory),
-                        child: Row(
-                          children: [
-                            Text(breadcrumb.name),
-                            if (breadcrumb != breadcrumbs.last)
-                              const Text(' / '),
-                          ],
+              children:
+                  breadcrumbs
+                      .map(
+                        (breadcrumb) => GestureDetector(
+                          onTap:
+                              () => _navigateToDirectory(breadcrumb.directory),
+                          child: Row(
+                            children: [
+                              Text(breadcrumb.name),
+                              if (breadcrumb != breadcrumbs.last)
+                                const Text(' / '),
+                            ],
+                          ),
                         ),
-                      ))
-                  .toList(),
+                      )
+                      .toList(),
             ),
           ),
         ],
@@ -149,9 +163,10 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
           itemBuilder: (context, index) {
             final entity = _files[index];
             return ListTile(
-              leading: entity is Directory
-                  ? const Icon(Icons.folder)
-                  : const Icon(Icons.insert_drive_file),
+              leading:
+                  entity is Directory
+                      ? const Icon(Icons.folder)
+                      : const Icon(Icons.insert_drive_file),
               title: Text(p.basename(entity.path)),
               onTap: () {
                 if (entity is Directory) {
@@ -166,14 +181,8 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
       ),
       actions: [
         if (_currentDirectory.path != _currentDirectory.parent.path)
-          HMBButton(
-            label:'Up',
-            onPressed: _navigateToParent,
-          ),
-        HMBButton(
-          label: 'Cancel',
-          onPressed: () => Navigator.pop(context),
-        ),
+          HMBButton(label: 'Up', onPressed: _navigateToParent),
+        HMBButton(label: 'Cancel', onPressed: () => Navigator.pop(context)),
       ],
     );
   }

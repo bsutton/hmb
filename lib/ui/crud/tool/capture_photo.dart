@@ -10,12 +10,13 @@ import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_thumbnail.dart';
 
 class CapturePhoto extends StatefulWidget {
-  const CapturePhoto(
-      {required this.tool,
-      required this.title,
-      required this.comment,
-      required this.onCaptured,
-      super.key});
+  const CapturePhoto({
+    required this.tool,
+    required this.title,
+    required this.comment,
+    required this.onCaptured,
+    super.key,
+  });
 
   final Tool tool;
   final String title;
@@ -27,8 +28,10 @@ class CapturePhoto extends StatefulWidget {
 }
 
 class _CapturePhotoState extends State<CapturePhoto> {
-  final PhotoController<Tool> _photoController =
-      PhotoController<Tool>(parent: null, parentType: ParentType.tool);
+  final PhotoController<Tool> _photoController = PhotoController<Tool>(
+    parent: null,
+    parentType: ParentType.tool,
+  );
 
   int? photoId;
 
@@ -39,49 +42,51 @@ class _CapturePhotoState extends State<CapturePhoto> {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              HMBButton.withIcon(
-                label: 'Capture Photo',
-                icon: const Icon(Icons.camera_alt),
-                onPressed: () async => _takePhoto(
-                  widget.title,
-                  (capturedPhoto) async {
-                    // Create a new Photo entity
-                    final newPhoto = Photo.forInsert(
-                      parentId: widget.tool.id,
-                      parentType: 'tool',
-                      filePath: capturedPhoto.relativePath,
-                      comment: widget.comment,
-                    );
-                    photoId = await widget.onCaptured(newPhoto);
+    padding: const EdgeInsets.all(16),
+    child: SingleChildScrollView(
+      child: Column(
+        children: [
+          HMBButton.withIcon(
+            label: 'Capture Photo',
+            icon: const Icon(Icons.camera_alt),
+            onPressed:
+                () async => _takePhoto(widget.title, (capturedPhoto) async {
+                  // Create a new Photo entity
+                  final newPhoto = Photo.forInsert(
+                    parentId: widget.tool.id,
+                    parentType: 'tool',
+                    filePath: capturedPhoto.relativePath,
+                    comment: widget.comment,
+                  );
+                  photoId = await widget.onCaptured(newPhoto);
 
-                    setState(() {});
-                  },
-                ),
-              ),
-              if (photoId != null) ...[
-                const SizedBox(height: 16),
-                Text(widget.title,
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                FutureBuilderEx(
-                    // ignore: discarded_futures
-                    future: _getPhotoMeta(),
-                    builder: (context, meta) => PhotoThumbnail.fromPhotoMeta(
-                        photoMeta: meta!,
-                        title: meta.title,
-                        comment: meta.comment))
-              ],
-            ],
+                  setState(() {});
+                }),
           ),
-        ),
-      );
+          if (photoId != null) ...[
+            const SizedBox(height: 16),
+            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            FutureBuilderEx(
+              // ignore: discarded_futures
+              future: _getPhotoMeta(),
+              builder:
+                  (context, meta) => PhotoThumbnail.fromPhotoMeta(
+                    photoMeta: meta!,
+                    title: meta.title,
+                    comment: meta.comment,
+                  ),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 
   Future<void> _takePhoto(
-      String title, void Function(CapturedPhoto) onCapture) async {
+    String title,
+    void Function(CapturedPhoto) onCapture,
+  ) async {
     final path = await _photoController.takePhoto();
     if (path != null) {
       onCapture(path);

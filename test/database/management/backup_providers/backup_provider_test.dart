@@ -26,8 +26,10 @@ void main() {
 
   group('Database Backup and Restore', () {
     final HMBDatabaseFactory databaseFactory = FlutterDatabaseFactory();
-    late final BackupProvider backupProvider =
-        TestBackupProvider(databaseFactory, testDbPath);
+    late final BackupProvider backupProvider = TestBackupProvider(
+      databaseFactory,
+      testDbPath,
+    );
 
     setUp(() async {
       // Insert mock data into the test database
@@ -71,8 +73,9 @@ void main() {
       if (File(dbPath).existsSync()) {
         File(dbPath).deleteSync();
       }
-      final photoFile =
-          File(p.join(await backupProvider.photosRootPath, 'test_photo.jpg'));
+      final photoFile = File(
+        p.join(await backupProvider.photosRootPath, 'test_photo.jpg'),
+      );
       if (photoFile.existsSync()) {
         photoFile.deleteSync();
       }
@@ -80,12 +83,13 @@ void main() {
       // Perform restore from the backup file
       await backupProvider.performRestore(
         Backup(
-            id: 'not used',
-            when: DateTime.now(),
-            pathTo: backupResult.pathToBackup,
-            size: 'unknown',
-            status: 'good',
-            error: 'none'),
+          id: 'not used',
+          when: DateTime.now(),
+          pathTo: backupResult.pathToBackup,
+          size: 'unknown',
+          status: 'good',
+          error: 'none',
+        ),
         ProjectScriptSource(),
         databaseFactory,
       );
@@ -100,14 +104,18 @@ void main() {
 
       // Verify database restoration
       final restoredDb = DatabaseHelper().database;
-      final restoredPhoto =
-          await restoredDb.query('photo', where: 'id = ?', whereArgs: [1]);
+      final restoredPhoto = await restoredDb.query(
+        'photo',
+        where: 'id = ?',
+        whereArgs: [1],
+      );
       expect(restoredPhoto.isNotEmpty, isTrue);
       expect(restoredPhoto.first['filePath'], 'test_photo.jpg');
 
       // Verify photo restoration
-      final restoredPhotoFile =
-          File(p.join(await backupProvider.photosRootPath, 'test_photo.jpg'));
+      final restoredPhotoFile = File(
+        p.join(await backupProvider.photosRootPath, 'test_photo.jpg'),
+      );
       expect(restoredPhotoFile.existsSync(), isTrue);
       expect(await restoredPhotoFile.readAsString(), 'This is a test photo');
     });

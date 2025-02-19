@@ -16,31 +16,35 @@ class HMBSiteText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          if (site != null && Strings.isNotEmpty(label))
-            Expanded(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: HMBColors.textPrimary),
-              ),
-            ),
-          Expanded(
-            child: Text(
-              Strings.join([
-                site?.addressLine1,
-                site?.addressLine2,
-                site?.suburb,
-                site?.state,
-                site?.postcode
-              ], separator: ', ', excludeEmpty: true),
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: HMBColors.textPrimary),
-            ),
+    children: [
+      if (site != null && Strings.isNotEmpty(label))
+        Expanded(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: HMBColors.textPrimary),
           ),
-          if (site != null) HMBMapIcon(site)
-        ],
-      );
+        ),
+      Expanded(
+        child: Text(
+          Strings.join(
+            [
+              site?.addressLine1,
+              site?.addressLine2,
+              site?.suburb,
+              site?.state,
+              site?.postcode,
+            ],
+            separator: ', ',
+            excludeEmpty: true,
+          ),
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: HMBColors.textPrimary),
+        ),
+      ),
+      if (site != null) HMBMapIcon(site),
+    ],
+  );
 }
 
 class HMBJobSiteText extends StatelessWidget {
@@ -50,11 +54,9 @@ class HMBJobSiteText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
-      waitingBuilder: (_) => const HMBPlaceHolder(height: 32),
-      // ignore: discarded_futures
-      future: DaoSite().getByJob(job),
-      builder: (context, site) => HMBSiteText(
-            label: label,
-            site: site,
-          ));
+    waitingBuilder: (_) => const HMBPlaceHolder(height: 32),
+    // ignore: discarded_futures
+    future: DaoSite().getByJob(job),
+    builder: (context, site) => HMBSiteText(label: label, site: site),
+  );
 }

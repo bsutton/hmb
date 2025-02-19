@@ -29,85 +29,88 @@ class _BackupScreenState extends State<BackupScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Center(
-          // Center the column vertically and horizontally
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text(
-                  'Backup and Restore Your Database',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Row(
-                    mainAxisSize:
-                        MainAxisSize.min, // Shrink the Row to fit its children
-                    children: [
-                      const Text('Include photos in backup'),
-                      Checkbox(
-                        value: _includePhotos,
-                        onChanged: (value) {
-                          setState(() {
-                            _includePhotos = value ?? false;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                HMBButton.withIcon(
-                  label: 'Backup & Email Database',
-                  onPressed: () async {
-                    await WakelockPlus.enable();
-                    try {
-                      await EmailBackupProvider(FlutterDatabaseFactory())
-                          .performBackup(
-                              version: 1,
-                              src: AssetScriptSource(),
-                              includePhotos: _includePhotos);
-                      if (context.mounted) {
-                        HMBToast.info('Backup successful');
-                      }
-                      // ignore: avoid_catches_without_on_clauses
-                    } catch (e) {
-                      if (context.mounted) {
-                        HMBToast.error(e.toString());
-                      }
-                    } finally {
-                      await WakelockPlus.disable();
-                    }
-                  },
-                  icon: const Icon(Icons.backup, size: 24),
-                ),
-                const SizedBox(height: 20),
-                HMBButton.withIcon(
-                  label: 'Restore Database',
-                  onPressed: () async {
-                    try {
-                      await EmailBackupProvider(FlutterDatabaseFactory())
-                          .restore(context);
-
-                      HMBToast.info('Database restored successfully.');
-                      // ignore: avoid_catches_without_on_clauses
-                    } catch (e) {
-                      HMBToast.error('Error: $e');
-                    }
-                  },
-                  icon: const Icon(Icons.restore, size: 24),
-                ),
-              ],
+    body: Center(
+      // Center the column vertically and horizontally
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text(
+              'Backup and Restore Your Database',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
+            const SizedBox(height: 40),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize:
+                    MainAxisSize.min, // Shrink the Row to fit its children
+                children: [
+                  const Text('Include photos in backup'),
+                  Checkbox(
+                    value: _includePhotos,
+                    onChanged: (value) {
+                      setState(() {
+                        _includePhotos = value ?? false;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            HMBButton.withIcon(
+              label: 'Backup & Email Database',
+              onPressed: () async {
+                await WakelockPlus.enable();
+                try {
+                  await EmailBackupProvider(
+                    FlutterDatabaseFactory(),
+                  ).performBackup(
+                    version: 1,
+                    src: AssetScriptSource(),
+                    includePhotos: _includePhotos,
+                  );
+                  if (context.mounted) {
+                    HMBToast.info('Backup successful');
+                  }
+                  // ignore: avoid_catches_without_on_clauses
+                } catch (e) {
+                  if (context.mounted) {
+                    HMBToast.error(e.toString());
+                  }
+                } finally {
+                  await WakelockPlus.disable();
+                }
+              },
+              icon: const Icon(Icons.backup, size: 24),
+            ),
+            const SizedBox(height: 20),
+            HMBButton.withIcon(
+              label: 'Restore Database',
+              onPressed: () async {
+                try {
+                  await EmailBackupProvider(
+                    FlutterDatabaseFactory(),
+                  ).restore(context);
+
+                  HMBToast.info('Database restored successfully.');
+                  // ignore: avoid_catches_without_on_clauses
+                } catch (e) {
+                  HMBToast.error('Error: $e');
+                }
+              },
+              icon: const Icon(Icons.restore, size: 24),
+            ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }

@@ -46,33 +46,40 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
         _initTimer(entry);
         if (entry != null) {
           final task = widget.task;
-          June.getState<TimeEntryState>(TimeEntryState.new)
-              .setActiveTimeEntry(entry, task);
+          June.getState<TimeEntryState>(
+            TimeEntryState.new,
+          ).setActiveTimeEntry(entry, task);
         }
       });
     }
   }
 
   @override
-  Widget build(BuildContext context) => DeferredBuilder(this,
-      builder: (context) => GestureDetector(
-            child: Row(
-              children: [
-                IconButton(
-                  padding: const EdgeInsets.only(top: 8, bottom: 8),
-                  visualDensity: const VisualDensity(horizontal: -4),
-                  // start / stop icon
-                  icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
-                  onPressed: () async => timeEntry != null
-                      ? _stop(widget.task)
-                      : _start(widget.task),
-                ),
-                _buildElapsedTime(timeEntry)
-              ],
-            ),
-            onTap: () async =>
-                timeEntry != null ? _stop(widget.task) : _start(widget.task),
-          ));
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder:
+        (context) => GestureDetector(
+          child: Row(
+            children: [
+              IconButton(
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                visualDensity: const VisualDensity(horizontal: -4),
+                // start / stop icon
+                icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
+                onPressed:
+                    () async =>
+                        timeEntry != null
+                            ? _stop(widget.task)
+                            : _start(widget.task),
+              ),
+              _buildElapsedTime(timeEntry),
+            ],
+          ),
+          onTap:
+              () async =>
+                  timeEntry != null ? _stop(widget.task) : _start(widget.task),
+        ),
+  );
 
   Future<void> _stop(Task? task) async {
     final runningTimer = await DaoTimeEntry().getActiveEntry();
@@ -90,14 +97,18 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
 
     /// Fixed point in time for all calcs.
     /// Start of the current minute.
-    final now =
-        DateTime.now().copyWith(second: 0, millisecond: 0, microsecond: 0);
+    final now = DateTime.now().copyWith(
+      second: 0,
+      millisecond: 0,
+      microsecond: 0,
+    );
 
     final startStopTimes = await _determineStartStopTime(
-        runningTimer: runningTimer,
-        runningTask: runningTask,
-        now: now,
-        startTask: widget.task!);
+      runningTimer: runningTimer,
+      runningTask: runningTask,
+      now: now,
+      startTask: widget.task!,
+    );
 
     var showStart = true;
     TimeEntry? stoppedEntry;
@@ -106,8 +117,10 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
     /// as there can only be one active timer
     /// we have no more work to do but stop this time.
     if (runningTimer != null) {
-      stoppedEntry =
-          await _stopDialog(runningTimer, startStopTimes.priorTaskStopTime!);
+      stoppedEntry = await _stopDialog(
+        runningTimer,
+        startStopTimes.priorTaskStopTime!,
+      );
 
       if (stoppedEntry == null) {
         showStart = false;
@@ -115,8 +128,9 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
         /// The user stopped a running time so we need to update
         /// the suggested start time to be just after the
         /// last timer was stopped.
-        startStopTimes.startTime =
-            stoppedEntry.endTime!.add(const Duration(minutes: 1));
+        startStopTimes.startTime = stoppedEntry.endTime!.add(
+          const Duration(minutes: 1),
+        );
       }
     }
 
@@ -139,20 +153,25 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   //   return _roundUpToQuaterHour(now);
   // }
 
-  Future<StopStartTime> _determineStartStopTime(
-      {required DateTime now,
-      required Task? runningTask,
-      required TimeEntry? runningTimer,
-      required Task startTask}) async {
+  Future<StopStartTime> _determineStartStopTime({
+    required DateTime now,
+    required Task? runningTask,
+    required TimeEntry? runningTimer,
+    required Task startTask,
+  }) async {
     assert(
-        (runningTask == null && runningTimer == null) ||
-            (runningTask != null &&
-                runningTimer != null &&
-                runningTask.id == runningTimer.taskId),
-        'The Timer must belong to the task or both be null');
+      (runningTask == null && runningTimer == null) ||
+          (runningTask != null &&
+              runningTimer != null &&
+              runningTask.id == runningTimer.taskId),
+      'The Timer must belong to the task or both be null',
+    );
 
-    final nowRoundedDown =
-        now.copyWith(second: 0, millisecond: 0, microsecond: 0);
+    final nowRoundedDown = now.copyWith(
+      second: 0,
+      millisecond: 0,
+      microsecond: 0,
+    );
     final nowPlusOne = nowRoundedDown.add(const Duration(minutes: 1));
 
     if (runningTask != null) {
@@ -164,18 +183,20 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
         /// the billing rules are 15min or part there of - per job
         /// so this the correct calc given these rules.
         return StopStartTime(
-
-            /// the stop time is probably wrong as the user
-            /// forgot to stop the prior job.
-            priorTaskStopTime: _roundUpToQuaterHour(now),
-            startTime: _roundDownToQuaterHour(now));
+          /// the stop time is probably wrong as the user
+          /// forgot to stop the prior job.
+          priorTaskStopTime: _roundUpToQuaterHour(now),
+          startTime: _roundDownToQuaterHour(now),
+        );
       }
 
       /// Same job so we stop the current task time as 'now'
       /// and start the new timer as 'now' + 1 minute.
       // last second of the minute.
       return StopStartTime(
-          priorTaskStopTime: nowRoundedDown, startTime: nowPlusOne);
+        priorTaskStopTime: nowRoundedDown,
+        startTime: nowPlusOne,
+      );
     }
 
     /// As we have no running task Check for a prior time entry for
@@ -208,16 +229,18 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
     /// No timers running and no prior entries for the same job,
     /// in the last quarter hour
     return StopStartTime(
-        priorTaskStopTime: null, startTime: _roundDownToQuaterHour(now));
+      priorTaskStopTime: null,
+      startTime: _roundDownToQuaterHour(now),
+    );
   }
 
   DateTime _roundUpToQuaterHour(DateTime now) => DateTime(
-        now.year,
-        now.month,
-        now.day,
-        now.hour,
-        ((now.minute ~/ 15) + 1) * 15,
-      );
+    now.year,
+    now.month,
+    now.day,
+    now.hour,
+    ((now.minute ~/ 15) + 1) * 15,
+  );
 
   DateTime _roundDownToQuaterHour(DateTime now) =>
       DateTime(now.year, now.month, now.day, now.hour, (now.minute ~/ 15) * 15);
@@ -246,20 +269,25 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   // }
 
   Future<TimeEntry?> _stopDialog(
-      TimeEntry activeEntry, DateTime stopTime) async {
+    TimeEntry activeEntry,
+    DateTime stopTime,
+  ) async {
     final task = await DaoTask().getById(activeEntry.taskId);
 
     if (mounted) {
-      final stoppedTimeEntry = await StopTimerDialog.show(context,
-          task: task!,
-          timeEntry: activeEntry,
-          showTask: true,
-          stopTime: stopTime);
+      final stoppedTimeEntry = await StopTimerDialog.show(
+        context,
+        task: task!,
+        timeEntry: activeEntry,
+        showTask: true,
+        stopTime: stopTime,
+      );
       if (stoppedTimeEntry != null) {
         stoppedTimeEntry.endTime!.add(const Duration(minutes: 1));
         await DaoTimeEntry().update(stoppedTimeEntry);
-        June.getState<TimeEntryState>(TimeEntryState.new)
-            .clearActiveTimeEntry();
+        June.getState<TimeEntryState>(
+          TimeEntryState.new,
+        ).clearActiveTimeEntry();
 
         _timer?.cancel();
         setState(() {});
@@ -276,8 +304,11 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   }
 
   Future<void> _startDialog(Task task, DateTime startTime) async {
-    final newTimeEntry = await StartTimerDialog.show(context,
-        task: widget.task!, startTime: startTime);
+    final newTimeEntry = await StartTimerDialog.show(
+      context,
+      task: widget.task!,
+      startTime: startTime,
+    );
     if (newTimeEntry != null) {
       await DaoTimeEntry().insert(newTimeEntry);
 
@@ -285,8 +316,9 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
       /// be the active job.
       final job = await DaoJob().markActive(task.jobId);
       _startTimer(newTimeEntry);
-      June.getState<TimeEntryState>(TimeEntryState.new)
-          .setActiveTimeEntry(newTimeEntry, widget.task);
+      June.getState<TimeEntryState>(
+        TimeEntryState.new,
+      ).setActiveTimeEntry(newTimeEntry, widget.task);
 
       widget.onStart(job);
     }
@@ -325,8 +357,11 @@ class TimeEntryState extends JuneState {
   TimeEntry? activeTimeEntry;
   Task? task;
 
-  void setActiveTimeEntry(TimeEntry? entry, Task? task,
-      {bool doRefresh = true}) {
+  void setActiveTimeEntry(
+    TimeEntry? entry,
+    Task? task, {
+    bool doRefresh = true,
+  }) {
     if (activeTimeEntry != entry) {
       activeTimeEntry = entry;
       this.task = task;

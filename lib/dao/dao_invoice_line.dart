@@ -15,16 +15,22 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
   InvoiceLine fromMap(Map<String, dynamic> map) => InvoiceLine.fromMap(map);
 
   @override
-  Future<List<InvoiceLine>> getAll(
-      {String? orderByClause, Transaction? transaction}) async {
+  Future<List<InvoiceLine>> getAll({
+    String? orderByClause,
+    Transaction? transaction,
+  }) async {
     final db = withinTransaction(transaction);
-    final List<Map<String, dynamic>> maps =
-        await db.query(tableName, orderBy: 'modified_date desc');
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableName,
+      orderBy: 'modified_date desc',
+    );
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
-  Future<List<InvoiceLine>> getByInvoiceId(int invoiceId,
-      [Transaction? transaction]) async {
+  Future<List<InvoiceLine>> getByInvoiceId(
+    int invoiceId, [
+    Transaction? transaction,
+  ]) async {
     final db = withinTransaction(transaction);
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
@@ -36,8 +42,10 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
 
   /// Deletes all invoice lines for the given invoice id.
   /// and marks all time entries as unbilled.
-  Future<void> deleteByInvoiceId(int invoiceId,
-      [Transaction? transaction]) async {
+  Future<void> deleteByInvoiceId(
+    int invoiceId, [
+    Transaction? transaction,
+  ]) async {
     final db = withinTransaction(transaction);
     final lines = await getByInvoiceId(invoiceId);
     for (final line in lines) {

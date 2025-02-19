@@ -48,10 +48,7 @@ import 'package:flutter/widgets.dart';
 ///  * [Builder], the platonic stateless widget.
 class StatefulBuilder extends StatefulWidget {
   /// Creates a widget that both has state and delegates its build to a callback.
-  const StatefulBuilder({
-    required this.builder,
-    super.key,
-  });
+  const StatefulBuilder({required this.builder, super.key});
 
   /// Called to obtain the child widget.
   ///

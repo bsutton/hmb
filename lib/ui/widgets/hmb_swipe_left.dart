@@ -10,11 +10,12 @@ class HMBSwipeLeft extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-      onHorizontalDragEnd: (details) {
-        // Check if the swipe is from left to right
-        if (details.primaryVelocity != null && details.primaryVelocity! < 0) {
-          onSwipe();
-        }
-      },
-      child: child);
+    onHorizontalDragEnd: (details) {
+      // Check if the swipe is from left to right
+      if (details.primaryVelocity != null && details.primaryVelocity! < 0) {
+        onSwipe();
+      }
+    },
+    child: child,
+  );
 }

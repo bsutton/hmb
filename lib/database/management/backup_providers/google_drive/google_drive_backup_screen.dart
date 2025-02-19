@@ -43,74 +43,71 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
+    appBar: AppBar(automaticallyImplyLeading: false),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (_isLoading) ...[
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                _stageDescription,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ] else ...[
+              const Text(
+                'Backup and Restore Your Database',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              _buildBackupButton(),
+              const SizedBox(height: 40),
+              _buildRestoreButton(context),
+            ],
+          ],
         ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_isLoading) ...[
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text(
-                    _stageDescription,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                ] else ...[
-                  const Text(
-                    'Backup and Restore Your Database',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 40),
-                  _buildBackupButton(),
-                  const SizedBox(height: 40),
-                  _buildRestoreButton(context),
-                ],
-              ],
-            ),
-          ),
-        ),
-      );
+      ),
+    ),
+  );
 
   Widget _buildBackupButton() => Column(
-        children: [
-          HMBButton.withIcon(
-            label: 'Backup to ${_provider.name}',
-            icon: const Icon(Icons.backup, size: 24),
-            onPressed: () async {
-              await _performBackup(_includePhotos);
-            },
-          ),
-          const SizedBox(height: 40),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Row(
-              mainAxisSize:
-                  MainAxisSize.min, // Shrink the Row to fit its children
-              children: [
-                const Text('Include photos in backup'),
-                Checkbox(
-                  value: _includePhotos,
-                  onChanged: (value) {
-                    setState(() {
-                      _includePhotos = value ?? false;
-                    });
-                  },
-                ),
-              ],
+    children: [
+      HMBButton.withIcon(
+        label: 'Backup to ${_provider.name}',
+        icon: const Icon(Icons.backup, size: 24),
+        onPressed: () async {
+          await _performBackup(_includePhotos);
+        },
+      ),
+      const SizedBox(height: 40),
+      Align(
+        alignment: Alignment.centerRight,
+        child: Row(
+          mainAxisSize: MainAxisSize.min, // Shrink the Row to fit its children
+          children: [
+            const Text('Include photos in backup'),
+            Checkbox(
+              value: _includePhotos,
+              onChanged: (value) {
+                setState(() {
+                  _includePhotos = value ?? false;
+                });
+              },
             ),
-          ),
-        ],
-      );
+          ],
+        ),
+      ),
+    ],
+  );
 
   Future<void> _performBackup(bool includePhotos) async {
     setState(() {
@@ -144,56 +141,56 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
   }
 
   HMBButton _buildRestoreButton(BuildContext context) => HMBButton.withIcon(
-        label: 'Restore from ${_provider.name}',
-        icon: const Icon(Icons.restore, size: 24),
-        onPressed: () async {
-          _provider.useDebugPath = !false;
-          final selectedBackup = await Navigator.push(
-            context,
-            MaterialPageRoute<Backup>(
-              builder: (context) =>
-                  BackupSelectionScreen(backupProvider: _provider),
-            ),
+    label: 'Restore from ${_provider.name}',
+    icon: const Icon(Icons.restore, size: 24),
+    onPressed: () async {
+      _provider.useDebugPath = !false;
+      final selectedBackup = await Navigator.push(
+        context,
+        MaterialPageRoute<Backup>(
+          builder:
+              (context) => BackupSelectionScreen(backupProvider: _provider),
+        ),
+      );
+
+      if (selectedBackup != null) {
+        setState(() {
+          _isLoading = true;
+          _stageDescription = 'Starting restore...';
+          _stageNo = 0;
+          _stageCount = 0;
+        });
+
+        await WakelockPlus.enable();
+        try {
+          await _provider.performRestore(
+            selectedBackup,
+            AssetScriptSource(),
+            FlutterDatabaseFactory(),
           );
 
-          if (selectedBackup != null) {
-            setState(() {
-              _isLoading = true;
-              _stageDescription = 'Starting restore...';
-              _stageNo = 0;
-              _stageCount = 0;
-            });
-
-            await WakelockPlus.enable();
-            try {
-              await _provider.performRestore(
-                selectedBackup,
-                AssetScriptSource(),
-                FlutterDatabaseFactory(),
-              );
-
-              if (mounted) {
-                HMBToast.info('Restore completed successfully.');
-              }
-              // ignore: avoid_catches_without_on_clauses
-            } catch (e) {
-              if (mounted) {
-                HMBToast.error('Error during restore: $e');
-              }
-            } finally {
-              if (mounted) {
-                setState(() {
-                  _isLoading = false;
-                });
-              }
-
-              _provider.useDebugPath = false;
-
-              await WakelockPlus.disable();
-            }
+          if (mounted) {
+            HMBToast.info('Restore completed successfully.');
           }
-        },
-      );
+          // ignore: avoid_catches_without_on_clauses
+        } catch (e) {
+          if (mounted) {
+            HMBToast.error('Error during restore: $e');
+          }
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+
+          _provider.useDebugPath = false;
+
+          await WakelockPlus.disable();
+        }
+      }
+    },
+  );
 
   BackupProvider _getProvider() =>
       GoogleDriveBackupProvider(FlutterDatabaseFactory());

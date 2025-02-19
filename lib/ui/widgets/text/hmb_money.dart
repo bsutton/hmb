@@ -3,7 +3,7 @@ import 'package:money2/money2.dart';
 
 class HMBMoney extends StatelessWidget {
   const HMBMoney({
-    required this.label, 
+    required this.label,
     required this.amount,
     super.key,
     this.verticalPadding = true,
@@ -14,12 +14,12 @@ class HMBMoney extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        children: [
-          if (verticalPadding) const SizedBox(height: 8),
-          Text(
-            '$label $amount',
-            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-          ),
-        ],
-      );
+    children: [
+      if (verticalPadding) const SizedBox(height: 8),
+      Text(
+        '$label $amount',
+        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+      ),
+    ],
+  );
 }

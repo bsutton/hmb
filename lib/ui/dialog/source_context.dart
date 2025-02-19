@@ -80,14 +80,14 @@ class SourceContext {
   }
 
   int _buildHash() => Object.hashAll([
-        customer,
-        job,
-        contact,
-        supplier,
-        site,
-        invoice,
-        delayPeriod,
-        originalDate,
-        jobActivity
-      ]);
+    customer,
+    job,
+    contact,
+    supplier,
+    site,
+    invoice,
+    delayPeriod,
+    originalDate,
+    jobActivity,
+  ]);
 }

@@ -42,15 +42,15 @@ class JobActivityDialog extends StatefulWidget {
     required CalendarEventData<JobActivityEx> this.event,
     this.preSelectedJobId,
     super.key,
-  })  : when = event.date,
-        isEditing = true;
+  }) : when = event.date,
+       isEditing = true;
 
   const JobActivityDialog.add({
     required this.when,
     this.preSelectedJobId,
     super.key,
-  })  : event = null,
-        isEditing = false;
+  }) : event = null,
+       isEditing = false;
 
   final int? preSelectedJobId;
   final CalendarEventData<JobActivityEx>? event;
@@ -64,26 +64,24 @@ class JobActivityDialog extends StatefulWidget {
     required BuildContext context,
     required DateTime when,
     required int? defaultJob,
-  }) =>
-      showDialog<JobActivityAddAction>(
-        context: context,
-        builder: (context) => Material(
+  }) => showDialog<JobActivityAddAction>(
+    context: context,
+    builder:
+        (context) => Material(
           child: JobActivityDialog.add(
             when: when,
             preSelectedJobId: defaultJob,
           ),
         ),
-      );
+  );
 
   static Future<JobActivityUpdateAction?> showEdit(
     BuildContext context,
     CalendarEventData<JobActivityEx> event,
-  ) =>
-      showDialog<JobActivityUpdateAction>(
-        context: context,
-        builder: (context) =>
-            Material(child: JobActivityDialog.edit(event: event)),
-      );
+  ) => showDialog<JobActivityUpdateAction>(
+    context: context,
+    builder: (context) => Material(child: JobActivityDialog.edit(event: event)),
+  );
 }
 
 class _JobActivityDialogState extends State<JobActivityDialog> {
@@ -152,9 +150,10 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
                 selectedItem: () async => _selectedJob,
                 items: (filter) async => DaoJob().getActiveJobs(filter),
                 format: (job) => job.summary,
-                onChanged: (job) => setState(() {
-                  _selectedJob = job;
-                }),
+                onChanged:
+                    (job) => setState(() {
+                      _selectedJob = job;
+                    }),
                 title: 'Select Job',
               ),
               const HMBSpacer(height: true),
@@ -193,79 +192,81 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   }
 
   TextFormField _buildNotes() => TextFormField(
-        initialValue: _notes,
-        decoration: const InputDecoration(labelText: 'Notes'),
-        maxLines: 3,
-        onChanged: (value) => _notes = value,
-      );
+    initialValue: _notes,
+    decoration: const InputDecoration(labelText: 'Notes'),
+    maxLines: 3,
+    onChanged: (value) => _notes = value,
+  );
 
   DropdownButtonFormField<JobActivityStatus> _buildStatus() =>
       DropdownButtonFormField<JobActivityStatus>(
         value: _status,
         decoration: const InputDecoration(labelText: 'Status'),
-        items: JobActivityStatus.values
-            .map((status) => DropdownMenuItem(
-                  value: status,
-                  child: Row(
-                    children: [
-                      // Colored circle
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: status.color,
-                          shape: BoxShape.circle,
+        items:
+            JobActivityStatus.values
+                .map(
+                  (status) => DropdownMenuItem(
+                    value: status,
+                    child: Row(
+                      children: [
+                        // Colored circle
+                        Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: status.color,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8), // Spacing
-                      // Text
-                      Text(Strings.toProperCase(status.name)),
-                    ],
+                        const SizedBox(width: 8), // Spacing
+                        // Text
+                        Text(Strings.toProperCase(status.name)),
+                      ],
+                    ),
                   ),
-                ))
-            .toList(),
+                )
+                .toList(),
         onChanged: (value) => setState(() => _status = value!),
       );
 
   Row _buildDuration(Duration duration) => Row(
-        children: [
-          Text(
-            'Duration: ${_formatDuration(duration)}',
-            style: const TextStyle(fontSize: 16),
-          ),
-        ],
-      );
+    children: [
+      Text(
+        'Duration: ${_formatDuration(duration)}',
+        style: const TextStyle(fontSize: 16),
+      ),
+    ],
+  );
 
   Row _buildButtons(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      // Delete button on the left
+      if (widget.isEditing)
+        HMBButtonSecondary(onPressed: _handleDelete, label: 'Delete')
+      else
+        const SizedBox(), // Placeholder for alignment when not editing
+      // Cancel and Save buttons on the right
+      Row(
         children: [
-          // Delete button on the left
-          if (widget.isEditing)
-            HMBButtonSecondary(
-              onPressed: _handleDelete,
-              label: 'Delete',
-            )
-          else
-            const SizedBox(), // Placeholder for alignment when not editing
-
-          // Cancel and Save buttons on the right
-          Row(
-            children: [
-              HMBButtonSecondary(
-                onPressed: () => Navigator.of(context).pop(widget.isEditing
-                    ? JobActivityUpdateAction(EditAction.cancel, null)
-                    : JobActivityAddAction(AddAction.cancel, null)),
-                label: 'Cancel',
-              ),
-              const HMBSpacer(width: true),
-              HMBButtonPrimary(
-                onPressed: _handleSave,
-                label: widget.isEditing ? 'Update Event' : 'Add Event',
-              ),
-            ],
+          HMBButtonSecondary(
+            onPressed:
+                () => Navigator.of(context).pop(
+                  widget.isEditing
+                      ? JobActivityUpdateAction(EditAction.cancel, null)
+                      : JobActivityAddAction(AddAction.cancel, null),
+                ),
+            label: 'Cancel',
+          ),
+          const HMBSpacer(width: true),
+          HMBButtonPrimary(
+            onPressed: _handleSave,
+            label: widget.isEditing ? 'Update Event' : 'Add Event',
           ),
         ],
-      );
+      ),
+    ],
+  );
 
   /// Helper to format the duration
   String _formatDuration(Duration duration) {
@@ -275,63 +276,66 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   }
 
   HMBDateTimeField _buildEventDate(BuildContext context) => HMBDateTimeField(
-      mode: HMBDateTimeFieldMode.dateOnly,
-      label: 'Event Date',
-      initialDateTime: _eventDate.toDateTime(),
-      width: 200,
-      onChanged: (date) {
-        setState(() {
-          _eventDate = date.toLocalDate();
-        });
-      },
-      validator: (date) {
-        if (date == null) {
-          return 'You must select a Start Date';
-        }
-        return null;
+    mode: HMBDateTimeFieldMode.dateOnly,
+    label: 'Event Date',
+    initialDateTime: _eventDate.toDateTime(),
+    width: 200,
+    onChanged: (date) {
+      setState(() {
+        _eventDate = date.toLocalDate();
       });
+    },
+    validator: (date) {
+      if (date == null) {
+        return 'You must select a Start Date';
+      }
+      return null;
+    },
+  );
 
   /// End Date
   HMBDateTimeField _buildEndDate(BuildContext context) => HMBDateTimeField(
-      mode: HMBDateTimeFieldMode.timeOnly,
-      label: 'End Time',
-      initialDateTime: _endTime.toDateTime(),
-      width: 200,
-      onChanged: (date) {
-        setState(() => _endTime = date.toLocalTime());
-      },
-      validator: (date) {
-        if (date == null) {
-          return 'You must select an End Date';
-        }
-        final endTime = date.toLocalTime();
-        if (endTime.isBefore(_startTime)) {
-          return 'Must be after start date.';
-        } else {
-          return null;
-        }
-      });
+    mode: HMBDateTimeFieldMode.timeOnly,
+    label: 'End Time',
+    initialDateTime: _endTime.toDateTime(),
+    width: 200,
+    onChanged: (date) {
+      setState(() => _endTime = date.toLocalTime());
+    },
+    validator: (date) {
+      if (date == null) {
+        return 'You must select an End Date';
+      }
+      final endTime = date.toLocalTime();
+      if (endTime.isBefore(_startTime)) {
+        return 'Must be after start date.';
+      } else {
+        return null;
+      }
+    },
+  );
 
   /// Start Date
   HMBDateTimeField _buildStartDate() => HMBDateTimeField(
-        mode: HMBDateTimeFieldMode.timeOnly,
-        label: 'Start Time',
-        initialDateTime: _startTime.toDateTime(),
-        width: 200,
-        onChanged: (date) {
-          _startTime = date.toLocalTime();
-          if (_startTime.isAfter(_endTime)) {
-            _endTime = _startTime.addDuration(const Duration(hours: 1));
-          }
-          setState(() => {});
-        },
-      );
+    mode: HMBDateTimeFieldMode.timeOnly,
+    label: 'Start Time',
+    initialDateTime: _startTime.toDateTime(),
+    width: 200,
+    onChanged: (date) {
+      _startTime = date.toLocalTime();
+      if (_startTime.isAfter(_endTime)) {
+        _endTime = _startTime.addDuration(const Duration(hours: 1));
+      }
+      setState(() => {});
+    },
+  );
 
   /// If the user taps “Delete,” we pop null
   /// to indicate a delete request.
   void _handleDelete() {
-    Navigator.of(context)
-        .pop(JobActivityUpdateAction(EditAction.delete, widget.event!.event));
+    Navigator.of(
+      context,
+    ).pop(JobActivityUpdateAction(EditAction.delete, widget.event!.event));
   }
 
   /// Save Event
@@ -360,10 +364,11 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     /// date, if the user chooses 12am (midnight) as the end date
     /// we roll it back 1 minute so it falls on the same day.
     if (_endTime == const LocalTime(hour: 24, minute: 00)) {
-      _endTime = _endTime
-          .atDate(_eventDate)
-          .subtract(const Duration(minutes: 1))
-          .toLocalTime();
+      _endTime =
+          _endTime
+              .atDate(_eventDate)
+              .subtract(const Duration(minutes: 1))
+              .toLocalTime();
     }
 
     // Check for overlapping events
@@ -375,24 +380,25 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
 
       final shouldOverride = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Event Overlap'),
-          content: Text(
-            'This event overlaps with another event: ${overlappingEvent.job.summary} '
-            '(${formatDateTime(overlappingEvent.jobActivity.start)} - ${formatDateTime(overlappingEvent.jobActivity.end)}). '
-            'Do you want to continue?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Event Overlap'),
+              content: Text(
+                'This event overlaps with another event: ${overlappingEvent.job.summary} '
+                '(${formatDateTime(overlappingEvent.jobActivity.start)} - ${formatDateTime(overlappingEvent.jobActivity.end)}). '
+                'Do you want to continue?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Continue'),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Continue'),
-            ),
-          ],
-        ),
       );
 
       if (!(shouldOverride ?? false)) {
@@ -429,11 +435,13 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
 
     if (mounted) {
       if (widget.isEditing) {
-        Navigator.of(context)
-            .pop(JobActivityUpdateAction(EditAction.update, jobEventEx));
+        Navigator.of(
+          context,
+        ).pop(JobActivityUpdateAction(EditAction.update, jobEventEx));
       } else {
-        Navigator.of(context)
-            .pop(JobActivityAddAction(AddAction.add, jobEventEx));
+        Navigator.of(
+          context,
+        ).pop(JobActivityAddAction(AddAction.add, jobEventEx));
       }
     }
   }
@@ -467,7 +475,7 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
           'quoting',
           'awaiting approval',
           'to be scheduled',
-          'on hold'
+          'on hold',
         ];
 
         // Convert the jobStatus name or statusEnum to lower, compare
@@ -494,39 +502,44 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
 
     await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Contact Method'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: contacts.length,
-            itemBuilder: (context, index) {
-              final contact = contacts[index];
-              return ListTile(
-                leading: Icon(
-                    contact.method == ContactMethod.email
-                        ? Icons.email
-                        : Icons.message,
-                    color: contact.isPrimary ? Colors.blue : null),
-                title: Text(
-                  contact.detail,
-                  style: TextStyle(
-                      fontWeight: contact.isPrimary
-                          ? FontWeight.bold
-                          : FontWeight.normal),
-                ),
-                subtitle: Text(
-                    '${contact.contact.firstName} ${contact.contact.surname}'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _sendNotice(contact);
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Select Contact Method'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: contacts.length,
+                itemBuilder: (context, index) {
+                  final contact = contacts[index];
+                  return ListTile(
+                    leading: Icon(
+                      contact.method == ContactMethod.email
+                          ? Icons.email
+                          : Icons.message,
+                      color: contact.isPrimary ? Colors.blue : null,
+                    ),
+                    title: Text(
+                      contact.detail,
+                      style: TextStyle(
+                        fontWeight:
+                            contact.isPrimary
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${contact.contact.firstName} ${contact.contact.surname}',
+                    ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _sendNotice(contact);
+                    },
+                  );
                 },
-              );
-            },
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -557,18 +570,22 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
 
         // Add customer contacts (Email, SMS)
         if (contact.emailAddress.isNotEmpty) {
-          contactOptions.add(ContactOption(
-            contact: contact,
-            detail: contact.emailAddress,
-            method: ContactMethod.email,
-          ));
+          contactOptions.add(
+            ContactOption(
+              contact: contact,
+              detail: contact.emailAddress,
+              method: ContactMethod.email,
+            ),
+          );
         }
         if (contact.mobileNumber.isNotEmpty) {
-          contactOptions.add(ContactOption(
-            contact: contact,
-            detail: contact.mobileNumber,
-            method: ContactMethod.sms,
-          ));
+          contactOptions.add(
+            ContactOption(
+              contact: contact,
+              detail: contact.mobileNumber,
+              method: ContactMethod.sms,
+            ),
+          );
         }
       }
 
@@ -584,8 +601,10 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     // For demonstration purposes, we just show a snackbar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text(
-              'Notice sent to ${contact.contact.firstName} via ${contact.method.name} (${contact.detail})')),
+        content: Text(
+          'Notice sent to ${contact.contact.firstName} via ${contact.method.name} (${contact.detail})',
+        ),
+      ),
     );
 
     // Record the date the notice was sent
@@ -608,13 +627,9 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
         // Horizontal layout for larger screens
         Row(
           children: [
-            Expanded(
-              child: _buildStartDate(),
-            ),
+            Expanded(child: _buildStartDate()),
             const HMBSpacer(height: true),
-            Expanded(
-              child: _buildEndDate(context),
-            ),
+            Expanded(child: _buildEndDate(context)),
           ],
         ),
         const HMBSpacer(height: true),

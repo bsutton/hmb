@@ -7,7 +7,6 @@ import '../../dao/dao_job.dart';
 import '../../entity/job.dart';
 import 'select/hmb_droplist_multi.dart';
 
-
 class JobFilterWidget extends StatefulWidget {
   const JobFilterWidget({required this.onJobSelectionChanged, super.key});
 
@@ -38,35 +37,36 @@ class _JobFilterWidgetState extends State<JobFilterWidget> {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CheckboxListTile(
-            title: const Text('Filter by Last Active Job'),
-            value: _filterLastActive,
-            onChanged: (value) async {
-              setState(() {
-                _filterLastActive = value ?? false;
-              });
-              if (_filterLastActive) {
-                await _loadDefaultJob();
-              }
-            },
-          ),
-          HMBDroplistMultiSelect<Job>(
-            title: 'Select Jobs',
-            initialItems: () async => June.getState(SelectedJobs.new).selected,
-            items: (filter) async => DaoJob().getByFilter(filter),
-            format: (job) => job.summary,
-            onChanged: (job) {
-              setState(() {
-                June.getState(SelectedJobs.new).reset(job);
-              });
-              widget.onJobSelectionChanged(
-                  June.getState(SelectedJobs.new).selected);
-            },
-          ),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      CheckboxListTile(
+        title: const Text('Filter by Last Active Job'),
+        value: _filterLastActive,
+        onChanged: (value) async {
+          setState(() {
+            _filterLastActive = value ?? false;
+          });
+          if (_filterLastActive) {
+            await _loadDefaultJob();
+          }
+        },
+      ),
+      HMBDroplistMultiSelect<Job>(
+        title: 'Select Jobs',
+        initialItems: () async => June.getState(SelectedJobs.new).selected,
+        items: (filter) async => DaoJob().getByFilter(filter),
+        format: (job) => job.summary,
+        onChanged: (job) {
+          setState(() {
+            June.getState(SelectedJobs.new).reset(job);
+          });
+          widget.onJobSelectionChanged(
+            June.getState(SelectedJobs.new).selected,
+          );
+        },
+      ),
+    ],
+  );
 }
 
 class SelectedJobs extends JuneState {

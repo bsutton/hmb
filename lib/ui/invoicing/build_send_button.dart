@@ -22,85 +22,87 @@ class BuildSendButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBButton(
-        label: 'Send...',
-        onPressed: () async {
-          var billBookingFee = true;
-          var displayCosts = true;
-          var displayGroupHeaders = true;
-          var displayItems = true;
-          var groupByTask = true; // Default to group by task
+    label: 'Send...',
+    onPressed: () async {
+      var billBookingFee = true;
+      var displayCosts = true;
+      var displayGroupHeaders = true;
+      var displayItems = true;
+      var groupByTask = true; // Default to group by task
 
-          final result = await showInvoiceOptionsDialog(
-              context: context,
-              displayCosts: displayCosts,
-              displayGroupHeaders: displayGroupHeaders,
-              displayItems: displayItems,
-              groupByTask: groupByTask,
-              billBookingFee: billBookingFee);
+      final result = await showInvoiceOptionsDialog(
+        context: context,
+        displayCosts: displayCosts,
+        displayGroupHeaders: displayGroupHeaders,
+        displayItems: displayItems,
+        groupByTask: groupByTask,
+        billBookingFee: billBookingFee,
+      );
 
-          if (result != null && mounted) {
-            billBookingFee = result['billBookingFee'] ?? true;
-            displayCosts = result['displayCosts'] ?? true;
-            displayGroupHeaders = result['displayGroupHeaders'] ?? true;
-            displayItems = result['displayItems'] ?? true;
-            groupByTask = result['groupByTask'] ?? true;
+      if (result != null && mounted) {
+        billBookingFee = result['billBookingFee'] ?? true;
+        displayCosts = result['displayCosts'] ?? true;
+        displayGroupHeaders = result['displayGroupHeaders'] ?? true;
+        displayItems = result['displayItems'] ?? true;
+        groupByTask = result['groupByTask'] ?? true;
 
-            final filePath = await generateInvoicePdf(
-              invoice,
-              displayCosts: displayCosts,
-              displayGroupHeaders: displayGroupHeaders,
-              displayItems: displayItems,
-            );
-            final system = await DaoSystem().get();
-            final job = await DaoJob().getById(invoice.jobId);
-            final contact = await DaoContact().getPrimaryForJob(job!.id);
-            final recipients = await DaoInvoice().getEmailsByInvoice(invoice);
-            if (context.mounted) {
-              await Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (context) => PdfPreviewScreen(
-                      title:
-                          '''Invoice #${invoice.bestNumber} ${job.summary}''',
-                      filePath: filePath.path,
-                      emailSubject:
-                          '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
-                      emailBody: '''
+        final filePath = await generateInvoicePdf(
+          invoice,
+          displayCosts: displayCosts,
+          displayGroupHeaders: displayGroupHeaders,
+          displayItems: displayItems,
+        );
+        final system = await DaoSystem().get();
+        final job = await DaoJob().getById(invoice.jobId);
+        final contact = await DaoContact().getPrimaryForJob(job!.id);
+        final recipients = await DaoInvoice().getEmailsByInvoice(invoice);
+        if (context.mounted) {
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder:
+                  (context) => PdfPreviewScreen(
+                    title: '''Invoice #${invoice.bestNumber} ${job.summary}''',
+                    filePath: filePath.path,
+                    emailSubject:
+                        '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
+                    emailBody: '''
 ${contact!.firstName.trim()},
 Please find the attached invoice for your job.
 
 Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
 ''',
-                      emailRecipients: [
-                        ...recipients,
-                        if (Strings.isNotBlank(system.emailAddress))
-                          system.emailAddress!
-                      ],
-                      onSent: () async => DaoInvoice().markSent(invoice)),
-                ),
-              );
-            }
-          }
-        },
-      );
+                    emailRecipients: [
+                      ...recipients,
+                      if (Strings.isNotBlank(system.emailAddress))
+                        system.emailAddress!,
+                    ],
+                    onSent: () async => DaoInvoice().markSent(invoice),
+                  ),
+            ),
+          );
+        }
+      }
+    },
+  );
 
-  Future<Map<String, bool>?> showInvoiceOptionsDialog(
-          {required BuildContext context,
-          required bool displayCosts,
-          required bool displayGroupHeaders,
-          required bool displayItems,
-          required bool groupByTask,
-          required bool billBookingFee}) =>
-      showDialog<Map<String, bool>>(
-        context: context,
-        builder: (context) {
-          var tempDisplayCosts = displayCosts;
-          var tempDisplayGroupHeaders = displayGroupHeaders;
-          var tempDisplayItems = displayItems;
-          final tempGroupByTask =
-              groupByTask; // Temporary selection for grouping
+  Future<Map<String, bool>?> showInvoiceOptionsDialog({
+    required BuildContext context,
+    required bool displayCosts,
+    required bool displayGroupHeaders,
+    required bool displayItems,
+    required bool groupByTask,
+    required bool billBookingFee,
+  }) => showDialog<Map<String, bool>>(
+    context: context,
+    builder: (context) {
+      var tempDisplayCosts = displayCosts;
+      var tempDisplayGroupHeaders = displayGroupHeaders;
+      var tempDisplayItems = displayItems;
+      final tempGroupByTask = groupByTask; // Temporary selection for grouping
 
-          return StatefulBuilder(
-            builder: (context, setState) => AlertDialog(
+      return StatefulBuilder(
+        builder:
+            (context, setState) => AlertDialog(
               title: const Text('Select Invoice Options'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -146,14 +148,14 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
                       'displayGroupHeaders': tempDisplayGroupHeaders,
                       'displayItems': tempDisplayItems,
                       'groupByTask': tempGroupByTask,
-                      'billBookingFee': billBookingFee
+                      'billBookingFee': billBookingFee,
                     });
                   },
                   label: 'OK',
                 ),
               ],
             ),
-          );
-        },
       );
+    },
+  );
 }

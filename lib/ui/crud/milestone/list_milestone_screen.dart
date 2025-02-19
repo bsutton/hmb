@@ -71,15 +71,18 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
 
       // Total value of all milestones
       final totalValue = quoteMilestones.fold<Money>(
-          MoneyEx.zero, (sum, m) => sum + (m.paymentAmount));
+        MoneyEx.zero,
+        (sum, m) => sum + (m.paymentAmount),
+      );
 
       final count = quoteMilestones.length;
 
       // Calculate total invoiced to date
       final invoicedValue = quoteMilestones.fold<Money>(
-          MoneyEx.zero,
-          (sum, m) =>
-              sum + ((m.invoiceId != null) ? m.paymentAmount : MoneyEx.zero));
+        MoneyEx.zero,
+        (sum, m) =>
+            sum + ((m.invoiceId != null) ? m.paymentAmount : MoneyEx.zero),
+      );
 
       // Count how many milestones are invoiced
       final invoicedCount =
@@ -104,73 +107,76 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-            toolbarHeight: 80,
-            automaticallyImplyLeading: false,
-            title: HMBSearchWithAdd(
-                onSearch: (filter) async {
-                  this.filter = filter?.toLowerCase();
-                  _summaries = _fetchMilestoneSummaries();
-                  setState(() {});
-                },
-                onAdd: _createMilestone)),
-        body: FutureBuilderEx<List<QuoteMilestoneSummary>>(
-          future: _summaries,
-          builder: (context, summaries) {
-            if (summaries == null || summaries.isEmpty) {
-              return const Center(
-                  child: Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                    'No milestones found - create milestone payments from the Billing/Quote screen.'),
-              ));
-            }
+    appBar: AppBar(
+      toolbarHeight: 80,
+      automaticallyImplyLeading: false,
+      title: HMBSearchWithAdd(
+        onSearch: (filter) async {
+          this.filter = filter?.toLowerCase();
+          _summaries = _fetchMilestoneSummaries();
+          setState(() {});
+        },
+        onAdd: _createMilestone,
+      ),
+    ),
+    body: FutureBuilderEx<List<QuoteMilestoneSummary>>(
+      future: _summaries,
+      builder: (context, summaries) {
+        if (summaries == null || summaries.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(8),
+              child: Text(
+                'No milestones found - create milestone payments from the Billing/Quote screen.',
+              ),
+            ),
+          );
+        }
 
-            return ListView.builder(
-              itemCount: summaries.length,
-              itemBuilder: (context, index) {
-                final summary = summaries[index];
-                return _buildMilestoneSummaryCard(summary);
-              },
-            );
+        return ListView.builder(
+          itemCount: summaries.length,
+          itemBuilder: (context, index) {
+            final summary = summaries[index];
+            return _buildMilestoneSummaryCard(summary);
           },
-        ),
-      );
+        );
+      },
+    ),
+  );
 
   Widget _buildMilestoneSummaryCard(QuoteMilestoneSummary summary) => Card(
-        margin: const EdgeInsets.all(8),
-        child: ListTile(
-          title: Text(
-            summary.job.summary,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    margin: const EdgeInsets.all(8),
+    child: ListTile(
+      title: Text(
+        summary.job.summary,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Customer: ${summary.customer?.name ?? "N/A"}'),
+          Text('Job #: ${summary.job.id}'),
+          Text('Quote #: ${summary.quote.bestNumber}'),
+          Text('Milestones: ${summary.milestoneCount}'),
+          Text('Invoiced Milestones: ${summary.invoicedCount}'),
+          Text('Invoiced to date: ${summary.invoicedValue}'),
+          Text('Total Value: ${summary.totalValue}'),
+        ],
+      ),
+      onTap: () async {
+        // Navigate to EditMilestonesScreen for this quote
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder:
+                (context) => EditMilestonesScreen(quoteId: summary.quote.id),
           ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Customer: ${summary.customer?.name ?? "N/A"}'),
-              Text('Job #: ${summary.job.id}'),
-              Text('Quote #: ${summary.quote.bestNumber}'),
-              Text('Milestones: ${summary.milestoneCount}'),
-              Text('Invoiced Milestones: ${summary.invoicedCount}'),
-              Text('Invoiced to date: ${summary.invoicedValue}'),
-              Text('Total Value: ${summary.totalValue}'),
-            ],
-          ),
-          onTap: () async {
-            // Navigate to EditMilestonesScreen for this quote
-            await Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => EditMilestonesScreen(
-                  quoteId: summary.quote.id,
-                ),
-              ),
-            );
-            setState(() {
-              _summaries = _fetchMilestoneSummaries();
-            });
-          },
-        ),
-      );
+        );
+        setState(() {
+          _summaries = _fetchMilestoneSummaries();
+        });
+      },
+    ),
+  );
 
   Future<void> _createMilestone() async {
     final quote = await SelectQuoteDialog.show(context);

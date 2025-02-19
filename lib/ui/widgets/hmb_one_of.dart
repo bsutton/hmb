@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 /// If [condition] is true, [onTrue] is displayed,
 ///  otherwise [onFalse] is displayed.
 class HMBOneOf extends StatelessWidget {
-  const HMBOneOf(
-      {required this.condition,
-      required this.onTrue,
-      required this.onFalse,
-      super.key});
+  const HMBOneOf({
+    required this.condition,
+    required this.onTrue,
+    required this.onFalse,
+    super.key,
+  });
 
   final bool condition;
   final Widget onTrue;

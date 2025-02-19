@@ -14,8 +14,11 @@ class DaoCheckListItemCheckList extends Dao<CheckListItem> {
   @override
   String get tableName => 'check_list_check_list_item';
 
-  Future<void> deleteJoin(CheckList checklist, CheckListItem checklistitem,
-      [Transaction? transaction]) async {
+  Future<void> deleteJoin(
+    CheckList checklist,
+    CheckListItem checklistitem, [
+    Transaction? transaction,
+  ]) async {
     await withinTransaction(transaction).delete(
       tableName,
       where: 'check_list_id = ? and check_list_item_id = ?',
@@ -23,12 +26,15 @@ class DaoCheckListItemCheckList extends Dao<CheckListItem> {
     );
   }
 
-  Future<void> insertJoin(CheckListItem checklistitem, CheckList checklist,
-      [Transaction? transaction]) async {
-    await withinTransaction(transaction).insert(
-      tableName,
-      {'check_list_id': checklist.id, 'check_list_item_id': checklistitem.id},
-    );
+  Future<void> insertJoin(
+    CheckListItem checklistitem,
+    CheckList checklist, [
+    Transaction? transaction,
+  ]) async {
+    await withinTransaction(transaction).insert(tableName, {
+      'check_list_id': checklist.id,
+      'check_list_item_id': checklistitem.id,
+    });
   }
 
   @override

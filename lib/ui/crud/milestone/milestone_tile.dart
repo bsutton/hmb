@@ -53,8 +53,9 @@ class _MilestoneTileState extends State<MilestoneTile> {
     super.initState();
     isEditable = widget.milestone.invoiceId == null;
 
-    descriptionController =
-        TextEditingController(text: widget.milestone.milestoneDescription);
+    descriptionController = TextEditingController(
+      text: widget.milestone.milestoneDescription,
+    );
     percentageController = TextEditingController(
       text: widget.milestone.paymentPercentage.toString(),
     );
@@ -92,8 +93,9 @@ class _MilestoneTileState extends State<MilestoneTile> {
       final percentage = Percentage.tryParse(percentageController.text);
 
       /// Calc the amount based on the percentage just entered by the user.
-      final amount = widget.quoteTotal
-          .multipliedByPercentage(percentage ?? Percentage.zero);
+      final amount = widget.quoteTotal.multipliedByPercentage(
+        percentage ?? Percentage.zero,
+      );
       amountController.text = amount.toString();
       changing = false;
     }
@@ -121,7 +123,8 @@ class _MilestoneTileState extends State<MilestoneTile> {
   Future<void> _onInvoicePressed() async {
     if (widget.milestone.paymentAmount <= MoneyEx.zero) {
       HMBToast.error(
-          'You cannot invoice a milestone with a zero or negative amount.');
+        'You cannot invoice a milestone with a zero or negative amount.',
+      );
       return;
     }
 
@@ -180,24 +183,28 @@ class _MilestoneTileState extends State<MilestoneTile> {
             children: [
               if (widget.milestone.invoiceId != null)
                 FutureBuilderEx<Invoice?>(
-                    // ignore: discarded_futures
-                    future: DaoInvoice().getById(widget.milestone.invoiceId),
-                    builder: (context, invoice) {
-                      final inv = invoice;
-                      if (inv == null) {
-                        return const Text('Not Invoiced');
-                      } else {
-                        // Make invoice number clickable to open InvoiceEditScreen
-                        return HMBLinkInternal(
-                            label: 'Invoice: ${inv.bestNumber}',
-                            navigateTo: () async {
-                              final invoiceDetails =
-                                  await InvoiceDetails.load(inv.id);
-                              return InvoiceEditScreen(
-                                  invoiceDetails: invoiceDetails);
-                            });
-                      }
-                    }),
+                  // ignore: discarded_futures
+                  future: DaoInvoice().getById(widget.milestone.invoiceId),
+                  builder: (context, invoice) {
+                    final inv = invoice;
+                    if (inv == null) {
+                      return const Text('Not Invoiced');
+                    } else {
+                      // Make invoice number clickable to open InvoiceEditScreen
+                      return HMBLinkInternal(
+                        label: 'Invoice: ${inv.bestNumber}',
+                        navigateTo: () async {
+                          final invoiceDetails = await InvoiceDetails.load(
+                            inv.id,
+                          );
+                          return InvoiceEditScreen(
+                            invoiceDetails: invoiceDetails,
+                          );
+                        },
+                      );
+                    }
+                  },
+                ),
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(labelText: 'Description'),
@@ -209,13 +216,17 @@ class _MilestoneTileState extends State<MilestoneTile> {
                   Expanded(
                     child: TextField(
                       controller: percentageController,
-                      decoration:
-                          const InputDecoration(labelText: 'Percentage'),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Percentage',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       enabled: isEditable && !shouldDisable,
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d*\.?\d*'),
+                        ),
                       ],
                       onChanged: (_) => _onPercentageChanged(),
                     ),
@@ -225,11 +236,14 @@ class _MilestoneTileState extends State<MilestoneTile> {
                     child: TextField(
                       controller: amountController,
                       decoration: const InputDecoration(labelText: 'Amount'),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       enabled: isEditable && !shouldDisable,
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d*\.?\d*'),
+                        ),
                       ],
                       onChanged: (_) => _onAmountChanged(),
                     ),

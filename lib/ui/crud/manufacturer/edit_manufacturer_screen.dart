@@ -30,21 +30,25 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
 
     currentEntity ??= widget.manufacturer;
     _nameController = TextEditingController(text: widget.manufacturer?.name);
-    _descriptionController =
-        TextEditingController(text: widget.manufacturer?.description);
-    _contactNumberController =
-        TextEditingController(text: widget.manufacturer?.contactNumber);
+    _descriptionController = TextEditingController(
+      text: widget.manufacturer?.description,
+    );
+    _contactNumberController = TextEditingController(
+      text: widget.manufacturer?.contactNumber,
+    );
     _emailController = TextEditingController(text: widget.manufacturer?.email);
-    _addressController =
-        TextEditingController(text: widget.manufacturer?.address);
+    _addressController = TextEditingController(
+      text: widget.manufacturer?.address,
+    );
   }
 
   @override
   Widget build(BuildContext context) => EntityEditScreen<Manufacturer>(
-        entityName: 'Manufacturer',
-        dao: DaoManufacturer(),
-        entityState: this,
-        editor: (manufacturer, {required isNew}) => Column(
+    entityName: 'Manufacturer',
+    dao: DaoManufacturer(),
+    entityState: this,
+    editor:
+        (manufacturer, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             HMBTextField(
@@ -66,13 +70,10 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
               labelText: 'Email',
               keyboardType: TextInputType.emailAddress,
             ),
-            HMBTextField(
-              controller: _addressController,
-              labelText: 'Address',
-            ),
+            HMBTextField(controller: _addressController, labelText: 'Address'),
           ],
         ),
-      );
+  );
 
   @override
   Future<Manufacturer> forUpdate(Manufacturer manufacturer) async =>
@@ -84,9 +85,9 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
 
   @override
   Future<Manufacturer> forInsert() async => Manufacturer.forInsert(
-        name: _nameController.text,
-        description: _descriptionController.text,
-      );
+    name: _nameController.text,
+    description: _descriptionController.text,
+  );
 
   @override
   void refresh() {

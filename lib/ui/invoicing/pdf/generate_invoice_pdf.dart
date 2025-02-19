@@ -44,61 +44,62 @@ Future<File> generateInvoicePdf(
     pw.MultiPage(
       pageTheme: pw.PageTheme(
         margin: pw.EdgeInsets.zero,
-        buildBackground: (context) => pw.Stack(
-          children: [
-            // Top colored band with business name
-            pw.Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: pw.Container(
-                height: 28, // 1cm height
-                color: systemColor,
-                child: pw.Padding(
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 8),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text(
-                        system.businessName ?? '',
-                        style: pw.TextStyle(
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.white,
-                        ),
+        buildBackground:
+            (context) => pw.Stack(
+              children: [
+                // Top colored band with business name
+                pw.Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: pw.Container(
+                    height: 28, // 1cm height
+                    color: systemColor,
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 8),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text(
+                            system.businessName ?? '',
+                            style: pw.TextStyle(
+                              fontSize: 18,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-            // Bottom colored band with page number
-            pw.Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: pw.Container(
-                height: 28,
-                color: systemColor,
-                child: pw.Padding(
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 10),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text(
-                        '${context.pageNumber} of ${context.pagesCount}',
-                        style: const pw.TextStyle(
-                          fontSize: 12,
-                          color: PdfColors.white,
-                        ),
+                // Bottom colored band with page number
+                pw.Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: pw.Container(
+                    height: 28,
+                    color: systemColor,
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text(
+                            '${context.pageNumber} of ${context.pagesCount}',
+                            style: const pw.TextStyle(
+                              fontSize: 12,
+                              color: PdfColors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
       ),
       header: (context) {
         if (context.pageNumber == 1) {
@@ -127,10 +128,8 @@ Future<File> generateInvoicePdf(
                           ),
                         ),
                         pw.Text('Date: ${formatDate(invoice.createdDate)}'),
-                        pw.Text(
-                          '''
-Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}''',
-                        ),
+                        pw.Text('''
+Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}'''),
                       ],
                     ),
                     // Business logo
@@ -157,7 +156,8 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}''',
                 pw.Text('Email: ${system.emailAddress}'),
                 pw.Text('Phone: $phone'),
                 pw.Text(
-                    '${system.businessNumberLabel}: ${system.businessNumber}'),
+                  '${system.businessNumberLabel}: ${system.businessNumber}',
+                ),
                 pw.Divider(),
               ],
             ),
@@ -175,7 +175,8 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}''',
           for (final group in groupedLines) {
             content
               ..add(pw.SizedBox(height: 10)) // Add 10 units of space
-              ..add(pw.Row(
+              ..add(
+                pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text(
@@ -193,31 +194,37 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}''',
                           fontWeight: pw.FontWeight.bold,
                         ),
                       ),
-                  ]));
+                  ],
+                ),
+              );
 
             // Display items in the group if requested
             if (displayItems) {
               for (final line in group.items) {
-                content.add(pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(line.description),
-                    if (displayCosts) pw.Text(line.lineTotal.toString()),
-                  ],
-                ));
+                content.add(
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(line.description),
+                      if (displayCosts) pw.Text(line.lineTotal.toString()),
+                    ],
+                  ),
+                );
               }
             }
           }
         } else {
           // Display lines without grouping if group headers are not enabled
           for (final line in lines) {
-            content.add(pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text(line.description),
-                if (displayCosts) pw.Text(line.lineTotal.toString()),
-              ],
-            ));
+            content.add(
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(line.description),
+                  if (displayCosts) pw.Text(line.lineTotal.toString()),
+                ],
+              ),
+            );
           }
         }
 
@@ -301,7 +308,8 @@ String paymentTerms(System system) {
 
 // Helper function to group items by `invoiceLineGroupId`
 Future<List<GroupedLine>> groupByInvoiceLineGroup(
-    List<InvoiceLine> lines) async {
+  List<InvoiceLine> lines,
+) async {
   final grouped = <int?, List<InvoiceLine>>{};
   for (final line in lines) {
     final groupKey = line.invoiceLineGroupId;
@@ -311,13 +319,16 @@ Future<List<GroupedLine>> groupByInvoiceLineGroup(
   // Convert the map to a list of grouped lines
   final groupLines = <GroupedLine>[];
   for (final entry in grouped.entries) {
-    final total =
-        entry.value.fold(MoneyEx.zero, (sum, line) => sum + line.lineTotal);
+    final total = entry.value.fold(
+      MoneyEx.zero,
+      (sum, line) => sum + line.lineTotal,
+    );
     final groupLine = GroupedLine(
-        key: entry.key,
-        title: (await DaoInvoiceLineGroup().getById(entry.key))!.name,
-        items: entry.value,
-        total: total);
+      key: entry.key,
+      title: (await DaoInvoiceLineGroup().getById(entry.key))!.name,
+      items: entry.value,
+      total: total,
+    );
 
     if (groupLine.hasVisibleItems) {
       groupLines.add(groupLine);
@@ -344,9 +355,10 @@ class GroupedLine {
   Fixed get quantity =>
       items.map((line) => line.quantity).reduce((lhs, rhs) => lhs + rhs);
 
-  bool get hasVisibleItems => items
-      .where((item) => item.status != LineStatus.noChargeHidden)
-      .isNotEmpty;
+  bool get hasVisibleItems =>
+      items
+          .where((item) => item.status != LineStatus.noChargeHidden)
+          .isNotEmpty;
 }
 
 // Helper function to get the logo

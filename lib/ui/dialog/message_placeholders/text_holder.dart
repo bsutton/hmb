@@ -6,9 +6,9 @@ import 'text_source.dart';
 /// A default placeholder incase we encounter an unknown
 /// placeholder, in which case we just give the user
 /// a text field to fill in.
-class DefaultHolder extends PlaceHolder< String> {
+class DefaultHolder extends PlaceHolder<String> {
   DefaultHolder({required super.name})
-      : super(base: tagBase, source: TextSource(label: name));
+    : super(base: tagBase, source: TextSource(label: name));
 
   static String tagBase = 'text';
 
@@ -16,7 +16,7 @@ class DefaultHolder extends PlaceHolder< String> {
   Future<String> value() async => source.value ?? '';
 }
 
-class SignatureHolder extends PlaceHolder< String> {
+class SignatureHolder extends PlaceHolder<String> {
   SignatureHolder() : super(name: tagName, base: tagBase, source: NoopSource());
 
   static String tagName = 'signature';

@@ -8,9 +8,7 @@ import '../util/local_date.dart';
 import '../util/money_ex.dart';
 import 'dao.g.dart';
 
-Future<Invoice> createFixedPriceInvoice(
-  Quote quote,
-) async {
+Future<Invoice> createFixedPriceInvoice(Quote quote) async {
   final job = await DaoJob().getById(quote.jobId);
   if (job!.hourlyRate == MoneyEx.zero) {
     throw InvoiceException('Hourly rate must be set for job ${job.summary}');
@@ -20,23 +18,27 @@ Future<Invoice> createFixedPriceInvoice(
 
   // Create invoice
   final invoice = Invoice.forInsert(
-      jobId: job.id,
-      totalAmount: totalAmount,
-      dueDate: LocalDate.today().add(const Duration(days: 1)));
+    jobId: job.id,
+    totalAmount: totalAmount,
+    dueDate: LocalDate.today().add(const Duration(days: 1)),
+  );
 
   final invoiceId = await DaoInvoice().insert(invoice);
 
-  final invoiceLineGroup =
-      InvoiceLineGroup.forInsert(invoiceId: invoiceId, name: 'Total');
+  final invoiceLineGroup = InvoiceLineGroup.forInsert(
+    invoiceId: invoiceId,
+    name: 'Total',
+  );
   await DaoInvoiceLineGroup().insert(invoiceLineGroup);
 
   final invoiceLine = InvoiceLine.forInsert(
-      invoiceLineGroupId: invoiceLineGroup.id,
-      invoiceId: invoiceId,
-      description: job.summary,
-      quantity: Fixed.one,
-      unitPrice: totalAmount,
-      lineTotal: totalAmount);
+    invoiceLineGroupId: invoiceLineGroup.id,
+    invoiceId: invoiceId,
+    description: job.summary,
+    quantity: Fixed.one,
+    unitPrice: totalAmount,
+    lineTotal: totalAmount,
+  );
   await DaoInvoiceLine().insert(invoiceLine);
 
   // Update the invoice total amount
@@ -61,15 +63,17 @@ Future<Invoice> createInvoiceFromMilestone(Milestone milestonePayment) async {
   final invoiceId = await DaoInvoice().insert(invoice);
 
   final invoiceLineGroup = InvoiceLineGroup.forInsert(
-      invoiceId: invoiceId,
-      name: 'Milestone #${milestonePayment.milestoneNumber}');
+    invoiceId: invoiceId,
+    name: 'Milestone #${milestonePayment.milestoneNumber}',
+  );
   await DaoInvoiceLineGroup().insert(invoiceLineGroup);
 
   // Create an InvoiceLine for this milestone
   final invoiceLine = InvoiceLine.forInsert(
     invoiceId: invoiceId,
     invoiceLineGroupId: invoiceLineGroup.id,
-    description: milestonePayment.milestoneDescription ??
+    description:
+        milestonePayment.milestoneDescription ??
         'Milestone Payment ${milestonePayment.milestoneNumber}',
     quantity: Fixed.fromInt(1, scale: 0),
     unitPrice: milestonePayment.paymentAmount,

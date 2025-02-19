@@ -61,11 +61,14 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
     }
     // By default, exclude quotes whose state is approved or rejected.
     if (!includeApprovedRejected) {
-      quotes = quotes
-          .where((q) =>
-              (q.state != QuoteState.approved) &&
-              (q.state != QuoteState.rejected))
-          .toList();
+      quotes =
+          quotes
+              .where(
+                (q) =>
+                    (q.state != QuoteState.approved) &&
+                    (q.state != QuoteState.rejected),
+              )
+              .toList();
     }
     return quotes;
   }
@@ -81,14 +84,18 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
         try {
           if (!quoteOptions.billBookingFee &&
               quoteOptions.selectedTaskIds.isEmpty) {
-            HMBToast.error('You must select a task or the booking fee',
-                acknowledgmentRequired: true);
+            HMBToast.error(
+              'You must select a task or the booking fee',
+              acknowledgmentRequired: true,
+            );
             return;
           }
           await DaoQuote().create(job, quoteOptions);
         } catch (e) {
-          HMBToast.error('Failed to create quote: $e',
-              acknowledgmentRequired: true);
+          HMBToast.error(
+            'Failed to create quote: $e',
+            acknowledgmentRequired: true,
+          );
         }
         await _refreshQuoteList();
       }
@@ -98,20 +105,21 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   Future<void> _deleteQuote(Quote quote) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Quote'),
-        content: const Text('Are you sure you want to delete this quote?'),
-        actions: [
-          HMBButton(
-            label: 'Cancel',
-            onPressed: () => Navigator.of(context).pop(false),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Quote'),
+            content: const Text('Are you sure you want to delete this quote?'),
+            actions: [
+              HMBButton(
+                label: 'Cancel',
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              HMBButton(
+                label: 'Delete',
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
           ),
-          HMBButton(
-            label: 'Delete',
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
     );
     if (confirmed ?? false) {
       try {
@@ -131,84 +139,89 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          toolbarHeight: 80,
-          title: HMBSearchWithAdd(
-            onSearch: (filter) async => _onFilterChanged(filter ?? ''),
-            onAdd: _createQuote,
-          ),
-        ),
-        body: DeferredBuilder(this,
-            builder: (context) => Column(
+    appBar: AppBar(
+      automaticallyImplyLeading: false,
+      toolbarHeight: 80,
+      title: HMBSearchWithAdd(
+        onSearch: (filter) async => _onFilterChanged(filter ?? ''),
+        onAdd: _createQuote,
+      ),
+    ),
+    body: DeferredBuilder(
+      this,
+      builder:
+          (context) => Column(
+            children: [
+              // --- FILTER SECTION ---
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
                   children: [
-                    // --- FILTER SECTION ---
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Row(
-                        children: [
-                          // A simple text filter.
-                          Expanded(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                labelText: 'Filter Quotes',
-                                border: OutlineInputBorder(),
-                              ),
-                              onChanged: (value) async {
-                                await _onFilterChanged(value);
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Switch to include approved/rejected quotes.
-                          Row(
-                            children: [
-                              const Text('Include Approved/Rejected'),
-                              Switch(
-                                value: includeApprovedRejected,
-                                onChanged: (val) async {
-                                  includeApprovedRejected = val;
-                                  await _refreshQuoteList();
-                                },
-                              ),
-                            ],
-                          )
-                        ],
+                    // A simple text filter.
+                    Expanded(
+                      child: TextField(
+                        decoration: const InputDecoration(
+                          labelText: 'Filter Quotes',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) async {
+                          await _onFilterChanged(value);
+                        },
                       ),
                     ),
-                    // --- END FILTER SECTION ---
-                    Expanded(
-                      child: (_quotes.isEmpty)
-                          ? const Center(child: Text('No quotes found.'))
-                          : ListView.builder(
-                              itemCount: _quotes.length,
-                              itemBuilder: (context, index) {
-                                final quote = _quotes[index];
-                                return GestureDetector(
-                                  onTap: () async {
-                                    // Navigate to the details screen.
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder: (context) =>
-                                            QuoteDetailsScreen(
-                                                quoteId: quote.id),
-                                      ),
-                                    );
-                                    await _refreshQuoteList();
-                                  },
-                                  child: QuoteSummaryCard(
-                                    key: ValueKey(quote.hashCode),
-                                    quote: quote,
-                                    onDelete: () async => _deleteQuote(quote),
-                                    onStateChanged: _refreshQuoteList,
-                                  ),
-                                );
-                              },
-                            ),
+                    const SizedBox(width: 8),
+                    // Switch to include approved/rejected quotes.
+                    Row(
+                      children: [
+                        const Text('Include Approved/Rejected'),
+                        Switch(
+                          value: includeApprovedRejected,
+                          onChanged: (val) async {
+                            includeApprovedRejected = val;
+                            await _refreshQuoteList();
+                          },
+                        ),
+                      ],
                     ),
                   ],
-                )),
-      );
+                ),
+              ),
+              // --- END FILTER SECTION ---
+              Expanded(
+                child:
+                    (_quotes.isEmpty)
+                        ? const Center(child: Text('No quotes found.'))
+                        : ListView.builder(
+                          itemCount: _quotes.length,
+                          itemBuilder: (context, index) {
+                            final quote = _quotes[index];
+                            return GestureDetector(
+                              onTap: () async {
+                                // Navigate to the details screen.
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder:
+                                        (context) => QuoteDetailsScreen(
+                                          quoteId: quote.id,
+                                        ),
+                                  ),
+                                );
+                                await _refreshQuoteList();
+                              },
+                              child: QuoteSummaryCard(
+                                key: ValueKey(quote.hashCode),
+                                quote: quote,
+                                onDelete: () async => _deleteQuote(quote),
+                                onStateChanged: _refreshQuoteList,
+                              ),
+                            );
+                          },
+                        ),
+              ),
+            ],
+          ),
+    ),
+  );
 }
 
 /// A summary card used in the list screen.
@@ -239,111 +252,114 @@ class _QuoteSummaryCardState extends DeferredState<QuoteSummaryCard> {
 
   @override
   Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.all(8),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: DeferredBuilder(this,
-              builder: (context) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header row with summary information and a delete icon.
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: widget.onDelete,
-                          ),
-                        ],
+    margin: const EdgeInsets.all(8),
+    child: Padding(
+      padding: const EdgeInsets.all(8),
+      child: DeferredBuilder(
+        this,
+        builder:
+            (context) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header row with summary information and a delete icon.
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: widget.onDelete,
+                    ),
+                  ],
+                ),
 
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              HMBLinkInternal(
-                                label: 'Job: #${quote.jobId}',
-                                navigateTo: () async {
-                                  final job =
-                                      await DaoJob().getById(quote.jobId);
-                                  return JobEditScreen(job: job);
-                                },
-                              ),
-                              const HMBSpacer(width: true),
-                              Text(jc.job.summary),
-                            ],
-                          ),
-                          Text('Customer: ${jc.customer.name}'),
-                          Text('Contact: ${jc.contact?.fullname ?? 'N/A'}'),
-                        ],
-                      ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        HMBLinkInternal(
+                          label: 'Job: #${quote.jobId}',
+                          navigateTo: () async {
+                            final job = await DaoJob().getById(quote.jobId);
+                            return JobEditScreen(job: job);
+                          },
+                        ),
+                        const HMBSpacer(width: true),
+                        Text(jc.job.summary),
+                      ],
+                    ),
+                    Text('Customer: ${jc.customer.name}'),
+                    Text('Contact: ${jc.contact?.fullname ?? 'N/A'}'),
+                  ],
+                ),
 
-                      // Display the current state and (if set) date information.
-                      Row(
-                        children: [
-                          Text(quote.state.name.toCapitalised()),
-                          const SizedBox(width: 8),
-                          if (quote.state.name == 'sent' &&
-                              quote.dateSent != null)
-                            Text('Sent: ${formatDate(quote.dateSent!)}'),
-                          if (quote.state.name == 'approved' &&
-                              quote.dateApproved != null)
-                            Text(formatDate(quote.dateApproved!)),
-                        ],
-                      ),
-                      // --- State Update Buttons ---
-                      Row(
-                        children: [
-                          HMBButton(
-                            label: 'Approved',
-                            onPressed: () async {
-                              try {
-                                await DaoQuote().approveQuote(quote.id);
-                                HMBToast.info('Quote approved.');
-                                quote = (await DaoQuote().getById(quote.id))!;
-                                setState(() {});
-                                widget.onStateChanged();
-                              } catch (e) {
-                                HMBToast.error('Failed to approve quote: $e');
-                              }
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          HMBButton(
-                            label: 'Rejected',
-                            onPressed: () async {
-                              try {
-                                await DaoQuote().rejectQuote(quote.id);
-                                HMBToast.info('Quote rejected.');
-                                quote = (await DaoQuote().getById(quote.id))!;
-                                setState(() {});
-                                widget.onStateChanged();
-                              } catch (e) {
-                                HMBToast.error('Failed to reject quote: $e');
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                      // --- End State Buttons ---
-                    ],
-                  )),
-        ),
-      );
+                // Display the current state and (if set) date information.
+                Row(
+                  children: [
+                    Text(quote.state.name.toCapitalised()),
+                    const SizedBox(width: 8),
+                    if (quote.state.name == 'sent' && quote.dateSent != null)
+                      Text('Sent: ${formatDate(quote.dateSent!)}'),
+                    if (quote.state.name == 'approved' &&
+                        quote.dateApproved != null)
+                      Text(formatDate(quote.dateApproved!)),
+                  ],
+                ),
+                // --- State Update Buttons ---
+                Row(
+                  children: [
+                    HMBButton(
+                      label: 'Approved',
+                      onPressed: () async {
+                        try {
+                          await DaoQuote().approveQuote(quote.id);
+                          HMBToast.info('Quote approved.');
+                          quote = (await DaoQuote().getById(quote.id))!;
+                          setState(() {});
+                          widget.onStateChanged();
+                        } catch (e) {
+                          HMBToast.error('Failed to approve quote: $e');
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    HMBButton(
+                      label: 'Rejected',
+                      onPressed: () async {
+                        try {
+                          await DaoQuote().rejectQuote(quote.id);
+                          HMBToast.info('Quote rejected.');
+                          quote = (await DaoQuote().getById(quote.id))!;
+                          setState(() {});
+                          widget.onStateChanged();
+                        } catch (e) {
+                          HMBToast.error('Failed to reject quote: $e');
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                // --- End State Buttons ---
+              ],
+            ),
+      ),
+    ),
+  );
 }
 
 /// Helper class to load both Job and Customer details for a given Quote.
 class JobAndCustomer {
-  JobAndCustomer(
-      {required this.job, required this.customer, required this.contact});
+  JobAndCustomer({
+    required this.job,
+    required this.customer,
+    required this.contact,
+  });
   final Job job;
   final Customer customer;
   final Contact? contact;

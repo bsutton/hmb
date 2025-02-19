@@ -16,16 +16,16 @@ class OnEnterKey extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => KeyboardListener(
-        focusNode: FocusNode(), // Ensure that the RawKeyboardListener
-        // receives key events
-        onKeyEvent: (event) {
-          if (event is KeyDownEvent &&
-              event.logicalKey == LogicalKeyboardKey.enter) {
-            // Handle Enter key press here
-            // For example, call onPressed for the RaisedButton
-            onPressed(context);
-          }
-        },
-        child: child,
-      );
+    focusNode: FocusNode(), // Ensure that the RawKeyboardListener
+    // receives key events
+    onKeyEvent: (event) {
+      if (event is KeyDownEvent &&
+          event.logicalKey == LogicalKeyboardKey.enter) {
+        // Handle Enter key press here
+        // For example, call onPressed for the RaisedButton
+        onPressed(context);
+      }
+    },
+    child: child,
+  );
 }

@@ -5,8 +5,11 @@ import 'package:path/path.dart';
 import 'package:pub_release/pub_release.dart';
 
 void updateAndroidVersion(Version version) {
-  final filePath =
-      join(DartProject.self.pathToProjectRoot, 'android', 'version.properties');
+  final filePath = join(
+    DartProject.self.pathToProjectRoot,
+    'android',
+    'version.properties',
+  );
   final properties = _loadProperties(filePath);
 
   // Get current version code

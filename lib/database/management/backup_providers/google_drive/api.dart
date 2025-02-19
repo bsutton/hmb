@@ -31,9 +31,7 @@ class GoogleDriveAuth {
   }
 
   Future<GoogleSignInAccount?> _signin() async {
-    final _googleSignIn = GoogleSignIn(
-      scopes: [drive.DriveApi.driveFileScope],
-    );
+    final _googleSignIn = GoogleSignIn(scopes: [drive.DriveApi.driveFileScope]);
 
     try {
       return (await _googleSignIn.isSignedIn())
@@ -51,7 +49,8 @@ class GoogleDriveApi {
   GoogleDriveApi._internal(this._authHeaders);
 
   static Future<GoogleDriveApi> fromHeaders(
-      Map<String, String> authHeaders) async {
+    Map<String, String> authHeaders,
+  ) async {
     final api = GoogleDriveApi._internal(authHeaders);
     await api.init();
     return api;
@@ -93,8 +92,10 @@ class GoogleDriveApi {
   Future<StreamedResponse> send(BaseRequest request) =>
       _authClient!.send(request);
 
-  Future<String> getOrCreateFolderId(String folderName,
-      {String? parentFolderId}) async {
+  Future<String> getOrCreateFolderId(
+    String folderName, {
+    String? parentFolderId,
+  }) async {
     var q =
         "mimeType='application/vnd.google-apps.folder' and name='$folderName' and trashed=false";
     if (parentFolderId != null) {
@@ -105,9 +106,10 @@ class GoogleDriveApi {
     if (folders.files != null && folders.files!.isNotEmpty) {
       return folders.files!.first.id!;
     } else {
-      final folder = drive.File()
-        ..name = folderName
-        ..mimeType = 'application/vnd.google-apps.folder';
+      final folder =
+          drive.File()
+            ..name = folderName
+            ..mimeType = 'application/vnd.google-apps.folder';
       if (parentFolderId != null) {
         folder.parents = [parentFolderId];
       }
@@ -120,11 +122,15 @@ class GoogleDriveApi {
     var parentFolderId = await getOrCreateFolderId('hmb');
 
     if (kDebugMode) {
-      parentFolderId =
-          await getOrCreateFolderId('debug', parentFolderId: parentFolderId);
+      parentFolderId = await getOrCreateFolderId(
+        'debug',
+        parentFolderId: parentFolderId,
+      );
     }
-    final backupsFolderId =
-        await getOrCreateFolderId('backups', parentFolderId: parentFolderId);
+    final backupsFolderId = await getOrCreateFolderId(
+      'backups',
+      parentFolderId: parentFolderId,
+    );
     return backupsFolderId;
   }
 }

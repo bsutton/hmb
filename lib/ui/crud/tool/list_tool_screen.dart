@@ -24,65 +24,71 @@ class _ToolListScreenState extends State<ToolListScreen> {
 
   Future<void> _startStockTake(BuildContext context) async {
     await ToolStockTakeWizard.start(
-        context: context,
-        offerAnother: true,
-        onFinish: (reason) async {
-          Navigator.of(context).pop();
-          setState(() {
-            _refreshCounter++;
-          });
+      context: context,
+      offerAnother: true,
+      onFinish: (reason) async {
+        Navigator.of(context).pop();
+        setState(() {
+          _refreshCounter++;
         });
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: HMBButton.withIcon(
-                onPressed: () async => _startStockTake(context),
-                label: 'Start Stock Take',
-                icon: const Icon(Icons.inventory),
-              ),
+    appBar: AppBar(
+      automaticallyImplyLeading: false,
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: HMBButton.withIcon(
+            onPressed: () async => _startStockTake(context),
+            label: 'Start Stock Take',
+            icon: const Icon(Icons.inventory),
+          ),
+        ),
+      ],
+    ),
+    body: EntityListScreen<Tool>(
+      key: ValueKey(_refreshCounter),
+      pageTitle: 'Tools',
+      dao: DaoTool(),
+      title: (entity) => HMBTextHeadline2(entity.name),
+      fetchList: (filter) async => DaoTool().getByFilter(filter),
+      onEdit: (tool) => ToolEditScreen(tool: tool),
+      cardHeight: 470,
+      details: (entity) {
+        final tool = entity;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FutureBuilderEx(
+              // ignore: discarded_futures
+              future: DaoCategory().getById(tool.categoryId),
+              builder:
+                  (context, category) =>
+                      HMBTextBody('Category: ${category?.name ?? 'Not Set'}'),
+            ),
+            if (tool.datePurchased != null)
+              HMBTextBody('Purchased: ${formatDate(tool.datePurchased!)}'),
+            if (tool.description != null)
+              HMBTextBody('Description: ${tool.description}'),
+            if (tool.serialNumber != null)
+              HMBTextBody('Serial No.: ${tool.serialNumber}'),
+            if (tool.warrantyPeriod != null)
+              HMBTextBody('Warranty: ${tool.warrantyPeriod} months'),
+            if (tool.cost != null) HMBTextBody('Cost: ${tool.cost}'),
+            PhotoGallery.forTool(
+              tool: tool,
+              filter:
+                  (photo) =>
+                      !(photo.id == tool.serialNumberPhotoId ||
+                          photo.id == tool.receiptPhotoId),
             ),
           ],
-        ),
-        body: EntityListScreen<Tool>(
-          key: ValueKey(_refreshCounter),
-          pageTitle: 'Tools',
-          dao: DaoTool(),
-          title: (entity) => HMBTextHeadline2(entity.name),
-          fetchList: (filter) async => DaoTool().getByFilter(filter),
-          onEdit: (tool) => ToolEditScreen(tool: tool),
-          cardHeight: 470,
-          details: (entity) {
-            final tool = entity;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FutureBuilderEx(
-                    // ignore: discarded_futures
-                    future: DaoCategory().getById(tool.categoryId),
-                    builder: (context, category) => HMBTextBody(
-                        'Category: ${category?.name ?? 'Not Set'}')),
-                if (tool.datePurchased != null)
-                  HMBTextBody('Purchased: ${formatDate(tool.datePurchased!)}'),
-                if (tool.description != null)
-                  HMBTextBody('Description: ${tool.description}'),
-                if (tool.serialNumber != null)
-                  HMBTextBody('Serial No.: ${tool.serialNumber}'),
-                if (tool.warrantyPeriod != null)
-                  HMBTextBody('Warranty: ${tool.warrantyPeriod} months'),
-                if (tool.cost != null) HMBTextBody('Cost: ${tool.cost}'),
-                PhotoGallery.forTool(
-                    tool: tool,
-                    filter: (photo) => !(photo.id == tool.serialNumberPhotoId ||
-                        photo.id == tool.receiptPhotoId))
-              ],
-            );
-          },
-        ),
-      );
+        );
+      },
+    ),
+  );
 }

@@ -7,11 +7,15 @@ class DaoBase<T extends Entity<T>> {
 
   /// Use this method when you need to do db operations
   /// from a non-flutter app - e.g. CLI apps.
-  factory DaoBase.direct(Database db, String tableName,
-      T Function(Map<String, dynamic> map) fromMap) {
-    final dao = DaoBase<T>(db, (_, __) {})
-      .._tableName = tableName
-      .._fromMap = fromMap;
+  factory DaoBase.direct(
+    Database db,
+    String tableName,
+    T Function(Map<String, dynamic> map) fromMap,
+  ) {
+    final dao =
+        DaoBase<T>(db, (_, __) {})
+          .._tableName = tableName
+          .._fromMap = fromMap;
     return dao;
   }
 
@@ -48,8 +52,10 @@ class DaoBase<T extends Entity<T>> {
   ///  ```name desc, age```
   Future<List<T>> getAll({String? orderByClause}) async {
     final executor = db;
-    final List<Map<String, dynamic>> maps =
-        await executor.query(_tableName, orderBy: orderByClause);
+    final List<Map<String, dynamic>> maps = await executor.query(
+      _tableName,
+      orderBy: orderByClause,
+    );
     final list = List.generate(maps.length, (i) => _fromMap(maps[i]));
 
     return list;
@@ -59,8 +65,11 @@ class DaoBase<T extends Entity<T>> {
     if (entityId == null) {
       return null;
     }
-    final value =
-        await db.query(_tableName, where: 'id =?', whereArgs: [entityId]);
+    final value = await db.query(
+      _tableName,
+      where: 'id =?',
+      whereArgs: [entityId],
+    );
     if (value.isEmpty) {
       return null;
     }

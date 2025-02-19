@@ -37,42 +37,44 @@ class _BackupSelectionScreenState extends DeferredState<BackupSelectionScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Select Backup to Restore'),
-        ),
-        body: FutureBuilderEx<Backups>(
-          future: _backupsFuture,
-          errorBuilder: (context, error) =>
+    appBar: AppBar(title: const Text('Select Backup to Restore')),
+    body: FutureBuilderEx<Backups>(
+      future: _backupsFuture,
+      errorBuilder:
+          (context, error) =>
               Center(child: Text('Error loading backups: $error')),
-          builder: (context, backups) {
-            if (backups == null || backups.backups.isEmpty) {
-              return Center(child: Text('''
-No backups available in ${backups!.location}'''));
-            } else {
-              return Column(
-                children: [
-                  HMBText('Location: ${backups.location}'),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: backups.backups.length,
-                      itemBuilder: (context, index) {
-                        final backup = backups.backups[index];
-                        return ListTile(
-                          title: Text(
-                              ' ${formatDateTime(backup.when)} ${backup.size}'),
-                          onTap: () {
-                            Navigator.pop(context, backup);
-                          },
-                        );
+      builder: (context, backups) {
+        if (backups == null || backups.backups.isEmpty) {
+          return Center(
+            child: Text('''
+No backups available in ${backups!.location}'''),
+          );
+        } else {
+          return Column(
+            children: [
+              HMBText('Location: ${backups.location}'),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: backups.backups.length,
+                  itemBuilder: (context, index) {
+                    final backup = backups.backups[index];
+                    return ListTile(
+                      title: Text(
+                        ' ${formatDateTime(backup.when)} ${backup.size}',
+                      ),
+                      onTap: () {
+                        Navigator.pop(context, backup);
                       },
-                    ),
-                  ),
-                ],
-              );
-            }
-          },
-        ),
-      );
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        }
+      },
+    ),
+  );
 }
 
 class Backups {

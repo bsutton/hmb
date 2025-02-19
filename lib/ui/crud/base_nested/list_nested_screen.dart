@@ -95,100 +95,99 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-        children: [
-          _buildTitle(),
-          _buildBody(),
-        ],
-      );
+  Widget build(BuildContext context) =>
+      Column(children: [_buildTitle(), _buildBody()]);
 
   Widget _buildAddButton(BuildContext context) => HMBButtonAdd(
-        enabled: widget.parent.parent != null,
-        onPressed: () async {
-          if (context.mounted) {
-            await Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                  builder: (context) => widget.onEdit(null)),
-            ).then((_) => _refreshEntityList());
+    enabled: widget.parent.parent != null,
+    onPressed: () async {
+      if (context.mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (context) => widget.onEdit(null)),
+        ).then((_) => _refreshEntityList());
+      }
+    },
+  );
+
+  Column _buildTitle() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Row(
+        children: [
+          Text(widget.entityNamePlural, style: const TextStyle(fontSize: 18)),
+          const Spacer(),
+          _buildFilter(),
+          _buildAddButton(context),
+        ],
+      ),
+    ],
+  );
+
+  Widget _buildFilter() => Column(
+    mainAxisAlignment: MainAxisAlignment.end,
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      HMBToggle(
+        label: 'Show details',
+        tooltip: 'Show/Hide full card details',
+        initialValue: cardDetail == CardDetail.full,
+        onToggled: (on) {
+          setState(() {
+            cardDetail = on ? CardDetail.full : CardDetail.summary;
+          });
+        },
+      ),
+      if (widget.filterBar != null && widget.parent.parent != null)
+        widget.filterBar!(widget.parent.parent!),
+    ],
+  );
+
+  JuneBuilder<JuneState> _buildBody() => JuneBuilder(
+    widget.dao.juneRefresher,
+    builder: (context) {
+      // return const HMBSpacer(height: true);
+      // ignore: discarded_futures
+      entities = _fetchList();
+      return FutureBuilderEx<List<C>>(
+        future: entities,
+        waitingBuilder: (_) => const Center(child: CircularProgressIndicator()),
+        builder: (context, list) {
+          if (widget.parent.parent == null) {
+            return Center(
+              child: Text(
+                'Save the ${widget.parentTitle} first.',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            );
+          }
+          if (list!.isEmpty) {
+            return Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Click'),
+                  HMBButtonAdd(
+                    enabled: true,
+                    onPressed: () async {
+                      HMBToast.info('Not this one, the one to the right');
+                    },
+                  ),
+                  Text('to add a ${widget.entityNameSingular}.'),
+                ],
+              ),
+            );
+          } else {
+            return _displayColumn(list, context);
           }
         },
       );
-
-  Column _buildTitle() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(children: [
-            Text(
-              widget.entityNamePlural,
-              style: const TextStyle(fontSize: 18),
-            ),
-            const Spacer(),
-            _buildFilter(),
-            _buildAddButton(context),
-          ]),
-        ],
-      );
-
-  Widget _buildFilter() => Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          HMBToggle(
-            label: 'Show details',
-            tooltip: 'Show/Hide full card details',
-            initialValue: cardDetail == CardDetail.full,
-            onToggled: (on) {
-              setState(() {
-                cardDetail = on ? CardDetail.full : CardDetail.summary;
-              });
-            },
-          ),
-          if (widget.filterBar != null && widget.parent.parent != null)
-            widget.filterBar!(widget.parent.parent!),
-        ],
-      );
-
-  JuneBuilder<JuneState> _buildBody() =>
-      JuneBuilder(widget.dao.juneRefresher, builder: (context) {
-        // return const HMBSpacer(height: true);
-        // ignore: discarded_futures
-        entities = _fetchList();
-        return FutureBuilderEx<List<C>>(
-          future: entities,
-          waitingBuilder: (_) =>
-              const Center(child: CircularProgressIndicator()),
-          builder: (context, list) {
-            if (widget.parent.parent == null) {
-              return Center(
-                  child: Text(
-                'Save the ${widget.parentTitle} first.',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-              ));
-            }
-            if (list!.isEmpty) {
-              return Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Click'),
-                    HMBButtonAdd(
-                        enabled: true,
-                        onPressed: () async {
-                          HMBToast.info('Not this one, the one to the right');
-                        }),
-                    Text('to add a ${widget.entityNameSingular}.'),
-                  ],
-                ),
-              );
-            } else {
-              return _displayColumn(list, context);
-            }
-          },
-        );
-      });
+    },
+  );
 
   Widget _displayColumn(List<C> list, BuildContext context) {
     final cards = <Widget>[];
@@ -197,33 +196,31 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
       cards.add(SizedBox(height: 212, child: _buildCard(entity, context)));
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: cards,
-    );
+    return Column(mainAxisSize: MainAxisSize.min, children: cards);
   }
 
   Widget _buildCard(C entity, BuildContext context) => HMBCrudListCard(
-      title: widget.title(entity),
-      onDelete: () async => _confirmDelete(entity),
-      onEdit: () => widget.onEdit(entity),
-      canEdit:
-          widget.canEdit == null ? () => true : () => widget.canEdit!(entity),
-      canDelete: widget.canDelete == null
-          ? () => true
-          : () => widget.canDelete!(entity),
-      onRefresh: _refreshEntityList,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 8),
-        child: widget.details(entity, cardDetail),
-      ));
+    title: widget.title(entity),
+    onDelete: () async => _confirmDelete(entity),
+    onEdit: () => widget.onEdit(entity),
+    canEdit:
+        widget.canEdit == null ? () => true : () => widget.canEdit!(entity),
+    canDelete:
+        widget.canDelete == null ? () => true : () => widget.canDelete!(entity),
+    onRefresh: _refreshEntityList,
+    child: Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: widget.details(entity, cardDetail),
+    ),
+  );
 
   Future<void> _confirmDelete(C entity) async {
     await areYouSure(
-        context: context,
-        title: 'Delete Confirmation',
-        message: 'Are you sure you want to delete this item?',
-        onConfirmed: () async => _delete(entity));
+      context: context,
+      title: 'Delete Confirmation',
+      message: 'Are you sure you want to delete this item?',
+      onConfirmed: () async => _delete(entity),
+    );
   }
 
   Future<void> _delete(C entity) async {

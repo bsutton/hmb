@@ -28,8 +28,9 @@ class _CategoryEditScreenState extends State<CategoryEditScreen>
     currentEntity ??= widget.category;
 
     _nameController = TextEditingController(text: currentEntity?.name);
-    _descriptionController =
-        TextEditingController(text: currentEntity?.description);
+    _descriptionController = TextEditingController(
+      text: currentEntity?.description,
+    );
   }
 
   @override
@@ -41,10 +42,11 @@ class _CategoryEditScreenState extends State<CategoryEditScreen>
 
   @override
   Widget build(BuildContext context) => EntityEditScreen<Category>(
-        entityName: 'Category',
-        dao: DaoCategory(),
-        entityState: this,
-        editor: (category, {required isNew}) => Column(
+    entityName: 'Category',
+    dao: DaoCategory(),
+    entityState: this,
+    editor:
+        (category, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             HMBTextField(
@@ -58,20 +60,20 @@ class _CategoryEditScreenState extends State<CategoryEditScreen>
             ),
           ],
         ),
-      );
+  );
 
   @override
   Future<Category> forUpdate(Category category) async => Category.forUpdate(
-        entity: category,
-        name: _nameController.text,
-        description: _descriptionController.text,
-      );
+    entity: category,
+    name: _nameController.text,
+    description: _descriptionController.text,
+  );
 
   @override
   Future<Category> forInsert() async => Category.forInsert(
-        name: _nameController.text,
-        description: _descriptionController.text,
-      );
+    name: _nameController.text,
+    description: _descriptionController.text,
+  );
 
   @override
   void refresh() {

@@ -36,12 +36,14 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
 
     return Wizard(
       initialSteps: steps,
-      onTransition: (
-          {required currentStep,
-          required targetStep,
-          required userOriginated}) {
+      onTransition: ({
+        required currentStep,
+        required targetStep,
+        required userOriginated,
+      }) {
         Log.d(
-            'Wizard transition from ${currentStep.title} to ${targetStep.title}.');
+          'Wizard transition from ${currentStep.title} to ${targetStep.title}.',
+        );
       },
       onFinished: (reason) async {
         switch (reason) {

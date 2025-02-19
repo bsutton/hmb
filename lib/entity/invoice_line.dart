@@ -11,7 +11,7 @@ enum LineStatus {
   noCharge,
 
   /// The line item is not chargable and will be hidden from the user
-  noChargeHidden
+  noChargeHidden,
 }
 
 class InvoiceLine extends Entity<InvoiceLine> {
@@ -53,19 +53,18 @@ class InvoiceLine extends Entity<InvoiceLine> {
   }) : super.forUpdate();
 
   factory InvoiceLine.fromMap(Map<String, dynamic> map) => InvoiceLine(
-        id: map['id'] as int,
-        invoiceId: map['invoice_id'] as int,
-        invoiceLineGroupId: map['invoice_line_group_id'] as int,
-        description: map['description'] as String,
-        quantity: Fixed.fromInt(map['quantity'] as int),
-        unitPrice: Money.fromInt(map['unit_price'] as int, isoCode: 'AUD'),
-        lineTotal: Money.fromInt(map['line_total'] as int, isoCode: 'AUD'),
-        createdDate: DateTime.parse(map['created_date'] as String),
-        modifiedDate: DateTime.parse(map['modified_date'] as String),
-        status:
-            LineStatus.values[map['status'] as int? ?? LineStatus.normal.index],
-        fromBookingFee: map['from_booking_fee'] == 1,
-      );
+    id: map['id'] as int,
+    invoiceId: map['invoice_id'] as int,
+    invoiceLineGroupId: map['invoice_line_group_id'] as int,
+    description: map['description'] as String,
+    quantity: Fixed.fromInt(map['quantity'] as int),
+    unitPrice: Money.fromInt(map['unit_price'] as int, isoCode: 'AUD'),
+    lineTotal: Money.fromInt(map['line_total'] as int, isoCode: 'AUD'),
+    createdDate: DateTime.parse(map['created_date'] as String),
+    modifiedDate: DateTime.parse(map['modified_date'] as String),
+    status: LineStatus.values[map['status'] as int? ?? LineStatus.normal.index],
+    fromBookingFee: map['from_booking_fee'] == 1,
+  );
 
   int invoiceId;
   int invoiceLineGroupId;
@@ -88,45 +87,44 @@ class InvoiceLine extends Entity<InvoiceLine> {
     DateTime? modifiedDate,
     LineStatus? status,
     bool? fromBookingFee,
-  }) =>
-      InvoiceLine(
-        id: id ?? this.id,
-        invoiceId: invoiceId ?? this.invoiceId,
-        invoiceLineGroupId: invoiceLineGroupId ?? this.invoiceLineGroupId,
-        description: description ?? this.description,
-        quantity: quantity ?? this.quantity,
-        unitPrice: unitPrice ?? this.unitPrice,
-        lineTotal: lineTotal ?? this.lineTotal,
-        createdDate: createdDate ?? this.createdDate,
-        modifiedDate: modifiedDate ?? this.modifiedDate,
-        status: status ?? this.status,
-        fromBookingFee: fromBookingFee ?? this.fromBookingFee,
-      );
+  }) => InvoiceLine(
+    id: id ?? this.id,
+    invoiceId: invoiceId ?? this.invoiceId,
+    invoiceLineGroupId: invoiceLineGroupId ?? this.invoiceLineGroupId,
+    description: description ?? this.description,
+    quantity: quantity ?? this.quantity,
+    unitPrice: unitPrice ?? this.unitPrice,
+    lineTotal: lineTotal ?? this.lineTotal,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+    status: status ?? this.status,
+    fromBookingFee: fromBookingFee ?? this.fromBookingFee,
+  );
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'invoice_id': invoiceId,
-        'invoice_line_group_id': invoiceLineGroupId,
-        'description': description,
-        'quantity': quantity.copyWith( scale: 2).minorUnits.toInt(),
-        'unit_price': unitPrice.copyWith(decimalDigits: 2).minorUnits.toInt(),
-        'line_total': lineTotal.copyWith(decimalDigits: 2).minorUnits.toInt(),
-        'created_date': createdDate.toIso8601String(),
-        'modified_date': modifiedDate.toIso8601String(),
-        'status': status.index,
-        'from_booking_fee': fromBookingFee ? 1 : 0,
-      };
+    'id': id,
+    'invoice_id': invoiceId,
+    'invoice_line_group_id': invoiceLineGroupId,
+    'description': description,
+    'quantity': quantity.copyWith(scale: 2).minorUnits.toInt(),
+    'unit_price': unitPrice.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'line_total': lineTotal.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'created_date': createdDate.toIso8601String(),
+    'modified_date': modifiedDate.toIso8601String(),
+    'status': status.index,
+    'from_booking_fee': fromBookingFee ? 1 : 0,
+  };
 
   XeroLineItem toXeroLineItem() => XeroLineItem(
-        description: description,
-        quantity: quantity,
-        unitAmount: unitPrice,
-        lineTotal: lineTotal,
-        // TODO(bsutton): fix these so that they can be configured
-        //from the system
-        /// table.
-        accountCode: '240',
-        itemCode: 'IHS-Labour',
-      );
+    description: description,
+    quantity: quantity,
+    unitAmount: unitPrice,
+    lineTotal: lineTotal,
+    // TODO(bsutton): fix these so that they can be configured
+    //from the system
+    /// table.
+    accountCode: '240',
+    itemCode: 'IHS-Labour',
+  );
 }

@@ -21,8 +21,9 @@ abstract class BackupProvider {
   Stream<ProgressUpdate> get progressStream => _progressController.stream;
 
   void emitProgress(String stageDescription, int stageNo, int stageCount) {
-    _progressController
-        .add(ProgressUpdate(stageDescription, stageNo, stageCount));
+    _progressController.add(
+      ProgressUpdate(stageDescription, stageNo, stageCount),
+    );
   }
 
   /// A descrive name of the provider we show to the
@@ -34,10 +35,11 @@ abstract class BackupProvider {
   /// Stores the zipped backup file to a [BackupProvider]s
   /// defined location.
   /// Returns the path to where the file was stored.
-  Future<BackupResult> store(
-      {required String pathToDatabaseCopy,
-      required String pathToZippedBackup,
-      required int version});
+  Future<BackupResult> store({
+    required String pathToDatabaseCopy,
+    required String pathToZippedBackup,
+    required int version,
+  });
 
   /// Retrieve a list of prior backups made by the backup provider.
   Future<List<Backup>> getBackups();
@@ -53,51 +55,51 @@ abstract class BackupProvider {
     required int version,
     required ScriptSource src,
     bool includePhotos = false,
-  }) =>
-      withTempDirAsync((tmpDir) async {
-        emitProgress('Initializing backup', 1, 6);
+  }) => withTempDirAsync((tmpDir) async {
+    emitProgress('Initializing backup', 1, 6);
 
-        final datePart = formatDate(DateTime.now(), format: 'y-m-d');
-        final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
+    final datePart = formatDate(DateTime.now(), format: 'y-m-d');
+    final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
 
-        try {
-          final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
-          final pathToDatabase = await databasePath;
+    try {
+      final pathToBackupFile = join(tmpDir, 'handyman-$datePart.db');
+      final pathToDatabase = await databasePath;
 
-          if (!exists(pathToDatabase)) {
-            emitProgress('Database file not found', 6, 6);
-            throw Exception('Database file not found: $pathToDatabase');
-          }
+      if (!exists(pathToDatabase)) {
+        emitProgress('Database file not found', 6, 6);
+        throw Exception('Database file not found: $pathToDatabase');
+      }
 
-          emitProgress('Copying database', 2, 6);
-          await copyDatabaseTo(pathToBackupFile, src, this);
+      emitProgress('Copying database', 2, 6);
+      await copyDatabaseTo(pathToBackupFile, src, this);
 
-          emitProgress('Preparing to zip files', 3, 6);
+      emitProgress('Preparing to zip files', 3, 6);
 
-          // Set up communication channels
-          await zipBackup(
-              provider: this,
-              pathToZip: pathToZip,
-              pathToBackupFile: pathToBackupFile,
-              includePhotos: includePhotos);
+      // Set up communication channels
+      await zipBackup(
+        provider: this,
+        pathToZip: pathToZip,
+        pathToBackupFile: pathToBackupFile,
+        includePhotos: includePhotos,
+      );
 
-          emitProgress('Storing backup', 5, 6);
-          final result = await store(
-            pathToZippedBackup: pathToZip,
-            pathToDatabaseCopy: pathToBackupFile,
-            version: version,
-          );
+      emitProgress('Storing backup', 5, 6);
+      final result = await store(
+        pathToZippedBackup: pathToZip,
+        pathToDatabaseCopy: pathToBackupFile,
+        version: version,
+      );
 
-          emitProgress('Backup completed', 6, 6);
-          return result;
-        } catch (e, st) {
-          await Sentry.captureException(e, stackTrace: st);
-          emitProgress('Error during backup', 6, 6);
-          rethrow;
-        }
-      });
+      emitProgress('Backup completed', 6, 6);
+      return result;
+    } catch (e, st) {
+      await Sentry.captureException(e, stackTrace: st);
+      emitProgress('Error during backup', 6, 6);
+      rethrow;
+    }
+  });
 
-// ProgressUpdate class
+  // ProgressUpdate class
 
   Future<void> performRestore(
     Backup backup,
@@ -126,12 +128,20 @@ abstract class BackupProvider {
         final backupFile = await fetchBackup(backup);
 
         emitProgress('Extracting files from backup', 5, _restoreStageCount);
-        final dbPath =
-            await extractFiles(this, backupFile, tmpDir, 5, _restoreStageCount);
+        final dbPath = await extractFiles(
+          this,
+          backupFile,
+          tmpDir,
+          5,
+          _restoreStageCount,
+        );
 
         if (dbPath == null) {
           emitProgress(
-              'No database found in backup file', 6, _restoreStageCount);
+            'No database found in backup file',
+            6,
+            _restoreStageCount,
+          );
           throw BackupException('No database found in the zip file');
         }
 
@@ -169,8 +179,12 @@ abstract class BackupProvider {
   Future<File> fetchBackup(Backup backup);
 
   /// Replaces the current database with the one in the backup file.
-  Future<void> replaceDatabase(String pathToBackupFile, ScriptSource src,
-      BackupProvider backupProvider, HMBDatabaseFactory databaseFactory) async {
+  Future<void> replaceDatabase(
+    String pathToBackupFile,
+    ScriptSource src,
+    BackupProvider backupProvider,
+    HMBDatabaseFactory databaseFactory,
+  ) async {
     final wasOpen = DatabaseHelper().isOpen();
     try {
       // Get the path to the app's internal database
@@ -189,10 +203,11 @@ abstract class BackupProvider {
     } finally {
       if (wasOpen) {
         await DatabaseHelper().openDb(
-            src: src,
-            backupProvider: backupProvider,
-            databaseFactory: databaseFactory,
-            backup: false);
+          src: src,
+          backupProvider: backupProvider,
+          databaseFactory: databaseFactory,
+          backup: false,
+        );
       }
     }
   }
@@ -207,8 +222,11 @@ abstract class BackupProvider {
 
   /// Copies the current database to the backup file.
   /// Opening and closing the db as it goes.
-  Future<void> copyDatabaseTo(String pathToBackupFile, ScriptSource src,
-      BackupProvider backupProvider) async {
+  Future<void> copyDatabaseTo(
+    String pathToBackupFile,
+    ScriptSource src,
+    BackupProvider backupProvider,
+  ) async {
     final wasOpen = DatabaseHelper().isOpen();
     try {
       if (wasOpen) {
@@ -219,10 +237,11 @@ abstract class BackupProvider {
     } finally {
       if (wasOpen) {
         await DatabaseHelper().openDb(
-            src: src,
-            backupProvider: backupProvider,
-            databaseFactory: databaseFactory,
-            backup: false);
+          src: src,
+          backupProvider: backupProvider,
+          databaseFactory: databaseFactory,
+          backup: false,
+        );
       }
     }
   }
@@ -243,10 +262,11 @@ abstract class BackupProvider {
 }
 
 class BackupResult {
-  BackupResult(
-      {required this.pathToSource,
-      required this.pathToBackup,
-      required this.success}) {
+  BackupResult({
+    required this.pathToSource,
+    required this.pathToBackup,
+    required this.success,
+  }) {
     if (!exists(pathToBackup)) {
       success = false;
       status = 'Backup failed. Backup file not found.';
@@ -287,13 +307,14 @@ class BackupResult {
 }
 
 class Backup {
-  Backup(
-      {required this.id,
-      required this.when,
-      required this.pathTo,
-      required this.size,
-      required this.status,
-      required this.error});
+  Backup({
+    required this.id,
+    required this.when,
+    required this.pathTo,
+    required this.size,
+    required this.status,
+    required this.error,
+  });
 
   String id;
   DateTime when;
@@ -306,9 +327,7 @@ class Backup {
 class ProgressUpdate {
   ProgressUpdate(this.stageDescription, this.stageNo, this.stageCount);
 
-  ProgressUpdate.upload(this.stageDescription)
-      : stageNo = 6,
-        stageCount = 7;
+  ProgressUpdate.upload(this.stageDescription) : stageNo = 6, stageCount = 7;
 
   final String stageDescription;
   final int stageNo;

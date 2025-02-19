@@ -50,33 +50,36 @@ class _DimensionWidgetState extends State<DimensionWidget> {
     super.initState();
 
     // Initialize the selected measurement type and units using JuneState
-    final selectedMeasurementTypeState =
-        June.getState(SelectedMeasurementType.new)
-          ..selected =
-              widget.taskItem?.measurementType ?? MeasurementType.length;
+    final selectedMeasurementTypeState = June.getState(
+      SelectedMeasurementType.new,
+    )..selected = widget.taskItem?.measurementType ?? MeasurementType.length;
 
-    unawaited(getDefaultUnitForMeasurementType(
-            selectedMeasurementTypeState.selectedOrDefault)
-        .then((defaultUnits) {
-      June.getState(SelectedUnits.new).selected =
-          widget.taskItem?.units ?? defaultUnits;
-    }));
+    unawaited(
+      getDefaultUnitForMeasurementType(
+        selectedMeasurementTypeState.selectedOrDefault,
+      ).then((defaultUnits) {
+        June.getState(SelectedUnits.new).selected =
+            widget.taskItem?.units ?? defaultUnits;
+      }),
+    );
   }
 
   @override
   Widget build(BuildContext context) => JuneBuilder<SelectedCheckListItemType>(
-        SelectedCheckListItemType.new,
-        builder: (selectedItemTypeState) => FutureBuilderEx<TaskItemType?>(
+    SelectedCheckListItemType.new,
+    builder:
+        (selectedItemTypeState) => FutureBuilderEx<TaskItemType?>(
           future:
-              // ignore: discarded_futures
-              DaoTaskItemType().getById(selectedItemTypeState.selected),
+          // ignore: discarded_futures
+          DaoTaskItemType().getById(selectedItemTypeState.selected),
           builder: (context, itemType) {
             if (!_itemTypesWithDimensions.contains(itemType?.name ?? '')) {
               return const HMBEmpty();
             } else {
               final selectedUnitsState = June.getState(SelectedUnits.new);
-              final selectedMeasurementTypeState =
-                  June.getState(SelectedMeasurementType.new);
+              final selectedMeasurementTypeState = June.getState(
+                SelectedMeasurementType.new,
+              );
 
               final selectedUnit = selectedUnitsState.selectedOrDefault;
 
@@ -85,15 +88,16 @@ class _DimensionWidgetState extends State<DimensionWidget> {
                 children: [
                   HMBDroplist<MeasurementType>(
                     title: 'Measurement Type',
-                    selectedItem: () async =>
-                        selectedMeasurementTypeState.selected,
+                    selectedItem:
+                        () async => selectedMeasurementTypeState.selected,
                     format: (type) => type.name,
                     items: (filter) async => MeasurementType.list,
                     onChanged: (value) async {
                       if (selectedMeasurementTypeState.selected != value) {
-                        selectedUnitsState.selected =
-                            await getDefaultUnitForMeasurementType(
-                                value ?? MeasurementType.length);
+                        selectedUnitsState
+                            .selected = await getDefaultUnitForMeasurementType(
+                          value ?? MeasurementType.length,
+                        );
                       }
                       setState(() {
                         selectedMeasurementTypeState.selected =
@@ -108,8 +112,10 @@ class _DimensionWidgetState extends State<DimensionWidget> {
                     title: 'Units',
                     selectedItem: () async => selectedUnit,
                     format: (unit) => unit.name,
-                    items: (filter) async => getUnitsForMeasurementType(
-                        selectedMeasurementTypeState.selectedOrDefault),
+                    items:
+                        (filter) async => getUnitsForMeasurementType(
+                          selectedMeasurementTypeState.selectedOrDefault,
+                        ),
                     onChanged: (value) {
                       setState(() {
                         selectedUnitsState.selected = value ?? selectedUnit;
@@ -127,10 +133,8 @@ class _DimensionWidgetState extends State<DimensionWidget> {
                         widget.dimension3Controller.text,
                       ]);
 
-                      return HMBText(
-                        '''
-Measurements: Total: $totalMeasurement ${selectedUnit.name}''',
-                      );
+                      return HMBText('''
+Measurements: Total: $totalMeasurement ${selectedUnit.name}''');
                     },
                   ),
 
@@ -140,8 +144,8 @@ Measurements: Total: $totalMeasurement ${selectedUnit.name}''',
                     labelText:
                         '${selectedUnit.labels[0]} (${selectedUnit.measure})',
                     keyboardType: TextInputType.number,
-                    onChanged: (_) =>
-                        June.getState(MeasuremenTotal.new).setState(),
+                    onChanged:
+                        (_) => June.getState(MeasuremenTotal.new).setState(),
                   ),
                   if (selectedUnit.dimensions > 1)
                     HMBTextField(
@@ -149,8 +153,8 @@ Measurements: Total: $totalMeasurement ${selectedUnit.name}''',
                       labelText:
                           '${selectedUnit.labels[1]} (${selectedUnit.measure})',
                       keyboardType: TextInputType.number,
-                      onChanged: (_) =>
-                          June.getState(MeasuremenTotal.new).setState(),
+                      onChanged:
+                          (_) => June.getState(MeasuremenTotal.new).setState(),
                     ),
                   if (selectedUnit.dimensions > 2)
                     HMBTextField(
@@ -158,15 +162,15 @@ Measurements: Total: $totalMeasurement ${selectedUnit.name}''',
                       labelText:
                           '${selectedUnit.labels[2]} (${selectedUnit.measure})',
                       keyboardType: TextInputType.number,
-                      onChanged: (_) =>
-                          June.getState(MeasuremenTotal.new).setState(),
+                      onChanged:
+                          (_) => June.getState(MeasuremenTotal.new).setState(),
                     ),
                 ],
               );
             }
           },
         ),
-      );
+  );
 }
 
 /// The selected [MeasurementType]
@@ -201,10 +205,10 @@ class MeasuremenTotal extends JuneState {}
 MeasurementType getDefaultMeasurementType() => MeasurementType.length;
 
 Future<Units> getDefaultUnitForMeasurementType(
-    MeasurementType measurementType) async {
+  MeasurementType measurementType,
+) async {
   final system = await DaoSystem().get();
-  if ((system.preferredUnitSystem ) ==
-      PreferredUnitSystem.metric) {
+  if ((system.preferredUnitSystem) == PreferredUnitSystem.metric) {
     return measurementType.defaultMetric;
   } else {
     return measurementType.defaultImperial;
@@ -212,10 +216,10 @@ Future<Units> getDefaultUnitForMeasurementType(
 }
 
 Future<List<Units>> getUnitsForMeasurementType(
-    MeasurementType measurementType) async {
+  MeasurementType measurementType,
+) async {
   final system = await DaoSystem().get();
-  if ((system.preferredUnitSystem ) ==
-      PreferredUnitSystem.metric) {
+  if ((system.preferredUnitSystem) == PreferredUnitSystem.metric) {
     return measurementType.metric;
   } else {
     return measurementType.imperial;

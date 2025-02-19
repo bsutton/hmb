@@ -12,8 +12,9 @@ class ToolPhotoStep extends WizardStep {
 
   @override
   Widget build(BuildContext context) => CapturePhoto(
-      tool: wizard.tool!,
-      comment: 'Tool Photo',
-      title: 'CaptureTool Photo',
-      onCaptured: (photo) async => DaoPhoto().insert(photo));
+    tool: wizard.tool!,
+    comment: 'Tool Photo',
+    title: 'CaptureTool Photo',
+    onCaptured: (photo) async => DaoPhoto().insert(photo),
+  );
 }

@@ -39,17 +39,17 @@ class Contact extends Entity<Contact> {
   }) : super.forUpdate();
 
   factory Contact.fromMap(Map<String, dynamic> map) => Contact(
-        id: map['id'] as int,
-        firstName: map['firstName'] as String,
-        surname: map['surname'] as String,
-        mobileNumber: map['mobileNumber'] as String,
-        landLine: map['landLine'] as String,
-        officeNumber: map['officeNumber'] as String,
-        emailAddress: map['emailAddress'] as String,
-        xeroContactId: map['xeroContactId'] as String?,
-        createdDate: DateTime.parse(map['createdDate'] as String),
-        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-      );
+    id: map['id'] as int,
+    firstName: map['firstName'] as String,
+    surname: map['surname'] as String,
+    mobileNumber: map['mobileNumber'] as String,
+    landLine: map['landLine'] as String,
+    officeNumber: map['officeNumber'] as String,
+    emailAddress: map['emailAddress'] as String,
+    xeroContactId: map['xeroContactId'] as String?,
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+  );
 
   String firstName;
   String surname;
@@ -63,17 +63,17 @@ class Contact extends Entity<Contact> {
 
   @override
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'firstName': firstName,
-        'surname': surname,
-        'mobileNumber': mobileNumber,
-        'landLine': landLine,
-        'officeNumber': officeNumber,
-        'emailAddress': emailAddress,
-        'xeroContactId': xeroContactId,
-        'createdDate': createdDate.toIso8601String(),
-        'modifiedDate': modifiedDate.toIso8601String(),
-      };
+    'id': id,
+    'firstName': firstName,
+    'surname': surname,
+    'mobileNumber': mobileNumber,
+    'landLine': landLine,
+    'officeNumber': officeNumber,
+    'emailAddress': emailAddress,
+    'xeroContactId': xeroContactId,
+    'createdDate': createdDate.toIso8601String(),
+    'modifiedDate': modifiedDate.toIso8601String(),
+  };
 
   String abbreviated() => '$firstName $surname';
 
@@ -93,19 +93,18 @@ class Contact extends Entity<Contact> {
     String? xeroContactId,
     DateTime? createdDate,
     DateTime? modifiedDate,
-  }) =>
-      Contact(
-        id: id ?? this.id,
-        firstName: firstName ?? this.firstName,
-        surname: surname ?? this.surname,
-        mobileNumber: mobileNumber ?? this.mobileNumber,
-        landLine: landLine ?? this.landLine,
-        officeNumber: officeNumber ?? this.officeNumber,
-        emailAddress: emailAddress ?? this.emailAddress,
-        xeroContactId: xeroContactId ?? this.xeroContactId,
-        createdDate: createdDate ?? this.createdDate,
-        modifiedDate: modifiedDate ?? this.modifiedDate,
-      );
+  }) => Contact(
+    id: id ?? this.id,
+    firstName: firstName ?? this.firstName,
+    surname: surname ?? this.surname,
+    mobileNumber: mobileNumber ?? this.mobileNumber,
+    landLine: landLine ?? this.landLine,
+    officeNumber: officeNumber ?? this.officeNumber,
+    emailAddress: emailAddress ?? this.emailAddress,
+    xeroContactId: xeroContactId ?? this.xeroContactId,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+  );
 
   XeroContact toXeroContact() =>
       XeroContact(name: fullname, email: emailAddress, phone: bestPhone);

@@ -7,26 +7,30 @@ import '../util/money_ex.dart';
 import 'dao.g.dart';
 
 Future<Invoice> createTimeAndMaterialsInvoice(
-    Job job, List<int> selectedTaskIds,
-    {required bool groupByTask, required bool billBookingFee}) async {
+  Job job,
+  List<int> selectedTaskIds, {
+  required bool groupByTask,
+  required bool billBookingFee,
+}) async {
   if (job.hourlyRate == MoneyEx.zero) {
     throw InvoiceException('Hourly rate must be set for job ${job.summary}');
   }
 
   assert(
-      job.billingType == BillingType.timeAndMaterial ||
-          (job.billingType == BillingType.fixedPrice && groupByTask),
-      'FixedPrice must only use group by Task');
+    job.billingType == BillingType.timeAndMaterial ||
+        (job.billingType == BillingType.fixedPrice && groupByTask),
+    'FixedPrice must only use group by Task',
+  );
 
   var totalAmount = MoneyEx.zero;
 
   final system = await DaoSystem().get();
   // Create invoice
   final invoice = Invoice.forInsert(
-      jobId: job.id,
-      totalAmount: totalAmount,
-      dueDate:
-          LocalDate.today().add(Duration(days: system.paymentTermsInDays)));
+    jobId: job.id,
+    totalAmount: totalAmount,
+    dueDate: LocalDate.today().add(Duration(days: system.paymentTermsInDays)),
+  );
 
   final invoiceId = await DaoInvoice().insert(invoice);
 
@@ -36,18 +40,21 @@ Future<Invoice> createTimeAndMaterialsInvoice(
     final bookingFee = await DaoJob().getBookingFee(job);
 
     if (billBookingFee && bookingFee > MoneyEx.zero) {
-      final invoiceLineGroup =
-          InvoiceLineGroup.forInsert(invoiceId: invoiceId, name: 'Booking Fee');
+      final invoiceLineGroup = InvoiceLineGroup.forInsert(
+        invoiceId: invoiceId,
+        name: 'Booking Fee',
+      );
       await DaoInvoiceLineGroup().insert(invoiceLineGroup);
 
       final invoiceLine = InvoiceLine.forInsert(
-          invoiceId: invoiceId,
-          invoiceLineGroupId: invoiceLineGroup.id,
-          description: 'Booking Fee: ',
-          quantity: Fixed.one,
-          unitPrice: bookingFee,
-          lineTotal: bookingFee,
-          fromBookingFee: true);
+        invoiceId: invoiceId,
+        invoiceLineGroupId: invoiceLineGroup.id,
+        description: 'Booking Fee: ',
+        quantity: Fixed.one,
+        unitPrice: bookingFee,
+        lineTotal: bookingFee,
+        fromBookingFee: true,
+      );
 
       job.bookingFeeInvoiced = true;
       await DaoJob().update(job);

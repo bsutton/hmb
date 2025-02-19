@@ -24,13 +24,16 @@ class DevBackupProvider extends BackupProvider {
     final paths = find('*.zip', workingDirectory: _pathToBackups()).toList();
 
     return paths
-        .map((filePath) => Backup(
+        .map(
+          (filePath) => Backup(
             id: 'not used',
             when: stat(filePath).modified,
             size: '${stat(filePath).size}',
             status: 'good',
             pathTo: filePath,
-            error: 'none'))
+            error: 'none',
+          ),
+        )
         .toList();
   }
 
@@ -38,12 +41,16 @@ class DevBackupProvider extends BackupProvider {
       join(DartProject.self.pathToProjectRoot, 'backups');
 
   @override
-  Future<BackupResult> store(
-      {required String pathToDatabaseCopy,
-      required String pathToZippedBackup,
-      required int version}) async {
-    var pathToBackupFile = join(DartProject.self.pathToProjectRoot, 'backups',
-        basename(pathToZippedBackup));
+  Future<BackupResult> store({
+    required String pathToDatabaseCopy,
+    required String pathToZippedBackup,
+    required int version,
+  }) async {
+    var pathToBackupFile = join(
+      DartProject.self.pathToProjectRoot,
+      'backups',
+      basename(pathToZippedBackup),
+    );
 
     var count = 1;
     while (exists(pathToBackupFile)) {
@@ -54,9 +61,10 @@ class DevBackupProvider extends BackupProvider {
     move(pathToZippedBackup, pathToBackupFile);
 
     return BackupResult(
-        pathToBackup: pathToBackupFile,
-        pathToSource: await databasePath,
-        success: true);
+      pathToBackup: pathToBackupFile,
+      pathToSource: await databasePath,
+      success: true,
+    );
   }
 
   @override
@@ -65,11 +73,12 @@ class DevBackupProvider extends BackupProvider {
 
   @override
   Future<String> get databasePath async => join(
-      DartProject.self.pathToProjectRoot,
-      '.dart_tool',
-      'sqflite_common_ffi',
-      'databases',
-      'handyman.db');
+    DartProject.self.pathToProjectRoot,
+    '.dart_tool',
+    'sqflite_common_ffi',
+    'databases',
+    'handyman.db',
+  );
 
   @override
   Future<String> get backupLocation async => _pathToBackups();

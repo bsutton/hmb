@@ -23,19 +23,25 @@ class SiteListScreen<P extends Entity<P>> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => NestedEntityListScreen<Site, P>(
-      parent: parent,
-      entityNamePlural: 'Sites',
-      entityNameSingular: 'Site',
-      parentTitle: parentTitle,
-      dao: DaoSite(),
-      onDelete: (site) async => daoJoin.deleteFromParent(site!, parent.parent!),
-      onInsert: (site) async => daoJoin.insertForParent(site!, parent.parent!),
-      // ignore: discarded_futures
-      fetchList: () => daoJoin.getByParent(parent.parent),
-      // title: (site) => Text('${site.addressLine1} ${site.suburb}') as Widget,
-      title: (site) => HMBSiteText(label: '', site: site),
-      onEdit: (site) =>
-          SiteEditScreen(daoJoin: daoJoin, parent: parent.parent!, site: site),
-      details: (entity, details) =>
-          const Column(crossAxisAlignment: CrossAxisAlignment.start));
+    parent: parent,
+    entityNamePlural: 'Sites',
+    entityNameSingular: 'Site',
+    parentTitle: parentTitle,
+    dao: DaoSite(),
+    onDelete: (site) async => daoJoin.deleteFromParent(site!, parent.parent!),
+    onInsert: (site) async => daoJoin.insertForParent(site!, parent.parent!),
+    // ignore: discarded_futures
+    fetchList: () => daoJoin.getByParent(parent.parent),
+    // title: (site) => Text('${site.addressLine1} ${site.suburb}') as Widget,
+    title: (site) => HMBSiteText(label: '', site: site),
+    onEdit:
+        (site) => SiteEditScreen(
+          daoJoin: daoJoin,
+          parent: parent.parent!,
+          site: site,
+        ),
+    details:
+        (entity, details) =>
+            const Column(crossAxisAlignment: CrossAxisAlignment.start),
+  );
 }

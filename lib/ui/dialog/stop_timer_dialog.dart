@@ -31,19 +31,22 @@ class StopTimerDialog extends StatefulWidget {
   @override
   State<StopTimerDialog> createState() => _StopTimerDialogState();
 
-  static Future<TimeEntry?> show(BuildContext context,
-          {required Task task,
-          required TimeEntry timeEntry,
-          required DateTime stopTime,
-          bool showTask = false}) =>
-      showDialog<TimeEntry>(
-        context: context,
-        builder: (context) => StopTimerDialog(
-            task: task,
-            showTask: showTask,
-            timeEntry: timeEntry,
-            stopTime: stopTime),
-      );
+  static Future<TimeEntry?> show(
+    BuildContext context, {
+    required Task task,
+    required TimeEntry timeEntry,
+    required DateTime stopTime,
+    bool showTask = false,
+  }) => showDialog<TimeEntry>(
+    context: context,
+    builder:
+        (context) => StopTimerDialog(
+          task: task,
+          showTask: showTask,
+          timeEntry: timeEntry,
+          stopTime: stopTime,
+        ),
+  );
 }
 
 class _StopTimerDialogState extends State<StopTimerDialog> {
@@ -92,14 +95,13 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
         children: [
           HMBText('Current Time: ${formatDateTime(DateTime.now())}'),
           if (widget.showTask) buildTaskDetails(),
-          Row(children: [
-            const HMBText(
-              'Start:',
-              bold: true,
-            ),
-            const HMBSpacer(width: true),
-            HMBText(formatDateTime(widget.timeEntry.startTime))
-          ]),
+          Row(
+            children: [
+              const HMBText('Start:', bold: true),
+              const HMBSpacer(width: true),
+              HMBText(formatDateTime(widget.timeEntry.startTime)),
+            ],
+          ),
           HMBDateTimeField(
             label: 'Stop:',
             mode: HMBDateTimeFieldMode.dateAndTime,
@@ -121,10 +123,7 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
         ],
       ),
       actions: [
-        HMBButton(
-          label: 'Cancel',
-          onPressed: () => Navigator.pop(context),
-        ),
+        HMBButton(label: 'Cancel', onPressed: () => Navigator.pop(context)),
         HMBButton(
           label: 'OK',
           onPressed: () async {
@@ -149,11 +148,12 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
 
             final note = noteController.text;
             final timeEntry = TimeEntry.forUpdate(
-                entity: widget.timeEntry,
-                taskId: widget.task.id,
-                startTime: widget.timeEntry.startTime,
-                endTime: stopDateTime,
-                note: note);
+              entity: widget.timeEntry,
+              taskId: widget.task.id,
+              startTime: widget.timeEntry.startTime,
+              endTime: stopDateTime,
+              note: note,
+            );
 
             if (context.mounted) {
               Navigator.pop(context, timeEntry);
@@ -165,52 +165,59 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
   }
 
   Future<bool> _showLongDurationDialog(
-          BuildContext context, Duration duration) async =>
+    BuildContext context,
+    Duration duration,
+  ) async =>
       await showDialog<bool>(
         context: context,
-        builder: (context) => HMBDialog(
-          title: const Text('Long Duration Warning'),
-          content: Text(
-              '''The time entry duration is ${duration.inHours} hours. Do you want to continue?'''),
-          actions: [
-            HMBButton(
-              label: 'Cancel',
-              onPressed: () => Navigator.pop(context, false),
+        builder:
+            (context) => HMBDialog(
+              title: const Text('Long Duration Warning'),
+              content: Text(
+                '''The time entry duration is ${duration.inHours} hours. Do you want to continue?''',
+              ),
+              actions: [
+                HMBButton(
+                  label: 'Cancel',
+                  onPressed: () => Navigator.pop(context, false),
+                ),
+                HMBButton(
+                  label: 'Continue',
+                  onPressed: () => Navigator.pop(context, true),
+                ),
+              ],
             ),
-            HMBButton(
-              label: 'Continue',
-              onPressed: () => Navigator.pop(context, true),
-            ),
-          ],
-        ),
       ) ??
       false;
 
   Widget buildTaskDetails() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          FutureBuilderEx(
-              // ignore: discarded_futures
-              future: DaoJob().getById(widget.task.jobId),
-              builder: (context, job) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FutureBuilderEx(
-                          // ignore: discarded_futures
-                          future: DaoCustomer().getById(job!.customerId),
-                          builder: (context, customer) => Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  HMBText('Customer: ${customer!.name}',
-                                      bold: true),
-                                  HMBText('Job: ${job.summary}', bold: true),
-                                ],
-                              )),
-                    ],
-                  )),
-          const SizedBox(height: 8),
-          HMBText('Task: ${widget.task.name}', bold: true),
-          HMBText(widget.task.description),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      FutureBuilderEx(
+        // ignore: discarded_futures
+        future: DaoJob().getById(widget.task.jobId),
+        builder:
+            (context, job) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FutureBuilderEx(
+                  // ignore: discarded_futures
+                  future: DaoCustomer().getById(job!.customerId),
+                  builder:
+                      (context, customer) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          HMBText('Customer: ${customer!.name}', bold: true),
+                          HMBText('Job: ${job.summary}', bold: true),
+                        ],
+                      ),
+                ),
+              ],
+            ),
+      ),
+      const SizedBox(height: 8),
+      HMBText('Task: ${widget.task.name}', bold: true),
+      HMBText(widget.task.description),
+    ],
+  );
 }

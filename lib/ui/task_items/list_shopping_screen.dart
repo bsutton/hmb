@@ -62,21 +62,35 @@ enum ScheduleFilter {
             scheduledDate.day == now.day;
       case ScheduleFilter.nextThreeDays:
         // Exclude today and include dates within the next 3 days.
-        final start =
-            DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
-        final end =
-            DateTime(now.year, now.month, now.day).add(const Duration(days: 3));
-        return scheduledDate
-                .isAfter(start.subtract(const Duration(microseconds: 1))) &&
+        final start = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).add(const Duration(days: 1));
+        final end = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).add(const Duration(days: 3));
+        return scheduledDate.isAfter(
+              start.subtract(const Duration(microseconds: 1)),
+            ) &&
             scheduledDate.isBefore(end.add(const Duration(microseconds: 1)));
       case ScheduleFilter.week:
         // Exclude today and include dates within the next 7 days.
-        final start =
-            DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
-        final end =
-            DateTime(now.year, now.month, now.day).add(const Duration(days: 7));
-        return scheduledDate
-                .isAfter(start.subtract(const Duration(microseconds: 1))) &&
+        final start = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).add(const Duration(days: 1));
+        final end = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).add(const Duration(days: 7));
+        return scheduledDate.isAfter(
+              start.subtract(const Duration(microseconds: 1)),
+            ) &&
             scheduledDate.isBefore(end.add(const Duration(microseconds: 1)));
     }
   }
@@ -121,9 +135,9 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
 
       // Apply text filter if present
       if (!Strings.isBlank(filter)) {
-        if (!taskItem.description
-            .toLowerCase()
-            .contains(filter!.toLowerCase())) {
+        if (!taskItem.description.toLowerCase().contains(
+          filter!.toLowerCase(),
+        )) {
           continue;
         }
       }
@@ -134,8 +148,9 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
         if (job == null) {
           continue;
         }
-        final nextActivity =
-            await DaoJobActivity().getNextActivityByJob(job.id);
+        final nextActivity = await DaoJobActivity().getNextActivityByJob(
+          job.id,
+        );
         if (nextActivity == null) {
           continue;
         }
@@ -176,135 +191,148 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Surface(
-          elevation: SurfaceElevation.e6,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    HMBSearchWithAdd(onSearch: (filter) {
-                      this.filter = filter;
-                      _loadTaskItems();
-                    }, onAdd: () async {
-                      await showAddItemDialog(context, AddType.shopping);
-                      await _loadTaskItems();
-                    }),
-                    HMBDroplistMultiSelect<Job>(
-                      initialItems: () async => _selectedJobs,
-                      items: (filter) async => DaoJob().getActiveJobs(filter),
-                      format: (job) => job.summary,
-                      onChanged: (selectedJobs) async {
-                        _selectedJobs = selectedJobs;
-                        await _loadTaskItems();
-                      },
-                      title: 'Filter by Jobs',
-                      backgroundColor: SurfaceElevation.e6.color,
-                      required: false,
-                    ).help('Filter by Job', '''
+    body: Surface(
+      elevation: SurfaceElevation.e6,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HMBSearchWithAdd(
+                  onSearch: (filter) {
+                    this.filter = filter;
+                    _loadTaskItems();
+                  },
+                  onAdd: () async {
+                    await showAddItemDialog(context, AddType.shopping);
+                    await _loadTaskItems();
+                  },
+                ),
+                HMBDroplistMultiSelect<Job>(
+                  initialItems: () async => _selectedJobs,
+                  items: (filter) async => DaoJob().getActiveJobs(filter),
+                  format: (job) => job.summary,
+                  onChanged: (selectedJobs) async {
+                    _selectedJobs = selectedJobs;
+                    await _loadTaskItems();
+                  },
+                  title: 'Filter by Jobs',
+                  backgroundColor: SurfaceElevation.e6.color,
+                  required: false,
+                ).help(
+                  'Filter by Job',
+                  '''
 Allows you to filter the shopping list to items from specific Jobs.
 
-If your Job isn't showing then you need to update its status to an Active one such as 'Scheduled, In Progress...' '''),
-                    const SizedBox(height: 10),
-                    HMBDroplist<Supplier>(
-                      selectedItem: () async => _selectedSupplier,
-                      items: (filter) async =>
-                          DaoSupplier().getByFilter(filter),
-                      format: (supplier) => supplier.name,
-                      onChanged: (supplier) async {
-                        _selectedSupplier = supplier;
-                        await _loadTaskItems();
-                      },
-                      title: 'Supplier',
-                      required: false,
-                    ).help('Filter by Supplier',
-                        'When adding Task Items, if you enter the supplier you can filter by supplier'),
-                    const SizedBox(height: 10),
-                    // New Schedule Filter Dropdown
-                    HMBDroplist<ScheduleFilter>(
-                      selectedItem: () async => _selectedScheduleFilter,
-                      items: (filter) async => ScheduleFilter.values,
-                      format: (schedule) => schedule.displayName,
-                      onChanged: (schedule) async {
-                        _selectedScheduleFilter = schedule!;
-                        await _loadTaskItems();
-                      },
-                      title: 'Schedule',
-                      required: false,
-                    ).help('Filter by Schedule',
-                        'Filter shopping items by job scheduled date (Today, Next 3 Days, or This Week)'),
-                  ],
+If your Job isn't showing then you need to update its status to an Active one such as 'Scheduled, In Progress...' ''',
                 ),
-              ),
-              Expanded(
-                child: DeferredBuilder(
-                  this,
-                  builder: (context) {
-                    if (_taskItems.isEmpty) {
-                      return _showEmpty();
-                    } else {
-                      return LayoutBuilder(
-                        builder: (context, constraints) {
-                          if (constraints.maxWidth < 900) {
-                            // Mobile layout
-                            return ListView.builder(
-                              padding: const EdgeInsets.all(8),
-                              itemCount: _taskItems.length,
-                              itemBuilder: (context, index) {
-                                final item = _taskItems[index];
-                                return _buildShoppingItem(context, item);
-                              },
-                            );
-                          } else {
-                            // Desktop layout
-                            return GridView.builder(
-                              padding: const EdgeInsets.all(8),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                const SizedBox(height: 10),
+                HMBDroplist<Supplier>(
+                  selectedItem: () async => _selectedSupplier,
+                  items: (filter) async => DaoSupplier().getByFilter(filter),
+                  format: (supplier) => supplier.name,
+                  onChanged: (supplier) async {
+                    _selectedSupplier = supplier;
+                    await _loadTaskItems();
+                  },
+                  title: 'Supplier',
+                  required: false,
+                ).help(
+                  'Filter by Supplier',
+                  'When adding Task Items, if you enter the supplier you can filter by supplier',
+                ),
+                const SizedBox(height: 10),
+                // New Schedule Filter Dropdown
+                HMBDroplist<ScheduleFilter>(
+                  selectedItem: () async => _selectedScheduleFilter,
+                  items: (filter) async => ScheduleFilter.values,
+                  format: (schedule) => schedule.displayName,
+                  onChanged: (schedule) async {
+                    _selectedScheduleFilter = schedule!;
+                    await _loadTaskItems();
+                  },
+                  title: 'Schedule',
+                  required: false,
+                ).help(
+                  'Filter by Schedule',
+                  'Filter shopping items by job scheduled date (Today, Next 3 Days, or This Week)',
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: DeferredBuilder(
+              this,
+              builder: (context) {
+                if (_taskItems.isEmpty) {
+                  return _showEmpty();
+                } else {
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth < 900) {
+                        // Mobile layout
+                        return ListView.builder(
+                          padding: const EdgeInsets.all(8),
+                          itemCount: _taskItems.length,
+                          itemBuilder: (context, index) {
+                            final item = _taskItems[index];
+                            return _buildShoppingItem(context, item);
+                          },
+                        );
+                      } else {
+                        // Desktop layout
+                        return GridView.builder(
+                          padding: const EdgeInsets.all(8),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
                                 childAspectRatio: 1.5,
                                 mainAxisExtent: 256,
                               ),
-                              itemCount: _taskItems.length,
-                              itemBuilder: (context, index) {
-                                final item = _taskItems[index];
-                                return _buildShoppingItem(context, item);
-                              },
-                            );
-                          }
-                        },
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
+                          itemCount: _taskItems.length,
+                          itemBuilder: (context, index) {
+                            final item = _taskItems[index];
+                            return _buildShoppingItem(context, item);
+                          },
+                        );
+                      }
+                    },
+                  );
+                }
+              },
+            ),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 
-  Center _showEmpty() => const Center(child: Text('''
+  Center _showEmpty() => const Center(
+    child: Text('''
 No Shopping Items found 
 - Shopping items are taken from Task Items 
 that are marked as "Materials - buy" or "Tools - buy".
 If you were expecting to see items here - check the Job's Status is active.
-'''));
+'''),
+  );
 
   /// build a card for each shipping item.
   Widget _buildShoppingItem(
-          BuildContext context, TaskItemContext itemContext) =>
-      Column(
-        children: [
-          const HMBSpacer(height: true),
-          SurfaceCard(
-            title: itemContext.taskItem.description,
-            height: 240,
-            body: FutureBuilderEx(
-              // Fetch the job associated with the task
-              future: CustomerAndJob.fetch(itemContext),
-              builder: (context, details) => Row(
+    BuildContext context,
+    TaskItemContext itemContext,
+  ) => Column(
+    children: [
+      const HMBSpacer(height: true),
+      SurfaceCard(
+        title: itemContext.taskItem.description,
+        height: 240,
+        body: FutureBuilderEx(
+          // Fetch the job associated with the task
+          future: CustomerAndJob.fetch(itemContext),
+          builder:
+              (context, details) => Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
@@ -316,13 +344,11 @@ If you were expecting to see items here - check the Job's Status is active.
                       if (details.supplier != null)
                         HMBTextLine('Supplier: ${details.supplier!.name}'),
                       HMBTextLine(
-                          '''Scheduled Date: ${details.dateOfNextActivity()}'''),
+                        '''Scheduled Date: ${details.dateOfNextActivity()}''',
+                      ),
                       HMBTextLine(itemContext.taskItem.dimensions),
                       if (itemContext.taskItem.completed)
-                        const HMBTextLine(
-                          'Completed',
-                          colour: Colors.green,
-                        ),
+                        const HMBTextLine('Completed', colour: Colors.green),
                     ],
                   ),
                   IconButton(
@@ -334,24 +360,29 @@ If you were expecting to see items here - check the Job's Status is active.
                   ),
                 ],
               ),
-            ),
-            onPressed: () async {
-              await markAsCompleted(itemContext, context);
-              await _loadTaskItems();
-            },
-          ),
-        ],
-      );
+        ),
+        onPressed: () async {
+          await markAsCompleted(itemContext, context);
+          await _loadTaskItems();
+        },
+      ),
+    ],
+  );
 }
 
 class CustomerAndJob {
   CustomerAndJob._internal(
-      this.customer, this.job, this.supplier, this.nextActivity);
+    this.customer,
+    this.job,
+    this.supplier,
+    this.nextActivity,
+  );
   static Future<CustomerAndJob> fetch(TaskItemContext itemContext) async {
     final job = await DaoJob().getJobForTask(itemContext.task.id);
     final customer = await DaoCustomer().getByJob(job!.id);
-    final supplier =
-        await DaoSupplier().getById(itemContext.taskItem.supplierId);
+    final supplier = await DaoSupplier().getById(
+      itemContext.taskItem.supplierId,
+    );
     final nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
 
     return CustomerAndJob._internal(customer!, job, supplier, nextActivity);

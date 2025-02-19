@@ -10,13 +10,14 @@ import 'script_source.dart';
 
 /// Upgrade the database by applying each upgrade script in order
 /// from the db's current version to the latest version.
-Future<void> upgradeDb(
-    {required Database db,
-    required int oldVersion,
-    required int newVersion,
-    required bool backup,
-    required ScriptSource src,
-    required BackupProvider backupProvider}) async {
+Future<void> upgradeDb({
+  required Database db,
+  required int oldVersion,
+  required int newVersion,
+  required bool backup,
+  required ScriptSource src,
+  required BackupProvider backupProvider,
+}) async {
   if (oldVersion == 1) {
     print('Creating database');
   } else {
@@ -33,9 +34,11 @@ Future<void> upgradeDb(
 
   // sort the list of upgrade script numerically after stripping
   // of the .sql extension.
-  upgradeAssets.sort((a, b) =>
-      extractVerionForSQLUpgradeScript(a) -
-      extractVerionForSQLUpgradeScript(b));
+  upgradeAssets.sort(
+    (a, b) =>
+        extractVerionForSQLUpgradeScript(a) -
+        extractVerionForSQLUpgradeScript(b),
+  );
 
   final firstUpgrade = oldVersion + 1;
 
@@ -54,15 +57,18 @@ Future<void> upgradeDb(
       }
 
       await insertVersion(
-          db,
-          Version.forInsert(
-              dbVersion: scriptVersion, codeVersion: code.packageVersion));
+        db,
+        Version.forInsert(
+          dbVersion: scriptVersion,
+          codeVersion: code.packageVersion,
+        ),
+      );
     }
   }
 }
 
 final upgradeActions = <int, Future<void> Function(Database)>{
-  77: postv77Upgrade
+  77: postv77Upgrade,
 };
 
 /// We can't use the Dao layer as it uses June which assumes
@@ -83,15 +89,20 @@ Future<int> getLatestVersion(ScriptSource src) async {
 
   // sort the list of upgrade script numerically after stripping
   // of the .sql extension.
-  upgradeAssets.sort((a, b) =>
-      extractVerionForSQLUpgradeScript(a) -
-      extractVerionForSQLUpgradeScript(b));
+  upgradeAssets.sort(
+    (a, b) =>
+        extractVerionForSQLUpgradeScript(a) -
+        extractVerionForSQLUpgradeScript(b),
+  );
 
   return extractVerionForSQLUpgradeScript(upgradeAssets.last);
 }
 
 Future<void> _executeScript(
-    Database db, ScriptSource src, String pathToScript) async {
+  Database db,
+  ScriptSource src,
+  String pathToScript,
+) async {
   final sql = await src.loadSQL(pathToScript);
 
   print('running $src.pathToScript');

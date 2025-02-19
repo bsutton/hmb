@@ -22,16 +22,16 @@ class TickBuilder extends StatefulWidget {
   /// If limit is null then it will increment forever.
   /// If [active] is false the tick builder will stop ticking.
   /// The build is called each [interval] period.
-  const TickBuilder(
-      {required TickerBuilder builder,
-      required Duration interval,
-      required int limit,
-      super.key,
-      bool active = true})
-      : _builder = builder,
-        _interval = interval,
-        _limit = limit,
-        _active = active;
+  const TickBuilder({
+    required TickerBuilder builder,
+    required Duration interval,
+    required int limit,
+    super.key,
+    bool active = true,
+  }) : _builder = builder,
+       _interval = interval,
+       _limit = limit,
+       _active = active;
   final TickerBuilder _builder;
   final Duration _interval;
   final int _limit;

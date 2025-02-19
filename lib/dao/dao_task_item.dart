@@ -18,11 +18,14 @@ class DaoTaskItem extends Dao<TaskItem> {
     if (taskId == null) {
       return [];
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select ti.* 
 from task_item ti
 where ti.task_id = ?
-''', [taskId]);
+''',
+      [taskId],
+    );
 
     return toList(data);
   }
@@ -30,14 +33,21 @@ where ti.task_id = ?
   Future<void> deleteByTask(int id, [Transaction? transaction]) async {
     final db = withinTransaction(transaction);
 
-    await db.rawDelete('''
+    await db.rawDelete(
+      '''
 DELETE FROM task_item
 WHERE task_id = ?
-''', [id]);
+''',
+      [id],
+    );
   }
 
-  Future<void> markAsCompleted(BillingType billingType, TaskItem item,
-      Money unitCost, Fixed quantity) async {
+  Future<void> markAsCompleted(
+    BillingType billingType,
+    TaskItem item,
+    Money unitCost,
+    Fixed quantity,
+  ) async {
     item
       ..completed = true
       ..actualMaterialUnitCost = unitCost
@@ -48,8 +58,10 @@ WHERE task_id = ?
   }
 
   Future<void> markAsBilled(TaskItem item, int invoiceLineId) async {
-    final updatedItem =
-        item.copyWith(billed: true, invoiceLineId: invoiceLineId);
+    final updatedItem = item.copyWith(
+      billed: true,
+      invoiceLineId: invoiceLineId,
+    );
     await update(updatedItem);
   }
 
@@ -67,8 +79,12 @@ where ti.completed = 0
 
   Future<void> markNotBilled(int invoiceLineId) async {
     final db = withoutTransaction();
-    await db.update(tableName, {'billed': 0, 'invoice_line_id': null},
-        where: 'invoice_line_id=?', whereArgs: [invoiceLineId]);
+    await db.update(
+      tableName,
+      {'billed': 0, 'invoice_line_id': null},
+      where: 'invoice_line_id=?',
+      whereArgs: [invoiceLineId],
+    );
   }
 
   Future<List<TaskItem>> getPackingItems({List<Job>? jobs}) async {
@@ -108,15 +124,18 @@ AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
     return toList(data);
   }
 
-  Future<List<TaskItem>> getShoppingItems(
-      {List<Job>? jobs, Supplier? supplier}) async {
+  Future<List<TaskItem>> getShoppingItems({
+    List<Job>? jobs,
+    Supplier? supplier,
+  }) async {
     final db = withoutTransaction();
 
     // Build conditions for filtering jobs and suppliers
     final jobIds = jobs?.map((job) => job.id).toList() ?? [];
-    final jobCondition = jobIds.isNotEmpty
-        ? 'AND j.id IN (${jobIds.map((_) => '?').join(",")})'
-        : '';
+    final jobCondition =
+        jobIds.isNotEmpty
+            ? 'AND j.id IN (${jobIds.map((_) => '?').join(",")})'
+            : '';
     final supplierCondition = supplier != null ? 'AND ti.supplier_id = ?' : '';
 
     // Combine the query with optional filters
@@ -169,8 +188,9 @@ $supplierCondition
         {
           final quantity = estimatedMaterialQuantity;
           estimatedCost = estimatedMaterialUnitCost.multiplyByFixed(quantity);
-          charge = estimatedCost
-              .multiplyByFixed(Fixed.one + (margin / Fixed.fromInt(100)));
+          charge = estimatedCost.multiplyByFixed(
+            Fixed.one + (margin / Fixed.fromInt(100)),
+          );
         }
       case 5:
         {
@@ -179,8 +199,9 @@ $supplierCondition
           } else {
             estimatedCost = estimatedLabourCost;
           }
-          charge = estimatedCost
-              .multiplyByFixed(Fixed.one + (margin / Fixed.fromInt(100)));
+          charge = estimatedCost.multiplyByFixed(
+            Fixed.one + (margin / Fixed.fromInt(100)),
+          );
         }
     }
 

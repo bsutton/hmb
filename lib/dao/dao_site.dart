@@ -26,7 +26,8 @@ class DaoSite extends Dao<Site> {
     }
 
     final db = withoutTransaction();
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select s.* 
 from site s
 join customer_site sc
@@ -34,7 +35,9 @@ join customer_site sc
 join customer cu
   on sc.customer_id = cu.id
 where cu.id =? 
-and sc.`primary` = 1''', [customerId]);
+and sc.`primary` = 1''',
+      [customerId],
+    );
 
     if (data.isEmpty) {
       return (await DaoSite().getByCustomer(customerId)).firstOrNull;
@@ -49,7 +52,8 @@ and sc.`primary` = 1''', [customerId]);
     }
 
     final db = withoutTransaction();
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select s.* 
 from site s
 join supplier_site sc
@@ -57,7 +61,9 @@ join supplier_site sc
 join supplier cu
   on sc.supplier_id = cu.id
 where cu.id =? 
-and sc.`primary` = 1''', [supplier.id]);
+and sc.`primary` = 1''',
+      [supplier.id],
+    );
 
     if (data.isEmpty) {
       return (await DaoSite().getBySupplier(supplier)).firstOrNull;
@@ -71,7 +77,8 @@ and sc.`primary` = 1''', [supplier.id]);
     if (customerId == null) {
       return [];
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select s.* 
 from site s
 join customer_site sc
@@ -79,7 +86,9 @@ join customer_site sc
 join customer cu
   on sc.customer_id = cu.id
 where cu.id =? 
-''', [customerId]);
+''',
+      [customerId],
+    );
 
     return toList(data);
   }
@@ -96,7 +105,8 @@ where cu.id =?
     }
 
     final likeArg = '''%$filter%''';
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select s.*
 from site s
 join customer c
@@ -106,7 +116,9 @@ or s.address2 like ?
 or s.suburb like ?
 or s.state like ?
 or s.postcode like ?
-''', [likeArg, likeArg, likeArg, likeArg, likeArg]);
+''',
+      [likeArg, likeArg, likeArg, likeArg, likeArg],
+    );
 
     return toList(data);
   }
@@ -117,7 +129,8 @@ or s.postcode like ?
     if (supplier == null) {
       return [];
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select s.* 
 from site s
 join supplier_site sc
@@ -125,7 +138,9 @@ join supplier_site sc
 join supplier cu
   on sc.supplier_id = cu.id
 where cu.id =? 
-''', [supplier.id]);
+''',
+      [supplier.id],
+    );
 
     return toList(data);
   }
@@ -136,13 +151,16 @@ where cu.id =?
     if (job == null) {
       return null;
     }
-    final data = await db.rawQuery('''
+    final data = await db.rawQuery(
+      '''
 select si.* 
 from site si
 join job jo
   on jo.site_id = si.id
 where jo.id =? 
-''', [job.id]);
+''',
+      [job.id],
+    );
 
     final list = toList(data);
 

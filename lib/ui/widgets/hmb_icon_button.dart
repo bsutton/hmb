@@ -33,18 +33,18 @@ class HMBIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Tooltip(
-        message: hint,
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: CircleAvatar(
-            backgroundColor: Colors.lightBlue,
-            radius: _size / 2, // CircleAvatar uses radius, so divide by 2
-            child: IconButton(
-              icon: icon,
-              onPressed: enabled ? onPressed : null,
-              iconSize: _size * 0.5, // Adjust the icon size proportionally
-            ),
-          ),
+    message: hint,
+    child: Padding(
+      padding: const EdgeInsets.all(8),
+      child: CircleAvatar(
+        backgroundColor: Colors.lightBlue,
+        radius: _size / 2, // CircleAvatar uses radius, so divide by 2
+        child: IconButton(
+          icon: icon,
+          onPressed: enabled ? onPressed : null,
+          iconSize: _size * 0.5, // Adjust the icon size proportionally
         ),
-      );
+      ),
+    ),
+  );
 }
