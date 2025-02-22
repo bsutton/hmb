@@ -136,9 +136,11 @@ You must provide an email address for the Contact ${contact.fullname}''');
 
     if (contactResponse.statusCode == 200) {
       final contacts =
+          /// its json.
           // ignore: avoid_dynamic_calls
           jsonDecode(contactResponse.body)['Contacts'] as List<dynamic>;
       if (contacts.isNotEmpty) {
+        /// its json.
         // ignore: avoid_dynamic_calls
         xeroContactId = contacts.first['ContactID'] as String;
       } else {
@@ -149,8 +151,10 @@ You must provide an email address for the Contact ${contact.fullname}''');
         );
 
         if (createContactResponse.statusCode == 200) {
+          /// its json.
           // ignore: avoid_dynamic_calls
           xeroContactId =
+          /// its json.
               // ignore: avoid_dynamic_calls
               (jsonDecode(createContactResponse.body)['Contacts'] as List)
                       .first['ContactID']
@@ -179,8 +183,10 @@ You must provide an email address for the Contact ${contact.fullname}''');
       );
     }
     final responseBody = jsonDecode(createInvoiceResponse.body);
+    /// its json.
     // ignore: avoid_dynamic_calls
     final invoiceNum = responseBody['Invoices'][0]['InvoiceNumber'] as String;
+    /// its json.
     // ignore: avoid_dynamic_calls
     final invoiceId = responseBody['Invoices'][0]['InvoiceID'] as String;
 

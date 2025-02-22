@@ -41,7 +41,7 @@ class XeroAuth2 {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   /// The path suffix for finalizing OAuth.
-  /// Desktop will use http://localhost:<port>/xero/auth_complete
+  /// Desktop will use `http://localhost:<port>/xero/auth_complete`
   /// Mobile deep link will use https://ivanhoehandyman.com.au/xero/auth_complete
   static const redirectPath = 'xero/auth_complete';
 

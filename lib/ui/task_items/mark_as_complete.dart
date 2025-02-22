@@ -21,7 +21,7 @@ Future<void> markAsCompleted(
 
   final itemType = TaskItemTypeEnum.fromId(taskItem.itemTypeId);
 
-  /// TODO: need to rework this as part of allowing  a T&M job
+  // TODO(bsutton): need to rework this as part of allowing  a T&M job
   /// to invoice a Fixed priced task.
   switch (itemType) {
     case TaskItemTypeEnum.materialsBuy:

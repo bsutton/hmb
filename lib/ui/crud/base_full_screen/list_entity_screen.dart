@@ -168,8 +168,8 @@ class EntityListScreenState<T extends Entity<T>>
 
   Widget _buildCard(T entity) => FutureBuilderEx<Color>(
     initialData: SurfaceElevation.e6.color,
-    // ignore: discarded_futures
     future:
+        // ignore: discarded_futures
         widget.background?.call(entity) ??
         Future.value(SurfaceElevation.e6.color),
     builder:

@@ -148,7 +148,7 @@ class DaoTimeEntry extends Dao<TimeEntry> {
 /// This method is called each time the database is updated through the [Dao]
 /// methods - delete, insert and update.
 /// You can also for a notification by calling:
-/// ```
+/// ```dart
 /// DbTimeEntryChanged.notify();
 /// ```
 class DbTimeEntryChanged extends JuneState {

@@ -107,7 +107,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.0
   flutter_test:
     sdk: flutter
-  lint_hard: ^5.0.0
+  lint_hard: ^6.0.0
   pub_release: ^11.0.0
   pubspec_manager: ^1.0.0
 

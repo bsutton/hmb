@@ -10,7 +10,7 @@ import 'local_server_redirect_handler.dart';
 abstract class RedirectHandler {
   /// The URI that Xero should redirect to.
   /// On mobile: https://ivanhoehandyman.com.au/xero/auth_complete
-  /// On desktop: http://localhost:<port>/xero/auth_complete
+  /// On desktop: `http://localhost:<port>/xero/auth_complete`
   Uri get redirectUri;
 
   /// Start listening for the OAuth callback.

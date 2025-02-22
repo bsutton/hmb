@@ -58,114 +58,113 @@ GoRouter get router => GoRouter(
     // 3) Jobs route (replaces the old root builder).
     GoRoute(
       path: '/jobs',
-      builder: (_, __) => const HomeWithDrawer(initialScreen: JobListScreen()),
+      builder: (_, _) => const HomeWithDrawer(initialScreen: JobListScreen()),
     ),
 
     // 4) All other routes directly from the top level:
     GoRoute(
       path: '/customers',
       builder:
-          (_, __) => const HomeWithDrawer(initialScreen: CustomerListScreen()),
+          (_, _) => const HomeWithDrawer(initialScreen: CustomerListScreen()),
     ),
     GoRoute(
       path: '/suppliers',
       builder:
-          (_, __) => const HomeWithDrawer(initialScreen: SupplierListScreen()),
-    ),
-    GoRoute(
+          (_, _) => const HomeWithDrawer(initialScreen: SupplierListScreen()),
+    ),    GoRoute(
       path: '/shopping',
-      builder: (_, __) => const HomeWithDrawer(initialScreen: ShoppingScreen()),
+      builder: (_, _) => const HomeWithDrawer(initialScreen: ShoppingScreen()),
     ),
     GoRoute(
       path: '/packing',
-      builder: (_, __) => const HomeWithDrawer(initialScreen: PackingScreen()),
+      builder: (_, _) => const HomeWithDrawer(initialScreen: PackingScreen()),
     ),
     GoRoute(
       path: '/schedule',
       builder:
-          (_, __) => const HomeWithDrawer(
+          (_, _) => const HomeWithDrawer(
             initialScreen: SchedulePage(dialogMode: false),
           ),
     ),
     GoRoute(
       path: '/billing/quotes',
       builder:
-          (_, __) => const HomeWithDrawer(initialScreen: QuoteListScreen()),
+          (_, _) => const HomeWithDrawer(initialScreen: QuoteListScreen()),
     ),
     GoRoute(
       path: '/billing/invoices',
       builder:
-          (_, __) => const HomeWithDrawer(initialScreen: InvoiceListScreen()),
+          (_, _) => const HomeWithDrawer(initialScreen: InvoiceListScreen()),
     ),
     GoRoute(
       path: '/billing/estimator',
       builder:
-          (_, __) =>
+          (_, _) =>
               const HomeWithDrawer(initialScreen: JobEstimatesListScreen()),
     ),
     GoRoute(
       path: '/billing/milestones',
       builder:
-          (_, __) => const HomeWithDrawer(initialScreen: ListMilestoneScreen()),
+          (_, _) => const HomeWithDrawer(initialScreen: ListMilestoneScreen()),
     ),
     GoRoute(
       path: '/extras/tools',
-      builder: (_, __) => const HomeWithDrawer(initialScreen: ToolListScreen()),
+      builder: (_, _) => const HomeWithDrawer(initialScreen: ToolListScreen()),
     ),
     GoRoute(
       path: '/extras/manufacturers',
       builder:
-          (_, __) =>
+          (_, _) =>
               const HomeWithDrawer(initialScreen: ManufacturerListScreen()),
     ),
     GoRoute(
       path: '/system/sms_templates',
       builder:
-          (_, __) =>
+          (_, _) =>
               const HomeWithDrawer(initialScreen: MessageTemplateListScreen()),
     ),
     GoRoute(
       path: '/system/business',
       builder:
-          (_, __) =>
+          (_, _) =>
               const HomeWithDrawer(initialScreen: SystemBusinessScreen()),
     ),
     GoRoute(
       path: '/system/billing',
       builder:
-          (_, __) => const HomeWithDrawer(initialScreen: SystemBillingScreen()),
+          (_, _) => const HomeWithDrawer(initialScreen: SystemBillingScreen()),
     ),
     GoRoute(
       path: '/system/contact',
       builder:
-          (_, __) => const HomeWithDrawer(
+          (_, _) => const HomeWithDrawer(
             initialScreen: SystemContactInformationScreen(),
           ),
     ),
     GoRoute(
       path: '/system/integration',
       builder:
-          (_, __) =>
+          (_, _) =>
               const HomeWithDrawer(initialScreen: SystemIntegrationScreen()),
     ),
     GoRoute(
       path: '/system/about',
-      builder: (_, __) => const HomeWithDrawer(initialScreen: AboutScreen()),
+      builder: (_, _) => const HomeWithDrawer(initialScreen: AboutScreen()),
     ),
     GoRoute(
       path: '/system/backup/google',
       builder:
-          (_, __) =>
+          (_, _) =>
               const HomeWithDrawer(initialScreen: GoogleDriveBackupScreen()),
     ),
     GoRoute(
       path: '/system/backup/local',
       builder:
-          (_, __) => const HomeWithDrawer(initialScreen: LocalBackupScreen()),
+          (_, _) => const HomeWithDrawer(initialScreen: LocalBackupScreen()),
     ),
     GoRoute(
       path: '/system/wizard',
-      builder: (_, __) => const HomeWithDrawer(initialScreen: FirstRunWizard()),
+      builder: (_, _) => const HomeWithDrawer(initialScreen: FirstRunWizard()),
     ),
 
     GoRoute(

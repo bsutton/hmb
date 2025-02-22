@@ -125,7 +125,6 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
       if (mounted) {
         HMBToast.info('Backup completed successfully.');
       }
-      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       if (mounted) {
         HMBToast.error('Error during backup: $e');

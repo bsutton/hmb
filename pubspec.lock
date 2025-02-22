@@ -937,10 +937,10 @@ packages:
     dependency: "direct dev"
     description:
       name: lint_hard
-      sha256: "638d2cce6d3d5499826be71311d18cded797a51351eaa1aee7a35a2f0f9bc46e"
+      sha256: ffe7058cb49e021d244d67e650a63380445b56643c2849c6929e938246b99058
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.0"
+    version: "6.0.0"
   lists:
     dependency: transitive
     description:

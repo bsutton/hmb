@@ -12,6 +12,7 @@ analyzer:
   errors:
     avoid_catches_without_on_clauses: ignore
     avoid_classes_with_only_static_members: ignore
+    document_ignores: ignore
     library_private_types_in_public_api: ignore
     lines_longer_than_80_chars: ignore
 include: package:lint_hard/all.yaml
