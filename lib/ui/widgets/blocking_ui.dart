@@ -11,6 +11,7 @@ import 'package:stacktrace_impl/stacktrace_impl.dart';
 
 import '../../util/hmb_theme.dart';
 import '../../util/stack_list.dart';
+import 'color_ex.dart';
 import 'layout/position.dart';
 import 'text/hmb_text_themes.dart';
 import 'tick_builder.dart';
@@ -142,97 +143,65 @@ class _BlockingOverlayWidget extends StatefulWidget {
 class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
-    final width = MediaQuery.of(context).size.width;
-    // Log.d(green('is UI blocked ${blockingUI.blocked}'));
-    if (widget.blockingOverlayState.blocked) {
-      // make it transparent for the first 500ms.
+    if (!widget.blockingOverlayState.blocked) {
+      return const SizedBox.shrink();
+    }
+    return Material(
+      type: MaterialType.transparency, // ensures no background is painted
+      child: TickBuilder(
+        limit: 100,
+        interval: const Duration(milliseconds: 100),
+        builder: (context, index) {
+          final elapsed = DateTime.now().difference(
+            widget.blockingOverlayState.startTime!,
+          );
+          final showProgress = elapsed > const Duration(milliseconds: 500);
+          final showLabel = elapsed > const Duration(milliseconds: 1000);
 
-      return Material(
-        child: TickBuilder(
-          limit: 100,
-          interval: const Duration(milliseconds: 100),
-          builder: (context, index) {
-            final showProgress =
-                DateTime.now().difference(
-                  widget.blockingOverlayState.startTime!,
-                ) >
-                const Duration(milliseconds: 500);
-
-            // show label if we have been here more than 1 second.
-            final showLabel =
-                DateTime.now().difference(
-                  widget.blockingOverlayState.startTime!,
-                ) >
-                const Duration(milliseconds: 1000);
-
-            return SizedBox(
-              height: height,
-              width: width,
-              child: Stack(
-                children: [
-                  // hide the help icon by drawing a container over it.
-                  if (showProgress && widget.hideHelpIcon)
-                    Positioned(
-                      bottom: 5,
-                      right: HMBTheme.padding,
-                      child: Container(
-                        height: 40,
-                        width: 40,
-                        color: Colors.transparent,
-                      ),
-                    ), // .appBarColor)),
-                  // cover the entire screen with an overlay.
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    height: height,
-                    width: width,
-                    child: Opacity(
-                      opacity: (showProgress ? 0.6 : 0),
-                      child: Container(color: Colors.grey),
+          return Stack(
+            children: [
+              // Use ModalBarrier for a translucent overlay
+              Positioned.fill(
+                child: ModalBarrier(
+                  color:
+                      showProgress
+                          ? Colors.grey.withSafeOpacity(0.6)
+                          : Colors.transparent,
+                  dismissible: false,
+                ),
+              ),
+              // Show the progress indicator when appropriate
+              if (showProgress)
+                Center(
+                  child: GestureDetector(
+                    onTap: cancelRun,
+                    child: const CircularProgressIndicator(),
+                  ),
+                ),
+              // Display a waiting label after 1 second
+              if (showLabel)
+                Positioned(
+                  bottom: HMBTheme.padding,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Chip(
+                      label:
+                          widget.blockingOverlayState.topAction.label == null
+                              ? HMBTextChip('Just a moment...')
+                              : HMBTextChip(
+                                'Just a moment: ${widget.blockingOverlayState.topAction.label}',
+                              ),
+                      backgroundColor: Colors.yellow,
+                      elevation: 7,
                     ),
                   ),
-
-                  // draw the progress indicator
-                  if (showProgress)
-                    TopOrTail(
-                      placement: widget.placement,
-                      child: GestureDetector(
-                        onTap: cancelRun,
-                        child: const CircularProgressIndicator(),
-                      ),
-                    ),
-                  if (showLabel)
-                    Positioned(
-                      bottom: HMBTheme.padding,
-                      left: 0,
-                      width: width,
-                      child: GestureDetector(
-                        onTap: cancelRun,
-                        child: Center(
-                          child: Chip(
-                            label:
-                                (widget.blockingOverlayState.topAction.label ==
-                                        null
-                                    ? HMBTextChip('Just a moment...')
-                                    : HMBTextChip('''
-        Just a moment: ${widget.blockingOverlayState.topAction.label}''')),
-                            backgroundColor: Colors.yellow,
-                            elevation: 7,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
-      );
-    } else {
-      return Container();
-    }
+                ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   void cancelRun() {
