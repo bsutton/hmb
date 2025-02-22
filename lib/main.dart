@@ -80,7 +80,7 @@ Future<void> main(List<String> args) async {
                       child: JuneBuilder(
                         TimeEntryState.new,
                         builder:
-                            (_) => BlockingUIRunner(
+                            (_) => BlockingUITransition(
                               key: blockingUIKey,
                               slowAction: () => _initialise(context),
                               label: 'Upgrading your database.',
