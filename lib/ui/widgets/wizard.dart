@@ -111,7 +111,7 @@ class WizardState extends State<Wizard> {
   );
 
   Future<void> _onNext() async {
-    BlockingUI().run<void>(() async {
+    BlockingUI().run(() async {
       if (isLastVisible(_currentStepIndex)) {
         final fakeLast = FakeLastStep();
         final target = WizardStepTarget(this, fakeLast);
