@@ -15,6 +15,7 @@ import '../../dao/dao_time_entry.dart';
 import '../../entity/invoice_line.dart';
 import '../../util/format.dart';
 import '../dialog/hmb_are_you_sure_dialog.dart';
+import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/surface.dart';
@@ -86,12 +87,22 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                   children: [
                     HMBButton(
                       label: 'Upload to Xero',
-                      onPressed: _uploadInvoiceToXero,
+                      onPressed: () async {
+                        BlockingUI().run(() async {
+                          await _uploadInvoiceToXero();
+                        }, label: 'Uploading Invoice');
+                      },
                     ),
                     const SizedBox(width: 16),
                     HMBButton(
                       label: 'Delete Invoice',
-                      onPressed: _deleteInvoice,
+
+                      onPressed: () async {
+                        BlockingUI().run(
+                          () async => _deleteInvoice(),
+                          label: 'Deleting Invoice',
+                        );
+                      },
                     ),
                   ],
                 ),
