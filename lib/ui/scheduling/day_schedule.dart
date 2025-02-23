@@ -100,7 +100,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
       // Check if this activity is outside operating hours.
       if (!operatingHours.inOperatingHours(jobActivity)) {
         foundExtended = true;
-        // Assuming jobActivity has a 'startTime' property and a 'durationInMinutes' property.
+        // Assuming jobActivity has 'start' and 'end' DateTime properties.
         final eventStart = jobActivity.start;
         final eventEnd = jobActivity.end;
         final eventStartHour = eventStart.hour;
@@ -260,51 +260,69 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     return FutureBuilderEx<JobAndCustomer>(
       // ignore: discarded_futures
       future: JobAndCustomer.fetch(job),
-      builder:
-          (context, jobAndCustomer) => SizedBox(
-            height:
-                view.heightPerMinute * (jobActivity?.durationInMinutes ?? 15),
-            child: Card(
-              color: SurfaceElevation.e6.color,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          if (jobActivity != null)
-                            Circle(
-                              color: jobActivity.jobActivity.status.color,
-                              child: const Text(''),
-                            ),
-                          const SizedBox(width: 5),
-                          HMBTextLine(jobAndCustomer!.job.summary),
-                        ],
-                      ),
-                      Row(
-                        children: [HMBTextLine(jobAndCustomer.customer.name)],
-                      ),
-                      Row(
-                        children: [
-                          HMBMapIcon(jobAndCustomer.site),
-                          HMBPhoneIcon(
-                            jobAndCustomer.bestPhoneNo ?? '',
-                            sourceContext: SourceContext(
-                              job: jobAndCustomer.job,
-                              customer: jobAndCustomer.customer,
-                            ),
+      builder: (context, jobAndCustomer) {
+        // Combine job summary with note if available.
+        final jobName = jobAndCustomer!.job.summary;
+        final note = jobActivity?.jobActivity.notes;
+        var displayText = jobName;
+        if (note != null && note.trim().isNotEmpty) {
+          final firstLine = note.trim().split('\n').first;
+          displayText = '$jobName / $firstLine';
+        }
+
+        return SizedBox(
+          height: view.heightPerMinute * (jobActivity?.durationInMinutes ?? 15),
+          child: Card(
+            color: SurfaceElevation.e6.color,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        if (jobActivity != null)
+                          Circle(
+                            color: jobActivity.jobActivity.status.color,
+                            child: const Text(''),
                           ),
-                          HMBMailToIcon(jobAndCustomer.bestEmailAddress),
-                        ],
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 5),
+                        // Display the combined job name and note in one line with ellipsis.
+                        Expanded(
+                          child: Text(
+                            displayText,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(children: [HMBTextLine(jobAndCustomer.customer.name)]),
+                    Row(
+                      children: [
+                        HMBMapIcon(jobAndCustomer.site),
+                        HMBPhoneIcon(
+                          jobAndCustomer.bestPhoneNo ?? '',
+                          sourceContext: SourceContext(
+                            job: jobAndCustomer.job,
+                            customer: jobAndCustomer.customer,
+                          ),
+                        ),
+                        HMBMailToIcon(jobAndCustomer.bestEmailAddress),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
+        );
+      },
     );
   }
 
