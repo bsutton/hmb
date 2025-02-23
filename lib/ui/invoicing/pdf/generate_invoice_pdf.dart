@@ -33,6 +33,13 @@ Future<File> generateInvoicePdf(
   // Define the system color (using the color stored in the system table)
   final systemColor = PdfColor.fromInt(system.billingColour);
 
+  // Retrieve the Job using the jobId from the Invoice.
+  final job = await DaoJob().getById(invoice.jobId);
+
+  // Retrieve the customer for the job and the primary contact for the job.
+  final customer = await DaoCustomer().getByJob(invoice.jobId);
+  final contact = await DaoContact().getPrimaryForJob(invoice.jobId);
+
   var groupedLines = <GroupedLine>[];
 
   if (displayGroupHeaders) {
@@ -113,9 +120,11 @@ Future<File> generateInvoicePdf(
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
+                // Top row: Invoice details on the left and customer/contact details on the right.
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
+                    // Left column: Invoice details.
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
@@ -127,31 +136,62 @@ Future<File> generateInvoicePdf(
                             fontWeight: pw.FontWeight.bold,
                           ),
                         ),
-                        pw.Text('Date: ${formatDate(invoice.createdDate)}'),
-                        pw.Text('''
-Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}'''),
+                        pw.Text(
+                          'Issued: ${formatDate(invoice.createdDate, format: 'yyyy MMM dd')}',
+                        ),
+                        pw.Text(
+                          'Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}',
+                        ),
                       ],
                     ),
-                    // Business logo
-                    if (logo != null)
-                      pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Padding(
-                          padding: const pw.EdgeInsets.only(top: 6),
-                          child: logo,
-                        ),
-                      ),
+                    // Right column: Customer and Contact details.
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.SizedBox(
+                          height: 16,
+                        ), // Added to vertically align with Invoice number.
+                        if (customer != null)
+                          pw.Text(
+                            'Customer: ${customer.name}',
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        if (customer != null && customer.description != null)
+                          pw.Text(
+                            customer.description!,
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                        if (contact != null) ...[
+                          pw.SizedBox(height: 4),
+                          pw.Text(
+                            'Contact: ${contact.fullname}',
+                            style: const pw.TextStyle(fontSize: 12),
+                          ),
+                          pw.Text(
+                            'Email: ${contact.emailAddress}',
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                          pw.Text(
+                            'Phone: ${contact.bestPhone}',
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
                 pw.Divider(),
+                // Business details.
                 pw.Text(
-                  'Business Details:',
+                  system.businessName ?? '',
                   style: pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
                   ),
                 ),
-                pw.Text('Business Name: ${system.businessName}'),
                 pw.Text('Address: ${system.address}'),
                 pw.Text('Email: ${system.emailAddress}'),
                 pw.Text('Phone: $phone'),
@@ -159,6 +199,18 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}'''),
                   '${system.businessNumberLabel}: ${system.businessNumber}',
                 ),
                 pw.Divider(),
+                // Moved job details.
+                if (job != null) ...[
+                  pw.Text(
+                    'Job: #${job.id}',
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.Text(job.summary, style: const pw.TextStyle(fontSize: 12)),
+                  pw.Divider(),
+                ],
               ],
             ),
           );
@@ -166,15 +218,15 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}'''),
           return pw.SizedBox();
         }
       },
+
       build: (context) {
         final content = <pw.Widget>[];
 
         if (displayGroupHeaders) {
           // Group items by `invoiceLineGroupId`
-
           for (final group in groupedLines) {
             content
-              ..add(pw.SizedBox(height: 10)) // Add 10 units of space
+              ..add(pw.SizedBox(height: 10))
               ..add(
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -198,7 +250,6 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}'''),
                 ),
               );
 
-            // Display items in the group if requested
             if (displayItems) {
               for (final line in group.items) {
                 content.add(
@@ -214,7 +265,6 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}'''),
             }
           }
         } else {
-          // Display lines without grouping if group headers are not enabled
           for (final line in lines) {
             content.add(
               pw.Row(
@@ -244,7 +294,6 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}'''),
             ],
           ),
           pw.Divider(),
-          // Payment details
           if (system.showBsbAccountOnInvoice ?? false) ...[
             pw.Text('Payment Details:'),
             pw.Text('BSB: ${system.bsb}'),
@@ -262,8 +311,7 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}'''),
               destination: system.paymentLinkUrl ?? '',
             ),
           ],
-          pw.SizedBox(height: 10), // Space before payment terms and options
-          // Payment terms and options
+          pw.SizedBox(height: 10),
           pw.Text(
             paymentTerms(system),
             style: const pw.TextStyle(fontSize: 12),
@@ -274,17 +322,18 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}'''),
           ),
         ]);
 
+        // Reduced top padding to remove excess whitespace before lines/groups.
         return [
           pw.Padding(
             padding: const pw.EdgeInsets.only(
               left: 20,
               right: 20,
-              top: 80,
-              bottom: 60,
+              top: 10,
+              bottom: 20,
             ),
             child: pw.Column(
-              children: content,
               crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: content,
             ),
           ),
         ];
