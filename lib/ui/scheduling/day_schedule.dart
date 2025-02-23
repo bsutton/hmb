@@ -126,24 +126,34 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final dayOperating = system.getOperatingHours().day(
       DayName.fromDate(currentDate),
     );
-    final operatingStartHour = dayOperating.start?.hour ?? 9;
-    final operatingEndHour = dayOperating.end?.hour ?? 17;
-    // Default buffered operating hours with a 1-hour buffer.
-    final int defaultStart = max(0, operatingStartHour - buffer);
-    final int defaultEnd = min(24, operatingEndHour + buffer);
-
-    if (foundExtended) {
-      hasActivitiesInExtendedHours = true;
-      // Apply a 1-hour buffer to extended event bounds.
-      _computedStartHour = min(
-        defaultStart,
-        max(0, earliestExtendedHour - buffer),
-      );
-      _computedEndHour = max(defaultEnd, min(24, latestExtendedHour + buffer));
-    } else {
+    // If operating hours are not defined, we treat it as a non-operating day.
+    if (dayOperating.start == null || dayOperating.end == null) {
       hasActivitiesInExtendedHours = false;
       _computedStartHour = null;
       _computedEndHour = null;
+    } else {
+      final operatingStartHour = dayOperating.start!.hour;
+      final operatingEndHour = dayOperating.end!.hour;
+      // Default buffered operating hours with a 1-hour buffer.
+      final int defaultStart = max(0, operatingStartHour - buffer);
+      final int defaultEnd = min(24, operatingEndHour + buffer);
+
+      if (foundExtended) {
+        hasActivitiesInExtendedHours = true;
+        // Apply a 1-hour buffer to extended event bounds.
+        _computedStartHour = min(
+          defaultStart,
+          max(0, earliestExtendedHour - buffer),
+        );
+        _computedEndHour = max(
+          defaultEnd,
+          min(24, latestExtendedHour + buffer),
+        );
+      } else {
+        hasActivitiesInExtendedHours = false;
+        _computedStartHour = null;
+        _computedEndHour = null;
+      }
     }
 
     print('Extended hours: $hasActivitiesInExtendedHours');
@@ -221,27 +231,47 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
 
   /// Determine the start hour for the day view.
   int _getStartHour() {
+    // If the extended toggle is on, show the full day.
+    if (widget.showExtendedHours) {
+      return 0;
+    }
     final dayOperating = system.getOperatingHours().day(
       DayName.fromDate(currentDate),
     );
-    final operatingStartHour = dayOperating.start?.hour ?? 9;
-    const buffer = 1;
+    // If operating hours are not defined (non-operating day), show the full day.
+    if (dayOperating.start == null || dayOperating.end == null) {
+      return 0;
+    }
+    // If there are extended activities, use the computed start hour.
     if (hasActivitiesInExtendedHours && _computedStartHour != null) {
       return _computedStartHour!;
     }
+    // Otherwise, return the operating start hour with a 1-hour buffer.
+    const buffer = 1;
+    final operatingStartHour = dayOperating.start!.hour;
     return max(0, operatingStartHour - buffer);
   }
 
   /// Determine the end hour for the day view.
   int _getEndHour() {
+    // If the extended toggle is on, show the full day.
+    if (widget.showExtendedHours) {
+      return 24;
+    }
     final dayOperating = system.getOperatingHours().day(
       DayName.fromDate(currentDate),
     );
-    final operatingEndHour = dayOperating.end?.hour ?? 17;
-    const buffer = 1;
+    // If operating hours are not defined (non-operating day), show the full day.
+    if (dayOperating.start == null || dayOperating.end == null) {
+      return 24;
+    }
+    // If there are extended activities, use the computed end hour.
     if (hasActivitiesInExtendedHours && _computedEndHour != null) {
       return _computedEndHour!;
     }
+    // Otherwise, return the operating end hour with a 1-hour buffer.
+    const buffer = 1;
+    final operatingEndHour = dayOperating.end!.hour;
     return min(24, operatingEndHour + buffer);
   }
 
