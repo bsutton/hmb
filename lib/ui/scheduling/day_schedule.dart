@@ -11,7 +11,6 @@ import '../../entity/system.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
-import '../../util/local_time.dart';
 import '../dialog/dialog.g.dart';
 import '../widgets/circle.dart';
 import '../widgets/hmb_mail_to_icon.dart';
@@ -49,6 +48,9 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
   late final System system;
   late final OperatingHours operatingHours;
   bool hasActivitiesInExtendedHours = false;
+  // New state variables to hold the computed bounds when there are extended activities.
+  int? _computedStartHour;
+  int? _computedEndHour;
   late LocalDate currentDate;
 
   @override
@@ -71,7 +73,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     super.dispose();
   }
 
-  /// Fetch activities for [currentDate] from DB
+  /// Fetch activities for [currentDate] from DB and compute extended hour bounds if needed.
   Future<void> _loadActivitiesForDay() async {
     print('loadingDays');
     // Set a date range: midnight -> midnight next day
@@ -82,16 +84,34 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final jobActivities = await dao.getActivitiesInRange(start, end);
 
     final activityData = <CalendarEventData<JobActivityEx>>[];
-    var _hasActivitiesInExtendedHours = false;
+
+    // Variables to track extended event bounds.
+    var foundExtended = false;
+    var earliestExtendedHour = 24;
+    var latestExtendedHour = 0;
+    const buffer = 1; // 1 hour buffer for both operating and extended times
+
     for (final jobActivity in jobActivities) {
       var fontColor = Colors.white;
       if (widget.defaultJob == jobActivity.jobId) {
         fontColor = Colors.orange;
       }
 
-      _hasActivitiesInExtendedHours =
-          _hasActivitiesInExtendedHours ||
-          !operatingHours.inOperatingHours(jobActivity);
+      // Check if this activity is outside operating hours.
+      if (!operatingHours.inOperatingHours(jobActivity)) {
+        foundExtended = true;
+        // Assuming jobActivity has a 'startTime' property and a 'durationInMinutes' property.
+        final eventStart = jobActivity.start;
+        final eventEnd = jobActivity.end;
+        final eventStartHour = eventStart.hour;
+        // Round up the end hour if there are remaining minutes.
+        var eventEndHour = eventEnd.hour;
+        if (eventEnd.minute > 0) {
+          eventEndHour++;
+        }
+        earliestExtendedHour = min(earliestExtendedHour, eventStartHour);
+        latestExtendedHour = max(latestExtendedHour, eventEndHour);
+      }
 
       activityData.add(
         (await JobActivityEx.fromActivity(jobActivity)).eventData.copyWith(
@@ -101,9 +121,32 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
         ),
       );
     }
-    hasActivitiesInExtendedHours = _hasActivitiesInExtendedHours;
-    print('extened hours: $hasActivitiesInExtendedHours');
 
+    // Get operating hours for the current day.
+    final dayOperating = system.getOperatingHours().day(
+      DayName.fromDate(currentDate),
+    );
+    final operatingStartHour = dayOperating.start?.hour ?? 9;
+    final operatingEndHour = dayOperating.end?.hour ?? 17;
+    // Default buffered operating hours with a 1-hour buffer.
+    final int defaultStart = max(0, operatingStartHour - buffer);
+    final int defaultEnd = min(24, operatingEndHour + buffer);
+
+    if (foundExtended) {
+      hasActivitiesInExtendedHours = true;
+      // Apply a 1-hour buffer to extended event bounds.
+      _computedStartHour = min(
+        defaultStart,
+        max(0, earliestExtendedHour - buffer),
+      );
+      _computedEndHour = max(defaultEnd, min(24, latestExtendedHour + buffer));
+    } else {
+      hasActivitiesInExtendedHours = false;
+      _computedStartHour = null;
+      _computedEndHour = null;
+    }
+
+    print('Extended hours: $hasActivitiesInExtendedHours');
     if (mounted) {
       _dayController
         ..clear()
@@ -153,66 +196,56 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
       );
 
   Future<void> _onPageChange(DateTime date) async {
-    {
-      currentDate = await widget.onPageChange(date.toLocalDate());
+    currentDate = await widget.onPageChange(date.toLocalDate());
 
-      /// force a refresh of the view so that the
-      /// start/end hour range is re-evaluated for the
-      /// current day.
-      await _loadActivitiesForDay();
-    }
+    /// Force a refresh of the view so that the start/end hour range is re-evaluated for the current day.
+    await _loadActivitiesForDay();
   }
 
   Future<void> _onEventTap(
     List<CalendarEventData<JobActivityEx>> events,
     DateTime date,
   ) async {
-    {
-      // Only handle the first event in the list
-      await widget.onActivityTap(context, events.first);
-      // Refresh
-      await _loadActivitiesForDay();
-    }
+    // Only handle the first event in the list.
+    await widget.onActivityTap(context, events.first);
+    // Refresh.
+    await _loadActivitiesForDay();
   }
 
   Future<void> _onDateTap(DateTime date) async {
-    {
-      // Create new activity
-      await widget.addActivity(context, date, widget.defaultJob);
-      // Refresh
-      await _loadActivitiesForDay();
-    }
+    // Create new activity.
+    await widget.addActivity(context, date, widget.defaultJob);
+    // Refresh.
+    await _loadActivitiesForDay();
   }
 
-  /// The opening hours starting time (hour only)
-  int _getEndHour() {
-    if (widget.showExtendedHours || hasActivitiesInExtendedHours) {
-      return 24;
-    }
-    return min(
-      24,
-      (system.getOperatingHours().day(DayName.fromDate(currentDate)).end ??
-                  const LocalTime(hour: 17, minute: 0))
-              .hour +
-          2,
-    );
-  }
-
-  /// The opening hours finishing time (hour only)
+  /// Determine the start hour for the day view.
   int _getStartHour() {
-    if (widget.showExtendedHours || hasActivitiesInExtendedHours) {
-      return 0;
-    }
-    return max(
-      0,
-      (system.getOperatingHours().day(DayName.fromDate(currentDate)).start ??
-                  const LocalTime(hour: 9, minute: 0))
-              .hour -
-          2,
+    final dayOperating = system.getOperatingHours().day(
+      DayName.fromDate(currentDate),
     );
+    final operatingStartHour = dayOperating.start?.hour ?? 9;
+    const buffer = 1;
+    if (hasActivitiesInExtendedHours && _computedStartHour != null) {
+      return _computedStartHour!;
+    }
+    return max(0, operatingStartHour - buffer);
   }
 
-  /// A card for each activity, using a [FutureBuilderEx] to fetch job+customer
+  /// Determine the end hour for the day view.
+  int _getEndHour() {
+    final dayOperating = system.getOperatingHours().day(
+      DayName.fromDate(currentDate),
+    );
+    final operatingEndHour = dayOperating.end?.hour ?? 17;
+    const buffer = 1;
+    if (hasActivitiesInExtendedHours && _computedEndHour != null) {
+      return _computedEndHour!;
+    }
+    return min(24, operatingEndHour + buffer);
+  }
+
+  /// A card for each activity, using a [FutureBuilderEx] to fetch job+customer.
   Widget _buildActvityCard(
     DayView view,
     CalendarEventData<JobActivityEx> event,
@@ -283,7 +316,6 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     } else {
       formatted = formatDate(date, format: 'Y M d D');
     }
-
     return formatted;
   }
 }
