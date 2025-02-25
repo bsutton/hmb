@@ -185,7 +185,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
               timeStringBuilder:
                   (date, {secondaryDate}) =>
                       formatTime(date, 'ha').toLowerCase(),
-              heightPerMinute: 1.5,
+              heightPerMinute: 1.6,
               eventTileBuilder:
                   (date, events, boundary, startDuration, endDuration) =>
                       _buildActvityCard(dayView, events.first),
