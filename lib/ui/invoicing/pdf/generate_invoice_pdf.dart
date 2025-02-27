@@ -137,7 +137,7 @@ Future<File> generateInvoicePdf(
                           ),
                         ),
                         pw.Text(
-                          'Issued: ${formatDate(invoice.createdDate, format: 'yyyy MMM dd')}',
+                          'Issued: ${formatDate(invoice.createdDate, format: 'Y M d')}',
                         ),
                         pw.Text(
                           'Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}',
@@ -153,30 +153,18 @@ Future<File> generateInvoicePdf(
                         ), // Added to vertically align with Invoice number.
                         if (customer != null)
                           pw.Text(
-                            'Customer: ${customer.name}',
+                            'To: ${customer.name}',
                             style: pw.TextStyle(
                               fontSize: 14,
                               fontWeight: pw.FontWeight.bold,
                             ),
                           ),
-                        if (customer != null && customer.description != null)
-                          pw.Text(
-                            customer.description!,
-                            style: const pw.TextStyle(fontSize: 10),
-                          ),
+
                         if (contact != null) ...[
                           pw.SizedBox(height: 4),
                           pw.Text(
-                            'Contact: ${contact.fullname}',
+                            'Attention: ${contact.fullname}',
                             style: const pw.TextStyle(fontSize: 12),
-                          ),
-                          pw.Text(
-                            'Email: ${contact.emailAddress}',
-                            style: const pw.TextStyle(fontSize: 10),
-                          ),
-                          pw.Text(
-                            'Phone: ${contact.bestPhone}',
-                            style: const pw.TextStyle(fontSize: 10),
                           ),
                         ],
                       ],
