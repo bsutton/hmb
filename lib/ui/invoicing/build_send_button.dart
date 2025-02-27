@@ -22,7 +22,7 @@ class BuildSendButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBButton(
-    label: 'Send...',
+    label: 'View/Send...',
     onPressed: () async {
       var billBookingFee = true;
       var displayCosts = true;
