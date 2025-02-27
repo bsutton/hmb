@@ -11,8 +11,10 @@ import '../../entity/system.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
+import '../crud/job/edit_job_screen.dart';
 import '../dialog/dialog.g.dart';
 import '../widgets/circle.dart';
+import '../widgets/hmb_link_internal.dart';
 import '../widgets/hmb_mail_to_icon.dart';
 import '../widgets/hmb_map_icon.dart';
 import '../widgets/hmb_phone_icon.dart';
@@ -185,7 +187,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
               timeStringBuilder:
                   (date, {secondaryDate}) =>
                       formatTime(date, 'ha').toLowerCase(),
-              heightPerMinute: 1.6,
+              heightPerMinute: 1.8,
               eventTileBuilder:
                   (date, events, boundary, startDuration, endDuration) =>
                       _buildActvityCard(dayView, events.first),
@@ -288,10 +290,8 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final jobActivity = event.event;
 
     return FutureBuilderEx<JobAndCustomer>(
-      // ignore: discarded_futures
       future: JobAndCustomer.fetch(job),
       builder: (context, jobAndCustomer) {
-        // Combine job summary with note if available.
         final jobName = jobAndCustomer!.job.summary;
         final note = jobActivity?.jobActivity.notes;
         var displayText = jobName;
@@ -305,34 +305,71 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
           child: Card(
             color: SurfaceElevation.e6.color,
             child: Padding(
-              padding: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.only(
+                left: 8,
+                top: 4,
+                bottom: 4,
+                right: 8,
+              ),
               child: Align(
                 alignment: Alignment.topLeft,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Wrap the first two rows in a Row so we can have a two-row column at the end.
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (jobActivity != null)
-                          Circle(
-                            color: jobActivity.jobActivity.status.color,
-                            child: const Text(''),
-                          ),
-                        const SizedBox(width: 5),
-                        // Display the combined job name and note in one line with ellipsis.
+                        // Left: Column with job activity and customer name.
                         Expanded(
-                          child: Text(
-                            displayText,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  if (jobActivity != null)
+                                    Circle(
+                                      color:
+                                          jobActivity.jobActivity.status.color,
+                                      child: const Text(''),
+                                    ),
+                                  const SizedBox(width: 5),
+                                  Expanded(
+                                    child: Text(
+                                      displayText,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  HMBTextLine(jobAndCustomer.customer.name),
+                                ],
+                              ),
+                            ],
                           ),
+                        ),
+                        // Right: Column spanning two rows with the job link.
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            HMBLinkInternal(
+                              label: 'Job: #${jobAndCustomer.job.id}',
+                              navigateTo:
+                                  () async =>
+                                      JobEditScreen(job: jobAndCustomer.job),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    Row(children: [HMBTextLine(jobAndCustomer.customer.name)]),
+                    // Action icons row.
                     Row(
                       children: [
                         HMBMapIcon(jobAndCustomer.site),
