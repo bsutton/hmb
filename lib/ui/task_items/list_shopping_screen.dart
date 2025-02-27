@@ -52,46 +52,25 @@ enum ScheduleFilter {
   /// Returns true if [scheduledDate] falls within the period defined by this filter.
   bool includes(DateTime scheduledDate, {DateTime? now}) {
     now ??= DateTime.now();
-
+    // Set the base of today to midnight
+    final todayDate = DateTime(now.year, now.month, now.day);
     switch (this) {
       case ScheduleFilter.all:
         return true;
       case ScheduleFilter.today:
-        return scheduledDate.year == now.year &&
-            scheduledDate.month == now.month &&
-            scheduledDate.day == now.day;
+        return scheduledDate.year == todayDate.year &&
+            scheduledDate.month == todayDate.month &&
+            scheduledDate.day == todayDate.day;
       case ScheduleFilter.nextThreeDays:
-        // Exclude today and include dates within the next 3 days.
-        final start = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).add(const Duration(days: 1));
-        final end = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).add(const Duration(days: 3));
-        return scheduledDate.isAfter(
-              start.subtract(const Duration(microseconds: 1)),
-            ) &&
-            scheduledDate.isBefore(end.add(const Duration(microseconds: 1)));
+        // Include today plus the next 2 days (3 days total).
+        final end = todayDate.add(const Duration(days: 3));
+        return !scheduledDate.isBefore(todayDate) &&
+            scheduledDate.isBefore(end);
       case ScheduleFilter.week:
-        // Exclude today and include dates within the next 7 days.
-        final start = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).add(const Duration(days: 1));
-        final end = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).add(const Duration(days: 7));
-        return scheduledDate.isAfter(
-              start.subtract(const Duration(microseconds: 1)),
-            ) &&
-            scheduledDate.isBefore(end.add(const Duration(microseconds: 1)));
+        // Include today plus the next 6 days (7 days total).
+        final end = todayDate.add(const Duration(days: 7));
+        return !scheduledDate.isBefore(todayDate) &&
+            scheduledDate.isBefore(end);
     }
   }
 }
@@ -114,7 +93,8 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
   List<Job> _selectedJobs = [];
   Supplier? _selectedSupplier;
   String? filter;
-  ScheduleFilter _selectedScheduleFilter = ScheduleFilter.all; // New filter
+  static ScheduleFilter _selectedScheduleFilter =
+      ScheduleFilter.all; // New filter
 
   @override
   Future<void> asyncInitState() async {

@@ -24,10 +24,14 @@ import '../widgets/hmb_button.dart';
 import '../widgets/hmb_colours.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/select/hmb_droplist.dart';
 import '../widgets/select/hmb_droplist_multi.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
+import 'list_shopping_screen.dart';
 import 'mark_as_complete.dart';
+
+ScheduleFilter _selectedScheduleFilter = ScheduleFilter.all;
 
 class PackingScreen extends StatefulWidget {
   const PackingScreen({super.key});
@@ -57,25 +61,45 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
   }
 
   Future<void> _loadTaskItems() async {
-    // Pass the selected jobs to filter the packing items
+    // Get packing items filtered by the selected jobs.
     final taskItems = await DaoTaskItem().getPackingItems(jobs: _selectedJobs);
 
     taskItemsContexts.clear();
 
     for (final taskItem in taskItems) {
       final task = await DaoTask().getById(taskItem.taskId);
-
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
 
-      if (Strings.isBlank(filter)) {
-        taskItemsContexts.add(TaskItemContext(task!, taskItem, billingType));
-      } else {
-        if (taskItem.description.toLowerCase().contains(filter!)) {
-          taskItemsContexts.add(TaskItemContext(task!, taskItem, billingType));
+      // Apply text filter if present.
+      var include =
+          Strings.isBlank(filter) ||
+          taskItem.description.toLowerCase().contains(filter!.toLowerCase());
+
+      // If a schedule filter is selected (other than "All") check the job's next activity.
+      if (include && _selectedScheduleFilter != ScheduleFilter.all) {
+        final job = await DaoJob().getJobForTask(task!.id);
+        if (job == null) {
+          include = false;
+        } else {
+          final nextActivity = await DaoJobActivity().getNextActivityByJob(
+            job.id,
+          );
+          if (nextActivity == null) {
+            include = false;
+          } else {
+            // Use the enum's includes method.
+            include = _selectedScheduleFilter.includes(
+              nextActivity.start,
+              now: DateTime.now(),
+            );
+          }
         }
       }
-    }
 
+      if (include) {
+        taskItemsContexts.add(TaskItemContext(task!, taskItem, billingType));
+      }
+    }
     setState(() {});
   }
 
@@ -116,11 +140,27 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
                   '''
 Allows you to filter the packing list to items from specific Jobs.
 
-If your Job isn't showing then you need to update it's status to an Active one such as 'Scheduled, In Progress...' ''',
+If your Job isn't showing then you need to update its status to an Active one such as 'Scheduled, In Progress...' ''',
+                ),
+                const SizedBox(height: 10),
+                HMBDroplist<ScheduleFilter>(
+                  selectedItem: () async => _selectedScheduleFilter,
+                  items: (filter) async => ScheduleFilter.values,
+                  format: (schedule) => schedule.displayName,
+                  onChanged: (schedule) async {
+                    _selectedScheduleFilter = schedule!;
+                    await _loadTaskItems();
+                  },
+                  title: 'Schedule',
+                  required: false,
+                ).help(
+                  'Filter by Schedule',
+                  'Filter packing items by job scheduled date (Today, Next 3 Days, or This Week)',
                 ),
               ],
             ),
           ),
+
           Expanded(
             child: DeferredBuilder(
               this,
