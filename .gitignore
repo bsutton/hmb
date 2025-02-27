@@ -56,3 +56,4 @@ hmb-production.keystore
 hmb-production.keystore.zip
 android/key.properties.zip
 *.run.lock
+android/app/.cxx
