@@ -16,6 +16,7 @@ import '../../util/local_time.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/layout/hmb_scroll_for_keyboard.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'job_activity_ex.dart';
@@ -139,7 +140,7 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
 
     return Form(
       key: _form,
-      child: SingleChildScrollView(
+      child: HMBScrollForKeyboard(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -162,10 +163,8 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
 
               const HMBSpacer(height: true),
               ..._buildStartEndDates(isSmallScreen),
-
               // Display the duration
               _buildDuration(duration),
-
               // Status dropdown
               _buildStatus(),
               const HMBSpacer(height: true),
