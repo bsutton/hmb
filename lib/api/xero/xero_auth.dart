@@ -223,7 +223,13 @@ The Xero credentials are not set. Navigate to the System | Integration screen an
     }
 
     if (savedCredentials != null) {
-      client = oauth2.Client(savedCredentials);
+      final credentials = await _fetchSecretIdentity();
+
+      client = oauth2.Client(
+        savedCredentials,
+        identifier: credentials.clientId,
+        secret: credentials.clientSecret,
+      );
       if (!client!.credentials.isExpired) {
         log('Loaded saved credentials, no login required.');
         return true;
