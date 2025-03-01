@@ -32,6 +32,17 @@ GoRouter get router => GoRouter(
   onException: (context, state, router) {
     HMBToast.error('Route Error: ${state.error}');
   },
+  redirect: (context, state) {
+    // If the deep link is the Xero OAuth callback, do not change the current route.
+    if (state.matchedLocation == '/xero/auth_complete') {
+      // Return the current location so that no navigation occurs
+      // as we are directly handling the intent in the xero auth code.
+      return state.uri.toString();
+    }
+
+    // No other redirection.
+    return null;
+  },
   routes: [
     // 1) Root route that redirects to either the Wizard or the Jobs screen
     GoRoute(
@@ -71,7 +82,8 @@ GoRouter get router => GoRouter(
       path: '/suppliers',
       builder:
           (_, _) => const HomeWithDrawer(initialScreen: SupplierListScreen()),
-    ),    GoRoute(
+    ),
+    GoRoute(
       path: '/shopping',
       builder: (_, _) => const HomeWithDrawer(initialScreen: ShoppingScreen()),
     ),
@@ -88,8 +100,7 @@ GoRouter get router => GoRouter(
     ),
     GoRoute(
       path: '/billing/quotes',
-      builder:
-          (_, _) => const HomeWithDrawer(initialScreen: QuoteListScreen()),
+      builder: (_, _) => const HomeWithDrawer(initialScreen: QuoteListScreen()),
     ),
     GoRoute(
       path: '/billing/invoices',
@@ -126,8 +137,7 @@ GoRouter get router => GoRouter(
     GoRoute(
       path: '/system/business',
       builder:
-          (_, _) =>
-              const HomeWithDrawer(initialScreen: SystemBusinessScreen()),
+          (_, _) => const HomeWithDrawer(initialScreen: SystemBusinessScreen()),
     ),
     GoRoute(
       path: '/system/billing',
