@@ -10,8 +10,8 @@ import '../invoicing/select_job_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
-import 'quote_details_screen.dart';
 import 'quote_card.dart';
+import 'quote_details_screen.dart';
 
 class QuoteListScreen extends StatefulWidget {
   const QuoteListScreen({super.key});
@@ -21,7 +21,8 @@ class QuoteListScreen extends StatefulWidget {
 }
 
 class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
-  late List<Quote> _quotes;
+  // Maintain a local list of quotes.
+  List<Quote> _quotes = [];
 
   Job? selectedJob;
   Customer? selectedCustomer;
@@ -32,22 +33,20 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Quotes');
-    await _refreshQuoteList();
+    await _loadQuotes();
   }
 
-  Future<void> _refreshQuoteList() async {
+  // Load quotes once from the DAO.
+  Future<void> _loadQuotes() async {
     _quotes = await _fetchFilteredQuotes();
     setState(() {});
   }
 
   Future<List<Quote>> _fetchFilteredQuotes() async {
-    // Get quotes by filter text from the DAO.
     var quotes = await DaoQuote().getByFilter(filterText);
-    // Filter by selected job if one is chosen.
     if (selectedJob != null) {
       quotes = quotes.where((q) => q.jobId == selectedJob!.id).toList();
     }
-    // Filter by selected customer if one is chosen.
     if (selectedCustomer != null) {
       quotes = await Future.wait(
         quotes.map((q) async {
@@ -56,7 +55,6 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
         }),
       ).then((list) => list.whereType<Quote>().toList());
     }
-    // By default, exclude quotes whose state is approved or rejected.
     if (!includeApprovedRejected) {
       quotes =
           quotes
@@ -72,30 +70,27 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
 
   Future<void> _createQuote() async {
     final job = await SelectJobDialog.show(context);
-    if (job == null) {
-      return;
-    }
-    if (mounted) {
-      final quoteOptions = await showQuote(context: context, job: job);
-      if (quoteOptions != null) {
-        try {
-          if (!quoteOptions.billBookingFee &&
-              quoteOptions.selectedTaskIds.isEmpty) {
-            HMBToast.error(
-              'You must select a task or the booking fee',
-              acknowledgmentRequired: true,
-            );
-            return;
-          }
-          await DaoQuote().create(job, quoteOptions);
-        } catch (e) {
+    if (job == null) return;
+    final quoteOptions = await showQuote(context: context, job: job);
+    if (quoteOptions != null) {
+      try {
+        if (!quoteOptions.billBookingFee &&
+            quoteOptions.selectedTaskIds.isEmpty) {
           HMBToast.error(
-            'Failed to create quote: $e',
+            'You must select a task or the booking fee',
             acknowledgmentRequired: true,
           );
+          return;
         }
-        await _refreshQuoteList();
+        await DaoQuote().create(job, quoteOptions);
+      } catch (e) {
+        HMBToast.error(
+          'Failed to create quote: $e',
+          acknowledgmentRequired: true,
+        );
       }
+      // Reload the list if needed.
+      await _loadQuotes();
     }
   }
 
@@ -122,7 +117,10 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       try {
         await DaoQuote().delete(quote.id);
         HMBToast.info('Quote deleted successfully.');
-        await _refreshQuoteList();
+        // Remove the quote locally.
+        setState(() {
+          _quotes.removeWhere((q) => q.id == quote.id);
+        });
       } catch (e) {
         HMBToast.error('Failed to delete quote: $e');
       }
@@ -131,7 +129,14 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
 
   Future<void> _onFilterChanged(String value) async {
     filterText = value;
-    await _refreshQuoteList();
+    await _loadQuotes();
+  }
+
+  // Called from QuoteSummaryCard after its removal animation.
+  void _removeQuoteFromList(Quote removedQuote) {
+    setState(() {
+      _quotes.removeWhere((q) => q.id == removedQuote.id);
+    });
   }
 
   @override
@@ -154,20 +159,16 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                 padding: const EdgeInsets.all(8),
                 child: Row(
                   children: [
-                    // A simple text filter.
                     Expanded(
                       child: TextField(
                         decoration: const InputDecoration(
                           labelText: 'Filter Quotes',
                           border: OutlineInputBorder(),
                         ),
-                        onChanged: (value) async {
-                          await _onFilterChanged(value);
-                        },
+                        onChanged: (value) async => _onFilterChanged(value),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Switch to include approved/rejected quotes.
                     Row(
                       children: [
                         const Text('Include Approved/Rejected'),
@@ -175,7 +176,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                           value: includeApprovedRejected,
                           onChanged: (val) async {
                             includeApprovedRejected = val;
-                            await _refreshQuoteList();
+                            await _loadQuotes();
                           },
                         ),
                       ],
@@ -186,7 +187,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
               // --- END FILTER SECTION ---
               Expanded(
                 child:
-                    (_quotes.isEmpty)
+                    _quotes.isEmpty
                         ? const Center(child: Text('No quotes found.'))
                         : ListView.builder(
                           itemCount: _quotes.length,
@@ -194,7 +195,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                             final quote = _quotes[index];
                             return GestureDetector(
                               onTap: () async {
-                                // Navigate to the details screen.
+                                // Navigate without forcing a full reload.
                                 await Navigator.of(context).push(
                                   MaterialPageRoute<void>(
                                     builder:
@@ -203,13 +204,14 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                                         ),
                                   ),
                                 );
-                                await _refreshQuoteList();
+                                // Optionally, update only if necessary.
                               },
+                              // Use a stable key based on quote.id.
                               child: QuoteSummaryCard(
-                                key: ValueKey(quote.hashCode),
+                                key: ValueKey(quote.id),
                                 quote: quote,
                                 onDelete: () async => _deleteQuote(quote),
-                                onStateChanged: _refreshQuoteList,
+                                onStateChanged: _removeQuoteFromList,
                               ),
                             );
                           },
@@ -219,29 +221,4 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
           ),
     ),
   );
-}
-
-/// Helper class to load both Job and Customer details for a given Quote.
-class JobAndCustomer {
-  JobAndCustomer({
-    required this.job,
-    required this.customer,
-    required this.contact,
-  });
-  final Job job;
-  final Customer customer;
-  final Contact? contact;
-  static Future<JobAndCustomer> fromQuote(Quote quote) async {
-    final job = await DaoJob().getById(quote.jobId);
-    if (job == null) {
-      throw Exception('Job not found for Quote ${quote.id}');
-    }
-    final customer = await DaoCustomer().getById(job.customerId);
-    if (customer == null) {
-      throw Exception('Customer not found for Job ${job.id}');
-    }
-
-    final contact = await DaoContact().getPrimaryForJob(job.id);
-    return JobAndCustomer(job: job, customer: customer, contact: contact);
-  }
 }
