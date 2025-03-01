@@ -21,25 +21,33 @@ class QuoteListScreen extends StatefulWidget {
 }
 
 class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
-  // Maintain a local list of quotes.
+  // Local list of quotes.
   List<Quote> _quotes = [];
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
 
   Job? selectedJob;
   Customer? selectedCustomer;
   String? filterText;
-  // When false (the default) we do not display approved/rejected quotes.
+  // When false (default) do not display approved/rejected quotes.
   bool includeApprovedRejected = false;
+  final Duration _duration = const Duration(milliseconds: 300);
 
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Quotes');
-    await _loadQuotes();
+    await _loadQuotes(initial: true);
   }
 
-  // Load quotes once from the DAO.
-  Future<void> _loadQuotes() async {
-    _quotes = await _fetchFilteredQuotes();
-    setState(() {});
+  // Load quotes from the DAO.
+  Future<void> _loadQuotes({bool initial = false}) async {
+    final quotes = await _fetchFilteredQuotes();
+    if (initial) {
+      _quotes = quotes;
+    } else {
+      setState(() {
+        _quotes = quotes;
+      });
+    }
   }
 
   Future<List<Quote>> _fetchFilteredQuotes() async {
@@ -70,7 +78,9 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
 
   Future<void> _createQuote() async {
     final job = await SelectJobDialog.show(context);
-    if (job == null) return;
+    if (job == null) {
+      return;
+    }
     final quoteOptions = await showQuote(context: context, job: job);
     if (quoteOptions != null) {
       try {
@@ -82,15 +92,19 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
           );
           return;
         }
-        await DaoQuote().create(job, quoteOptions);
+        // Assume create returns the new Quote.
+        final newQuote = await DaoQuote().create(job, quoteOptions);
+        // Insert the new quote at the beginning (or any desired position).
+        setState(() {
+          _quotes.insert(0, newQuote);
+        });
+        _listKey.currentState?.insertItem(0, duration: _duration);
       } catch (e) {
         HMBToast.error(
           'Failed to create quote: $e',
           acknowledgmentRequired: true,
         );
       }
-      // Reload the list if needed.
-      await _loadQuotes();
     }
   }
 
@@ -117,26 +131,43 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       try {
         await DaoQuote().delete(quote.id);
         HMBToast.info('Quote deleted successfully.');
-        // Remove the quote locally.
-        setState(() {
-          _quotes.removeWhere((q) => q.id == quote.id);
-        });
+        _removeQuoteFromList(quote);
       } catch (e) {
         HMBToast.error('Failed to delete quote: $e');
       }
     }
   }
 
+  // Called when a QuoteCard signals removal (after an approve/reject action).
+  void _removeQuoteFromList(Quote removedQuote) {
+    final index = _quotes.indexWhere((q) => q.id == removedQuote.id);
+    if (index != -1) {
+      final removedItem = _quotes.removeAt(index);
+      _listKey.currentState?.removeItem(
+        index,
+        (context, animation) => ClipRect(
+          child: FadeTransition(
+            opacity: animation,
+            child: SizeTransition(
+              sizeFactor: animation,
+              child: QuoteCard(
+                key: ValueKey(removedItem.id),
+                quote: removedItem,
+                onDelete: () {},
+                onStateChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+        duration: _duration,
+      );
+    }
+  }
+
   Future<void> _onFilterChanged(String value) async {
     filterText = value;
     await _loadQuotes();
-  }
-
-  // Called from QuoteSummaryCard after its removal animation.
-  void _removeQuoteFromList(Quote removedQuote) {
-    setState(() {
-      _quotes.removeWhere((q) => q.id == removedQuote.id);
-    });
+    setState(() {});
   }
 
   @override
@@ -177,6 +208,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                           onChanged: (val) async {
                             includeApprovedRejected = val;
                             await _loadQuotes();
+                            setState(() {});
                           },
                         ),
                       ],
@@ -189,29 +221,30 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                 child:
                     _quotes.isEmpty
                         ? const Center(child: Text('No quotes found.'))
-                        : ListView.builder(
-                          itemCount: _quotes.length,
-                          itemBuilder: (context, index) {
+                        : AnimatedList(
+                          key: _listKey,
+                          initialItemCount: _quotes.length,
+                          itemBuilder: (context, index, animation) {
                             final quote = _quotes[index];
-                            return GestureDetector(
-                              onTap: () async {
-                                // Navigate without forcing a full reload.
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder:
-                                        (context) => QuoteDetailsScreen(
-                                          quoteId: quote.id,
-                                        ),
-                                  ),
-                                );
-                                // Optionally, update only if necessary.
-                              },
-                              // Use a stable key based on quote.id.
-                              child: QuoteSummaryCard(
-                                key: ValueKey(quote.id),
-                                quote: quote,
-                                onDelete: () async => _deleteQuote(quote),
-                                onStateChanged: _removeQuoteFromList,
+                            return SizeTransition(
+                              sizeFactor: animation,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder:
+                                          (context) => QuoteDetailsScreen(
+                                            quoteId: quote.id,
+                                          ),
+                                    ),
+                                  );
+                                },
+                                child: QuoteCard(
+                                  key: ValueKey(quote.id),
+                                  quote: quote,
+                                  onDelete: () async => _deleteQuote(quote),
+                                  onStateChanged: _removeQuoteFromList,
+                                ),
                               ),
                             );
                           },
