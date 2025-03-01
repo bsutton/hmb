@@ -290,6 +290,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final jobActivity = event.event;
 
     return FutureBuilderEx<JobAndCustomer>(
+      // ignore: discarded_futures
       future: JobAndCustomer.fetch(job),
       builder: (context, jobAndCustomer) {
         final jobName = jobAndCustomer!.job.summary;

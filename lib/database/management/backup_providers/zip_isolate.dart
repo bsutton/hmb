@@ -193,7 +193,7 @@ Future<String?> extractFiles(
   final encoder = ZipDecoder();
   String? dbPath;
   // Extract the ZIP file contents to a temporary directory
-  final archive = encoder.decodeBuffer(InputFileStream(backupFile.path));
+  final archive = encoder.decodeStream(InputFileStream(backupFile.path));
 
   const restored = 0;
 
