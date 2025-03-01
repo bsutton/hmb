@@ -6,6 +6,12 @@ import '../../../dao/dao_system.dart';
 import '../../../ui/widgets/hmb_toast.dart';
 import '../../dialog/email_dialog.dart';
 
+class EmailBlocked {
+  EmailBlocked(this.blocked, this.reason);
+  String reason;
+  bool blocked;
+}
+
 class PdfPreviewScreen extends StatelessWidget {
   const PdfPreviewScreen({
     required this.title,
@@ -13,6 +19,7 @@ class PdfPreviewScreen extends StatelessWidget {
     required this.emailBody,
     required this.filePath,
     required this.emailRecipients,
+    required this.canEmail,
     required this.onSent,
     super.key,
   });
@@ -23,9 +30,18 @@ class PdfPreviewScreen extends StatelessWidget {
   final String emailBody;
   final List<String> emailRecipients;
   final Future<void> Function() onSent;
+  final Future<EmailBlocked> Function() canEmail;
 
   Future<void> _showEmailDialog(BuildContext context) async {
     final system = await DaoSystem().get();
+
+    final emailBlocked = await canEmail();
+    if (emailBlocked.blocked) {
+      HMBToast.error(
+        'You can not email this document as ${emailBlocked.reason}',
+      );
+      return;
+    }
 
     if (emailRecipients.isEmpty) {
       HMBToast.error('No contacts have an email address');

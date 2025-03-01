@@ -1,4 +1,5 @@
 import 'package:money2/money2.dart';
+import 'package:strings/strings.dart';
 
 import '../api/xero/models/xero_invoice.dart';
 import '../dao/dao_contact.dart';
@@ -132,4 +133,8 @@ class Invoice extends Entity<Invoice> {
     ); // All amounts are inclusive of tax.
     return xeroInvoice;
   }
+
+  /// true if the invoice has been uploaded to the external
+  /// accounting syhstem.
+  bool isUploaded() => Strings.isNotBlank(externalInvoiceId);
 }

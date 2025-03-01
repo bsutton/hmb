@@ -304,6 +304,8 @@ class System extends Entity<System> {
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
+
+  bool isExternalAccountingEnabled() => Strings.isNotBlank(xeroClientId);
 }
 
 enum DayName {

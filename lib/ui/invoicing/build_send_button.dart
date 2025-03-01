@@ -77,6 +77,17 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
                         system.emailAddress!,
                     ],
                     onSent: () async => DaoInvoice().markSent(invoice),
+                    canEmail: () async {
+                      if (system.isExternalAccountingEnabled() &&
+                          !invoice.isUploaded()) {
+                        return EmailBlocked(
+                          true,
+                          'the envoice has not been uploaded.',
+                        );
+                      } else {
+                        return EmailBlocked(false, '');
+                      }
+                    },
                   ),
             ),
           );

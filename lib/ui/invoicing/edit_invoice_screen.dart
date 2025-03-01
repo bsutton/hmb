@@ -98,10 +98,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                       label: 'Delete Invoice',
 
                       onPressed: () async {
-                        BlockingUI().run(
-                          () async => _deleteInvoice(),
-                          label: 'Deleting Invoice',
-                        );
+                        await _deleteInvoice();
                       },
                     ),
                   ],
@@ -170,7 +167,10 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 'This invoice has been sent to the customer and cannot be deleted',
               );
             } else {
-              await _xeroApi.deleteInvoice(invoiceDetails.invoice);
+              BlockingUI().run(
+                () async => _xeroApi.deleteInvoice(invoiceDetails.invoice),
+                label: 'Deleting Invoice',
+              );
             }
           }
           if (mounted) {

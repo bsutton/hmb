@@ -215,6 +215,9 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                                               setState(() {});
                                             }
                                           },
+                                          canEmail:
+                                              () async =>
+                                                  EmailBlocked(false, ''),
                                         ),
                                   ),
                                 );
