@@ -70,10 +70,10 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                           children: [
                             Text('State: ${_quote.state.name}'),
                             const SizedBox(width: 8),
-                            if (_quote.state.name == 'sent' &&
+                            if (_quote.state == QuoteState.sent &&
                                 _quote.dateSent != null)
                               Text('Sent: ${formatDate(_quote.dateSent!)}'),
-                            if (_quote.state.name == 'approved' &&
+                            if (_quote.state == QuoteState.approved &&
                                 _quote.dateApproved != null)
                               Text(
                                 'Approved: ${formatDate(_quote.dateApproved!)}',
@@ -206,8 +206,8 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                                               'Please find the attached quote',
                                           emailRecipients: emailRecipients,
                                           onSent: () async {
-                                            if (_quote.state.name !=
-                                                'approved') {
+                                            if (_quote.state !=
+                                                QuoteState.approved) {
                                               await DaoQuote().markQuoteSent(
                                                 _quote.id,
                                               );
