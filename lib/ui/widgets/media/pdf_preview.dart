@@ -7,7 +7,7 @@ import '../../../ui/widgets/hmb_toast.dart';
 import '../../dialog/email_dialog.dart';
 
 class EmailBlocked {
-  EmailBlocked(this.blocked, this.reason);
+  EmailBlocked({required this.blocked, required this.reason});
   String reason;
   bool blocked;
 }

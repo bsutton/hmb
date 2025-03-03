@@ -81,11 +81,11 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
                       if (system.isExternalAccountingEnabled() &&
                           !invoice.isUploaded()) {
                         return EmailBlocked(
-                          true,
-                          'the envoice has not been uploaded.',
+                          blocked: true,
+                          reason: 'the envoice has not been uploaded.',
                         );
                       } else {
-                        return EmailBlocked(false, '');
+                        return EmailBlocked(blocked: false,reason: '');
                       }
                     },
                   ),

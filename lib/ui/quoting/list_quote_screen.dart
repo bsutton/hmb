@@ -81,29 +81,31 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
     if (job == null) {
       return;
     }
-    final quoteOptions = await showQuote(context: context, job: job);
-    if (quoteOptions != null) {
-      try {
-        if (!quoteOptions.billBookingFee &&
-            quoteOptions.selectedTaskIds.isEmpty) {
+    if (mounted) {
+      final quoteOptions = await showQuote(context: context, job: job);
+      if (quoteOptions != null) {
+        try {
+          if (!quoteOptions.billBookingFee &&
+              quoteOptions.selectedTaskIds.isEmpty) {
+            HMBToast.error(
+              'You must select a task or the booking fee',
+              acknowledgmentRequired: true,
+            );
+            return;
+          }
+          // Assume create returns the new Quote.
+          final newQuote = await DaoQuote().create(job, quoteOptions);
+          // Insert the new quote at the beginning (or any desired position).
+          setState(() {
+            _quotes.insert(0, newQuote);
+          });
+          _listKey.currentState?.insertItem(0, duration: _duration);
+        } catch (e) {
           HMBToast.error(
-            'You must select a task or the booking fee',
+            'Failed to create quote: $e',
             acknowledgmentRequired: true,
           );
-          return;
         }
-        // Assume create returns the new Quote.
-        final newQuote = await DaoQuote().create(job, quoteOptions);
-        // Insert the new quote at the beginning (or any desired position).
-        setState(() {
-          _quotes.insert(0, newQuote);
-        });
-        _listKey.currentState?.insertItem(0, duration: _duration);
-      } catch (e) {
-        HMBToast.error(
-          'Failed to create quote: $e',
-          acknowledgmentRequired: true,
-        );
       }
     }
   }
