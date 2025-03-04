@@ -48,6 +48,8 @@ Future<void> main(List<String> args) async {
             'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
         ..tracesSampleRate = 1.0
         ..profilesSampleRate = 1.0;
+      options.experimental.replay.sessionSampleRate = 1.0;
+      options.experimental.replay.onErrorSampleRate = 1.0;
     },
     appRunner: () {
       // Perform camera and deeplink init
@@ -58,7 +60,6 @@ Future<void> main(List<String> args) async {
       final blockingUIKey = GlobalKey();
 
       runApp(
-        // Wrap the entire app with a Container and DecoratedBox
         ToastificationWrapper(
           child: MaterialApp.router(
             theme: theme,
@@ -67,9 +68,10 @@ Future<void> main(List<String> args) async {
             // 1) Use `builder` to place your custom logic (BlockingUIRunner).
             // 2) `child` is the routed screen from routerConfig.
             builder:
-                (context, child) => Stack(
+                (context, mainAppWindow) => Stack(
                   children: [
-                    // The main content, wrapped by your blocking logic:
+                    // Added a white border when running on desktop so users can
+                    // see the edge of the app.
                     DecoratedBox(
                       position: DecorationPosition.foreground,
                       decoration: BoxDecoration(
@@ -85,12 +87,14 @@ Future<void> main(List<String> args) async {
                               slowAction: () => _initialise(context),
                               label: 'Upgrading your database.',
                               builder:
-                                  (context) => child ?? const SizedBox.shrink(),
+                                  (context) =>
+                                      mainAppWindow ?? const SizedBox.shrink(),
                             ),
                       ),
                     ),
 
-                    // The overlay
+                    // Overlay used to display a grey overlay
+                    // and message when doing long running actions.
                     const BlockingOverlay(),
                   ],
                 ),
