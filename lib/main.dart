@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:toastification/toastification.dart';
 
+import 'api/xero/handyman/app_starts_logging.dart';
 import 'dao/dao_task.dart';
 import 'dao/dao_time_entry.dart';
 import 'database/factory/flutter_database_factory.dart';
@@ -174,6 +175,7 @@ Future<void> _initialise(BuildContext context) async {
       // ignore: use_build_context_synchronously
       await _initDb(context);
       await _initializeTimeEntryState(refresh: false);
+      unawaited(logAppStartup());
 
       // ignore: avoid_catches_without_on_clauses
     } catch (e, stackTrace) {
