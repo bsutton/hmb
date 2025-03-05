@@ -140,8 +140,8 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
                 ),
                 HBMCrudSite(
                   parentTitle: 'Customer',
-                  daoJoin: JoinAdaptorCustomerSite(),
                   parent: Parent(customer),
+                  daoJoin: JoinAdaptorCustomerSite(),
                 ),
               ],
             ),
