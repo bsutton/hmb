@@ -96,7 +96,7 @@ class _JobEditScreenState extends State<JobEditScreen>
     _hourlyRateFocusNode = FocusNode();
     _bookingFeeFocusNode = FocusNode();
 
-    /// reset the state.
+    /// set the state.
     June.getState(SelectedCustomer.new).customerId = widget.job?.customerId;
     June.getState(SelectJobStatus.new).jobStatusId = widget.job?.jobStatusId;
     June.getState(SelectedSite.new).siteId = widget.job?.siteId;
@@ -118,7 +118,9 @@ class _JobEditScreenState extends State<JobEditScreen>
         // to do this.
         // ignore: discarded_futures
         DaoJobStatus().getById(1).then((jobStatus) {
-          June.getState(SelectJobStatus.new).jobStatusId = jobStatus?.id;
+          June.getState(SelectJobStatus.new)
+            ..jobStatusId = jobStatus?.id
+            ..setState();
         });
       });
     }
@@ -252,10 +254,11 @@ You can set a default booking fee from System | Billing screen''');
             (state) => HMBSelectContact(
               selectedContact: state,
               customer: customer,
-              onSelected:
-                  (contact) =>
-                      June.getState(SelectedContact.new).contactId =
-                          contact?.id,
+              onSelected: (contact) {
+                June.getState(SelectedContact.new)
+                  ..contactId = contact?.id
+                  ..setState();
+              },
             ),
       );
 
@@ -266,20 +269,29 @@ You can set a default booking fee from System | Billing screen''');
             (state) => HMBSelectSite(
               initialSite: state,
               customer: customer,
-              onSelected:
-                  (site) => June.getState(SelectedSite.new).siteId = site?.id,
+              onSelected: (site) {
+                June.getState(SelectedSite.new)
+                  ..siteId = site?.id
+                  ..setState();
+              },
             ),
       );
 
   Widget _chooseCustomer() => SelectCustomer(
     selectedCustomer: June.getState(SelectedCustomer.new),
     onSelected: (customer) {
-      June.getState(SelectedCustomer.new).customerId = customer?.id;
+      June.getState(SelectedCustomer.new)
+        ..customerId = customer?.id
+        ..setState();
 
       /// we have changed customers so the site and contact lists
       /// are no longer valid.
-      June.getState(SelectedSite.new).siteId = null;
-      June.getState(SelectedContact.new).contactId = null;
+      June.getState(SelectedSite.new)
+        ..siteId = null
+        ..setState();
+      June.getState(SelectedContact.new)
+        ..contactId = null
+        ..setState();
     },
   );
 
