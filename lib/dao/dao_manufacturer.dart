@@ -12,18 +12,18 @@ class DaoManufacturer extends Dao<Manufacturer> {
       return getAll(orderByClause: 'name');
     }
     final like = '''%$filter%''';
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select m.* 
 from manufacturer m
 where m.name like ?
 or m.description like ?
 order by m.name
 ''',
-      [like, like],
+        [like, like],
+      ),
     );
-
-    return toList(data);
   }
 
   @override

@@ -28,22 +28,19 @@ class DaoInvoice extends Dao<Invoice> {
   @override
   Future<List<Invoice>> getAll({String? orderByClause}) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      orderBy: 'modified_date desc',
-    );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
+    return toList(await db.query(tableName, orderBy: 'modified_date desc'));
   }
 
   Future<List<Invoice>> getByJobId(int jobId) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'job_id = ?',
-      whereArgs: [jobId],
-      orderBy: 'id desc',
+    return toList(
+      await db.query(
+        tableName,
+        where: 'job_id = ?',
+        whereArgs: [jobId],
+        orderBy: 'id desc',
+      ),
     );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
   Future<List<Invoice>> getByFilter(String? filter) async {
@@ -53,8 +50,9 @@ class DaoInvoice extends Dao<Invoice> {
       return getAll(orderByClause: 'modified_date desc');
     }
 
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
     SELECT i.*
     FROM invoice i
     LEFT JOIN job j ON i.job_id = j.id
@@ -65,15 +63,14 @@ class DaoInvoice extends Dao<Invoice> {
        OR c.name LIKE ?
     ORDER BY i.modified_date DESC
   ''',
-      [
-        '%$filter%', // Filter for invoice_num
-        '%$filter%', // Filter for external_invoice_id
-        '%$filter%', // Filter for job summary
-        '%$filter%', // Filter for customer name
-      ],
+        [
+          '%$filter%', // Filter for invoice_num
+          '%$filter%', // Filter for external_invoice_id
+          '%$filter%', // Filter for job summary
+          '%$filter%', // Filter for customer name
+        ],
+      ),
     );
-
-    return toList(data);
   }
 
   @override
@@ -154,7 +151,7 @@ You must provide an email address for the Contact ${contact.fullname}''');
           /// its json.
           // ignore: avoid_dynamic_calls
           xeroContactId =
-          /// its json.
+              /// its json.
               // ignore: avoid_dynamic_calls
               (jsonDecode(createContactResponse.body)['Contacts'] as List)
                       .first['ContactID']
@@ -183,9 +180,11 @@ You must provide an email address for the Contact ${contact.fullname}''');
       );
     }
     final responseBody = jsonDecode(createInvoiceResponse.body);
+
     /// its json.
     // ignore: avoid_dynamic_calls
     final invoiceNum = responseBody['Invoices'][0]['InvoiceNumber'] as String;
+
     /// its json.
     // ignore: avoid_dynamic_calls
     final invoiceId = responseBody['Invoices'][0]['InvoiceID'] as String;

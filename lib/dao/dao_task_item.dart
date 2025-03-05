@@ -18,16 +18,16 @@ class DaoTaskItem extends Dao<TaskItem> {
     if (taskId == null) {
       return [];
     }
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select ti.* 
 from task_item ti
 where ti.task_id = ?
 ''',
-      [taskId],
+        [taskId],
+      ),
     );
-
-    return toList(data);
   }
 
   Future<void> deleteByTask(int id, [Transaction? transaction]) async {
@@ -68,13 +68,13 @@ WHERE task_id = ?
   Future<List<TaskItem>> getIncompleteItems() async {
     final db = withoutTransaction();
 
-    final data = await db.rawQuery('''
+    return toList(
+      await db.rawQuery('''
 select ti.* 
 from task_item ti
 where ti.completed = 0
-''');
-
-    return toList(data);
+'''),
+    );
   }
 
   Future<void> markNotBilled(int invoiceLineId) async {
@@ -118,10 +118,7 @@ AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
       parameters.addAll(jobIds);
     }
 
-    final data = await db.rawQuery(query, parameters);
-
-    // Convert the result into a list of TaskItem objects
-    return toList(data);
+    return toList(await db.rawQuery(query, parameters));
   }
 
   Future<List<TaskItem>> getShoppingItems({
@@ -161,10 +158,8 @@ $supplierCondition
       parameters.add(supplier.id);
     }
 
-    final data = await db.rawQuery(query, parameters);
+   return toList( await db.rawQuery(query, parameters));
 
-    // Convert the result into a list of TaskItem objects
-    return toList(data);
   }
 
   Money calculateCharge({

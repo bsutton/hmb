@@ -17,18 +17,18 @@ class DaoTaskStatus extends Dao<TaskStatus> {
     }
 
     final likeArg = '''%$filter%''';
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select ts.*
 from task_status ts 
 where ts.name like ?
 or ts.description like ?
 order by ordinal
 ''',
-      [likeArg, likeArg],
+        [likeArg, likeArg],
+      ),
     );
-
-    return toList(data);
   }
 
   Future<TaskStatus> getByEnum(TaskStatusEnum taskStatusEnum) async {

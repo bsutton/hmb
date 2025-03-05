@@ -52,13 +52,7 @@ class DaoBase<T extends Entity<T>> {
   ///  ```name desc, age```
   Future<List<T>> getAll({String? orderByClause}) async {
     final executor = db;
-    final List<Map<String, dynamic>> maps = await executor.query(
-      _tableName,
-      orderBy: orderByClause,
-    );
-    final list = List.generate(maps.length, (i) => _fromMap(maps[i]));
-
-    return list;
+    return toList(await executor.query(_tableName, orderBy: orderByClause));
   }
 
   Future<T?> getById(int? entityId) async {

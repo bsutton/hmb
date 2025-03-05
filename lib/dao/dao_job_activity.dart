@@ -14,13 +14,14 @@ class DaoJobActivity extends Dao<JobActivity> {
       return [];
     }
     final db = withoutTransaction();
-    final rows = await db.query(
-      tableName,
-      where: 'job_id = ?',
-      whereArgs: [jobId],
-      orderBy: 'start_date asc',
+    return toList(
+      await db.query(
+        tableName,
+        where: 'job_id = ?',
+        whereArgs: [jobId],
+        orderBy: 'start_date asc',
+      ),
     );
-    return toList(rows);
   }
 
   Future<List<JobActivity>> getActivitiesInRange(

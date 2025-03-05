@@ -77,7 +77,7 @@ and sc.`primary` = 1''',
     if (customerId == null) {
       return [];
     }
-    final data = await db.rawQuery(
+    return toList( await db.rawQuery(
       '''
 select s.* 
 from site s
@@ -88,9 +88,8 @@ join customer cu
 where cu.id =? 
 ''',
       [customerId],
-    );
+    ));
 
-    return toList(data);
   }
 
   /// search for Sites given a user supplied filter string.
@@ -105,7 +104,7 @@ where cu.id =?
     }
 
     final likeArg = '''%$filter%''';
-    final data = await db.rawQuery(
+    return toList(await db.rawQuery(
       '''
 select s.*
 from site s
@@ -118,9 +117,8 @@ or s.state like ?
 or s.postcode like ?
 ''',
       [likeArg, likeArg, likeArg, likeArg, likeArg],
-    );
+    ));
 
-    return toList(data);
   }
 
   Future<List<Site>> getBySupplier(Supplier? supplier) async {
@@ -129,7 +127,7 @@ or s.postcode like ?
     if (supplier == null) {
       return [];
     }
-    final data = await db.rawQuery(
+    return toList(await db.rawQuery(
       '''
 select s.* 
 from site s
@@ -140,9 +138,8 @@ join supplier cu
 where cu.id =? 
 ''',
       [supplier.id],
-    );
+    ));
 
-    return toList(data);
   }
 
   Future<Site?> getByJob(Job? job) async {

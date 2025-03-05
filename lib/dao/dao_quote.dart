@@ -23,22 +23,19 @@ class DaoQuote extends Dao<Quote> {
   @override
   Future<List<Quote>> getAll({String? orderByClause}) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      orderBy: 'modified_date desc',
-    );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
+    return toList(await db.query(tableName, orderBy: 'modified_date desc'));
   }
 
   Future<List<Quote>> getByJobId(int jobId) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'job_id = ?',
-      whereArgs: [jobId],
-      orderBy: 'id desc',
+    return toList(
+      await db.query(
+        tableName,
+        where: 'job_id = ?',
+        whereArgs: [jobId],
+        orderBy: 'id desc',
+      ),
     );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
   Future<List<Quote>> getByFilter(String? filter) async {
@@ -48,7 +45,7 @@ class DaoQuote extends Dao<Quote> {
       return getAll(orderByClause: 'modified_date desc');
     }
 
-    final data = await db.rawQuery(
+    return toList(await db.rawQuery(
       '''
     SELECT q.*
     FROM quote q
@@ -66,21 +63,19 @@ class DaoQuote extends Dao<Quote> {
         '%$filter%', // Filter for job summary
         '%$filter%', // Filter for customer name
       ],
-    );
+    ));
 
-    return toList(data);
   }
 
   Future<List<Quote>> getQuotesWithoutMilestones() async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> data = await db.rawQuery('''
+    return toList(await db.rawQuery('''
       SELECT q.*
       FROM quote q
       LEFT JOIN milestone m ON q.id = m.quote_id
       WHERE m.id IS NULL
-    ''');
+    '''));
 
-    return toList(data);
   }
 
   @override

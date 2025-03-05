@@ -124,8 +124,9 @@ and sc.`primary` = 1''',
     if (customerId == null) {
       return [];
     }
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select co.* 
 from contact co
 join customer_contact cc
@@ -134,10 +135,9 @@ join customer cu
   on cc.customer_id = cu.id
 where cu.id =? 
 ''',
-      [customerId],
+        [customerId],
+      ),
     );
-
-    return toList(data);
   }
 
   /// returns the primary contact for the supplier
@@ -148,8 +148,9 @@ where cu.id =?
     if (supplier == null) {
       return [];
     }
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select co.* 
 from contact co
 join supplier_contact cc
@@ -158,10 +159,9 @@ join supplier cu
   on cc.supplier_id = cu.id
 where cu.id =? 
 ''',
-      [supplier.id],
+        [supplier.id],
+      ),
     );
-
-    return toList(data);
   }
 
   Future<List<Contact>> getByJob(int? jobId) async {
@@ -170,18 +170,18 @@ where cu.id =?
     if (jobId == null) {
       return [];
     }
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select co.* 
 from contact co
 join job jo
   on co.id = jo.contact_id
 where jo.id =? 
 ''',
-      [jobId],
+        [jobId],
+      ),
     );
-
-    return toList(data);
   }
 
   Future<void> deleteFromCustomer(Contact contact, Customer customer) async {
@@ -221,8 +221,9 @@ where jo.id =?
     if (Strings.isBlank(filter)) {
       return getAll(orderByClause: 'modifiedDate desc');
     }
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select c.* 
 form contact c
 join customer_contact cc
@@ -232,10 +233,9 @@ join customer cu
 where c.name like ?
 order by c.modifiedDate desc
 ''',
-      ['''%$filter%'''],
+        ['''%$filter%'''],
+      ),
     );
-
-    return toList(data);
   }
 }
 

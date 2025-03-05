@@ -12,8 +12,9 @@ class DaoSupplier extends Dao<Supplier> {
       return getAll(orderByClause: 'name');
     }
     final like = '''%$filter%''';
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select s.* 
 from supplier s
 where s.name like ?
@@ -21,10 +22,9 @@ or s.description like ?
 or s.service like ?
 order by s.name
 ''',
-      [like, like, like],
+        [like, like, like],
+      ),
     );
-
-    return toList(data);
   }
 
   @override

@@ -32,13 +32,7 @@ class DaoJob extends Dao<Job> {
   @override
   Future<List<Job>> getAll({String? orderByClause}) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      orderBy: 'modified_date desc',
-    );
-    final list = List.generate(maps.length, (i) => fromMap(maps[i]));
-
-    return list;
+    return toList(await db.query(tableName, orderBy: 'modified_date desc'));
   }
 
   Future<Job?> getLastActiveJob() async {
@@ -88,8 +82,9 @@ class DaoJob extends Dao<Job> {
     }
 
     final likeArg = '''%$filter%''';
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select j.*
 from job j
 join customer c
@@ -102,10 +97,9 @@ or c.name like ?
 or js.name like ?
 order by j.modified_date desc
 ''',
-      [likeArg, likeArg, likeArg, likeArg],
+        [likeArg, likeArg, likeArg, likeArg],
+      ),
     );
-
-    return toList(data);
   }
 
   Future<Job?> getJobForTask(int? taskId) async {
@@ -134,8 +128,9 @@ where t.id =?
     final db = withoutTransaction();
     final likeArg = filter != null ? '''%$filter%''' : '%%';
 
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
     SELECT j.*
     FROM job j
     JOIN job_status js ON j.job_status_id = js.id
@@ -143,10 +138,9 @@ where t.id =?
     AND (j.summary LIKE ? OR j.description LIKE ?)
     ORDER BY j.modified_date DESC
     ''',
-      [likeArg, likeArg],
+        [likeArg, likeArg],
+      ),
     );
-
-    return toList(data);
   }
 
   /// Get Quotable Jobs - now filtered by `preStart` status
@@ -157,8 +151,9 @@ where t.id =?
     // Use the enum's name property to match the `status_enum` column in the database
     final preStartStatus = JobStatusEnum.preStart.name;
 
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
     SELECT j.*
     FROM job j
     JOIN job_status js ON j.job_status_id = js.id
@@ -166,10 +161,9 @@ where t.id =?
     AND (j.summary LIKE ? OR j.description LIKE ?)
     ORDER BY j.modified_date DESC
   ''',
-      [preStartStatus, likeArg, likeArg],
+        [preStartStatus, likeArg, likeArg],
+      ),
     );
-
-    return toList(data);
   }
 
   Future<JobStatistics> getJobStatistics(Job job) async {
@@ -252,18 +246,18 @@ where t.id =?
     }
     final db = withoutTransaction();
 
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select j.* 
 from job j
 join customer c
   on j.customer_id = c.id
 where c.id =?
 ''',
-      [customer.id],
+        [customer.id],
+      ),
     );
-
-    return toList(data);
   }
 
   Future<bool> hasBillableTasks(Job job) async {

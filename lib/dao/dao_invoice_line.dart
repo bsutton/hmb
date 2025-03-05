@@ -20,11 +20,7 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
     Transaction? transaction,
   }) async {
     final db = withinTransaction(transaction);
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      orderBy: 'modified_date desc',
-    );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
+    return toList(await db.query(tableName, orderBy: 'modified_date desc'));
   }
 
   Future<List<InvoiceLine>> getByInvoiceId(
@@ -32,12 +28,13 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
     Transaction? transaction,
   ]) async {
     final db = withinTransaction(transaction);
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'invoice_id = ?',
-      whereArgs: [invoiceId],
+    return toList(
+      await db.query(
+        tableName,
+        where: 'invoice_id = ?',
+        whereArgs: [invoiceId],
+      ),
     );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
   /// Deletes all invoice lines for the given invoice id.
@@ -68,12 +65,11 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
 
   Future<List<InvoiceLine>> getByInvoiceLineGroupId(int id) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(
+    return toList( await db.query(
       tableName,
       where: 'invoice_line_group_id = ?',
       whereArgs: [id],
-    );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
+    ));
   }
 }
 

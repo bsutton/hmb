@@ -18,11 +18,7 @@ class DaoQuoteLineGroup extends Dao<QuoteLineGroup> {
     Transaction? transaction,
   }) async {
     final db = withinTransaction(transaction);
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      orderBy: 'modified_date asc',
-    );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
+    return toList(await db.query(tableName, orderBy: 'modified_date asc'));
   }
 
   Future<List<QuoteLineGroup>> getByQuoteId(
@@ -30,13 +26,14 @@ class DaoQuoteLineGroup extends Dao<QuoteLineGroup> {
     Transaction? transaction,
   ]) async {
     final db = withinTransaction(transaction);
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'quote_id = ?',
-      whereArgs: [quoteId],
-      orderBy: 'id asc',
+    return toList(
+      await db.query(
+        tableName,
+        where: 'quote_id = ?',
+        whereArgs: [quoteId],
+        orderBy: 'id asc',
+      ),
     );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
   Future<int> deleteByQuoteId(int quoteId, [Transaction? transaction]) async {

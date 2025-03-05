@@ -18,16 +18,15 @@ class DaoMessageTemplate extends Dao<MessageTemplate> {
       return getAll(orderByClause: 'modifiedDate desc');
     }
 
-    final data = await db.rawQuery(
+    return toList(await db.rawQuery(
       '''
       SELECT * FROM message_template 
       WHERE title LIKE ? 
       ORDER BY modifiedDate DESC
     ''',
       ['%$filter%'],
-    );
+    ));
 
-    return toList(data);
   }
 
   @override

@@ -18,11 +18,7 @@ class DaoInvoiceLineGroup extends Dao<InvoiceLineGroup> {
     Transaction? transaction,
   }) async {
     final db = withinTransaction(transaction);
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      orderBy: 'modified_date desc',
-    );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
+    return toList(await db.query(tableName, orderBy: 'modified_date desc'));
   }
 
   Future<List<InvoiceLineGroup>> getByInvoiceId(
@@ -30,12 +26,13 @@ class DaoInvoiceLineGroup extends Dao<InvoiceLineGroup> {
     Transaction? transaction,
   ]) async {
     final db = withinTransaction(transaction);
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'invoice_id = ?',
-      whereArgs: [invoiceId],
+    return toList(
+      await db.query(
+        tableName,
+        where: 'invoice_id = ?',
+        whereArgs: [invoiceId],
+      ),
     );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
   @override

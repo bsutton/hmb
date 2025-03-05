@@ -43,17 +43,17 @@ where j.id =?
     if (Strings.isBlank(filter)) {
       return getAll(orderByClause: 'modifiedDate desc');
     }
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select c.* 
 from customer c
 where c.name like ?
 order by c.modifiedDate desc
 ''',
-      ['''%$filter%'''],
+        ['''%$filter%'''],
+      ),
     );
-
-    return toList(data);
   }
 
   Future<Customer?> getByQuote(int quoteId) async {

@@ -12,13 +12,14 @@ class DaoMilestone extends Dao<Milestone> {
 
   Future<List<Milestone>> getByQuoteId(int quoteId) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'quote_id = ?',
-      whereArgs: [quoteId],
-      orderBy: 'milestone_number ASC',
+    return toList(
+      await db.query(
+        tableName,
+        where: 'quote_id = ?',
+        whereArgs: [quoteId],
+        orderBy: 'milestone_number ASC',
+      ),
     );
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
   @override

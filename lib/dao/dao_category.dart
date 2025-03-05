@@ -9,16 +9,16 @@ class DaoCategory extends Dao<Category> {
       return getAll(orderByClause: 'name');
     }
     final like = '''%$filter%''';
-    final data = await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
           SELECT * FROM category 
           WHERE name LIKE ? OR description LIKE ?
           ORDER BY name
         ''',
-      [like, like],
+        [like, like],
+      ),
     );
-
-    return toList(data);
   }
 
   @override
