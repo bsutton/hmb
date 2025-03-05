@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/save_and_close.dart';
 
 abstract class EntityState<E extends Entity<E>> {
@@ -86,32 +87,41 @@ class EntityEditScreenState<E extends Entity<E>>
       Navigator.of(context).pop();
     },
   );
-
-  /// Save the entity
   Future<void> _save({bool close = false}) async {
     if (_formKey.currentState!.validate()) {
-      if (widget.entityState.currentEntity != null) {
-        // Update existing entity
-        final updatedEntity = await widget.entityState.forUpdate(
-          widget.entityState.currentEntity!,
-        );
-        await widget.dao.update(updatedEntity);
-        setState(() {
-          widget.entityState.currentEntity = updatedEntity;
-        });
-      } else {
-        // Insert new entity
-        final newEntity = await widget.entityState.forInsert();
-        await widget.dao.insert(newEntity);
-        setState(() {
-          widget.entityState.currentEntity = newEntity;
-        });
-      }
+      try {
+        if (widget.entityState.currentEntity != null) {
+          // Update existing entity
+          final updatedEntity = await widget.entityState.forUpdate(
+            widget.entityState.currentEntity!,
+          );
+          await widget.dao.update(updatedEntity);
+          setState(() {
+            widget.entityState.currentEntity = updatedEntity;
+          });
+        } else {
+          // Insert new entity
+          final newEntity = await widget.entityState.forInsert();
+          await widget.dao.insert(newEntity);
+          setState(() {
+            widget.entityState.currentEntity = newEntity;
+          });
+        }
 
-      if (close && mounted) {
-        Navigator.of(context).pop(widget.entityState.currentEntity);
-      } else {
-        setState(() {});
+        if (close && mounted) {
+          Navigator.of(context).pop(widget.entityState.currentEntity);
+        } else {
+          setState(() {});
+        }
+      } catch (error) {
+        // Check if the error indicates a duplicate name (unique constraint violation)
+        if (error.toString().contains('UNIQUE constraint failed')) {
+          HMBToast.error(
+            'A ${widget.entityName.toLowerCase()} with that name already exists.',
+          );
+        } else {
+          rethrow;
+        }
       }
     }
   }
