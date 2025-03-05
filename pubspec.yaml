@@ -12,7 +12,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.7.0
+version: 0.7.2
 
 environment:
   sdk: '>=3.7.0 <4.0.0'
@@ -83,8 +83,8 @@ dependencies:
   photo_view: ^0.15.0
   printing: ^5.13.1
   provider: ^6.1.2
-  sentry: ^8.11.0
-  sentry_flutter: ^8.9.0
+  sentry: ^8.13.2
+  sentry_flutter: ^8.13.2
   # sms_advanced: # ^1.1.0
   #   hosted: https://onepub.dev/api/jbbxpsdavu/
   sqflite: ^2.3.2

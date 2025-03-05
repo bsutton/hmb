@@ -373,10 +373,10 @@ packages:
     dependency: transitive
     description:
       name: dev_build
-      sha256: "8e215c30e555d6f5b0619f50be2c3f49c0bf9bf4426a3dcddf0654f943420b4b"
+      sha256: f658f2fbf601b40d103fb9cb8db277da0a2022173950aa2aadf0f8cbcdf7c8c3
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.2+4"
+    version: "1.1.2+5"
   diff_match_patch:
     dependency: transitive
     description:
@@ -543,10 +543,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_plugin_android_lifecycle
-      sha256: "1c2b787f99bdca1f3718543f81d38aa1b124817dfeb9fb196201bea85b6134bf"
+      sha256: "5a1e6fb2c0561958d7e4c33574674bda7b77caaca7a33b758876956f2902eea3"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.26"
+    version: "2.0.27"
   flutter_secure_storage:
     dependency: "direct main"
     description:
@@ -713,10 +713,10 @@ packages:
     dependency: transitive
     description:
       name: google_sign_in_platform_interface
-      sha256: "1f6e5787d7a120cc0359ddf315c92309069171306242e181c09472d1b00a2971"
+      sha256: "5f6f79cf139c197261adb6ac024577518ae48fdff8e53205c5373b5f6430a8aa"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.5"
+    version: "2.5.0"
   google_sign_in_web:
     dependency: transitive
     description:
