@@ -11,12 +11,13 @@ enum ParentType { task, tool }
 class DaoPhoto extends Dao<Photo> {
   Future<List<Photo>> getByParent(int parentId, ParentType parentType) async {
     final db = withoutTransaction();
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'parentId = ? AND parentType = ?',
-      whereArgs: [parentId, parentType.name],
+    return toList(
+      await db.query(
+        tableName,
+        where: 'parentId = ? AND parentType = ?',
+        whereArgs: [parentId, parentType.name],
+      ),
     );
-    return List.generate(maps.length, (i) => Photo.fromMap(maps[i]));
   }
 
   Future<List<String>> getAllPhotoPaths() async {
@@ -26,6 +27,27 @@ class DaoPhoto extends Dao<Photo> {
       columns: ['filePath'],
     );
     return maps.map((map) => map['filePath'] as String).toList();
+  }
+
+  /// Returns the list of photos that have not been backed up yet.
+  Future<List<Photo>> getNewPhotos() async {
+    // You can add a query method to DaoPhoto that returns only photos with a null last_backup_date.
+    final db = withoutTransaction();
+    final List<Map<String, dynamic>> maps = await db.query(
+      'photo',
+      where: 'last_backup_date IS NULL',
+    );
+    return maps.map(Photo.fromMap).toList();
+  }
+
+  /// Updates the photo record to mark it as backed up.
+  Future<void> updatePhotoBackupStatus(int photoId) async {
+    final db = withoutTransaction();
+    // Raw SQL update statement:
+    await db.rawUpdate(
+      "UPDATE photo SET last_backup_date = datetime('now') WHERE id = ?",
+      [photoId],
+    );
   }
 
   @override

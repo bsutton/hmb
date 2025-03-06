@@ -9,6 +9,7 @@ import 'package:sqflite_common/sqflite.dart';
 import '../../../../util/log.dart';
 import '../../../../util/paths.dart'
     if (dart.library.ui) '../../../../util/paths_flutter.dart';
+import '../backup.dart';
 import '../backup_provider.dart';
 
 /// Does on device backups.

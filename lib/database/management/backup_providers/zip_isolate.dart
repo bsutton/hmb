@@ -8,6 +8,7 @@ import 'package:path/path.dart';
 import 'package:sentry/sentry.dart';
 
 import 'backup_provider.dart';
+import 'progress_update.dart';
 
 /// All photos are stored under this path in the zip file
 const zipPhotoRoot = 'photos/';

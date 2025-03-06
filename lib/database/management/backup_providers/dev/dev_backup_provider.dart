@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dcli/dcli.dart';
 import 'package:path/path.dart';
 
+import '../backup.dart';
 import '../backup_provider.dart';
 
 class DevBackupProvider extends BackupProvider {

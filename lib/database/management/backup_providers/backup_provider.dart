@@ -10,6 +10,8 @@ import '../../../util/exceptions.dart';
 import '../../factory/hmb_database_factory.dart';
 import '../../versions/script_source.dart';
 import '../database_helper.dart';
+import 'backup.dart';
+import 'progress_update.dart';
 import 'zip_isolate.dart';
 
 abstract class BackupProvider {
@@ -304,32 +306,4 @@ class BackupResult {
       ..writeln('Backed-up Size: $backupSize');
     return sb.toString();
   }
-}
-
-class Backup {
-  Backup({
-    required this.id,
-    required this.when,
-    required this.pathTo,
-    required this.size,
-    required this.status,
-    required this.error,
-  });
-
-  String id;
-  DateTime when;
-  String pathTo;
-  String size;
-  String status;
-  String error;
-}
-
-class ProgressUpdate {
-  ProgressUpdate(this.stageDescription, this.stageNo, this.stageCount);
-
-  ProgressUpdate.upload(this.stageDescription) : stageNo = 6, stageCount = 7;
-
-  final String stageDescription;
-  final int stageNo;
-  final int stageCount;
 }
