@@ -110,8 +110,8 @@ select s.*
 from site s
 join customer c
   on c.id = s.customer_id
-where s.address1 like ?
-or s.address2 like ?
+where s.addressLine1 like ?
+or s.addressLine2 like ?
 or s.suburb like ?
 or s.state like ?
 or s.postcode like ?
