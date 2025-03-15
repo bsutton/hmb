@@ -58,31 +58,38 @@ class JobActivityDialog extends StatefulWidget {
   final DateTime? when;
   final bool isEditing;
 
-  @override
-  _JobActivityDialogState createState() => _JobActivityDialogState();
-
-  static Future<JobActivityAddAction?> showAdd({
+  static Future<JobActivityAddAction> showAdd({
     required BuildContext context,
     required DateTime when,
     required int? defaultJob,
-  }) => showDialog<JobActivityAddAction>(
-    context: context,
-    builder:
-        (context) => Material(
-          child: JobActivityDialog.add(
-            when: when,
-            preSelectedJobId: defaultJob,
+  }) async {
+    var result = await showDialog<JobActivityAddAction>(
+      context: context,
+      builder:
+          (context) => Material(
+            child: JobActivityDialog.add(
+              when: when,
+              preSelectedJobId: defaultJob,
+            ),
           ),
-        ),
-  );
+    );
+    return result ??= JobActivityAddAction(AddAction.cancel, null);
+  }
 
-  static Future<JobActivityUpdateAction?> showEdit(
+  static Future<JobActivityUpdateAction> showEdit(
     BuildContext context,
     CalendarEventData<JobActivityEx> event,
-  ) => showDialog<JobActivityUpdateAction>(
-    context: context,
-    builder: (context) => Material(child: JobActivityDialog.edit(event: event)),
-  );
+  ) async {
+    var result = await showDialog<JobActivityUpdateAction>(
+      context: context,
+      builder:
+          (context) => Material(child: JobActivityDialog.edit(event: event)),
+    );
+    return result ??= JobActivityUpdateAction(EditAction.cancel, null);
+  }
+
+  @override
+  _JobActivityDialogState createState() => _JobActivityDialogState();
 }
 
 class _JobActivityDialogState extends State<JobActivityDialog> {

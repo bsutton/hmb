@@ -19,8 +19,7 @@ mixin ScheduleHelper {
     CalendarEventData<JobActivityEx> event,
   ) async {
     // Show the edit dialog for this activity
-    final jobActivityAction =
-        (await JobActivityDialog.showEdit(context, event))!;
+    final jobActivityAction = await JobActivityDialog.showEdit(context, event);
 
     switch (jobActivityAction.action) {
       case EditAction.update:
@@ -37,12 +36,11 @@ mixin ScheduleHelper {
     DateTime date,
     int? defaultJob,
   ) async {
-    final jobActivityAction =
-        (await JobActivityDialog.showAdd(
-          context: context,
-          defaultJob: defaultJob,
-          when: date,
-        ))!;
+    final jobActivityAction = await JobActivityDialog.showAdd(
+      context: context,
+      defaultJob: defaultJob,
+      when: date,
+    );
 
     final dao = DaoJobActivity();
     switch (jobActivityAction.action) {
