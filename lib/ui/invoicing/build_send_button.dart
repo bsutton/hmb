@@ -82,7 +82,7 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
                           !invoice.isUploaded()) {
                         return EmailBlocked(
                           blocked: true,
-                          reason: 'the envoice has not been uploaded.',
+                          reason: 'the invoice has not been uploaded.',
                         );
                       } else {
                         return EmailBlocked(blocked: false,reason: '');
