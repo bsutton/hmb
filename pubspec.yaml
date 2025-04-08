@@ -110,6 +110,7 @@ dev_dependencies:
   lint_hard: ^6.0.0
   pub_release: ^11.0.0
   pubspec_manager: ^1.0.0
+  test: ^1.25.15
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

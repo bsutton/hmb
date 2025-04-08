@@ -66,12 +66,6 @@ class LocalDate {
   static DateTime stripTime(DateTime dateTime) =>
       DateTime(dateTime.year, dateTime.month, dateTime.day);
 
-  LocalDate addDays(int days) =>
-      LocalDate.fromDateTime(date.add(Duration(days: days)));
-
-  LocalDate subtractDays(int days) =>
-      LocalDate.fromDateTime(date.subtract(Duration(days: days)));
-
   bool isAfter(LocalDate rhs) => date.isAfter(rhs.date);
 
   bool isAfterOrEqual(LocalDate rhs) => isAfter(rhs) || isEqual(rhs);
@@ -84,6 +78,16 @@ class LocalDate {
 
   @override
   bool operator ==(Object other) => other is LocalDate && isEqual(other);
+
+  LocalDate addDays(int days) =>
+  // We use this method to avoid problems with DST transitions
+  // where a day is longer or shorer than 24 hrs
+  LocalDate.fromDateTime(DateTime(date.year, date.month, date.day + days));
+
+  LocalDate subtractDays(int days) =>
+  // We use this method to avoid problems with DST transitions
+  // where a day is longer or shorer than 24 hrs
+  LocalDate.fromDateTime(DateTime(date.year, date.month, date.day - days));
 
   LocalDate add(Duration duration) =>
       LocalDate.fromDateTime(date.add(duration));

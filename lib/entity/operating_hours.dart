@@ -108,7 +108,7 @@ class OperatingHours {
       }
 
       // Move to the next day
-      date = date.add(const Duration(days: 1));
+      date = date.addDays(1);
     }
 
     // If no open day is found within the next 7 days (unlikely), throw an error
@@ -124,7 +124,7 @@ class OperatingHours {
       if (await isOpen(date)) {
         return date;
       }
-      date = date.subtract(const Duration(days: 1));
+      date = date.subtractDays( 1);
     }
     // If everything is closed for a whole week, handle gracefully or throw:
     throw StateError('No open day found within the past 7 days.');
