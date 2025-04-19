@@ -36,7 +36,8 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
       (await DaoQuote().getById(widget.quoteId))!;
 
   Future<void> _refresh() async {
-    setState(_loadQuote);
+    await _loadQuote();
+    setState(() {});
   }
 
   @override

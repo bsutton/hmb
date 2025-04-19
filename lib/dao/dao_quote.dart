@@ -45,8 +45,9 @@ class DaoQuote extends Dao<Quote> {
       return getAll(orderByClause: 'modified_date desc');
     }
 
-    return toList(await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
     SELECT q.*
     FROM quote q
     LEFT JOIN job j ON q.job_id = j.id
@@ -57,25 +58,26 @@ class DaoQuote extends Dao<Quote> {
        OR c.name LIKE ?
     ORDER BY q.modified_date DESC
   ''',
-      [
-        '%$filter%', // Filter for quote_num
-        '%$filter%', // Filter for external_quote_id
-        '%$filter%', // Filter for job summary
-        '%$filter%', // Filter for customer name
-      ],
-    ));
-
+        [
+          '%$filter%', // Filter for quote_num
+          '%$filter%', // Filter for external_quote_id
+          '%$filter%', // Filter for job summary
+          '%$filter%', // Filter for customer name
+        ],
+      ),
+    );
   }
 
   Future<List<Quote>> getQuotesWithoutMilestones() async {
     final db = withoutTransaction();
-    return toList(await db.rawQuery('''
+    return toList(
+      await db.rawQuery('''
       SELECT q.*
       FROM quote q
       LEFT JOIN milestone m ON q.id = m.quote_id
       WHERE m.id IS NULL
-    '''));
-
+    '''),
+    );
   }
 
   @override
@@ -212,8 +214,10 @@ class DaoQuote extends Dao<Quote> {
     final lines = await DaoQuoteLine().getByQuoteId(quoteId);
     var total = MoneyEx.zero;
     for (final line in lines) {
-      final lineTotal = line.unitPrice.multiplyByFixed(line.quantity);
-      total += lineTotal;
+      if (line.status == LineStatus.normal) {
+        final lineTotal = line.unitPrice.multiplyByFixed(line.quantity);
+        total += lineTotal;
+      }
     }
     final quote = await DaoQuote().getById(quoteId);
     final updatedQuote = quote!.copyWith(totalAmount: total);
