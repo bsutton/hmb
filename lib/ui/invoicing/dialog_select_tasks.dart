@@ -146,7 +146,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text('Select tasks to bill for Job: ${widget.job.summary}'),
+    title: Text('Select tasks to bill: ${widget.job.summary}'),
     content: DeferredBuilder(
       this,
       builder:
