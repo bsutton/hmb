@@ -131,10 +131,6 @@ class HMBLinkButton extends StatelessWidget {
 
   Future<void> _launchURL(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
-    } else {
-      throw HMBException('Could not launch $url');
-    }
   }
 }
