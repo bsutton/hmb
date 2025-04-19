@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../dao/dao_system.dart';
 import '../../entity/invoice.dart';
+import '../../util/exceptions.dart';
 import 'models/xero_invoice.dart';
 import 'xero_auth.dart';
 
@@ -25,6 +27,8 @@ class XeroApi {
   XeroAuth2 xeroAuth;
 
   Future<http.Response> uploadInvoice(XeroInvoice xeroInvoice) async {
+    await _checkIntegration();
+
     final tenantId = await getTenantId();
     final response = await http.post(
       Uri.parse('${_baseUrl}Invoices'),
@@ -41,6 +45,8 @@ class XeroApi {
   }
 
   Future<http.Response> deleteInvoice(Invoice invoice) async {
+    await _checkIntegration();
+
     final tenantId = await getTenantId();
     final response = await http.post(
       Uri.parse('${_baseUrl}Invoices/${invoice.invoiceNum}'),
@@ -65,6 +71,8 @@ class XeroApi {
   /// Invoices which have been authorised cannot be deleted and
   /// instead must be voided.
   Future<http.Response> voidInvoice(Invoice invoice) async {
+    await _checkIntegration();
+
     final tenantId = await getTenantId();
     final response = await http.post(
       Uri.parse('${_baseUrl}Invoices/${invoice.invoiceNum}'),
@@ -88,6 +96,8 @@ class XeroApi {
 
   /// Instruct xero to send the invoice to the jobs primary contact.
   Future<http.Response> sendInvoice(Invoice invoice) async {
+    await _checkIntegration();
+
     final tenantId = await getTenantId();
 
     await markApproved(invoice);
@@ -110,6 +120,7 @@ class XeroApi {
 
   /// Instruct xero to send the invoice to the job's primary contact.
   Future<http.Response> markApproved(Invoice invoice) async {
+    await _checkIntegration();
     final tenantId = await getTenantId();
     final response = await http.post(
       Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}'),
@@ -133,6 +144,7 @@ class XeroApi {
 
   /// Mark the invoice in xero as sent.
   Future<http.Response> markAsSent(Invoice invoice) async {
+    await _checkIntegration();
     final tenantId = await getTenantId();
     final response = await http.post(
       Uri.parse('${_baseUrl}Invoices/${invoice.externalInvoiceId}'),
@@ -155,6 +167,7 @@ class XeroApi {
   }
 
   Future<http.Response> getContact(String contactName) async {
+    await _checkIntegration();
     final tenantId = await getTenantId();
     final response = await http.get(
       Uri.parse('${_baseUrl}Contacts?where=Name=="$contactName"'),
@@ -168,6 +181,7 @@ class XeroApi {
   }
 
   Future<http.Response> createContact(Map<String, dynamic> contact) async {
+    await _checkIntegration();
     final tenantId = await getTenantId();
     final response = await http.post(
       Uri.parse('${_baseUrl}Contacts'),
@@ -184,6 +198,7 @@ class XeroApi {
   }
 
   Future<String> getTenantId() async {
+    await _checkIntegration();
     if (_tenantId != null) {
       return _tenantId!;
     }
@@ -205,6 +220,14 @@ class XeroApi {
       }
     } else {
       throw Exception('Failed to get tenant ID: ${response.body}');
+    }
+  }
+
+  Future<void> _checkIntegration() async {
+    if (!(await DaoSystem().get()).enableXeroIntegration) {
+      throw IntegrationDisabledExcpetion(
+        'Xero integration is disabled. Check System | Integration',
+      );
     }
   }
 }

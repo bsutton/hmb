@@ -52,6 +52,7 @@ class System extends Entity<System> {
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
+    required this.enableXeroIntegration,
     required this.businessName,
     required this.businessNumber,
     required this.businessNumberLabel,
@@ -65,11 +66,11 @@ class System extends Entity<System> {
     required this.billingColour,
     required this.paymentTermsInDays,
     required this.paymentOptions,
-    required this.firstname, // New field
-    required this.surname, // New field
+    required this.firstname,
+    required this.surname,
     required super.createdDate,
     required super.modifiedDate,
-    this.operatingHours, // <<--- New field for operating days/hours
+    this.operatingHours,
   }) : super();
 
   System.forInsert({
@@ -102,12 +103,13 @@ class System extends Entity<System> {
     required this.billingColour,
     required this.paymentTermsInDays,
     required this.paymentOptions,
+    this.enableXeroIntegration = true,
     this.preferredUnitSystem = PreferredUnitSystem.metric,
     this.logoPath = '',
     this.logoAspectRatio = LogoAspectRatio.square,
-    this.firstname, // New field
-    this.surname, // New field
-    this.operatingHours, // <<--- New field for operating days/hours
+    this.firstname,
+    this.surname,
+    this.operatingHours,
   }) : super.forInsert();
 
   System.forUpdate({
@@ -131,6 +133,7 @@ class System extends Entity<System> {
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
+    required this.enableXeroIntegration,
     required this.businessName,
     required this.businessNumber,
     required this.businessNumberLabel,
@@ -144,9 +147,9 @@ class System extends Entity<System> {
     required this.billingColour,
     required this.paymentTermsInDays,
     required this.paymentOptions,
-    this.firstname, // New field
-    this.surname, // New field
-    this.operatingHours, // <<--- New field for operating days/hours
+    this.firstname,
+    this.surname,
+    this.operatingHours,
   }) : super.forUpdate();
 
   factory System.fromMap(Map<String, dynamic> map) => System(
@@ -176,6 +179,7 @@ class System extends Entity<System> {
     simCardNo: map['sim_card_no'] as int?,
     xeroClientId: map['xero_client_id'] as String?,
     xeroClientSecret: map['xero_client_secret'] as String?,
+    enableXeroIntegration: (map['enable_xero_integration'] as int? ?? 1) == 1,
     businessName: map['business_name'] as String?,
     businessNumber: map['business_number'] as String?,
     businessNumberLabel: map['business_number_label'] as String?,
@@ -196,7 +200,7 @@ class System extends Entity<System> {
     paymentOptions: map['payment_options'] as String? ?? '',
     firstname: map['firstname'] as String?,
     surname: map['surname'] as String?,
-    operatingHours: map['operating_hours'] as String?, // <<--- New field
+    operatingHours: map['operating_hours'] as String?,
     createdDate:
         DateTime.tryParse(map['created_date'] as String? ?? '') ??
         DateTime.now(),
@@ -224,6 +228,7 @@ class System extends Entity<System> {
   int? simCardNo;
   String? xeroClientId;
   String? xeroClientSecret;
+  bool enableXeroIntegration;
   String? businessName;
   String? businessNumber;
   String? businessNumberLabel;
@@ -239,12 +244,10 @@ class System extends Entity<System> {
   String paymentOptions;
   String? firstname;
   String? surname;
-  String? operatingHours; // <<--- New field
+  String? operatingHours;
 
   void setOperatingHours(OperatingHours schedule) {
     operatingHours = schedule.toJson();
-    // Save
-    // `system` to the DB as usual
   }
 
   OperatingHours getOperatingHours() => OperatingHours.fromJson(operatingHours);
@@ -284,6 +287,7 @@ class System extends Entity<System> {
     'sim_card_no': simCardNo,
     'xero_client_id': xeroClientId,
     'xero_client_secret': xeroClientSecret,
+    'enable_xero_integration': enableXeroIntegration ? 1 : 0,
     'business_name': businessName,
     'business_number': businessNumber,
     'business_number_label': businessNumberLabel,
@@ -300,12 +304,13 @@ class System extends Entity<System> {
     'payment_options': paymentOptions,
     'firstname': firstname,
     'surname': surname,
-    'operating_hours': operatingHours, // <<--- New field
+    'operating_hours': operatingHours,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
 
-  bool isExternalAccountingEnabled() => Strings.isNotBlank(xeroClientId);
+  bool isExternalAccountingEnabled() =>
+      enableXeroIntegration && Strings.isNotBlank(xeroClientId);
 }
 
 enum DayName {
