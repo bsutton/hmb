@@ -81,6 +81,8 @@ class TaskStatus extends Entity<TaskStatus> {
     'modifiedDate': modifiedDate.toIso8601String(),
   };
 
+  bool isCancelled() => name == 'Cancelled';
+
   bool isComplete() {
     switch (name) {
       case 'To be scheduled':

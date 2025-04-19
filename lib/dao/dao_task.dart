@@ -6,11 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import '../entity/entity.g.dart';
 import '../util/money_ex.dart';
 import '../util/photo_meta.dart';
-import 'dao.dart';
-import 'dao_job.dart';
-import 'dao_photo.dart';
-import 'dao_task_item.dart';
-import 'dao_time_entry.dart';
+import 'dao.g.dart';
 
 class DaoTask extends Dao<Task> {
   @override
@@ -169,9 +165,13 @@ WHERE ti.id = ?
     final estimates = <TaskEstimatedValue>[];
     for (final task in tasks) {
       final hourlyRate = await DaoTask().getHourlyRate(task);
-      final estimate = await getEstimateForTask(task, hourlyRate);
-      if (!estimate.total.isZero) {
-        estimates.add(estimate);
+      final taskStatus = await DaoTaskStatus().getById(task.taskStatusId);
+
+      if (!taskStatus!.isCancelled()) {
+        final estimate = await getEstimateForTask(task, hourlyRate);
+        if (!estimate.total.isZero) {
+          estimates.add(estimate);
+        }
       }
     }
 
