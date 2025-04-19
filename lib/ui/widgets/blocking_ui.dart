@@ -384,6 +384,11 @@ class BlockingUI {
 
     return actionRunner.completer;
   }
+
+  /// Convience method for [run] that allows you to wait for the
+  /// long running [slowAction] to complete.
+  Future<T> runAndWait<T>(Future<T> Function() slowAction, {String? label}) =>
+      run(slowAction, label: label).future;
 }
 
 /// [BlockingUI] supports nested calls to its [BlockingUI.run]
@@ -420,7 +425,7 @@ class RunningSlowAction<T> {
         .whenComplete(() {
           /// If an error occurs we will aready be complete.
           if (!completer.isCompleted) {
-            completer.complete();
+            completer.complete(result);
           }
           end();
         });

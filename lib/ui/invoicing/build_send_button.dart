@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
+import '../../api/external_accounting.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/invoice.dart';
 import '../../util/format.dart';
@@ -78,14 +79,14 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
                     ],
                     onSent: () async => DaoInvoice().markSent(invoice),
                     canEmail: () async {
-                      if (system.isExternalAccountingEnabled() &&
+                      if ((await ExternalAccounting().isEnabled()) &&
                           !invoice.isUploaded()) {
                         return EmailBlocked(
                           blocked: true,
                           reason: 'the invoice has not been uploaded.',
                         );
                       } else {
-                        return EmailBlocked(blocked: false,reason: '');
+                        return EmailBlocked(blocked: false, reason: '');
                       }
                     },
                   ),

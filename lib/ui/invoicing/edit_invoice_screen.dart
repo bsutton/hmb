@@ -4,6 +4,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:strings/strings.dart';
 
+import '../../api/external_accounting.dart';
 import '../../api/xero/xero_api.dart';
 import '../../dao/dao_contact.dart';
 import '../../dao/dao_invoice.dart';
@@ -159,20 +160,23 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
         try {
           final invoiceDetails = await _invoiceDetails;
           final sent = invoiceDetails.invoice.sent;
-          await DaoInvoice().delete(invoiceDetails.invoice.id);
-          if (Strings.isNotBlank(invoiceDetails.invoice.invoiceNum)) {
-            await _xeroApi.login();
-            if (sent) {
-              HMBToast.error(
-                'This invoice has been sent to the customer and cannot be deleted',
-              );
-            } else {
-              BlockingUI().run(
-                () async => _xeroApi.deleteInvoice(invoiceDetails.invoice),
-                label: 'Deleting Invoice',
-              );
+          if (sent) {
+            HMBToast.error(
+              'This invoice has been sent to the customer and cannot be deleted',
+            );
+            return;
+          }
+
+          if (await ExternalAccounting().isEnabled()) {
+            if (Strings.isNotBlank(invoiceDetails.invoice.invoiceNum)) {
+              await _xeroApi.login();
+              await BlockingUI().runAndWait(() async {
+                await _xeroApi.deleteInvoice(invoiceDetails.invoice);
+              }, label: 'Deleting Invoice');
             }
           }
+          await DaoInvoice().delete(invoiceDetails.invoice.id);
+          HMBToast.info('Invoice ${invoiceDetails.invoice.bestNumber} deleted');
           if (mounted) {
             Navigator.pop(context); // Close after deletion
           }
