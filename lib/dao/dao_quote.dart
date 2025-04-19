@@ -112,7 +112,9 @@ class DaoQuote extends Dao<Quote> {
     final quoteId = await DaoQuote().insert(quote);
 
     // Add Booking Fee as a quote line
-    if (job.bookingFee != null && !job.bookingFee!.isZero) {
+    if (invoiceOptions.billBookingFee &&
+        job.bookingFee != null &&
+        !job.bookingFee!.isZero) {
       final quoteLineGroup = QuoteLineGroup.forInsert(
         quoteId: quoteId,
         name: 'Booking Fee',
