@@ -89,17 +89,17 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
     for (final jobActivity in jobActivities) {
       var fontColor = Colors.white;
       if (widget.defaultJob == jobActivity.jobId) {
-        fontColor = Colors.orange;
+        fontColor = Colors.black;
       }
       _hasActivitiesInExtendedHours =
           _hasActivitiesInExtendedHours ||
           !operatingHours.inOperatingHours(jobActivity);
 
+      final style = TextStyle(color: fontColor, fontSize: 13);
       eventData.add(
-        (await JobActivityEx.fromActivity(jobActivity)).eventData.copyWith(
-          titleStyle: TextStyle(color: fontColor, fontSize: 13),
-          descriptionStyle: TextStyle(color: fontColor, fontSize: 13),
-        ),
+        (await JobActivityEx.fromActivity(
+          jobActivity,
+        )).eventData.copyWith(titleStyle: style, descriptionStyle: style),
       );
     }
 
