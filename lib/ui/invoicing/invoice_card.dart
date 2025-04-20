@@ -6,7 +6,7 @@ import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/format.dart';
 import '../widgets/hmb_button.dart';
-import 'build_send_button.dart';
+import 'invoice_send_button.dart';
 
 class InvoiceCard extends StatefulWidget {
   const InvoiceCard({

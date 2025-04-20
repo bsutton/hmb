@@ -64,6 +64,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   late TextEditingController _dimension2Controller;
   late TextEditingController _dimension3Controller;
   late TextEditingController _urlController;
+  bool _manualCharge = false;
 
   late FocusNode _descriptionFocusNode;
 
@@ -118,6 +119,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
 
     _urlController = TextEditingController(text: currentEntity?.url);
     _labourEntryMode = currentEntity?.labourEntryMode ?? LabourEntryMode.hours;
+
+    _manualCharge = currentEntity?.chargeSet ?? false;
 
     _descriptionFocusNode = FocusNode();
   }
@@ -251,20 +254,37 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       );
 
   List<Widget> _buildFieldsBasedOnItemType() {
+    final widgets = <Widget>[];
+
     switch (June.getState(SelectedCheckListItemType.new).selected) {
       case 0:
-        return [];
-      case 5: // Labour
-        return _buildLabourFields();
+        break;
       case 1: // Materials - buy
       case 3: // Tools - buy
-        return _buildBuyFields();
+        widgets.addAll(_buildBuyFields());
       case 2: // Materials - stock
       case 4: // Tools - stock
-        return _buildStockFields();
-      default:
-        return [];
+        widgets.addAll(_buildStockFields());
+      case 5: // Labour
+        widgets.addAll(_buildLabourFields());
     }
+
+    /// Control how charge is calculated.
+    final mode = SwitchListTile(
+      title: const Text('Enter charge directly'),
+      value: _manualCharge,
+      onChanged:
+          (val) => setState(() {
+            _manualCharge = val;
+            // if switching *off* manual, re‑compute from current margin/qty/hours
+            if (!_manualCharge) {
+              _calculateChargeFromMargin(_marginController.text);
+            }
+          }),
+    );
+
+    widgets.insert(0, mode);
+    return widgets;
   }
 
   List<Widget> _buildLabourFields() => [
@@ -285,6 +305,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         controller: _estimatedLabourHoursController,
         labelText: 'Estimated Hours',
         keyboardType: TextInputType.number,
+        enabled: !_manualCharge,
         onChanged: (value) {
           _calculateEstimatedCostFromHours(value);
           _calculateChargeFromMargin(_marginController.text);
@@ -295,6 +316,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         controller: _estimatedLabourCostController,
         labelText: 'Estimated Cost',
         keyboardType: TextInputType.number,
+        enabled: !_manualCharge,
         onChanged:
             (value) => _calculateChargeFromMargin(_marginController.text),
       ),
@@ -343,6 +365,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       controller: _estimatedMaterialUnitCostController,
       labelText: 'Estimated Unit Cost',
       keyboardType: TextInputType.number,
+      enabled: !_manualCharge,
       onChanged: (value) {
         _calculateChargeFromMargin(_marginController.text);
       },
@@ -351,6 +374,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       controller: _estimatedMaterialQuantityController,
       labelText: 'Quantity',
       keyboardType: TextInputType.number,
+      enabled: !_manualCharge,
       onChanged: (value) {
         _calculateChargeFromMargin(_marginController.text);
       },
@@ -382,7 +406,9 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       labelText: 'Charge',
       keyboardType: TextInputType.number,
       onChanged: (value) {
-        _calculateChargeFromMargin(_marginController.text);
+        if (!_manualCharge) {
+          _calculateChargeFromMargin(_marginController.text);
+        }
       },
     ),
   ];
@@ -394,14 +420,18 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         controller: _marginController,
         labelText: 'Margin (%)',
         keyboardType: TextInputType.number,
+        enabled: !_manualCharge,
         onChanged: _calculateChargeFromMargin,
       ),
       HMBTextField(
         controller: _chargeController,
         labelText: 'Charge',
         keyboardType: TextInputType.number,
+        enabled: _manualCharge,
         onChanged: (value) {
-          _calculateChargeFromMargin(_marginController.text);
+          if (!_manualCharge) {
+            _calculateChargeFromMargin(_marginController.text);
+          }
         },
       ),
     ],
@@ -430,7 +460,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     ),
     estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
     charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
-    chargeSet: taskItem.chargeSet,
+    chargeSet: _manualCharge,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
     completed: taskItem.completed,
     billed: false,
@@ -464,7 +494,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     ),
     estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
     charge: Money.tryParse(_chargeController.text, isoCode: 'AUD'),
-    chargeSet: false,
+    chargeSet: _manualCharge,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
     labourEntryMode: _labourEntryMode,
     measurementType:

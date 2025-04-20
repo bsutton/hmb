@@ -20,9 +20,9 @@ import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/surface.dart';
-import 'build_send_button.dart';
 import 'edit_invoice_line_dialog.dart';
 import 'invoice_details.dart';
+import 'invoice_send_button.dart';
 
 class InvoiceEditScreen extends StatefulWidget {
   const InvoiceEditScreen({required this.invoiceDetails, super.key});

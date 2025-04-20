@@ -207,7 +207,7 @@ class TaskItem extends Entity<TaskItem> {
   LabourEntryMode labourEntryMode;
 
   Money getCharge(BillingType billingType, Money hourlyRate) {
-    if (chargeSet && _charge != null) {
+    if (chargeSet) {
       return _charge!;
     }
     switch (TaskItemTypeEnum.fromId(itemTypeId)) {
@@ -228,8 +228,16 @@ class TaskItem extends Entity<TaskItem> {
   };
 
   /// What we will charge the customer including our margin.
-  Money calcMaterialCharges(BillingType billingType) =>
-      calcMaterialCost(billingType).plusPercentage(margin);
+  Money calcMaterialCharges(BillingType billingType) {
+    final cost = calcMaterialCost(billingType);
+    if (chargeSet) {
+      /// the users has directly entered the charge field
+      /// so we assume they have include the margin.
+      return cost;
+    } else {
+      return cost.plusPercentage(margin);
+    }
+  }
 
   /// Calc cost for a Time And Materials job.
   Money _tAndMCost() {
@@ -252,16 +260,27 @@ class TaskItem extends Entity<TaskItem> {
   }
 
   /// The charge to the customer which includes our margin
-  Money calcLabourCharges(Money hourlyRate) =>
-      calcLabourCost(hourlyRate).plusPercentage(margin);
+  Money calcLabourCharges(Money hourlyRate) {
+    final cost = calcLabourCost(hourlyRate);
+    if (chargeSet) {
+      /// the users has directly entered the charge field
+      /// so we assume they have include the margin.
+      return cost;
+    } else {
+      return cost.plusPercentage(margin);
+    }
+  }
 
   Money calcLabourCost(Money hourlyRate) {
     switch (labourEntryMode) {
       case LabourEntryMode.dollars:
-        return _charge ?? estimatedLabourCost ?? MoneyEx.zero;
+        return (chargeSet ? _charge : estimatedLabourCost) ?? MoneyEx.zero;
       case LabourEntryMode.hours:
         if (estimatedLabourHours != null) {
-          return _charge ?? hourlyRate.multiplyByFixed(estimatedLabourHours!);
+          return (chargeSet
+                  ? _charge
+                  : hourlyRate.multiplyByFixed(estimatedLabourHours!)) ??
+              MoneyEx.zero;
         }
     }
     return MoneyEx.zero;
