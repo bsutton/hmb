@@ -6,6 +6,7 @@ import '../../dao/dao.g.dart';
 import '../../entity/invoice.dart';
 import '../../util/format.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/hmb_toast.dart';
 import '../widgets/media/pdf_preview.dart';
 import 'pdf/generate_invoice_pdf.dart';
 
@@ -31,6 +32,16 @@ class BuildSendButton extends StatelessWidget {
       var displayItems = true;
       var groupByTask = true; // Default to group by task
 
+      final job = await DaoJob().getById(invoice.jobId);
+      final contact = await DaoContact().getPrimaryForJob(job!.id);
+      if (contact == null) {
+        HMBToast.error('You must first set a Contact on the Job');
+        return;
+      }
+
+      if (!context.mounted) {
+        return;
+      }
       final result = await showInvoiceOptionsDialog(
         context: context,
         displayCosts: displayCosts,
@@ -54,8 +65,7 @@ class BuildSendButton extends StatelessWidget {
           displayItems: displayItems,
         );
         final system = await DaoSystem().get();
-        final job = await DaoJob().getById(invoice.jobId);
-        final contact = await DaoContact().getPrimaryForJob(job!.id);
+
         final recipients = await DaoInvoice().getEmailsByInvoice(invoice);
         if (context.mounted) {
           await Navigator.of(context).push(
@@ -67,7 +77,7 @@ class BuildSendButton extends StatelessWidget {
                     emailSubject:
                         '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
                     emailBody: '''
-${contact!.firstName.trim()},
+${contact.firstName.trim()},
 Please find the attached invoice for your job.
 
 Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
