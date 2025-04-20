@@ -36,5 +36,5 @@ extension MoneyEx on Money {
   /// Adds the given percentage to this amount
   /// 1 + 20 % = 1.2
   Money plusPercentage(Percentage percentage) =>
-      multiplyByFixed(Fixed.one + percentage);
+      this + this.multipliedByPercentage(percentage);
 }

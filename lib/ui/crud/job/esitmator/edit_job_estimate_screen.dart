@@ -78,10 +78,10 @@ class _JobEstimateBuilderScreenState
       final hourlyRate = await DaoTask().getHourlyRate(task);
       for (final item in items) {
         if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
-          totalLabour += item.calcLabourCost(hourlyRate);
+          totalLabour += item.calcLabourCharges(hourlyRate);
         } else {
           final billingType = await DaoTask().getBillingType(task);
-          totalMaterials += item.calcMaterialCost(billingType);
+          totalMaterials += item.calcMaterialCharges(billingType);
         }
       }
     }

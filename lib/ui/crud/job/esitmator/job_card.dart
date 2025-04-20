@@ -35,9 +35,9 @@ class _JobCardState extends State<JobCard> {
       // ignore: discarded_futures
       future: _loadCompleteJobInfo(widget.job),
       builder: (context, info) {
-        final labourCost = info!.totals.labourCost;
-        final materialsCost = info.totals.materialsCost;
-        final combinedCost = labourCost + materialsCost;
+        final labourCharges = info!.totals.labourCharges;
+        final materialCharges = info.totals.materialsCharges;
+        final combinedCharges = labourCharges + materialCharges;
 
         return Surface(
           padding: const EdgeInsets.all(16),
@@ -58,9 +58,9 @@ class _JobCardState extends State<JobCard> {
                 HMBTextLine('Quote #: ${info.quoteNumber}'),
               HMBTextLine('Status: ${info.statusName}'),
               const SizedBox(height: 16),
-              HMBTextLine('Labour: $labourCost'),
-              HMBTextLine('Materials: $materialsCost'),
-              HMBTextLine('Combined: $combinedCost'),
+              HMBTextLine('Labour: $labourCharges'),
+              HMBTextLine('Materials: $materialCharges'),
+              HMBTextLine('Combined: $combinedCharges'),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -163,23 +163,25 @@ class _JobCardState extends State<JobCard> {
 
       for (final item in items) {
         if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
-          totalLabour += item.calcLabourCost(hourlyRate);
+          totalLabour += item.calcLabourCharges(hourlyRate);
         } else {
-          totalMaterials += item.calcMaterialCost(billingType);
+          totalMaterials += item.calcMaterialCharges(billingType);
         }
       }
     }
 
-    return JobTotals(labourCost: totalLabour, materialsCost: totalMaterials);
+    return JobTotals(labourCharges: totalLabour, materialsCharges: totalMaterials);
   }
 }
 
 /// Holds totals for a job
 class JobTotals {
-  JobTotals({required this.labourCost, required this.materialsCost});
+  JobTotals({required this.labourCharges, required this.materialsCharges});
 
-  final Money labourCost;
-  final Money materialsCost;
+final Money labourCharges;
+  final Money materialsCharges;
+
+
 }
 
 /// Holds all required details for displaying the job card fields.
