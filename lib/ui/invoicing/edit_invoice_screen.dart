@@ -188,6 +188,12 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   Future<void> _uploadInvoiceToXero() async {
+    if (!(await ExternalAccounting().isEnabled())) {
+      HMBToast.info(
+        'You must first enable the Xero Integration via System | Intgration',
+      );
+      return;
+    }
     try {
       final invoice = (await _invoiceDetails).invoice;
       final job = await DaoJob().getById(invoice.jobId);

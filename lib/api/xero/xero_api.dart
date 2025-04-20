@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../../dao/dao_system.dart';
 import '../../entity/invoice.dart';
 import '../../util/exceptions.dart';
+import '../external_accounting.dart';
 import 'models/xero_invoice.dart';
 import 'xero_auth.dart';
 
@@ -224,7 +224,7 @@ class XeroApi {
   }
 
   Future<void> _checkIntegration() async {
-    if (!(await DaoSystem().get()).enableXeroIntegration) {
+    if (!(await ExternalAccounting().isEnabled())) {
       throw IntegrationDisabledExcpetion(
         'Xero integration is disabled. Check System | Integration',
       );

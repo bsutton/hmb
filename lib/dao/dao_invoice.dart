@@ -5,6 +5,7 @@ import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:strings/strings.dart';
 
+import '../api/external_accounting.dart';
 import '../api/xero/models/xero_contact.dart';
 import '../api/xero/xero_api.dart';
 import '../entity/entity.g.dart';
@@ -219,11 +220,13 @@ You must provide an email address for the Contact ${contact.fullname}''');
 
     await update(invoice);
 
-    final xeroApi = XeroApi();
-    await xeroApi.login();
+    if (await ExternalAccounting().isEnabled()) {
+      final xeroApi = XeroApi();
+      await xeroApi.login();
 
-    await xeroApi.markApproved(invoice);
-    await xeroApi.markAsSent(invoice);
+      await xeroApi.markApproved(invoice);
+      await xeroApi.markAsSent(invoice);
+    }
   }
 }
 
