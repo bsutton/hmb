@@ -215,11 +215,9 @@ class TaskItem extends Entity<TaskItem> {
       case TaskItemTypeEnum.materialsStock:
       case TaskItemTypeEnum.toolsBuy:
       case TaskItemTypeEnum.toolsOwn:
-        return calcMaterialCost(
-          billingType,
-        ).multiplyByFixed(Fixed.one + margin);
+        return calcMaterialCharges(billingType);
       case TaskItemTypeEnum.labour:
-        return calcLabourCost(hourlyRate).multiplyByFixed(Fixed.one + margin);
+        return calcLabourCharges(hourlyRate);
     }
   }
 
@@ -228,6 +226,10 @@ class TaskItem extends Entity<TaskItem> {
         .multiplyByFixed(estimatedMaterialQuantity ?? Fixed.one),
     BillingType.timeAndMaterial => _tAndMCost(),
   };
+
+  /// What we will charge the customer including our margin.
+  Money calcMaterialCharges(BillingType billingType) =>
+      calcMaterialCost(billingType).plusPercentage(margin);
 
   /// Calc cost for a Time And Materials job.
   Money _tAndMCost() {
@@ -248,6 +250,10 @@ class TaskItem extends Entity<TaskItem> {
     _charge = value;
     chargeSet = true; // Update chargeSet when charge is set
   }
+
+  /// The charge to the customer which includes our margin
+  Money calcLabourCharges(Money hourlyRate) =>
+      calcLabourCost(hourlyRate).plusPercentage(margin);
 
   Money calcLabourCost(Money hourlyRate) {
     switch (labourEntryMode) {

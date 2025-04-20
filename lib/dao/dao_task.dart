@@ -184,6 +184,7 @@ WHERE ti.id = ?
   ) async {
     var estimatedMaterialsCharge = MoneyEx.zero;
     var estimatedLabourCharge = MoneyEx.zero;
+    var estimatedLabourHours = Fixed.zero;
 
     // Get checklist items for the task
     final taskItems = await DaoTaskItem().getByTask(task.id);
@@ -193,12 +194,11 @@ WHERE ti.id = ?
     for (final item in taskItems) {
       if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
         // Labour check list item
-
-        estimatedLabourCharge += item.calcLabourCost(hourlyRate);
+        estimatedLabourCharge += item.calcLabourCharges(hourlyRate);
+        estimatedLabourHours += item.estimatedLabourHours ?? Fixed.zero;
       } else if (item.itemTypeId == TaskItemTypeEnum.materialsBuy.id) {
         // Materials and tools to be purchased
-        estimatedMaterialsCharge += item.estimatedMaterialUnitCost!
-            .multiplyByFixed(item.estimatedMaterialQuantity!);
+        estimatedMaterialsCharge += item.calcMaterialCharges(billingType);
       }
     }
 
@@ -206,10 +206,8 @@ WHERE ti.id = ?
       // Calculate time entries cost
       final timeEntries = await DaoTimeEntry().getByTask(task.id);
       for (final entry in timeEntries.where((entry) => !entry.billed)) {
-        final duration = entry.duration.inMinutes / 60;
-        estimatedMaterialsCharge += hourlyRate.multiplyByFixed(
-          Fixed.fromNum(duration),
-        );
+        estimatedLabourCharge += entry.calcLabourCharge(hourlyRate);
+        estimatedLabourHours += entry.calcHours();
       }
     }
 
@@ -218,6 +216,7 @@ WHERE ti.id = ?
       hourlyRate: hourlyRate,
       estimatedMaterialsCharge: estimatedMaterialsCharge,
       estimatedLabourCharge: estimatedLabourCharge,
+      estimatedLabourHours: estimatedLabourHours,
     );
   }
 
@@ -374,10 +373,13 @@ class TaskEstimatedValue {
     required this.estimatedMaterialsCharge,
     required this.estimatedLabourCharge,
     required this.hourlyRate,
-  }) : estimatedLabourHours =
-           hourlyRate == MoneyEx.zero
-               ? Fixed.zero
-               : estimatedLabourCharge.divideByFixed(hourlyRate.amount).amount;
+    required this.estimatedLabourHours,
+  });
+
+  //  : estimatedLabourHours =
+  //          hourlyRate == MoneyEx.zero
+  //              ? Fixed.zero
+  //              : estimatedLabourCharge.divideByFixed(hourlyRate.amount).amount;
 
   Task task;
   Money hourlyRate;
@@ -392,8 +394,6 @@ class TaskEstimatedValue {
 
   Fixed estimatedLabourHours;
 
-  // Money get estimatedLabourCharge =>
-  //     hourlyRate.multiplyByFixed(estimatedLabour);
-
+  /// Total charges including the margin.
   Money get total => estimatedMaterialsCharge + estimatedLabourCharge;
 }

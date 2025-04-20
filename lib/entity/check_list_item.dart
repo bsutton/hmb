@@ -198,11 +198,9 @@ class CheckListItem extends Entity<CheckListItem> {
       case TaskItemTypeEnum.materialsStock:
       case TaskItemTypeEnum.toolsBuy:
       case TaskItemTypeEnum.toolsOwn:
-        return calcMaterialCost(
-          billingType,
-        ).multiplyByFixed(Fixed.one + margin);
+        return calcMaterialCost(billingType).plusPercentage(margin);
       case TaskItemTypeEnum.labour:
-        return calcLabourCost(hourlyRate).multiplyByFixed(Fixed.one + margin);
+        return calcLabourCost(hourlyRate).plusPercentage(margin);
     }
   }
 

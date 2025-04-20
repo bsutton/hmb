@@ -174,9 +174,7 @@ class DaoQuote extends Dao<Quote> {
         if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
           continue;
         }
-        final lineTotal = item.estimatedMaterialUnitCost!.multiplyByFixed(
-          item.estimatedMaterialQuantity!,
-        );
+        final lineTotal = item.calcMaterialCharges(job.billingType);
         quoteLineGroup ??= await _createQuoteLineGroup(estimate.task, quoteId);
 
         final quoteLine = QuoteLine.forInsert(
@@ -184,7 +182,9 @@ class DaoQuote extends Dao<Quote> {
           quoteLineGroupId: quoteLineGroup.id,
           description: 'Material: ${item.description}',
           quantity: item.estimatedMaterialQuantity!,
-          unitPrice: item.estimatedMaterialUnitCost!,
+          unitPrice: item.estimatedMaterialUnitCost!.plusPercentage(
+            item.margin,
+          ),
           lineTotal: lineTotal,
         );
 

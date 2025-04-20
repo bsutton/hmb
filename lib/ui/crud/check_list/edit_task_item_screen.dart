@@ -302,7 +302,9 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   ];
 
   void _calculateChargeFromMargin(String? marginValue) {
-    final margin = FixedEx.tryParse(marginValue).divide(100);
+    final margin =
+        Percentage.tryParse(marginValue ?? '0', decimalDigits: 3) ??
+        Percentage(0);
     final estimatedLabourHours = FixedEx.tryParse(
       _estimatedLabourHoursController.text,
     );

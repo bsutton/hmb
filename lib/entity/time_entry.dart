@@ -107,4 +107,13 @@ class TimeEntry extends Entity<TimeEntry> {
   /// or part there of.
   bool recentlyStopped(DateTime now) =>
       endTime == null || now.difference(endTime!).inMinutes.abs() <= 15;
+
+  /// Calulate the charge for this [TimeEntry] based on the given
+  /// [hourlyRate]
+  Money calcLabourCharge(Money hourlyRate) {
+    final minutes = duration.inMinutes / 60;
+    return hourlyRate.multiplyByFixed(Fixed.fromNum(minutes));
+  }
+
+  Fixed calcHours() => Fixed.fromNum(duration.inMinutes / 60);
 }

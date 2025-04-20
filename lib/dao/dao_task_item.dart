@@ -3,6 +3,7 @@ import 'package:money2/money2.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
+import '../util/util.g.dart';
 import 'dao.dart';
 
 class DaoTaskItem extends Dao<TaskItem> {
@@ -52,7 +53,7 @@ WHERE task_id = ?
       ..completed = true
       ..actualMaterialUnitCost = unitCost
       ..actualMaterialQuantity = quantity
-      ..setCharge(item.calcMaterialCost(billingType));
+      ..setCharge(item.calcMaterialCharges(billingType));
 
     await update(item);
   }
@@ -158,13 +159,12 @@ $supplierCondition
       parameters.add(supplier.id);
     }
 
-   return toList( await db.rawQuery(query, parameters));
-
+    return toList(await db.rawQuery(query, parameters));
   }
 
   Money calculateCharge({
     required int? itemTypeId,
-    required Fixed margin,
+    required Percentage margin,
     required LabourEntryMode labourEntryMode,
     required Fixed estimatedLabourHours,
     required Money hourlyRate,
@@ -183,9 +183,7 @@ $supplierCondition
         {
           final quantity = estimatedMaterialQuantity;
           estimatedCost = estimatedMaterialUnitCost.multiplyByFixed(quantity);
-          charge = estimatedCost.multiplyByFixed(
-            Fixed.one + (margin / Fixed.fromInt(100)),
-          );
+          charge = estimatedCost.plusPercentage(margin);
         }
       case 5:
         {
@@ -194,9 +192,7 @@ $supplierCondition
           } else {
             estimatedCost = estimatedLabourCost;
           }
-          charge = estimatedCost.multiplyByFixed(
-            Fixed.one + (margin / Fixed.fromInt(100)),
-          );
+          charge = estimatedCost.plusPercentage(margin);
         }
     }
 
