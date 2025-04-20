@@ -23,7 +23,6 @@ class InvalidPathException extends HMBException {
   InvalidPathException(super.message);
 }
 
-
 class IntegrationDisabledExcpetion extends HMBException {
   IntegrationDisabledExcpetion(super.message);
 }

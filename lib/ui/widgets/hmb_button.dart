@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../util/exceptions.dart';
 import '../../util/hmb_theme.dart';
 import 'color_ex.dart';
 import 'layout/hmb_empty.dart';
@@ -131,6 +130,6 @@ class HMBLinkButton extends StatelessWidget {
 
   Future<void> _launchURL(String url) async {
     final uri = Uri.parse(url);
-      await launchUrl(uri);
+    await launchUrl(uri);
   }
 }
