@@ -13,7 +13,7 @@ import '../../../entity/job_status.dart';
 import '../../../util/date_time_ex.dart';
 import '../../../util/format.dart';
 import '../../../util/local_date.dart';
-import '../../widgets/hmb_text_clickable.dart';
+import '../../widgets/text/hmb_text_clickable.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/media/rich_editor.dart';
