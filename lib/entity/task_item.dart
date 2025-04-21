@@ -294,7 +294,9 @@ class TaskItem extends Entity<TaskItem> {
     return units?.format([dimension1, dimension2, dimension3]) ?? '';
   }
 
-  bool get hasDimensions => itemTypeId == 1 || itemTypeId == 2;
+  bool get hasDimensions =>
+      (itemTypeId == 1 || itemTypeId == 2) &&
+      (dimension1.isPositive || dimension2.isPositive || dimension3.isPositive);
 
   @override
   Map<String, dynamic> toMap() => {
