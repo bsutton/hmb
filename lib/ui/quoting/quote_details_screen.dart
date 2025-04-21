@@ -1,4 +1,3 @@
-// quote_details_screen.dart
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -36,7 +35,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
       (await DaoQuote().getById(widget.quoteId))!;
 
   Future<void> _refresh() async {
-    await _loadQuote();
+    _quote = await _loadQuote();
     setState(() {});
   }
 
@@ -88,7 +87,9 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                   // --- Action Buttons ---
                   Padding(
                     padding: const EdgeInsets.all(8),
-                    child: Row(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         HMBButton(
                           label: 'Send...',
@@ -228,7 +229,6 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                             }
                           },
                         ),
-                        const SizedBox(width: 8),
                         HMBButton(
                           label: 'Create Milestones',
                           onPressed: () async {
@@ -242,7 +242,6 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                             );
                           },
                         ),
-                        const SizedBox(width: 8),
                         HMBButton(
                           label: 'Create Invoice',
                           onPressed: () async {
@@ -264,7 +263,6 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                   const Divider(),
                   // --- Quote Lines / Groups ---
                   FutureBuilderEx<JobQuote>(
-                    // ignore: discarded_futures
                     future: JobQuote.fromQuoteId(_quote.id),
                     builder: (context, jobQuote) {
                       if (jobQuote == null || jobQuote.groups.isEmpty) {
