@@ -1,5 +1,11 @@
 import 'package:flutter/widgets.dart';
 
+
+/// This is a duplicate of the Flutter [StatefulBuilder].
+/// 
+/// we have vendored the method as we need access to the [StatefulBuilderState]
+/// which in the Flutter implementation is a private class.
+
 /// A platonic widget that both has state and calls a closure to obtain its child widget.
 ///
 /// {@youtube 560 315 https://www.youtube.com/watch?v=syvT63CosNE}
