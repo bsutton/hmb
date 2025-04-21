@@ -37,7 +37,6 @@ class PackingScreen extends StatefulWidget {
   const PackingScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _PackingScreenState createState() => _PackingScreenState();
 }
 
@@ -51,7 +50,6 @@ class TaskItemContext {
 class _PackingScreenState extends DeferredState<PackingScreen> {
   final taskItemsContexts = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
-
   String? filter;
 
   @override
@@ -63,13 +61,11 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
   Future<void> _loadTaskItems() async {
     // Get packing items filtered by the selected jobs.
     final taskItems = await DaoTaskItem().getPackingItems(jobs: _selectedJobs);
-
     taskItemsContexts.clear();
 
     for (final taskItem in taskItems) {
       final task = await DaoTask().getById(taskItem.taskId);
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
-
       // Apply text filter if present.
       var include =
           Strings.isBlank(filter) ||
@@ -78,21 +74,18 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
       // If a schedule filter is selected (other than "All") check the job's next activity.
       if (include && _selectedScheduleFilter != ScheduleFilter.all) {
         final job = await DaoJob().getJobForTask(task!.id);
-        if (job == null) {
-          include = false;
-        } else {
+        if (job != null) {
           final nextActivity = await DaoJobActivity().getNextActivityByJob(
             job.id,
           );
-          if (nextActivity == null) {
-            include = false;
-          } else {
-            // Use the enum's includes method.
-            include = _selectedScheduleFilter.includes(
-              nextActivity.start,
-              now: DateTime.now(),
-            );
-          }
+          include =
+              nextActivity != null &&
+              _selectedScheduleFilter.includes(
+                nextActivity.start,
+                now: DateTime.now(),
+              );
+        } else {
+          include = false;
         }
       }
 
@@ -132,7 +125,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
                     _selectedJobs = selectedJobs;
                     await _loadTaskItems();
                   },
-                  title: 'Filter by Jobs',
+                  title: 'Jobs',
                   backgroundColor: SurfaceElevation.e4.color,
                   required: false,
                 ).help(
@@ -160,29 +153,29 @@ If your Job isn't showing then you need to update its status to an Active one su
               ],
             ),
           ),
-
           Expanded(
             child: DeferredBuilder(
               this,
               builder: (context) {
                 if (taskItemsContexts.isEmpty) {
                   return _showEmpty();
-                } else {
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (constraints.maxWidth < 900) {
-                        // Mobile layout
-                        return ListView.builder(
+                }
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isMobile = constraints.maxWidth < 900;
+                    return isMobile
+                        ? ListView.builder(
+                          // Mobile layout
                           padding: const EdgeInsets.all(8),
                           itemCount: taskItemsContexts.length,
-                          itemBuilder: (context, index) {
-                            final item = taskItemsContexts[index];
-                            return _buildListItem(context, item);
-                          },
-                        );
-                      } else {
+                          itemBuilder:
+                              (context, index) => _buildListItem(
+                                context,
+                                taskItemsContexts[index],
+                              ),
+                        )
                         // Desktop layout
-                        return GridView.builder(
+                        : GridView.builder(
                           padding: const EdgeInsets.all(8),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
@@ -193,15 +186,14 @@ If your Job isn't showing then you need to update its status to an Active one su
                                 crossAxisSpacing: 16,
                               ),
                           itemCount: taskItemsContexts.length,
-                          itemBuilder: (context, index) {
-                            final itemContext = taskItemsContexts[index];
-                            return _buildListItem(context, itemContext);
-                          },
+                          itemBuilder:
+                              (context, index) => _buildListItem(
+                                context,
+                                taskItemsContexts[index],
+                              ),
                         );
-                      }
-                    },
-                  );
-                }
+                  },
+                );
               },
             ),
           ),
@@ -228,49 +220,50 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
         title: itemContext.taskItem.description,
         body: Row(
           children: [
-            FutureBuilderEx(
-              // ignore: discarded_futures
-              future: JobDetail.get(itemContext.task),
-              builder:
-                  (context, jobDetail) => Column(
+            // Constrain details column so buttons are always visible
+            Expanded(
+              child: FutureBuilderEx(
+                // ignore: discarded_futures
+                future: JobDetail.get(itemContext.task),
+                builder: (context, jobDetail) {
+                  final jd = jobDetail!;
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      HMBTextLine('Customer: ${jobDetail!.customer.name}'),
-                      HMBTextLine('Job: ${jobDetail.job.summary}'),
+                      HMBTextLine('Customer: ${jd.customer.name}'),
+                      HMBTextLine('Job: ${jd.job.summary}'),
                       HMBTextLine('Task: ${itemContext.task.name}'),
-                      HMBTextLine(
-                        '''Scheduled: ${jobDetail.dateOfNextActivity()}''',
-                      ),
-                      HMBTextLine(
-                        '${itemContext.taskItem.dimension1} '
-                        'x ${itemContext.taskItem.dimension2} '
-                        'x ${itemContext.taskItem.dimension3} '
-                        '${itemContext.taskItem.measurementType}',
-                      ),
+                      HMBTextLine('Scheduled: ${jd.dateOfNextActivity()}'),
+                      if (itemContext.taskItem.hasDimensions)
+                        HMBTextLine(
+                          '${itemContext.taskItem.dimension1} '
+                          'x ${itemContext.taskItem.dimension2} '
+                          'x ${itemContext.taskItem.dimension3} '
+                          '${itemContext.taskItem.measurementType}',
+                        ),
                       if (itemContext.taskItem.completed)
                         const Text(
                           'Completed',
                           style: TextStyle(color: Colors.green),
                         ),
                     ],
-                  ),
-            ),
-            Expanded(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.shopping_cart, color: Colors.blue),
-                    onPressed: () async => _moveToShoppingList(itemContext),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.check, color: Colors.green),
-                    onPressed:
-                        () async => markAsCompleted(itemContext, context),
-                  ),
-                ],
+                  );
+                },
               ),
+            ),
+            // Action buttons
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart, color: Colors.blue),
+                  onPressed: () async => _moveToShoppingList(itemContext),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.check, color: Colors.green),
+                  onPressed: () async => markAsCompleted(itemContext, context),
+                ),
+              ],
             ),
           ],
         ),
@@ -278,19 +271,29 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
 
   Future<void> _moveToShoppingList(TaskItemContext itemContext) async {
     final itemType = TaskItemTypeEnum.fromId(itemContext.taskItem.itemTypeId);
-
     // Determine the new item type
     final newType = switch (itemType) {
       TaskItemTypeEnum.toolsOwn => TaskItemTypeEnum.toolsBuy,
       TaskItemTypeEnum.materialsStock => TaskItemTypeEnum.materialsBuy,
       _ => null, // Other types are not moved
     };
-
     if (newType == null) {
       HMBToast.error('Item cannot be moved to shopping list.');
       return;
     }
+    // Show confirmation dialog
+    final confirmed = await _showConfirmationDialog(itemContext);
+    // If the user cancels, do nothing
+    if (confirmed != true) {
+      return;
+    }
+    final taskItem = itemContext.taskItem..itemTypeId = newType.id;
+    await DaoTaskItem().update(taskItem);
+    await _loadTaskItems();
+    HMBToast.info('Item moved to shopping list.');
+  }
 
+  Future<bool?> _showConfirmationDialog(TaskItemContext itemContext) async {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
@@ -313,40 +316,22 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
             ],
           ),
     );
-
-    // If the user cancels, do nothing
-    if (confirmed != true) {
-      return;
-    }
-
-    // Update the item type in the database
-    final taskItem = itemContext.taskItem..itemTypeId = newType.id;
-    await DaoTaskItem().update(taskItem);
-
-    // Reload the list to reflect the changes
-    await _loadTaskItems();
-
-    // Show confirmation
-    HMBToast.info('Item moved to shopping list.');
+    return confirmed;
   }
 }
 
 class JobDetail {
   JobDetail._(this.job, this.nextActivity, this.customer);
-
   static Future<JobDetail> get(Task task) async {
     final job = await DaoJob().getJobForTask(task.id);
-
     final nextActivity = await DaoJobActivity().getNextActivityByJob(job!.id);
-
     final customer = (await DaoCustomer().getByJob(job.id))!;
-
     return JobDetail._(job, nextActivity, customer);
   }
 
-  Job job;
-  JobActivity? nextActivity;
-  Customer customer;
+  final Job job;
+  final JobActivity? nextActivity;
+  final Customer customer;
 
   String dateOfNextActivity() {
     if (nextActivity == null) {

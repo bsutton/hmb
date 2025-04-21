@@ -79,27 +79,20 @@ class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _ShoppingScreenState createState() => _ShoppingScreenState();
 }
 
-bool isSameDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
-
-// -----------------------------------------------------------------------------
-// In your _ShoppingScreenState, add a field for the schedule filter:
 class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
-  late final _taskItems = <TaskItemContext>[];
+  final _taskItems = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
   Supplier? _selectedSupplier;
   String? filter;
-  static ScheduleFilter _selectedScheduleFilter =
-      ScheduleFilter.all; // New filter
+  static ScheduleFilter _selectedScheduleFilter = ScheduleFilter.all;
 
   @override
   Future<void> asyncInitState() async {
-    await _loadTaskItems();
     setAppTitle('Shopping');
+    await _loadTaskItems();
   }
 
   Future<void> _loadTaskItems() async {
@@ -114,52 +107,19 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
 
       // Apply text filter if present
-      if (!Strings.isBlank(filter)) {
-        if (!taskItem.description.toLowerCase().contains(
-          filter!.toLowerCase(),
-        )) {
-          continue;
-        }
+      if (!Strings.isBlank(filter) &&
+          !taskItem.description.toLowerCase().contains(filter!.toLowerCase())) {
+        continue;
       }
-
       // Apply schedule filter (if not "All")
       if (_selectedScheduleFilter != ScheduleFilter.all) {
         final job = await DaoJob().getJobForTask(task!.id);
-        if (job == null) {
-          continue;
-        }
-        final nextActivity = await DaoJobActivity().getNextActivityByJob(
-          job.id,
-        );
-        if (nextActivity == null) {
-          continue;
-        }
-        final scheduledDate = nextActivity.start;
-        final now = DateTime.now();
-
-        var include = false;
-        switch (_selectedScheduleFilter) {
-          case ScheduleFilter.today:
-            include = isSameDay(scheduledDate, now);
-          case ScheduleFilter.nextThreeDays:
-            // Only include if scheduledDate is after today and within the next 3 days.
-            if (!isSameDay(scheduledDate, now) &&
-                scheduledDate.isAfter(now) &&
-                scheduledDate.isBefore(now.add(const Duration(days: 3)))) {
-              include = true;
-            }
-          case ScheduleFilter.week:
-            // Include if scheduledDate is after today and within the next 7 days.
-            if (!isSameDay(scheduledDate, now) &&
-                scheduledDate.isAfter(now) &&
-                scheduledDate.isBefore(now.add(const Duration(days: 7)))) {
-              include = true;
-            }
-
-          case ScheduleFilter.all:
-            include = true;
-        }
-        if (!include) {
+        final nextActivity =
+            job == null
+                ? null
+                : await DaoJobActivity().getNextActivityByJob(job.id);
+        if (nextActivity == null ||
+            !_selectedScheduleFilter.includes(nextActivity.start)) {
           continue;
         }
       }
@@ -198,7 +158,7 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
                     _selectedJobs = selectedJobs;
                     await _loadTaskItems();
                   },
-                  title: 'Filter by Jobs',
+                  title: 'Jobs',
                   backgroundColor: SurfaceElevation.e6.color,
                   required: false,
                 ).help(
@@ -224,7 +184,6 @@ If your Job isn't showing then you need to update its status to an Active one su
                   'When adding Task Items, if you enter the supplier you can filter by supplier',
                 ),
                 const SizedBox(height: 10),
-                // New Schedule Filter Dropdown
                 HMBDroplist<ScheduleFilter>(
                   selectedItem: () async => _selectedScheduleFilter,
                   items: (filter) async => ScheduleFilter.values,
@@ -248,22 +207,21 @@ If your Job isn't showing then you need to update its status to an Active one su
               builder: (context) {
                 if (_taskItems.isEmpty) {
                   return _showEmpty();
-                } else {
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (constraints.maxWidth < 900) {
-                        // Mobile layout
-                        return ListView.builder(
+                }
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isMobile = constraints.maxWidth < 900;
+                    return isMobile
+                        ? ListView.builder(
                           padding: const EdgeInsets.all(8),
                           itemCount: _taskItems.length,
-                          itemBuilder: (context, index) {
-                            final item = _taskItems[index];
-                            return _buildShoppingItem(context, item);
-                          },
-                        );
-                      } else {
-                        // Desktop layout
-                        return GridView.builder(
+                          itemBuilder:
+                              (context, index) => _buildShoppingItem(
+                                context,
+                                _taskItems[index],
+                              ),
+                        )
+                        : GridView.builder(
                           padding: const EdgeInsets.all(8),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
@@ -272,15 +230,14 @@ If your Job isn't showing then you need to update its status to an Active one su
                                 mainAxisExtent: 256,
                               ),
                           itemCount: _taskItems.length,
-                          itemBuilder: (context, index) {
-                            final item = _taskItems[index];
-                            return _buildShoppingItem(context, item);
-                          },
+                          itemBuilder:
+                              (context, index) => _buildShoppingItem(
+                                context,
+                                _taskItems[index],
+                              ),
                         );
-                      }
-                    },
-                  );
-                }
+                  },
+                );
               },
             ),
           ),
@@ -311,35 +268,38 @@ If you were expecting to see items here - check the Job's Status is active.
         body: FutureBuilderEx(
           // Fetch the job associated with the task
           future: CustomerAndJob.fetch(itemContext),
-          builder:
-              (context, details) => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
+          builder: (context, details) {
+            final det = details!;
+            return Row(
+              children: [
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      HMBTextLine('Customer: ${details!.customer.name}'),
-                      HMBTextLine('Job: ${details.job.summary}'),
+                      HMBTextLine('Customer: ${det.customer.name}'),
+                      HMBTextLine('Job: ${det.job.summary}'),
                       HMBTextLine('Task: ${itemContext.task.name}'),
-                      if (details.supplier != null)
-                        HMBTextLine('Supplier: ${details.supplier!.name}'),
+                      if (det.supplier != null)
+                        HMBTextLine('Supplier: ${det.supplier!.name}'),
                       HMBTextLine(
-                        '''Scheduled Date: ${details.dateOfNextActivity()}''',
+                        'Scheduled Date: ${det.dateOfNextActivity()}',
                       ),
                       HMBTextLine(itemContext.taskItem.dimensions),
                       if (itemContext.taskItem.completed)
                         const HMBTextLine('Completed', colour: Colors.green),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.check, color: Colors.green),
-                    onPressed: () async {
-                      await markAsCompleted(itemContext, context);
-                      await _loadTaskItems();
-                    },
-                  ),
-                ],
-              ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.check, color: Colors.green),
+                  onPressed: () async {
+                    await markAsCompleted(itemContext, context);
+                    await _loadTaskItems();
+                  },
+                ),
+              ],
+            );
+          },
         ),
         onPressed: () async {
           await markAsCompleted(itemContext, context);
@@ -360,9 +320,10 @@ class CustomerAndJob {
   static Future<CustomerAndJob> fetch(TaskItemContext itemContext) async {
     final job = await DaoJob().getJobForTask(itemContext.task.id);
     final customer = await DaoCustomer().getByJob(job!.id);
-    final supplier = await DaoSupplier().getById(
-      itemContext.taskItem.supplierId,
-    );
+    final supplier =
+        itemContext.taskItem.supplierId == null
+            ? null
+            : await DaoSupplier().getById(itemContext.taskItem.supplierId);
     final nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
 
     return CustomerAndJob._internal(customer!, job, supplier, nextActivity);
@@ -371,7 +332,7 @@ class CustomerAndJob {
   final Customer customer;
   final Job job;
   final Supplier? supplier;
-  JobActivity? nextActivity;
+  final JobActivity? nextActivity;
 
   String dateOfNextActivity() {
     if (nextActivity == null) {
