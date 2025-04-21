@@ -7,10 +7,10 @@ import '../../../../entity/job.dart';
 import '../../../../entity/task_item_type.dart';
 import '../../../../util/money_ex.dart';
 import '../../../invoicing/dialog_select_tasks.dart';
-import '../../../widgets/hmb_button.dart';
-import '../../../widgets/hmb_toast.dart';
-import '../../../widgets/surface.dart';
+import '../../../quoting/quote_details_screen.dart';
 import '../../../widgets/text/hmb_text_themes.dart';
+import '../../../widgets/widgets.g.dart';
+import '../edit_job_screen.dart';
 import 'edit_job_estimate_screen.dart';
 
 class JobCard extends StatefulWidget {
@@ -30,7 +30,7 @@ class JobCard extends StatefulWidget {
 class _JobCardState extends State<JobCard> {
   @override
   Widget build(BuildContext context) => SizedBox(
-    height: 327,
+    height: 360,
     child: FutureBuilderEx<CompleteJobInfo>(
       // ignore: discarded_futures
       future: _loadCompleteJobInfo(widget.job),
@@ -53,9 +53,17 @@ class _JobCardState extends State<JobCard> {
               ),
               const SizedBox(height: 8),
               HMBTextLine('Customer: ${info.customerName}'),
-              HMBTextLine('Job Number: ${widget.job.id}'),
+              HMBLinkInternal(
+                label: 'Job #: ${widget.job.id}',
+                navigateTo: () async => JobEditScreen(job: widget.job),
+              ),
+
               if (info.quoteNumber != null)
-                HMBTextLine('Quote #: ${info.quoteNumber}'),
+                HMBLinkInternal(
+                  label: 'Quote #: ${info.quoteNumber}',
+                  navigateTo: () async => const QuoteDetailsScreen(quoteId: 1),
+                ),
+
               HMBTextLine('Status: ${info.statusName}'),
               const SizedBox(height: 16),
               HMBTextLine('Labour: $labourCharges'),
@@ -136,11 +144,13 @@ class _JobCardState extends State<JobCard> {
     // Fetch the quotes for this job and pick the most recent one
     final quotes = await DaoQuote().getByJobId(job.id);
     String? quoteNumber;
+    int? quoteId;
     if (quotes.isNotEmpty) {
       // Sort quotes by modified date descending
       quotes.sort((a, b) => b.modifiedDate.compareTo(a.modifiedDate));
       final latestQuote = quotes.first;
       quoteNumber = latestQuote.bestNumber;
+      quoteId = latestQuote.id;
     }
 
     return CompleteJobInfo(
@@ -148,6 +158,7 @@ class _JobCardState extends State<JobCard> {
       customerName: customerName,
       statusName: statusName,
       quoteNumber: quoteNumber,
+      quoteId: quoteId,
     );
   }
 
@@ -170,7 +181,10 @@ class _JobCardState extends State<JobCard> {
       }
     }
 
-    return JobTotals(labourCharges: totalLabour, materialsCharges: totalMaterials);
+    return JobTotals(
+      labourCharges: totalLabour,
+      materialsCharges: totalMaterials,
+    );
   }
 }
 
@@ -178,10 +192,8 @@ class _JobCardState extends State<JobCard> {
 class JobTotals {
   JobTotals({required this.labourCharges, required this.materialsCharges});
 
-final Money labourCharges;
+  final Money labourCharges;
   final Money materialsCharges;
-
-
 }
 
 /// Holds all required details for displaying the job card fields.
@@ -191,10 +203,12 @@ class CompleteJobInfo {
     required this.customerName,
     required this.statusName,
     this.quoteNumber,
+    this.quoteId,
   });
 
   final JobTotals totals;
   final String customerName;
   final String statusName;
   final String? quoteNumber;
+  final int? quoteId;
 }
