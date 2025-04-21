@@ -57,16 +57,17 @@ class DaoTaskItemType extends Dao<TaskItemType> {
     }
 
     final likeArg = '''%$filter%''';
-    return toList( await db.rawQuery(
-      '''
+    return toList(
+      await db.rawQuery(
+        '''
 select it.*
 from $tableName it
 where it.name like ?
 or it.description like ?
 ''',
-      [likeArg, likeArg],
-    ));
-
+        [likeArg, likeArg],
+      ),
+    );
   }
 
   @override

@@ -215,7 +215,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   }
 
   /// Called by a tile when it enters or leaves edit mode.
-  void _onEditingStatusChanged(Milestone milestone, bool isEditing) {
+  void _onEditingStatusChanged({required Milestone milestone, required bool isEditing}) {
     setState(() {
       editingMilestoneId = isEditing ? milestone.id : null;
     });

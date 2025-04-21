@@ -124,7 +124,7 @@ class OperatingHours {
       if (await isOpen(date)) {
         return date;
       }
-      date = date.subtractDays( 1);
+      date = date.subtractDays(1);
     }
     // If everything is closed for a whole week, handle gracefully or throw:
     throw StateError('No open day found within the past 7 days.');

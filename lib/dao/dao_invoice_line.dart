@@ -65,11 +65,13 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
 
   Future<List<InvoiceLine>> getByInvoiceLineGroupId(int id) async {
     final db = withoutTransaction();
-    return toList( await db.query(
-      tableName,
-      where: 'invoice_line_group_id = ?',
-      whereArgs: [id],
-    ));
+    return toList(
+      await db.query(
+        tableName,
+        where: 'invoice_line_group_id = ?',
+        whereArgs: [id],
+      ),
+    );
   }
 }
 

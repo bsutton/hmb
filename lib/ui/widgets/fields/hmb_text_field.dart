@@ -38,7 +38,7 @@ class HMBTextField extends StatelessWidget {
     children: [
       if (leadingSpace) const SizedBox(height: 16),
       TextFormField(
-          style: const TextStyle(color: HMBColors.textPrimary),
+        style: const TextStyle(color: HMBColors.textPrimary),
         enabled: enabled,
         readOnly: !enabled,
         controller: controller,

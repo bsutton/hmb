@@ -33,7 +33,8 @@ class MilestoneTile extends StatefulWidget {
   final ValueChanged<Milestone> onDelete;
   final ValueChanged<Milestone> onSave;
   final Future<void> Function(Milestone milestone) onInvoice;
-  final void Function(Milestone, bool) onEditingStatusChanged;
+  final void Function({required Milestone milestone, required bool isEditing})
+  onEditingStatusChanged;
   final bool isOtherTileEditing;
 
   @override
@@ -75,7 +76,10 @@ class _MilestoneTileState extends State<MilestoneTile> {
   void _enterEditMode() {
     if (!isInEditMode) {
       setState(() => isInEditMode = true);
-      widget.onEditingStatusChanged(widget.milestone, true);
+      widget.onEditingStatusChanged(
+        milestone: widget.milestone,
+        isEditing: true,
+      );
     }
   }
 
@@ -150,7 +154,10 @@ class _MilestoneTileState extends State<MilestoneTile> {
 
     widget.milestone.edited = true;
     setState(() => isInEditMode = false);
-    widget.onEditingStatusChanged(widget.milestone, false);
+    widget.onEditingStatusChanged(
+      milestone: widget.milestone,
+      isEditing: false,
+    );
     widget.onSave(widget.milestone);
   }
 

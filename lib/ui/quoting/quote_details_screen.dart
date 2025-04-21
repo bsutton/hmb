@@ -263,6 +263,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                   const Divider(),
                   // --- Quote Lines / Groups ---
                   FutureBuilderEx<JobQuote>(
+                    // ignore: discarded_futures
                     future: JobQuote.fromQuoteId(_quote.id),
                     builder: (context, jobQuote) {
                       if (jobQuote == null || jobQuote.groups.isEmpty) {

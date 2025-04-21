@@ -13,7 +13,6 @@ import '../../../entity/job_status.dart';
 import '../../../util/date_time_ex.dart';
 import '../../../util/format.dart';
 import '../../../util/local_date.dart';
-import '../../widgets/text/hmb_text_clickable.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/media/rich_editor.dart';
@@ -23,6 +22,7 @@ import '../../widgets/text/hmb_phone_text.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../../widgets/text/hmb_text_block.dart';
+import '../../widgets/text/hmb_text_clickable.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import 'list_time_entry.dart';
 

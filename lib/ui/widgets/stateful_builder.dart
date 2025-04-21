@@ -1,8 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-
 /// This is a duplicate of the Flutter [StatefulBuilder].
-/// 
+///
 /// we have vendored the method as we need access to the [StatefulBuilderState]
 /// which in the Flutter implementation is a private class.
 
