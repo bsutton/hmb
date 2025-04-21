@@ -148,7 +148,7 @@ If your Job isn't showing then you need to update its status to an Active one su
                   items: (filter) async => ScheduleFilter.values,
                   format: (schedule) => schedule.displayName,
                   onChanged: (schedule) async {
-                    _selectedScheduleFilter = schedule!;
+                    _selectedScheduleFilter = schedule ?? ScheduleFilter.all;
                     await _loadTaskItems();
                   },
                   title: 'Schedule',
