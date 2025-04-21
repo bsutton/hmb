@@ -1,9 +1,13 @@
+import 'dart:async';
+
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../ui/widgets/hmb_button.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
 import '../../../../util/app_title.dart';
+import '../../../../util/format.dart';
 import '../../../factory/flutter_database_factory.dart';
 import '../../../versions/asset_script_source.dart';
 import '../backup.dart';
@@ -19,64 +23,101 @@ class GoogleDriveBackupScreen extends StatefulWidget {
       _GoogleDriveBackupScreenState();
 }
 
-class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
-  bool _isLoading = false; // Indicates operation in progress
-  String _stageDescription = ''; // Current stage of the operation
-
-  int _stageNo = 0; // Current stage number
-  int _stageCount = 0; // Total number of stages
-
+class _GoogleDriveBackupScreenState
+    extends DeferredState<GoogleDriveBackupScreen> {
+  bool _isLoading = false;
+  String _stageDescription = '';
   bool _includePhotos = false;
 
   late final BackupProvider _provider;
+  late Future<DateTime?> _lastBackupFuture;
 
   @override
   void initState() {
     super.initState();
+    // Listen for progress updates
+    _provider.progressStream.listen((update) {
+      setState(() => _stageDescription = update.stageDescription);
+    });
+  }
+
+  @override
+  Future<void> asyncInitState() async {
     setAppTitle('Backup & Restore');
     _provider = _getProvider();
-    _provider.progressStream.listen((update) {
-      setState(() {
-        _stageDescription = update.stageDescription;
-      });
-    });
+
+    // Load last backup date
+    await _refreshLastBackup();
+  }
+
+  Future<void> _refreshLastBackup() async {
+    DateTime? last;
+
+    try {
+      final backups = await _provider.getBackups();
+      if (backups.isNotEmpty) {
+        backups.sort((a, b) => b.when.compareTo(a.when));
+        last = backups.first.when;
+      }
+    } catch (_) {
+      last = null;
+    }
+
+    // Wrap the result in a Future<DateTime?> for your FutureBuilder
+    _lastBackupFuture = Future.value(last);
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(automaticallyImplyLeading: false),
-    body: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (_isLoading) ...[
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text(
-                _stageDescription,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 18),
+    body: DeferredBuilder(
+      this,
+      builder:
+          (context) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_isLoading) ...[
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(
+                      _stageDescription,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                  ] else ...[
+                    const Text(
+                      'Backup and Restore Your Database',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    FutureBuilder<DateTime?>(
+                      future: _lastBackupFuture,
+                      builder: (context, snapshot) {
+                        final date = snapshot.data;
+                        final text =
+                            date == null
+                                ? 'No backups yet'
+                                : 'Last backup: ${formatDateTime(date)}';
+                        return Text(text, style: const TextStyle(fontSize: 16));
+                      },
+                    ),
+                    const SizedBox(height: 40),
+                    _buildBackupButton(),
+                    const SizedBox(height: 40),
+                    _buildRestoreButton(context),
+                  ],
+                ],
               ),
-            ] else ...[
-              const Text(
-                'Backup and Restore Your Database',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 40),
-              _buildBackupButton(),
-              const SizedBox(height: 40),
-              _buildRestoreButton(context),
-            ],
-          ],
-        ),
-      ),
+            ),
+          ),
     ),
   );
 
@@ -87,21 +128,21 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
         icon: const Icon(Icons.backup, size: 24),
         onPressed: () async {
           await _performBackup(_includePhotos);
+          await _refreshLastBackup();
+          setState(() {});
         },
       ),
       const SizedBox(height: 40),
       Align(
         alignment: Alignment.centerRight,
         child: Row(
-          mainAxisSize: MainAxisSize.min, // Shrink the Row to fit its children
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Include photos in backup'),
             Checkbox(
               value: _includePhotos,
               onChanged: (value) {
-                setState(() {
-                  _includePhotos = value ?? false;
-                });
+                setState(() => _includePhotos = value ?? false);
               },
             ),
           ],
@@ -132,9 +173,7 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
       await WakelockPlus.disable();
     }
@@ -145,22 +184,17 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
     icon: const Icon(Icons.restore, size: 24),
     onPressed: () async {
       _provider.useDebugPath = !false;
-      final selectedBackup = await Navigator.push(
+      final selectedBackup = await Navigator.push<Backup>(
         context,
-        MaterialPageRoute<Backup>(
-          builder:
-              (context) => BackupSelectionScreen(backupProvider: _provider),
+        MaterialPageRoute(
+          builder: (c) => BackupSelectionScreen(backupProvider: _provider),
         ),
       );
-
       if (selectedBackup != null) {
         setState(() {
           _isLoading = true;
           _stageDescription = 'Starting restore...';
-          _stageNo = 0;
-          _stageCount = 0;
         });
-
         await WakelockPlus.enable();
         try {
           await _provider.performRestore(
@@ -168,24 +202,18 @@ class _GoogleDriveBackupScreenState extends State<GoogleDriveBackupScreen> {
             AssetScriptSource(),
             FlutterDatabaseFactory(),
           );
-
           if (mounted) {
             HMBToast.info('Restore completed successfully.');
           }
-          // ignore: avoid_catches_without_on_clauses
         } catch (e) {
           if (mounted) {
             HMBToast.error('Error during restore: $e');
           }
         } finally {
           if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
+            setState(() => _isLoading = false);
           }
-
           _provider.useDebugPath = false;
-
           await WakelockPlus.disable();
         }
       }

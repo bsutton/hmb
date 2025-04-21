@@ -64,28 +64,28 @@ class GoogleDriveApi {
     return api;
   }
 
+  bool initialised = false;
   final Map<String, String> _authHeaders;
   late final drive.DriveApi _driveApi;
-  late final AuthenticatedClient? _authClient;
+  late AuthenticatedClient? _authClient;
 
   FilesResource get files => _driveApi.files;
 
-  void close() {
-    if (_authClient != null) {
-      _authClient.close();
+  Future<void> init() async {
+    if (!initialised) {
+      _authClient = AuthenticatedClient(http.Client(), _authHeaders);
+
+      // final authHeaders = await account.authHeaders;
+      // final authenticateClient = GoogleAuthClient(authHeaders);
+      _driveApi = drive.DriveApi(_authClient!);
+      initialised = true;
     }
   }
 
-  Future<void> init() async {
-    _driveApi = await _getDriveApi();
-  }
-
-  Future<drive.DriveApi> _getDriveApi() async {
-    _authClient = AuthenticatedClient(http.Client(), _authHeaders);
-
-    // final authHeaders = await account.authHeaders;
-    // final authenticateClient = GoogleAuthClient(authHeaders);
-    return drive.DriveApi(_authClient!);
+  void close() {
+    _authClient?.close();
+    _authClient = null;
+    initialised = false;
   }
 
   /// Sends an HTTP request and asynchronously returns the response.
