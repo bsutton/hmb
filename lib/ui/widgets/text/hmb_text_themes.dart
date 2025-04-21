@@ -295,18 +295,22 @@ class HMBTextBody extends StatelessWidget {
   }
 }
 
+/// A single-line text widget with ellipsis overflow.
 class HMBTextLine extends StatelessWidget {
   const HMBTextLine(this.text, {super.key, this.colour});
 
   final String text;
-
   final Color? colour;
 
   @override
   Widget build(BuildContext context) => Text(
     text,
     overflow: TextOverflow.ellipsis,
-    style: TextStyle(color: colour),
+    maxLines: 1,
+    style:
+        colour != null
+            ? TextStyle(color: colour)
+            : Theme.of(context).textTheme.titleMedium,
   );
 }
 
