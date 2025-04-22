@@ -1,3 +1,4 @@
+// lib/src/models/photo.dart
 import 'entity.dart';
 
 class Photo extends Entity<Photo> {
@@ -7,6 +8,7 @@ class Photo extends Entity<Photo> {
     required this.parentType,
     required this.filePath,
     required this.comment,
+    required this.lastBackupDate,
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
@@ -16,6 +18,7 @@ class Photo extends Entity<Photo> {
     required this.parentType,
     required this.filePath,
     required this.comment,
+    this.lastBackupDate,
   }) : super.forInsert();
 
   Photo.forUpdate({
@@ -24,6 +27,7 @@ class Photo extends Entity<Photo> {
     required this.parentType,
     required this.filePath,
     required this.comment,
+    this.lastBackupDate,
   }) : super.forUpdate();
 
   factory Photo.fromMap(Map<String, dynamic> map) => Photo(
@@ -32,6 +36,10 @@ class Photo extends Entity<Photo> {
     parentType: map['parentType'] as String,
     filePath: map['filePath'] as String,
     comment: map['comment'] as String,
+    lastBackupDate:
+        map['last_backup_date'] == null
+            ? null
+            : DateTime.parse(map['last_backup_date'] as String),
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
@@ -40,6 +48,7 @@ class Photo extends Entity<Photo> {
   String parentType;
   String filePath;
   String comment;
+  DateTime? lastBackupDate;
 
   @override
   Map<String, dynamic> toMap() => {
@@ -48,6 +57,7 @@ class Photo extends Entity<Photo> {
     'parentType': parentType,
     'filePath': filePath,
     'comment': comment,
+    'last_backup_date': lastBackupDate?.toIso8601String(),
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
