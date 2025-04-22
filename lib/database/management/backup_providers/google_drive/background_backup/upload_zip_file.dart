@@ -56,7 +56,11 @@ Future<void> uploadZipFile(BackupParams params) async {
     await for (final data in progressStream) {
       request.sink.add(data);
     }
-    await request.sink.close();
+    // We can't await the close as it will never return until the
+    // below driveApi.send completes so we deadlock.
+    // We don't actually need to wait for the sink to close
+    // so we just unawait it.
+    unawaited(request.sink.close());
 
     final response = await driveApi.send(request);
     if (response.statusCode == 308) {
