@@ -68,10 +68,6 @@ class PhotoSyncService {
     _errorPort!.listen((error) {
       _controller.add(ProgressUpdate('Sync error: $error', 0, 0));
     });
-    _exitPort!.listen((_) {
-      _cleanup();
-      
-    });
 
     final params = PhotoSyncParams(
       sendPort: _receivePort!.sendPort,
@@ -85,6 +81,9 @@ class PhotoSyncService {
       onError: _errorPort!.sendPort,
       onExit: _exitPort!.sendPort,
     );
+
+    await _exitPort!.first;
+    _cleanup();
   }
 
   void cancelSync() {

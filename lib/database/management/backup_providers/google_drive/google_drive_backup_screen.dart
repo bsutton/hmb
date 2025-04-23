@@ -221,6 +221,8 @@ class _GoogleDriveBackupScreenState
   BackupProvider _getProvider() =>
       GoogleDriveBackupProvider(FlutterDatabaseFactory());
 
+  bool syncRunning = false;
+
   List<Widget> _buildPhotoSyncSection() => [
     // Sync Photos Button
     HMBButton.withIcon(
@@ -229,8 +231,10 @@ class _GoogleDriveBackupScreenState
       onPressed: () async {
         await WakelockPlus.enable();
         try {
+          syncRunning = true;
           await _provider.syncPhotos();
         } finally {
+          syncRunning = false;
           await WakelockPlus.disable();
         }
       },
@@ -239,17 +243,17 @@ class _GoogleDriveBackupScreenState
       const SizedBox(height: 8),
       Text(_photoStageDescription, style: const TextStyle(fontSize: 16)),
     ],
-
-    FutureBuilderEx<List<PhotoPayload>>(
-      // ignore: discarded_futures
-      future: DaoPhoto().getUnsyncedPhotos(),
-      builder: (context, unsynced) {
-        final text =
-            unsynced!.isEmpty
-                ? 'All photos synced.'
-                : '${unsynced.length} photos to be synced ';
-        return Text(text, style: const TextStyle(fontSize: 16));
-      },
-    ),
+    if (!syncRunning)
+      FutureBuilderEx<List<PhotoPayload>>(
+        // ignore: discarded_futures
+        future: DaoPhoto().getUnsyncedPhotos(),
+        builder: (context, unsynced) {
+          final text =
+              unsynced!.isEmpty
+                  ? 'All photos synced.'
+                  : '${unsynced.length} photos to be synced ';
+          return Text(text, style: const TextStyle(fontSize: 16));
+        },
+      ),
   ];
 }
