@@ -227,7 +227,12 @@ class _GoogleDriveBackupScreenState
       label: 'Sync Photos',
       icon: const Icon(Icons.cloud_upload, size: 24),
       onPressed: () async {
-        await _provider.syncPhotos();
+        await WakelockPlus.enable();
+        try {
+          await _provider.syncPhotos();
+        } finally {
+          await WakelockPlus.disable();
+        }
       },
     ),
     if (_photoStageDescription.isNotEmpty) ...[

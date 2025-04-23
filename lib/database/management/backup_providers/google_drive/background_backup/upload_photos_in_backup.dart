@@ -47,6 +47,19 @@ Future<void> uploadPhotosInBackup({
 
     final file = File(photoPayload.absolutePathToPhoto);
     if (!file.existsSync()) {
+      // this should only be an issue for me as I have
+      // old photo records for which I lost the photo
+      // so for now we just mark these photos as synced.
+      //
+      sendPort
+        ..send(PhotoUploaded(photoPayload.id))
+        ..send(
+          ProgressUpdate(
+            'Photo ${photoPayload.id} skipped as missing',
+            stageNo++,
+            stageCount,
+          ),
+        );
       continue;
     }
 
