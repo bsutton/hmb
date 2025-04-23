@@ -61,7 +61,8 @@ class _JobCardState extends State<JobCard> {
               if (info.quoteNumber != null)
                 HMBLinkInternal(
                   label: 'Quote #: ${info.quoteNumber}',
-                  navigateTo: () async => const QuoteDetailsScreen(quoteId: 1),
+                  navigateTo:
+                      () async => QuoteDetailsScreen(quoteId: info.quoteId!),
                 ),
 
               HMBTextLine('Status: ${info.statusName}'),
