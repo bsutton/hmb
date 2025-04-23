@@ -106,29 +106,34 @@ class DaoQuote extends Dao<Quote> {
 
     var totalAmount = MoneyEx.zero;
 
-    // Create quote
-    final quote = Quote.forInsert(jobId: job.id, totalAmount: totalAmount);
-
-    final quoteId = await DaoQuote().insert(quote);
+    // Insert the Quote
+    final quote = Quote.forInsert(
+      jobId: job.id,
+      totalAmount: totalAmount,
+      assumption: job.assumption,
+    );
+    final quoteId = await insert(quote);
 
     // Add Booking Fee as a quote line
     if (invoiceOptions.billBookingFee &&
         job.bookingFee != null &&
         !job.bookingFee!.isZero) {
-      final quoteLineGroup = QuoteLineGroup.forInsert(
+      final bookingGroup = QuoteLineGroup.forInsert(
         quoteId: quoteId,
         name: 'Booking Fee',
+        assumption: '',
       );
-      await DaoQuoteLineGroup().insert(quoteLineGroup);
-      final bookingFeeLine = QuoteLine.forInsert(
+      await DaoQuoteLineGroup().insert(bookingGroup);
+
+      final bookingLine = QuoteLine.forInsert(
         quoteId: quoteId,
-        quoteLineGroupId: quoteLineGroup.id,
+        quoteLineGroupId: bookingGroup.id,
         description: 'Booking Fee',
         quantity: Fixed.fromInt(100),
         unitPrice: job.bookingFee!,
         lineTotal: job.bookingFee!,
       );
-      await DaoQuoteLine().insert(bookingFeeLine);
+      await DaoQuoteLine().insert(bookingLine);
       totalAmount += job.bookingFee!;
     }
 
@@ -139,65 +144,62 @@ class DaoQuote extends Dao<Quote> {
       }
 
       /// One group for each task.
-      QuoteLineGroup? quoteLineGroup;
+      QuoteLineGroup? group;
+      QuoteLine? line;
 
-      QuoteLine? quoteLine;
-
+      // Labour
       if (!MoneyEx.isZeroOrNull(estimate.estimatedLabourCharge)) {
         /// Labour based billing using estimated effort
-        final lineTotal = estimate.estimatedLabourCharge;
+        final labourTotal = estimate.estimatedLabourCharge;
 
-        if (!lineTotal.isZero) {
-          quoteLine = QuoteLine.forInsert(
+        if (!labourTotal.isZero) {
+          line = QuoteLine.forInsert(
             quoteId: quoteId,
             description: 'Labour',
             quantity: estimate.estimatedLabourHours,
             unitPrice: job.hourlyRate!,
-            lineTotal: lineTotal,
+            lineTotal: labourTotal,
           );
-
-          totalAmount += lineTotal;
+          totalAmount += labourTotal;
         }
       }
 
-      if (quoteLine != null) {
-        quoteLineGroup ??= await _createQuoteLineGroup(estimate.task, quoteId);
-        await DaoQuoteLine().insert(
-          quoteLine.copyWith(quoteLineGroupId: quoteLineGroup.id),
-        );
+      // Group + insert labour line
+      if (line != null) {
+        group ??= await _createQuoteLineGroup(estimate.task, quoteId);
+        await DaoQuoteLine().insert(line.copyWith(quoteLineGroupId: group.id));
       }
 
-      /// Materials based billing
-      final taskItems = await DaoTaskItem().getByTask(estimate.task.id);
-      for (final item in taskItems.where((item) => !item.billed)) {
-        /// Labour is already accounted for in the above labour costs.
+      // Materials & Tools
+      final items = await DaoTaskItem().getByTask(estimate.task.id);
+      for (final item in items.where((i) => !i.billed)) {
         if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
           continue;
         }
-        final lineTotal = item.calcMaterialCharges(job.billingType);
-        quoteLineGroup ??= await _createQuoteLineGroup(estimate.task, quoteId);
 
-        final quoteLine = QuoteLine.forInsert(
+        final matTotal = item.calcMaterialCharges(job.billingType);
+
+        group ??= await _createQuoteLineGroup(estimate.task, quoteId);
+
+        final matLine = QuoteLine.forInsert(
           quoteId: quoteId,
-          quoteLineGroupId: quoteLineGroup.id,
+          quoteLineGroupId: group.id,
           description: 'Material: ${item.description}',
           quantity: item.estimatedMaterialQuantity!,
           unitPrice: item.estimatedMaterialUnitCost!.plusPercentage(
             item.margin,
           ),
-          lineTotal: lineTotal,
+          lineTotal: matTotal,
         );
-
-        await DaoQuoteLine().insert(quoteLine);
-        totalAmount += lineTotal;
+        await DaoQuoteLine().insert(matLine);
+        totalAmount += matTotal;
       }
     }
 
-    // Update the quote total amount
-    final updatedQuote = quote.copyWith(id: quoteId, totalAmount: totalAmount);
-    await DaoQuote().update(updatedQuote);
-
-    return updatedQuote;
+    // Finalize
+    final updated = quote.copyWith(id: quoteId, totalAmount: totalAmount);
+    await update(updated);
+    return updated;
   }
 
   Future<QuoteLineGroup> _createQuoteLineGroup(Task task, int quoteId) async {
@@ -205,6 +207,7 @@ class DaoQuote extends Dao<Quote> {
     final quoteLineGroup = QuoteLineGroup.forInsert(
       quoteId: quoteId,
       name: task.name,
+      assumption: task.assumption,
     );
 
     await DaoQuoteLineGroup().insert(quoteLineGroup);

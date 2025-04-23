@@ -1,8 +1,11 @@
+// lib/src/services/quote_pdf_generator.dart
+
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:strings/strings.dart';
 
 import '../../dao/dao_quote_line.dart';
 import '../../dao/dao_system.dart';
@@ -10,6 +13,7 @@ import '../../entity/quote.dart';
 import '../../entity/system.dart';
 import '../../util/format.dart';
 import '../../util/money_ex.dart';
+import '../../util/rich_text_helper.dart';
 import 'job_quote.dart';
 
 Future<File> generateQuotePdf(
@@ -20,24 +24,16 @@ Future<File> generateQuotePdf(
 }) async {
   final pdf = pw.Document();
   final system = await DaoSystem().get();
-
   final lines = await DaoQuoteLine().getByQuoteId(quote.id);
-
-  // Group items by some criteria, e.g., task name or category
   final jobQuote = await JobQuote.fromQuoteId(quote.id);
 
-  // Calculate the total amount from the lines
   final totalAmount = lines.fold(
     MoneyEx.zero,
     (sum, line) => sum + line.lineTotal,
   );
 
   final phone = await formatPhone(system.bestPhone);
-
-  // Load logo
   final logo = await _getLogo(system);
-
-  // Define the system color (using the color stored in the system table)
   final systemColor = PdfColor.fromInt(system.billingColour);
 
   pdf.addPage(
@@ -47,42 +43,23 @@ Future<File> generateQuotePdf(
         buildBackground:
             (context) => pw.Stack(
               children: [
-                // Top coloured band with business name
+                // Top band
                 pw.Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: pw.Container(
-                    height: 28, // 1cm height
-                    color: systemColor,
-                    child: pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 8),
-                      child: pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Text(
-                            system.businessName ?? '',
-                            style: pw.TextStyle(
-                              fontSize: 18,
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  child: pw.Container(height: 28, color: systemColor),
                 ),
-                // Bottom coloured band with T&C link
+                // Bottom band with T&C
                 pw.Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
                   child: pw.Container(
-                    height: 28, // 1cm height
+                    height: 28,
                     color: systemColor,
                     child: pw.Padding(
-                      padding: const pw.EdgeInsets.only(left: 10, right: 10),
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 10),
                       child: pw.Row(
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [
@@ -105,6 +82,7 @@ Future<File> generateQuotePdf(
                                 ),
                                 const pw.TextSpan(
                                   text: ' and is valid for 30 days',
+                                  style: pw.TextStyle(color: PdfColors.white),
                                 ),
                               ],
                             ),
@@ -127,12 +105,7 @@ Future<File> generateQuotePdf(
       header: (context) {
         if (context.pageNumber == 1) {
           return pw.Padding(
-            padding: const pw.EdgeInsets.only(
-              top: 20,
-              left: 20,
-              right: 20,
-              bottom: 10,
-            ), // Prevent overlap with header
+            padding: const pw.EdgeInsets.fromLTRB(20, 30, 20, 10),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
@@ -142,7 +115,6 @@ Future<File> generateQuotePdf(
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.SizedBox(height: 16),
                         pw.Text(
                           'Quote: ${quote.bestNumber}',
                           style: pw.TextStyle(
@@ -153,16 +125,7 @@ Future<File> generateQuotePdf(
                         pw.Text('Date: ${formatDate(quote.createdDate)}'),
                       ],
                     ),
-
-                    // business logo
-                    if (logo != null)
-                      pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Padding(
-                          padding: const pw.EdgeInsets.only(top: 6),
-                          child: logo,
-                        ),
-                      ),
+                    if (logo != null) logo,
                   ],
                 ),
                 pw.Divider(),
@@ -184,41 +147,69 @@ Future<File> generateQuotePdf(
               ],
             ),
           );
-        } else {
-          return pw.SizedBox(); // Empty header for subsequent pages
         }
+        return pw.SizedBox();
       },
       build: (context) {
         final content = <pw.Widget>[];
 
+        // Quote-level assumptions
+        if (Strings.isNotBlank(quote.assumption)) {
+          content.addAll([
+            // reduced from 10 to 4
+            pw.SizedBox(height: 4),
+            pw.Text(
+              'Assumptions:',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.Text(RichTextHelper.toPlainText(quote.assumption)),
+            pw.Divider(),
+          ]);
+        }
+
+        // Task groups & items with group-level assumptions
         if (displayGroupHeaders) {
-          /// Display each Task
           for (final group in jobQuote.groups) {
-            content
-              ..add(pw.SizedBox(height: 10)) // Add 10 units of space
-              ..add(
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
+            content.addAll([
+              pw.SizedBox(height: 4),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    group.group.name,
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  if (displayCosts)
                     pw.Text(
-                      group.group.name,
+                      group.total.toString(),
                       style: pw.TextStyle(
                         fontSize: 14,
                         fontWeight: pw.FontWeight.bold,
                       ),
                     ),
-                    if (displayCosts)
-                      pw.Text(
-                        group.total.toString(),
-                        style: pw.TextStyle(
-                          fontSize: 14,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                  ],
+                ],
+              ),
+            ]);
+
+            // Group-level assumption
+            if (Strings.isNotBlank(group.group.assumption)) {
+              content.add(
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(left: 8, top: 2),
+                  child: pw.Text(
+                    group.group.assumption,
+                    style: pw.TextStyle(
+                      fontStyle: pw.FontStyle.italic,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
               );
-            // Items from the task if requested.
+            }
+
             if (displayItems) {
               for (final line in group.lines) {
                 content.add(
@@ -235,9 +226,9 @@ Future<File> generateQuotePdf(
           }
         }
 
+        // Total & payment details
         final showAccount = system.showBsbAccountOnInvoice ?? false;
         final showPaymentLink = system.showPaymentLinkOnInvoice ?? false;
-
         content.addAll([
           pw.Divider(),
           pw.Row(
@@ -253,46 +244,51 @@ Future<File> generateQuotePdf(
               ),
             ],
           ),
-          pw.Divider(),
+        ]);
 
-          // Payment details
-          if (showPaymentLink || showAccount)
-            pw.Text(
-              'Payment Details:',
-              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-            ),
-          if (showAccount) ...[
-            pw.Text('BSB: ${system.bsb}'),
-            pw.Text('Account Number: ${system.accountNo}'),
-          ],
-          if (showPaymentLink) ...[
-            pw.UrlLink(
-              child: pw.Text(
-                'Payment Link',
-                style: const pw.TextStyle(
-                  color: PdfColors.blue,
-                  decoration: pw.TextDecoration.underline,
+        if (showAccount || showPaymentLink) {
+          content
+            ..add(pw.Divider())
+            ..add(
+              pw.Text(
+                'Payment Details:',
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
                 ),
               ),
-              destination: system.paymentLinkUrl ?? '',
-            ),
-          ],
-        ]);
+            );
+          if (showAccount) {
+            content
+              ..add(pw.Text('BSB: ${system.bsb}'))
+              ..add(pw.Text('Account Number: ${system.accountNo}'));
+          }
+          if (showPaymentLink) {
+            content.add(
+              pw.UrlLink(
+                child: pw.Text(
+                  'Payment Link',
+                  style: const pw.TextStyle(
+                    color: PdfColors.blue,
+                    decoration: pw.TextDecoration.underline,
+                  ),
+                ),
+                destination: system.paymentLinkUrl ?? '',
+              ),
+            );
+          }
+        }
 
         return [
           pw.Padding(
-            padding: const pw.EdgeInsets.only(
-              left: 20,
-              right: 20,
-              top: 80, // Ensure space from top band
-              bottom: 60, // Ensure space from bottom band
-            ),
+            // top padding reduced from 80 to 20
+            padding: const pw.EdgeInsets.fromLTRB(20, 20, 20, 60),
             child: pw.Column(
-              children: content,
               crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: content,
             ),
           ),
-        ]; // Indent for body content
+        ];
       },
     ),
   );
@@ -303,22 +299,19 @@ Future<File> generateQuotePdf(
   return file;
 }
 
-// Helper function to get the logo
+/// Helper to load and size the business logo
 Future<pw.Widget?> _getLogo(System system) async {
   final logoPath = system.logoPath;
-
-  if (logoPath.isEmpty) {
+  if (Strings.isBlank(logoPath)) {
     return null;
   }
-
   final file = File(logoPath);
   if (!file.existsSync()) {
     return null;
   }
-  final image = pw.MemoryImage(await file.readAsBytes());
-
+  final imageData = await file.readAsBytes();
   return pw.Image(
-    image,
+    pw.MemoryImage(imageData),
     width: system.logoAspectRatio.width.toDouble(),
     height: system.logoAspectRatio.height.toDouble(),
   );

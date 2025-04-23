@@ -23,18 +23,19 @@ import 'photo_crud.dart';
 
 class TaskEditScreen extends StatefulWidget {
   TaskEditScreen({required this.job, super.key, this.task}) {
+    // for the moment we don't let tasks override the billing type.
     billingType = job.billingType;
   }
+
   final Job job;
   final Task? task;
 
-  /// for the moment we don't let tasks override
-  /// the billing type.
   late final BillingType billingType;
 
   @override
   // ignore: library_private_types_in_public_api
   _TaskEditScreenState createState() => _TaskEditScreenState();
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -46,18 +47,14 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     implements NestedEntityState<Task> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
+  late TextEditingController _assumptionController;
   late PhotoController<Task> _photoController;
   late FocusNode _summaryFocusNode;
   late FocusNode _descriptionFocusNode;
+  late FocusNode _assumptionFocusNode;
 
   @override
   Task? currentEntity;
-
-  // BillingType _selectedBillingType = BillingType.timeAndMaterial;
-
-  // Fixed _totalEffortInHours = Fixed.zero;
-  // Money _totalMaterialsCost = MoneyEx.zero;
-  // Money _totalToolsCost = MoneyEx.zero;
 
   @override
   void initState() {
@@ -69,6 +66,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     _descriptionController = TextEditingController(
       text: currentEntity?.description,
     );
+    _assumptionController = TextEditingController(
+      text: currentEntity?.assumption,
+    );
 
     _photoController = PhotoController<Task>(
       parent: currentEntity,
@@ -77,11 +77,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
-
-    // _selectedBillingType = currentEntity?.billingType ?? widget.job.billingType;
-
-    // ignore: discarded_futures
-    // _calculateChecklistSummary(); // Calculate the effort/cost based on checklist items
+    _assumptionFocusNode = FocusNode();
 
     if (isNotMobile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -98,7 +94,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     if (currentEntity?.taskStatusId != null) {
       taskStatus = await DaoTaskStatus().getById(currentEntity!.taskStatusId);
     }
-
     taskStatus ??= await DaoTaskStatus().getByEnum(TaskStatusEnum.preApproval);
 
     setState(() {
@@ -108,12 +103,14 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   @override
   void dispose() {
-    super.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
+    _assumptionController.dispose();
     _photoController.dispose();
     _summaryFocusNode.dispose();
     _descriptionFocusNode.dispose();
+    _assumptionFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -141,16 +138,15 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               focusNode: _descriptionFocusNode,
               labelText: 'Description',
             ),
-
+            const SizedBox(height: 12),
+            HMBTextArea(
+              controller: _assumptionController,
+              focusNode: _assumptionFocusNode,
+              labelText: 'Assumptions',
+            ),
             // _chooseBillingType(),
-
-            // Display the summary based on billing type
-            // if (_selectedBillingType == BillingType.timeAndMaterial)
-            //   _buildEffortSummary(), // Display effort summary
-            // if (_selectedBillingType == BillingType.fixedPrice)
-            //   _buildCostSummary(), // Display cost summary
             _buildItemList(task),
-            HBMCrudTimeEntry(parentTitle: 'Task', parent: Parent(task)),
+            HMBCrudTimeEntry(parentTitle: 'Task', parent: Parent(task)),
             PhotoCrud<Task>(
               parentName: 'Task',
               parentType: ParentType.task,
@@ -159,62 +155,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
           ],
         ),
   );
-
-  // Widget _chooseBillingType() => HMBDroplist<BillingType>(
-  //       title: 'Billing Type',
-  //       items: (filter) async => BillingType.values,
-  //       selectedItem: () async => _selectedBillingType,
-  //       onChanged: (billingType) => setState(() {
-  //         _selectedBillingType = billingType;
-  //         // ignore: lines_longer_than_80_chars, discarded_futures
-  //         _calculateChecklistSummary(); // Recalculate the summary when billing type changes
-  //       }),
-  //       format: (value) => value.display,
-  //     );
-
-  // // Calculate the checklist summary for effort or cost
-  // Future<void> _calculateChecklistSummary() async {
-  //   // _totalEffortInHours = Fixed.zero;
-  //   // _totalMaterialsCost = MoneyEx.zero;
-  //   // _totalToolsCost = MoneyEx.zero;
-
-  //   if (currentEntity == null) {
-  //     return;
-  //   }
-  //   final taskItems = await DaoTaskItem().getByTask(currentEntity!.id);
-
-  //   for (final item in taskItems) {
-  //     switch (item.itemTypeId) {
-  //       case 5: // Labour (Effort)
-  //         _totalEffortInHours += item.estimatedLabourHours!;
-  //       case 1: // Materials - buy
-  //         _totalMaterialsCost += item.estimatedMaterialUnitCost!
-  //             .multiplyByFixed(item.estimatedMaterialQuantity!);
-  //       case 3: // Tools - buy
-  //         _totalToolsCost += item.estimatedMaterialUnitCost!
-  //             .multiplyByFixed(item.estimatedMaterialQuantity!);
-  //     }
-  //   }
-
-  //   setState(() {}); // Update the UI with the calculated summary
-  // }
-
-  // Build the summary for effort (time and materials billing)
-  // Widget _buildEffortSummary() => Column(
-  //       crossAxisAlignment: CrossAxisAlignment.stretch,
-  //       children: [
-  //         HMBText('Total Effort: $_totalEffortInHours hours', bold: true),
-  //       ],
-  //     );
-
-  // // Build the summary for cost (fixed price billing)
-  // Widget _buildCostSummary() => Column(
-  //       crossAxisAlignment: CrossAxisAlignment.stretch,
-  //       children: [
-  //         HMBText('Total Materials Cost: $_totalMaterialsCost'),
-  //         HMBText('Total Tools Cost: $_totalToolsCost'),
-  //       ],
-  //     );
 
   Widget _buildItemList(Task? task) => Flexible(
     child: SingleChildScrollView(
@@ -239,7 +179,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   Future<void> _insertTask(Task task) async {
     await DaoTask().insert(task);
-
     _photoController.parent = task;
   }
 
@@ -251,8 +190,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       jobId: widget.job.id,
       name: _nameController.text,
       description: _descriptionController.text,
+      assumption: _assumptionController.text,
       taskStatusId: June.getState(SelectedTaskStatus.new).taskStatus!.id,
-      // billingType: _selectedBillingType, // Retain the selected billing type
     );
   }
 
@@ -261,8 +200,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     jobId: widget.job.id,
     name: _nameController.text,
     description: _descriptionController.text,
+    assumption: _assumptionController.text,
     taskStatusId: June.getState(SelectedTaskStatus.new).taskStatus!.id,
-    // billingType: _selectedBillingType, // Retain the selected billing type
   );
 
   @override
@@ -271,8 +210,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   }
 }
 
-class SelectedTaskStatus {
-  SelectedTaskStatus();
-
+class SelectedTaskStatus extends JuneState {
   TaskStatus? taskStatus;
 }

@@ -2,20 +2,14 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../../dao/dao_customer.dart';
-import '../../../dao/dao_job.dart';
-import '../../../dao/dao_job_activity.dart';
-import '../../../dao/dao_job_status.dart';
-import '../../../entity/customer.dart';
-import '../../../entity/job.dart';
-import '../../../entity/job_activity.dart';
-import '../../../entity/job_status.dart';
+import '../../../dao/dao.g.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/date_time_ex.dart';
 import '../../../util/format.dart';
 import '../../../util/local_date.dart';
+import '../../../util/rich_text_helper.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/media/photo_gallery.dart';
-import '../../widgets/media/rich_editor.dart';
 import '../../widgets/surface.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
@@ -39,6 +33,7 @@ class JobCard extends StatefulWidget {
 class _JobCardState extends DeferredState<JobCard> {
   late Job job;
   late final JobActivity? nextActivity;
+
   @override
   Future<void> asyncInitState() async {
     job = widget.job;
@@ -52,13 +47,6 @@ class _JobCardState extends DeferredState<JobCard> {
     }
     super.didUpdateWidget(old);
   }
-
-  // Future<void> _refreshJob() async {
-  //   final refreshedJob = await DaoJob().getById(job.id);
-  //   setState(() {
-  //     job = refreshedJob ?? job;
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
@@ -92,12 +80,12 @@ class _JobCardState extends DeferredState<JobCard> {
 Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
       const SizedBox(height: 8),
       _buildNextActivity(),
+      const SizedBox(height: 8),
       const HMBText('Description:', bold: true),
-      HMBTextBlock(
-        RichEditor.createParchment(
-          job.description,
-        ).toPlainText().replaceAll('\n\n', '\n'),
-      ),
+      HMBTextBlock(RichTextHelper.toPlainText(job.description)),
+      const SizedBox(height: 8),
+      const HMBText('Assumptions:', bold: true),
+      HMBTextBlock(RichTextHelper.toPlainText(job.assumption)),
       const SizedBox(height: 8),
       PhotoGallery.forJob(job: job),
       const SizedBox(height: 16),
@@ -107,18 +95,18 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
 
   Widget _buildNextActivity() {
     String activity;
-    var text = Colors.white;
+    Color textColor;
     if (nextActivity == null) {
       activity = 'Not Scheduled';
-      text = Colors.red;
+      textColor = Colors.red;
     } else if (nextActivity!.start.toLocalDate() == LocalDate.today()) {
       activity = formatTime(nextActivity!.start, 'h:mm a');
-      text = Colors.orange;
+      textColor = Colors.orange;
     } else {
       activity = formatDateTime(nextActivity!.start);
+      textColor = Colors.white;
     }
-
-    return HMBText('Next Activity: $activity', color: text);
+    return HMBText('Next Activity: $activity', color: textColor);
   }
 
   Widget _buildContactPoints() => LayoutBuilder(
@@ -127,7 +115,7 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child:
-            (isMobile
+            isMobile
                 ? Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -141,12 +129,12 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
                     HMBJobPhoneText(job: job),
                     Expanded(child: HMBJobEmailText(job: job)),
                   ],
-                )),
+                ),
       );
     },
   );
 
-  FutureBuilderEx<JobStatistics> buildStatistics(Job job) => FutureBuilderEx(
+  Widget buildStatistics(Job job) => FutureBuilderEx(
     waitingBuilder: (_) => const HMBPlaceHolder(height: 97),
     // ignore: discarded_futures
     future: DaoJob().getJobStatistics(job),
@@ -193,17 +181,17 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
       'Tasks: ${remainingTasks.completedTasks}/${remainingTasks.totalTasks}',
       bold: true,
     ),
-    const SizedBox(width: 16), //
+    const SizedBox(width: 16),
     HMBText(
       'Est. Effort(hrs): ${remainingTasks.completedEffort.format('0.00')}/${remainingTasks.totalEffort.format('0.00')}',
       bold: true,
     ),
-    const SizedBox(width: 16), //
+    const SizedBox(width: 16),
     HMBText(
       'Earnings: ${remainingTasks.earnedCost}/${remainingTasks.totalCost}',
       bold: true,
     ),
-    const SizedBox(width: 16), //
+    const SizedBox(width: 16),
     HMBTextClickable(
       text: 'Worked: ${remainingTasks.worked}/${remainingTasks.workedHours}hrs',
       bold: true,

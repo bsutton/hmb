@@ -28,8 +28,8 @@ import 'hmb_start_time_entry.dart';
 //       ));
 // }
 
-class HBMCrudTimeEntry extends StatefulWidget {
-  const HBMCrudTimeEntry({
+class HMBCrudTimeEntry extends StatefulWidget {
+  const HMBCrudTimeEntry({
     required this.parentTitle,
     required this.parent,
     super.key,
@@ -39,10 +39,10 @@ class HBMCrudTimeEntry extends StatefulWidget {
   final Parent<Task> parent;
 
   @override
-  HBMCrudTimeEntryState createState() => HBMCrudTimeEntryState();
+  HMBCrudTimeEntryState createState() => HMBCrudTimeEntryState();
 }
 
-class HBMCrudTimeEntryState extends State<HBMCrudTimeEntry> {
+class HMBCrudTimeEntryState extends State<HMBCrudTimeEntry> {
   Future<void> refresh() async {
     setState(() {});
   }

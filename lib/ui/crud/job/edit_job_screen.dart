@@ -21,6 +21,7 @@ import '../../../util/format.dart';
 import '../../../util/local_date.dart';
 import '../../../util/money_ex.dart';
 import '../../../util/platform_ex.dart';
+import '../../../util/rich_text_helper.dart';
 import '../../scheduling/schedule_page.dart';
 import '../../widgets/circle.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -55,11 +56,13 @@ class _JobEditScreenState extends State<JobEditScreen>
     implements EntityState<Job> {
   late TextEditingController _summaryController;
   late RichEditorController _descriptionController;
+  late RichEditorController _assumptionController;
   late TextEditingController _hourlyRateController;
   late TextEditingController _bookingFeeController;
 
   late FocusNode _summaryFocusNode;
   late FocusNode _descriptionFocusNode;
+  late FocusNode _assumptionFocusNode;
   late FocusNode _hourlyRateFocusNode;
   late FocusNode _bookingFeeFocusNode;
 
@@ -68,6 +71,7 @@ class _JobEditScreenState extends State<JobEditScreen>
   // there has to be a better way but I can get the
   // HMBTextBlock to see the description change.
   int descriptionVersion = 0;
+  int assumptionVersion = 0;
 
   @override
   Job? currentEntity;
@@ -77,12 +81,14 @@ class _JobEditScreenState extends State<JobEditScreen>
     super.initState();
 
     currentEntity ??= widget.job;
-
     scrollController = ScrollController();
 
     _summaryController = TextEditingController(text: widget.job?.summary ?? '');
     _descriptionController = RichEditorController(
       parchmentAsJsonString: widget.job?.description ?? '',
+    );
+    _assumptionController = RichEditorController(
+      parchmentAsJsonString: widget.job?.assumption ?? '',
     );
     _hourlyRateController = TextEditingController(
       text: widget.job?.hourlyRate?.toString() ?? '',
@@ -93,10 +99,11 @@ class _JobEditScreenState extends State<JobEditScreen>
 
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
+    _assumptionFocusNode = FocusNode();
     _hourlyRateFocusNode = FocusNode();
     _bookingFeeFocusNode = FocusNode();
 
-    /// set the state.
+    /// Load initial state.
     June.getState(SelectedCustomer.new).customerId = widget.job?.customerId;
     June.getState(SelectJobStatus.new).jobStatusId = widget.job?.jobStatusId;
     June.getState(SelectedSite.new).siteId = widget.job?.siteId;
@@ -133,8 +140,6 @@ class _JobEditScreenState extends State<JobEditScreen>
         (selectedCustomer) => FutureBuilderEx<Customer?>(
           // ignore: discarded_futures
           future: DaoCustomer().getById(selectedCustomer.customerId),
-
-          /// get the job details
           builder:
               (context, customer) => EntityEditScreen<Job>(
                 entityName: 'Job',
@@ -158,30 +163,20 @@ class _JobEditScreenState extends State<JobEditScreen>
                             _showBookingFee(),
                             const HMBSpacer(height: true),
                             _buildDescription(job),
-                            // SizedBox(
-                            //   height: 300,
-                            //   child: RichEditor(
-                            //       controller: _descriptionController,
-                            //       focusNode: _descriptionFocusNode,
-                            //       key: ValueKey(job?.description)),
-                            // ),
+                            const SizedBox(height: 12),
+                            _buildAssumption(job),
+                            const SizedBox(height: 12),
+
                             // Allow the user to select a contact for the job
                             _chooseContact(customer, job),
-
                             // Allow the user to select a site for the job
                             _chooseSite(customer, job),
                           ],
                         ),
-
                         const HMBSpacer(height: true),
-
                         // Display task photos
                         if (job != null) PhotoGallery.forJob(job: job),
-
-                        // Manage tasks
                         _manageTasks(job),
-
-                        // Remove the quote button (assuming it was here)
                       ],
                     ),
               ),
@@ -331,9 +326,7 @@ You can set a default booking fee from System | Billing screen''');
         return;
       }
       final jobId = widget.job!.id;
-
       final firstActivity = await _getFirstActivity();
-
       if (mounted) {
         // Fetch upcoming activity for that job
         // If no activities, just open schedule set to week/today
@@ -376,46 +369,42 @@ You can set a default booking fee from System | Billing screen''');
   Widget _buildActivityButton() => JuneBuilder(
     ActivityJobsState.new,
     builder:
-        (context) => FutureBuilderEx(
+        (context) => FutureBuilderEx<List<JobActivity>>(
           // ignore: discarded_futures
           future: DaoJobActivity().getByJob(widget.job!.id),
-          builder: (context, jobActivities) {
-            final nextActivity = _nextAcitivty(jobActivities!);
+          builder: (context, activities) {
+            final jobActivities = activities ?? [];
+            final nextActivity = _nextAcitivty(jobActivities);
             final nextActivityWhen =
                 nextActivity == null
                     ? ''
                     : formatDateTimeAM(nextActivity.start);
             return ElevatedButton(
               onPressed: () async {
-                // Find the next upcoming activity
-                if (mounted) {
-                  // Display a droplist or a simple dialog?
-                  // For demonstration, let's do a showDialog with the list:
-                  final selectedActivity = await showActivityDialog(
-                    jobActivities,
+                final selectedActivity = await showActivityDialog(
+                  jobActivities,
+                );
+
+                if (context.mounted && selectedActivity != null) {
+                  // Now open schedule page showing that activities date in Week view
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder:
+                          (_) => SchedulePage(
+                            defaultView: ScheduleView.week,
+                            initialActivityId: selectedActivity.id,
+                            defaultJob: widget.job?.id,
+                            dialogMode: true,
+                          ),
+                      fullscreenDialog: true,
+                    ),
                   );
 
-                  if (context.mounted && selectedActivity != null) {
-                    // Now open schedule page showing that activities date in Week view
-                    await Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder:
-                            (_) => SchedulePage(
-                              defaultView: ScheduleView.week,
-                              initialActivityId: selectedActivity.id,
-                              defaultJob: widget.job?.id,
-                              dialogMode: true,
-                            ),
-                        fullscreenDialog: true,
-                      ),
-                    );
-
-                    /// We need to reset the title as the Schedule Page
-                    /// will have updated it.
-                    setAppTitle(JobListScreen.pageTitle);
-                    // refresh the list of activities.
-                    June.getState(ActivityJobsState.new).setState();
-                  }
+                  /// We need to reset the title as the Schedule Page
+                  /// will have updated it.
+                  setAppTitle(JobListScreen.pageTitle);
+                  // refresh the list of activities.
+                  June.getState(ActivityJobsState.new).setState();
                 }
               },
               child: Row(
@@ -442,12 +431,7 @@ You can set a default booking fee from System | Billing screen''');
         ),
   );
 
-  ///
-  /// show activity Dialog
-  ///
-  Future<JobActivity?> showActivityDialog(
-    List<JobActivity> jobActivities,
-  ) async {
+  Future<JobActivity?> showActivityDialog(List<JobActivity> activities) async {
     final today = DateTime.now().withoutTime;
     return showDialog<JobActivity>(
       context: context,
@@ -455,18 +439,12 @@ You can set a default booking fee from System | Billing screen''');
           (context) => SimpleDialog(
             title: const Text('Open an Activity'),
             children: [
-              // "Next Activity" first, if any
               SimpleDialogOption(
                 onPressed:
-                    () =>
-                        Navigator.of(context).pop(_nextAcitivty(jobActivities)),
-                child: Text(
-                  'Next Activity: ${_nextAcctivityWhen(jobActivities)}',
-                ),
+                    () => Navigator.of(context).pop(_nextAcitivty(activities)),
+                child: Text('Next Activity: ${_nextAcctivityWhen(activities)}'),
               ),
-
-              // Then list all
-              for (final jobActivity in jobActivities)
+              for (final jobActivity in activities)
                 SimpleDialogOption(
                   onPressed: () => Navigator.of(context).pop(jobActivity),
                   child: Row(
@@ -480,7 +458,7 @@ You can set a default booking fee from System | Billing screen''');
                         _activityDisplay(jobActivity),
                         style: TextStyle(
                           decoration:
-                              (jobActivity.start.isBefore(today))
+                              jobActivity.start.isBefore(today)
                                   ? TextDecoration.lineThrough
                                   : TextDecoration.none,
                         ),
@@ -493,26 +471,23 @@ You can set a default booking fee from System | Billing screen''');
     );
   }
 
-  String _nextAcctivityWhen(List<JobActivity> jobActivities) {
-    final next = _nextActivityDate(jobActivities);
-    return next == null ? '' : formatDateTimeAM(next);
+  String _nextAcctivityWhen(List<JobActivity> activities) {
+    final next = _nextAcitivty(activities);
+    return next == null ? '' : formatDateTimeAM(next.start);
   }
-
-  DateTime? _nextActivityDate(List<JobActivity> jobActivities) =>
-      _nextAcitivty(jobActivities)?.start;
 
   JobActivity? _nextAcitivty(List<JobActivity> jobActivities) {
     final today = LocalDate.today();
     for (final e in jobActivities) {
-      if (e.start.toLocalDate().isAfter(today) ||
-          e.start.toLocalDate() == today) {
+      final ld = e.start.toLocalDate();
+      if (ld.isAfter(today) || ld == today) {
         return e;
       }
     }
     return null;
   }
 
-  bool _isToday(DateTime nextActivity) => nextActivity.toLocalDate().isToday;
+  bool _isToday(DateTime dt) => dt.toLocalDate().isToday;
 
   String _activityDisplay(JobActivity e) => formatDateTimeAM(e.start);
 
@@ -522,6 +497,7 @@ You can set a default booking fee from System | Billing screen''');
     customerId: June.getState(SelectedCustomer.new).customerId,
     summary: _summaryController.text,
     description: jsonEncode(_descriptionController.document),
+    assumption: jsonEncode(_assumptionController.document),
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(SelectedContact.new).contactId,
     jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
@@ -536,6 +512,7 @@ You can set a default booking fee from System | Billing screen''');
     customerId: June.getState(SelectedCustomer.new).customerId,
     summary: _summaryController.text,
     description: jsonEncode(_descriptionController.document),
+    assumption: jsonEncode(_assumptionController.document),
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(SelectedContact.new).contactId,
     jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
@@ -549,19 +526,19 @@ You can set a default booking fee from System | Billing screen''');
     scrollController.dispose();
     _summaryController.dispose();
     _descriptionController.dispose();
+    _descriptionFocusNode.dispose();
+    _assumptionController.dispose();
     _hourlyRateController.dispose();
     _bookingFeeController.dispose();
     _summaryFocusNode.dispose();
-    _descriptionFocusNode.dispose();
+    _assumptionFocusNode.dispose();
     _hourlyRateFocusNode.dispose();
     _bookingFeeFocusNode.dispose();
     super.dispose();
   }
 
   @override
-  void refresh() {
-    setState(() {});
-  }
+  void refresh() => setState(() {});
 
   Widget _buildDescription(Job? job) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,7 +547,6 @@ You can set a default booking fee from System | Billing screen''');
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Display the description with formatting
             const HMBText('Description:', bold: true),
             Container(
               // This enforces a minimum height of 300 pixels
@@ -578,37 +554,64 @@ You can set a default booking fee from System | Billing screen''');
               constraints: const BoxConstraints(minHeight: 200),
               child: HMBExpandingTextBlock(
                 // Convert your RichEditor content to plain text as before
-                RichEditor.createParchment(
-                  jsonEncode(_descriptionController.document),
-                ).toPlainText().replaceAll('\n\n', '\n'),
+                RichTextHelper.parchmentToPlainText(_descriptionController.document),
+
+                /// the version enforces an refresh
                 key: ValueKey(descriptionVersion),
               ),
             ),
-
-            // RichEditor(
-            //   controller: _descriptionController,
-            //   focusNode: _descriptionFocusNode,
-            //   key: ValueKey(job?.description),
-            //   readOnly: true,
-            // ),
-
-            // Add an edit button
           ],
         ),
       ),
       IconButton(
         icon: const Icon(Icons.edit),
         onPressed: () async {
-          await _showDescriptionDialog();
-          setState(() {
-            descriptionVersion++;
-          });
+          await _showRichEditDialog(_descriptionController, 'Description');
+          setState(() => descriptionVersion++);
         },
       ),
     ],
   );
 
-  Future<void> _showDescriptionDialog() async {
+  Widget _buildAssumption(Job? job) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const HMBText('Assumption:', bold: true),
+            Container(
+              // This enforces a minimum height of 300 pixels
+              // but allows the container to grow based on the text length.
+              constraints: const BoxConstraints(minHeight: 200),
+              child: HMBExpandingTextBlock(
+                // Convert your RichEditor content to plain text as before
+                RichEditor.createParchment(
+                  jsonEncode(_assumptionController.document),
+                ).toPlainText().replaceAll('\n\n', '\n'),
+
+                /// the version enforces an refresh
+                key: ValueKey(assumptionVersion),
+              ),
+            ),
+          ],
+        ),
+      ),
+      IconButton(
+        icon: const Icon(Icons.edit),
+        onPressed: () async {
+          await _showRichEditDialog(_assumptionController, 'Assumptions');
+          setState(() => assumptionVersion++);
+        },
+      ),
+    ],
+  );
+
+  Future<void> _showRichEditDialog(
+    RichEditorController richController,
+    String title,
+  ) async {
     await showDialog<void>(
       context: context,
       builder:
@@ -620,16 +623,13 @@ You can set a default booking fee from System | Billing screen''');
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Edit Description',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                  Text(title, style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 16),
-                  Expanded(
+                  SizedBox(
+                    height: 300,
                     child: RichEditor(
-                      controller: _descriptionController,
-                      focusNode:
-                          FocusNode(), // New focus node for dialog editor
+                      controller: richController,
+                      focusNode: FocusNode(),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -641,18 +641,7 @@ You can set a default booking fee from System | Billing screen''');
                         child: const Text('Cancel'),
                       ),
                       ElevatedButton(
-                        onPressed: () {
-                          // Save and update the description
-                          setState(() {
-                            // currentEntity = currentEntity?.copyWith(
-                            //   description: jsonEncode(_descriptionController
-                            //       .document
-                            //       .toDelta()
-                            //       .toJson()),
-                            // );
-                          });
-                          Navigator.of(context).pop();
-                        },
+                        onPressed: () => Navigator.of(context).pop(),
                         child: const Text('Save'),
                       ),
                     ],

@@ -1,4 +1,5 @@
 import 'package:money2/money2.dart';
+
 import 'entity.dart';
 
 enum BillingType {
@@ -32,12 +33,12 @@ class Job extends Entity<Job> {
     required this.customerId,
     required this.summary,
     required this.description,
-    this.assumption = '',
     required this.siteId,
     required this.contactId,
     required this.jobStatusId,
     required this.hourlyRate,
     required this.bookingFee,
+    this.assumption = '',
     this.lastActive = false,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,

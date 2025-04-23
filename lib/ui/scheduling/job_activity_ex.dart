@@ -21,10 +21,6 @@ class JobActivityEx {
   CalendarEventData<JobActivityEx> get eventData => CalendarEventData(
     title: job.summary,
     description: jobActivity.notes,
-
-    //  RichEditor.createParchment(
-    //   job.description,
-    // ).toPlainText().replaceAll('\n\n', '\n'),
     date: jobActivity.start.withoutTime,
     startTime: jobActivity.start,
     endTime: jobActivity.end,

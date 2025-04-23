@@ -2,34 +2,14 @@ import 'package:money2/money2.dart';
 
 import 'entity.dart';
 
-enum QuoteState {
-  reviewing,
-  sent,
-  approved,
-  rejected;
-
-  /// Creates a [QuoteState] from a string.
-  static QuoteState fromString(String value) {
-    switch (value) {
-      case 'reviewing':
-        return QuoteState.reviewing;
-      case 'sent':
-        return QuoteState.sent;
-      case 'approved':
-        return QuoteState.approved;
-      case 'rejected':
-        return QuoteState.rejected;
-      default:
-        throw ArgumentError('Invalid quote state: $value');
-    }
-  }
-}
+enum QuoteState { reviewing, sent, approved, rejected }
 
 class Quote extends Entity<Quote> {
   Quote({
     required super.id,
     required this.jobId,
     required this.totalAmount,
+    required this.assumption,
     required super.createdDate,
     required super.modifiedDate,
     required this.quoteNum,
@@ -42,6 +22,7 @@ class Quote extends Entity<Quote> {
   Quote.forInsert({
     required this.jobId,
     required this.totalAmount,
+    this.assumption = '',
     this.quoteNum,
     this.externalQuoteId,
     this.state = QuoteState.reviewing,
@@ -53,6 +34,7 @@ class Quote extends Entity<Quote> {
     required super.entity,
     required this.jobId,
     required this.totalAmount,
+    required this.assumption,
     required this.quoteNum,
     required this.state,
     this.externalQuoteId,
@@ -64,12 +46,12 @@ class Quote extends Entity<Quote> {
     id: map['id'] as int,
     jobId: map['job_id'] as int,
     totalAmount: Money.fromInt(map['total_amount'] as int, isoCode: 'AUD'),
+    assumption: map['assumption'] as String,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
     quoteNum: map['quote_num'] as String?,
     externalQuoteId: map['external_quote_id'] as String?,
-    // Convert the stored string to a Dart enum
-    state: QuoteState.fromString(map['state'] as String),
+    state: QuoteState.values.byName(map['state'] as String),
     dateSent:
         map['date_sent'] != null
             ? DateTime.parse(map['date_sent'] as String)
@@ -82,9 +64,9 @@ class Quote extends Entity<Quote> {
 
   int jobId;
   Money totalAmount;
+  String assumption;
   String? quoteNum;
   String? externalQuoteId;
-  // New field as a Dart enum
   QuoteState state;
   DateTime? dateSent;
   DateTime? dateApproved;
@@ -94,6 +76,7 @@ class Quote extends Entity<Quote> {
   Quote copyWith({
     int? id,
     int? jobId,
+    String? assumption,
     Money? totalAmount,
     DateTime? createdDate,
     DateTime? modifiedDate,
@@ -105,6 +88,7 @@ class Quote extends Entity<Quote> {
   }) => Quote(
     id: id ?? this.id,
     jobId: jobId ?? this.jobId,
+    assumption: assumption ?? this.assumption,
     totalAmount: totalAmount ?? this.totalAmount,
     createdDate: createdDate ?? this.createdDate,
     modifiedDate: modifiedDate ?? this.modifiedDate,
@@ -120,6 +104,7 @@ class Quote extends Entity<Quote> {
     'id': id,
     'job_id': jobId,
     'total_amount': totalAmount.minorUnits.toInt(),
+    'assumption': assumption,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
     'quote_num': quoteNum,
