@@ -1,13 +1,11 @@
-// --------------------
-// Imports
-// --------------------
-
+// lib/src/providers/google_drive_backup_provider.dart
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
 import 'package:archive/archive_io.dart';
 import 'package:dcli_core/dcli_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:path/path.dart';
 import 'package:sentry/sentry.dart';
@@ -20,8 +18,8 @@ import '../../backup.dart';
 import '../../backup_provider.dart';
 import '../api.dart';
 import 'backup_params.dart';
+import 'photo_sync_service.dart';
 import 'progress_update.dart';
-import 'upload_photos_in_backup.dart';
 import 'upload_zip_file.dart';
 
 class GoogleDriveBackupProvider extends BackupProvider {
@@ -84,8 +82,8 @@ class GoogleDriveBackupProvider extends BackupProvider {
   Future<List<Backup>> getBackups() async {
     try {
       final driveApi = await GoogleDriveApi.selfAuth();
-      final backupsFolderId = await driveApi.getBackupFolder();
-      final q = "'$backupsFolderId' in parents and trashed=false";
+      final folderId = await driveApi.getBackupFolder();
+      final q = "'$folderId' in parents and trashed=false";
       final filesList = await driveApi.files.list(
         q: q,
         $fields: 'files(id, name, size, createdTime)',
@@ -115,55 +113,42 @@ class GoogleDriveBackupProvider extends BackupProvider {
     required int version,
   }) async {
     try {
-      emitProgress('Starting Google Drive backup', 5, 6);
+      emitProgress('Starting Google Drive backup', 1, 3);
 
       // Spawn a single isolate to perform the entire backup.
       final receivePort = ReceivePort();
       final errorPort = ReceivePort();
       final exitPort = ReceivePort();
 
-      await Isolate.spawn<BackupParams>(
+      final params = BackupParams(
+        sendPort: receivePort.sendPort,
+        pathToZip: pathToZippedBackup,
+        pathToBackupFile: pathToDatabaseCopy,
+        authHeaders: (await GoogleDriveAuth.init()).authHeaders,
+        progressStageStart: 1,
+        progressStageEnd: 3,
+      );
+
+      await Isolate.spawn(
         _performDriveBackup,
-        BackupParams(
-          sendPort: receivePort.sendPort,
-          pathToZip: pathToZippedBackup,
-          pathToBackupFile: pathToDatabaseCopy,
-          includePhotos: true, // or based on user settings
-          photosRootPath: await photosRootPath,
-          authHeaders: (await GoogleDriveAuth.init()).authHeaders,
-          progressStageStart: 3,
-          progressStageEnd: 6,
-        ),
+        params,
         onError: errorPort.sendPort,
         onExit: exitPort.sendPort,
       );
 
-      final completer = Completer<void>();
-      errorPort.listen((error) {
-        Sentry.captureException(error);
-        completer.completeError(error as Object);
-      });
-      exitPort.listen((message) {
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
-      });
-      receivePort.listen((message) {
-        if (message is ProgressUpdate) {
-          emitProgress(
-            message.stageDescription,
-            message.stageNo,
-            message.stageCount,
-          );
+      errorPort.listen((e) => emitProgress(r'Error: $e', 3, 3));
+      receivePort.listen((msg) {
+        if (msg is ProgressUpdate) {
+          emitProgress(msg.stageDescription, msg.stageNo, msg.stageCount);
         }
       });
 
-      await completer.future;
+      await exitPort.first;
+      emitProgress('Backup completed', 3, 3);
       receivePort.close();
       errorPort.close();
       exitPort.close();
 
-      emitProgress('Backup completed', 6, 6);
       return BackupResult(
         pathToSource: pathToDatabaseCopy,
         pathToBackup: pathToZippedBackup,
@@ -179,7 +164,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
   // _performDriveBackup
   // The isolate entry point that performs the entire backup operation.
   // --------------------
-  Future<void> _performDriveBackup(BackupParams params) async {
+  static Future<void> _performDriveBackup(BackupParams params) async {
     await Sentry.init((options) {
       options
         ..dsn =
@@ -191,61 +176,25 @@ class GoogleDriveBackupProvider extends BackupProvider {
 
     try {
       // Step 1: Zip the database.
-      sendPort.send(
-        ProgressUpdate(
-          'Zipping database...',
-          params.progressStageStart,
-          params.progressStageEnd,
-        ),
-      );
+      sendPort.send(ProgressUpdate('Zipping DB...', 1, 3));
       final encoder = ZipFileEncoder()..create(params.pathToZip);
       await encoder.addFile(File(params.pathToBackupFile));
       await encoder.close();
 
-      // Step 2: Upload photos individually if requested.
-      if (params.includePhotos) {
-        sendPort.send(
-          ProgressUpdate(
-            'Uploading photos...',
-            params.progressStageStart,
-            params.progressStageEnd,
-          ),
-        );
-        await uploadPhotosInBackup(params);
-      }
-
-      // Step 3: Upload the zip file (DB backup) to Google Drive.
-      sendPort.send(
-        ProgressUpdate(
-          'Uploading backup file...',
-          params.progressStageStart,
-          params.progressStageEnd,
-        ),
-      );
+      sendPort.send(ProgressUpdate('Uploading backup file...', 2, 3));
       await uploadZipFile(params);
 
-      sendPort.send(
-        ProgressUpdate(
-          'Backup completed',
-          params.progressStageEnd,
-          params.progressStageEnd,
-        ),
-      );
-    } catch (e, st) {
-      await Sentry.captureException(e, stackTrace: st);
-      sendPort.send(
-        ProgressUpdate(
-          'Error during backup: $e',
-          params.progressStageEnd,
-          params.progressStageEnd,
-        ),
-      );
+      sendPort.send(ProgressUpdate('Backup uploaded', 3, 3));
+    } catch (e) {
+      sendPort.send(ProgressUpdate(r'Error during backup: $e', 3, 3));
     }
-
-    await Sentry.close();
     Isolate.exit();
   }
 
+  /// Launches the photo sync process in its own isolate.
+  @override
+  Future<void> syncPhotos() async => PhotoSyncService().start();
+  
   @override
   Future<String> get photosRootPath => getPhotosRootPath();
 
@@ -258,5 +207,5 @@ class GoogleDriveBackupProvider extends BackupProvider {
       'Google Drive: ${useDebugPath ? '/hmb/debug/backups/' : '/hmb/backups'}';
 
   @override
-  set useDebugPath(bool bool) {}
+  set useDebugPath(bool bool) => kDebugMode;
 }

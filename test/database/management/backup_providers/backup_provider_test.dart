@@ -60,7 +60,6 @@ void main() {
       final backupResult = await backupProvider.performBackup(
         version: 1,
         src: ProjectScriptSource(),
-        includePhotos: true,
       );
 
       // Verify the backup was created successfully

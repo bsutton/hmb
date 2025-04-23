@@ -129,7 +129,6 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                     await _provider.performBackup(
                       version: 1,
                       src: AssetScriptSource(),
-                      includePhotos: _includePhotos,
                     );
                     if (mounted) {
                       HMBToast.info('Backup completed successfully.');

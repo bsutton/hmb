@@ -24,7 +24,11 @@ class PhotoMeta {
   }
 
   Future<String> resolve() async =>
-      _absolutePath = join(await getPhotosRootPath(), photo.filePath);
+      _absolutePath = await getAbsolutePath(photo);
+
+  /// returns the absolute path to where the photo is stored.
+  static Future<String> getAbsolutePath(Photo photo) async =>
+      join(await getPhotosRootPath(), photo.filePath);
 
   /// Resolves all of the file paths into absolute file paths.
   static Future<List<PhotoMeta>> resolveAll(List<PhotoMeta> photos) async {

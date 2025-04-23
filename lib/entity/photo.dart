@@ -48,6 +48,8 @@ class Photo extends Entity<Photo> {
   String parentType;
   String filePath;
   String comment;
+  /// The last time the photo was backed up.
+  /// Normally we would only ever back a photo once.
   DateTime? lastBackupDate;
 
   @override

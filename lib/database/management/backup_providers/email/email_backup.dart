@@ -174,4 +174,9 @@ class EmailBackupProvider extends BackupProvider {
 
   @override
   Future<String> get backupLocation => throw UnimplementedError();
+  
+  @override
+  Future<void> syncPhotos() {
+    throw UnimplementedError();
+  }
 }

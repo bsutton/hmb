@@ -1,5 +1,6 @@
 import 'package:june/june.dart';
 
+import '../database/management/backup_providers/google_drive/background_backup/photo_sync_params.dart';
 import '../entity/photo.dart';
 import '../util/photo_meta.dart';
 import 'dao.dart';
@@ -23,21 +24,26 @@ class DaoPhoto extends Dao<Photo> {
   Future<List<String>> getAllPhotoPaths() async {
     final db = withoutTransaction();
     final List<Map<String, dynamic>> maps = await db.query(
-      'photo',
+      tableName,
       columns: ['filePath'],
     );
     return maps.map((map) => map['filePath'] as String).toList();
   }
 
   /// Returns the list of photos that have not been backed up yet.
-  Future<List<Photo>> getNewPhotos() async {
+  Future<List<PhotoPayload>> getUnsyncedPhotos() async {
     // You can add a query method to DaoPhoto that returns only photos with a null last_backup_date.
     final db = withoutTransaction();
     final List<Map<String, dynamic>> maps = await db.query(
-      'photo',
+      tableName,
       where: 'last_backup_date IS NULL',
     );
-    return maps.map(Photo.fromMap).toList();
+
+    final payloads = <PhotoPayload>[];
+    for (final photo in toList(maps)) {
+      payloads.add(await PhotoPayload.fromPhoto(photo));
+    }
+    return payloads;
   }
 
   /// Updates the photo record to mark it as backed up.
@@ -95,6 +101,8 @@ class DaoPhoto extends Dao<Photo> {
         return getByTool(parentId);
     }
   }
+
+
 }
 
 class PhotoState extends JuneState {

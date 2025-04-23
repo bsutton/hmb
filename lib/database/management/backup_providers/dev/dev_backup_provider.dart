@@ -83,4 +83,9 @@ class DevBackupProvider extends BackupProvider {
 
   @override
   Future<String> get backupLocation async => _pathToBackups();
+  
+  @override
+  Future<void> syncPhotos() {
+    throw UnimplementedError();
+  }
 }

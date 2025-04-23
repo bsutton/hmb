@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../../../dao/dao.g.dart';
 import '../../../../ui/widgets/hmb_button.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
 import '../../../../util/app_title.dart';
@@ -13,7 +15,10 @@ import '../../../versions/asset_script_source.dart';
 import '../backup.dart';
 import '../backup_provider.dart';
 import '../backup_selection.dart';
+import '../progress_update.dart';
 import 'background_backup/google_drive_backup_provider.dart';
+import 'background_backup/photo_sync_params.dart';
+import 'background_backup/photo_sync_service.dart';
 
 class GoogleDriveBackupScreen extends StatefulWidget {
   const GoogleDriveBackupScreen({super.key});
@@ -27,18 +32,31 @@ class _GoogleDriveBackupScreenState
     extends DeferredState<GoogleDriveBackupScreen> {
   bool _isLoading = false;
   String _stageDescription = '';
-  bool _includePhotos = false;
+  String _photoStageDescription = '';
 
   late final BackupProvider _provider;
   late Future<DateTime?> _lastBackupFuture;
+  late final StreamSubscription<ProgressUpdate> _backupSub;
+  late final StreamSubscription<ProgressUpdate> _photoSub;
 
   @override
   void initState() {
     super.initState();
-    // Listen for progress updates
-    _provider.progressStream.listen((update) {
+    // Listen for DB backup progress (provider set in asyncInitState)
+    _backupSub = _provider.progressStream.listen((update) {
       setState(() => _stageDescription = update.stageDescription);
     });
+    // Listen for photo sync progress
+    _photoSub = PhotoSyncService().progressStream.listen((update) {
+      setState(() => _photoStageDescription = update.stageDescription);
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_backupSub.cancel());
+    unawaited(_photoSub.cancel());
+    super.dispose();
   }
 
   @override
@@ -47,12 +65,11 @@ class _GoogleDriveBackupScreenState
     _provider = _getProvider();
 
     // Load last backup date
-    await _refreshLastBackup();
+    _lastBackupFuture = _refreshLastBackup();
   }
 
-  Future<void> _refreshLastBackup() async {
+  Future<DateTime?> _refreshLastBackup() async {
     DateTime? last;
-
     try {
       final backups = await _provider.getBackups();
       if (backups.isNotEmpty) {
@@ -62,9 +79,7 @@ class _GoogleDriveBackupScreenState
     } catch (_) {
       last = null;
     }
-
-    // Wrap the result in a Future<DateTime?> for your FutureBuilder
-    _lastBackupFuture = Future.value(last);
+    return last;
   }
 
   @override
@@ -97,22 +112,14 @@ class _GoogleDriveBackupScreenState
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16),
-                    FutureBuilder<DateTime?>(
-                      future: _lastBackupFuture,
-                      builder: (context, snapshot) {
-                        final date = snapshot.data;
-                        final text =
-                            date == null
-                                ? 'No backups yet'
-                                : 'Last backup: ${formatDateTime(date)}';
-                        return Text(text, style: const TextStyle(fontSize: 16));
-                      },
-                    ),
                     const SizedBox(height: 40),
                     _buildBackupButton(),
+                    const SizedBox(height: 16),
+                    _buildLastBackup(),
                     const SizedBox(height: 40),
                     _buildRestoreButton(context),
+                    const SizedBox(height: 40),
+                    ..._buildPhotoSyncSection(),
                   ],
                 ],
               ),
@@ -121,37 +128,32 @@ class _GoogleDriveBackupScreenState
     ),
   );
 
+  FutureBuilderEx<DateTime?> _buildLastBackup() => FutureBuilderEx<DateTime?>(
+    future: _lastBackupFuture,
+    builder: (context, lastBackupDate) {
+      final text =
+          lastBackupDate == null
+              ? 'No backups yet'
+              : 'Last backup: ${formatDateTime(lastBackupDate)}';
+      return Text(text, style: const TextStyle(fontSize: 16));
+    },
+  );
+
   Widget _buildBackupButton() => Column(
     children: [
       HMBButton.withIcon(
         label: 'Backup to ${_provider.name}',
         icon: const Icon(Icons.backup, size: 24),
         onPressed: () async {
-          await _performBackup(_includePhotos);
+          await _performBackup();
           await _refreshLastBackup();
           setState(() {});
         },
       ),
-      const SizedBox(height: 40),
-      Align(
-        alignment: Alignment.centerRight,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Include photos in backup'),
-            Checkbox(
-              value: _includePhotos,
-              onChanged: (value) {
-                setState(() => _includePhotos = value ?? false);
-              },
-            ),
-          ],
-        ),
-      ),
     ],
   );
 
-  Future<void> _performBackup(bool includePhotos) async {
+  Future<void> _performBackup() async {
     setState(() {
       _isLoading = true;
       _stageDescription = 'Starting backup...';
@@ -159,11 +161,7 @@ class _GoogleDriveBackupScreenState
 
     await WakelockPlus.enable();
     try {
-      await _provider.performBackup(
-        version: 1,
-        src: AssetScriptSource(),
-        includePhotos: includePhotos,
-      );
+      await _provider.performBackup(version: 1, src: AssetScriptSource());
       if (mounted) {
         HMBToast.info('Backup completed successfully.');
       }
@@ -184,13 +182,13 @@ class _GoogleDriveBackupScreenState
     icon: const Icon(Icons.restore, size: 24),
     onPressed: () async {
       _provider.useDebugPath = !false;
-      final selectedBackup = await Navigator.push<Backup>(
+      final selected = await Navigator.push<Backup>(
         context,
         MaterialPageRoute(
           builder: (c) => BackupSelectionScreen(backupProvider: _provider),
         ),
       );
-      if (selectedBackup != null) {
+      if (selected != null) {
         setState(() {
           _isLoading = true;
           _stageDescription = 'Starting restore...';
@@ -198,7 +196,7 @@ class _GoogleDriveBackupScreenState
         await WakelockPlus.enable();
         try {
           await _provider.performRestore(
-            selectedBackup,
+            selected,
             AssetScriptSource(),
             FlutterDatabaseFactory(),
           );
@@ -222,4 +220,31 @@ class _GoogleDriveBackupScreenState
 
   BackupProvider _getProvider() =>
       GoogleDriveBackupProvider(FlutterDatabaseFactory());
+
+  List<Widget> _buildPhotoSyncSection() => [
+    // Sync Photos Button
+    HMBButton.withIcon(
+      label: 'Sync Photos',
+      icon: const Icon(Icons.cloud_upload, size: 24),
+      onPressed: () async {
+        await _provider.syncPhotos();
+      },
+    ),
+    if (_photoStageDescription.isNotEmpty) ...[
+      const SizedBox(height: 8),
+      Text(_photoStageDescription, style: const TextStyle(fontSize: 16)),
+    ],
+
+    FutureBuilderEx<List<PhotoPayload>>(
+      // ignore: discarded_futures
+      future: DaoPhoto().getUnsyncedPhotos(),
+      builder: (context, unsynced) {
+        final text =
+            unsynced!.isEmpty
+                ? 'All photos synced.'
+                : '${unsynced.length} photos to be synced ';
+        return Text(text, style: const TextStyle(fontSize: 16));
+      },
+    ),
+  ];
 }

@@ -56,7 +56,6 @@ abstract class BackupProvider {
   Future<BackupResult> performBackup({
     required int version,
     required ScriptSource src,
-    bool includePhotos = false,
   }) => withTempDirAsync((tmpDir) async {
     emitProgress('Initializing backup', 1, 6);
 
@@ -82,7 +81,6 @@ abstract class BackupProvider {
         provider: this,
         pathToZip: pathToZip,
         pathToBackupFile: pathToBackupFile,
-        includePhotos: includePhotos,
       );
 
       emitProgress('Storing backup', 5, 6);
@@ -247,6 +245,8 @@ abstract class BackupProvider {
       }
     }
   }
+
+  Future<void> syncPhotos();
 
   /// A somewhat abstract string desgined to show the
   /// location of where backups are stored to the

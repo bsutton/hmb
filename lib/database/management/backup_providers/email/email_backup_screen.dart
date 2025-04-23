@@ -75,7 +75,6 @@ class _BackupScreenState extends State<BackupScreen> {
                   ).performBackup(
                     version: 1,
                     src: AssetScriptSource(),
-                    includePhotos: _includePhotos,
                   );
                   if (context.mounted) {
                     HMBToast.info('Backup successful');

@@ -1,140 +1,103 @@
-// --------------------
-// Imports
-// --------------------
-
-import 'dart:async';
+// --------------------------------------------------------------
+// lib/src/api/upload_photos_in_backup.dart
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
+
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import '../../../../../dao/dao.g.dart';
-import '../api.dart';
-import 'backup_params.dart';
-import 'progress_update.dart';
 
-Future<void> uploadPhotosInBackup(BackupParams params) async {
-  final sendPort = params.sendPort;
-  final newPhotos = await DaoPhoto().getNewPhotos();
-  final totalPhotos = newPhotos.length;
+import '../../progress_update.dart';
+import '../api.dart';
+import 'photo_sync_params.dart';
+import 'photo_sync_service.dart';
+
+/// Uploads the given photos to Google Drive, sending progress updates.
+Future<void> uploadPhotosInBackup({
+  required SendPort sendPort,
+  required Map<String, String> authHeaders,
+  required List<PhotoPayload> photoPayloads,
+}) async {
+  final totalPhotos = photoPayloads.length;
+  final stageCount = totalPhotos + 2;
+  var stageNo = 1;
   if (totalPhotos == 0) {
-    sendPort.send(
-      ProgressUpdate(
-        'No new photos to backup',
-        params.progressStageEnd,
-        params.progressStageEnd,
-      ),
-    );
+    sendPort.send(ProgressUpdate('No photos to sync', stageNo++, stageCount));
     return;
   }
 
-  // Initialize the Drive API.
-  final driveApi = await GoogleDriveApi.fromHeaders(params.authHeaders);
-  // Build folder structure: hmb → backups → photos.
-  final hmbFolderId = await driveApi.getOrCreateFolderId('hmb');
-  final backupsFolderId = await driveApi.getOrCreateFolderId(
-    'backups',
-    parentFolderId: hmbFolderId,
-  );
+  // Init Drive API
+  final driveApi = await GoogleDriveApi.fromHeaders(authHeaders);
+  final backupsFolderId = await driveApi.getBackupFolder();
   final photosFolderId = await driveApi.getOrCreateFolderId(
     'photos',
     parentFolderId: backupsFolderId,
   );
 
-  var processed = 0;
-  for (final photo in newPhotos) {
-    final stageNo =
-        params.progressStageStart +
-        ((processed / totalPhotos) *
-                (params.progressStageEnd - params.progressStageStart))
-            .toInt();
+  for (var i = 0; i < totalPhotos; i++) {
+    final photoPayload = photoPayloads[i];
+
     sendPort.send(
       ProgressUpdate(
-        'Uploading photo (${processed + 1}/$totalPhotos)',
-        stageNo,
-        params.progressStageEnd,
+        'Uploading photo (${i + 1}/$totalPhotos)',
+        stageNo++,
+        stageCount,
       ),
     );
 
-    final photoFile = File(photo.filePath);
-    if (!photoFile.existsSync()) {
-      processed++;
+    final file = File(photoPayload.absolutePathToPhoto);
+    if (!file.existsSync()) {
       continue;
     }
 
-    // Create a monthly subfolder based on the photo's creation date.
-    final monthFolderName = DateFormat('yyyy-MM').format(photo.createdDate);
+    final monthFolderName = DateFormat(
+      'yyyy-MM',
+    ).format(photoPayload.createdAt);
     final monthFolderId = await driveApi.getOrCreateFolderId(
       monthFolderName,
       parentFolderId: photosFolderId,
     );
 
-    // Prepare metadata for the file.
-    final metadata = {
-      'name': photoFile.uri.pathSegments.last,
+    // Resumable upload init
+    final metadata = jsonEncode({
+      'name': '${photoPayload.id}:${file.uri.pathSegments.last}',
       'parents': [monthFolderId],
-    };
-
-    // Initiate a resumable upload session.
-    final uri = Uri.parse(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',
+    });
+    final initResp = await driveApi.send(
+      http.Request(
+          'POST',
+          Uri.parse(
+            'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',
+          ),
+        )
+        ..headers['Content-Type'] = 'application/json; charset=UTF-8'
+        ..body = metadata,
     );
-    final initRequest =
-        http.Request('POST', uri)
-          ..headers['Content-Type'] = 'application/json; charset=UTF-8'
-          ..body = jsonEncode(metadata);
-
-    final initResponse = await driveApi.send(initRequest);
-    if (initResponse.statusCode != 200 && initResponse.statusCode != 201) {
-      sendPort.send(
-        ProgressUpdate(
-          'Error initiating upload for photo ${photo.id}',
-          stageNo,
-          params.progressStageEnd,
-        ),
-      );
-      processed++;
-      continue;
-    }
-    final uploadUrl = initResponse.headers['location'];
+    final uploadUrl = initResp.headers['location'];
     if (uploadUrl == null) {
-      sendPort.send(
-        ProgressUpdate(
-          'No upload URL for photo ${photo.id}',
-          stageNo,
-          params.progressStageEnd,
-        ),
-      );
-      processed++;
       continue;
     }
 
-    // Upload the photo.
-    final fileBytes = await photoFile.readAsBytes();
-    final uploadRequest =
-        http.Request('PUT', Uri.parse(uploadUrl))
-          ..headers['Content-Type'] = 'image/jpeg'
-          ..bodyBytes = fileBytes;
-    final uploadResponse = await driveApi.send(uploadRequest);
-    if (uploadResponse.statusCode == 200 || uploadResponse.statusCode == 201) {
-      // Mark photo as backed up in the database.
-      await DaoPhoto().updatePhotoBackupStatus(photo.id);
-      sendPort.send(
-        ProgressUpdate(
-          'Uploaded photo ${photo.id}',
-          stageNo,
-          params.progressStageEnd,
-        ),
-      );
-    } else {
-      sendPort.send(
-        ProgressUpdate(
-          'Failed uploading photo ${photo.id}',
-          stageNo,
-          params.progressStageEnd,
-        ),
-      );
+    final bytes = await file.readAsBytes();
+    final uploadResp = await driveApi.send(
+      http.Request('PUT', Uri.parse(uploadUrl))
+        ..headers['Content-Type'] = 'image/jpeg'
+        ..bodyBytes = bytes,
+    );
+
+    if (uploadResp.statusCode == 200 || uploadResp.statusCode == 201) {
+      sendPort
+        ..send(PhotoUploaded(photoPayload.id))
+        ..send(
+          ProgressUpdate(
+            'Photo ${photoPayload.id} synced',
+            stageNo++,
+            stageCount,
+          ),
+        );
     }
-    processed++;
   }
+
   driveApi.close();
+  sendPort.send(ProgressUpdate('Photo sync completed', stageNo, stageNo));
 }

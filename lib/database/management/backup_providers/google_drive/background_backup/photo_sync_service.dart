@@ -1,0 +1,114 @@
+// lib/src/services/photo_sync_service.dart
+import 'dart:async';
+import 'dart:isolate';
+
+import '../../../../../dao/dao_photo.dart';
+import '../../progress_update.dart';
+import '../api.dart';
+import 'photo_sync_params.dart';
+import 'upload_photos_in_backup.dart';
+
+/// Used by the photo upload isolate to indicate
+/// that it successfully uploaded a photo.
+class PhotoUploaded {
+  PhotoUploaded(this.id);
+  int id;
+}
+
+class PhotoSyncService {
+  factory PhotoSyncService() => _instance;
+  PhotoSyncService._();
+  static final PhotoSyncService _instance = PhotoSyncService._();
+
+  final StreamController<ProgressUpdate> _controller =
+      StreamController.broadcast();
+  Stream<ProgressUpdate> get progressStream => _controller.stream;
+
+  Isolate? _isolate;
+  ReceivePort? _receivePort;
+  ReceivePort? _errorPort;
+  ReceivePort? _exitPort;
+
+  bool get isRunning => _isolate != null;
+
+  /// Kick off the sync and listen for both progress and payload messages.
+  Future<void> start() async {
+    final photos = await DaoPhoto().getUnsyncedPhotos();
+    if (photos.isEmpty) {
+      _controller.add(ProgressUpdate('No new Photos to sync', 0, 0));
+      return;
+    }
+
+    final headers = (await GoogleDriveAuth.init()).authHeaders;
+    await _startSync(photos: photos, authHeaders: headers);
+  }
+
+  Future<void> _startSync({
+    required List<PhotoPayload> photos,
+    required Map<String, String> authHeaders,
+  }) async {
+    if (isRunning) {
+      return;
+    }
+
+    _receivePort = ReceivePort();
+    _errorPort = ReceivePort();
+    _exitPort = ReceivePort();
+
+    // 1️⃣ Listen for ProgressUpdate or PhotoPayload
+    _receivePort!.listen((message) async {
+      if (message is ProgressUpdate) {
+        _controller.add(message);
+      } else if (message is PhotoUploaded) {
+        // mark that one photo has now been backed up
+        await DaoPhoto().updatePhotoBackupStatus(message.id);
+      }
+    });
+
+    _errorPort!.listen((error) {
+      _controller.add(ProgressUpdate('Sync error: $error', 0, 0));
+    });
+    _exitPort!.listen((_) {
+      _cleanup();
+      
+    });
+
+    final params = PhotoSyncParams(
+      sendPort: _receivePort!.sendPort,
+      authHeaders: authHeaders,
+      photos: photos,
+    );
+
+    _isolate = await Isolate.spawn<PhotoSyncParams>(
+      _photoSyncEntry,
+      params,
+      onError: _errorPort!.sendPort,
+      onExit: _exitPort!.sendPort,
+    );
+  }
+
+  void cancelSync() {
+    _isolate?.kill(priority: Isolate.immediate);
+    _cleanup();
+  }
+
+  void _cleanup() {
+    _receivePort?.close();
+    _errorPort?.close();
+    _exitPort?.close();
+    _isolate = null;
+    _receivePort = null;
+    _errorPort = null;
+    _exitPort = null;
+  }
+}
+
+/// In the isolate, after each successful upload, send the payload itself:
+Future<void> _photoSyncEntry(PhotoSyncParams params) async {
+  await uploadPhotosInBackup(
+    sendPort: params.sendPort,
+    authHeaders: params.authHeaders,
+    photoPayloads: params.photos,
+  );
+  Isolate.exit();
+}

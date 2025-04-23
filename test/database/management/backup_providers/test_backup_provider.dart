@@ -64,4 +64,9 @@ class TestBackupProvider extends BackupProvider {
 
   @override
   Future<String> get databasePath async => pathToDatabase;
+
+  @override
+  Future<void> syncPhotos() {
+    throw UnimplementedError();
+  }
 }

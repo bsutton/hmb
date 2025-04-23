@@ -9,20 +9,15 @@ class BackupParams {
     required this.sendPort,
     required this.pathToZip,
     required this.pathToBackupFile,
-    required this.includePhotos,
-    required this.photosRootPath,
     required this.authHeaders,
     required this.progressStageStart,
     required this.progressStageEnd,
   });
-
   final SendPort sendPort;
-  // Path where the zip file (containing the DB backup) will be written.
+  // Path where the zip file (containing the DB backup) will be written
   final String pathToZip;
   // Path to the copied database file.
   final String pathToBackupFile;
-  final bool includePhotos;
-  final String photosRootPath;
   // Google Drive authentication headers.
   final Map<String, String> authHeaders;
   // Progress staging values for reporting.
