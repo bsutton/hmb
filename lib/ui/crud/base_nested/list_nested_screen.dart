@@ -114,14 +114,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
     crossAxisAlignment: CrossAxisAlignment.start,
     mainAxisSize: MainAxisSize.min,
     children: [
-      Row(
-        children: [
-          Text(widget.entityNamePlural, style: const TextStyle(fontSize: 18)),
-          const Spacer(),
-          _buildFilter(),
-          _buildAddButton(context),
-        ],
-      ),
+      Row(children: [const Spacer(), _buildFilter(), _buildAddButton(context)]),
     ],
   );
 

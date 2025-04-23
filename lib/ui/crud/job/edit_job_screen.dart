@@ -243,7 +243,7 @@ A once off fee applied to this Job.
 You can set a default booking fee from System | Billing screen''');
 
   Widget _manageTasks(Job? job) => HMBChildCrudCard(
-    // headline: 'Tasks',
+    headline: 'Tasks',
     crudListScreen: TaskListScreen(parent: Parent(job), extended: true),
   );
 

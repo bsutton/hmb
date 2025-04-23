@@ -55,9 +55,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
           child: NestedEntityListScreen<Task, Job>(
             key: ValueKey(showCompleted),
             parent: widget.parent,
+            parentTitle: 'Job',
             entityNamePlural: 'Tasks',
             entityNameSingular: 'Task',
-            parentTitle: 'Job',
             dao: DaoTask(),
             // ignore: discarded_futures
             fetchList: _fetchTasks,
