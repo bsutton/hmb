@@ -13,6 +13,7 @@ import '../../../entity/task_status.dart';
 import '../../../util/platform_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/help_button.dart';
 import '../../widgets/hmb_crud_checklist_item.dart';
 import '../../widgets/hmb_crud_time_entry.dart';
 import '../../widgets/media/photo_controller.dart';
@@ -143,6 +144,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
               controller: _assumptionController,
               focusNode: _assumptionFocusNode,
               labelText: 'Assumptions',
+            ).help(
+              'Assumptions',
+              'Detail the assumptions your pricing is based on. Assumptions are shown on the Quote. ',
             ),
             // _chooseBillingType(),
             _buildItemList(task),

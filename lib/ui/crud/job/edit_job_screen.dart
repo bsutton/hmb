@@ -554,7 +554,9 @@ You can set a default booking fee from System | Billing screen''');
               constraints: const BoxConstraints(minHeight: 200),
               child: HMBExpandingTextBlock(
                 // Convert your RichEditor content to plain text as before
-                RichTextHelper.parchmentToPlainText(_descriptionController.document),
+                RichTextHelper.parchmentToPlainText(
+                  _descriptionController.document,
+                ),
 
                 /// the version enforces an refresh
                 key: ValueKey(descriptionVersion),
@@ -580,7 +582,10 @@ You can set a default booking fee from System | Billing screen''');
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const HMBText('Assumption:', bold: true),
+            const HMBText('Assumption:', bold: true).help(
+              'Assumptions',
+              'Detail the assumptions your pricing is based on. Assumptions are shown on the Quote. ',
+            ),
             Container(
               // This enforces a minimum height of 300 pixels
               // but allows the container to grow based on the text length.

@@ -8,6 +8,7 @@ import '../../../util/date_time_ex.dart';
 import '../../../util/format.dart';
 import '../../../util/local_date.dart';
 import '../../../util/rich_text_helper.dart';
+import '../../widgets/help_button.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/surface.dart';
