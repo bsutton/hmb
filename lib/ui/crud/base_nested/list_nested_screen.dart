@@ -8,7 +8,7 @@ import '../../../dao/dao.dart';
 import '../../../entity/entity.g.dart';
 import '../../dialog/hmb_are_you_sure_dialog.dart';
 import '../../widgets/hmb_add_button.dart';
-import '../../widgets/hmb_toast.dart';
+import '../../widgets/hmb_icon_button.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/layout/hmb_list_card.dart';
 
@@ -164,12 +164,14 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text('Click'),
-                  HMBButtonAdd(
-                    enabled: true,
-                    onPressed: () async {
-                      HMBToast.info('Not this one, the one to the right');
-                    },
+                  HMBIconButton(
+                    enabled: false,
+                    size: HMBIconButtonSize.small,
+                    icon: const Icon(Icons.add),
+                    hint: 'Not this one',
+                    onPressed: () async {},
                   ),
+
                   Text('to add a ${widget.entityNameSingular}.'),
                 ],
               ),
