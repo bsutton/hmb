@@ -15,14 +15,7 @@ enum LabourEntryMode {
   const LabourEntryMode(this._display);
   final String _display;
 
-  static String getDisplay(LabourEntryMode mode) {
-    switch (mode) {
-      case LabourEntryMode.hours:
-        return LabourEntryMode.hours._display;
-      case LabourEntryMode.dollars:
-        return LabourEntryMode.dollars._display;
-    }
-  }
+  static String getDisplay(LabourEntryMode mode) => mode._display;
 
   static LabourEntryMode fromString(String value) {
     switch (value) {
@@ -39,7 +32,7 @@ enum LabourEntryMode {
 }
 
 class TaskItem extends Entity<TaskItem> {
-  TaskItem({
+  TaskItem._({
     required super.id,
     required this.taskId,
     required this.description,
@@ -49,7 +42,7 @@ class TaskItem extends Entity<TaskItem> {
     required this.estimatedLabourHours,
     required this.estimatedLabourCost,
     required Money? charge,
-    required this.chargeSet, // New field
+    required this.chargeSet,
     required this.margin,
     required this.completed,
     required this.billed,
@@ -62,72 +55,131 @@ class TaskItem extends Entity<TaskItem> {
     required this.units,
     required this.url,
     required this.labourEntryMode,
-    this.invoiceLineId,
-    this.supplierId,
-    this.actualMaterialUnitCost,
-    this.actualMaterialQuantity,
-    this.actualCost,
+    required this.invoiceLineId,
+    required this.supplierId,
+    required this.actualMaterialUnitCost,
+    required this.actualMaterialQuantity,
+    required this.actualCost,
   }) : _charge = charge,
        super();
 
-  TaskItem.forInsert({
-    required this.taskId,
-    required this.description,
-    required this.itemTypeId,
-    required this.estimatedMaterialUnitCost,
-    required this.estimatedLabourHours,
-    required this.estimatedMaterialQuantity,
-    required this.estimatedLabourCost,
-    required this.margin,
-    required Money? charge,
-    required this.chargeSet, // New field
-    required this.measurementType,
-    required this.dimension1,
-    required this.dimension2,
-    required this.dimension3,
-    required this.units,
-    required this.url,
-    required this.labourEntryMode,
-    this.completed = false,
-    this.billed = false,
-    this.invoiceLineId,
-    this.supplierId,
-    this.actualMaterialUnitCost,
-    this.actualMaterialQuantity,
-    this.actualCost,
-  }) : _charge = charge,
-       super.forInsert();
+  factory TaskItem.forInsert({
+    required int taskId,
+    required String description,
+    required int itemTypeId,
+    required Percentage margin,
+    required MeasurementType measurementType,
+    required Fixed dimension1,
+    required Fixed dimension2,
+    required Fixed dimension3,
+    required Units units,
+    required String url,
+    required LabourEntryMode labourEntryMode,
+    Money? estimatedMaterialUnitCost,
+    Fixed? estimatedMaterialQuantity,
+    Money? estimatedLabourCost,
+    Fixed? estimatedLabourHours,
+    Money? charge,
+    bool completed = false,
+    bool billed = false,
+    int? invoiceLineId,
+    int? supplierId,
+    Money? actualMaterialUnitCost,
+    Fixed? actualMaterialQuantity,
+    Money? actualCost,
+  }) {
+    final now = DateTime.now();
+    return TaskItem._(
+      id: -1, // placeholder; DB will assign real PK
+      taskId: taskId,
+      description: description,
+      itemTypeId: itemTypeId,
+      estimatedMaterialUnitCost: estimatedMaterialUnitCost,
+      estimatedMaterialQuantity: estimatedMaterialQuantity,
+      estimatedLabourHours: estimatedLabourHours,
+      estimatedLabourCost: estimatedLabourCost,
+      margin: margin,
+      charge: charge,
+      chargeSet: charge != null,
+      completed: completed,
+      billed: billed,
+      createdDate: now,
+      modifiedDate: now,
+      measurementType: measurementType,
+      dimension1: dimension1,
+      dimension2: dimension2,
+      dimension3: dimension3,
+      units: units,
+      url: url,
+      labourEntryMode: labourEntryMode,
+      invoiceLineId: invoiceLineId,
+      supplierId: supplierId,
+      actualMaterialUnitCost: actualMaterialUnitCost,
+      actualMaterialQuantity: actualMaterialQuantity,
+      actualCost: actualCost,
+    );
+  }
 
-  TaskItem.forUpdate({
-    required super.entity,
-    required this.taskId,
-    required this.description,
-    required this.itemTypeId,
-    required this.estimatedMaterialUnitCost,
-    required this.estimatedLabourHours,
-    required this.estimatedMaterialQuantity,
-    required this.estimatedLabourCost,
-    required this.margin,
-    required Money? charge,
-    required this.chargeSet, // New field
-    required this.completed,
-    required this.billed,
-    required this.measurementType,
-    required this.dimension1,
-    required this.dimension2,
-    required this.dimension3,
-    required this.units,
-    required this.url,
-    required this.labourEntryMode,
-    this.invoiceLineId,
-    this.supplierId,
-    this.actualMaterialUnitCost,
-    this.actualMaterialQuantity,
-    this.actualCost,
-  }) : _charge = charge,
-       super.forUpdate();
+  //── and a factory for updates ───────────────────────────────────────
+  factory TaskItem.forUpdate({
+    required TaskItem existing,
+    required int taskId,
+    required String description,
+    required int itemTypeId,
+    required Money? estimatedMaterialUnitCost,
+    required Fixed estimatedMaterialQuantity,
+    required Fixed estimatedLabourHours,
+    required Money? estimatedLabourCost,
+    required Percentage margin,
+    required bool completed,
+    required bool billed,
+    required MeasurementType measurementType,
+    required Fixed dimension1,
+    required Fixed dimension2,
+    required Fixed dimension3,
+    required Units units,
+    required String url,
+    required LabourEntryMode labourEntryMode,
+    Money? charge,
+    int? invoiceLineId,
+    int? supplierId,
+    Money? actualMaterialUnitCost,
+    Fixed? actualMaterialQuantity,
+    Money? actualCost,
+  }) {
+    final now = DateTime.now();
+    return TaskItem._(
+      id: existing.id,
+      taskId: taskId,
+      description: description,
+      itemTypeId: itemTypeId,
+      estimatedMaterialUnitCost: estimatedMaterialUnitCost,
+      estimatedMaterialQuantity: estimatedMaterialQuantity,
+      estimatedLabourHours: estimatedLabourHours,
+      estimatedLabourCost: estimatedLabourCost,
+      margin: margin,
+      charge: charge,
+      chargeSet: charge != null,
+      completed: completed,
+      billed: billed,
+      createdDate: existing.createdDate,
+      modifiedDate: now,
+      measurementType: measurementType,
+      dimension1: dimension1,
+      dimension2: dimension2,
+      dimension3: dimension3,
+      units: units,
+      url: url,
+      labourEntryMode: labourEntryMode,
+      invoiceLineId: invoiceLineId,
+      supplierId: supplierId,
+      actualMaterialUnitCost: actualMaterialUnitCost,
+      actualMaterialQuantity: actualMaterialQuantity,
+      actualCost: actualCost,
+    );
+  }
 
-  factory TaskItem.fromMap(Map<String, dynamic> map) => TaskItem(
+  factory TaskItem.fromMap(Map<String, dynamic> map) => TaskItem._(
     id: map['id'] as int,
     taskId: map['task_id'] as int,
     description: map['description'] as String,
@@ -148,7 +200,10 @@ class TaskItem extends Entity<TaskItem> {
     ),
     margin: Percentage.fromInt(map['margin'] as int? ?? 0, decimalDigits: 3),
     charge: MoneyEx.moneyOrNull(map['charge'] as int?),
-    chargeSet: (map['charge_set'] as int) == 1, // New field
+
+    /// We shouldn't need to check charge but we had some
+    /// db entries in an inconsistent state.
+    chargeSet: (map['charge_set'] as int) == 1 && map['charge'] != null,
     completed: map['completed'] == 1,
     billed: map['billed'] == 1,
     invoiceLineId: map['invoice_line_id'] as int?,
@@ -193,7 +248,7 @@ class TaskItem extends Entity<TaskItem> {
   Money? actualCost;
   Percentage margin;
   Money? _charge;
-  bool chargeSet; // New field
+  bool chargeSet;
   bool completed;
   bool billed;
   int? invoiceLineId;
@@ -314,7 +369,7 @@ class TaskItem extends Entity<TaskItem> {
         estimatedLabourCost?.twoDigits().minorUnits.toInt(),
     'margin': margin.threeDigits().minorUnits.toInt(),
     'charge': _charge?.twoDigits().minorUnits.toInt(),
-    'charge_set': chargeSet ? 1 : 0, // New field
+    'charge_set': chargeSet ? 1 : 0,
     'completed': completed ? 1 : 0,
     'billed': billed ? 1 : 0,
     'invoice_line_id': invoiceLineId,
@@ -363,7 +418,7 @@ class TaskItem extends Entity<TaskItem> {
     Money? actualMaterialUnitCost,
     Fixed? actualMaterialQuantity,
     Money? actualCost,
-  }) => TaskItem(
+  }) => TaskItem._(
     id: id ?? this.id,
     taskId: taskId ?? this.taskId,
     description: description ?? this.description,
