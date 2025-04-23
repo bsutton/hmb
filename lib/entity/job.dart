@@ -1,5 +1,4 @@
 import 'package:money2/money2.dart';
-
 import 'entity.dart';
 
 enum BillingType {
@@ -7,7 +6,6 @@ enum BillingType {
   fixedPrice('Fixed Price');
 
   const BillingType(this.display);
-
   final String display;
 }
 
@@ -17,6 +15,7 @@ class Job extends Entity<Job> {
     required this.customerId,
     required this.summary,
     required this.description,
+    required this.assumption,
     required this.siteId,
     required this.contactId,
     required this.jobStatusId,
@@ -33,6 +32,7 @@ class Job extends Entity<Job> {
     required this.customerId,
     required this.summary,
     required this.description,
+    this.assumption = '',
     required this.siteId,
     required this.contactId,
     required this.jobStatusId,
@@ -48,6 +48,7 @@ class Job extends Entity<Job> {
     required this.customerId,
     required this.summary,
     required this.description,
+    required this.assumption,
     required this.siteId,
     required this.contactId,
     required this.jobStatusId,
@@ -63,6 +64,7 @@ class Job extends Entity<Job> {
     customerId: map['customer_id'] as int?,
     summary: map['summary'] as String,
     description: map['description'] as String,
+    assumption: map['assumption'] as String,
     siteId: map['site_id'] as int?,
     contactId: map['contact_id'] as int?,
     jobStatusId: map['job_status_id'] as int?,
@@ -84,6 +86,7 @@ class Job extends Entity<Job> {
     'customer_id': customerId,
     'summary': summary,
     'description': description,
+    'assumption': assumption,
     'site_id': siteId,
     'contact_id': contactId,
     'job_status_id': jobStatusId,
@@ -99,6 +102,7 @@ class Job extends Entity<Job> {
   int? customerId;
   String summary;
   String description;
+  String assumption;
   int? siteId;
   int? contactId;
   int? jobStatusId;
