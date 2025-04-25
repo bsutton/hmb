@@ -56,12 +56,14 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       quotes = quotes.where((q) => q.jobId == selectedJob!.id).toList();
     }
     if (selectedCustomer != null) {
-      quotes = await Future.wait(
-        quotes.map((q) async {
-          final job = await DaoJob().getById(q.jobId);
-          return job?.customerId == selectedCustomer!.id ? q : null;
-        }),
-      ).then((list) => list.whereType<Quote>().toList());
+      final forCustomer = <Quote>[];
+      for (final quote in quotes) {
+        final job = await DaoJob().getById(quote.jobId);
+        if (job?.customerId == selectedCustomer!.id) {
+          forCustomer.add(quote);
+        }
+      }
+      quotes = forCustomer;
     }
     if (!includeApprovedRejected) {
       quotes =
