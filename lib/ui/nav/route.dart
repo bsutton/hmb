@@ -25,6 +25,7 @@ import '../task_items/list_shopping_screen.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../wizard/system_wizard.dart';
+import 'dashboard.dart';
 import 'home_with_drawer.dart';
 
 GoRouter get router => GoRouter(
@@ -51,7 +52,7 @@ GoRouter get router => GoRouter(
         // If firstRun is true, route to /system/wizard
         // Else, go to /jobs
         // Then set firstRun=false to avoid repeating
-        final alt = firstRun ? '/system/wizard' : '/jobs';
+        final alt = firstRun ? '/system/wizard' : '/dashboard';
         firstRun = false;
         return alt;
       },
@@ -66,6 +67,11 @@ GoRouter get router => GoRouter(
       },
     ),
 
+    // Dashboard
+    GoRoute(
+      path: '/dashboard',
+      builder: (_, _) => const HomeWithDrawer(initialScreen: DashboardPage()),
+    ),
     // 3) Jobs route (replaces the old root builder).
     GoRoute(
       path: '/jobs',

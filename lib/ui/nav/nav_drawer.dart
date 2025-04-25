@@ -7,6 +7,7 @@ class MyDrawer extends StatelessWidget {
   MyDrawer({super.key});
 
   final List<DrawerItem> drawerItems = [
+    DrawerItem(title: 'Dashboard', route: '/dashboard'),
     DrawerItem(title: 'Jobs', route: '/jobs'),
     DrawerItem(title: 'Customers', route: '/customers'),
     DrawerItem(title: 'Suppliers', route: '/suppliers'),
