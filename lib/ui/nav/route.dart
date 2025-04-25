@@ -70,7 +70,7 @@ GoRouter get router => GoRouter(
     // Dashboard
     GoRoute(
       path: '/dashboard',
-      builder: (_, _) => const HomeWithDrawer(initialScreen: DashboardPage()),
+      builder: (_, _) => HomeWithDrawer(initialScreen: DashboardPage()),
     ),
     // 3) Jobs route (replaces the old root builder).
     GoRoute(
