@@ -103,6 +103,17 @@ class DaoBase<T extends Entity<T>> {
     return List.generate(data.length, (i) => _fromMap(data[i]));
   }
 
+  /// Returns the total number of rows in the table, optionally filtered.
+  Future<int> count({String? where, List<Object?>? whereArgs}) async {
+    final sql = StringBuffer('SELECT COUNT(*) AS count FROM $_tableName');
+    if (where != null && where.isNotEmpty) {
+      sql.write(' WHERE $where');
+    }
+    final result = await db.rawQuery(sql.toString(), whereArgs);
+    // Sqflite.firstIntValue handles extracting the count from the result
+    return result.first['count'] as int? ?? 0;
+  }
+
   /// Allows you to execute a command against the db
   /// optionally within a transaction.
   DatabaseExecutor withinTransaction(Transaction? transaction) =>
