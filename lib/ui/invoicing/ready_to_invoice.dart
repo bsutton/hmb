@@ -19,8 +19,6 @@ class ReadyToInvoiceJobListScreen extends StatefulWidget {
     setAppTitle('Ready To Invoice');
   }
 
-  static const pageTitle = 'Ready to Invoice';
-
   @override
   _ReadyToInvoiceJobListScreenState createState() =>
       _ReadyToInvoiceJobListScreenState();
@@ -70,7 +68,6 @@ class _ReadyToInvoiceJobListScreenState
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text(ReadyToInvoiceJobListScreen.pageTitle)),
     body: Surface(
       elevation: SurfaceElevation.e0,
       child: DeferredBuilder(
