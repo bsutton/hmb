@@ -18,6 +18,7 @@ import '../crud/system/system_integration_screen.dart';
 import '../crud/tool/list_tool_screen.dart';
 import '../error.dart';
 import '../invoicing/list_invoice_screen.dart';
+import '../invoicing/ready_to_invoice.dart';
 import '../quoting/list_quote_screen.dart';
 import '../scheduling/schedule_page.dart';
 import '../task_items/list_packing_screen.dart';
@@ -112,6 +113,13 @@ GoRouter get router => GoRouter(
       path: '/billing/invoices',
       builder:
           (_, _) => const HomeWithDrawer(initialScreen: InvoiceListScreen()),
+    ),
+
+    GoRoute(
+      path: '/billing/ready_to_invoice',
+      builder:
+          (_, _) =>
+              HomeWithDrawer(initialScreen: ReadyToInvoiceJobListScreen()),
     ),
     GoRoute(
       path: '/billing/estimator',

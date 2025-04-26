@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
-import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../../dao/dao_customer.dart';
@@ -13,11 +12,16 @@ import '../../dao/dao_job_activity.dart';
 import '../../dao/dao_quote.dart';
 import '../../dao/dao_supplier.dart';
 import '../../dao/dao_task_item.dart';
+import '../../entity/job_activity.dart';
 import '../../entity/quote.dart';
 import '../../util/app_title.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../../util/money_ex.dart';
+import '../scheduling/schedule_page.dart';
+
+typedef DashletValueBuilder<T> =
+    Widget Function(BuildContext context, T? value);
 
 class DashboardPage extends StatelessWidget {
   DashboardPage({super.key}) {
@@ -57,15 +61,36 @@ class DashboardPage extends StatelessWidget {
             future: getPackingCount(),
             route: '/packing',
           ),
-          _buildDashlet<String>(
+          _buildDashlet<JobActivity?>(
             context,
             label: 'Next Job',
             icon: Icons.schedule,
+            format: (activity) {
+              if (activity == null) {
+                return '—';
+              }
+
+              final date = formatDate(
+                activity.start.toLocal(),
+                format: 'D h:i',
+              );
+              if (Strings.isNotBlank(activity.notes)) {
+                return '$date ${activity.notes}';
+              } else {
+                return date;
+              }
+            },
             // ignore: discarded_futures
             future: getNextJob(),
-            route: '/schedule',
+
+            builder:
+                (_, activity) => SchedulePage(
+                  defaultView: ScheduleView.week,
+                  initialActivityId: activity?.id,
+                  dialogMode: true,
+                ),
           ),
-          _buildDashlet<Money>(
+          _buildDashlet<String>(
             context,
             label: 'Quotes',
             icon: Icons.format_quote,
@@ -73,7 +98,7 @@ class DashboardPage extends StatelessWidget {
             future: getQuoteValue(),
             route: '/billing/quotes',
           ),
-          _buildDashlet<Money>(
+          _buildDashlet<String>(
             context,
             label: 'Invoices',
             icon: Icons.receipt_long,
@@ -87,7 +112,7 @@ class DashboardPage extends StatelessWidget {
             icon: Icons.playlist_add_check,
             // ignore: discarded_futures
             future: getReadyToInvoice(),
-            route: '/billing/invoices',
+            route: '/billing/ready_to_invoice',
           ),
           _buildDashlet<int>(
             context,
@@ -110,22 +135,13 @@ class DashboardPage extends StatelessWidget {
     ),
   );
 
-  Future<String> getNextJob() async {
+  Future<JobActivity?> getNextJob() async {
     final jobActivities = await DaoJobActivity().getActivitiesInRange(
       LocalDate.today(),
       LocalDate.today().addDays(7),
     );
-    if (jobActivities.isEmpty) {
-      return '—';
-    }
 
-    final activity = jobActivities.first;
-    final date = formatDate(activity.start.toLocal(), format: 'D h:i');
-    if (Strings.isNotBlank(activity.notes)) {
-      return '$date ${activity.notes}';
-    } else {
-      return date;
-    }
+    return jobActivities.isEmpty ? null : jobActivities.first;
   }
 
   Future<int> getPackingCount() async {
@@ -144,12 +160,27 @@ class DashboardPage extends StatelessWidget {
     required String label,
     required IconData icon,
     required Future<T> future,
-    required String route,
+    String Function(T?)? format,
+    String? route,
+    DashletValueBuilder<T>? builder,
   }) {
+    assert(route != null || builder != null, 'You must provided one of.');
     final theme = Theme.of(context);
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => context.go(route),
+      onTap: () async {
+        if (route != null) {
+          context.go(route);
+        } else {
+          final value = await future;
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => builder!(context, value),
+              fullscreenDialog: true,
+            ),
+          );
+        }
+      },
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 4,
@@ -166,9 +197,9 @@ class DashboardPage extends StatelessWidget {
                 future: future,
                 builder:
                     (ctx, value) => Text(
-                      '$value',
-                      style: theme.textTheme.titleLarge!.copyWith(
-                        color: theme.primaryColorDark,
+                      format != null ? format(value) : value.toString(),
+                      style: theme.textTheme.titleSmall!.copyWith(
+                        color: Colors.white,
                       ),
                     ),
               ),
@@ -180,15 +211,9 @@ class DashboardPage extends StatelessWidget {
   }
 
   Future<int> getReadyToInvoice() async {
-    final activeJobs = await DaoJob().getActiveJobs(null);
+    final ready = await DaoJob().readyToBeInvoiced(null);
 
-    var count = 0;
-    for (final job in activeJobs) {
-      if (await DaoJob().hasBillableTasks(job)) {
-        count++;
-      }
-    }
-    return count;
+    return ready.length;
   }
 
   Future<int> getCustomerCount() async {
@@ -204,7 +229,7 @@ class DashboardPage extends StatelessWidget {
     return activeJobs.length;
   }
 
-  Future<Money> getInvoicedThisMonth() async {
+  Future<String> getInvoicedThisMonth() async {
     final invoices = await DaoInvoice().getAll();
 
     var total = MoneyEx.zero;
@@ -216,7 +241,7 @@ class DashboardPage extends StatelessWidget {
         total += invoice.totalAmount;
       }
     }
-    return total;
+    return total.format('S#');
   }
 
   Future<int> getShoppingCount() async {
@@ -231,7 +256,7 @@ class DashboardPage extends StatelessWidget {
     return count;
   }
 
-  Future<Money> getQuoteValue() async {
+  Future<String> getQuoteValue() async {
     final quotes = await DaoQuote().getAll();
 
     var total = MoneyEx.zero;
@@ -241,6 +266,6 @@ class DashboardPage extends StatelessWidget {
         total += quote.totalAmount;
       }
     }
-    return total;
+    return total.format('S#');
   }
 }

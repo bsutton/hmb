@@ -358,6 +358,17 @@ where c.id =?
     final quote = await DaoQuote().getById(quoteId);
     return (await getById(quote!.jobId))!;
   }
+
+  Future<List<Job>> readyToBeInvoiced(String? filter) async {
+    final activeJobs = await DaoJob().getActiveJobs(filter);
+    final ready = <Job>[];
+    for (final job in activeJobs) {
+      if (await DaoJob().hasBillableTasks(job)) {
+        ready.add(job);
+      }
+    }
+    return ready;
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.
