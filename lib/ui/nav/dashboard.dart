@@ -252,14 +252,8 @@ class DashboardPage extends StatelessWidget {
     return DashletValue(count);
   }
 
-  Future<DashletValue<int>> getReadyToInvoice() async {
-    final ready = await DaoJob().readyToBeInvoiced(null);
-    var count = 0;
-    for (final job in ready) {
-      count++;
-    }
-    return DashletValue(count);
-  }
+  Future<DashletValue<int>> getReadyToInvoice() async =>
+      DashletValue((await DaoJob().readyToBeInvoiced(null)).length);
 
   Future<DashletValue<int>> getCustomerCount() async {
     final count = await DaoCustomer().count();
