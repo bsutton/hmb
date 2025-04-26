@@ -206,7 +206,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                     const SizedBox(width: 8),
                     Row(
                       children: [
-                        const Text('Include Approved/Rejected'),
+                        const Text('Old'),
                         Switch(
                           value: includeApprovedRejected,
                           onChanged: (val) async {
