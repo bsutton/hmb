@@ -1,5 +1,7 @@
 // lib/src/ui/dashboard/dashboard_page.dart
 
+// ignore_for_file: discarded_futures
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
@@ -20,8 +22,15 @@ import '../../util/local_date.dart';
 import '../../util/money_ex.dart';
 import '../scheduling/schedule_page.dart';
 
-typedef DashletValueBuilder<T> =
-    Widget Function(BuildContext context, T? value);
+/// Holds primary and optional secondary values for a dashlet
+class DashletValue<T> {
+  DashletValue(this.value, [this.secondValue]);
+  final T value;
+  final String? secondValue;
+}
+
+typedef DashletWidgetBuilder<T> =
+    Widget Function(BuildContext context, DashletValue<T> dv);
 
 class DashboardPage extends StatelessWidget {
   DashboardPage({super.key}) {
@@ -29,243 +38,281 @@ class DashboardPage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: Padding(
-      padding: const EdgeInsets.all(16),
-      child: GridView.count(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        children: [
-          _buildDashlet<int>(
-            context,
-            label: 'Jobs',
-            icon: Icons.work,
-            // ignore: discarded_futures
-            future: getActiveJobs(),
-            route: '/jobs',
-          ),
-          _buildDashlet<int>(
-            context,
-            label: 'Shopping',
-            icon: Icons.shopping_cart,
-            // ignore: discarded_futures
-            future: getShoppingCount(),
-            route: '/shopping',
-          ),
-          _buildDashlet<int>(
-            context,
-            label: 'Packing',
-            icon: Icons.inventory_2,
-            // ignore: discarded_futures
-            future: getPackingCount(),
-            route: '/packing',
-          ),
-          _buildDashlet<JobActivity?>(
-            context,
-            label: 'Next Job',
-            icon: Icons.schedule,
-            format: (activity) {
-              if (activity == null) {
-                return '—';
-              }
-
-              final date = formatDate(
-                activity.start.toLocal(),
-                format: 'D h:i',
-              );
-              if (Strings.isNotBlank(activity.notes)) {
-                return '$date ${activity.notes}';
-              } else {
-                return date;
-              }
-            },
-            // ignore: discarded_futures
-            future: getNextJob(),
-
-            builder:
-                (_, activity) => SchedulePage(
-                  defaultView: ScheduleView.week,
-                  initialActivityId: activity?.id,
-                  dialogMode: true,
-                ),
-          ),
-          _buildDashlet<String>(
-            context,
-            label: 'Quotes',
-            icon: Icons.format_quote,
-            // ignore: discarded_futures
-            future: getQuoteValue(),
-            route: '/billing/quotes',
-          ),
-          _buildDashlet<String>(
-            context,
-            label: 'Invoices',
-            icon: Icons.receipt_long,
-            // ignore: discarded_futures
-            future: getInvoicedThisMonth(),
-            route: '/billing/invoices',
-          ),
-          _buildDashlet<int>(
-            context,
-            label: 'Ready to Invoice',
-            icon: Icons.playlist_add_check,
-            // ignore: discarded_futures
-            future: getReadyToInvoice(),
-            route: '/billing/ready_to_invoice',
-          ),
-          _buildDashlet<int>(
-            context,
-            label: 'Customers',
-            icon: Icons.people,
-            // ignore: discarded_futures
-            future: getCustomerCount(),
-            route: '/customers',
-          ),
-          _buildDashlet<int>(
-            context,
-            label: 'Suppliers',
-            icon: Icons.store,
-            // ignore: discarded_futures
-            future: getSupplierCount(),
-            route: '/suppliers',
-          ),
-        ],
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: GridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          children: [
+            _buildDashlet<int>(
+              context,
+              label: 'Jobs',
+              icon: Icons.work,
+              future: getActiveJobs(),
+              route: '/jobs',
+            ),
+            _buildDashlet<int>(
+              context,
+              label: 'Shopping',
+              icon: Icons.shopping_cart,
+              future: getShoppingCount(),
+              route: '/shopping',
+            ),
+            _buildDashlet<int>(
+              context,
+              label: 'Packing',
+              icon: Icons.inventory_2,
+              future: getPackingCount(),
+              route: '/packing',
+            ),
+            _buildDashlet<JobActivity?>(
+              context,
+              label: 'Next Job',
+              icon: Icons.schedule,
+              future: getNextJob(),
+              widgetBuilder: (ctx, dv) {
+                final theme = Theme.of(context);
+                if (dv.value == null) {
+                  return Text('—', style: theme.textTheme.titleSmall);
+                }
+                final date = formatDate(
+                  dv.value!.start.toLocal(),
+                  format: 'D h:i',
+                );
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(date, style: theme.textTheme.titleSmall),
+                    if (Strings.isNotBlank(dv.secondValue))
+                      Text(
+                        dv.secondValue!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                  ],
+                );
+              },
+              builder:
+                  (_, dv) => SchedulePage(
+                    defaultView: ScheduleView.week,
+                    initialActivityId: dv.value?.id,
+                    dialogMode: true,
+                  ),
+            ),
+            _buildDashlet<String>(
+              context,
+              label: 'Quotes',
+              icon: Icons.format_quote,
+              future: getQuoteValue(),
+              route: '/billing/quotes',
+            ),
+            _buildDashlet<String>(
+              context,
+              label: 'Invoices',
+              icon: Icons.receipt_long,
+              future: getInvoicedThisMonth(),
+              route: '/billing/invoices',
+            ),
+            _buildDashlet<int>(
+              context,
+              label: 'Ready to Invoice',
+              icon: Icons.attach_money,
+              future: getReadyToInvoice(),
+              route: '/billing/ready_to_invoice',
+            ),
+            _buildDashlet<int>(
+              context,
+              label: 'Customers',
+              icon: Icons.people,
+              future: getCustomerCount(),
+              route: '/customers',
+            ),
+            _buildDashlet<int>(
+              context,
+              label: 'Suppliers',
+              icon: Icons.store,
+              future: getSupplierCount(),
+              route: '/suppliers',
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-
-  Future<JobActivity?> getNextJob() async {
-    final jobActivities = await DaoJobActivity().getActivitiesInRange(
-      LocalDate.today(),
-      LocalDate.today().addDays(7),
     );
-
-    return jobActivities.isEmpty ? null : jobActivities.first;
-  }
-
-  Future<int> getPackingCount() async {
-    final packingList = await DaoTaskItem().getPackingItems();
-    var count = 0;
-    for (final packingItem in packingList) {
-      if (!packingItem.completed) {
-        count++;
-      }
-    }
-    return count;
   }
 
   Widget _buildDashlet<T>(
     BuildContext context, {
     required String label,
     required IconData icon,
-    required Future<T> future,
-    String Function(T?)? format,
+    required Future<DashletValue<T>> future,
     String? route,
-    DashletValueBuilder<T>? builder,
+    DashletWidgetBuilder<T>? widgetBuilder,
+    DashletWidgetBuilder<T>? builder,
   }) {
-    assert(route != null || builder != null, 'You must provided one of.');
+    assert(
+      route != null || builder != null || widgetBuilder != null,
+      'Provide route or builder',
+    );
     final theme = Theme.of(context);
+    final cardColor = theme.colorScheme.surface;
+    final iconColor = theme.colorScheme.primary;
+
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () async {
         if (route != null) {
           context.go(route);
         } else {
-          final value = await future;
-          await Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (context) => builder!(context, value),
-              fullscreenDialog: true,
-            ),
-          );
+          final dv = await future;
+          if (context.mounted) {
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (c) => (builder ?? widgetBuilder)!(c, dv),
+                fullscreenDialog: true,
+              ),
+            );
+          }
         }
       },
       child: Card(
+        color: cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 4,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 40, color: theme.primaryColor),
-              const SizedBox(height: 8),
-              Text(label, style: theme.textTheme.titleMedium),
-              const SizedBox(height: 4),
-              FutureBuilderEx<T>(
-                future: future,
-                builder:
-                    (ctx, value) => Text(
-                      format != null ? format(value) : value.toString(),
-                      style: theme.textTheme.titleSmall!.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 40, color: iconColor),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 4),
+            FutureBuilderEx<DashletValue<T>>(
+              future: future,
+              builder: (ctx, dv) {
+                if (dv == null) {
+                  return const SizedBox();
+                }
+                return widgetBuilder != null
+                    ? widgetBuilder(ctx, dv)
+                    : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          dv.value.toString(),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (dv.secondValue != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            dv.secondValue!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ],
+                    );
+              },
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Future<int> getReadyToInvoice() async {
-    final ready = await DaoJob().readyToBeInvoiced(null);
-
-    return ready.length;
+  Future<DashletValue<JobActivity?>> getNextJob() async {
+    final acts = await DaoJobActivity().getActivitiesInRange(
+      LocalDate.today(),
+      LocalDate.today().addDays(7),
+    );
+    final act = acts.isEmpty ? null : acts.first;
+    return DashletValue(act, act?.notes);
   }
 
-  Future<int> getCustomerCount() async {
-    final count = await DaoCustomer().count();
-    return count;
-  }
-
-  Future<int> getSupplierCount() async => DaoSupplier().count();
-
-  Future<int> getActiveJobs() async {
-    final activeJobs = await DaoJob().getActiveJobs(null);
-
-    return activeJobs.length;
-  }
-
-  Future<String> getInvoicedThisMonth() async {
-    final invoices = await DaoInvoice().getAll();
-
-    var total = MoneyEx.zero;
-    for (final invoice in invoices) {
-      final now = DateTime.now();
-      if (invoice.sent &&
-          invoice.createdDate.year == now.year &&
-          invoice.createdDate.month == now.month) {
-        total += invoice.totalAmount;
-      }
-    }
-    return total.format('S#');
-  }
-
-  Future<int> getShoppingCount() async {
-    final shopping = await DaoTaskItem().getShoppingItems();
-
+  Future<DashletValue<int>> getPackingCount() async {
+    final packing = await DaoTaskItem().getPackingItems();
     var count = 0;
-    for (final toBuy in shopping) {
-      if (!toBuy.completed) {
+    for (final item in packing) {
+      if (!item.completed) {
         count++;
       }
     }
-    return count;
+    return DashletValue(count);
   }
 
-  Future<String> getQuoteValue() async {
-    final quotes = await DaoQuote().getAll();
+  Future<DashletValue<int>> getReadyToInvoice() async {
+    final ready = await DaoJob().readyToBeInvoiced(null);
+    var count = 0;
+    for (final job in ready) {
+      count++;
+    }
+    return DashletValue(count);
+  }
 
+  Future<DashletValue<int>> getCustomerCount() async {
+    final count = await DaoCustomer().count();
+    return DashletValue(count);
+  }
+
+  Future<DashletValue<int>> getSupplierCount() async {
+    final count = await DaoSupplier().count();
+    return DashletValue(count);
+  }
+
+  Future<DashletValue<int>> getActiveJobs() async {
+    final active = await DaoJob().getActiveJobs(null);
+    var count = 0;
+    for (final job in active) {
+      count++;
+    }
+    return DashletValue(count);
+  }
+
+  Future<DashletValue<String>> getInvoicedThisMonth() async {
+    final invoices = await DaoInvoice().getAll();
+    final now = DateTime.now();
     var total = MoneyEx.zero;
-    for (final quote in quotes) {
-      if (quote.state == QuoteState.sent ||
-          quote.state == QuoteState.approved) {
-        total += quote.totalAmount;
+    for (final inv in invoices) {
+      if (inv.sent &&
+          inv.createdDate.year == now.year &&
+          inv.createdDate.month == now.month) {
+        total += inv.totalAmount;
       }
     }
-    return total.format('S#');
+    return DashletValue(total.format('S#'));
+  }
+
+  Future<DashletValue<int>> getShoppingCount() async {
+    final shopping = await DaoTaskItem().getShoppingItems();
+    var count = 0;
+    for (final item in shopping) {
+      if (!item.completed) {
+        count++;
+      }
+    }
+    return DashletValue(count);
+  }
+
+  Future<DashletValue<String>> getQuoteValue() async {
+    final quotes = await DaoQuote().getAll();
+    var total = MoneyEx.zero;
+    for (final q in quotes) {
+      if (q.state == QuoteState.sent || q.state == QuoteState.approved) {
+        total += q.totalAmount;
+      }
+    }
+    return DashletValue(total.format('S#'));
   }
 }
