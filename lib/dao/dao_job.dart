@@ -195,10 +195,10 @@ where t.id =?
 
     final totalTasks = tasks.length;
     var completedTasks = 0;
-    var totalEffort = Fixed.zero;
-    var completedEffort = Fixed.zero;
-    var totalCost = MoneyEx.zero;
-    var earnedCost = MoneyEx.zero;
+    var expectedLabourHours = Fixed.zero;
+    var completedLabourHours = Fixed.zero;
+    var totalMaterialCost = MoneyEx.zero;
+    var completedMaterialCost = MoneyEx.zero;
     var workedHours = Fixed.fromNum(0, scale: 2);
 
     for (final task in tasks) {
@@ -210,17 +210,16 @@ where t.id =?
 
       // Calculate effort and cost from checklist items
       for (final item in taskItems) {
-        totalEffort += item.estimatedLabourHours!;
-        totalCost += item.estimatedMaterialUnitCost!.multiplyByFixed(
+        expectedLabourHours += item.estimatedLabourHours!;
+        totalMaterialCost += item.estimatedMaterialUnitCost!.multiplyByFixed(
           item.estimatedMaterialQuantity!,
         );
 
         // If the task is completed, add to completed effort and earned cost
-        if ((status?.isComplete() ?? false) && item.completed) {
-          completedEffort += item.estimatedLabourHours!;
-          earnedCost += item.estimatedMaterialUnitCost!.multiplyByFixed(
-            item.estimatedMaterialQuantity!,
-          );
+        if ((status?.isComplete() ?? false) || item.completed) {
+          completedLabourHours += item.estimatedLabourHours!;
+          completedMaterialCost += item.estimatedMaterialUnitCost!
+              .multiplyByFixed(item.estimatedMaterialQuantity!);
         }
       }
 
@@ -240,10 +239,10 @@ where t.id =?
     return JobStatistics(
       totalTasks: totalTasks,
       completedTasks: completedTasks,
-      totalEffort: totalEffort,
-      completedEffort: completedEffort,
-      totalCost: totalCost,
-      earnedCost: earnedCost,
+      expectedLabourHours: expectedLabourHours,
+      completedLabourHours: completedLabourHours,
+      totalMaterialCost: totalMaterialCost,
+      completedMaterialCost: completedMaterialCost,
       workedHours: workedHours,
       worked: job.hourlyRate!.multiplyByFixed(workedHours),
     );
@@ -404,19 +403,19 @@ class JobStatistics {
   JobStatistics({
     required this.totalTasks,
     required this.completedTasks,
-    required this.totalEffort,
-    required this.completedEffort,
-    required this.totalCost,
-    required this.earnedCost,
+    required this.expectedLabourHours,
+    required this.completedLabourHours,
+    required this.totalMaterialCost,
+    required this.completedMaterialCost,
     required this.worked,
     required this.workedHours,
   });
   final int totalTasks;
   final int completedTasks;
-  final Fixed totalEffort;
-  final Fixed completedEffort;
-  final Money totalCost;
-  final Money earnedCost;
+  final Fixed expectedLabourHours;
+  final Fixed completedLabourHours;
+  final Money totalMaterialCost;
+  final Money completedMaterialCost;
   final Money worked;
   final Fixed workedHours;
 }

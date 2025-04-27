@@ -16,7 +16,9 @@ class JobCost extends PlaceHolder<Job> {
   Future<String> value() async {
     final job = jobSource.value;
     if (job != null) {
-      return (await DaoJob().getJobStatistics(job)).totalCost.toString();
+      return (await DaoJob().getJobStatistics(
+        job,
+      )).totalMaterialCost.toString();
     } else {
       return '';
     }

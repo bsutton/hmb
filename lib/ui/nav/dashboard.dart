@@ -57,7 +57,7 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   @override
   void didPopNext() {
     // Called when a pushed route is popped back to this one.
-    // Re‐build so all the FutureBuilderEx’s get new futures.
+    // Re‐build so all the values for dashlets are recalculated
     setState(() {});
     // Reset title, too, if needed
     setAppTitle('Dashboard');
@@ -284,8 +284,19 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     return DashletValue(count);
   }
 
-  Future<DashletValue<int>> getYetToBeInvoiced() async =>
-      DashletValue((await DaoJob().readyToBeInvoiced(null)).length);
+  Future<DashletValue<int>> getYetToBeInvoiced() async {
+    final jobs = await DaoJob().readyToBeInvoiced(null);
+    final count = jobs.length;
+    var total = MoneyEx.zero;
+    for (final job in jobs) {
+      final hourlyRate = job.hourlyRate;
+      final statistics = await DaoJob().getJobStatistics(job);
+      total +=
+          statistics.completedMaterialCost +
+          (hourlyRate!.multiplyByFixed(statistics.workedHours));
+    }
+    return DashletValue(count, total.format('S#'));
+  }
 
   Future<DashletValue<int>> getCustomerCount() async {
     final count = await DaoCustomer().count();
