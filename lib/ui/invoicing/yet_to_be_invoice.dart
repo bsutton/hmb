@@ -96,7 +96,7 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
                           children: [
                             // Job summary as an internal link
                             HMBLinkInternal(
-                              label: job.summary,
+                              label: 'Job : #${job.id} ${job.summary}',
                               navigateTo: () async => JobEditScreen(job: job),
                             ),
                             const SizedBox(height: 4),
