@@ -137,7 +137,7 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
         const HMBSpacer(width: true),
       if (widget.mode != HMBDateTimeFieldMode.dateOnly)
         SizedBox(
-          width: widget.width,
+          width: 100,
           child: StatefulBuilder(
             key: timeKey,
             builder:
