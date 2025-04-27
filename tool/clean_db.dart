@@ -13,9 +13,9 @@ import 'package:path/path.dart';
 ///
 /// For details on installing dcli.
 ///
-void main(List<String> args) {
+void main(List<String> args) async {
   final pathToDb = join(
-    DartProject.self.pathToProjectRoot,
+  DartProject.self.pathToProjectRoot,
     '.dart_tool',
     'sqflite_common_ffi',
     'databases',
@@ -23,5 +23,15 @@ void main(List<String> args) {
   move(
     join(pathToDb, 'handyman.db'),
     join(pathToDb, 'handyman.db.${DateTime.now()}'),
+  );
+
+  // await pathToHmbFiles
+  /// correct until its not. We can't use [pathToHmbFiles] as this requires
+  /// flutter
+  delete(
+    join(
+      '/home/bsutton/snap/code/187/.local/share/dev.onepub.handyman/hmb',
+      'firstrun.txt',
+    ),
   );
 }
