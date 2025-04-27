@@ -1,9 +1,6 @@
 import 'package:date_time_format/date_time_format.dart';
-import 'package:dlibphonenumber/dlibphonenumber.dart';
 import 'package:intl/intl.dart';
-import 'package:strings/strings.dart';
 
-import '../dao/dao_system.dart';
 import 'local_date.dart';
 import 'local_time.dart';
 
@@ -55,23 +52,3 @@ DateTime? parseDateTime(String? value) => dateFormat.tryParse(value ?? '');
 
 //   return localClone.getValueOrThrow().localDateTime.toDateTimeLocal();
 // }
-
-Future<String> formatPhone(String? phone) async {
-  if (Strings.isBlank(phone)) {
-    return '';
-  }
-  final phoneUtil = PhoneNumberUtil.instance;
-
-  final system = await DaoSystem().get();
-
-  String formatted;
-
-  try {
-    final phoneNumber = phoneUtil.parse(phone, system.countryCode ?? 'AU');
-    formatted = phoneUtil.format(phoneNumber, PhoneNumberFormat.national);
-    // ignore: avoid_catches_without_on_clauses
-  } catch (e) {
-    formatted = phone ?? '';
-  }
-  return formatted;
-}

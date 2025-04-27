@@ -1,7 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:meta/meta.dart';
 import 'package:strings/strings.dart';
-import 'package:time_machine/time_machine.dart' as tm;
 
 import 'date_time_ex.dart';
 import 'format.dart';
@@ -108,15 +107,21 @@ class LocalDate {
 
   Duration difference(LocalDate other) => date.difference(other.toDateTime());
 
-  LocalDate addMonths(int months) {
-    final tmDate = tm.LocalDate(
-      date.year,
-      date.month,
-      date.day,
-    ).addMonths(months);
+LocalDate addMonths(int months) {
+  // 1) total months since year-0:
+  final total = (date.year * 12 + (date.month - 1)) + months;
+  // 2) new year & month:
+  final newYear = total ~/ 12;
+  final newMonth = total % 12 + 1;
+  // 3) find last day of that month:
+  final lastDayOfNewMonth = DateTime(newYear, newMonth + 1, 0).day;
+  // 4) clamp the day:
+  final newDay = date.day <= lastDayOfNewMonth
+      ? date.day
+      : lastDayOfNewMonth;
+  return LocalDate(newYear, newMonth, newDay);
+}
 
-    return LocalDate(tmDate.year, tmDate.monthOfYear, tmDate.dayOfMonth);
-  }
 
   @override
   String toString() => formatLocalDate(this);

@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:meta/meta.dart';
 import 'package:strings/strings.dart';
 
 import 'format.dart';
