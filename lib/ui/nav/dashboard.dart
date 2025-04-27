@@ -130,10 +130,10 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             _buildDashlet<int>(
               context,
-              label: 'Ready to Invoice',
+              label: 'To be Invoiced',
               icon: Icons.attach_money,
-              future: getReadyToInvoice(),
-              route: '/billing/ready_to_invoice',
+              future: getYetToBeInvoiced(),
+              route: '/billing/to_be_invoiced',
             ),
             _buildDashlet<int>(
               context,
@@ -267,7 +267,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return DashletValue(count);
   }
 
-  Future<DashletValue<int>> getReadyToInvoice() async =>
+  Future<DashletValue<int>> getYetToBeInvoiced() async =>
       DashletValue((await DaoJob().readyToBeInvoiced(null)).length);
 
   Future<DashletValue<int>> getCustomerCount() async {

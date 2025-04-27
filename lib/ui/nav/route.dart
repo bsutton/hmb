@@ -19,7 +19,7 @@ import '../crud/system/system_integration_screen.dart';
 import '../crud/tool/list_tool_screen.dart';
 import '../error.dart';
 import '../invoicing/list_invoice_screen.dart';
-import '../invoicing/ready_to_invoice.dart';
+import '../invoicing/yet_to_be_invoice.dart';
 import '../quoting/list_quote_screen.dart';
 import '../scheduling/schedule_page.dart';
 import '../task_items/list_packing_screen.dart';
@@ -73,7 +73,7 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     // Dashboard
     GoRoute(
       path: '/dashboard',
-      builder: (_, _) => HomeWithDrawer(initialScreen: DashboardPage()),
+      builder: (_, _) => const HomeWithDrawer(initialScreen: DashboardPage()),
     ),
     // 3) Jobs route (replaces the old root builder).
     GoRoute(
@@ -118,10 +118,8 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     ),
 
     GoRoute(
-      path: '/billing/ready_to_invoice',
-      builder:
-          (_, _) =>
-              HomeWithDrawer(initialScreen: ReadyToInvoiceJobListScreen()),
+      path: '/billing/to_be_invoiced',
+      builder: (_, _) => HomeWithDrawer(initialScreen: YetToBeInvoicedScreen()),
     ),
     GoRoute(
       path: '/billing/estimator',

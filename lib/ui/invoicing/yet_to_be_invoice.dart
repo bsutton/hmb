@@ -1,7 +1,5 @@
 // lib/src/ui/job/list_ready_to_invoice_screen.dart
 
-// lib/src/ui/job/list_ready_to_invoice_screen.dart
-
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -9,23 +7,24 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/app_title.dart';
+import '../crud/job/job.g.dart';
+import '../widgets/hmb_link_internal.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/text.g.dart';
 import '../widgets/widgets.g.dart' show HMBButton, HMBToast;
 import 'dialog_select_tasks.dart';
 
-class ReadyToInvoiceJobListScreen extends StatefulWidget {
-  ReadyToInvoiceJobListScreen({super.key}) {
-    setAppTitle('Ready To Invoice');
+class YetToBeInvoicedScreen extends StatefulWidget {
+  YetToBeInvoicedScreen({super.key}) {
+    // Renamed title as requested
+    setAppTitle('To Be Invoiced');
   }
 
   @override
-  _ReadyToInvoiceJobListScreenState createState() =>
-      _ReadyToInvoiceJobListScreenState();
+  _YetToBeInvoicedScreenState createState() => _YetToBeInvoicedScreenState();
 }
 
-class _ReadyToInvoiceJobListScreenState
-    extends DeferredState<ReadyToInvoiceJobListScreen> {
+class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
   late List<Job> _jobs;
 
   @override
@@ -74,7 +73,7 @@ class _ReadyToInvoiceJobListScreenState
         this,
         builder: (context) {
           if (_jobs.isEmpty) {
-            return const Center(child: Text('No jobs ready to invoice.'));
+            return const Center(child: Text('No jobs yet to invoice.'));
           }
           return ListView.builder(
             padding: const EdgeInsets.all(8),
@@ -95,7 +94,11 @@ class _ReadyToInvoiceJobListScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            HMBText(job.summary, bold: true),
+                            // Job summary as an internal link
+                            HMBLinkInternal(
+                              label: job.summary,
+                              navigateTo: () async => JobEditScreen(job: job),
+                            ),
                             const SizedBox(height: 4),
                             FutureBuilderEx<Customer?>(
                               // ignore: discarded_futures
