@@ -32,8 +32,17 @@ class DashletValue<T> {
 typedef DashletWidgetBuilder<T> =
     Widget Function(BuildContext context, DashletValue<T> dv);
 
-class DashboardPage extends StatelessWidget {
-  DashboardPage({super.key}) {
+class DashboardPage extends StatefulWidget {
+  const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  @override
+  void initState() {
+    super.initState();
     setAppTitle('Dashboard');
   }
 
@@ -167,17 +176,23 @@ class DashboardPage extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       onTap: () async {
         if (route != null) {
-          context.go(route);
+          // 1) push the named route
+          await context.push(route);
+          // 2) once we pop back, reset title
+          setAppTitle('Dashboard');
         } else {
           final dv = await future;
-          if (context.mounted) {
-            await Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (c) => (builder ?? widgetBuilder)!(c, dv),
-                fullscreenDialog: true,
-              ),
-            );
+          if (!context.mounted) {
+            return;
           }
+          // push the widget‐builder route
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute<void>(
+              builder: (c) => (builder ?? widgetBuilder)!(c, dv),
+              fullscreenDialog: true,
+            ),
+          );
+          setAppTitle('Dashboard');
         }
       },
       child: Card(
