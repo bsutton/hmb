@@ -150,6 +150,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
                 ),
               ),
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: _selectedCountryCode,
                 decoration: const InputDecoration(labelText: 'Country Code'),
                 items:
@@ -193,10 +194,16 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
               HMBTextField(
                 controller: _webUrlController!,
                 labelText: 'Web URL',
+              ).help(
+                'Web URL',
+                'A link to your business web site. Appears in your email footer.',
               ),
               HMBTextField(
                 controller: _termsUrlController!,
                 labelText: 'Terms URL',
+              ).help(
+                'Terms URL',
+                'A link to your Terms and Conditions. Appears on your Quotes and Invoices.',
               ),
 
               // New Operating Hours Section
