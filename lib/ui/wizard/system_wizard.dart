@@ -63,7 +63,7 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
           Navigator.of(context).pop();
         } else {
           // If you have a named route for jobs, e.g.:
-          context.go('/jobs');
+          context.go('/dashboard');
         }
       },
     );
