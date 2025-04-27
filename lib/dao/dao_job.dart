@@ -47,6 +47,9 @@ class DaoJob extends Dao<Job> {
     return data.isNotEmpty ? fromMap(data.first) : null;
   }
 
+  /// Marks the job as 'in progress' if it is
+  /// in a pre-start state.
+  /// Also marks the job as the last active job.
   Future<Job> markActive(int jobId) async {
     final lastActive = await getLastActiveJob();
     if (lastActive != null) {
@@ -67,6 +70,27 @@ class DaoJob extends Dao<Job> {
       final inProgress = await DaoJobStatus().getInProgress();
 
       job.jobStatusId = inProgress!.id;
+    }
+    await update(job);
+
+    return job;
+  }
+
+  /// Marks the job as 'in quoting' if it is
+  /// in a pre-start state.
+  Future<Job> markQuoting(int jobId) async {
+    final job = await getById(jobId);
+
+    /// even if the job is active we want to update the last
+    /// modified date so it comes up first in the job list.
+    job!.lastActive = true;
+    job.modifiedDate = DateTime.now();
+
+    final jobStatus = await DaoJobStatus().getById(job.jobStatusId);
+    if (jobStatus!.statusEnum == JobStatusEnum.preStart) {
+      final quoting = await DaoJobStatus().getQuoting();
+
+      job.jobStatusId = quoting!.id;
     }
     await update(job);
 

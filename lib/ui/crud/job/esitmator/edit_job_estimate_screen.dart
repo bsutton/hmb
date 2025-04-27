@@ -4,8 +4,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
-import '../../../../dao/dao_task.dart';
-import '../../../../dao/dao_task_item.dart';
+import '../../../../dao/dao.g.dart';
 import '../../../../entity/job.dart';
 import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
@@ -43,6 +42,8 @@ class _JobEstimateBuilderScreenState
 
   @override
   Future<void> asyncInitState() async {
+    final job = await DaoJob().markQuoting(widget.job.id);
+    widget.job.jobStatusId = job.jobStatusId;
     await _loadTasks();
   }
 
