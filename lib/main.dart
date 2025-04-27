@@ -23,6 +23,7 @@ import 'installer/linux/install.dart' if (kIsWeb) 'util/web_stub.dart';
 import 'ui/error.dart';
 import 'ui/nav/route.dart';
 import 'ui/widgets/blocking_ui.dart';
+import 'ui/widgets/desktop_back_gesture.dart';
 import 'ui/widgets/hmb_start_time_entry.dart';
 import 'ui/widgets/hmb_toast.dart';
 import 'ui/widgets/media/desktop_camera_delegate.dart';
@@ -60,45 +61,47 @@ Future<void> main(List<String> args) async {
 
       // BlockingUIRunner key
       final blockingUIKey = GlobalKey();
+      final _rootNavKey = GlobalKey<NavigatorState>();
 
       runApp(
         ToastificationWrapper(
           child: MaterialApp.router(
             theme: theme,
-            routerConfig: router,
-
-            // 1) Use `builder` to place your custom logic (BlockingUIRunner).
-            // 2) `child` is the routed screen from routerConfig.
+            routerConfig: createGoRouter(_rootNavKey),
             builder:
-                (context, mainAppWindow) => Stack(
-                  children: [
-                    // Added a white border when running on desktop so users can
-                    // see the edge of the app.
-                    DecoratedBox(
-                      position: DecorationPosition.foreground,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: isMobile ? Colors.black : Colors.white,
+                (context, mainAppWindow) => DesktopBackGesture(
+                  navigatorKey: _rootNavKey,
+                  child: Stack(
+                    children: [
+                      // Added a white border when running on desktop so users can
+                      // see the edge of the app.
+                      DecoratedBox(
+                        position: DecorationPosition.foreground,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: isMobile ? Colors.black : Colors.white,
+                          ),
+                        ),
+                        child: JuneBuilder(
+                          TimeEntryState.new,
+                          builder:
+                              (_) => BlockingUITransition(
+                                key: blockingUIKey,
+                                slowAction: () => _initialise(context),
+                                label: 'Upgrading your database.',
+                                builder:
+                                    (context) =>
+                                        mainAppWindow ??
+                                        const SizedBox.shrink(),
+                              ),
                         ),
                       ),
-                      child: JuneBuilder(
-                        TimeEntryState.new,
-                        builder:
-                            (_) => BlockingUITransition(
-                              key: blockingUIKey,
-                              slowAction: () => _initialise(context),
-                              label: 'Upgrading your database.',
-                              builder:
-                                  (context) =>
-                                      mainAppWindow ?? const SizedBox.shrink(),
-                            ),
-                      ),
-                    ),
 
-                    // Overlay used to display a grey overlay
-                    // and message when doing long running actions.
-                    const BlockingOverlay(),
-                  ],
+                      // Overlay used to display a grey overlay
+                      // and message when doing long running actions.
+                      const BlockingOverlay(),
+                    ],
+                  ),
                 ),
           ),
         ),
