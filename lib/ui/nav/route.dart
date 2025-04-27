@@ -32,6 +32,8 @@ import 'home_with_drawer.dart';
 
 GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
   navigatorKey: navigatorKey,
+  observers: [routeObserver], // so we can refresh the dashboard when
+                              // we pop back to it.
   debugLogDiagnostics: true,
   onException: (context, state, router) {
     HMBToast.error('Route Error: ${state.error}');
@@ -207,3 +209,7 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     ),
   ],
 );
+
+/// A global RouteObserver that you can attach to GoRouter
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();

@@ -21,6 +21,7 @@ import '../../util/format.dart';
 import '../../util/local_date.dart';
 import '../../util/money_ex.dart';
 import '../scheduling/schedule_page.dart';
+import 'route.dart';
 
 /// Holds primary and optional secondary values for a dashlet
 class DashletValue<T> {
@@ -39,10 +40,26 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> with RouteAware {
   @override
   void initState() {
     super.initState();
+    setAppTitle('Dashboard');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // subscribe this State to route events
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void didPopNext() {
+    // Called when a pushed route is popped back to this one.
+    // Re‐build so all the FutureBuilderEx’s get new futures.
+    setState(() {});
+    // Reset title, too, if needed
     setAppTitle('Dashboard');
   }
 
