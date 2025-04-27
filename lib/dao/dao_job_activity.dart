@@ -34,15 +34,16 @@ class DaoJobActivity extends Dao<JobActivity> {
       tableName,
       where:
           '(start_date >= ? AND start_date < ?) OR (end_date > ? AND end_date <= ?)',
-      whereArgs: [
+      whereArgs: <Object>[
         start.toIso8601String(),
         end.toIso8601String(),
         start.toIso8601String(),
         end.toIso8601String(),
       ],
+      orderBy: 'start_date ASC', // ← next activity first
     );
 
-    // Convert each row into a JobEvent
+    // Convert each row into a JobActivity
     final jobEvents = <JobActivity>[];
     for (final row in results) {
       jobEvents.add(JobActivity.fromMap(row));
