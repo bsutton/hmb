@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../database/management/backup_providers/google_drive/google_drive_backup_screen.dart';
@@ -29,7 +30,8 @@ import '../wizard/system_wizard.dart';
 import 'dashboard.dart';
 import 'home_with_drawer.dart';
 
-GoRouter get router => GoRouter(
+GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
+  navigatorKey: navigatorKey,
   debugLogDiagnostics: true,
   onException: (context, state, router) {
     HMBToast.error('Route Error: ${state.error}');
