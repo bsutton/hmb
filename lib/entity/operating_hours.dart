@@ -20,7 +20,11 @@ class OperatingHours {
     }
 
     for (final missed in missing) {
-      days[missed] = OperatingDay(dayName: missed);
+      days[missed] = OperatingDay(
+        dayName: missed,
+        start: const LocalTime(hour: 9, minute: 0),
+        end: const LocalTime(hour: 17, minute: 0),
+      );
     }
   }
 

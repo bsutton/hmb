@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../entity/operating_hours.dart';
 import '../../../entity/system.dart';
 import '../../../util/local_time.dart';
-import '../../widgets/hmb_date_time_picker.dart';
 import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/text/hmb_text_themes.dart';
+import '../../widgets/widgets.g.dart';
 
 class OperatingHoursController {
   OperatingHoursController({required this.operatingHours});
@@ -48,6 +48,10 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
           const Text(
             'Operating Days and Hours',
             style: TextStyle(fontSize: 16),
+          ).help(
+            'Toggle Open Days',
+            'Toggle a day name to indicate on which days you operate. '
+                'Then set your start and end times for each day',
           ),
           const SizedBox(height: 8),
           ToggleButtons(
@@ -55,8 +59,8 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
             onPressed: (index) {
               setState(() {
                 final dayName = DayName.fromIndex(index);
-                widget.controller.operatingHours.day(dayName).open =
-                    !widget.controller.operatingHours.day(dayName).open;
+                final day = widget.controller.operatingHours.day(dayName);
+                day.open = !day.open;
               });
             },
             children: _dayOrder.map((d) => Text(d.shortName)).toList(),
@@ -100,7 +104,7 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           SizedBox(
-                            width: 200,
+                            width: 180,
                             child: HMBDateTimeField(
                               initialDateTime: start.toDateTime(),
                               mode: HMBDateTimeFieldMode.timeOnly,
@@ -111,7 +115,7 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                             ),
                           ),
                           SizedBox(
-                            width: 250,
+                            width: 180,
                             child: HMBDateTimeField(
                               initialDateTime: end.toDateTime(),
                               mode: HMBDateTimeFieldMode.timeOnly,
