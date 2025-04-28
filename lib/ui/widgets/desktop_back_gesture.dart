@@ -71,9 +71,8 @@ class DesktopBackGesture extends StatelessWidget {
           if (_shouldPop(nav)) {
             nav!.pop();
           }
-        } else if (key == LogicalKeyboardKey.backspace ||
-            key == LogicalKeyboardKey.goBack) {
-          // Backspace or BrowserBack
+        } else if (key == LogicalKeyboardKey.goBack) {
+          //  BrowserBack
           if (_shouldPop(nav)) {
             nav!.pop();
           }
