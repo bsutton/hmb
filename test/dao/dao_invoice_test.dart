@@ -37,7 +37,7 @@ should create an invoice for time and materials job with correct rates and mark 
         await insertLabourEstimates(
           task,
           MoneyEx.fromInt(5000), // $50 labour cost
-          Fixed.fromNum(2, scale: 3), // 2 hours of labour
+          Fixed.fromNum(2, decimalDigits: 3), // 2 hours of labour
         );
 
         /// book time against the job - will be invoiced - $100
@@ -107,7 +107,7 @@ should create an invoice for time and materials job with correct rates and mark 
 
     await insertMaterials(
       task1,
-      Fixed.fromNum(2, scale: 3),
+      Fixed.fromNum(2, decimalDigits: 3),
       MoneyEx.fromInt(200),
       Percentage.zero,
       await DaoTaskItemType().getMaterialsBuy(),
@@ -152,7 +152,7 @@ should create an invoice for time and materials job with correct rates and mark 
     await insertLabourEstimates(
       task1,
       MoneyEx.fromInt(2000),
-      Fixed.fromNum(1, scale: 3),
+      Fixed.fromNum(1, decimalDigits: 3),
     );
 
     // Create invoice grouped by task

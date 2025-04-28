@@ -169,5 +169,5 @@ class LabourForTaskOnDate {
   List<TimeEntry> timeEntries;
   late Duration hours;
 
-  Fixed get durationInHours => Fixed.fromNum(hours.inMinutes / 60, scale: 2);
+  Fixed get durationInHours => Fixed.fromNum(hours.inMinutes / 60, decimalDigits: 2);
 }

@@ -46,11 +46,11 @@ class CheckListItem extends Entity<CheckListItem> {
     ),
     estimatedMaterialQuantity: Fixed.fromInt(
       map['estimated_material_quantity'] as int? ?? 0,
-      scale: 3,
+      decimalDigits: 3,
     ),
     estimatedLabourHours: Fixed.fromInt(
       map['estimated_labour_hours'] as int? ?? 0,
-      scale: 3,
+      decimalDigits: 3,
     ),
     estimatedLabourCost: MoneyEx.fromInt(
       map['estimated_labour_cost'] as int? ?? 0,
@@ -66,9 +66,9 @@ class CheckListItem extends Entity<CheckListItem> {
               MeasurementType.defaultMeasurementType.name,
         ) ??
         MeasurementType.defaultMeasurementType,
-    dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
-    dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
-    dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
+    dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, decimalDigits: 3),
+    dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, decimalDigits: 3),
+    dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, decimalDigits: 3),
     units:
         Units.fromName(map['units'] as String? ?? Units.defaultUnits.name) ??
         Units.defaultUnits,
@@ -84,7 +84,7 @@ class CheckListItem extends Entity<CheckListItem> {
     ),
     actualMaterialQuantity: Fixed.fromInt(
       map['actual_material_quantity'] as int? ?? 0,
-      scale: 3,
+      decimalDigits: 3,
     ),
     actualCost: MoneyEx.fromInt(map['actual_cost'] as int? ?? 0),
   );
@@ -278,28 +278,28 @@ class CheckListItem extends Entity<CheckListItem> {
             .minorUnits
             .toInt(),
     'estimated_material_quantity':
-        estimatedMaterialQuantity?.copyWith(scale: 3).minorUnits.toInt(),
+        estimatedMaterialQuantity?.copyWith(decimalDigits: 3).minorUnits.toInt(),
     'estimated_labour_hours':
-        estimatedLabourHours?.copyWith(scale: 3).minorUnits.toInt(),
+        estimatedLabourHours?.copyWith(decimalDigits: 3).minorUnits.toInt(),
     'estimated_labour_cost':
         estimatedLabourCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
-    'margin': margin.copyWith(scale: 3).minorUnits.toInt(),
+    'margin': margin.copyWith(decimalDigits: 3).minorUnits.toInt(),
     'charge': _charge?.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'labour_entry_mode': labourEntryMode.toSqlString(),
     'completed': completed ? 1 : 0,
     'billed': billed ? 1 : 0,
     'invoice_line_id': invoiceLineId,
     'measurement_type': measurementType.name,
-    'dimension1': dimension1.copyWith(scale: 3).minorUnits.toInt(),
-    'dimension2': dimension2.copyWith(scale: 3).minorUnits.toInt(),
-    'dimension3': dimension3.copyWith(scale: 3).minorUnits.toInt(),
+    'dimension1': dimension1.copyWith(decimalDigits: 3).minorUnits.toInt(),
+    'dimension2': dimension2.copyWith(decimalDigits: 3).minorUnits.toInt(),
+    'dimension3': dimension3.copyWith(decimalDigits: 3).minorUnits.toInt(),
     'units': units.name,
     'url': url,
     'supplier_id': supplierId,
     'actual_material_unit_cost':
         actualMaterialUnitCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'actual_material_quantity':
-        actualMaterialQuantity?.copyWith(scale: 3).minorUnits.toInt(),
+        actualMaterialQuantity?.copyWith(decimalDigits: 3).minorUnits.toInt(),
     'actual_cost': actualCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),

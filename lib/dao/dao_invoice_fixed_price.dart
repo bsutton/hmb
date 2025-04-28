@@ -75,7 +75,7 @@ Future<Invoice> createInvoiceFromMilestone(Milestone milestonePayment) async {
     description:
         milestonePayment.milestoneDescription ??
         'Milestone Payment ${milestonePayment.milestoneNumber}',
-    quantity: Fixed.fromInt(1, scale: 0),
+    quantity: Fixed.fromInt(1, decimalDigits: 0),
     unitPrice: milestonePayment.paymentAmount,
     lineTotal: milestonePayment.paymentAmount,
   );

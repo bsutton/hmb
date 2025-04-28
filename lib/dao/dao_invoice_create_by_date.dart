@@ -221,7 +221,7 @@ class TaskEntries {
       (sum, value) => sum + value.duration,
     );
 
-    return Fixed.fromNum(hours.inMinutes / 60, scale: 2);
+    return Fixed.fromNum(hours.inMinutes / 60, decimalDigits: 2);
   }
 
   void add(TimeEntry timeEntry) => _timeEntries.add(timeEntry);

@@ -189,11 +189,11 @@ class TaskItem extends Entity<TaskItem> {
     ),
     estimatedMaterialQuantity: Fixed.fromInt(
       map['estimated_material_quantity'] as int? ?? 0,
-      scale: 3,
+      decimalDigits: 3,
     ),
     estimatedLabourHours: Fixed.fromInt(
       map['estimated_labour_hours'] as int? ?? 0,
-      scale: 3,
+      decimalDigits: 3,
     ),
     estimatedLabourCost: MoneyEx.fromInt(
       map['estimated_labour_cost'] as int? ?? 0,
@@ -213,9 +213,9 @@ class TaskItem extends Entity<TaskItem> {
               MeasurementType.defaultMeasurementType.name,
         ) ??
         MeasurementType.defaultMeasurementType,
-    dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, scale: 3),
-    dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, scale: 3),
-    dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, scale: 3),
+    dimension1: Fixed.fromInt(map['dimension1'] as int? ?? 0, decimalDigits: 3),
+    dimension2: Fixed.fromInt(map['dimension2'] as int? ?? 0, decimalDigits: 3),
+    dimension3: Fixed.fromInt(map['dimension3'] as int? ?? 0, decimalDigits: 3),
     units:
         Units.fromName(map['units'] as String? ?? Units.defaultUnits.name) ??
         Units.defaultUnits,
@@ -231,7 +231,7 @@ class TaskItem extends Entity<TaskItem> {
     ),
     actualMaterialQuantity: Fixed.fromInt(
       map['actual_material_quantity'] as int? ?? 0,
-      scale: 3,
+      decimalDigits: 3,
     ),
     actualCost: MoneyEx.fromInt(map['actual_cost'] as int? ?? 0),
   );

@@ -33,9 +33,9 @@ abstract class Units {
   // Calculation functions
   Fixed linearCalc(Fixed value) => value; // 1D calculation
   Fixed areaCalc(Fixed d1, Fixed d2) =>
-      (d1 * d2).copyWith(scale: 3); // 2D calculation
+      (d1 * d2).copyWith(decimalDigits: 3); // 2D calculation
   Fixed volumeCalc(Fixed d1, Fixed d2, Fixed d3) =>
-      (d1 * d2 * d3).copyWith(scale: 3); // 3D calculation
+      (d1 * d2 * d3).copyWith(decimalDigits: 3); // 3D calculation
 
   // Define named variables for each unit with labels
 

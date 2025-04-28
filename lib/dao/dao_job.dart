@@ -199,7 +199,7 @@ where t.id =?
     var completedLabourHours = Fixed.zero;
     var totalMaterialCost = MoneyEx.zero;
     var completedMaterialCost = MoneyEx.zero;
-    var workedHours = Fixed.fromNum(0, scale: 2);
+    var workedHours = Fixed.fromNum(0, decimalDigits: 2);
 
     for (final task in tasks) {
       // Fetch task status to check if it's completed

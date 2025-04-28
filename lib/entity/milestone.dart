@@ -66,7 +66,7 @@ class Milestone extends Entity<Milestone> {
     'milestone_number': milestoneNumber,
     'payment_amount': paymentAmount.twoDigits().minorUnits.toInt(),
     'payment_percentage':
-        paymentPercentage.copyWith(scale: 2).minorUnits.toInt(),
+        paymentPercentage.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'milestone_description': milestoneDescription,
     'due_date': const LocalDateNullableConverter().toJson(dueDate),
     'edited': edited ? 1 : 0,
@@ -93,7 +93,7 @@ class Milestone extends Entity<Milestone> {
     milestoneNumber: milestoneNumber ?? this.milestoneNumber,
     paymentAmount: paymentAmount?.twoDigits() ?? this.paymentAmount,
     paymentPercentage:
-        paymentPercentage?.copyWith(scale: 2) ?? this.paymentPercentage,
+        paymentPercentage?.copyWith(decimalDigits: 2) ?? this.paymentPercentage,
     milestoneDescription: milestoneDescription ?? this.milestoneDescription,
     dueDate: dueDate ?? this.dueDate,
     edited: edited ?? this.edited,

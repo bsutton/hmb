@@ -472,11 +472,11 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     measurementType:
         June.getState(SelectedMeasurementType.new).selectedOrDefault,
     dimension1:
-        Fixed.tryParse(_dimension1Controller.text, scale: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension1Controller.text, decimalDigits: 3) ?? Fixed.zero,
     dimension2:
-        Fixed.tryParse(_dimension2Controller.text, scale: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension2Controller.text, decimalDigits: 3) ?? Fixed.zero,
     dimension3:
-        Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension3Controller.text, decimalDigits: 3) ?? Fixed.zero,
     units: June.getState(SelectedUnits.new).selectedOrDefault,
     url: _urlController.text,
     supplierId: June.getState(SelectedSupplier.new).selected,
@@ -506,11 +506,11 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     measurementType:
         June.getState(SelectedMeasurementType.new).selectedOrDefault,
     dimension1:
-        Fixed.tryParse(_dimension1Controller.text, scale: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension1Controller.text, decimalDigits: 3) ?? Fixed.zero,
     dimension2:
-        Fixed.tryParse(_dimension2Controller.text, scale: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension2Controller.text, decimalDigits: 3) ?? Fixed.zero,
     dimension3:
-        Fixed.tryParse(_dimension3Controller.text, scale: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension3Controller.text, decimalDigits: 3) ?? Fixed.zero,
     units: June.getState(SelectedUnits.new).selectedOrDefault,
     url: _urlController.text,
     supplierId: June.getState(SelectedSupplier.new).selected,

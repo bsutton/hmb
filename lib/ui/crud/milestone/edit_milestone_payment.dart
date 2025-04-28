@@ -124,7 +124,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     final count = uneditedMilestones.length;
     final amountPerMilestone =
         count > 0
-            ? remainingForUnedited.divideByFixed(Fixed.fromInt(count, scale: 0))
+            ? remainingForUnedited.divideByFixed(Fixed.fromInt(count, decimalDigits: 0))
             : MoneyEx.zero;
 
     for (final milestone in uneditedMilestones) {

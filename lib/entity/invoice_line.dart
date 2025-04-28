@@ -107,7 +107,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     'invoice_id': invoiceId,
     'invoice_line_group_id': invoiceLineGroupId,
     'description': description,
-    'quantity': quantity.copyWith(scale: 2).minorUnits.toInt(),
+    'quantity': quantity.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'unit_price': unitPrice.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'line_total': lineTotal.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'created_date': createdDate.toIso8601String(),
