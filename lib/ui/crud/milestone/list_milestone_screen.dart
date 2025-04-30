@@ -113,6 +113,7 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
       title: HMBSearchWithAdd(
         onSearch: (filter) {
           this.filter = filter?.toLowerCase();
+          // ignore: discarded_futures
           _summaries = _fetchMilestoneSummaries();
           setState(() {});
         },

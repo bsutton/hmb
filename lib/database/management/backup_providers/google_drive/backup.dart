@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -61,7 +62,7 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
                 const SizedBox(height: 20),
                 HMBButton(
                   label: 'Upload File to Google Drive',
-                  onPressed: () => _uploadFile(context),
+                  onPressed: () => unawaited(_uploadFile(context)),
                 ),
               ],
             ),

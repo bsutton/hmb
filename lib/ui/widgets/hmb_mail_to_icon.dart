@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:mailto/mailto.dart';
@@ -20,7 +22,7 @@ class HMBMailToIcon extends StatelessWidget {
         iconSize: 22,
         icon: const Icon(Icons.email),
         onPressed:
-            () => Strings.isEmpty(email) ? null : _sendEmail(context, email!),
+            () => Strings.isEmpty(email) ? null : unawaited(_sendEmail(context, email!)),
         color: Strings.isEmpty(email) ? Colors.grey : Colors.blue,
         tooltip: 'Send an Email',
       ),
@@ -31,7 +33,7 @@ class HMBMailToIcon extends StatelessWidget {
             () =>
                 Strings.isEmpty(email)
                     ? null
-                    : clipboardCopyTo(context, email!),
+                    : unawaited(clipboardCopyTo(context, email!)),
         color: Strings.isEmpty(email) ? Colors.grey : Colors.blue,
         tooltip: 'Copy Email address to the Clipboard',
       ),

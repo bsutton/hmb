@@ -119,6 +119,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
                 ),
                 HMBDroplistMultiSelect<Job>(
                   initialItems: () async => _selectedJobs,
+                  // ignore: discarded_futures
                   items: (filter) => DaoJob().getActiveJobs(filter),
                   format: (job) => job.summary,
                   onChanged: (selectedJobs) async {
@@ -216,7 +217,7 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
   Widget _buildListItem(BuildContext context, TaskItemContext itemContext) =>
       SurfaceCard(
         height: 250,
-        onPressed: () => markAsCompleted(itemContext, context),
+        onPressed: () => unawaited(markAsCompleted(itemContext, context)),
         title: itemContext.taskItem.description,
         body: Row(
           children: [
@@ -257,11 +258,11 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
               children: [
                 IconButton(
                   icon: const Icon(Icons.shopping_cart, color: Colors.blue),
-                  onPressed: () => _moveToShoppingList(itemContext),
+                  onPressed: () => unawaited(_moveToShoppingList(itemContext)),
                 ),
                 IconButton(
                   icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () => markAsCompleted(itemContext, context),
+                  onPressed: () => unawaited(markAsCompleted(itemContext, context)),
                 ),
               ],
             ),

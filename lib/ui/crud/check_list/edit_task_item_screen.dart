@@ -176,6 +176,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
           key: globalKey,
           entityName: 'Task Item',
           dao: DaoTaskItem(),
+          // ignore: discarded_futures
           onInsert: (taskItem) => DaoTaskItem().insert(taskItem!),
           entityState: this,
           editor:
@@ -220,9 +221,11 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       HMBDroplist<TaskItemType>(
         title: 'Item Type',
         selectedItem:
+            // ignore: discarded_futures
             () => DaoTaskItemType().getById(
               June.getState(SelectedCheckListItemType.new).selected,
             ),
+        // ignore: discarded_futures
         items: (filter) => DaoTaskItemType().getByFilter(filter),
         format: (checklistItemType) => checklistItemType.name,
         onChanged: (itemType) {
@@ -243,6 +246,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
                       June.getState(SelectedSupplier.new).selected,
                     )
                     : null,
+        // ignore: discarded_futures
         items: (filter) => DaoSupplier().getByFilter(filter),
         format: (supplier) => supplier.name,
         onChanged: (supplier) {

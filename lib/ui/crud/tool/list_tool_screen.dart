@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -43,7 +45,7 @@ class _ToolListScreenState extends State<ToolListScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: HMBButton.withIcon(
-            onPressed: () => _startStockTake(context),
+            onPressed: () => unawaited(_startStockTake(context)),
             label: 'Start Stock Take',
             icon: const Icon(Icons.inventory),
           ),
@@ -55,6 +57,7 @@ class _ToolListScreenState extends State<ToolListScreen> {
       pageTitle: 'Tools',
       dao: DaoTool(),
       title: (entity) => HMBTextHeadline2(entity.name),
+      // ignore: discarded_futures
       fetchList: (filter) => DaoTool().getByFilter(filter),
       onEdit: (tool) => ToolEditScreen(tool: tool),
       cardHeight: 470,

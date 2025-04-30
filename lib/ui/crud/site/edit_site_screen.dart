@@ -66,6 +66,7 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     dao: DaoSite(),
     entityState: this,
     onInsert:
+        // ignore: discarded_futures
         (site)  => widget.daoJoin.insertForParent(site!, widget.parent),
     editor:
         (site) => Column(

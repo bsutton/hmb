@@ -22,6 +22,7 @@ class SupplierListScreen extends StatelessWidget {
     pageTitle: 'Suppliers',
     dao: DaoSupplier(),
     title: (entity) => HMBCardHeading(entity.name),
+    // ignore: discarded_futures
     fetchList: (filter) => DaoSupplier().getByFilter(filter),
     onEdit: (supplier) => SupplierEditScreen(supplier: supplier),
     details: (entity) {

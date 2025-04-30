@@ -178,6 +178,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
 
             // ignore: join_return_with_assignment
             dayView = DayView<JobActivityEx>(
+              // ignore: discarded_futures
               onPageChange: (date, _) => _onPageChange(date),
               startHour: _getStartHour(),
               endHour: _getEndHour(),

@@ -88,6 +88,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
         dao: DaoContact(),
         onInsert:
             (contact) =>
+                // ignore: discarded_futures
                 widget.daoJoin.insertForParent(contact!, widget.parent),
         entityState: this,
         editor:

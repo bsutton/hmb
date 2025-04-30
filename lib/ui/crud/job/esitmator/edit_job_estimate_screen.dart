@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -197,16 +199,17 @@ class _JobEstimateBuilderScreenState
               subtitle: HMBTextHeadline3(task.description),
               trailing: IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
+                // ignore: discarded_futures
                 onPressed: () => _deleteTask(task),
               ),
-              onTap: () => _editTask(task),
+              onTap: () => unawaited(_editTask(task)),
             ),
             Padding(
               padding: const EdgeInsets.only(left: 16),
               child: PhotoGallery.forTask(task: task),
             ),
             _buildTaskItems(task),
-            HMBButton(label: 'Add Item', onPressed: () => _addItemToTask(task)),
+            HMBButton(label: 'Add Item', onPressed: () => unawaited(_addItemToTask(task))),
           ],
         ),
       ),
@@ -243,9 +246,9 @@ class _JobEstimateBuilderScreenState
     subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
     trailing: IconButton(
       icon: const Icon(Icons.delete, color: Colors.red),
-      onPressed: () => _deleteItem(item),
+      onPressed: () => unawaited(_deleteItem(item)),
     ),
-    onTap: () => _editItem(item, task),
+    onTap: () => unawaited(_editItem(item, task)),
   );
 
   Future<void> _addItemToTask(Task task) async {

@@ -15,6 +15,7 @@ class MessageTemplateListScreen extends StatelessWidget {
     pageTitle: 'SMS Templates',
     dao: DaoMessageTemplate(),
     title: (entity) => HMBTextHeadline2(entity.title),
+    // ignore: discarded_futures
     fetchList: (filter)  => DaoMessageTemplate().getByFilter(filter),
     onEdit:
         (smsTemplate) =>

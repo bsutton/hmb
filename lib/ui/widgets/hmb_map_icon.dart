@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
@@ -33,7 +35,7 @@ class HMBMapIcon extends StatelessWidget {
           iconSize: 25,
           icon: const Icon(Icons.map),
           onPressed:
-              () => site == null ? null : GoogleMaps.openMap(context, site!),
+              () => site == null ? null : unawaited(GoogleMaps.openMap(context, site!)),
           color: site != null && !site!.isEmpty() ? Colors.blue : Colors.grey,
           tooltip: 'Get Directions',
         ),
@@ -44,7 +46,7 @@ class HMBMapIcon extends StatelessWidget {
               () =>
                   Strings.isEmpty(address)
                       ? null
-                      : clipboardCopyTo(context, address),
+                      : unawaited(clipboardCopyTo(context, address)),
           color: Strings.isEmpty(address) ? Colors.grey : Colors.blue,
           tooltip: 'Copy Address to the Clipboard',
         ),

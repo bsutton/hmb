@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -124,7 +126,7 @@ class HMBLinkButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextButton(
-    onPressed: () => _launchURL(link),
+    onPressed: () => unawaited(_launchURL(link)),
     child: Text(label, style: const TextStyle(color: Colors.blue)),
   );
 

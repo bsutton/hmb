@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 /// A small help icon that, when tapped, opens a dialog showing user help content.
@@ -73,7 +75,7 @@ class HelpButton extends StatelessWidget {
   Widget build(BuildContext context) => IconButton(
     icon: const Icon(Icons.help_outline),
     tooltip: tooltip,
-    onPressed: () => _showHelpDialog(context),
+    onPressed: () => unawaited(_showHelpDialog(context)),
   );
 }
 

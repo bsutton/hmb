@@ -54,6 +54,7 @@ class _JobFilterWidgetState extends State<JobFilterWidget> {
       HMBDroplistMultiSelect<Job>(
         title: 'Select Jobs',
         initialItems: () async => June.getState(SelectedJobs.new).selected,
+        // ignore: discarded_futures
         items: (filter) => DaoJob().getByFilter(filter),
         format: (job) => job.summary,
         onChanged: (job) {

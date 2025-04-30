@@ -296,7 +296,9 @@ You can set a default booking fee from System | Billing screen''');
         (jobStatus) => HMBDroplist<JobStatus>(
           title: 'Status',
           items:
+              // ignore: discarded_futures
               (filter) => DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
+          // ignore: discarded_futures
           selectedItem: () => DaoJobStatus().getById(jobStatus.jobStatusId),
           onChanged: (status) => jobStatus.jobStatusId = status?.id,
           format: (value) => value.name,

@@ -87,7 +87,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
             onEdit:
                 (task) =>
                     TaskEditScreen(job: widget.parent.parent!, task: task),
+            // ignore: discarded_futures
             onDelete: (task) => DaoTask().delete(task!.id),
+            // ignore: discarded_futures
             onInsert: (task) => DaoTask().insert(task!),
             details:
                 (task, details) =>

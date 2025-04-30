@@ -69,15 +69,16 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
                 onPressed:
                     () =>
                         timeEntry != null
+                            // ignore: discarded_futures
                             ? _stop(widget.task)
-                            : _start(widget.task),
+                            : unawaited(_start(widget.task)),
               ),
               _buildElapsedTime(timeEntry),
             ],
           ),
           onTap:
               () =>
-                  timeEntry != null ? _stop(widget.task) : _start(widget.task),
+                  timeEntry != null ? unawaited(_stop(widget.task)) : unawaited(_start(widget.task)),
         ),
   );
 

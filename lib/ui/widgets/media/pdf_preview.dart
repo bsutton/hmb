@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -73,7 +75,7 @@ class PdfPreviewScreen extends StatelessWidget {
       actions: [
         IconButton(
           icon: const Icon(Icons.email),
-          onPressed: () => _showEmailDialog(context),
+          onPressed: () => unawaited(_showEmailDialog(context)),
         ),
       ],
     ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
@@ -68,8 +70,11 @@ class _TaskItemListScreenState<P extends Entity<P>>
             entityNameSingular: 'Task Item',
             entityNamePlural: 'Task Items',
             dao: DaoTaskItem(),
+            // ignore: discarded_futures
             onDelete: (taskItem) => DaoTaskItem().delete(taskItem!.id),
+            // ignore: discarded_futures
             onInsert: (taskItem) => DaoTaskItem().insert(taskItem!),
+            // ignore: discarded_futures
             fetchList: () => _fetchItems(showCompleted),
             title: (taskItem) => Text(taskItem.description) as Widget,
             onEdit:
@@ -101,14 +106,14 @@ class _TaskItemListScreenState<P extends Entity<P>>
                     IconButton(
                       icon: const Icon(Icons.check, color: Colors.green),
                       onPressed:
-                          () => markAsCompleted(
+                          () => unawaited(markAsCompleted(
                             TaskItemContext(
                               widget.task!,
                               taskItem,
                               taskAndRate.billingType,
                             ),
                             context,
-                          ),
+                          )),
                     ),
                 ],
               );

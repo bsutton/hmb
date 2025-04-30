@@ -38,7 +38,9 @@ class ContactListScreen<P extends Entity<P>> extends StatelessWidget {
           contact: contact,
           daoJoin: daoJoin,
         ),
+    // ignore: discarded_futures
     onDelete: (contact) => daoJoin.deleteFromParent(contact!, parent.parent!),
+    // ignore: discarded_futures
     onInsert: (contact) => daoJoin.insertForParent(contact!, parent.parent!),
     details: (entity, details) {
       final contact = entity;

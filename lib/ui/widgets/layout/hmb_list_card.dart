@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 typedef OnDelete = Future<void> Function();
@@ -53,7 +55,7 @@ class HMBCrudListCard extends StatelessWidget {
         ],
       ),
     ),
-    onTap: () => canEdit?.call() ?? true ? _pushEdit(context) : null,
+    onTap: () => canEdit?.call() ?? true ? unawaited(_pushEdit(context)) : null,
   );
 
   Future<void> _pushEdit(BuildContext context) async {

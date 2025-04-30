@@ -1,4 +1,6 @@
 // quote_list_screen.dart
+import 'dart:async';
+
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 
@@ -180,7 +182,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       automaticallyImplyLeading: false,
       toolbarHeight: 80,
       title: HMBSearchWithAdd(
-        onSearch: (filter) => _onFilterChanged(filter ?? ''),
+        onSearch: (filter) => unawaited(_onFilterChanged(filter ?? '')),
         onAdd: _createQuote,
       ),
     ),
@@ -246,6 +248,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                                 child: QuoteCard(
                                   key: ValueKey(quote.id),
                                   quote: quote,
+                                  // ignore: discarded_futures
                                   onDelete: () => _deleteQuote(quote),
                                   onStateChanged: _removeQuoteFromList,
                                 ),

@@ -20,6 +20,7 @@ class JobSource extends Source<Job> {
         (context, customerJob, _) => HMBDroplist<Job>(
           title: 'Job',
           selectedItem: () async => customerJob.job,
+          // ignore: discarded_futures
           items: (filter) => DaoJob().getByCustomer(customerJob.customer),
           format: (job) => customerJob.job?.summary ?? '',
           onChanged: (job) {

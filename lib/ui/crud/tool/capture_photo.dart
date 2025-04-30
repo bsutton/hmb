@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -50,7 +52,7 @@ class _CapturePhotoState extends State<CapturePhoto> {
             label: 'Capture Photo',
             icon: const Icon(Icons.camera_alt),
             onPressed:
-                () => _takePhoto(widget.title, (capturedPhoto) async {
+                () => unawaited(_takePhoto(widget.title, (capturedPhoto) async {
                   // Create a new Photo entity
                   final newPhoto = Photo.forInsert(
                     parentId: widget.tool.id,
@@ -61,7 +63,7 @@ class _CapturePhotoState extends State<CapturePhoto> {
                   photoId = await widget.onCaptured(newPhoto);
 
                   setState(() {});
-                }),
+                })),
           ),
           if (photoId != null) ...[
             const SizedBox(height: 16),

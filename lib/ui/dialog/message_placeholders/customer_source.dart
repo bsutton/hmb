@@ -20,6 +20,7 @@ class CustomerSource extends Source<Customer> {
         (context, customer, _) => HMBDroplist<Customer>(
           title: 'Customer',
           selectedItem: () async => customer,
+          // ignore: discarded_futures
           items: (filter) => DaoCustomer().getByFilter(filter),
           format: (customer) => customer.name,
           onChanged: (customer) {

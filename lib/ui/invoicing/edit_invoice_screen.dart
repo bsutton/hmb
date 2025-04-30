@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -130,11 +132,11 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                           Text('Total: ${line.lineTotal}'),
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () => _editInvoiceLine(context, line),
+                            onPressed: () => unawaited(_editInvoiceLine(context, line)),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _deleteInvoiceLine(line),
+                            onPressed: () => unawaited(_deleteInvoiceLine(line)),
                           ),
                         ],
                       ),

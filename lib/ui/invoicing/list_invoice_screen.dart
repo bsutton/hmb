@@ -143,6 +143,7 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
             children: [
               HMBDroplist<Job>(
                 title: 'Filter by Job',
+                // ignore: discarded_futures
                 items: (filter) => DaoJob().getActiveJobs(filter),
                 format: (job) => job.summary,
                 required: false,
@@ -157,6 +158,7 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
               const SizedBox(height: 8),
               HMBDroplist<Customer>(
                 title: 'Filter by Customer',
+                // ignore: discarded_futures
                 items: (filter) => DaoCustomer().getByFilter(filter),
                 format: (customer) => customer.name,
                 required: false,

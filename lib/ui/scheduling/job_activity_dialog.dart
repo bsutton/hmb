@@ -156,6 +156,7 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
               const SizedBox(height: 15),
               HMBDroplist<Job>(
                 selectedItem: () async => _selectedJob,
+                // ignore: discarded_futures
                 items: (filter) => DaoJob().getActiveJobs(filter),
                 format: (job) => job.summary,
                 onChanged:
