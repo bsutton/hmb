@@ -27,13 +27,12 @@ import '../task_items/list_shopping_screen.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../wizard/system_wizard.dart';
-import 'dashboard.dart';
-import 'home_with_drawer.dart';
+import 'nav.g.dart';
 
 GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
   navigatorKey: navigatorKey,
   observers: [routeObserver], // so we can refresh the dashboard when
-                              // we pop back to it.
+  // we pop back to it.
   debugLogDiagnostics: true,
   onException: (context, state, router) {
     HMBToast.error('Route Error: ${state.error}');
@@ -73,97 +72,115 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     ),
 
     // Dashboard
+    // Dashboard
+    GoRoute(
+      path: '/home',
+      builder: (_, _) => const HomeScaffold(initialScreen: MainDashboardPage()),
+    ),
+
     GoRoute(
       path: '/dashboard',
-      builder: (_, _) => const HomeWithDrawer(initialScreen: DashboardPage()),
+      builder: (_, _) => const HomeScaffold(initialScreen: MainDashboardPage()),
+    ),
+
+    GoRoute(
+      path: '/dashboard/billing',
+      builder:
+          (_, _) => const HomeScaffold(initialScreen: BillingDashboardPage()),
+    ),
+    GoRoute(
+      path: '/dashboard/settings',
+      builder:
+          (_, _) => const HomeScaffold(initialScreen: SettingsDashboardPage()),
+    ),
+    GoRoute(
+      path: '/dashboard/help',
+      builder: (_, _) => const HomeScaffold(initialScreen: HelpDashboardPage()),
     ),
     // 3) Jobs route (replaces the old root builder).
     GoRoute(
       path: '/jobs',
-      builder: (_, _) => const HomeWithDrawer(initialScreen: JobListScreen()),
+      builder: (_, _) => const HomeScaffold(initialScreen: JobListScreen()),
     ),
 
     // 4) All other routes directly from the top level:
     GoRoute(
       path: '/customers',
       builder:
-          (_, _) => const HomeWithDrawer(initialScreen: CustomerListScreen()),
+          (_, _) => const HomeScaffold(initialScreen: CustomerListScreen()),
     ),
     GoRoute(
       path: '/suppliers',
       builder:
-          (_, _) => const HomeWithDrawer(initialScreen: SupplierListScreen()),
+          (_, _) => const HomeScaffold(initialScreen: SupplierListScreen()),
     ),
     GoRoute(
       path: '/shopping',
-      builder: (_, _) => const HomeWithDrawer(initialScreen: ShoppingScreen()),
+      builder: (_, _) => const HomeScaffold(initialScreen: ShoppingScreen()),
     ),
     GoRoute(
       path: '/packing',
-      builder: (_, _) => const HomeWithDrawer(initialScreen: PackingScreen()),
+      builder: (_, _) => const HomeScaffold(initialScreen: PackingScreen()),
     ),
     GoRoute(
       path: '/schedule',
       builder:
-          (_, _) => const HomeWithDrawer(
+          (_, _) => const HomeScaffold(
             initialScreen: SchedulePage(dialogMode: false),
           ),
     ),
     GoRoute(
       path: '/billing/quotes',
-      builder: (_, _) => const HomeWithDrawer(initialScreen: QuoteListScreen()),
+      builder: (_, _) => const HomeScaffold(initialScreen: QuoteListScreen()),
     ),
     GoRoute(
       path: '/billing/invoices',
-      builder:
-          (_, _) => const HomeWithDrawer(initialScreen: InvoiceListScreen()),
+      builder: (_, _) => const HomeScaffold(initialScreen: InvoiceListScreen()),
     ),
 
     GoRoute(
       path: '/billing/to_be_invoiced',
-      builder: (_, _) => HomeWithDrawer(initialScreen: YetToBeInvoicedScreen()),
+      builder: (_, _) => HomeScaffold(initialScreen: YetToBeInvoicedScreen()),
     ),
     GoRoute(
       path: '/billing/estimator',
       builder:
-          (_, _) =>
-              const HomeWithDrawer(initialScreen: JobEstimatesListScreen()),
+          (_, _) => const HomeScaffold(initialScreen: JobEstimatesListScreen()),
     ),
     GoRoute(
       path: '/billing/milestones',
       builder:
-          (_, _) => const HomeWithDrawer(initialScreen: ListMilestoneScreen()),
+          (_, _) => const HomeScaffold(initialScreen: ListMilestoneScreen()),
     ),
     GoRoute(
       path: '/extras/tools',
-      builder: (_, _) => const HomeWithDrawer(initialScreen: ToolListScreen()),
+      builder: (_, _) => const HomeScaffold(initialScreen: ToolListScreen()),
     ),
     GoRoute(
       path: '/extras/manufacturers',
       builder:
-          (_, _) =>
-              const HomeWithDrawer(initialScreen: ManufacturerListScreen()),
+          (_, _) => const HomeScaffold(initialScreen: ManufacturerListScreen()),
     ),
     GoRoute(
       path: '/system/sms_templates',
       builder:
           (_, _) =>
-              const HomeWithDrawer(initialScreen: MessageTemplateListScreen()),
+              const HomeScaffold(initialScreen: MessageTemplateListScreen()),
     ),
     GoRoute(
       path: '/system/business',
       builder:
-          (_, _) => const HomeWithDrawer(initialScreen: SystemBusinessScreen()),
+          (_, _) => const HomeScaffold(initialScreen: SystemBusinessScreen()),
     ),
     GoRoute(
       path: '/system/billing',
       builder:
-          (_, _) => const HomeWithDrawer(initialScreen: SystemBillingScreen()),
+          (_, _) => const HomeScaffold(initialScreen: SystemBillingScreen()),
     ),
     GoRoute(
       path: '/system/contact',
       builder:
-          (_, _) => const HomeWithDrawer(
+          (_, _) => const HomeScaffold(
             initialScreen: SystemContactInformationScreen(),
           ),
     ),
@@ -171,26 +188,25 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
       path: '/system/integration',
       builder:
           (_, _) =>
-              const HomeWithDrawer(initialScreen: SystemIntegrationScreen()),
+              const HomeScaffold(initialScreen: SystemIntegrationScreen()),
     ),
     GoRoute(
       path: '/system/about',
-      builder: (_, _) => const HomeWithDrawer(initialScreen: AboutScreen()),
+      builder: (_, _) => const HomeScaffold(initialScreen: AboutScreen()),
     ),
     GoRoute(
       path: '/system/backup/google',
       builder:
           (_, _) =>
-              const HomeWithDrawer(initialScreen: GoogleDriveBackupScreen()),
+              const HomeScaffold(initialScreen: GoogleDriveBackupScreen()),
     ),
     GoRoute(
       path: '/system/backup/local',
-      builder:
-          (_, _) => const HomeWithDrawer(initialScreen: LocalBackupScreen()),
+      builder: (_, _) => const HomeScaffold(initialScreen: LocalBackupScreen()),
     ),
     GoRoute(
       path: '/system/wizard',
-      builder: (_, _) => const HomeWithDrawer(initialScreen: FirstRunWizard()),
+      builder: (_, _) => const HomeScaffold(initialScreen: FirstRunWizard()),
     ),
 
     GoRoute(
@@ -211,5 +227,4 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
 );
 
 /// A global RouteObserver that you can attach to GoRouter
-final RouteObserver<ModalRoute<void>> routeObserver =
-    RouteObserver<ModalRoute<void>>();
+final routeObserver = RouteObserver<ModalRoute<void>>();

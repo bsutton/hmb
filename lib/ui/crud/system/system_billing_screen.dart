@@ -124,7 +124,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
       if (mounted) {
         HMBToast.info('saved');
         if (close) {
-          context.go('/jobs');
+          context.go('/dashboard/settings');
         }
       }
       return true;
@@ -193,7 +193,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
             SaveAndClose(
               onSave: save,
               showSaveOnly: false,
-              onCancel: () async => context.go('/jobs'),
+              onCancel: () async => context.go('/home'),
             ),
             Expanded(
               child: Padding(

@@ -13,4 +13,5 @@ export 'hmb_phone_text.dart';
 export 'hmb_site_text.dart';
 export 'hmb_text.dart';
 export 'hmb_text_block.dart';
+export 'hmb_text_clickable.dart';
 export 'hmb_text_themes.dart';

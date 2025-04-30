@@ -136,10 +136,10 @@ class SchedulePageState extends DeferredState<SchedulePage> {
     operatingHours = (await DaoSystem().get()).getOperatingHours();
     if (operatingHours.noOpenDays()) {
       HMBToast.error(
-        "Before you Schedule a job, you must first set your opening hours from the 'System | Business' page.",
+        "Before you Schedule a job, you must first set your opening hours from the 'Settings | Business' page.",
       );
       if (mounted) {
-        context.go('/jobs');
+        context.go('/dashboard/settings');
       }
     }
     await _initPage();

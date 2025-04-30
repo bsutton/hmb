@@ -26,6 +26,7 @@ export 'paths.dart';
 export 'photo_meta.dart';
 export 'platform_ex.dart';
 export 'plus_space.dart';
+export 'rich_text_helper.dart';
 export 'sentry_noop.dart';
 export 'sim_cards.dart';
 export 'stack_list.dart';
