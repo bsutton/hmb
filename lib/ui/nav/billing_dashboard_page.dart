@@ -10,53 +10,45 @@ class BillingDashboardPage extends StatelessWidget {
   const BillingDashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Billing')),
-    body: Padding(
-      padding: const EdgeInsets.all(16),
-      child: GridView.count(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        children: [
-          DashletCard<void>(
-            label: 'Estimator',
-            icon: Icons.calculate,
-            dashletValue: () => Future.value(const DashletValue(null)),
-            route: '/billing/estimator',
-            widgetBuilder: (_, _) => const SizedBox.shrink(),
-          ),
-          DashletCard<String>(
-            label: 'Quotes',
-            icon: Icons.format_quote,
-            // ignore: discarded_futures
-            dashletValue: getQuoteValue,
-            route: '/billing/quotes',
-          ),
-          DashletCard<int>(
-            label: 'To Be Invoiced',
-            icon: Icons.attach_money,
-            // ignore: discarded_futures
-            dashletValue: getYetToBeInvoiced,
-            route: '/billing/to_be_invoiced',
-          ),
-          DashletCard<String>(
-            label: 'Invoices',
-            icon: Icons.receipt_long,
-            // ignore: discarded_futures
-            dashletValue: getInvoicedThisMonth,
-            route: '/billing/invoices',
-          ),
-          DashletCard<void>(
-            label: 'Milestones',
-            icon: Icons.flag,
-            dashletValue: () => Future.value(const DashletValue(null)),
-            route: '/billing/milestones',
-            widgetBuilder: (_, _) => const SizedBox.shrink(),
-          ),
-        ],
+  Widget build(BuildContext context) => DashboardPage(
+    title: 'Billing',
+    dashlets: [
+      DashletCard<void>(
+        label: 'Estimator',
+        icon: Icons.calculate,
+        dashletValue: () => Future.value(const DashletValue(null)),
+        route: '/billing/estimator',
+        widgetBuilder: (_, _) => const SizedBox.shrink(),
       ),
-    ),
+      DashletCard<String>(
+        label: 'Quotes',
+        icon: Icons.format_quote,
+        // ignore: discarded_futures
+        dashletValue: getQuoteValue,
+        route: '/billing/quotes',
+      ),
+      DashletCard<int>(
+        label: 'To Be Invoiced',
+        icon: Icons.attach_money,
+        // ignore: discarded_futures
+        dashletValue: getYetToBeInvoiced,
+        route: '/billing/to_be_invoiced',
+      ),
+      DashletCard<String>(
+        label: 'Invoices',
+        icon: Icons.receipt_long,
+        // ignore: discarded_futures
+        dashletValue: getInvoicedThisMonth,
+        route: '/billing/invoices',
+      ),
+      DashletCard<void>(
+        label: 'Milestones',
+        icon: Icons.flag,
+        dashletValue: () => Future.value(const DashletValue(null)),
+        route: '/billing/milestones',
+        widgetBuilder: (_, _) => const SizedBox.shrink(),
+      ),
+    ],
   );
   Future<DashletValue<String>> getQuoteValue() async {
     final quotes = await DaoQuote().getAll();
