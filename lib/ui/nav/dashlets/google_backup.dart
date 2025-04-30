@@ -1,4 +1,6 @@
 // lib/src/ui/dashboard/shopping_dashlet.dart
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -35,13 +37,16 @@ class GoogleBackupDashlset extends StatelessWidget {
   Future<DateTime?> _getLastBackup() async {
     DateTime? last;
     try {
-      final backups =
-          await GoogleDriveBackupProvider(
-            FlutterDatabaseFactory(),
-          ).getBackups();
-      if (backups.isNotEmpty) {
-        backups.sort((a, b) => b.when.compareTo(a.when));
-        last = backups.first.when;
+      // google api's not supported on linux.
+      if (!Platform.isLinux) {
+        final backups =
+            await GoogleDriveBackupProvider(
+              FlutterDatabaseFactory(),
+            ).getBackups();
+        if (backups.isNotEmpty) {
+          backups.sort((a, b) => b.when.compareTo(a.when));
+          last = backups.first.when;
+        }
       }
     } catch (_) {
       last = null;
