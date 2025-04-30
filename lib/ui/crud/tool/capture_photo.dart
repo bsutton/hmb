@@ -28,7 +28,7 @@ class CapturePhoto extends StatefulWidget {
 }
 
 class _CapturePhotoState extends State<CapturePhoto> {
-  final PhotoController<Tool> _photoController = PhotoController<Tool>(
+  final _photoController = PhotoController<Tool>(
     parent: null,
     parentType: ParentType.tool,
   );
@@ -50,7 +50,7 @@ class _CapturePhotoState extends State<CapturePhoto> {
             label: 'Capture Photo',
             icon: const Icon(Icons.camera_alt),
             onPressed:
-                () async => _takePhoto(widget.title, (capturedPhoto) async {
+                () => _takePhoto(widget.title, (capturedPhoto) async {
                   // Create a new Photo entity
                   final newPhoto = Photo.forInsert(
                     parentId: widget.tool.id,

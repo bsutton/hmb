@@ -23,7 +23,7 @@ class CustomerListScreen extends StatelessWidget {
     pageTitle: 'Customers',
     dao: DaoCustomer(),
     title: (entity) => HMBCardHeading(entity.name),
-    fetchList: (filter) async => DaoCustomer().getByFilter(filter),
+    fetchList: (filter)  => DaoCustomer().getByFilter(filter),
     onEdit: (customer) => CustomerEditScreen(customer: customer),
     details: (entity) {
       final customer = entity;

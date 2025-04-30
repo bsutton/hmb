@@ -38,7 +38,7 @@ class _JobEstimateBuilderScreenState
   Money _totalMaterialsCost = MoneyEx.zero;
   Money _totalCombinedCost = MoneyEx.zero;
 
-  String filter = '';
+  var _filter = '';
 
   @override
   Future<void> asyncInitState() async {
@@ -57,12 +57,12 @@ class _JobEstimateBuilderScreenState
   List<Task> filteredTasks() {
     final filtered = <Task>[];
 
-    if (Strings.isBlank(filter)) {
+    if (Strings.isBlank(_filter)) {
       return _tasks;
     }
     for (final task in _tasks) {
-      if (task.name.toLowerCase().contains(filter) ||
-          task.description.toLowerCase().contains(filter)) {
+      if (task.name.toLowerCase().contains(_filter) ||
+          task.description.toLowerCase().contains(_filter)) {
         filtered.add(task);
       }
     }
@@ -151,8 +151,8 @@ class _JobEstimateBuilderScreenState
               child: HMBSearchWithAdd(
                 hint: 'Add Task',
                 onSearch:
-                    (filter) async => setState(() {
-                      this.filter = filter ?? '';
+                    (filter) => setState(() {
+                      _filter = filter ?? '';
                     }),
                 onAdd: _addNewTask,
               ),
@@ -197,19 +197,16 @@ class _JobEstimateBuilderScreenState
               subtitle: HMBTextHeadline3(task.description),
               trailing: IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () async => _deleteTask(task),
+                onPressed: () => _deleteTask(task),
               ),
-              onTap: () async => _editTask(task),
+              onTap: () => _editTask(task),
             ),
             Padding(
               padding: const EdgeInsets.only(left: 16),
               child: PhotoGallery.forTask(task: task),
             ),
             _buildTaskItems(task),
-            HMBButton(
-              label: 'Add Item',
-              onPressed: () async => _addItemToTask(task),
-            ),
+            HMBButton(label: 'Add Item', onPressed: () => _addItemToTask(task)),
           ],
         ),
       ),
@@ -246,9 +243,9 @@ class _JobEstimateBuilderScreenState
     subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
     trailing: IconButton(
       icon: const Icon(Icons.delete, color: Colors.red),
-      onPressed: () async => _deleteItem(item),
+      onPressed: () => _deleteItem(item),
     ),
-    onTap: () async => _editItem(item, task),
+    onTap: () => _editItem(item, task),
   );
 
   Future<void> _addItemToTask(Task task) async {

@@ -13,14 +13,14 @@ class XeroApi {
 
   XeroApi._internal() : xeroAuth = XeroAuth2();
 
-  static final XeroApi _instance = XeroApi._internal();
+  static final _instance = XeroApi._internal();
 
   Future<void> login() async {
     await xeroAuth.login();
     await getTenantId();
   }
 
-  final String _baseUrl = 'https://api.xero.com/api.xro/2.0/';
+  final _baseUrl = 'https://api.xero.com/api.xro/2.0/';
 
   String? _tenantId;
 

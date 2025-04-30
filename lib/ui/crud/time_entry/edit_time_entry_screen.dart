@@ -32,7 +32,7 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
   late FocusNode _startTimeFocusNode;
   late FocusNode _endTimeFocusNode;
   late FocusNode _noteFocusNode;
-  final DateFormat _dateTimeFormat = DateFormat('yyyy-MM-dd hh:mm a');
+  final _dateTimeFormat = DateFormat('yyyy-MM-dd hh:mm a');
 
   String _formatDateTime(DateTime dateTime) =>
       _dateTimeFormat.format(dateTime.toLocal());
@@ -124,7 +124,7 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
   Widget build(BuildContext context) => NestedEntityEditScreen<TimeEntry, Task>(
     entityName: 'Time Entry',
     dao: DaoTimeEntry(),
-    onInsert: (timeEntry) async => DaoTimeEntry().insert(timeEntry!),
+    onInsert: (timeEntry)  => DaoTimeEntry().insert(timeEntry!),
     entityState: this,
     editor:
         (timeEntry) => Column(

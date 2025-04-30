@@ -22,7 +22,7 @@ class JoinAdaptorCustomerContact implements DaoJoinAdaptor<Contact, Customer> {
   }
 
   @override
-  Future<List<Contact>> getByParent(Customer? parent) async =>
+  Future<List<Contact>> getByParent(Customer? parent) =>
       DaoContact().getByCustomer(parent?.id);
 
   @override

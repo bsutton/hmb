@@ -22,10 +22,10 @@ class SelectCategory extends StatefulWidget {
 }
 
 class SelectCategoryState extends State<SelectCategory> {
-  Future<Category?> _getInitialCategory() async =>
+  Future<Category?> _getInitialCategory() =>
       DaoCategory().getById(widget.selectedCategory.categoryId);
 
-  Future<List<Category>> _getCategories(String? filter) async =>
+  Future<List<Category>> _getCategories(String? filter) =>
       DaoCategory().getByFilter(filter);
 
   void _onCategoryChanged(Category? newValue) {
@@ -58,7 +58,7 @@ class SelectCategoryState extends State<SelectCategory> {
           title: 'Category',
           selectedItem: _getInitialCategory,
           onChanged: _onCategoryChanged,
-          items: (filter) async => _getCategories(filter),
+          items: _getCategories,
           format: (category) => category.name,
         ),
       ),

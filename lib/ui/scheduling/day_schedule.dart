@@ -49,7 +49,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
   late final EventController<JobActivityEx> _dayController;
   late final System system;
   late final OperatingHours operatingHours;
-  bool hasActivitiesInExtendedHours = false;
+  var _hasActivitiesInExtendedHours = false;
   // New state variables to hold the computed bounds when there are extended activities.
   int? _computedStartHour;
   int? _computedEndHour;
@@ -130,7 +130,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     );
     // If operating hours are not defined, we treat it as a non-operating day.
     if (dayOperating.start == null || dayOperating.end == null) {
-      hasActivitiesInExtendedHours = false;
+      _hasActivitiesInExtendedHours = false;
       _computedStartHour = null;
       _computedEndHour = null;
     } else {
@@ -141,7 +141,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
       final int defaultEnd = min(24, operatingEndHour + buffer);
 
       if (foundExtended) {
-        hasActivitiesInExtendedHours = true;
+        _hasActivitiesInExtendedHours = true;
         // Apply a 1-hour buffer to extended event bounds.
         _computedStartHour = min(
           defaultStart,
@@ -152,13 +152,13 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
           min(24, latestExtendedHour + buffer),
         );
       } else {
-        hasActivitiesInExtendedHours = false;
+        _hasActivitiesInExtendedHours = false;
         _computedStartHour = null;
         _computedEndHour = null;
       }
     }
 
-    print('Extended hours: $hasActivitiesInExtendedHours');
+    print('Extended hours: $_hasActivitiesInExtendedHours');
     if (mounted) {
       _dayController
         ..clear()
@@ -178,7 +178,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
 
             // ignore: join_return_with_assignment
             dayView = DayView<JobActivityEx>(
-              onPageChange: (date, _) async => _onPageChange(date),
+              onPageChange: (date, _) => _onPageChange(date),
               startHour: _getStartHour(),
               endHour: _getEndHour(),
               key: widget.dayKey,
@@ -245,7 +245,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
       return 0;
     }
     // If there are extended activities, use the computed start hour.
-    if (hasActivitiesInExtendedHours && _computedStartHour != null) {
+    if (_hasActivitiesInExtendedHours && _computedStartHour != null) {
       return _computedStartHour!;
     }
     // Otherwise, return the operating start hour with a 1-hour buffer.
@@ -268,7 +268,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
       return 24;
     }
     // If there are extended activities, use the computed end hour.
-    if (hasActivitiesInExtendedHours && _computedEndHour != null) {
+    if (_hasActivitiesInExtendedHours && _computedEndHour != null) {
       return _computedEndHour!;
     }
     // Otherwise, return the operating end hour with a 1-hour buffer.

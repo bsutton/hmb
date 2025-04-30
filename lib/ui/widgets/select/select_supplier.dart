@@ -24,10 +24,10 @@ class SelectSupplier extends StatefulWidget {
 }
 
 class SelectSupplierState extends State<SelectSupplier> {
-  Future<Supplier?> _getInitialSupplier() async =>
+  Future<Supplier?> _getInitialSupplier() =>
       DaoSupplier().getById(widget.selectedSupplier.selected);
 
-  Future<List<Supplier>> _getSuppliers(String? filter) async =>
+  Future<List<Supplier>> _getSuppliers(String? filter) =>
       DaoSupplier().getByFilter(filter);
 
   void _onSupplierChanged(Supplier? newValue) {
@@ -60,7 +60,7 @@ class SelectSupplierState extends State<SelectSupplier> {
           title: widget.isRequired ? 'Supplier *' : 'Supplier',
           selectedItem: _getInitialSupplier,
           onChanged: _onSupplierChanged,
-          items: (filter) async => _getSuppliers(filter),
+          items: _getSuppliers,
           format: (supplier) => supplier.name,
           required: widget.isRequired,
         ),

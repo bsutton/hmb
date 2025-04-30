@@ -234,7 +234,7 @@ class DaoQuote extends Dao<Quote> {
     int quoteId,
     QuoteState newState, {
     Transaction? transaction,
-  }) async {
+  }) {
     final db = withinTransaction(transaction);
     return db.update(
       tableName,
@@ -248,7 +248,7 @@ class DaoQuote extends Dao<Quote> {
   }
 
   /// Approve quote
-  Future<int> approveQuote(int quoteId, {Transaction? transaction}) async {
+  Future<int> approveQuote(int quoteId, {Transaction? transaction}) {
     final db = withinTransaction(transaction);
     return db.update(
       tableName,
@@ -263,11 +263,11 @@ class DaoQuote extends Dao<Quote> {
   }
 
   /// Reject quote
-  Future<int> rejectQuote(int quoteId, {Transaction? transaction}) async =>
+  Future<int> rejectQuote(int quoteId, {Transaction? transaction}) =>
       updateState(quoteId, QuoteState.rejected, transaction: transaction);
 
   /// quote sent
-  Future<int> markQuoteSent(int quoteId, {Transaction? transaction}) async {
+  Future<int> markQuoteSent(int quoteId, {Transaction? transaction}) {
     final db = withinTransaction(transaction);
     return db.update(
       tableName,

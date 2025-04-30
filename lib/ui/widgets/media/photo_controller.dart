@@ -35,7 +35,7 @@ class PhotoController<E extends Entity<E>> {
     return _photos;
   }
 
-  final Completer<void> _completer = Completer<void>();
+  final _completer = Completer<void>();
 
   // List to hold comment controllers for each photo
   final List<TextEditingController> _commentControllers = [];

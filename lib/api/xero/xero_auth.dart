@@ -38,7 +38,7 @@ class XeroAuth2 {
   /// somewhere to store credentials so we don't have to
   /// auth every time
   static const _credentialsKey = 'xero_credentials';
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final _secureStorage = const FlutterSecureStorage();
 
   /// The path suffix for finalizing OAuth.
   /// Desktop will use `http://localhost:<port>/xero/auth_complete`
@@ -109,10 +109,10 @@ class XeroAuth2 {
     late StreamSubscription<Uri> sub;
     sub = redirectHandler.stream.listen((uri) {
       if (uri.toString().startsWith(redirectUri.toString())) {
-        sub.cancel();
-        redirectHandler.stop();
+        unawaited(sub.cancel());
+        unawaited(redirectHandler.stop());
         log('Received callback -> calling completeLogin');
-        completeLogin(loginComplete, uri);
+        unawaited(completeLogin(loginComplete, uri));
       }
     });
 

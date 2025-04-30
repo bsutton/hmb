@@ -112,7 +112,7 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
               initialMonth: currentDate.toDateTime(),
               headerStyle: widget.headerStyle(),
               headerStringBuilder: widget.monthDateStringBuilder,
-              onPageChange: (date, index) async => _onePageChange(date),
+              onPageChange: (date, index) => _onePageChange(date),
               cellBuilder:
                   (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
                       _cellBuilder(
@@ -242,7 +242,7 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
       fontColor = Colors.orange;
     }
     return GestureDetector(
-      onTap: () async {
+      onTap: () {
         if (monthView.onEventTap != null) {
           monthView.onEventTap?.call(event, event.startTime!);
         }

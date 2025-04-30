@@ -124,7 +124,7 @@ class HMBLinkButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextButton(
-    onPressed: () async => _launchURL(link),
+    onPressed: () => _launchURL(link),
     child: Text(label, style: const TextStyle(color: Colors.blue)),
   );
 

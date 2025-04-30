@@ -23,7 +23,7 @@ class ContactSource extends Source<Contact> {
           title: 'Contact',
           selectedItem: () async => customerContact.contact,
           items:
-              (filter) async =>
+              (filter) =>
                   DaoContact().getByFilter(customerContact.customer!, filter),
           format: (contact) => contact.fullname,
           onChanged: (contact) {

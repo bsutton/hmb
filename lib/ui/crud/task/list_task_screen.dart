@@ -47,7 +47,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   @override
   Widget build(BuildContext context) {
     final showCompleted =
-        June.getState(ShowCompletedTasksState.new).showCompletedTasks;
+        June.getState(ShowCompletedTasksState.new)._showCompletedTasks;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -75,7 +75,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       initialValue:
                           June.getState(
                             ShowCompletedTasksState.new,
-                          ).showCompletedTasks,
+                          )._showCompletedTasks,
                       onToggled: (value) {
                         setState(() {
                           June.getState(ShowCompletedTasksState.new).toggle();
@@ -87,8 +87,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
             onEdit:
                 (task) =>
                     TaskEditScreen(job: widget.parent.parent!, task: task),
-            onDelete: (task) async => DaoTask().delete(task!.id),
-            onInsert: (task) async => DaoTask().insert(task!),
+            onDelete: (task) => DaoTask().delete(task!.id),
+            onInsert: (task) => DaoTask().insert(task!),
             details:
                 (task, details) =>
                     details == CardDetail.full
@@ -103,7 +103,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   Future<List<Task>> _fetchTasks() async {
     final showCompleted =
-        June.getState(ShowCompletedTasksState.new).showCompletedTasks;
+        June.getState(ShowCompletedTasksState.new)._showCompletedTasks;
     final tasks = await DaoTask().getTasksByJob(widget.parent.parent!.id);
 
     final included = <Task>[];
@@ -196,10 +196,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
 }
 
 class ShowCompletedTasksState extends JuneState {
-  bool showCompletedTasks = false;
+  var _showCompletedTasks = false;
 
   void toggle() {
-    showCompletedTasks = !showCompletedTasks;
+    _showCompletedTasks = !_showCompletedTasks;
     refresh(); // Notify listeners to rebuild
   }
 }

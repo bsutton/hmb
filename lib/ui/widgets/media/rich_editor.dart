@@ -202,8 +202,8 @@ class _RichEditorState extends State<RichEditor> {
       return;
     }
     final uri = Uri.parse(url);
-    final _canLaunch = await canLaunchUrl(uri);
-    if (_canLaunch) {
+    final canLaunch = await canLaunchUrl(uri);
+    if (canLaunch) {
       await launchUrl(uri);
     }
   }

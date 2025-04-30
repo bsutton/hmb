@@ -41,7 +41,7 @@ Future<void> zipBackup({
   // Listen for progress updates from the isolate
   final completer = Completer<void>();
   errorPort.listen((error) {
-    Sentry.captureException(error);
+    unawaited(Sentry.captureException(error));
     completer.completeError(error as Object);
   });
   exitPort.listen((message) {

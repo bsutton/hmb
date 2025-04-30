@@ -42,7 +42,7 @@ class TickBuilder extends StatefulWidget {
 }
 
 class _TickBuilderState extends State<TickBuilder> {
-  int tickCount = 0;
+  var _tickCount = 0;
 
   @override
   void initState() {
@@ -51,15 +51,15 @@ class _TickBuilderState extends State<TickBuilder> {
   }
 
   @override
-  Widget build(BuildContext context) => widget._builder(context, tickCount);
+  Widget build(BuildContext context) => widget._builder(context, _tickCount);
 
   void queueTicker() {
     Future.delayed(widget._interval, () {
       if (mounted && widget._active) {
         setState(() {
-          tickCount++;
-          if (tickCount > widget._limit) {
-            tickCount = 0;
+          _tickCount++;
+          if (_tickCount > widget._limit) {
+            _tickCount = 0;
           }
         });
         queueTicker();
@@ -70,6 +70,6 @@ class _TickBuilderState extends State<TickBuilder> {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IntProperty('tickCount', tickCount));
+    properties.add(IntProperty('tickCount', _tickCount));
   }
 }

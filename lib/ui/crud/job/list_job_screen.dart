@@ -39,7 +39,7 @@ class _JobListScreenState extends State<JobListScreen> {
                 });
               },
               label:
-                  June.getState(FilterState.new).showOnHoldAndFinalised
+                  June.getState(FilterState.new)._showOnHoldAndFinalised
                       ? 'Show PreStart & Progressing'
                       : 'Show OnHold & Finalised',
             ),
@@ -51,12 +51,12 @@ class _JobListScreenState extends State<JobListScreen> {
             builder:
                 (context) => EntityListScreen<Job>(
                   key: ValueKey(
-                    June.getState(FilterState.new).showOnHoldAndFinalised,
+                    June.getState(FilterState.new)._showOnHoldAndFinalised,
                   ),
                   dao: DaoJob(),
                   pageTitle: JobListScreen.pageTitle,
                   onEdit: (job) => JobEditScreen(job: job),
-                  fetchList: (filter) async => _fetchJobs(filter),
+                  fetchList: _fetchJobs,
                   title: (job) => HMBCardTitle(job.summary),
                   cardHeight: 765,
                   background:
@@ -80,7 +80,7 @@ class _JobListScreenState extends State<JobListScreen> {
     for (final job in jobs) {
       final jobStatus = await DaoJobStatus().getById(job.jobStatusId);
       final status = jobStatus?.statusEnum;
-      if (June.getState(FilterState.new).showOnHoldAndFinalised) {
+      if (June.getState(FilterState.new)._showOnHoldAndFinalised) {
         if (status == JobStatusEnum.onHold ||
             status == JobStatusEnum.finalised) {
           selected.add(job);
@@ -97,10 +97,10 @@ class _JobListScreenState extends State<JobListScreen> {
 }
 
 class FilterState extends JuneState {
-  bool showOnHoldAndFinalised = false;
+  var _showOnHoldAndFinalised = false;
 
   void toggle() {
-    showOnHoldAndFinalised = !showOnHoldAndFinalised;
+    _showOnHoldAndFinalised = !_showOnHoldAndFinalised;
     refresh();
   }
 }

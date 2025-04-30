@@ -50,7 +50,7 @@ class DesktopBackGesture extends StatelessWidget {
   final GlobalKey<NavigatorState> navigatorKey;
 
   /// Mouse button code for "Back" (thumb button)
-  static const int kBackMouseButton = 8;
+  static const kBackMouseButton = 8;
 
   /// Threshold for horizontal drag to count as a "back" swipe
   static const double _dragThreshold = 20;

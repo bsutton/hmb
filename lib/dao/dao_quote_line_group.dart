@@ -36,7 +36,7 @@ class DaoQuoteLineGroup extends Dao<QuoteLineGroup> {
     );
   }
 
-  Future<int> deleteByQuoteId(int quoteId, [Transaction? transaction]) async {
+  Future<int> deleteByQuoteId(int quoteId, [Transaction? transaction]) {
     final db = withinTransaction(transaction);
     return db.delete(tableName, where: 'quote_id = ?', whereArgs: [quoteId]);
   }

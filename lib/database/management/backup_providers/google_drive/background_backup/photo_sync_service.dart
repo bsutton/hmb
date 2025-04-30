@@ -18,7 +18,7 @@ class PhotoUploaded {
 class PhotoSyncService {
   factory PhotoSyncService() => _instance;
   PhotoSyncService._();
-  static final PhotoSyncService _instance = PhotoSyncService._();
+  static final _instance = PhotoSyncService._();
 
   final StreamController<ProgressUpdate> _controller =
       StreamController.broadcast();

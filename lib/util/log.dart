@@ -137,9 +137,6 @@ class MyLogPrinter extends LogPrinter {
   MyLogPrinter(this.currentWorkingDirectory);
 
   ///
-  bool colors = true;
-
-  ///
   String currentWorkingDirectory;
 
   @override

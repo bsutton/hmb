@@ -13,7 +13,7 @@ import 'stock_take_wizard.dart';
 class SerialNumberStep extends WizardStep {
   SerialNumberStep(this.toolWizardState) : super(title: 'Serial No');
 
-  final TextEditingController _serialNumberController = TextEditingController();
+  final _serialNumberController = TextEditingController();
 
   ToolWizardState toolWizardState;
   String? _serialPhotoPath;

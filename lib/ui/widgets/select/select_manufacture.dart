@@ -24,10 +24,10 @@ class SelectManufacturer extends StatefulWidget {
 }
 
 class SelectManufacturerState extends State<SelectManufacturer> {
-  Future<Manufacturer?> _getInitialManufacturer() async =>
+  Future<Manufacturer?> _getInitialManufacturer() =>
       DaoManufacturer().getById(widget.selectedManufacturer.manufacturerId);
 
-  Future<List<Manufacturer>> _getManufacturers(String? filter) async =>
+  Future<List<Manufacturer>> _getManufacturers(String? filter) =>
       DaoManufacturer().getByFilter(filter);
 
   void _onManufacturerChanged(Manufacturer? newValue) {
@@ -60,7 +60,7 @@ class SelectManufacturerState extends State<SelectManufacturer> {
           title: widget.isRequired ? 'Manufacturer *' : 'Manufacturer',
           selectedItem: _getInitialManufacturer,
           onChanged: _onManufacturerChanged,
-          items: (filter) async => _getManufacturers(filter),
+          items: _getManufacturers,
           format: (manufacturer) => manufacturer.name,
           required: widget.isRequired,
         ),

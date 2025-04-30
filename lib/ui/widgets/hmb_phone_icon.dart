@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:direct_caller_sim_choice/direct_caller_sim_choice.dart';
@@ -32,7 +33,7 @@ class HMBPhoneIcon extends StatelessWidget {
             () async =>
                 Strings.isEmpty(phoneNo)
                     ? null
-                    : _showOptions(context, phoneNo),
+                    : await _showOptions(context, phoneNo),
         color: Strings.isEmpty(phoneNo) ? Colors.grey : Colors.blue,
         tooltip: 'Call or Text',
       ),
@@ -43,7 +44,7 @@ class HMBPhoneIcon extends StatelessWidget {
             () async =>
                 Strings.isEmpty(phoneNo)
                     ? null
-                    : clipboardCopyTo(context, phoneNo),
+                    : await clipboardCopyTo(context, phoneNo),
         color: Strings.isEmpty(phoneNo) ? Colors.grey : Colors.blue,
         tooltip: 'Copy Phone No. to the Clipboard',
       ),
@@ -64,7 +65,7 @@ class HMBPhoneIcon extends StatelessWidget {
                 label: 'Call',
                 onPressed: () {
                   Navigator.of(context).pop();
-                  _call(context, phoneNo);
+                  unawaited(_call(context, phoneNo));
                 },
               ),
               HMBButton(

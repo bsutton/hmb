@@ -87,7 +87,7 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
                       if (Strings.isNotBlank(system.emailAddress))
                         system.emailAddress!,
                     ],
-                    onSent: () async => DaoInvoice().markSent(invoice),
+                    onSent: () => DaoInvoice().markSent(invoice),
                     canEmail: () async {
                       if ((await ExternalAccounting().isEnabled()) &&
                           !invoice.isUploaded()) {

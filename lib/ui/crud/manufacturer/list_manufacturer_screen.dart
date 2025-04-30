@@ -14,7 +14,7 @@ class ManufacturerListScreen extends StatelessWidget {
     pageTitle: 'Manufacturers',
     dao: DaoManufacturer(),
     title: (entity) => HMBTextHeadline2(entity.name),
-    fetchList: (filter) async => DaoManufacturer().getByFilter(filter),
+    fetchList: (filter)  => DaoManufacturer().getByFilter(filter),
     onEdit:
         (manufacturer) => ManufacturerEditScreen(manufacturer: manufacturer),
     details: (entity) {

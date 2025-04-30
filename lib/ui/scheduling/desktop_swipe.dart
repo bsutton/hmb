@@ -45,7 +45,7 @@ class DesktopSwipe extends StatelessWidget {
     child:
     /// support swipe left/right
     GestureDetector(
-      onHorizontalDragEnd: (details) async {
+      onHorizontalDragEnd: (details) {
         print(
           'horizontal drag: velocity: ${details.primaryVelocity}, ${details.velocity}',
         );

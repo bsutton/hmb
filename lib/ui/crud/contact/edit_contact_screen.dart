@@ -87,7 +87,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
         entityName: 'Contact',
         dao: DaoContact(),
         onInsert:
-            (contact) async =>
+            (contact) =>
                 widget.daoJoin.insertForParent(contact!, widget.parent),
         entityState: this,
         editor:

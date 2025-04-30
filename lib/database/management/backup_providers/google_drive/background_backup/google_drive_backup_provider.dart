@@ -193,7 +193,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
 
   /// Launches the photo sync process in its own isolate.
   @override
-  Future<void> syncPhotos() async => PhotoSyncService().start();
+  Future<void> syncPhotos()  => PhotoSyncService().start();
   
   @override
   Future<String> get photosRootPath => getPhotosRootPath();

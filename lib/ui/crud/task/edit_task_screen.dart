@@ -172,7 +172,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
     title: 'Task Status',
     selectedItem: () async => June.getState(SelectedTaskStatus.new).taskStatus,
-    items: (filter) async => DaoTaskStatus().getByFilter(filter),
+    items: (filter) => DaoTaskStatus().getByFilter(filter),
     format: (item) => item.name,
     onChanged: (item) {
       setState(() {

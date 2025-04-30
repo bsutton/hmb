@@ -39,7 +39,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                       HMBDroplist<Job>(
                         title: 'Select Job',
                         selectedItem: () async => selectedJob,
-                        items: (filter) async => DaoJob().getActiveJobs(filter),
+                        items: (filter) => DaoJob().getActiveJobs(filter),
                         format: (job) => job.summary,
                         onChanged: (job) {
                           setState(() {
@@ -55,7 +55,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                           title: 'Select Task',
                           selectedItem: () async => selectedTask,
                           items:
-                              (filter) async =>
+                              (filter) =>
                                   DaoTask().getTasksByJob(selectedJob!.id),
                           format: (task) => task.name,
                           onChanged: (task) {

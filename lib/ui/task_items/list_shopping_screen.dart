@@ -152,7 +152,7 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
                 ),
                 HMBDroplistMultiSelect<Job>(
                   initialItems: () async => _selectedJobs,
-                  items: (filter) async => DaoJob().getActiveJobs(filter),
+                  items: (filter) => DaoJob().getActiveJobs(filter),
                   format: (job) => job.summary,
                   onChanged: (selectedJobs) async {
                     _selectedJobs = selectedJobs;
@@ -171,7 +171,7 @@ If your Job isn't showing then you need to update its status to an Active one su
                 const SizedBox(height: 10),
                 HMBDroplist<Supplier>(
                   selectedItem: () async => _selectedSupplier,
-                  items: (filter) async => DaoSupplier().getByFilter(filter),
+                  items: (filter) => DaoSupplier().getByFilter(filter),
                   format: (supplier) => supplier.name,
                   onChanged: (supplier) async {
                     _selectedSupplier = supplier;

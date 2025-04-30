@@ -111,46 +111,46 @@ class AnsiColor {
   /// Resets
 
   /// Reset fg and bg colors
-  static const String resetCode = '0';
+  static const resetCode = '0';
 
   /// Defaults the terminal's fg color without altering the bg.
-  static const String fgResetCode = '39';
+  static const fgResetCode = '39';
 
   /// Defaults the terminal's bg color without altering the fg.
-  static const String bgResetCode = '49';
+  static const bgResetCode = '49';
 
   /// emmit this code followed by a color code to set the fg color
-  static const String fgColor = '38;5;';
+  static const fgColor = '38;5;';
 
   /// emmit this code followed by a color code to set the fg color
-  static const String bgColor = '48;5;';
+  static const bgColor = '48;5;';
 
   /// Colors
-  static const AnsiColor black = AnsiColor(30);
+  static const black = AnsiColor(30);
 
   ///
-  static const AnsiColor red = AnsiColor(31);
+  static const red = AnsiColor(31);
 
   ///
-  static const AnsiColor green = AnsiColor(32);
+  static const green = AnsiColor(32);
 
   ///
-  static const AnsiColor yellow = AnsiColor(33);
+  static const yellow = AnsiColor(33);
 
   ///
-  static const AnsiColor blue = AnsiColor(34);
+  static const blue = AnsiColor(34);
 
   ///
-  static const AnsiColor magenta = AnsiColor(35);
+  static const magenta = AnsiColor(35);
 
   ///
-  static const AnsiColor cyan = AnsiColor(36);
+  static const cyan = AnsiColor(36);
 
   ///
-  static const AnsiColor white = AnsiColor(37);
+  static const white = AnsiColor(37);
 
   ///
-  static const AnsiColor orange = AnsiColor(208);
+  static const orange = AnsiColor(208);
 
   ///
   static AnsiColor grey({double level = 0.5}) =>
@@ -159,5 +159,5 @@ class AnsiColor {
   /// passing this as the background color will cause
   /// the background code to be suppressed resulting
   /// in the default background color.
-  static const AnsiColor none = AnsiColor(-1);
+  static const none = AnsiColor(-1);
 }

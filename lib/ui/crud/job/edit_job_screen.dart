@@ -70,8 +70,8 @@ class _JobEditScreenState extends State<JobEditScreen>
   late final ScrollController scrollController;
   // there has to be a better way but I can get the
   // HMBTextBlock to see the description change.
-  int descriptionVersion = 0;
-  int assumptionVersion = 0;
+  var _descriptionVersion = 0;
+  var _assumptionVersion = 0;
 
   @override
   Job? currentEntity;
@@ -296,10 +296,8 @@ You can set a default booking fee from System | Billing screen''');
         (jobStatus) => HMBDroplist<JobStatus>(
           title: 'Status',
           items:
-              (filter) async =>
-                  DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
-          selectedItem:
-              () async => DaoJobStatus().getById(jobStatus.jobStatusId),
+              (filter) => DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
+          selectedItem: () => DaoJobStatus().getById(jobStatus.jobStatusId),
           onChanged: (status) => jobStatus.jobStatusId = status?.id,
           format: (value) => value.name,
         ),
@@ -431,7 +429,7 @@ You can set a default booking fee from System | Billing screen''');
         ),
   );
 
-  Future<JobActivity?> showActivityDialog(List<JobActivity> activities) async {
+  Future<JobActivity?> showActivityDialog(List<JobActivity> activities) {
     final today = DateTime.now().withoutTime;
     return showDialog<JobActivity>(
       context: context,
@@ -559,7 +557,7 @@ You can set a default booking fee from System | Billing screen''');
                 ),
 
                 /// the version enforces an refresh
-                key: ValueKey(descriptionVersion),
+                key: ValueKey(_descriptionVersion),
               ),
             ),
           ],
@@ -569,7 +567,7 @@ You can set a default booking fee from System | Billing screen''');
         icon: const Icon(Icons.edit),
         onPressed: () async {
           await _showRichEditDialog(_descriptionController, 'Description');
-          setState(() => descriptionVersion++);
+          setState(() => _descriptionVersion++);
         },
       ),
     ],
@@ -597,7 +595,7 @@ You can set a default booking fee from System | Billing screen''');
                 ).toPlainText().replaceAll('\n\n', '\n'),
 
                 /// the version enforces an refresh
-                key: ValueKey(assumptionVersion),
+                key: ValueKey(_assumptionVersion),
               ),
             ),
           ],
@@ -607,7 +605,7 @@ You can set a default booking fee from System | Billing screen''');
         icon: const Icon(Icons.edit),
         onPressed: () async {
           await _showRichEditDialog(_assumptionController, 'Assumptions');
-          setState(() => assumptionVersion++);
+          setState(() => _assumptionVersion++);
         },
       ),
     ],

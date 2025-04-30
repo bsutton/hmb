@@ -67,7 +67,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
                 // start / stop icon
                 icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
                 onPressed:
-                    () async =>
+                    () =>
                         timeEntry != null
                             ? _stop(widget.task)
                             : _start(widget.task),
@@ -76,7 +76,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
             ],
           ),
           onTap:
-              () async =>
+              () =>
                   timeEntry != null ? _stop(widget.task) : _start(widget.task),
         ),
   );

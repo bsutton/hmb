@@ -17,8 +17,7 @@ import 'zip_isolate.dart';
 abstract class BackupProvider {
   BackupProvider(this.databaseFactory);
 
-  final StreamController<ProgressUpdate> _progressController =
-      StreamController<ProgressUpdate>.broadcast();
+  final _progressController = StreamController<ProgressUpdate>.broadcast();
 
   Stream<ProgressUpdate> get progressStream => _progressController.stream;
 
@@ -170,7 +169,7 @@ abstract class BackupProvider {
     });
   }
 
-  static const int _restoreStageCount = 9;
+  static const _restoreStageCount = 9;
 
   /// Fetchs the backup from storage and makes
   /// it available on the local file system
@@ -260,6 +259,7 @@ abstract class BackupProvider {
   /// need for different database storage locations.
   Future<String> get databasePath;
 
+  // ignore: omit_obvious_property_types
   bool useDebugPath = false;
 }
 

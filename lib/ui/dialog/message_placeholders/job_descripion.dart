@@ -6,9 +6,9 @@ class JobDescription extends PlaceHolder<Job> {
   JobDescription({required this.jobSource})
     : super(name: tagName, base: tagBase, source: jobSource);
 
-  static const String tagName = 'job.description';
+  static const tagName = 'job.description';
 
-  static const String tagBase = 'job';
+  static const tagBase = 'job';
   final JobSource jobSource;
 
   @override

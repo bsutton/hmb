@@ -99,6 +99,7 @@ class InvoiceOptions {
     required this.groupByTask,
   });
   List<int> selectedTaskIds = [];
+  // ignore: omit_obvious_property_types
   bool billBookingFee = true;
   bool groupByTask;
 }
@@ -106,10 +107,10 @@ class InvoiceOptions {
 class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   // late List<TaskEstimates> _tasks;
   final Map<int, bool> _selectedTasks = {};
-  bool _selectAll = true;
+  var _selectAll = true;
   late bool billBookingFee;
   late bool canBillBookingFee;
-  bool groupByTask = false;
+  var _groupByTask = false;
 
   @override
   Future<void> asyncInitState() async {
@@ -154,7 +155,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
             child: Column(
               children: [
                 DropdownButton<bool>(
-                  value: groupByTask,
+                  value: _groupByTask,
                   items: const [
                     DropdownMenuItem(
                       value: true,
@@ -167,7 +168,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                   ],
                   onChanged: (value) {
                     setState(() {
-                      groupByTask = value ?? true;
+                      _groupByTask = value ?? true;
                     });
                   },
                   isExpanded: true,
@@ -216,7 +217,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
             InvoiceOptions(
               selectedTaskIds: selectedTaskIds,
               billBookingFee: billBookingFee,
-              groupByTask: groupByTask,
+              groupByTask: _groupByTask,
             ),
           );
         },
@@ -224,7 +225,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
     ],
   );
 
-  Future<Money> cost(TaskAccruedValue taskCost, Showing showing) async {
+  Future<Money> cost(TaskAccruedValue taskCost, Showing showing) {
     switch (showing) {
       case Showing.showQuote:
         return taskCost.quoted;

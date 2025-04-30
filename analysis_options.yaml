@@ -15,6 +15,7 @@ analyzer:
     document_ignores: ignore
     library_private_types_in_public_api: ignore
     lines_longer_than_80_chars: ignore
+    unsafe_variance: ignore
 include: package:lint_hard/all.yaml
 
 linter:

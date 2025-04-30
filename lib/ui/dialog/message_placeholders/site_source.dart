@@ -21,7 +21,7 @@ class SiteSource extends Source<Site> {
           key: ValueKey(customer),
           title: 'Site',
           selectedItem: () async => value,
-          items: (filter) async => DaoSite().getByCustomer(customer?.id),
+          items: (filter) => DaoSite().getByCustomer(customer?.id),
           format: (site) => site.address,
           onChanged: (site) {
             this.site = site;

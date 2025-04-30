@@ -9,7 +9,7 @@ import 'package:path/path.dart';
 /// Launch the sqlite3 command line tool connected to the local
 /// dev database
 
-void main(List<String> args) async {
+void main(List<String> args) {
   final parser =
       ArgParser()
         ..addFlag('help', abbr: 'h')

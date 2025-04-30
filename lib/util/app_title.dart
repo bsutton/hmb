@@ -1,6 +1,7 @@
 import 'package:june/june.dart';
 
 class HMBTitle extends JuneState {
+  // ignore: omit_obvious_property_types
   String title = 'HMB';
 }
 

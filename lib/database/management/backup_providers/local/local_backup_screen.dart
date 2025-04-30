@@ -20,12 +20,12 @@ class LocalBackupScreen extends StatefulWidget {
 }
 
 class _LocalBackupScreenState extends State<LocalBackupScreen> {
-  bool _includePhotos = false;
-  bool _isLoading = false; // Indicates operation in progress
-  bool _useProductionPath = false; // Flag for production path in debug mode
-  String _stageDescription = ''; // Description of the current stage
-  int _stageNo = 0; // Current stage number
-  int _stageCount = 0; // Total number of stages
+  var _includePhotos = false;
+  var _isLoading = false; // Indicates operation in progress
+  var _useProductionPath = false; // Flag for production path in debug mode
+  var _stageDescription = ''; // Description of the current stage
+  var _stageNo = 0; // Current stage number
+  var _stageCount = 0; // Total number of stages
 
   late final BackupProvider _provider;
 

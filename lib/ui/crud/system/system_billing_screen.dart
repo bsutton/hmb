@@ -40,22 +40,17 @@ class SystemBillingScreen extends StatefulWidget {
 class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  late final HMBMoneyEditingController _defaultHourlyRateController =
-      HMBMoneyEditingController();
-  late final HMBMoneyEditingController _defaultBookingFeeController =
-      HMBMoneyEditingController();
-  late final TextEditingController _bsbController = TextEditingController();
-  late final TextEditingController _accountNoController =
-      TextEditingController();
-  late final TextEditingController _paymentLinkUrlController =
-      TextEditingController();
+  late final _defaultHourlyRateController = HMBMoneyEditingController();
+  late final _defaultBookingFeeController = HMBMoneyEditingController();
+  late final _bsbController = TextEditingController();
+  late final _accountNoController = TextEditingController();
+  late final _paymentLinkUrlController = TextEditingController();
   late TextEditingController _paymentTermsInDaysController;
   late TextEditingController _paymentOptionsController;
 
-  late final TextEditingController _logoPathController =
-      TextEditingController();
-  bool _showBsbAccountOnInvoice = false;
-  bool _showPaymentLinkOnInvoice = false;
+  late final _logoPathController = TextEditingController();
+  var _showBsbAccountOnInvoice = false;
+  var _showPaymentLinkOnInvoice = false;
   LogoAspectRatio _logoAspectRatio = LogoAspectRatio.square;
   String? _logoFile;
   Color _billingColour = Colors.deepPurpleAccent; // Default billing color
@@ -196,7 +191,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         body: Column(
           children: [
             SaveAndClose(
-              onSave: ({required close}) async => save(close: close),
+              onSave: save,
               showSaveOnly: false,
               onCancel: () async => context.go('/jobs'),
             ),

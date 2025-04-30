@@ -29,16 +29,15 @@ class ToolDetailsStep extends WizardStep {
   final ToolWizardState toolWizardState;
   final Money? cost;
 
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController warrantyPeriodController =
-      TextEditingController();
-  final TextEditingController costController = TextEditingController();
+  final nameController = TextEditingController();
+  final descriptionController = TextEditingController();
+  final warrantyPeriodController = TextEditingController();
+  final costController = TextEditingController();
 
   final selectedSupplier = SelectedSupplier();
   final selectedManufacturer = SelectedManufacturer();
   final selectedCategory = SelectedCategory();
-  DateTime selectedDatePurchased = DateTime.now();
+  var _selectedDatePurchased = DateTime.now();
 
   @override
   Future<void> onNext(
@@ -64,7 +63,7 @@ class ToolDetailsStep extends WizardStep {
         categoryId: selectedCategory.categoryId,
         supplierId: selectedSupplier.selected,
         manufacturerId: selectedManufacturer.manufacturerId,
-        datePurchased: selectedDatePurchased,
+        datePurchased: _selectedDatePurchased,
         warrantyPeriod: int.tryParse(warrantyPeriodController.text),
         cost: MoneyEx.tryParse(costController.text),
       );
@@ -77,7 +76,7 @@ class ToolDetailsStep extends WizardStep {
         categoryId: selectedCategory.categoryId,
         supplierId: selectedSupplier.selected,
         manufacturerId: selectedManufacturer.manufacturerId,
-        datePurchased: selectedDatePurchased,
+        datePurchased: _selectedDatePurchased,
         warrantyPeriod: int.tryParse(warrantyPeriodController.text),
         cost: MoneyEx.tryParse(costController.text),
       );
@@ -143,8 +142,8 @@ class ToolDetailsStep extends WizardStep {
             HMBDateTimeField(
               mode: HMBDateTimeFieldMode.dateOnly,
               label: 'Date Purchased',
-              initialDateTime: selectedDatePurchased,
-              onChanged: (date) => selectedDatePurchased = date,
+              initialDateTime: _selectedDatePurchased,
+              onChanged: (date) => _selectedDatePurchased = date,
             ),
           ],
         ),

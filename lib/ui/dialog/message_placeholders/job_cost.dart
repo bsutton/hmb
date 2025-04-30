@@ -5,10 +5,11 @@ import 'place_holder.dart';
 
 class JobCost extends PlaceHolder<Job> {
   JobCost({required this.jobSource})
-    : super(name: tagName, base: tagBase, source: jobSource);
+    : super(name: tagName, base: _tagBase, source: jobSource);
 
-  static String get tagName => 'job.cost';
-  static String tagBase = 'job';
+  // ignore: omit_obvious_property_types
+  static String tagName = 'job.cost';
+  static const _tagBase = 'job';
 
   final JobSource jobSource;
 

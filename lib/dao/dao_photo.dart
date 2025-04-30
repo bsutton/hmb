@@ -93,7 +93,7 @@ class DaoPhoto extends Dao<Photo> {
   static Future<List<PhotoMeta>> getMetaByParent(
     int parentId,
     ParentType parentType,
-  ) async {
+  ) {
     switch (parentType) {
       case ParentType.task:
         return getByTask(parentId);
@@ -101,8 +101,6 @@ class DaoPhoto extends Dao<Photo> {
         return getByTool(parentId);
     }
   }
-
-
 }
 
 class PhotoState extends JuneState {

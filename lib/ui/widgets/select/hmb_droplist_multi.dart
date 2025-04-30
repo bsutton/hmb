@@ -72,7 +72,7 @@ class _HMBDroplistMultiSelect<T> extends StatefulWidget {
 class _HMBDroplistMultiSelectState<T>
     extends State<_HMBDroplistMultiSelect<T>> {
   List<T> _selectedItems = [];
-  bool _loading = true;
+  var _loading = true;
 
   @override
   void initState() {

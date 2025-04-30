@@ -28,8 +28,8 @@ class HMBDroplistMultiSelectDialog<T> extends StatefulWidget {
 class _HMBDroplistMultiSelectDialogState<T>
     extends State<HMBDroplistMultiSelectDialog<T>> {
   List<T>? _items;
-  bool _loading = true;
-  String _filter = '';
+  var _loading = true;
+  var _filter = '';
   late List<T> _selectedItems;
 
   final _searchController = TextEditingController();

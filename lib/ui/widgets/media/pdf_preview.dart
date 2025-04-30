@@ -73,7 +73,7 @@ class PdfPreviewScreen extends StatelessWidget {
       actions: [
         IconButton(
           icon: const Icon(Icons.email),
-          onPressed: () async => _showEmailDialog(context),
+          onPressed: () => _showEmailDialog(context),
         ),
       ],
     ),

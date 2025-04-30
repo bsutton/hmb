@@ -10,7 +10,7 @@ class HMBFilePickerDialog {
     BuildContext context, {
     List<String>? allowedExtensions,
     bool showHidden = false,
-  }) async => _pickFileFromDirectory(
+  }) => _pickFileFromDirectory(
     context,
     Directory.current,
     allowedExtensions: allowedExtensions,

@@ -4,10 +4,11 @@ import 'site_source.dart';
 
 class SiteHolder extends PlaceHolder<Site> {
   SiteHolder({required this.siteSource})
-    : super(name: tagName, base: tagBase, source: siteSource);
+    : super(name: tagName, base: _tagBase, source: siteSource);
 
+  // ignore: omit_obvious_property_types
   static String tagName = 'site.address';
-  static String tagBase = 'site';
+  static const _tagBase = 'site';
 
   final SiteSource siteSource;
 

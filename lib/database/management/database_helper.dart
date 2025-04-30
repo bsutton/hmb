@@ -11,7 +11,7 @@ class DatabaseHelper {
   factory DatabaseHelper() => instance;
   DatabaseHelper._();
   static Database? _database;
-  static final DatabaseHelper instance = DatabaseHelper._();
+  static final instance = DatabaseHelper._();
 
   Database get database => _database!;
 
@@ -63,7 +63,7 @@ class DatabaseHelper {
 
   bool isOpen() => _database != null;
 
-  Future<int> getVersion() async => database.getVersion();
+  Future<int> getVersion()  => database.getVersion();
 
   Future<void> withOpenDatabase(
     HMBDatabaseFactory databaseFactory,

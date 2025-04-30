@@ -22,10 +22,10 @@ class SelectCustomer extends StatefulWidget {
 }
 
 class SelectCustomerState extends State<SelectCustomer> {
-  Future<Customer?> _getInitialCustomer() async =>
+  Future<Customer?> _getInitialCustomer() =>
       DaoCustomer().getById(widget.selectedCustomer.customerId);
 
-  Future<List<Customer>> _getCustomers(String? filter) async =>
+  Future<List<Customer>> _getCustomers(String? filter) =>
       DaoCustomer().getByFilter(filter);
 
   void _onCustomerChanged(Customer? newValue) {
@@ -58,7 +58,7 @@ class SelectCustomerState extends State<SelectCustomer> {
           title: 'Customer',
           selectedItem: _getInitialCustomer,
           onChanged: _onCustomerChanged,
-          items: (filter) async => _getCustomers(filter),
+          items: _getCustomers,
           format: (customer) => customer.name,
           onAdd: _addCustomer,
         ),

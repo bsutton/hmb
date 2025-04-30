@@ -31,6 +31,7 @@ import 'util/hmb_theme.dart';
 import 'util/log.dart';
 import 'util/platform_ex.dart';
 
+// ignore: omit_obvious_property_types
 bool firstRun = false;
 
 Future<void> main(List<String> args) async {
@@ -61,16 +62,16 @@ Future<void> main(List<String> args) async {
 
       // BlockingUIRunner key
       final blockingUIKey = GlobalKey();
-      final _rootNavKey = GlobalKey<NavigatorState>();
+      final rootNavKey = GlobalKey<NavigatorState>();
 
       runApp(
         ToastificationWrapper(
           child: MaterialApp.router(
             theme: theme,
-            routerConfig: createGoRouter(_rootNavKey),
+            routerConfig: createGoRouter(rootNavKey),
             builder:
                 (context, mainAppWindow) => DesktopBackGesture(
-                  navigatorKey: _rootNavKey,
+                  navigatorKey: rootNavKey,
                   child: Stack(
                     children: [
                       // Added a white border when running on desktop so users can
@@ -130,14 +131,15 @@ ThemeData get theme => ThemeData(
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(foregroundColor: Colors.white),
   ),
-  dialogTheme: const DialogTheme(
-    titleTextStyle: TextStyle(
-      color: Colors.white,
-      fontSize: 20,
-      fontWeight: FontWeight.bold,
-    ),
-    contentTextStyle: TextStyle(color: Colors.white),
-  ),
+  dialogTheme:
+      const DialogTheme(
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+        contentTextStyle: TextStyle(color: Colors.white),
+      ).data,
   colorScheme: ColorScheme.fromSwatch(
         primarySwatch: Colors.deepPurple,
         brightness:
@@ -170,11 +172,11 @@ void initAppLinks() {
   // });
 }
 
-bool initialised = false;
+var _initialised = false;
 Future<void> _initialise(BuildContext context) async {
-  if (!initialised) {
+  if (!_initialised) {
     try {
-      initialised = true;
+      _initialised = true;
       firstRun = await _checkInstall();
       // ignore: use_build_context_synchronously
       await _initDb(context);

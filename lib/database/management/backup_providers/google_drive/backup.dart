@@ -23,9 +23,7 @@ class BackupAuthGoogleScreen extends StatefulWidget {
 class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
   GoogleSignInAccount? _currentUser;
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [drive.DriveApi.driveFileScope],
-  );
+  final _googleSignIn = GoogleSignIn(scopes: [drive.DriveApi.driveFileScope]);
 
   @override
   void initState() {
@@ -63,7 +61,7 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
                 const SizedBox(height: 20),
                 HMBButton(
                   label: 'Upload File to Google Drive',
-                  onPressed: () async => _uploadFile(context),
+                  onPressed: () => _uploadFile(context),
                 ),
               ],
             ),

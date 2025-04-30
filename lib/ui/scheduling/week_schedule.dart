@@ -41,7 +41,7 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
   late final System system;
   late final bool showWeekends;
   late final OperatingHours operatingHours;
-  late bool hasActivitiesInExtendedHours;
+  late bool _hasActivitiesInExtendedHours;
   late LocalDate currentDate;
 
   @override
@@ -83,7 +83,7 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
       endOfWeek,
     );
 
-    var _hasActivitiesInExtendedHours = false;
+    _hasActivitiesInExtendedHours = false;
 
     final eventData = <CalendarEventData<JobActivityEx>>[];
     for (final jobActivity in jobActivities) {
@@ -102,8 +102,6 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
         )).eventData.copyWith(titleStyle: style, descriptionStyle: style),
       );
     }
-
-    hasActivitiesInExtendedHours = _hasActivitiesInExtendedHours;
 
     /// Occasionally when moving this can get called
     /// after we are demounted.
@@ -148,11 +146,11 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
                 showWeekends:
                     widget.showExtendedHours ||
                     showWeekends ||
-                    hasActivitiesInExtendedHours,
+                    _hasActivitiesInExtendedHours,
                 backgroundColor: Colors.black,
                 headerStringBuilder: widget.dateStringBuilder,
                 eventTileBuilder: _defaultEventTileBuilder,
-                onPageChange: (date, index) async => _onPageChange(date),
+                onPageChange: (date, index) => _onPageChange(date),
                 onDateTap: (date) async {
                   await widget.addActivity(context, date, widget.defaultJob);
                   await _loadActivitiesForWeek();
@@ -173,14 +171,14 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
   }
 
   int _getEndHour() {
-    if (widget.showExtendedHours || hasActivitiesInExtendedHours) {
+    if (widget.showExtendedHours || _hasActivitiesInExtendedHours) {
       return 24;
     }
     return min(24, _getLatestFinish(currentDate) + 1);
   }
 
   int _getStartHour() {
-    if (widget.showExtendedHours || hasActivitiesInExtendedHours) {
+    if (widget.showExtendedHours || _hasActivitiesInExtendedHours) {
       return 0;
     }
     return max(0, _getEarliestStart(currentDate) - 1);

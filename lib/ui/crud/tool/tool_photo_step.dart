@@ -15,6 +15,6 @@ class ToolPhotoStep extends WizardStep {
     tool: wizard.tool!,
     comment: 'Tool Photo',
     title: 'CaptureTool Photo',
-    onCaptured: (photo) async => DaoPhoto().insert(photo),
+    onCaptured: (photo) => DaoPhoto().insert(photo),
   );
 }

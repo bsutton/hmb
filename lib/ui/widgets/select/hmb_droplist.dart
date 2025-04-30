@@ -72,7 +72,7 @@ class _HMBDroplist<T> extends StatefulWidget {
 
 class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
   T? _selectedItem;
-  bool _loading = true;
+  var _loading = true;
 
   @override
   void initState() {

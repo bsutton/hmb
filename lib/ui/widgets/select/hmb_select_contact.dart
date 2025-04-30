@@ -30,10 +30,10 @@ class HMBSelectContact extends StatefulWidget {
 }
 
 class HMBSelectContactState extends State<HMBSelectContact> {
-  Future<Contact?> _getInitialContact() async =>
+  Future<Contact?> _getInitialContact() =>
       DaoContact().getById(widget.selectedContact.contactId);
 
-  Future<List<Contact>> _getContacts(String? filter) async =>
+  Future<List<Contact>> _getContacts(String? filter) =>
       DaoContact().getByCustomer(widget.customer?.id);
 
   void _onContactChanged(Contact? newValue) {
@@ -74,7 +74,7 @@ class HMBSelectContactState extends State<HMBSelectContact> {
               title: 'Contact',
               selectedItem: _getInitialContact,
               onChanged: _onContactChanged,
-              items: (filter) async => _getContacts(filter),
+              items: _getContacts,
               format: (contact) => ' ${contact.firstName} ${contact.surname}',
               required: false,
             ),

@@ -30,5 +30,5 @@ class CliDatabaseFactory implements local.HMBDatabaseFactory {
   Future<Database> openDatabase(
     String path, {
     required OpenDatabaseOptions options,
-  }) async => databaseFactory.openDatabase(path, options: options);
+  })  => databaseFactory.openDatabase(path, options: options);
 }

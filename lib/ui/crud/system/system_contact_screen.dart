@@ -134,7 +134,7 @@ class SystemContactInformationScreenState
         body: Column(
           children: [
             SaveAndClose(
-              onSave: ({required close}) async => save(close: close),
+              onSave: save,
               showSaveOnly: false,
               onCancel: () async => context.go('/jobs'),
             ),

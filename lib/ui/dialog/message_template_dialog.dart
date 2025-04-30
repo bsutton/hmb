@@ -24,7 +24,7 @@ class MessageTemplateDialog extends StatefulWidget {
 Future<SelectedMessageTemplate?> showMessageTemplateDialog(
   BuildContext context, {
   required SourceContext sourceContext,
-}) async => Navigator.of(context).push(
+}) => Navigator.of(context).push(
   MaterialPageRoute(
     builder: (context) => MessageTemplateDialog(sourceContext: sourceContext),
   ),
@@ -38,7 +38,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   final Map<String, PlaceHolder<dynamic>> placeholders = {};
 
   late TabController _tabController;
-  final TextEditingController _messageController = TextEditingController();
+  final _messageController = TextEditingController();
 
   @override
   Future<void> asyncInitState() async {

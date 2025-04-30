@@ -113,7 +113,7 @@ Future<void> _executeScript(
       continue;
     }
     print('running: $statement');
-    await db.transaction((txn) async => txn.execute(statement));
+    await db.transaction((txn)  => txn.execute(statement));
   }
 }
 

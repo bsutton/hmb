@@ -18,7 +18,7 @@ class BackupScreen extends StatefulWidget {
 }
 
 class _BackupScreenState extends State<BackupScreen> {
-  bool _includePhotos = false;
+  var _includePhotos = false;
 
   @override
   void initState() {

@@ -29,7 +29,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   List<Milestone> milestones = [];
   final daoMilestonePayment = DaoMilestone();
   Money totalAllocated = MoneyEx.zero;
-  String errorMessage = '';
+  var _errorMessage = '';
   int? editingMilestoneId; // Track which milestone is currently being edited
 
   @override
@@ -48,19 +48,19 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     final difference = quote.totalAmount - totalAllocated;
 
     if (milestones.isEmpty) {
-      errorMessage = 'Add a milestone to begin';
+      _errorMessage = 'Add a milestone to begin';
       return;
     }
     if (!difference.isZero) {
       if (difference.isNegative) {
-        errorMessage =
+        _errorMessage =
             'Total milestone amounts exceed the Quotation Total by ${-difference}';
       } else {
-        errorMessage =
+        _errorMessage =
             'Total milestone amounts are less than the Quote total by $difference';
       }
     } else {
-      errorMessage = '';
+      _errorMessage = '';
     }
   }
 
@@ -124,7 +124,9 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     final count = uneditedMilestones.length;
     final amountPerMilestone =
         count > 0
-            ? remainingForUnedited.divideByFixed(Fixed.fromInt(count, decimalDigits: 0))
+            ? remainingForUnedited.divideByFixed(
+              Fixed.fromInt(count, decimalDigits: 0),
+            )
             : MoneyEx.zero;
 
     for (final milestone in uneditedMilestones) {
@@ -215,7 +217,10 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   }
 
   /// Called by a tile when it enters or leaves edit mode.
-  void _onEditingStatusChanged({required Milestone milestone, required bool isEditing}) {
+  void _onEditingStatusChanged({
+    required Milestone milestone,
+    required bool isEditing,
+  }) {
     setState(() {
       editingMilestoneId = isEditing ? milestone.id : null;
     });
@@ -242,11 +247,11 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
                 padding: const EdgeInsets.all(16),
                 child: HMBText('Quote Total: ${quote.totalAmount}'),
               ),
-              if (errorMessage.isNotEmpty)
+              if (_errorMessage.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    errorMessage,
+                    _errorMessage,
                     style: const TextStyle(color: Colors.red),
                   ),
                 ),

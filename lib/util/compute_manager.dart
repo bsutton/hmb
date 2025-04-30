@@ -23,13 +23,13 @@ class ComputeManager {
   static ComputeManager? _self;
 
   final int maxConcurrentTasks;
-  int _runningTasks = 0;
+  var _runningTasks = 0;
   final Queue<ComputeTask> _taskQueue = Queue();
 
   Future<String?> enqueueCompute(
     ComputeCallback<ThumbnailPaths, String?> function,
     ThumbnailPaths message,
-  ) async {
+  ) {
     final completer = Completer<String?>();
     final task = ComputeTask(function, message, completer);
     _taskQueue.add(task);

@@ -17,7 +17,7 @@ class JobFilterWidget extends StatefulWidget {
 }
 
 class _JobFilterWidgetState extends State<JobFilterWidget> {
-  bool _filterLastActive = true;
+  var _filterLastActive = true;
 
   @override
   void initState() {
@@ -54,7 +54,7 @@ class _JobFilterWidgetState extends State<JobFilterWidget> {
       HMBDroplistMultiSelect<Job>(
         title: 'Select Jobs',
         initialItems: () async => June.getState(SelectedJobs.new).selected,
-        items: (filter) async => DaoJob().getByFilter(filter),
+        items: (filter) => DaoJob().getByFilter(filter),
         format: (job) => job.summary,
         onChanged: (job) {
           setState(() {

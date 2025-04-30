@@ -20,7 +20,7 @@ class ToolListScreen extends StatefulWidget {
 }
 
 class _ToolListScreenState extends State<ToolListScreen> {
-  int _refreshCounter = 0;
+  var _refreshCounter = 0;
 
   Future<void> _startStockTake(BuildContext context) async {
     await ToolStockTakeWizard.start(
@@ -43,7 +43,7 @@ class _ToolListScreenState extends State<ToolListScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: HMBButton.withIcon(
-            onPressed: () async => _startStockTake(context),
+            onPressed: () => _startStockTake(context),
             label: 'Start Stock Take',
             icon: const Icon(Icons.inventory),
           ),
@@ -55,7 +55,7 @@ class _ToolListScreenState extends State<ToolListScreen> {
       pageTitle: 'Tools',
       dao: DaoTool(),
       title: (entity) => HMBTextHeadline2(entity.name),
-      fetchList: (filter) async => DaoTool().getByFilter(filter),
+      fetchList: (filter) => DaoTool().getByFilter(filter),
       onEdit: (tool) => ToolEditScreen(tool: tool),
       cardHeight: 470,
       details: (entity) {

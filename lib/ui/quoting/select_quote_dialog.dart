@@ -15,18 +15,18 @@ class SelectQuoteDialog extends StatefulWidget {
   @override
   _SelectQuoteDialogState createState() => _SelectQuoteDialogState();
 
-  static Future<Quote?> show(BuildContext context) async => showDialog<Quote?>(
+  static Future<Quote?> show(BuildContext context) => showDialog<Quote?>(
     context: context,
     builder: (context) => const SelectQuoteDialog(),
   );
 }
 
 class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
-  bool showAllQuotes = false;
-  bool showQuotesWithNoBillableItems = false;
+  var _showAllQuotes = false;
+  var _showQuotesWithNoBillableItems = false;
 
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  final _searchController = TextEditingController();
+  var _searchQuery = '';
 
   @override
   void initState() {
@@ -49,8 +49,8 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
   }
 
   Future<List<CustomerAndQuote>> _fetchQuotes() => CustomerAndQuote.getQuotes(
-    showAllQuotes: showAllQuotes,
-    showQuotesWithNoBillableItems: showQuotesWithNoBillableItems,
+    showAllQuotes: _showAllQuotes,
+    showQuotesWithNoBillableItems: _showQuotesWithNoBillableItems,
   );
 
   List<CustomerAndQuote> _filterQuotes(List<CustomerAndQuote> quotes) {
@@ -93,20 +93,20 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
               children: [
                 CheckboxListTile(
                   title: const Text('Show all quotes'),
-                  value: showAllQuotes,
+                  value: _showAllQuotes,
                   onChanged: (value) {
                     setState(() {
-                      showAllQuotes = value ?? false;
+                      _showAllQuotes = value ?? false;
                     });
                   },
                   controlAffinity: ListTileControlAffinity.leading,
                 ),
                 CheckboxListTile(
                   title: const Text('Show quotes with no billable items'),
-                  value: showQuotesWithNoBillableItems,
+                  value: _showQuotesWithNoBillableItems,
                   onChanged: (value) {
                     setState(() {
-                      showQuotesWithNoBillableItems = value ?? false;
+                      _showQuotesWithNoBillableItems = value ?? false;
                     });
                   },
                   controlAffinity: ListTileControlAffinity.leading,

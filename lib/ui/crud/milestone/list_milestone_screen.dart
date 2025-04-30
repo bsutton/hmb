@@ -111,7 +111,7 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
       toolbarHeight: 80,
       automaticallyImplyLeading: false,
       title: HMBSearchWithAdd(
-        onSearch: (filter) async {
+        onSearch: (filter) {
           this.filter = filter?.toLowerCase();
           _summaries = _fetchMilestoneSummaries();
           setState(() {});

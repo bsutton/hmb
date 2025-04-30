@@ -34,7 +34,7 @@ class InvoiceEditScreen extends StatefulWidget {
 }
 
 class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
-  final XeroApi _xeroApi = XeroApi();
+  final _xeroApi = XeroApi();
   late final int invoiceId;
   late Future<InvoiceDetails> _invoiceDetails;
 
@@ -88,7 +88,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                   children: [
                     HMBButton(
                       label: 'Upload to Xero',
-                      onPressed: () async {
+                      onPressed: () {
                         BlockingUI().run(() async {
                           await _uploadInvoiceToXero();
                         }, label: 'Uploading Invoice');
@@ -130,12 +130,11 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                           Text('Total: ${line.lineTotal}'),
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed:
-                                () async => _editInvoiceLine(context, line),
+                            onPressed: () => _editInvoiceLine(context, line),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () async => _deleteInvoiceLine(line),
+                            onPressed: () => _deleteInvoiceLine(line),
                           ),
                         ],
                       ),

@@ -40,7 +40,7 @@ class DimensionWidget extends StatefulWidget {
 class _DimensionWidgetState extends State<DimensionWidget> {
   // Define the specific item types that should trigger
   // the dimension and units dropdown
-  final List<String> _itemTypesWithDimensions = [
+  final _itemTypesWithDimensions = <String>[
     'Materials - buy',
     'Materials - stock',
   ];
@@ -113,6 +113,7 @@ class _DimensionWidgetState extends State<DimensionWidget> {
                     selectedItem: () async => selectedUnit,
                     format: (unit) => unit.name,
                     items:
+                        // ignore: unnecessary_async
                         (filter) async => getUnitsForMeasurementType(
                           selectedMeasurementTypeState.selectedOrDefault,
                         ),

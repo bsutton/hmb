@@ -41,7 +41,7 @@ class DaoQuoteLine extends Dao<QuoteLine> {
     );
   }
 
-  Future<int> deleteByQuoteId(int quoteId, [Transaction? transaction]) async {
+  Future<int> deleteByQuoteId(int quoteId, [Transaction? transaction]) {
     final db = withinTransaction(transaction);
     return db.delete(tableName, where: 'quote_id = ?', whereArgs: [quoteId]);
   }
@@ -49,7 +49,7 @@ class DaoQuoteLine extends Dao<QuoteLine> {
   Future<int> deleteByQuoteLineGroupId(
     int quoteLineGroupId, [
     Transaction? transaction,
-  ]) async {
+  ])  {
     final db = withinTransaction(transaction);
     return db.delete(
       tableName,

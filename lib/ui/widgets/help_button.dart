@@ -73,7 +73,7 @@ class HelpButton extends StatelessWidget {
   Widget build(BuildContext context) => IconButton(
     icon: const Icon(Icons.help_outline),
     tooltip: tooltip,
-    onPressed: () async => _showHelpDialog(context),
+    onPressed: () => _showHelpDialog(context),
   );
 }
 

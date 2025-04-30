@@ -36,7 +36,7 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
   Job? selectedJob;
   Customer? selectedCustomer;
   String? filterText;
-  final TextEditingController _filterController = TextEditingController();
+  final _filterController = TextEditingController();
 
   @override
   Future<void> asyncInitState() async {
@@ -143,7 +143,7 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
             children: [
               HMBDroplist<Job>(
                 title: 'Filter by Job',
-                items: (filter) async => DaoJob().getActiveJobs(filter),
+                items: (filter) => DaoJob().getActiveJobs(filter),
                 format: (job) => job.summary,
                 required: false,
                 selectedItem: () async => selectedJob,
@@ -157,7 +157,7 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
               const SizedBox(height: 8),
               HMBDroplist<Customer>(
                 title: 'Filter by Customer',
-                items: (filter) async => DaoCustomer().getByFilter(filter),
+                items: (filter) => DaoCustomer().getByFilter(filter),
                 format: (customer) => customer.name,
                 required: false,
                 selectedItem: () async => selectedCustomer,

@@ -30,9 +30,9 @@ class GoogleDriveBackupScreen extends StatefulWidget {
 
 class _GoogleDriveBackupScreenState
     extends DeferredState<GoogleDriveBackupScreen> {
-  bool _isLoading = false;
-  String _stageDescription = '';
-  String _photoStageDescription = '';
+  var _isLoading = false;
+  var _stageDescription = '';
+  var _photoStageDescription = '';
 
   late final BackupProvider _provider;
   late Future<DateTime?> _lastBackupFuture;
@@ -221,7 +221,7 @@ class _GoogleDriveBackupScreenState
   BackupProvider _getProvider() =>
       GoogleDriveBackupProvider(FlutterDatabaseFactory());
 
-  bool syncRunning = false;
+  var _syncRunning = false;
 
   List<Widget> _buildPhotoSyncSection() => [
     // Sync Photos Button
@@ -231,10 +231,10 @@ class _GoogleDriveBackupScreenState
       onPressed: () async {
         await WakelockPlus.enable();
         try {
-          syncRunning = true;
+          _syncRunning = true;
           await _provider.syncPhotos();
         } finally {
-          syncRunning = false;
+          _syncRunning = false;
           await WakelockPlus.disable();
         }
       },
@@ -243,7 +243,7 @@ class _GoogleDriveBackupScreenState
       const SizedBox(height: 8),
       Text(_photoStageDescription, style: const TextStyle(fontSize: 16)),
     ],
-    if (!syncRunning)
+    if (!_syncRunning)
       FutureBuilderEx<List<PhotoPayload>>(
         // ignore: discarded_futures
         future: DaoPhoto().getUnsyncedPhotos(),

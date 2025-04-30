@@ -32,8 +32,8 @@ class HMBDroplistDialog<T> extends StatefulWidget {
 
 class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
   List<T>? _items;
-  bool _loading = true;
-  String _filter = '';
+  var _loading = true;
+  var _filter = '';
 
   final _searchController = TextEditingController();
 

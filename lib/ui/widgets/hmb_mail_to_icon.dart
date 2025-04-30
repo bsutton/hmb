@@ -20,8 +20,7 @@ class HMBMailToIcon extends StatelessWidget {
         iconSize: 22,
         icon: const Icon(Icons.email),
         onPressed:
-            () async =>
-                Strings.isEmpty(email) ? null : _sendEmail(context, email!),
+            () => Strings.isEmpty(email) ? null : _sendEmail(context, email!),
         color: Strings.isEmpty(email) ? Colors.grey : Colors.blue,
         tooltip: 'Send an Email',
       ),
@@ -29,7 +28,7 @@ class HMBMailToIcon extends StatelessWidget {
         iconSize: 22,
         icon: const Icon(Icons.copy),
         onPressed:
-            () async =>
+            () =>
                 Strings.isEmpty(email)
                     ? null
                     : clipboardCopyTo(context, email!),

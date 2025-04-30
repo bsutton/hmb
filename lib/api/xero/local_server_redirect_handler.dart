@@ -18,27 +18,25 @@ class LocalServerRedirectHandler extends RedirectHandler {
   /// https://developer.xero.com/ under the list
   /// fo Redirect URIs.
   /// http://localhost:12335/xero/auth_complete
-  static int portNo = 12335;
+  static const portNo = 12335;
   final int port;
-  bool running = false;
+  var _running = false;
   HttpServer? server;
 
   // Singleton instance for the server
-  static final LocalServerRedirectHandler _instance =
-      LocalServerRedirectHandler._(portNo);
+  static final _instance = LocalServerRedirectHandler._(portNo);
 
   // Stream controller for managing subscriptions to auth notifications
-  final StreamController<Uri> _authStreamController =
-      StreamController<Uri>.broadcast();
+  final _authStreamController = StreamController<Uri>.broadcast();
 
   // Start the server
   @override
   Future<void> start() async {
-    if (running) {
+    if (_running) {
       return;
     }
 
-    running = true;
+    _running = true;
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
     _log('listening on http://${server!.address.host}:${server!.port}');
 
@@ -73,7 +71,7 @@ class LocalServerRedirectHandler extends RedirectHandler {
   @override
   Future<void> stop() async {
     _log('Stopping');
-    running = false;
+    _running = false;
 
     /// we let the server close gracefully so the
     /// last response is sent before we close down.

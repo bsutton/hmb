@@ -13,7 +13,7 @@ class JoinAdaptorSupplierSite implements DaoJoinAdaptor<Site, Supplier> {
   }
 
   @override
-  Future<List<Site>> getByParent(Supplier? supplier) async =>
+  Future<List<Site>> getByParent(Supplier? supplier)  =>
       DaoSite().getBySupplier(supplier);
 
   @override

@@ -23,7 +23,8 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     Future<List<T>> Function(String? filter)? fetchList,
     super.key,
   }) {
-    _fetchList = fetchList ?? (_) async => dao.getAll();
+    // ignore: discarded_futures
+    _fetchList = fetchList ?? (_) => dao.getAll();
   }
 
   final String pageTitle;
@@ -45,7 +46,7 @@ class EntityListScreenState<T extends Entity<T>>
   late List<T> entityList = [];
   String? filterOption;
   late final TextEditingController filterController;
-  final ScrollController _scrollController = ScrollController();
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -213,7 +214,7 @@ class EntityListScreenState<T extends Entity<T>>
       context: context,
       title: 'Delete Confirmation',
       message: 'Are you sure you want to delete this item?',
-      onConfirmed: () async => _delete(entity),
+      onConfirmed: () => _delete(entity),
     );
   }
 

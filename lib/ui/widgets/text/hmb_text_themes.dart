@@ -275,7 +275,7 @@ class HMBTextBody extends StatelessWidget {
   HMBTextBody(this.text, {super.key, this.color = HMBColors.textPrimary})
     : _style = style.copyWith(color: color);
   static const fontSize = 16.0;
-  static const TextStyle style = TextStyle(fontSize: fontSize);
+  static const style = TextStyle(fontSize: fontSize);
 
   final TextStyle _style;
   final String text;
@@ -347,7 +347,7 @@ class HMBTextNotice extends StatelessWidget {
   const HMBTextNotice(this.text, {super.key});
   static const fontSize = 14.0;
   final String text;
-  static const TextStyle noticeStyle = TextStyle(
+  static const noticeStyle = TextStyle(
     fontSize: fontSize,
     fontWeight: FontWeight.bold,
   );
@@ -368,7 +368,7 @@ class HMBTextError extends StatelessWidget {
   const HMBTextError(this.text, {super.key});
   static const fontSize = 14.0;
   final String text;
-  static const TextStyle noticeStyle = TextStyle(
+  static const noticeStyle = TextStyle(
     fontSize: fontSize,
     fontWeight: FontWeight.bold,
     color: HMBColors.errorText,
@@ -417,7 +417,7 @@ class HMBTextListItem extends StatelessWidget {
   final String text;
   final Color? color;
   static const fontSize = 16.0;
-  static const TextStyle style = TextStyle(fontSize: fontSize);
+  static const style = TextStyle(fontSize: fontSize);
 
   @override
   Widget build(BuildContext context) =>
@@ -443,7 +443,7 @@ class HMBTextListItemBold extends StatelessWidget {
   static const fontSize = 16.0;
   final String text;
   final Color color;
-  static const TextStyle style = TextStyle(
+  static const style = TextStyle(
     fontSize: fontSize,
     fontWeight: FontWeight.bold,
   );
@@ -493,7 +493,7 @@ class HMBTextChip extends StatelessWidget {
   HMBTextChip(this.text, {super.key, this.color = HMBColors.chipTextColor})
     : _style = style.copyWith(color: color);
   static const fontSize = 15.0;
-  static const TextStyle style = TextStyle(fontSize: fontSize);
+  static const style = TextStyle(fontSize: fontSize);
 
   final TextStyle _style;
   final String text;

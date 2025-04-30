@@ -196,6 +196,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
 
   Widget _buildCard(C entity, BuildContext context) => HMBCrudListCard(
     title: widget.title(entity),
+    // ignore: unnecessary_async
     onDelete: () async => _confirmDelete(entity),
     onEdit: () => widget.onEdit(entity),
     canEdit:
@@ -214,7 +215,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
       context: context,
       title: 'Delete Confirmation',
       message: 'Are you sure you want to delete this item?',
-      onConfirmed: () async => _delete(entity),
+      onConfirmed: () => _delete(entity),
     );
   }
 

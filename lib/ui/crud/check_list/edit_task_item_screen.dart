@@ -64,7 +64,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   late TextEditingController _dimension2Controller;
   late TextEditingController _dimension3Controller;
   late TextEditingController _urlController;
-  bool _manualCharge = false;
+  var _manualCharge = false;
 
   late FocusNode _descriptionFocusNode;
 
@@ -176,7 +176,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
           key: globalKey,
           entityName: 'Task Item',
           dao: DaoTaskItem(),
-          onInsert: (taskItem) async => DaoTaskItem().insert(taskItem!),
+          onInsert: (taskItem) => DaoTaskItem().insert(taskItem!),
           entityState: this,
           editor:
               (taskItem) => Column(
@@ -220,10 +220,10 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       HMBDroplist<TaskItemType>(
         title: 'Item Type',
         selectedItem:
-            () async => DaoTaskItemType().getById(
+            () => DaoTaskItemType().getById(
               June.getState(SelectedCheckListItemType.new).selected,
             ),
-        items: (filter) async => DaoTaskItemType().getByFilter(filter),
+        items: (filter) => DaoTaskItemType().getByFilter(filter),
         format: (checklistItemType) => checklistItemType.name,
         onChanged: (itemType) {
           setState(() {
@@ -243,7 +243,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
                       June.getState(SelectedSupplier.new).selected,
                     )
                     : null,
-        items: (filter) async => DaoSupplier().getByFilter(filter),
+        items: (filter) => DaoSupplier().getByFilter(filter),
         format: (supplier) => supplier.name,
         onChanged: (supplier) {
           setState(() {
@@ -472,11 +472,14 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     measurementType:
         June.getState(SelectedMeasurementType.new).selectedOrDefault,
     dimension1:
-        Fixed.tryParse(_dimension1Controller.text, decimalDigits: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension1Controller.text, decimalDigits: 3) ??
+        Fixed.zero,
     dimension2:
-        Fixed.tryParse(_dimension2Controller.text, decimalDigits: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension2Controller.text, decimalDigits: 3) ??
+        Fixed.zero,
     dimension3:
-        Fixed.tryParse(_dimension3Controller.text, decimalDigits: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension3Controller.text, decimalDigits: 3) ??
+        Fixed.zero,
     units: June.getState(SelectedUnits.new).selectedOrDefault,
     url: _urlController.text,
     supplierId: June.getState(SelectedSupplier.new).selected,
@@ -506,11 +509,14 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     measurementType:
         June.getState(SelectedMeasurementType.new).selectedOrDefault,
     dimension1:
-        Fixed.tryParse(_dimension1Controller.text, decimalDigits: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension1Controller.text, decimalDigits: 3) ??
+        Fixed.zero,
     dimension2:
-        Fixed.tryParse(_dimension2Controller.text, decimalDigits: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension2Controller.text, decimalDigits: 3) ??
+        Fixed.zero,
     dimension3:
-        Fixed.tryParse(_dimension3Controller.text, decimalDigits: 3) ?? Fixed.zero,
+        Fixed.tryParse(_dimension3Controller.text, decimalDigits: 3) ??
+        Fixed.zero,
     units: June.getState(SelectedUnits.new).selectedOrDefault,
     url: _urlController.text,
     supplierId: June.getState(SelectedSupplier.new).selected,

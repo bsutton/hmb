@@ -28,8 +28,8 @@ class SiteListScreen<P extends Entity<P>> extends StatelessWidget {
     entityNameSingular: 'Site',
     parentTitle: parentTitle,
     dao: DaoSite(),
-    onDelete: (site) async => daoJoin.deleteFromParent(site!, parent.parent!),
-    onInsert: (site) async => daoJoin.insertForParent(site!, parent.parent!),
+    onDelete: (site) => daoJoin.deleteFromParent(site!, parent.parent!),
+    onInsert: (site) => daoJoin.insertForParent(site!, parent.parent!),
     // ignore: discarded_futures
     fetchList: () => daoJoin.getByParent(parent.parent),
     // title: (site) => Text('${site.addressLine1} ${site.suburb}') as Widget,

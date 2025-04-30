@@ -46,14 +46,14 @@ class _MilestoneTileState extends State<MilestoneTile> {
   late TextEditingController percentageController;
   late TextEditingController amountController;
 
-  bool isEditable = true;
-  bool isInEditMode = false;
-  bool changing = false;
+  var _isEditable = true;
+  var _isInEditMode = false;
+  var _changing = false;
 
   @override
   void initState() {
     super.initState();
-    isEditable = widget.milestone.invoiceId == null;
+    _isEditable = widget.milestone.invoiceId == null;
     descriptionController = TextEditingController(
       text: widget.milestone.milestoneDescription,
     );
@@ -74,8 +74,8 @@ class _MilestoneTileState extends State<MilestoneTile> {
   }
 
   void _enterEditMode() {
-    if (!isInEditMode) {
-      setState(() => isInEditMode = true);
+    if (!_isInEditMode) {
+      setState(() => _isInEditMode = true);
       widget.onEditingStatusChanged(
         milestone: widget.milestone,
         isEditing: true,
@@ -87,27 +87,27 @@ class _MilestoneTileState extends State<MilestoneTile> {
 
   void _onPercentageChanged() {
     _enterEditMode();
-    if (!changing) {
-      changing = true;
+    if (!_changing) {
+      _changing = true;
       final percentage =
           Percentage.tryParse(percentageController.text) ?? Percentage.zero;
 
       /// Calc the amount based on the percentage just entered by the user.
       final amount = widget.quoteTotal.multipliedByPercentage(percentage);
       amountController.text = amount.toString();
-      changing = false;
+      _changing = false;
     }
   }
 
   void _onAmountChanged() {
     _enterEditMode();
-    if (!changing) {
-      changing = true;
+    if (!_changing) {
+      _changing = true;
       final amount = MoneyEx.tryParse(amountController.text);
       // Update the percentage based on the amount the user has just entered.
       final percentage = amount.percentageOf(widget.quoteTotal);
       percentageController.text = percentage.toString();
-      changing = false;
+      _changing = false;
     }
   }
 
@@ -131,7 +131,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
 
     await widget.onInvoice(widget.milestone);
     HMBToast.info('Invoice created: #${widget.milestone.invoiceId}');
-    setState(() => isEditable = false);
+    setState(() => _isEditable = false);
   }
 
   void _onSavePressed() {
@@ -153,7 +153,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
     widget.milestone.paymentPercentage = pct;
 
     widget.milestone.edited = true;
-    setState(() => isInEditMode = false);
+    setState(() => _isInEditMode = false);
     widget.onEditingStatusChanged(
       milestone: widget.milestone,
       isEditing: false,
@@ -193,7 +193,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(labelText: 'Description'),
-                enabled: isEditable && !disabled,
+                enabled: _isEditable && !disabled,
                 onChanged: (_) => _onDescriptionChanged(),
               ),
               Row(
@@ -207,7 +207,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      enabled: isEditable && !disabled,
+                      enabled: _isEditable && !disabled,
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
                           RegExp(r'^\d*\.?\d*'),
@@ -224,7 +224,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      enabled: isEditable && !disabled,
+                      enabled: _isEditable && !disabled,
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
                           RegExp(r'^\d*\.?\d*'),
@@ -240,20 +240,20 @@ class _MilestoneTileState extends State<MilestoneTile> {
           trailing: Wrap(
             spacing: 8,
             children: [
-              if (isInEditMode)
+              if (_isInEditMode)
                 IconButton(
                   icon: const Icon(Icons.save, color: Colors.green),
                   onPressed: disabled ? null : _onSavePressed,
                   tooltip: 'Save changes',
                 )
               else ...[
-                if (isEditable)
+                if (_isEditable)
                   IconButton(
                     icon: const Icon(Icons.receipt, color: Colors.blue),
                     onPressed: disabled ? null : _onInvoicePressed,
                     tooltip: 'Invoice this Milestone',
                   ),
-                if (isEditable)
+                if (_isEditable)
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: disabled ? null : _onDeletePressed,

@@ -39,6 +39,7 @@ String formatLocalTime(LocalTime time, [String format = 'h:mm:ss a']) =>
 String formatTime(DateTime date, [String format = 'h:mm:ss a']) =>
     DateFormat(format).format(date);
 
+// ignore: omit_obvious_property_types
 DateFormat dateFormat = DateFormat('yyyy-MM-dd hh:mm a');
 
 DateTime? parseDateTime(String? value) => dateFormat.tryParse(value ?? '');

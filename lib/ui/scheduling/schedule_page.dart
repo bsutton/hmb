@@ -95,7 +95,7 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
 ///
 class SchedulePageState extends DeferredState<SchedulePage> {
   late ScheduleView selectedView;
-  bool showExtendedHours = false;
+  var _showExtendedHours = false;
 
   final monthKey = GlobalKey<MonthViewState<JobActivityEx>>();
   final weekKey = GlobalKey<WeekViewState>();
@@ -105,16 +105,16 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   // late final PageController? _pageControllerX;
 
   /// The date that corresponds to the first date on currently displayed page
-  LocalDate currentFirstDateOnPage = LocalDate.today();
+  var _currentFirstDateOnPage = LocalDate.today();
 
   /// The current date that the user is focused on.
-  /// Used to help select the [currentFirstDateOnPage] when
+  /// Used to help select the [_currentFirstDateOnPage] when
   /// moving from a broader date range (e.g. month) to a narrow
   /// date range (e.g. day)
-  LocalDate focusDate = LocalDate.today();
+  var _focusDate = LocalDate.today();
 
   /// A guard to prevent infinite `_onPageChanged` loops if we call jumpToPage inside it.
-  bool _isAdjustingPage = false;
+  var _isAdjustingPage = false;
 
   late final OperatingHours operatingHours;
 
@@ -154,7 +154,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   /// - If [SchedulePage.initialActivityId] is provided, fetch that activities' date from DB.
   /// - Otherwise, use [DateTime.now()].
   Future<void> _initPage() async {
-    currentFirstDateOnPage = await operatingHours.getNextOpenDate(
+    _currentFirstDateOnPage = await operatingHours.getNextOpenDate(
       LocalDate.today(),
     );
 
@@ -163,16 +163,16 @@ class SchedulePageState extends DeferredState<SchedulePage> {
       final dao = DaoJobActivity();
       final activity = await dao.getById(widget.initialActivityId);
       if (activity != null) {
-        currentFirstDateOnPage = activity.start.toLocalDate();
+        _currentFirstDateOnPage = activity.start.toLocalDate();
       }
     }
 
-    if (currentFirstDateOnPage.isBefore(_referenceDate)) {
-      currentFirstDateOnPage = _referenceDate;
+    if (_currentFirstDateOnPage.isBefore(_referenceDate)) {
+      _currentFirstDateOnPage = _referenceDate;
     }
 
-    focusDate = currentFirstDateOnPage;
-    print('focusDate: $focusDate');
+    _focusDate = _currentFirstDateOnPage;
+    print('focusDate: $_focusDate');
 
     // Create the PageController using that initial index
     // _pageControllerX = PageController(initialPage: initialIndex);
@@ -214,24 +214,24 @@ class SchedulePageState extends DeferredState<SchedulePage> {
       MonthSchedule(
         schedulePageState: this,
         monthKey: monthKey,
-        currentFirstDateOnPage,
-        onPageChange: (date) async => _onPageChanged(date),
+        _currentFirstDateOnPage,
+        onPageChange: _onPageChanged,
         defaultJob: widget.defaultJob,
-        showWeekends: showExtendedHours,
+        showWeekends: _showExtendedHours,
       ),
       WeekSchedule(
-        currentFirstDateOnPage,
+        _currentFirstDateOnPage,
         weekKey: weekKey,
         defaultJob: widget.defaultJob,
-        onPageChange: (date) async => _onPageChanged(date),
-        showExtendedHours: showExtendedHours,
+        onPageChange: _onPageChanged,
+        showExtendedHours: _showExtendedHours,
       ),
       DaySchedule(
         dayKey: dayKey,
-        currentFirstDateOnPage,
+        _currentFirstDateOnPage,
         defaultJob: widget.defaultJob,
-        showExtendedHours: showExtendedHours,
-        onPageChange: (date) async => _onPageChanged(date),
+        showExtendedHours: _showExtendedHours,
+        onPageChange: _onPageChanged,
       ),
     ];
 
@@ -273,17 +273,17 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   Future<LocalDate> _onPageChanged(LocalDate targetDate) async {
     // If we just called jumpToDate() internally, skip this invocation.
     if (_isAdjustingPage) {
-      return currentFirstDateOnPage;
+      return _currentFirstDateOnPage;
     }
     print('onPageChanged targetDate $targetDate');
 
     // Determine if user swiped forward or backward
-    final isForward = targetDate.isAfter(currentFirstDateOnPage);
+    final isForward = targetDate.isAfter(_currentFirstDateOnPage);
 
     var skipTo = false;
 
     // Only skip closed days if we are in DAY view & not showExtendedHours
-    if (selectedView == ScheduleView.day && !showExtendedHours) {
+    if (selectedView == ScheduleView.day && !_showExtendedHours) {
       final newDate =
           isForward
               ? (await operatingHours.getNextOpenDate(targetDate))
@@ -299,7 +299,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
     // If we're here, either the date is open or we’re in week/month view.
     // Just update your state to reflect the new date.
     setState(() {
-      currentFirstDateOnPage = targetDate;
+      _currentFirstDateOnPage = targetDate;
     });
 
     if (skipTo) {
@@ -310,9 +310,9 @@ class SchedulePageState extends DeferredState<SchedulePage> {
       await _jumpToDate(targetDate);
       _isAdjustingPage = false;
     }
-    focusDate = currentFirstDateOnPage;
-    print('onPageChanged currentFirstDateOnPage $currentFirstDateOnPage');
-    return currentFirstDateOnPage;
+    _focusDate = _currentFirstDateOnPage;
+    print('onPageChanged currentFirstDateOnPage $_currentFirstDateOnPage');
+    return _currentFirstDateOnPage;
   }
 
   Future<void> _jumpToDate(LocalDate targetDate) async {
@@ -404,7 +404,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
           initialValue: false,
           onToggled: (value) {
             setState(() {
-              showExtendedHours = value;
+              _showExtendedHours = value;
             });
           },
         ),
@@ -417,12 +417,12 @@ class SchedulePageState extends DeferredState<SchedulePage> {
             items: (filter) async => ScheduleView.values,
             format: (view) => view.name,
             onChanged: (view) async {
-              focusDate = await _adjustFocusDate(selectedView);
+              _focusDate = await _adjustFocusDate(selectedView);
               selectedView = view!;
 
               /// Force the new view to the same date
               WidgetsBinding.instance.scheduleFrameCallback((_) async {
-                await _jumpToDate(currentFirstDateOnPage);
+                await _jumpToDate(_currentFirstDateOnPage);
               });
               setState(() {});
             },
@@ -435,16 +435,16 @@ class SchedulePageState extends DeferredState<SchedulePage> {
 
   /// Jump to "today" for whichever view is active
   Future<void> onTodayPage() async {
-    if (showExtendedHours) {
-      currentFirstDateOnPage = LocalDate.today();
+    if (_showExtendedHours) {
+      _currentFirstDateOnPage = LocalDate.today();
     } else {
-      currentFirstDateOnPage = await operatingHours.getNextOpenDate(
+      _currentFirstDateOnPage = await operatingHours.getNextOpenDate(
         LocalDate.today(),
       );
     }
-    print('moving to $currentFirstDateOnPage');
+    print('moving to $_currentFirstDateOnPage');
     _isAdjustingPage = true;
-    await _jumpToDate(currentFirstDateOnPage);
+    await _jumpToDate(_currentFirstDateOnPage);
     _isAdjustingPage = false;
     setState(() {});
   }
@@ -460,25 +460,25 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   }
 
   Future<LocalDate> _adjustFocusDate(ScheduleView fromView) async {
-    final rangeStart = currentFirstDateOnPage;
+    final rangeStart = _currentFirstDateOnPage;
     final LocalDate rangeEnd;
 
     // Determine the end of the range based on the selected view
     switch (fromView) {
       case ScheduleView.month:
-        rangeEnd = currentFirstDateOnPage.addMonths(1).subtractDays(1);
+        rangeEnd = _currentFirstDateOnPage.addMonths(1).subtractDays(1);
       case ScheduleView.week:
-        rangeEnd = currentFirstDateOnPage.addDays(6);
+        rangeEnd = _currentFirstDateOnPage.addDays(6);
       case ScheduleView.day:
-        rangeEnd = currentFirstDateOnPage; // Day view has a single-day range
+        rangeEnd = _currentFirstDateOnPage; // Day view has a single-day range
     }
 
     LocalDate revisedDate;
 
     // If focusDate is within the range, return focusDate
-    if (focusDate.isAfterOrEqual(rangeStart) &&
-        focusDate.isBeforeOrEqual(rangeEnd)) {
-      revisedDate = focusDate;
+    if (_focusDate.isAfterOrEqual(rangeStart) &&
+        _focusDate.isBeforeOrEqual(rangeEnd)) {
+      revisedDate = _focusDate;
     } else {
       // Otherwise, return the start of the range
       revisedDate = rangeStart;
@@ -488,10 +488,10 @@ class SchedulePageState extends DeferredState<SchedulePage> {
       revisedDate = await operatingHours.getNextOpenDate(revisedDate);
     }
 
-    if (focusDate != revisedDate) {
+    if (_focusDate != revisedDate) {
       // we must have changed pages so the first date
       // must change.
-      currentFirstDateOnPage = revisedDate;
+      _currentFirstDateOnPage = revisedDate;
     }
     return revisedDate;
   }

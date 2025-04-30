@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../dao/dao_category.dart';
 import '../../../entity/category.dart';
 import '../../widgets/text/hmb_text_themes.dart';
@@ -13,7 +14,7 @@ class CategoryListScreen extends StatelessWidget {
     pageTitle: 'Categories',
     dao: DaoCategory(),
     title: (entity) => HMBTextHeadline2(entity.name),
-    fetchList: (filter) async => DaoCategory().getByFilter(filter),
+    fetchList: (filter) => DaoCategory().getByFilter(filter),
     onEdit: (category) => CategoryEditScreen(category: category),
     details: (entity) => HMBTextBody(entity.description ?? ''),
   );

@@ -13,9 +13,9 @@ import 'package:path/path.dart';
 ///
 /// For details on installing dcli.
 ///
-void main(List<String> args) async {
+void main(List<String> args) {
   final pathToDb = join(
-  DartProject.self.pathToProjectRoot,
+    DartProject.self.pathToProjectRoot,
     '.dart_tool',
     'sqflite_common_ffi',
     'databases',

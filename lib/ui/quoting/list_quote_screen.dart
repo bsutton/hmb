@@ -23,14 +23,14 @@ class QuoteListScreen extends StatefulWidget {
 class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   // Local list of quotes.
   List<Quote> _quotes = [];
-  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final _listKey = GlobalKey<AnimatedListState>();
 
   Job? selectedJob;
   Customer? selectedCustomer;
   String? filterText;
   // When false (default) do not display approved/rejected quotes.
-  bool includeApprovedRejected = false;
-  final Duration _duration = const Duration(milliseconds: 300);
+  var _includeApprovedRejected = false;
+  final _duration = const Duration(milliseconds: 300);
 
   @override
   Future<void> asyncInitState() async {
@@ -65,7 +65,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       }
       quotes = forCustomer;
     }
-    if (!includeApprovedRejected) {
+    if (!_includeApprovedRejected) {
       quotes =
           quotes
               .where(
@@ -180,7 +180,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       automaticallyImplyLeading: false,
       toolbarHeight: 80,
       title: HMBSearchWithAdd(
-        onSearch: (filter) async => _onFilterChanged(filter ?? ''),
+        onSearch: (filter) => _onFilterChanged(filter ?? ''),
         onAdd: _createQuote,
       ),
     ),
@@ -200,7 +200,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                           labelText: 'Filter Quotes',
                           border: OutlineInputBorder(),
                         ),
-                        onChanged: (value) async => _onFilterChanged(value),
+                        onChanged: _onFilterChanged,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -208,9 +208,9 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                       children: [
                         const Text('Old'),
                         Switch(
-                          value: includeApprovedRejected,
+                          value: _includeApprovedRejected,
                           onChanged: (val) async {
-                            includeApprovedRejected = val;
+                            _includeApprovedRejected = val;
                             await _loadQuotes();
                             setState(() {});
                           },
@@ -246,7 +246,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                                 child: QuoteCard(
                                   key: ValueKey(quote.id),
                                   quote: quote,
-                                  onDelete: () async => _deleteQuote(quote),
+                                  onDelete: () => _deleteQuote(quote),
                                   onStateChanged: _removeQuoteFromList,
                                 ),
                               ),

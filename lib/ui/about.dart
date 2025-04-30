@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:url_launcher/url_launcher.dart'; // Add this import to handle URL launching
@@ -78,7 +80,7 @@ class _AboutScreenState extends State<AboutScreen> {
   }) => [
     Text(description, textAlign: TextAlign.center),
     HMBLinkButton(
-      onPressed: () async => _launchURL(link),
+      onPressed: ()  => unawaited(_launchURL(link)),
       label: label,
       link: link,
     ),

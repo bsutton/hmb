@@ -4,10 +4,10 @@ import 'place_holder.dart';
 
 class JobSummary extends PlaceHolder<Job> {
   JobSummary({required this.jobSource})
-    : super(name: tagName, base: tagBase, source: jobSource);
+    : super(name: tagName, base: _tagBase, source: jobSource);
 
   static String get tagName => 'job.summary';
-  static String tagBase = 'job';
+  static const _tagBase = 'job';
 
   final JobSource jobSource;
 

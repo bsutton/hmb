@@ -48,7 +48,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
   final selectedSupplier = SelectedSupplier();
   final selectedManufacturer = SelectedManufacturer();
   final selectedCategory = SelectedCategory();
-  DateTime selectedDatePurchased = DateTime.now();
+  var _selectedDatePurchased = DateTime.now();
 
   @override
   Future<void> asyncInitState() async {
@@ -67,7 +67,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
     _costController = TextEditingController(
       text: currentEntity?.cost?.toString(),
     );
-    selectedDatePurchased = currentEntity?.datePurchased ?? DateTime.now();
+    _selectedDatePurchased = currentEntity?.datePurchased ?? DateTime.now();
     _photoController = PhotoController<Tool>(
       parent: currentEntity,
       parentType: ParentType.tool,
@@ -151,9 +151,9 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
                   HMBDateTimeField(
                     mode: HMBDateTimeFieldMode.dateOnly,
                     label: 'Date Purchased',
-                    initialDateTime: selectedDatePurchased,
-                    onChanged: (datePurchased) async {
-                      selectedDatePurchased = datePurchased;
+                    initialDateTime: _selectedDatePurchased,
+                    onChanged: (datePurchased) {
+                      _selectedDatePurchased = datePurchased;
                     },
                   ),
                   const SizedBox(height: 16),
@@ -287,7 +287,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
       cost: MoneyEx.tryParse(_costController.text),
       receiptPhotoId: _receiptPhotoId,
       serialNumberPhotoId: _serialNumberPhotoId,
-      datePurchased: selectedDatePurchased,
+      datePurchased: _selectedDatePurchased,
     );
   }
 
@@ -303,7 +303,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
     cost: MoneyEx.tryParse(_costController.text),
     receiptPhotoId: _receiptPhotoId,
     serialNumberPhotoId: _serialNumberPhotoId,
-    datePurchased: selectedDatePurchased,
+    datePurchased: _selectedDatePurchased,
   );
 
   @override

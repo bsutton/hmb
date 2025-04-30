@@ -32,7 +32,7 @@ class DaoTask extends Dao<Task> {
   }
 
   @override
-  Future<int> insert(covariant Task entity, [Transaction? transaction]) async {
+  Future<int> insert(covariant Task entity, [Transaction? transaction]) {
     final task = super.insert(entity, transaction);
 
     return task;
@@ -268,8 +268,7 @@ WHERE ti.id = ?
     return id;
   }
 
-  Future<Money> getHourlyRate(Task task) async =>
-      DaoJob().getHourlyRate(task.jobId);
+  Future<Money> getHourlyRate(Task task) => DaoJob().getHourlyRate(task.jobId);
 
   Future<BillingType> getBillingType(Task task) async {
     final job = await DaoJob().getById(task.jobId);

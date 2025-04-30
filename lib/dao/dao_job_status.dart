@@ -26,8 +26,8 @@ class DaoJobStatus extends Dao<JobStatus> {
     return JobStatus.fromMap(data.first); // Convert the first row to JobStatus
   }
 
-  Future<JobStatus?> getInProgress() async => getByName('In Progress');
-  Future<JobStatus?> getQuoting() async => getByName('Quoting');
+  Future<JobStatus?> getInProgress() => getByName('In Progress');
+  Future<JobStatus?> getQuoting() => getByName('Quoting');
 }
 
 /// Used to notify the UI that the time entry has changed.

@@ -33,8 +33,7 @@ class HMBMapIcon extends StatelessWidget {
           iconSize: 25,
           icon: const Icon(Icons.map),
           onPressed:
-              () async =>
-                  site == null ? null : GoogleMaps.openMap(context, site!),
+              () => site == null ? null : GoogleMaps.openMap(context, site!),
           color: site != null && !site!.isEmpty() ? Colors.blue : Colors.grey,
           tooltip: 'Get Directions',
         ),
@@ -42,7 +41,7 @@ class HMBMapIcon extends StatelessWidget {
           iconSize: 22,
           icon: const Icon(Icons.copy),
           onPressed:
-              () async =>
+              () =>
                   Strings.isEmpty(address)
                       ? null
                       : clipboardCopyTo(context, address),

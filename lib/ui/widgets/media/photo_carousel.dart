@@ -147,9 +147,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
       FloatingActionButton(
         heroTag: 'previousPhotoBtn',
         onPressed:
-            _currentIndex == 0
-                ? null
-                : () async => _scrollToIndex(_currentIndex - 1),
+            _currentIndex == 0 ? null : () => _scrollToIndex(_currentIndex - 1),
         backgroundColor: _currentIndex == 0 ? Colors.grey[700] : Colors.purple,
         child: const Icon(Icons.arrow_back),
       ),
@@ -170,7 +168,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
         onPressed:
             _currentIndex == widget.photos.length - 1
                 ? null
-                : () async => _scrollToIndex(_currentIndex + 1),
+                : () => _scrollToIndex(_currentIndex + 1),
         backgroundColor:
             _currentIndex == widget.photos.length - 1
                 ? Colors.grey[700]

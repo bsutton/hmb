@@ -43,7 +43,7 @@ class HMBCrudListCard extends StatelessWidget {
                   visible: canDelete?.call() ?? true,
                   child: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () async => onDelete(),
+                    onPressed: onDelete,
                   ),
                 ),
               ],
@@ -53,7 +53,7 @@ class HMBCrudListCard extends StatelessWidget {
         ],
       ),
     ),
-    onTap: () async => canEdit?.call() ?? true ? _pushEdit(context) : null,
+    onTap: () => canEdit?.call() ?? true ? _pushEdit(context) : null,
   );
 
   Future<void> _pushEdit(BuildContext context) async {

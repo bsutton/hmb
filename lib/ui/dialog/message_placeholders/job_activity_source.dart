@@ -21,9 +21,7 @@ class JobActivitySource extends Source<JobActivity> {
         (context, jobAndActivity, _) => HMBDroplist<JobActivity>(
           title: 'Activity',
           selectedItem: () async => jobAndActivity.jobActivity,
-          items:
-              (filter) async =>
-                  DaoJobActivity().getByJob(jobAndActivity.job?.id),
+          items: (filter) => DaoJobActivity().getByJob(jobAndActivity.job?.id),
           format:
               (jobActivity) =>
                   jobAndActivity.jobActivity != null

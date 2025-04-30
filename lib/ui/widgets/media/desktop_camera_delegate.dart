@@ -9,9 +9,9 @@ import '../../../ui/widgets/hmb_toast.dart';
 
 class DesktopCameraDelegate extends ImagePickerCameraDelegate {
   List<CameraDescription> _cameras = [];
-  int _cameraId = -1;
-  bool _initialized = false;
-  bool _isTakingPhoto = false;
+  var _cameraId = -1;
+  var _initialized = false;
+  var _isTakingPhoto = false;
   StreamSubscription<CameraErrorEvent>? _errorStreamSubscription;
 
   @override

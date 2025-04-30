@@ -66,7 +66,7 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     dao: DaoSite(),
     entityState: this,
     onInsert:
-        (site) async => widget.daoJoin.insertForParent(site!, widget.parent),
+        (site)  => widget.daoJoin.insertForParent(site!, widget.parent),
     editor:
         (site) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

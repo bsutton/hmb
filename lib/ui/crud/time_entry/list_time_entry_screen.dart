@@ -30,9 +30,9 @@ class TimeEntryListScreen extends StatelessWidget {
         (timeEntry) =>
             TimeEntryEditScreen(task: parent.parent!, timeEntry: timeEntry),
     canEdit: (timeEntry) => !timeEntry.billed,
-    onDelete: (timeEntry) async => DaoTimeEntry().delete(timeEntry!.id),
+    onDelete: (timeEntry) => DaoTimeEntry().delete(timeEntry!.id),
     canDelete: (timeEntry) => !timeEntry.billed,
-    onInsert: (timeEntry) async => DaoTimeEntry().insert(timeEntry!),
+    onInsert: (timeEntry) => DaoTimeEntry().insert(timeEntry!),
     details:
         (timeEntry, details) => Row(
           children: [

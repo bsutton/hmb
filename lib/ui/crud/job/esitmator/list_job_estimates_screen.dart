@@ -20,9 +20,9 @@ class JobEstimatesListScreen extends StatefulWidget {
 class _JobEstimatesListScreenState
     extends DeferredState<JobEstimatesListScreen> {
   late Future<List<CustomerAndJob>> _jobs;
-  bool showOnlyActiveJobs = true;
+  var _showOnlyActiveJobs = true;
 
-  String _searchQuery = '';
+  var _searchQuery = '';
 
   @override
   Future<void> asyncInitState() async {
@@ -48,7 +48,7 @@ class _JobEstimatesListScreenState
 
   Future<List<CustomerAndJob>> _fetchJobs() async {
     List<Job> rawJobs;
-    if (showOnlyActiveJobs) {
+    if (_showOnlyActiveJobs) {
       rawJobs = await DaoJob().getQuotableJobs(null);
     } else {
       rawJobs = await DaoJob().getByFilter(null);
@@ -122,10 +122,10 @@ class _JobEstimatesListScreenState
             children: [
               HMBToggle(
                 label: 'Show All Jobs',
-                initialValue: !showOnlyActiveJobs,
+                initialValue: !_showOnlyActiveJobs,
                 onToggled: (value) async {
                   setState(() {
-                    showOnlyActiveJobs = !value;
+                    _showOnlyActiveJobs = !value;
                   });
                   await _refreshJobs();
                 },

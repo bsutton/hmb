@@ -27,7 +27,7 @@ class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
   final _xeroClientIdController = TextEditingController();
 
   final _xeroClientSecretController = TextEditingController();
-  bool _xeroEnabled = true;
+  var _xeroEnabled = true;
 
   @override
   void initState() {

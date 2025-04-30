@@ -14,18 +14,18 @@ class SelectJobDialog extends StatefulWidget {
   @override
   _SelectJobDialogState createState() => _SelectJobDialogState();
 
-  static Future<Job?> show(BuildContext context) async => showDialog<Job?>(
+  static Future<Job?> show(BuildContext context) => showDialog<Job?>(
     context: context,
     builder: (context) => const SelectJobDialog(),
   );
 }
 
 class _SelectJobDialogState extends State<SelectJobDialog> {
-  bool showAllJobs = false;
-  bool showJobsWithNoBillableItems = false;
+  var _showAllJobs = false;
+  var _showJobsWithNoBillableItems = false;
 
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  final _searchController = TextEditingController();
+  var _searchQuery = '';
 
   @override
   void initState() {
@@ -48,8 +48,8 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
   }
 
   Future<List<CustomerAndJob>> _fetchJobs() => CustomerAndJob.getJobs(
-    showAllJobs: showAllJobs,
-    showJobsWithNoBillableItems: showJobsWithNoBillableItems,
+    showAllJobs: _showAllJobs,
+    showJobsWithNoBillableItems: _showJobsWithNoBillableItems,
   );
 
   List<CustomerAndJob> _filterJobs(List<CustomerAndJob> jobs) {
@@ -92,20 +92,20 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
               children: [
                 CheckboxListTile(
                   title: const Text('Show all jobs'),
-                  value: showAllJobs,
+                  value: _showAllJobs,
                   onChanged: (value) {
                     setState(() {
-                      showAllJobs = value ?? false;
+                      _showAllJobs = value ?? false;
                     });
                   },
                   controlAffinity: ListTileControlAffinity.leading,
                 ),
                 CheckboxListTile(
                   title: const Text('Show jobs with no billable items'),
-                  value: showJobsWithNoBillableItems,
+                  value: _showJobsWithNoBillableItems,
                   onChanged: (value) {
                     setState(() {
-                      showJobsWithNoBillableItems = value ?? false;
+                      _showJobsWithNoBillableItems = value ?? false;
                     });
                   },
                   controlAffinity: ListTileControlAffinity.leading,

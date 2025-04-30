@@ -56,10 +56,10 @@ ${widget.site?.addressLine1}, ${widget.site?.addressLine2}, ${widget.site?.subur
                   ),
             ),
           );
+          if (site != null) {
+            await widget.daoJoin.setAsPrimary(site, widget.parent);
+          }
           setState(() {
-            if (site != null) {
-              widget.daoJoin.setAsPrimary(site, widget.parent);
-            }
             this.site = site;
           });
         },

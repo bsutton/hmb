@@ -236,7 +236,7 @@ class BlockingUITransition extends StatefulWidget {
 }
 
 class BlockingUITransitionState extends State<BlockingUITransition> {
-  bool _initialised = false;
+  var _initialised = false;
   late final CompleterEx<void> completer;
 
   @override
@@ -287,20 +287,20 @@ class BlockingOverlayState extends JuneState {
   StackTrace get stackTrace => actions.peek().stackTrace;
 
   DateTime? startTime;
-  int count = 0;
+  var _count = 0;
 
   ///
   /// begin
   ///
   void begin<T>(RunningSlowAction<T> actionRunner) {
     actions.push(actionRunner);
-    count++;
+    _count++;
     // Log.e('begin count=$count');
     // Log.d(green('UI is blocked'));
     // Log.d(green(
     //'blocked by: ${actions.peek().stackTrace.formatStackTrace()}'));
 
-    if (count == 1) {
+    if (_count == 1) {
       startTime = DateTime.now();
     }
 
@@ -319,8 +319,8 @@ class BlockingOverlayState extends JuneState {
   /// end
   ///
   void end() {
-    count--;
-    assert(count >= 0, 'bad');
+    _count--;
+    assert(_count >= 0, 'bad');
 
     actions.pop();
 
@@ -328,7 +328,7 @@ class BlockingOverlayState extends JuneState {
     // Log.d(
     //green('unblocked for: ${callPoint.stackTrace.formatStackTrace()}'));
 
-    if (count == 0) {
+    if (_count == 0) {
       startTime = null;
       _waitForAllActions = Future.value();
     } else {

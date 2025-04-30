@@ -55,7 +55,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
   @override
   Widget build(BuildContext context) {
     final showCompleted =
-        June.getState(ShowCompltedItems.new).showCompletedTasks;
+        June.getState(ShowCompltedItems.new)._showCompletedTasks;
 
     return FutureBuilderEx(
       // ignore: discarded_futures
@@ -68,10 +68,9 @@ class _TaskItemListScreenState<P extends Entity<P>>
             entityNameSingular: 'Task Item',
             entityNamePlural: 'Task Items',
             dao: DaoTaskItem(),
-            onDelete: (taskItem) async => DaoTaskItem().delete(taskItem!.id),
-            onInsert: (taskItem) async => DaoTaskItem().insert(taskItem!),
-            // ignore: discarded_futures
-            fetchList: () async => _fetchItems(showCompleted),
+            onDelete: (taskItem) => DaoTaskItem().delete(taskItem!.id),
+            onInsert: (taskItem) => DaoTaskItem().insert(taskItem!),
+            fetchList: () => _fetchItems(showCompleted),
             title: (taskItem) => Text(taskItem.description) as Widget,
             onEdit:
                 (taskItem) => TaskItemEditScreen(
@@ -102,7 +101,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
                     IconButton(
                       icon: const Icon(Icons.check, color: Colors.green),
                       onPressed:
-                          () async => markAsCompleted(
+                          () => markAsCompleted(
                             TaskItemContext(
                               widget.task!,
                               taskItem,
@@ -127,7 +126,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
                       initialValue:
                           June.getState(
                             ShowCompltedItems.new,
-                          ).showCompletedTasks,
+                          )._showCompletedTasks,
                       onToggled: (value) {
                         setState(() {
                           June.getState(ShowCompltedItems.new).toggle();
@@ -215,10 +214,10 @@ class _TaskItemListScreenState<P extends Entity<P>>
 }
 
 class ShowCompltedItems extends JuneState {
-  bool showCompletedTasks = false;
+  var _showCompletedTasks = false;
 
   void toggle() {
-    showCompletedTasks = !showCompletedTasks;
+    _showCompletedTasks = !_showCompletedTasks;
     refresh(); // Notify listeners to rebuild
   }
 }

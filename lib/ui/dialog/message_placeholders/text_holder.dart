@@ -8,9 +8,9 @@ import 'text_source.dart';
 /// a text field to fill in.
 class DefaultHolder extends PlaceHolder<String> {
   DefaultHolder({required super.name})
-    : super(base: tagBase, source: TextSource(label: name));
+    : super(base: _tagBase, source: TextSource(label: name));
 
-  static String tagBase = 'text';
+  static const _tagBase = 'text';
 
   @override
   Future<String> value() async => source.value ?? '';
@@ -19,11 +19,13 @@ class DefaultHolder extends PlaceHolder<String> {
 class SignatureHolder extends PlaceHolder<String> {
   SignatureHolder() : super(name: tagName, base: tagBase, source: NoopSource());
 
+  // ignore: omit_obvious_property_types
   static String tagName = 'signature';
+  // ignore: omit_obvious_property_types
   static String tagBase = 'signature';
 
   @override
-  Future<String> value() async => _fetchSignature();
+  Future<String> value() => _fetchSignature();
 
   Future<String> _fetchSignature() async {
     final system = await DaoSystem().get();

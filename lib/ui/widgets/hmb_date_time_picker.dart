@@ -187,7 +187,7 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
   Future<TimeOfDay?> _showTimePicker(
     BuildContext context,
     DateTime? currentValue,
-  ) async => showTimePicker(
+  ) => showTimePicker(
     context: context,
     initialTime: TimeOfDay.fromDateTime(currentValue ?? DateTime.now()),
     builder:

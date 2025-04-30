@@ -31,12 +31,12 @@ class GoogleDriveAuth {
   }
 
   Future<GoogleSignInAccount?> _signin() async {
-    final _googleSignIn = GoogleSignIn(scopes: [drive.DriveApi.driveFileScope]);
+    final googleSignIn = GoogleSignIn(scopes: [drive.DriveApi.driveFileScope]);
 
     try {
-      return (await _googleSignIn.isSignedIn())
-          ? _googleSignIn.signInSilently()
-          : _googleSignIn.signIn();
+      return (await googleSignIn.isSignedIn())
+          ? googleSignIn.signInSilently()
+          : googleSignIn.signIn();
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       HMBToast.error('Error signing in: $e');
@@ -64,7 +64,7 @@ class GoogleDriveApi {
     return api;
   }
 
-  bool initialised = false;
+  var _initialised = false;
   final Map<String, String> _authHeaders;
   late final drive.DriveApi _driveApi;
   late AuthenticatedClient? _authClient;
@@ -72,20 +72,20 @@ class GoogleDriveApi {
   FilesResource get files => _driveApi.files;
 
   Future<void> init() async {
-    if (!initialised) {
+    if (!_initialised) {
       _authClient = AuthenticatedClient(http.Client(), _authHeaders);
 
       // final authHeaders = await account.authHeaders;
       // final authenticateClient = GoogleAuthClient(authHeaders);
       _driveApi = drive.DriveApi(_authClient!);
-      initialised = true;
+      _initialised = true;
     }
   }
 
   void close() {
     _authClient?.close();
     _authClient = null;
-    initialised = false;
+    _initialised = false;
   }
 
   /// Sends an HTTP request and asynchronously returns the response.
@@ -138,7 +138,7 @@ class GoogleDriveApi {
 class GoogleAuthClient extends http.BaseClient {
   GoogleAuthClient(this._headers);
   final Map<String, String> _headers;
-  final http.Client _client = http.Client();
+  final _client = http.Client();
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) =>
