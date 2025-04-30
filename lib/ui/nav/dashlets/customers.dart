@@ -12,7 +12,7 @@ class CustomersDashlet extends StatelessWidget {
   Widget build(BuildContext context) => DashletCard<int>(
     label: 'Customers',
     icon: Icons.people,
-    future: getCustomerCount(),
+    dashletValue: getCustomerCount,
     route: '/customers',
   );
 

@@ -11,7 +11,7 @@ class ToolsDashlet extends StatelessWidget {
   Widget build(BuildContext context) => DashletCard<void>(
     label: 'Tools',
     icon: Icons.build,
-    future: Future.value(const DashletValue(null)),
+    dashletValue: () => Future.value(const DashletValue(null)),
     route: '/extras/tools',
     widgetBuilder: (_, _) => const SizedBox.shrink(),
   );

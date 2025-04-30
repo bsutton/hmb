@@ -11,7 +11,7 @@ class HelpDashlet extends StatelessWidget {
   Widget build(BuildContext context) => DashletCard<void>(
     label: 'Help',
     icon: Icons.help,
-    future: Future.value(const DashletValue(null)),
+    dashletValue: () => Future.value(const DashletValue(null)),
     route: '/dashboard/help',
     widgetBuilder: (_, _) => const SizedBox.shrink(),
   );

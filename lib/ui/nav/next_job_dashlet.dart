@@ -14,7 +14,7 @@ class NextJobDashlet extends StatelessWidget {
     label: 'Next Job',
     icon: Icons.schedule,
     // ignore: discarded_futures
-    future: getNextJob(),
+    dashletValue: getNextJob,
     widgetBuilder: (ctx, dv) {
       if (dv.value == null) {
         return Text('—', style: Theme.of(ctx).textTheme.titleSmall);

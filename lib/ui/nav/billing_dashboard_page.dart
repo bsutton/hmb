@@ -19,38 +19,38 @@ class BillingDashboardPage extends StatelessWidget {
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
         children: [
+          DashletCard<void>(
+            label: 'Estimator',
+            icon: Icons.calculate,
+            dashletValue: () => Future.value(const DashletValue(null)),
+            route: '/billing/estimator',
+            widgetBuilder: (_, _) => const SizedBox.shrink(),
+          ),
           DashletCard<String>(
             label: 'Quotes',
             icon: Icons.format_quote,
             // ignore: discarded_futures
-            future: getQuoteValue(),
+            dashletValue: getQuoteValue,
             route: '/billing/quotes',
-          ),
-          DashletCard<String>(
-            label: 'Invoices',
-            icon: Icons.receipt_long,
-            // ignore: discarded_futures
-            future: getInvoicedThisMonth(),
-            route: '/billing/invoices',
           ),
           DashletCard<int>(
             label: 'To Be Invoiced',
             icon: Icons.attach_money,
             // ignore: discarded_futures
-            future: getYetToBeInvoiced(),
+            dashletValue: getYetToBeInvoiced,
             route: '/billing/to_be_invoiced',
           ),
-          DashletCard<void>(
-            label: 'Estimator',
-            icon: Icons.calculate,
-            future: Future.value(const DashletValue(null)),
-            route: '/billing/estimator',
-            widgetBuilder: (_, _) => const SizedBox.shrink(),
+          DashletCard<String>(
+            label: 'Invoices',
+            icon: Icons.receipt_long,
+            // ignore: discarded_futures
+            dashletValue: getInvoicedThisMonth,
+            route: '/billing/invoices',
           ),
           DashletCard<void>(
             label: 'Milestones',
             icon: Icons.flag,
-            future: Future.value(const DashletValue(null)),
+            dashletValue: () => Future.value(const DashletValue(null)),
             route: '/billing/milestones',
             widgetBuilder: (_, _) => const SizedBox.shrink(),
           ),

@@ -11,10 +11,14 @@ class PackingDashlet extends StatelessWidget {
   Widget build(BuildContext context) => DashletCard<int>(
     label: 'Packing',
     icon: Icons.inventory_2,
-    future: DaoTaskItem().getPackingItems().then((items) {
-      final count = items.where((it) => !it.completed).length;
-      return DashletValue(count);
-    }),
+    dashletValue: getPackingItems,
     route: '/packing',
   );
+
+  Future<DashletValue<int>> getPackingItems() async {
+    final items = await DaoTaskItem().getPackingItems();
+
+    final count = items.where((it) => !it.completed).length;
+    return DashletValue(count);
+  }
 }

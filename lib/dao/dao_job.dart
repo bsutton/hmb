@@ -158,7 +158,7 @@ where t.id =?
     SELECT j.*
     FROM job j
     JOIN job_status js ON j.job_status_id = js.id
-    WHERE js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment', 'Completed', 'To be Billed')
+    WHERE js.name NOT IN ( 'Rejected', 'On Hold', 'Awaiting Payment', 'Completed', 'To be Billed')
     AND (j.summary LIKE ? OR j.description LIKE ?)
     ORDER BY j.modified_date DESC
     ''',

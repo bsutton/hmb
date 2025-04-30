@@ -15,12 +15,13 @@ class GoogleBackupDashlset extends StatelessWidget {
   Widget build(BuildContext context) => DashletCard<void>(
     label: 'Backup',
     icon: Icons.cloud,
-    future: Future.value(const DashletValue(null)),
+    dashletValue: () => Future.value(const DashletValue(null)),
     route: '/system/backup/google',
     widgetBuilder: (_, _) => _buildLastBackup(),
   );
 
   FutureBuilderEx<DateTime?> _buildLastBackup() => FutureBuilderEx<DateTime?>(
+    // ignore: discarded_futures
     future: _getLastBackup(),
     builder: (context, lastBackupDate) {
       final text =

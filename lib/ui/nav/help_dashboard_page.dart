@@ -1,4 +1,6 @@
 // lib/src/ui/dashboard/help_dashboard_page.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -29,31 +31,31 @@ class HelpDashboardPage extends StatelessWidget {
           DashletCard<void>(
             label: 'Getting Started',
             icon: Icons.info_outline,
-            future: Future.value(const DashletValue(null)),
+            dashletValue: () => Future.value(const DashletValue(null)),
             onTapOverride:
-                () => _launchURL('https://hmb.onepub.dev/getting-started'),
+                () => unawaited(_launchURL('https://hmb.onepub.dev/getting-started')),
             widgetBuilder: (_, _) => const SizedBox.shrink(),
           ),
           DashletCard<void>(
             label: 'Report an Issue',
             icon: Icons.bug_report,
-            future: Future.value(const DashletValue(null)),
+            dashletValue: () => Future.value(const DashletValue(null)),
             onTapOverride:
-                () => _launchURL('https://github.com/bsutton/hmb/issues'),
+                () => unawaited(_launchURL('https://github.com/bsutton/hmb/issues')),
             widgetBuilder: (_, _) => const SizedBox.shrink(),
           ),
           DashletCard<void>(
             label: 'Community Discussions',
             icon: Icons.forum,
-            future: Future.value(const DashletValue(null)),
+            dashletValue: () => Future.value(const DashletValue(null)),
             onTapOverride:
-                () => _launchURL('https://github.com/bsutton/hmb/discussions'),
+                () => unawaited(_launchURL('https://github.com/bsutton/hmb/discussions')),
             widgetBuilder: (_, _) => const SizedBox.shrink(),
           ),
           DashletCard<void>(
             label: 'About',
             icon: Icons.info,
-            future: Future.value(const DashletValue(null)),
+            dashletValue: () => Future.value(const DashletValue(null)),
             route: '/system/about',
             widgetBuilder: (_, _) => const SizedBox.shrink(),
           ),

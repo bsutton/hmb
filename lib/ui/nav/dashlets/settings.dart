@@ -11,7 +11,7 @@ class SettingsDashlet extends StatelessWidget {
   Widget build(BuildContext context) => DashletCard<void>(
     label: 'Settings',
     icon: Icons.settings,
-    future: Future.value(const DashletValue(null)),
+    dashletValue: () => Future.value(const DashletValue(null)),
     route: '/dashboard/settings',
     widgetBuilder: (_, _) => const SizedBox.shrink(),
   );

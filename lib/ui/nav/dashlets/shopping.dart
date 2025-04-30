@@ -12,10 +12,14 @@ class ShoppingDashlet extends StatelessWidget {
   Widget build(BuildContext context) => DashletCard<int>(
     label: 'Shopping',
     icon: Icons.shopping_cart,
-    future: DaoTaskItem().getShoppingItems().then((items) {
-      final count = items.where((it) => !it.completed).length;
-      return DashletValue(count);
-    }),
+    // ignore: discarded_futures
+    dashletValue: getShopping,
     route: '/shopping',
   );
+
+  Future<DashletValue<int>> getShopping() async {
+    final items = await DaoTaskItem().getShoppingItems();
+    final count = items.where((it) => !it.completed).length;
+    return DashletValue(count);
+  }
 }

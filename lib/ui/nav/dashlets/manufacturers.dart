@@ -11,7 +11,7 @@ class ManufacturersDashlet extends StatelessWidget {
   Widget build(BuildContext context) => DashletCard<void>(
     label: 'Manufacturers',
     icon: Icons.factory,
-    future: Future.value(const DashletValue(null)),
+    dashletValue: () => Future.value(const DashletValue(null)),
     route: '/extras/manufacturers',
     widgetBuilder: (_, _) => const SizedBox.shrink(),
   );

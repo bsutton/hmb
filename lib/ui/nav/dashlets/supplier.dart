@@ -12,7 +12,7 @@ class SuppliersDashlet extends StatelessWidget {
   Widget build(BuildContext context) => DashletCard<int>(
     label: 'Suppliers',
     icon: Icons.store,
-    future: getSupplierCount(),
+    dashletValue: getSupplierCount,
     route: '/suppliers',
   );
 
