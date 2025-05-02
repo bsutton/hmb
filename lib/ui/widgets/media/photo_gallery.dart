@@ -1,22 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dcli_core/dcli_core.dart' as core;
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:image/image.dart' as img;
 import 'package:june/june.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_task.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/compute_manager.dart';
-import '../../../util/exceptions.dart';
 import '../../../util/photo_meta.dart';
 import '../layout/hmb_placeholder.dart';
 import 'photo_carousel.dart';
+import 'thumbnail.dart';
 
 class PhotoGallery extends StatelessWidget {
   PhotoGallery.forJob({required Job job, super.key}) {
@@ -121,10 +117,9 @@ class PhotoGallery extends StatelessWidget {
                     //     }
                     //   }
                     // },
-                    child: FutureBuilderEx<String?>(
+                    child: FutureBuilderEx<Thumbnail?>(
                       // ignore: discarded_futures
-                      future: _getThumbnailPath(computeManager, photoMeta),
-
+                      future: _getThumbNail(photoMeta),
                       waitingBuilder:
                           (context) => Container(
                             width: 80,
@@ -149,10 +144,10 @@ class PhotoGallery extends StatelessWidget {
                           ),
 
                       builder:
-                          (context, path) => Stack(
+                          (context, thumbnail) => Stack(
                             children: [
                               Image.file(
-                                File(path!),
+                                File(thumbnail!.target),
                                 width: 80,
                                 height: 80,
                                 fit: BoxFit.cover,
@@ -192,68 +187,9 @@ class PhotoGallery extends StatelessWidget {
   static void notify() {
     June.getState(PhotoGalleryState.new).setState();
   }
+
+  Future<Thumbnail?> _getThumbNail(PhotoMeta photoMeta) async =>
+      (await Thumbnail.fromMeta(photoMeta)).generate(computeManager);
 }
 
 class PhotoGalleryState extends JuneState {}
-
-Future<String?> _getThumbnailPath(
-  ComputeManager computeManager,
-  PhotoMeta meta,
-) async {
-  await meta.resolve();
-
-  final absolutePath = meta.absolutePathTo;
-  final thumbnailDir = await _getThumbnailDirectory();
-  final thumbnailPath = p.join(
-    thumbnailDir,
-    '${p.basenameWithoutExtension(absolutePath)}.jpg',
-  );
-
-  if (!core.exists(absolutePath)) {
-    throw InvalidPathException(absolutePath);
-  }
-
-  if (core.exists(thumbnailPath)) {
-    return thumbnailPath;
-  } else {
-    // Generate thumbnail in a background isolate
-
-    return computeManager.enqueueCompute(
-      _generateThumbnail,
-      ThumbnailPaths(source: absolutePath, target: thumbnailPath),
-    );
-  }
-}
-
-class ThumbnailPaths {
-  ThumbnailPaths({required this.source, required this.target});
-  String source;
-  String target;
-}
-
-// Function to generate a thumbnail (to be run in a background isolate)
-Future<String?> _generateThumbnail(ThumbnailPaths paths) async {
-  print('generating thumbnail: ${paths.source}');
-
-  final imageFile = File(paths.source);
-  if (!core.exists(paths.source)) {
-    return null;
-  }
-
-  final image = img.decodeImage(imageFile.readAsBytesSync());
-  if (image == null) {
-    return null;
-  }
-
-  final thumbnail = img.copyResize(image, width: 80, height: 80);
-  File(paths.target).writeAsBytesSync(img.encodeJpg(thumbnail));
-  return paths.target;
-}
-
-// Helper function to get the thumbnail directory
-Future<String> _getThumbnailDirectory() async {
-  final tempDir = await getTemporaryDirectory();
-  final thumbnailDir = p.join(tempDir.path, 'thumbnails');
-  Directory(thumbnailDir).createSync(recursive: true);
-  return thumbnailDir;
-}

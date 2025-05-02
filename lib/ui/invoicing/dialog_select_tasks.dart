@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
 import '../../dao/dao_task.dart';
-import '../../entity/job.dart';
-import '../../entity/task.dart';
+import '../../entity/entity.g.dart';
 import '../widgets/hmb_button.dart';
 
 enum Showing { showQuote, showInvoice }
@@ -13,6 +12,7 @@ enum Showing { showQuote, showInvoice }
 Future<InvoiceOptions?> showQuote({
   required BuildContext context,
   required Job job,
+  Contact? contact,
 }) async {
   final estimates = await DaoTask().getEstimatesForJob(job.id);
 
@@ -44,6 +44,7 @@ Future<InvoiceOptions?> showQuote({
 Future<InvoiceOptions?> showInvoice({
   required BuildContext context,
   required Job job,
+  Contact? contact,
 }) async {
   final values = await DaoTask().getAccruedValueForJob(
     jobId: job.id,

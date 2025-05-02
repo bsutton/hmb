@@ -4,19 +4,31 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../dao/dao_contact.dart';
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
+import '../../entity/contact.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../widgets/surface.dart';
 
+class JobAndContact {
+  JobAndContact(this.job, this.contact);
+  final Job job;
+  final Contact? contact;
+}
+
 class SelectJobDialog extends StatefulWidget {
-  const SelectJobDialog({super.key});
+  const SelectJobDialog({super.key, this.selectContact = false});
+
+  final bool selectContact;
 
   @override
   _SelectJobDialogState createState() => _SelectJobDialogState();
 
-  static Future<Job?> show(BuildContext context) => showDialog<Job?>(
+  static Future<JobAndContact?> show(
+    BuildContext context, {
+    bool selectContact = false,
+  }) => showDialog<JobAndContact>(
     context: context,
-    builder: (context) => const SelectJobDialog(),
+    builder: (context) => SelectJobDialog(selectContact: selectContact),
   );
 }
 
@@ -161,7 +173,7 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
                             Text('Contact: ${current.contactName}'),
                         ],
                       ),
-                      onPressed: () => Navigator.pop(context, current.job),
+                      onPressed: () => _onPressed(current),
                     );
                   },
                 );
@@ -172,6 +184,51 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
       ),
     ),
   );
+
+  Future<void> _onPressed(CustomerAndJob current) async {
+    var selectedContact = current.selectedContact;
+    if (widget.selectContact) {
+      final contacts = await DaoContact().getByCustomer(current.customer.id);
+      if (!mounted) {
+        return;
+      }
+      await showDialog<void>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Select Contact'),
+              content: StatefulBuilder(
+                builder:
+                    (context, setState) => DropdownButton<Contact>(
+                      isExpanded: true,
+                      value: selectedContact,
+                      hint: const Text('Choose contact'),
+                      items:
+                          contacts
+                              .map(
+                                (c) => DropdownMenuItem<Contact>(
+                                  value: c,
+                                  child: Text(c.fullname),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (c) => setState(() => selectedContact = c),
+                    ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+      );
+    }
+
+    if (mounted) {
+      Navigator.pop(context, JobAndContact(current.job, selectedContact));
+    }
+  }
 }
 
 class CustomerAndJob {
@@ -180,12 +237,14 @@ class CustomerAndJob {
     this.job, {
     required this.hasBillables,
     this.contactName,
+    this.selectedContact,
   });
 
   final Customer customer;
   final Job job;
   final bool hasBillables;
   final String? contactName;
+  final Contact? selectedContact;
 
   static Future<List<CustomerAndJob>> getJobs({
     required bool showAllJobs,

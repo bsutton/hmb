@@ -79,12 +79,15 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   }
 
   Future<void> _createQuote() async {
-    final job = await SelectJobDialog.show(context);
-    if (job == null) {
+    final jobAndContact = await SelectJobDialog.show(context);
+    if (jobAndContact == null) {
       return;
     }
     if (mounted) {
-      final quoteOptions = await showQuote(context: context, job: job);
+      final job = jobAndContact.job;
+      final contact = jobAndContact.contact;
+
+      final quoteOptions = await showQuote(context: context, job: job, contact: contact);
       if (quoteOptions != null) {
         try {
           if (!quoteOptions.billBookingFee &&
