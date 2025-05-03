@@ -92,7 +92,7 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
               ),
               IconButton(
                 icon: const Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(context).pop(widget.selectedItem),
               ),
             ],
           ),
