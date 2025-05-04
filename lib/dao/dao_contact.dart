@@ -237,6 +237,35 @@ order by c.modifiedDate desc
       ),
     );
   }
+
+  /// Returns the customer's billing contact if set; otherwise the contact
+  /// with the lowest ID among that customer's contacts.
+  Future<Contact?> getBillingContactByCustomer(Customer customer) async {
+    // Load a plain sqlite db instance (no active transaction)
+    final db = withoutTransaction();
+
+    // Use -1 as a dummy so no contact.id == -1, forcing fallback if null
+    final billingId = customer.billingContactId ?? -1;
+
+    final rows = await db.rawQuery(
+      '''
+      SELECT c.* 
+        FROM contact AS c
+        JOIN $tableName AS cc 
+          ON cc.contact_id = c.id
+       WHERE cc.customer_id = ?
+       ORDER BY (c.id = ?) DESC, c.id ASC
+       LIMIT 1
+      ''',
+      <Object?>[customer.id, billingId],
+    );
+
+    if (rows.isEmpty) {
+      return null;
+    }
+
+    return Contact.fromMap(rows.first);
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

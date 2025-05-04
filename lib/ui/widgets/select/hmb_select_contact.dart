@@ -1,5 +1,5 @@
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:june/june.dart';
 
 import '../../../dao/dao_contact.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
@@ -13,7 +13,7 @@ import 'hmb_droplist.dart';
 /// and associate them with another entity (e.g. as billing contact).
 class HMBSelectContact extends StatefulWidget {
   const HMBSelectContact({
-    required this.selectedContact,
+    required this.initialContact,
     required this.customer,
     this.onSelected,
     this.title = 'Contact',
@@ -23,8 +23,7 @@ class HMBSelectContact extends StatefulWidget {
   /// The customer that owns the contact.
   final Customer? customer;
 
-  /// A reference to the June state tracking the selected contact ID.
-  final SelectedContact selectedContact;
+  final int? initialContact;
 
   /// Called when a contact is selected.
   final void Function(Contact? contact)? onSelected;
@@ -36,10 +35,13 @@ class HMBSelectContact extends StatefulWidget {
   HMBSelectContactState createState() => HMBSelectContactState();
 }
 
-class HMBSelectContactState extends State<HMBSelectContact> {
-  /// Fetch the current selected contact by ID.
-  Future<Contact?> _getInitialContact() =>
-      DaoContact().getById(widget.selectedContact.contactId);
+class HMBSelectContactState extends DeferredState<HMBSelectContact> {
+  Contact? contact;
+  
+  @override
+  Future<void> asyncInitState() async {
+    contact = await DaoContact().getById(widget.initialContact);
+  }
 
   /// Fetch all contacts for the given customer.
   Future<List<Contact>> _getContacts(String? filter) =>
@@ -48,9 +50,9 @@ class HMBSelectContactState extends State<HMBSelectContact> {
   /// Called when a contact is selected from the droplist.
   void _onContactChanged(Contact? newValue) {
     final newId = newValue?.id;
-    if (newId != widget.selectedContact.contactId) {
+    if (newId != contact?.id) {
       setState(() {
-        widget.selectedContact.contactId = newId;
+        contact = newValue;
       });
       widget.onSelected?.call(newValue);
     }
@@ -71,39 +73,35 @@ class HMBSelectContactState extends State<HMBSelectContact> {
 
     if (contact != null) {
       setState(() {
-        widget.selectedContact.contactId = contact.id;
+        this.contact = contact;
       });
       widget.onSelected?.call(contact);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (widget.customer == null) {
-      return const Center(child: Text('Contacts: Select a customer first.'));
-    } else {
-      return Row(
-        children: [
-          Expanded(
-            child: HMBDroplist<Contact>(
-              title: widget.title,
-              selectedItem: _getInitialContact,
-              onChanged: _onContactChanged,
-              items: _getContacts,
-              format: (contact) => '${contact.firstName} ${contact.surname}',
-              required: false,
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder: (context) {
+      if (widget.customer == null) {
+        return const Center(child: Text('Contacts: Select a customer first.'));
+      } else {
+        return Row(
+          children: [
+            Expanded(
+              child: HMBDroplist<Contact>(
+                title: widget.title,
+                selectedItem: () async => contact,
+                onChanged: _onContactChanged,
+                items: _getContacts,
+                format: (contact) => '${contact.firstName} ${contact.surname}',
+                required: false,
+              ),
             ),
-          ),
-          HMBButtonAdd(enabled: true, onPressed: _addContact),
-        ],
-      );
-    }
-  }
-}
-
-/// State object to persist the selected contact ID across screens.
-class SelectedContact extends JuneState {
-  SelectedContact();
-
-  int? contactId;
+            HMBButtonAdd(enabled: true, onPressed: _addContact),
+          ],
+        );
+      }
+    },
+  );
 }
