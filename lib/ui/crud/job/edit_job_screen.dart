@@ -2,19 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:calendar_view/calendar_view.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 
-import '../../../dao/dao_customer.dart';
-import '../../../dao/dao_job.dart';
-import '../../../dao/dao_job_activity.dart';
-import '../../../dao/dao_job_status.dart';
-import '../../../dao/dao_system.dart';
-import '../../../entity/customer.dart';
-import '../../../entity/job.dart';
-import '../../../entity/job_activity.dart';
-import '../../../entity/job_status.dart';
+import '../../../dao/dao.g.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/app_title.dart';
 import '../../../util/date_time_ex.dart';
 import '../../../util/format.dart';
@@ -52,7 +46,7 @@ class JobEditScreen extends StatefulWidget {
   _JobEditScreenState createState() => _JobEditScreenState();
 }
 
-class _JobEditScreenState extends State<JobEditScreen>
+class _JobEditScreenState extends DeferredState<JobEditScreen>
     implements EntityState<Job> {
   late TextEditingController _summaryController;
   late RichEditorController _descriptionController;
@@ -102,87 +96,94 @@ class _JobEditScreenState extends State<JobEditScreen>
     _assumptionFocusNode = FocusNode();
     _hourlyRateFocusNode = FocusNode();
     _bookingFeeFocusNode = FocusNode();
+  }
 
+  @override
+  Future<void> asyncInitState() async {
     /// Load initial state.
     June.getState(SelectedCustomer.new).customerId = widget.job?.customerId;
     June.getState(SelectJobStatus.new).jobStatusId = widget.job?.jobStatusId;
     June.getState(SelectedSite.new).siteId = widget.job?.siteId;
-    June.getState(SelectedContact.new).contactId = widget.job?.contactId;
+    June.getState(_SelectedContact.new).contactId = widget.job?.contactId;
 
     _selectedBillingType =
         widget.job?.billingType ?? BillingType.timeAndMaterial;
 
     if (widget.job == null) {
       // ignore: discarded_futures
-      DaoSystem().get().then((system) {
-        setState(() {
-          _hourlyRateController.text =
-              system.defaultHourlyRate?.amount.toString() ?? '0.00';
-          _bookingFeeController.text =
-              system.defaultBookingFee?.amount.toString() ?? '0.00';
-        });
-        // Hard coded id of the 'Prospecting' status (1), probably not a great way
-        // to do this.
-        // ignore: discarded_futures
-        DaoJobStatus().getById(1).then((jobStatus) {
-          June.getState(SelectJobStatus.new)
-            ..jobStatusId = jobStatus?.id
-            ..setState();
-        });
+      final system = await DaoSystem().get();
+      setState(() {
+        _hourlyRateController.text =
+            system.defaultHourlyRate?.amount.toString() ?? '0.00';
+        _bookingFeeController.text =
+            system.defaultBookingFee?.amount.toString() ?? '0.00';
       });
+      // Hard coded id of the 'Prospecting' status (1), probably not a great way
+      // to do this.
+      // ignore: discarded_futures
+      final jobStatus = await DaoJobStatus().getById(1);
+      June.getState(SelectJobStatus.new)
+        ..jobStatusId = jobStatus?.id
+        ..setState();
     }
   }
 
   @override
-  Widget build(BuildContext context) => JuneBuilder(
-    () => SelectedCustomer()..customerId = widget.job?.customerId,
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
     builder:
-        (selectedCustomer) => FutureBuilderEx<Customer?>(
-          // ignore: discarded_futures
-          future: DaoCustomer().getById(selectedCustomer.customerId),
+        (context) => JuneBuilder(
+          SelectedCustomer.new,
           builder:
-              (context, customer) => EntityEditScreen<Job>(
-                entityName: 'Job',
-                dao: DaoJob(),
-                scrollController: scrollController,
-                entityState: this,
-                editor:
-                    (job, {required isNew}) => Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const HMBSpacer(height: true),
-                        HMBFormSection(
-                          children: [
-                            _showSummary(),
-                            _chooseCustomer(),
-                            _chooseStatus(job),
-                            if (widget.job != null) _buildScheduleButtons(),
-                            _chooseBillingType(),
-                            _showHourlyRate(),
-                            _showBookingFee(),
-                            const HMBSpacer(height: true),
-                            _buildDescription(job),
-                            const SizedBox(height: 12),
-                            _buildAssumption(job),
-                            const SizedBox(height: 12),
+              (selectedCustomer) => FutureBuilderEx<Customer?>(
+                // ignore: discarded_futures
+                future: DaoCustomer().getById(selectedCustomer.customerId),
+                builder:
+                    (context, customer) => EntityEditScreen<Job>(
+                      entityName: 'Job',
+                      dao: DaoJob(),
+                      scrollController: scrollController,
+                      entityState: this,
+                      editor:
+                          (job, {required isNew}) => Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const HMBSpacer(height: true),
+                              HMBFormSection(
+                                children: [
+                                  _showSummary(),
+                                  _chooseCustomer(),
+                                  _chooseStatus(job),
+                                  if (widget.job != null)
+                                    _buildScheduleButtons(),
+                                  _chooseBillingType(),
+                                  _showHourlyRate(),
+                                  _showBookingFee(),
+                                  const HMBSpacer(height: true),
+                                  _buildDescription(job),
+                                  const SizedBox(height: 12),
+                                  _buildAssumption(job),
+                                  const SizedBox(height: 12),
 
-                            // Allow the user to select a contact for the job
-                            _chooseContact(customer, job),
-                            // Allow the user to select a site for the job
-                            _chooseSite(customer, job),
-                          ],
-                        ),
-                        const HMBSpacer(height: true),
-                        // Display task photos
-                        if (job != null) PhotoGallery.forJob(job: job),
-                        _manageTasks(job),
-                      ],
+                                  // Allow the user to select a contact for the job
+                                  _chooseContact(customer, job),
+                                  // Allow the user to select a site for the job
+                                  _chooseSite(customer, job),
+                                ],
+                              ),
+                              const HMBSpacer(height: true),
+                              // Display task photos
+                              if (job != null) PhotoGallery.forJob(job: job),
+                              _manageTasks(job),
+                            ],
+                          ),
                     ),
               ),
         ),
   );
 
+  // _showSummary
   Widget _showSummary() => HMBTextField(
     key: const Key('jobSummary'),
     focusNode: _summaryFocusNode,
@@ -194,6 +195,7 @@ class _JobEditScreenState extends State<JobEditScreen>
     keyboardType: TextInputType.name,
   );
 
+  /// _chooseBillingType
   Widget _chooseBillingType() => HMBDroplist<BillingType>(
     title: 'Billing Type',
     items: (filter) async => BillingType.values,
@@ -218,6 +220,8 @@ Bills the customer a pre-agreed amount.
 You can create Milestone Invoices as the Job progresses.
 Navigate to Billing | Milestones.
 ''');
+
+  /// hourly rate
   Widget _showHourlyRate() => HMBTextField(
     key: const Key('hourlyRate'),
     controller: _hourlyRateController,
@@ -226,6 +230,7 @@ Navigate to Billing | Milestones.
     keyboardType: TextInputType.number,
   );
 
+  /// booking fee
   Widget _showBookingFee() => HMBTextField(
     key: const Key('bookingFee'),
     controller: _bookingFeeController,
@@ -237,25 +242,26 @@ A once off fee applied to this Job.
 
 You can set a default booking fee from System | Billing screen''');
 
+  /// manage tasks
   Widget _manageTasks(Job? job) => HMBChildCrudCard(
     headline: 'Tasks',
     crudListScreen: TaskListScreen(parent: Parent(job), extended: true),
   );
 
-  JuneBuilder<SelectedContact> _chooseContact(Customer? customer, Job? job) =>
-      JuneBuilder(
-        () => SelectedContact()..contactId = job?.contactId,
-        builder:
-            (state) => HMBSelectContact(
-              selectedContact: state,
-              customer: customer,
-              onSelected: (contact) {
-                June.getState(SelectedContact.new)
-                  ..contactId = contact?.id
-                  ..setState();
-              },
-            ),
-      );
+  /// choose contact
+  Widget _chooseContact(Customer? customer, Job? job) => JuneBuilder(
+    _SelectedContact.new,
+    builder:
+        (state) => HMBSelectContact(
+          initialContact: state.contactId,
+          customer: customer,
+          onSelected: (contact) {
+            June.getState(_SelectedContact.new)
+              ..contactId = contact?.id
+              ..setState();
+          },
+        ),
+  );
 
   JuneBuilder<SelectedSite> _chooseSite(Customer? customer, Job? job) =>
       JuneBuilder(
@@ -284,7 +290,7 @@ You can set a default booking fee from System | Billing screen''');
       June.getState(SelectedSite.new)
         ..siteId = null
         ..setState();
-      June.getState(SelectedContact.new)
+      June.getState(_SelectedContact.new)
         ..contactId = null
         ..setState();
     },
@@ -499,7 +505,7 @@ You can set a default booking fee from System | Billing screen''');
     description: jsonEncode(_descriptionController.document),
     assumption: jsonEncode(_assumptionController.document),
     siteId: June.getState(SelectedSite.new).siteId,
-    contactId: June.getState(SelectedContact.new).contactId,
+    contactId: June.getState(_SelectedContact.new).contactId,
     jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
     bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
@@ -514,7 +520,7 @@ You can set a default booking fee from System | Billing screen''');
     description: jsonEncode(_descriptionController.document),
     assumption: jsonEncode(_assumptionController.document),
     siteId: June.getState(SelectedSite.new).siteId,
-    contactId: June.getState(SelectedContact.new).contactId,
+    contactId: June.getState(_SelectedContact.new).contactId,
     jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
     bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
@@ -666,3 +672,10 @@ class SelectJobStatus extends JuneState {
 }
 
 class ActivityJobsState extends JuneState {}
+
+/// State object to persist the selected contact ID across screens.
+class _SelectedContact extends JuneState {
+  _SelectedContact();
+
+  int? contactId;
+}
