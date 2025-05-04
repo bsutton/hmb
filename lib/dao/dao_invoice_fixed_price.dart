@@ -8,7 +8,7 @@ import '../util/local_date.dart';
 import '../util/money_ex.dart';
 import 'dao.g.dart';
 
-Future<Invoice> createFixedPriceInvoice(Quote quote) async {
+Future<Invoice> createFixedPriceInvoice(Quote quote, Contact billingContact) async {
   final job = await DaoJob().getById(quote.jobId);
   if (job!.hourlyRate == MoneyEx.zero) {
     throw InvoiceException('Hourly rate must be set for job ${job.summary}');
@@ -21,6 +21,7 @@ Future<Invoice> createFixedPriceInvoice(Quote quote) async {
     jobId: job.id,
     totalAmount: totalAmount,
     dueDate: LocalDate.today().add(const Duration(days: 1)),
+    billingContactId: billingContact.id
   );
 
   final invoiceId = await DaoInvoice().insert(invoice);
@@ -58,6 +59,7 @@ Future<Invoice> createInvoiceFromMilestone(Milestone milestonePayment) async {
     jobId: job.id,
     dueDate: LocalDate.today().add(const Duration(days: 1)),
     totalAmount: milestonePayment.paymentAmount,
+    billingContactId: milestonePayment.billingContactId
   );
 
   final invoiceId = await DaoInvoice().insert(invoice);

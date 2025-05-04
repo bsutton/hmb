@@ -33,6 +33,7 @@ void main() {
         // Create invoice for the job
         final invoice = await createTimeAndMaterialsInvoice(
           job,
+          await createContact('Brett', 'Sutton'),
           [],
           groupByTask: true,
           billBookingFee: true,
@@ -62,6 +63,7 @@ void main() {
         // Create invoice for the job
         final invoice = await createTimeAndMaterialsInvoice(
           job,
+          await createContact('Brett', 'Sutton'),
           [],
           groupByTask: true,
           billBookingFee: true,
@@ -93,6 +95,7 @@ void main() {
         // Create invoice for the job
         final invoice = await createTimeAndMaterialsInvoice(
           job,
+          await createContact('Brett', 'Sutton'),
           [],
           groupByTask: true,
           billBookingFee: true,
@@ -124,6 +127,7 @@ void main() {
         // Create invoice for the job
         final invoice = await createTimeAndMaterialsInvoice(
           job,
+          await createContact('Brett', 'Sutton'),
           [],
           groupByTask: true,
           billBookingFee: true,

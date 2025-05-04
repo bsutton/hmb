@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:june/june.dart';
 
 import '../../../dao/dao_customer.dart';
 import '../../../dao/dao_system.dart';
@@ -16,6 +17,7 @@ import '../../widgets/hmb_crud_site.dart';
 import '../../widgets/hmb_switch.dart';
 import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/select/hmb_droplist.dart';
+import '../../widgets/select/hmb_select_contact.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 
@@ -26,6 +28,7 @@ class CustomerEditScreen extends StatefulWidget {
   @override
   // ignore: library_private_types_in_public_api
   _CustomerEditScreenState createState() => _CustomerEditScreenState();
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -47,20 +50,25 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
   @override
   void initState() {
     super.initState();
+
     currentEntity ??= widget.customer;
-    _nameController = TextEditingController(text: widget.customer?.name);
+    _nameController = TextEditingController(text: widget.customer?.name ?? '');
     _descriptionController = TextEditingController(
-      text: widget.customer?.description,
+      text: widget.customer?.description ?? '',
     );
     _hourlyRateController = TextEditingController(
-      text: widget.customer?.hourlyRate.amount.toString() ?? '0',
+      text: widget.customer?.hourlyRate.amount.toString() ?? '0.00',
     );
     _disbarred = widget.customer?.disbarred ?? false;
     _selectedCustomerType =
         widget.customer?.customerType ?? CustomerType.residential;
 
+    // Set the billing contact only once during init
+    June.getState(SelectedContact.new).contactId ??=
+        widget.customer?.billingContactId;
+
     if (widget.customer == null) {
-      // ignore: unawaited_futures, discarded_futures
+      // ignore: discarded_futures
       DaoSystem().get().then((system) {
         setState(() {
           _hourlyRateController.text =
@@ -87,63 +95,74 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
         (customer, {required isNew}) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            HMBFormSection(
               children: [
-                HMBFormSection(
-                  children: [
-                    Text(
-                      'Customer Details',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    HMBNameField(
-                      autofocus: isNotMobile,
-                      controller: _nameController,
-                      labelText: 'Name',
-                      required: true,
-                      keyboardType: TextInputType.name,
-                    ),
-                    HMBTextArea(
-                      controller: _descriptionController,
-                      labelText: 'Description',
-                    ),
-                    HMBTextField(
-                      controller: _hourlyRateController,
-                      labelText: 'Hourly Rate',
-                      keyboardType: TextInputType.number,
-                      required: true,
-                    ),
-                    HMBSwitch(
-                      labelText: 'Disbarred',
-                      initialValue: _disbarred,
-                      onChanged: (value) {
-                        setState(() {
-                          _disbarred = value;
-                        });
-                      },
-                    ),
-                    HMBDroplist<CustomerType>(
-                      selectedItem: () async => _selectedCustomerType,
-                      items: (filter) async => CustomerType.values,
-                      title: 'Customer Type',
-                      onChanged: (newValue) {
-                        _selectedCustomerType = newValue!;
-                      },
-                      format: (item) => item.name,
-                    ),
-                  ],
+                Text(
+                  'Customer Details',
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                HMBCrudContact<Customer>(
-                  parentTitle: 'Customer',
-                  parent: Parent(customer),
-                  daoJoin: JoinAdaptorCustomerContact(),
+                HMBNameField(
+                  autofocus: isNotMobile,
+                  controller: _nameController,
+                  labelText: 'Name',
+                  required: true,
+                  keyboardType: TextInputType.name,
                 ),
-                HBMCrudSite(
-                  parentTitle: 'Customer',
-                  parent: Parent(customer),
-                  daoJoin: JoinAdaptorCustomerSite(),
+                HMBTextArea(
+                  controller: _descriptionController,
+                  labelText: 'Description',
+                ),
+                HMBTextField(
+                  controller: _hourlyRateController,
+                  labelText: 'Hourly Rate',
+                  keyboardType: TextInputType.number,
+                  required: true,
+                ),
+                HMBSwitch(
+                  labelText: 'Disbarred',
+                  initialValue: _disbarred,
+                  onChanged: (value) {
+                    setState(() => _disbarred = value);
+                  },
+                ),
+                HMBDroplist<CustomerType>(
+                  selectedItem: () async => _selectedCustomerType,
+                  items: (filter) async => CustomerType.values,
+                  title: 'Customer Type',
+                  onChanged: (newValue) {
+                    _selectedCustomerType = newValue!;
+                  },
+                  format: (item) => item.display,
+                ),
+
+                // Select billing contact
+                JuneBuilder<SelectedContact>(
+                  SelectedContact.new,
+                  builder:
+                      (state) => HMBSelectContact(
+                        title: 'Billing Contact',
+                        selectedContact: state,
+                        customer: customer,
+                        onSelected: (contact) {
+                          if (contact != null) {
+                            state
+                              ..contactId = contact.id
+                              ..setState();
+                          }
+                        },
+                      ),
                 ),
               ],
+            ),
+            HMBCrudContact<Customer>(
+              parentTitle: 'Customer',
+              parent: Parent(customer),
+              daoJoin: JoinAdaptorCustomerContact(),
+            ),
+            HBMCrudSite(
+              parentTitle: 'Customer',
+              parent: Parent(customer),
+              daoJoin: JoinAdaptorCustomerSite(),
             ),
           ],
         ),
@@ -157,6 +176,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
     disbarred: _disbarred,
     customerType: _selectedCustomerType,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
+    billingContactId: June.getState(SelectedContact.new).contactId,
   );
 
   @override
@@ -166,7 +186,9 @@ class _CustomerEditScreenState extends State<CustomerEditScreen>
     disbarred: _disbarred,
     customerType: _selectedCustomerType,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
+    billingContactId: June.getState(SelectedContact.new).contactId,
   );
+
   @override
   void refresh() {
     setState(() {});

@@ -17,6 +17,7 @@ class Milestone extends Entity<Milestone> {
     this.invoiceId,
     this.milestoneDescription,
     this.dueDate,
+    this.billingContactId,
   }) : super();
 
   Milestone.forInsert({
@@ -27,6 +28,7 @@ class Milestone extends Entity<Milestone> {
     this.invoiceId,
     this.milestoneDescription,
     this.dueDate,
+    this.billingContactId,
     this.edited = false,
   }) : super.forInsert();
 
@@ -44,6 +46,7 @@ class Milestone extends Entity<Milestone> {
               map['due_date'] as String,
             )
             : null,
+    billingContactId: map['billing_contact_id'] as int?,
     edited: (map['edited'] as int) == 1,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
@@ -57,6 +60,7 @@ class Milestone extends Entity<Milestone> {
   String? milestoneDescription;
   LocalDate? dueDate;
   bool edited;
+  int? billingContactId;
 
   @override
   Map<String, dynamic> toMap() => {
@@ -69,6 +73,7 @@ class Milestone extends Entity<Milestone> {
         paymentPercentage.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'milestone_description': milestoneDescription,
     'due_date': const LocalDateNullableConverter().toJson(dueDate),
+    'billing_contact_id': billingContactId,
     'edited': edited ? 1 : 0,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
@@ -84,6 +89,7 @@ class Milestone extends Entity<Milestone> {
     String? milestoneDescription,
     LocalDate? dueDate,
     bool? edited,
+    int? billingContactId,
     DateTime? createdDate,
     DateTime? modifiedDate,
   }) => Milestone(
@@ -97,12 +103,12 @@ class Milestone extends Entity<Milestone> {
     milestoneDescription: milestoneDescription ?? this.milestoneDescription,
     dueDate: dueDate ?? this.dueDate,
     edited: edited ?? this.edited,
+    billingContactId: billingContactId ?? this.billingContactId,
     createdDate: createdDate ?? this.createdDate,
     modifiedDate: modifiedDate ?? this.modifiedDate,
   );
 
   int get hash => Object.hash(
-    id,
     id,
     quoteId,
     milestoneNumber,
@@ -114,5 +120,6 @@ class Milestone extends Entity<Milestone> {
     paymentPercentage,
     milestoneDescription,
     dueDate,
+    billingContactId,
   );
 }

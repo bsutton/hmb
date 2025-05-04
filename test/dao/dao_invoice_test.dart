@@ -25,6 +25,7 @@ should create an invoice for time and materials job with correct rates and mark 
         final now = DateTime.now();
         final today = LocalDate.fromDateTime(now);
         final job = await createJob(
+          contact: await createContact('Brett', 'Sutton'),
           now,
           BillingType.timeAndMaterial,
           hourlyRate: MoneyEx.dollars(50),
@@ -50,6 +51,7 @@ should create an invoice for time and materials job with correct rates and mark 
         // Create invoice for the job
         final invoice = await createTimeAndMaterialsInvoice(
           job,
+          await createContact('Brett', 'Sutton'),
           [task.id],
           groupByTask: false,
           billBookingFee: true,
@@ -116,6 +118,7 @@ should create an invoice for time and materials job with correct rates and mark 
     // Create invoice grouped by date
     final invoice = await createTimeAndMaterialsInvoice(
       job,
+      await createContact('Brett', 'Sutton'),
       [task1.id, task2.id],
       groupByTask: false,
       billBookingFee: true,
@@ -158,6 +161,7 @@ should create an invoice for time and materials job with correct rates and mark 
     // Create invoice grouped by task
     final invoice = await createTimeAndMaterialsInvoice(
       job,
+      await createContact('Brett', 'Sutton'),
       [task1.id, task2.id],
       groupByTask: true,
       billBookingFee: true,

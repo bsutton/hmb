@@ -47,6 +47,7 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
         if (options.selectedTaskIds.isNotEmpty || options.billBookingFee) {
           await createTimeAndMaterialsInvoice(
             job,
+            options.contact,
             options.selectedTaskIds,
             groupByTask: options.groupByTask,
             billBookingFee: options.billBookingFee,

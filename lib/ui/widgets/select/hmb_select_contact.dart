@@ -9,40 +9,54 @@ import '../../../ui/widgets/hmb_add_button.dart';
 import '../../crud/contact/edit_contact_screen.dart';
 import 'hmb_droplist.dart';
 
-/// Allows the user to select a Primary Contact from the contacts
-/// owned by a customer and associate them with another
-/// entity e.g. a job.
+/// Allows the user to select a contact owned by a customer
+/// and associate them with another entity (e.g. as billing contact).
 class HMBSelectContact extends StatefulWidget {
   const HMBSelectContact({
     required this.selectedContact,
     required this.customer,
-    super.key,
     this.onSelected,
+    this.title = 'Contact',
+    super.key,
   });
 
   /// The customer that owns the contact.
   final Customer? customer;
+
+  /// A reference to the June state tracking the selected contact ID.
   final SelectedContact selectedContact;
+
+  /// Called when a contact is selected.
   final void Function(Contact? contact)? onSelected;
+
+  /// Label for the field.
+  final String title;
 
   @override
   HMBSelectContactState createState() => HMBSelectContactState();
 }
 
 class HMBSelectContactState extends State<HMBSelectContact> {
+  /// Fetch the current selected contact by ID.
   Future<Contact?> _getInitialContact() =>
       DaoContact().getById(widget.selectedContact.contactId);
 
+  /// Fetch all contacts for the given customer.
   Future<List<Contact>> _getContacts(String? filter) =>
       DaoContact().getByCustomer(widget.customer?.id);
 
+  /// Called when a contact is selected from the droplist.
   void _onContactChanged(Contact? newValue) {
-    setState(() {
-      widget.selectedContact.contactId = newValue?.id;
-    });
-    widget.onSelected?.call(newValue);
+    final newId = newValue?.id;
+    if (newId != widget.selectedContact.contactId) {
+      setState(() {
+        widget.selectedContact.contactId = newId;
+      });
+      widget.onSelected?.call(newValue);
+    }
   }
 
+  /// Launches the add contact screen and updates selection if contact is added.
   Future<void> _addContact() async {
     final contact = await Navigator.push<Contact>(
       context,
@@ -54,6 +68,7 @@ class HMBSelectContactState extends State<HMBSelectContact> {
             ),
       ),
     );
+
     if (contact != null) {
       setState(() {
         widget.selectedContact.contactId = contact.id;
@@ -71,11 +86,11 @@ class HMBSelectContactState extends State<HMBSelectContact> {
         children: [
           Expanded(
             child: HMBDroplist<Contact>(
-              title: 'Contact',
+              title: widget.title,
               selectedItem: _getInitialContact,
               onChanged: _onContactChanged,
               items: _getContacts,
-              format: (contact) => ' ${contact.firstName} ${contact.surname}',
+              format: (contact) => '${contact.firstName} ${contact.surname}',
               required: false,
             ),
           ),
@@ -86,6 +101,7 @@ class HMBSelectContactState extends State<HMBSelectContact> {
   }
 }
 
+/// State object to persist the selected contact ID across screens.
 class SelectedContact extends JuneState {
   SelectedContact();
 

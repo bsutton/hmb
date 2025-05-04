@@ -38,6 +38,7 @@ should create an invoice with work done on two different dates for the same task
         // Create invoice grouped by date
         final invoice = await createTimeAndMaterialsInvoice(
           job,
+          await createContact('Brett', 'Sutton'),
           [task.id],
           groupByTask: false,
           billBookingFee: true,
@@ -84,6 +85,7 @@ should create an invoice with work done on two different dates for two different
         // Create invoice grouped by date
         final invoice = await createTimeAndMaterialsInvoice(
           job,
+          await createContact('Brett', 'Sutton'),
           [task1.id, task2.id],
           groupByTask: false,
           billBookingFee: true,

@@ -74,14 +74,11 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
   }
 
   Future<void> _createInvoice() async {
-    final jobAndContact = await SelectJobDialog.show(context, selectContact: true);
+    final job = await SelectJobDialog.show(context);
 
-    if (jobAndContact == null) {
+    if (job == null) {
       return;
     }
-
-    final job = jobAndContact.job;
-    final contact = jobAndContact.contact;
 
     if (job.hourlyRate == MoneyEx.zero) {
       HMBToast.error('Hourly rate must be set for job ${job.summary}');
@@ -94,7 +91,10 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
     }
 
     if (mounted) {
-      final invoiceOptions = await showInvoice(context: context, job: job, contact: contact);
+      final invoiceOptions = await showInvoice(
+        context: context,
+        job: job,
+      );
 
       if (invoiceOptions != null) {
         try {
@@ -102,6 +102,7 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
               invoiceOptions.billBookingFee) {
             await createTimeAndMaterialsInvoice(
               job,
+              invoiceOptions.contact,
               invoiceOptions.selectedTaskIds,
               groupByTask: invoiceOptions.groupByTask,
               billBookingFee: invoiceOptions.billBookingFee,

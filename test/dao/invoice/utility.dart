@@ -93,6 +93,7 @@ Future<Job> createJob(
   DateTime now,
   BillingType billingType, {
   required Money hourlyRate,
+  Contact? contact,
   Money? bookingFee,
   String summary = 'Time and Materials Job',
 }) async {
@@ -102,7 +103,7 @@ Future<Job> createJob(
     summary: summary,
     description: 'This is a T&M job',
     siteId: 1, // Assuming a site ID
-    contactId: 1, // Assuming a contact ID
+    contactId: contact?.id ?? 1, // Assuming a contact ID
     jobStatusId: 1, // Assuming job status ID
     hourlyRate: hourlyRate, // $50 per hour
     bookingFee: bookingFee, // $100 Booking Fee
@@ -111,4 +112,18 @@ Future<Job> createJob(
   await DaoJob().insert(job);
 
   return job;
+}
+
+Future<Contact> createContact(String firstname, String surname) async {
+  final contact = Contact.forInsert(
+    firstName: firstname,
+    surname: surname,
+    mobileNumber: '',
+    landLine: '',
+    officeNumber: '',
+    emailAddress: '',
+  );
+
+  await DaoContact().insert(contact);
+  return contact;
 }
