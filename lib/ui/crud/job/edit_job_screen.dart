@@ -62,8 +62,8 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
 
   BillingType _selectedBillingType = BillingType.timeAndMaterial;
   late final ScrollController scrollController;
-  // there has to be a better way but I can get the
-  // HMBTextBlock to see the description change.
+
+  // Version counters to force RichEditor rebuild
   var _descriptionVersion = 0;
   var _assumptionVersion = 0;
 
@@ -73,7 +73,6 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   @override
   void initState() {
     super.initState();
-
     currentEntity ??= widget.job;
     scrollController = ScrollController();
 
@@ -100,17 +99,27 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
 
   @override
   Future<void> asyncInitState() async {
-    /// Load initial state.
+    // existing selections
     June.getState(SelectedCustomer.new).customerId = widget.job?.customerId;
     June.getState(SelectJobStatus.new).jobStatusId = widget.job?.jobStatusId;
     June.getState(SelectedSite.new).siteId = widget.job?.siteId;
     June.getState(_SelectedContact.new).contactId = widget.job?.contactId;
-
     _selectedBillingType =
         widget.job?.billingType ?? BillingType.timeAndMaterial;
 
+    // Handle billing contact default
+    final billingState = June.getState(_JobBillingContact.new);
+    var initial = widget.job?.billingContactId;
+    if (initial == null && widget.job?.customerId != null) {
+      final cust = await DaoCustomer().getById(widget.job!.customerId);
+      initial = cust?.billingContactId;
+    }
+    billingState
+      ..contactId = initial
+      ..setState();
+
+    // new‐job defaults
     if (widget.job == null) {
-      // ignore: discarded_futures
       final system = await DaoSystem().get();
       setState(() {
         _hourlyRateController.text =
@@ -158,6 +167,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
                                   if (widget.job != null)
                                     _buildScheduleButtons(),
                                   _chooseBillingType(),
+                                  _chooseBillingContact(customer, job),
                                   _showHourlyRate(),
                                   _showBookingFee(),
                                   const HMBSpacer(height: true),
@@ -248,11 +258,29 @@ You can set a default booking fee from System | Billing screen''');
     crudListScreen: TaskListScreen(parent: Parent(job), extended: true),
   );
 
+  /// choose billing contact
+  Widget _chooseBillingContact(Customer? customer, Job? job) => JuneBuilder(
+    _JobBillingContact.new,
+    builder:
+        (state) => HMBSelectContact(
+          key: ValueKey(state.contactId),
+          title: 'Billing Contact',
+          initialContact: state.contactId,
+          customer: customer,
+          onSelected: (contact) {
+            June.getState(_JobBillingContact.new)
+              ..contactId = contact?.id
+              ..setState();
+          },
+        ),
+  );
+
   /// choose contact
   Widget _chooseContact(Customer? customer, Job? job) => JuneBuilder(
     _SelectedContact.new,
     builder:
         (state) => HMBSelectContact(
+          key: ValueKey(state.contactId),
           initialContact: state.contactId,
           customer: customer,
           onSelected: (contact) {
@@ -268,6 +296,7 @@ You can set a default booking fee from System | Billing screen''');
         () => SelectedSite()..siteId = job?.siteId,
         builder:
             (state) => HMBSelectSite(
+              key: ValueKey(state.siteId),
               initialSite: state,
               customer: customer,
               onSelected: (site) {
@@ -278,21 +307,35 @@ You can set a default booking fee from System | Billing screen''');
             ),
       );
 
+  /// Customer selector: when changed, clear dependent fields and re-seed defaults.
   Widget _chooseCustomer() => SelectCustomer(
     selectedCustomer: June.getState(SelectedCustomer.new),
     onSelected: (customer) {
+      // 1. Update the selected customer ID
       June.getState(SelectedCustomer.new)
         ..customerId = customer?.id
         ..setState();
 
-      /// we have changed customers so the site and contact lists
-      /// are no longer valid.
+      // 2. Clear site and contact selections
       June.getState(SelectedSite.new)
         ..siteId = null
         ..setState();
       June.getState(_SelectedContact.new)
         ..contactId = null
         ..setState();
+
+      // 3. Reset billing contact to the customer's default billingContactId
+      June.getState(_JobBillingContact.new)
+        ..contactId = customer?.billingContactId
+        ..setState();
+
+      // 4. Pull the customer's rate (and booking-fee if you have it) into the text fields
+      setState(() {
+        _hourlyRateController.text =
+            customer?.hourlyRate.amount.toString() ?? '';
+        // if your Customer model ever gets a bookingFee field, uncomment:
+        // _bookingFeeController.text = customer?.bookingFee.amount.toString() ?? '';
+      });
     },
   );
 
@@ -677,5 +720,10 @@ class ActivityJobsState extends JuneState {}
 class _SelectedContact extends JuneState {
   _SelectedContact();
 
+  int? contactId;
+}
+
+/// State object to persist the selected billing contact ID across this screen.
+class _JobBillingContact extends JuneState {
   int? contactId;
 }

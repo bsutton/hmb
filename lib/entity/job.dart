@@ -27,6 +27,7 @@ class Job extends Entity<Job> {
     required super.modifiedDate,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,
+    this.billingContactId,
   }) : super();
 
   Job.forInsert({
@@ -42,6 +43,7 @@ class Job extends Entity<Job> {
     this.lastActive = false,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,
+    this.billingContactId,
   }) : super.forInsert();
 
   Job.forUpdate({
@@ -58,6 +60,7 @@ class Job extends Entity<Job> {
     required this.bookingFeeInvoiced,
     this.lastActive = false,
     this.billingType = BillingType.timeAndMaterial,
+    this.billingContactId,
   }) : super.forUpdate();
 
   factory Job.fromMap(Map<String, dynamic> map) => Job(
@@ -73,12 +76,13 @@ class Job extends Entity<Job> {
     bookingFee: Money.fromInt(map['booking_fee'] as int? ?? 0, isoCode: 'AUD'),
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
-    lastActive: map['last_active'] == 1,
+    lastActive: (map['last_active'] as int) == 1,
     billingType: BillingType.values.firstWhere(
-      (e) => e.name == map['billing_type'],
+      (e) => e.name == (map['billing_type'] as String?),
       orElse: () => BillingType.timeAndMaterial,
     ),
-    bookingFeeInvoiced: map['booking_fee_invoiced'] == 1,
+    bookingFeeInvoiced: (map['booking_fee_invoiced'] as int) == 1,
+    billingContactId: map['billing_contact_id'] as int?,
   );
 
   @override
@@ -96,6 +100,7 @@ class Job extends Entity<Job> {
     'last_active': lastActive ? 1 : 0,
     'billing_type': billingType.name,
     'booking_fee_invoiced': bookingFeeInvoiced ? 1 : 0,
+    'billing_contact_id': billingContactId,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
@@ -112,4 +117,5 @@ class Job extends Entity<Job> {
   bool lastActive;
   BillingType billingType;
   bool bookingFeeInvoiced;
+  int? billingContactId;
 }

@@ -10,14 +10,13 @@ class Milestone extends Entity<Milestone> {
     required this.quoteId,
     required this.milestoneNumber,
     required this.edited,
-    required super.createdDate,
-    required super.modifiedDate,
     required this.paymentAmount,
     required this.paymentPercentage,
+    required super.createdDate,
+    required super.modifiedDate,
     this.invoiceId,
     this.milestoneDescription,
     this.dueDate,
-    this.billingContactId,
   }) : super();
 
   Milestone.forInsert({
@@ -46,7 +45,7 @@ class Milestone extends Entity<Milestone> {
               map['due_date'] as String,
             )
             : null,
-    billingContactId: map['billing_contact_id'] as int?,
+    
     edited: (map['edited'] as int) == 1,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
@@ -103,7 +102,6 @@ class Milestone extends Entity<Milestone> {
     milestoneDescription: milestoneDescription ?? this.milestoneDescription,
     dueDate: dueDate ?? this.dueDate,
     edited: edited ?? this.edited,
-    billingContactId: billingContactId ?? this.billingContactId,
     createdDate: createdDate ?? this.createdDate,
     modifiedDate: modifiedDate ?? this.modifiedDate,
   );
