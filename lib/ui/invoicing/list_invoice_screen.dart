@@ -91,7 +91,10 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
     }
 
     if (mounted) {
-      final invoiceOptions = await showInvoice(context: context, job: job);
+      final invoiceOptions = await showInvoice(
+        context: context,
+        job: job,
+      );
 
       if (invoiceOptions != null) {
         try {
@@ -99,6 +102,7 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
               invoiceOptions.billBookingFee) {
             await createTimeAndMaterialsInvoice(
               job,
+              invoiceOptions.contact,
               invoiceOptions.selectedTaskIds,
               groupByTask: invoiceOptions.groupByTask,
               billBookingFee: invoiceOptions.billBookingFee,

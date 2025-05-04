@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../dao/dao_contact.dart';
 import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
 import '../../entity/customer.dart';
@@ -14,7 +13,7 @@ class SelectJobDialog extends StatefulWidget {
   @override
   _SelectJobDialogState createState() => _SelectJobDialogState();
 
-  static Future<Job?> show(BuildContext context) => showDialog<Job?>(
+  static Future<Job?> show(BuildContext context) => showDialog<Job>(
     context: context,
     builder: (context) => const SelectJobDialog(),
   );
@@ -53,23 +52,18 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
   );
 
   List<CustomerAndJob> _filterJobs(List<CustomerAndJob> jobs) {
-    if (_searchQuery.isEmpty) {
-      return jobs;
-    }
+    if (_searchQuery.isEmpty) return jobs;
+
     return jobs.where((cj) {
       final customerName = cj.customer.name.toLowerCase();
       final jobSummary = cj.job.summary.toLowerCase();
-      final contactName = (cj.contactName ?? '').toLowerCase();
-
       return customerName.contains(_searchQuery) ||
-          jobSummary.contains(_searchQuery) ||
-          contactName.contains(_searchQuery);
+          jobSummary.contains(_searchQuery);
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) => Dialog(
-    // Remove default dialog padding to allow full-screen
     insetPadding: EdgeInsets.zero,
     backgroundColor: Theme.of(context).canvasColor,
     child: Scaffold(
@@ -85,7 +79,6 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
       ),
       body: Column(
         children: [
-          // Filters
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
@@ -113,8 +106,6 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
               ],
             ),
           ),
-
-          // Search bar
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -126,10 +117,8 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
               ),
             ),
           ),
-
           Expanded(
             child: FutureBuilderEx<List<CustomerAndJob>>(
-              // ignore: discarded_futures
               future: _fetchJobs(),
               builder: (context, jobs) {
                 if (jobs == null || jobs.isEmpty) {
@@ -157,11 +146,9 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
                           Text(
                             'Has billable items: ${current.hasBillables ? "Yes" : "No"}',
                           ),
-                          if (current.contactName != null)
-                            Text('Contact: ${current.contactName}'),
                         ],
                       ),
-                      onPressed: () => Navigator.pop(context, current.job),
+                      onPressed: () => _onPressed(current),
                     );
                   },
                 );
@@ -172,58 +159,40 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
       ),
     ),
   );
+
+  void _onPressed(CustomerAndJob current) {
+    if (mounted) {
+      Navigator.pop(context, current.job);
+    }
+  }
 }
 
 class CustomerAndJob {
-  CustomerAndJob(
-    this.customer,
-    this.job, {
-    required this.hasBillables,
-    this.contactName,
-  });
+  CustomerAndJob(this.customer, this.job, {required this.hasBillables});
 
   final Customer customer;
   final Job job;
   final bool hasBillables;
-  final String? contactName;
 
   static Future<List<CustomerAndJob>> getJobs({
     required bool showAllJobs,
     required bool showJobsWithNoBillableItems,
   }) async {
-    List<Job> jobs;
-
-    if (showAllJobs) {
-      jobs = await DaoJob().getAll();
-    } else {
-      jobs = await DaoJob().getActiveJobs(null); // Fetch active jobs
-    }
+    final jobs =
+        showAllJobs
+            ? await DaoJob().getAll()
+            : await DaoJob().getActiveJobs(null);
 
     final jobList = <CustomerAndJob>[];
 
     for (final job in jobs) {
       final customer = await DaoCustomer().getByJob(job.id);
-      if (customer == null) {
-        continue;
-      }
+      if (customer == null) continue;
 
       final hasBillables = await hasBillableItems(job);
-      if (!showJobsWithNoBillableItems && !hasBillables) {
-        continue;
-      }
+      if (!showJobsWithNoBillableItems && !hasBillables) continue;
 
-      // Fetch the primary contact for the job
-      final contact = await DaoContact().getPrimaryForJob(job.id);
-      final contactName = contact?.fullname;
-
-      jobList.add(
-        CustomerAndJob(
-          customer,
-          job,
-          hasBillables: hasBillables,
-          contactName: contactName,
-        ),
-      );
+      jobList.add(CustomerAndJob(customer, job, hasBillables: hasBillables));
     }
 
     return jobList;

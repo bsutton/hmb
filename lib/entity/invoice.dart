@@ -21,6 +21,7 @@ class Invoice extends Entity<Invoice> {
     this.externalInvoiceId,
     LocalDate? dueDate,
     this.sent = false,
+    this.billingContactId,
   }) : super() {
     this.dueDate =
         dueDate ??
@@ -31,6 +32,7 @@ class Invoice extends Entity<Invoice> {
     required this.jobId,
     required this.dueDate,
     required this.totalAmount,
+    required this.billingContactId,
     this.sent = false,
   }) : super.forInsert();
 
@@ -40,6 +42,7 @@ class Invoice extends Entity<Invoice> {
     required this.totalAmount,
     required this.invoiceNum,
     required this.dueDate,
+    required this.billingContactId,
     this.externalInvoiceId,
     this.sent = false,
   }) : super.forUpdate();
@@ -56,7 +59,8 @@ class Invoice extends Entity<Invoice> {
         map['due_date'] != null
             ? const LocalDateConverter().fromJson(map['due_date'] as String)
             : null,
-    sent: (map['sent'] as int) == 1, // Convert to boolean
+    sent: (map['sent'] as int) == 1,
+    billingContactId: map['billing_contact_id'] as int?,
   );
 
   int jobId;
@@ -68,6 +72,7 @@ class Invoice extends Entity<Invoice> {
   /// The invoice has been marked as sent on the remote accounting system
   /// sent invoices must be voided rather than deleted.
   bool sent;
+  int? billingContactId;
 
   String get bestNumber => invoiceNum ?? '$id';
 
@@ -81,6 +86,7 @@ class Invoice extends Entity<Invoice> {
     String? externalInvoiceId,
     LocalDate? dueDate,
     bool? sent,
+    int? billingContactId,
   }) => Invoice(
     id: id ?? this.id,
     jobId: jobId ?? this.jobId,
@@ -91,6 +97,7 @@ class Invoice extends Entity<Invoice> {
     externalInvoiceId: externalInvoiceId ?? this.externalInvoiceId,
     dueDate: dueDate ?? this.dueDate,
     sent: sent ?? this.sent,
+    billingContactId: billingContactId ?? this.billingContactId,
   );
 
   @override
@@ -103,7 +110,8 @@ class Invoice extends Entity<Invoice> {
     'invoice_num': invoiceNum,
     'external_invoice_id': externalInvoiceId,
     'due_date': const LocalDateConverter().toJson(dueDate),
-    'sent': sent ? 1 : 0, // Convert boolean to int
+    'sent': sent ? 1 : 0,
+    'billing_contact_id': billingContactId,
   };
 
   Future<XeroInvoice> toXeroInvoice(Invoice invoice) async {
@@ -135,6 +143,6 @@ class Invoice extends Entity<Invoice> {
   }
 
   /// true if the invoice has been uploaded to the external
-  /// accounting syhstem.
+  /// accounting system.
   bool isUploaded() => Strings.isNotBlank(externalInvoiceId);
 }

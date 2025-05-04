@@ -14,6 +14,7 @@ import '../widgets/surface.dart';
 import 'edit_quote_line_dialog.dart';
 import 'generate_quote_pdf.dart';
 import 'job_quote.dart';
+import 'select_billing_contact_dialog.dart';
 
 class QuoteDetailsScreen extends StatefulWidget {
   const QuoteDetailsScreen({required this.quoteId, super.key});
@@ -51,7 +52,6 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- Quote Summary ---
                   Padding(
                     padding: const EdgeInsets.all(8),
                     child: Column(
@@ -84,7 +84,6 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                     ),
                   ),
                   const Divider(),
-                  // --- Action Buttons ---
                   Padding(
                     padding: const EdgeInsets.all(8),
                     child: Wrap(
@@ -246,8 +245,21 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                           label: 'Create Invoice',
                           onPressed: () async {
                             try {
+                              final customer = await DaoCustomer().getByQuote(
+                                _quote.id,
+                              );
+                              if (customer == null) throw 'Customer not found';
+
+                              final contact =
+                                  await SelectBillingContactDialog.show(
+                                    context,
+                                    customer,
+                                  );
+                              if (contact == null) return;
+
                               final invoice = await createFixedPriceInvoice(
                                 _quote,
+                                contact,
                               );
                               HMBToast.info(
                                 'Invoice #${invoice.id} created successfully.',
@@ -261,9 +273,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                     ),
                   ),
                   const Divider(),
-                  // --- Quote Lines / Groups ---
                   FutureBuilderEx<JobQuote>(
-                    // ignore: discarded_futures
                     future: JobQuote.fromQuoteId(_quote.id),
                     builder: (context, jobQuote) {
                       if (jobQuote == null || jobQuote.groups.isEmpty) {

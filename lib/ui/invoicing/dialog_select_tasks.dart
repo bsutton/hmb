@@ -2,26 +2,29 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
+import '../../dao/dao_contact.dart';
 import '../../dao/dao_task.dart';
-import '../../entity/job.dart';
-import '../../entity/task.dart';
+import '../../entity/entity.g.dart';
 import '../widgets/hmb_button.dart';
 
 enum Showing { showQuote, showInvoice }
 
-/// Show the dialog
 Future<InvoiceOptions?> showQuote({
   required BuildContext context,
   required Job job,
 }) async {
   final estimates = await DaoTask().getEstimatesForJob(job.id);
 
+  final contact =
+      await DaoContact().getPrimaryForJob(job.id) ??
+      (throw Exception('No primary contact found for job'));
   if (context.mounted) {
     final invoiceOptions = await showDialog<InvoiceOptions>(
       context: context,
       builder:
           (context) => DialogTaskSelection(
             job: job,
+            contact: contact,
             taskSelectors:
                 estimates
                     .map(
@@ -40,7 +43,6 @@ Future<InvoiceOptions?> showQuote({
   return null;
 }
 
-/// Show the dialog
 Future<InvoiceOptions?> showInvoice({
   required BuildContext context,
   required Job job,
@@ -57,31 +59,37 @@ Future<InvoiceOptions?> showInvoice({
     );
   }
 
+  final contact =
+      await DaoContact().getPrimaryForJob(job.id) ??
+      (throw Exception('No primary contact found for job'));
   if (context.mounted) {
     final invoiceOptions = await showDialog<InvoiceOptions>(
       context: context,
       builder:
-          (context) => DialogTaskSelection(job: job, taskSelectors: selectors),
+          (context) => DialogTaskSelection(
+            job: job,
+            contact: contact,
+            taskSelectors: selectors,
+          ),
     );
     return invoiceOptions;
   }
   return null;
 }
 
-/// show the user the set of tasks for the passed Job
-/// and allow them to select which tasks they want to
-/// work on.
 class DialogTaskSelection extends StatefulWidget {
   const DialogTaskSelection({
     required this.job,
     required this.taskSelectors,
+    required this.contact,
     super.key,
   });
+
   final Job job;
   final List<TaskSelector> taskSelectors;
+  final Contact contact;
 
   @override
-  // ignore: library_private_types_in_public_api
   _DialogTaskSelectionState createState() => _DialogTaskSelectionState();
 }
 
@@ -97,20 +105,25 @@ class InvoiceOptions {
     required this.selectedTaskIds,
     required this.billBookingFee,
     required this.groupByTask,
+    required this.contact,
   });
+
   List<int> selectedTaskIds = [];
   // ignore: omit_obvious_property_types
   bool billBookingFee = true;
   bool groupByTask;
+  Contact contact;
 }
 
 class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
-  // late List<TaskEstimates> _tasks;
   final Map<int, bool> _selectedTasks = {};
   var _selectAll = true;
   late bool billBookingFee;
   late bool canBillBookingFee;
   var _groupByTask = false;
+
+  List<Contact> _contacts = [];
+  late Contact _selectedContact;
 
   @override
   Future<void> asyncInitState() async {
@@ -119,10 +132,15 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
             widget.job.billingType == BillingType.timeAndMaterial &&
             !widget.job.bookingFeeInvoiced;
 
-    /// Mark all tasks as selected.
     for (final accuredValue in widget.taskSelectors) {
       _selectedTasks[accuredValue.task.id] = true;
     }
+
+    _contacts = await DaoContact().getByCustomer(widget.job.customerId);
+    _selectedContact = _contacts.firstWhere(
+      (c) => c.id == widget.contact.id,
+      orElse: () => _contacts.first,
+    );
   }
 
   void _toggleSelectAll(bool? value) {
@@ -154,8 +172,34 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
           (context) => SingleChildScrollView(
             child: Column(
               children: [
+                if (_contacts.isNotEmpty)
+                  DropdownButton<Contact>(
+                    value: _selectedContact,
+                    isExpanded: true,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedContact = value!;
+                      });
+                    },
+                    items:
+                        _contacts
+                            .map(
+                              (contact) => DropdownMenuItem(
+                                value: contact,
+                                child: Text(contact.fullname),
+                              ),
+                            )
+                            .toList(),
+                  ),
+                const SizedBox(height: 20),
                 DropdownButton<bool>(
                   value: _groupByTask,
+                  isExpanded: true,
+                  onChanged: (value) {
+                    setState(() {
+                      _groupByTask = value ?? true;
+                    });
+                  },
                   items: const [
                     DropdownMenuItem(
                       value: true,
@@ -166,12 +210,6 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                       child: Text('Group by Date/Task'),
                     ),
                   ],
-                  onChanged: (value) {
-                    setState(() {
-                      _groupByTask = value ?? true;
-                    });
-                  },
-                  isExpanded: true,
                 ),
                 const SizedBox(height: 20),
                 if (canBillBookingFee)
@@ -193,7 +231,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                 for (final taskSelector in widget.taskSelectors)
                   CheckboxListTile(
                     title: Text(taskSelector.description),
-                    subtitle: Text('''Total Cost: ${taskSelector.value}'''),
+                    subtitle: Text('Total Cost: ${taskSelector.value}'),
                     value: _selectedTasks[taskSelector.task.id] ?? false,
                     onChanged:
                         (value) =>
@@ -218,6 +256,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
               selectedTaskIds: selectedTaskIds,
               billBookingFee: billBookingFee,
               groupByTask: _groupByTask,
+              contact: _selectedContact,
             ),
           );
         },

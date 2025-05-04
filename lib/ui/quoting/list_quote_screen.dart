@@ -86,6 +86,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       return;
     }
     if (mounted) {
+
       final quoteOptions = await showQuote(context: context, job: job);
       if (quoteOptions != null) {
         try {

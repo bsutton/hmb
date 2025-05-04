@@ -3,14 +3,12 @@ import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
-import '../ui/widgets/media/photo_gallery.dart';
-
 // A class to represent a task
-class ComputeTask {
+class ComputeTask<T, R> {
   ComputeTask(this.function, this.data, this.completer);
-  final ComputeCallback<ThumbnailPaths, String?> function;
-  final ThumbnailPaths data;
-  final Completer<String?> completer;
+  final ComputeCallback<T, R?> function;
+  final T data;
+  final Completer<R?> completer;
 }
 
 /// Run a task in an isolate but limit the number of concurrent isolates.
@@ -24,13 +22,10 @@ class ComputeManager {
 
   final int maxConcurrentTasks;
   var _runningTasks = 0;
-  final Queue<ComputeTask> _taskQueue = Queue();
+  final Queue<ComputeTask<dynamic, dynamic>> _taskQueue = Queue();
 
-  Future<String?> enqueueCompute(
-    ComputeCallback<ThumbnailPaths, String?> function,
-    ThumbnailPaths message,
-  ) {
-    final completer = Completer<String?>();
+  Future<R?> enqueueCompute<T, R>(ComputeCallback<T, R?> function, T message) {
+    final completer = Completer<R?>();
     final task = ComputeTask(function, message, completer);
     _taskQueue.add(task);
     unawaited(_maybeStartTasks());
@@ -46,7 +41,7 @@ class ComputeManager {
     }
   }
 
-  Future<void> _runTask(ComputeTask task) async {
+  Future<void> _runTask(ComputeTask<dynamic, dynamic> task) async {
     try {
       final result = await compute(
         task.function,

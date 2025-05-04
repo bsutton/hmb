@@ -8,6 +8,7 @@ import 'dao.g.dart';
 
 Future<Invoice> createTimeAndMaterialsInvoice(
   Job job,
+  Contact contact,
   List<int> selectedTaskIds, {
   required bool groupByTask,
   required bool billBookingFee,
@@ -30,6 +31,7 @@ Future<Invoice> createTimeAndMaterialsInvoice(
     jobId: job.id,
     totalAmount: totalAmount,
     dueDate: LocalDate.today().add(Duration(days: system.paymentTermsInDays)),
+    billingContactId: contact.id,
   );
 
   final invoiceId = await DaoInvoice().insert(invoice);
