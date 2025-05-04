@@ -52,7 +52,9 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
   );
 
   List<CustomerAndJob> _filterJobs(List<CustomerAndJob> jobs) {
-    if (_searchQuery.isEmpty) return jobs;
+    if (_searchQuery.isEmpty) {
+      return jobs;
+    }
 
     return jobs.where((cj) {
       final customerName = cj.customer.name.toLowerCase();
@@ -63,7 +65,7 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => Dialog(
+  Widget build(BuildContext context)  => Dialog(
     insetPadding: EdgeInsets.zero,
     backgroundColor: Theme.of(context).canvasColor,
     child: Scaffold(
@@ -119,6 +121,7 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
           ),
           Expanded(
             child: FutureBuilderEx<List<CustomerAndJob>>(
+              // ignore: discarded_futures
               future: _fetchJobs(),
               builder: (context, jobs) {
                 if (jobs == null || jobs.isEmpty) {
@@ -187,10 +190,14 @@ class CustomerAndJob {
 
     for (final job in jobs) {
       final customer = await DaoCustomer().getByJob(job.id);
-      if (customer == null) continue;
+      if (customer == null) {
+        continue;
+      }
 
       final hasBillables = await hasBillableItems(job);
-      if (!showJobsWithNoBillableItems && !hasBillables) continue;
+      if (!showJobsWithNoBillableItems && !hasBillables) {
+        continue;
+      }
 
       jobList.add(CustomerAndJob(customer, job, hasBillables: hasBillables));
     }
