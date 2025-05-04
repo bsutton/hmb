@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
 import '../../util/app_title.dart';
+import 'dashlet_card.dart';
 import 'route.dart';
 
 /// Main dashboard page wired up to refresh on return
@@ -47,9 +48,19 @@ class DashboardState extends State<DashboardPage> with RouteAware {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Padding(
-      padding: const EdgeInsets.all(16),
-      child: GridView.count(crossAxisCount: 2, children: widget.dashlets),
+    body: Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 16),
+        child: GridView.extent(
+          maxCrossAxisExtent: kDashletMaxWidth,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          shrinkWrap: true,
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: widget.dashlets,
+        ),
+      ),
     ),
   );
 
