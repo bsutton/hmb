@@ -42,7 +42,7 @@ class HMBButton extends StatelessWidget {
       );
     }
     return ElevatedButton(
-      onPressed: onPressed,
+      onPressed: (enabled ? onPressed : null),
       child: Text(label, style: TextStyle(color: color)),
     );
   }

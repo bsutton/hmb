@@ -105,7 +105,11 @@ class _JobCardState extends State<JobCard> {
   );
 
   Future<void> _createQuote() async {
-    final invoiceOptions = await showQuote(context: context, job: widget.job);
+    final invoiceOptions = await selectTaskToQuote(
+      context: context,
+      job: widget.job,
+      title: 'Tasks for Quote'
+    );
 
     if (invoiceOptions != null) {
       try {

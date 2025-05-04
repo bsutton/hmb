@@ -2,21 +2,23 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
-import '../../dao/dao_contact.dart';
-import '../../dao/dao_task.dart';
+import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/select/hmb_select_contact.dart';
 
 enum Showing { showQuote, showInvoice }
 
-Future<InvoiceOptions?> showQuote({
+/// Tasks for Quote
+Future<InvoiceOptions?> selectTaskToQuote({
   required BuildContext context,
   required Job job,
+  required String title,
 }) async {
   final estimates = await DaoTask().getEstimatesForJob(job.id);
 
   final contact =
-      await DaoContact().getPrimaryForJob(job.id) ??
+      await DaoContact().getBillingContactByJob(job) ??
       (throw Exception('No primary contact found for job'));
   if (context.mounted) {
     final invoiceOptions = await showDialog<InvoiceOptions>(
@@ -25,6 +27,7 @@ Future<InvoiceOptions?> showQuote({
           (context) => DialogTaskSelection(
             job: job,
             contact: contact,
+            title: title,
             taskSelectors:
                 estimates
                     .map(
@@ -43,9 +46,11 @@ Future<InvoiceOptions?> showQuote({
   return null;
 }
 
-Future<InvoiceOptions?> showInvoice({
+/// Tasks for Invoice
+Future<InvoiceOptions?> selectTasksToInvoice({
   required BuildContext context,
   required Job job,
+  required String title,
 }) async {
   final values = await DaoTask().getAccruedValueForJob(
     jobId: job.id,
@@ -60,8 +65,8 @@ Future<InvoiceOptions?> showInvoice({
   }
 
   final contact =
-      await DaoContact().getPrimaryForJob(job.id) ??
-      (throw Exception('No primary contact found for job'));
+      await DaoContact().getBillingContactByJob(job) ??
+      (throw Exception('No Billing contact found for job'));
   if (context.mounted) {
     final invoiceOptions = await showDialog<InvoiceOptions>(
       context: context,
@@ -70,6 +75,7 @@ Future<InvoiceOptions?> showInvoice({
             job: job,
             contact: contact,
             taskSelectors: selectors,
+            title: title,
           ),
     );
     return invoiceOptions;
@@ -82,37 +88,17 @@ class DialogTaskSelection extends StatefulWidget {
     required this.job,
     required this.taskSelectors,
     required this.contact,
+    required this.title,
     super.key,
   });
 
+  final String title;
   final Job job;
   final List<TaskSelector> taskSelectors;
   final Contact contact;
 
   @override
   _DialogTaskSelectionState createState() => _DialogTaskSelectionState();
-}
-
-class TaskSelector {
-  TaskSelector(this.task, this.description, this.value);
-  final Task task;
-  final String description;
-  final Money value;
-}
-
-class InvoiceOptions {
-  InvoiceOptions({
-    required this.selectedTaskIds,
-    required this.billBookingFee,
-    required this.groupByTask,
-    required this.contact,
-  });
-
-  List<int> selectedTaskIds = [];
-  // ignore: omit_obvious_property_types
-  bool billBookingFee = true;
-  bool groupByTask;
-  Contact contact;
 }
 
 class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
@@ -122,8 +108,9 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   late bool canBillBookingFee;
   var _groupByTask = false;
 
-  List<Contact> _contacts = [];
+  late Customer _customer;
   late Contact _selectedContact;
+  List<Contact> _contacts = [];
 
   @override
   Future<void> asyncInitState() async {
@@ -136,6 +123,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
       _selectedTasks[accuredValue.task.id] = true;
     }
 
+    _customer = (await DaoCustomer().getById(widget.job.customerId))!;
     _contacts = await DaoContact().getByCustomer(widget.job.customerId);
     _selectedContact = _contacts.firstWhere(
       (c) => c.id == widget.contact.id,
@@ -165,7 +153,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text('Select tasks to bill: ${widget.job.summary}'),
+    title: Text('${widget.title}: ${widget.job.summary}'),
     content: DeferredBuilder(
       this,
       builder:
@@ -173,23 +161,16 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
             child: Column(
               children: [
                 if (_contacts.isNotEmpty)
-                  DropdownButton<Contact>(
-                    value: _selectedContact,
-                    isExpanded: true,
-                    onChanged: (value) {
+                  HMBSelectContact(
+                    title: 'Billing Contact',
+
+                    initialContact: _selectedContact.id,
+                    customer: _customer,
+                    onSelected: (value) {
                       setState(() {
                         _selectedContact = value!;
                       });
                     },
-                    items:
-                        _contacts
-                            .map(
-                              (contact) => DropdownMenuItem(
-                                value: contact,
-                                child: Text(contact.fullname),
-                              ),
-                            )
-                            .toList(),
                   ),
                 const SizedBox(height: 20),
                 DropdownButton<bool>(
@@ -272,4 +253,26 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
         return taskCost.earned;
     }
   }
+}
+
+class TaskSelector {
+  TaskSelector(this.task, this.description, this.value);
+  final Task task;
+  final String description;
+  final Money value;
+}
+
+class InvoiceOptions {
+  InvoiceOptions({
+    required this.selectedTaskIds,
+    required this.billBookingFee,
+    required this.groupByTask,
+    required this.contact,
+  });
+
+  List<int> selectedTaskIds = [];
+  // ignore: omit_obvious_property_types
+  bool billBookingFee = true;
+  bool groupByTask;
+  Contact contact;
 }

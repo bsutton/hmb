@@ -4,13 +4,12 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
-import '../../../dao/dao_invoice_fixed_price.dart';
-import '../../../dao/dao_milestone.dart';
-import '../../../dao/dao_quote.dart';
+import '../../../dao/dao.g.dart';
 import '../../../entity/milestone.dart';
 import '../../../entity/quote.dart';
 import '../../../util/list_ex.dart';
 import '../../../util/money_ex.dart';
+import '../../quoting/select_billing_contact_dialog.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/text/hmb_text.dart';
@@ -267,7 +266,10 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
                       quoteTotal: quote.totalAmount,
                       onDelete: _onMilestoneDeleted,
                       onSave: _onMilestoneSave,
-                      onInvoice: _onMilestoneInvoice,
+                      onInvoice:
+                          // ignore: unnecessary_async
+                          (milestone) async =>
+                              _onMilestoneInvoice(context, milestone),
                       // If editingMilestoneId is set and not equal to this milestone's id,
                       // then this tile is grayed out.
                       isOtherTileEditing:
@@ -284,14 +286,35 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
         ),
   );
 
-  Future<void> _onMilestoneInvoice(Milestone milestone) async {
-    // Create invoice and update milestone
-    final invoice = await createInvoiceFromMilestone(milestone);
-    milestone.invoiceId = invoice.id;
-    await DaoMilestone().update(milestone);
+  Future<void> _onMilestoneInvoice(
+    BuildContext context,
+    Milestone milestone,
+  ) async {
+    final customer = await DaoCustomer().getByQuote(milestone.quoteId);
 
-    // Refresh data
-    await _loadData();
-    setState(() {});
+    final quote = await DaoQuote().getById(milestone.quoteId);
+    final job = await DaoJob().getById(quote!.jobId);
+    final initialContact = await DaoContact().getBillingContactByJob(job!);
+
+    if (context.mounted) {
+      final billingContact = await SelectBillingContactDialog.show(
+        context,
+        customer!,
+        initialContact,
+        (_) {},
+      );
+
+      // Create invoice and update milestone
+      final invoice = await createInvoiceFromMilestone(
+        milestone,
+        billingContact!,
+      );
+      milestone.invoiceId = invoice.id;
+      await DaoMilestone().update(milestone);
+
+      // Refresh data
+      await _loadData();
+      setState(() {});
+    }
   }
 }

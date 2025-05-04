@@ -392,6 +392,9 @@ where c.id =?
     }
     return ready;
   }
+
+
+
 }
 
 /// Used to notify the UI that the time entry has changed.

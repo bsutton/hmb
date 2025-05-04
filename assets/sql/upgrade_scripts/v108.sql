@@ -48,3 +48,4 @@ ALTER TABLE milestone_new
 -- 1) Add the new nullable column to the existing table
 ALTER TABLE job
 ADD COLUMN billing_contact_id INTEGER;
+

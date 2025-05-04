@@ -41,7 +41,11 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
       DaoJob().readyToBeInvoiced(filter);
 
   Future<void> _createInvoiceFor(Job job) async {
-    final options = await showInvoice(context: context, job: job);
+    final options = await selectTasksToInvoice(
+      context: context,
+      job: job,
+      title: 'Tasks sto Invoice',
+    );
     if (options != null) {
       try {
         if (options.selectedTaskIds.isNotEmpty || options.billBookingFee) {

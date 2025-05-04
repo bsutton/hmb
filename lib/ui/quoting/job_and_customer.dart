@@ -8,11 +8,13 @@ class JobAndCustomer {
   JobAndCustomer({
     required this.job,
     required this.customer,
-    required this.contact,
+    required this.primaryContact,
+    required this.billingContact,
   });
   final Job job;
   final Customer customer;
-  final Contact? contact;
+  final Contact? primaryContact;
+  final Contact? billingContact;
   static Future<JobAndCustomer> fromQuote(Quote quote) async {
     final job = await DaoJob().getById(quote.jobId);
     if (job == null) {
@@ -23,7 +25,13 @@ class JobAndCustomer {
       throw Exception('Customer not found for Job ${job.id}');
     }
 
-    final contact = await DaoContact().getPrimaryForJob(job.id);
-    return JobAndCustomer(job: job, customer: customer, contact: contact);
+    final primaryContact = await DaoContact().getPrimaryForJob(job.id);
+    final billingContact = await DaoContact().getBillingContactByJob(job);
+    return JobAndCustomer(
+      job: job,
+      customer: customer,
+      primaryContact: primaryContact,
+      billingContact: billingContact,
+    );
   }
 }

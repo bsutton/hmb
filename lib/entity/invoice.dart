@@ -18,10 +18,10 @@ class Invoice extends Entity<Invoice> {
     required super.createdDate,
     required super.modifiedDate,
     required this.invoiceNum,
+    required this.billingContactId,
     this.externalInvoiceId,
     LocalDate? dueDate,
     this.sent = false,
-    this.billingContactId,
   }) : super() {
     this.dueDate =
         dueDate ??

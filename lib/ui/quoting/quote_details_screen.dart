@@ -248,18 +248,31 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                               final customer = await DaoCustomer().getByQuote(
                                 _quote.id,
                               );
-                              if (customer == null) throw 'Customer not found';
 
-                              final contact =
+                              final job = await DaoJob().getJobForQuote(
+                                _quote.id,
+                              );
+
+                              final initialContact = await DaoContact()
+                                  .getBillingContactByJob(job);
+
+                              if (!context.mounted) {
+                                return;
+                              }
+                              final billingContact =
                                   await SelectBillingContactDialog.show(
                                     context,
-                                    customer,
+                                    customer!,
+                                    initialContact,
+                                    (contact) {},
                                   );
-                              if (contact == null) return;
+                              if (billingContact == null) {
+                                return;
+                              }
 
                               final invoice = await createFixedPriceInvoice(
                                 _quote,
-                                contact,
+                                billingContact,
                               );
                               HMBToast.info(
                                 'Invoice #${invoice.id} created successfully.',
@@ -274,6 +287,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                   ),
                   const Divider(),
                   FutureBuilderEx<JobQuote>(
+                    // ignore: discarded_futures
                     future: JobQuote.fromQuoteId(_quote.id),
                     builder: (context, jobQuote) {
                       if (jobQuote == null || jobQuote.groups.isEmpty) {

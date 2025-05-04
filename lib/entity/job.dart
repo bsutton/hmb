@@ -25,9 +25,9 @@ class Job extends Entity<Job> {
     required this.lastActive,
     required super.createdDate,
     required super.modifiedDate,
+    required this.billingContactId,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,
-    this.billingContactId,
   }) : super();
 
   Job.forInsert({
@@ -39,11 +39,11 @@ class Job extends Entity<Job> {
     required this.jobStatusId,
     required this.hourlyRate,
     required this.bookingFee,
+    required this.billingContactId,
     this.assumption = '',
     this.lastActive = false,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,
-    this.billingContactId,
   }) : super.forInsert();
 
   Job.forUpdate({
@@ -57,10 +57,10 @@ class Job extends Entity<Job> {
     required this.jobStatusId,
     required this.hourlyRate,
     required this.bookingFee,
+    required this.billingContactId,
     required this.bookingFeeInvoiced,
     this.lastActive = false,
     this.billingType = BillingType.timeAndMaterial,
-    this.billingContactId,
   }) : super.forUpdate();
 
   factory Job.fromMap(Map<String, dynamic> map) => Job(

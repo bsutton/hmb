@@ -91,9 +91,10 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
     }
 
     if (mounted) {
-      final invoiceOptions = await showInvoice(
+      final invoiceOptions = await selectTasksToInvoice(
         context: context,
         job: job,
+        title: 'Tasks to bill'
       );
 
       if (invoiceOptions != null) {

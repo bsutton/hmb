@@ -27,7 +27,6 @@ class Milestone extends Entity<Milestone> {
     this.invoiceId,
     this.milestoneDescription,
     this.dueDate,
-    this.billingContactId,
     this.edited = false,
   }) : super.forInsert();
 
@@ -59,7 +58,6 @@ class Milestone extends Entity<Milestone> {
   String? milestoneDescription;
   LocalDate? dueDate;
   bool edited;
-  int? billingContactId;
 
   @override
   Map<String, dynamic> toMap() => {
@@ -72,7 +70,6 @@ class Milestone extends Entity<Milestone> {
         paymentPercentage.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'milestone_description': milestoneDescription,
     'due_date': const LocalDateNullableConverter().toJson(dueDate),
-    'billing_contact_id': billingContactId,
     'edited': edited ? 1 : 0,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
@@ -88,7 +85,6 @@ class Milestone extends Entity<Milestone> {
     String? milestoneDescription,
     LocalDate? dueDate,
     bool? edited,
-    int? billingContactId,
     DateTime? createdDate,
     DateTime? modifiedDate,
   }) => Milestone(
@@ -118,6 +114,5 @@ class Milestone extends Entity<Milestone> {
     paymentPercentage,
     milestoneDescription,
     dueDate,
-    billingContactId,
   );
 }

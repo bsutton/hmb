@@ -12,6 +12,7 @@ import '../invoicing/select_job_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/layout/layout.g.dart';
 import 'quote_card.dart';
 import 'quote_details_screen.dart';
 
@@ -31,7 +32,9 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   Customer? selectedCustomer;
   String? filterText;
   // When false (default) do not display approved/rejected quotes.
-  var _includeApprovedRejected = false;
+  var _includeApproved = true;
+  var _includeRejected = false;
+  var _includeCompleted = false;
   final _duration = const Duration(milliseconds: 300);
 
   @override
@@ -54,9 +57,13 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
 
   Future<List<Quote>> _fetchFilteredQuotes() async {
     var quotes = await DaoQuote().getByFilter(filterText);
+
+    // Job filter
     if (selectedJob != null) {
       quotes = quotes.where((q) => q.jobId == selectedJob!.id).toList();
     }
+
+    // Customer filter
     if (selectedCustomer != null) {
       final forCustomer = <Quote>[];
       for (final quote in quotes) {
@@ -67,16 +74,35 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       }
       quotes = forCustomer;
     }
-    if (!_includeApprovedRejected) {
-      quotes =
-          quotes
-              .where(
-                (q) =>
-                    (q.state != QuoteState.approved) &&
-                    (q.state != QuoteState.rejected),
-              )
-              .toList();
+
+    // State filters
+    if (!_includeApproved) {
+      quotes = quotes.where((q) => q.state != QuoteState.approved).toList();
     }
+    if (!_includeRejected) {
+      quotes = quotes.where((q) => q.state != QuoteState.rejected).toList();
+    }
+
+    // Completed filter: exclude “completed” quotes if !_includeCompleted
+    if (!_includeCompleted) {
+      final notCompleted = <Quote>[];
+      for (final quote in quotes) {
+        // 1) any milestone for this quote?
+        final milestones = await DaoMilestone().getByQuoteId(quote.id);
+        if (milestones.isNotEmpty) {
+          continue; // completed → skip
+        }
+        // 2) any invoice on the quote’s job?
+        final invoices = await DaoInvoice().getByJobId(quote.jobId);
+        if (invoices.isNotEmpty) {
+          continue; // completed → skip
+        }
+        // still here? → not completed
+        notCompleted.add(quote);
+      }
+      quotes = notCompleted;
+    }
+
     return quotes;
   }
 
@@ -86,8 +112,11 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       return;
     }
     if (mounted) {
-
-      final quoteOptions = await showQuote(context: context, job: job);
+      final quoteOptions = await selectTaskToQuote(
+        context: context,
+        job: job,
+        title: 'Tasks to quote',
+      );
       if (quoteOptions != null) {
         try {
           if (!quoteOptions.billBookingFee &&
@@ -138,38 +167,38 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       try {
         await DaoQuote().delete(quote.id);
         HMBToast.info('Quote deleted successfully.');
-        _removeQuoteFromList(quote);
+        // _removeQuoteFromList(quote);
       } catch (e) {
         HMBToast.error('Failed to delete quote: $e');
       }
     }
   }
 
-  // Called when a QuoteCard signals removal (after an approve/reject action).
-  void _removeQuoteFromList(Quote removedQuote) {
-    final index = _quotes.indexWhere((q) => q.id == removedQuote.id);
-    if (index != -1) {
-      final removedItem = _quotes.removeAt(index);
-      _listKey.currentState?.removeItem(
-        index,
-        (context, animation) => ClipRect(
-          child: FadeTransition(
-            opacity: animation,
-            child: SizeTransition(
-              sizeFactor: animation,
-              child: QuoteCard(
-                key: ValueKey(removedItem.id),
-                quote: removedItem,
-                onDelete: () {},
-                onStateChanged: (_) {},
-              ),
-            ),
-          ),
-        ),
-        duration: _duration,
-      );
-    }
-  }
+  // // Called when a QuoteCard signals removal (after an approve/reject action).
+  // void _removeQuoteFromList(Quote removedQuote) {
+  //   final index = _quotes.indexWhere((q) => q.id == removedQuote.id);
+  //   if (index != -1) {
+  //     final removedItem = _quotes.removeAt(index);
+  //     _listKey.currentState?.removeItem(
+  //       index,
+  //       (context, animation) => ClipRect(
+  //         child: FadeTransition(
+  //           opacity: animation,
+  //           child: SizeTransition(
+  //             sizeFactor: animation,
+  //             child: QuoteCard(
+  //               key: ValueKey(removedItem.id),
+  //               quote: removedItem,
+  //               onDelete: () {},
+  //               onStateChanged: (_) {},
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //       duration: _duration,
+  //     );
+  //   }
+  // }
 
   Future<void> _onFilterChanged(String value) async {
     filterText = value;
@@ -197,23 +226,33 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                 padding: const EdgeInsets.all(8),
                 child: Row(
                   children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: const InputDecoration(
-                          labelText: 'Filter Quotes',
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: _onFilterChanged,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     Row(
                       children: [
-                        const Text('Old'),
+                        const Text('Approved'),
                         Switch(
-                          value: _includeApprovedRejected,
+                          value: _includeApproved,
                           onChanged: (val) async {
-                            _includeApprovedRejected = val;
+                            _includeApproved = val;
+                            await _loadQuotes();
+                            setState(() {});
+                          },
+                        ),
+                        const HMBSpacer(width: true),
+                        const Text('Completed'),
+                        Switch(
+                          value: _includeCompleted,
+                          onChanged: (val) async {
+                            _includeCompleted = val;
+                            await _loadQuotes();
+                            setState(() {});
+                          },
+                        ),
+                        const HMBSpacer(width: true),
+                        const Text('Rejected'),
+                        Switch(
+                          value: _includeRejected,
+                          onChanged: (val) async {
+                            _includeRejected = val;
                             await _loadQuotes();
                             setState(() {});
                           },
@@ -251,7 +290,11 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                                   quote: quote,
                                   // ignore: discarded_futures
                                   onDelete: () => _deleteQuote(quote),
-                                  onStateChanged: _removeQuoteFromList,
+                                  // ignore: discarded_futures
+                                  onStateChanged: (_) async {
+                                    await _fetchFilteredQuotes();
+                                    setState(() {});
+                                  },
                                 ),
                               ),
                             );

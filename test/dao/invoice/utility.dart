@@ -108,6 +108,7 @@ Future<Job> createJob(
     hourlyRate: hourlyRate, // $50 per hour
     bookingFee: bookingFee, // $100 Booking Fee
     billingType: billingType,
+    billingContactId: 1, // assumed contact id
   );
   await DaoJob().insert(job);
 

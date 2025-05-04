@@ -554,6 +554,7 @@ You can set a default booking fee from System | Billing screen''');
     bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
     bookingFeeInvoiced: job.bookingFeeInvoiced,
     billingType: _selectedBillingType,
+    billingContactId: June.getState(_JobBillingContact.new).contactId,
   );
 
   @override
@@ -568,6 +569,7 @@ You can set a default booking fee from System | Billing screen''');
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
     bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
     billingType: _selectedBillingType,
+    billingContactId: June.getState(_JobBillingContact.new).contactId,
   );
 
   @override

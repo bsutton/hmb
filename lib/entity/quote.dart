@@ -16,7 +16,9 @@ class Quote extends Entity<Quote> {
     required this.state,
     this.externalQuoteId,
     this.dateSent,
+    
     this.dateApproved,
+    this.billingContactId,
   }) : super();
 
   Quote.forInsert({
@@ -28,6 +30,7 @@ class Quote extends Entity<Quote> {
     this.state = QuoteState.reviewing,
     this.dateSent,
     this.dateApproved,
+    this.billingContactId,
   }) : super.forInsert();
 
   Quote.forUpdate({
@@ -40,6 +43,7 @@ class Quote extends Entity<Quote> {
     this.externalQuoteId,
     this.dateSent,
     this.dateApproved,
+    this.billingContactId,
   }) : super.forUpdate();
 
   factory Quote.fromMap(Map<String, dynamic> map) => Quote(
@@ -60,6 +64,7 @@ class Quote extends Entity<Quote> {
         map['date_approved'] != null
             ? DateTime.parse(map['date_approved'] as String)
             : null,
+    billingContactId: map['billing_contact_id'] as int?,
   );
 
   int jobId;
@@ -70,6 +75,7 @@ class Quote extends Entity<Quote> {
   QuoteState state;
   DateTime? dateSent;
   DateTime? dateApproved;
+  int? billingContactId;
 
   String get bestNumber => externalQuoteId ?? quoteNum ?? '$id';
 
@@ -85,6 +91,7 @@ class Quote extends Entity<Quote> {
     QuoteState? state,
     DateTime? dateSent,
     DateTime? dateApproved,
+    int? billingContactId,
   }) => Quote(
     id: id ?? this.id,
     jobId: jobId ?? this.jobId,
@@ -97,6 +104,7 @@ class Quote extends Entity<Quote> {
     state: state ?? this.state,
     dateSent: dateSent ?? this.dateSent,
     dateApproved: dateApproved ?? this.dateApproved,
+    billingContactId: billingContactId ?? this.billingContactId,
   );
 
   @override
@@ -112,5 +120,6 @@ class Quote extends Entity<Quote> {
     'state': state.name,
     'date_sent': dateSent?.toIso8601String(),
     'date_approved': dateApproved?.toIso8601String(),
+    'billing_contact_id': billingContactId,
   };
 }

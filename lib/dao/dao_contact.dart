@@ -9,6 +9,7 @@ import '../entity/supplier.dart';
 import 'dao.dart';
 import 'dao_contact_customer.dart';
 import 'dao_contact_supplier.dart';
+import 'dao_customer.dart';
 import 'dao_job.dart';
 
 class DaoContact extends Dao<Contact> {
@@ -265,6 +266,75 @@ order by c.modifiedDate desc
     }
 
     return Contact.fromMap(rows.first);
+  }
+
+  /// Returns a contact according to this priority:
+  ///  1. The job’s specific billing contact (job.billingContactId)
+  ///  2. The customer’s billing contact (customer.billingContactId)
+  ///  3. The job’s general contact (job.contactId)
+  ///  4. The contact with the lowest ID among that customer’s contacts
+  Future<Contact?> getBillingContactByJob(Job job) async {
+    final db = withoutTransaction();
+
+    // 1) Job-specific billing contact
+    if (job.billingContactId != null) {
+      final rows = await db.query(
+        'contact',
+        where: 'id = ?',
+        whereArgs: [job.billingContactId],
+      );
+      if (rows.isNotEmpty) {
+        return Contact.fromMap(rows.first);
+      }
+    }
+
+    // Load the customer (to check their billingContactId and their contacts)
+    final customer = await DaoCustomer().getById(job.customerId);
+    if (customer != null) {
+      // 2) Customer’s billing contact
+      if (customer.billingContactId != null) {
+        final rows = await db.query(
+          'contact',
+          where: 'id = ?',
+          whereArgs: [customer.billingContactId],
+        );
+        if (rows.isNotEmpty) {
+          return Contact.fromMap(rows.first);
+        }
+      }
+
+      // 3) Job’s general contact
+      if (job.contactId != null) {
+        final rows = await db.query(
+          'contact',
+          where: 'id = ?',
+          whereArgs: [job.contactId],
+        );
+        if (rows.isNotEmpty) {
+          return Contact.fromMap(rows.first);
+        }
+      }
+
+      // 4) Lowest-ID contact for that customer
+      final fallback = await db.rawQuery(
+        '''
+        SELECT c.*
+          FROM contact AS c
+          JOIN customer_contact AS cc
+            ON cc.contact_id = c.id
+         WHERE cc.customer_id = ?
+         ORDER BY c.id ASC
+         LIMIT 1
+        ''',
+        [customer.id],
+      );
+      if (fallback.isNotEmpty) {
+        return Contact.fromMap(fallback.first);
+      }
+    }
+
+    // No contact found
+    return null;
   }
 }
 
