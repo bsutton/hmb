@@ -20,6 +20,7 @@ class PdfPreviewScreen extends StatelessWidget {
     required this.emailSubject,
     required this.emailBody,
     required this.filePath,
+    required this.preferredRecipient,
     required this.emailRecipients,
     required this.canEmail,
     required this.onSent,
@@ -30,6 +31,7 @@ class PdfPreviewScreen extends StatelessWidget {
 
   final String emailSubject;
   final String emailBody;
+  final String preferredRecipient;
   final List<String> emailRecipients;
   final Future<void> Function() onSent;
   final Future<EmailBlocked> Function() canEmail;
@@ -55,6 +57,7 @@ class PdfPreviewScreen extends StatelessWidget {
         context: context,
         builder:
             (context) => EmailDialog(
+              preferredRecipient: preferredRecipient,
               emailRecipients: emailRecipients,
               system: system,
               filePath: filePath,

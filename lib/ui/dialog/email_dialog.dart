@@ -11,6 +11,7 @@ class EmailDialog extends StatefulWidget {
   const EmailDialog({
     required this.subject,
     required this.body,
+    required this.preferredRecipient,
     required this.emailRecipients,
     required this.system,
     required this.filePath,
@@ -19,6 +20,7 @@ class EmailDialog extends StatefulWidget {
 
   final String subject;
   final String body;
+  final String preferredRecipient;
   final List<String> emailRecipients;
   final System system;
   final String filePath;
@@ -50,8 +52,8 @@ Web: ${widget.system.webUrl}
 ${widget.system.businessNumberLabel}: ${widget.system.businessNumber}
 ''',
     );
-    _selectedRecipient =
-        widget.emailRecipients.isNotEmpty ? widget.emailRecipients.first : null;
+    _selectedRecipient = widget.preferredRecipient;
+    
   }
 
   @override

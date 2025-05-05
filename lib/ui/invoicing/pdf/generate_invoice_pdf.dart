@@ -34,12 +34,13 @@ Future<File> generateInvoicePdf(
   final systemColor = PdfColor.fromInt(system.billingColour);
 
   // Retrieve the Job using the jobId from the Invoice.
-  final job = await DaoJob().getById(invoice.jobId);
+  final job = (await DaoJob().getById(invoice.jobId))!;
 
   // Retrieve the customer for the job and the primary contact for the job.
   final customer = await DaoCustomer().getByJob(invoice.jobId);
-  final contact = await DaoContact().getPrimaryForJob(invoice.jobId);
-
+  final primaryContact = await DaoContact().getPrimaryForJob(invoice.jobId);
+  var billingContact = await DaoContact().getById(invoice.billingContactId);
+  billingContact ??= await DaoContact().getBillingContactByJob(job);
   var groupedLines = <GroupedLine>[];
 
   if (displayGroupHeaders) {
@@ -160,10 +161,10 @@ Future<File> generateInvoicePdf(
                             ),
                           ),
 
-                        if (contact != null) ...[
+                        if (billingContact != null) ...[
                           pw.SizedBox(height: 4),
                           pw.Text(
-                            'Attention: ${contact.fullname}',
+                            'Attention: ${billingContact.fullname}',
                             style: const pw.TextStyle(fontSize: 12),
                           ),
                         ],
@@ -188,7 +189,7 @@ Future<File> generateInvoicePdf(
                 ),
                 pw.Divider(),
                 // Moved job details.
-                if (job != null) ...[
+                ...[
                   pw.Text(
                     'Job: #${job.id}',
                     style: pw.TextStyle(

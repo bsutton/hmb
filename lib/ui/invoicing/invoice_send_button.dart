@@ -33,11 +33,15 @@ class BuildSendButton extends StatelessWidget {
       var groupByTask = true; // Default to group by task
 
       final job = await DaoJob().getById(invoice.jobId);
-      final contact = await DaoContact().getPrimaryForJob(job!.id);
-      if (contact == null) {
+      final primaryContact = await DaoContact().getPrimaryForJob(job!.id);
+      if (primaryContact == null) {
         HMBToast.error('You must first set a Contact on the Job');
         return;
       }
+
+      final billingContact = await DaoContact().getBillingContactByJob(job);
+
+      
 
       if (!context.mounted) {
         return;
@@ -74,10 +78,11 @@ class BuildSendButton extends StatelessWidget {
                   (context) => PdfPreviewScreen(
                     title: '''Invoice #${invoice.bestNumber} ${job.summary}''',
                     filePath: filePath.path,
+                    preferredRecipient: billingContact?.emailAddress ?? recipients.first,
                     emailSubject:
                         '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
                     emailBody: '''
-${contact.firstName.trim()},
+${primaryContact.firstName.trim()},
 Please find the attached invoice for your job.
 
 Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}

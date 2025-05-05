@@ -187,7 +187,10 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                                 displayItems: displayItems,
                               );
                               final system = await DaoSystem().get();
-                              final job = await DaoJob().getById(_quote.jobId);
+                              final job =
+                                  (await DaoJob().getById(_quote.jobId))!;
+                              final billingContact = await DaoContact()
+                                  .getBillingContactByJob(job);
                               final contacts = await DaoContact().getByJob(
                                 _quote.jobId,
                               );
@@ -199,12 +202,15 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                                     builder:
                                         (context) => PdfPreviewScreen(
                                           title:
-                                              'Quote #${_quote.id} ${job!.summary}',
+                                              'Quote #${_quote.id} ${job.summary}',
                                           filePath: filePath.path,
                                           emailSubject:
                                               '${system.businessName ?? 'Your'} Quote',
                                           emailBody:
                                               'Please find the attached quote',
+                                          preferredRecipient:
+                                              billingContact?.emailAddress ??
+                                              emailRecipients.first,
                                           emailRecipients: emailRecipients,
                                           onSent: () async {
                                             if (_quote.state !=
