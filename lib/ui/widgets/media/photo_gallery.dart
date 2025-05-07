@@ -54,7 +54,7 @@ class PhotoGallery extends StatelessWidget {
                 )
                 .toList();
   }
-  final computeManager = ComputeManager();
+  final computeManager = ComputeManager<Thumbnail, Thumbnail>();
 
   late final Future<List<PhotoMeta>> Function() _fetchPhotos;
 
@@ -147,7 +147,7 @@ class PhotoGallery extends StatelessWidget {
                           (context, thumbnail) => Stack(
                             children: [
                               Image.file(
-                                File(thumbnail!.target),
+                                File(thumbnail!.pathToThumbNail),
                                 width: 80,
                                 height: 80,
                                 fit: BoxFit.cover,
@@ -188,8 +188,11 @@ class PhotoGallery extends StatelessWidget {
     June.getState(PhotoGalleryState.new).setState();
   }
 
-  Future<Thumbnail?> _getThumbNail(PhotoMeta photoMeta) async =>
-      (await Thumbnail.fromMeta(photoMeta)).generate(computeManager);
+  Future<Thumbnail?> _getThumbNail(PhotoMeta photoMeta) async {
+    final thumbnail = await Thumbnail.fromMeta(photoMeta);
+    await thumbnail.generate(computeManager);
+    return thumbnail;
+  }
 }
 
 class PhotoGalleryState extends JuneState {}

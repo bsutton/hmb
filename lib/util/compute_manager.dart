@@ -12,9 +12,12 @@ class ComputeTask<T, R> {
 }
 
 /// Run a task in an isolate but limit the number of concurrent isolates.
-class ComputeManager {
+class ComputeManager<T, R> {
   factory ComputeManager({int maxConcurrentTasks = 2}) =>
-      _self ??= ComputeManager._init(maxConcurrentTasks: maxConcurrentTasks);
+      (_self ??= ComputeManager<T, R>._init(
+            maxConcurrentTasks: maxConcurrentTasks,
+          ))
+          as ComputeManager<T, R>;
 
   ComputeManager._init({this.maxConcurrentTasks = 2});
 
@@ -22,11 +25,11 @@ class ComputeManager {
 
   final int maxConcurrentTasks;
   var _runningTasks = 0;
-  final Queue<ComputeTask<dynamic, dynamic>> _taskQueue = Queue();
+  final Queue<ComputeTask<T, R>> _taskQueue = Queue();
 
-  Future<R?> enqueueCompute<T, R>(ComputeCallback<T, R?> function, T message) {
+  Future<R?> enqueueCompute(ComputeCallback<T, R?> function, T data) {
     final completer = Completer<R?>();
-    final task = ComputeTask(function, message, completer);
+    final task = ComputeTask(function, data, completer);
     _taskQueue.add(task);
     unawaited(_maybeStartTasks());
     return completer.future;
@@ -41,7 +44,7 @@ class ComputeManager {
     }
   }
 
-  Future<void> _runTask(ComputeTask<dynamic, dynamic> task) async {
+  Future<void> _runTask(ComputeTask<T, R> task) async {
     try {
       final result = await compute(
         task.function,

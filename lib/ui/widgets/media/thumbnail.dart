@@ -1,3 +1,4 @@
+import 'dart:developer' show log;
 import 'dart:io';
 
 import 'package:dcli_core/dcli_core.dart' as core;
@@ -11,35 +12,34 @@ import '../../../util/exceptions.dart';
 import '../../../util/photo_meta.dart';
 
 class Thumbnail {
-  Thumbnail({required this.source, required this.target});
+  Thumbnail({required this.source, required this.pathToThumbNail});
 
   static Future<Thumbnail> fromMeta(PhotoMeta meta) async {
+    await meta.resolve();
     final source = meta.absolutePathTo;
 
-    await meta.resolve();
-
-    final absolutePath = meta.absolutePathTo;
     final thumbnailDir = await _getThumbnailDirectory();
     final target = p.join(
       thumbnailDir,
-      '${p.basenameWithoutExtension(absolutePath)}.jpg',
+      '${p.basenameWithoutExtension(source)}.jpg',
     );
 
-    if (!core.exists(absolutePath)) {
-      throw InvalidPathException(absolutePath);
+    if (!core.exists(source)) {
+      throw InvalidPathException(source);
     }
 
-    return Thumbnail(source: source, target: target);
+    return Thumbnail(source: source, pathToThumbNail: target);
   }
 
   String source;
-  String target;
+  String pathToThumbNail;
 
   bool exists() => core.exists(source);
 
   // Function to generate a thumbnail (to be run in a background isolate)
-  Future<String?> generateThumbnail() async {
-    print('generating thumbnail: $source');
+  // returns a path to the generated image
+  Future<String?> _generateImage() async {
+    log('generating thumbnail image for: $source');
 
     final imageFile = File(source);
     if (!exists()) {
@@ -52,26 +52,31 @@ class Thumbnail {
     }
 
     final thumbnail = img.copyResize(image, width: 80, height: 80);
-    File(target).writeAsBytesSync(img.encodeJpg(thumbnail));
-    return target;
+    File(pathToThumbNail).writeAsBytesSync(img.encodeJpg(thumbnail));
+    return pathToThumbNail;
   }
 
   // Helper function to get the thumbnail directory
   static Future<String> _getThumbnailDirectory() async {
     final tempDir = await getTemporaryDirectory();
     final thumbnailDir = p.join(tempDir.path, 'thumbnails');
-    createDir(thumbnailDir, recursive: true);
+    if (!core.exists(thumbnailDir)) {
+      createDir(thumbnailDir, recursive: true);
+    }
     return thumbnailDir;
   }
 
-  Future<Thumbnail?> generate(ComputeManager computeManager) async {
-    if (exists()) {
-      return this;
+  Future<void> generate(
+    ComputeManager<Thumbnail, Thumbnail> computeManager,
+  ) async {
+    if (core.exists(pathToThumbNail)) {
+      return;
     }
 
     // Generate thumbnail in a background isolate
-    return computeManager.enqueueCompute((thumbnail) async {
-      await thumbnail.generateThumbnail();
+    await computeManager.enqueueCompute((thumbnail) async {
+      await thumbnail._generateImage();
+
       return thumbnail;
     }, this);
   }

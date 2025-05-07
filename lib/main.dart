@@ -38,7 +38,7 @@ Future<void> main(List<String> args) async {
   Log.configure('.');
 
   // Ensure WidgetsFlutterBinding is initialized before any async code.
-  WidgetsFlutterBinding.ensureInitialized();
+  // WidgetsFlutterBinding.ensureInitialized();
   SentryWidgetsFlutterBinding.ensureInitialized();
 
   final packageInfo = await PackageInfo.fromPlatform();

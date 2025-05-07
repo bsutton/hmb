@@ -5,6 +5,7 @@ import '../../api/external_accounting.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/invoice.dart';
 import '../../util/format.dart';
+import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/pdf_preview.dart';
@@ -41,8 +42,6 @@ class BuildSendButton extends StatelessWidget {
 
       final billingContact = await DaoContact().getBillingContactByJob(job);
 
-      
-
       if (!context.mounted) {
         return;
       }
@@ -62,11 +61,14 @@ class BuildSendButton extends StatelessWidget {
         displayItems = result['displayItems'] ?? true;
         groupByTask = result['groupByTask'] ?? true;
 
-        final filePath = await generateInvoicePdf(
-          invoice,
-          displayCosts: displayCosts,
-          displayGroupHeaders: displayGroupHeaders,
-          displayItems: displayItems,
+        final filePath = await BlockingUI().runAndWait(
+          label: 'Generating Invoice',
+          () => generateInvoicePdf(
+            invoice,
+            displayCosts: displayCosts,
+            displayGroupHeaders: displayGroupHeaders,
+            displayItems: displayItems,
+          ),
         );
         final system = await DaoSystem().get();
 
@@ -78,7 +80,8 @@ class BuildSendButton extends StatelessWidget {
                   (context) => PdfPreviewScreen(
                     title: '''Invoice #${invoice.bestNumber} ${job.summary}''',
                     filePath: filePath.path,
-                    preferredRecipient: billingContact?.emailAddress ?? recipients.first,
+                    preferredRecipient:
+                        billingContact?.emailAddress ?? recipients.first,
                     emailSubject:
                         '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
                     emailBody: '''

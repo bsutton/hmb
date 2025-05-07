@@ -38,13 +38,12 @@ Future<File> generateInvoicePdf(
 
   // Retrieve the customer for the job and the primary contact for the job.
   final customer = await DaoCustomer().getByJob(invoice.jobId);
-  final primaryContact = await DaoContact().getPrimaryForJob(invoice.jobId);
   var billingContact = await DaoContact().getById(invoice.billingContactId);
   billingContact ??= await DaoContact().getBillingContactByJob(job);
-  var groupedLines = <GroupedLine>[];
 
+  // Group lines if requested
+  var groupedLines = <GroupedLine>[];
   if (displayGroupHeaders) {
-    // Group items by `invoiceLineGroupId`
     groupedLines = await groupByInvoiceLineGroup(lines);
   }
 
@@ -61,7 +60,7 @@ Future<File> generateInvoicePdf(
                   left: 0,
                   right: 0,
                   child: pw.Container(
-                    height: 28, // 1cm height
+                    height: 28,
                     color: systemColor,
                     child: pw.Padding(
                       padding: const pw.EdgeInsets.symmetric(horizontal: 8),
@@ -121,17 +120,17 @@ Future<File> generateInvoicePdf(
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Top row: Invoice details on the left and customer/contact details on the right.
+                // Top row: Tax Invoice details on the left and customer/contact on the right
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    // Left column: Invoice details.
+                    // Left column: Invoice details
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.SizedBox(height: 16),
                         pw.Text(
-                          'Invoice: ${invoice.bestNumber}',
+                          'Tax Invoice: ${invoice.bestNumber}',
                           style: pw.TextStyle(
                             fontSize: 18,
                             fontWeight: pw.FontWeight.bold,
@@ -145,13 +144,11 @@ Future<File> generateInvoicePdf(
                         ),
                       ],
                     ),
-                    // Right column: Customer and Contact details.
+                    // Right column: Customer and Contact details
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [
-                        pw.SizedBox(
-                          height: 16,
-                        ), // Added to vertically align with Invoice number.
+                        pw.SizedBox(height: 16),
                         if (customer != null)
                           pw.Text(
                             'To: ${customer.name}',
@@ -160,7 +157,6 @@ Future<File> generateInvoicePdf(
                               fontWeight: pw.FontWeight.bold,
                             ),
                           ),
-
                         if (billingContact != null) ...[
                           pw.SizedBox(height: 4),
                           pw.Text(
@@ -173,46 +169,62 @@ Future<File> generateInvoicePdf(
                   ],
                 ),
                 pw.Divider(),
-                // Business details.
+                // Business details and logo in one row
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    // Business details on the left
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            system.businessName ?? '',
+                            style: pw.TextStyle(
+                              fontSize: 16,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                          if (system.address.isNotEmpty)
+                            pw.Text('Address: ${system.address}'),
+                          if (system.emailAddress != null &&
+                              system.emailAddress!.isNotEmpty)
+                            pw.Text('Email: ${system.emailAddress}'),
+                          if (phone.isNotEmpty) pw.Text('Phone: $phone'),
+                          if (system.businessNumberLabel != null &&
+                              system.businessNumber != null &&
+                              system.businessNumber!.isNotEmpty)
+                            pw.Text(
+                              '${system.businessNumberLabel}: ${system.businessNumber}',
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Logo on the right
+                    if (logo != null) logo,
+                  ],
+                ),
+                pw.Divider(),
+                // Job details
                 pw.Text(
-                  system.businessName ?? '',
+                  'Job: #${job.id}',
                   style: pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
                   ),
                 ),
-                pw.Text('Address: ${system.address}'),
-                pw.Text('Email: ${system.emailAddress}'),
-                pw.Text('Phone: $phone'),
-                pw.Text(
-                  '${system.businessNumberLabel}: ${system.businessNumber}',
-                ),
+                pw.Text(job.summary, style: const pw.TextStyle(fontSize: 12)),
                 pw.Divider(),
-                // Moved job details.
-                ...[
-                  pw.Text(
-                    'Job: #${job.id}',
-                    style: pw.TextStyle(
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.Text(job.summary, style: const pw.TextStyle(fontSize: 12)),
-                  pw.Divider(),
-                ],
               ],
             ),
           );
-        } else {
-          return pw.SizedBox();
         }
+        return pw.SizedBox();
       },
-
       build: (context) {
         final content = <pw.Widget>[];
 
         if (displayGroupHeaders) {
-          // Group items by `invoiceLineGroupId`
           for (final group in groupedLines) {
             content
               ..add(pw.SizedBox(height: 10))
@@ -238,7 +250,6 @@ Future<File> generateInvoicePdf(
                   ],
                 ),
               );
-
             if (displayItems) {
               for (final line in group.items) {
                 content.add(
@@ -311,7 +322,6 @@ Future<File> generateInvoicePdf(
           ),
         ]);
 
-        // Reduced top padding to remove excess whitespace before lines/groups.
         return [
           pw.Padding(
             padding: const pw.EdgeInsets.only(
@@ -344,7 +354,6 @@ String paymentTerms(System system) {
   }
 }
 
-// Helper function to group items by `invoiceLineGroupId`
 Future<List<GroupedLine>> groupByInvoiceLineGroup(
   List<InvoiceLine> lines,
 ) async {
@@ -354,7 +363,6 @@ Future<List<GroupedLine>> groupByInvoiceLineGroup(
     grouped.putIfAbsent(groupKey, () => []).add(line);
   }
 
-  // Convert the map to a list of grouped lines
   final groupLines = <GroupedLine>[];
   for (final entry in grouped.entries) {
     final total = entry.value.fold(
@@ -376,7 +384,6 @@ Future<List<GroupedLine>> groupByInvoiceLineGroup(
   return groupLines;
 }
 
-// Grouped line class to hold grouping data
 class GroupedLine {
   GroupedLine({
     required this.key,
@@ -399,20 +406,16 @@ class GroupedLine {
           .isNotEmpty;
 }
 
-// Helper function to get the logo
 Future<pw.Widget?> _getLogo(System system) async {
   final logoPath = system.logoPath;
-
   if (logoPath.isEmpty) {
     return null;
   }
-
   final file = File(logoPath);
   if (!file.existsSync()) {
     return null;
   }
   final image = pw.MemoryImage(await file.readAsBytes());
-
   return pw.Image(
     image,
     width: system.logoAspectRatio.width.toDouble(),

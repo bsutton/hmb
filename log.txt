@@ -1,0 +1,343 @@
+[  +21 ms] executing: uname -m
+[  +14 ms] Exit code 0 from: uname -m
+[        ] x86_64
+[  +45 ms] Found 1 files which will be executed as Widget Tests.
+[   +7 ms] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[   +1 ms] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[  +38 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[        ] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +81 ms] Skipping pub get: version match.
+[  +41 ms] Found plugin android_intent_plus at /home/bsutton/.pub-cache/hosted/pub.dev/android_intent_plus-4.0.3/
+[   +6 ms] Found plugin app_links at /home/bsutton/.pub-cache/hosted/pub.dev/app_links-6.4.0/
+[   +4 ms] Found plugin app_links_linux at /home/bsutton/.pub-cache/hosted/pub.dev/app_links_linux-1.0.3/
+[   +3 ms] Found plugin app_links_web at /home/bsutton/.pub-cache/hosted/pub.dev/app_links_web-1.0.4/
+[  +10 ms] Found plugin camera_windows at /home/bsutton/.pub-cache/hosted/pub.dev/camera_windows-0.2.6+2/
+[  +46 ms] Found plugin file_picker at /home/bsutton/.pub-cache/hosted/pub.dev/file_picker-10.1.2/
+[   +2 ms] Found plugin file_selector_linux at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2/
+[   +1 ms] Found plugin file_selector_macos at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+2/
+[   +2 ms] Found plugin file_selector_windows at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4/
+[   +5 ms] Found plugin flutter_email_sender at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_email_sender-7.0.0/
+[   +3 ms] Found plugin flutter_plugin_android_lifecycle at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.28/
+[   +1 ms] Found plugin flutter_secure_storage at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage-10.0.0-beta.4/
+[   +1 ms] Found plugin flutter_secure_storage_darwin at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_darwin-0.1.0/
+[   +1 ms] Found plugin flutter_secure_storage_linux at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_linux-2.0.1/
+[   +2 ms] Found plugin flutter_secure_storage_web at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-2.0.0/
+[   +1 ms] Found plugin flutter_secure_storage_windows at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-4.0.0/
+[  +15 ms] Found plugin google_mlkit_barcode_scanning at /home/bsutton/.pub-cache/hosted/pub.dev/google_mlkit_barcode_scanning-0.14.1/
+[   +2 ms] Found plugin google_mlkit_commons at /home/bsutton/.pub-cache/hosted/pub.dev/google_mlkit_commons-0.11.0/
+[   +1 ms] Found plugin google_sign_in at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in-6.3.0/
+[   +1 ms] Found plugin google_sign_in_android at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_android-6.2.1/
+[   +1 ms] Found plugin google_sign_in_ios at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_ios-5.9.0/
+[   +1 ms] Found plugin google_sign_in_web at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_web-0.12.4+4/
+[   +2 ms] Found plugin gtk at /home/bsutton/.pub-cache/hosted/pub.dev/gtk-2.1.0/
+[   +8 ms] Found plugin image_picker at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker-1.1.2/
+[   +3 ms] Found plugin image_picker_android at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_android-0.8.12+23/
+[   +3 ms] Found plugin image_picker_for_web at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_for_web-3.0.6/
+[   +2 ms] Found plugin image_picker_ios at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12+2/
+[   +3 ms] Found plugin image_picker_linux at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.1+2/
+[   +1 ms] Found plugin image_picker_macos at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.1+2/
+[   +1 ms] Found plugin image_picker_windows at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1/
+[  +18 ms] Found plugin package_info_plus at /home/bsutton/.pub-cache/hosted/pub.dev/package_info_plus-8.3.0/
+[   +3 ms] Found plugin pasteboard at /home/bsutton/.pub-cache/hosted/pub.dev/pasteboard-0.4.0/
+[   +3 ms] Found plugin path_provider at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[   +3 ms] Found plugin path_provider_android at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17/
+[   +1 ms] Found plugin path_provider_foundation at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1/
+[   +1 ms] Found plugin path_provider_linux at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[   +1 ms] Found plugin path_provider_windows at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[   +4 ms] Found plugin pdfrx at /home/bsutton/.pub-cache/hosted/pub.dev/pdfrx-1.1.28/
+[        ] Found plugin permission_handler at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler-12.0.0+1/
+[        ] Found plugin permission_handler_android at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_android-13.0.1/
+[        ] Found plugin permission_handler_apple at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_apple-9.4.7/
+[        ] Found plugin permission_handler_html at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_html-0.1.3+5/
+[   +1 ms] Found plugin permission_handler_windows at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_windows-0.2.1/
+[   +3 ms] Found plugin printing at /home/bsutton/.pub-cache/hosted/pub.dev/printing-5.14.2/
+[   +8 ms] Found plugin sentry_flutter at /home/bsutton/.pub-cache/hosted/pub.dev/sentry_flutter-8.14.2/
+[  +10 ms] Found plugin sqflite at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[   +1 ms] Found plugin sqflite_android at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite_android-2.4.1/
+[   +3 ms] Found plugin sqflite_darwin at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[  +12 ms] Found plugin url_launcher at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher-6.3.1/
+[        ] Found plugin url_launcher_android at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.16/
+[        ] Found plugin url_launcher_ios at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.3/
+[        ] Found plugin url_launcher_linux at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[        ] Found plugin url_launcher_macos at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.2/
+[   +1 ms] Found plugin url_launcher_web at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[        ] Found plugin url_launcher_windows at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[   +8 ms] Found plugin wakelock_plus at /home/bsutton/.pub-cache/hosted/pub.dev/wakelock_plus-1.3.2/
+[  +65 ms] Found plugin android_intent_plus at /home/bsutton/.pub-cache/hosted/pub.dev/android_intent_plus-4.0.3/
+[   +2 ms] Found plugin app_links at /home/bsutton/.pub-cache/hosted/pub.dev/app_links-6.4.0/
+[   +1 ms] Found plugin app_links_linux at /home/bsutton/.pub-cache/hosted/pub.dev/app_links_linux-1.0.3/
+[   +4 ms] Found plugin app_links_web at /home/bsutton/.pub-cache/hosted/pub.dev/app_links_web-1.0.4/
+[   +8 ms] Found plugin camera_windows at /home/bsutton/.pub-cache/hosted/pub.dev/camera_windows-0.2.6+2/
+[  +27 ms] Found plugin file_picker at /home/bsutton/.pub-cache/hosted/pub.dev/file_picker-10.1.2/
+[   +1 ms] Found plugin file_selector_linux at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2/
+[        ] Found plugin file_selector_macos at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+2/
+[   +1 ms] Found plugin file_selector_windows at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4/
+[   +4 ms] Found plugin flutter_email_sender at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_email_sender-7.0.0/
+[   +1 ms] Found plugin flutter_plugin_android_lifecycle at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.28/
+[        ] Found plugin flutter_secure_storage at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage-10.0.0-beta.4/
+[        ] Found plugin flutter_secure_storage_darwin at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_darwin-0.1.0/
+[        ] Found plugin flutter_secure_storage_linux at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_linux-2.0.1/
+[        ] Found plugin flutter_secure_storage_web at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-2.0.0/
+[        ] Found plugin flutter_secure_storage_windows at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-4.0.0/
+[   +5 ms] Found plugin google_mlkit_barcode_scanning at /home/bsutton/.pub-cache/hosted/pub.dev/google_mlkit_barcode_scanning-0.14.1/
+[        ] Found plugin google_mlkit_commons at /home/bsutton/.pub-cache/hosted/pub.dev/google_mlkit_commons-0.11.0/
+[        ] Found plugin google_sign_in at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in-6.3.0/
+[        ] Found plugin google_sign_in_android at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_android-6.2.1/
+[        ] Found plugin google_sign_in_ios at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_ios-5.9.0/
+[   +1 ms] Found plugin google_sign_in_web at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_web-0.12.4+4/
+[   +6 ms] Found plugin gtk at /home/bsutton/.pub-cache/hosted/pub.dev/gtk-2.1.0/
+[   +8 ms] Found plugin image_picker at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker-1.1.2/
+[        ] Found plugin image_picker_android at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_android-0.8.12+23/
+[        ] Found plugin image_picker_for_web at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_for_web-3.0.6/
+[   +2 ms] Found plugin image_picker_ios at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12+2/
+[        ] Found plugin image_picker_linux at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.1+2/
+[        ] Found plugin image_picker_macos at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.1+2/
+[        ] Found plugin image_picker_windows at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1/
+[  +14 ms] Found plugin package_info_plus at /home/bsutton/.pub-cache/hosted/pub.dev/package_info_plus-8.3.0/
+[   +5 ms] Found plugin pasteboard at /home/bsutton/.pub-cache/hosted/pub.dev/pasteboard-0.4.0/
+[   +3 ms] Found plugin path_provider at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[   +1 ms] Found plugin path_provider_android at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17/
+[        ] Found plugin path_provider_foundation at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1/
+[        ] Found plugin path_provider_linux at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[        ] Found plugin path_provider_windows at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[   +2 ms] Found plugin pdfrx at /home/bsutton/.pub-cache/hosted/pub.dev/pdfrx-1.1.28/
+[        ] Found plugin permission_handler at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler-12.0.0+1/
+[        ] Found plugin permission_handler_android at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_android-13.0.1/
+[        ] Found plugin permission_handler_apple at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_apple-9.4.7/
+[        ] Found plugin permission_handler_html at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_html-0.1.3+5/
+[        ] Found plugin permission_handler_windows at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_windows-0.2.1/
+[   +3 ms] Found plugin printing at /home/bsutton/.pub-cache/hosted/pub.dev/printing-5.14.2/
+[   +5 ms] Found plugin sentry_flutter at /home/bsutton/.pub-cache/hosted/pub.dev/sentry_flutter-8.14.2/
+[   +5 ms] Found plugin sqflite at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[        ] Found plugin sqflite_android at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite_android-2.4.1/
+[   +1 ms] Found plugin sqflite_darwin at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[  +10 ms] Found plugin url_launcher at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher-6.3.1/
+[        ] Found plugin url_launcher_android at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.16/
+[        ] Found plugin url_launcher_ios at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.3/
+[        ] Found plugin url_launcher_linux at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[        ] Found plugin url_launcher_macos at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.2/
+[   +1 ms] Found plugin url_launcher_web at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[        ] Found plugin url_launcher_windows at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[   +4 ms] Found plugin wakelock_plus at /home/bsutton/.pub-cache/hosted/pub.dev/wakelock_plus-1.3.2/
+[  +36 ms] Found plugin android_intent_plus at /home/bsutton/.pub-cache/hosted/pub.dev/android_intent_plus-4.0.3/
+[   +1 ms] Found plugin app_links at /home/bsutton/.pub-cache/hosted/pub.dev/app_links-6.4.0/
+[   +2 ms] Found plugin app_links_linux at /home/bsutton/.pub-cache/hosted/pub.dev/app_links_linux-1.0.3/
+[   +1 ms] Found plugin app_links_web at /home/bsutton/.pub-cache/hosted/pub.dev/app_links_web-1.0.4/
+[   +4 ms] Found plugin camera_windows at /home/bsutton/.pub-cache/hosted/pub.dev/camera_windows-0.2.6+2/
+[  +14 ms] Found plugin file_picker at /home/bsutton/.pub-cache/hosted/pub.dev/file_picker-10.1.2/
+[   +1 ms] Found plugin file_selector_linux at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2/
+[   +1 ms] Found plugin file_selector_macos at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+2/
+[   +1 ms] Found plugin file_selector_windows at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4/
+[   +3 ms] Found plugin flutter_email_sender at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_email_sender-7.0.0/
+[   +1 ms] Found plugin flutter_plugin_android_lifecycle at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.28/
+[   +1 ms] Found plugin flutter_secure_storage at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage-10.0.0-beta.4/
+[        ] Found plugin flutter_secure_storage_darwin at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_darwin-0.1.0/
+[        ] Found plugin flutter_secure_storage_linux at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_linux-2.0.1/
+[   +1 ms] Found plugin flutter_secure_storage_web at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-2.0.0/
+[        ] Found plugin flutter_secure_storage_windows at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-4.0.0/
+[   +4 ms] Found plugin google_mlkit_barcode_scanning at /home/bsutton/.pub-cache/hosted/pub.dev/google_mlkit_barcode_scanning-0.14.1/
+[        ] Found plugin google_mlkit_commons at /home/bsutton/.pub-cache/hosted/pub.dev/google_mlkit_commons-0.11.0/
+[        ] Found plugin google_sign_in at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in-6.3.0/
+[        ] Found plugin google_sign_in_android at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_android-6.2.1/
+[        ] Found plugin google_sign_in_ios at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_ios-5.9.0/
+[   +1 ms] Found plugin google_sign_in_web at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_web-0.12.4+4/
+[   +1 ms] Found plugin gtk at /home/bsutton/.pub-cache/hosted/pub.dev/gtk-2.1.0/
+[   +4 ms] Found plugin image_picker at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker-1.1.2/
+[        ] Found plugin image_picker_android at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_android-0.8.12+23/
+[        ] Found plugin image_picker_for_web at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_for_web-3.0.6/
+[        ] Found plugin image_picker_ios at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12+2/
+[        ] Found plugin image_picker_linux at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.1+2/
+[        ] Found plugin image_picker_macos at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.1+2/
+[        ] Found plugin image_picker_windows at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1/
+[  +10 ms] Found plugin package_info_plus at /home/bsutton/.pub-cache/hosted/pub.dev/package_info_plus-8.3.0/
+[   +2 ms] Found plugin pasteboard at /home/bsutton/.pub-cache/hosted/pub.dev/pasteboard-0.4.0/
+[   +1 ms] Found plugin path_provider at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[        ] Found plugin path_provider_android at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17/
+[   +4 ms] Found plugin path_provider_foundation at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1/
+[   +1 ms] Found plugin path_provider_linux at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[   +1 ms] Found plugin path_provider_windows at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[   +2 ms] Found plugin pdfrx at /home/bsutton/.pub-cache/hosted/pub.dev/pdfrx-1.1.28/
+[        ] Found plugin permission_handler at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler-12.0.0+1/
+[   +1 ms] Found plugin permission_handler_android at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_android-13.0.1/
+[        ] Found plugin permission_handler_apple at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_apple-9.4.7/
+[        ] Found plugin permission_handler_html at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_html-0.1.3+5/
+[   +2 ms] Found plugin permission_handler_windows at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_windows-0.2.1/
+[   +5 ms] Found plugin printing at /home/bsutton/.pub-cache/hosted/pub.dev/printing-5.14.2/
+[   +4 ms] Found plugin sentry_flutter at /home/bsutton/.pub-cache/hosted/pub.dev/sentry_flutter-8.14.2/
+[   +5 ms] Found plugin sqflite at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[   +1 ms] Found plugin sqflite_android at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite_android-2.4.1/
+[   +3 ms] Found plugin sqflite_darwin at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[   +9 ms] Found plugin url_launcher at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher-6.3.1/
+[   +4 ms] Found plugin url_launcher_android at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.16/
+[        ] Found plugin url_launcher_ios at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.3/
+[        ] Found plugin url_launcher_linux at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[        ] Found plugin url_launcher_macos at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.2/
+[        ] Found plugin url_launcher_web at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[        ] Found plugin url_launcher_windows at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[   +4 ms] Found plugin wakelock_plus at /home/bsutton/.pub-cache/hosted/pub.dev/wakelock_plus-1.3.2/
+[  +13 ms] Generating /home/bsutton/git/hmb/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+[ +163 ms] No packages with native assets. Skipping native assets compilation.
+[   +3 ms] Writing native assets json to file:///home/bsutton/git/hmb/build/native_assets/linux/native_assets.json.
+[   +2 ms] Writing /home/bsutton/git/hmb/build/native_assets/linux/native_assets.json done.
+[ +219 ms] Manifest contained wildcard assets. Inserting missing file into build graph to force rerun. for more information see #56466.
+[  +23 ms] running test package with arguments: [--no-color, --chain-stack-traces, --, file:///home/bsutton/git/hmb/test/util/paths_flutter_test.dart?]
+00:00 +0: loading /home/bsutton/git/hmb/test/util/paths_flutter_test.dart                                                                                                                              [ +213 ms] test 0: starting test /home/bsutton/git/hmb/test/util/paths_flutter_test.dart
+[   +3 ms] Stopping scan for flutter_test_config.dart; found project root at /home/bsutton/git/hmb
+[   +1 ms] Compiler will use the following file as its incremental dill file: /tmp/flutter_tools.RQGFJK/flutter_test_compiler.WNRTRE/output.dill
+[        ] Listening to compiler controller...
+[   +9 ms] Compiling file:///tmp/flutter_tools.RQGFJK/flutter_test_listener.ASVQQH/listener.dart
+[  +38 ms] Found plugin android_intent_plus at /home/bsutton/.pub-cache/hosted/pub.dev/android_intent_plus-4.0.3/
+[   +1 ms] Found plugin app_links at /home/bsutton/.pub-cache/hosted/pub.dev/app_links-6.4.0/
+[        ] Found plugin app_links_linux at /home/bsutton/.pub-cache/hosted/pub.dev/app_links_linux-1.0.3/
+[        ] Found plugin app_links_web at /home/bsutton/.pub-cache/hosted/pub.dev/app_links_web-1.0.4/
+[   +7 ms] Found plugin camera_windows at /home/bsutton/.pub-cache/hosted/pub.dev/camera_windows-0.2.6+2/
+[  +23 ms] Found plugin file_picker at /home/bsutton/.pub-cache/hosted/pub.dev/file_picker-10.1.2/
+[        ] Found plugin file_selector_linux at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2/
+[        ] Found plugin file_selector_macos at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+2/
+[        ] Found plugin file_selector_windows at /home/bsutton/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4/
+[   +1 ms] Found plugin flutter_email_sender at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_email_sender-7.0.0/
+[   +1 ms] Found plugin flutter_plugin_android_lifecycle at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.28/
+[        ] Found plugin flutter_secure_storage at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage-10.0.0-beta.4/
+[        ] Found plugin flutter_secure_storage_darwin at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_darwin-0.1.0/
+[        ] Found plugin flutter_secure_storage_linux at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_linux-2.0.1/
+[   +1 ms] Found plugin flutter_secure_storage_web at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-2.0.0/
+[        ] Found plugin flutter_secure_storage_windows at /home/bsutton/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-4.0.0/
+[   +5 ms] Found plugin google_mlkit_barcode_scanning at /home/bsutton/.pub-cache/hosted/pub.dev/google_mlkit_barcode_scanning-0.14.1/
+[   +1 ms] Found plugin google_mlkit_commons at /home/bsutton/.pub-cache/hosted/pub.dev/google_mlkit_commons-0.11.0/
+[   +1 ms] Found plugin google_sign_in at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in-6.3.0/
+[        ] Found plugin google_sign_in_android at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_android-6.2.1/
+[   +1 ms] Found plugin google_sign_in_ios at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_ios-5.9.0/
+[   +2 ms] Found plugin google_sign_in_web at /home/bsutton/.pub-cache/hosted/pub.dev/google_sign_in_web-0.12.4+4/
+[   +1 ms] Found plugin gtk at /home/bsutton/.pub-cache/hosted/pub.dev/gtk-2.1.0/
+[   +3 ms] Found plugin image_picker at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker-1.1.2/
+[        ] Found plugin image_picker_android at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_android-0.8.12+23/
+[        ] Found plugin image_picker_for_web at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_for_web-3.0.6/
+[        ] Found plugin image_picker_ios at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12+2/
+[        ] Found plugin image_picker_linux at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.1+2/
+[        ] Found plugin image_picker_macos at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.1+2/
+[        ] Found plugin image_picker_windows at /home/bsutton/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1/
+[   +8 ms] Found plugin package_info_plus at /home/bsutton/.pub-cache/hosted/pub.dev/package_info_plus-8.3.0/
+[   +1 ms] Found plugin pasteboard at /home/bsutton/.pub-cache/hosted/pub.dev/pasteboard-0.4.0/
+[        ] Found plugin path_provider at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[        ] Found plugin path_provider_android at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17/
+[        ] Found plugin path_provider_foundation at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1/
+[        ] Found plugin path_provider_linux at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[        ] Found plugin path_provider_windows at /home/bsutton/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[   +1 ms] Found plugin pdfrx at /home/bsutton/.pub-cache/hosted/pub.dev/pdfrx-1.1.28/
+[        ] Found plugin permission_handler at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler-12.0.0+1/
+[        ] Found plugin permission_handler_android at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_android-13.0.1/
+[        ] Found plugin permission_handler_apple at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_apple-9.4.7/
+[        ] Found plugin permission_handler_html at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_html-0.1.3+5/
+[   +1 ms] Found plugin permission_handler_windows at /home/bsutton/.pub-cache/hosted/pub.dev/permission_handler_windows-0.2.1/
+[   +4 ms] Found plugin printing at /home/bsutton/.pub-cache/hosted/pub.dev/printing-5.14.2/
+[  +17 ms] Found plugin sentry_flutter at /home/bsutton/.pub-cache/hosted/pub.dev/sentry_flutter-8.14.2/
+[  +11 ms] Found plugin sqflite at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[        ] Found plugin sqflite_android at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite_android-2.4.1/
+[   +2 ms] Found plugin sqflite_darwin at /home/bsutton/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[  +13 ms] Found plugin url_launcher at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher-6.3.1/
+[        ] Found plugin url_launcher_android at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.16/
+[        ] Found plugin url_launcher_ios at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.3/
+[        ] Found plugin url_launcher_linux at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[        ] Found plugin url_launcher_macos at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.2/
+[   +1 ms] Found plugin url_launcher_web at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[        ] Found plugin url_launcher_windows at /home/bsutton/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[   +4 ms] Found plugin wakelock_plus at /home/bsutton/.pub-cache/hosted/pub.dev/wakelock_plus-1.3.2/
+[  +29 ms] /home/bsutton/apps/flutter/bin/cache/dart-sdk/bin/dartaotruntime /home/bsutton/apps/flutter/bin/cache/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot --sdk-root /home/bsutton/apps/flutter/bin/cache/artifacts/engine/common/flutter_patched_sdk/ --incremental --no-print-incremental-dependencies --target=flutter --experimental-emit-debug-metadata --output-dill /tmp/flutter_tools.RQGFJK/flutter_test_compiler.WNRTRE/output.dill --packages /home/bsutton/git/hmb/.dart_tool/package_config.json -Ddart.vm.profile=false -Ddart.vm.product=false --enable-asserts --track-widget-creation --initialize-from-dill /home/bsutton/git/hmb/build/test_cache/build/cache.dill.track.dill --verbosity=error
+[  +16 ms] <- compile file:///tmp/flutter_tools.RQGFJK/flutter_test_listener.ASVQQH/listener.dart
+00:01 +0: loading /home/bsutton/git/hmb/test/util/paths_flutter_test.dart                                                                                                                              [+1096 ms] <- accept
+[        ] <- reset
+[        ] Compiling file:///tmp/flutter_tools.RQGFJK/flutter_test_listener.ASVQQH/listener.dart took 1325ms
+[        ] test 0: starting test device
+[   +2 ms] test 0: awaiting connection to test device
+[   +1 ms] test 0: VM Service uri is not available
+[   +2 ms] test 0: test harness socket server is running at port:33903
+[   +1 ms] Using this directory for fonts configuration: /tmp/flutter_tools.RQGFJK/flutter_test_fonts.LEICEC
+[        ] test 0: Starting flutter_tester process with command=[/home/bsutton/apps/flutter/bin/cache/artifacts/engine/linux-x64/flutter_tester, --disable-vm-service, --enable-checked-mode, --verify-entry-points, --enable-software-rendering, --skia-deterministic-rendering, --enable-dart-profiling, --non-interactive, --use-test-fonts, --disable-asset-fonts, --packages=/home/bsutton/git/hmb/.dart_tool/package_config.json, --flutter-assets-dir=/home/bsutton/git/hmb/build/unit_test_assets, /tmp/flutter_tools.RQGFJK/flutter_test_listener.ASVQQH/listener.dart.dill], environment={FLUTTER_TEST: true, FONTCONFIG_FILE: /tmp/flutter_tools.RQGFJK/flutter_test_fonts.LEICEC/fonts.conf, SERVER_PORT: 33903, APP_NAME: hmb, UNIT_TEST_ASSETS: /home/bsutton/git/hmb/build/unit_test_assets}
+[   +7 ms] test 0: Started flutter_tester process at pid 74361
+[ +528 ms] test 0: connected to test device, now awaiting test result
+[   +4 ms] test 0: Waiting for test harness or tests to finish
+00:02 +0: loading /home/bsutton/git/hmb/test/util/paths_flutter_test.dart                                                                                                                              00:02 +0: paths flutter ...                                                                                                                                                                            00:02 +0: paths flutter ...                                                                                                                                                                            
+starting on linux
+[+5990 ms] Running 3 shutdown hooks
+[        ] test 0: cleaning up...
+[        ] test 0: ensuring test device is terminated.
+[        ] test 0: Terminating flutter_tester process
+[        ] test 0: Shutting down DevTools server
+[   +3 ms] test 0: Shutting down test harness socket server
+[   +6 ms] test 0: Test process is no longer needed by test harness
+[        ] test 0: finished
+[   +1 ms] test 0: Test harness is no longer needed by test process
+[        ] test 0: finished
+[        ] test 0: flutter_tester process at pid 74361 exited with code=-2
+[        ] test 0: error while cleaning up; reporting to console
+[   +1 ms] test 0: deleting temporary directory
+[        ] test 0: error while cleaning up; reporting to console
+[        ] Shutdown hooks complete
+00:07 +0 -1: loading /home/bsutton/git/hmb/test/util/paths_flutter_test.dart [E]                                                                                                                       
+  Error: the Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 895:11    DefaultResidentCompiler._compile.<fn>
+  dart:async/zone.dart 1538:47                     _rootRunUnary
+  dart:async/zone.dart 1429:19                     _CustomZone.runUnary
+  dart:async/future_impl.dart 932:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 961:13               Future._propagateToListeners
+  dart:async/future_impl.dart 712:5                Future._completeWithValue
+  dart:async/future_impl.dart 792:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone.dart 1525:13                     _rootRun
+  dart:async/zone.dart 1422:19                     _CustomZone.run
+  dart:async/zone.dart 1321:7                      _CustomZone.runGuarded
+  dart:async/zone.dart 1362:23                     _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:21         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 128:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 195:5      _RawReceivePort._handleMessage
+  
+00:07 +0 -1: paths flutter ... - did not complete [E]                                                                                                                                                  
+00:07 +0 -1: Some tests failed.                                                                                                                                                                        
+[  +18 ms] Deleting /tmp/flutter_tools.RQGFJK/flutter_test_compiler.WNRTRE...
+[   +1 ms] killing pid 74329
+[        ] Deleting /tmp/flutter_tools.RQGFJK/flutter_test_fonts.LEICEC...
+[   +3 ms] test package returned with exit code 1
+[        ] Runtime for phase TestRunner: Wall-clock: 0:00:08.150080; combined: 0:00:08.150113.
+[        ] Runtime for phase Compile: Wall-clock: 0:00:01.325440; combined: 0:00:01.325462.
+[        ] Runtime for phase Run: Wall-clock: 0:00:06.551316; combined: 0:00:06.551319.
+[        ] Runtime for phase CoverageTotal: Wall-clock: 0:00:00.000000; combined: 0:00:00.000000.
+[        ] Runtime for phase CoverageCollect: Wall-clock: 0:00:00.000000; combined: 0:00:00.000000.
+[        ] Runtime for phase CoverageParseJson: Wall-clock: 0:00:00.000000; combined: 0:00:00.000000.
+[        ] Runtime for phase CoverageAddHitmap: Wall-clock: 0:00:00.000000; combined: 0:00:00.000000.
+[        ] Runtime for phase CoverageDataCollect: Wall-clock: 0:00:00.000000; combined: 0:00:00.000000.
+[        ] Runtime for phase WatcherFinishedTest: Wall-clock: 0:00:00.001424; combined: 0:00:00.001426.
+[  +11 ms] "flutter test" took 9,393ms.
+[        ] Running 3 shutdown hooks
+[   +1 ms] Shutdown hooks complete
+[ +136 ms] exiting with code 0
