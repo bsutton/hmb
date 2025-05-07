@@ -8,13 +8,13 @@ import 'entity.dart';
 import 'job.dart';
 import 'task_item_type.dart';
 
+/// Specialist enum for labour entry mode
 enum LabourEntryMode {
   hours('Hours'),
   dollars('Dollars');
 
   const LabourEntryMode(this._display);
   final String _display;
-
   static String getDisplay(LabourEntryMode mode) => mode._display;
 
   static LabourEntryMode fromString(String value) {
@@ -31,9 +31,12 @@ enum LabourEntryMode {
   String toSqlString() => _display;
 }
 
+/// A single task item, including estimates, actuals, billing and return/audit info
 class TaskItem extends Entity<TaskItem> {
   TaskItem._({
     required super.id,
+    required super.createdDate,
+    required super.modifiedDate,
     required this.taskId,
     required this.description,
     required this.itemTypeId,
@@ -46,8 +49,6 @@ class TaskItem extends Entity<TaskItem> {
     required this.margin,
     required this.completed,
     required this.billed,
-    required super.createdDate,
-    required super.modifiedDate,
     required this.measurementType,
     required this.dimension1,
     required this.dimension2,
@@ -60,9 +61,14 @@ class TaskItem extends Entity<TaskItem> {
     required this.actualMaterialUnitCost,
     required this.actualMaterialQuantity,
     required this.actualCost,
+    required this.returned,
+    required this.returnQuantity,
+    required this.returnUnitPrice,
+    required this.returnDate,
   }) : _charge = charge,
        super();
 
+  /// Constructor for new items
   factory TaskItem.forInsert({
     required int taskId,
     required String description,
@@ -87,10 +93,16 @@ class TaskItem extends Entity<TaskItem> {
     Money? actualMaterialUnitCost,
     Fixed? actualMaterialQuantity,
     Money? actualCost,
+    bool returned = false,
+    Fixed? returnQuantity,
+    Money? returnUnitPrice,
+    DateTime? returnDate,
   }) {
     final now = DateTime.now();
     return TaskItem._(
-      id: -1, // placeholder; DB will assign real PK
+      id: -1,
+      createdDate: now,
+      modifiedDate: now,
       taskId: taskId,
       description: description,
       itemTypeId: itemTypeId,
@@ -103,8 +115,6 @@ class TaskItem extends Entity<TaskItem> {
       chargeSet: charge != null,
       completed: completed,
       billed: billed,
-      createdDate: now,
-      modifiedDate: now,
       measurementType: measurementType,
       dimension1: dimension1,
       dimension2: dimension2,
@@ -117,10 +127,14 @@ class TaskItem extends Entity<TaskItem> {
       actualMaterialUnitCost: actualMaterialUnitCost,
       actualMaterialQuantity: actualMaterialQuantity,
       actualCost: actualCost,
+      returned: returned,
+      returnQuantity: returnQuantity,
+      returnUnitPrice: returnUnitPrice,
+      returnDate: returnDate,
     );
   }
 
-  //── and a factory for updates ───────────────────────────────────────
+  /// Constructor for updating existing items
   factory TaskItem.forUpdate({
     required TaskItem existing,
     required int taskId,
@@ -146,10 +160,16 @@ class TaskItem extends Entity<TaskItem> {
     Money? actualMaterialUnitCost,
     Fixed? actualMaterialQuantity,
     Money? actualCost,
+    bool? returned,
+    Fixed? returnQuantity,
+    Money? returnUnitPrice,
+    DateTime? returnDate,
   }) {
     final now = DateTime.now();
     return TaskItem._(
       id: existing.id,
+      createdDate: existing.createdDate,
+      modifiedDate: now,
       taskId: taskId,
       description: description,
       itemTypeId: itemTypeId,
@@ -162,8 +182,6 @@ class TaskItem extends Entity<TaskItem> {
       chargeSet: charge != null,
       completed: completed,
       billed: billed,
-      createdDate: existing.createdDate,
-      modifiedDate: now,
       measurementType: measurementType,
       dimension1: dimension1,
       dimension2: dimension2,
@@ -176,11 +194,18 @@ class TaskItem extends Entity<TaskItem> {
       actualMaterialUnitCost: actualMaterialUnitCost,
       actualMaterialQuantity: actualMaterialQuantity,
       actualCost: actualCost,
+      returned: returned ?? existing.returned,
+      returnQuantity: returnQuantity ?? existing.returnQuantity,
+      returnUnitPrice: returnUnitPrice ?? existing.returnUnitPrice,
+      returnDate: returnDate ?? existing.returnDate,
     );
   }
 
+  /// Parse from database map
   factory TaskItem.fromMap(Map<String, dynamic> map) => TaskItem._(
     id: map['id'] as int,
+    createdDate: DateTime.parse(map['created_date'] as String),
+    modifiedDate: DateTime.parse(map['modified_date'] as String),
     taskId: map['task_id'] as int,
     description: map['description'] as String,
     itemTypeId: map['item_type_id'] as int,
@@ -224,8 +249,6 @@ class TaskItem extends Entity<TaskItem> {
     labourEntryMode: LabourEntryMode.fromString(
       map['labour_entry_mode'] as String,
     ),
-    createdDate: DateTime.parse(map['created_date'] as String),
-    modifiedDate: DateTime.parse(map['modified_date'] as String),
     actualMaterialUnitCost: MoneyEx.fromInt(
       map['actual_material_unit_cost'] as int? ?? 0,
     ),
@@ -234,32 +257,68 @@ class TaskItem extends Entity<TaskItem> {
       decimalDigits: 3,
     ),
     actualCost: MoneyEx.fromInt(map['actual_cost'] as int? ?? 0),
+    returned: (map['returned'] as int? ?? 0) == 1,
+    returnQuantity:
+        map['return_quantity'] != null
+            ? Fixed.fromInt(map['return_quantity'] as int, decimalDigits: 3)
+            : null,
+    returnUnitPrice:
+        map['return_unit_price'] != null
+            ? MoneyEx.fromInt(map['return_unit_price'] as int)
+            : null,
+    returnDate:
+        map['return_date'] != null
+            ? DateTime.parse(map['return_date'] as String)
+            : null,
   );
 
-  int taskId;
-  String description;
+  // Primary fields
+  final int taskId;
+  final String description;
   int itemTypeId;
-  Fixed? estimatedLabourHours;
-  Money? estimatedLabourCost;
-  Money? estimatedMaterialUnitCost;
-  Fixed? estimatedMaterialQuantity;
+
+  // Estimates
+  final Fixed? estimatedLabourHours;
+  final Money? estimatedLabourCost;
+  final Money? estimatedMaterialUnitCost;
+  final Fixed? estimatedMaterialQuantity;
+
+  // Actuals
   Money? actualMaterialUnitCost;
   Fixed? actualMaterialQuantity;
   Money? actualCost;
-  Percentage margin;
+
+  // Margin %
+  final Percentage margin;
+
+  // Computed charge
   Money? _charge;
   bool chargeSet;
+
+  // Status
   bool completed;
   bool billed;
   int? invoiceLineId;
-  MeasurementType? measurementType;
-  Fixed dimension1;
-  Fixed dimension2;
-  Fixed dimension3;
-  Units? units;
-  String url;
+
+  // Dimensions
+  final MeasurementType? measurementType;
+  final Fixed dimension1;
+  final Fixed dimension2;
+  final Fixed dimension3;
+  final Units? units;
+  final String url;
+
+  // Supplier
   int? supplierId;
-  LabourEntryMode labourEntryMode;
+
+  // Labour mode
+  final LabourEntryMode labourEntryMode;
+
+  // Return tracking
+  bool returned;
+  Fixed? returnQuantity;
+  Money? returnUnitPrice;
+  DateTime? returnDate;
 
   Money getCharge(BillingType billingType, Money hourlyRate) {
     if (chargeSet) {
@@ -386,12 +445,16 @@ class TaskItem extends Entity<TaskItem> {
     'actual_material_quantity':
         actualMaterialQuantity?.threeDigits().minorUnits.toInt(),
     'actual_cost': actualCost?.twoDigits().minorUnits.toInt(),
+    'returned': returned ? 1 : 0,
+    'return_quantity': returnQuantity?.threeDigits().minorUnits.toInt(),
+    'return_unit_price': returnUnitPrice?.twoDigits().minorUnits.toInt(),
+    'return_date': returnDate?.toIso8601String(),
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
 
+  /// Copy method
   TaskItem copyWith({
-    int? id,
     int? taskId,
     String? description,
     int? itemTypeId,
@@ -401,12 +464,10 @@ class TaskItem extends Entity<TaskItem> {
     Money? estimatedLabourCost,
     Percentage? margin,
     Money? charge,
-    bool? chargeSet, // New field
+    bool? chargeSet,
     bool? completed,
     bool? billed,
     int? invoiceLineId,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
     MeasurementType? measurementType,
     Fixed? dimension1,
     Fixed? dimension2,
@@ -418,8 +479,14 @@ class TaskItem extends Entity<TaskItem> {
     Money? actualMaterialUnitCost,
     Fixed? actualMaterialQuantity,
     Money? actualCost,
+    bool? returned,
+    Fixed? returnQuantity,
+    Money? returnUnitPrice,
+    DateTime? returnDate,
   }) => TaskItem._(
-    id: id ?? this.id,
+    id: id,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
     taskId: taskId ?? this.taskId,
     description: description ?? this.description,
     itemTypeId: itemTypeId ?? this.itemTypeId,
@@ -430,13 +497,11 @@ class TaskItem extends Entity<TaskItem> {
         estimatedMaterialQuantity ?? this.estimatedMaterialQuantity,
     estimatedLabourCost: estimatedLabourCost ?? this.estimatedLabourCost,
     charge: charge ?? _charge,
-    chargeSet: chargeSet ?? this.chargeSet, // New field
+    chargeSet: chargeSet ?? this.chargeSet,
     margin: margin ?? this.margin,
     completed: completed ?? this.completed,
     billed: billed ?? this.billed,
     invoiceLineId: invoiceLineId ?? this.invoiceLineId,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
     measurementType: measurementType ?? this.measurementType,
     dimension1: dimension1 ?? this.dimension1,
     dimension2: dimension2 ?? this.dimension2,
@@ -450,5 +515,9 @@ class TaskItem extends Entity<TaskItem> {
     actualMaterialQuantity:
         actualMaterialQuantity ?? this.actualMaterialQuantity,
     actualCost: actualCost ?? this.actualCost,
+    returned: returned ?? this.returned,
+    returnQuantity: returnQuantity ?? this.returnQuantity,
+    returnUnitPrice: returnUnitPrice ?? this.returnUnitPrice,
+    returnDate: returnDate ?? this.returnDate,
   );
 }

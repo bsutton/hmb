@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_supplier.dart';
@@ -17,16 +18,14 @@ import '../../dao/dao_task.dart';
 import '../../dao/dao_task_item.dart';
 import '../../entity/customer.dart';
 import '../../entity/job_activity.dart';
+import '../../entity/task_item.dart';
 import '../../util/app_title.dart';
 import '../../util/format.dart';
-import '../widgets/add_task_item.dart';
-import '../widgets/help_button.dart';
-import '../widgets/hmb_search.dart';
-import '../widgets/layout/hmb_spacer.dart';
-import '../widgets/select/hmb_droplist.dart';
-import '../widgets/select/hmb_droplist_multi.dart';
-import '../widgets/surface.dart';
+import '../../util/money_ex.dart';
+import '../widgets/select/select.g.dart';
+import '../widgets/text/hmb_text.dart';
 import '../widgets/text/hmb_text_themes.dart';
+import '../widgets/widgets.g.dart';
 import 'list_packing_screen.dart';
 import 'mark_as_complete.dart';
 
@@ -82,7 +81,23 @@ class ShoppingScreen extends StatefulWidget {
   _ShoppingScreenState createState() => _ShoppingScreenState();
 }
 
+enum ShoppingMode { toPurchase, purchased, returns }
+
+extension ShoppingModeX on ShoppingMode {
+  String get displayName {
+    switch (this) {
+      case ShoppingMode.toPurchase:
+        return 'To Purchase';
+      case ShoppingMode.purchased:
+        return 'Purchased';
+      case ShoppingMode.returns:
+        return 'Returns';
+    }
+  }
+}
+
 class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
+  static ShoppingMode _selectedMode = ShoppingMode.toPurchase;
   final _taskItems = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
   Supplier? _selectedSupplier;
@@ -96,11 +111,27 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
   }
 
   Future<void> _loadTaskItems() async {
-    final taskItems = await DaoTaskItem().getShoppingItems(
-      jobs: _selectedJobs,
-      supplier: _selectedSupplier,
-    );
+    List<TaskItem> taskItems;
+    switch (_selectedMode) {
+      case ShoppingMode.toPurchase:
+        taskItems = await DaoTaskItem().getShoppingItems(
+          jobs: _selectedJobs,
+          supplier: _selectedSupplier,
+        );
+      case ShoppingMode.purchased:
+        taskItems = await DaoTaskItem().getPurchasedItems(
+          since: DateTime.now().subtract(const Duration(days: 1)),
+          jobs: _selectedJobs,
+          supplier: _selectedSupplier,
+        );
+      case ShoppingMode.returns:
+        taskItems = await DaoTaskItem().getReturnableItems(
+          jobs: _selectedJobs,
+          supplier: _selectedSupplier,
+        );
+    }
 
+    // apply text & schedule filters (same as before)…
     _taskItems.clear();
     for (final taskItem in taskItems) {
       final task = await DaoTask().getById(taskItem.taskId);
@@ -140,6 +171,20 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                HMBDroplist<ShoppingMode>(
+                  selectedItem: () async => _selectedMode,
+                  items: (f) async => ShoppingMode.values,
+                  format: (m) => m.displayName,
+                  onChanged: (m) async {
+                    _selectedMode = m ?? ShoppingMode.toPurchase;
+                    await _loadTaskItems();
+                  },
+                  title: 'View',
+                  required: false,
+                ).help(
+                  'Toggle View',
+                  'Toggle between items to purchase, recently purchased, or returns',
+                ),
                 HMBSearchWithAdd(
                   onSearch: (filter) {
                     this.filter = filter;
@@ -245,7 +290,6 @@ If your Job isn't showing then you need to update its status to an Active one su
       ),
     ),
   );
-
   Center _showEmpty() => const Center(
     child: Text('''
 No Shopping Items found 
@@ -255,59 +299,136 @@ If you were expecting to see items here - check the Job's Status is active.
 '''),
   );
 
-  /// build a card for each shipping item.
-  Widget _buildShoppingItem(
-    BuildContext context,
-    TaskItemContext itemContext,
-  ) => Column(
-    children: [
-      const HMBSpacer(height: true),
-      SurfaceCard(
-        title: itemContext.taskItem.description,
-        height: 240,
-        body: FutureBuilderEx(
-          // Fetch the job associated with the task
-          future: CustomerAndJob.fetch(itemContext),
-          builder: (context, details) {
-            final det = details!;
-            return Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HMBTextLine('Customer: ${det.customer.name}'),
-                      HMBTextLine('Job: ${det.job.summary}'),
-                      HMBTextLine('Task: ${itemContext.task.name}'),
-                      if (det.supplier != null)
-                        HMBTextLine('Supplier: ${det.supplier!.name}'),
+  Widget _buildShoppingItem(BuildContext context, TaskItemContext itemContext) {
+    final ti = itemContext.taskItem;
+    return SurfaceCard(
+      title: ti.description,
+      height: 240,
+      body: FutureBuilderEx(
+        future: CustomerAndJob.fetch(itemContext),
+        builder: (ctx, details) {
+          final det = details!;
+          return Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    HMBTextLine('Customer: ${det.customer.name}'),
+                    // … common fields …
+                    if (_selectedMode == ShoppingMode.purchased)
                       HMBTextLine(
-                        'Scheduled Date: ${det.dateOfNextActivity()}',
+                        'Qty: ${ti.actualMaterialQuantity ?? ti.actualMaterialUnitCost}',
                       ),
-                      HMBTextLine(itemContext.taskItem.dimensions),
-                      if (itemContext.taskItem.completed)
-                        const HMBTextLine('Completed', colour: Colors.green),
-                    ],
-                  ),
+                    if (_selectedMode == ShoppingMode.returns)
+                      HMBTextLine(
+                        'Qty Purchased: ${ti.actualMaterialQuantity ?? ti.actualMaterialUnitCost}',
+                      ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () async {
+              ),
+              // Action Button:
+              IconButton(
+                icon: Icon(
+                  _selectedMode == ShoppingMode.toPurchase
+                      ? Icons.check
+                      : _selectedMode == ShoppingMode.returns
+                      ? Icons.undo
+                      : Icons.receipt,
+                  color:
+                      _selectedMode == ShoppingMode.returns
+                          ? Colors.red
+                          : Colors.green,
+                ),
+                onPressed: () async {
+                  if (_selectedMode == ShoppingMode.toPurchase) {
                     await markAsCompleted(itemContext, context);
-                    await _loadTaskItems();
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-        onPressed: () async {
-          await markAsCompleted(itemContext, context);
-          await _loadTaskItems();
+                  } else if (_selectedMode == ShoppingMode.returns) {
+                    await _markAsReturned(itemContext, context);
+                  }
+                  await _loadTaskItems();
+                },
+              ),
+            ],
+          );
         },
       ),
-    ],
-  );
+    );
+  }
+
+  Future<void> _markAsReturned(
+    TaskItemContext itemContext,
+    BuildContext context,
+  ) async {
+    final qtyCtrl = TextEditingController(
+      text:
+          (itemContext.taskItem.actualMaterialQuantity ?? Fixed.one).toString(),
+    );
+    final refundCtrl = TextEditingController(
+      text: itemContext.taskItem.actualMaterialUnitCost.toString(),
+    );
+
+    final totalCost = (itemContext.taskItem.actualMaterialUnitCost ??
+            MoneyEx.zero)
+        .multiplyByFixed(
+          itemContext.taskItem.actualMaterialQuantity ?? Fixed.zero,
+        );
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Return Item'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(itemContext.taskItem.description),
+                TextField(
+                  controller: qtyCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Quantity to return',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: refundCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Refund amount each',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                HMBText('Total: $totalCost'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Return'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed ?? false) {
+      final qty = Fixed.tryParse(qtyCtrl.text) ?? Fixed.one;
+      final refund = MoneyEx.tryParse(refundCtrl.text);
+      await DaoTaskItem().markAsReturned(itemContext.taskItem.id, qty, refund);
+    }
+  }
+
+  Future<List<TaskItemContext>> withContext(List<TaskItem> items) async {
+    final itemsWithContext = <TaskItemContext>[];
+
+    for (final item in items) {
+      final task = await DaoTask().getById(item.taskId);
+      final billing = await DaoTask().getBillingTypeByTaskItem(item);
+      itemsWithContext.add(TaskItemContext(task!, item, billing));
+    }
+    return itemsWithContext;
+  }
 }
 
 class CustomerAndJob {

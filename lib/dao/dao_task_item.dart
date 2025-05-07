@@ -201,6 +201,114 @@ $supplierCondition
 
   @override
   JuneStateCreator get juneRefresher => TaskItemState.new;
+
+  Future<List<TaskItem>> getPurchasedItems({
+    required DateTime since,
+    required List<Job> jobs,
+    Supplier? supplier,
+  }) async {
+    final db = withoutTransaction();
+
+    // Base query for retrieving purchased items (Materials - buy, Tools - buy)
+    final sql = StringBuffer('''
+SELECT ti.*
+FROM task_item ti
+JOIN task_item_type tit ON ti.item_type_id = tit.id
+JOIN task t ON ti.task_id = t.id
+JOIN job j ON t.job_id = j.id
+WHERE (tit.name = 'Materials - buy' OR tit.name = 'Tools - buy')
+  AND ti.completed = 1
+  AND ti.modified_date >= ?
+''');
+
+    // Collect parameters, starting with the "since" timestamp
+    final params = <dynamic>[since.toIso8601String()];
+
+    // If jobs were provided, filter by those job IDs
+    if (jobs.isNotEmpty) {
+      final placeholders = List.filled(jobs.length, '?').join(',');
+      sql.write(' AND j.id IN ($placeholders)');
+      params.addAll(jobs.map((j) => j.id));
+    }
+
+    // If a supplier was provided, filter by that supplier ID
+    if (supplier != null) {
+      sql.write(' AND ti.supplier_id = ?');
+      params.add(supplier.id);
+    }
+
+    // Execute and map to TaskItem instances
+    final rows = await db.rawQuery(sql.toString(), params);
+    return toList(rows);
+  }
+
+  Future<List<TaskItem>> getReturnableItems({
+    List<Job>? jobs,
+    Supplier? supplier,
+  }) async {
+    final db = withoutTransaction();
+
+    // Base query for returnable purchased items
+    final sql = StringBuffer('''
+SELECT ti.*
+FROM task_item ti
+JOIN task_item_type tit ON ti.item_type_id = tit.id
+JOIN task t ON ti.task_id = t.id
+JOIN job j ON t.job_id = j.id
+WHERE (tit.name = 'Materials - buy' OR tit.name = 'Tools - buy')
+  AND ti.completed = 1
+''');
+
+    final params = <dynamic>[];
+
+    // Filter by specific jobs if provided
+    if (jobs != null && jobs.isNotEmpty) {
+      final placeholders = List.filled(jobs.length, '?').join(',');
+      sql.write(' AND j.id IN ($placeholders)');
+      params.addAll(jobs.map((j) => j.id));
+    }
+
+    // Filter by supplier if provided
+    if (supplier != null) {
+      sql.write(' AND ti.supplier_id = ?');
+      params.add(supplier.id);
+    }
+
+    // Order by most recently completed first
+    sql.write(' ORDER BY ti.modified_date DESC');
+
+    final rows = await db.rawQuery(sql.toString(), params);
+    return toList(rows);
+  }
+
+  /// In DaoTaskItem (just below your other “mark…” methods)
+
+  /// Marks a completed TaskItem as returned:
+  ///  - sets returned flag
+  ///  - records how many units were returned
+  ///  - records the refund per unit
+  ///  - timestamps the return
+  Future<void> markAsReturned(
+    int taskItemId,
+    Fixed returnQuantity,
+    Money returnUnitPrice,
+  ) async {
+    final db = withoutTransaction();
+    final now = DateTime.now().toIso8601String();
+
+    await db.update(
+      tableName,
+      {
+        'returned': 1,
+        'return_quantity': returnQuantity.threeDigits().minorUnits.toInt(),
+        'return_unit_price': returnUnitPrice.twoDigits().minorUnits.toInt(),
+        'return_date': now,
+        'modified_date': now,
+      },
+      where: 'id = ?',
+      whereArgs: [taskItemId],
+    );
+  }
 }
 
 class TaskItemState extends JuneState {
