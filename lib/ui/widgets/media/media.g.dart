@@ -13,3 +13,4 @@ export 'photo_controller.dart';
 export 'photo_gallery.dart';
 export 'photo_thumbnail.dart';
 export 'rich_editor.dart';
+export 'thumbnail.dart';

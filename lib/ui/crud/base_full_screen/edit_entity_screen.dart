@@ -12,6 +12,12 @@ abstract class EntityState<E extends Entity<E>> {
   E? currentEntity;
 }
 
+typedef CrossValidator<E> = Future<bool> Function();
+
+/// The [crossValidator] is called during the save operation
+/// after the Form has been validated to allow you to cross
+/// validate form fields. If there is an error you should display it
+/// as this class will NOT.
 class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
   const EntityEditScreen({
     required this.editor,
@@ -19,8 +25,11 @@ class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
     required this.entityState,
     required this.dao,
     this.scrollController,
+    CrossValidator<E>? crossValidator,
     super.key,
-  });
+  }) : crossValidator = crossValidator ?? noOpValidator;
+
+  static Future<bool> noOpValidator() async => true;
 
   final String entityName;
   final Dao<E> dao;
@@ -29,6 +38,7 @@ class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
   final EntityState<E> entityState;
   final ScrollController? scrollController;
 
+  final Future<bool> Function() crossValidator;
   @override
   EntityEditScreenState createState() => EntityEditScreenState<E>();
 }
@@ -88,7 +98,7 @@ class EntityEditScreenState<E extends Entity<E>>
     },
   );
   Future<void> _save({bool close = false}) async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate() && await widget.crossValidator()) {
       try {
         if (widget.entityState.currentEntity != null) {
           // Update existing entity

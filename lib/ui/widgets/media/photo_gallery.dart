@@ -33,6 +33,13 @@ class PhotoGallery extends StatelessWidget {
         ];
   }
 
+    PhotoGallery.forReceipt({required Receipt receipt, super.key}) {
+    _fetchPhotos =
+        () async => [
+          ...await DaoPhoto.getMetaByParent(receipt.id, ParentType.receipt),
+        ];
+  }
+
   /// the [filter] allows you to control what photos are returned.
   /// By default, if no [filter] is passed, then all photos for the tool
   /// are returned.

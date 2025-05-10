@@ -4,6 +4,8 @@ import 'package:strings/strings.dart';
 extension MoneyEx on Money {
   static Money get zero => Money.fromInt(0, isoCode: 'AUD', decimalDigits: 2);
 
+  bool get isNonZero => !isZero;
+
   static Money tryParse(String? amount) =>
       Money.tryParse(
         Strings.orElseOnBlank(amount, '0'),

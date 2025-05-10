@@ -2,12 +2,10 @@ import 'package:june/june.dart';
 
 import '../database/management/backup_providers/google_drive/background_backup/photo_sync_params.dart';
 import '../entity/photo.dart';
-import '../util/photo_meta.dart';
-import 'dao.dart';
-import 'dao_task.dart';
-import 'dao_tool.dart';
+import '../util/util.g.dart';
+import 'dao.g.dart';
 
-enum ParentType { task, tool }
+enum ParentType { task, tool, receipt }
 
 class DaoPhoto extends Dao<Photo> {
   Future<List<Photo>> getByParent(int parentId, ParentType parentType) async {
@@ -90,6 +88,21 @@ class DaoPhoto extends Dao<Photo> {
         .toList();
   }
 
+  static Future<List<PhotoMeta>> getByReceipt(int receiptId) async {
+    final receipt = await DaoReceipt().getById(receiptId);
+    final supplier = await DaoSupplier().getById(receipt!.supplierId);
+
+    return (await DaoPhoto().getByParent(receiptId, ParentType.receipt))
+        .map(
+          (photo) => PhotoMeta(
+            photo: photo,
+            title: '${supplier!.name} ${formatDate(receipt.receiptDate)}',
+            comment: '',
+          ),
+        )
+        .toList();
+  }
+
   static Future<List<PhotoMeta>> getMetaByParent(
     int parentId,
     ParentType parentType,
@@ -99,6 +112,8 @@ class DaoPhoto extends Dao<Photo> {
         return getByTask(parentId);
       case ParentType.tool:
         return getByTool(parentId);
+      case ParentType.receipt:
+        return getByReceipt(parentId);
     }
   }
 }

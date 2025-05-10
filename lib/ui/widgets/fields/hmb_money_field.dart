@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:money2/money2.dart';
 
 import '../../../util/money_ex.dart';
 import 'hmb_money_editing_controller.dart';
@@ -43,7 +42,7 @@ class HMBMoneyField extends HMBTextField {
     super.autofocus = false,
     super.leadingSpace = true,
     super.validator,
-  }) : super(keyboardType: TextInputType.text);
+  }) : super(keyboardType: TextInputType.number);
 
   final String fieldName;
   final bool nonZero;
@@ -54,7 +53,7 @@ class HMBMoneyField extends HMBTextField {
       if (value == null || value.isEmpty) {
         return 'Please enter a $fieldName';
       } else {
-        if (Money.parse(value, isoCode: 'AUD') == MoneyEx.zero) {
+        if (MoneyEx.tryParse(value) == MoneyEx.zero) {
           return 'Please enter a $fieldName greater than zero';
         }
       }
