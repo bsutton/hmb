@@ -68,6 +68,9 @@ class System extends Entity<System> {
     required this.paymentOptions,
     required this.firstname,
     required this.surname,
+    required this.chatgptAccessToken,
+    required this.chatgptRefreshToken,
+    required this.chatgptTokenExpiry,
     required super.createdDate,
     required super.modifiedDate,
     this.operatingHours,
@@ -110,6 +113,9 @@ class System extends Entity<System> {
     this.firstname,
     this.surname,
     this.operatingHours,
+    this.chatgptAccessToken,
+    this.chatgptRefreshToken,
+    this.chatgptTokenExpiry,
   }) : super.forInsert();
 
   System.forUpdate({
@@ -150,6 +156,9 @@ class System extends Entity<System> {
     this.firstname,
     this.surname,
     this.operatingHours,
+    this.chatgptAccessToken,
+    this.chatgptRefreshToken,
+    this.chatgptTokenExpiry,
   }) : super.forUpdate();
 
   factory System.fromMap(Map<String, dynamic> map) => System(
@@ -201,6 +210,12 @@ class System extends Entity<System> {
     firstname: map['firstname'] as String?,
     surname: map['surname'] as String?,
     operatingHours: map['operating_hours'] as String?,
+    chatgptAccessToken: map['chatgpt_access_token'] as String?,
+    chatgptRefreshToken: map['chatgpt_refresh_token'] as String?,
+    chatgptTokenExpiry:
+        map['chatgpt_token_expiry'] != null
+            ? DateTime.parse(map['chatgpt_token_expiry'] as String)
+            : null,
     createdDate:
         DateTime.tryParse(map['created_date'] as String? ?? '') ??
         DateTime.now(),
@@ -245,6 +260,11 @@ class System extends Entity<System> {
   String? firstname;
   String? surname;
   String? operatingHours;
+
+  /// OAuth2 tokens for ChatGPT API
+  String? chatgptAccessToken;
+  String? chatgptRefreshToken;
+  DateTime? chatgptTokenExpiry;
 
   void setOperatingHours(OperatingHours schedule) {
     operatingHours = schedule.toJson();
@@ -305,6 +325,9 @@ class System extends Entity<System> {
     'firstname': firstname,
     'surname': surname,
     'operating_hours': operatingHours,
+    'chatgpt_access_token': chatgptAccessToken,
+    'chatgpt_refresh_token': chatgptRefreshToken,
+    'chatgpt_token_expiry': chatgptTokenExpiry?.toIso8601String(),
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
