@@ -145,7 +145,7 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
   );
 
   @override
-  void refresh() {
+  void saved() {
     setState(() {});
   }
 }

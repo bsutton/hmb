@@ -171,6 +171,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
 
       // Photos
       PhotoCrud<Receipt>(
+        key: ValueKey(currentEntity?.id),
         parentName: 'Receipt',
         parentType: ParentType.receipt,
         controller: _photoCtrl,
@@ -201,7 +202,14 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   );
 
   @override
-  void refresh() => setState(() {});
+  void saved() {
+    // update the controller to point at the newly‐saved entity
+    _photoCtrl = PhotoController<Receipt>(
+      parent: currentEntity,
+      parentType: ParentType.receipt,
+    );
+    setState(() {});
+  }
 
   void _recalculate() {
     if (_isCalculating) {

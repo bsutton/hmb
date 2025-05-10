@@ -8,7 +8,10 @@ import '../../widgets/save_and_close.dart';
 abstract class EntityState<E extends Entity<E>> {
   Future<E> forInsert();
   Future<E> forUpdate(E entity);
-  void refresh();
+
+  /// Called to notify that the entity has just been saved.
+  /// [currentEntity] will have the saved value.
+  void saved();
   E? currentEntity;
 }
 
@@ -106,22 +109,17 @@ class EntityEditScreenState<E extends Entity<E>>
             widget.entityState.currentEntity!,
           );
           await widget.dao.update(updatedEntity);
-          setState(() {
-            widget.entityState.currentEntity = updatedEntity;
-          });
+          widget.entityState.currentEntity = updatedEntity;
         } else {
           // Insert new entity
           final newEntity = await widget.entityState.forInsert();
           await widget.dao.insert(newEntity);
-          setState(() {
-            widget.entityState.currentEntity = newEntity;
-          });
+          widget.entityState.currentEntity = newEntity;
         }
+        saved();
 
         if (close && mounted) {
           Navigator.of(context).pop(widget.entityState.currentEntity);
-        } else {
-          setState(() {});
         }
       } catch (error) {
         // Check if the error indicates a duplicate name (unique constraint violation)
@@ -134,6 +132,11 @@ class EntityEditScreenState<E extends Entity<E>>
         }
       }
     }
+  }
+
+  void saved() {
+    widget.entityState.saved();
+    setState(() {});
   }
 
   bool get isNew => widget.entityState.currentEntity == null;

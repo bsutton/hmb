@@ -198,7 +198,7 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
   );
 
   @override
-  void refresh() {
+  void saved() {
     setState(() {});
   }
 }

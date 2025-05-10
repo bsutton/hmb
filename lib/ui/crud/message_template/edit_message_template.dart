@@ -109,7 +109,7 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
   );
 
   @override
-  void refresh() {
+  void saved() {
     setState(() {});
   }
 }

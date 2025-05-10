@@ -307,7 +307,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
   );
 
   @override
-  void refresh() {
+  void saved() {
     setState(() {});
   }
 }

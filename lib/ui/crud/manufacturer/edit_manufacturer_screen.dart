@@ -90,7 +90,7 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
   );
 
   @override
-  void refresh() {
+  void saved() {
     setState(() {});
   }
 }

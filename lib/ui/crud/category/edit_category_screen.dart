@@ -76,7 +76,7 @@ class _CategoryEditScreenState extends State<CategoryEditScreen>
   );
 
   @override
-  void refresh() {
+  void saved() {
     setState(() {});
   }
 }
