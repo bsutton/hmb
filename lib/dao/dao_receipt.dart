@@ -58,6 +58,7 @@ class DaoReceipt extends Dao<Receipt> {
       tableName,
       where: where.isNotEmpty ? where.join(' AND ') : null,
       whereArgs: args.isNotEmpty ? args : null,
+      orderBy: 'receipt_date desc',
     );
     return toList(maps);
   }
