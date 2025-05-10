@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/util.g.dart';
+import 'dashlets/receipt.dart';
 import 'nav.g.dart';
 
 class AccountingDashboardPage extends StatelessWidget {
@@ -48,12 +49,7 @@ class AccountingDashboardPage extends StatelessWidget {
         route: '/accounting/milestones',
         widgetBuilder: (_, _) => const SizedBox.shrink(),
       ),
-      DashletCard<String>(
-        label: 'Receipts',
-        icon: Icons.receipt,
-        dashletValue: getReceiptsThisMonth,
-        route: '/accounting/receipts',
-      ),
+      const ReceiptDashlet(),
     ],
   );
   Future<DashletValue<String>> getQuoteValue() async {
@@ -91,19 +87,6 @@ class AccountingDashboardPage extends StatelessWidget {
           inv.createdDate.month == now.month) {
         total += inv.totalAmount;
       }
-    }
-    return DashletValue(total.format('S#'));
-  }
-
-  Future<DashletValue<String>> getReceiptsThisMonth() async {
-    final now = DateTime.now();
-    final receipts = await DaoReceipt().getByFilter(
-      dateFrom: DateTime(now.year, now.month),
-      dateTo: DateTime(now.year, now.month + 1, 0),
-    );
-    var total = MoneyEx.zero;
-    for (final r in receipts) {
-      total += r.totalIncludingTax;
     }
     return DashletValue(total.format('S#'));
   }
