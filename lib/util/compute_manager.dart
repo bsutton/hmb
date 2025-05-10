@@ -21,6 +21,7 @@ class ComputeManager<T, R> {
 
   ComputeManager._init({this.maxConcurrentTasks = 2});
 
+  // ignore: strict_raw_type
   static ComputeManager? _self;
 
   final int maxConcurrentTasks;
