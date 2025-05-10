@@ -120,7 +120,7 @@ class EntityEditScreenState<E extends Entity<E>>
             'A ${widget.entityName.toLowerCase()} with that name already exists.',
           );
         } else {
-          rethrow;
+          HMBToast.error(error.toString());
         }
       }
     }
