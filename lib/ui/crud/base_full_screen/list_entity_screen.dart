@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -28,7 +30,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   }
 
   final String pageTitle;
-  final Widget Function(T entity) title;
+  final FutureOr<Widget> Function(T entity) title;
   final Widget Function(T entity) details;
   final Widget Function(T? entity) onEdit;
   final Future<Color> Function(T entity)? background;
@@ -193,12 +195,24 @@ class EntityListScreenState<T extends Entity<T>>
             child: Surface(
               elevation: SurfaceElevation.e6,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Flexible(child: widget.title(entity)),
+                      Flexible(
+                        child: FutureBuilderEx(
+                          future:
+                              ((widget.title is Future)
+                                      // ignore: discarded_futures
+                                      ? widget.title(entity)
+                                      // ignore: discarded_futures
+                                      : Future.value(widget.title(entity)))
+                                  as Future<Widget>,
+                          builder: (context, title) => title!,
+                        ),
+                      ),
                       _buildDeleteButton(entity),
                     ],
                   ),
