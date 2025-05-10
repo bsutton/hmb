@@ -28,6 +28,6 @@ class ReceiptDashlet extends StatelessWidget {
     for (final r in receipts) {
       total += r.totalIncludingTax;
     }
-    return DashletValue('MTD: ${total.format('S#')}');
+    return DashletValue('mtd: ${total.format('S#')}');
   }
 }

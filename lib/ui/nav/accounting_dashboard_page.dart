@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/util.g.dart';
+import 'dashlets/invoices.dart';
 import 'dashlets/receipt.dart';
 import 'nav.g.dart';
 
@@ -35,13 +36,7 @@ class AccountingDashboardPage extends StatelessWidget {
         dashletValue: getYetToBeInvoiced,
         route: '/accounting/to_be_invoiced',
       ),
-      DashletCard<String>(
-        label: 'Invoices',
-        icon: Icons.receipt_long,
-        // ignore: discarded_futures
-        dashletValue: getInvoicedThisMonth,
-        route: '/accounting/invoices',
-      ),
+      const InvoiceDashlet(),
       DashletCard<void>(
         label: 'Milestones',
         icon: Icons.flag,
@@ -75,19 +70,5 @@ class AccountingDashboardPage extends StatelessWidget {
           (hourlyRate!.multiplyByFixed(statistics.workedHours));
     }
     return DashletValue(count, total.format('S#'));
-  }
-
-  Future<DashletValue<String>> getInvoicedThisMonth() async {
-    final invoices = await DaoInvoice().getAll();
-    final now = DateTime.now();
-    var total = MoneyEx.zero;
-    for (final inv in invoices) {
-      if (inv.sent &&
-          inv.createdDate.year == now.year &&
-          inv.createdDate.month == now.month) {
-        total += inv.totalAmount;
-      }
-    }
-    return DashletValue(total.format('S#'));
   }
 }
