@@ -11,6 +11,7 @@ import '../crud/job/list_job_screen.dart';
 import '../crud/manufacturer/list_manufacturer_screen.dart';
 import '../crud/message_template/list_message_template.dart';
 import '../crud/milestone/list_milestone_screen.dart';
+import '../crud/receipt/list_receipt_screen.dart';
 import '../crud/supplier/list_supplier_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
@@ -84,9 +85,10 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     ),
 
     GoRoute(
-      path: '/dashboard/billing',
+      path: '/dashboard/accounting',
       builder:
-          (_, _) => const HomeScaffold(initialScreen: BillingDashboardPage()),
+          (_, _) =>
+              const HomeScaffold(initialScreen: AccountingDashboardPage()),
     ),
     GoRoute(
       path: '/dashboard/settings',
@@ -130,27 +132,31 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
           ),
     ),
     GoRoute(
-      path: '/billing/quotes',
+      path: '/accounting/quotes',
       builder: (_, _) => const HomeScaffold(initialScreen: QuoteListScreen()),
     ),
     GoRoute(
-      path: '/billing/invoices',
+      path: '/accounting/invoices',
       builder: (_, _) => const HomeScaffold(initialScreen: InvoiceListScreen()),
     ),
 
     GoRoute(
-      path: '/billing/to_be_invoiced',
+      path: '/accounting/to_be_invoiced',
       builder: (_, _) => HomeScaffold(initialScreen: YetToBeInvoicedScreen()),
     ),
     GoRoute(
-      path: '/billing/estimator',
+      path: '/accounting/estimator',
       builder:
           (_, _) => const HomeScaffold(initialScreen: JobEstimatesListScreen()),
     ),
     GoRoute(
-      path: '/billing/milestones',
+      path: '/accounting/milestones',
       builder:
           (_, _) => const HomeScaffold(initialScreen: ListMilestoneScreen()),
+    ),
+    GoRoute(
+      path: '/accounting/receipts',
+      builder: (_, _) => const HomeScaffold(initialScreen: ReceiptListScreen()),
     ),
     GoRoute(
       path: '/extras/tools',

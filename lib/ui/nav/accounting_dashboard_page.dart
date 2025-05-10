@@ -6,18 +6,18 @@ import '../../entity/entity.g.dart';
 import '../../util/util.g.dart';
 import 'nav.g.dart';
 
-class BillingDashboardPage extends StatelessWidget {
-  const BillingDashboardPage({super.key});
+class AccountingDashboardPage extends StatelessWidget {
+  const AccountingDashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) => DashboardPage(
-    title: 'Billing',
+    title: 'Accounting',
     dashlets: [
       DashletCard<void>(
         label: 'Estimator',
         icon: Icons.calculate,
         dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/billing/estimator',
+        route: '/accounting/estimator',
         widgetBuilder: (_, _) => const SizedBox.shrink(),
       ),
       DashletCard<String>(
@@ -25,28 +25,34 @@ class BillingDashboardPage extends StatelessWidget {
         icon: Icons.format_quote,
         // ignore: discarded_futures
         dashletValue: getQuoteValue,
-        route: '/billing/quotes',
+        route: '/accounting/quotes',
       ),
       DashletCard<int>(
         label: 'To Be Invoiced',
         icon: Icons.attach_money,
         // ignore: discarded_futures
         dashletValue: getYetToBeInvoiced,
-        route: '/billing/to_be_invoiced',
+        route: '/accounting/to_be_invoiced',
       ),
       DashletCard<String>(
         label: 'Invoices',
         icon: Icons.receipt_long,
         // ignore: discarded_futures
         dashletValue: getInvoicedThisMonth,
-        route: '/billing/invoices',
+        route: '/accounting/invoices',
       ),
       DashletCard<void>(
         label: 'Milestones',
         icon: Icons.flag,
         dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/billing/milestones',
+        route: '/accounting/milestones',
         widgetBuilder: (_, _) => const SizedBox.shrink(),
+      ),
+      DashletCard<String>(
+        label: 'Receipts',
+        icon: Icons.receipt,
+        dashletValue: getReceiptsThisMonth,
+        route: '/accounting/receipts',
       ),
     ],
   );
@@ -85,6 +91,19 @@ class BillingDashboardPage extends StatelessWidget {
           inv.createdDate.month == now.month) {
         total += inv.totalAmount;
       }
+    }
+    return DashletValue(total.format('S#'));
+  }
+
+  Future<DashletValue<String>> getReceiptsThisMonth() async {
+    final now = DateTime.now();
+    final receipts = await DaoReceipt().getByFilter(
+      dateFrom: DateTime(now.year, now.month),
+      dateTo: DateTime(now.year, now.month + 1, 0),
+    );
+    var total = MoneyEx.zero;
+    for (final r in receipts) {
+      total += r.totalIncludingTax;
     }
     return DashletValue(total.format('S#'));
   }

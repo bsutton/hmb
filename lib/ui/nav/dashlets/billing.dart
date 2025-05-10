@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import '../dashlet_card.dart';
 
 /// Dashlet for Billing sub-dashboard
-class BillingDashlet extends StatelessWidget {
-  const BillingDashlet({super.key});
+class AccountingDashlet extends StatelessWidget {
+  const AccountingDashlet({super.key});
 
   @override
   Widget build(BuildContext context) => DashletCard<void>(
-    label: 'Billing',
+    label: 'Accounting',
     icon: Icons.account_balance_wallet,
     dashletValue: () => Future.value(const DashletValue(null)),
-    route: '/dashboard/billing',
+    route: '/dashboard/accounting',
     widgetBuilder: (_, _) => const SizedBox.shrink(),
   );
 }

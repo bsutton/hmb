@@ -6,6 +6,7 @@
 //
 export 'billing.dart';
 export 'customers.dart';
+export 'google_backup.dart';
 export 'help.dart';
 export 'job.dart';
 export 'manufacturers.dart';

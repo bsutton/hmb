@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 
 import 'dashlets/dashlets.g.dart';
-import 'dashlets/google_backup.dart';
 import 'nav.g.dart';
 
 class MainDashboardPage extends StatelessWidget {
@@ -18,7 +17,7 @@ class MainDashboardPage extends StatelessWidget {
         NextJobDashlet(),
         ShoppingDashlet(),
         PackingDashlet(),
-        BillingDashlet(),
+        AccountingDashlet(),
         CustomersDashlet(),
         SuppliersDashlet(),
         ToolsDashlet(),
