@@ -75,6 +75,7 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
               const SizedBox(height: 8),
               Text(
                 widget.label,
+                textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
