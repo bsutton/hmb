@@ -11,4 +11,5 @@ export 'job_quote.dart';
 export 'list_quote_screen.dart';
 export 'quote_card.dart';
 export 'quote_details_screen.dart';
+export 'select_billing_contact_dialog.dart';
 export 'select_quote_dialog.dart';
