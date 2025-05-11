@@ -122,46 +122,49 @@ AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
     return toList(await db.rawQuery(query, parameters));
   }
 
+  /// shopping items
   Future<List<TaskItem>> getShoppingItems({
     List<Job>? jobs,
     Supplier? supplier,
   }) async {
     final db = withoutTransaction();
 
-    // Build conditions for filtering jobs and suppliers
-    final jobIds = jobs?.map((job) => job.id).toList() ?? [];
-    final jobCondition =
+    // Build job‐filter clause
+    final jobIds = jobs?.map((j) => j.id).toList() ?? [];
+    final jobClause =
         jobIds.isNotEmpty
-            ? 'AND j.id IN (${jobIds.map((_) => '?').join(",")})'
+            ? 'AND j.id IN (${List.filled(jobIds.length, '?').join(',')})'
             : '';
-    final supplierCondition = supplier != null ? 'AND ti.supplier_id = ?' : '';
 
-    // Combine the query with optional filters
-    final query = '''
-SELECT ti.* 
-FROM task_item ti
-JOIN task_item_type tit ON ti.item_type_id = tit.id
-JOIN task t ON ti.task_id = t.id
-JOIN job j ON t.job_id = j.id
-JOIN job_status js ON j.job_status_id = js.id
-WHERE (tit.name = 'Materials - buy' OR tit.name = 'Tools - buy')
-AND ti.completed = 0
-AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
-$jobCondition
-$supplierCondition
+    final supplierClause = supplier != null ? 'AND ti.supplier_id = ?' : '';
+
+    final sql = '''
+SELECT ti.*
+  FROM task_item ti
+  JOIN task_item_type tit ON ti.item_type_id = tit.id
+  JOIN task t               ON ti.task_id       = t.id
+  JOIN job j                ON t.job_id         = j.id
+  JOIN job_status js        ON j.job_status_id  = js.id
+ WHERE (tit.name = 'Materials - buy' OR tit.name = 'Tools - buy')
+   AND ti.completed = 0
+   AND ti.is_return = 0
+   AND js.name NOT IN ( 'Rejected', 'On Hold')
+   $jobClause
+   $supplierClause
 ''';
 
-    final parameters = <dynamic>[];
+    final params = <dynamic>[];
     if (jobIds.isNotEmpty) {
-      parameters.addAll(jobIds);
+      params.addAll(jobIds);
     }
     if (supplier != null) {
-      parameters.add(supplier.id);
+      params.add(supplier.id);
     }
 
-    return toList(await db.rawQuery(query, parameters));
+    return toList(await db.rawQuery(sql, params));
   }
 
+  /// Calculate charge
   Money calculateCharge({
     required int? itemTypeId,
     required Percentage margin,
@@ -202,6 +205,7 @@ $supplierCondition
   @override
   JuneStateCreator get juneRefresher => TaskItemState.new;
 
+  /// Items that have been purchased but not returned.
   Future<List<TaskItem>> getPurchasedItems({
     required DateTime since,
     required List<Job> jobs,
@@ -209,72 +213,73 @@ $supplierCondition
   }) async {
     final db = withoutTransaction();
 
-    // Base query for retrieving purchased items (Materials - buy, Tools - buy)
     final sql = StringBuffer('''
 SELECT ti.*
-FROM task_item ti
-JOIN task_item_type tit ON ti.item_type_id = tit.id
-JOIN task t ON ti.task_id = t.id
-JOIN job j ON t.job_id = j.id
-WHERE (tit.name = 'Materials - buy' OR tit.name = 'Tools - buy')
-  AND ti.completed = 1
-  AND ti.modified_date >= ?
+  FROM task_item ti
+  JOIN task_item_type tit ON ti.item_type_id = tit.id
+  JOIN task t               ON ti.task_id       = t.id
+  JOIN job j                ON t.job_id         = j.id
+ WHERE (tit.name = 'Materials - buy' OR tit.name = 'Tools - buy')
+   AND ti.completed = 1
+   AND ti.is_return = 0
+   AND ti.modified_date >= ?
+   -- exclude any purchase that has been returned
+   AND NOT EXISTS (
+     SELECT 1
+       FROM task_item r
+      WHERE r.source_task_item_id = ti.id
+   )
 ''');
 
-    // Collect parameters, starting with the "since" timestamp
     final params = <dynamic>[since.toIso8601String()];
 
-    // If jobs were provided, filter by those job IDs
     if (jobs.isNotEmpty) {
       final placeholders = List.filled(jobs.length, '?').join(',');
       sql.write(' AND j.id IN ($placeholders)');
       params.addAll(jobs.map((j) => j.id));
     }
-
-    // If a supplier was provided, filter by that supplier ID
     if (supplier != null) {
       sql.write(' AND ti.supplier_id = ?');
       params.add(supplier.id);
     }
 
-    // Execute and map to TaskItem instances
+    sql.write(' ORDER BY ti.modified_date DESC');
     final rows = await db.rawQuery(sql.toString(), params);
     return toList(rows);
   }
 
-  Future<List<TaskItem>> getReturnableItems({
+  /// “Returned” tab (items that have already been returned)
+  Future<List<TaskItem>> getReturnedItems({
     List<Job>? jobs,
     Supplier? supplier,
   }) async {
     final db = withoutTransaction();
 
-    // Base query for returnable purchased items
     final sql = StringBuffer('''
 SELECT ti.*
-FROM task_item ti
-JOIN task_item_type tit ON ti.item_type_id = tit.id
-JOIN task t ON ti.task_id = t.id
-JOIN job j ON t.job_id = j.id
-WHERE (tit.name = 'Materials - buy' OR tit.name = 'Tools - buy')
-  AND ti.completed = 1
+  FROM task_item ti
+  JOIN task_item_type tit ON ti.item_type_id = tit.id
+  JOIN task t               ON ti.task_id       = t.id
+  JOIN job j                ON t.job_id         = j.id
+ WHERE ti.is_return = 1
 ''');
 
     final params = <dynamic>[];
 
-    // Filter by specific jobs if provided
+    // Optional job filter
     if (jobs != null && jobs.isNotEmpty) {
       final placeholders = List.filled(jobs.length, '?').join(',');
       sql.write(' AND j.id IN ($placeholders)');
       params.addAll(jobs.map((j) => j.id));
     }
 
-    // Filter by supplier if provided
+    // Optional supplier filter
     if (supplier != null) {
       sql.write(' AND ti.supplier_id = ?');
       params.add(supplier.id);
     }
 
-    // Order by most recently completed first
+    // Most recent returns first
     sql.write(' ORDER BY ti.modified_date DESC');
 
     final rows = await db.rawQuery(sql.toString(), params);
@@ -289,25 +294,36 @@ WHERE (tit.name = 'Materials - buy' OR tit.name = 'Tools - buy')
   ///  - records the refund per unit
   ///  - timestamps the return
   Future<void> markAsReturned(
-    int taskItemId,
+    int originalId,
     Fixed returnQuantity,
     Money returnUnitPrice,
   ) async {
     final db = withoutTransaction();
-    final now = DateTime.now().toIso8601String();
 
-    await db.update(
+    // 1. Fetch the original
+    final rows = await db.query(
       tableName,
-      {
-        'returned': 1,
-        'return_quantity': returnQuantity.threeDigits().minorUnits.toInt(),
-        'return_unit_price': returnUnitPrice.twoDigits().minorUnits.toInt(),
-        'return_date': now,
-        'modified_date': now,
-      },
       where: 'id = ?',
-      whereArgs: [taskItemId],
+      whereArgs: [originalId],
     );
+    if (rows.isEmpty) {
+      throw StateError('No TaskItem found with id=$originalId');
+    }
+    final original = TaskItem.fromMap(rows.first);
+
+    // 2. Build and insert the return row
+    final returnItem = original.forReturn(returnQuantity, returnUnitPrice);
+    await insert(returnItem);
+  }
+
+  /// True if the passsed [taskItemId] has been returned.
+  Future<bool> wasReturned(int taskItemId) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      'SELECT 1 FROM task_item WHERE source_task_item_id = ? LIMIT 1',
+      [taskItemId],
+    );
+    return rows.isNotEmpty;
   }
 }
 

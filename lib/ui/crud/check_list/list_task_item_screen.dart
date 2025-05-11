@@ -108,10 +108,11 @@ class _TaskItemListScreenState<P extends Entity<P>>
                       onPressed:
                           () => unawaited(markAsCompleted(
                             TaskItemContext(
-                              widget.task!,
-                              taskItem,
-                              taskAndRate.billingType,
-                            ),
+                                task: widget.task!,
+                                taskItem: taskItem,
+                                billingType: taskAndRate.billingType,
+                                wasReturned: false,
+                              ),
                             context,
                           )),
                     ),

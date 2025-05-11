@@ -8,8 +8,7 @@ import 'dao_task.dart';
 import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
 
-/// Group by Task then Dates within that task, followed by materials
-/// associated with that task.
+/// Group by Task then Dates within that task, followed by materials and returns.
 Future<Money> createByTask(
   int invoiceId,
   Job job,
@@ -17,6 +16,7 @@ Future<Money> createByTask(
 ) async {
   var totalAmount = MoneyEx.zero;
 
+  // 1. Fetch all tasks for this job
   final tasks = await DaoTask().getTasksByJob(job.id);
   for (final task in tasks) {
     /// Only process tasks that the user selected to be on
@@ -25,22 +25,22 @@ Future<Money> createByTask(
       continue;
     }
 
-    /// A new invoice group for each task.
+    // 2. Create a new invoice‐line group per task
     final invoiceLineGroup = InvoiceLineGroup.forInsert(
       invoiceId: invoiceId,
       name: task.name,
     );
-
     final invoiceLineGroupId = await DaoInvoiceLineGroup().insert(
       invoiceLineGroup,
     );
 
-    final labourForDays = await collectLabourPerDay(task);
+    // 3. Collect labour entries by date for this task
+    final labourForDate = await collectLabourPerDay(task);
 
-    // Add time entries (labour) grouped by date
+    // 4. Emit labour (time entries) lines
     if (job.billingType == BillingType.timeAndMaterial) {
       totalAmount += await _timeAndMaterialsLabour(
-        labourForDays,
+        labourForDate,
         job,
         invoiceId,
         invoiceLineGroupId,
@@ -48,7 +48,7 @@ Future<Money> createByTask(
       );
     } else {
       totalAmount += await _fixedPriceLabour(
-        labourForDays,
+        labourForDate,
         job,
         invoiceId,
         invoiceLineGroupId,
@@ -56,55 +56,74 @@ Future<Money> createByTask(
       );
     }
 
-    // Add materials
-    final taskItesm = await DaoTaskItem().getByTask(task.id);
-    for (final item in taskItesm.where(
-      (item) => !item.billed && item.completed,
-    )) {
-      Money unitCost;
-      Fixed quantity;
-
-      switch (job.billingType) {
-        case BillingType.timeAndMaterial:
-          unitCost = item.actualMaterialUnitCost!;
-          quantity = item.actualMaterialQuantity!;
-        case BillingType.fixedPrice:
-          unitCost = item.estimatedMaterialUnitCost!;
-          quantity = item.estimatedMaterialQuantity!;
+    // 5. Emit material and return lines
+    final taskItems = await DaoTaskItem().getByTask(task.id);
+    for (final taskItem in taskItems) {
+      if (taskItem.billed || !taskItem.completed) {
+        continue;
       }
 
-      final lineTotal = unitCost.multiplyByFixed(quantity);
+      final itemType = TaskItemTypeEnum.fromId(taskItem.itemTypeId);
+      if (itemType == TaskItemTypeEnum.labour ||
+          itemType == TaskItemTypeEnum.toolsOwn) {
+        continue;
+      }
 
+      // Determine unit cost and quantity based on billing type
+      Money unitCost;
+      Fixed quantity;
+      switch (job.billingType) {
+        case BillingType.timeAndMaterial:
+          unitCost = taskItem.actualMaterialUnitCost!;
+          quantity = taskItem.actualMaterialQuantity!;
+        case BillingType.fixedPrice:
+          unitCost = taskItem.estimatedMaterialUnitCost!;
+          quantity = taskItem.estimatedMaterialQuantity!;
+      }
+
+      // Calculate the line total, flipping sign for returns
+      var lineTotal = unitCost.multiplyByFixed(quantity);
+      if (taskItem.isReturn) {
+        lineTotal = -lineTotal;
+      }
+
+      final descriptionPrefix = taskItem.isReturn ? 'Returned: ' : 'Material: ';
+      final lineDescription = '$descriptionPrefix${taskItem.description}';
+
+      // Insert the invoice line
       final invoiceLine = InvoiceLine.forInsert(
         invoiceId: invoiceId,
         invoiceLineGroupId: invoiceLineGroupId,
-        description: 'Material: ${item.description}',
+        description: lineDescription,
         quantity: quantity,
         unitPrice: unitCost,
         lineTotal: lineTotal,
       );
       final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-      await DaoTaskItem().markAsBilled(item, invoiceLineId);
+
+      // Mark the task item as billed
+      await DaoTaskItem().markAsBilled(taskItem, invoiceLineId);
+
       totalAmount += lineTotal;
     }
   }
+
   return totalAmount;
 }
 
 Future<Money> _timeAndMaterialsLabour(
-  List<LabourForTaskOnDate> labourForDays,
+  List<LabourForTaskOnDate> labourForDate,
   Job job,
   int invoiceId,
   int invoiceLineGroupId,
   Task task,
 ) async {
-  var totalAmount = MoneyEx.zero;
+  var totalLabourAmount = MoneyEx.zero;
   // Add time entries (labour) grouped by date
-  for (final labourForDay in labourForDays) {
-    final lineTotal = job.hourlyRate!.multiplyByFixed(
-      labourForDay.durationInHours,
-    );
 
+  for (final labourForDay in labourForDate) {
+    final hoursWorked = labourForDay.durationInHours;
+    final lineTotal = job.hourlyRate!.multiplyByFixed(hoursWorked);
     if (lineTotal.isZero) {
       continue;
     }
@@ -113,100 +132,52 @@ Future<Money> _timeAndMaterialsLabour(
       invoiceId: invoiceId,
       invoiceLineGroupId: invoiceLineGroupId,
       description:
-          'Labour: ${task.name} on ${formatLocalDate(labourForDay.date)} '
-          'Hours: ${labourForDay.durationInHours}',
-      quantity: labourForDay.durationInHours,
+          'Labour: ${task.name} on ${formatLocalDate(labourForDay.date)} — Hours: $hoursWorked',
+      quantity: hoursWorked,
       unitPrice: job.hourlyRate!,
       lineTotal: lineTotal,
     );
 
     final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-    totalAmount += lineTotal;
+    totalLabourAmount += lineTotal;
 
     for (final timeEntry in labourForDay.timeEntries) {
       // Mark time entry as billed with the invoice line id
       await DaoTimeEntry().markAsBilled(timeEntry, invoiceLineId);
     }
   }
-  return totalAmount;
+  return totalLabourAmount;
 }
 
 /// CheckListItems of type [TaskItemTypeEnum.labour] estimates
 /// are used on an invoice.
 Future<Money> _fixedPriceLabour(
-  List<LabourForTaskOnDate> labourForDays,
+  List<LabourForTaskOnDate> labourForDates,
   Job job,
   int invoiceId,
   int invoiceLineGroupId,
   Task task,
-) async {
-  var totalAmount = MoneyEx.zero;
+) =>
+// For fixed price, we treat labour the same as time & materials.
+_timeAndMaterialsLabour(
+  labourForDates,
+  job,
+  invoiceId,
+  invoiceLineGroupId,
+  task,
+);
 
-  // Add time entries (labour) grouped by date
-  for (final labourForDay in labourForDays) {
-    final lineTotal = job.hourlyRate!.multiplyByFixed(
-      labourForDay.durationInHours,
-    );
-
-    if (lineTotal.isZero) {
-      continue;
-    }
-
-    final invoiceLine = InvoiceLine.forInsert(
-      invoiceId: invoiceId,
-      invoiceLineGroupId: invoiceLineGroupId,
-      description:
-          'Labour: ${task.name} on ${formatLocalDate(labourForDay.date)} '
-          'Hours: ${labourForDay.durationInHours}',
-      quantity: labourForDay.durationInHours,
-      unitPrice: job.hourlyRate!,
-      lineTotal: lineTotal,
-    );
-
-    final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-    totalAmount += lineTotal;
-
-    for (final timeEntry in labourForDay.timeEntries) {
-      // Mark time entry as billed with the invoice line id
-      await DaoTimeEntry().markAsBilled(timeEntry, invoiceLineId);
-    }
-  }
-  return totalAmount;
-}
-
-/// Collect the labour for each day [task] was worked on
-/// which hasn't yet been billed.
+/// Groups all un‐billed time entries for [task] by date.
 Future<List<LabourForTaskOnDate>> collectLabourPerDay(Task task) async {
-  final days = <LabourForTaskOnDate>[];
-
-  // for (final workDate in workDates) {
-  //   days.add(await DaoTimeEntry().getLabourForDate(task, workDate));
-  // }
-
+  final timeEntriesByDate = <LocalDate, List<TimeEntry>>{};
   final timeEntries = await DaoTimeEntry().getByTask(task.id);
-
-  // Create a map to group time entries by date
-  final timeEntryGroups = <LocalDate, List<TimeEntry>>{};
 
   for (final timeEntry in timeEntries.where((entry) => !entry.billed)) {
     final date = LocalDate.fromDateTime(timeEntry.startTime);
-    timeEntryGroups.putIfAbsent(date, () => []).add(timeEntry);
+    timeEntriesByDate.putIfAbsent(date, () => []).add(timeEntry);
   }
 
-  /// Sum the hours
-  for (final entry in timeEntryGroups.entries) {
-    final date = entry.key;
-    days.add(LabourForTaskOnDate(task, date, entry.value));
-  }
-
-  return days;
-}
-
-class LineAndSource {
-  LineAndSource({required this.line, this.taskItem, this.timeEntry});
-  InvoiceLine line;
-  TaskItem? taskItem;
-  TimeEntry? timeEntry;
-
-  Future<void> markBilled(int invoiceLineId) async {}
+  return timeEntriesByDate.entries
+      .map((entry) => LabourForTaskOnDate(task, entry.key, entry.value))
+      .toList();
 }

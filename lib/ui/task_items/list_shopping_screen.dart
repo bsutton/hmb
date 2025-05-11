@@ -4,8 +4,6 @@ import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_supplier.dart';
@@ -21,13 +19,12 @@ import '../../entity/job_activity.dart';
 import '../../entity/task_item.dart';
 import '../../util/app_title.dart';
 import '../../util/format.dart';
-import '../../util/money_ex.dart';
 import '../widgets/select/select.g.dart';
-import '../widgets/text/hmb_text.dart';
-import '../widgets/text/hmb_text_themes.dart';
 import '../widgets/widgets.g.dart';
 import 'list_packing_screen.dart';
-import 'mark_as_complete.dart';
+import 'purchased_item_card.dart';
+import 'return_item_card.dart';
+import 'to_purchase_item_card.dart';
 
 enum ScheduleFilter {
   all,
@@ -125,7 +122,7 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
           supplier: _selectedSupplier,
         );
       case ShoppingMode.returns:
-        taskItems = await DaoTaskItem().getReturnableItems(
+        taskItems = await DaoTaskItem().getReturnedItems(
           jobs: _selectedJobs,
           supplier: _selectedSupplier,
         );
@@ -136,6 +133,7 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
     for (final taskItem in taskItems) {
       final task = await DaoTask().getById(taskItem.taskId);
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
+      final wasReturned = await DaoTaskItem().wasReturned(taskItem.id);
 
       // Apply text filter if present
       if (!Strings.isBlank(filter) &&
@@ -155,7 +153,14 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
         }
       }
 
-      _taskItems.add(TaskItemContext(task!, taskItem, billingType));
+      _taskItems.add(
+        TaskItemContext(
+          task: task!,
+          taskItem: taskItem,
+          billingType: billingType,
+          wasReturned: wasReturned,
+        ),
+      );
     }
     setState(() {});
   }
@@ -300,124 +305,59 @@ If you were expecting to see items here - check the Job's Status is active.
   );
 
   Widget _buildShoppingItem(BuildContext context, TaskItemContext itemContext) {
-    final ti = itemContext.taskItem;
-    return SurfaceCard(
-      title: ti.description,
-      height: 240,
-      body: FutureBuilderEx(
-        future: CustomerAndJob.fetch(itemContext),
-        builder: (ctx, details) {
-          final det = details!;
-          return Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    HMBTextLine('Customer: ${det.customer.name}'),
-                    // … common fields …
-                    if (_selectedMode == ShoppingMode.purchased)
-                      HMBTextLine(
-                        'Qty: ${ti.actualMaterialQuantity ?? ti.actualMaterialUnitCost}',
-                      ),
-                    if (_selectedMode == ShoppingMode.returns)
-                      HMBTextLine(
-                        'Qty Purchased: ${ti.actualMaterialQuantity ?? ti.actualMaterialUnitCost}',
-                      ),
-                  ],
-                ),
-              ),
-              // Action Button:
-              IconButton(
-                icon: Icon(
-                  _selectedMode == ShoppingMode.toPurchase
-                      ? Icons.check
-                      : _selectedMode == ShoppingMode.returns
-                      ? Icons.undo
-                      : Icons.receipt,
-                  color:
-                      _selectedMode == ShoppingMode.returns
-                          ? Colors.red
-                          : Colors.green,
-                ),
-                onPressed: () async {
-                  if (_selectedMode == ShoppingMode.toPurchase) {
-                    await markAsCompleted(itemContext, context);
-                  } else if (_selectedMode == ShoppingMode.returns) {
-                    await _markAsReturned(itemContext, context);
-                  }
-                  await _loadTaskItems();
-                },
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Future<void> _markAsReturned(
-    TaskItemContext itemContext,
-    BuildContext context,
-  ) async {
-    final qtyCtrl = TextEditingController(
-      text:
-          (itemContext.taskItem.actualMaterialQuantity ?? Fixed.one).toString(),
-    );
-    final refundCtrl = TextEditingController(
-      text: itemContext.taskItem.actualMaterialUnitCost.toString(),
-    );
-
-    final totalCost = (itemContext.taskItem.actualMaterialUnitCost ??
-            MoneyEx.zero)
-        .multiplyByFixed(
-          itemContext.taskItem.actualMaterialQuantity ?? Fixed.zero,
+    switch (_selectedMode) {
+      case ShoppingMode.toPurchase:
+        return ToPurchaseItemCard(
+          itemContext: itemContext,
+          onReload: _loadTaskItems,
         );
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Return Item'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(itemContext.taskItem.description),
-                TextField(
-                  controller: qtyCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Quantity to return',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: refundCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Refund amount each',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                HMBText('Total: $totalCost'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Return'),
-              ),
-            ],
-          ),
-    );
-
-    if (confirmed ?? false) {
-      final qty = Fixed.tryParse(qtyCtrl.text) ?? Fixed.one;
-      final refund = MoneyEx.tryParse(refundCtrl.text);
-      await DaoTaskItem().markAsReturned(itemContext.taskItem.id, qty, refund);
+      case ShoppingMode.purchased:
+        return PurchasedItemCard(
+          itemContext: itemContext,
+          onReload: _loadTaskItems,
+        );
+      case ShoppingMode.returns:
+        return ReturnItemCard(
+          itemContext: itemContext,
+          onReload: _loadTaskItems,
+        );
     }
   }
+
+  // Widget _buildShoppingItem2(
+  //   BuildContext context,
+  //   TaskItemContext itemContext,
+  // ) {
+  //   final taskItem = itemContext.taskItem;
+
+  //   return SurfaceCard(
+  //     title: taskItem.description,
+  //     height: 240,
+  //     body: FutureBuilderEx(
+  //       future: CustomerAndJob.fetch(itemContext),
+  //       builder: (ctx, details) {
+  //         final det = details!;
+  //         // final isReturnMode = _selectedMode == ShoppingMode.returns;
+  //         // // Only material‐buy and tools - buy, not already returned, may be returned:
+  //         // final canReturn =
+  //         //     isReturnMode &&
+  //         //     (TaskItemTypeEnum.fromId(taskItem.itemTypeId) ==
+  //         //             TaskItemTypeEnum.materialsBuy ||
+  //         //         TaskItemTypeEnum.fromId(taskItem.itemTypeId) ==
+  //         //             TaskItemTypeEnum.toolsBuy) &&
+  //         //     !itemContext.wasReturned;
+
+  //         return Row(
+  //           children: [
+  //             ItemCardCommon(det: det, taskItem: taskItem),
+
+  //             // Action Button:
+  //           ],
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
 
   Future<List<TaskItemContext>> withContext(List<TaskItem> items) async {
     final itemsWithContext = <TaskItemContext>[];
@@ -425,7 +365,15 @@ If you were expecting to see items here - check the Job's Status is active.
     for (final item in items) {
       final task = await DaoTask().getById(item.taskId);
       final billing = await DaoTask().getBillingTypeByTaskItem(item);
-      itemsWithContext.add(TaskItemContext(task!, item, billing));
+      final wasReturned = await DaoTaskItem().wasReturned(item.id);
+      itemsWithContext.add(
+        TaskItemContext(
+          task: task!,
+          taskItem: item,
+          billingType: billing,
+          wasReturned: wasReturned,
+        ),
+      );
     }
     return itemsWithContext;
   }

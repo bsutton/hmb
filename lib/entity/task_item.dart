@@ -31,7 +31,7 @@ enum LabourEntryMode {
   String toSqlString() => _display;
 }
 
-/// A single task item, including estimates, actuals, billing and return/audit info
+/// A single task item, including estimates, actuals, billing, and return linkage
 class TaskItem extends Entity<TaskItem> {
   TaskItem._({
     required super.id,
@@ -61,10 +61,8 @@ class TaskItem extends Entity<TaskItem> {
     required this.actualMaterialUnitCost,
     required this.actualMaterialQuantity,
     required this.actualCost,
-    required this.returned,
-    required this.returnQuantity,
-    required this.returnUnitPrice,
-    required this.returnDate,
+    required this.sourceTaskItemId,
+    required this.isReturn,
   }) : _charge = charge,
        super();
 
@@ -93,10 +91,8 @@ class TaskItem extends Entity<TaskItem> {
     Money? actualMaterialUnitCost,
     Fixed? actualMaterialQuantity,
     Money? actualCost,
-    bool returned = false,
-    Fixed? returnQuantity,
-    Money? returnUnitPrice,
-    DateTime? returnDate,
+    int? sourceTaskItemId,
+    bool isReturn = false,
   }) {
     final now = DateTime.now();
     return TaskItem._(
@@ -127,10 +123,8 @@ class TaskItem extends Entity<TaskItem> {
       actualMaterialUnitCost: actualMaterialUnitCost,
       actualMaterialQuantity: actualMaterialQuantity,
       actualCost: actualCost,
-      returned: returned,
-      returnQuantity: returnQuantity,
-      returnUnitPrice: returnUnitPrice,
-      returnDate: returnDate,
+      sourceTaskItemId: sourceTaskItemId,
+      isReturn: isReturn,
     );
   }
 
@@ -160,10 +154,8 @@ class TaskItem extends Entity<TaskItem> {
     Money? actualMaterialUnitCost,
     Fixed? actualMaterialQuantity,
     Money? actualCost,
-    bool? returned,
-    Fixed? returnQuantity,
-    Money? returnUnitPrice,
-    DateTime? returnDate,
+    int? sourceTaskItemId,
+    bool? isReturn,
   }) {
     final now = DateTime.now();
     return TaskItem._(
@@ -194,10 +186,8 @@ class TaskItem extends Entity<TaskItem> {
       actualMaterialUnitCost: actualMaterialUnitCost,
       actualMaterialQuantity: actualMaterialQuantity,
       actualCost: actualCost,
-      returned: returned ?? existing.returned,
-      returnQuantity: returnQuantity ?? existing.returnQuantity,
-      returnUnitPrice: returnUnitPrice ?? existing.returnUnitPrice,
-      returnDate: returnDate ?? existing.returnDate,
+      sourceTaskItemId: sourceTaskItemId ?? existing.sourceTaskItemId,
+      isReturn: isReturn ?? existing.isReturn,
     );
   }
 
@@ -257,19 +247,8 @@ class TaskItem extends Entity<TaskItem> {
       decimalDigits: 3,
     ),
     actualCost: MoneyEx.fromInt(map['actual_cost'] as int? ?? 0),
-    returned: (map['returned'] as int? ?? 0) == 1,
-    returnQuantity:
-        map['return_quantity'] != null
-            ? Fixed.fromInt(map['return_quantity'] as int, decimalDigits: 3)
-            : null,
-    returnUnitPrice:
-        map['return_unit_price'] != null
-            ? MoneyEx.fromInt(map['return_unit_price'] as int)
-            : null,
-    returnDate:
-        map['return_date'] != null
-            ? DateTime.parse(map['return_date'] as String)
-            : null,
+    sourceTaskItemId: map['source_task_item_id'] as int?,
+    isReturn: (map['is_return'] as int? ?? 0) == 1,
   );
 
   // Primary fields
@@ -314,12 +293,11 @@ class TaskItem extends Entity<TaskItem> {
   // Labour mode
   final LabourEntryMode labourEntryMode;
 
-  // Return tracking
-  bool returned;
-  Fixed? returnQuantity;
-  Money? returnUnitPrice;
-  DateTime? returnDate;
+  // Return linkage
+  final int? sourceTaskItemId;
+  final bool isReturn;
 
+  /// Charge calculation...
   Money getCharge(BillingType billingType, Money hourlyRate) {
     if (chargeSet) {
       return _charge!;
@@ -445,10 +423,8 @@ class TaskItem extends Entity<TaskItem> {
     'actual_material_quantity':
         actualMaterialQuantity?.threeDigits().minorUnits.toInt(),
     'actual_cost': actualCost?.twoDigits().minorUnits.toInt(),
-    'returned': returned ? 1 : 0,
-    'return_quantity': returnQuantity?.threeDigits().minorUnits.toInt(),
-    'return_unit_price': returnUnitPrice?.twoDigits().minorUnits.toInt(),
-    'return_date': returnDate?.toIso8601String(),
+    'source_task_item_id': sourceTaskItemId,
+    'is_return': isReturn ? 1 : 0,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
@@ -479,10 +455,8 @@ class TaskItem extends Entity<TaskItem> {
     Money? actualMaterialUnitCost,
     Fixed? actualMaterialQuantity,
     Money? actualCost,
-    bool? returned,
-    Fixed? returnQuantity,
-    Money? returnUnitPrice,
-    DateTime? returnDate,
+    int? sourceTaskItemId,
+    bool? isReturn,
   }) => TaskItem._(
     id: id,
     createdDate: createdDate,
@@ -515,9 +489,47 @@ class TaskItem extends Entity<TaskItem> {
     actualMaterialQuantity:
         actualMaterialQuantity ?? this.actualMaterialQuantity,
     actualCost: actualCost ?? this.actualCost,
-    returned: returned ?? this.returned,
-    returnQuantity: returnQuantity ?? this.returnQuantity,
-    returnUnitPrice: returnUnitPrice ?? this.returnUnitPrice,
-    returnDate: returnDate ?? this.returnDate,
+    sourceTaskItemId: sourceTaskItemId ?? this.sourceTaskItemId,
+    isReturn: isReturn ?? this.isReturn,
   );
+
+  /// Build a brand-new “return” record linked back to this original.
+  TaskItem forReturn(Fixed returnQuantity, Money returnUnitPrice) {
+    final now = DateTime.now();
+    return TaskItem._(
+      id: -1, // new row
+      createdDate: now,
+      modifiedDate: now,
+      taskId: taskId,
+      description: description,
+      itemTypeId: itemTypeId,
+      // carry across estimates
+      estimatedMaterialUnitCost: estimatedMaterialUnitCost,
+      estimatedMaterialQuantity: estimatedMaterialQuantity,
+      estimatedLabourHours: estimatedLabourHours,
+      estimatedLabourCost: estimatedLabourCost,
+      margin: margin,
+      charge: _charge,
+      chargeSet: chargeSet,
+      // mark it as completed so it shows on the next invoice:
+      completed: true,
+      billed: false,
+      measurementType: measurementType,
+      dimension1: dimension1,
+      dimension2: dimension2,
+      dimension3: dimension3,
+      units: units,
+      url: url,
+      labourEntryMode: labourEntryMode,
+      invoiceLineId: null,
+      supplierId: supplierId,
+      // these are the “actuals” for the return:
+      actualMaterialUnitCost: returnUnitPrice,
+      actualMaterialQuantity: returnQuantity,
+      actualCost: returnUnitPrice.multiplyByFixed(returnQuantity),
+      // link back and flag as a return:
+      sourceTaskItemId: id,
+      isReturn: true,
+    );
+  }
 }

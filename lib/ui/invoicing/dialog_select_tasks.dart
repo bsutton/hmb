@@ -4,8 +4,8 @@ import 'package:money2/money2.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../widgets/hmb_button.dart';
 import '../widgets/select/hmb_select_contact.dart';
+import '../widgets/widgets.g.dart';
 
 enum Showing { showQuote, showInvoice }
 
@@ -125,10 +125,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
     _customer = (await DaoCustomer().getById(widget.job.customerId))!;
     _contacts = await DaoContact().getByCustomer(widget.job.customerId);
-    _selectedContact = _contacts.firstWhere(
-      (c) => c.id == widget.contact.id,
-      orElse: () => _contacts.first,
-    );
+    _selectedContact = widget.contact;
   }
 
   void _toggleSelectAll(bool? value) {

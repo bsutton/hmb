@@ -41,10 +41,17 @@ class PackingScreen extends StatefulWidget {
 }
 
 class TaskItemContext {
-  TaskItemContext(this.task, this.taskItem, this.billingType);
+  TaskItemContext({
+    required this.task,
+    required this.taskItem,
+    required this.billingType,
+    required this.wasReturned,
+  });
   TaskItem taskItem;
   Task task;
   BillingType billingType;
+  // If true this item is a return (to supplier) item.
+  bool wasReturned;
 }
 
 class _PackingScreenState extends DeferredState<PackingScreen> {
@@ -66,6 +73,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
     for (final taskItem in taskItems) {
       final task = await DaoTask().getById(taskItem.taskId);
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
+      final isReturn = taskItem.isReturn;
       // Apply text filter if present.
       var include =
           Strings.isBlank(filter) ||
@@ -90,7 +98,14 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
       }
 
       if (include) {
-        taskItemsContexts.add(TaskItemContext(task!, taskItem, billingType));
+        taskItemsContexts.add(
+          TaskItemContext(
+            task: task!,
+            taskItem: taskItem,
+            billingType: billingType,
+            wasReturned: isReturn,
+          ),
+        );
       }
     }
     setState(() {});
@@ -262,7 +277,8 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
                 ),
                 IconButton(
                   icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () => unawaited(markAsCompleted(itemContext, context)),
+                  onPressed:
+                      () => unawaited(markAsCompleted(itemContext, context)),
                 ),
               ],
             ),
