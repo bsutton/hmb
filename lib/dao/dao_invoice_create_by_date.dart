@@ -18,9 +18,6 @@ Future<Money> createByDate(
   List<int> selectedTaskIds,
 ) async {
   var totalAmount = MoneyEx.zero;
-  // Prepare containers for grouping
-  // final taskGroupMap = <int, List<LineAndSource>>{};
-  // final dateGroupedLines = <LineAndSource>[];
 
   /// Determine all of the dates we worked on tasks.
   final workDates = <LocalDate>{};
@@ -83,23 +80,8 @@ Future<Money> createByDate(
     // Add to the list of grouped lines and update total amount
     totalAmount += lineTotal;
   }
-
-  // // Insert date-based labour lines directly
-  // for (final line in dateGroupedLines) {
-  //   final invoiceLineId = await DaoInvoiceLine().insert(line.line);
-  //   await line.markBilled(invoiceLineId);
-  // }
-
-  // // Insert materials grouped by task at the bottom
-  // for (final taskLines in taskGroupMap.values) {
-  //   for (final line in taskLines) {
-  //     final invoiceLineId = await DaoInvoiceLine().insert(line.line);
-  //     await line.markBilled(invoiceLineId);
-  //   }
-  // }
   // Add materials at the end of the invoice, grouped under
   // their respective tasks
-
   return totalAmount +
       await emitMaterialsByTask(job, invoiceId, selectedTaskIds);
 }
