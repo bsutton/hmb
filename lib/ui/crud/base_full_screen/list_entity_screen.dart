@@ -86,7 +86,7 @@ class EntityListScreenState<T extends Entity<T>>
     setState(() {
       if (idx == -1) {
         // If it's a newly created entity, add it
-        entityList.add(updatedEntity);
+        entityList.insert(0, updatedEntity);
       } else {
         // If it's an existing entity, update in-place
         entityList[idx] = updatedEntity;
