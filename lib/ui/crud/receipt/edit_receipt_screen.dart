@@ -149,10 +149,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
 
       // MONEY FIELDS: dollars entry
       HMBMoneyField(
-        controller: _totalExclCtrl,
-        labelText: 'Total Excl. Tax',
-        fieldName: 'Total Excluding Tax',
-        focusNode: _taxExFocus,
+        controller: _totalInclCtrl,
+        labelText: 'Total Incl. Tax',
+        fieldName: 'Total Including Tax',
+        focusNode: _taxIncFocus,
       ),
       HMBMoneyField(
         controller: _taxCtrl,
@@ -161,10 +161,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         focusNode: _taxFocus,
       ),
       HMBMoneyField(
-        controller: _totalInclCtrl,
-        labelText: 'Total Incl. Tax',
-        fieldName: 'Total Including Tax',
-        focusNode: _taxIncFocus,
+        controller: _totalExclCtrl,
+        labelText: 'Total Excl. Tax',
+        fieldName: 'Total Excluding Tax',
+        focusNode: _taxExFocus,
       ),
 
       const SizedBox(height: 16),
