@@ -216,11 +216,11 @@ Future<void> _initDb(BuildContext context) async {
     print('Database located at: ${await backupProvider.databasePath}');
     // ignore: avoid_catches_without_on_clauses
   } catch (e, st) {
+    unawaited(Sentry.captureException(e, stackTrace: st));
     HMBToast.error(
       'Db open failed. Try rebooting your phone or restore the db $e',
     );
 
-    unawaited(Sentry.captureException(e, stackTrace: st));
     if (context.mounted) {
       await Navigator.push(
         context,
