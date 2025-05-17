@@ -26,7 +26,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
   GoogleDriveBackupProvider(super.databaseFactory);
 
   @override
-  String get name => 'Google Drive Backup';
+  String get name => 'Google Drive';
 
   @override
   Future<void> deleteBackup(Backup backupToDelete) async {
@@ -193,8 +193,8 @@ class GoogleDriveBackupProvider extends BackupProvider {
 
   /// Launches the photo sync process in its own isolate.
   @override
-  Future<void> syncPhotos()  => PhotoSyncService().start();
-  
+  Future<void> syncPhotos() => PhotoSyncService().start();
+
   @override
   Future<String> get photosRootPath => getPhotosRootPath();
 
