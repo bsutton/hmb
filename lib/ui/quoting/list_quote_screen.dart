@@ -26,7 +26,7 @@ class QuoteListScreen extends StatefulWidget {
 class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   // Local list of quotes.
   List<Quote> _quotes = [];
-  final _listKey = GlobalKey<AnimatedListState>();
+  var _listKey = GlobalKey<AnimatedListState>();
 
   Job? selectedJob;
   Customer? selectedCustomer;
@@ -40,19 +40,18 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Quotes');
-    await _loadQuotes(initial: true);
+    await _loadQuotes();
   }
 
   // Load quotes from the DAO.
-  Future<void> _loadQuotes({bool initial = false}) async {
+  Future<void> _loadQuotes() async {
     final quotes = await _fetchFilteredQuotes();
-    if (initial) {
+    setState(() {
       _quotes = quotes;
-    } else {
-      setState(() {
-        _quotes = quotes;
-      });
-    }
+
+      /// force the AnimatedList to be full rebuilt without animations.
+      _listKey = GlobalKey<AnimatedListState>();
+    });
   }
 
   Future<List<Quote>> _fetchFilteredQuotes() async {
