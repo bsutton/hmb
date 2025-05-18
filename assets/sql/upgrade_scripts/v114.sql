@@ -17,7 +17,7 @@ CREATE TABLE quote_line (
   modified_date TEXT NOT NULL,
 
   line_chargeable_status TEXT NOT NULL DEFAULT 'none'
-    CHECK(line_chargeable_status IN ('none','included','excluded')),
+    CHECK(line_chargeable_status IN ('normal','noCharge','noChargeHidden')),
 
   line_approval_status TEXT NOT NULL DEFAULT 'preApproval'
     CHECK(line_approval_status IN ('preApproval','approved','rejected')),

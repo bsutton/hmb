@@ -8,8 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sentry/sentry.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../api/xero/handyman/app_starts_logging.dart';
 import '../../dao/dao.g.dart';
@@ -18,7 +16,6 @@ import '../../database/management/backup_providers/local/local_backup_provider.d
 import '../../database/versions/asset_script_source.dart';
 import '../../installer/linux/install.dart';
 import '../dialog/database_error_dialog.dart';
-import '../ui.g.dart';
 import 'widgets.g.dart';
 
 // ignore: omit_obvious_property_types
@@ -40,7 +37,8 @@ class _SplashScreenState extends State<SplashScreen> {
     key: _blockingUIKey,
     slowAction: () => _initialise(context),
     builder: (context) => const SizedBox.shrink(),
-    errorBuilder: (context, error) => DatabaseErrorDialog(error: error.toString()),
+    errorBuilder:
+        (context, error) => DatabaseErrorDialog(error: error.toString()),
   );
 
   Future<bool> _checkInstall() async {
@@ -73,14 +71,14 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _initialise(BuildContext context) async {
     if (!_initialised) {
       // try {
-        _initialised = true;
-        firstRun = await _checkInstall();
-        // ignore: use_build_context_synchronously
-        await _initDb(context);
-        await _initializeTimeEntryState(refresh: false);
-        unawaited(logAppStartup());
+      _initialised = true;
+      firstRun = await _checkInstall();
+      // ignore: use_build_context_synchronously
+      await _initDb(context);
+      await _initializeTimeEntryState(refresh: false);
+      unawaited(logAppStartup());
 
-        // ignore: avoid_catches_without_on_clauses
+      // ignore: avoid_catches_without_on_clauses
       // } catch (e, stackTrace) {
       //   // Capture the exception in Sentry
       //   unawaited(Sentry.captureException(e, stackTrace: stackTrace));
@@ -96,6 +94,9 @@ class _SplashScreenState extends State<SplashScreen> {
       //     context.go('system/backup/google');
       //   }
       // }
+    }
+    if (context.mounted) {
+      context.go('/home');
     }
   }
 
