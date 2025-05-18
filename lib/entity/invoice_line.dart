@@ -3,7 +3,7 @@ import 'package:money2/money2.dart';
 import '../api/xero/models/xero_line_item.dart';
 import 'entity.dart';
 
-enum LineStatus {
+enum LineChargeableStatus {
   /// The line item is chargable
   normal,
 
@@ -25,7 +25,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required super.createdDate,
     required super.modifiedDate,
     required this.invoiceLineGroupId,
-    this.status = LineStatus.normal,
+    this.status = LineChargeableStatus.normal,
     this.fromBookingFee = false,
   }) : super();
 
@@ -36,7 +36,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.unitPrice,
     required this.lineTotal,
     required this.invoiceLineGroupId,
-    this.status = LineStatus.normal,
+    this.status = LineChargeableStatus.normal,
     this.fromBookingFee = false,
   }) : super.forInsert();
 
@@ -48,7 +48,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     required this.unitPrice,
     required this.lineTotal,
     required this.invoiceLineGroupId,
-    this.status = LineStatus.normal,
+    this.status = LineChargeableStatus.normal,
     this.fromBookingFee = false,
   }) : super.forUpdate();
 
@@ -62,7 +62,9 @@ class InvoiceLine extends Entity<InvoiceLine> {
     lineTotal: Money.fromInt(map['line_total'] as int, isoCode: 'AUD'),
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
-    status: LineStatus.values[map['status'] as int? ?? LineStatus.normal.index],
+    status:
+        LineChargeableStatus.values[map['status'] as int? ??
+            LineChargeableStatus.normal.index],
     fromBookingFee: map['from_booking_fee'] == 1,
   );
 
@@ -72,7 +74,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
   Fixed quantity;
   Money unitPrice;
   Money lineTotal;
-  LineStatus status;
+  LineChargeableStatus status;
   bool fromBookingFee;
 
   InvoiceLine copyWith({
@@ -85,7 +87,7 @@ class InvoiceLine extends Entity<InvoiceLine> {
     Money? lineTotal,
     DateTime? createdDate,
     DateTime? modifiedDate,
-    LineStatus? status,
+    LineChargeableStatus? status,
     bool? fromBookingFee,
   }) => InvoiceLine(
     id: id ?? this.id,

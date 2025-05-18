@@ -134,7 +134,7 @@ class Invoice extends Entity<Invoice> {
       dueDate: invoice.dueDate,
       lineItems:
           invoiceLines
-              .where((line) => line.status == LineStatus.normal)
+              .where((line) => line.status == LineChargeableStatus.normal)
               .map((line) => line.toXeroLineItem())
               .toList(),
       lineAmountTypes: 'Inclusive',

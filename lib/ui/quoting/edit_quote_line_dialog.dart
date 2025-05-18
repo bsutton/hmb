@@ -18,7 +18,7 @@ class _EditQuoteLineDialogState extends State<EditQuoteLineDialog> {
   late TextEditingController _descriptionController;
   late TextEditingController _quantityController;
   late TextEditingController _unitPriceController;
-  late LineStatus _status;
+  late LineChargeableStatus _status;
 
   @override
   void initState() {
@@ -30,9 +30,9 @@ class _EditQuoteLineDialogState extends State<EditQuoteLineDialog> {
       text: widget.line.quantity.toString(),
     );
     _unitPriceController = TextEditingController(
-      text: widget.line.unitPrice.toString(),
+      text: widget.line.unitCharge.toString(),
     );
-    _status = widget.line.status;
+    _status = widget.line.lineChargeableStatus;
   }
 
   @override
@@ -55,7 +55,7 @@ class _EditQuoteLineDialogState extends State<EditQuoteLineDialog> {
             decoration: const InputDecoration(labelText: 'Unit Price'),
             keyboardType: TextInputType.number,
           ),
-          DropdownButton<LineStatus>(
+          DropdownButton<LineChargeableStatus>(
             value: _status,
             onChanged: (newValue) {
               setState(() {
@@ -63,9 +63,9 @@ class _EditQuoteLineDialogState extends State<EditQuoteLineDialog> {
               });
             },
             items:
-                LineStatus.values
+                LineChargeableStatus.values
                     .map(
-                      (status) => DropdownMenuItem<LineStatus>(
+                      (status) => DropdownMenuItem<LineChargeableStatus>(
                         value: status,
                         child: Text(status.toString().split('.').last),
                       ),
@@ -93,9 +93,9 @@ class _EditQuoteLineDialogState extends State<EditQuoteLineDialog> {
           final updatedLine = widget.line.copyWith(
             description: _descriptionController.text,
             quantity: quantity,
-            unitPrice: unitPrice,
+            unitCharge: unitPrice,
             lineTotal: unitPrice.multiplyByFixed(quantity),
-            status: _status,
+            lineChargeableStatus: _status,
           );
           Navigator.of(context).pop(updatedLine);
         },

@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../entity/quote_line.dart';
 import 'dao.dart';
+import 'dao.g.dart';
 
 class DaoQuoteLine extends Dao<QuoteLine> {
   @override
@@ -49,7 +50,7 @@ class DaoQuoteLine extends Dao<QuoteLine> {
   Future<int> deleteByQuoteLineGroupId(
     int quoteLineGroupId, [
     Transaction? transaction,
-  ])  {
+  ]) {
     final db = withinTransaction(transaction);
     return db.delete(
       tableName,
@@ -60,6 +61,19 @@ class DaoQuoteLine extends Dao<QuoteLine> {
 
   @override
   JuneStateCreator get juneRefresher => QuoteLineState.new;
+
+  Future<void> markRejected(int quoteLineId) async {
+    final quoteLine = await getById(quoteLineId);
+
+    quoteLine!.lineApprovalStatus = LineApprovalStatus.rejected;
+
+    await update(quoteLine);
+
+          if (quoteLine.taskId != null) {
+        await DaoTask().markRejected(quoteLine.taskId!);
+      }
+
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

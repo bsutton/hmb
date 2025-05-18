@@ -132,8 +132,9 @@ class DaoQuote extends Dao<Quote> {
         quoteLineGroupId: bookingGroup.id,
         description: 'Booking Fee',
         quantity: Fixed.fromInt(100),
-        unitPrice: job.bookingFee!,
+        unitCharge: job.bookingFee!,
         lineTotal: job.bookingFee!,
+        taskId: null,
       );
       await DaoQuoteLine().insert(bookingLine);
       totalAmount += job.bookingFee!;
@@ -159,8 +160,9 @@ class DaoQuote extends Dao<Quote> {
             quoteId: quoteId,
             description: 'Labour',
             quantity: estimate.estimatedLabourHours,
-            unitPrice: job.hourlyRate!,
+            unitCharge: job.hourlyRate!,
             lineTotal: labourTotal,
+            taskId: estimate.task.id,
           );
           totalAmount += labourTotal;
         }
@@ -188,10 +190,11 @@ class DaoQuote extends Dao<Quote> {
           quoteLineGroupId: group.id,
           description: 'Material: ${item.description}',
           quantity: item.estimatedMaterialQuantity!,
-          unitPrice: item.estimatedMaterialUnitCost!.plusPercentage(
+          unitCharge: item.estimatedMaterialUnitCost!.plusPercentage(
             item.margin,
           ),
           lineTotal: matTotal,
+          taskId: item.taskId,
         );
         await DaoQuoteLine().insert(matLine);
         totalAmount += matTotal;
@@ -221,8 +224,8 @@ class DaoQuote extends Dao<Quote> {
     final lines = await DaoQuoteLine().getByQuoteId(quoteId);
     var total = MoneyEx.zero;
     for (final line in lines) {
-      if (line.status == LineStatus.normal) {
-        final lineTotal = line.unitPrice.multiplyByFixed(line.quantity);
+      if (line.lineChargeableStatus == LineChargeableStatus.normal) {
+        final lineTotal = line.unitCharge.multiplyByFixed(line.quantity);
         total += lineTotal;
       }
     }

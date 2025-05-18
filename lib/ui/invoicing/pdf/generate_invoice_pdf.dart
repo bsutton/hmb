@@ -22,7 +22,7 @@ Future<File> generateInvoicePdf(
 
   // Calculate the total amount from lines, excluding noChargeHidden lines
   final totalAmount = lines
-      .where((line) => line.status != LineStatus.noChargeHidden)
+      .where((line) => line.status != LineChargeableStatus.noChargeHidden)
       .fold(MoneyEx.zero, (sum, line) => sum + line.lineTotal);
 
   final phone = await formatPhone(system.bestPhone);
@@ -402,7 +402,7 @@ class GroupedLine {
 
   bool get hasVisibleItems =>
       items
-          .where((item) => item.status != LineStatus.noChargeHidden)
+          .where((item) => item.status != LineChargeableStatus.noChargeHidden)
           .isNotEmpty;
 }
 

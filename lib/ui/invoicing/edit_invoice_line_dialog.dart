@@ -18,7 +18,7 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
   late TextEditingController _descriptionController;
   late TextEditingController _quantityController;
   late TextEditingController _unitPriceController;
-  late LineStatus _status;
+  late LineChargeableStatus _status;
 
   @override
   void initState() {
@@ -55,7 +55,7 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
             decoration: const InputDecoration(labelText: 'Unit Price'),
             keyboardType: TextInputType.number,
           ),
-          DropdownButton<LineStatus>(
+          DropdownButton<LineChargeableStatus>(
             value: _status,
             onChanged: (newValue) {
               setState(() {
@@ -63,9 +63,9 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
               });
             },
             items:
-                LineStatus.values
+                LineChargeableStatus.values
                     .map(
-                      (status) => DropdownMenuItem<LineStatus>(
+                      (status) => DropdownMenuItem<LineChargeableStatus>(
                         value: status,
                         child: Text(status.toString().split('.').last),
                       ),
@@ -95,7 +95,7 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
             quantity: quantity,
             unitPrice: unitPrice,
             lineTotal:
-                _status == LineStatus.normal
+                _status == LineChargeableStatus.normal
                     ? unitPrice.multiplyByFixed(quantity)
                     : MoneyEx.zero,
             status: _status,

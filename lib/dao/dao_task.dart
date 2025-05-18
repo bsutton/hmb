@@ -308,6 +308,13 @@ WHERE ti.id = ?
 
     throw Exception('No billing type found for the provided TaskItem.');
   }
+
+  Future<void> markRejected(int taskId) async {
+    final task = await getById(taskId);
+
+    task?.taskStatusId =
+        (await DaoTaskStatus().getByEnum(TaskStatusEnum.cancelled)).id;
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.

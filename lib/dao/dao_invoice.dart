@@ -98,10 +98,10 @@ class DaoInvoice extends Dao<Invoice> {
     for (final line in lines) {
       final Money lineTotal;
       switch (line.status) {
-        case LineStatus.normal:
+        case LineChargeableStatus.normal:
           lineTotal = line.unitPrice.multiplyByFixed(line.quantity);
-        case LineStatus.noCharge:
-        case LineStatus.noChargeHidden:
+        case LineChargeableStatus.noCharge:
+        case LineChargeableStatus.noChargeHidden:
           lineTotal = MoneyEx.zero;
       }
       total += lineTotal;
