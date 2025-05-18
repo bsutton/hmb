@@ -249,44 +249,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                         ),
                         HMBButton(
                           label: 'Create Invoice',
-                          onPressed: () async {
-                            try {
-                              final customer = await DaoCustomer().getByQuote(
-                                _quote.id,
-                              );
-
-                              final job = await DaoJob().getJobForQuote(
-                                _quote.id,
-                              );
-
-                              final initialContact = await DaoContact()
-                                  .getBillingContactByJob(job);
-
-                              if (!context.mounted) {
-                                return;
-                              }
-                              final billingContact =
-                                  await SelectBillingContactDialog.show(
-                                    context,
-                                    customer!,
-                                    initialContact,
-                                    (contact) {},
-                                  );
-                              if (billingContact == null) {
-                                return;
-                              }
-
-                              final invoice = await createFixedPriceInvoice(
-                                _quote,
-                                billingContact,
-                              );
-                              HMBToast.info(
-                                'Invoice #${invoice.id} created successfully.',
-                              );
-                            } catch (e) {
-                              HMBToast.error('Failed to create invoice: $e');
-                            }
-                          },
+                          onPressed: _createInvoice,
                         ),
                       ],
                     ),
@@ -355,4 +318,35 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
           ),
     ),
   );
+
+  Future<void> _createInvoice() async {
+    try {
+      final customer = await DaoCustomer().getByQuote(_quote.id);
+
+      final job = await DaoJob().getJobForQuote(_quote.id);
+
+      final initialContact = await DaoContact().getBillingContactByJob(job);
+
+      if (!mounted) {
+        return;
+      }
+      final billingContact = await SelectBillingContactDialog.show(
+        context,
+        customer!,
+        initialContact,
+        (contact) {},
+      );
+      if (billingContact == null) {
+        return;
+      }
+
+      final invoice = await createFixedPriceInvoice(_quote, billingContact);
+
+      _quote.state = QuoteState.invoiced;
+      await DaoQuote().update(_quote);
+      HMBToast.info('Invoice #${invoice.id} created successfully.');
+    } catch (e) {
+      HMBToast.error('Failed to create invoice: $e');
+    }
+  }
 }

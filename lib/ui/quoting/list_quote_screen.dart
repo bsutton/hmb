@@ -34,7 +34,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   // When false (default) do not display approved/rejected quotes.
   var _includeApproved = true;
   var _includeRejected = false;
-  var _includeCompleted = false;
+  var _includeInvoiced = false;
   final _duration = const Duration(milliseconds: 300);
 
   @override
@@ -55,54 +55,56 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   }
 
   Future<List<Quote>> _fetchFilteredQuotes() async {
-    var quotes = await DaoQuote().getByFilter(filterText);
+    var filteredQuotes = await DaoQuote().getByFilter(filterText);
 
     // Job filter
     if (selectedJob != null) {
-      quotes = quotes.where((q) => q.jobId == selectedJob!.id).toList();
+      filteredQuotes =
+          filteredQuotes.where((q) => q.jobId == selectedJob!.id).toList();
     }
 
     // Customer filter
     if (selectedCustomer != null) {
       final forCustomer = <Quote>[];
-      for (final quote in quotes) {
+      for (final quote in filteredQuotes) {
         final job = await DaoJob().getById(quote.jobId);
         if (job?.customerId == selectedCustomer!.id) {
           forCustomer.add(quote);
         }
       }
-      quotes = forCustomer;
+      filteredQuotes = forCustomer;
     }
 
-    // State filters
-    if (!_includeApproved) {
-      quotes = quotes.where((q) => q.state != QuoteState.approved).toList();
-    }
-    if (!_includeRejected) {
-      quotes = quotes.where((q) => q.state != QuoteState.rejected).toList();
+    final invoiced =
+        filteredQuotes.where((q) => q.state == QuoteState.invoiced).toList();
+    final approved =
+        filteredQuotes.where((q) => q.state == QuoteState.approved).toList();
+    final rejected =
+        filteredQuotes.where((q) => q.state == QuoteState.rejected).toList();
+
+    final awaiting =
+        filteredQuotes
+            .where(
+              (q) =>
+                  q.state == QuoteState.reviewing || q.state == QuoteState.sent,
+            )
+            .toList();
+
+    final quotes = <Quote>[];
+    if (_includeInvoiced) {
+      quotes.addAll(invoiced);
     }
 
-    // Completed filter: exclude “completed” quotes if !_includeCompleted
-    if (!_includeCompleted) {
-      final notCompleted = <Quote>[];
-      for (final quote in quotes) {
-        // 1) any milestone for this quote?
-        final milestones = await DaoMilestone().getByQuoteId(quote.id);
-        if (milestones.isNotEmpty) {
-          continue; // completed → skip
-        }
-        // 2) any invoice on the quote’s job?
-        final invoices = await DaoInvoice().getByJobId(quote.jobId);
-        if (invoices.isNotEmpty) {
-          continue; // completed → skip
-        }
-        // still here? → not completed
-        notCompleted.add(quote);
-      }
-      quotes = notCompleted;
+    if (_includeApproved) {
+      quotes.addAll(approved);
+    }
+    if (_includeRejected) {
+      quotes.addAll(rejected);
     }
 
-    return quotes;
+    quotes.addAll(awaiting);
+
+    return quotes..sort((a, b) => -a.modifiedDate.compareTo(b.modifiedDate));
   }
 
   Future<void> _createQuote() async {
@@ -237,11 +239,11 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
                           },
                         ),
                         const HMBSpacer(width: true),
-                        const Text('Completed'),
+                        const Text('Invoiced'),
                         Switch(
-                          value: _includeCompleted,
+                          value: _includeInvoiced,
                           onChanged: (val) async {
-                            _includeCompleted = val;
+                            _includeInvoiced = val;
                             await _loadQuotes();
                             setState(() {});
                           },
@@ -304,4 +306,10 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
           ),
     ),
   );
+
+  List<Quote> removeAll(List<Quote> focus, List<Quote> other) {
+    final bIds = other.map((b) => b.id).toSet();
+    focus.removeWhere((a) => bIds.contains(a.id));
+    return focus;
+  }
 }

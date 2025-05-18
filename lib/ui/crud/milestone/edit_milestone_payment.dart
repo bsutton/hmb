@@ -81,6 +81,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     await DaoMilestone().insert(newMilestone);
     milestones.add(newMilestone);
     await _redistributeAmounts();
+
     setState(() {});
   }
 
@@ -311,6 +312,9 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
       );
       milestone.invoiceId = invoice.id;
       await DaoMilestone().update(milestone);
+
+      quote.state = QuoteState.invoiced;
+      await DaoQuote().update(quote);
 
       // Refresh data
       await _loadData();

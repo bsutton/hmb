@@ -2,7 +2,19 @@ import 'package:money2/money2.dart';
 
 import 'entity.dart';
 
-enum QuoteState { reviewing, sent, approved, rejected }
+enum QuoteState {
+  /// The quote is being reviewed internally.
+  reviewing,
+
+  /// Quote has been sent to the customer.
+  sent,
+  approved,
+  rejected,
+
+  /// The quote has been approved and we have
+  ///  created at least one invoice from the quote.
+  invoiced,
+}
 
 class Quote extends Entity<Quote> {
   Quote({
@@ -16,7 +28,7 @@ class Quote extends Entity<Quote> {
     required this.state,
     this.externalQuoteId,
     this.dateSent,
-    
+
     this.dateApproved,
     this.billingContactId,
   }) : super();

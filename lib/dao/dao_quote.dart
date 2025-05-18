@@ -56,6 +56,7 @@ class DaoQuote extends Dao<Quote> {
        OR q.external_quote_id LIKE ?
        OR j.summary LIKE ?
        OR c.name LIKE ?
+       OR q.id = ?
     ORDER BY q.modified_date DESC
   ''',
         [
@@ -63,6 +64,7 @@ class DaoQuote extends Dao<Quote> {
           '%$filter%', // Filter for external_quote_id
           '%$filter%', // Filter for job summary
           '%$filter%', // Filter for customer name
+          filter, // filter based on quote id.
         ],
       ),
     );
