@@ -209,6 +209,8 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
   }
 }
 
+typedef ErrorBuilder = Widget Function(BuildContext, Object error);
+
 /// This class is designed to provide user feedback
 /// when transition to a new screen that may take some
 /// time.
@@ -229,7 +231,7 @@ class BlockingUITransition extends StatefulWidget {
   });
 
   final WidgetBuilder builder;
-  final WidgetBuilder? errorBuilder;
+  final ErrorBuilder? errorBuilder;
   final Future<void> Function() slowAction;
   final String? label;
 
@@ -241,6 +243,8 @@ class BlockingUITransitionState extends State<BlockingUITransition> {
   var _initialised = false;
   late final CompleterEx<void> completer;
 
+  Object? _error;
+
   @override
   void initState() {
     super.initState();
@@ -250,15 +254,23 @@ class BlockingUITransitionState extends State<BlockingUITransition> {
 
       // ignore: discarded_futures
       completer.future.whenComplete(() => setState(() {}));
-      completer.future.catchError(onError)
+      // ignore: inference_failure_on_untyped_parameter, discarded_futures
+      completer.future.catchError((error) {
+        setState(() {});
+        return _error = error;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (completer.isCompleted) {
-      completer.
-      return widget.builder(context);
+      if (_error == null) {
+        return widget.builder(context);
+      } else {
+        return widget.errorBuilder?.call(context, _error!) ??
+            widget.builder(context);
+      }
     } else {
       // initiallly we display a blank screen until the
       // ticker kicks in and displays the waiting message.

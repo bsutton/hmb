@@ -207,6 +207,12 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
               const HomeScaffold(initialScreen: GoogleDriveBackupScreen()),
     ),
     GoRoute(
+      path: '/system/backup/google/restore',
+      builder:
+          (_, _) =>
+              const HomeScaffold(initialScreen: GoogleDriveBackupScreen(restoreOnly:true)),
+    ),
+    GoRoute(
       path: '/system/backup/local',
       builder: (_, _) => const HomeScaffold(initialScreen: LocalBackupScreen()),
     ),

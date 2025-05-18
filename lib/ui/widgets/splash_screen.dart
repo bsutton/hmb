@@ -17,6 +17,7 @@ import '../../database/factory/factory.g.dart';
 import '../../database/management/backup_providers/local/local_backup_provider.dart';
 import '../../database/versions/asset_script_source.dart';
 import '../../installer/linux/install.dart';
+import '../dialog/database_error_dialog.dart';
 import '../ui.g.dart';
 import 'widgets.g.dart';
 
@@ -39,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen> {
     key: _blockingUIKey,
     slowAction: () => _initialise(context),
     builder: (context) => const SizedBox.shrink(),
-    errorBuilder: (context, error) => ErrorScreen(errorMessage: error.toString(),),
+    errorBuilder: (context, error) => DatabaseErrorDialog(error: error.toString()),
   );
 
   Future<bool> _checkInstall() async {
@@ -71,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen> {
   var _initialised = false;
   Future<void> _initialise(BuildContext context) async {
     if (!_initialised) {
-      try {
+      // try {
         _initialised = true;
         firstRun = await _checkInstall();
         // ignore: use_build_context_synchronously
@@ -80,21 +81,21 @@ class _SplashScreenState extends State<SplashScreen> {
         unawaited(logAppStartup());
 
         // ignore: avoid_catches_without_on_clauses
-      } catch (e, stackTrace) {
-        // Capture the exception in Sentry
-        unawaited(Sentry.captureException(e, stackTrace: stackTrace));
+      // } catch (e, stackTrace) {
+      //   // Capture the exception in Sentry
+      //   unawaited(Sentry.captureException(e, stackTrace: stackTrace));
 
-        if (context.mounted) {
-          await showDialog<void>(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => ErrorScreen(errorMessage: e.toString()),
-          );
-        }
-        if (context.mounted) {
-          context.go('system/backup/google');
-        }
-      }
+      //   if (context.mounted) {
+      //     await showDialog<void>(
+      //       context: context,
+      //       barrierDismissible: false,
+      //       builder: (_) => ErrorScreen(errorMessage: e.toString()),
+      //     );
+      //   }
+      //   if (context.mounted) {
+      //     context.go('system/backup/google');
+      //   }
+      // }
     }
   }
 

@@ -21,11 +21,13 @@ import 'background_backup/photo_sync_params.dart';
 import 'background_backup/photo_sync_service.dart';
 
 class GoogleDriveBackupScreen extends StatefulWidget {
-  const GoogleDriveBackupScreen({super.key});
+  const GoogleDriveBackupScreen({super.key, this.restoreOnly = false});
 
   @override
   _GoogleDriveBackupScreenState createState() =>
       _GoogleDriveBackupScreenState();
+
+  final bool restoreOnly;
 }
 
 class _GoogleDriveBackupScreenState
@@ -118,8 +120,8 @@ class _GoogleDriveBackupScreenState
                     _buildLastBackup(),
                     const SizedBox(height: 40),
                     _buildRestoreButton(context),
-                    const SizedBox(height: 40),
-                    ..._buildPhotoSyncSection(),
+                    if (!widget.restoreOnly) const SizedBox(height: 40),
+                    if (!widget.restoreOnly) ..._buildPhotoSyncSection(),
                   ],
                 ],
               ),
