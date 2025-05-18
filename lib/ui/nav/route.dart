@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../database/management/backup_providers/google_drive/google_drive_backup_screen.dart';
 import '../../database/management/backup_providers/local/local_backup_screen.dart';
-import '../../main.dart';
 import '../about.dart';
 import '../crud/customer/list_customer_screen.dart';
 import '../crud/job/esitmator/list_job_estimates_screen.dart';
@@ -27,6 +26,7 @@ import '../task_items/list_packing_screen.dart';
 import '../task_items/list_shopping_screen.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
+import '../widgets/splash_screen.dart';
 import '../wizard/system_wizard.dart';
 import 'nav.g.dart';
 
@@ -57,7 +57,7 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
         // If firstRun is true, route to /system/wizard
         // Else, go to /jobs
         // Then set firstRun=false to avoid repeating
-        final alt = firstRun ? '/system/wizard' : '/dashboard';
+        final alt = firstRun ? '/system/wizard' : '/splash';
         firstRun = false;
         return alt;
       },
@@ -72,7 +72,7 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
       },
     ),
 
-    // Dashboard
+    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
     // Dashboard
     GoRoute(
       path: '/home',
