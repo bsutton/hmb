@@ -37,7 +37,7 @@ class HMBSelectContact extends StatefulWidget {
 
 class HMBSelectContactState extends DeferredState<HMBSelectContact> {
   Contact? contact;
-  
+
   @override
   Future<void> asyncInitState() async {
     contact = await DaoContact().getById(widget.initialContact);
@@ -80,6 +80,7 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
     builder: (context) {
@@ -87,6 +88,7 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
         return const Center(child: Text('Contacts: Select a customer first.'));
       } else {
         return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: HMBDroplist<Contact>(
@@ -98,7 +100,13 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
                 required: false,
               ),
             ),
-            HMBButtonAdd(enabled: true, onPressed: _addContact),
+            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(
+                top: 16,
+              ), // tweak this to align visually
+              child: HMBButtonAdd(enabled: true, onPressed: _addContact),
+            ),
           ],
         );
       }
