@@ -38,7 +38,7 @@ class GoogleBackupDashlset extends StatelessWidget {
     DateTime? last;
     try {
       // google api's not supported on linux.
-      if (!Platform.isLinux) {
+      if (Platform.isAndroid || Platform.isIOS) {
         final backups =
             await GoogleDriveBackupProvider(
               FlutterDatabaseFactory(),
