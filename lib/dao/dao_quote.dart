@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/entity.g.dart';
+import '../entity/quote_line.dart';
 import '../ui/invoicing/dialog_select_tasks.dart';
 import '../util/exceptions.dart';
 import '../util/money_ex.dart';
@@ -122,6 +123,7 @@ class DaoQuote extends Dao<Quote> {
         !job.bookingFee!.isZero) {
       final bookingGroup = QuoteLineGroup.forInsert(
         quoteId: quoteId,
+        taskId: null,
         name: 'Booking Fee',
         assumption: '',
       );
@@ -134,7 +136,6 @@ class DaoQuote extends Dao<Quote> {
         quantity: Fixed.fromInt(100),
         unitCharge: job.bookingFee!,
         lineTotal: job.bookingFee!,
-        taskId: null,
       );
       await DaoQuoteLine().insert(bookingLine);
       totalAmount += job.bookingFee!;
@@ -162,7 +163,6 @@ class DaoQuote extends Dao<Quote> {
             quantity: estimate.estimatedLabourHours,
             unitCharge: job.hourlyRate!,
             lineTotal: labourTotal,
-            taskId: estimate.task.id,
           );
           totalAmount += labourTotal;
         }
@@ -194,7 +194,6 @@ class DaoQuote extends Dao<Quote> {
             item.margin,
           ),
           lineTotal: matTotal,
-          taskId: item.taskId,
         );
         await DaoQuoteLine().insert(matLine);
         totalAmount += matTotal;
@@ -213,6 +212,7 @@ class DaoQuote extends Dao<Quote> {
       quoteId: quoteId,
       name: task.name,
       assumption: task.assumption,
+      taskId: task.id
     );
 
     await DaoQuoteLineGroup().insert(quoteLineGroup);

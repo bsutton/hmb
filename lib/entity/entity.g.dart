@@ -24,7 +24,6 @@ export 'operating_day.dart';
 export 'operating_hours.dart';
 export 'photo.dart';
 export 'quote.dart';
-export 'quote_line.dart';
 export 'quote_line_group.dart';
 export 'receipt.dart';
 export 'site.dart';

@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../entity/quote_line_group.dart';
 import 'dao.dart';
+import 'dao_task.dart';
 
 class DaoQuoteLineGroup extends Dao<QuoteLineGroup> {
   @override
@@ -41,6 +42,18 @@ class DaoQuoteLineGroup extends Dao<QuoteLineGroup> {
     return db.delete(tableName, where: 'quote_id = ?', whereArgs: [quoteId]);
   }
 
+Future<void> markRejected(int quoteGroupLineId) async {
+    final quoteGroupLine = await getById(quoteGroupLineId);
+
+    quoteGroupLine!.lineApprovalStatus = LineApprovalStatus.rejected;
+
+    await update(quoteGroupLine);
+
+          if (quoteGroupLine.taskId != null) {
+        await DaoTask().markRejected(quoteGroupLine.taskId!);
+      }
+
+  }
   @override
   JuneStateCreator get juneRefresher => QuoteGroupLineState.new;
 }

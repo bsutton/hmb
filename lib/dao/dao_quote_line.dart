@@ -62,18 +62,7 @@ class DaoQuoteLine extends Dao<QuoteLine> {
   @override
   JuneStateCreator get juneRefresher => QuoteLineState.new;
 
-  Future<void> markRejected(int quoteLineId) async {
-    final quoteLine = await getById(quoteLineId);
-
-    quoteLine!.lineApprovalStatus = LineApprovalStatus.rejected;
-
-    await update(quoteLine);
-
-          if (quoteLine.taskId != null) {
-        await DaoTask().markRejected(quoteLine.taskId!);
-      }
-
-  }
+  
 }
 
 /// Used to notify the UI that the time entry has changed.

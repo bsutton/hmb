@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
-import '../../entity/invoice_line.dart';
 import '../../entity/quote_line.dart';
 import '../widgets/hmb_button.dart';
 
