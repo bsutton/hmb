@@ -12,7 +12,6 @@ import '../invoicing/select_job_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
-import '../widgets/layout/layout.g.dart';
 import 'quote_card.dart';
 import 'quote_details_screen.dart';
 
@@ -225,42 +224,19 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
               // --- FILTER SECTION ---
               Padding(
                 padding: const EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    Row(
-                      children: [
-                        const Text('Approved'),
-                        Switch(
-                          value: _includeApproved,
-                          onChanged: (val) async {
-                            _includeApproved = val;
-                            await _loadQuotes();
-                            setState(() {});
-                          },
-                        ),
-                        const HMBSpacer(width: true),
-                        const Text('Invoiced'),
-                        Switch(
-                          value: _includeInvoiced,
-                          onChanged: (val) async {
-                            _includeInvoiced = val;
-                            await _loadQuotes();
-                            setState(() {});
-                          },
-                        ),
-                        const HMBSpacer(width: true),
-                        const Text('Rejected'),
-                        Switch(
-                          value: _includeRejected,
-                          onChanged: (val) async {
-                            _includeRejected = val;
-                            await _loadQuotes();
-                            setState(() {});
-                          },
-                        ),
-                      ],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.filter_list),
+                      label: const Text('Filters'),
+                      onPressed: _showFilterDialog,
                     ),
-                  ],
+                  ),
                 ),
               ),
               // --- END FILTER SECTION ---
@@ -311,5 +287,64 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
     final bIds = other.map((b) => b.id).toSet();
     focus.removeWhere((a) => bIds.contains(a.id));
     return focus;
+  }
+
+  Future<void> _showFilterDialog() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setModalState) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Filter Quotes',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchListTile(
+                        title: const Text('Include Approved'),
+                        value: _includeApproved,
+                        onChanged: (val) {
+                          setModalState(() => _includeApproved = val);
+                        },
+                      ),
+                      SwitchListTile(
+                        title: const Text('Include Invoiced'),
+                        value: _includeInvoiced,
+                        onChanged: (val) {
+                          setModalState(() => _includeInvoiced = val);
+                        },
+                      ),
+                      SwitchListTile(
+                        title: const Text('Include Rejected'),
+                        value: _includeRejected,
+                        onChanged: (val) {
+                          setModalState(() => _includeRejected = val);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          await _loadQuotes();
+                          setState(() {});
+                        },
+                        child: const Text('Apply Filters'),
+                      ),
+                    ],
+                  ),
+                ),
+          ),
+    );
   }
 }
