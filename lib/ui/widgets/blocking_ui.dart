@@ -223,11 +223,13 @@ class BlockingUITransition extends StatefulWidget {
   const BlockingUITransition({
     required this.slowAction,
     required this.builder,
+    this.errorBuilder,
     this.label,
     super.key,
   });
 
   final WidgetBuilder builder;
+  final WidgetBuilder? errorBuilder;
   final Future<void> Function() slowAction;
   final String? label;
 
@@ -248,12 +250,14 @@ class BlockingUITransitionState extends State<BlockingUITransition> {
 
       // ignore: discarded_futures
       completer.future.whenComplete(() => setState(() {}));
+      completer.future.catchError(onError)
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (completer.isCompleted) {
+      completer.
       return widget.builder(context);
     } else {
       // initiallly we display a blank screen until the

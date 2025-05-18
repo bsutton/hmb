@@ -39,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
     key: _blockingUIKey,
     slowAction: () => _initialise(context),
     builder: (context) => const SizedBox.shrink(),
-    
+    errorBuilder: (context, error) => ErrorScreen(errorMessage: error.toString(),),
   );
 
   Future<bool> _checkInstall() async {
@@ -88,11 +88,7 @@ class _SplashScreenState extends State<SplashScreen> {
           await showDialog<void>(
             context: context,
             barrierDismissible: false,
-            builder:
-                (_) => FullScreenDialog(
-                  content: ErrorScreen(errorMessage: e.toString()),
-                  title: 'Database Error',
-                ),
+            builder: (_) => ErrorScreen(errorMessage: e.toString()),
           );
         }
         if (context.mounted) {
