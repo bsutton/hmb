@@ -24,7 +24,7 @@ abstract class Source<T> {
   /// from the source of the placeholder
   // ignore: use_setters_to_change_properties
   void listen(void Function(T? onChanged, ResetFields resetFields) onChanged) {
-    this._onChangeNotifier = onChanged;
+    _onChangeNotifier = onChanged;
   }
 
   Widget? widget();
