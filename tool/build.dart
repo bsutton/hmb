@@ -119,12 +119,12 @@ void installApk() {
 }
 
 void buildApk() {
-  // TODO(bsutton): the rich text editor includes random icons
-  // so tree shaking of icons isn't possible. Can we fix this?
   'flutter build apk --no-tree-shake-icons'.run;
 }
 
 void buildAppBundle(Version newVersion) {
+  // The rich text editor includes random icons
+  // so tree shaking of icons isn't possible. Can we fix this?
   'flutter build appbundle --release --no-tree-shake-icons'.start();
 
   final targetPath = join(
