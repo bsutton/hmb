@@ -36,6 +36,8 @@ export 'dao_site.dart';
 export 'dao_site_customer.dart';
 export 'dao_site_supplier.dart';
 export 'dao_supplier.dart';
+export 'dao_supplier_assignment.dart';
+export 'dao_supplier_assignment_task.dart';
 export 'dao_system.dart';
 export 'dao_task.dart';
 export 'dao_task_item.dart';

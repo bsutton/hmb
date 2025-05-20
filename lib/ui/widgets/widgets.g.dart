@@ -37,6 +37,7 @@ export 'hmb_toggle.dart';
 export 'job_filter.dart';
 export 'on_enter_key.dart';
 export 'save_and_close.dart';
+export 'splash_screen.dart';
 export 'stateful_builder.dart';
 export 'surface.dart';
 export 'svg.dart';
