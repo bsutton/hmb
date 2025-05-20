@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_task.dart';
@@ -118,8 +119,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   Widget build(BuildContext context) => NestedEntityEditScreen<Task, Job>(
     entityName: 'Task',
     dao: DaoTask(),
-    onInsert: (task) async {
-      await _insertTask(task!);
+    onInsert: (task, transaction) async {
+      await _insertTask(task!, transaction);
     },
     entityState: this,
     editor:
@@ -182,8 +183,8 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     },
   );
 
-  Future<void> _insertTask(Task task) async {
-    await DaoTask().insert(task);
+  Future<void> _insertTask(Task task, Transaction transaction) async {
+    await DaoTask().insert(task, transaction);
     _photoController.parent = task;
   }
 
@@ -213,6 +214,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   void refresh() {
     setState(() {});
   }
+    @override
+  Future<void> postSave(Transaction transaction, Operation operation) async {}
+
 }
 
 class SelectedTaskStatus extends JuneState {

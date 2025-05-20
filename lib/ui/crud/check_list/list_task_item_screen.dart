@@ -73,7 +73,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
             // ignore: discarded_futures
             onDelete: (taskItem) => DaoTaskItem().delete(taskItem!.id),
             // ignore: discarded_futures
-            onInsert: (taskItem) => DaoTaskItem().insert(taskItem!),
+            onInsert: (taskItem, transaction) => DaoTaskItem().insert(taskItem!, transaction),
             // ignore: discarded_futures
             fetchList: () => _fetchItems(showCompleted),
             title: (taskItem) => Text(taskItem.description) as Widget,

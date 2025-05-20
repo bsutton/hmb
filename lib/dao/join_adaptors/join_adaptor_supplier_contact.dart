@@ -1,5 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'package:sqflite_common/sqlite_api.dart';
+
 import '../../entity/contact.dart';
 import '../../entity/supplier.dart';
 import '../dao_contact.dart';
@@ -17,8 +19,8 @@ class JoinAdaptorSupplierContact implements DaoJoinAdaptor<Contact, Supplier> {
       DaoContact().getBySupplier(supplier);
 
   @override
-  Future<void> insertForParent(Contact contact, Supplier supplier) async {
-    await DaoContact().insertForSupplier(contact, supplier);
+  Future<void> insertForParent(Contact contact, Supplier supplier, Transaction transaction) async {
+    await DaoContact().insertForSupplier(contact, supplier, transaction);
   }
 
   @override

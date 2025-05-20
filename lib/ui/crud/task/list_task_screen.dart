@@ -90,7 +90,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
             // ignore: discarded_futures
             onDelete: (task) => DaoTask().delete(task!.id),
             // ignore: discarded_futures
-            onInsert: (task) => DaoTask().insert(task!),
+            onInsert: (task,  transaction) => DaoTask().insert(task!, transaction),
             details:
                 (task, details) =>
                     details == CardDetail.full

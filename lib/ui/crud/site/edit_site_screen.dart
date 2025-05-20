@@ -1,6 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao_site.dart';
 import '../../../dao/join_adaptors/dao_join_adaptor.dart';
@@ -67,7 +68,7 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     entityState: this,
     onInsert:
         // ignore: discarded_futures
-        (site)  => widget.daoJoin.insertForParent(site!, widget.parent),
+        (site, transaction)  => widget.daoJoin.insertForParent(site!, widget.parent, transaction),
     editor:
         (site) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,4 +129,8 @@ class _SiteEditScreenState extends State<SiteEditScreen>
   void refresh() {
     setState(() {});
   }
+
+    @override
+  Future<void> postSave(Transaction transaction, Operation operation) async {}
+
 }

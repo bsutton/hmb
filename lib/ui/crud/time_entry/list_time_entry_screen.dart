@@ -34,7 +34,9 @@ class TimeEntryListScreen extends StatelessWidget {
     onDelete: (timeEntry) => DaoTimeEntry().delete(timeEntry!.id),
     canDelete: (timeEntry) => !timeEntry.billed,
     // ignore: discarded_futures
-    onInsert: (timeEntry) => DaoTimeEntry().insert(timeEntry!),
+    onInsert:
+        (timeEntry, transaction) =>
+            DaoTimeEntry().insert(timeEntry!, transaction),
     details:
         (timeEntry, details) => Row(
           children: [

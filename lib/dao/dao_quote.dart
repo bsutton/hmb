@@ -4,7 +4,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/entity.g.dart';
-import '../entity/quote_line.dart';
 import '../ui/invoicing/dialog_select_tasks.dart';
 import '../util/exceptions.dart';
 import '../util/money_ex.dart';
@@ -212,7 +211,7 @@ class DaoQuote extends Dao<Quote> {
       quoteId: quoteId,
       name: task.name,
       assumption: task.assumption,
-      taskId: task.id
+      taskId: task.id,
     );
 
     await DaoQuoteLineGroup().insert(quoteLineGroup);

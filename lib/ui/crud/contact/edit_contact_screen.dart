@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao_contact.dart';
 import '../../../dao/join_adaptors/dao_join_adaptor.dart';
@@ -87,9 +88,9 @@ class _ContactEditScreenState extends State<ContactEditScreen>
         entityName: 'Contact',
         dao: DaoContact(),
         onInsert:
-            (contact) =>
+            (contact, transaction) =>
                 // ignore: discarded_futures
-                widget.daoJoin.insertForParent(contact!, widget.parent),
+                widget.daoJoin.insertForParent(contact!, widget.parent, transaction),
         entityState: this,
         editor:
             (contact) => Column(
@@ -160,4 +161,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   void refresh() {
     setState(() {});
   }
+    @override
+  Future<void> postSave(Transaction transaction, Operation operation) async {}
+
 }

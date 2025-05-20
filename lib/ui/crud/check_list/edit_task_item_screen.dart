@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao_supplier.dart';
 import '../../../dao/dao_system.dart';
@@ -177,7 +178,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
           entityName: 'Task Item',
           dao: DaoTaskItem(),
           // ignore: discarded_futures
-          onInsert: (taskItem) => DaoTaskItem().insert(taskItem!),
+          onInsert: (taskItem, transaction) => DaoTaskItem().insert(taskItem!, transaction),
           entityState: this,
           editor:
               (taskItem) => Column(
@@ -530,6 +531,9 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   void refresh() {
     setState(() {});
   }
+
+  @override
+  Future<void> postSave(Transaction transaction, Operation operation) async {}
 }
 
 class SelectedCheckListItemType extends JuneState {

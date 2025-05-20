@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_time_entry.dart';
@@ -125,7 +126,7 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
     entityName: 'Time Entry',
     dao: DaoTimeEntry(),
     // ignore: discarded_futures
-    onInsert: (timeEntry)  => DaoTimeEntry().insert(timeEntry!),
+    onInsert: (timeEntry,  transaction) => DaoTimeEntry().insert(timeEntry!, transaction),
     entityState: this,
     editor:
         (timeEntry) => Column(
@@ -220,4 +221,7 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
   void refresh() {
     setState(() {});
   }
+
+  @override
+  Future<void> postSave(Transaction transaction, Operation operation) async {}
 }

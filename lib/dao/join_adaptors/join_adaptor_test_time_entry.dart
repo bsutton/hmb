@@ -1,3 +1,5 @@
+import 'package:sqflite_common/sqlite_api.dart';
+
 import '../../entity/task.dart';
 import '../../entity/time_entry.dart';
 import '../dao_time_entry.dart';
@@ -15,7 +17,7 @@ class JoinAdaptorTaskTimeEntry extends DaoJoinAdaptor<TimeEntry, Task> {
       DaoTimeEntry().getByTask(parent?.id);
 
   @override
-  Future<void> insertForParent(TimeEntry child, Task parent) async {
+  Future<void> insertForParent(TimeEntry child, Task parent, Transaction transaction) async {
     // await DaoTimeEntry().insertForTask(timeEntry, task);
   }
 
