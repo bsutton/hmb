@@ -1,13 +1,11 @@
 import 'package:june/june.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../entity/contact.dart';
-import '../entity/supplier.dart';
-import 'dao.dart';
-import 'dao_contact.dart';
+import '../entity/entity.g.dart';
+import 'dao.g.dart';
 
+/// Join table DAO: maps suppliers ⇄ contacts
 class DaoContactSupplier extends Dao<Contact> {
-  Future<void> createTable(Database db, int version) async {}
 
   @override
   Contact fromMap(Map<String, dynamic> map) => Contact.fromMap(map);
@@ -15,6 +13,22 @@ class DaoContactSupplier extends Dao<Contact> {
   @override
   String get tableName => 'supplier_contact';
 
+  /// Fetch all Contact rows for a given supplier
+  Future<List<Contact>> getBySupplier(int supplierId) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+      SELECT c.*
+        FROM supplier_contact sc
+        JOIN contact c ON c.id = sc.contact_id
+       WHERE sc.supplier_id = ?
+      ''',
+      [supplierId],
+    );
+    return toList(rows);
+  }
+
+  /// Remove the join and delete the contact itself
   Future<void> deleteJoin(
     Supplier supplier,
     Contact contact, [
@@ -22,12 +36,13 @@ class DaoContactSupplier extends Dao<Contact> {
   ]) async {
     await withinTransaction(transaction).delete(
       tableName,
-      where: 'supplier_id = ? and contact_id = ?',
+      where: 'supplier_id = ? AND contact_id = ?',
       whereArgs: [supplier.id, contact.id],
     );
     await DaoContact().delete(contact.id);
   }
 
+  /// Add a supplier-contact mapping
   Future<void> insertJoin(
     Contact contact,
     Supplier supplier, [
@@ -38,6 +53,7 @@ class DaoContactSupplier extends Dao<Contact> {
     ).insert(tableName, {'supplier_id': supplier.id, 'contact_id': contact.id});
   }
 
+  /// Mark a particular mapping as primary
   Future<void> setAsPrimary(
     Contact contact,
     Supplier supplier, [
@@ -46,7 +62,7 @@ class DaoContactSupplier extends Dao<Contact> {
     await withinTransaction(transaction).update(
       tableName,
       {'primary': 1},
-      where: 'supplier_id = ? and contact_id = ?',
+      where: 'supplier_id = ? AND contact_id = ?',
       whereArgs: [supplier.id, contact.id],
     );
   }
@@ -55,7 +71,7 @@ class DaoContactSupplier extends Dao<Contact> {
   JuneStateCreator get juneRefresher => ContactSupplierState.new;
 }
 
-/// Used to notify the UI that the time entry has changed.
+/// UI refresher state for supplier-contact joins
 class ContactSupplierState extends JuneState {
   ContactSupplierState();
 }

@@ -41,6 +41,7 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
     this.canEdit,
     this.canDelete,
     this.extended = false,
+    this.cardHeight = 212,
     super.key,
   });
 
@@ -58,6 +59,7 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
   final Dao<C> dao;
   final String parentTitle;
   final String entityNameSingular;
+  final double cardHeight;
 
   /// All cards are displayed on screen rather than in a listview.
   final bool extended;
@@ -189,7 +191,9 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
     final cards = <Widget>[];
 
     for (final entity in list) {
-      cards.add(SizedBox(height: 212, child: _buildCard(entity, context)));
+      cards.add(
+        SizedBox(height: widget.cardHeight, child: _buildCard(entity, context)),
+      );
     }
 
     return Column(mainAxisSize: MainAxisSize.min, children: cards);

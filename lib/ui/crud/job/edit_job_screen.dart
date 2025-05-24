@@ -35,6 +35,7 @@ import '../../widgets/text/hmb_expanding_text_block.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
+import '../supplier_assignment/list_assignment_screen.dart';
 import '../task/list_task_screen.dart';
 import 'list_job_screen.dart';
 
@@ -185,6 +186,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
                               const HMBSpacer(height: true),
                               // Display task photos
                               if (job != null) PhotoGallery.forJob(job: job),
+                              _manageAssignments(job),
                               _manageTasks(job),
                             ],
                           ),
@@ -256,6 +258,12 @@ You can set a default booking fee from System | Billing screen''');
   Widget _manageTasks(Job? job) => HMBChildCrudCard(
     headline: 'Tasks',
     crudListScreen: TaskListScreen(parent: Parent(job), extended: true),
+  );
+
+  /// manage assignments
+  Widget _manageAssignments(Job? job) => HMBChildCrudCard(
+    headline: 'Sub-contractor Assignments',
+    crudListScreen: AssignmentListScreen(job: job!),
   );
 
   /// choose billing contact

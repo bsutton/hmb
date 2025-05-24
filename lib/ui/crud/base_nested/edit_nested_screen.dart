@@ -33,6 +33,7 @@ class NestedEntityEditScreen<C extends Entity<C>, P extends Entity<P>>
   final NestedEntityState<C> entityState;
   final Future<void> Function(C? entity, Transaction transaction) onInsert;
 
+
   @override
   NestedEntityEditScreenState createState() =>
       NestedEntityEditScreenState<C, P>();
@@ -93,29 +94,39 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
 
   Future<void> _save({bool close = false}) async {
     if (_formKey.currentState!.validate()) {
+      final savedEntity = widget.entityState.currentEntity;
       try {
         if (widget.entityState.currentEntity != null) {
           final updatedEntity = await widget.entityState.forUpdate(
             widget.entityState.currentEntity!,
           );
 
-          await widget.dao.withTransaction((transaction) async {
-            await widget.dao.update(updatedEntity, transaction);
-            await widget.entityState.postSave(transaction, Operation.update);
-            setState(() {
+          try {
+            await widget.dao.withTransaction((transaction) async {
               widget.entityState.currentEntity = updatedEntity;
+              await widget.dao.update(updatedEntity, transaction);
+              await widget.entityState.postSave(transaction, Operation.update);
             });
-          });
+          } catch (e) {
+            widget.entityState.currentEntity = savedEntity;
+            rethrow;
+          }
+
+          setState(() {});
         } else {
           final newEntity = await widget.entityState.forInsert();
+          widget.entityState.currentEntity = newEntity;
 
-          await widget.dao.withTransaction((transaction) async {
-            await widget.onInsert(newEntity, transaction);
-            await widget.entityState.postSave(transaction, Operation.insert);
-            setState(() {
-              widget.entityState.currentEntity = newEntity;
+          try {
+            await widget.dao.withTransaction((transaction) async {
+              await widget.onInsert(newEntity, transaction);
+              await widget.entityState.postSave(transaction, Operation.insert);
             });
-          });
+          } catch (e) {
+            widget.entityState.currentEntity = savedEntity;
+            rethrow;
+          }
+          setState(() {});
         }
 
         if (close && mounted) {

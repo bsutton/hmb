@@ -1,0 +1,2 @@
+ALTER TABLE supplier_assignment
+  ADD COLUMN sent INTEGER NOT NULL DEFAULT 0;
