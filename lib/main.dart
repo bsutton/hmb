@@ -18,7 +18,6 @@ import 'util/platform_ex.dart';
 
 //----------------------------------------------------------------------
 
-
 // the navigator key you already passed into GoRouter
 final _rootNavKey = GlobalKey<NavigatorState>();
 
@@ -66,30 +65,27 @@ class HmbApp extends StatelessWidget {
     child: MaterialApp.router(
       theme: theme,
       routerConfig: createGoRouter(_rootNavKey), // unchanged
-      builder:
-          (context, mainAppWindow) => DesktopBackGesture(
-            navigatorKey: _rootNavKey,
-            child: Stack(
-              children: [
-                // your real app (or the SplashScreen, depending on route)
-
-                // Added a white border when running on desktop so users can
-                // see the edge of the app.
-                DecoratedBox(
-                  position: DecorationPosition.foreground,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: isMobile ? Colors.black : Colors.white,
-                    ),
-                  ),
+      builder: (context, mainAppWindow) => DesktopBackGesture(
+        navigatorKey: _rootNavKey,
+        child: Stack(
+          children: [
+            // Added a white border when running on desktop so users can
+            // see the edge of the app.
+            DecoratedBox(
+              position: DecorationPosition.foreground,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isMobile ? Colors.black : Colors.white,
                 ),
-                mainAppWindow ?? const SizedBox.shrink(),
-
-                // your overlay for blocking UI during long operations
-                const BlockingOverlay(),
-              ],
+              ),
+              child: mainAppWindow ?? const SizedBox.shrink(),
             ),
-          ),
+
+            //  an overlay for blocking UI during long operations
+            const BlockingOverlay(),
+          ],
+        ),
+      ),
     ),
   );
 }
@@ -114,22 +110,22 @@ ThemeData get theme => ThemeData(
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(foregroundColor: Colors.white),
   ),
-  dialogTheme:
-      const DialogTheme(
-        titleTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-        contentTextStyle: TextStyle(color: Colors.white),
-      ).data,
-  colorScheme: ColorScheme.fromSwatch(
-        primarySwatch: Colors.deepPurple,
-        brightness:
-            Brightness.dark, // Add this line to match ThemeData brightness
-      )
-      .copyWith(secondary: HMBColors.accent)
-      .copyWith(surface: HMBColors.defaultBackground),
+  dialogTheme: const DialogTheme(
+    titleTextStyle: TextStyle(
+      color: Colors.white,
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+    ),
+    contentTextStyle: TextStyle(color: Colors.white),
+  ).data,
+  colorScheme:
+      ColorScheme.fromSwatch(
+            primarySwatch: Colors.deepPurple,
+            brightness:
+                Brightness.dark, // Add this line to match ThemeData brightness
+          )
+          .copyWith(secondary: HMBColors.accent)
+          .copyWith(surface: HMBColors.defaultBackground),
   visualDensity: VisualDensity.adaptivePlatformDensity,
 );
 
