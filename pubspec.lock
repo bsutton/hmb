@@ -249,14 +249,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
-  country_code:
+  country_code2:
     dependency: "direct main"
     description:
-      name: country_code
-      sha256: "7e6b8d196c4e1908dd5ff8af683757ad559f7141c6b076009c147facae4ac235"
-      url: "https://onepub.dev/api/jbbxpsdavu/"
+      name: country_code2
+      sha256: f55336caad5056cad8cfb4b4cb953bbccb2d25e42ea17ecfbf4a7196ec09ad38
+      url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "2.0.0"
   coverage:
     dependency: transitive
     description:

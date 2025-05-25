@@ -26,9 +26,8 @@ dependencies:
   camera_platform_interface: ^2.8.0
   camera_windows: ^0.2.6
   completer_ex: ^4.0.3
-  country_code:
-    hosted: https://onepub.dev/api/jbbxpsdavu/
-    version: ^1.1.0
+  country_code2:
+    version: ^2.0.0
   date_time_format: ^2.0.1
   datetime_picker_formfield_new : ^2.0.1
   dcli: ^7.0.1

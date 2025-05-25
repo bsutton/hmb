@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:country_code/country_code.dart';
+import 'package:country_code2/country_code2.dart';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
