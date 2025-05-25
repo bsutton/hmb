@@ -19,10 +19,9 @@ class TimeEntry extends Entity<TimeEntry> {
     id: map['id'] as int,
     taskId: map['task_id'] as int,
     startTime: DateTime.parse(map['start_time'] as String),
-    endTime:
-        map['end_time'] != null
-            ? DateTime.parse(map['end_time'] as String)
-            : null,
+    endTime: map['end_time'] != null
+        ? DateTime.parse(map['end_time'] as String)
+        : null,
     note: map['notes'] as String?,
     billed: map['billed'] == 1,
     invoiceLineId: map['invoice_line_id'] as int?,
@@ -46,6 +45,10 @@ class TimeEntry extends Entity<TimeEntry> {
     this.note,
     this.billed = false,
   }) : super.forUpdate();
+
+  /// entries over this interval are considered suspicions
+  /// so we warn the user in case the entered the end time incorrectly.
+  static const longDurationHours = 12;
 
   int taskId;
   DateTime startTime;

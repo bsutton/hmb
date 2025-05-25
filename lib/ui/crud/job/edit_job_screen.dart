@@ -185,7 +185,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
                               ),
                               const HMBSpacer(height: true),
                               // Display task photos
-                              if (job != null) PhotoGallery.forJob(job: job),
+                              // if (job != null) PhotoGallery.forJob(job: job),
                               _manageAssignments(job),
                               _manageTasks(job),
                             ],

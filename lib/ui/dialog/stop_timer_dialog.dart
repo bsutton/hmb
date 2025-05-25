@@ -13,6 +13,7 @@ import '../widgets/hmb_button.dart';
 import '../widgets/layout/hmb_spacer.dart';
 import '../widgets/text/hmb_text.dart';
 import 'hmb_dialog.dart';
+import 'long_duration_dialog.dart';
 
 class StopTimerDialog extends StatefulWidget {
   const StopTimerDialog({
@@ -39,13 +40,12 @@ class StopTimerDialog extends StatefulWidget {
     bool showTask = false,
   }) => showDialog<TimeEntry>(
     context: context,
-    builder:
-        (context) => StopTimerDialog(
-          task: task,
-          showTask: showTask,
-          timeEntry: timeEntry,
-          stopTime: stopTime,
-        ),
+    builder: (context) => StopTimerDialog(
+      task: task,
+      showTask: showTask,
+      timeEntry: timeEntry,
+      stopTime: stopTime,
+    ),
   );
 }
 
@@ -139,8 +139,8 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
               HMBToast.error('The duration is negative');
               return;
             }
-            if (duration.inHours > 8) {
-              final confirm = await _showLongDurationDialog(context, duration);
+            if (duration.inHours > TimeEntry.longDurationHours) {
+              final confirm = await showLongDurationDialog(context, duration);
               if (!confirm) {
                 return;
               }
@@ -164,56 +164,28 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
     );
   }
 
-  Future<bool> _showLongDurationDialog(
-    BuildContext context,
-    Duration duration,
-  ) async =>
-      await showDialog<bool>(
-        context: context,
-        builder:
-            (context) => HMBDialog(
-              title: const Text('Long Duration Warning'),
-              content: Text(
-                '''The time entry duration is ${duration.inHours} hours. Do you want to continue?''',
-              ),
-              actions: [
-                HMBButton(
-                  label: 'Cancel',
-                  onPressed: () => Navigator.pop(context, false),
-                ),
-                HMBButton(
-                  label: 'Continue',
-                  onPressed: () => Navigator.pop(context, true),
-                ),
-              ],
-            ),
-      ) ??
-      false;
-
   Widget buildTaskDetails() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       FutureBuilderEx(
         // ignore: discarded_futures
         future: DaoJob().getById(widget.task.jobId),
-        builder:
-            (context, job) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FutureBuilderEx(
-                  // ignore: discarded_futures
-                  future: DaoCustomer().getById(job!.customerId),
-                  builder:
-                      (context, customer) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          HMBText('Customer: ${customer!.name}', bold: true),
-                          HMBText('Job: ${job.summary}', bold: true),
-                        ],
-                      ),
-                ),
-              ],
+        builder: (context, job) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FutureBuilderEx(
+              // ignore: discarded_futures
+              future: DaoCustomer().getById(job!.customerId),
+              builder: (context, customer) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  HMBText('Customer: ${customer!.name}', bold: true),
+                  HMBText('Job: ${job.summary}', bold: true),
+                ],
+              ),
             ),
+          ],
+        ),
       ),
       const SizedBox(height: 8),
       HMBText('Task: ${widget.task.name}', bold: true),

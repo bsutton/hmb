@@ -5,6 +5,7 @@ import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/save_and_close.dart';
+import '../base_full_screen/edit_entity_screen.dart';
 
 abstract class NestedEntityState<E extends Entity<E>> {
   Future<E> forInsert();
@@ -16,6 +17,10 @@ abstract class NestedEntityState<E extends Entity<E>> {
 
 enum Operation { insert, update }
 
+/// The [crossValidator] is called during the save operation
+/// after the Form has been validated to allow you to cross
+/// validate form fields. If there is an error you should display it
+/// as this class will NOT.
 class NestedEntityEditScreen<C extends Entity<C>, P extends Entity<P>>
     extends StatefulWidget {
   const NestedEntityEditScreen({
@@ -24,8 +29,9 @@ class NestedEntityEditScreen<C extends Entity<C>, P extends Entity<P>>
     required this.entityName,
     required this.entityState,
     required this.dao,
+    CrossValidator<C>? crossValidator,
     super.key,
-  });
+  }) : crossValidator = crossValidator ?? noOpValidator;
 
   final String entityName;
   final Dao<C> dao;
@@ -33,6 +39,7 @@ class NestedEntityEditScreen<C extends Entity<C>, P extends Entity<P>>
   final NestedEntityState<C> entityState;
   final Future<void> Function(C? entity, Transaction transaction) onInsert;
 
+  final Future<bool> Function() crossValidator;
 
   @override
   NestedEntityEditScreenState createState() =>
@@ -93,7 +100,7 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
   );
 
   Future<void> _save({bool close = false}) async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate() && await widget.crossValidator()) {
       final savedEntity = widget.entityState.currentEntity;
       try {
         if (widget.entityState.currentEntity != null) {

@@ -16,6 +16,7 @@ abstract class EntityState<E extends Entity<E>> {
 }
 
 typedef CrossValidator<E> = Future<bool> Function();
+Future<bool> noOpValidator() async => true;
 
 /// The [crossValidator] is called during the save operation
 /// after the Form has been validated to allow you to cross
@@ -31,8 +32,6 @@ class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
     CrossValidator<E>? crossValidator,
     super.key,
   }) : crossValidator = crossValidator ?? noOpValidator;
-
-  static Future<bool> noOpValidator() async => true;
 
   final String entityName;
   final Dao<E> dao;

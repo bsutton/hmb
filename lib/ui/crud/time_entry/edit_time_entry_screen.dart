@@ -7,6 +7,7 @@ import 'package:strings/strings.dart';
 import '../../../dao/dao_time_entry.dart';
 import '../../../entity/task.dart';
 import '../../../entity/time_entry.dart';
+import '../../dialog/long_duration_dialog.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../base_nested/edit_nested_screen.dart';
 
@@ -50,16 +51,14 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
 
     currentEntity ??= widget.timeEntry;
     _startTimeController = TextEditingController(
-      text:
-          currentEntity != null
-              ? _formatDateTime(currentEntity!.startTime)
-              : '',
+      text: currentEntity != null
+          ? _formatDateTime(currentEntity!.startTime)
+          : '',
     );
     _endTimeController = TextEditingController(
-      text:
-          currentEntity?.endTime != null
-              ? _formatDateTime(currentEntity!.endTime!)
-              : '',
+      text: currentEntity?.endTime != null
+          ? _formatDateTime(currentEntity!.endTime!)
+          : '',
     );
     _noteController = TextEditingController(text: currentEntity?.note ?? '');
 
@@ -98,13 +97,10 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
       final selectedTime = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(initialDate ?? DateTime.now()),
-        builder:
-            (context, child) => MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(alwaysUse24HourFormat: false),
-              child: child!,
-            ),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+          child: child!,
+        ),
       );
 
       if (selectedTime != null) {
@@ -126,75 +122,89 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
     entityName: 'Time Entry',
     dao: DaoTimeEntry(),
     // ignore: discarded_futures
-    onInsert: (timeEntry,  transaction) => DaoTimeEntry().insert(timeEntry!, transaction),
+    onInsert: (timeEntry, transaction) =>
+        DaoTimeEntry().insert(timeEntry!, transaction),
     entityState: this,
-    editor:
-        (timeEntry) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            GestureDetector(
-              onTap: () async {
-                final selectedDateTime = await _selectDateTime(
-                  context,
-                  _parseDateTime(_startTimeController.text),
-                );
-                if (selectedDateTime != null) {
-                  _startTimeController.text = _formatDateTime(selectedDateTime);
-                }
-              },
-              child: AbsorbPointer(
-                child: HMBTextField(
-                  controller: _startTimeController,
-                  focusNode: _startTimeFocusNode,
-                  labelText: 'Start Time',
-                  keyboardType: TextInputType.datetime,
-                  required: true,
-                  validator:
-                      (value) =>
-                          (_parseDateTime(value) == null)
-                              ? 'You must enter a valid Start Time'
-                              : null,
-                ),
-              ),
-            ),
-            GestureDetector(
-              onTap: () async {
-                final selectedDateTime = await _selectDateTime(
-                  context,
-                  _parseDateTime(_endTimeController.text),
-                );
-                if (selectedDateTime != null) {
-                  _endTimeController.text = _formatDateTime(selectedDateTime);
-                }
-              },
-              child: AbsorbPointer(
-                child: HMBTextField(
-                  controller: _endTimeController,
-                  focusNode: _endTimeFocusNode,
-                  labelText: 'End Time',
-                  keyboardType: TextInputType.datetime,
-                  required: true,
+    crossValidator: () async {
+      final endTime = _parseDateTime(_endTimeController.text);
+      final startTime =
+          _parseDateTime(_startTimeController.text) ?? DateTime.now();
 
-                  /// end time must be after start time.
-                  validator:
-                      (value) =>
-                          (Strings.isNotBlank(value) &&
-                                  (!_parseDateTime(value)!.isAfter(
-                                    _parseDateTime(_startTimeController.text) ??
-                                        DateTime.now(),
-                                  )))
-                              ? 'End time must be after start time'
-                              : null,
-                ),
-              ),
+      final duration = endTime!.difference(startTime);
+      if (duration.inHours > TimeEntry.longDurationHours) {
+        final confirm = await showLongDurationDialog(context, duration);
+        if (!confirm) {
+          return false;
+        }
+      }
+
+      return true;
+    },
+    editor: (timeEntry) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GestureDetector(
+          onTap: () async {
+            final selectedDateTime = await _selectDateTime(
+              context,
+              _parseDateTime(_startTimeController.text),
+            );
+            if (selectedDateTime != null) {
+              _startTimeController.text = _formatDateTime(selectedDateTime);
+            }
+          },
+          child: AbsorbPointer(
+            child: HMBTextField(
+              controller: _startTimeController,
+              focusNode: _startTimeFocusNode,
+              labelText: 'Start Time',
+              keyboardType: TextInputType.datetime,
+              required: true,
+              validator: (value) => (_parseDateTime(value) == null)
+                  ? 'You must enter a valid Start Time'
+                  : null,
             ),
-            HMBTextField(
-              controller: _noteController,
-              focusNode: _noteFocusNode,
-              labelText: 'Note',
-            ),
-          ],
+          ),
         ),
+        GestureDetector(
+          onTap: () async {
+            final selectedDateTime = await _selectDateTime(
+              context,
+              _parseDateTime(_endTimeController.text),
+            );
+            if (selectedDateTime != null) {
+              _endTimeController.text = _formatDateTime(selectedDateTime);
+            }
+          },
+          child: AbsorbPointer(
+            child: HMBTextField(
+              controller: _endTimeController,
+              focusNode: _endTimeFocusNode,
+              labelText: 'End Time',
+              keyboardType: TextInputType.datetime,
+              required: true,
+
+              /// end time must be after start time.
+              validator: (value) {
+                final endTime = _parseDateTime(value);
+                final startTime =
+                    _parseDateTime(_startTimeController.text) ?? DateTime.now();
+                if (Strings.isNotBlank(value) &&
+                    (!endTime!.isAfter(startTime))) {
+                  return 'End time must be after start time';
+                }
+                return null;
+              },
+            ),
+          ),
+        ),
+        HMBTextField(
+          controller: _noteController,
+          focusNode: _noteFocusNode,
+          labelText: 'Note',
+        ),
+      ],
+    ),
   );
 
   @override
@@ -202,10 +212,9 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
     entity: timeEntry,
     taskId: widget.task.id,
     startTime: _parseDateTime(_startTimeController.text)!,
-    endTime:
-        _endTimeController.text.isNotEmpty
-            ? _parseDateTime(_endTimeController.text)
-            : null,
+    endTime: _endTimeController.text.isNotEmpty
+        ? _parseDateTime(_endTimeController.text)
+        : null,
     note: _noteController.text,
   );
 
