@@ -8,6 +8,7 @@ import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/foundation.dart'; // for compute()
 import 'package:image/image.dart' as img; // image decoding/resizing
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart'; // for PdfColor, PdfColors
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../../dao/dao.g.dart';
@@ -41,18 +42,18 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
   final pdf = pw.Document();
 
   // --- Fetch your data from DAOs ---
+  final system = await DaoSystem().get();
+  final systemColor = PdfColor.fromInt(system.billingColour);
   final satDao = DaoSupplierAssignmentTask();
   final supplierDao = DaoSupplier();
   final taskDao = DaoTask();
 
   final supplier = await supplierDao.getById(assignment.supplierId);
   final contact = await DaoContact().getById(assignment.contactId);
-
   final job = await DaoJob().getById(assignment.jobId);
   final site = (job?.siteId != null)
       ? await DaoSite().getById(job!.siteId)
       : null;
-
   final customer = (job?.customerId != null)
       ? await DaoCustomer().getById(job!.customerId)
       : null;
@@ -73,18 +74,16 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
 
   // --- Limit concurrent isolates for image compression
   // leaving 1 cpu so the UI will continue updating ---
-  final  maxConcurrent = max(1, Platform.numberOfProcessors - 1); 
+  final maxConcurrent = max(1, Platform.numberOfProcessors - 1);
   final compressedBytes = <String, Uint8List>{};
   final allPaths = taskDataList
-      .expand((data) => data.photos)
-      .map((meta) => meta.absolutePathTo)
+      .expand((d) => d.photos)
+      .map((m) => m.absolutePathTo)
       .where(exists)
       .toList();
 
-  // Process in batches of maxConcurrent
   for (var i = 0; i < allPaths.length; i += maxConcurrent) {
     final batch = allPaths.skip(i).take(maxConcurrent).toList();
-    // kick off all isolates in this batch
     final futures = batch
         .map((path) => compute(_compressImageTask, path))
         .toList();
@@ -101,72 +100,72 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
   pdf.addPage(
     pw.MultiPage(
       pageTheme: const pw.PageTheme(margin: pw.EdgeInsets.all(24)),
+
+      // Header: top band with title on every page, plus page1 details below
       header: (context) => pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
         children: [
-          pw.Text(
-            'Work Assignment',
-            style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+          // Top band with title
+          pw.Container(
+            height: 28,
+            color: systemColor,
+            padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+            alignment: pw.Alignment.centerLeft,
+            child: pw.Text(
+              'Work Assignment',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.white,
+              ),
+            ),
           ),
-          pw.SizedBox(height: 12),
-          if (supplier != null)
-            pw.Text(
-              'Supplier: ${supplier.name}',
-              style: const pw.TextStyle(fontSize: 14),
-            ),
-          if (contact != null) ...[
-            pw.Text(
-              'Contact: ${contact.fullname}',
-              style: const pw.TextStyle(fontSize: 14),
-            ),
-            pw.Text(
-              'Email: ${contact.emailAddress}',
-              style: const pw.TextStyle(fontSize: 12),
-            ),
-            pw.Text(
-              'Phone: ${contact.bestPhone}',
-              style: const pw.TextStyle(fontSize: 12),
-            ),
-            pw.SizedBox(height: 12),
-          ],
-          if (customer != null) ...[
-            pw.Text(
-              'Customer: ${customer.name}',
-              style: const pw.TextStyle(fontSize: 14),
-            ),
-            if (site != null)
-              pw.Text(
-                'Address: ${site.address}',
-                style: const pw.TextStyle(fontSize: 12),
+
+          // Only on page 1: details block
+          if (context.pageNumber == 1)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(top: 8, bottom: 12),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  if (supplier != null) pw.Text('Supplier: ${supplier.name}'),
+                  if (contact != null) ...[
+                    pw.Text('Contact: ${contact.fullname}'),
+                    pw.Text('Email: ${contact.emailAddress}'),
+                    pw.Text('Phone: ${contact.bestPhone}'),
+                  ],
+                  if (customer != null) pw.Text('Customer: ${customer.name}'),
+                  if (site != null) pw.Text('Address: ${site.address}'),
+                  if (primaryContact != null)
+                    pw.Text('Phone: ${primaryContact.bestPhone}'),
+                  if (job != null) pw.Text('Job: ${job.summary}'),
+                  pw.Divider(thickness: 1.5),
+                ],
               ),
-            if (primaryContact != null)
-              pw.Text(
-                'Phone: ${primaryContact.bestPhone}',
-                style: const pw.TextStyle(fontSize: 12),
-              ),
-            pw.SizedBox(height: 12),
-          ],
-          pw.Divider(thickness: 1.5),
-          if (job != null) ...[
-            pw.Text(
-              'Job: ${job.summary}',
-              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
             ),
-            if (site != null) ...[
-              pw.Text(
-                'Site: ${site.address}',
-                style: const pw.TextStyle(fontSize: 14),
-              ),
-              pw.Text(site.address, style: const pw.TextStyle(fontSize: 12)),
-            ],
-            pw.Divider(thickness: 1),
-          ],
         ],
       ),
+
+      // Footer with bottom band and page number
+      footer: (context) => pw.Container(
+        height: 28,
+        color: systemColor,
+        child: pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+          child: pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Text(
+              'Page ${context.pageNumber} of ${context.pagesCount}',
+              style: const pw.TextStyle(fontSize: 12, color: PdfColors.white),
+            ),
+          ),
+        ),
+      ),
+
+      // Main content: only task details here
       build: (context) {
         final content = <pw.Widget>[];
         for (final data in taskDataList) {
-          // Task header
           content.addAll([
             pw.Text(
               'Task: ${data.task.name}',
@@ -174,7 +173,6 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
             ),
             pw.SizedBox(height: 4),
           ]);
-
           // Description & Assumptions
           if (data.task.description.isNotEmpty) {
             content.add(pw.Text('Description: ${data.task.description}'));
@@ -191,16 +189,14 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
               if (bytes == null) {
                 continue;
               }
-              final image = pw.MemoryImage(bytes);
               content.add(
                 pw.Container(
                   margin: const pw.EdgeInsets.only(bottom: 8),
-                  child: pw.Image(image),
+                  child: pw.Image(pw.MemoryImage(bytes)),
                 ),
               );
             }
           }
-
           content.addAll([
             pw.SizedBox(height: 12),
             pw.Divider(),
