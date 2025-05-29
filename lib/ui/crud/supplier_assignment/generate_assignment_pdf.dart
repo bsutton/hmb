@@ -1,7 +1,8 @@
-/// Generates a PDF for a SupplierAssignment, including task photos under each task.
+/// lib/src/services/assignment_pdf_generator.dart
 library;
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/foundation.dart'; // for compute()
@@ -20,8 +21,8 @@ class _TaskData {
   final List<PhotoMeta> photos;
 }
 
-/// Top‐level function to run in an isolate: reads,
-/// downsizes (max width 200px), JPEG‐encodes (70% quality)
+/// Top-level function to run in an isolate:
+/// reads, downsizes (max width 200px), JPEG-encodes (70% quality)
 /// and returns the compressed bytes.
 Uint8List _compressImageTask(String absolutePath) {
   final raw = File(absolutePath).readAsBytesSync();
@@ -35,7 +36,7 @@ Uint8List _compressImageTask(String absolutePath) {
 }
 
 /// Generates a PDF for a SupplierAssignment,
-/// including pre‐compressed task photos.
+/// including task photos under each task.
 Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
   final pdf = pw.Document();
 
@@ -70,19 +71,28 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
     taskDataList.add(_TaskData(task: task, photos: metas));
   }
 
-  // --- Pre-compress all images in background isolates ---
+  // --- Limit concurrent isolates for image compression
+  // leaving 1 cpu so the UI will continue updating ---
+  final  maxConcurrent = max(1, Platform.numberOfProcessors - 1); 
   final compressedBytes = <String, Uint8List>{};
-  for (final data in taskDataList) {
-    for (final meta in data.photos) {
-      try {
-        if (exists(meta.absolutePathTo)) {
-          final bytes = await compute(_compressImageTask, meta.absolutePathTo);
-          if (bytes.isNotEmpty) {
-            compressedBytes[meta.absolutePathTo] = bytes;
-          }
-        }
-      } catch (_) {
-        // ignore failures
+  final allPaths = taskDataList
+      .expand((data) => data.photos)
+      .map((meta) => meta.absolutePathTo)
+      .where(exists)
+      .toList();
+
+  // Process in batches of maxConcurrent
+  for (var i = 0; i < allPaths.length; i += maxConcurrent) {
+    final batch = allPaths.skip(i).take(maxConcurrent).toList();
+    // kick off all isolates in this batch
+    final futures = batch
+        .map((path) => compute(_compressImageTask, path))
+        .toList();
+    final results = await Future.wait(futures);
+    for (var j = 0; j < batch.length; j++) {
+      final bytes = results[j];
+      if (bytes.isNotEmpty) {
+        compressedBytes[batch[j]] = bytes;
       }
     }
   }
@@ -119,8 +129,6 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
             ),
             pw.SizedBox(height: 12),
           ],
-
-          /// Customer details
           if (customer != null) ...[
             pw.Text(
               'Customer: ${customer.name}',
@@ -204,7 +212,7 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
     ),
   );
 
-  // --- Write out the pdf  ---
+  // --- Write out the PDF ---
   final dir = await getTemporaryDirectory();
   final out = File('${dir.path}/assignment_${assignment.id}.pdf');
   await out.writeAsBytes(await pdf.save());

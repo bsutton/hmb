@@ -26,7 +26,7 @@ class BuildSendAssignmentButton extends StatelessWidget {
     final sent = assignment.sent;
     final buttonLabel = sent ? 'View/Send... (Sent)' : 'View/Send...';
 
-    return HMBButton(
+    return HMBButtonSecondary(
       label: buttonLabel,
       onPressed: () async {
         final job = await DaoJob().getById(assignment.jobId);
