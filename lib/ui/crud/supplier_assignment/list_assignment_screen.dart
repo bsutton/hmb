@@ -61,7 +61,7 @@ class AssignmentListScreen extends StatelessWidget {
             DaoSupplierAssignment().delete(assignment!.id),
         onInsert: (assignment, tx) =>
             DaoSupplierAssignment().insert(assignment!, tx),
-        cardHeight: 160,
+        cardHeight: 180,
       );
 }
 
