@@ -36,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) => BlockingUITransition(
     key: _blockingUIKey,
     slowAction: () async => _initialise(context),
-    builder: (context) => const SizedBox.shrink(),
+    builder: (context, _) => const SizedBox.shrink(),
     errorBuilder:
         (context, error) => DatabaseErrorDialog(error: error.toString()),
   );

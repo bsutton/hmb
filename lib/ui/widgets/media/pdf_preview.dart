@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../dao/dao_system.dart';
 import '../../../ui/widgets/hmb_toast.dart';
 import '../../dialog/email_dialog.dart';
+import '../blocking_ui.dart';
 
 class EmailBlocked {
   EmailBlocked({required this.blocked, required this.reason});
@@ -55,15 +56,14 @@ class PdfPreviewScreen extends StatelessWidget {
     if (context.mounted) {
       final sent = await showDialog<bool>(
         context: context,
-        builder:
-            (context) => EmailDialog(
-              preferredRecipient: preferredRecipient,
-              emailRecipients: emailRecipients,
-              system: system,
-              filePath: filePath,
-              subject: emailSubject,
-              body: emailBody,
-            ),
+        builder: (context) => EmailDialog(
+          preferredRecipient: preferredRecipient,
+          emailRecipients: emailRecipients,
+          system: system,
+          filePath: filePath,
+          subject: emailSubject,
+          body: emailBody,
+        ),
       );
       if (sent ?? false) {
         await onSent();
@@ -86,21 +86,25 @@ class PdfPreviewScreen extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: PdfViewer.file(
-              filePath,
-              params: PdfViewerParams(
-                linkHandlerParams: PdfLinkHandlerParams(
-                  onLinkTap: (link) async {
-                    // handle URL or Dest
-                    if (link.url != null) {
-                      await launchUrl(link.url!);
-                    }
-                    // else if (link.dest != null) {
-                    //   controller.goToDest(link.dest);
-                    // }
-                  },
+            child: BlockingUITransition<PdfViewer>(
+              label: 'Rendering PDF',
+              slowAction: () async => PdfViewer.file(
+                filePath,
+                params: PdfViewerParams(
+                  linkHandlerParams: PdfLinkHandlerParams(
+                    onLinkTap: (link) async {
+                      // handle URL or Dest
+                      if (link.url != null) {
+                        await launchUrl(link.url!);
+                      }
+                      // else if (link.dest != null) {
+                      //   controller.goToDest(link.dest);
+                      // }
+                    },
+                  ),
                 ),
               ),
+              builder: (context, pdf) => pdf!,
             ),
           ),
         ],

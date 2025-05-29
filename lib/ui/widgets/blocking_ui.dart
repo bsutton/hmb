@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:completer_ex/completer_ex.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
@@ -80,17 +81,14 @@ class BlockingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) => JuneBuilder(
     BlockingOverlayState.new,
-    builder:
-        (blockingOverlayState) => FutureBuilderEx<void>(
-          debugLabel: 'BlockingOverlayState',
-          // ignore: discarded_futures
-          future: blockingOverlayState.waitForAllActions,
-          waitingBuilder:
-              (context) => _BlockingOverlayWidget(blockingOverlayState),
-          builder:
-              (context, _) =>
-                  const SizedBox.shrink(), // widget.builder(context),
-        ),
+    builder: (blockingOverlayState) => FutureBuilderEx<void>(
+      debugLabel: 'BlockingOverlayState',
+      // ignore: discarded_futures
+      future: blockingOverlayState.waitForAllActions,
+      waitingBuilder: (context) => _BlockingOverlayWidget(blockingOverlayState),
+      builder: (context, _) =>
+          const SizedBox.shrink(), // widget.builder(context),
+    ),
   );
 }
 
@@ -163,10 +161,9 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
               // Use ModalBarrier for a translucent overlay
               Positioned.fill(
                 child: ModalBarrier(
-                  color:
-                      showProgress
-                          ? Colors.grey.withSafeOpacity(0.6)
-                          : Colors.transparent,
+                  color: showProgress
+                      ? Colors.grey.withSafeOpacity(0.6)
+                      : Colors.transparent,
                   dismissible: false,
                 ),
               ),
@@ -186,12 +183,11 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
                   right: 0,
                   child: Center(
                     child: Chip(
-                      label:
-                          widget.blockingOverlayState.topAction.label == null
-                              ? HMBTextChip('Just a moment...')
-                              : HMBTextChip(
-                                'Just a moment: ${widget.blockingOverlayState.topAction.label}',
-                              ),
+                      label: widget.blockingOverlayState.topAction.label == null
+                          ? HMBTextChip('Just a moment...')
+                          : HMBTextChip(
+                              'Just a moment: ${widget.blockingOverlayState.topAction.label}',
+                            ),
                       backgroundColor: Colors.yellow,
                       elevation: 7,
                     ),
@@ -221,7 +217,7 @@ typedef ErrorBuilder = Widget Function(BuildContext, Object error);
 /// the  [_BlockingOverlayWidget] is displayed.
 ///
 ///
-class BlockingUITransition extends StatefulWidget {
+class BlockingUITransition<T> extends StatefulWidget {
   const BlockingUITransition({
     required this.slowAction,
     required this.builder,
@@ -230,54 +226,64 @@ class BlockingUITransition extends StatefulWidget {
     super.key,
   });
 
-  final WidgetBuilder builder;
+  final BlockingWidgetBuilder<T> builder;
   final ErrorBuilder? errorBuilder;
-  final Future<void> Function() slowAction;
+  final Future<T> Function() slowAction;
   final String? label;
 
   @override
-  State<BlockingUITransition> createState() => BlockingUITransitionState();
+  State<BlockingUITransition<T>> createState() =>
+      BlockingUITransitionState<T>();
 }
 
-class BlockingUITransitionState extends State<BlockingUITransition> {
+typedef BlockingWidgetBuilder<T> =
+    Widget Function(BuildContext context, T? data);
+
+class BlockingUITransitionState<T>
+    extends DeferredState<BlockingUITransition<T>> {
   var _initialised = false;
-  late final CompleterEx<void> completer;
+  late final CompleterEx<T> completer;
 
   Object? _error;
 
+  T? data;
+
   @override
-  void initState() {
-    super.initState();
+  Future<void> asyncInitState() async {
     if (!_initialised) {
       _initialised = true;
+
+      // start the blocking UI
       completer = BlockingUI().run(widget.slowAction, label: widget.label);
 
-      // ignore: discarded_futures
-      completer.future.whenComplete(() => setState(() {}));
-      // ignore: inference_failure_on_untyped_parameter, discarded_futures
-      completer.future.catchError((error) {
-        setState(() {});
-        return _error = error;
-      });
+      try {
+        // await your slow action
+        data = await completer.future;
+      } catch (e) {
+        _error = e;
+      }
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (completer.isCompleted) {
-      if (_error == null) {
-        return widget.builder(context);
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder: (context) {
+      if (completer.isCompleted) {
+        if (_error == null) {
+          return widget.builder(context, data);
+        } else {
+          return widget.errorBuilder?.call(context, _error!) ??
+              widget.builder(context, data);
+        }
       } else {
-        return widget.errorBuilder?.call(context, _error!) ??
-            widget.builder(context);
+        // initiallly we display a blank screen until the
+        // ticker kicks in and displays the waiting message.
+        // This helps reduce flicker for very short lived actions.
+        return Container();
       }
-    } else {
-      // initiallly we display a blank screen until the
-      // ticker kicks in and displays the waiting message.
-      // This helps reduce flicker for very short lived actions.
-      return Container();
-    }
-  }
+    },
+  );
 }
 
 class BlockingOverlayState extends JuneState {
