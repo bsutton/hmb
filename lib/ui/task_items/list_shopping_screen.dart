@@ -143,10 +143,9 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
       // Apply schedule filter (if not "All")
       if (_selectedScheduleFilter != ScheduleFilter.all) {
         final job = await DaoJob().getJobForTask(task!.id);
-        final nextActivity =
-            job == null
-                ? null
-                : await DaoJobActivity().getNextActivityByJob(job.id);
+        final nextActivity = job == null
+            ? null
+            : await DaoJobActivity().getNextActivityByJob(job.id);
         if (nextActivity == null ||
             !_selectedScheduleFilter.includes(nextActivity.start)) {
           continue;
@@ -246,7 +245,7 @@ If your Job isn't showing then you need to update its status to an Active one su
                   required: false,
                 ).help(
                   'Filter by Schedule',
-                  'Filter shopping items by job scheduled date (Today, Next 3 Days, or This Week)',
+                  "Shopping items for job's scheduled within the selected interval",
                 ),
               ],
             ),
@@ -263,29 +262,23 @@ If your Job isn't showing then you need to update its status to an Active one su
                     final isMobile = constraints.maxWidth < 900;
                     return isMobile
                         ? ListView.builder(
-                          padding: const EdgeInsets.all(8),
-                          itemCount: _taskItems.length,
-                          itemBuilder:
-                              (context, index) => _buildShoppingItem(
-                                context,
-                                _taskItems[index],
-                              ),
-                        )
+                            padding: const EdgeInsets.all(8),
+                            itemCount: _taskItems.length,
+                            itemBuilder: (context, index) =>
+                                _buildShoppingItem(context, _taskItems[index]),
+                          )
                         : GridView.builder(
-                          padding: const EdgeInsets.all(8),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 1.5,
-                                mainAxisExtent: 256,
-                              ),
-                          itemCount: _taskItems.length,
-                          itemBuilder:
-                              (context, index) => _buildShoppingItem(
-                                context,
-                                _taskItems[index],
-                              ),
-                        );
+                            padding: const EdgeInsets.all(8),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 1.5,
+                                  mainAxisExtent: 256,
+                                ),
+                            itemCount: _taskItems.length,
+                            itemBuilder: (context, index) =>
+                                _buildShoppingItem(context, _taskItems[index]),
+                          );
                   },
                 );
               },
@@ -389,10 +382,9 @@ class CustomerAndJob {
   static Future<CustomerAndJob> fetch(TaskItemContext itemContext) async {
     final job = await DaoJob().getJobForTask(itemContext.task.id);
     final customer = await DaoCustomer().getByJob(job!.id);
-    final supplier =
-        itemContext.taskItem.supplierId == null
-            ? null
-            : await DaoSupplier().getById(itemContext.taskItem.supplierId);
+    final supplier = itemContext.taskItem.supplierId == null
+        ? null
+        : await DaoSupplier().getById(itemContext.taskItem.supplierId);
     final nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
 
     return CustomerAndJob._internal(customer!, job, supplier, nextActivity);
