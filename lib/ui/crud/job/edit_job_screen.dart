@@ -141,58 +141,53 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder:
-        (context) => JuneBuilder(
-          SelectedCustomer.new,
-          builder:
-              (selectedCustomer) => FutureBuilderEx<Customer?>(
-                // ignore: discarded_futures
-                future: DaoCustomer().getById(selectedCustomer.customerId),
-                builder:
-                    (context, customer) => EntityEditScreen<Job>(
-                      entityName: 'Job',
-                      dao: DaoJob(),
-                      scrollController: scrollController,
-                      entityState: this,
-                      editor:
-                          (job, {required isNew}) => Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const HMBSpacer(height: true),
-                              HMBFormSection(
-                                children: [
-                                  _showSummary(),
-                                  _chooseCustomer(),
-                                  _chooseStatus(job),
-                                  if (widget.job != null)
-                                    _buildScheduleButtons(),
-                                  _chooseBillingType(),
-                                  _chooseBillingContact(customer, job),
-                                  _showHourlyRate(),
-                                  _showBookingFee(),
-                                  const HMBSpacer(height: true),
-                                  _buildDescription(job),
-                                  const SizedBox(height: 12),
-                                  _buildAssumption(job),
-                                  const SizedBox(height: 12),
+    builder: (context) => JuneBuilder(
+      SelectedCustomer.new,
+      builder: (selectedCustomer) => FutureBuilderEx<Customer?>(
+        // ignore: discarded_futures
+        future: DaoCustomer().getById(selectedCustomer.customerId),
+        builder: (context, customer) => EntityEditScreen<Job>(
+          entityName: 'Job',
+          dao: DaoJob(),
+          scrollController: scrollController,
+          entityState: this,
+          editor: (job, {required isNew}) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const HMBSpacer(height: true),
+              HMBFormSection(
+                children: [
+                  _showSummary(),
+                  _chooseCustomer(),
+                  _chooseStatus(job),
+                  if (widget.job != null) _buildScheduleButtons(),
+                  _chooseBillingType(),
+                  _chooseBillingContact(customer, job),
+                  _showHourlyRate(),
+                  _showBookingFee(),
+                  const HMBSpacer(height: true),
+                  _buildDescription(job),
+                  const SizedBox(height: 12),
+                  _buildAssumption(job),
+                  const SizedBox(height: 12),
 
-                                  // Allow the user to select a contact for the job
-                                  _chooseContact(customer, job),
-                                  // Allow the user to select a site for the job
-                                  _chooseSite(customer, job),
-                                ],
-                              ),
-                              const HMBSpacer(height: true),
-                              // Display task photos
-                              if (job != null) PhotoGallery.forJob(job: job),
-                              _manageAssignments(job),
-                              _manageTasks(job),
-                            ],
-                          ),
-                    ),
+                  // Allow the user to select a contact for the job
+                  _chooseContact(customer, job),
+                  // Allow the user to select a site for the job
+                  _chooseSite(customer, job),
+                ],
               ),
+              const HMBSpacer(height: true),
+              // Display task photos
+              if (job != null) PhotoGallery.forJob(job: job),
+              _manageAssignments(job),
+              _manageTasks(job),
+            ],
+          ),
         ),
+      ),
+    ),
   );
 
   // _showSummary
@@ -208,16 +203,16 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   );
 
   /// _chooseBillingType
-  Widget _chooseBillingType() => HMBDroplist<BillingType>(
-    title: 'Billing Type',
-    items: (filter) async => BillingType.values,
-    selectedItem: () async => _selectedBillingType,
-    onChanged:
-        (billingType) => setState(() {
+  Widget _chooseBillingType() =>
+      HMBDroplist<BillingType>(
+        title: 'Billing Type',
+        items: (filter) async => BillingType.values,
+        selectedItem: () async => _selectedBillingType,
+        onChanged: (billingType) => setState(() {
           _selectedBillingType = billingType!;
         }),
-    format: (value) => value.display,
-  ).help('Billing Type', '''
+        format: (value) => value.display,
+      ).help('Billing Type', '''
 
 Time and Materials (Cost Plus)
 
@@ -243,13 +238,14 @@ Navigate to Billing | Milestones.
   );
 
   /// booking fee
-  Widget _showBookingFee() => HMBTextField(
-    key: const Key('bookingFee'),
-    controller: _bookingFeeController,
-    focusNode: _bookingFeeFocusNode,
-    labelText: 'Booking Fee',
-    keyboardType: TextInputType.number,
-  ).help('Booking Fee', '''
+  Widget _showBookingFee() =>
+      HMBTextField(
+        key: const Key('bookingFee'),
+        controller: _bookingFeeController,
+        focusNode: _bookingFeeFocusNode,
+        labelText: 'Booking Fee',
+        keyboardType: TextInputType.number,
+      ).help('Booking Fee', '''
 A once off fee applied to this Job.
 
 You can set a default booking fee from System | Billing screen''');
@@ -263,56 +259,53 @@ You can set a default booking fee from System | Billing screen''');
   /// manage assignments
   Widget _manageAssignments(Job? job) => HMBChildCrudCard(
     headline: 'Sub-contractor Assignments',
-    crudListScreen: AssignmentListScreen(job: job!),
+    crudListScreen: AssignmentListScreen(parent: Parent(job)),
   );
 
   /// choose billing contact
   Widget _chooseBillingContact(Customer? customer, Job? job) => JuneBuilder(
     _JobBillingContact.new,
-    builder:
-        (state) => HMBSelectContact(
-          key: ValueKey(state.contactId),
-          title: 'Billing Contact',
-          initialContact: state.contactId,
-          customer: customer,
-          onSelected: (contact) {
-            June.getState(_JobBillingContact.new)
-              ..contactId = contact?.id
-              ..setState();
-          },
-        ),
+    builder: (state) => HMBSelectContact(
+      key: ValueKey(state.contactId),
+      title: 'Billing Contact',
+      initialContact: state.contactId,
+      customer: customer,
+      onSelected: (contact) {
+        June.getState(_JobBillingContact.new)
+          ..contactId = contact?.id
+          ..setState();
+      },
+    ),
   );
 
   /// choose contact
   Widget _chooseContact(Customer? customer, Job? job) => JuneBuilder(
     _SelectedContact.new,
-    builder:
-        (state) => HMBSelectContact(
-          key: ValueKey(state.contactId),
-          initialContact: state.contactId,
-          customer: customer,
-          onSelected: (contact) {
-            June.getState(_SelectedContact.new)
-              ..contactId = contact?.id
-              ..setState();
-          },
-        ),
+    builder: (state) => HMBSelectContact(
+      key: ValueKey(state.contactId),
+      initialContact: state.contactId,
+      customer: customer,
+      onSelected: (contact) {
+        June.getState(_SelectedContact.new)
+          ..contactId = contact?.id
+          ..setState();
+      },
+    ),
   );
 
   JuneBuilder<SelectedSite> _chooseSite(Customer? customer, Job? job) =>
       JuneBuilder(
         () => SelectedSite()..siteId = job?.siteId,
-        builder:
-            (state) => HMBSelectSite(
-              key: ValueKey(state.siteId),
-              initialSite: state,
-              customer: customer,
-              onSelected: (site) {
-                June.getState(SelectedSite.new)
-                  ..siteId = site?.id
-                  ..setState();
-              },
-            ),
+        builder: (state) => HMBSelectSite(
+          key: ValueKey(state.siteId),
+          initialSite: state,
+          customer: customer,
+          onSelected: (site) {
+            June.getState(SelectedSite.new)
+              ..siteId = site?.id
+              ..setState();
+          },
+        ),
       );
 
   /// Customer selector: when changed, clear dependent fields and re-seed defaults.
@@ -349,17 +342,16 @@ You can set a default booking fee from System | Billing screen''');
 
   Widget _chooseStatus(Job? job) => JuneBuilder(
     () => SelectJobStatus()..jobStatusId = job?.jobStatusId,
-    builder:
-        (jobStatus) => HMBDroplist<JobStatus>(
-          title: 'Status',
-          items:
-              // ignore: discarded_futures
-              (filter) => DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
+    builder: (jobStatus) => HMBDroplist<JobStatus>(
+      title: 'Status',
+      items:
           // ignore: discarded_futures
-          selectedItem: () => DaoJobStatus().getById(jobStatus.jobStatusId),
-          onChanged: (status) => jobStatus.jobStatusId = status?.id,
-          format: (value) => value.name,
-        ),
+          (filter) => DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
+      // ignore: discarded_futures
+      selectedItem: () => DaoJobStatus().getById(jobStatus.jobStatusId),
+      onChanged: (status) => jobStatus.jobStatusId = status?.id,
+      format: (value) => value.name,
+    ),
   );
 
   Widget _buildScheduleButtons() => Padding(
@@ -389,13 +381,12 @@ You can set a default booking fee from System | Billing screen''');
         // If no activities, just open schedule set to week/today
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder:
-                (_) => SchedulePage(
-                  defaultView: ScheduleView.week,
-                  initialActivityId: firstActivity?.id,
-                  defaultJob: jobId,
-                  dialogMode: true,
-                ),
+            builder: (_) => SchedulePage(
+              defaultView: ScheduleView.week,
+              initialActivityId: firstActivity?.id,
+              defaultJob: jobId,
+              dialogMode: true,
+            ),
             fullscreenDialog: true,
           ),
         );
@@ -425,106 +416,95 @@ You can set a default booking fee from System | Billing screen''');
 
   Widget _buildActivityButton() => JuneBuilder(
     ActivityJobsState.new,
-    builder:
-        (context) => FutureBuilderEx<List<JobActivity>>(
-          // ignore: discarded_futures
-          future: DaoJobActivity().getByJob(widget.job!.id),
-          builder: (context, activities) {
-            final jobActivities = activities ?? [];
-            final nextActivity = _nextAcitivty(jobActivities);
-            final nextActivityWhen =
-                nextActivity == null
-                    ? ''
-                    : formatDateTimeAM(nextActivity.start);
-            return ElevatedButton(
-              onPressed: () async {
-                final selectedActivity = await showActivityDialog(
-                  jobActivities,
-                );
+    builder: (context) => FutureBuilderEx<List<JobActivity>>(
+      // ignore: discarded_futures
+      future: DaoJobActivity().getByJob(widget.job!.id),
+      builder: (context, activities) {
+        final jobActivities = activities ?? [];
+        final nextActivity = _nextAcitivty(jobActivities);
+        final nextActivityWhen = nextActivity == null
+            ? ''
+            : formatDateTimeAM(nextActivity.start);
+        return ElevatedButton(
+          onPressed: () async {
+            final selectedActivity = await showActivityDialog(jobActivities);
 
-                if (context.mounted && selectedActivity != null) {
-                  // Now open schedule page showing that activities date in Week view
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder:
-                          (_) => SchedulePage(
-                            defaultView: ScheduleView.week,
-                            initialActivityId: selectedActivity.id,
-                            defaultJob: widget.job?.id,
-                            dialogMode: true,
-                          ),
-                      fullscreenDialog: true,
-                    ),
-                  );
-
-                  /// We need to reset the title as the Schedule Page
-                  /// will have updated it.
-                  setAppTitle(JobListScreen.pageTitle);
-                  // refresh the list of activities.
-                  June.getState(ActivityJobsState.new).setState();
-                }
-              },
-              child: Row(
-                children: [
-                  if (nextActivity != null)
-                    Circle(
-                      color: nextActivity.status.color,
-                      child: const Text(''),
-                    ),
-                  const SizedBox(width: 5),
-                  Text(
-                    'Activities: $nextActivityWhen',
-                    style: TextStyle(
-                      color:
-                          nextActivity != null && _isToday(nextActivity.start)
-                              ? Colors.orangeAccent
-                              : Colors.white,
-                    ),
+            if (context.mounted && selectedActivity != null) {
+              // Now open schedule page showing that activities date in Week view
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => SchedulePage(
+                    defaultView: ScheduleView.week,
+                    initialActivityId: selectedActivity.id,
+                    defaultJob: widget.job?.id,
+                    dialogMode: true,
                   ),
-                ],
-              ),
-            );
+                  fullscreenDialog: true,
+                ),
+              );
+
+              /// We need to reset the title as the Schedule Page
+              /// will have updated it.
+              setAppTitle(JobListScreen.pageTitle);
+              // refresh the list of activities.
+              June.getState(ActivityJobsState.new).setState();
+            }
           },
-        ),
+          child: Row(
+            children: [
+              if (nextActivity != null)
+                Circle(color: nextActivity.status.color, child: const Text('')),
+              const SizedBox(width: 5),
+              Text(
+                'Activities: $nextActivityWhen',
+                style: TextStyle(
+                  color: nextActivity != null && _isToday(nextActivity.start)
+                      ? Colors.orangeAccent
+                      : Colors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
   );
 
   Future<JobActivity?> showActivityDialog(List<JobActivity> activities) {
     final today = DateTime.now().withoutTime;
     return showDialog<JobActivity>(
       context: context,
-      builder:
-          (context) => SimpleDialog(
-            title: const Text('Open an Activity'),
-            children: [
-              SimpleDialogOption(
-                onPressed:
-                    () => Navigator.of(context).pop(_nextAcitivty(activities)),
-                child: Text('Next Activity: ${_nextAcctivityWhen(activities)}'),
-              ),
-              for (final jobActivity in activities)
-                SimpleDialogOption(
-                  onPressed: () => Navigator.of(context).pop(jobActivity),
-                  child: Row(
-                    children: [
-                      Circle(
-                        color: jobActivity.status.color,
-                        child: const Text(''),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        _activityDisplay(jobActivity),
-                        style: TextStyle(
-                          decoration:
-                              jobActivity.start.isBefore(today)
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
+      builder: (context) => SimpleDialog(
+        title: const Text('Open an Activity'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () =>
+                Navigator.of(context).pop(_nextAcitivty(activities)),
+            child: Text('Next Activity: ${_nextAcctivityWhen(activities)}'),
           ),
+          for (final jobActivity in activities)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(context).pop(jobActivity),
+              child: Row(
+                children: [
+                  Circle(
+                    color: jobActivity.status.color,
+                    child: const Text(''),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    _activityDisplay(jobActivity),
+                    style: TextStyle(
+                      decoration: jobActivity.start.isBefore(today)
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -678,42 +658,41 @@ You can set a default booking fee from System | Billing screen''');
   ) async {
     await showDialog<void>(
       context: context,
-      builder:
-          (context) => Dialog(
-            insetPadding: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 300,
+                child: RichEditor(
+                  controller: richController,
+                  focusNode: FocusNode(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(title, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 300,
-                    child: RichEditor(
-                      controller: richController,
-                      focusNode: FocusNode(),
-                    ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Save'),
-                      ),
-                    ],
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Save'),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 }

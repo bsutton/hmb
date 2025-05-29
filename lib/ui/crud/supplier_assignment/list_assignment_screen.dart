@@ -12,20 +12,20 @@ import 'build_send_assignment_button.dart';
 import 'edit_assignment_screen.dart';
 
 class AssignmentListScreen extends StatelessWidget {
-  const AssignmentListScreen({required this.job, super.key});
+  const AssignmentListScreen({required this.parent, super.key});
 
-  final Job job;
+  final Parent<Job> parent;
 
   @override
   Widget build(BuildContext context) =>
       NestedEntityListScreen<SupplierAssignment, Job>(
         title: (assignment) => Text('Assignment #${assignment.id}'),
-        parent: Parent(job),
+        parent: parent,
         parentTitle: 'Job',
         entityNamePlural: 'Supplier Assignments',
         entityNameSingular: 'Supplier Assignment',
         dao: DaoSupplierAssignment(),
-        fetchList: () => DaoSupplierAssignment().getByJob(job.id),
+        fetchList: () => DaoSupplierAssignment().getByJob(parent.parent!.id),
         details: (assignment, details) => FutureBuilderEx(
           future: SupplierAndTasks.get(assignment),
           builder: (context, supplierAndTasks) => Column(
@@ -56,7 +56,7 @@ class AssignmentListScreen extends StatelessWidget {
           ),
         ),
         onEdit: (assignment) =>
-            AssignmentEditScreen(job: job, assignment: assignment),
+            AssignmentEditScreen(job: parent.parent!, assignment: assignment),
         onDelete: (assignment) =>
             DaoSupplierAssignment().delete(assignment!.id),
         onInsert: (assignment, tx) =>
