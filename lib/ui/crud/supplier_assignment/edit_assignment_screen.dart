@@ -97,7 +97,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
       children: [
         // Supplier selector
         FutureBuilderEx<List<Supplier>>(
-          future: DaoSupplier().getAll(),
+          future: DaoSupplier().getAll(orderByClause: 'name COLLATE NOCASE'),
           builder:
               (c, suppliers) => HMBDroplist<Supplier>(
                 selectedItem:

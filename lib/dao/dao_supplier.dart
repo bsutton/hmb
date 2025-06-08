@@ -9,7 +9,7 @@ class DaoSupplier extends Dao<Supplier> {
     final db = withoutTransaction();
 
     if (Strings.isBlank(filter)) {
-      return getAll(orderByClause: 'name');
+      return getAll(orderByClause: 'name COLLATE NOCASE');
     }
     final like = '''%$filter%''';
     return toList(
@@ -20,7 +20,7 @@ from supplier s
 where s.name like ?
 or s.description like ?
 or s.service like ?
-order by s.name
+order by s.name COLLATE NOCASE
 ''',
         [like, like, like],
       ),
