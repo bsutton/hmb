@@ -10,15 +10,17 @@ import 'contact_page.dart';
 import 'integration_page.dart';
 import 'intro_step.dart';
 
-class FirstRunWizard extends StatefulWidget {
-  const FirstRunWizard({super.key});
+class SetupWizard extends StatefulWidget {
+  const SetupWizard({required this.launchedFromSettings, super.key});
+
+  /// True if launched from the settings dashboard
+  final bool launchedFromSettings;
 
   @override
-  // ignore: library_private_types_in_public_api
-  _FirstRunWizardState createState() => _FirstRunWizardState();
+  _SetupWizardState createState() => _SetupWizardState();
 }
 
-class _FirstRunWizardState extends State<FirstRunWizard> {
+class _SetupWizardState extends State<SetupWizard> {
   @override
   void initState() {
     super.initState();
@@ -61,11 +63,13 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
             Log.d('Wizard closed using device back button.');
         }
 
-        // After the wizard is done or cancelled, go somewhere
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
+        if (!mounted) {
+          return;
+        }
+
+        if (widget.launchedFromSettings) {
+          context.go('/dashboard/settings');
         } else {
-          // If you have a named route for jobs, e.g.:
           context.go('/dashboard');
         }
       },

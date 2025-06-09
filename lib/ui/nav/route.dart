@@ -27,7 +27,7 @@ import '../task_items/list_shopping_screen.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../widgets/splash_screen.dart';
-import '../wizard/system_wizard.dart';
+import '../wizard/setup_wizard.dart';
 import 'nav.g.dart';
 
 GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
@@ -198,9 +198,15 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
       path: '/system/backup/local',
       builder: (_, _) => const HomeScaffold(initialScreen: LocalBackupScreen()),
     ),
+
     GoRoute(
       path: '/system/wizard',
-      builder: (_, _) => const HomeScaffold(initialScreen: FirstRunWizard()),
+      builder: (context, state) {
+        final fromSettings = state.extra as bool? ?? false;
+        return HomeScaffold(
+          initialScreen: SetupWizard(launchedFromSettings: fromSettings),
+        );
+      },
     ),
 
     GoRoute(
