@@ -50,18 +50,8 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     return null;
   },
   routes: [
-    // 1) Root route that redirects to either the Wizard or the Jobs screen
-    GoRoute(
-      path: '/',
-      redirect: (context, state) {
-        // If firstRun is true, route to /system/wizard
-        // Else, go to /jobs
-        // Then set firstRun=false to avoid repeating
-        final alt = firstRun ? '/system/wizard' : '/splash';
-        firstRun = false;
-        return alt;
-      },
-    ),
+    // 1) Root route that redirects the Splash screen
+    GoRoute(path: '/', redirect: (context, state) => '/splash'),
 
     // 2) Error screen route
     GoRoute(
@@ -86,14 +76,13 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
 
     GoRoute(
       path: '/dashboard/accounting',
-      builder:
-          (_, _) =>
-              const HomeScaffold(initialScreen: AccountingDashboardPage()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: AccountingDashboardPage()),
     ),
     GoRoute(
       path: '/dashboard/settings',
-      builder:
-          (_, _) => const HomeScaffold(initialScreen: SettingsDashboardPage()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: SettingsDashboardPage()),
     ),
     GoRoute(
       path: '/dashboard/help',
@@ -108,13 +97,13 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     // 4) All other routes directly from the top level:
     GoRoute(
       path: '/customers',
-      builder:
-          (_, _) => const HomeScaffold(initialScreen: CustomerListScreen()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: CustomerListScreen()),
     ),
     GoRoute(
       path: '/suppliers',
-      builder:
-          (_, _) => const HomeScaffold(initialScreen: SupplierListScreen()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: SupplierListScreen()),
     ),
     GoRoute(
       path: '/shopping',
@@ -126,10 +115,8 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     ),
     GoRoute(
       path: '/schedule',
-      builder:
-          (_, _) => const HomeScaffold(
-            initialScreen: SchedulePage(dialogMode: false),
-          ),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: SchedulePage(dialogMode: false)),
     ),
     GoRoute(
       path: '/accounting/quotes',
@@ -146,13 +133,13 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     ),
     GoRoute(
       path: '/accounting/estimator',
-      builder:
-          (_, _) => const HomeScaffold(initialScreen: JobEstimatesListScreen()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: JobEstimatesListScreen()),
     ),
     GoRoute(
       path: '/accounting/milestones',
-      builder:
-          (_, _) => const HomeScaffold(initialScreen: ListMilestoneScreen()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: ListMilestoneScreen()),
     ),
     GoRoute(
       path: '/accounting/receipts',
@@ -164,37 +151,33 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     ),
     GoRoute(
       path: '/extras/manufacturers',
-      builder:
-          (_, _) => const HomeScaffold(initialScreen: ManufacturerListScreen()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: ManufacturerListScreen()),
     ),
     GoRoute(
       path: '/system/sms_templates',
-      builder:
-          (_, _) =>
-              const HomeScaffold(initialScreen: MessageTemplateListScreen()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: MessageTemplateListScreen()),
     ),
     GoRoute(
       path: '/system/business',
-      builder:
-          (_, _) => const HomeScaffold(initialScreen: SystemBusinessScreen()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: SystemBusinessScreen()),
     ),
     GoRoute(
       path: '/system/billing',
-      builder:
-          (_, _) => const HomeScaffold(initialScreen: SystemBillingScreen()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: SystemBillingScreen()),
     ),
     GoRoute(
       path: '/system/contact',
-      builder:
-          (_, _) => const HomeScaffold(
-            initialScreen: SystemContactInformationScreen(),
-          ),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: SystemContactInformationScreen()),
     ),
     GoRoute(
       path: '/system/integration',
-      builder:
-          (_, _) =>
-              const HomeScaffold(initialScreen: SystemIntegrationScreen()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: SystemIntegrationScreen()),
     ),
     GoRoute(
       path: '/system/about',
@@ -202,15 +185,14 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     ),
     GoRoute(
       path: '/system/backup/google',
-      builder:
-          (_, _) =>
-              const HomeScaffold(initialScreen: GoogleDriveBackupScreen()),
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: GoogleDriveBackupScreen()),
     ),
     GoRoute(
       path: '/system/backup/google/restore',
-      builder:
-          (_, _) =>
-              const HomeScaffold(initialScreen: GoogleDriveBackupScreen(restoreOnly:true)),
+      builder: (_, _) => const HomeScaffold(
+        initialScreen: GoogleDriveBackupScreen(restoreOnly: true),
+      ),
     ),
     GoRoute(
       path: '/system/backup/local',

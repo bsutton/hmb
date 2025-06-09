@@ -15,6 +15,7 @@ import '../../database/factory/factory.g.dart';
 import '../../database/management/backup_providers/local/local_backup_provider.dart';
 import '../../database/versions/asset_script_source.dart';
 import '../../installer/linux/install.dart';
+import '../../util/hmb_theme.dart';
 import '../dialog/database_error_dialog.dart';
 import 'widgets.g.dart';
 
@@ -33,13 +34,61 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   @override
-  Widget build(BuildContext context) => BlockingUITransition(
-    key: _blockingUIKey,
-    slowAction: () async => _initialise(context),
-    builder: (context, _) => const SizedBox.shrink(),
-    errorBuilder:
-        (context, error) => DatabaseErrorDialog(error: error.toString()),
-  );
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Stack(
+        children: [
+          // Gradient background using your theme's primary and accent colors
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary.withSafeOpacity(0.8),
+                  HMBColors.accent.withSafeOpacity(0.8),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          // Centered app branding
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '🍺 Hold My Beer',
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Getting things ready...',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: theme.colorScheme.onSurface.withSafeOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Blocking UI handles loading/errors
+          BlockingUITransition(
+            key: _blockingUIKey,
+            slowAction: () async => _initialise(context),
+            builder: (context, _) => const SizedBox.shrink(),
+            errorBuilder: (context, error) =>
+                DatabaseErrorDialog(error: error.toString()),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<bool> _checkInstall() async {
     if (kIsWeb) {
@@ -95,8 +144,14 @@ class _SplashScreenState extends State<SplashScreen> {
       //   }
       // }
     }
+
     if (context.mounted) {
-      context.go('/home');
+      if (firstRun) {
+        firstRun = false;
+        context.go('/system/wizard');
+      } else {
+        context.go('/home');
+      }
     }
   }
 
@@ -120,6 +175,8 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
+  // on linux this is:
+  // $HOME/snap/code/194/.local/share/dev.onepub.handyman/hmb
   Future<String> get pathToHmbFiles async =>
       join((await getApplicationSupportDirectory()).path, 'hmb');
 }
