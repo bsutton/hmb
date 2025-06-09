@@ -1,5 +1,6 @@
 // lib/src/ui/dashboard/settings_dashboard_page.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'nav.g.dart';
 
@@ -49,6 +50,7 @@ class SettingsDashboardPage extends StatelessWidget {
         label: 'Setup Wizard',
         icon: Icons.auto_fix_high,
         dashletValue: () => Future.value(const DashletValue(null)),
+        onTapOverride: () => context.push('/system/wizard', extra: true),
         route: '/system/wizard',
         widgetBuilder: (_, _) => const SizedBox.shrink(),
       ),
