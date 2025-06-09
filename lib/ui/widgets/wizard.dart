@@ -58,6 +58,7 @@ class WizardState extends State<Wizard> {
   static const double lineInset = 7;
   static const double lineWidth = 24;
   static const crossFadeDuration = Duration(milliseconds: 500);
+  final _scrollController = ScrollController();
 
   final ScrollPhysics physics = const ClampingScrollPhysics();
 
@@ -105,7 +106,10 @@ class WizardState extends State<Wizard> {
     child: Material(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Expanded(child: _buildBody()), _buildControls()],
+        children: [
+          Expanded(child: _buildBody()),
+          _buildControls(),
+        ],
       ),
     ),
   );
@@ -210,7 +214,7 @@ class WizardState extends State<Wizard> {
 
     _currentStep = nextStep;
     _currentStepIndex = _indexOf(nextStep);
-    _showStep();
+    await _showStep();
   }
 
   Future<void> _transitionBackwards(
@@ -282,7 +286,7 @@ class WizardState extends State<Wizard> {
 
     _currentStep = prevStep;
     _currentStepIndex = _indexOf(prevStep);
-    _showStep();
+    await _showStep();
   }
 
   /// Allows you to force a jump to a specific step.
@@ -335,7 +339,7 @@ class WizardState extends State<Wizard> {
   // remove the onscreen keyboard.
   void _hideKeyboard() => FocusScope.of(context).unfocus();
 
-  void _showStep() {
+  Future<void> _showStep() async {
     setState(() {
       // force a rebuild of the steps
     });
@@ -344,20 +348,31 @@ class WizardState extends State<Wizard> {
     // The delay is so the cross fade has a chance to complete.
     // This is a little hack, but there is no apparent way to hook
     // the cross fade completion so we just share a common duration.
-    Future.delayed(crossFadeDuration, () async {
-      if (_keys[_currentStepIndex].currentContext != null) {
-        await Scrollable.ensureVisible(
-          _keys[_currentStepIndex].currentContext!,
-          curve: Curves.fastOutSlowIn,
-          duration: kThemeAnimationDuration,
-        );
-      }
+    Future.delayed(crossFadeDuration, () {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+        }
+      });
     });
+
+    // if (_scrollController.hasClients) {
+    //   await _scrollController.animateTo(
+    //     0,
+    //     duration: const Duration(milliseconds: 300),
+    //     curve: Curves.easeOut,
+    //   );
+    // }
   }
 
   Widget _buildBody() {
     final steps = _buildSteps();
-    return ListView(shrinkWrap: true, physics: physics, children: steps);
+    return ListView(
+      controller: _scrollController,
+      shrinkWrap: true,
+      physics: physics,
+      children: steps,
+    );
   }
 
   Widget _buildStepHeading(WizardStep step, int stepNo) => GrayedOut(
@@ -477,10 +492,9 @@ class WizardState extends State<Wizard> {
           firstCurve: const Interval(0, 0.1, curve: Curves.fastOutSlowIn),
           secondCurve: const Interval(0, 1, curve: Curves.fastOutSlowIn),
           sizeCurve: Curves.fastOutSlowIn,
-          crossFadeState:
-              _isCurrent(index)
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
+          crossFadeState: _isCurrent(index)
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
           duration: crossFadeDuration,
         ),
       ],
@@ -497,22 +511,21 @@ class WizardState extends State<Wizard> {
       children: [
         HMBButtonSecondary(
           label: widget.cancelLabel,
-          onPressed:
-              _inTransition || _pageLoading
-                  ? null
-                  : () async {
-                    await _triggerOnFinished(WizardCompletionReason.cancelled);
-                  },
+          onPressed: _inTransition || _pageLoading
+              ? null
+              : () async {
+                  await _triggerOnFinished(WizardCompletionReason.cancelled);
+                },
         ),
         HMBButtonPrimary(
           label: 'Back',
           // BACK BUTTON
           onPressed:
               isFirstVisible(_currentStepIndex) || _inTransition || _pageLoading
-                  // no steps back, so disable the button
-                  ? null
-                  // add handler
-                  : _onBack,
+              // no steps back, so disable the button
+              ? null
+              // add handler
+              : _onBack,
         ),
         // NEXT BUTTON
         HMBButtonPrimary(
