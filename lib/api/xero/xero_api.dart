@@ -55,7 +55,8 @@ class XeroApi {
         'Content-Type': 'application/json',
         'Xero-tenant-id': tenantId,
       },
-      body: '''
+      body:
+          '''
 {
     "InvoiceNumber": "${invoice.invoiceNum}",
     "Status": "DELETED"
@@ -81,7 +82,8 @@ class XeroApi {
         'Content-Type': 'application/json',
         'Xero-tenant-id': tenantId,
       },
-      body: '''
+      body:
+          '''
 {
     "InvoiceNumber": "${invoice.invoiceNum}",
     "Status": "VOIDED"
@@ -129,7 +131,8 @@ class XeroApi {
         'Content-Type': 'application/json',
         'Xero-tenant-id': tenantId,
       },
-      body: '''
+      body:
+          '''
 {
     "InvoiceID": "${invoice.externalInvoiceId}",
     "Status": "AUTHORISED"
@@ -153,7 +156,8 @@ class XeroApi {
         'Content-Type': 'application/json',
         'Xero-tenant-id': tenantId,
       },
-      body: '''
+      body:
+          '''
 {
     "InvoiceID": "${invoice.externalInvoiceId}",
     "SentToContact": "true"

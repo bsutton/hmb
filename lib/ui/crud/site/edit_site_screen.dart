@@ -68,40 +68,40 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     entityState: this,
     onInsert:
         // ignore: discarded_futures
-        (site, transaction)  => widget.daoJoin.insertForParent(site!, widget.parent, transaction),
-    editor:
-        (site) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Add other form fields for the new fields
-            TextFormField(
-              controller: _addressLine1Controller,
-              decoration: const InputDecoration(labelText: 'Address Line 1'),
-            ),
-            TextFormField(
-              controller: _addressLine2Controller,
-              decoration: const InputDecoration(labelText: 'Address Line 2'),
-            ),
-            TextFormField(
-              controller: _suburbController,
-              decoration: const InputDecoration(labelText: 'Suburb'),
-              keyboardType: TextInputType.name,
-            ),
-            TextFormField(
-              controller: _stateController,
-              decoration: const InputDecoration(labelText: 'State'),
-              keyboardType: TextInputType.name,
-            ),
-            TextFormField(
-              controller: _postcodeController,
-              decoration: const InputDecoration(labelText: 'Postcode'),
-            ),
-            TextFormField(
-              controller: _accessDetailsController, // New field
-              decoration: const InputDecoration(labelText: 'Access Details'),
-            ),
-          ],
+        (site, transaction) =>
+            widget.daoJoin.insertForParent(site!, widget.parent, transaction),
+    editor: (site) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Add other form fields for the new fields
+        TextFormField(
+          controller: _addressLine1Controller,
+          decoration: const InputDecoration(labelText: 'Address Line 1'),
         ),
+        TextFormField(
+          controller: _addressLine2Controller,
+          decoration: const InputDecoration(labelText: 'Address Line 2'),
+        ),
+        TextFormField(
+          controller: _suburbController,
+          decoration: const InputDecoration(labelText: 'Suburb'),
+          keyboardType: TextInputType.name,
+        ),
+        TextFormField(
+          controller: _stateController,
+          decoration: const InputDecoration(labelText: 'State'),
+          keyboardType: TextInputType.name,
+        ),
+        TextFormField(
+          controller: _postcodeController,
+          decoration: const InputDecoration(labelText: 'Postcode'),
+        ),
+        TextFormField(
+          controller: _accessDetailsController, // New field
+          decoration: const InputDecoration(labelText: 'Access Details'),
+        ),
+      ],
+    ),
   );
 
   @override
@@ -130,7 +130,6 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     setState(() {});
   }
 
-    @override
+  @override
   Future<void> postSave(Transaction transaction, Operation operation) async {}
-
 }

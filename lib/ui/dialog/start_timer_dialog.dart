@@ -34,12 +34,8 @@ class StartTimerDialog extends StatefulWidget {
     bool showTask = false,
   }) => showDialog<TimeEntry>(
     context: context,
-    builder:
-        (context) => StartTimerDialog(
-          task: task,
-          showTask: showTask,
-          startTime: startTime,
-        ),
+    builder: (context) =>
+        StartTimerDialog(task: task, showTask: showTask, startTime: startTime),
   );
 }
 
@@ -114,19 +110,16 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
       FutureBuilderEx(
         // ignore: discarded_futures
         future: DaoJob().getById(widget.task.jobId),
-        builder:
-            (context, job) => Column(
-              children: [
-                FutureBuilderEx(
-                  // ignore: discarded_futures
-                  future: DaoCustomer().getById(job!.customerId),
-                  builder:
-                      (context, customer) => Column(
-                        children: [Text(customer!.name), Text(job.summary)],
-                      ),
-                ),
-              ],
+        builder: (context, job) => Column(
+          children: [
+            FutureBuilderEx(
+              // ignore: discarded_futures
+              future: DaoCustomer().getById(job!.customerId),
+              builder: (context, customer) =>
+                  Column(children: [Text(customer!.name), Text(job.summary)]),
             ),
+          ],
+        ),
       ),
       Text(widget.task.description),
     ],

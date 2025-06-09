@@ -47,11 +47,10 @@ class HMBSelectSiteState extends State<HMBSelectSite> {
     final site = await Navigator.push<Site>(
       context,
       MaterialPageRoute<Site>(
-        builder:
-            (context) => SiteEditScreen<Customer>(
-              parent: widget.customer!,
-              daoJoin: JoinAdaptorCustomerSite(),
-            ),
+        builder: (context) => SiteEditScreen<Customer>(
+          parent: widget.customer!,
+          daoJoin: JoinAdaptorCustomerSite(),
+        ),
       ),
     );
     if (site != null) {

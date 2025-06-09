@@ -39,9 +39,8 @@ class OperatingHours {
     // Convert the decoded list into a Map keyed by `DayName`.
     final dayMap = {
       for (final item in decoded)
-        OperatingDay.fromJson(
-          item as Map<String, dynamic>,
-        ).dayName: OperatingDay.fromJson(item),
+        OperatingDay.fromJson(item as Map<String, dynamic>).dayName:
+            OperatingDay.fromJson(item),
     };
 
     return OperatingHours(days: dayMap);
@@ -55,8 +54,9 @@ class OperatingHours {
   /// Converts the OperatingHours instance back to a JSON string.
   String toJson() {
     // Convert the map values (OperatingDay) to a list of maps (JSON format).
-    final listToEncode =
-        days.values.map((operatingDay) => operatingDay.toJson()).toList();
+    final listToEncode = days.values
+        .map((operatingDay) => operatingDay.toJson())
+        .toList();
     return jsonEncode(listToEncode);
   }
 
@@ -84,11 +84,10 @@ class OperatingHours {
       /// to check for activities scheduled out of normal hours.
 
       /// special check for an activiity on the out of hours day.
-      open =
-          (await DaoJobActivity().getActivitiesInRange(
-            targetDate,
-            targetDate.addDays(1),
-          )).isNotEmpty;
+      open = (await DaoJobActivity().getActivitiesInRange(
+        targetDate,
+        targetDate.addDays(1),
+      )).isNotEmpty;
     }
     return open;
   }

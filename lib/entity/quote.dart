@@ -68,14 +68,12 @@ class Quote extends Entity<Quote> {
     quoteNum: map['quote_num'] as String?,
     externalQuoteId: map['external_quote_id'] as String?,
     state: QuoteState.values.byName(map['state'] as String),
-    dateSent:
-        map['date_sent'] != null
-            ? DateTime.parse(map['date_sent'] as String)
-            : null,
-    dateApproved:
-        map['date_approved'] != null
-            ? DateTime.parse(map['date_approved'] as String)
-            : null,
+    dateSent: map['date_sent'] != null
+        ? DateTime.parse(map['date_sent'] as String)
+        : null,
+    dateApproved: map['date_approved'] != null
+        ? DateTime.parse(map['date_approved'] as String)
+        : null,
     billingContactId: map['billing_contact_id'] as int?,
   );
 

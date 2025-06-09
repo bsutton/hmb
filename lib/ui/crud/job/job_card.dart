@@ -53,18 +53,16 @@ class _JobCardState extends DeferredState<JobCard> {
     waitingBuilder: (context) => const HMBPlaceHolder(height: 594),
     // ignore: discarded_futures
     future: DaoJobStatus().getById(job.jobStatusId),
-    builder:
-        (context, jobStatus) => FutureBuilderEx<Customer?>(
-          waitingBuilder: (context) => const HMBPlaceHolder(height: 594),
-          // ignore: discarded_futures
-          future: DaoCustomer().getById(job.customerId),
-          builder:
-              (context, customer) => Surface(
-                padding: EdgeInsets.zero,
-                elevation: SurfaceElevation.e6,
-                child: _buildDetails(customer, jobStatus),
-              ),
-        ),
+    builder: (context, jobStatus) => FutureBuilderEx<Customer?>(
+      waitingBuilder: (context) => const HMBPlaceHolder(height: 594),
+      // ignore: discarded_futures
+      future: DaoCustomer().getById(job.customerId),
+      builder: (context, customer) => Surface(
+        padding: EdgeInsets.zero,
+        elevation: SurfaceElevation.e6,
+        child: _buildDetails(customer, jobStatus),
+      ),
+    ),
   );
 
   Widget _buildDetails(Customer? customer, JobStatus? jobStatus) => Column(
@@ -111,22 +109,21 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
       final isMobile = constraints.maxWidth < 600;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child:
-            isMobile
-                ? Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    HMBJobPhoneText(job: job),
-                    HMBJobEmailText(job: job),
-                  ],
-                )
-                : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    HMBJobPhoneText(job: job),
-                    Expanded(child: HMBJobEmailText(job: job)),
-                  ],
-                ),
+        child: isMobile
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  HMBJobPhoneText(job: job),
+                  HMBJobEmailText(job: job),
+                ],
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  HMBJobPhoneText(job: job),
+                  Expanded(child: HMBJobEmailText(job: job)),
+                ],
+              ),
       );
     },
   );
@@ -144,10 +141,9 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
           final isMobile = constraints.maxWidth < 800;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child:
-                isMobile
-                    ? _buildMobileLayout(remainingTasks, context)
-                    : _buildDesktopLayout(remainingTasks, context),
+            child: isMobile
+                ? _buildMobileLayout(remainingTasks, context)
+                : _buildDesktopLayout(remainingTasks, context),
           );
         },
       );

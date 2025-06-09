@@ -20,3 +20,12 @@ dependency_overrides:
   # runtime_native_semaphores: 
   #   version: ^1.0.0-beta.7
   #   hosted: https://onepub.dev/api/jbbxpsdavu/
+
+  
+  #https://github.com/juliansteenbakker/flutter_secure_storage/issues/920
+  flutter_secure_storage_linux:
+    git:
+      url: https://github.com/m-berto/flutter_secure_storage.git
+      ref: patch-2
+      path: flutter_secure_storage_linux
+  flutter_secure_storage_platform_interface: 2.0.0

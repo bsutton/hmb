@@ -307,10 +307,9 @@ class HMBTextLine extends StatelessWidget {
     text,
     overflow: TextOverflow.ellipsis,
     maxLines: 1,
-    style:
-        colour != null
-            ? TextStyle(color: colour)
-            : Theme.of(context).textTheme.titleMedium,
+    style: colour != null
+        ? TextStyle(color: colour)
+        : Theme.of(context).textTheme.titleMedium,
   );
 }
 

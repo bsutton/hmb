@@ -102,12 +102,11 @@ class FullScreenPhotoViewer extends StatelessWidget {
     await Navigator.push(
       context,
       MaterialPageRoute<void>(
-        builder:
-            (context) => FullScreenPhotoViewer(
-              imagePath: imagePath,
-              title: title,
-              comment: comment,
-            ),
+        builder: (context) => FullScreenPhotoViewer(
+          imagePath: imagePath,
+          title: title,
+          comment: comment,
+        ),
       ),
     );
   }

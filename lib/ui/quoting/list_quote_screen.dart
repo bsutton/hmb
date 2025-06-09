@@ -58,8 +58,9 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
 
     // Job filter
     if (selectedJob != null) {
-      filteredQuotes =
-          filteredQuotes.where((q) => q.jobId == selectedJob!.id).toList();
+      filteredQuotes = filteredQuotes
+          .where((q) => q.jobId == selectedJob!.id)
+          .toList();
     }
 
     // Customer filter
@@ -74,20 +75,21 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       filteredQuotes = forCustomer;
     }
 
-    final invoiced =
-        filteredQuotes.where((q) => q.state == QuoteState.invoiced).toList();
-    final approved =
-        filteredQuotes.where((q) => q.state == QuoteState.approved).toList();
-    final rejected =
-        filteredQuotes.where((q) => q.state == QuoteState.rejected).toList();
+    final invoiced = filteredQuotes
+        .where((q) => q.state == QuoteState.invoiced)
+        .toList();
+    final approved = filteredQuotes
+        .where((q) => q.state == QuoteState.approved)
+        .toList();
+    final rejected = filteredQuotes
+        .where((q) => q.state == QuoteState.rejected)
+        .toList();
 
-    final awaiting =
-        filteredQuotes
-            .where(
-              (q) =>
-                  q.state == QuoteState.reviewing || q.state == QuoteState.sent,
-            )
-            .toList();
+    final awaiting = filteredQuotes
+        .where(
+          (q) => q.state == QuoteState.reviewing || q.state == QuoteState.sent,
+        )
+        .toList();
 
     final quotes = <Quote>[];
     if (_includeInvoiced) {
@@ -147,21 +149,20 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   Future<void> _deleteQuote(Quote quote) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Delete Quote'),
-            content: const Text('Are you sure you want to delete this quote?'),
-            actions: [
-              HMBButton(
-                label: 'Cancel',
-                onPressed: () => Navigator.of(context).pop(false),
-              ),
-              HMBButton(
-                label: 'Delete',
-                onPressed: () => Navigator.of(context).pop(true),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Quote'),
+        content: const Text('Are you sure you want to delete this quote?'),
+        actions: [
+          HMBButton(
+            label: 'Cancel',
+            onPressed: () => Navigator.of(context).pop(false),
           ),
+          HMBButton(
+            label: 'Delete',
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
     );
     if (confirmed ?? false) {
       try {
@@ -218,68 +219,61 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
     ),
     body: DeferredBuilder(
       this,
-      builder:
-          (context) => Column(
-            children: [
-              // --- FILTER SECTION ---
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.filter_list),
-                      label: const Text('Filters'),
-                      onPressed: _showFilterDialog,
-                    ),
-                  ),
+      builder: (context) => Column(
+        children: [
+          // --- FILTER SECTION ---
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.filter_list),
+                  label: const Text('Filters'),
+                  onPressed: _showFilterDialog,
                 ),
               ),
-              // --- END FILTER SECTION ---
-              Expanded(
-                child:
-                    _quotes.isEmpty
-                        ? const Center(child: Text('No quotes found.'))
-                        : AnimatedList(
-                          key: _listKey,
-                          initialItemCount: _quotes.length,
-                          itemBuilder: (context, index, animation) {
-                            final quote = _quotes[index];
-                            return SizeTransition(
-                              sizeFactor: animation,
-                              child: GestureDetector(
-                                onTap: () async {
-                                  await Navigator.of(context).push(
-                                    MaterialPageRoute<void>(
-                                      builder:
-                                          (context) => QuoteDetailsScreen(
-                                            quoteId: quote.id,
-                                          ),
-                                    ),
-                                  );
-                                },
-                                child: QuoteCard(
-                                  key: ValueKey(quote.id),
-                                  quote: quote,
-                                  // ignore: discarded_futures
-                                  onDelete: () => _deleteQuote(quote),
-                                  // ignore: discarded_futures
-                                  onStateChanged: (_) async {
-                                    await _fetchFilteredQuotes();
-                                    setState(() {});
-                                  },
-                                ),
+            ),
+          ),
+          // --- END FILTER SECTION ---
+          Expanded(
+            child: _quotes.isEmpty
+                ? const Center(child: Text('No quotes found.'))
+                : AnimatedList(
+                    key: _listKey,
+                    initialItemCount: _quotes.length,
+                    itemBuilder: (context, index, animation) {
+                      final quote = _quotes[index];
+                      return SizeTransition(
+                        sizeFactor: animation,
+                        child: GestureDetector(
+                          onTap: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (context) =>
+                                    QuoteDetailsScreen(quoteId: quote.id),
                               ),
                             );
                           },
+                          child: QuoteCard(
+                            key: ValueKey(quote.id),
+                            quote: quote,
+                            // ignore: discarded_futures
+                            onDelete: () => _deleteQuote(quote),
+                            // ignore: discarded_futures
+                            onStateChanged: (_) async {
+                              await _fetchFilteredQuotes();
+                              setState(() {});
+                            },
+                          ),
                         ),
-              ),
-            ],
+                      );
+                    },
+                  ),
           ),
+        ],
+      ),
     ),
   );
 
@@ -295,56 +289,51 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder:
-          (context) => StatefulBuilder(
-            builder:
-                (context, setModalState) => Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Filter Quotes',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchListTile(
-                        title: const Text('Include Approved'),
-                        value: _includeApproved,
-                        onChanged: (val) {
-                          setModalState(() => _includeApproved = val);
-                        },
-                      ),
-                      SwitchListTile(
-                        title: const Text('Include Invoiced'),
-                        value: _includeInvoiced,
-                        onChanged: (val) {
-                          setModalState(() => _includeInvoiced = val);
-                        },
-                      ),
-                      SwitchListTile(
-                        title: const Text('Include Rejected'),
-                        value: _includeRejected,
-                        onChanged: (val) {
-                          setModalState(() => _includeRejected = val);
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          await _loadQuotes();
-                          setState(() {});
-                        },
-                        child: const Text('Apply Filters'),
-                      ),
-                    ],
-                  ),
-                ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Filter Quotes',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                title: const Text('Include Approved'),
+                value: _includeApproved,
+                onChanged: (val) {
+                  setModalState(() => _includeApproved = val);
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Include Invoiced'),
+                value: _includeInvoiced,
+                onChanged: (val) {
+                  setModalState(() => _includeInvoiced = val);
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Include Rejected'),
+                value: _includeRejected,
+                onChanged: (val) {
+                  setModalState(() => _includeRejected = val);
+                },
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await _loadQuotes();
+                  setState(() {});
+                },
+                child: const Text('Apply Filters'),
+              ),
+            ],
           ),
+        ),
+      ),
     );
   }
 }

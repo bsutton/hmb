@@ -33,12 +33,11 @@ class HMBStatusBar extends StatelessWidget {
             child: FutureBuilderEx(
               // ignore: discarded_futures
               future: DaoJob().getJobForTask(task?.id),
-              builder:
-                  (context, job) => Text(
-                    '${task!.name} - ${job!.summary}',
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white),
-                  ),
+              builder: (context, job) => Text(
+                '${task!.name} - ${job!.summary}',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ),
         ],

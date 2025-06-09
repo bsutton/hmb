@@ -24,13 +24,12 @@ class DelaySource extends Source<String> {
   Widget widget() => DropdownButtonFormField<String>(
     decoration: const InputDecoration(labelText: 'Delay Period'),
     value: periods[0],
-    items:
-        periods
-            .map(
-              (period) =>
-                  DropdownMenuItem<String>(value: period, child: Text(period)),
-            )
-            .toList(),
+    items: periods
+        .map(
+          (period) =>
+              DropdownMenuItem<String>(value: period, child: Text(period)),
+        )
+        .toList(),
     onChanged: (newValue) {
       delay = newValue ?? '';
     },

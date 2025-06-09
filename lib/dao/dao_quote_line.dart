@@ -61,8 +61,6 @@ class DaoQuoteLine extends Dao<QuoteLine> {
 
   @override
   JuneStateCreator get juneRefresher => QuoteLineState.new;
-
-  
 }
 
 /// Used to notify the UI that the time entry has changed.

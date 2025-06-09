@@ -272,17 +272,22 @@ class CheckListItem extends Entity<CheckListItem> {
     'check_list_id': checkListId,
     'description': description,
     'item_type_id': itemTypeId,
-    'estimated_material_unit_cost':
-        estimatedMaterialUnitCost
-            ?.copyWith(decimalDigits: 2)
-            .minorUnits
-            .toInt(),
-    'estimated_material_quantity':
-        estimatedMaterialQuantity?.copyWith(decimalDigits: 3).minorUnits.toInt(),
-    'estimated_labour_hours':
-        estimatedLabourHours?.copyWith(decimalDigits: 3).minorUnits.toInt(),
-    'estimated_labour_cost':
-        estimatedLabourCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'estimated_material_unit_cost': estimatedMaterialUnitCost
+        ?.copyWith(decimalDigits: 2)
+        .minorUnits
+        .toInt(),
+    'estimated_material_quantity': estimatedMaterialQuantity
+        ?.copyWith(decimalDigits: 3)
+        .minorUnits
+        .toInt(),
+    'estimated_labour_hours': estimatedLabourHours
+        ?.copyWith(decimalDigits: 3)
+        .minorUnits
+        .toInt(),
+    'estimated_labour_cost': estimatedLabourCost
+        ?.copyWith(decimalDigits: 2)
+        .minorUnits
+        .toInt(),
     'margin': margin.copyWith(decimalDigits: 3).minorUnits.toInt(),
     'charge': _charge?.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'labour_entry_mode': labourEntryMode.toSqlString(),
@@ -296,10 +301,14 @@ class CheckListItem extends Entity<CheckListItem> {
     'units': units.name,
     'url': url,
     'supplier_id': supplierId,
-    'actual_material_unit_cost':
-        actualMaterialUnitCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
-    'actual_material_quantity':
-        actualMaterialQuantity?.copyWith(decimalDigits: 3).minorUnits.toInt(),
+    'actual_material_unit_cost': actualMaterialUnitCost
+        ?.copyWith(decimalDigits: 2)
+        .minorUnits
+        .toInt(),
+    'actual_material_quantity': actualMaterialQuantity
+        ?.copyWith(decimalDigits: 3)
+        .minorUnits
+        .toInt(),
     'actual_cost': actualCost?.copyWith(decimalDigits: 2).minorUnits.toInt(),
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),

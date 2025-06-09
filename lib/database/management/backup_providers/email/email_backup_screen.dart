@@ -72,10 +72,7 @@ class _BackupScreenState extends State<BackupScreen> {
                 try {
                   await EmailBackupProvider(
                     FlutterDatabaseFactory(),
-                  ).performBackup(
-                    version: 1,
-                    src: AssetScriptSource(),
-                  );
+                  ).performBackup(version: 1, src: AssetScriptSource());
                   if (context.mounted) {
                     HMBToast.info('Backup successful');
                   }

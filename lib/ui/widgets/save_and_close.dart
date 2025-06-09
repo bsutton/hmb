@@ -27,9 +27,15 @@ class SaveAndClose extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (showSaveOnly)
-          HMBButton(onPressed: () => unawaited(onSave(close: false)), label: 'Save'),
+          HMBButton(
+            onPressed: () => unawaited(onSave(close: false)),
+            label: 'Save',
+          ),
         const HMBSpacer(width: true),
-        HMBButton(label: 'Save & Close', onPressed: () => unawaited(onSave(close: true))),
+        HMBButton(
+          label: 'Save & Close',
+          onPressed: () => unawaited(onSave(close: true)),
+        ),
         const HMBSpacer(width: true),
         HMBButton(onPressed: onCancel, label: 'Cancel'),
       ],

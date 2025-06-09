@@ -16,10 +16,9 @@ class MessageTemplateListScreen extends StatelessWidget {
     dao: DaoMessageTemplate(),
     title: (entity) => HMBTextHeadline2(entity.title),
     // ignore: discarded_futures
-    fetchList: (filter)  => DaoMessageTemplate().getByFilter(filter),
-    onEdit:
-        (smsTemplate) =>
-            MessageTemplateEditScreen(messageTemplate: smsTemplate),
+    fetchList: (filter) => DaoMessageTemplate().getByFilter(filter),
+    onEdit: (smsTemplate) =>
+        MessageTemplateEditScreen(messageTemplate: smsTemplate),
 
     // smsTemplate?.type == SmsTemplateType.user
     //     ? SmsTemplateEditScreen(smsTemplate: smsTemplate)

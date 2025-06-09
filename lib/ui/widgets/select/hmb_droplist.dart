@@ -21,18 +21,17 @@ class HMBDroplist<T> extends FormField<T> {
     super.key,
   }) : super(
          autovalidateMode: AutovalidateMode.always,
-         builder:
-             (state) => _HMBDroplist<T>(
-               state: state,
-               selectedItemFuture: selectedItem,
-               items: items,
-               format: format,
-               onChanged: onChanged,
-               title: title,
-               backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
-               required: required,
-               onAdd: onAdd, // Pass the "Add" callback
-             ),
+         builder: (state) => _HMBDroplist<T>(
+           state: state,
+           selectedItemFuture: selectedItem,
+           items: items,
+           format: format,
+           onChanged: onChanged,
+           title: title,
+           backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
+           required: required,
+           onAdd: onAdd, // Pass the "Add" callback
+         ),
          validator: (value) {
            if (required && value == null) {
              return 'Please select an item';
@@ -116,18 +115,16 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
     onTap: () async {
       final selectedItem = await showDialog<T>(
         context: context,
-        builder:
-            (context) => HMBDroplistDialog<T>(
-              getItems: widget.items,
-              formatItem: widget.format,
-              title: widget.title,
-              selectedItem: _selectedItem,
-              allowClear: !widget.required,
-              onAdd:
-                  widget.onAdd != null
-                      ? _handleAdd
-                      : null, // Pass the "Add" handler
-            ),
+        builder: (context) => HMBDroplistDialog<T>(
+          getItems: widget.items,
+          formatItem: widget.format,
+          title: widget.title,
+          selectedItem: _selectedItem,
+          allowClear: !widget.required,
+          onAdd: widget.onAdd != null
+              ? _handleAdd
+              : null, // Pass the "Add" handler
+        ),
       );
 
       if (selectedItem != null || !widget.required) {
@@ -161,10 +158,9 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
                       : 'Select a ${widget.title}',
                   style: TextStyle(
                     fontSize: 16,
-                    color:
-                        widget.state.hasError
-                            ? Theme.of(context).colorScheme.error
-                            : HMBColors.textPrimary,
+                    color: widget.state.hasError
+                        ? Theme.of(context).colorScheme.error
+                        : HMBColors.textPrimary,
                   ),
                 ),
               const Icon(Icons.arrow_drop_down, color: HMBColors.dropboxArrow),

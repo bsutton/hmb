@@ -26,10 +26,9 @@ class GoogleBackupDashlset extends StatelessWidget {
     // ignore: discarded_futures
     future: _getLastBackup(),
     builder: (context, lastBackupDate) {
-      final text =
-          lastBackupDate == null
-              ? 'No backups yet'
-              : 'Last backup: ${formatDateTime(lastBackupDate)}';
+      final text = lastBackupDate == null
+          ? 'No backups yet'
+          : 'Last backup: ${formatDateTime(lastBackupDate)}';
       return Text(text, style: const TextStyle(fontSize: 16));
     },
   );
@@ -39,10 +38,9 @@ class GoogleBackupDashlset extends StatelessWidget {
     try {
       // google api's not supported on linux.
       if (Platform.isAndroid || Platform.isIOS) {
-        final backups =
-            await GoogleDriveBackupProvider(
-              FlutterDatabaseFactory(),
-            ).getBackups();
+        final backups = await GoogleDriveBackupProvider(
+          FlutterDatabaseFactory(),
+        ).getBackups();
         if (backups.isNotEmpty) {
           backups.sort((a, b) => b.when.compareTo(a.when));
           last = backups.first.when;

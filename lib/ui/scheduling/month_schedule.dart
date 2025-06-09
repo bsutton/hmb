@@ -96,65 +96,60 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      CalendarControllerProvider<JobActivityEx>(
-        controller: _monthController,
-        child: DeferredBuilder(
-          this,
-          builder: (context) {
-            /// Month View
-            late final MonthView<JobActivityEx> monthView;
-            // ignore: join_return_with_assignment
-            monthView = MonthView<JobActivityEx>(
-              showWeekends: showWeekends,
-              // key: ValueKey(widget.initialDate),
-              key: widget.monthKey,
-              initialMonth: currentDate.toDateTime(),
-              headerStyle: widget.headerStyle(),
-              headerStringBuilder: widget.monthDateStringBuilder,
-              // ignore: discarded_futures
-              onPageChange: (date, index) => _onePageChange(date),
-              cellBuilder:
-                  (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
-                      _cellBuilder(
-                        monthView,
-                        date,
-                        events,
-                        isToday,
-                        isInMonth,
-                        hideDaysNotInMonth,
-                      ),
-              weekDayBuilder:
-                  (day) => Center(
-                    child: Text(
-                      ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day],
-                      style: const TextStyle(
-                        color: Colors.white,
-                      ), // Weekday text color
-                    ),
-                  ),
-              onCellTap: (events, date) async {
-                /// [date] is always midnight so lets show a more reasonable
-                /// starting time for the event.
-                final openingTime = operatingHours.openingTime(
-                  date.toLocalDate(),
-                );
-                await widget.addActivity(
-                  context,
-                  date.withTime(openingTime),
-                  widget.defaultJob,
-                );
-                await _loadActivitiesForMonth();
-              },
-              onEventTap: (event, date) async {
-                await widget.onActivityTap(context, event);
-                await _loadActivitiesForMonth();
-              },
+  Widget build(
+    BuildContext context,
+  ) => CalendarControllerProvider<JobActivityEx>(
+    controller: _monthController,
+    child: DeferredBuilder(
+      this,
+      builder: (context) {
+        /// Month View
+        late final MonthView<JobActivityEx> monthView;
+        // ignore: join_return_with_assignment
+        monthView = MonthView<JobActivityEx>(
+          showWeekends: showWeekends,
+          // key: ValueKey(widget.initialDate),
+          key: widget.monthKey,
+          initialMonth: currentDate.toDateTime(),
+          headerStyle: widget.headerStyle(),
+          headerStringBuilder: widget.monthDateStringBuilder,
+          // ignore: discarded_futures
+          onPageChange: (date, index) => _onePageChange(date),
+          cellBuilder: (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
+              _cellBuilder(
+                monthView,
+                date,
+                events,
+                isToday,
+                isInMonth,
+                hideDaysNotInMonth,
+              ),
+          weekDayBuilder: (day) => Center(
+            child: Text(
+              ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day],
+              style: const TextStyle(color: Colors.white), // Weekday text color
+            ),
+          ),
+          onCellTap: (events, date) async {
+            /// [date] is always midnight so lets show a more reasonable
+            /// starting time for the event.
+            final openingTime = operatingHours.openingTime(date.toLocalDate());
+            await widget.addActivity(
+              context,
+              date.withTime(openingTime),
+              widget.defaultJob,
             );
-            return monthView;
+            await _loadActivitiesForMonth();
           },
-        ),
-      );
+          onEventTap: (event, date) async {
+            await widget.onActivityTap(context, event);
+            await _loadActivitiesForMonth();
+          },
+        );
+        return monthView;
+      },
+    ),
+  );
 
   Future<void> _onePageChange(DateTime date) async {
     final revisedDate = await widget.onPageChange(date.toLocalDate());
@@ -172,15 +167,15 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
     bool isInMonth,
     bool hideDaysNotInMonth,
   ) {
-    final backgroundColour =
-        isToday
-            ? SurfaceElevation.e4.color
-            : isInMonth
-            ? Colors.black
-            : Colors.grey[350]!;
+    final backgroundColour = isToday
+        ? SurfaceElevation.e4.color
+        : isInMonth
+        ? Colors.black
+        : Colors.grey[350]!;
 
-    final colour =
-        isToday ? Colors.yellow : (isInMonth ? Colors.white : Colors.black);
+    final colour = isToday
+        ? Colors.yellow
+        : (isInMonth ? Colors.white : Colors.black);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -211,11 +206,10 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
   }) {
     final widgets = <Widget>[
       GestureDetector(
-        onTap:
-            () => widget.schedulePageState.showDateOnView(
-              ScheduleView.week,
-              date.toLocalDate(),
-            ),
+        onTap: () => widget.schedulePageState.showDateOnView(
+          ScheduleView.week,
+          date.toLocalDate(),
+        ),
         child: Center(
           child: Text(
             '${date.day}',

@@ -51,19 +51,17 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
     else {
       return JuneBuilder(
         PhotoLoader.new,
-        builder:
-            (context) => FutureBuilderEx(
-              // ignore: discarded_futures
-              future: widget.controller.photos,
-              builder:
-                  (context, photoMetas) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildAddButton(widget.controller.parent, photoMetas),
-                      _buildPhotoCRUD(photoMetas),
-                    ],
-                  ),
-            ),
+        builder: (context) => FutureBuilderEx(
+          // ignore: discarded_futures
+          future: widget.controller.photos,
+          builder: (context, photoMetas) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildAddButton(widget.controller.parent, photoMetas),
+              _buildPhotoCRUD(photoMetas),
+            ],
+          ),
+        ),
       );
     }
   }
@@ -94,19 +92,18 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
   /// Build the photo CRUD
   Widget _buildPhotoCRUD(List<PhotoMeta>? photoMetas) => Column(
     mainAxisSize: MainAxisSize.min,
-    children:
-        photoMetas!
-            .map(
-              (photoMeta) => Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _showPhoto(photoMeta),
-                  _buildCommentField(photoMeta),
-                  _buildDeleteButton(photoMeta),
-                ],
-              ),
-            )
-            .toList(),
+    children: photoMetas!
+        .map(
+          (photoMeta) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _showPhoto(photoMeta),
+              _buildCommentField(photoMeta),
+              _buildDeleteButton(photoMeta),
+            ],
+          ),
+        )
+        .toList(),
   );
 
   /// Display the photo with a 'Icon in the corner
@@ -115,45 +112,44 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
   Widget _showPhoto(PhotoMeta photoMeta) => FutureBuilderEx(
     // ignore: discarded_futures
     future: photoMeta.resolve(),
-    builder:
-        (context, path) => Stack(
-          children: [
-            if (exists(path!))
-              Image.file(File(path))
-            else
-              Container(
-                width: double.infinity,
-                height: 200,
-                color: Colors.grey,
-                child: const Icon(
-                  Icons.broken_image,
-                  color: Colors.white,
-                  size: 80,
-                ),
-              ),
-            Positioned(
-              right: 0,
-              child: GestureDetector(
-                // Show full screen photo when tapped, only if the file exists
-                onTap: () async {
-                  if (exists(path) && mounted) {
-                    await FullScreenPhotoViewer.show(
-                      context: context,
-                      imagePath: path,
-                      title: photoMeta.title,
-                      comment: photoMeta.comment,
-                    );
-                  }
-                },
-                child: Container(
-                  color: Colors.black.withSafeOpacity(0.5),
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(Icons.fullscreen, color: Colors.white),
-                ),
-              ),
+    builder: (context, path) => Stack(
+      children: [
+        if (exists(path!))
+          Image.file(File(path))
+        else
+          Container(
+            width: double.infinity,
+            height: 200,
+            color: Colors.grey,
+            child: const Icon(
+              Icons.broken_image,
+              color: Colors.white,
+              size: 80,
             ),
-          ],
+          ),
+        Positioned(
+          right: 0,
+          child: GestureDetector(
+            // Show full screen photo when tapped, only if the file exists
+            onTap: () async {
+              if (exists(path) && mounted) {
+                await FullScreenPhotoViewer.show(
+                  context: context,
+                  imagePath: path,
+                  title: photoMeta.title,
+                  comment: photoMeta.comment,
+                );
+              }
+            },
+            child: Container(
+              color: Colors.black.withSafeOpacity(0.5),
+              padding: const EdgeInsets.all(8),
+              child: const Icon(Icons.fullscreen, color: Colors.white),
+            ),
+          ),
         ),
+      ],
+    ),
   );
 
   IconButton _buildDeleteButton(PhotoMeta photoMeta) => IconButton(
@@ -186,41 +182,40 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
     if (context.mounted) {
       return showDialog<void>(
         context: context,
-        builder:
-            (context) => AlertDialog(
-              title: const Text('Delete Photo'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Image.file(
-                    File(pathToPhoto),
-                    width: 100,
-                    height: 100,
-                  ), // Thumbnail of the photo
-                  if (Strings.isNotBlank(photoMeta.comment))
-                    Text(photoMeta.photo.comment),
-                  const SizedBox(height: 10),
-                  const Text('Are you sure you want to delete this photo?'),
-                ],
-              ),
-              actions: <Widget>[
-                HMBButton(
-                  label: 'Cancel',
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-                HMBButton(
-                  label: 'Delete',
-                  onPressed: () async {
-                    await widget.controller.deletePhoto(photoMeta);
-                    if (context.mounted) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-              ],
+        builder: (context) => AlertDialog(
+          title: const Text('Delete Photo'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Image.file(
+                File(pathToPhoto),
+                width: 100,
+                height: 100,
+              ), // Thumbnail of the photo
+              if (Strings.isNotBlank(photoMeta.comment))
+                Text(photoMeta.photo.comment),
+              const SizedBox(height: 10),
+              const Text('Are you sure you want to delete this photo?'),
+            ],
+          ),
+          actions: <Widget>[
+            HMBButton(
+              label: 'Cancel',
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
+            HMBButton(
+              label: 'Delete',
+              onPressed: () async {
+                await widget.controller.deletePhoto(photoMeta);
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        ),
       );
     }
   }

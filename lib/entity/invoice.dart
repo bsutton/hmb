@@ -55,10 +55,9 @@ class Invoice extends Entity<Invoice> {
     modifiedDate: DateTime.parse(map['modified_date'] as String),
     invoiceNum: map['invoice_num'] as String?,
     externalInvoiceId: map['external_invoice_id'] as String?,
-    dueDate:
-        map['due_date'] != null
-            ? const LocalDateConverter().fromJson(map['due_date'] as String)
-            : null,
+    dueDate: map['due_date'] != null
+        ? const LocalDateConverter().fromJson(map['due_date'] as String)
+        : null,
     sent: (map['sent'] as int) == 1,
     billingContactId: map['billing_contact_id'] as int?,
   );
@@ -132,11 +131,10 @@ class Invoice extends Entity<Invoice> {
       contact: xeroContact,
       issueDate: LocalDate.fromDateTime(invoice.createdDate),
       dueDate: invoice.dueDate,
-      lineItems:
-          invoiceLines
-              .where((line) => line.status == LineChargeableStatus.normal)
-              .map((line) => line.toXeroLineItem())
-              .toList(),
+      lineItems: invoiceLines
+          .where((line) => line.status == LineChargeableStatus.normal)
+          .map((line) => line.toXeroLineItem())
+          .toList(),
       lineAmountTypes: 'Inclusive',
     ); // All amounts are inclusive of tax.
     return xeroInvoice;

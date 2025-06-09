@@ -72,9 +72,8 @@ class _TimeEntryListScreenState extends DeferredState<TimeEntryListScreen> {
                   return FutureBuilderEx<Task?>(
                     // ignore: discarded_futures
                     future: DaoTask().getById(timeEntry.taskId),
-                    waitingBuilder:
-                        (context) =>
-                            const ListTile(title: Text('Loading task...')),
+                    waitingBuilder: (context) =>
+                        const ListTile(title: Text('Loading task...')),
                     builder: (context, task) {
                       if (task == null) {
                         return const ListTile(title: Text('Task not found'));
@@ -126,10 +125,9 @@ class TimeEntryTile extends StatelessWidget {
           Text('Billed: ${timeEntry.billed ? "Yes" : "No"}'),
         ],
       ),
-      trailing:
-          timeEntry.invoiceLineId != null
-              ? const Icon(Icons.check_circle, color: Colors.green)
-              : const Icon(Icons.hourglass_empty, color: Colors.grey),
+      trailing: timeEntry.invoiceLineId != null
+          ? const Icon(Icons.check_circle, color: Colors.green)
+          : const Icon(Icons.hourglass_empty, color: Colors.grey),
     ),
   );
 }

@@ -123,42 +123,41 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       await _insertTask(task!, transaction);
     },
     entityState: this,
-    editor:
-        (task) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HMBTextField(
-              controller: _nameController,
-              focusNode: _summaryFocusNode,
-              labelText: 'Summary',
-              required: true,
-            ),
-            _chooseTaskStatus(task),
-            HMBTextArea(
-              controller: _descriptionController,
-              focusNode: _descriptionFocusNode,
-              labelText: 'Description',
-            ),
-            const SizedBox(height: 12),
-            HMBTextArea(
-              controller: _assumptionController,
-              focusNode: _assumptionFocusNode,
-              labelText: 'Assumptions',
-            ).help(
-              'Assumptions',
-              'Detail the assumptions your pricing is based on. Assumptions are shown on the Quote. ',
-            ),
-            // _chooseBillingType(),
-            _buildItemList(task),
-            HMBCrudTimeEntry(parentTitle: 'Task', parent: Parent(task)),
-            PhotoCrud<Task>(
-              parentName: 'Task',
-              parentType: ParentType.task,
-              controller: _photoController,
-            ),
-          ],
+    editor: (task) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        HMBTextField(
+          controller: _nameController,
+          focusNode: _summaryFocusNode,
+          labelText: 'Summary',
+          required: true,
         ),
+        _chooseTaskStatus(task),
+        HMBTextArea(
+          controller: _descriptionController,
+          focusNode: _descriptionFocusNode,
+          labelText: 'Description',
+        ),
+        const SizedBox(height: 12),
+        HMBTextArea(
+          controller: _assumptionController,
+          focusNode: _assumptionFocusNode,
+          labelText: 'Assumptions',
+        ).help(
+          'Assumptions',
+          'Detail the assumptions your pricing is based on. Assumptions are shown on the Quote. ',
+        ),
+        // _chooseBillingType(),
+        _buildItemList(task),
+        HMBCrudTimeEntry(parentTitle: 'Task', parent: Parent(task)),
+        PhotoCrud<Task>(
+          parentName: 'Task',
+          parentType: ParentType.task,
+          controller: _photoController,
+        ),
+      ],
+    ),
   );
 
   Widget _buildItemList(Task? task) => Flexible(
@@ -214,9 +213,9 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   void refresh() {
     setState(() {});
   }
-    @override
-  Future<void> postSave(Transaction transaction, Operation operation) async {}
 
+  @override
+  Future<void> postSave(Transaction transaction, Operation operation) async {}
 }
 
 class SelectedTaskStatus extends JuneState {

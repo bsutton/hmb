@@ -106,10 +106,9 @@ class GoogleDriveApi {
     if (folders.files != null && folders.files!.isNotEmpty) {
       return folders.files!.first.id!;
     } else {
-      final folder =
-          drive.File()
-            ..name = folderName
-            ..mimeType = 'application/vnd.google-apps.folder';
+      final folder = drive.File()
+        ..name = folderName
+        ..mimeType = 'application/vnd.google-apps.folder';
       if (parentFolderId != null) {
         folder.parents = [parentFolderId];
       }

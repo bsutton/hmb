@@ -19,31 +19,30 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'lib/version_properties.dart';
 
 void main(List<String> args) async {
-  final parser =
-      ArgParser()
-        ..addFlag(
-          'assets',
-          abbr: 'a',
-          help:
-              '''Update the list of assets - important to run for db upgrade scripts''',
-        )
-        ..addFlag(
-          'build',
-          abbr: 'b',
-          help: 'build the apk suitable for installing the app via USB',
-        )
-        ..addFlag(
-          'install',
-          abbr: 'i',
-          help: 'install the apk to a device connected via USB',
-        )
-        ..addFlag(
-          'release',
-          abbr: 'r',
-          help: '''
+  final parser = ArgParser()
+    ..addFlag(
+      'assets',
+      abbr: 'a',
+      help:
+          '''Update the list of assets - important to run for db upgrade scripts''',
+    )
+    ..addFlag(
+      'build',
+      abbr: 'b',
+      help: 'build the apk suitable for installing the app via USB',
+    )
+    ..addFlag(
+      'install',
+      abbr: 'i',
+      help: 'install the apk to a device connected via USB',
+    )
+    ..addFlag(
+      'release',
+      abbr: 'r',
+      help: '''
 Create a signed release appbundle suitable to upload to Google Play store.''',
-        )
-        ..addFlag('help', abbr: 'h', help: 'Shows the help message');
+    )
+    ..addFlag('help', abbr: 'h', help: 'Shows the help message');
 
   final results = parser.parse(args);
 
@@ -206,15 +205,14 @@ Future<void> createCleanTestDatabase() async {
     testDbPath,
     options: OpenDatabaseOptions(
       version: await getLatestVersion(src),
-      onUpgrade:
-          (db, oldVersion, newVersion) => upgradeDb(
-            db: db,
-            oldVersion: oldVersion,
-            newVersion: newVersion,
-            backup: true,
-            src: src,
-            backupProvider: DevBackupProvider(databaseFactory),
-          ),
+      onUpgrade: (db, oldVersion, newVersion) => upgradeDb(
+        db: db,
+        oldVersion: oldVersion,
+        newVersion: newVersion,
+        backup: true,
+        src: src,
+        backupProvider: DevBackupProvider(databaseFactory),
+      ),
     ),
   );
 

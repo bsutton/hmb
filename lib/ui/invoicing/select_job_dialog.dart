@@ -65,7 +65,7 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
   }
 
   @override
-  Widget build(BuildContext context)  => Dialog(
+  Widget build(BuildContext context) => Dialog(
     insetPadding: EdgeInsets.zero,
     backgroundColor: Theme.of(context).canvasColor,
     child: Scaffold(
@@ -181,10 +181,9 @@ class CustomerAndJob {
     required bool showAllJobs,
     required bool showJobsWithNoBillableItems,
   }) async {
-    final jobs =
-        showAllJobs
-            ? await DaoJob().getAll()
-            : await DaoJob().getActiveJobs(null);
+    final jobs = showAllJobs
+        ? await DaoJob().getAll()
+        : await DaoJob().getActiveJobs(null);
 
     final jobList = <CustomerAndJob>[];
 

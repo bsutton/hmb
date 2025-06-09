@@ -38,36 +38,32 @@ class _JobListScreenState extends State<JobListScreen> {
                   June.getState(FilterState.new).toggle();
                 });
               },
-              label:
-                  June.getState(FilterState.new)._showOnHoldAndFinalised
-                      ? 'Show PreStart & Progressing'
-                      : 'Show OnHold & Finalised',
+              label: June.getState(FilterState.new)._showOnHoldAndFinalised
+                  ? 'Show PreStart & Progressing'
+                  : 'Show OnHold & Finalised',
             ),
           ],
         ),
         Flexible(
           child: JuneBuilder(
             FilterState.new,
-            builder:
-                (context) => EntityListScreen<Job>(
-                  key: ValueKey(
-                    June.getState(FilterState.new)._showOnHoldAndFinalised,
-                  ),
-                  dao: DaoJob(),
-                  pageTitle: JobListScreen.pageTitle,
-                  onEdit: (job) => JobEditScreen(job: job),
-                  fetchList: _fetchJobs,
-                  title: (job) => HMBCardTitle(job.summary),
-                  cardHeight: 765,
-                  background:
-                      (job) async =>
-                          (await DaoJobStatus().getById(
-                            job.jobStatusId,
-                          ))?.getColour() ??
-                          Colors.green,
-                  details:
-                      (job) => JobCard(job: job, key: ValueKey(job.hashCode)),
-                ),
+            builder: (context) => EntityListScreen<Job>(
+              key: ValueKey(
+                June.getState(FilterState.new)._showOnHoldAndFinalised,
+              ),
+              dao: DaoJob(),
+              pageTitle: JobListScreen.pageTitle,
+              onEdit: (job) => JobEditScreen(job: job),
+              fetchList: _fetchJobs,
+              title: (job) => HMBCardTitle(job.summary),
+              cardHeight: 765,
+              background: (job) async =>
+                  (await DaoJobStatus().getById(
+                    job.jobStatusId,
+                  ))?.getColour() ??
+                  Colors.green,
+              details: (job) => JobCard(job: job, key: ValueKey(job.hashCode)),
+            ),
           ),
         ),
       ],

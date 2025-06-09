@@ -44,22 +44,21 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
     appBar: AppBar(title: const Text('Quote Details')),
     body: DeferredBuilder(
       this,
-      builder:
-          (context) => SingleChildScrollView(
-            child: Surface(
-              margin: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const Divider(),
-                  _buildActions(),
-                  const Divider(),
-                  _buildQuoteLines(),
-                ],
-              ),
-            ),
+      builder: (context) => SingleChildScrollView(
+        child: Surface(
+          margin: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const Divider(),
+              _buildActions(),
+              const Divider(),
+              _buildQuoteLines(),
+            ],
           ),
+        ),
+      ),
     ),
   );
 
@@ -121,81 +120,72 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children:
-            jobQuote.groups.map((groupWrap) {
-              final group = groupWrap.group;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        children: jobQuote.groups.map((groupWrap) {
+          final group = groupWrap.group;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // —— Group header with Reject button ——
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // —— Group header with Reject button ——
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Task: ${group.name}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (group.taskId != null &&
-                            group.lineApprovalStatus !=
-                                LineApprovalStatus.rejected)
-                          HMBButton(
-                            label: 'Reject',
-                            onPressed:
-                                () async =>
-                                    _rejectQuoteGroup(group, groupWrap.lines),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    // —— Lines list ——
-                    Card(
-                      child: Column(
-                        children:
-                            groupWrap.lines
-                                .map(
-                                  (line) => ListTile(
-                                    title: Text(line.description),
-                                    subtitle: Text(
-                                      'Qty: ${line.quantity} × ${line.unitCharge} = '
-                                      '${line.lineTotal}',
-                                    ),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.edit),
-                                      onPressed: () async {
-                                        final editedLine =
-                                            await showDialog<QuoteLine>(
-                                              context: context,
-                                              builder:
-                                                  (_) => EditQuoteLineDialog(
-                                                    line: line,
-                                                  ),
-                                            );
-                                        if (editedLine != null) {
-                                          await DaoQuoteLine().update(
-                                            editedLine,
-                                          );
-                                          await DaoQuote().recalculateTotal(
-                                            editedLine.quoteId,
-                                          );
-                                          await _refresh();
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                    Text(
+                      'Task: ${group.name}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
+                    if (group.taskId != null &&
+                        group.lineApprovalStatus != LineApprovalStatus.rejected)
+                      HMBButton(
+                        label: 'Reject',
+                        onPressed: () async =>
+                            _rejectQuoteGroup(group, groupWrap.lines),
+                      ),
                   ],
                 ),
-              );
-            }).toList(),
+                const SizedBox(height: 8),
+
+                // —— Lines list ——
+                Card(
+                  child: Column(
+                    children: groupWrap.lines
+                        .map(
+                          (line) => ListTile(
+                            title: Text(line.description),
+                            subtitle: Text(
+                              'Qty: ${line.quantity} × ${line.unitCharge} = '
+                              '${line.lineTotal}',
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () async {
+                                final editedLine = await showDialog<QuoteLine>(
+                                  context: context,
+                                  builder: (_) =>
+                                      EditQuoteLineDialog(line: line),
+                                );
+                                if (editedLine != null) {
+                                  await DaoQuoteLine().update(editedLine);
+                                  await DaoQuote().recalculateTotal(
+                                    editedLine.quoteId,
+                                  );
+                                  await _refresh();
+                                }
+                              },
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       );
     },
   );
@@ -213,58 +203,57 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
         var tempDisplayItems = displayItems;
 
         return StatefulBuilder(
-          builder:
-              (context, setState) => AlertDialog(
-                title: const Text('Select Quote Options'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CheckboxListTile(
-                      title: const Text('Display Costs'),
-                      value: tempDisplayCosts,
-                      onChanged: (value) {
-                        setState(() {
-                          tempDisplayCosts = value ?? true;
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Display Group Headers'),
-                      value: tempDisplayGroupHeaders,
-                      onChanged: (value) {
-                        setState(() {
-                          tempDisplayGroupHeaders = value ?? true;
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Display Items'),
-                      value: tempDisplayItems,
-                      onChanged: (value) {
-                        setState(() {
-                          tempDisplayItems = value ?? true;
-                        });
-                      },
-                    ),
-                  ],
+          builder: (context, setState) => AlertDialog(
+            title: const Text('Select Quote Options'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CheckboxListTile(
+                  title: const Text('Display Costs'),
+                  value: tempDisplayCosts,
+                  onChanged: (value) {
+                    setState(() {
+                      tempDisplayCosts = value ?? true;
+                    });
+                  },
                 ),
-                actions: [
-                  HMBButton(
-                    label: 'Cancel',
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  HMBButton(
-                    label: 'OK',
-                    onPressed: () {
-                      Navigator.of(context).pop({
-                        'displayCosts': tempDisplayCosts,
-                        'displayGroupHeaders': tempDisplayGroupHeaders,
-                        'displayItems': tempDisplayItems,
-                      });
-                    },
-                  ),
-                ],
+                CheckboxListTile(
+                  title: const Text('Display Group Headers'),
+                  value: tempDisplayGroupHeaders,
+                  onChanged: (value) {
+                    setState(() {
+                      tempDisplayGroupHeaders = value ?? true;
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  title: const Text('Display Items'),
+                  value: tempDisplayItems,
+                  onChanged: (value) {
+                    setState(() {
+                      tempDisplayItems = value ?? true;
+                    });
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              HMBButton(
+                label: 'Cancel',
+                onPressed: () => Navigator.of(context).pop(),
               ),
+              HMBButton(
+                label: 'OK',
+                onPressed: () {
+                  Navigator.of(context).pop({
+                    'displayCosts': tempDisplayCosts,
+                    'displayGroupHeaders': tempDisplayGroupHeaders,
+                    'displayItems': tempDisplayItems,
+                  });
+                },
+              ),
+            ],
+          ),
         );
       },
     );
@@ -288,8 +277,9 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
     final job = (await DaoJob().getById(_quote.jobId))!;
     final billingContact = await DaoContact().getBillingContactByJob(job);
     final contacts = await DaoContact().getByJob(_quote.jobId);
-    final emailRecipients =
-        contacts.map((contact) => contact.emailAddress).toList();
+    final emailRecipients = contacts
+        .map((contact) => contact.emailAddress)
+        .toList();
 
     final preferredRecipient =
         billingContact?.emailAddress ??
@@ -307,22 +297,21 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
 
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder:
-            (context) => PdfPreviewScreen(
-              title: 'Quote #${_quote.id} ${job.summary}',
-              filePath: filePath.path,
-              emailSubject: '${system.businessName ?? 'Your'} Quote',
-              emailBody: 'Please find the attached quote',
-              preferredRecipient: preferredRecipient,
-              emailRecipients: emailRecipients,
-              onSent: () async {
-                if (_quote.state != QuoteState.approved) {
-                  await DaoQuote().markQuoteSent(_quote.id);
-                  await _refresh();
-                }
-              },
-              canEmail: () async => EmailBlocked(blocked: false, reason: ''),
-            ),
+        builder: (context) => PdfPreviewScreen(
+          title: 'Quote #${_quote.id} ${job.summary}',
+          filePath: filePath.path,
+          emailSubject: '${system.businessName ?? 'Your'} Quote',
+          emailBody: 'Please find the attached quote',
+          preferredRecipient: preferredRecipient,
+          emailRecipients: emailRecipients,
+          onSent: () async {
+            if (_quote.state != QuoteState.approved) {
+              await DaoQuote().markQuoteSent(_quote.id);
+              await _refresh();
+            }
+          },
+          canEmail: () async => EmailBlocked(blocked: false, reason: ''),
+        ),
       ),
     );
   }
@@ -368,24 +357,22 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
         return AlertDialog(
           title: const Text('Reject Quote Group'),
           content: StatefulBuilder(
-            builder:
-                (context, setState) => Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Do you want to reject this group of items?'),
-                    const SizedBox(height: 12),
-                    CheckboxListTile(
-                      title: const Text(
-                        'Also mark the associated Task as Cancelled',
-                      ),
-                      value: alsoRejectTask,
-                      onChanged:
-                          (v) => setState(() {
-                            alsoRejectTask = v ?? false;
-                          }),
-                    ),
-                  ],
+            builder: (context, setState) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Do you want to reject this group of items?'),
+                const SizedBox(height: 12),
+                CheckboxListTile(
+                  title: const Text(
+                    'Also mark the associated Task as Cancelled',
+                  ),
+                  value: alsoRejectTask,
+                  onChanged: (v) => setState(() {
+                    alsoRejectTask = v ?? false;
+                  }),
                 ),
+              ],
+            ),
           ),
           actions: [
             HMBButton(

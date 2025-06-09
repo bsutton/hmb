@@ -27,11 +27,15 @@ class JoinAdaptorCustomerSite implements DaoJoinAdaptor<Site, Customer> {
   }
 
   @override
-  Future<List<Site>> getByParent(Customer? customer)  =>
+  Future<List<Site>> getByParent(Customer? customer) =>
       DaoSite().getByCustomer(customer?.id);
 
   @override
-  Future<void> insertForParent(Site site, Customer customer, Transaction transaction) async {
+  Future<void> insertForParent(
+    Site site,
+    Customer customer,
+    Transaction transaction,
+  ) async {
     await DaoSite().insertForCustomer(site, customer, transaction);
   }
 

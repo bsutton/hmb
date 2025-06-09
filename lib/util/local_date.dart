@@ -79,14 +79,14 @@ class LocalDate {
   bool operator ==(Object other) => other is LocalDate && isEqual(other);
 
   LocalDate addDays(int days) =>
-  // We use this method to avoid problems with DST transitions
-  // where a day is longer or shorer than 24 hrs
-  LocalDate.fromDateTime(DateTime(date.year, date.month, date.day + days));
+      // We use this method to avoid problems with DST transitions
+      // where a day is longer or shorer than 24 hrs
+      LocalDate.fromDateTime(DateTime(date.year, date.month, date.day + days));
 
   LocalDate subtractDays(int days) =>
-  // We use this method to avoid problems with DST transitions
-  // where a day is longer or shorer than 24 hrs
-  LocalDate.fromDateTime(DateTime(date.year, date.month, date.day - days));
+      // We use this method to avoid problems with DST transitions
+      // where a day is longer or shorer than 24 hrs
+      LocalDate.fromDateTime(DateTime(date.year, date.month, date.day - days));
 
   LocalDate add(Duration duration) =>
       LocalDate.fromDateTime(date.add(duration));
@@ -107,21 +107,18 @@ class LocalDate {
 
   Duration difference(LocalDate other) => date.difference(other.toDateTime());
 
-LocalDate addMonths(int months) {
-  // 1) total months since year-0:
-  final total = (date.year * 12 + (date.month - 1)) + months;
-  // 2) new year & month:
-  final newYear = total ~/ 12;
-  final newMonth = total % 12 + 1;
-  // 3) find last day of that month:
-  final lastDayOfNewMonth = DateTime(newYear, newMonth + 1, 0).day;
-  // 4) clamp the day:
-  final newDay = date.day <= lastDayOfNewMonth
-      ? date.day
-      : lastDayOfNewMonth;
-  return LocalDate(newYear, newMonth, newDay);
-}
-
+  LocalDate addMonths(int months) {
+    // 1) total months since year-0:
+    final total = (date.year * 12 + (date.month - 1)) + months;
+    // 2) new year & month:
+    final newYear = total ~/ 12;
+    final newMonth = total % 12 + 1;
+    // 3) find last day of that month:
+    final lastDayOfNewMonth = DateTime(newYear, newMonth + 1, 0).day;
+    // 4) clamp the day:
+    final newDay = date.day <= lastDayOfNewMonth ? date.day : lastDayOfNewMonth;
+    return LocalDate(newYear, newMonth, newDay);
+  }
 
   @override
   String toString() => formatLocalDate(this);
@@ -131,10 +128,9 @@ class LocalDateConverter implements JsonConverter<LocalDate, String> {
   const LocalDateConverter();
 
   @override
-  LocalDate fromJson(String? json) =>
-      Strings.isBlank(json)
-          ? LocalDate.today()
-          : LocalDate.fromDateTime(DateTime.parse(json!));
+  LocalDate fromJson(String? json) => Strings.isBlank(json)
+      ? LocalDate.today()
+      : LocalDate.fromDateTime(DateTime.parse(json!));
 
   @override
   String toJson(LocalDate? date) =>

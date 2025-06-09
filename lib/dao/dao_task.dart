@@ -62,8 +62,9 @@ class DaoTask extends Dao<Task> {
     for (final photo in photos) {
       await DaoPhoto().delete(photo.id);
 
-      final absolutePathToPhoto =
-          await PhotoMeta.fromPhoto(photo: photo).resolve();
+      final absolutePathToPhoto = await PhotoMeta.fromPhoto(
+        photo: photo,
+      ).resolve();
 
       // Delete the photo file from the disk
       if (core.exists(absolutePathToPhoto)) {
@@ -137,9 +138,10 @@ WHERE ti.id = ?
         if (item.itemTypeId == TaskItemTypeEnum.materialsBuy.id) {
           if ((includeBilled && item.billed) || !item.billed) {
             // Materials and tools to be purchased
-            totalMaterialCharges += (item.actualMaterialUnitCost ??
-                    MoneyEx.zero)
-                .multiplyByFixed(item.actualMaterialQuantity ?? Fixed.one);
+            totalMaterialCharges +=
+                (item.actualMaterialUnitCost ?? MoneyEx.zero).multiplyByFixed(
+                  item.actualMaterialQuantity ?? Fixed.one,
+                );
           }
         }
       }
@@ -312,8 +314,9 @@ WHERE ti.id = ?
   Future<void> markRejected(int taskId) async {
     final task = await getById(taskId);
 
-    task?.taskStatusId =
-        (await DaoTaskStatus().getByEnum(TaskStatusEnum.cancelled)).id;
+    task?.taskStatusId = (await DaoTaskStatus().getByEnum(
+      TaskStatusEnum.cancelled,
+    )).id;
   }
 }
 
@@ -332,10 +335,9 @@ class TaskAccruedValue {
     required this.earnedMaterialCharges,
     required this.earnedLabourCharges,
     required Money hourlyRate,
-  }) : earnedLabourHours =
-           hourlyRate == MoneyEx.zero
-               ? Fixed.zero
-               : earnedLabourCharges.divideByFixed(hourlyRate.amount).amount;
+  }) : earnedLabourHours = hourlyRate == MoneyEx.zero
+           ? Fixed.zero
+           : earnedLabourCharges.divideByFixed(hourlyRate.amount).amount;
 
   final TaskEstimatedValue taskEstimatedValue;
 

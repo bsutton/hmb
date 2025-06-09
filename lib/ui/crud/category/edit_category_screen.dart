@@ -45,21 +45,20 @@ class _CategoryEditScreenState extends State<CategoryEditScreen>
     entityName: 'Category',
     dao: DaoCategory(),
     entityState: this,
-    editor:
-        (category, {required isNew}) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            HMBTextField(
-              controller: _nameController,
-              labelText: 'Name',
-              required: true,
-            ),
-            HMBTextArea(
-              controller: _descriptionController,
-              labelText: 'Description',
-            ),
-          ],
+    editor: (category, {required isNew}) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HMBTextField(
+          controller: _nameController,
+          labelText: 'Name',
+          required: true,
         ),
+        HMBTextArea(
+          controller: _descriptionController,
+          labelText: 'Description',
+        ),
+      ],
+    ),
   );
 
   @override

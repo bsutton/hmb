@@ -52,21 +52,20 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
     body: FutureBuilderEx(
       // ignore: discarded_futures
       future: _signin(context),
-      waitingBuilder:
-          (context) => const Center(child: CircularProgressIndicator()),
-      builder:
-          (context, auth) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const SizedBox(height: 20),
-                HMBButton(
-                  label: 'Upload File to Google Drive',
-                  onPressed: () => unawaited(_uploadFile(context)),
-                ),
-              ],
+      waitingBuilder: (context) =>
+          const Center(child: CircularProgressIndicator()),
+      builder: (context, auth) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const SizedBox(height: 20),
+            HMBButton(
+              label: 'Upload File to Google Drive',
+              onPressed: () => unawaited(_uploadFile(context)),
             ),
-          ),
+          ],
+        ),
+      ),
     ),
   );
 

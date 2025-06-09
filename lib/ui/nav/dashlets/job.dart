@@ -13,12 +13,10 @@ class JobsDashlet extends StatelessWidget {
   Widget build(BuildContext context) => DashletCard<int>(
     label: 'Jobs',
     icon: Icons.work,
-    dashletValue:
-        () async {
-          final jobs = await DaoJob()
-            .getActiveJobs(null);
-            return DashletValue(jobs.length);
-        },
+    dashletValue: () async {
+      final jobs = await DaoJob().getActiveJobs(null);
+      return DashletValue(jobs.length);
+    },
     route: '/jobs',
   );
 }

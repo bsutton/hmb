@@ -65,13 +65,9 @@ class JobActivityDialog extends StatefulWidget {
   }) async {
     var result = await showDialog<JobActivityAddAction>(
       context: context,
-      builder:
-          (context) => Material(
-            child: JobActivityDialog.add(
-              when: when,
-              preSelectedJobId: defaultJob,
-            ),
-          ),
+      builder: (context) => Material(
+        child: JobActivityDialog.add(when: when, preSelectedJobId: defaultJob),
+      ),
     );
     return result ??= JobActivityAddAction(AddAction.cancel, null);
   }
@@ -82,8 +78,8 @@ class JobActivityDialog extends StatefulWidget {
   ) async {
     var result = await showDialog<JobActivityUpdateAction>(
       context: context,
-      builder:
-          (context) => Material(child: JobActivityDialog.edit(event: event)),
+      builder: (context) =>
+          Material(child: JobActivityDialog.edit(event: event)),
     );
     return result ??= JobActivityUpdateAction(EditAction.cancel, null);
   }
@@ -159,10 +155,9 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
                 // ignore: discarded_futures
                 items: (filter) => DaoJob().getActiveJobs(filter),
                 format: (job) => job.summary,
-                onChanged:
-                    (job) => setState(() {
-                      _selectedJob = job;
-                    }),
+                onChanged: (job) => setState(() {
+                  _selectedJob = job;
+                }),
                 title: 'Select Job',
               ),
               const HMBSpacer(height: true),
@@ -209,30 +204,29 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
       DropdownButtonFormField<JobActivityStatus>(
         value: _status,
         decoration: const InputDecoration(labelText: 'Status'),
-        items:
-            JobActivityStatus.values
-                .map(
-                  (status) => DropdownMenuItem(
-                    value: status,
-                    child: Row(
-                      children: [
-                        // Colored circle
-                        Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: status.color,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8), // Spacing
-                        // Text
-                        Text(Strings.toProperCase(status.name)),
-                      ],
+        items: JobActivityStatus.values
+            .map(
+              (status) => DropdownMenuItem(
+                value: status,
+                child: Row(
+                  children: [
+                    // Colored circle
+                    Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: status.color,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                )
-                .toList(),
+                    const SizedBox(width: 8), // Spacing
+                    // Text
+                    Text(Strings.toProperCase(status.name)),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
         onChanged: (value) => setState(() => _status = value!),
       );
 
@@ -257,12 +251,11 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
       Row(
         children: [
           HMBButtonSecondary(
-            onPressed:
-                () => Navigator.of(context).pop(
-                  widget.isEditing
-                      ? JobActivityUpdateAction(EditAction.cancel, null)
-                      : JobActivityAddAction(AddAction.cancel, null),
-                ),
+            onPressed: () => Navigator.of(context).pop(
+              widget.isEditing
+                  ? JobActivityUpdateAction(EditAction.cancel, null)
+                  : JobActivityAddAction(AddAction.cancel, null),
+            ),
             label: 'Cancel',
           ),
           const HMBSpacer(width: true),
@@ -371,11 +364,10 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     /// date, if the user chooses 12am (midnight) as the end date
     /// we roll it back 1 minute so it falls on the same day.
     if (_endTime == const LocalTime(hour: 24, minute: 00)) {
-      _endTime =
-          _endTime
-              .atDate(_eventDate)
-              .subtract(const Duration(minutes: 1))
-              .toLocalTime();
+      _endTime = _endTime
+          .atDate(_eventDate)
+          .subtract(const Duration(minutes: 1))
+          .toLocalTime();
     }
 
     // Check for overlapping events
@@ -387,25 +379,24 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
 
       final shouldOverride = await showDialog<bool>(
         context: context,
-        builder:
-            (context) => AlertDialog(
-              title: const Text('Event Overlap'),
-              content: Text(
-                'This event overlaps with another event: ${overlappingEvent.job.summary} '
-                '(${formatDateTime(overlappingEvent.jobActivity.start)} - ${formatDateTime(overlappingEvent.jobActivity.end)}). '
-                'Do you want to continue?',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Continue'),
-                ),
-              ],
+        builder: (context) => AlertDialog(
+          title: const Text('Event Overlap'),
+          content: Text(
+            'This event overlaps with another event: ${overlappingEvent.job.summary} '
+            '(${formatDateTime(overlappingEvent.jobActivity.start)} - ${formatDateTime(overlappingEvent.jobActivity.end)}). '
+            'Do you want to continue?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
             ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
       );
 
       if (!(shouldOverride ?? false)) {
@@ -509,44 +500,42 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
 
     await showDialog<void>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Select Contact Method'),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: contacts.length,
-                itemBuilder: (context, index) {
-                  final contact = contacts[index];
-                  return ListTile(
-                    leading: Icon(
-                      contact.method == ContactMethod.email
-                          ? Icons.email
-                          : Icons.message,
-                      color: contact.isPrimary ? Colors.blue : null,
-                    ),
-                    title: Text(
-                      contact.detail,
-                      style: TextStyle(
-                        fontWeight:
-                            contact.isPrimary
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                      ),
-                    ),
-                    subtitle: Text(
-                      '${contact.contact.firstName} ${contact.contact.surname}',
-                    ),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      _sendNotice(contact);
-                    },
-                  );
+      builder: (context) => AlertDialog(
+        title: const Text('Select Contact Method'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: contacts.length,
+            itemBuilder: (context, index) {
+              final contact = contacts[index];
+              return ListTile(
+                leading: Icon(
+                  contact.method == ContactMethod.email
+                      ? Icons.email
+                      : Icons.message,
+                  color: contact.isPrimary ? Colors.blue : null,
+                ),
+                title: Text(
+                  contact.detail,
+                  style: TextStyle(
+                    fontWeight: contact.isPrimary
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+                subtitle: Text(
+                  '${contact.contact.firstName} ${contact.contact.surname}',
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _sendNotice(contact);
                 },
-              ),
-            ),
+              );
+            },
           ),
+        ),
+      ),
     );
   }
 

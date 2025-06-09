@@ -76,19 +76,17 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
   @override
   Widget build(BuildContext ctx) => DeferredBuilder(
     this,
-    builder:
-        (_) => NestedEntityEditScreen<SupplierAssignment, Job>(
-          entityName: 'Assignment',
-          dao: DaoSupplierAssignment(),
-          onInsert:
-              (supplierAssignment, transaction) async => DaoSupplierAssignment()
-                  .insert(supplierAssignment!, transaction),
-          entityState: this,
-          editor: (supplierAssignment) => _buildEditor(),
-          
-          // crossValidator:
-          //     () async => _selectedSupplier != null && _selectedContact != null,
-        ),
+    builder: (_) => NestedEntityEditScreen<SupplierAssignment, Job>(
+      entityName: 'Assignment',
+      dao: DaoSupplierAssignment(),
+      onInsert: (supplierAssignment, transaction) async =>
+          DaoSupplierAssignment().insert(supplierAssignment!, transaction),
+      entityState: this,
+      editor: (supplierAssignment) => _buildEditor(),
+
+      // crossValidator:
+      //     () async => _selectedSupplier != null && _selectedContact != null,
+    ),
   );
 
   Widget _buildEditor() => SingleChildScrollView(
@@ -98,20 +96,18 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
         // Supplier selector
         FutureBuilderEx<List<Supplier>>(
           future: DaoSupplier().getAll(orderByClause: 'name COLLATE NOCASE'),
-          builder:
-              (c, suppliers) => HMBDroplist<Supplier>(
-                selectedItem:
-                    () async => DaoSupplier().getById(_selectedSupplier),
-                title: 'Supplier',
-                format: (supplier) => supplier.name,
-                items: (filter) async => suppliers!,
-                onChanged: (supplier) {
-                  _selectedSupplier = supplier?.id;
-                  // force the contact drop list to show, now
-                  // that we have a supplier.
-                  setState(() {});
-                },
-              ),
+          builder: (c, suppliers) => HMBDroplist<Supplier>(
+            selectedItem: () async => DaoSupplier().getById(_selectedSupplier),
+            title: 'Supplier',
+            format: (supplier) => supplier.name,
+            items: (filter) async => suppliers!,
+            onChanged: (supplier) {
+              _selectedSupplier = supplier?.id;
+              // force the contact drop list to show, now
+              // that we have a supplier.
+              setState(() {});
+            },
+          ),
         ),
 
         const SizedBox(height: 16),
@@ -120,15 +116,13 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
         if (_selectedSupplier != null) ...[
           FutureBuilderEx<List<Contact>>(
             future: DaoContactSupplier().getBySupplier(_selectedSupplier!),
-            builder:
-                (context, contacts) => HMBDroplist<Contact>(
-                  selectedItem:
-                      () async => DaoContact().getById(_selectedContact),
-                  title: 'Supplier Contact',
-                  format: (contacts) => contacts.fullname,
-                  items: (filter) async => contacts!,
-                  onChanged: (contact) => _selectedContact = contact?.id,
-                ),
+            builder: (context, contacts) => HMBDroplist<Contact>(
+              selectedItem: () async => DaoContact().getById(_selectedContact),
+              title: 'Supplier Contact',
+              format: (contacts) => contacts.fullname,
+              items: (filter) async => contacts!,
+              onChanged: (contact) => _selectedContact = contact?.id,
+            ),
           ),
 
           const SizedBox(height: 16),
@@ -151,14 +145,13 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
                     value: _selectedTasks.contains(t.id),
                     title: Text(t.name),
                     subtitle: Text(RichTextHelper.toPlainText(t.assumption)),
-                    onChanged:
-                        (on) => setState(() {
-                          if (on ?? false) {
-                            _selectedTasks.add(t.id);
-                          } else {
-                            _selectedTasks.remove(t.id);
-                          }
-                        }),
+                    onChanged: (on) => setState(() {
+                      if (on ?? false) {
+                        _selectedTasks.add(t.id);
+                      } else {
+                        _selectedTasks.remove(t.id);
+                      }
+                    }),
                   ),
                 ),
               ],

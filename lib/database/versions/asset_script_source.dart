@@ -7,7 +7,7 @@ import 'script_source.dart';
 class AssetScriptSource implements ScriptSource {
   AssetScriptSource();
   @override
-  Future<String> loadSQL(String pathToScript)  =>
+  Future<String> loadSQL(String pathToScript) =>
       rootBundle.loadString(pathToScript);
 
   @override

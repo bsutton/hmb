@@ -38,13 +38,10 @@ class Milestone extends Entity<Milestone> {
     paymentAmount: MoneyEx.fromInt(map['payment_amount'] as int),
     paymentPercentage: Percentage.fromInt(map['payment_percentage'] as int),
     milestoneDescription: map['milestone_description'] as String?,
-    dueDate:
-        map['due_date'] != null
-            ? const LocalDateNullableConverter().fromJson(
-              map['due_date'] as String,
-            )
-            : null,
-    
+    dueDate: map['due_date'] != null
+        ? const LocalDateNullableConverter().fromJson(map['due_date'] as String)
+        : null,
+
     edited: (map['edited'] as int) == 1,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
@@ -66,8 +63,10 @@ class Milestone extends Entity<Milestone> {
     'invoice_id': invoiceId,
     'milestone_number': milestoneNumber,
     'payment_amount': paymentAmount.twoDigits().minorUnits.toInt(),
-    'payment_percentage':
-        paymentPercentage.copyWith(decimalDigits: 2).minorUnits.toInt(),
+    'payment_percentage': paymentPercentage
+        .copyWith(decimalDigits: 2)
+        .minorUnits
+        .toInt(),
     'milestone_description': milestoneDescription,
     'due_date': const LocalDateNullableConverter().toJson(dueDate),
     'edited': edited ? 1 : 0,

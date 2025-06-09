@@ -63,64 +63,63 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
     entityName: 'Supplier',
     dao: DaoSupplier(),
     entityState: this,
-    editor:
-        (supplier, {required isNew}) => Column(
+    editor: (supplier, {required isNew}) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            HMBFormSection(
               children: [
-                HMBFormSection(
-                  children: [
-                    Text(
-                      'Supplier Details',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    HMBTextField(
-                      autofocus: isNotMobile,
-                      controller: _nameController,
-                      labelText: 'Name',
-                      keyboardType: TextInputType.name,
-                      required: true,
-                    ),
-                    HMBTextField(
-                      controller: _serviceController,
-                      labelText: 'Service',
-                    ),
-                    HMBTextArea(
-                      controller: _descriptionController,
-                      labelText: 'Description',
-                    ),
-                    HMBTextField(
-                      controller: _businessNumberController,
-                      labelText: 'Business Number',
-                    ),
-                    HMBTextField(
-                      controller: _bsbController,
-                      labelText: 'BSB',
-                      keyboardType: TextInputType.number,
-                    ),
-                    HMBTextField(
-                      controller: _accountNumberController,
-                      labelText: 'Account Number',
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
+                Text(
+                  'Supplier Details',
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                HMBCrudContact(
-                  parentTitle: 'Supplier',
-                  parent: Parent(supplier),
-                  daoJoin: JoinAdaptorSupplierContact(),
+                HMBTextField(
+                  autofocus: isNotMobile,
+                  controller: _nameController,
+                  labelText: 'Name',
+                  keyboardType: TextInputType.name,
+                  required: true,
                 ),
-                HBMCrudSite(
-                  parentTitle: 'Supplier',
-                  daoJoin: JoinAdaptorSupplierSite(),
-                  parent: Parent(supplier),
+                HMBTextField(
+                  controller: _serviceController,
+                  labelText: 'Service',
+                ),
+                HMBTextArea(
+                  controller: _descriptionController,
+                  labelText: 'Description',
+                ),
+                HMBTextField(
+                  controller: _businessNumberController,
+                  labelText: 'Business Number',
+                ),
+                HMBTextField(
+                  controller: _bsbController,
+                  labelText: 'BSB',
+                  keyboardType: TextInputType.number,
+                ),
+                HMBTextField(
+                  controller: _accountNumberController,
+                  labelText: 'Account Number',
+                  keyboardType: TextInputType.number,
                 ),
               ],
             ),
+            HMBCrudContact(
+              parentTitle: 'Supplier',
+              parent: Parent(supplier),
+              daoJoin: JoinAdaptorSupplierContact(),
+            ),
+            HBMCrudSite(
+              parentTitle: 'Supplier',
+              daoJoin: JoinAdaptorSupplierSite(),
+              parent: Parent(supplier),
+            ),
           ],
         ),
+      ],
+    ),
   );
 
   @override

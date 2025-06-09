@@ -26,7 +26,8 @@ Future<void> logAppStartup() async {
 
   // Build the YAML message including the app version.
   final now = DateTime.now().toIso8601String();
-  final message = '''
+  final message =
+      '''
 start: "$now"
 business name: "$obfuscatedBusinessName"
 app version: "$packageVersion"

@@ -108,56 +108,54 @@ class _InvoiceCardState extends State<InvoiceCard> {
       Padding(
         padding: const EdgeInsets.only(left: 16),
         child: Column(
-          children:
-              invoiceLineGroups
-                  .map(
-                    (group) => ExpansionTile(
-                      title: Text(group.name),
-                      children: [
-                        FutureBuilderEx<List<InvoiceLine>>(
-                          future:
+          children: invoiceLineGroups
+              .map(
+                (group) => ExpansionTile(
+                  title: Text(group.name),
+                  children: [
+                    FutureBuilderEx<List<InvoiceLine>>(
+                      future:
                           // ignore: discarded_futures
                           DaoInvoiceLine().getByInvoiceLineGroupId(group.id),
-                          builder: (context, invoiceLines) {
-                            if (invoiceLines!.isEmpty) {
-                              return const ListTile(
-                                title: Text('No invoice lines found.'),
-                              );
-                            }
+                      builder: (context, invoiceLines) {
+                        if (invoiceLines!.isEmpty) {
+                          return const ListTile(
+                            title: Text('No invoice lines found.'),
+                          );
+                        }
 
-                            return _buildInvoiceLines(invoiceLines);
-                          },
-                        ),
-                      ],
+                        return _buildInvoiceLines(invoiceLines);
+                      },
                     ),
-                  )
-                  .toList(),
+                  ],
+                ),
+              )
+              .toList(),
         ),
       );
 
   Widget _buildInvoiceLines(List<InvoiceLine> invoiceLines) => Column(
-    children:
-        invoiceLines
-            .map(
-              (line) => ListTile(
-                title: Text(line.description),
-                subtitle: Text(
-                  'Quantity: ${line.quantity}, Unit Price: ${line.unitPrice}, Status: ${line.status.toString().split('.').last}',
+    children: invoiceLines
+        .map(
+          (line) => ListTile(
+            title: Text(line.description),
+            subtitle: Text(
+              'Quantity: ${line.quantity}, Unit Price: ${line.unitPrice}, Status: ${line.status.toString().split('.').last}',
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Total: ${line.lineTotal}'),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => widget.onDeleteInvoiceLine(line),
                 ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Total: ${line.lineTotal}'),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => widget.onDeleteInvoiceLine(line),
-                    ),
-                  ],
-                ),
-                onTap: () => widget.onEditInvoiceLine(context, line),
-              ),
-            )
-            .toList(),
+              ],
+            ),
+            onTap: () => widget.onEditInvoiceLine(context, line),
+          ),
+        )
+        .toList(),
   );
 }
 

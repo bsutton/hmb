@@ -96,122 +96,113 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
   // --------------------------------
   Widget _buildForm() => DeferredBuilder(
     this,
-    builder:
-        (context) => Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Existing fields...
-              HMBTextField(
-                controller: _businessNameController!,
-                labelText: 'Business Name',
-              ),
-              HelpWrapper(
-                tooltip: 'Help for Business Number',
-                title: 'What is a Business Number?',
-                helpChild: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Your government allocated business registration number.',
-                    ),
-                    HMBSpacer(height: true),
-                    Text('Australia: ABN (e.g., 12 345 678 901)'),
-                    Text('United States: EIN (e.g., 12-3456789)'),
-                    Text('United Kingdom: CRN (e.g., 12345678)'),
-                    Text(
-                      'Other Countries: Enter your official registration number.',
-                    ),
-                  ],
-                ),
-                child: HMBTextField(
-                  controller: _businessNumberController!,
-                  labelText: 'Business Number',
-                ),
-              ),
-              HelpWrapper(
-                tooltip: 'Help for Business Number Label',
-                title: 'What is a Business Number Label?',
-                helpChild: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Your government allocated business number'),
-                    HMBSpacer(height: true),
-                    Text('Examples of labels:'),
-                    Text('Australia - ABN'),
-                    Text('United States - EIN'),
-                    Text('United Kingdom - CRN'),
-                  ],
-                ),
-                child: HMBTextField(
-                  controller: _businessNumberLabelController!,
-                  labelText: 'Business Number Label',
-                ),
-              ),
-              DropdownButtonFormField<String>(
-                isExpanded: true,
-                value: _selectedCountryCode,
-                decoration: const InputDecoration(labelText: 'Country Code'),
-                items:
-                    _countryCodes
-                        .map(
-                          (country) => DropdownMenuItem<String>(
-                            value: country.alpha2,
-                            child: Text(
-                              '${country.countryName} (${country.alpha2})',
-                            ),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedCountryCode = newValue!;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a country code';
-                  }
-                  return null;
-                },
-              ),
-              HMBDroplist<PreferredUnitSystem>(
-                title: 'Unit System',
-                selectedItem: () async => system.preferredUnitSystem,
-                format:
-                    (unit) =>
-                        unit == PreferredUnitSystem.metric
-                            ? 'Metric'
-                            : 'Imperial',
-                items: (filter) async => PreferredUnitSystem.values,
-                onChanged: (value) {
-                  setState(() {
-                    system.preferredUnitSystem = value!;
-                  });
-                },
-              ),
-              HMBTextField(
-                controller: _webUrlController!,
-                labelText: 'Web URL',
-              ).help(
-                'Web URL',
-                'A link to your business web site. Appears in your email footer.',
-              ),
-              HMBTextField(
-                controller: _termsUrlController!,
-                labelText: 'Terms URL',
-              ).help(
-                'Terms URL',
-                'A link to your Terms and Conditions. Appears on your Quotes and Invoices.',
-              ),
-
-              // New Operating Hours Section
-              const SizedBox(height: 16),
-              _buildOperatingHours(),
-            ],
+    builder: (context) => Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Existing fields...
+          HMBTextField(
+            controller: _businessNameController!,
+            labelText: 'Business Name',
           ),
-        ),
+          HelpWrapper(
+            tooltip: 'Help for Business Number',
+            title: 'What is a Business Number?',
+            helpChild: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Your government allocated business registration number.'),
+                HMBSpacer(height: true),
+                Text('Australia: ABN (e.g., 12 345 678 901)'),
+                Text('United States: EIN (e.g., 12-3456789)'),
+                Text('United Kingdom: CRN (e.g., 12345678)'),
+                Text(
+                  'Other Countries: Enter your official registration number.',
+                ),
+              ],
+            ),
+            child: HMBTextField(
+              controller: _businessNumberController!,
+              labelText: 'Business Number',
+            ),
+          ),
+          HelpWrapper(
+            tooltip: 'Help for Business Number Label',
+            title: 'What is a Business Number Label?',
+            helpChild: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Your government allocated business number'),
+                HMBSpacer(height: true),
+                Text('Examples of labels:'),
+                Text('Australia - ABN'),
+                Text('United States - EIN'),
+                Text('United Kingdom - CRN'),
+              ],
+            ),
+            child: HMBTextField(
+              controller: _businessNumberLabelController!,
+              labelText: 'Business Number Label',
+            ),
+          ),
+          DropdownButtonFormField<String>(
+            isExpanded: true,
+            value: _selectedCountryCode,
+            decoration: const InputDecoration(labelText: 'Country Code'),
+            items: _countryCodes
+                .map(
+                  (country) => DropdownMenuItem<String>(
+                    value: country.alpha2,
+                    child: Text('${country.countryName} (${country.alpha2})'),
+                  ),
+                )
+                .toList(),
+            onChanged: (newValue) {
+              setState(() {
+                _selectedCountryCode = newValue!;
+              });
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select a country code';
+              }
+              return null;
+            },
+          ),
+          HMBDroplist<PreferredUnitSystem>(
+            title: 'Unit System',
+            selectedItem: () async => system.preferredUnitSystem,
+            format: (unit) =>
+                unit == PreferredUnitSystem.metric ? 'Metric' : 'Imperial',
+            items: (filter) async => PreferredUnitSystem.values,
+            onChanged: (value) {
+              setState(() {
+                system.preferredUnitSystem = value!;
+              });
+            },
+          ),
+          HMBTextField(
+            controller: _webUrlController!,
+            labelText: 'Web URL',
+          ).help(
+            'Web URL',
+            'A link to your business web site. Appears in your email footer.',
+          ),
+          HMBTextField(
+            controller: _termsUrlController!,
+            labelText: 'Terms URL',
+          ).help(
+            'Terms URL',
+            'A link to your Terms and Conditions. Appears on your Quotes and Invoices.',
+          ),
+
+          // New Operating Hours Section
+          const SizedBox(height: 16),
+          _buildOperatingHours(),
+        ],
+      ),
+    ),
   );
 
   // --------------------------------

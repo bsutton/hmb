@@ -192,20 +192,19 @@ class SchedulePageState extends DeferredState<SchedulePage> {
     appBar: widget.dialogMode ? AppBar() : null,
     body: DeferredBuilder(
       this,
-      builder:
-          (context) => Column(
-            children: [
-              _navigationRow(),
-              Expanded(
-                child: DesktopSwipe(
-                  onNext: onNextPage,
-                  onPrevious: onPreviousPage,
-                  onHome: onTodayPage,
-                  child: _buildCalendar(),
-                ),
-              ),
-            ],
+      builder: (context) => Column(
+        children: [
+          _navigationRow(),
+          Expanded(
+            child: DesktopSwipe(
+              onNext: onNextPage,
+              onPrevious: onPreviousPage,
+              onHome: onTodayPage,
+              child: _buildCalendar(),
+            ),
           ),
+        ],
+      ),
     ),
   );
 
@@ -284,10 +283,9 @@ class SchedulePageState extends DeferredState<SchedulePage> {
 
     // Only skip closed days if we are in DAY view & not showExtendedHours
     if (selectedView == ScheduleView.day && !_showExtendedHours) {
-      final newDate =
-          isForward
-              ? (await operatingHours.getNextOpenDate(targetDate))
-              : (await operatingHours.getPreviousOpenDate(targetDate));
+      final newDate = isForward
+          ? (await operatingHours.getNextOpenDate(targetDate))
+          : (await operatingHours.getPreviousOpenDate(targetDate));
 
       if (newDate != targetDate) {
         /// skip to the next/prev open date.

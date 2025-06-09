@@ -23,22 +23,20 @@ Future<InvoiceOptions?> selectTaskToQuote({
   if (context.mounted) {
     final invoiceOptions = await showDialog<InvoiceOptions>(
       context: context,
-      builder:
-          (context) => DialogTaskSelection(
-            job: job,
-            contact: contact,
-            title: title,
-            taskSelectors:
-                estimates
-                    .map(
-                      (estimate) => TaskSelector(
-                        estimate.task,
-                        estimate.task.name,
-                        estimate.total,
-                      ),
-                    )
-                    .toList(),
-          ),
+      builder: (context) => DialogTaskSelection(
+        job: job,
+        contact: contact,
+        title: title,
+        taskSelectors: estimates
+            .map(
+              (estimate) => TaskSelector(
+                estimate.task,
+                estimate.task.name,
+                estimate.total,
+              ),
+            )
+            .toList(),
+      ),
     );
 
     return invoiceOptions;
@@ -70,13 +68,12 @@ Future<InvoiceOptions?> selectTasksToInvoice({
   if (context.mounted) {
     final invoiceOptions = await showDialog<InvoiceOptions>(
       context: context,
-      builder:
-          (context) => DialogTaskSelection(
-            job: job,
-            contact: contact,
-            taskSelectors: selectors,
-            title: title,
-          ),
+      builder: (context) => DialogTaskSelection(
+        job: job,
+        contact: contact,
+        taskSelectors: selectors,
+        title: title,
+      ),
     );
     return invoiceOptions;
   }
@@ -114,10 +111,9 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
   @override
   Future<void> asyncInitState() async {
-    billBookingFee =
-        canBillBookingFee =
-            widget.job.billingType == BillingType.timeAndMaterial &&
-            !widget.job.bookingFeeInvoiced;
+    billBookingFee = canBillBookingFee =
+        widget.job.billingType == BillingType.timeAndMaterial &&
+        !widget.job.bookingFeeInvoiced;
 
     for (final accuredValue in widget.taskSelectors) {
       _selectedTasks[accuredValue.task.id] = true;
@@ -153,82 +149,79 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
     title: Text('${widget.title}: ${widget.job.summary}'),
     content: DeferredBuilder(
       this,
-      builder:
-          (context) => SingleChildScrollView(
-            child: Column(
-              children: [
-                if (_contacts.isNotEmpty)
-                  HMBSelectContact(
-                    title: 'Billing Contact',
+      builder: (context) => SingleChildScrollView(
+        child: Column(
+          children: [
+            if (_contacts.isNotEmpty)
+              HMBSelectContact(
+                title: 'Billing Contact',
 
-                    initialContact: _selectedContact.id,
-                    customer: _customer,
-                    onSelected: (value) {
-                      setState(() {
-                        _selectedContact = value!;
-                      });
-                    },
-                  ),
-                const SizedBox(height: 20),
-                DropdownButton<bool>(
-                  value: _groupByTask,
-                  isExpanded: true,
-                  onChanged: (value) {
-                    setState(() {
-                      _groupByTask = value ?? true;
-                    });
-                  },
-                  items: const [
-                    DropdownMenuItem(
-                      value: true,
-                      child: Text('Group by Task/Date'),
-                    ),
-                    DropdownMenuItem(
-                      value: false,
-                      child: Text('Group by Date/Task'),
-                    ),
-                  ],
+                initialContact: _selectedContact.id,
+                customer: _customer,
+                onSelected: (value) {
+                  setState(() {
+                    _selectedContact = value!;
+                  });
+                },
+              ),
+            const SizedBox(height: 20),
+            DropdownButton<bool>(
+              value: _groupByTask,
+              isExpanded: true,
+              onChanged: (value) {
+                setState(() {
+                  _groupByTask = value ?? true;
+                });
+              },
+              items: const [
+                DropdownMenuItem(
+                  value: true,
+                  child: Text('Group by Task/Date'),
                 ),
-                const SizedBox(height: 20),
-                if (canBillBookingFee)
-                  CheckboxListTile(
-                    title: const Text('Bill booking Fee'),
-                    value: billBookingFee,
-                    onChanged: (value) {
-                      setState(() {
-                        billBookingFee = value ?? true;
-                      });
-                    },
-                  ),
-                if (_selectedTasks.isNotEmpty)
-                  CheckboxListTile(
-                    title: const Text('Select All'),
-                    value: _selectAll,
-                    onChanged: _toggleSelectAll,
-                  ),
-                for (final taskSelector in widget.taskSelectors)
-                  CheckboxListTile(
-                    title: Text(taskSelector.description),
-                    subtitle: Text('Total Cost: ${taskSelector.value}'),
-                    value: _selectedTasks[taskSelector.task.id] ?? false,
-                    onChanged:
-                        (value) =>
-                            _toggleIndividualTask(taskSelector.task.id, value),
-                  ),
+                DropdownMenuItem(
+                  value: false,
+                  child: Text('Group by Date/Task'),
+                ),
               ],
             ),
-          ),
+            const SizedBox(height: 20),
+            if (canBillBookingFee)
+              CheckboxListTile(
+                title: const Text('Bill booking Fee'),
+                value: billBookingFee,
+                onChanged: (value) {
+                  setState(() {
+                    billBookingFee = value ?? true;
+                  });
+                },
+              ),
+            if (_selectedTasks.isNotEmpty)
+              CheckboxListTile(
+                title: const Text('Select All'),
+                value: _selectAll,
+                onChanged: _toggleSelectAll,
+              ),
+            for (final taskSelector in widget.taskSelectors)
+              CheckboxListTile(
+                title: Text(taskSelector.description),
+                subtitle: Text('Total Cost: ${taskSelector.value}'),
+                value: _selectedTasks[taskSelector.task.id] ?? false,
+                onChanged: (value) =>
+                    _toggleIndividualTask(taskSelector.task.id, value),
+              ),
+          ],
+        ),
+      ),
     ),
     actions: [
       HMBButton(label: 'Cancel', onPressed: () => Navigator.of(context).pop()),
       HMBButton(
         label: 'OK',
         onPressed: () {
-          final selectedTaskIds =
-              _selectedTasks.entries
-                  .where((entry) => entry.value)
-                  .map((entry) => entry.key)
-                  .toList();
+          final selectedTaskIds = _selectedTasks.entries
+              .where((entry) => entry.value)
+              .map((entry) => entry.key)
+              .toList();
           Navigator.of(context).pop(
             InvoiceOptions(
               selectedTaskIds: selectedTaskIds,

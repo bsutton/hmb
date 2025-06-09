@@ -51,62 +51,61 @@ Future<File> generateInvoicePdf(
     pw.MultiPage(
       pageTheme: pw.PageTheme(
         margin: pw.EdgeInsets.zero,
-        buildBackground:
-            (context) => pw.Stack(
-              children: [
-                // Top colored band with business name
-                pw.Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: pw.Container(
-                    height: 28,
-                    color: systemColor,
-                    child: pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 8),
-                      child: pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Text(
-                            system.businessName ?? '',
-                            style: pw.TextStyle(
-                              fontSize: 18,
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.white,
-                            ),
-                          ),
-                        ],
+        buildBackground: (context) => pw.Stack(
+          children: [
+            // Top colored band with business name
+            pw.Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: pw.Container(
+                height: 28,
+                color: systemColor,
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 8),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        system.businessName ?? '',
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                // Bottom colored band with page number
-                pw.Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: pw.Container(
-                    height: 28,
-                    color: systemColor,
-                    child: pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 10),
-                      child: pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Text(
-                            '${context.pageNumber} of ${context.pagesCount}',
-                            style: const pw.TextStyle(
-                              fontSize: 12,
-                              color: PdfColors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
+            // Bottom colored band with page number
+            pw.Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: pw.Container(
+                height: 28,
+                color: systemColor,
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        '${context.pageNumber} of ${context.pagesCount}',
+                        style: const pw.TextStyle(
+                          fontSize: 12,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       header: (context) {
         if (context.pageNumber == 1) {
@@ -400,10 +399,9 @@ class GroupedLine {
   Fixed get quantity =>
       items.map((line) => line.quantity).reduce((lhs, rhs) => lhs + rhs);
 
-  bool get hasVisibleItems =>
-      items
-          .where((item) => item.status != LineChargeableStatus.noChargeHidden)
-          .isNotEmpty;
+  bool get hasVisibleItems => items
+      .where((item) => item.status != LineChargeableStatus.noChargeHidden)
+      .isNotEmpty;
 }
 
 Future<pw.Widget?> _getLogo(System system) async {

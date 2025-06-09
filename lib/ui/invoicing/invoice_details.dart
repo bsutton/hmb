@@ -17,10 +17,9 @@ class InvoiceDetails {
     }
 
     final job = await DaoJob().getById(invoice.jobId);
-    final customer =
-        job?.customerId != null
-            ? await DaoCustomer().getById(job!.customerId)
-            : null;
+    final customer = job?.customerId != null
+        ? await DaoCustomer().getById(job!.customerId)
+        : null;
 
     final lineGroups = await DaoInvoiceLineGroup().getByInvoiceId(invoice.id);
     final groupDetails = <InvoiceLineGroupDetails>[];

@@ -34,13 +34,12 @@ class ReturnItemCard extends ShoppingItemCard {
 
     return IconButton(
       icon: Icon(Icons.delete, color: canReturn ? Colors.red : Colors.grey),
-      onPressed:
-          canReturn
-              ? () async {
-                await _delete(itemContext, context);
-                await onReload();
-              }
-              : null,
+      onPressed: canReturn
+          ? () async {
+              await _delete(itemContext, context);
+              await onReload();
+            }
+          : null,
     );
   }
 

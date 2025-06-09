@@ -62,15 +62,14 @@ class _EditQuoteLineDialogState extends State<EditQuoteLineDialog> {
                 _status = newValue!;
               });
             },
-            items:
-                LineChargeableStatus.values
-                    .map(
-                      (status) => DropdownMenuItem<LineChargeableStatus>(
-                        value: status,
-                        child: Text(status.toString().split('.').last),
-                      ),
-                    )
-                    .toList(),
+            items: LineChargeableStatus.values
+                .map(
+                  (status) => DropdownMenuItem<LineChargeableStatus>(
+                    value: status,
+                    child: Text(status.toString().split('.').last),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),

@@ -12,12 +12,12 @@ Future<void> postv77Upgrade(Database db) async {
   final photos = await daoPhoto.getAll();
 
   for (final photo in photos) {
-    final absolutePathToPhoto =
-        await PhotoMeta.fromPhoto(photo: photo).resolve();
-    photo.filePath =
-        (await CapturedPhoto.fromAbsolute(
-          absolutePathToPhoto: absolutePathToPhoto,
-        )).relativePath;
+    final absolutePathToPhoto = await PhotoMeta.fromPhoto(
+      photo: photo,
+    ).resolve();
+    photo.filePath = (await CapturedPhoto.fromAbsolute(
+      absolutePathToPhoto: absolutePathToPhoto,
+    )).relativePath;
 
     await daoPhoto.update(photo);
   }

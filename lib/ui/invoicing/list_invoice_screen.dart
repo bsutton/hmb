@@ -94,7 +94,7 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
       final invoiceOptions = await selectTasksToInvoice(
         context: context,
         job: job,
-        title: 'Tasks to bill'
+        title: 'Tasks to bill',
       );
 
       if (invoiceOptions != null) {
@@ -193,9 +193,8 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
                       onTap: () async {
                         await Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder:
-                                (context) =>
-                                    InvoiceEditScreen(invoiceDetails: details),
+                            builder: (context) =>
+                                InvoiceEditScreen(invoiceDetails: details),
                           ),
                         );
                         await _refreshInvoiceList();
@@ -220,8 +219,8 @@ class _InvoiceListScreenState extends DeferredState<InvoiceListScreen> {
                               HMBLinkInternal(
                                 label:
                                     'Job: #${details.job.id} - ${details.job.summary} ',
-                                navigateTo:
-                                    () async => JobEditScreen(job: details.job),
+                                navigateTo: () async =>
+                                    JobEditScreen(job: details.job),
                               ),
                               Text(
                                 'Xero: ${details.invoice.invoiceNum == null ? 'Not uploaded' : '#${details.invoice.invoiceNum}'}',

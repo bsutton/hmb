@@ -89,54 +89,52 @@ class _GoogleDriveBackupScreenState
     appBar: AppBar(automaticallyImplyLeading: false),
     body: DeferredBuilder(
       this,
-      builder:
-          (context) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_isLoading) ...[
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(
-                      _stageDescription,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ] else ...[
-                    const Text(
-                      'Backup and Restore Your Database',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 40),
-                    _buildBackupButton(),
-                    const SizedBox(height: 16),
-                    _buildLastBackup(),
-                    const SizedBox(height: 40),
-                    _buildRestoreButton(context),
-                    if (!widget.restoreOnly) const SizedBox(height: 40),
-                    if (!widget.restoreOnly) ..._buildPhotoSyncSection(),
-                  ],
-                ],
-              ),
-            ),
+      builder: (context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_isLoading) ...[
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  _stageDescription,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 18),
+                ),
+              ] else ...[
+                const Text(
+                  'Backup and Restore Your Database',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+                _buildBackupButton(),
+                const SizedBox(height: 16),
+                _buildLastBackup(),
+                const SizedBox(height: 40),
+                _buildRestoreButton(context),
+                if (!widget.restoreOnly) const SizedBox(height: 40),
+                if (!widget.restoreOnly) ..._buildPhotoSyncSection(),
+              ],
+            ],
           ),
+        ),
+      ),
     ),
   );
 
   FutureBuilderEx<DateTime?> _buildLastBackup() => FutureBuilderEx<DateTime?>(
     future: _lastBackupFuture,
     builder: (context, lastBackupDate) {
-      final text =
-          lastBackupDate == null
-              ? 'No backups yet'
-              : 'Last backup: ${formatDateTime(lastBackupDate)}';
+      final text = lastBackupDate == null
+          ? 'No backups yet'
+          : 'Last backup: ${formatDateTime(lastBackupDate)}';
       return Text(text, style: const TextStyle(fontSize: 16));
     },
   );
@@ -250,10 +248,9 @@ class _GoogleDriveBackupScreenState
         // ignore: discarded_futures
         future: DaoPhoto().getUnsyncedPhotos(),
         builder: (context, unsynced) {
-          final text =
-              unsynced!.isEmpty
-                  ? 'All photos synced.'
-                  : '${unsynced.length} photos to be synced ';
+          final text = unsynced!.isEmpty
+              ? 'All photos synced.'
+              : '${unsynced.length} photos to be synced ';
           return Text(text, style: const TextStyle(fontSize: 16));
         },
       ),

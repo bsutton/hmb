@@ -17,22 +17,19 @@ class JobActivitySource extends Source<JobActivity> {
   @override
   Widget widget() => ValueListenableBuilder(
     valueListenable: notifier,
-    builder:
-        (context, jobAndActivity, _) => HMBDroplist<JobActivity>(
-          title: 'Activity',
-          selectedItem: () async => jobAndActivity.jobActivity,
-          // ignore: discarded_futures
-          items: (filter) => DaoJobActivity().getByJob(jobAndActivity.job?.id),
-          format:
-              (jobActivity) =>
-                  jobAndActivity.jobActivity != null
-                      ? formatDate(jobAndActivity.jobActivity!.start)
-                      : '',
-          onChanged: (jobActivity) {
-            this.jobActivity = jobActivity;
-            onChanged(jobActivity, ResetFields(contact: true, site: true));
-          },
-        ),
+    builder: (context, jobAndActivity, _) => HMBDroplist<JobActivity>(
+      title: 'Activity',
+      selectedItem: () async => jobAndActivity.jobActivity,
+      // ignore: discarded_futures
+      items: (filter) => DaoJobActivity().getByJob(jobAndActivity.job?.id),
+      format: (jobActivity) => jobAndActivity.jobActivity != null
+          ? formatDate(jobAndActivity.jobActivity!.start)
+          : '',
+      onChanged: (jobActivity) {
+        this.jobActivity = jobActivity;
+        onChanged(jobActivity, ResetFields(contact: true, site: true));
+      },
+    ),
   );
 
   @override

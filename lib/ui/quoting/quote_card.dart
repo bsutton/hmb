@@ -60,95 +60,93 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
         padding: const EdgeInsets.all(8),
         child: DeferredBuilder(
           this,
-          builder:
-              (context) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          builder: (context) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row with summary info and delete icon.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Header row with summary info and delete icon.
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: widget.onDelete,
-                      ),
-                    ],
+                  Expanded(
+                    child: Text(
+                      'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
-                  // Additional details.
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          HMBLinkInternal(
-                            label: 'Job: #${quote.jobId}',
-                            navigateTo: () async {
-                              final job = await DaoJob().getById(quote.jobId);
-                              return JobEditScreen(job: job);
-                            },
-                          ),
-                          const HMBSpacer(width: true),
-                          Text(jc.job.summary),
-                        ],
-                      ),
-                      Text('Customer: ${jc.customer.name}'),
-                      Text(
-                        'Primary Contact: ${jc.primaryContact?.fullname ?? 'N/A'}',
-                      ),
-                      Text(
-                        'Billing Contact: ${jc.billingContact?.fullname ?? 'N/A'}',
-                      ),
-                    ],
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: widget.onDelete,
                   ),
-                  // Display current state and date info.
-                  Row(
-                    children: [
-                      Text(quote.state.name.toCapitalised()),
-                      const SizedBox(width: 8),
-                      if (quote.state == QuoteState.sent &&
-                          quote.dateSent != null)
-                        Text('Sent: ${formatDate(quote.dateSent!)}'),
-                      if (quote.state == QuoteState.approved &&
-                          quote.dateApproved != null)
-                        Text(formatDate(quote.dateApproved!)),
-                    ],
-                  ),
-
-                  // --- State Update Buttons ---
-                  Row(
-                    children: [
-                      HMBButton(
-                        label: 'Approved',
-                        // disable when already approved
-                        enabled: !isApproved,
-                        onPressed: () async {
-                          await _updateQuote(() async {
-                            await DaoQuote().approveQuote(quote.id);
-                          });
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      HMBButton(
-                        label: 'Rejected',
-                        // disable when already rejected
-                        enabled: !isRejected,
-                        onPressed: () async {
-                          await _updateQuote(() async {
-                            await DaoQuote().rejectQuote(quote.id);
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  // --- End State Buttons ---
                 ],
               ),
+              // Additional details.
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      HMBLinkInternal(
+                        label: 'Job: #${quote.jobId}',
+                        navigateTo: () async {
+                          final job = await DaoJob().getById(quote.jobId);
+                          return JobEditScreen(job: job);
+                        },
+                      ),
+                      const HMBSpacer(width: true),
+                      Text(jc.job.summary),
+                    ],
+                  ),
+                  Text('Customer: ${jc.customer.name}'),
+                  Text(
+                    'Primary Contact: ${jc.primaryContact?.fullname ?? 'N/A'}',
+                  ),
+                  Text(
+                    'Billing Contact: ${jc.billingContact?.fullname ?? 'N/A'}',
+                  ),
+                ],
+              ),
+              // Display current state and date info.
+              Row(
+                children: [
+                  Text(quote.state.name.toCapitalised()),
+                  const SizedBox(width: 8),
+                  if (quote.state == QuoteState.sent && quote.dateSent != null)
+                    Text('Sent: ${formatDate(quote.dateSent!)}'),
+                  if (quote.state == QuoteState.approved &&
+                      quote.dateApproved != null)
+                    Text(formatDate(quote.dateApproved!)),
+                ],
+              ),
+
+              // --- State Update Buttons ---
+              Row(
+                children: [
+                  HMBButton(
+                    label: 'Approved',
+                    // disable when already approved
+                    enabled: !isApproved,
+                    onPressed: () async {
+                      await _updateQuote(() async {
+                        await DaoQuote().approveQuote(quote.id);
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  HMBButton(
+                    label: 'Rejected',
+                    // disable when already rejected
+                    enabled: !isRejected,
+                    onPressed: () async {
+                      await _updateQuote(() async {
+                        await DaoQuote().rejectQuote(quote.id);
+                      });
+                    },
+                  ),
+                ],
+              ),
+              // --- End State Buttons ---
+            ],
+          ),
         ),
       ),
     );

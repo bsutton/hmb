@@ -56,92 +56,86 @@ class _TaskItemListScreenState<P extends Entity<P>>
     extends State<TaskItemListScreen> {
   @override
   Widget build(BuildContext context) {
-    final showCompleted =
-        June.getState(ShowCompltedItems.new)._showCompletedTasks;
+    final showCompleted = June.getState(
+      ShowCompltedItems.new,
+    )._showCompletedTasks;
 
     return FutureBuilderEx(
       // ignore: discarded_futures
       future: getTaskAndRate(widget.task),
-      builder:
-          (context, taskAndRate) => NestedEntityListScreen<TaskItem, Task>(
-            key: ValueKey(showCompleted),
-            parent: Parent(widget.task), // widget.parent,
-            parentTitle: 'Task',
-            entityNameSingular: 'Task Item',
-            entityNamePlural: 'Task Items',
-            dao: DaoTaskItem(),
-            // ignore: discarded_futures
-            onDelete: (taskItem) => DaoTaskItem().delete(taskItem!.id),
-            // ignore: discarded_futures
-            onInsert: (taskItem, transaction) => DaoTaskItem().insert(taskItem!, transaction),
-            // ignore: discarded_futures
-            fetchList: () => _fetchItems(showCompleted),
-            title: (taskItem) => Text(taskItem.description) as Widget,
-            onEdit:
-                (taskItem) => TaskItemEditScreen(
-                  parent: widget.task,
-                  taskItem: taskItem,
-                  billingType:
-                      taskAndRate?.billingType ?? BillingType.timeAndMaterial,
-                  hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
-                ),
-            details: (entity, details) {
-              final taskItem = entity;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ..._buildFieldsBasedOnItemType(
-                    taskItem,
-                    taskAndRate!.billingType,
-                    taskAndRate.rate,
+      builder: (context, taskAndRate) => NestedEntityListScreen<TaskItem, Task>(
+        key: ValueKey(showCompleted),
+        parent: Parent(widget.task), // widget.parent,
+        parentTitle: 'Task',
+        entityNameSingular: 'Task Item',
+        entityNamePlural: 'Task Items',
+        dao: DaoTaskItem(),
+        // ignore: discarded_futures
+        onDelete: (taskItem) => DaoTaskItem().delete(taskItem!.id),
+        // ignore: discarded_futures
+        onInsert: (taskItem, transaction) =>
+            DaoTaskItem().insert(taskItem!, transaction),
+        // ignore: discarded_futures
+        fetchList: () => _fetchItems(showCompleted),
+        title: (taskItem) => Text(taskItem.description) as Widget,
+        onEdit: (taskItem) => TaskItemEditScreen(
+          parent: widget.task,
+          taskItem: taskItem,
+          billingType: taskAndRate?.billingType ?? BillingType.timeAndMaterial,
+          hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
+        ),
+        details: (entity, details) {
+          final taskItem = entity;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ..._buildFieldsBasedOnItemType(
+                taskItem,
+                taskAndRate!.billingType,
+                taskAndRate.rate,
+              ),
+              HMBText(taskItem.dimensions),
+              if (taskItem.completed)
+                const Text('Completed', style: TextStyle(color: Colors.green))
+              else
+                IconButton(
+                  icon: const Icon(Icons.check, color: Colors.green),
+                  onPressed: () => unawaited(
+                    markAsCompleted(
+                      TaskItemContext(
+                        task: widget.task!,
+                        taskItem: taskItem,
+                        billingType: taskAndRate.billingType,
+                        wasReturned: false,
+                      ),
+                      context,
+                    ),
                   ),
-                  HMBText(taskItem.dimensions),
-                  if (taskItem.completed)
-                    const Text(
-                      'Completed',
-                      style: TextStyle(color: Colors.green),
-                    )
-                  else
-                    IconButton(
-                      icon: const Icon(Icons.check, color: Colors.green),
-                      onPressed:
-                          () => unawaited(markAsCompleted(
-                            TaskItemContext(
-                                task: widget.task!,
-                                taskItem: taskItem,
-                                billingType: taskAndRate.billingType,
-                                wasReturned: false,
-                              ),
-                            context,
-                          )),
-                    ),
-                ],
-              );
-            },
-            filterBar:
-                (entity) => Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    HMBToggle(
-                      label: 'Show Completed',
-                      tooltip:
-                          showCompleted
-                              ? 'Show Only Non-Completed Tasks'
-                              : 'Show Completed Tasks',
-                      initialValue:
-                          June.getState(
-                            ShowCompltedItems.new,
-                          )._showCompletedTasks,
-                      onToggled: (value) {
-                        setState(() {
-                          June.getState(ShowCompltedItems.new).toggle();
-                        });
-                      },
-                    ),
-                  ],
                 ),
-          ),
+            ],
+          );
+        },
+        filterBar: (entity) => Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            HMBToggle(
+              label: 'Show Completed',
+              tooltip: showCompleted
+                  ? 'Show Only Non-Completed Tasks'
+                  : 'Show Completed Tasks',
+              initialValue: June.getState(
+                ShowCompltedItems.new,
+              )._showCompletedTasks,
+              onToggled: (value) {
+                setState(() {
+                  June.getState(ShowCompltedItems.new).toggle();
+                });
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

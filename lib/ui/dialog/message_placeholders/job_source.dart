@@ -16,18 +16,17 @@ class JobSource extends Source<Job> {
   @override
   Widget widget() => ValueListenableBuilder(
     valueListenable: customerNotifier,
-    builder:
-        (context, customerJob, _) => HMBDroplist<Job>(
-          title: 'Job',
-          selectedItem: () async => customerJob.job,
-          // ignore: discarded_futures
-          items: (filter) => DaoJob().getByCustomer(customerJob.customer),
-          format: (job) => customerJob.job?.summary ?? '',
-          onChanged: (job) {
-            this.job = job;
-            onChanged(job, ResetFields(contact: true, site: true));
-          },
-        ),
+    builder: (context, customerJob, _) => HMBDroplist<Job>(
+      title: 'Job',
+      selectedItem: () async => customerJob.job,
+      // ignore: discarded_futures
+      items: (filter) => DaoJob().getByCustomer(customerJob.customer),
+      format: (job) => customerJob.job?.summary ?? '',
+      onChanged: (job) {
+        this.job = job;
+        onChanged(job, ResetFields(contact: true, site: true));
+      },
+    ),
   );
 
   @override

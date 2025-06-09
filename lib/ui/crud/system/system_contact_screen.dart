@@ -95,12 +95,10 @@ class SystemContactInformationScreenState
       final system = await DaoSystem().get();
       // Save the form data
       system
-        ..firstname =
-            _firstNameController
-                ?.text // Save first name
-        ..surname =
-            _surnameController
-                ?.text // Save surname
+        ..firstname = _firstNameController
+            ?.text // Save first name
+        ..surname = _surnameController
+            ?.text // Save surname
         ..addressLine1 = _addressLine1Controller?.text
         ..addressLine2 = _addressLine2Controller?.text
         ..suburb = _suburbController?.text
@@ -155,146 +153,142 @@ class SystemContactInformationScreenState
 
   DeferredBuilder _buildForm() => DeferredBuilder(
     this,
-    builder:
-        (context) => Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              HMBTextField(
-                controller: _firstNameController!,
-                labelText: 'First Name',
-                required: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your first name';
-                  }
-                  return null;
-                },
-              ),
-              HMBTextField(
-                controller: _surnameController!,
-                labelText: 'Surname',
-                required: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your surname';
-                  }
-                  return null;
-                },
-              ),
-              HMBPhoneField(
-                controller: _mobileNumberController!,
-                labelText: 'Mobile Number',
-                sourceContext: SourceContext(),
-              ),
-              HMBPhoneField(
-                controller: _landLineController!,
-                labelText: 'Land Line',
-                sourceContext: SourceContext(),
-              ),
-              HMBPhoneField(
-                controller: _officeNumberController!,
-                labelText: 'Office Number',
-                sourceContext: SourceContext(),
-              ),
-              HMBEmailField(
-                autofocus: isNotMobile,
-                controller: _fromEmailController!,
-                labelText: 'From Email',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a from email';
-                  }
-                  return null;
-                },
-              ).help(
-                'From Email',
-                '''
-The Email address that will be used when you send an email to your customer.''',
-              ),
-              HMBEmailField(
-                controller: _emailAddressController!,
-                required: true,
-                labelText: 'Notice/Backup Email Address',
-              ).help('Notice/Backup Eamil Address', '''
-The email address used to send you notices such as a successful backup.'''),
-              HMBTextField(
-                controller: _addressLine1Controller!,
-                labelText: 'Address Line 1',
-                keyboardType: TextInputType.streetAddress,
-              ),
-              HMBTextField(
-                controller: _addressLine2Controller!,
-                labelText: 'Address Line 2',
-                keyboardType: TextInputType.streetAddress,
-              ),
-              HMBTextField(
-                controller: _suburbController!,
-                labelText: 'Suburb',
-                keyboardType: TextInputType.name,
-              ),
-              HMBTextField(
-                controller: _stateController!,
-                labelText: 'State',
-                keyboardType: TextInputType.name,
-              ),
-              HMBTextField(
-                controller: _postcodeController!,
-                labelText: 'Post/Zip code',
-                keyboardType: TextInputType.number,
-              ),
-
-              DropdownButtonFormField<String>(
-                value: _selectedCountryCode,
-                decoration: const InputDecoration(labelText: 'Country Code'),
-                items:
-                    _countryCodes
-                        .map(
-                          (country) => DropdownMenuItem<String>(
-                            value: country.alpha2,
-                            child: Text(
-                              '${country.countryName} (${country.alpha2})',
-                            ),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (newValue) {
-                  _selectedCountryCode = newValue!;
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a country code';
-                  }
-                  return null;
-                },
-              ),
-              // FutureBuilderEx(
-              //   // ignore: discarded_futures
-              //   future: getSimCards(),
-              //   builder: (context, cards) {
-              //     if (cards == null || cards.isEmpty) {
-              //       return const Text('No sim cards found');
-              //     } else {
-              //       return HMBDroplist<SimCard>(
-              //         title: 'Sim Card',
-              //         selectedItem: () async {
-              //           final cards = await getSimCards();
-              //           if (cards.isNotEmpty) {
-              //             return cards[system.simCardNo ?? 0];
-              //           } else {
-              //             return null;
-              //           }
-              //         },
-              //         items: (filter) async => getSimCards(),
-              //         format: (card) => card.displayName ?? 'Unnamed',
-              //         onChanged: (card) =>
-              //             system.simCardNo = card?.slotIndex,
-              //       );
-              //     }
-              //   },
-              // ),
-            ],
+    builder: (context) => Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          HMBTextField(
+            controller: _firstNameController!,
+            labelText: 'First Name',
+            required: true,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your first name';
+              }
+              return null;
+            },
           ),
-        ),
+          HMBTextField(
+            controller: _surnameController!,
+            labelText: 'Surname',
+            required: true,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your surname';
+              }
+              return null;
+            },
+          ),
+          HMBPhoneField(
+            controller: _mobileNumberController!,
+            labelText: 'Mobile Number',
+            sourceContext: SourceContext(),
+          ),
+          HMBPhoneField(
+            controller: _landLineController!,
+            labelText: 'Land Line',
+            sourceContext: SourceContext(),
+          ),
+          HMBPhoneField(
+            controller: _officeNumberController!,
+            labelText: 'Office Number',
+            sourceContext: SourceContext(),
+          ),
+          HMBEmailField(
+            autofocus: isNotMobile,
+            controller: _fromEmailController!,
+            labelText: 'From Email',
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a from email';
+              }
+              return null;
+            },
+          ).help(
+            'From Email',
+            '''
+The Email address that will be used when you send an email to your customer.''',
+          ),
+          HMBEmailField(
+            controller: _emailAddressController!,
+            required: true,
+            labelText: 'Notice/Backup Email Address',
+          ).help('Notice/Backup Eamil Address', '''
+The email address used to send you notices such as a successful backup.'''),
+          HMBTextField(
+            controller: _addressLine1Controller!,
+            labelText: 'Address Line 1',
+            keyboardType: TextInputType.streetAddress,
+          ),
+          HMBTextField(
+            controller: _addressLine2Controller!,
+            labelText: 'Address Line 2',
+            keyboardType: TextInputType.streetAddress,
+          ),
+          HMBTextField(
+            controller: _suburbController!,
+            labelText: 'Suburb',
+            keyboardType: TextInputType.name,
+          ),
+          HMBTextField(
+            controller: _stateController!,
+            labelText: 'State',
+            keyboardType: TextInputType.name,
+          ),
+          HMBTextField(
+            controller: _postcodeController!,
+            labelText: 'Post/Zip code',
+            keyboardType: TextInputType.number,
+          ),
+
+          DropdownButtonFormField<String>(
+            value: _selectedCountryCode,
+            decoration: const InputDecoration(labelText: 'Country Code'),
+            items: _countryCodes
+                .map(
+                  (country) => DropdownMenuItem<String>(
+                    value: country.alpha2,
+                    child: Text('${country.countryName} (${country.alpha2})'),
+                  ),
+                )
+                .toList(),
+            onChanged: (newValue) {
+              _selectedCountryCode = newValue!;
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select a country code';
+              }
+              return null;
+            },
+          ),
+          // FutureBuilderEx(
+          //   // ignore: discarded_futures
+          //   future: getSimCards(),
+          //   builder: (context, cards) {
+          //     if (cards == null || cards.isEmpty) {
+          //       return const Text('No sim cards found');
+          //     } else {
+          //       return HMBDroplist<SimCard>(
+          //         title: 'Sim Card',
+          //         selectedItem: () async {
+          //           final cards = await getSimCards();
+          //           if (cards.isNotEmpty) {
+          //             return cards[system.simCardNo ?? 0];
+          //           } else {
+          //             return null;
+          //           }
+          //         },
+          //         items: (filter) async => getSimCards(),
+          //         format: (card) => card.displayName ?? 'Unnamed',
+          //         onChanged: (card) =>
+          //             system.simCardNo = card?.slotIndex,
+          //       );
+          //     }
+          //   },
+          // ),
+        ],
+      ),
+    ),
   );
 }

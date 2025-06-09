@@ -62,15 +62,14 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
                 _status = newValue!;
               });
             },
-            items:
-                LineChargeableStatus.values
-                    .map(
-                      (status) => DropdownMenuItem<LineChargeableStatus>(
-                        value: status,
-                        child: Text(status.toString().split('.').last),
-                      ),
-                    )
-                    .toList(),
+            items: LineChargeableStatus.values
+                .map(
+                  (status) => DropdownMenuItem<LineChargeableStatus>(
+                    value: status,
+                    child: Text(status.toString().split('.').last),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
@@ -94,10 +93,9 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
             description: _descriptionController.text,
             quantity: quantity,
             unitPrice: unitPrice,
-            lineTotal:
-                _status == LineChargeableStatus.normal
-                    ? unitPrice.multiplyByFixed(quantity)
-                    : MoneyEx.zero,
+            lineTotal: _status == LineChargeableStatus.normal
+                ? unitPrice.multiplyByFixed(quantity)
+                : MoneyEx.zero,
             status: _status,
           );
           Navigator.of(context).pop(updatedLine);

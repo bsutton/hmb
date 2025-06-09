@@ -131,14 +131,14 @@ AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
 
     // Build job‐filter clause
     final jobIds = jobs?.map((j) => j.id).toList() ?? [];
-    final jobClause =
-        jobIds.isNotEmpty
-            ? 'AND j.id IN (${List.filled(jobIds.length, '?').join(',')})'
-            : '';
+    final jobClause = jobIds.isNotEmpty
+        ? 'AND j.id IN (${List.filled(jobIds.length, '?').join(',')})'
+        : '';
 
     final supplierClause = supplier != null ? 'AND ti.supplier_id = ?' : '';
 
-    final sql = '''
+    final sql =
+        '''
 SELECT ti.*
   FROM task_item ti
   JOIN task_item_type tit ON ti.item_type_id = tit.id

@@ -148,10 +148,9 @@ class Units3D extends Units {
       '''${labels[0]}: ${values[0]} $measure, ${labels[1]}: ${values[1]} $measure, ${labels[2]}: ${values[2]} $measure Total: ${_calc(values)} $name''';
 
   @override
-  Fixed _calc(List<Fixed> values) =>
-      values.length < 3
-          ? Fixed.zero
-          : volumeCalc(values[0], values[1], values[2]);
+  Fixed _calc(List<Fixed> values) => values.length < 3
+      ? Fixed.zero
+      : volumeCalc(values[0], values[1], values[2]);
 }
 
 // Map of unit names to Units objects

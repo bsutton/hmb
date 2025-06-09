@@ -175,7 +175,11 @@ where jo.id =?
     await delete(site.id);
   }
 
-  Future<void> insertForCustomer(Site site, Customer customer, Transaction transaction) async {
+  Future<void> insertForCustomer(
+    Site site,
+    Customer customer,
+    Transaction transaction,
+  ) async {
     await insert(site, transaction);
     await DaoSiteCustomer().insertJoin(site, customer, transaction);
   }
@@ -185,7 +189,11 @@ where jo.id =?
     await delete(site.id);
   }
 
-  Future<void> insertForSupplier(Site site, Supplier supplier, Transaction transaction) async {
+  Future<void> insertForSupplier(
+    Site site,
+    Supplier supplier,
+    Transaction transaction,
+  ) async {
     await insert(site, transaction);
     await DaoSiteSupplier().insertJoin(site, supplier, transaction);
   }

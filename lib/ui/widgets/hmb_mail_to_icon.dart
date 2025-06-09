@@ -21,19 +21,18 @@ class HMBMailToIcon extends StatelessWidget {
       IconButton(
         iconSize: 22,
         icon: const Icon(Icons.email),
-        onPressed:
-            () => Strings.isEmpty(email) ? null : unawaited(_sendEmail(context, email!)),
+        onPressed: () => Strings.isEmpty(email)
+            ? null
+            : unawaited(_sendEmail(context, email!)),
         color: Strings.isEmpty(email) ? Colors.grey : Colors.blue,
         tooltip: 'Send an Email',
       ),
       IconButton(
         iconSize: 22,
         icon: const Icon(Icons.copy),
-        onPressed:
-            () =>
-                Strings.isEmpty(email)
-                    ? null
-                    : unawaited(clipboardCopyTo(context, email!)),
+        onPressed: () => Strings.isEmpty(email)
+            ? null
+            : unawaited(clipboardCopyTo(context, email!)),
         color: Strings.isEmpty(email) ? Colors.grey : Colors.blue,
         tooltip: 'Copy Email address to the Clipboard',
       ),

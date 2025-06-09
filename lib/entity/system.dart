@@ -196,10 +196,9 @@ class System extends Entity<System> {
     paymentLinkUrl: map['payment_link_url'] as String?,
     showBsbAccountOnInvoice: map['show_bsb_account_on_invoice'] == 1,
     showPaymentLinkOnInvoice: map['show_payment_link_on_invoice'] == 1,
-    preferredUnitSystem:
-        (map['use_metric_units'] == 1)
-            ? PreferredUnitSystem.metric
-            : PreferredUnitSystem.imperial,
+    preferredUnitSystem: (map['use_metric_units'] == 1)
+        ? PreferredUnitSystem.metric
+        : PreferredUnitSystem.imperial,
     logoPath: map['logo_path'] as String? ?? '',
     logoAspectRatio: LogoAspectRatio.fromName(
       map['logo_aspect_ratio'] as String?,
@@ -212,10 +211,9 @@ class System extends Entity<System> {
     operatingHours: map['operating_hours'] as String?,
     chatgptAccessToken: map['chatgpt_access_token'] as String?,
     chatgptRefreshToken: map['chatgpt_refresh_token'] as String?,
-    chatgptTokenExpiry:
-        map['chatgpt_token_expiry'] != null
-            ? DateTime.parse(map['chatgpt_token_expiry'] as String)
-            : null,
+    chatgptTokenExpiry: map['chatgpt_token_expiry'] != null
+        ? DateTime.parse(map['chatgpt_token_expiry'] as String)
+        : null,
     createdDate:
         DateTime.tryParse(map['created_date'] as String? ?? '') ??
         DateTime.now(),
@@ -272,12 +270,11 @@ class System extends Entity<System> {
 
   OperatingHours getOperatingHours() => OperatingHours.fromJson(operatingHours);
 
-  String? get bestPhone =>
-      Strings.isNotBlank(mobileNumber)
-          ? mobileNumber
-          : Strings.isNotBlank(landLine)
-          ? landLine
-          : officeNumber;
+  String? get bestPhone => Strings.isNotBlank(mobileNumber)
+      ? mobileNumber
+      : Strings.isNotBlank(landLine)
+      ? landLine
+      : officeNumber;
 
   String get address => Strings.join(
     [addressLine1, addressLine2, suburb, state, postcode],
@@ -315,8 +312,9 @@ class System extends Entity<System> {
     'payment_link_url': paymentLinkUrl,
     'show_bsb_account_on_invoice': showBsbAccountOnInvoice ?? true ? 1 : 0,
     'show_payment_link_on_invoice': showPaymentLinkOnInvoice ?? true ? 1 : 0,
-    'use_metric_units':
-        preferredUnitSystem == PreferredUnitSystem.metric ? 1 : 0,
+    'use_metric_units': preferredUnitSystem == PreferredUnitSystem.metric
+        ? 1
+        : 0,
     'logo_path': logoPath,
     'logo_aspect_ratio': logoAspectRatio.name,
     'billing_colour': billingColour,

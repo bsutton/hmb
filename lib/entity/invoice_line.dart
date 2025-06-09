@@ -62,9 +62,8 @@ class InvoiceLine extends Entity<InvoiceLine> {
     lineTotal: Money.fromInt(map['line_total'] as int, isoCode: 'AUD'),
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
-    status:
-        LineChargeableStatus.values[map['status'] as int? ??
-            LineChargeableStatus.normal.index],
+    status: LineChargeableStatus
+        .values[map['status'] as int? ?? LineChargeableStatus.normal.index],
     fromBookingFee: map['from_booking_fee'] == 1,
   );
 

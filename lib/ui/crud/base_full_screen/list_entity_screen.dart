@@ -177,52 +177,51 @@ class EntityListScreenState<T extends Entity<T>>
         // ignore: discarded_futures
         widget.background?.call(entity) ??
         Future.value(SurfaceElevation.e6.color),
-    builder:
-        (context, cardColor) => Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 8),
-          child: GestureDetector(
-            onTap: () async {
-              // Navigate to the edit screen
-              final updatedEntity = await Navigator.push<T?>(
-                context,
-                MaterialPageRoute(builder: (context) => widget.onEdit(entity)),
-              );
-              // If user successfully saved or created a new entity
-              if (updatedEntity != null) {
-                _partialRefresh(updatedEntity);
-              }
-            },
-            child: Surface(
-              elevation: SurfaceElevation.e6,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    builder: (context, cardColor) => Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      child: GestureDetector(
+        onTap: () async {
+          // Navigate to the edit screen
+          final updatedEntity = await Navigator.push<T?>(
+            context,
+            MaterialPageRoute(builder: (context) => widget.onEdit(entity)),
+          );
+          // If user successfully saved or created a new entity
+          if (updatedEntity != null) {
+            _partialRefresh(updatedEntity);
+          }
+        },
+        child: Surface(
+          elevation: SurfaceElevation.e6,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Title row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: FutureBuilderEx(
-                          future:
-                              ((widget.title is Future)
-                                      // ignore: discarded_futures
-                                      ? widget.title(entity)
-                                      // ignore: discarded_futures
-                                      : Future.value(widget.title(entity)))
-                                  as Future<Widget>,
-                          builder: (context, title) => title!,
-                        ),
-                      ),
-                      _buildDeleteButton(entity),
-                    ],
+                  Flexible(
+                    child: FutureBuilderEx(
+                      future:
+                          ((widget.title is Future)
+                                  // ignore: discarded_futures
+                                  ? widget.title(entity)
+                                  // ignore: discarded_futures
+                                  : Future.value(widget.title(entity)))
+                              as Future<Widget>,
+                      builder: (context, title) => title!,
+                    ),
                   ),
-                  // Body (details)
-                  Expanded(child: widget.details(entity)),
+                  _buildDeleteButton(entity),
                 ],
               ),
-            ),
+              // Body (details)
+              Expanded(child: widget.details(entity)),
+            ],
           ),
         ),
+      ),
+    ),
   );
 
   Future<void> _confirmDelete(T entity) async {

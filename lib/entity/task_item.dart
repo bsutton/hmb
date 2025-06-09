@@ -314,8 +314,10 @@ class TaskItem extends Entity<TaskItem> {
   }
 
   Money calcMaterialCost(BillingType billingType) => switch (billingType) {
-    BillingType.fixedPrice => (estimatedMaterialUnitCost ?? MoneyEx.zero)
-        .multiplyByFixed(estimatedMaterialQuantity ?? Fixed.one),
+    BillingType.fixedPrice =>
+      (estimatedMaterialUnitCost ?? MoneyEx.zero).multiplyByFixed(
+        estimatedMaterialQuantity ?? Fixed.one,
+      ),
     BillingType.timeAndMaterial => _tAndMCost(),
   };
 
@@ -396,14 +398,22 @@ class TaskItem extends Entity<TaskItem> {
     'task_id': taskId,
     'description': description,
     'item_type_id': itemTypeId,
-    'estimated_material_unit_cost':
-        estimatedMaterialUnitCost?.twoDigits().minorUnits.toInt(),
-    'estimated_material_quantity':
-        estimatedMaterialQuantity?.threeDigits().minorUnits.toInt(),
-    'estimated_labour_hours':
-        estimatedLabourHours?.threeDigits().minorUnits.toInt(),
-    'estimated_labour_cost':
-        estimatedLabourCost?.twoDigits().minorUnits.toInt(),
+    'estimated_material_unit_cost': estimatedMaterialUnitCost
+        ?.twoDigits()
+        .minorUnits
+        .toInt(),
+    'estimated_material_quantity': estimatedMaterialQuantity
+        ?.threeDigits()
+        .minorUnits
+        .toInt(),
+    'estimated_labour_hours': estimatedLabourHours
+        ?.threeDigits()
+        .minorUnits
+        .toInt(),
+    'estimated_labour_cost': estimatedLabourCost
+        ?.twoDigits()
+        .minorUnits
+        .toInt(),
     'margin': margin.threeDigits().minorUnits.toInt(),
     'charge': _charge?.twoDigits().minorUnits.toInt(),
     'charge_set': chargeSet ? 1 : 0,
@@ -418,10 +428,14 @@ class TaskItem extends Entity<TaskItem> {
     'url': url,
     'supplier_id': supplierId,
     'labour_entry_mode': labourEntryMode.toSqlString(),
-    'actual_material_unit_cost':
-        actualMaterialUnitCost?.twoDigits().minorUnits.toInt(),
-    'actual_material_quantity':
-        actualMaterialQuantity?.threeDigits().minorUnits.toInt(),
+    'actual_material_unit_cost': actualMaterialUnitCost
+        ?.twoDigits()
+        .minorUnits
+        .toInt(),
+    'actual_material_quantity': actualMaterialQuantity
+        ?.threeDigits()
+        .minorUnits
+        .toInt(),
     'actual_cost': actualCost?.twoDigits().minorUnits.toInt(),
     'source_task_item_id': sourceTaskItemId,
     'is_return': isReturn ? 1 : 0,

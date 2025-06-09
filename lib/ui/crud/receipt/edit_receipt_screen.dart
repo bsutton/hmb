@@ -100,14 +100,13 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder:
-        (_) => EntityEditScreen<Receipt>(
-          entityName: 'Receipt',
-          dao: DaoReceipt(),
-          entityState: this,
-          editor: (e, {required isNew}) => _buildEditor(),
-          crossValidator: _validateTotals,
-        ),
+    builder: (_) => EntityEditScreen<Receipt>(
+      entityName: 'Receipt',
+      dao: DaoReceipt(),
+      entityState: this,
+      editor: (e, {required isNew}) => _buildEditor(),
+      crossValidator: _validateTotals,
+    ),
   );
 
   Widget _buildEditor() => Column(
@@ -140,11 +139,10 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         selectedSupplier: selectedSupplier,
         isRequired: true,
 
-        onSelected:
-            (supplier) => setState(() {
-              _supplierId = supplier?.id;
-              selectedSupplier.selected = supplier?.id;
-            }),
+        onSelected: (supplier) => setState(() {
+          _supplierId = supplier?.id;
+          selectedSupplier.selected = supplier?.id;
+        }),
       ),
 
       // MONEY FIELDS: dollars entry
@@ -221,12 +219,11 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     final tax = _taxCtrl.money;
     final incl = _totalInclCtrl.money;
 
-    final provided =
-        [
-          _taxHasUserValue,
-          _taxExHasUserValue,
-          _taxIncHasUserValue,
-        ].where((m) => m).length;
+    final provided = [
+      _taxHasUserValue,
+      _taxExHasUserValue,
+      _taxIncHasUserValue,
+    ].where((m) => m).length;
 
     /// We only do the calc for a field if:
     /// * it is blank

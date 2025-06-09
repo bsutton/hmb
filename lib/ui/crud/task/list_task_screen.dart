@@ -46,8 +46,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final showCompleted =
-        June.getState(ShowCompletedTasksState.new)._showCompletedTasks;
+    final showCompleted = June.getState(
+      ShowCompletedTasksState.new,
+    )._showCompletedTasks;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -62,40 +63,35 @@ class _TaskListScreenState extends State<TaskListScreen> {
             // ignore: discarded_futures
             fetchList: _fetchTasks,
             title: (entity) => Text(entity.name),
-            filterBar:
-                (entity) => Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    HMBToggle(
-                      label: 'Show Completed',
-                      tooltip:
-                          showCompleted
-                              ? 'Show Only Non-Completed Tasks'
-                              : 'Show Completed Tasks',
-                      initialValue:
-                          June.getState(
-                            ShowCompletedTasksState.new,
-                          )._showCompletedTasks,
-                      onToggled: (value) {
-                        setState(() {
-                          June.getState(ShowCompletedTasksState.new).toggle();
-                        });
-                      },
-                    ),
-                  ],
+            filterBar: (entity) => Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                HMBToggle(
+                  label: 'Show Completed',
+                  tooltip: showCompleted
+                      ? 'Show Only Non-Completed Tasks'
+                      : 'Show Completed Tasks',
+                  initialValue: June.getState(
+                    ShowCompletedTasksState.new,
+                  )._showCompletedTasks,
+                  onToggled: (value) {
+                    setState(() {
+                      June.getState(ShowCompletedTasksState.new).toggle();
+                    });
+                  },
                 ),
-            onEdit:
-                (task) =>
-                    TaskEditScreen(job: widget.parent.parent!, task: task),
+              ],
+            ),
+            onEdit: (task) =>
+                TaskEditScreen(job: widget.parent.parent!, task: task),
             // ignore: discarded_futures
             onDelete: (task) => DaoTask().delete(task!.id),
             // ignore: discarded_futures
-            onInsert: (task,  transaction) => DaoTask().insert(task!, transaction),
-            details:
-                (task, details) =>
-                    details == CardDetail.full
-                        ? _buildFullTasksDetails(task)
-                        : _buildTaskSummary(task),
+            onInsert: (task, transaction) =>
+                DaoTask().insert(task!, transaction),
+            details: (task, details) => details == CardDetail.full
+                ? _buildFullTasksDetails(task)
+                : _buildTaskSummary(task),
             extended: widget.extended,
           ),
         ),
@@ -104,8 +100,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<List<Task>> _fetchTasks() async {
-    final showCompleted =
-        June.getState(ShowCompletedTasksState.new)._showCompletedTasks;
+    final showCompleted = June.getState(
+      ShowCompletedTasksState.new,
+    )._showCompletedTasks;
     final tasks = await DaoTask().getTasksByJob(widget.parent.parent!.id);
 
     final included = <Task>[];
@@ -130,19 +127,18 @@ class _TaskListScreenState extends State<TaskListScreen> {
       ),
       FutureBuilderEx(
         future: DaoTask()
-        // ignore: discarded_futures
-        .getAccruedValueForTask(task: task, includeBilled: true),
-        builder:
-            (context, taskAccruedValue) => Row(
-              children: [
-                HMBText(
-                  'Effort(hrs): ${taskAccruedValue!.earnedLabourHours.format('0.00')}/${taskAccruedValue.taskEstimatedValue.estimatedLabourHours.format('0.00')}',
-                ),
-                HMBText(
-                  ' Earnings: ${taskAccruedValue.earnedMaterialCharges}/${taskAccruedValue.taskEstimatedValue.estimatedMaterialsCharge}',
-                ),
-              ],
+            // ignore: discarded_futures
+            .getAccruedValueForTask(task: task, includeBilled: true),
+        builder: (context, taskAccruedValue) => Row(
+          children: [
+            HMBText(
+              'Effort(hrs): ${taskAccruedValue!.earnedLabourHours.format('0.00')}/${taskAccruedValue.taskEstimatedValue.estimatedLabourHours.format('0.00')}',
             ),
+            HMBText(
+              ' Earnings: ${taskAccruedValue.earnedMaterialCharges}/${taskAccruedValue.taskEstimatedValue.estimatedMaterialsCharge}',
+            ),
+          ],
+        ),
       ),
       HMBStartTimeEntry(
         task: task,
@@ -167,15 +163,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
       FutureBuilderEx(
         // ignore: discarded_futures
         future: DaoTimeEntry().getByTask(task.id),
-        builder:
-            (context, timeEntries) => Text(
-              formatDuration(
-                timeEntries!.fold<Duration>(
-                  Duration.zero,
-                  (a, b) => a + b.duration,
-                ),
-              ),
+        builder: (context, timeEntries) => Text(
+          formatDuration(
+            timeEntries!.fold<Duration>(
+              Duration.zero,
+              (a, b) => a + b.duration,
             ),
+          ),
+        ),
       ),
       FutureBuilderEx<int>(
         // ignore: discarded_futures

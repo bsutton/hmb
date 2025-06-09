@@ -166,8 +166,8 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
       final selectedBackup = await Navigator.push(
         context,
         MaterialPageRoute<Backup>(
-          builder:
-              (context) => BackupSelectionScreen(backupProvider: _provider),
+          builder: (context) =>
+              BackupSelectionScreen(backupProvider: _provider),
         ),
       );
 

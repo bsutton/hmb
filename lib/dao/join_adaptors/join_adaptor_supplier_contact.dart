@@ -15,11 +15,15 @@ class JoinAdaptorSupplierContact implements DaoJoinAdaptor<Contact, Supplier> {
   }
 
   @override
-  Future<List<Contact>> getByParent(Supplier? supplier)  =>
+  Future<List<Contact>> getByParent(Supplier? supplier) =>
       DaoContact().getBySupplier(supplier);
 
   @override
-  Future<void> insertForParent(Contact contact, Supplier supplier, Transaction transaction) async {
+  Future<void> insertForParent(
+    Contact contact,
+    Supplier supplier,
+    Transaction transaction,
+  ) async {
     await DaoContact().insertForSupplier(contact, supplier, transaction);
   }
 

@@ -28,12 +28,11 @@ class SelectBillingContactDialog extends StatefulWidget {
     void Function(Contact? contact)? onSelected,
   ) => showDialog<Contact>(
     context: context,
-    builder:
-        (context) => SelectBillingContactDialog(
-          customer: customer,
-          initialContact: contact,
-          onSelected: onSelected,
-        ),
+    builder: (context) => SelectBillingContactDialog(
+      customer: customer,
+      initialContact: contact,
+      onSelected: onSelected,
+    ),
   );
 
   @override

@@ -30,25 +30,23 @@ class SupplierListScreen extends StatelessWidget {
       return FutureBuilderEx(
         // ignore: discarded_futures
         future: DaoSite().getPrimaryForSupplier(supplier),
-        builder:
-            (context, site) => FutureBuilderEx(
-              // ignore: discarded_futures
-              future: DaoContact().getPrimaryForSupplier(supplier),
-              builder:
-                  (context, contact) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HMBTextBody(supplier.service ?? ''),
-                      ContactText(label: '', contact: contact),
-                      HMBPhoneText(
-                        phoneNo: contact?.bestPhone,
-                        sourceContext: SourceContext(supplier: supplier),
-                      ),
-                      HMBEmailText(email: contact?.emailAddress),
-                      HMBSiteText(label: '', site: site),
-                    ],
-                  ),
-            ),
+        builder: (context, site) => FutureBuilderEx(
+          // ignore: discarded_futures
+          future: DaoContact().getPrimaryForSupplier(supplier),
+          builder: (context, contact) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              HMBTextBody(supplier.service ?? ''),
+              ContactText(label: '', contact: contact),
+              HMBPhoneText(
+                phoneNo: contact?.bestPhone,
+                sourceContext: SourceContext(supplier: supplier),
+              ),
+              HMBEmailText(email: contact?.emailAddress),
+              HMBSiteText(label: '', site: site),
+            ],
+          ),
+        ),
       );
     },
   );

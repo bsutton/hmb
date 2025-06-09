@@ -140,10 +140,9 @@ Future<Money> emitMaterialsByTask(
         lineTotal = -lineTotal;
       }
 
-      final description =
-          item.isReturn
-              ? 'Returned: ${item.description}'
-              : 'Material: ${item.description}';
+      final description = item.isReturn
+          ? 'Returned: ${item.description}'
+          : 'Material: ${item.description}';
 
       final invoiceLine = InvoiceLine.forInsert(
         invoiceId: invoiceId,

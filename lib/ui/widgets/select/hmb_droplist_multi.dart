@@ -22,17 +22,16 @@ class HMBDroplistMultiSelect<T> extends FormField<List<T>> {
     super.key,
   }) : super(
          autovalidateMode: AutovalidateMode.always,
-         builder:
-             (state) => _HMBDroplistMultiSelect<T>(
-               key: ValueKey(initialItems),
-               state: state,
-               initialItems: initialItems,
-               items: items,
-               format: format,
-               onChanged: onChanged,
-               title: title,
-               backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
-             ),
+         builder: (state) => _HMBDroplistMultiSelect<T>(
+           key: ValueKey(initialItems),
+           state: state,
+           initialItems: initialItems,
+           items: items,
+           format: format,
+           onChanged: onChanged,
+           title: title,
+           backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
+         ),
          validator: (value) {
            if (required && (value == null || value.isEmpty)) {
              return 'Please select at least one item';
@@ -100,13 +99,12 @@ class _HMBDroplistMultiSelectState<T>
     onTap: () async {
       final selectedItems = await showDialog<List<T>>(
         context: context,
-        builder:
-            (context) => HMBDroplistMultiSelectDialog<T>(
-              getItems: widget.items,
-              formatItem: widget.format,
-              title: widget.title,
-              selectedItems: _selectedItems,
-            ),
+        builder: (context) => HMBDroplistMultiSelectDialog<T>(
+          getItems: widget.items,
+          formatItem: widget.format,
+          title: widget.title,
+          selectedItems: _selectedItems,
+        ),
       );
 
       if (selectedItems != null) {
@@ -138,10 +136,9 @@ class _HMBDroplistMultiSelectState<T>
                       : 'Select ${widget.title}',
                   style: TextStyle(
                     fontSize: 13,
-                    color:
-                        widget.state.hasError
-                            ? Theme.of(context).colorScheme.error
-                            : HMBColors.textPrimary,
+                    color: widget.state.hasError
+                        ? Theme.of(context).colorScheme.error
+                        : HMBColors.textPrimary,
                   ),
                 ),
               const Icon(Icons.arrow_drop_down, color: HMBColors.dropboxArrow),

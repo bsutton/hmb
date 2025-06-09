@@ -32,7 +32,7 @@ class DaoSupplierAssignmentTask extends Dao<SupplierAssignmentTask> {
   }
 
   @override
-  JuneStateCreator get juneRefresher =>  SupplierAssignmentTaskState.new;
+  JuneStateCreator get juneRefresher => SupplierAssignmentTaskState.new;
 }
 
 /// Used to notify the UI that the time entry has changed.

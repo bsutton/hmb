@@ -181,33 +181,31 @@ If your Job isn't showing then you need to update its status to an Active one su
                     final isMobile = constraints.maxWidth < 900;
                     return isMobile
                         ? ListView.builder(
-                          // Mobile layout
-                          padding: const EdgeInsets.all(8),
-                          itemCount: taskItemsContexts.length,
-                          itemBuilder:
-                              (context, index) => _buildListItem(
-                                context,
-                                taskItemsContexts[index],
-                              ),
-                        )
+                            // Mobile layout
+                            padding: const EdgeInsets.all(8),
+                            itemCount: taskItemsContexts.length,
+                            itemBuilder: (context, index) => _buildListItem(
+                              context,
+                              taskItemsContexts[index],
+                            ),
+                          )
                         // Desktop layout
                         : GridView.builder(
-                          padding: const EdgeInsets.all(8),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 1.5,
-                                mainAxisSpacing:
-                                    16, // Added vertical spacing between items
-                                crossAxisSpacing: 16,
-                              ),
-                          itemCount: taskItemsContexts.length,
-                          itemBuilder:
-                              (context, index) => _buildListItem(
-                                context,
-                                taskItemsContexts[index],
-                              ),
-                        );
+                            padding: const EdgeInsets.all(8),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 1.5,
+                                  mainAxisSpacing:
+                                      16, // Added vertical spacing between items
+                                  crossAxisSpacing: 16,
+                                ),
+                            itemCount: taskItemsContexts.length,
+                            itemBuilder: (context, index) => _buildListItem(
+                              context,
+                              taskItemsContexts[index],
+                            ),
+                          );
                   },
                 );
               },
@@ -277,8 +275,8 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
                 ),
                 IconButton(
                   icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed:
-                      () => unawaited(markAsCompleted(itemContext, context)),
+                  onPressed: () =>
+                      unawaited(markAsCompleted(itemContext, context)),
                 ),
               ],
             ),
@@ -314,24 +312,23 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Move to Shopping List'),
-            content: Text(
-              'Are you sure you want to move "${itemContext.taskItem.description}" '
-              'to the shopping list?',
-            ),
-            actions: [
-              HMBButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                label: 'Cancel',
-              ),
-              HMBButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                label: 'Confirm',
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Move to Shopping List'),
+        content: Text(
+          'Are you sure you want to move "${itemContext.taskItem.description}" '
+          'to the shopping list?',
+        ),
+        actions: [
+          HMBButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            label: 'Cancel',
           ),
+          HMBButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            label: 'Confirm',
+          ),
+        ],
+      ),
     );
     return confirmed;
   }

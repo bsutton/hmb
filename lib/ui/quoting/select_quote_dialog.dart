@@ -189,8 +189,8 @@ class CustomerAndQuote {
     if (showAllQuotes) {
       quotes = await DaoQuote().getAll();
     } else {
-      quotes =
-          await DaoQuote().getQuotesWithoutMilestones(); // Fetch active quotes
+      quotes = await DaoQuote()
+          .getQuotesWithoutMilestones(); // Fetch active quotes
     }
 
     final quoteList = <CustomerAndQuote>[];

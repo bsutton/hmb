@@ -63,11 +63,10 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
     final contact = await Navigator.push<Contact>(
       context,
       MaterialPageRoute<Contact>(
-        builder:
-            (context) => ContactEditScreen<Customer>(
-              parent: widget.customer!,
-              daoJoin: JoinAdaptorCustomerContact(),
-            ),
+        builder: (context) => ContactEditScreen<Customer>(
+          parent: widget.customer!,
+          daoJoin: JoinAdaptorCustomerContact(),
+        ),
       ),
     );
 

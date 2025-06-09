@@ -33,55 +33,51 @@ class ToolStockTakeWizard extends StatefulWidget {
   }) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder:
-            (_) => ToolStockTakeWizard(
-              cost: cost,
-              name: name,
-              onFinish: (reason) async {
-                await onFinish(reason);
+        builder: (_) => ToolStockTakeWizard(
+          cost: cost,
+          name: name,
+          onFinish: (reason) async {
+            await onFinish(reason);
 
-                if (reason == WizardCompletionReason.cancelled) {
-                  return;
-                }
+            if (reason == WizardCompletionReason.cancelled) {
+              return;
+            }
 
-                if (!offerAnother || !context.mounted) {
-                  return;
-                }
+            if (!offerAnother || !context.mounted) {
+              return;
+            }
 
-                // Show a dialog asking if the user wants to add another
-                final addAnother = await showDialog<bool>(
-                  context: context,
-                  builder:
-                      (dialogContext) => AlertDialog(
-                        title: const Text('Add Another?'),
-                        content: const Text(
-                          'Would you like to run the stock take wizard again?',
-                        ),
-                        actions: [
-                          HMBButton(
-                            label: 'No',
-                            onPressed:
-                                () => Navigator.of(dialogContext).pop(false),
-                          ),
-                          HMBButton(
-                            label: 'Yes',
-                            onPressed:
-                                () => Navigator.of(dialogContext).pop(true),
-                          ),
-                        ],
-                      ),
-                );
+            // Show a dialog asking if the user wants to add another
+            final addAnother = await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: const Text('Add Another?'),
+                content: const Text(
+                  'Would you like to run the stock take wizard again?',
+                ),
+                actions: [
+                  HMBButton(
+                    label: 'No',
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                  ),
+                  HMBButton(
+                    label: 'Yes',
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                  ),
+                ],
+              ),
+            );
 
-                // If the user chooses to add another, re-launch the wizard
-                if ((addAnother ?? false) && context.mounted) {
-                  await start(
-                    context: context,
-                    onFinish: onFinish,
-                    offerAnother: offerAnother,
-                  );
-                }
-              },
-            ),
+            // If the user chooses to add another, re-launch the wizard
+            if ((addAnother ?? false) && context.mounted) {
+              await start(
+                context: context,
+                onFinish: onFinish,
+                offerAnother: offerAnother,
+              );
+            }
+          },
+        ),
       ),
     );
   }

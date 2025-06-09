@@ -49,11 +49,10 @@ ${widget.site?.addressLine1}, ${widget.site?.addressLine2}, ${widget.site?.subur
           final site = await Navigator.push<Site>(
             context,
             MaterialPageRoute<Site>(
-              builder:
-                  (context) => SiteEditScreen(
-                    parent: widget.parent,
-                    daoJoin: widget.daoJoin,
-                  ),
+              builder: (context) => SiteEditScreen(
+                parent: widget.parent,
+                daoJoin: widget.daoJoin,
+              ),
             ),
           );
           if (site != null) {

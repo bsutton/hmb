@@ -85,7 +85,7 @@ class LocalBackupProvider extends BackupProvider {
   }
 
   @override
-  Future<String> get backupLocation  => _pathToBackupDir;
+  Future<String> get backupLocation => _pathToBackupDir;
 
   Future<String> get _pathToBackupDir async =>
       join((await getApplicationDocumentsDirectory()).path, 'hmb', 'backups');

@@ -146,8 +146,9 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
       // Previous button
       FloatingActionButton(
         heroTag: 'previousPhotoBtn',
-        onPressed:
-            _currentIndex == 0 ? null : () => unawaited(_scrollToIndex(_currentIndex - 1)),
+        onPressed: _currentIndex == 0
+            ? null
+            : () => unawaited(_scrollToIndex(_currentIndex - 1)),
         backgroundColor: _currentIndex == 0 ? Colors.grey[700] : Colors.purple,
         child: const Icon(Icons.arrow_back),
       ),
@@ -165,14 +166,12 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
       // Next button
       FloatingActionButton(
         heroTag: 'nextPhotoBtn',
-        onPressed:
-            _currentIndex == widget.photos.length - 1
-                ? null
-                : () => unawaited(_scrollToIndex(_currentIndex + 1)),
-        backgroundColor:
-            _currentIndex == widget.photos.length - 1
-                ? Colors.grey[700]
-                : Colors.purple,
+        onPressed: _currentIndex == widget.photos.length - 1
+            ? null
+            : () => unawaited(_scrollToIndex(_currentIndex + 1)),
+        backgroundColor: _currentIndex == widget.photos.length - 1
+            ? Colors.grey[700]
+            : Colors.purple,
         child: const Icon(Icons.arrow_forward),
       ),
     ],

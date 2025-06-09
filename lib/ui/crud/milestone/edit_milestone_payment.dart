@@ -94,10 +94,12 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     }
 
     // Separate edited and unedited milestones
-    final editedMilestones =
-        uninvoicedMilestones.where((m) => m.edited).toList();
-    final uneditedMilestones =
-        uninvoicedMilestones.where((m) => !m.edited).toList();
+    final editedMilestones = uninvoicedMilestones
+        .where((m) => m.edited)
+        .toList();
+    final uneditedMilestones = uninvoicedMilestones
+        .where((m) => !m.edited)
+        .toList();
 
     // Calculate how much is already allocated by edited milestones
     final allocatedByEdited = editedMilestones.fold<Money>(
@@ -122,12 +124,11 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     }
 
     final count = uneditedMilestones.length;
-    final amountPerMilestone =
-        count > 0
-            ? remainingForUnedited.divideByFixed(
-              Fixed.fromInt(count, decimalDigits: 0),
-            )
-            : MoneyEx.zero;
+    final amountPerMilestone = count > 0
+        ? remainingForUnedited.divideByFixed(
+            Fixed.fromInt(count, decimalDigits: 0),
+          )
+        : MoneyEx.zero;
 
     for (final milestone in uneditedMilestones) {
       milestone
@@ -229,62 +230,61 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder:
-        (context) => Scaffold(
-          appBar: AppBar(
-            title: const Text('Edit Milestones'),
-            actions: [
-              HMBButtonAdd(
-                enabled: true,
-                hint: 'Add Milestone',
-                onPressed: _addMilestone,
-              ),
-            ],
+    builder: (context) => Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Milestones'),
+        actions: [
+          HMBButtonAdd(
+            enabled: true,
+            hint: 'Add Milestone',
+            onPressed: _addMilestone,
           ),
-          body: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: HMBText('Quote Total: ${quote.totalAmount}'),
-              ),
-              if (_errorMessage.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-              Expanded(
-                child: ReorderableListView(
-                  padding: const EdgeInsets.only(right: 28),
-                  onReorder: _onReorder,
-                  children: List.generate(milestones.length, (index) {
-                    final milestone = milestones[index];
-                    return MilestoneTile(
-                      key: ValueKey(milestone.id),
-                      milestone: milestone,
-                      quoteTotal: quote.totalAmount,
-                      onDelete: _onMilestoneDeleted,
-                      onSave: _onMilestoneSave,
-                      onInvoice:
-                          // ignore: unnecessary_async
-                          (milestone) async =>
-                              _onMilestoneInvoice(context, milestone),
-                      // If editingMilestoneId is set and not equal to this milestone's id,
-                      // then this tile is grayed out.
-                      isOtherTileEditing:
-                          editingMilestoneId != null &&
-                          editingMilestoneId != milestone.id,
-                      // Add the editing status changed callback
-                      onEditingStatusChanged: _onEditingStatusChanged,
-                    );
-                  }),
-                ),
-              ),
-            ],
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: HMBText('Quote Total: ${quote.totalAmount}'),
           ),
-        ),
+          if (_errorMessage.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                _errorMessage,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          Expanded(
+            child: ReorderableListView(
+              padding: const EdgeInsets.only(right: 28),
+              onReorder: _onReorder,
+              children: List.generate(milestones.length, (index) {
+                final milestone = milestones[index];
+                return MilestoneTile(
+                  key: ValueKey(milestone.id),
+                  milestone: milestone,
+                  quoteTotal: quote.totalAmount,
+                  onDelete: _onMilestoneDeleted,
+                  onSave: _onMilestoneSave,
+                  onInvoice:
+                      // ignore: unnecessary_async
+                      (milestone) async =>
+                          _onMilestoneInvoice(context, milestone),
+                  // If editingMilestoneId is set and not equal to this milestone's id,
+                  // then this tile is grayed out.
+                  isOtherTileEditing:
+                      editingMilestoneId != null &&
+                      editingMilestoneId != milestone.id,
+                  // Add the editing status changed callback
+                  onEditingStatusChanged: _onEditingStatusChanged,
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    ),
   );
 
   Future<void> _onMilestoneInvoice(

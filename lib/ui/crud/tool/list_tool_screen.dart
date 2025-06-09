@@ -69,9 +69,8 @@ class _ToolListScreenState extends State<ToolListScreen> {
             FutureBuilderEx(
               // ignore: discarded_futures
               future: DaoCategory().getById(tool.categoryId),
-              builder:
-                  (context, category) =>
-                      HMBTextBody('Category: ${category?.name ?? 'Not Set'}'),
+              builder: (context, category) =>
+                  HMBTextBody('Category: ${category?.name ?? 'Not Set'}'),
             ),
             if (tool.datePurchased != null)
               HMBTextBody('Purchased: ${formatDate(tool.datePurchased!)}'),
@@ -84,10 +83,9 @@ class _ToolListScreenState extends State<ToolListScreen> {
             if (tool.cost != null) HMBTextBody('Cost: ${tool.cost}'),
             PhotoGallery.forTool(
               tool: tool,
-              filter:
-                  (photo) =>
-                      !(photo.id == tool.serialNumberPhotoId ||
-                          photo.id == tool.receiptPhotoId),
+              filter: (photo) =>
+                  !(photo.id == tool.serialNumberPhotoId ||
+                      photo.id == tool.receiptPhotoId),
             ),
           ],
         );

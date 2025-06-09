@@ -85,8 +85,9 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
       );
 
       // Count how many milestones are invoiced
-      final invoicedCount =
-          quoteMilestones.where((m) => m.invoiceId != null).length;
+      final invoicedCount = quoteMilestones
+          .where((m) => m.invoiceId != null)
+          .length;
 
       final summary = QuoteMilestoneSummary(
         quote: quote,
@@ -168,8 +169,8 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
         // Navigate to EditMilestonesScreen for this quote
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder:
-                (context) => EditMilestonesScreen(quoteId: summary.quote.id),
+            builder: (context) =>
+                EditMilestonesScreen(quoteId: summary.quote.id),
           ),
         );
         setState(() {

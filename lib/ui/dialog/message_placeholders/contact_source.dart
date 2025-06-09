@@ -18,21 +18,19 @@ class ContactSource extends Source<Contact> {
   @override
   Widget widget() => ValueListenableBuilder(
     valueListenable: customerNotifier,
-    builder:
-        (context, customerContact, _) => HMBDroplist<Contact>(
-          title: 'Contact',
-          selectedItem: () async => customerContact.contact,
-          items:
-              (filter) =>
-                  // ignore: discarded_futures
-                  DaoContact().getByFilter(customerContact.customer!, filter),
-          format: (contact) => contact.fullname,
-          onChanged: (contact) {
-            this.contact = contact;
-            // Reset site and contact when customer changes
-            onChanged.call(contact, ResetFields(site: true, contact: true));
-          },
-        ),
+    builder: (context, customerContact, _) => HMBDroplist<Contact>(
+      title: 'Contact',
+      selectedItem: () async => customerContact.contact,
+      items: (filter) =>
+          // ignore: discarded_futures
+          DaoContact().getByFilter(customerContact.customer!, filter),
+      format: (contact) => contact.fullname,
+      onChanged: (contact) {
+        this.contact = contact;
+        // Reset site and contact when customer changes
+        onChanged.call(contact, ResetFields(site: true, contact: true));
+      },
+    ),
   );
 
   @override

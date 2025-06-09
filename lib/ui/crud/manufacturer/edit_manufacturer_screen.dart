@@ -47,32 +47,31 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
     entityName: 'Manufacturer',
     dao: DaoManufacturer(),
     entityState: this,
-    editor:
-        (manufacturer, {required isNew}) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            HMBTextField(
-              controller: _nameController,
-              labelText: 'Name',
-              required: true,
-            ),
-            HMBTextField(
-              controller: _descriptionController,
-              labelText: 'Description',
-            ),
-            HMBTextField(
-              controller: _contactNumberController,
-              labelText: 'Contact Number',
-              keyboardType: TextInputType.phone,
-            ),
-            HMBTextField(
-              controller: _emailController,
-              labelText: 'Email',
-              keyboardType: TextInputType.emailAddress,
-            ),
-            HMBTextField(controller: _addressController, labelText: 'Address'),
-          ],
+    editor: (manufacturer, {required isNew}) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HMBTextField(
+          controller: _nameController,
+          labelText: 'Name',
+          required: true,
         ),
+        HMBTextField(
+          controller: _descriptionController,
+          labelText: 'Description',
+        ),
+        HMBTextField(
+          controller: _contactNumberController,
+          labelText: 'Contact Number',
+          keyboardType: TextInputType.phone,
+        ),
+        HMBTextField(
+          controller: _emailController,
+          labelText: 'Email',
+          keyboardType: TextInputType.emailAddress,
+        ),
+        HMBTextField(controller: _addressController, labelText: 'Address'),
+      ],
+    ),
   );
 
   @override

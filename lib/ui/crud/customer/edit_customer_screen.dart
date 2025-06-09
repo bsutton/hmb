@@ -95,85 +95,82 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
     entityName: 'Customer',
     dao: DaoCustomer(),
     entityState: this,
-    editor:
-        (customer, {required isNew}) => DeferredBuilder(
-          this,
-          builder:
-              (context) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  HMBFormSection(
-                    children: [
-                      Text(
-                        'Customer Details',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      HMBNameField(
-                        autofocus: isNotMobile,
-                        controller: _nameController,
-                        labelText: 'Name',
-                        required: true,
-                        keyboardType: TextInputType.name,
-                      ),
-                      HMBTextArea(
-                        controller: _descriptionController,
-                        labelText: 'Description',
-                      ),
-                      HMBTextField(
-                        controller: _hourlyRateController,
-                        labelText: 'Hourly Rate',
-                        keyboardType: TextInputType.number,
-                        required: true,
-                      ),
-                      HMBSwitch(
-                        labelText: 'Disbarred',
-                        initialValue: _disbarred,
-                        onChanged: (value) {
-                          setState(() => _disbarred = value);
-                        },
-                      ),
-                      HMBDroplist<CustomerType>(
-                        selectedItem: () async => _selectedCustomerType,
-                        items: (filter) async => CustomerType.values,
-                        title: 'Customer Type',
-                        onChanged: (newValue) {
-                          _selectedCustomerType = newValue!;
-                        },
-                        format: (item) => item.display,
-                      ),
-
-                      // Select billing contact
-                      JuneBuilder<CustomerBillingContact>(
-                        CustomerBillingContact.new,
-                        builder:
-                            (billingContactState) => HMBSelectContact(
-                              title: 'Billing Contact',
-                              initialContact: billingContactState.contact?.id,
-                              customer: customer,
-                              onSelected: (contact) {
-                                if (contact != null) {
-                                  billingContactState
-                                    ..contact = contact
-                                    ..setState();
-                                }
-                              },
-                            ),
-                      ),
-                    ],
-                  ),
-                  HMBCrudContact<Customer>(
-                    parentTitle: 'Customer',
-                    parent: Parent(customer),
-                    daoJoin: JoinAdaptorCustomerContact(),
-                  ),
-                  HBMCrudSite(
-                    parentTitle: 'Customer',
-                    parent: Parent(customer),
-                    daoJoin: JoinAdaptorCustomerSite(),
-                  ),
-                ],
+    editor: (customer, {required isNew}) => DeferredBuilder(
+      this,
+      builder: (context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          HMBFormSection(
+            children: [
+              Text(
+                'Customer Details',
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
-        ),
+              HMBNameField(
+                autofocus: isNotMobile,
+                controller: _nameController,
+                labelText: 'Name',
+                required: true,
+                keyboardType: TextInputType.name,
+              ),
+              HMBTextArea(
+                controller: _descriptionController,
+                labelText: 'Description',
+              ),
+              HMBTextField(
+                controller: _hourlyRateController,
+                labelText: 'Hourly Rate',
+                keyboardType: TextInputType.number,
+                required: true,
+              ),
+              HMBSwitch(
+                labelText: 'Disbarred',
+                initialValue: _disbarred,
+                onChanged: (value) {
+                  setState(() => _disbarred = value);
+                },
+              ),
+              HMBDroplist<CustomerType>(
+                selectedItem: () async => _selectedCustomerType,
+                items: (filter) async => CustomerType.values,
+                title: 'Customer Type',
+                onChanged: (newValue) {
+                  _selectedCustomerType = newValue!;
+                },
+                format: (item) => item.display,
+              ),
+
+              // Select billing contact
+              JuneBuilder<CustomerBillingContact>(
+                CustomerBillingContact.new,
+                builder: (billingContactState) => HMBSelectContact(
+                  title: 'Billing Contact',
+                  initialContact: billingContactState.contact?.id,
+                  customer: customer,
+                  onSelected: (contact) {
+                    if (contact != null) {
+                      billingContactState
+                        ..contact = contact
+                        ..setState();
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          HMBCrudContact<Customer>(
+            parentTitle: 'Customer',
+            parent: Parent(customer),
+            daoJoin: JoinAdaptorCustomerContact(),
+          ),
+          HBMCrudSite(
+            parentTitle: 'Customer',
+            parent: Parent(customer),
+            daoJoin: JoinAdaptorCustomerSite(),
+          ),
+        ],
+      ),
+    ),
   );
 
   @override

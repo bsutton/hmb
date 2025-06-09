@@ -8,7 +8,10 @@ import 'text_source.dart';
 /// a text field to fill in.
 class DefaultHolder extends PlaceHolder<String> {
   DefaultHolder({required super.name})
-    : super(base: _tagBase, source: TextSource(label: name));
+    : super(
+        base: _tagBase,
+        source: TextSource(label: name),
+      );
 
   static const _tagBase = 'text';
 

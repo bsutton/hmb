@@ -190,7 +190,11 @@ where jo.id =?
     await delete(contact.id);
   }
 
-  Future<void> insertForCustomer(Contact contact, Customer customer, Transaction transaction) async {
+  Future<void> insertForCustomer(
+    Contact contact,
+    Customer customer,
+    Transaction transaction,
+  ) async {
     await insert(contact, transaction);
     await DaoContactCustomer().insertJoin(contact, customer, transaction);
   }
@@ -200,7 +204,11 @@ where jo.id =?
     await delete(contact.id);
   }
 
-  Future<void> insertForSupplier(Contact contact, Supplier supplier, Transaction transaction) async {
+  Future<void> insertForSupplier(
+    Contact contact,
+    Supplier supplier,
+    Transaction transaction,
+  ) async {
     await insert(contact, transaction);
     await DaoContactSupplier().insertJoin(contact, supplier, transaction);
   }

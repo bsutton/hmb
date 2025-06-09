@@ -6,7 +6,6 @@ import 'dao.g.dart';
 
 /// Join table DAO: maps suppliers ⇄ contacts
 class DaoContactSupplier extends Dao<Contact> {
-
   @override
   Contact fromMap(Map<String, dynamic> map) => Contact.fromMap(map);
 

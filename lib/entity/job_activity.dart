@@ -72,10 +72,9 @@ class JobActivity extends Entity<JobActivity> {
       map['status'] as String? ?? JobActivityStatus.proposed.name,
     ),
     notes: map['notes'] as String?,
-    noticeSentDate:
-        map['notice_sent_date'] == null
-            ? null
-            : DateTime.parse(map['notice_sent_date'] as String),
+    noticeSentDate: map['notice_sent_date'] == null
+        ? null
+        : DateTime.parse(map['notice_sent_date'] as String),
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );

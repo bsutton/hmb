@@ -61,8 +61,8 @@ class _JobCardState extends State<JobCard> {
               if (info.quoteNumber != null)
                 HMBLinkInternal(
                   label: 'Quote #: ${info.quoteNumber}',
-                  navigateTo:
-                      () async => QuoteDetailsScreen(quoteId: info.quoteId!),
+                  navigateTo: () async =>
+                      QuoteDetailsScreen(quoteId: info.quoteId!),
                 ),
 
               HMBTextLine('Status: ${info.statusName}'),
@@ -78,9 +78,8 @@ class _JobCardState extends State<JobCard> {
                     onPressed: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder:
-                              (context) =>
-                                  JobEstimateBuilderScreen(job: widget.job),
+                          builder: (context) =>
+                              JobEstimateBuilderScreen(job: widget.job),
                         ),
                       );
                       // After returning, refresh totals
@@ -108,7 +107,7 @@ class _JobCardState extends State<JobCard> {
     final invoiceOptions = await selectTaskToQuote(
       context: context,
       job: widget.job,
-      title: 'Tasks for Quote'
+      title: 'Tasks for Quote',
     );
 
     if (invoiceOptions != null) {
@@ -134,14 +133,12 @@ class _JobCardState extends State<JobCard> {
 
   Future<CompleteJobInfo> _loadCompleteJobInfo(Job job) async {
     final totals = await _loadJobTotals(job);
-    final customer =
-        job.customerId != null
-            ? await DaoCustomer().getById(job.customerId)
-            : null;
-    final jobStatus =
-        job.jobStatusId != null
-            ? await DaoJobStatus().getById(job.jobStatusId)
-            : null;
+    final customer = job.customerId != null
+        ? await DaoCustomer().getById(job.customerId)
+        : null;
+    final jobStatus = job.jobStatusId != null
+        ? await DaoJobStatus().getById(job.jobStatusId)
+        : null;
 
     final customerName = customer?.name ?? 'N/A';
     final statusName = jobStatus?.name ?? 'Unknown';

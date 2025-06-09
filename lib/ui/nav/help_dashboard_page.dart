@@ -28,30 +28,25 @@ class HelpDashboardPage extends StatelessWidget {
           label: 'Getting Started',
           icon: Icons.info_outline,
           dashletValue: () => Future.value(const DashletValue(null)),
-          onTapOverride:
-              () => unawaited(
-                _launchURL('https://hmb.onepub.dev/getting-started'),
-              ),
+          onTapOverride: () =>
+              unawaited(_launchURL('https://hmb.onepub.dev/getting-started')),
           widgetBuilder: (_, _) => const SizedBox.shrink(),
         ),
         DashletCard<void>(
           label: 'Report an Issue',
           icon: Icons.bug_report,
           dashletValue: () => Future.value(const DashletValue(null)),
-          onTapOverride:
-              () => unawaited(
-                _launchURL('https://github.com/bsutton/hmb/issues'),
-              ),
+          onTapOverride: () =>
+              unawaited(_launchURL('https://github.com/bsutton/hmb/issues')),
           widgetBuilder: (_, _) => const SizedBox.shrink(),
         ),
         DashletCard<void>(
           label: 'Community Discussions',
           icon: Icons.forum,
           dashletValue: () => Future.value(const DashletValue(null)),
-          onTapOverride:
-              () => unawaited(
-                _launchURL('https://github.com/bsutton/hmb/discussions'),
-              ),
+          onTapOverride: () => unawaited(
+            _launchURL('https://github.com/bsutton/hmb/discussions'),
+          ),
           widgetBuilder: (_, _) => const SizedBox.shrink(),
         ),
         DashletCard<void>(

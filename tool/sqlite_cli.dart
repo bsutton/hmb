@@ -10,10 +10,9 @@ import 'package:path/path.dart';
 /// dev database
 
 void main(List<String> args) {
-  final parser =
-      ArgParser()
-        ..addFlag('help', abbr: 'h')
-        ..addFlag('test', abbr: 't', help: 'Connect to the test fixtures db');
+  final parser = ArgParser()
+    ..addFlag('help', abbr: 'h')
+    ..addFlag('test', abbr: 't', help: 'Connect to the test fixtures db');
 
   final results = parser.parse(args);
   if (results['help'] as bool) {

@@ -12,10 +12,9 @@ class DaoBase<T extends Entity<T>> {
     String tableName,
     T Function(Map<String, dynamic> map) fromMap,
   ) {
-    final dao =
-        DaoBase<T>(db, (_, _) {})
-          .._tableName = tableName
-          .._fromMap = fromMap;
+    final dao = DaoBase<T>(db, (_, _) {})
+      .._tableName = tableName
+      .._fromMap = fromMap;
     return dao;
   }
 

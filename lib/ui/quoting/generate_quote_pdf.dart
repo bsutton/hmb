@@ -40,67 +40,66 @@ Future<File> generateQuotePdf(
     pw.MultiPage(
       pageTheme: pw.PageTheme(
         margin: pw.EdgeInsets.zero,
-        buildBackground:
-            (context) => pw.Stack(
-              children: [
-                // Top band
-                pw.Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: pw.Container(height: 28, color: systemColor),
-                ),
-                // Bottom band with T&C
-                pw.Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: pw.Container(
-                    height: 28,
-                    color: systemColor,
-                    child: pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 10),
-                      child: pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.RichText(
-                            text: pw.TextSpan(
-                              text: 'This quote is subject to our ',
-                              style: const pw.TextStyle(color: PdfColors.white),
-                              children: [
-                                pw.WidgetSpan(
-                                  child: pw.UrlLink(
-                                    child: pw.Text(
-                                      'Terms and Conditions',
-                                      style: const pw.TextStyle(
-                                        color: PdfColors.blue,
-                                        decoration: pw.TextDecoration.underline,
-                                      ),
-                                    ),
-                                    destination: system.termsUrl ?? '',
+        buildBackground: (context) => pw.Stack(
+          children: [
+            // Top band
+            pw.Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: pw.Container(height: 28, color: systemColor),
+            ),
+            // Bottom band with T&C
+            pw.Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: pw.Container(
+                height: 28,
+                color: systemColor,
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 10),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.RichText(
+                        text: pw.TextSpan(
+                          text: 'This quote is subject to our ',
+                          style: const pw.TextStyle(color: PdfColors.white),
+                          children: [
+                            pw.WidgetSpan(
+                              child: pw.UrlLink(
+                                child: pw.Text(
+                                  'Terms and Conditions',
+                                  style: const pw.TextStyle(
+                                    color: PdfColors.blue,
+                                    decoration: pw.TextDecoration.underline,
                                   ),
                                 ),
-                                const pw.TextSpan(
-                                  text: ' and is valid for 30 days',
-                                  style: pw.TextStyle(color: PdfColors.white),
-                                ),
-                              ],
+                                destination: system.termsUrl ?? '',
+                              ),
                             ),
-                          ),
-                          pw.Text(
-                            '${context.pageNumber} of ${context.pagesCount}',
-                            style: const pw.TextStyle(
-                              fontSize: 12,
-                              color: PdfColors.white,
+                            const pw.TextSpan(
+                              text: ' and is valid for 30 days',
+                              style: pw.TextStyle(color: PdfColors.white),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                      pw.Text(
+                        '${context.pageNumber} of ${context.pagesCount}',
+                        style: const pw.TextStyle(
+                          fontSize: 12,
+                          color: PdfColors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
+          ],
+        ),
       ),
       header: (context) {
         if (context.pageNumber == 1) {

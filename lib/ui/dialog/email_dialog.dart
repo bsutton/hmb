@@ -40,7 +40,8 @@ class _EmailDialogState extends State<EmailDialog> {
     super.initState();
     _subjectController = TextEditingController(text: widget.subject);
     _bodyController = TextEditingController(
-      text: '''
+      text:
+          '''
 ${widget.body}
 
 Regards,
@@ -53,7 +54,6 @@ ${widget.system.businessNumberLabel}: ${widget.system.businessNumber}
 ''',
     );
     _selectedRecipient = widget.preferredRecipient;
-    
   }
 
   @override
@@ -69,15 +69,14 @@ ${widget.system.businessNumberLabel}: ${widget.system.businessNumber}
                 _selectedRecipient = newValue;
               });
             },
-            items:
-                widget.emailRecipients
-                    .map(
-                      (recipient) => DropdownMenuItem<String>(
-                        value: recipient,
-                        child: Text(recipient),
-                      ),
-                    )
-                    .toList(),
+            items: widget.emailRecipients
+                .map(
+                  (recipient) => DropdownMenuItem<String>(
+                    value: recipient,
+                    child: Text(recipient),
+                  ),
+                )
+                .toList(),
           ),
           TextField(
             controller: _subjectController,

@@ -16,7 +16,6 @@ class SettingsDashboardPage extends StatelessWidget {
         dashletValue: () => Future.value(const DashletValue(null)),
         route: '/system/sms_templates',
         widgetBuilder: (_, _) => const SizedBox.shrink(),
-
       ),
       DashletCard<void>(
         label: 'Business',

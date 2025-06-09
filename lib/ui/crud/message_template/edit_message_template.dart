@@ -50,42 +50,41 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
     entityName: 'Message Template',
     dao: DaoMessageTemplate(),
     entityState: this,
-    editor:
-        (messageTemplate, {required isNew}) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (messageTemplate == null ||
-                messageTemplate.owner == MessageTemplateOwner.user) ...[
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-                keyboardType: TextInputType.text,
-                textInputAction: TextInputAction.next,
-              ),
-              HMBTextArea(
-                controller: _messageController,
-                labelText: 'Message',
-                maxLines: 5,
-              ),
-            ] else ...[
-              ListTile(
-                title: Text(_titleController.text),
-                subtitle: const HMBTextHeadline(
-                  'System templates cannot be edited!',
-                ),
-              ),
-            ],
-            SwitchListTile(
-              title: Text(_enabled ? 'Enabled' : 'Disabled'),
-              value: _enabled,
-              onChanged: (value) {
-                setState(() {
-                  _enabled = value;
-                });
-              },
+    editor: (messageTemplate, {required isNew}) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (messageTemplate == null ||
+            messageTemplate.owner == MessageTemplateOwner.user) ...[
+          TextFormField(
+            controller: _titleController,
+            decoration: const InputDecoration(labelText: 'Title'),
+            keyboardType: TextInputType.text,
+            textInputAction: TextInputAction.next,
+          ),
+          HMBTextArea(
+            controller: _messageController,
+            labelText: 'Message',
+            maxLines: 5,
+          ),
+        ] else ...[
+          ListTile(
+            title: Text(_titleController.text),
+            subtitle: const HMBTextHeadline(
+              'System templates cannot be edited!',
             ),
-          ],
+          ),
+        ],
+        SwitchListTile(
+          title: Text(_enabled ? 'Enabled' : 'Disabled'),
+          value: _enabled,
+          onChanged: (value) {
+            setState(() {
+              _enabled = value;
+            });
+          },
         ),
+      ],
+    ),
   );
 
   @override

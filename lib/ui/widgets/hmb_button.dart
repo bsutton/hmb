@@ -84,10 +84,9 @@ class HMBButtonPrimary extends StatelessWidget {
     ),
     onPressed: (enabled ? onPressed : null),
     label: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
-    icon:
-        svg == null
-            ? const HMBEmpty()
-            : Svg(svg!, height: 24, width: 24, color: svgColor),
+    icon: svg == null
+        ? const HMBEmpty()
+        : Svg(svg!, height: 24, width: 24, color: svgColor),
   );
 }
 

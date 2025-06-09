@@ -98,10 +98,9 @@ Future<String> _initiateResumableUpload(
     'parents': [folderId],
   };
 
-  final request =
-      http.Request('POST', uri)
-        ..headers['Content-Type'] = 'application/json; charset=UTF-8'
-        ..body = jsonEncode(metadata);
+  final request = http.Request('POST', uri)
+    ..headers['Content-Type'] = 'application/json; charset=UTF-8'
+    ..body = jsonEncode(metadata);
 
   final response = await api.send(request);
   if (response.statusCode != 200 && response.statusCode != 201) {

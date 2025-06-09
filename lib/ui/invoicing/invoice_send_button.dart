@@ -76,38 +76,38 @@ class BuildSendButton extends StatelessWidget {
         if (context.mounted) {
           await Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder:
-                  (context) => PdfPreviewScreen(
-                    title: '''Invoice #${invoice.bestNumber} ${job.summary}''',
-                    filePath: filePath.path,
-                    preferredRecipient:
-                        billingContact?.emailAddress ?? recipients.first,
-                    emailSubject:
-                        '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
-                    emailBody: '''
+              builder: (context) => PdfPreviewScreen(
+                title: '''Invoice #${invoice.bestNumber} ${job.summary}''',
+                filePath: filePath.path,
+                preferredRecipient:
+                    billingContact?.emailAddress ?? recipients.first,
+                emailSubject:
+                    '''${system.businessName ?? 'Your'} Invoice #${invoice.bestNumber}''',
+                emailBody:
+                    '''
 ${primaryContact.firstName.trim()},
 Please find the attached invoice for your job.
 
 Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
 ''',
-                    emailRecipients: [
-                      ...recipients,
-                      if (Strings.isNotBlank(system.emailAddress))
-                        system.emailAddress!,
-                    ],
-                    onSent: () => DaoInvoice().markSent(invoice),
-                    canEmail: () async {
-                      if ((await ExternalAccounting().isEnabled()) &&
-                          !invoice.isUploaded()) {
-                        return EmailBlocked(
-                          blocked: true,
-                          reason: 'the invoice has not been uploaded.',
-                        );
-                      } else {
-                        return EmailBlocked(blocked: false, reason: '');
-                      }
-                    },
-                  ),
+                emailRecipients: [
+                  ...recipients,
+                  if (Strings.isNotBlank(system.emailAddress))
+                    system.emailAddress!,
+                ],
+                onSent: () => DaoInvoice().markSent(invoice),
+                canEmail: () async {
+                  if ((await ExternalAccounting().isEnabled()) &&
+                      !invoice.isUploaded()) {
+                    return EmailBlocked(
+                      blocked: true,
+                      reason: 'the invoice has not been uploaded.',
+                    );
+                  } else {
+                    return EmailBlocked(blocked: false, reason: '');
+                  }
+                },
+              ),
             ),
           );
         }
@@ -131,60 +131,59 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
       final tempGroupByTask = groupByTask; // Temporary selection for grouping
 
       return StatefulBuilder(
-        builder:
-            (context, setState) => AlertDialog(
-              title: const Text('Select Invoice Options'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CheckboxListTile(
-                    title: const Text('Display Costs'),
-                    value: tempDisplayCosts,
-                    onChanged: (value) {
-                      setState(() {
-                        tempDisplayCosts = value ?? true;
-                      });
-                    },
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Display Group Headers'),
-                    value: tempDisplayGroupHeaders,
-                    onChanged: (value) {
-                      setState(() {
-                        tempDisplayGroupHeaders = value ?? true;
-                      });
-                    },
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Display Items'),
-                    value: tempDisplayItems,
-                    onChanged: (value) {
-                      setState(() {
-                        tempDisplayItems = value ?? true;
-                      });
-                    },
-                  ),
-                ],
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Select Invoice Options'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CheckboxListTile(
+                title: const Text('Display Costs'),
+                value: tempDisplayCosts,
+                onChanged: (value) {
+                  setState(() {
+                    tempDisplayCosts = value ?? true;
+                  });
+                },
               ),
-              actions: [
-                HMBButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  label: 'Cancel',
-                ),
-                HMBButton(
-                  onPressed: () {
-                    Navigator.of(context).pop({
-                      'displayCosts': tempDisplayCosts,
-                      'displayGroupHeaders': tempDisplayGroupHeaders,
-                      'displayItems': tempDisplayItems,
-                      'groupByTask': tempGroupByTask,
-                      'billBookingFee': billBookingFee,
-                    });
-                  },
-                  label: 'OK',
-                ),
-              ],
+              CheckboxListTile(
+                title: const Text('Display Group Headers'),
+                value: tempDisplayGroupHeaders,
+                onChanged: (value) {
+                  setState(() {
+                    tempDisplayGroupHeaders = value ?? true;
+                  });
+                },
+              ),
+              CheckboxListTile(
+                title: const Text('Display Items'),
+                value: tempDisplayItems,
+                onChanged: (value) {
+                  setState(() {
+                    tempDisplayItems = value ?? true;
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            HMBButton(
+              onPressed: () => Navigator.of(context).pop(),
+              label: 'Cancel',
             ),
+            HMBButton(
+              onPressed: () {
+                Navigator.of(context).pop({
+                  'displayCosts': tempDisplayCosts,
+                  'displayGroupHeaders': tempDisplayGroupHeaders,
+                  'displayItems': tempDisplayItems,
+                  'groupByTask': tempGroupByTask,
+                  'billBookingFee': billBookingFee,
+                });
+              },
+              label: 'OK',
+            ),
+          ],
+        ),
       );
     },
   );

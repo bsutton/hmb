@@ -51,19 +51,20 @@ class _CapturePhotoState extends State<CapturePhoto> {
           HMBButton.withIcon(
             label: 'Capture Photo',
             icon: const Icon(Icons.camera_alt),
-            onPressed:
-                () => unawaited(_takePhoto(widget.title, (capturedPhoto) async {
-                  // Create a new Photo entity
-                  final newPhoto = Photo.forInsert(
-                    parentId: widget.tool.id,
-                    parentType: 'tool',
-                    filePath: capturedPhoto.relativePath,
-                    comment: widget.comment,
-                  );
-                  photoId = await widget.onCaptured(newPhoto);
+            onPressed: () => unawaited(
+              _takePhoto(widget.title, (capturedPhoto) async {
+                // Create a new Photo entity
+                final newPhoto = Photo.forInsert(
+                  parentId: widget.tool.id,
+                  parentType: 'tool',
+                  filePath: capturedPhoto.relativePath,
+                  comment: widget.comment,
+                );
+                photoId = await widget.onCaptured(newPhoto);
 
-                  setState(() {});
-                })),
+                setState(() {});
+              }),
+            ),
           ),
           if (photoId != null) ...[
             const SizedBox(height: 16),
@@ -72,12 +73,11 @@ class _CapturePhotoState extends State<CapturePhoto> {
             FutureBuilderEx(
               // ignore: discarded_futures
               future: _getPhotoMeta(),
-              builder:
-                  (context, meta) => PhotoThumbnail.fromPhotoMeta(
-                    photoMeta: meta!,
-                    title: meta.title,
-                    comment: meta.comment,
-                  ),
+              builder: (context, meta) => PhotoThumbnail.fromPhotoMeta(
+                photoMeta: meta!,
+                title: meta.title,
+                comment: meta.comment,
+              ),
             ),
           ],
         ],

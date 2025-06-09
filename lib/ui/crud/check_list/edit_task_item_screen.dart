@@ -102,10 +102,9 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       text: currentEntity?.margin.toString(),
     );
     _chargeController = TextEditingController(
-      text:
-          currentEntity
-              ?.getCharge(widget.billingType, widget.hourlyRate)
-              .toString(),
+      text: currentEntity
+          ?.getCharge(widget.billingType, widget.hourlyRate)
+          .toString(),
     );
 
     _dimension1Controller = TextEditingController(
@@ -139,8 +138,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
 
     final defaultDimensionType =
         system.preferredUnitSystem == PreferredUnitSystem.metric
-            ? selectedDimensionType.defaultMetric
-            : selectedDimensionType.defaultImperial;
+        ? selectedDimensionType.defaultMetric
+        : selectedDimensionType.defaultImperial;
 
     selectedUnits =
         selectedUnits ?? currentEntity?.units ?? defaultDimensionType;
@@ -172,50 +171,48 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder:
-        (context) => NestedEntityEditScreen<TaskItem, Task>(
-          key: globalKey,
-          entityName: 'Task Item',
-          dao: DaoTaskItem(),
-          // ignore: discarded_futures
-          onInsert: (taskItem, transaction) => DaoTaskItem().insert(taskItem!, transaction),
-          entityState: this,
-          editor:
-              (taskItem) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  HMBTextField(
-                    controller: _descriptionController,
-                    focusNode: _descriptionFocusNode,
-                    autofocus: isNotMobile,
-                    labelText: 'Description',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter the description';
-                      }
-                      return null;
-                    },
-                  ),
-                  _chooseItemType(taskItem),
-                  if (June.getState(SelectedCheckListItemType.new).selected !=
-                      0) ...[
-                    _chooseSupplier(taskItem),
-                    ..._buildFieldsBasedOnItemType(),
-                    HMBTextField(
-                      controller: _urlController,
-                      labelText: 'Reference URL',
-                      keyboardType: TextInputType.url,
-                    ),
-                    DimensionWidget(
-                      dimension1Controller: _dimension1Controller,
-                      dimension2Controller: _dimension2Controller,
-                      dimension3Controller: _dimension3Controller,
-                      taskItem: taskItem,
-                    ),
-                  ],
-                ],
-              ),
-        ),
+    builder: (context) => NestedEntityEditScreen<TaskItem, Task>(
+      key: globalKey,
+      entityName: 'Task Item',
+      dao: DaoTaskItem(),
+      // ignore: discarded_futures
+      onInsert: (taskItem, transaction) =>
+          DaoTaskItem().insert(taskItem!, transaction),
+      entityState: this,
+      editor: (taskItem) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          HMBTextField(
+            controller: _descriptionController,
+            focusNode: _descriptionFocusNode,
+            autofocus: isNotMobile,
+            labelText: 'Description',
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter the description';
+              }
+              return null;
+            },
+          ),
+          _chooseItemType(taskItem),
+          if (June.getState(SelectedCheckListItemType.new).selected != 0) ...[
+            _chooseSupplier(taskItem),
+            ..._buildFieldsBasedOnItemType(),
+            HMBTextField(
+              controller: _urlController,
+              labelText: 'Reference URL',
+              keyboardType: TextInputType.url,
+            ),
+            DimensionWidget(
+              dimension1Controller: _dimension1Controller,
+              dimension2Controller: _dimension2Controller,
+              dimension3Controller: _dimension3Controller,
+              taskItem: taskItem,
+            ),
+          ],
+        ],
+      ),
+    ),
   );
 
   HMBDroplist<TaskItemType> _chooseItemType(TaskItem? taskItem) =>
@@ -240,13 +237,12 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   HMBDroplist<Supplier> _chooseSupplier(TaskItem? taskItem) =>
       HMBDroplist<Supplier>(
         title: 'Supplier',
-        selectedItem:
-            () async =>
-                June.getState(SelectedSupplier.new).selected != 0
-                    ? DaoSupplier().getById(
-                      June.getState(SelectedSupplier.new).selected,
-                    )
-                    : null,
+        selectedItem: () async =>
+            June.getState(SelectedSupplier.new).selected != 0
+            ? DaoSupplier().getById(
+                June.getState(SelectedSupplier.new).selected,
+              )
+            : null,
         // ignore: discarded_futures
         items: (filter) => DaoSupplier().getByFilter(filter),
         format: (supplier) => supplier.name,
@@ -307,8 +303,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         labelText: 'Estimated Cost',
         keyboardType: TextInputType.number,
         enabled: !_manualCharge,
-        onChanged:
-            (value) => _calculateChargeFromMargin(_marginController.text),
+        onChanged: (value) =>
+            _calculateChargeFromMargin(_marginController.text),
       ),
 
     _buildMarginAndChargeFields(),
@@ -434,14 +430,13 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   Widget _buildDirectChargeField() => SwitchListTile(
     title: const Text('Enter charge directly'),
     value: _manualCharge,
-    onChanged:
-        (val) => setState(() {
-          _manualCharge = val;
-          // if switching *off* manual, re‑compute from current margin/qty/hours
-          if (!_manualCharge) {
-            _calculateChargeFromMargin(_marginController.text);
-          }
-        }),
+    onChanged: (val) => setState(() {
+      _manualCharge = val;
+      // if switching *off* manual, re‑compute from current margin/qty/hours
+      if (!_manualCharge) {
+        _calculateChargeFromMargin(_marginController.text);
+      }
+    }),
   );
 
   void _calculateEstimatedCostFromHours(String? hoursValue) {
@@ -466,16 +461,16 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       _estimatedLabourHoursController.text,
     ),
     estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
-    charge:
-        _manualCharge
-            ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
-            : null,
+    charge: _manualCharge
+        ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
+        : null,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
     completed: taskItem.completed,
     billed: false,
     labourEntryMode: _labourEntryMode,
-    measurementType:
-        June.getState(SelectedMeasurementType.new).selectedOrDefault,
+    measurementType: June.getState(
+      SelectedMeasurementType.new,
+    ).selectedOrDefault,
     dimension1:
         Fixed.tryParse(_dimension1Controller.text, decimalDigits: 3) ??
         Fixed.zero,
@@ -505,14 +500,14 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       _estimatedLabourHoursController.text,
     ),
     estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
-    charge:
-        _manualCharge
-            ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
-            : null,
+    charge: _manualCharge
+        ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
+        : null,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
     labourEntryMode: _labourEntryMode,
-    measurementType:
-        June.getState(SelectedMeasurementType.new).selectedOrDefault,
+    measurementType: June.getState(
+      SelectedMeasurementType.new,
+    ).selectedOrDefault,
     dimension1:
         Fixed.tryParse(_dimension1Controller.text, decimalDigits: 3) ??
         Fixed.zero,

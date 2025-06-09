@@ -41,9 +41,8 @@ class _BackupSelectionScreenState extends DeferredState<BackupSelectionScreen> {
     appBar: AppBar(title: const Text('Select Backup to Restore')),
     body: FutureBuilderEx<Backups>(
       future: _backupsFuture,
-      errorBuilder:
-          (context, error) =>
-              Center(child: Text('Error loading backups: $error')),
+      errorBuilder: (context, error) =>
+          Center(child: Text('Error loading backups: $error')),
       builder: (context, backups) {
         if (backups == null || backups.backups.isEmpty) {
           return Center(

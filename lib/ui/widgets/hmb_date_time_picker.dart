@@ -92,45 +92,38 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
           width: widget.width,
           child: StatefulBuilder(
             key: dateKey,
-            builder:
-                (context, setFormState) => FormField<DateTime>(
-                  initialValue: selectedDateTime,
-                  validator: (value) => widget.validator?.call(value),
-                  builder:
-                      (field) => InkWell(
-                        onTap: () async {
-                          final date = await _showDatePicker(
-                            context,
-                            selectedDateTime,
-                          );
-                          if (date != null) {
-                            setState(() {
-                              selectedDateTime = DateTime(
-                                date.year,
-                                date.month,
-                                date.day,
-                                selectedDateTime.hour,
-                                selectedDateTime.minute,
-                              );
-                              dateController.text = dateFormat.format(
-                                selectedDateTime,
-                              );
-                            });
-                            widget.onChanged(selectedDateTime);
-                            setFormState(() {
-                              field.didChange(selectedDateTime);
-                            });
-                          }
-                        },
-                        child: InputDecorator(
-                          decoration: InputDecoration(
-                            labelText: 'Select Date',
-                            errorText: field.errorText,
-                          ),
-                          child: Text(dateController.text),
-                        ),
-                      ),
+            builder: (context, setFormState) => FormField<DateTime>(
+              initialValue: selectedDateTime,
+              validator: (value) => widget.validator?.call(value),
+              builder: (field) => InkWell(
+                onTap: () async {
+                  final date = await _showDatePicker(context, selectedDateTime);
+                  if (date != null) {
+                    setState(() {
+                      selectedDateTime = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        selectedDateTime.hour,
+                        selectedDateTime.minute,
+                      );
+                      dateController.text = dateFormat.format(selectedDateTime);
+                    });
+                    widget.onChanged(selectedDateTime);
+                    setFormState(() {
+                      field.didChange(selectedDateTime);
+                    });
+                  }
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Select Date',
+                    errorText: field.errorText,
+                  ),
+                  child: Text(dateController.text),
                 ),
+              ),
+            ),
           ),
         ),
       if (widget.mode == HMBDateTimeFieldMode.dateAndTime)
@@ -140,45 +133,38 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
           width: 100,
           child: StatefulBuilder(
             key: timeKey,
-            builder:
-                (context, setFormState) => FormField<DateTime>(
-                  initialValue: selectedDateTime,
-                  validator: (value) => widget.validator?.call(value),
-                  builder:
-                      (field) => InkWell(
-                        onTap: () async {
-                          final time = await _showTimePicker(
-                            context,
-                            selectedDateTime,
-                          );
-                          if (time != null) {
-                            setState(() {
-                              selectedDateTime = DateTime(
-                                selectedDateTime.year,
-                                selectedDateTime.month,
-                                selectedDateTime.day,
-                                time.hour,
-                                time.minute,
-                              );
-                              timeController.text = timeFormat.format(
-                                selectedDateTime,
-                              );
-                            });
-                            widget.onChanged(selectedDateTime);
-                            setFormState(() {
-                              field.didChange(selectedDateTime);
-                            });
-                          }
-                        },
-                        child: InputDecorator(
-                          decoration: InputDecoration(
-                            labelText: 'Select Time',
-                            errorText: field.errorText,
-                          ),
-                          child: Text(timeController.text),
-                        ),
-                      ),
+            builder: (context, setFormState) => FormField<DateTime>(
+              initialValue: selectedDateTime,
+              validator: (value) => widget.validator?.call(value),
+              builder: (field) => InkWell(
+                onTap: () async {
+                  final time = await _showTimePicker(context, selectedDateTime);
+                  if (time != null) {
+                    setState(() {
+                      selectedDateTime = DateTime(
+                        selectedDateTime.year,
+                        selectedDateTime.month,
+                        selectedDateTime.day,
+                        time.hour,
+                        time.minute,
+                      );
+                      timeController.text = timeFormat.format(selectedDateTime);
+                    });
+                    widget.onChanged(selectedDateTime);
+                    setFormState(() {
+                      field.didChange(selectedDateTime);
+                    });
+                  }
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Select Time',
+                    errorText: field.errorText,
+                  ),
+                  child: Text(timeController.text),
                 ),
+              ),
+            ),
           ),
         ),
     ],
@@ -190,11 +176,10 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
   ) => showTimePicker(
     context: context,
     initialTime: TimeOfDay.fromDateTime(currentValue ?? DateTime.now()),
-    builder:
-        (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-          child: child!,
-        ),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+      child: child!,
+    ),
   );
 
   Future<DateTime?> _showDatePicker(

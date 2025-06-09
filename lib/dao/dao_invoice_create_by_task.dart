@@ -158,14 +158,14 @@ Future<Money> _fixedPriceLabour(
   int invoiceLineGroupId,
   Task task,
 ) =>
-// For fixed price, we treat labour the same as time & materials.
-_timeAndMaterialsLabour(
-  labourForDates,
-  job,
-  invoiceId,
-  invoiceLineGroupId,
-  task,
-);
+    // For fixed price, we treat labour the same as time & materials.
+    _timeAndMaterialsLabour(
+      labourForDates,
+      job,
+      invoiceId,
+      invoiceLineGroupId,
+      task,
+    );
 
 /// Groups all un‐billed time entries for [task] by date.
 Future<List<LabourForTaskOnDate>> collectLabourPerDay(Task task) async {

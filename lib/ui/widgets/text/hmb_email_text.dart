@@ -45,8 +45,7 @@ class HMBJobEmailText extends StatelessWidget {
     waitingBuilder: (_) => const HMBPlaceHolder(height: 40),
     // ignore: discarded_futures
     future: DaoContact().getPrimaryForJob(job.id),
-    builder:
-        (context, contact) =>
-            HMBEmailText(email: contact?.emailAddress, label: label),
+    builder: (context, contact) =>
+        HMBEmailText(email: contact?.emailAddress, label: label),
   );
 }

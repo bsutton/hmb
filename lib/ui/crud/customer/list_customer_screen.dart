@@ -24,7 +24,7 @@ class CustomerListScreen extends StatelessWidget {
     dao: DaoCustomer(),
     title: (entity) => HMBCardHeading(entity.name),
     // ignore: discarded_futures
-    fetchList: (filter)  => DaoCustomer().getByFilter(filter),
+    fetchList: (filter) => DaoCustomer().getByFilter(filter),
     onEdit: (customer) => CustomerEditScreen(customer: customer),
     details: (entity) {
       final customer = entity;
@@ -32,30 +32,28 @@ class CustomerListScreen extends StatelessWidget {
         waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
         // ignore: discarded_futures
         future: DaoSite().getPrimaryForCustomer(customer.id),
-        builder:
-            (context, site) => FutureBuilderEx(
-              waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
-              // ignore: discarded_futures
-              future: DaoContact().getPrimaryForCustomer(customer.id),
-              builder:
-                  (context, contact) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ContactText(label: 'Primary Contact:', contact: contact),
-                      HMBPhoneText(
-                        label: '',
-                        phoneNo: contact?.bestPhone,
-                        sourceContext: SourceContext(
-                          contact: contact,
-                          customer: customer,
-                        ),
-                      ),
-                      HMBEmailText(label: '', email: contact?.emailAddress),
-                      HMBSiteText(label: '', site: site),
-                    ],
-                  ),
-            ),
+        builder: (context, site) => FutureBuilderEx(
+          waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
+          // ignore: discarded_futures
+          future: DaoContact().getPrimaryForCustomer(customer.id),
+          builder: (context, contact) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ContactText(label: 'Primary Contact:', contact: contact),
+              HMBPhoneText(
+                label: '',
+                phoneNo: contact?.bestPhone,
+                sourceContext: SourceContext(
+                  contact: contact,
+                  customer: customer,
+                ),
+              ),
+              HMBEmailText(label: '', email: contact?.emailAddress),
+              HMBSiteText(label: '', site: site),
+            ],
+          ),
+        ),
       );
     },
   );

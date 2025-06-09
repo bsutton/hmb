@@ -67,110 +67,107 @@ class _DimensionWidgetState extends State<DimensionWidget> {
   @override
   Widget build(BuildContext context) => JuneBuilder<SelectedCheckListItemType>(
     SelectedCheckListItemType.new,
-    builder:
-        (selectedItemTypeState) => FutureBuilderEx<TaskItemType?>(
-          future:
+    builder: (selectedItemTypeState) => FutureBuilderEx<TaskItemType?>(
+      future:
           // ignore: discarded_futures
           DaoTaskItemType().getById(selectedItemTypeState.selected),
-          builder: (context, itemType) {
-            if (!_itemTypesWithDimensions.contains(itemType?.name ?? '')) {
-              return const HMBEmpty();
-            } else {
-              final selectedUnitsState = June.getState(SelectedUnits.new);
-              final selectedMeasurementTypeState = June.getState(
-                SelectedMeasurementType.new,
-              );
+      builder: (context, itemType) {
+        if (!_itemTypesWithDimensions.contains(itemType?.name ?? '')) {
+          return const HMBEmpty();
+        } else {
+          final selectedUnitsState = June.getState(SelectedUnits.new);
+          final selectedMeasurementTypeState = June.getState(
+            SelectedMeasurementType.new,
+          );
 
-              final selectedUnit = selectedUnitsState.selectedOrDefault;
+          final selectedUnit = selectedUnitsState.selectedOrDefault;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  HMBDroplist<MeasurementType>(
-                    title: 'Measurement Type',
-                    selectedItem:
-                        () async => selectedMeasurementTypeState.selected,
-                    format: (type) => type.name,
-                    items: (filter) async => MeasurementType.list,
-                    onChanged: (value) async {
-                      if (selectedMeasurementTypeState.selected != value) {
-                        selectedUnitsState
-                            .selected = await getDefaultUnitForMeasurementType(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              HMBDroplist<MeasurementType>(
+                title: 'Measurement Type',
+                selectedItem: () async => selectedMeasurementTypeState.selected,
+                format: (type) => type.name,
+                items: (filter) async => MeasurementType.list,
+                onChanged: (value) async {
+                  if (selectedMeasurementTypeState.selected != value) {
+                    selectedUnitsState.selected =
+                        await getDefaultUnitForMeasurementType(
                           value ?? MeasurementType.length,
                         );
-                      }
-                      setState(() {
-                        selectedMeasurementTypeState.selected =
-                            value ?? MeasurementType.length;
-                        selectedUnitsState.setState();
-                      });
-                    },
-                  ),
+                  }
+                  setState(() {
+                    selectedMeasurementTypeState.selected =
+                        value ?? MeasurementType.length;
+                    selectedUnitsState.setState();
+                  });
+                },
+              ),
 
-                  /// Units
-                  HMBDroplist<Units>(
-                    title: 'Units',
-                    selectedItem: () async => selectedUnit,
-                    format: (unit) => unit.name,
-                    items:
-                        // ignore: unnecessary_async
-                        (filter) async => getUnitsForMeasurementType(
-                          selectedMeasurementTypeState.selectedOrDefault,
-                        ),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedUnitsState.selected = value ?? selectedUnit;
-                      });
-                    },
-                  ),
+              /// Units
+              HMBDroplist<Units>(
+                title: 'Units',
+                selectedItem: () async => selectedUnit,
+                format: (unit) => unit.name,
+                items:
+                    // ignore: unnecessary_async
+                    (filter) async => getUnitsForMeasurementType(
+                      selectedMeasurementTypeState.selectedOrDefault,
+                    ),
+                onChanged: (value) {
+                  setState(() {
+                    selectedUnitsState.selected = value ?? selectedUnit;
+                  });
+                },
+              ),
 
-                  // Display the total measurement
-                  JuneBuilder<MeasuremenTotal>(
-                    MeasuremenTotal.new,
-                    builder: (context) {
-                      final totalMeasurement = selectedUnit.calc([
-                        widget.dimension1Controller.text,
-                        widget.dimension2Controller.text,
-                        widget.dimension3Controller.text,
-                      ]);
+              // Display the total measurement
+              JuneBuilder<MeasuremenTotal>(
+                MeasuremenTotal.new,
+                builder: (context) {
+                  final totalMeasurement = selectedUnit.calc([
+                    widget.dimension1Controller.text,
+                    widget.dimension2Controller.text,
+                    widget.dimension3Controller.text,
+                  ]);
 
-                      return HMBText('''
+                  return HMBText('''
 Measurements: Total: $totalMeasurement ${selectedUnit.name}''');
-                    },
-                  ),
+                },
+              ),
 
-                  // Dimension fields
-                  HMBTextField(
-                    controller: widget.dimension1Controller,
-                    labelText:
-                        '${selectedUnit.labels[0]} (${selectedUnit.measure})',
-                    keyboardType: TextInputType.number,
-                    onChanged:
-                        (_) => June.getState(MeasuremenTotal.new).setState(),
-                  ),
-                  if (selectedUnit.dimensions > 1)
-                    HMBTextField(
-                      controller: widget.dimension2Controller,
-                      labelText:
-                          '${selectedUnit.labels[1]} (${selectedUnit.measure})',
-                      keyboardType: TextInputType.number,
-                      onChanged:
-                          (_) => June.getState(MeasuremenTotal.new).setState(),
-                    ),
-                  if (selectedUnit.dimensions > 2)
-                    HMBTextField(
-                      controller: widget.dimension3Controller,
-                      labelText:
-                          '${selectedUnit.labels[2]} (${selectedUnit.measure})',
-                      keyboardType: TextInputType.number,
-                      onChanged:
-                          (_) => June.getState(MeasuremenTotal.new).setState(),
-                    ),
-                ],
-              );
-            }
-          },
-        ),
+              // Dimension fields
+              HMBTextField(
+                controller: widget.dimension1Controller,
+                labelText:
+                    '${selectedUnit.labels[0]} (${selectedUnit.measure})',
+                keyboardType: TextInputType.number,
+                onChanged: (_) => June.getState(MeasuremenTotal.new).setState(),
+              ),
+              if (selectedUnit.dimensions > 1)
+                HMBTextField(
+                  controller: widget.dimension2Controller,
+                  labelText:
+                      '${selectedUnit.labels[1]} (${selectedUnit.measure})',
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) =>
+                      June.getState(MeasuremenTotal.new).setState(),
+                ),
+              if (selectedUnit.dimensions > 2)
+                HMBTextField(
+                  controller: widget.dimension3Controller,
+                  labelText:
+                      '${selectedUnit.labels[2]} (${selectedUnit.measure})',
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) =>
+                      June.getState(MeasuremenTotal.new).setState(),
+                ),
+            ],
+          );
+        }
+      },
+    ),
   );
 }
 

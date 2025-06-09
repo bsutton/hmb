@@ -57,17 +57,16 @@ class HelpButton extends StatelessWidget {
   Future<void> _showHelpDialog(BuildContext context) async {
     await showDialog<void>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: Text(dialogTitle),
-            content: child ?? Text(helpText!, textAlign: TextAlign.start),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('OK'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: Text(dialogTitle),
+        content: child ?? Text(helpText!, textAlign: TextAlign.start),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
           ),
+        ],
+      ),
     );
   }
 

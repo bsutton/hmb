@@ -57,29 +57,26 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder:
-        (context) => GestureDetector(
-          child: Row(
-            children: [
-              IconButton(
-                padding: const EdgeInsets.only(top: 8, bottom: 8),
-                visualDensity: const VisualDensity(horizontal: -4),
-                // start / stop icon
-                icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
-                onPressed:
-                    () =>
-                        timeEntry != null
-                            // ignore: discarded_futures
-                            ? _stop(widget.task)
-                            : unawaited(_start(widget.task)),
-              ),
-              _buildElapsedTime(timeEntry),
-            ],
+    builder: (context) => GestureDetector(
+      child: Row(
+        children: [
+          IconButton(
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            visualDensity: const VisualDensity(horizontal: -4),
+            // start / stop icon
+            icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
+            onPressed: () => timeEntry != null
+                // ignore: discarded_futures
+                ? _stop(widget.task)
+                : unawaited(_start(widget.task)),
           ),
-          onTap:
-              () =>
-                  timeEntry != null ? unawaited(_stop(widget.task)) : unawaited(_start(widget.task)),
-        ),
+          _buildElapsedTime(timeEntry),
+        ],
+      ),
+      onTap: () => timeEntry != null
+          ? unawaited(_stop(widget.task))
+          : unawaited(_start(widget.task)),
+    ),
   );
 
   Future<void> _stop(Task? task) async {

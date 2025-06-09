@@ -83,39 +83,38 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
               const SizedBox(height: 4),
               JuneBuilder(
                 DashboardReloaded.new,
-                builder:
-                    (_) => FutureBuilderEx<DashletValue<T>>(
-                      // ignore: discarded_futures
-                      future: widget.dashletValue(),
-                      builder: (ctx, dv) {
-                        if (dv == null) {
-                          return const SizedBox();
-                        }
-                        if (widget.widgetBuilder != null) {
-                          return widget.widgetBuilder!(ctx, dv);
-                        }
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              dv.value.toString(),
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (dv.secondValue != null) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                dv.secondValue!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            ],
-                          ],
-                        );
-                      },
-                    ),
+                builder: (_) => FutureBuilderEx<DashletValue<T>>(
+                  // ignore: discarded_futures
+                  future: widget.dashletValue(),
+                  builder: (ctx, dv) {
+                    if (dv == null) {
+                      return const SizedBox();
+                    }
+                    if (widget.widgetBuilder != null) {
+                      return widget.widgetBuilder!(ctx, dv);
+                    }
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          dv.value.toString(),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (dv.secondValue != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            dv.secondValue!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                ),
               ),
             ],
           ),

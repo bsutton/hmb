@@ -108,10 +108,8 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
                             FutureBuilderEx<Customer?>(
                               // ignore: discarded_futures
                               future: DaoCustomer().getByJob(job.id),
-                              builder:
-                                  (ctx, customer) => HMBText(
-                                    'Customer: ${customer?.name ?? '—'}',
-                                  ),
+                              builder: (ctx, customer) =>
+                                  HMBText('Customer: ${customer?.name ?? '—'}'),
                             ),
                             const SizedBox(height: 4),
                             HMBText('Type: ${job.billingType.display}'),

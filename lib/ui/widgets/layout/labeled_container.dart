@@ -38,11 +38,10 @@ class LabeledContainer extends StatelessWidget {
             labelText,
             style: TextStyle(
               fontSize: 13,
-              color:
-                  isError
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).textTheme.bodyLarge?.color ??
-                          Colors.black,
+              color: isError
+                  ? Theme.of(context).colorScheme.error
+                  : Theme.of(context).textTheme.bodyLarge?.color ??
+                        Colors.black,
             ),
           ),
         ),

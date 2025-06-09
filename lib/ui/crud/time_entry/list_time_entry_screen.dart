@@ -22,30 +22,26 @@ class TimeEntryListScreen extends StatelessWidget {
     dao: DaoTimeEntry(),
     // ignore: discarded_futures
     fetchList: () => DaoTimeEntry().getByTask(parent.parent?.id),
-    title:
-        (entity) => Text(
-          '''Interval: ${formatDateTime(entity.startTime)} - ${entity.endTime != null ? formatDateTime(entity.endTime!) : 'running'}; ${entity.note}''',
-        ),
-    onEdit:
-        (timeEntry) =>
-            TimeEntryEditScreen(task: parent.parent!, timeEntry: timeEntry),
+    title: (entity) => Text(
+      '''Interval: ${formatDateTime(entity.startTime)} - ${entity.endTime != null ? formatDateTime(entity.endTime!) : 'running'}; ${entity.note}''',
+    ),
+    onEdit: (timeEntry) =>
+        TimeEntryEditScreen(task: parent.parent!, timeEntry: timeEntry),
     canEdit: (timeEntry) => !timeEntry.billed,
     // ignore: discarded_futures
     onDelete: (timeEntry) => DaoTimeEntry().delete(timeEntry!.id),
     canDelete: (timeEntry) => !timeEntry.billed,
     // ignore: discarded_futures
-    onInsert:
-        (timeEntry, transaction) =>
-            DaoTimeEntry().insert(timeEntry!, transaction),
-    details:
-        (timeEntry, details) => Row(
-          children: [
-            Text('Billed: ${timeEntry.billed}'),
-            const HMBRowGap(),
-            Text(
-              '''Duration: ${timeEntry.endTime == null ? 'running' : formatDuration(timeEntry.endTime!.difference(timeEntry.startTime))}''',
-            ),
-          ],
+    onInsert: (timeEntry, transaction) =>
+        DaoTimeEntry().insert(timeEntry!, transaction),
+    details: (timeEntry, details) => Row(
+      children: [
+        Text('Billed: ${timeEntry.billed}'),
+        const HMBRowGap(),
+        Text(
+          '''Duration: ${timeEntry.endTime == null ? 'running' : formatDuration(timeEntry.endTime!.difference(timeEntry.startTime))}''',
         ),
+      ],
+    ),
   );
 }

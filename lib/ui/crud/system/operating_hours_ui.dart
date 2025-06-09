@@ -108,9 +108,8 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                             child: HMBDateTimeField(
                               initialDateTime: start.toDateTime(),
                               mode: HMBDateTimeFieldMode.timeOnly,
-                              onChanged:
-                                  (date) =>
-                                      day.start = LocalTime.fromDateTime(date),
+                              onChanged: (date) =>
+                                  day.start = LocalTime.fromDateTime(date),
                               label: 'Start',
                             ),
                           ),
@@ -119,9 +118,8 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                             child: HMBDateTimeField(
                               initialDateTime: end.toDateTime(),
                               mode: HMBDateTimeFieldMode.timeOnly,
-                              onChanged:
-                                  (date) =>
-                                      day.end = LocalTime.fromDateTime(date),
+                              onChanged: (date) =>
+                                  day.end = LocalTime.fromDateTime(date),
                               label: 'End',
                             ),
                           ),

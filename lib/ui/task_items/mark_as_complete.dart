@@ -32,12 +32,12 @@ Future<void> markAsCompleted(
       quantityController.text = taskItem.estimatedMaterialQuantity.toString();
     case TaskItemTypeEnum.labour:
       if (taskItem.labourEntryMode == LabourEntryMode.hours) {
-        costController.text =
-            itemContext.taskItem.estimatedLabourHours.toString();
+        costController.text = itemContext.taskItem.estimatedLabourHours
+            .toString();
         quantityController.text = '1.00';
       } else {
-        costController.text =
-            itemContext.taskItem.estimatedLabourCost.toString();
+        costController.text = itemContext.taskItem.estimatedLabourCost
+            .toString();
         quantityController.text = '1.00';
       }
   }
@@ -54,77 +54,75 @@ Future<void> markAsCompleted(
   final confirmed = await showDialog<bool>(
     // ignore: use_build_context_synchronously
     context: context,
-    builder:
-        (context) => StatefulBuilder(
-          builder:
-              (context, setStateDialog) => AlertDialog(
-                title: const Text('Complete Item'),
-                content: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Full, wrapping description
-                      Text(
-                        taskItem.description,
-                        style: Theme.of(context).textTheme.titleMedium,
-                        softWrap: true,
-                      ),
-
-                      // Optional dimensions line
-                      if (taskItem.hasDimensions) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          taskItem.dimensions,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-
-                      const SizedBox(height: 16),
-
-                      // Supplier droplist
-                      HMBDroplist<Supplier>(
-                        title: 'Supplier',
-                        items: (filter) => DaoSupplier().getByFilter(filter),
-                        format: (sup) => sup.name,
-                        selectedItem: () async => selectedSupplier,
-                        required: false,
-                        onChanged: (sup) {
-                          setStateDialog(() {
-                            selectedSupplier = sup;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Cost per item field
-                      HMBTextField(
-                        controller: costController,
-                        labelText: 'Cost per item (optional)',
-                        keyboardType: TextInputType.number,
-                      ),
-
-                      // Quantity field
-                      HMBTextField(
-                        controller: quantityController,
-                        labelText: 'Quantity (optional)',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ],
-                  ),
-                ),
-                actions: [
-                  HMBButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    label: 'Cancel',
-                  ),
-                  HMBButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    label: 'Complete',
-                  ),
-                ],
+    builder: (context) => StatefulBuilder(
+      builder: (context, setStateDialog) => AlertDialog(
+        title: const Text('Complete Item'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Full, wrapping description
+              Text(
+                taskItem.description,
+                style: Theme.of(context).textTheme.titleMedium,
+                softWrap: true,
               ),
+
+              // Optional dimensions line
+              if (taskItem.hasDimensions) ...[
+                const SizedBox(height: 8),
+                Text(
+                  taskItem.dimensions,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+
+              const SizedBox(height: 16),
+
+              // Supplier droplist
+              HMBDroplist<Supplier>(
+                title: 'Supplier',
+                items: (filter) => DaoSupplier().getByFilter(filter),
+                format: (sup) => sup.name,
+                selectedItem: () async => selectedSupplier,
+                required: false,
+                onChanged: (sup) {
+                  setStateDialog(() {
+                    selectedSupplier = sup;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Cost per item field
+              HMBTextField(
+                controller: costController,
+                labelText: 'Cost per item (optional)',
+                keyboardType: TextInputType.number,
+              ),
+
+              // Quantity field
+              HMBTextField(
+                controller: quantityController,
+                labelText: 'Quantity (optional)',
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
         ),
+        actions: [
+          HMBButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            label: 'Cancel',
+          ),
+          HMBButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            label: 'Complete',
+          ),
+        ],
+      ),
+    ),
   );
 
   if (confirmed ?? false) {
@@ -150,23 +148,22 @@ Future<void> markAsCompleted(
       if (context.mounted) {
         final addTool = await showDialog<bool>(
           context: context,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('Add Tool to Tool List?'),
-                content: const Text(
-                  'Would you like to add this tool to your tool list?',
-                ),
-                actions: [
-                  HMBButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    label: 'No',
-                  ),
-                  HMBButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    label: 'Yes',
-                  ),
-                ],
+          builder: (context) => AlertDialog(
+            title: const Text('Add Tool to Tool List?'),
+            content: const Text(
+              'Would you like to add this tool to your tool list?',
+            ),
+            actions: [
+              HMBButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                label: 'No',
               ),
+              HMBButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                label: 'Yes',
+              ),
+            ],
+          ),
         );
 
         if ((addTool ?? false) && context.mounted) {

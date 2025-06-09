@@ -28,7 +28,11 @@ class JoinAdaptorCustomerContact implements DaoJoinAdaptor<Contact, Customer> {
       DaoContact().getByCustomer(parent?.id);
 
   @override
-  Future<void> insertForParent(Contact contact, Customer customer, Transaction transaction) async {
+  Future<void> insertForParent(
+    Contact contact,
+    Customer customer,
+    Transaction transaction,
+  ) async {
     await DaoContact().insertForCustomer(contact, customer, transaction);
   }
 

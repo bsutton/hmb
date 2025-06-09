@@ -12,21 +12,20 @@ Future<void> areYouSure({
 }) async {
   final confirmed = await showDialog<bool>(
     context: context,
-    builder:
-        (context) => AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            HMBButton(
-              label: 'No',
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-            HMBButton(
-              label: 'Yes',
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-          ],
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        HMBButton(
+          label: 'No',
+          onPressed: () => Navigator.of(context).pop(false),
         ),
+        HMBButton(
+          label: 'Yes',
+          onPressed: () => Navigator.of(context).pop(true),
+        ),
+      ],
+    ),
   );
 
   if (confirmed ?? false) {

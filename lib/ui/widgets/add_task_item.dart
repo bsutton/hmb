@@ -23,114 +23,107 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
 
   await showDialog<void>(
     context: context,
-    builder:
-        (context) => StatefulBuilder(
-          builder:
-              (context, setState) => AlertDialog(
-                title:
-                    addType == AddType.shopping
-                        ? const HMBTextHeadline('Add Shopping Item')
-                        : const HMBTextHeadline('Add Packing Item'),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Job Selection Dropdown
-                      HMBDroplist<Job>(
-                        title: 'Select Job',
-                        selectedItem: () async => selectedJob,
-                        items: (filter) => DaoJob().getActiveJobs(filter),
-                        format: (job) => job.summary,
-                        onChanged: (job) {
-                          setState(() {
-                            selectedJob = job;
-                            selectedTask = null; // Reset task selection
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      // Task Selection Dropdown (dependent on selected job)
-                      if (selectedJob != null)
-                        HMBDroplist<Task>(
-                          title: 'Select Task',
-                          selectedItem: () async => selectedTask,
-                          items:
-                              (filter) =>
-                                  DaoTask().getTasksByJob(selectedJob!.id),
-                          format: (task) => task.name,
-                          onChanged: (task) {
-                            setState(() {
-                              selectedTask = task;
-                            });
-                          },
-                        ),
-                      const SizedBox(height: 10),
-                      // Item Type Selection Dropdown
-                      HMBDroplist<TaskItemTypeEnum>(
-                        title: 'Item Type',
-                        selectedItem: () async => selectedItemType,
-                        items:
-                            (filter) async => [
-                              ...switch (addType) {
-                                AddType.shopping => [
-                                  TaskItemTypeEnum.toolsBuy,
-                                  TaskItemTypeEnum.materialsBuy,
-                                ],
-                                AddType.packing => [
-                                  TaskItemTypeEnum.toolsOwn,
-                                  TaskItemTypeEnum.materialsStock,
-                                ],
-                              },
-                            ],
-                        format: (type) => type.description,
-                        onChanged: (type) {
-                          setState(() {
-                            selectedItemType = type;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      // Description Input
-                      HMBTextField(
-                        controller: descriptionController,
-                        labelText: 'Description',
-                      ),
-                      // Quantity Input
-                      HMBTextField(
-                        controller: quantityController,
-                        labelText: 'Quantity',
-                        keyboardType: TextInputType.number,
-                      ),
-                      // Unit Cost Input
-                      HMBTextField(
-                        controller: unitCostController,
-                        labelText: 'Unit Cost',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ],
-                  ),
-                ),
-                actions: [
-                  HMBButton(
-                    label: 'Cancel',
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  HMBButton(
-                    label: 'Add',
-                    onPressed:
-                        () => _addTaskItem(
-                          selectedJob: selectedJob,
-                          selectedTask: selectedTask,
-                          selectedItemType: selectedItemType,
-                          quantityController: quantityController,
-                          unitCostController: unitCostController,
-                          descriptionController: descriptionController,
-                          context: context,
-                        ),
-                  ),
-                ],
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: addType == AddType.shopping
+            ? const HMBTextHeadline('Add Shopping Item')
+            : const HMBTextHeadline('Add Packing Item'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Job Selection Dropdown
+              HMBDroplist<Job>(
+                title: 'Select Job',
+                selectedItem: () async => selectedJob,
+                items: (filter) => DaoJob().getActiveJobs(filter),
+                format: (job) => job.summary,
+                onChanged: (job) {
+                  setState(() {
+                    selectedJob = job;
+                    selectedTask = null; // Reset task selection
+                  });
+                },
               ),
+              const SizedBox(height: 10),
+              // Task Selection Dropdown (dependent on selected job)
+              if (selectedJob != null)
+                HMBDroplist<Task>(
+                  title: 'Select Task',
+                  selectedItem: () async => selectedTask,
+                  items: (filter) => DaoTask().getTasksByJob(selectedJob!.id),
+                  format: (task) => task.name,
+                  onChanged: (task) {
+                    setState(() {
+                      selectedTask = task;
+                    });
+                  },
+                ),
+              const SizedBox(height: 10),
+              // Item Type Selection Dropdown
+              HMBDroplist<TaskItemTypeEnum>(
+                title: 'Item Type',
+                selectedItem: () async => selectedItemType,
+                items: (filter) async => [
+                  ...switch (addType) {
+                    AddType.shopping => [
+                      TaskItemTypeEnum.toolsBuy,
+                      TaskItemTypeEnum.materialsBuy,
+                    ],
+                    AddType.packing => [
+                      TaskItemTypeEnum.toolsOwn,
+                      TaskItemTypeEnum.materialsStock,
+                    ],
+                  },
+                ],
+                format: (type) => type.description,
+                onChanged: (type) {
+                  setState(() {
+                    selectedItemType = type;
+                  });
+                },
+              ),
+              const SizedBox(height: 10),
+              // Description Input
+              HMBTextField(
+                controller: descriptionController,
+                labelText: 'Description',
+              ),
+              // Quantity Input
+              HMBTextField(
+                controller: quantityController,
+                labelText: 'Quantity',
+                keyboardType: TextInputType.number,
+              ),
+              // Unit Cost Input
+              HMBTextField(
+                controller: unitCostController,
+                labelText: 'Unit Cost',
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
         ),
+        actions: [
+          HMBButton(
+            label: 'Cancel',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          HMBButton(
+            label: 'Add',
+            onPressed: () => _addTaskItem(
+              selectedJob: selectedJob,
+              selectedTask: selectedTask,
+              selectedItemType: selectedItemType,
+              quantityController: quantityController,
+              unitCostController: unitCostController,
+              descriptionController: descriptionController,
+              context: context,
+            ),
+          ),
+        ],
+      ),
+    ),
   );
 }
 

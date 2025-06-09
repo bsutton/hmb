@@ -129,38 +129,36 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
         controller: _weekController,
         child: DeferredBuilder(
           this,
-          builder:
-              (context) => WeekView<JobActivityEx>(
-                key: widget.weekKey,
+          builder: (context) => WeekView<JobActivityEx>(
+            key: widget.weekKey,
 
-                startHour: _getStartHour(),
-                endHour: _getEndHour(),
-                // key: ValueKey(currentDate),
-                initialDay: currentDate.toDateTime(),
-                headerStyle: widget.headerStyle(),
-                timeLineWidth: 60,
-                timeLineStringBuilder:
-                    (date, {secondaryDate}) =>
-                        formatTime(date, 'ha').toLowerCase(),
-                weekTitleHeight: 60,
-                showWeekends:
-                    widget.showExtendedHours ||
-                    showWeekends ||
-                    _hasActivitiesInExtendedHours,
-                backgroundColor: Colors.black,
-                headerStringBuilder: widget.dateStringBuilder,
-                eventTileBuilder: _defaultEventTileBuilder,
-                // ignore: discarded_futures
-                onPageChange: (date, index) => _onPageChange(date),
-                onDateTap: (date) async {
-                  await widget.addActivity(context, date, widget.defaultJob);
-                  await _loadActivitiesForWeek();
-                },
-                onEventTap: (events, date) async {
-                  await widget.onActivityTap(context, events.first);
-                  await _loadActivitiesForWeek();
-                },
-              ),
+            startHour: _getStartHour(),
+            endHour: _getEndHour(),
+            // key: ValueKey(currentDate),
+            initialDay: currentDate.toDateTime(),
+            headerStyle: widget.headerStyle(),
+            timeLineWidth: 60,
+            timeLineStringBuilder: (date, {secondaryDate}) =>
+                formatTime(date, 'ha').toLowerCase(),
+            weekTitleHeight: 60,
+            showWeekends:
+                widget.showExtendedHours ||
+                showWeekends ||
+                _hasActivitiesInExtendedHours,
+            backgroundColor: Colors.black,
+            headerStringBuilder: widget.dateStringBuilder,
+            eventTileBuilder: _defaultEventTileBuilder,
+            // ignore: discarded_futures
+            onPageChange: (date, index) => _onPageChange(date),
+            onDateTap: (date) async {
+              await widget.addActivity(context, date, widget.defaultJob);
+              await _loadActivitiesForWeek();
+            },
+            onEventTap: (events, date) async {
+              await widget.onActivityTap(context, events.first);
+              await _loadActivitiesForWeek();
+            },
+          ),
         ),
       );
 

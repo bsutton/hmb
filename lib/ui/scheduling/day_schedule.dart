@@ -185,19 +185,17 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
               key: widget.dayKey,
               initialDay: currentDate.toDateTime(),
               dateStringBuilder: dayTitle,
-              timeStringBuilder:
-                  (date, {secondaryDate}) =>
-                      formatTime(date, 'ha').toLowerCase(),
+              timeStringBuilder: (date, {secondaryDate}) =>
+                  formatTime(date, 'ha').toLowerCase(),
               heightPerMinute: 1.8,
               eventTileBuilder:
                   (date, events, boundary, startDuration, endDuration) =>
                       _buildActvityCard(dayView, events.first),
               timeLineWidth: 58,
-              fullDayEventBuilder:
-                  (events, date) => const Text(
-                    'Full Day Activity',
-                    style: TextStyle(color: Colors.white),
-                  ),
+              fullDayEventBuilder: (events, date) => const Text(
+                'Full Day Activity',
+                style: TextStyle(color: Colors.white),
+              ),
               headerStyle: widget.headerStyle(),
               backgroundColor: Colors.black,
               onDateTap: _onDateTap,
@@ -363,9 +361,8 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
                           children: [
                             HMBLinkInternal(
                               label: 'Job: #${jobAndCustomer.job.id}',
-                              navigateTo:
-                                  () async =>
-                                      JobEditScreen(job: jobAndCustomer.job),
+                              navigateTo: () async =>
+                                  JobEditScreen(job: jobAndCustomer.job),
                             ),
                           ],
                         ),

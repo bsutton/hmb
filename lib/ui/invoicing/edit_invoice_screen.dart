@@ -132,11 +132,13 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                           Text('Total: ${line.lineTotal}'),
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () => unawaited(_editInvoiceLine(context, line)),
+                            onPressed: () =>
+                                unawaited(_editInvoiceLine(context, line)),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => unawaited(_deleteInvoiceLine(line)),
+                            onPressed: () =>
+                                unawaited(_deleteInvoiceLine(line)),
                           ),
                         ],
                       ),
@@ -246,27 +248,26 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   Future<void> _deleteInvoiceLine(InvoiceLine line) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Delete Invoice Line'),
-            content: Text('''
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Invoice Line'),
+        content: Text('''
 Are you sure you want to delete this invoice line?
 
 Details:
 Description: ${line.description}
 Quantity: ${line.quantity}
 Total: ${line.lineTotal}'''),
-            actions: <Widget>[
-              HMBButton(
-                label: 'Cancel',
-                onPressed: () => Navigator.of(context).pop(false),
-              ),
-              HMBButton(
-                label: 'Delete',
-                onPressed: () => Navigator.of(context).pop(true),
-              ),
-            ],
+        actions: <Widget>[
+          HMBButton(
+            label: 'Cancel',
+            onPressed: () => Navigator.of(context).pop(false),
           ),
+          HMBButton(
+            label: 'Delete',
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
     );
 
     if (confirmed ?? false) {

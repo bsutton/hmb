@@ -42,18 +42,18 @@ class DaoQuoteLineGroup extends Dao<QuoteLineGroup> {
     return db.delete(tableName, where: 'quote_id = ?', whereArgs: [quoteId]);
   }
 
-Future<void> markRejected(int quoteGroupLineId) async {
+  Future<void> markRejected(int quoteGroupLineId) async {
     final quoteGroupLine = await getById(quoteGroupLineId);
 
     quoteGroupLine!.lineApprovalStatus = LineApprovalStatus.rejected;
 
     await update(quoteGroupLine);
 
-          if (quoteGroupLine.taskId != null) {
-        await DaoTask().markRejected(quoteGroupLine.taskId!);
-      }
-
+    if (quoteGroupLine.taskId != null) {
+      await DaoTask().markRejected(quoteGroupLine.taskId!);
+    }
   }
+
   @override
   JuneStateCreator get juneRefresher => QuoteGroupLineState.new;
 }

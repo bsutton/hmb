@@ -83,59 +83,55 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   }
 
   @override
-  Widget build(BuildContext context) =>
-      NestedEntityEditScreen<Contact, Customer>(
-        entityName: 'Contact',
-        dao: DaoContact(),
-        onInsert:
-            (contact, transaction) =>
-                // ignore: discarded_futures
-                widget.daoJoin.insertForParent(contact!, widget.parent, transaction),
-        entityState: this,
-        editor:
-            (contact) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                HMBNameField(
-                  controller: _firstNameController,
-                  focusNode: _firstNameFocusNode,
-                  autofocus: isNotMobile,
-                  labelText: 'First Name',
-                  keyboardType: TextInputType.name,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the first name';
-                    }
-                    return null;
-                  },
-                ),
-                HMBNameField(
-                  controller: _surnameController,
-                  labelText: 'Surname',
-                  keyboardType: TextInputType.name,
-                ),
-                HMBPhoneField(
-                  controller: _mobileNumberController,
-                  labelText: 'Mobile Number',
-                  sourceContext: SourceContext(contact: contact),
-                ),
-                HMBPhoneField(
-                  controller: _landlineController,
-                  labelText: 'Landline',
-                  sourceContext: SourceContext(contact: contact),
-                ),
-                HMBPhoneField(
-                  controller: _officeNumberController,
-                  labelText: 'Office Number',
-                  sourceContext: SourceContext(contact: contact),
-                ),
-                HMBEmailField(
-                  controller: _emailaddressController,
-                  labelText: 'Email',
-                ),
-              ],
-            ),
-      );
+  Widget build(
+    BuildContext context,
+  ) => NestedEntityEditScreen<Contact, Customer>(
+    entityName: 'Contact',
+    dao: DaoContact(),
+    onInsert: (contact, transaction) =>
+        // ignore: discarded_futures
+        widget.daoJoin.insertForParent(contact!, widget.parent, transaction),
+    entityState: this,
+    editor: (contact) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HMBNameField(
+          controller: _firstNameController,
+          focusNode: _firstNameFocusNode,
+          autofocus: isNotMobile,
+          labelText: 'First Name',
+          keyboardType: TextInputType.name,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter the first name';
+            }
+            return null;
+          },
+        ),
+        HMBNameField(
+          controller: _surnameController,
+          labelText: 'Surname',
+          keyboardType: TextInputType.name,
+        ),
+        HMBPhoneField(
+          controller: _mobileNumberController,
+          labelText: 'Mobile Number',
+          sourceContext: SourceContext(contact: contact),
+        ),
+        HMBPhoneField(
+          controller: _landlineController,
+          labelText: 'Landline',
+          sourceContext: SourceContext(contact: contact),
+        ),
+        HMBPhoneField(
+          controller: _officeNumberController,
+          labelText: 'Office Number',
+          sourceContext: SourceContext(contact: contact),
+        ),
+        HMBEmailField(controller: _emailaddressController, labelText: 'Email'),
+      ],
+    ),
+  );
 
   @override
   Future<Contact> forUpdate(Contact contact) async => Contact.forUpdate(
@@ -161,7 +157,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   void refresh() {
     setState(() {});
   }
-    @override
-  Future<void> postSave(Transaction transaction, Operation operation) async {}
 
+  @override
+  Future<void> postSave(Transaction transaction, Operation operation) async {}
 }

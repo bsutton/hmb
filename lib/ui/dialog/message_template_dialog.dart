@@ -170,16 +170,13 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
                 HMBDroplist<MessageTemplate>(
                   title: 'Choose a template',
                   selectedItem: () async => _selectedTemplate,
-                  items:
-                      (filter) async =>
-                          filter == null
-                              ? _templates
-                              : _templates
-                                  .where(
-                                    (template) =>
-                                        template.title.contains(filter),
-                                  )
-                                  .toList(),
+                  items: (filter) async => filter == null
+                      ? _templates
+                      : _templates
+                            .where(
+                              (template) => template.title.contains(filter),
+                            )
+                            .toList(),
                   format: (template) => template.title,
                   onChanged: (template) async {
                     _selectedTemplate = template;
@@ -197,7 +194,10 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
         // The TabBar
         TabBar(
           controller: _tabController,
-          tabs: const [Tab(text: 'Edit'), Tab(text: 'Preview')],
+          tabs: const [
+            Tab(text: 'Edit'),
+            Tab(text: 'Preview'),
+          ],
         ),
         // The TabBarView inside an Expanded widget
         Expanded(

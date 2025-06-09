@@ -111,10 +111,9 @@ class _HMBDroplistMultiSelectDialogState<T>
                       context,
                     ).primaryColor.withSafeOpacity(0.1),
                     title: Text(widget.formatItem(item)),
-                    trailing:
-                        isSelected
-                            ? const Icon(Icons.check, color: Colors.green)
-                            : null,
+                    trailing: isSelected
+                        ? const Icon(Icons.check, color: Colors.green)
+                        : null,
                     onTap: () {
                       setState(() {
                         if (isSelected) {

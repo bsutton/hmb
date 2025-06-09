@@ -42,15 +42,14 @@ class DatabaseHelper {
       path,
       options: OpenDatabaseOptions(
         version: targetVersion,
-        onUpgrade:
-            (db, oldVersion, newVersion) => upgradeDb(
-              db: db,
-              backup: backup,
-              oldVersion: oldVersion,
-              newVersion: newVersion,
-              src: src,
-              backupProvider: backupProvider,
-            ),
+        onUpgrade: (db, oldVersion, newVersion) => upgradeDb(
+          db: db,
+          backup: backup,
+          oldVersion: oldVersion,
+          newVersion: newVersion,
+          src: src,
+          backupProvider: backupProvider,
+        ),
       ),
     );
   }
@@ -63,7 +62,7 @@ class DatabaseHelper {
 
   bool isOpen() => _database != null;
 
-  Future<int> getVersion()  => database.getVersion();
+  Future<int> getVersion() => database.getVersion();
 
   Future<void> withOpenDatabase(
     HMBDatabaseFactory databaseFactory,

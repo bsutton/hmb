@@ -40,6 +40,8 @@ class FullScreenDialog extends StatelessWidget {
   final Widget content;
 
   @override
-  Widget build(BuildContext context) =>
-      Scaffold(appBar: AppBar(title: Text(title)), body: content);
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(title)),
+    body: content,
+  );
 }

@@ -182,12 +182,12 @@ class _MilestoneTileState extends State<MilestoneTile> {
                         ? const Text('Not Invoiced')
                         // Make invoice number clickable to open InvoiceEditScreen
                         : HMBLinkInternal(
-                          label: 'Invoice: ${inv.bestNumber}',
-                          navigateTo: () async {
-                            final details = await InvoiceDetails.load(inv.id);
-                            return InvoiceEditScreen(invoiceDetails: details);
-                          },
-                        );
+                            label: 'Invoice: ${inv.bestNumber}',
+                            navigateTo: () async {
+                              final details = await InvoiceDetails.load(inv.id);
+                              return InvoiceEditScreen(invoiceDetails: details);
+                            },
+                          );
                   },
                 ),
               TextField(

@@ -27,16 +27,15 @@ class HMBFilePickerDialog {
 
     await showDialog<void>(
       context: context,
-      builder:
-          (context) => _FilePickerDialog(
-            directory: directory,
-            allowedExtensions: allowedExtensions,
-            showHidden: showHidden,
-            onFileSelected: (filePath) {
-              selectedFilePath = filePath;
-              Navigator.pop(context);
-            },
-          ),
+      builder: (context) => _FilePickerDialog(
+        directory: directory,
+        allowedExtensions: allowedExtensions,
+        showHidden: showHidden,
+        onFileSelected: (filePath) {
+          selectedFilePath = filePath;
+          Navigator.pop(context);
+        },
+      ),
     );
 
     return selectedFilePath;
@@ -73,26 +72,25 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
 
   void _listFiles() {
     setState(() {
-      _files =
-          _currentDirectory.listSync().where((entity) {
-            final isHidden = p.basename(entity.path).startsWith('.');
+      _files = _currentDirectory.listSync().where((entity) {
+        final isHidden = p.basename(entity.path).startsWith('.');
 
-            if (!widget.showHidden && isHidden) {
-              return false;
-            }
+        if (!widget.showHidden && isHidden) {
+          return false;
+        }
 
-            if (entity is File) {
-              if (widget.allowedExtensions != null) {
-                final extension = p
-                    .extension(entity.path)
-                    .toLowerCase()
-                    .replaceAll('.', '');
-                return widget.allowedExtensions!.contains(extension);
-              }
-            }
+        if (entity is File) {
+          if (widget.allowedExtensions != null) {
+            final extension = p
+                .extension(entity.path)
+                .toLowerCase()
+                .replaceAll('.', '');
+            return widget.allowedExtensions!.contains(extension);
+          }
+        }
 
-            return true;
-          }).toList();
+        return true;
+      }).toList();
     });
   }
 
@@ -114,8 +112,9 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
     final items = <BreadcrumbItem>[];
     var dir = _currentDirectory;
     while (true) {
-      final directoryName =
-          dir.path == dir.parent.path ? '/' : p.basename(dir.path);
+      final directoryName = dir.path == dir.parent.path
+          ? '/'
+          : p.basename(dir.path);
       items.insert(0, BreadcrumbItem(directoryName, dir));
       if (dir.path == dir.parent.path) {
         break;
@@ -136,22 +135,19 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children:
-                  breadcrumbs
-                      .map(
-                        (breadcrumb) => GestureDetector(
-                          onTap:
-                              () => _navigateToDirectory(breadcrumb.directory),
-                          child: Row(
-                            children: [
-                              Text(breadcrumb.name),
-                              if (breadcrumb != breadcrumbs.last)
-                                const Text(' / '),
-                            ],
-                          ),
-                        ),
-                      )
-                      .toList(),
+              children: breadcrumbs
+                  .map(
+                    (breadcrumb) => GestureDetector(
+                      onTap: () => _navigateToDirectory(breadcrumb.directory),
+                      child: Row(
+                        children: [
+                          Text(breadcrumb.name),
+                          if (breadcrumb != breadcrumbs.last) const Text(' / '),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ),
         ],
@@ -163,10 +159,9 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
           itemBuilder: (context, index) {
             final entity = _files[index];
             return ListTile(
-              leading:
-                  entity is Directory
-                      ? const Icon(Icons.folder)
-                      : const Icon(Icons.insert_drive_file),
+              leading: entity is Directory
+                  ? const Icon(Icons.folder)
+                  : const Icon(Icons.insert_drive_file),
               title: Text(p.basename(entity.path)),
               onTap: () {
                 if (entity is Directory) {

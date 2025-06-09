@@ -36,10 +36,9 @@ class Photo extends Entity<Photo> {
     parentType: map['parentType'] as String,
     filePath: map['filePath'] as String,
     comment: map['comment'] as String,
-    lastBackupDate:
-        map['last_backup_date'] == null
-            ? null
-            : DateTime.parse(map['last_backup_date'] as String),
+    lastBackupDate: map['last_backup_date'] == null
+        ? null
+        : DateTime.parse(map['last_backup_date'] as String),
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
@@ -48,6 +47,7 @@ class Photo extends Entity<Photo> {
   String parentType;
   String filePath;
   String comment;
+
   /// The last time the photo was backed up.
   /// Normally we would only ever back a photo once.
   DateTime? lastBackupDate;

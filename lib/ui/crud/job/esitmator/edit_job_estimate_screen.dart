@@ -152,10 +152,9 @@ class _JobEstimateBuilderScreenState
               elevation: SurfaceElevation.e0,
               child: HMBSearchWithAdd(
                 hint: 'Add Task',
-                onSearch:
-                    (filter) => setState(() {
-                      _filter = filter ?? '';
-                    }),
+                onSearch: (filter) => setState(() {
+                  _filter = filter ?? '';
+                }),
                 onAdd: _addNewTask,
               ),
             ),
@@ -209,7 +208,10 @@ class _JobEstimateBuilderScreenState
               child: PhotoGallery.forTask(task: task),
             ),
             _buildTaskItems(task),
-            HMBButton(label: 'Add Item', onPressed: () => unawaited(_addItemToTask(task))),
+            HMBButton(
+              label: 'Add Item',
+              onPressed: () => unawaited(_addItemToTask(task)),
+            ),
           ],
         ),
       ),
@@ -220,20 +222,18 @@ class _JobEstimateBuilderScreenState
   Widget _buildTaskItems(Task task) => FutureBuilderEx<ItemsAndRate>(
     // ignore: discarded_futures
     future: ItemsAndRate.fromTask(task),
-    builder:
-        (context, itemAndRate) => Column(
-          children:
-              itemAndRate!.items
-                  .map(
-                    (item) => _buildItemTile(
-                      item,
-                      task,
-                      itemAndRate.hourlyRate,
-                      itemAndRate.billingType,
-                    ),
-                  )
-                  .toList(),
-        ),
+    builder: (context, itemAndRate) => Column(
+      children: itemAndRate!.items
+          .map(
+            (item) => _buildItemTile(
+              item,
+              task,
+              itemAndRate.hourlyRate,
+              itemAndRate.billingType,
+            ),
+          )
+          .toList(),
+    ),
   );
 
   Widget _buildItemTile(
@@ -256,19 +256,17 @@ class _JobEstimateBuilderScreenState
 
     newItem = await Navigator.of(context).push<TaskItem>(
       MaterialPageRoute(
-        builder:
-            (context) => FutureBuilderEx(
-              // ignore: discarded_futures
-              future: getTaskAndRate(task),
-              builder:
-                  (context, taskAndRate) => TaskItemEditScreen(
-                    parent: task,
-                    taskItem: newItem,
-                    billingType:
-                        taskAndRate?.billingType ?? BillingType.timeAndMaterial,
-                    hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
-                  ),
-            ),
+        builder: (context) => FutureBuilderEx(
+          // ignore: discarded_futures
+          future: getTaskAndRate(task),
+          builder: (context, taskAndRate) => TaskItemEditScreen(
+            parent: task,
+            taskItem: newItem,
+            billingType:
+                taskAndRate?.billingType ?? BillingType.timeAndMaterial,
+            hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
+          ),
+        ),
       ),
     );
     if (newItem != null) {
@@ -280,19 +278,17 @@ class _JobEstimateBuilderScreenState
   Future<void> _editItem(TaskItem item, Task task) async {
     final updatedItem = await Navigator.of(context).push<TaskItem>(
       MaterialPageRoute(
-        builder:
-            (context) => FutureBuilderEx(
-              // ignore: discarded_futures
-              future: getTaskAndRate(task),
-              builder:
-                  (context, taskAndRate) => TaskItemEditScreen(
-                    parent: task,
-                    taskItem: item,
-                    billingType:
-                        taskAndRate?.billingType ?? BillingType.timeAndMaterial,
-                    hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
-                  ),
-            ),
+        builder: (context) => FutureBuilderEx(
+          // ignore: discarded_futures
+          future: getTaskAndRate(task),
+          builder: (context, taskAndRate) => TaskItemEditScreen(
+            parent: task,
+            taskItem: item,
+            billingType:
+                taskAndRate?.billingType ?? BillingType.timeAndMaterial,
+            hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
+          ),
+        ),
       ),
     );
 

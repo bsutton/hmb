@@ -29,10 +29,9 @@ class JobActivityTime extends PlaceHolder<JobActivity> {
   static String label = 'Activity Time';
 
   @override
-  Future<String> value() async =>
-      source.value != null
-          ? formatLocalTime(source.value!.start.toLocalTime())
-          : '';
+  Future<String> value() async => source.value != null
+      ? formatLocalTime(source.value!.start.toLocalTime())
+      : '';
 }
 
 class OriginalDate extends PlaceHolder<LocalDate> {

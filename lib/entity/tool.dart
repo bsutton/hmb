@@ -56,10 +56,9 @@ class Tool extends Entity<Tool> {
     categoryId: map['categoryId'] as int?,
     supplierId: map['supplierId'] as int?,
     manufacturerId: map['manufacturerId'] as int?,
-    datePurchased:
-        map['datePurchased'] != null
-            ? DateTime.parse(map['datePurchased'] as String)
-            : null,
+    datePurchased: map['datePurchased'] != null
+        ? DateTime.parse(map['datePurchased'] as String)
+        : null,
     serialNumber: map['serialNumber'] as String?,
     receiptPhotoId: map['receiptPhotoId'] as int?,
     serialNumberPhotoId: map['serialNumberPhotoId'] as int?,

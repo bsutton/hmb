@@ -27,26 +27,25 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
     onEdit: (receipt) => ReceiptEditScreen(receipt: receipt),
     title: _getTitle,
     cardHeight: 480,
-    details:
-        (r) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FutureBuilderEx(
-              // ignore: discarded_futures
-              future: DaoJob().getById(r.jobId),
-              builder: (c, job) => HMBTextBody('Job: ${job?.summary ?? ''}'),
-            ),
-            FutureBuilderEx(
-              // ignore: discarded_futures
-              future: DaoSupplier().getById(r.supplierId),
-              builder: (c, sup) => HMBTextBody('Supplier: ${sup?.name ?? ''}'),
-            ),
-            HMBTextBody('Excl. Tax: ${r.totalExcludingTax}'),
-            HMBTextBody('Tax: ${r.tax}'),
-            HMBTextBody('Incl. Tax: ${r.totalIncludingTax}'),
-            PhotoGallery.forReceipt(receipt: r),
-          ],
+    details: (r) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FutureBuilderEx(
+          // ignore: discarded_futures
+          future: DaoJob().getById(r.jobId),
+          builder: (c, job) => HMBTextBody('Job: ${job?.summary ?? ''}'),
         ),
+        FutureBuilderEx(
+          // ignore: discarded_futures
+          future: DaoSupplier().getById(r.supplierId),
+          builder: (c, sup) => HMBTextBody('Supplier: ${sup?.name ?? ''}'),
+        ),
+        HMBTextBody('Excl. Tax: ${r.totalExcludingTax}'),
+        HMBTextBody('Tax: ${r.tax}'),
+        HMBTextBody('Incl. Tax: ${r.totalIncludingTax}'),
+        PhotoGallery.forReceipt(receipt: r),
+      ],
+    ),
   );
 
   Future<Widget> _getTitle(Receipt receipt) async {

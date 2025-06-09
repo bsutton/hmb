@@ -306,8 +306,9 @@ where c.id =?
 
     if (bestPhone == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestPhone =
-          (await DaoContact().getPrimaryForCustomer(customer!.id))?.bestPhone;
+      bestPhone = (await DaoContact().getPrimaryForCustomer(
+        customer!.id,
+      ))?.bestPhone;
     }
     return bestPhone;
   }
@@ -320,10 +321,9 @@ where c.id =?
 
     if (bestEmail == null) {
       final customer = await DaoCustomer().getByJob(job.id);
-      bestEmail =
-          (await DaoContact().getPrimaryForCustomer(
-            customer!.id,
-          ))?.emailAddress;
+      bestEmail = (await DaoContact().getPrimaryForCustomer(
+        customer!.id,
+      ))?.emailAddress;
     }
     return bestEmail;
   }
@@ -392,9 +392,6 @@ where c.id =?
     }
     return ready;
   }
-
-
-
 }
 
 /// Used to notify the UI that the time entry has changed.
