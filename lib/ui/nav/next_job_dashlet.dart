@@ -11,7 +11,7 @@ class NextJobDashlet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DashletCard<JobActivity?>(
-    label: 'Next Job',
+    label: 'Schedule',
     icon: Icons.schedule,
     // ignore: discarded_futures
     dashletValue: getNextJob,
