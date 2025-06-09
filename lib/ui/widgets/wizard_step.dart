@@ -4,7 +4,8 @@ import 'text/hmb_text_themes.dart';
 import 'wizard.dart';
 
 abstract class WizardStep {
-  WizardStep({required String title}) : _title = title;
+  WizardStep({required String title}) : _title = title, key = GlobalKey();
+  final GlobalKey key;
   final String _title;
 
   WizardState? wizardState;

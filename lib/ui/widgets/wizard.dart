@@ -63,7 +63,6 @@ class WizardState extends State<Wizard> {
   final ScrollPhysics physics = const ClampingScrollPhysics();
 
   late final List<WizardStep> steps;
-  late final List<GlobalKey> _keys;
 
   late WizardStep _currentStep;
   var _currentStepIndex = 0;
@@ -91,8 +90,6 @@ class WizardState extends State<Wizard> {
 
     _currentStep = steps[0];
     _currentStepIndex = 0;
-
-    _keys = List<GlobalKey>.generate(steps.length, (i) => GlobalKey());
   }
 
   @override
@@ -439,7 +436,7 @@ class WizardState extends State<Wizard> {
       }
       children.add(
         Column(
-          key: _keys[i],
+          key: step.key,
           children: [
             Material(
               child: InkWell(
