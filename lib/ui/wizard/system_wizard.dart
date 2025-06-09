@@ -8,6 +8,7 @@ import 'billing_page.dart';
 import 'business_page.dart';
 import 'contact_page.dart';
 import 'integration_page.dart';
+import 'intro_step.dart';
 
 class FirstRunWizard extends StatefulWidget {
   const FirstRunWizard({super.key});
@@ -28,6 +29,7 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
   Widget build(BuildContext context) {
     // The wizard steps we want to show
     final steps = [
+      IntroWizardStep(),
       BusinessWizardStep(),
       BillingWizardStep(),
       ContactWizardStep(),
@@ -36,15 +38,16 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
 
     return Wizard(
       initialSteps: steps,
-      onTransition: ({
-        required currentStep,
-        required targetStep,
-        required userOriginated,
-      }) {
-        Log.d(
-          'Wizard transition from ${currentStep.title} to ${targetStep.title}.',
-        );
-      },
+      onTransition:
+          ({
+            required currentStep,
+            required targetStep,
+            required userOriginated,
+          }) {
+            Log.d(
+              'Wizard transition from ${currentStep.title} to ${targetStep.title}.',
+            );
+          },
       onFinished: (reason) async {
         switch (reason) {
           case WizardCompletionReason.cancelled:
