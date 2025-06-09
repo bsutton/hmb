@@ -48,7 +48,7 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
     setState(() {
       _quotes = quotes;
 
-      /// force the AnimatedList to be full rebuilt without animations.
+      /// force the AnimatedList to be fully rebuilt without animations.
       _listKey = GlobalKey<AnimatedListState>();
     });
   }
