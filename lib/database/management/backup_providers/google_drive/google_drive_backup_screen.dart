@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
@@ -6,16 +7,19 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../dao/dao.g.dart';
+import '../../../../ui/widgets/color_ex.dart';
 import '../../../../ui/widgets/hmb_button.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
 import '../../../../util/app_title.dart';
 import '../../../../util/format.dart';
+import '../../../../util/hmb_theme.dart';
 import '../../../factory/flutter_database_factory.dart';
 import '../../../versions/asset_script_source.dart';
 import '../backup.dart';
 import '../backup_provider.dart';
 import '../backup_selection.dart';
 import '../progress_update.dart';
+import 'api.dart';
 import 'background_backup/google_drive_backup_provider.dart';
 import 'background_backup/photo_sync_params.dart';
 import 'background_backup/photo_sync_service.dart';
@@ -61,13 +65,18 @@ class _GoogleDriveBackupScreenState
     super.dispose();
   }
 
+  var _isGoogleSignedIn = false;
+
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Backup & Restore');
     _provider = _getProvider();
 
-    // Load last backup date
-    _lastBackupFuture = _refreshLastBackup();
+    if (await GoogleDriveAuth().isSignedIn) {
+      // Load last backup date
+      _lastBackupFuture = _refreshLastBackup();
+      _isGoogleSignedIn = true;
+    }
   }
 
   Future<DateTime?> _refreshLastBackup() async {
@@ -89,42 +98,54 @@ class _GoogleDriveBackupScreenState
     appBar: AppBar(automaticallyImplyLeading: false),
     body: DeferredBuilder(
       this,
-      builder: (context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (_isLoading) ...[
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(
-                  _stageDescription,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 18),
-                ),
-              ] else ...[
-                const Text(
-                  'Backup and Restore Your Database',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-                _buildBackupButton(),
-                const SizedBox(height: 16),
-                _buildLastBackup(),
-                const SizedBox(height: 40),
-                _buildRestoreButton(context),
-                if (!widget.restoreOnly) const SizedBox(height: 40),
-                if (!widget.restoreOnly) ..._buildPhotoSyncSection(),
-              ],
-            ],
-          ),
-        ),
+      builder: (context) {
+        if (Platform.isLinux || Platform.isWindows) {
+          return _buildUnsupportedPlatformMessage(context);
+        }
+
+        if (!_isGoogleSignedIn) {
+          return _buildSignInPrompt(context);
+        } else {
+          return _buildBackupUI(context);
+        }
+      },
+    ),
+  );
+
+  Widget _buildBackupUI(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (_isLoading) ...[
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              _stageDescription,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18),
+            ),
+          ] else ...[
+            const Text(
+              'Backup and Restore Your Database',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+            _buildBackupButton(),
+            const SizedBox(height: 16),
+            _buildLastBackup(),
+            const SizedBox(height: 40),
+            _buildRestoreButton(context),
+            if (!widget.restoreOnly) const SizedBox(height: 40),
+            if (!widget.restoreOnly) ..._buildPhotoSyncSection(),
+          ],
+        ],
       ),
     ),
   );
@@ -255,4 +276,102 @@ class _GoogleDriveBackupScreenState
         },
       ),
   ];
+
+  Widget _buildSignInPrompt(BuildContext context) {
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withSafeOpacity(0.8),
+            HMBColors.accent.withSafeOpacity(0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '🔐 Google Drive Backup',
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                'To enable cloud backups, please sign in to your Google account.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, color: Colors.white70),
+              ),
+            ),
+            const SizedBox(height: 32),
+            HMBButton.withIcon(
+              icon: const Icon(Icons.login, color: Colors.white),
+              label: 'Sign in to Google',
+              onPressed: () async {
+                try {
+                  final auth = await GoogleDriveAuth.init();
+                  if (await auth.isSignedIn && mounted) {
+                    _isGoogleSignedIn = true;
+                    setState(() {});
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    HMBToast.error('Sign-in failed: $e');
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnsupportedPlatformMessage(BuildContext context) {
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withSafeOpacity(0.8),
+            HMBColors.accent.withSafeOpacity(0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '🚫 Not Supported',
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Google Drive backup is not supported on Linux or Windows.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, color: Colors.white70),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

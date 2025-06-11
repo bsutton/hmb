@@ -30,7 +30,7 @@ Future<void> main(List<String> args) async {
   SentryWidgetsFlutterBinding.ensureInitialized();
 
   // grab package info for logging
-  final packageInfo = await PackageInfo.fromPlatform();
+final packageInfo = await PackageInfo.fromPlatform();
   Log.i('Package Name: ${packageInfo.packageName}');
 
   // initialize Sentry

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -28,6 +29,16 @@ class GoogleDriveAuth {
     api._authHeaders = await account.authHeaders;
 
     return api;
+  }
+
+  Future<bool> get isSignedIn async {
+    if (Platform.isLinux || Platform.isWindows) {
+      /// auth not supported on these plaforms.
+      return false;
+    }
+    final googleSignIn = GoogleSignIn(scopes: [drive.DriveApi.driveFileScope]);
+
+    return googleSignIn.isSignedIn();
   }
 
   Future<GoogleSignInAccount?> _signin() async {
