@@ -78,7 +78,7 @@ class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
             // Insert the photo metadata into the database
             final newPhoto = Photo.forInsert(
               parentId: parent!.id,
-              parentType: widget.parentType.name,
+              parentType: widget.parentType,
               filePath: capturedPhoto.relativePath,
               comment: '',
             );

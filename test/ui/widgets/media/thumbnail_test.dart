@@ -2,6 +2,7 @@
 
 import 'package:dcli/dcli.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/photo.dart';
 import 'package:hmb/ui/widgets/media/thumbnail.dart';
 import 'package:hmb/util/compute_manager.dart';
@@ -19,7 +20,7 @@ void main() {
 
     final photo = Photo.forInsert(
       parentId: 1,
-      parentType: 'None',
+      parentType: ParentType.task,
       lastBackupDate: DateTime.now(),
       comment: 'None',
       filePath: pathToPhoto,

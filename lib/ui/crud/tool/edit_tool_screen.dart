@@ -161,7 +161,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
               // Create a new Photo entity
               final newPhoto = Photo.forInsert(
                 parentId: currentEntity?.id ?? 0,
-                parentType: 'tool',
+                parentType: ParentType.tool,
                 filePath: capturedPhoto.relativePath,
                 comment: 'Serial Number Photo',
               );
@@ -185,9 +185,9 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
               // Create a new Photo entity
               final newPhoto = Photo.forInsert(
                 parentId: currentEntity?.id ?? 0,
-                parentType: 'tool',
+                parentType: ParentType.tool,
                 filePath: capturedPhoto.relativePath,
-                comment: 'Reciept Photo',
+                comment: 'Receipt Photo',
               );
 
               // Insert the photo into the DB

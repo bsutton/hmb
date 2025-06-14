@@ -56,7 +56,7 @@ class _CapturePhotoState extends State<CapturePhoto> {
                 // Create a new Photo entity
                 final newPhoto = Photo.forInsert(
                   parentId: widget.tool.id,
-                  parentType: 'tool',
+                  parentType: ParentType.tool,
                   filePath: capturedPhoto.relativePath,
                   comment: widget.comment,
                 );

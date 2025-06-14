@@ -5,7 +5,7 @@ import '../entity/photo.dart';
 import '../util/util.g.dart';
 import 'dao.g.dart';
 
-enum ParentType { task, tool, receipt }
+
 
 class DaoPhoto extends Dao<Photo> {
   Future<List<Photo>> getByParent(int parentId, ParentType parentType) async {
