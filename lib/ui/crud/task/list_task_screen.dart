@@ -6,9 +6,7 @@ import '../../../dao/dao_photo.dart'; // Import the Photo DAO
 import '../../../dao/dao_task.dart';
 import '../../../dao/dao_task_status.dart';
 import '../../../dao/dao_time_entry.dart';
-import '../../../entity/job.dart';
-import '../../../entity/task.dart';
-import '../../../entity/time_entry.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/format.dart';
 import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/hmb_toggle.dart';

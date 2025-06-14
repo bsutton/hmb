@@ -2,8 +2,7 @@
 
 import 'package:dcli/dcli.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hmb/dao/dao.g.dart';
-import 'package:hmb/entity/photo.dart';
+import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/widgets/media/thumbnail.dart';
 import 'package:hmb/util/compute_manager.dart';
 import 'package:hmb/util/photo_meta.dart';

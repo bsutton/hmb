@@ -5,12 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
-import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_task.dart';
 import '../../../dao/dao_task_status.dart';
-import '../../../entity/job.dart';
-import '../../../entity/task.dart';
-import '../../../entity/task_status.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/platform_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';

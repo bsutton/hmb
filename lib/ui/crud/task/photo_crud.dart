@@ -7,7 +7,6 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 import 'package:strings/strings.dart';
 
-import '../../../dao/dao_photo.dart';
 import '../../../entity/entity.dart';
 import '../../../entity/photo.dart';
 import '../../../util/photo_meta.dart';
