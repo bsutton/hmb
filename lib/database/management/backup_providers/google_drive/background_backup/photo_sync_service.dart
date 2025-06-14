@@ -11,8 +11,9 @@ import 'upload_photos_in_backup.dart';
 /// Used by the photo upload isolate to indicate
 /// that it successfully uploaded a photo.
 class PhotoUploaded {
-  PhotoUploaded(this.id);
+  PhotoUploaded(this.id, this.pathToStorageLocation);
   int id;
+  String pathToStorageLocation;
 }
 
 class PhotoSyncService {

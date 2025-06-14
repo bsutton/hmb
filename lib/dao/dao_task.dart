@@ -56,6 +56,15 @@ class DaoTask extends Dao<Task> {
   //     return toList(data).first;
   //   }
 
+  Future<Task?> getForPhoto(Photo photo) async {
+    assert(
+      photo.parentType == ParentType.task,
+      'The photo must be owned by Task',
+    );
+
+    return getById(photo.parentId);
+  }
+
   Future<void> deleteTaskPhotos(int taskId, {Transaction? transaction}) async {
     final photos = await DaoPhoto().getByParent(taskId, ParentType.task);
 

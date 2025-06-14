@@ -5,7 +5,6 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 
 import '../../progress_update.dart';
 import '../api.dart';
@@ -29,10 +28,6 @@ Future<void> uploadPhotosInBackup({
   // Init Drive API
   final driveApi = await GoogleDriveApi.fromHeaders(authHeaders);
   final backupsFolderId = await driveApi.getBackupFolder();
-  final photosFolderId = await driveApi.getOrCreateFolderId(
-    'photos',
-    parentFolderId: backupsFolderId,
-  );
 
   for (var i = 0; i < totalPhotos; i++) {
     final photoPayload = photoPayloads[i];
@@ -50,9 +45,8 @@ Future<void> uploadPhotosInBackup({
       // this should only be an issue for me as I have
       // old photo records for which I lost the photo
       // so for now we just mark these photos as synced.
-      //
       sendPort
-        ..send(PhotoUploaded(photoPayload.id))
+        ..send(PhotoUploaded(photoPayload.id, photoPayload.pathToCloudStorage))
         ..send(
           ProgressUpdate(
             'Photo ${photoPayload.id} skipped as missing',
@@ -63,19 +57,25 @@ Future<void> uploadPhotosInBackup({
       continue;
     }
 
-    final monthFolderName = DateFormat(
-      'yyyy-MM',
-    ).format(photoPayload.createdAt);
-    final monthFolderId = await driveApi.getOrCreateFolderId(
-      monthFolderName,
-      parentFolderId: photosFolderId,
-    );
+    // Create folder hierarchy from storagePath (excluding the file name)
+    final parts = photoPayload.pathToCloudStorage.split('/');
+    final folderParts = parts.take(parts.length - 1);
+    final fileName = parts.last;
 
-    // Resumable upload init
+    var parentId = backupsFolderId;
+    for (final part in folderParts) {
+      parentId = await driveApi.getOrCreateFolderId(
+        part,
+        parentFolderId: parentId,
+      );
+    }
+
+    // Upload file to final destination
     final metadata = jsonEncode({
-      'name': '${photoPayload.id}:${file.uri.pathSegments.last}',
-      'parents': [monthFolderId],
+      'name': '${photoPayload.id}:$fileName',
+      'parents': [parentId],
     });
+
     final initResp = await driveApi.send(
       http.Request(
           'POST',
@@ -86,6 +86,7 @@ Future<void> uploadPhotosInBackup({
         ..headers['Content-Type'] = 'application/json; charset=UTF-8'
         ..body = metadata,
     );
+
     final uploadUrl = initResp.headers['location'];
     if (uploadUrl == null) {
       continue;
@@ -100,7 +101,7 @@ Future<void> uploadPhotosInBackup({
 
     if (uploadResp.statusCode == 200 || uploadResp.statusCode == 201) {
       sendPort
-        ..send(PhotoUploaded(photoPayload.id))
+        ..send(PhotoUploaded(photoPayload.id, photoPayload.pathToCloudStorage))
         ..send(
           ProgressUpdate(
             'Photo ${photoPayload.id} synced',

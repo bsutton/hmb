@@ -2,7 +2,7 @@ import 'package:june/june.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
-import '../entity/tool.dart';
+import '../entity/entity.g.dart';
 import 'dao.dart';
 import 'dao_photo.dart';
 
