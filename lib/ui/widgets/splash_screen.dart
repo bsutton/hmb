@@ -23,7 +23,7 @@ import 'widgets.g.dart';
 bool firstRun = false;
 
 // re-use your blocking UI key
-final _blockingUIKey = GlobalKey();
+// final _blockingUIKey = GlobalKey();
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -79,7 +79,7 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
           // Blocking UI handles loading/errors
           BlockingUITransition(
-            key: _blockingUIKey,
+            // key: _blockingUIKey,
             slowAction: () async => _initialise(context),
             builder: (context, _) => const SizedBox.shrink(),
             errorBuilder: (context, error) =>
