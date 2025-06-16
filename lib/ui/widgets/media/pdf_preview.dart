@@ -93,13 +93,22 @@ class PdfPreviewScreen extends StatelessWidget {
                 params: PdfViewerParams(
                   linkHandlerParams: PdfLinkHandlerParams(
                     onLinkTap: (link) async {
-                      // handle URL or Dest
-                      if (link.url != null) {
-                        await launchUrl(link.url!);
+                      final uri = link.url;
+
+                      if (uri != null) {
+                        Uri normalized;
+                        if (!uri.hasScheme) {
+                          normalized = Uri.parse('https://$uri');
+                        } else {
+                          normalized = uri;
+                        }
+
+                        if (await canLaunchUrl(normalized)) {
+                          await launchUrl(normalized);
+                        } else {
+                          HMBToast.error('Could not launch URL: $normalized');
+                        }
                       }
-                      // else if (link.dest != null) {
-                      //   controller.goToDest(link.dest);
-                      // }
                     },
                   ),
                 ),

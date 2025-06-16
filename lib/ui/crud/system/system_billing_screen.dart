@@ -15,6 +15,7 @@ import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
 import '../../../util/app_title.dart';
 import '../../../util/money_ex.dart';
+import '../../../util/uri_ex.dart';
 import '../../widgets/color_ex.dart';
 import '../../widgets/fields/hmb_money_editing_controller.dart';
 import '../../widgets/fields/hmb_money_field.dart';
@@ -288,6 +289,12 @@ and what forms of payment you accept.'''),
                 controller: _paymentLinkUrlController,
                 labelText: 'Payment Link URL',
                 keyboardType: TextInputType.url,
+                validator: (value) => !UriEx.isValid(value)
+                    ? 'Payment link must be a valid URL'
+                    : null,
+              ).help(
+                'Payment Link',
+                'A link to details on how the user can pay. Appears on Invoices and Quotes. e.g. https://mysite/payment.html',
               ),
             const SizedBox(height: 20),
             HMBDroplist<LogoAspectRatio>(

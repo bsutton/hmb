@@ -10,6 +10,7 @@ import '../../../entity/system.dart';
 // Import your new classes/enums
 import '../../../util/app_title.dart';
 import '../../../util/measurement_type.dart';
+import '../../../util/uri_ex.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_toast.dart';
@@ -185,6 +186,9 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
           HMBTextField(
             controller: _webUrlController!,
             labelText: 'Web URL',
+            validator: (value) => !UriEx.isValid(value) 
+                ? 'Web URL must be a valid URL'
+                : null,
           ).help(
             'Web URL',
             'A link to your business web site. Appears in your email footer.',
@@ -192,6 +196,9 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
           HMBTextField(
             controller: _termsUrlController!,
             labelText: 'Terms URL',
+            validator: (value) => !UriEx.isValid(value) 
+                ? 'Terms Url must be a valid URL'
+                : null,
           ).help(
             'Terms URL',
             'A link to your Terms and Conditions. Appears on your Quotes and Invoices.',
