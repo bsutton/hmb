@@ -121,55 +121,16 @@ class PhotoGallery extends StatelessWidget {
                 child: FutureBuilderEx<Thumbnail?>(
                   // ignore: discarded_futures
                   future: _getThumbNail(photoMeta),
-                  waitingBuilder: (context) => Container(
-                    width: 80,
-                    height: 80,
-                    color: Colors.grey,
-                    child: const Icon(
-                      Icons.image,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
-                  errorBuilder: (context, error) => Container(
-                    width: 80,
-                    height: 80,
-                    color: Colors.grey,
-                    child: const Icon(
-                      Icons.error,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
+                  waitingBuilder: (context) => _showWaitingIcon(),
+                  errorBuilder: (context, error) => _showMissingIcon(),
 
-                  builder: (context, thumbnail) => Stack(
-                    children: [
-                      Image.file(
-                        File(thumbnail!.pathToThumbNail),
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey,
-                          child: const Icon(
-                            Icons.broken_image,
-                            color: Colors.white,
-                            size: 40,
-                          ),
-                        ),
-                      ),
-                      const Positioned(
-                        bottom: 8,
-                        right: 0,
-                        child: ColoredBox(
-                          color: Colors.black45,
-                          child: Icon(Icons.zoom_out_map, color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
+                  builder: (context, thumbnail) {
+                    if (thumbnail == null) {
+                      return _showMissingIcon();
+                    } else {
+                      return _showThumbnail(thumbnail);
+                    }
+                  },
                 ),
               ),
             ),
@@ -178,14 +139,58 @@ class PhotoGallery extends StatelessWidget {
     ),
   );
 
+  Stack _showThumbnail(Thumbnail? thumbnail) => Stack(
+    children: [
+      Image.file(
+        File(thumbnail!.pathToThumbNail),
+        width: 80,
+        height: 80,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: 80,
+          height: 80,
+          color: Colors.grey,
+          child: const Icon(Icons.broken_image, color: Colors.white, size: 40),
+        ),
+      ),
+      const Positioned(
+        bottom: 8,
+        right: 0,
+        child: ColoredBox(
+          color: Colors.black45,
+          child: Icon(Icons.zoom_out_map, color: Colors.white),
+        ),
+      ),
+    ],
+  );
+
+  Container _showWaitingIcon() => Container(
+    width: 80,
+    height: 80,
+    color: Colors.grey,
+    child: const Icon(Icons.image, color: Colors.white, size: 40),
+  );
+
+  Container _showMissingIcon() => Container(
+    width: 80,
+    height: 80,
+    color: Colors.grey,
+    child: const Icon(Icons.error, color: Colors.white, size: 40),
+  );
+
   static void notify() {
     June.getState(PhotoGalleryState.new).setState();
   }
 
   Future<Thumbnail?> _getThumbNail(PhotoMeta photoMeta) async {
-    final thumbnail = await Thumbnail.fromMeta(photoMeta);
-    await thumbnail.generate(computeManager);
-    return thumbnail;
+    await photoMeta.resolve();
+    if (photoMeta.exists()) {
+      final thumbnail = await Thumbnail.fromMeta(photoMeta);
+      await thumbnail.generate(computeManager);
+      return thumbnail;
+    } else {
+      return null;
+    }
   }
 }
 
