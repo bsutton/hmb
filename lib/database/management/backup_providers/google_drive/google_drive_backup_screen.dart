@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../dao/dao.g.dart';
@@ -103,15 +104,14 @@ class _GoogleDriveBackupScreenState
           return _buildUnsupportedPlatformMessage(context);
         }
 
-        if (!_isGoogleSignedIn) {
-          return _buildSignInPrompt(context);
-        } else {
+        if (_isGoogleSignedIn) {
           return _buildBackupUI(context);
+        } else {
+          return _buildSignInPrompt(context);
         }
       },
     ),
   );
-
   Widget _buildBackupUI(BuildContext context) => Center(
     child: Padding(
       padding: const EdgeInsets.all(16),
@@ -144,6 +144,18 @@ class _GoogleDriveBackupScreenState
             _buildRestoreButton(context),
             if (!widget.restoreOnly) const SizedBox(height: 40),
             if (!widget.restoreOnly) ..._buildPhotoSyncSection(),
+            const SizedBox(height: 40),
+            HMBButton.withIcon(
+              label: 'Sign Out',
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                final googleSignIn = GoogleSignIn();
+                await googleSignIn.signOut();
+                setState(() {
+                  _isGoogleSignedIn = false;
+                });
+              },
+            ),
           ],
         ],
       ),
@@ -316,13 +328,17 @@ class _GoogleDriveBackupScreenState
               icon: const Icon(Icons.login, color: Colors.white),
               label: 'Sign in to Google',
               onPressed: () async {
+                GoogleDriveAuth? auth;
                 try {
-                  final auth = await GoogleDriveAuth.init();
+                  auth = await GoogleDriveAuth.init();
                   if (await auth.isSignedIn && mounted) {
                     _isGoogleSignedIn = true;
                     setState(() {});
                   }
                 } catch (e) {
+                  /// ensure we are not left in a 'half signed-in'
+                  /// state.
+                  await auth?.signOut();
                   if (mounted) {
                     HMBToast.error('Sign-in failed: $e');
                   }
