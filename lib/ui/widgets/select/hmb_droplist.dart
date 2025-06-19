@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
@@ -88,7 +89,9 @@ class _HMBDroplistState<T> extends State<_HMBDroplist<T>> {
           _loading = false;
         });
       }
-      widget.state.didChange(_selectedItem);
+      if (mounted) {
+        widget.state.didChange(_selectedItem);
+      }
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       print('Error loading selected item: $e');
