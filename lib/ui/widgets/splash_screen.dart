@@ -150,7 +150,7 @@ class _SplashScreenState extends State<SplashScreen> {
         firstRun = false;
         context.go('/system/wizard');
       } else {
-        context.go('/home');
+        context.go('/dashboard');
       }
     }
   }

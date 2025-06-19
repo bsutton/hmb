@@ -254,7 +254,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
             SaveAndClose(
               onSave: save,
               showSaveOnly: false,
-              onCancel: () async => context.go('/home'),
+              onCancel: () async => context.go('/dashboard'),
             ),
             Expanded(
               child: Padding(

@@ -124,9 +124,11 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
   }
 
   Future<void> _handleTap(BuildContext context) async {
+    /// a route was passed.
     if (widget.route != null) {
       await GoRouter.of(context).push(widget.route!);
     } else {
+      // A builder was passed with a value.
       final dv = await widget.dashletValue();
       if (!context.mounted) {
         return;

@@ -26,9 +26,9 @@ import '../task_items/list_packing_screen.dart';
 import '../task_items/list_shopping_screen.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
-import '../widgets/splash_screen.dart';
 import '../wizard/setup_wizard.dart';
 import 'nav.g.dart';
+import 'splash_router.dart';
 
 GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
   navigatorKey: navigatorKey,
@@ -50,8 +50,8 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     return null;
   },
   routes: [
-    // 1) Root route that redirects the Splash screen
-    GoRoute(path: '/', redirect: (context, state) => '/splash'),
+    // '/' is used on startup and for deeplinking
+    GoRoute(path: '/', builder: (context, state) => const SplashRouter()),
 
     // 2) Error screen route
     GoRoute(
@@ -62,13 +62,7 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
       },
     ),
 
-    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
-    // Dashboard
-    GoRoute(
-      path: '/home',
-      builder: (_, _) => const HomeScaffold(initialScreen: MainDashboardPage()),
-    ),
-
+    // This where the user lands after we finish initialising.
     GoRoute(
       path: '/dashboard',
       builder: (_, _) => const HomeScaffold(initialScreen: MainDashboardPage()),
@@ -223,6 +217,7 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
         );
       },
     ),
+    GoRoute(path: '/testpdf', builder: (context, state) => const TestPdfZoom()),
   ],
 );
 
