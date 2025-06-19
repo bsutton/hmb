@@ -56,6 +56,14 @@ class HelpDashboardPage extends StatelessWidget {
           route: '/system/about',
           widgetBuilder: (_, _) => const SizedBox.shrink(),
         ),
+
+        //  DashletCard<void>(
+        //   label: 'Test PDF',
+        //   icon: Icons.info,
+        //   dashletValue: () => Future.value(const DashletValue(null)),
+        //   route: '/testpdf',
+        //   widgetBuilder: (_, _) => const SizedBox.shrink(),
+        // ),
       ],
     ),
   );

@@ -77,7 +77,7 @@ class Photo extends Entity<Photo> {
     'filePath': filePath,
     'comment': comment,
     'last_backup_date': lastBackupDate?.toIso8601String(),
-    'path': pathToCloudStorage,
+    'path_to_cloud_storage': pathToCloudStorage,
     'path_version': pathVersion,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
