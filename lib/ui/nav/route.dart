@@ -217,7 +217,7 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
         );
       },
     ),
-    GoRoute(path: '/testpdf', builder: (context, state) => const TestPdfZoom()),
+    // GoRoute(path: '/testpdf', builder: (context, state) => const TestPdfZoom()),
   ],
 );
 
