@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../api/external_accounting.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../widgets/media/media.g.dart';
+import '../../widgets/media/pdf_preview.dart';
 import '../../widgets/widgets.g.dart';
 import 'generate_assignment_pdf.dart';
 

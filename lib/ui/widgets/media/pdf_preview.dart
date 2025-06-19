@@ -2,12 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:zoom_view/zoom_view.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../ui/widgets/hmb_toast.dart';
 import '../../dialog/email_dialog.dart';
 import '../blocking_ui.dart';
+import '../desktop_back_gesture_ignore.dart';
 
 class EmailBlocked {
   EmailBlocked({required this.blocked, required this.reason});
@@ -16,7 +17,7 @@ class EmailBlocked {
 }
 
 class PdfPreviewScreen extends StatelessWidget {
-  const PdfPreviewScreen({
+  PdfPreviewScreen({
     required this.title,
     required this.emailSubject,
     required this.emailBody,
@@ -27,15 +28,17 @@ class PdfPreviewScreen extends StatelessWidget {
     required this.onSent,
     super.key,
   });
+
   final String title;
   final String filePath;
-
   final String emailSubject;
   final String emailBody;
   final String preferredRecipient;
   final List<String> emailRecipients;
   final Future<void> Function() onSent;
   final Future<EmailBlocked> Function() canEmail;
+
+  final controller = ScrollController();
 
   Future<void> _showEmailDialog(BuildContext context) async {
     final system = await DaoSystem().get();
@@ -71,6 +74,7 @@ class PdfPreviewScreen extends StatelessWidget {
     }
   }
 
+  final pdfViewerController = PdfViewerController();
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
@@ -86,38 +90,51 @@ class PdfPreviewScreen extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: BlockingUITransition<PdfViewer>(
+            child: BlockingUITransition<Widget>(
               label: 'Rendering PDF',
-              slowAction: () async => PdfViewer.file(
-                filePath,
-                params: PdfViewerParams(
-                  linkHandlerParams: PdfLinkHandlerParams(
-                    onLinkTap: (link) async {
-                      final uri = link.url;
+              slowAction: () async {
+                final pages = await _loadPages(context);
 
-                      if (uri != null) {
-                        Uri normalized;
-                        if (!uri.hasScheme) {
-                          normalized = Uri.parse('https://$uri');
-                        } else {
-                          normalized = uri;
-                        }
-
-                        if (await canLaunchUrl(normalized)) {
-                          await launchUrl(normalized);
-                        } else {
-                          HMBToast.error('Could not launch URL: $normalized');
-                        }
-                      }
-                    },
+                return SuppressDesktopBackGesture(
+                  child: ZoomListView(
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      controller: controller,
+                      itemCount: pages.length,
+                      itemBuilder: (context, index) => pages[index],
+                    ),
                   ),
-                ),
-              ),
-              builder: (context, pdf) => pdf!,
+                );
+              },
+
+              builder: (context, widget) => widget!,
             ),
           ),
         ],
       ),
     ),
   );
+
+  Future<List<Widget>> _loadPages(BuildContext context) async {
+    final doc = await PdfDocument.openFile(filePath);
+    final pageWidgets = <Widget>[];
+
+    for (var i = 0; i < doc.pages.length; i++) {
+      final widget = PdfPageView(
+        document: doc,
+        pageNumber: i + 1, // base 1
+
+        pageSizeCallback: (biggestSize, page) => Size(page.width, page.height),
+      );
+
+      pageWidgets.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: widget,
+        ),
+      );
+    }
+
+    return pageWidgets;
+  }
 }

@@ -5,6 +5,9 @@ import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:june/june.dart';
+
+import 'desktop_back_gesture_ignore.dart';
 
 /// Wraps [child] with keyboard, mouse-button and swipe-back handlers,
 /// using a provided [navigatorKey] to pop the correct Navigator from GoRouter.
@@ -89,19 +92,25 @@ class DesktopBackGesture extends StatelessWidget {
           }
         }
       },
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onHorizontalDragUpdate: (details) {
-          // Negative dx for right-to-left swipe (back)
-          if (details.delta.dx < -_dragThreshold) {
-            final nav = navigatorKey.currentState;
-            if (_shouldPop(nav)) {
-              nav!.pop();
-            }
-          }
-        },
-        child: child,
+      child: JuneBuilder(
+        IgnoreDesktopGesture.new,
+        builder: (context) => (June.getState(IgnoreDesktopGesture.new).ignored)
+            ? child
+            : GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onHorizontalDragUpdate: (details) {
+                  // Negative dx for right-to-left swipe (back)
+                  if (details.delta.dx < -_dragThreshold) {
+                    final nav = navigatorKey.currentState;
+                    if (_shouldPop(nav)) {
+                      nav!.pop();
+                    }
+                  }
+                },
+                child: child,
+              ),
       ),
+      // child: child,
     ),
   );
 }
