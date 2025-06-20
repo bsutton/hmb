@@ -5,7 +5,7 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:strings/strings.dart';
 
-import '../desktop_back_gesture_ignore.dart';
+import '../desktop_back_gesture_suppress.dart';
 import '../hmb_toast.dart';
 
 class FullScreenPhotoViewer extends StatelessWidget {

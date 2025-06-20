@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:june/june.dart';
 
-import 'desktop_back_gesture_ignore.dart';
+import 'desktop_back_gesture_suppress.dart';
 
 /// Wraps [child] with keyboard, mouse-button and swipe-back handlers,
 /// using a provided [navigatorKey] to pop the correct Navigator from GoRouter.

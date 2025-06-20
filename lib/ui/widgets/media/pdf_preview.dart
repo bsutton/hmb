@@ -8,7 +8,7 @@ import '../../../dao/dao_system.dart';
 import '../../../ui/widgets/hmb_toast.dart';
 import '../../dialog/email_dialog.dart';
 import '../blocking_ui.dart';
-import '../desktop_back_gesture_ignore.dart';
+import '../desktop_back_gesture_suppress.dart';
 
 class EmailBlocked {
   EmailBlocked({required this.blocked, required this.reason});
