@@ -18,19 +18,26 @@ class _DesktopBackGestureSuppressState
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
+      if (mounted) {
         June.getState(IgnoreDesktopGesture.new)
           ..ignored = true
           ..setState();
-      });
+      }
     });
   }
 
   @override
   void dispose() {
-    June.getState(IgnoreDesktopGesture.new)
-      ..ignored = false
-      ..setState();
+    // Defer the state update to avoid calling setState when the widget tree is locked.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final gestureState = June.getState(IgnoreDesktopGesture.new);
+
+      if (!gestureState.isDisposed) {
+        gestureState
+          ..ignored = false
+          ..setState();
+      }
+    });
 
     super.dispose();
   }
@@ -40,6 +47,5 @@ class _DesktopBackGestureSuppressState
 }
 
 class IgnoreDesktopGesture extends JuneState {
-  // ignore: type_annotate_public_apis
-  var ignored = false;
+  bool ignored = false;
 }

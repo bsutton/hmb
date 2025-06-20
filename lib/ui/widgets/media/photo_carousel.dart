@@ -8,6 +8,7 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:photo_view/photo_view.dart';
 
 import '../../../util/photo_meta.dart';
+import '../desktop_back_gesture_ignore.dart';
 import '../layout/hmb_spacer.dart';
 import '../text/hmb_text_themes.dart';
 
@@ -130,12 +131,14 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
     itemCount: widget.photos.length,
     itemBuilder: (context, index) {
       final photoMeta = widget.photos[index];
-      return PhotoView(
-        imageProvider: FileImage(File(photoMeta.absolutePathTo)),
-        backgroundDecoration: const BoxDecoration(color: Colors.black),
-        minScale: PhotoViewComputedScale.contained,
-        maxScale: PhotoViewComputedScale.covered * 2.0,
-        initialScale: PhotoViewComputedScale.contained,
+      return DesktopBackGestureSuppress(
+        child: PhotoView(
+          imageProvider: FileImage(File(photoMeta.absolutePathTo)),
+          backgroundDecoration: const BoxDecoration(color: Colors.black),
+          minScale: PhotoViewComputedScale.contained,
+          maxScale: PhotoViewComputedScale.covered * 2.0,               
+          initialScale: PhotoViewComputedScale.contained,
+        ),
       );
     },
   );
