@@ -5,6 +5,7 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:strings/strings.dart';
 
+import '../desktop_back_gesture_ignore.dart';
 import '../hmb_toast.dart';
 
 class FullScreenPhotoViewer extends StatelessWidget {
@@ -24,12 +25,14 @@ class FullScreenPhotoViewer extends StatelessWidget {
     backgroundColor: Colors.black,
     body: Stack(
       children: [
-        PhotoView(
-          imageProvider: FileImage(File(imagePath)),
-          backgroundDecoration: const BoxDecoration(color: Colors.black),
-          minScale: PhotoViewComputedScale.contained,
-          maxScale: PhotoViewComputedScale.covered * 2.0,
-          initialScale: PhotoViewComputedScale.contained,
+        DesktopBackGestureSuppress(
+          child: PhotoView(
+            imageProvider: FileImage(File(imagePath)),
+            backgroundDecoration: const BoxDecoration(color: Colors.black),
+            minScale: PhotoViewComputedScale.contained,
+            maxScale: PhotoViewComputedScale.covered * 2.0,
+            initialScale: PhotoViewComputedScale.contained,
+          ),
         ),
         Positioned(
           top: 40,

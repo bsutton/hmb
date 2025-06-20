@@ -1,18 +1,18 @@
 import 'package:flutter/widgets.dart';
 import 'package:june/june.dart';
 
-class SuppressDesktopBackGesture extends StatefulWidget {
-  const SuppressDesktopBackGesture({required this.child, super.key});
+class DesktopBackGestureSuppress extends StatefulWidget {
+  const DesktopBackGestureSuppress({required this.child, super.key});
 
   final Widget child;
 
   @override
-  State<SuppressDesktopBackGesture> createState() =>
-      _SuppressDesktopBackGestureState();
+  State<DesktopBackGestureSuppress> createState() =>
+      _DesktopBackGestureSuppressState();
 }
 
-class _SuppressDesktopBackGestureState
-    extends State<SuppressDesktopBackGesture> {
+class _DesktopBackGestureSuppressState
+    extends State<DesktopBackGestureSuppress> {
   @override
   void initState() {
     super.initState();

@@ -95,7 +95,7 @@ class PdfPreviewScreen extends StatelessWidget {
               slowAction: () async {
                 final pages = await _loadPages(context);
 
-                return SuppressDesktopBackGesture(
+                return DesktopBackGestureSuppress(
                   child: ZoomListView(
                     child: ListView.builder(
                       physics: const BouncingScrollPhysics(),
