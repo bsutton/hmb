@@ -1,5 +1,6 @@
 import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart' hide StatefulBuilder;
+import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/supplier.dart';
@@ -67,6 +68,12 @@ Future<void> markAsCompleted(
                 style: Theme.of(context).textTheme.titleMedium,
                 softWrap: true,
               ),
+              if (Strings.isNotBlank(taskItem.purpose))
+                Text(
+                  taskItem.purpose,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  softWrap: true,
+                ),
 
               // Optional dimensions line
               if (taskItem.hasDimensions) ...[

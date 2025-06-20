@@ -42,6 +42,7 @@ Future<TaskItem> insertLabourEstimates(
   final labourItem = TaskItem.forInsert(
     taskId: task!.id, // Assuming a check list ID
     description: 'Labour',
+    purpose: '',
     itemTypeId: (await DaoTaskItemType().getLabour()).id,
     estimatedLabourHours: hours,
     estimatedLabourCost: labourCost,
@@ -70,6 +71,7 @@ Future<TaskItem> insertMaterials(
   final completedMaterialItem = TaskItem.forInsert(
     taskId: task!.id,
     description: 'Completed Material Item',
+    purpose: '',
     itemTypeId: checkListItemType.id,
     estimatedMaterialUnitCost: unitCost,
     estimatedMaterialQuantity: quantity,

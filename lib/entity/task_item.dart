@@ -1,3 +1,6 @@
+/// lib/entity/task_item.dart
+library;
+
 import 'package:money2/money2.dart';
 
 import '../util/fixed_ex.dart';
@@ -31,7 +34,7 @@ enum LabourEntryMode {
   String toSqlString() => _display;
 }
 
-/// A single task item, including estimates, actuals, billing, and return linkage
+/// A single task item, including estimates, actuals, billing, URL, purpose, and return linkage
 class TaskItem extends Entity<TaskItem> {
   TaskItem._({
     required super.id,
@@ -55,6 +58,7 @@ class TaskItem extends Entity<TaskItem> {
     required this.dimension3,
     required this.units,
     required this.url,
+    required this.purpose,
     required this.labourEntryMode,
     required this.invoiceLineId,
     required this.supplierId,
@@ -78,6 +82,7 @@ class TaskItem extends Entity<TaskItem> {
     required Fixed dimension3,
     required Units units,
     required String url,
+    required String purpose,
     required LabourEntryMode labourEntryMode,
     Money? estimatedMaterialUnitCost,
     Fixed? estimatedMaterialQuantity,
@@ -117,6 +122,7 @@ class TaskItem extends Entity<TaskItem> {
       dimension3: dimension3,
       units: units,
       url: url,
+      purpose: purpose,
       labourEntryMode: labourEntryMode,
       invoiceLineId: invoiceLineId,
       supplierId: supplierId,
@@ -147,6 +153,7 @@ class TaskItem extends Entity<TaskItem> {
     required Fixed dimension3,
     required Units units,
     required String url,
+    required String purpose,
     required LabourEntryMode labourEntryMode,
     Money? charge,
     int? invoiceLineId,
@@ -180,6 +187,7 @@ class TaskItem extends Entity<TaskItem> {
       dimension3: dimension3,
       units: units,
       url: url,
+      purpose: purpose,
       labourEntryMode: labourEntryMode,
       invoiceLineId: invoiceLineId,
       supplierId: supplierId,
@@ -235,6 +243,7 @@ class TaskItem extends Entity<TaskItem> {
         Units.fromName(map['units'] as String? ?? Units.defaultUnits.name) ??
         Units.defaultUnits,
     url: map['url'] as String? ?? '',
+    purpose: map['purpose'] as String? ?? '',
     supplierId: map['supplier_id'] as int?,
     labourEntryMode: LabourEntryMode.fromString(
       map['labour_entry_mode'] as String,
@@ -253,8 +262,9 @@ class TaskItem extends Entity<TaskItem> {
 
   // Primary fields
   final int taskId;
-  final String description;
   int itemTypeId;
+  final String description;
+  final String purpose;
 
   // Estimates
   final Fixed? estimatedLabourHours;
@@ -318,7 +328,7 @@ class TaskItem extends Entity<TaskItem> {
       (estimatedMaterialUnitCost ?? MoneyEx.zero).multiplyByFixed(
         estimatedMaterialQuantity ?? Fixed.one,
       ),
-    BillingType.timeAndMaterial => _tAndMCost(),
+    BillingType.timeAndMaterial => _timeAndMaterialsCost(),
   };
 
   /// What we will charge the customer including our margin.
@@ -334,7 +344,7 @@ class TaskItem extends Entity<TaskItem> {
   }
 
   /// Calc cost for a Time And Materials job.
-  Money _tAndMCost() {
+  Money _timeAndMaterialsCost() {
     var quantity = Fixed.one;
     var cost = MoneyEx.zero;
 
@@ -426,6 +436,7 @@ class TaskItem extends Entity<TaskItem> {
     'dimension3': dimension3.threeDigits().minorUnits.toInt(),
     'units': units?.name,
     'url': url,
+    'purpose': purpose,
     'supplier_id': supplierId,
     'labour_entry_mode': labourEntryMode.toSqlString(),
     'actual_material_unit_cost': actualMaterialUnitCost
@@ -464,6 +475,7 @@ class TaskItem extends Entity<TaskItem> {
     Fixed? dimension3,
     Units? units,
     String? url,
+    String? purpose,
     int? supplierId,
     LabourEntryMode? labourEntryMode,
     Money? actualMaterialUnitCost,
@@ -477,6 +489,7 @@ class TaskItem extends Entity<TaskItem> {
     modifiedDate: DateTime.now(),
     taskId: taskId ?? this.taskId,
     description: description ?? this.description,
+    purpose: purpose ?? this.purpose,
     itemTypeId: itemTypeId ?? this.itemTypeId,
     estimatedMaterialUnitCost:
         estimatedMaterialUnitCost ?? this.estimatedMaterialUnitCost,
@@ -507,6 +520,7 @@ class TaskItem extends Entity<TaskItem> {
     isReturn: isReturn ?? this.isReturn,
   );
 
+  /// We are returning an purchased item to the store.
   /// Build a brand-new “return” record linked back to this original.
   TaskItem forReturn(Fixed returnQuantity, Money returnUnitPrice) {
     final now = DateTime.now();
@@ -517,7 +531,6 @@ class TaskItem extends Entity<TaskItem> {
       taskId: taskId,
       description: description,
       itemTypeId: itemTypeId,
-      // carry across estimates
       estimatedMaterialUnitCost: estimatedMaterialUnitCost,
       estimatedMaterialQuantity: estimatedMaterialQuantity,
       estimatedLabourHours: estimatedLabourHours,
@@ -525,7 +538,6 @@ class TaskItem extends Entity<TaskItem> {
       margin: margin,
       charge: _charge,
       chargeSet: chargeSet,
-      // mark it as completed so it shows on the next invoice:
       completed: true,
       billed: false,
       measurementType: measurementType,
@@ -534,6 +546,7 @@ class TaskItem extends Entity<TaskItem> {
       dimension3: dimension3,
       units: units,
       url: url,
+      purpose: purpose,
       labourEntryMode: labourEntryMode,
       invoiceLineId: null,
       supplierId: supplierId,
@@ -541,7 +554,7 @@ class TaskItem extends Entity<TaskItem> {
       actualMaterialUnitCost: returnUnitPrice,
       actualMaterialQuantity: returnQuantity,
       actualCost: returnUnitPrice.multiplyByFixed(returnQuantity),
-      // link back and flag as a return:
+      // link back to the original task item that we are returning.
       sourceTaskItemId: id,
       isReturn: true,
     );

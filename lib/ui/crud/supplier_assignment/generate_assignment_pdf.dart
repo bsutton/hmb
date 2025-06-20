@@ -95,7 +95,7 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
   for (var i = 0; i < allPaths.length; i += maxConcurrent) {
     final batch = allPaths.skip(i).take(maxConcurrent).toList();
     final futures = batch
-        .map((path) => compute(_compressImageTask, path))
+        .map((path) => compute(_compressImageTask, path, debugLabel:  'Compress Image'))
         .toList();
     final results = await Future.wait(futures);
     for (var j = 0; j < batch.length; j++) {
@@ -230,21 +230,38 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
                 ),
               );
 
-              // Display URL if present
-              if (item.url.isNotEmpty) {
+              if (item.purpose.isNotEmpty) {
                 content.add(
-                  pw.UrlLink(
-                    destination: item.url,
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.only(left: 20, bottom: 4),
                     child: pw.Text(
-                      item.url,
-                      style: const pw.TextStyle(
+                      item.purpose,
+                      style: pw.TextStyle(
                         fontSize: 10,
-                        decoration: pw.TextDecoration.underline,
-                        color: PdfColors.blue,
+                        fontStyle: pw.FontStyle.italic,
                       ),
                     ),
                   ),
                 );
+                // Display URL if present
+                if (item.url.isNotEmpty) {
+                  content.add(
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.only(left: 20, bottom: 4),
+                      child: pw.UrlLink(
+                        destination: item.url,
+                        child: pw.Text(
+                          item.url,
+                          style: const pw.TextStyle(
+                            fontSize: 10,
+                            decoration: pw.TextDecoration.underline,
+                            color: PdfColors.blue,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
               }
             }
           }

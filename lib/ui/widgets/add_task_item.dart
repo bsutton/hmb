@@ -18,6 +18,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
   Task? selectedTask;
   TaskItemTypeEnum? selectedItemType;
   final descriptionController = TextEditingController();
+  final purposeController = TextEditingController();
   final quantityController = TextEditingController();
   final unitCostController = TextEditingController();
 
@@ -89,6 +90,8 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                 controller: descriptionController,
                 labelText: 'Description',
               ),
+              // Purpose Input
+              HMBTextField(controller: purposeController, labelText: 'Purpose'),
               // Quantity Input
               HMBTextField(
                 controller: quantityController,
@@ -118,6 +121,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
               quantityController: quantityController,
               unitCostController: unitCostController,
               descriptionController: descriptionController,
+              purposeController: purposeController,
               context: context,
             ),
           ),
@@ -134,6 +138,7 @@ Future<void> _addTaskItem({
   required TextEditingController quantityController,
   required TextEditingController unitCostController,
   required TextEditingController descriptionController,
+  required TextEditingController purposeController,
   required BuildContext context,
 }) async {
   if (selectedJob != null && selectedTask != null && selectedItemType != null) {
@@ -144,6 +149,7 @@ Future<void> _addTaskItem({
     final newItem = TaskItem.forInsert(
       taskId: selectedTask.id,
       description: descriptionController.text,
+      purpose: purposeController.text,
       itemTypeId: selectedItemType.id,
       estimatedMaterialQuantity: quantity,
       estimatedMaterialUnitCost: unitCost,
