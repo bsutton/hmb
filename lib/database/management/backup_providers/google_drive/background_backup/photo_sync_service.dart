@@ -81,6 +81,7 @@ class PhotoSyncService {
       params,
       onError: _errorPort!.sendPort,
       onExit: _exitPort!.sendPort,
+      debugName: 'Photo Sync'
     );
 
     await _exitPort!.first;

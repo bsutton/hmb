@@ -134,6 +134,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
         params,
         onError: errorPort.sendPort,
         onExit: exitPort.sendPort,
+        debugName: 'google drive backup'
       );
 
       errorPort.listen((e) => emitProgress(r'Error: $e', 3, 3));

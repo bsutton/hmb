@@ -50,7 +50,7 @@ class ComputeManager<T, R> {
       final result = await compute(
         task.function,
         task.data,
-        debugLabel: 'ComputeTask',
+        debugLabel: 'ComputeTask ${task.data.runtimeType}',
       );
       task.completer.complete(result);
     } catch (e, st) {

@@ -36,6 +36,7 @@ Future<void> zipBackup({
     ),
     onError: errorPort.sendPort,
     onExit: exitPort.sendPort,
+    debugName: 'zipBackup'
   );
 
   // Listen for progress updates from the isolate
