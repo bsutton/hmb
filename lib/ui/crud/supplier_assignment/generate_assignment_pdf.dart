@@ -5,10 +5,10 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:dcli_core/dcli_core.dart';
-import 'package:flutter/foundation.dart'; // for compute()
-import 'package:image/image.dart' as img; // image decoding/resizing
+import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
-import 'package:pdf/pdf.dart'; // for PdfColor, PdfColors
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../../dao/dao.g.dart';
@@ -17,9 +17,14 @@ import '../../../util/util.g.dart';
 
 /// Internal data holder for task plus its resolved photos
 class _TaskData {
-  _TaskData({required this.task, required this.photos});
+  _TaskData({
+    required this.task,
+    required this.photos,
+    required this.taskItems,
+  });
   final Task task;
   final List<PhotoMeta> photos;
+  final List<TaskItem> taskItems;
 }
 
 /// Top-level function to run in an isolate:
@@ -40,21 +45,23 @@ Uint8List _compressImageTask(String absolutePath) {
 /// including task photos under each task.
 Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
   final pdf = pw.Document();
-
-  // --- Fetch your data from DAOs ---
   final system = await DaoSystem().get();
+  final useMetric = system.preferredUnitSystem == PreferredUnitSystem.metric;
   final systemColor = PdfColor.fromInt(system.billingColour);
   final satDao = DaoSupplierAssignmentTask();
   final supplierDao = DaoSupplier();
   final taskDao = DaoTask();
 
+  Units resolveUnits(MeasurementType type) =>
+      useMetric ? type.defaultMetric : type.defaultImperial;
+
   final supplier = await supplierDao.getById(assignment.supplierId);
   final contact = await DaoContact().getById(assignment.contactId);
   final job = await DaoJob().getById(assignment.jobId);
-  final site = (job?.siteId != null)
+  final site = job?.siteId != null
       ? await DaoSite().getById(job!.siteId)
       : null;
-  final customer = (job?.customerId != null)
+  final customer = job?.customerId != null
       ? await DaoCustomer().getById(job!.customerId)
       : null;
   final primaryContact = await DaoContact().getPrimaryForJob(job?.id);
@@ -69,7 +76,10 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
     }
     final photos = await DaoPhoto.getByTask(task.id);
     final metas = await PhotoMeta.resolveAll(photos);
-    taskDataList.add(_TaskData(task: task, photos: metas));
+    final taskItems = await DaoTaskItem().getByTask(task.id);
+    taskDataList.add(
+      _TaskData(task: task, photos: metas, taskItems: taskItems),
+    );
   }
 
   // --- Limit concurrent isolates for image compression
@@ -96,11 +106,9 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
     }
   }
 
-  // --- Build the PDF pages ---
   pdf.addPage(
     pw.MultiPage(
       pageTheme: const pw.PageTheme(margin: pw.EdgeInsets.all(24)),
-
       // Header: top band with title on every page, plus page1 details below
       header: (context) => pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
@@ -120,7 +128,6 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
               ),
             ),
           ),
-
           // Only on page 1: details block
           if (context.pageNumber == 1)
             pw.Padding(
@@ -145,7 +152,6 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
             ),
         ],
       ),
-
       // Footer with bottom band and page number
       footer: (context) => pw.Container(
         height: 28,
@@ -161,7 +167,6 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
           ),
         ),
       ),
-
       // Main content: only task details here
       build: (context) {
         final content = <pw.Widget>[];
@@ -181,6 +186,69 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
             content.add(pw.Text('Assumptions: ${data.task.assumption}'));
           }
 
+          final materials = data.taskItems.where((item) {
+            final type = TaskItemTypeEnum.fromId(item.itemTypeId);
+            return type == TaskItemTypeEnum.materialsBuy ||
+                type == TaskItemTypeEnum.materialsStock;
+          }).toList();
+
+          if (materials.isNotEmpty) {
+            content
+              ..add(pw.SizedBox(height: 6))
+              ..add(
+                pw.Text(
+                  'Materials:',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              );
+
+            for (final item in materials) {
+              final units =
+                  item.units ??
+                  resolveUnits(item.measurementType ?? MeasurementType.length);
+              final dimensionsStr = item.hasDimensions
+                  ? units.format([
+                      item.dimension1,
+                      item.dimension2,
+                      item.dimension3,
+                    ])
+                  : '';
+              final quantity = item.estimatedMaterialQuantity?.toString() ?? '';
+              final cost = item.estimatedMaterialUnitCost?.toString() ?? '';
+
+              content.add(
+                pw.Bullet(
+                  text:
+                      '${item.description} '
+                      '${dimensionsStr.isNotEmpty ? "($dimensionsStr ${units.name}) " : ""}'
+                      'Qty: $quantity '
+                      '${cost.isNotEmpty ? "Cost/unit: $cost" : ""}',
+                  style: const pw.TextStyle(fontSize: 11),
+                ),
+              );
+
+              // Display URL if present
+              if (item.url.isNotEmpty) {
+                content.add(
+                  pw.UrlLink(
+                    destination: item.url,
+                    child: pw.Text(
+                      item.url,
+                      style: const pw.TextStyle(
+                        fontSize: 10,
+                        decoration: pw.TextDecoration.underline,
+                        color: PdfColors.blue,
+                      ),
+                    ),
+                  ),
+                );
+              }
+            }
+          }
+
           // Photos (already compressed)
           if (data.photos.isNotEmpty) {
             content.add(pw.SizedBox(height: 8));
@@ -197,6 +265,7 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
               );
             }
           }
+
           content.addAll([
             pw.SizedBox(height: 12),
             pw.Divider(),
