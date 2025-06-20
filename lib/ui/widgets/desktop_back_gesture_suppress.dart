@@ -47,5 +47,6 @@ class _DesktopBackGestureSuppressState
 }
 
 class IgnoreDesktopGesture extends JuneState {
+  // ignore: omit_obvious_property_types
   bool ignored = false;
 }
