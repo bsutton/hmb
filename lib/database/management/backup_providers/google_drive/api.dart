@@ -139,20 +139,33 @@ class GoogleDriveApi {
     }
   }
 
-  Future<String> getBackupFolder() async {
-    var parentFolderId = await getOrCreateFolderId('hmb');
+
+  Future<String> getHMBFolder() async {
+    var hmbFolderId = await getOrCreateFolderId('hmb');
 
     if (kDebugMode) {
-      parentFolderId = await getOrCreateFolderId(
+      hmbFolderId = await getOrCreateFolderId(
         'debug',
-        parentFolderId: parentFolderId,
+        parentFolderId: hmbFolderId,
       );
     }
+    return hmbFolderId;
+  }
+  Future<String> getBackupFolder() async {
     final backupsFolderId = await getOrCreateFolderId(
       'backups',
-      parentFolderId: parentFolderId,
+      parentFolderId: await getHMBFolder(),
     );
     return backupsFolderId;
+  }
+
+
+  Future<String> getPhotoSyncFolder() async {
+    final photoFolderId = await getOrCreateFolderId(
+      'photos',
+      parentFolderId: await getHMBFolder(),
+    );
+    return photoFolderId;
   }
 }
 

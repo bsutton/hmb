@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:googleapis/drive/v3.dart' as gdrive show File;
 import 'package:http/http.dart' as http;
 
 import '../../progress_update.dart';
@@ -27,7 +28,7 @@ Future<void> uploadPhotosInBackup({
 
   // Init Drive API
   final driveApi = await GoogleDriveApi.fromHeaders(authHeaders);
-  final backupsFolderId = await driveApi.getBackupFolder();
+  final photoSyncFolderId = await driveApi.getPhotoSyncFolder();
 
   for (var i = 0; i < totalPhotos; i++) {
     final photoPayload = photoPayloads[i];
@@ -40,13 +41,15 @@ Future<void> uploadPhotosInBackup({
       ),
     );
 
-    final file = File(photoPayload.absolutePathToPhoto);
+    final file = File(photoPayload.absolutePathToLocalPhoto);
     if (!file.existsSync()) {
       // this should only be an issue for me as I have
       // old photo records for which I lost the photo
       // so for now we just mark these photos as synced.
       sendPort
-        ..send(PhotoUploaded(photoPayload.id, photoPayload.pathToCloudStorage))
+        ..send(
+          PhotoUploaded(photoPayload.id, photoPayload.pathToCloudStorage, 3),
+        )
         ..send(
           ProgressUpdate(
             'Photo ${photoPayload.id} skipped as missing',
@@ -57,13 +60,13 @@ Future<void> uploadPhotosInBackup({
       continue;
     }
 
-    // Create folder hierarchy from storagePath (excluding the file name)
+    // Create folder hierarchy from pathToCloudStorage (excluding the file name)
     final parts = photoPayload.pathToCloudStorage.split('/');
-    final folderParts = parts.take(parts.length - 1);
+    final cloudStorageParts = parts.take(parts.length - 1);
     final fileName = parts.last;
 
-    var parentId = backupsFolderId;
-    for (final part in folderParts) {
+    var parentId = photoSyncFolderId;
+    for (final part in cloudStorageParts) {
       parentId = await driveApi.getOrCreateFolderId(
         part,
         parentFolderId: parentId,
@@ -74,6 +77,10 @@ Future<void> uploadPhotosInBackup({
     final metadata = jsonEncode({
       'name': '${photoPayload.id}:$fileName',
       'parents': [parentId],
+      'properties': {
+        // custom metadata key “photoId” holding your photo’s ID
+        'photoId': photoPayload.id.toString(),
+      },
     });
 
     final initResp = await driveApi.send(
@@ -93,15 +100,19 @@ Future<void> uploadPhotosInBackup({
     }
 
     final bytes = await file.readAsBytes();
-    final uploadResp = await driveApi.send(
+    final uploadStreamResponse = await driveApi.send(
       http.Request('PUT', Uri.parse(uploadUrl))
         ..headers['Content-Type'] = 'image/jpeg'
         ..bodyBytes = bytes,
     );
 
+    final uploadResp = await http.Response.fromStream(uploadStreamResponse);
+
     if (uploadResp.statusCode == 200 || uploadResp.statusCode == 201) {
       sendPort
-        ..send(PhotoUploaded(photoPayload.id, photoPayload.pathToCloudStorage))
+        ..send(
+          PhotoUploaded(photoPayload.id, photoPayload.pathToCloudStorage, 3),
+        )
         ..send(
           ProgressUpdate(
             'Photo ${photoPayload.id} synced',
@@ -109,9 +120,26 @@ Future<void> uploadPhotosInBackup({
             stageCount,
           ),
         );
+      // final fileJson = jsonDecode(uploadResp.body) as Map<String, dynamic>;
+      // final fileId = fileJson['id'] as String;
+      // Used to test that meta data uploads work.
+      // await hasPhotoIdProperty(fileId: fileId, driveApi: driveApi);
     }
   }
 
   driveApi.close();
   sendPort.send(ProgressUpdate('Photo sync completed', stageNo, stageNo));
+}
+
+/// Returns `true` if the given file has a “photoId” property set.
+Future<bool> hasPhotoIdProperty({
+  required String fileId,
+  required GoogleDriveApi driveApi,
+}) async {
+  // Only request the properties field to keep the payload small
+  final file =
+      await driveApi.files.get(fileId, $fields: 'properties') as gdrive.File;
+  // properties may be null if none were ever set
+  final props = file.properties;
+  return props != null && props.containsKey('photoId');
 }

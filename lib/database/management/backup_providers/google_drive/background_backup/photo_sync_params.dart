@@ -12,12 +12,8 @@ import '../../../../../util/photo_meta.dart';
 class PhotoPayload {
   const PhotoPayload({
     required this.id,
-    required this.absolutePathToPhoto,
+    required this.absolutePathToLocalPhoto,
     required this.createdAt,
-    // required this.jobSummary,
-    // required this.taskName,
-    // required this.jobId,
-    // required this.taskId,
     required this.pathToCloudStorage,
   });
 
@@ -34,28 +30,23 @@ class PhotoPayload {
     final absolutePathToPhoto = await PhotoMeta.getAbsolutePath(photo);
     return PhotoPayload(
       id: photo.id,
-      absolutePathToPhoto: absolutePathToPhoto,
+      absolutePathToLocalPhoto: absolutePathToPhoto,
       createdAt: photo.createdDate,
-
-      // jobId: job.id,
-      // jobSummary: job.summary,
-      // taskId: task.id,
-      // taskName: task.name,
       pathToCloudStorage: storagePath,
     );
   }
 
   /// id of photo entity in db
   final int id;
-  final String absolutePathToPhoto;
-  final DateTime createdAt;
-  // final String jobSummary;
-  // final String taskName;
-  // final int jobId;
-  // final int taskId;
 
-  /// The path to the cloud storage where this phto
+  /// Where the photo is stored on the device.
+  final String absolutePathToLocalPhoto;
+  final DateTime createdAt;
+
+  /// The path to the cloud storage where this photo
   /// will be stored.
+  /// This path is relative to the 'hmb/photo' folder.
+  /// In debug mode it will be relative to 'hmb/debug/photo'.
   final String pathToCloudStorage;
 
   static String sanitize(String input) =>
@@ -73,7 +64,6 @@ class PhotoPayload {
     final taskFolderName = 'Task ${task.id} - $taskName';
 
     return join(
-      'photos',
       'jobs',
       jobFolderName,
       taskFolderName,
@@ -94,7 +84,6 @@ class PhotoPayload {
     final receiptFolderName = 'Receipt ${receipt.id} - $receiptDate';
 
     return join(
-      'photos',
       'receipts',
       jobFolderName,
       receiptFolderName,
@@ -122,7 +111,6 @@ class PhotoPayload {
     }
 
     return join(
-      'photos',
       'tools',
       toolCategory,
       toolFolderName,

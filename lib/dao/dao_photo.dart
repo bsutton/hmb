@@ -5,8 +5,6 @@ import '../entity/photo.dart';
 import '../util/util.g.dart';
 import 'dao.g.dart';
 
-
-
 class DaoPhoto extends Dao<Photo> {
   Future<List<Photo>> getByParent(int parentId, ParentType parentType) async {
     final db = withoutTransaction();
@@ -45,7 +43,7 @@ class DaoPhoto extends Dao<Photo> {
   }
 
   /// Updates the photo record to mark it as backed up.
-  Future<void> updatePhotoBackupStatus(int photoId) async {
+  Future<void> updatePhotoSyncStatus(int photoId) async {
     final db = withoutTransaction();
     // Raw SQL update statement:
     await db.rawUpdate(

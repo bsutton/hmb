@@ -11,9 +11,10 @@ import 'upload_photos_in_backup.dart';
 /// Used by the photo upload isolate to indicate
 /// that it successfully uploaded a photo.
 class PhotoUploaded {
-  PhotoUploaded(this.id, this.pathToStorageLocation);
+  PhotoUploaded(this.id, this.pathToStorageLocation, this.pathVersion);
   int id;
   String pathToStorageLocation;
+  int pathVersion;
 }
 
 class PhotoSyncService {
@@ -62,7 +63,7 @@ class PhotoSyncService {
         _controller.add(message);
       } else if (message is PhotoUploaded) {
         // mark that one photo has now been backed up
-        await DaoPhoto().updatePhotoBackupStatus(message.id);
+        await DaoPhoto().updatePhotoSyncStatus(message.id);
       }
     });
 
@@ -81,7 +82,7 @@ class PhotoSyncService {
       params,
       onError: _errorPort!.sendPort,
       onExit: _exitPort!.sendPort,
-      debugName: 'Photo Sync'
+      debugName: 'Photo Sync',
     );
 
     await _exitPort!.first;
