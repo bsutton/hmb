@@ -1,6 +1,8 @@
 // lib/ui/screens/shopping_item_card.dart
 
 import 'package:flutter/material.dart';
+import 'package:strings/strings.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../dao/dao_supplier.dart';
 import '../../dao/dao_task_item.dart';
@@ -11,7 +13,6 @@ import '../widgets/fields/fields.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'task_items.g.dart';
 
-/// Opens a dialog to view/edit a single shopping item's details.
 /// Opens a dialog to view/edit a single shopping item's details,
 /// then triggers [onReload] after saving.
 Future<void> showShoppingItemDialog(
@@ -32,6 +33,9 @@ Future<void> showShoppingItemDialog(
   if (item.supplierId != null) {
     selectedSupplier = await DaoSupplier().getById(item.supplierId);
   }
+
+  // Prepare URL
+  final url = item.url;
 
   if (!context.mounted) {
     return;
@@ -58,6 +62,14 @@ Future<void> showShoppingItemDialog(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (item.hasDimensions) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Dimensions: ${item.dimensions}',
+                      style: Theme.of(dialogCtx).textTheme.bodyMedium,
+                    ),
+                  ],
+                  const SizedBox(height: 8),
                   HMBTextField(
                     controller: descriptionController,
                     labelText: 'Description',
@@ -66,8 +78,26 @@ Future<void> showShoppingItemDialog(
                   HMBTextArea(
                     controller: purposeController,
                     labelText: 'Purpose',
-                    maxLines: 3,
+                    maxLines: 2,
                   ),
+                  const SizedBox(height: 8),
+                  if (Strings.isNotBlank(url)) ...[
+                    InkWell(
+                      onTap: () async {
+                        final uri = Uri.tryParse(url);
+                        if (uri != null && await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                        }
+                      },
+                      child: Text(
+                        url,
+                        style: const TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   HMBDroplist<Supplier>(
                     title: 'Supplier',
