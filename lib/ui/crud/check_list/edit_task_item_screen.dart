@@ -21,6 +21,7 @@ import '../../../util/fixed_ex.dart';
 import '../../../util/measurement_type.dart';
 import '../../../util/money_ex.dart';
 import '../../../util/platform_ex.dart';
+import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/select_supplier.dart';
@@ -55,6 +56,8 @@ class TaskItemEditScreen extends StatefulWidget {
 class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     implements NestedEntityState<TaskItem> {
   late TextEditingController _descriptionController;
+  late TextEditingController _purposeController;
+
   late TextEditingController _estimatedMaterialUnitCostController;
   late TextEditingController _estimatedMaterialQuantityController;
   late TextEditingController _estimatedLabourHoursController;
@@ -84,6 +87,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     _descriptionController = TextEditingController(
       text: currentEntity?.description,
     );
+
+    _purposeController = TextEditingController(text: currentEntity?.purpose);
     _estimatedMaterialUnitCostController = TextEditingController(
       text: currentEntity?.estimatedMaterialUnitCost.toString(),
     );
@@ -154,6 +159,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   @override
   void dispose() {
     _descriptionController.dispose();
+    _purposeController.dispose();
     _estimatedMaterialUnitCostController.dispose();
     _estimatedMaterialQuantityController.dispose();
     _estimatedLabourHoursController.dispose();
@@ -194,6 +200,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
               return null;
             },
           ),
+          HMBTextArea(controller: _purposeController, labelText: 'Purpose'),
           _chooseItemType(taskItem),
           if (June.getState(SelectedCheckListItemType.new).selected != 0) ...[
             _chooseSupplier(taskItem),
@@ -450,6 +457,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     existing: taskItem,
     taskId: taskItem.taskId,
     description: _descriptionController.text,
+    purpose: _purposeController.text,
     itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
     estimatedMaterialUnitCost: MoneyEx.tryParse(
       _estimatedMaterialUnitCostController.text,
@@ -489,6 +497,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   Future<TaskItem> forInsert() async => TaskItem.forInsert(
     taskId: widget.parent!.id,
     description: _descriptionController.text,
+    purpose: _purposeController.text,
     itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
     estimatedMaterialUnitCost: MoneyEx.tryParse(
       _estimatedMaterialUnitCostController.text,

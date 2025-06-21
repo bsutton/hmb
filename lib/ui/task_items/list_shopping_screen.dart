@@ -78,19 +78,14 @@ class ShoppingScreen extends StatefulWidget {
   _ShoppingScreenState createState() => _ShoppingScreenState();
 }
 
-enum ShoppingMode { toPurchase, purchased, returns }
+enum ShoppingMode {
+  toPurchase('To Purchase'),
+  purchased('Purchased'),
+  returns('Returns');
 
-extension ShoppingModeX on ShoppingMode {
-  String get displayName {
-    switch (this) {
-      case ShoppingMode.toPurchase:
-        return 'To Purchase';
-      case ShoppingMode.purchased:
-        return 'Purchased';
-      case ShoppingMode.returns:
-        return 'Returns';
-    }
-  }
+  const ShoppingMode(this.displayName);
+
+  final String displayName;
 }
 
 class _ShoppingScreenState extends DeferredState<ShoppingScreen> {

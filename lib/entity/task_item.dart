@@ -263,8 +263,8 @@ class TaskItem extends Entity<TaskItem> {
   // Primary fields
   final int taskId;
   int itemTypeId;
-  final String description;
-  final String purpose;
+  String description;
+  String purpose;
 
   // Estimates
   final Fixed? estimatedLabourHours;

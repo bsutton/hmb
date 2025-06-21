@@ -9,16 +9,13 @@ import 'list_packing_screen.dart';
 import 'list_shopping_screen.dart';
 import 'shopping_item_dialog.dart';
 
-/// Base card for a shopping item.
-/// Tapping anywhere except the action buttons opens the TaskItemDialog.
-
 /// Base card for a shopping item. Tapping the card opens its detail/edit dialog
 /// and then calls [onReload] after edits.
 abstract class ShoppingItemCard extends StatelessWidget {
   const ShoppingItemCard({
     required this.itemContext,
     required this.onReload,
-    
+
     super.key,
   });
 
