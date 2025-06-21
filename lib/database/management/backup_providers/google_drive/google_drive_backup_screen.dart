@@ -169,7 +169,7 @@ class _GoogleDriveBackupScreenState
       final text = lastBackupDate == null
           ? 'No backups yet'
           : 'Last: ${formatDateTime(lastBackupDate)}';
-      return Text(text, style: const TextStyle(fontSize: 16));
+      return Center(child: Text(text, style: const TextStyle(fontSize: 16)));
     },
   );
 

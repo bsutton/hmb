@@ -30,7 +30,13 @@ class GoogleBackupDashlset extends StatelessWidget {
       final text = lastBackupDate == null
           ? 'No backups yet'
           : 'Last: ${formatDateTime(lastBackupDate)}';
-      return Text(text, style: const TextStyle(fontSize: 16));
+      return Center(
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 16),
+        ),
+      );
     },
   );
 
