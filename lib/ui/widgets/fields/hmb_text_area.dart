@@ -20,18 +20,15 @@ class HMBTextArea extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     children: [
       if (leadingPadding) const SizedBox(height: 16),
-      SizedBox(
-        height: 200,
-        child: TextFormField(
-          maxLines: maxLines,
-          keyboardType: TextInputType.multiline,
-          textInputAction: TextInputAction.newline,
-          controller: controller,
-          focusNode: focusNode,
-          decoration: InputDecoration(
-            labelText: labelText,
-            border: const OutlineInputBorder(),
-          ),
+      TextFormField(
+        maxLines: maxLines,
+        keyboardType: TextInputType.multiline,
+        textInputAction: TextInputAction.newline,
+        controller: controller,
+        focusNode: focusNode,
+        decoration: InputDecoration(
+          labelText: labelText,
+          border: const OutlineInputBorder(),
         ),
       ),
     ],
