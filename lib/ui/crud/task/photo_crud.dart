@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dcli_core/dcli_core.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
@@ -33,37 +34,40 @@ class PhotoCrud<E extends Entity<E>> extends StatefulWidget {
   State<PhotoCrud> createState() => _PhotoCrudState<E>();
 }
 
-class _PhotoCrudState<E extends Entity<E>> extends State<PhotoCrud<E>> {
+class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
   @override
-  void initState() {
-    super.initState();
+  Future<void> asyncInitState() async {
+    await widget.controller.load();
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (widget.controller.parent == null) {
-      return Center(
-        child: Text('To Add a Photo - Save the ${widget.parentName} First'),
-      );
-    }
-    // Display photos and allow adding comments and deletion
-    else {
-      return JuneBuilder(
-        PhotoLoader.new,
-        builder: (context) => FutureBuilderEx(
-          // ignore: discarded_futures
-          future: widget.controller.photos,
-          builder: (context, photoMetas) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildAddButton(widget.controller.parent, photoMetas),
-              _buildPhotoCRUD(photoMetas),
-            ],
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder: (builder) {
+      if (widget.controller.parent == null) {
+        return Center(
+          child: Text('To Add a Photo - Save the ${widget.parentName} First'),
+        );
+      }
+      // Display photos and allow adding comments and deletion
+      else {
+        return JuneBuilder(
+          PhotoLoader.new,
+          builder: (context) => FutureBuilderEx(
+            // ignore: discarded_futures
+            future: widget.controller.photos,
+            builder: (context, photoMetas) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildAddButton(widget.controller.parent, photoMetas),
+                _buildPhotoCRUD(photoMetas),
+              ],
+            ),
           ),
-        ),
-      );
-    }
-  }
+        );
+      }
+    },
+  );
 
   /// Build the take photo button
   Widget _buildAddButton(E? parent, List<PhotoMeta>? photoMetas) =>

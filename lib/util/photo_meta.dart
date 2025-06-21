@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
+
 import 'package:dcli_core/dcli_core.dart' as core;
 import 'package:path/path.dart';
 
@@ -39,4 +41,15 @@ class PhotoMeta {
   }
 
   bool exists() => core.exists(absolutePathTo);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is PhotoMeta && photo.id == other.photo.id;
+  }
+
+  @override
+  int get hashCode => photo.id.hashCode;
 }

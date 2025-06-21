@@ -14,14 +14,18 @@ import 'photo_gallery.dart';
 
 class PhotoController<E extends Entity<E>> {
   PhotoController({required E? parent, required this.parentType, this.filter})
-    : _entity = parent {
-    unawaited(_loadPhotos());
+    : _entity = parent;
+
+  Future<void> load() async {
+    await _loadPhotos();
   }
 
   E? _entity;
   ParentType parentType;
   final bool Function(E, Photo)? filter;
   final List<PhotoMeta> _photos = [];
+  // List to hold comment controllers for each photo
+  final List<TextEditingController> _commentControllers = [];
 
   E? get parent => _entity;
 
@@ -30,19 +34,10 @@ class PhotoController<E extends Entity<E>> {
     June.getState(PhotoLoader.new).setState();
   }
 
-  Future<List<PhotoMeta>> get photos async {
-    await _completer.future;
-    return _photos;
-  }
-
-  final _completer = Completer<void>();
-
-  // List to hold comment controllers for each photo
-  final List<TextEditingController> _commentControllers = [];
+  Future<List<PhotoMeta>> get photos async => _photos;
 
   Future<void> _loadPhotos() async {
     if (_entity == null) {
-      _completer.complete();
       return;
     }
     final meta = await DaoPhoto.getMetaByParent(_entity!.id, parentType);
@@ -59,12 +54,10 @@ class PhotoController<E extends Entity<E>> {
         _commentControllers.add(controller);
       }
     }
-    _completer.complete();
   }
 
   /// Save comments explicitly when saving the task
   Future<void> save() async {
-    await _completer.future;
     for (var i = 0; i < _commentControllers.length; i++) {
       final photoMeta = _photos[i]..comment = _commentControllers[i].text;
       await DaoPhoto().update(photoMeta.photo);
