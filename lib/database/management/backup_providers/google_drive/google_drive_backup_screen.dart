@@ -168,7 +168,7 @@ class _GoogleDriveBackupScreenState
     builder: (context, lastBackupDate) {
       final text = lastBackupDate == null
           ? 'No backups yet'
-          : 'Last backup: ${formatDateTime(lastBackupDate)}';
+          : 'Last: ${formatDateTime(lastBackupDate)}';
       return Text(text, style: const TextStyle(fontSize: 16));
     },
   );
@@ -180,7 +180,7 @@ class _GoogleDriveBackupScreenState
         icon: const Icon(Icons.backup, size: 24),
         onPressed: () async {
           await _performBackup();
-          await _refreshLastBackup();
+          _lastBackupFuture = _refreshLastBackup();
           setState(() {});
         },
       ),
