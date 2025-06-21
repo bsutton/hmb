@@ -138,6 +138,7 @@ class _GoogleDriveBackupScreenState
             ),
             const SizedBox(height: 40),
             _buildBackupButton(),
+
             const SizedBox(height: 16),
             _buildLastBackup(),
             const SizedBox(height: 40),
@@ -332,6 +333,7 @@ class _GoogleDriveBackupScreenState
                 try {
                   auth = await GoogleDriveAuth.init();
                   if (await auth.isSignedIn && mounted) {
+                    _lastBackupFuture = _refreshLastBackup();
                     _isGoogleSignedIn = true;
                     setState(() {});
                   }
