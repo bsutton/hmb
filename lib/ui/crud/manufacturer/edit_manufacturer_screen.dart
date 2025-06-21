@@ -89,7 +89,7 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
   );
 
   @override
-  void saved() {
+  Future<void> saved() async {
     setState(() {});
   }
 }

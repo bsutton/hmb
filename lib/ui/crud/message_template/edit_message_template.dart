@@ -108,7 +108,7 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
   );
 
   @override
-  void saved() {
+  Future<void> saved() async {
     setState(() {});
   }
 }

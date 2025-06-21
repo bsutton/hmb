@@ -144,7 +144,7 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
   );
 
   @override
-  void saved() {
+  Future<void> saved() async {
     setState(() {});
   }
 }

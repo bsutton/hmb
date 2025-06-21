@@ -195,7 +195,7 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
   );
 
   @override
-  void saved() {
+  Future<void> saved() async {
     setState(() {});
   }
 }

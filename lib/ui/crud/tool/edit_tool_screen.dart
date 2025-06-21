@@ -295,7 +295,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
   );
 
   @override
-  void saved() {
+  Future<void> saved() async {
     setState(() {});
   }
 }

@@ -11,7 +11,7 @@ abstract class EntityState<E extends Entity<E>> {
 
   /// Called to notify that the entity has just been saved.
   /// [currentEntity] will have the saved value.
-  void saved();
+  Future<void> saved();
   E? currentEntity;
 }
 
@@ -115,7 +115,7 @@ class EntityEditScreenState<E extends Entity<E>>
           await widget.dao.insert(newEntity);
           widget.entityState.currentEntity = newEntity;
         }
-        saved();
+        await saved();
 
         if (close && mounted) {
           Navigator.of(context).pop(widget.entityState.currentEntity);
@@ -133,8 +133,8 @@ class EntityEditScreenState<E extends Entity<E>>
     }
   }
 
-  void saved() {
-    widget.entityState.saved();
+  Future<void> saved() async {
+    await widget.entityState.saved();
     setState(() {});
   }
 

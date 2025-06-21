@@ -577,7 +577,7 @@ You can set a default booking fee from System | Billing screen''');
   }
 
   @override
-  void saved() => setState(() {});
+  Future<void> saved() async => setState(() {});
 
   Widget _buildDescription(Job? job) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
