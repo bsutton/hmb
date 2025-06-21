@@ -12,7 +12,6 @@ import '../../dao/dao_contact.dart';
 import '../../dao/dao_invoice.dart';
 import '../../dao/dao_invoice_line.dart';
 import '../../dao/dao_invoice_line_group.dart';
-import '../../dao/dao_job.dart';
 import '../../dao/dao_task_item.dart';
 import '../../dao/dao_time_entry.dart';
 import '../../entity/invoice_line.dart';
@@ -199,15 +198,14 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
     }
     try {
       final invoice = (await _invoiceDetails).invoice;
-      final job = await DaoJob().getById(invoice.jobId);
-      final contact = await DaoContact().getPrimaryForCustomer(job!.customerId);
+      final contact = await DaoContact().getById(invoice.billingContactId);
       if (contact == null) {
         HMBToast.error('You must first add a Contact to the Customer');
         return;
       }
 
       if (Strings.isBlank(contact.emailAddress)) {
-        HMBToast.error("The customer's primary contact must have an email.");
+        HMBToast.error("The customer's billing contact must have an email.");
         return;
       }
 
