@@ -4,7 +4,6 @@ import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 
 import '../../dao/dao.g.dart';
-import '../../entity/entity.g.dart';
 import '../../util/util.g.dart';
 import '../widgets/text/text.g.dart';
 import 'list_packing_screen.dart';
@@ -15,18 +14,12 @@ import 'shopping_item_card.dart';
 class PurchasedItemCard extends ShoppingItemCard {
   const PurchasedItemCard({
     required super.itemContext,
-    required this.onReload,
+    required super.onReload,
     super.key,
   });
 
-  final Future<void> Function() onReload;
-
   @override
-  Widget buildActions(
-    BuildContext context,
-    CustomerAndJob det,
-    TaskItem taskItem,
-  ) => IconButton(
+  Widget buildActions(BuildContext context, CustomerAndJob det) => IconButton(
     icon: const Icon(Icons.undo, color: Colors.orange),
     onPressed: () async {
       await _markAsReturned(itemContext, context);

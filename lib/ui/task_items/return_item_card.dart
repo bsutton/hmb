@@ -13,18 +13,12 @@ import 'shopping_item_card.dart';
 class ReturnItemCard extends ShoppingItemCard {
   const ReturnItemCard({
     required super.itemContext,
-    required this.onReload,
+    required super.onReload,
     super.key,
   });
 
-  final Future<void> Function() onReload;
-
   @override
-  Widget buildActions(
-    BuildContext context,
-    CustomerAndJob det,
-    TaskItem taskItem,
-  ) {
+  Widget buildActions(BuildContext context, CustomerAndJob det) {
     final ti = itemContext.taskItem;
     final itemType = TaskItemTypeEnum.fromId(ti.itemTypeId);
     final canReturn =
