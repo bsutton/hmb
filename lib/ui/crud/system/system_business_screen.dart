@@ -4,6 +4,7 @@ import 'package:country_code2/country_code2.dart';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:strings/strings.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
@@ -186,9 +187,16 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
           HMBTextField(
             controller: _webUrlController!,
             labelText: 'Web URL',
-            validator: (value) => !UriEx.isValid(value) 
-                ? 'Web URL must be a valid URL'
-                : null,
+            validator: (value) {
+              if (Strings.isBlank(value)) {
+                return null;
+              }
+              if (!UriEx.isValid(value)) {
+                return 'Web URL must be a valid URL';
+              } else {
+                return null;
+              }
+            },
           ).help(
             'Web URL',
             'A link to your business web site. Appears in your email footer.',
@@ -196,9 +204,16 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
           HMBTextField(
             controller: _termsUrlController!,
             labelText: 'Terms URL',
-            validator: (value) => !UriEx.isValid(value) 
-                ? 'Terms Url must be a valid URL'
-                : null,
+            validator: (value) {
+              if (Strings.isBlank(value)) {
+                return null;
+              }
+              if (!UriEx.isValid(value)) {
+                return 'Terms Url must be a valid URL';
+              } else {
+                return null;
+              }
+            },
           ).help(
             'Terms URL',
             'A link to your Terms and Conditions. Appears on your Quotes and Invoices.',

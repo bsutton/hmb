@@ -288,6 +288,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
         ).clearActiveTimeEntry();
 
         _timer?.cancel();
+        timeEntry = null;
         setState(() {});
         return stoppedTimeEntry;
       }
@@ -317,6 +318,8 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
       June.getState<TimeEntryState>(
         TimeEntryState.new,
       ).setActiveTimeEntry(newTimeEntry, widget.task);
+      timeEntry = newTimeEntry;
+      setState(() {});
 
       widget.onStart(job);
     }

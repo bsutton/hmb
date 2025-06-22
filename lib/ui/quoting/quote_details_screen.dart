@@ -1,6 +1,7 @@
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/quote.dart';
@@ -276,31 +277,40 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
     final system = await DaoSystem().get();
     final job = (await DaoJob().getById(_quote.jobId))!;
     final billingContact = await DaoContact().getBillingContactByJob(job);
+    final site = await DaoSite().getById(job.siteId);
+    final address = site?.address;
     final contacts = await DaoContact().getByJob(_quote.jobId);
     final emailRecipients = contacts
         .map((contact) => contact.emailAddress)
         .toList();
 
     final preferredRecipient =
-        billingContact?.emailAddress ??
-        (emailRecipients.isNotEmpty ? emailRecipients.first : null);
+        billingContact?.emailAddress ?? emailRecipients.firstOrNull;
 
     if (preferredRecipient == null) {
       HMBToast.error(
-        'You must entere an email address for the preferred Contact',
+        'You must enter an email address for the preferred Contact',
       );
       return;
     }
     if (!mounted) {
       return;
     }
+    if (!emailRecipients.contains(preferredRecipient)) {
+      emailRecipients.add(preferredRecipient);
+    }
 
+    final businessPrefix = Strings.isBlank(system.businessName)
+        ? ''
+        : '${system.businessName}: ';
+
+    final addressSuffix = address == null ? '' : ' for $address';
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (context) => PdfPreviewScreen(
           title: 'Quote #${_quote.id} ${job.summary}',
           filePath: filePath.path,
-          emailSubject: '${system.businessName ?? 'Your'} Quote',
+          emailSubject: '${businessPrefix}Your Quote$addressSuffix',
           emailBody: 'Please find the attached quote',
           preferredRecipient: preferredRecipient,
           emailRecipients: emailRecipients,

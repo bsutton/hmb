@@ -141,7 +141,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     mobileNumber: _mobileNumberController.text,
     landLine: _landlineController.text,
     officeNumber: _officeNumberController.text,
-    emailAddress: _emailaddressController.text,
+    emailAddress: _emailaddressController.text.toLowerCase(),
   );
 
   @override
@@ -151,7 +151,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     mobileNumber: _mobileNumberController.text,
     landLine: _landlineController.text,
     officeNumber: _officeNumberController.text,
-    emailAddress: _emailaddressController.text,
+    emailAddress: _emailaddressController.text.toLowerCase(),
   );
   @override
   void refresh() {

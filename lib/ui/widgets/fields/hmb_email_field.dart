@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:strings/strings.dart';
 
 import '../../../util/platform_ex.dart';
@@ -26,6 +27,7 @@ class HMBEmailField extends StatelessWidget {
   Widget build(BuildContext context) => TextFormField(
     controller: controller,
     autofocus: isNotMobile,
+    inputFormatters: [LowerCaseTextFormatter()], // force lowercase
     decoration: InputDecoration(
       labelText: labelText,
       suffixIcon: HMBMailToIcon(controller.text),
@@ -47,4 +49,20 @@ class HMBEmailField extends StatelessWidget {
       return null;
     },
   );
+}
+
+/// A TextInputFormatter that lower-cases all input.
+class LowerCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final lower = newValue.text.toLowerCase();
+    return newValue.copyWith(
+      text: lower,
+      // preserve the cursor position at the end of the new text
+      selection: TextSelection.collapsed(offset: lower.length),
+    );
+  }
 }

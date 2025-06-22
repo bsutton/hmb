@@ -109,7 +109,7 @@ class SystemContactInformationScreenState
         ..landLine = _landLineController?.text
         ..officeNumber = _officeNumberController?.text
         ..fromEmail = _fromEmailController?.text
-        ..emailAddress = _emailAddressController?.text;
+        ..emailAddress = _emailAddressController?.text.toLowerCase();
 
       await DaoSystem().update(system);
       if (mounted) {

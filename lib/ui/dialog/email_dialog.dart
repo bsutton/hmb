@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:strings/strings.dart';
 
 import '../../entity/system.dart';
 import '../../ui/widgets/hmb_toast.dart';
@@ -39,6 +40,18 @@ class _EmailDialogState extends State<EmailDialog> {
   void initState() {
     super.initState();
     _subjectController = TextEditingController(text: widget.subject);
+
+    final businessDetails = StringBuffer();
+    if (Strings.isNotBlank(widget.system.businessNumber)) {
+      businessDetails
+        ..write(
+          Strings.orElseOnBlank(
+            widget.system.businessNumberLabel,
+            'Business No.',
+          ),
+        )
+        ..write(widget.system.businessNumber);
+    }
     _bodyController = TextEditingController(
       text:
           '''
@@ -50,7 +63,7 @@ ${widget.system.address}
 Email: ${widget.system.emailAddress}
 Phone: ${widget.system.bestPhone}
 Web: ${widget.system.webUrl}
-${widget.system.businessNumberLabel}: ${widget.system.businessNumber}
+$businessDetails
 ''',
     );
     _selectedRecipient = widget.preferredRecipient;

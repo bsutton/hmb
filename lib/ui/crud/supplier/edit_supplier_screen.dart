@@ -80,6 +80,7 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
                   controller: _nameController,
                   labelText: 'Name',
                   keyboardType: TextInputType.name,
+                  textCapitalization: TextCapitalization.words,
                   required: true,
                 ),
                 HMBTextField(
