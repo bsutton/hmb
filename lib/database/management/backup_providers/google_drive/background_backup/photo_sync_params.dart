@@ -74,7 +74,7 @@ class PhotoPayload {
   static Future<String> _getPathForReceipt(Photo photo) async {
     final receipt = await DaoReceipt().getById(photo.parentId);
 
-    final job = await DaoJob().getJobForTask(receipt!.jobId);
+    final job = await DaoJob().getById(receipt!.jobId);
 
     final absolutePathToPhoto = await PhotoMeta.getAbsolutePath(photo);
 
