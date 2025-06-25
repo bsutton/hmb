@@ -305,10 +305,15 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
         (_) {},
       );
 
+      // The user cancelled out of the dialog
+      if (billingContact == null) {
+        return;
+      }
+
       // Create invoice and update milestone
       final invoice = await createInvoiceFromMilestone(
         milestone,
-        billingContact!,
+        billingContact,
       );
       milestone.invoiceId = invoice.id;
       await DaoMilestone().update(milestone);
