@@ -128,11 +128,13 @@ void buildAppBundle(Version newVersion) {
 
   final targetPath = join(
     DartProject.self.pathToProjectRoot,
+    'release',
     'hmb-$newVersion.aab',
   );
   if (exists(targetPath)) {
     delete(targetPath);
   }
+  // move the generated aab into our release directory.
   move(
     join('build', 'app', 'outputs', 'bundle', 'release', 'app-release.aab'),
     targetPath,
