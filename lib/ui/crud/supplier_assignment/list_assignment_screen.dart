@@ -78,7 +78,13 @@ class SupplierAndTasks {
 
     final tasks = <Task>[];
     for (final assignedTask in assignedTasks) {
-      tasks.add((await DaoTask().getById(assignedTask.taskId))!);
+      final task = await DaoTask().getById(assignedTask.taskId);
+      // we shouldn't get a null, but a version was released that allows
+      // deleting a task without deleting a the assignment so
+      // this is a work around and probably generally prudent.
+      if (task != null) {
+        tasks.add(task);
+      }
     }
 
     return SupplierAndTasks._(supplier!, contact!, tasks);

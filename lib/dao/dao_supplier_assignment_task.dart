@@ -33,6 +33,11 @@ class DaoSupplierAssignmentTask extends Dao<SupplierAssignmentTask> {
 
   @override
   JuneStateCreator get juneRefresher => SupplierAssignmentTaskState.new;
+
+  Future<void> deleteByTask(int taskId, {Transaction? transaction}) =>
+      withinTransaction(
+        transaction,
+      ).delete(tableName, where: 'task_id = ?', whereArgs: [taskId]);
 }
 
 /// Used to notify the UI that the time entry has changed.

@@ -80,6 +80,8 @@ class DaoTask extends Dao<Task> {
         core.delete(absolutePathToPhoto);
       }
     }
+
+    await DaoSupplierAssignmentTask().deleteByTask(taskId);
   }
 
   Future<Task> getTaskForItem(TaskItem item) async {
