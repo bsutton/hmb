@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
+
+// import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_tool.dart';
 import '../../widgets/hmb_button.dart';
-import '../../widgets/hmb_toast.dart';
 import '../../widgets/wizard.dart';
 import '../../widgets/wizard_step.dart';
 import 'capture_photo.dart';
@@ -20,7 +20,7 @@ class SerialNumberStep extends WizardStep {
 
   Future<void> _scanBarcode() async {
     if (_serialPhotoPath != null) {
-      await _scanBarCodeFromfile(_serialPhotoPath!);
+      // await _scanBarCodeFromfile(_serialPhotoPath!);
     }
   }
 
@@ -75,38 +75,38 @@ class SerialNumberStep extends WizardStep {
     super.dispose();
   }
 
-  Future<void> _scanBarCodeFromfile(String imagePath) async {
-    final inputImage = InputImage.fromFilePath(imagePath);
-    final barcodeScanner = BarcodeScanner();
+  // Future<void> _scanBarCodeFromfile(String imagePath) async {
+  //   final inputImage = InputImage.fromFilePath(imagePath);
+  //   final barcodeScanner = BarcodeScanner();
 
-    try {
-      final barcodes = await barcodeScanner.processImage(inputImage);
+  //   try {
+  //     final barcodes = await barcodeScanner.processImage(inputImage);
 
-      if (barcodes.isNotEmpty) {
-        for (final barcode in barcodes) {
-          final rawValue = barcode.rawValue;
-          final format = barcode.format;
+  //     if (barcodes.isNotEmpty) {
+  //       for (final barcode in barcodes) {
+  //         final rawValue = barcode.rawValue;
+  //         final format = barcode.format;
 
-          // Use the barcode data (e.g., display it, save it, etc.)
-          print('Barcode found! Value: $rawValue, Format: $format');
+  //         // Use the barcode data (e.g., display it, save it, etc.)
+  //         print('Barcode found! Value: $rawValue, Format: $format');
 
-          // For example, update your serial number controller:
-          setState(() {
-            _serialNumberController.text = rawValue ?? '';
-          });
-        }
-      } else {
-        print('No barcode found in the image.');
-        // Optionally, notify the user
-        HMBToast.info('No barcode found in the image.');
-      }
-      // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
-      print('Error scanning barcode: $e');
-      // Optionally, handle errors appropriately
-      HMBToast.error('Error scanning barcode: $e');
-    } finally {
-      await barcodeScanner.close();
-    }
-  }
+  //         // For example, update your serial number controller:
+  //         setState(() {
+  //           _serialNumberController.text = rawValue ?? '';
+  //         });
+  //       }
+  //     } else {
+  //       print('No barcode found in the image.');
+  //       // Optionally, notify the user
+  //       HMBToast.info('No barcode found in the image.');
+  //     }
+  //     // ignore: avoid_catches_without_on_clauses
+  //   } catch (e) {
+  //     print('Error scanning barcode: $e');
+  //     // Optionally, handle errors appropriately
+  //     HMBToast.error('Error scanning barcode: $e');
+  //   } finally {
+  //     await barcodeScanner.close();
+  //   }
+  // }
 }
