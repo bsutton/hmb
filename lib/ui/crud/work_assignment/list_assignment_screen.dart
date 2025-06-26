@@ -18,14 +18,14 @@ class AssignmentListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      NestedEntityListScreen<SupplierAssignment, Job>(
+      NestedEntityListScreen<WorkAssignment, Job>(
         title: (assignment) => Text('Assignment #${assignment.id}'),
         parent: parent,
         parentTitle: 'Job',
         entityNamePlural: 'Supplier Assignments',
         entityNameSingular: 'Supplier Assignment',
-        dao: DaoSupplierAssignment(),
-        fetchList: () => DaoSupplierAssignment().getByJob(parent.parent!.id),
+        dao: DaoWorkAssigment(),
+        fetchList: () => DaoWorkAssigment().getByJob(parent.parent!.id),
         details: (assignment, details) => FutureBuilderEx(
           future: SupplierAndTasks.get(assignment),
           builder: (context, supplierAndTasks) => Column(
@@ -57,10 +57,9 @@ class AssignmentListScreen extends StatelessWidget {
         ),
         onEdit: (assignment) =>
             AssignmentEditScreen(job: parent.parent!, assignment: assignment),
-        onDelete: (assignment) =>
-            DaoSupplierAssignment().delete(assignment!.id),
+        onDelete: (assignment) => DaoWorkAssigment().delete(assignment!.id),
         onInsert: (assignment, tx) =>
-            DaoSupplierAssignment().insert(assignment!, tx),
+            DaoWorkAssigment().insert(assignment!, tx),
         cardHeight: 200,
       );
 }
@@ -68,11 +67,11 @@ class AssignmentListScreen extends StatelessWidget {
 class SupplierAndTasks {
   SupplierAndTasks._(this.supplier, this.contact, this.tasks);
 
-  static Future<SupplierAndTasks> get(SupplierAssignment assignment) async {
+  static Future<SupplierAndTasks> get(WorkAssignment assignment) async {
     final supplier = await DaoSupplier().getById(assignment.supplierId);
     final contact = await DaoContact().getById(assignment.contactId);
 
-    final assignedTasks = await DaoSupplierAssignmentTask().getByAssignment(
+    final assignedTasks = await DoaWorkAssignment().getByAssignment(
       assignment.id,
     );
 

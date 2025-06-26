@@ -12,7 +12,7 @@ import '../base_nested/edit_nested_screen.dart';
 class AssignmentEditScreen extends StatefulWidget {
   const AssignmentEditScreen({required this.job, super.key, this.assignment});
 
-  final SupplierAssignment? assignment;
+  final WorkAssignment? assignment;
   final Job job;
 
   @override
@@ -20,9 +20,9 @@ class AssignmentEditScreen extends StatefulWidget {
 }
 
 class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
-    implements NestedEntityState<SupplierAssignment> {
+    implements NestedEntityState<WorkAssignment> {
   @override
-  SupplierAssignment? currentEntity;
+  WorkAssignment? currentEntity;
   int? _selectedSupplier;
   int? _selectedContact;
   Set<int> _selectedTasks = {};
@@ -34,7 +34,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
     _selectedContact = currentEntity?.contactId;
 
     if (currentEntity != null) {
-      final tasks = await DaoSupplierAssignmentTask().getByAssignment(
+      final tasks = await DoaWorkAssignment().getByAssignment(
         currentEntity!.id,
       );
       _selectedTasks = tasks.map((j) => j.taskId).toSet();
@@ -42,15 +42,15 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
   }
 
   @override
-  Future<SupplierAssignment> forInsert() async => SupplierAssignment.forInsert(
+  Future<WorkAssignment> forInsert() async => WorkAssignment.forInsert(
     jobId: widget.job.id,
     supplierId: _selectedSupplier!,
     contactId: _selectedContact!,
   );
 
   @override
-  Future<SupplierAssignment> forUpdate(SupplierAssignment e) async =>
-      SupplierAssignment.forUpdate(
+  Future<WorkAssignment> forUpdate(WorkAssignment e) async =>
+      WorkAssignment.forUpdate(
         entity: e,
         jobId: e.jobId,
         supplierId: _selectedSupplier!,
@@ -58,13 +58,13 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
       );
   @override
   Future<void> postSave(Transaction transaction, Operation operation) async {
-    final dao = DaoSupplierAssignmentTask();
+    final dao = DoaWorkAssignment();
     if (operation == Operation.update) {
       await dao.deleteByAssignment(currentEntity!.id, transaction: transaction);
     }
     for (final taskId in _selectedTasks) {
       await dao.insert(
-        SupplierAssignmentTask.forInsert(
+        WorkAssignmentTask.forInsert(
           assignmentId: currentEntity!.id,
           taskId: taskId,
         ),
@@ -76,13 +76,13 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
   @override
   Widget build(BuildContext ctx) => DeferredBuilder(
     this,
-    builder: (_) => NestedEntityEditScreen<SupplierAssignment, Job>(
+    builder: (_) => NestedEntityEditScreen<WorkAssignment, Job>(
       entityName: 'Assignment',
-      dao: DaoSupplierAssignment(),
-      onInsert: (supplierAssignment, transaction) async =>
-          DaoSupplierAssignment().insert(supplierAssignment!, transaction),
+      dao: DaoWorkAssigment(),
+      onInsert: (workAssignment, transaction) async =>
+          DaoWorkAssigment().insert(workAssignment!, transaction),
       entityState: this,
-      editor: (supplierAssignment) => _buildEditor(),
+      editor: (workAssignment) => _buildEditor(),
 
       // crossValidator:
       //     () async => _selectedSupplier != null && _selectedContact != null,

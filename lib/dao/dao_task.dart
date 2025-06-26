@@ -81,7 +81,7 @@ class DaoTask extends Dao<Task> {
       }
     }
 
-    await DaoSupplierAssignmentTask().deleteByTask(taskId);
+    await DoaWorkAssignment().deleteByTask(taskId);
   }
 
   Future<Task> getTaskForItem(TaskItem item) async {

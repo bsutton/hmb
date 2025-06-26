@@ -35,8 +35,8 @@ import '../../widgets/text/hmb_expanding_text_block.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
-import '../supplier_assignment/list_assignment_screen.dart';
 import '../task/list_task_screen.dart';
+import '../work_assignment/list_assignment_screen.dart';
 import 'list_job_screen.dart';
 
 class JobEditScreen extends StatefulWidget {
@@ -258,7 +258,7 @@ You can set a default booking fee from System | Billing screen''');
 
   /// manage assignments
   Widget _manageAssignments(Job? job) => HMBChildCrudCard(
-    headline: 'Sub-contractor Assignments',
+    headline: 'Work Assignments',
     crudListScreen: AssignmentListScreen(parent: Parent(job)),
   );
 

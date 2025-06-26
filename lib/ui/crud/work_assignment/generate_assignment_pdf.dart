@@ -41,14 +41,14 @@ Uint8List _compressImageTask(String absolutePath) {
   return Uint8List.fromList(jpeg);
 }
 
-/// Generates a PDF for a SupplierAssignment,
+/// Generates a PDF for a WorkAssignment,
 /// including task photos under each task.
-Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
+Future<File> generateAssignmentPdf(WorkAssignment assignment) async {
   final pdf = pw.Document();
   final system = await DaoSystem().get();
   final useMetric = system.preferredUnitSystem == PreferredUnitSystem.metric;
   final systemColor = PdfColor.fromInt(system.billingColour);
-  final satDao = DaoSupplierAssignmentTask();
+  final satDao = DoaWorkAssignment();
   final supplierDao = DaoSupplier();
   final taskDao = DaoTask();
 
@@ -95,7 +95,10 @@ Future<File> generateAssignmentPdf(SupplierAssignment assignment) async {
   for (var i = 0; i < allPaths.length; i += maxConcurrent) {
     final batch = allPaths.skip(i).take(maxConcurrent).toList();
     final futures = batch
-        .map((path) => compute(_compressImageTask, path, debugLabel:  'Compress Image'))
+        .map(
+          (path) =>
+              compute(_compressImageTask, path, debugLabel: 'Compress Image'),
+        )
         .toList();
     final results = await Future.wait(futures);
     for (var j = 0; j < batch.length; j++) {

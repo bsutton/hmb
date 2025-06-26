@@ -19,7 +19,7 @@ class BuildSendAssignmentButton extends StatelessWidget {
 
   final BuildContext context;
   final bool mounted;
-  final SupplierAssignment assignment;
+  final WorkAssignment assignment;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +67,7 @@ ${primaryContact.firstName},
 Please find attached the work assignment for Job ${job.summary}.
 ''',
               emailRecipients: [...recipients],
-              onSent: () => DaoSupplierAssignment().markSent(assignment),
+              onSent: () => DaoWorkAssigment().markSent(assignment),
               canEmail: () async {
                 if (await ExternalAccounting().isEnabled()) {
                   return EmailBlocked(blocked: false, reason: '');

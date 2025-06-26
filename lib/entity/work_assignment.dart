@@ -2,8 +2,8 @@
 
 import 'entity.dart';
 
-class SupplierAssignment extends Entity<SupplierAssignment> {
-  SupplierAssignment({
+class WorkAssignment extends Entity<WorkAssignment> {
+  WorkAssignment({
     required super.id,
     required this.jobId,
     required this.supplierId,
@@ -14,7 +14,7 @@ class SupplierAssignment extends Entity<SupplierAssignment> {
   }) : super();
 
   /// For inserts, `sent` defaults to false.
-  SupplierAssignment.forInsert({
+  WorkAssignment.forInsert({
     required this.jobId,
     required this.supplierId,
     required this.contactId,
@@ -24,27 +24,26 @@ class SupplierAssignment extends Entity<SupplierAssignment> {
     modifiedDate = DateTime.now();
   }
 
-  SupplierAssignment.forUpdate({
+  WorkAssignment.forUpdate({
     required super.entity,
     required this.jobId,
     required this.supplierId,
     required this.contactId,
     bool? sent,
-  }) : sent = sent ?? (entity as SupplierAssignment).sent,
+  }) : sent = sent ?? (entity as WorkAssignment).sent,
        super.forUpdate() {
     modifiedDate = DateTime.now();
   }
 
-  factory SupplierAssignment.fromMap(Map<String, dynamic> m) =>
-      SupplierAssignment(
-        id: m['id'] as int,
-        jobId: m['job_id'] as int,
-        supplierId: m['supplier_id'] as int,
-        contactId: m['contact_id'] as int,
-        sent: (m['sent'] as int) == 1,
-        createdDate: DateTime.parse(m['created_date'] as String),
-        modifiedDate: DateTime.parse(m['modified_date'] as String),
-      );
+  factory WorkAssignment.fromMap(Map<String, dynamic> m) => WorkAssignment(
+    id: m['id'] as int,
+    jobId: m['job_id'] as int,
+    supplierId: m['supplier_id'] as int,
+    contactId: m['contact_id'] as int,
+    sent: (m['sent'] as int) == 1,
+    createdDate: DateTime.parse(m['created_date'] as String),
+    modifiedDate: DateTime.parse(m['modified_date'] as String),
+  );
 
   @override
   Map<String, dynamic> toMap() => {

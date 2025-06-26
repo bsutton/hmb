@@ -1,9 +1,9 @@
-// lib/src/entity/supplier_assignment_task.dart
+// lib/src/entity/work_assignment_task.dart
 
 import 'entity.dart';
 
-class SupplierAssignmentTask extends Entity<SupplierAssignmentTask> {
-  SupplierAssignmentTask({
+class WorkAssignmentTask extends Entity<WorkAssignmentTask> {
+  WorkAssignmentTask({
     required super.id,
     required this.assignmentId,
     required this.taskId,
@@ -11,19 +11,19 @@ class SupplierAssignmentTask extends Entity<SupplierAssignmentTask> {
     required super.modifiedDate,
   }) : super();
 
-  SupplierAssignmentTask.forInsert({
+  WorkAssignmentTask.forInsert({
     required this.assignmentId,
     required this.taskId,
   }) : super.forInsert();
 
-  SupplierAssignmentTask.forUpdate({
+  WorkAssignmentTask.forUpdate({
     required super.entity,
     required this.assignmentId,
     required this.taskId,
   }) : super.forUpdate();
 
-  factory SupplierAssignmentTask.fromMap(Map<String, dynamic> map) =>
-      SupplierAssignmentTask(
+  factory WorkAssignmentTask.fromMap(Map<String, dynamic> map) =>
+      WorkAssignmentTask(
         id: map['id'] as int,
         assignmentId: map['assignment_id'] as int,
         taskId: map['task_id'] as int,
