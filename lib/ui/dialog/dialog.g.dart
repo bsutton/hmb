@@ -6,7 +6,7 @@
 //
 export 'database_error_dialog.dart';
 export 'email_dialog.dart';
-export 'hmb_are_you_sure_dialog.dart';
+export 'hmb_ask_user_to_continue.dart';
 export 'hmb_dialog.dart';
 export 'hmb_file_picker_linux.dart';
 export 'message_template_dialog.dart';

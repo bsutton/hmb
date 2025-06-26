@@ -16,7 +16,7 @@ import '../../dao/dao_task_item.dart';
 import '../../dao/dao_time_entry.dart';
 import '../../entity/invoice_line.dart';
 import '../../util/format.dart';
-import '../dialog/hmb_are_you_sure_dialog.dart';
+import '../dialog/hmb_ask_user_to_continue.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
@@ -154,7 +154,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   );
 
   Future<void> _deleteInvoice() async {
-    await areYouSure(
+    await askUserToContinue(
       context: context,
       title: 'Delete Confirmation',
       message: 'Are you sure you want to delete this invoice?',

@@ -7,7 +7,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/app_title.dart';
-import '../../dialog/hmb_are_you_sure_dialog.dart';
+import '../../dialog/hmb_ask_user_to_continue.dart';
 import '../../widgets/hmb_icon_button.dart';
 import '../../widgets/hmb_search.dart';
 import '../../widgets/hmb_toast.dart';
@@ -225,7 +225,7 @@ class EntityListScreenState<T extends Entity<T>>
   );
 
   Future<void> _confirmDelete(T entity) async {
-    await areYouSure(
+    await askUserToContinue(
       context: context,
       title: 'Delete Confirmation',
       message: 'Are you sure you want to delete this item?',
