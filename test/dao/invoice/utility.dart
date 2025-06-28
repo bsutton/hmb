@@ -28,7 +28,7 @@ Future<Task> createTask(Job job, String name) async {
     jobId: job.id,
     name: name,
     description: 'First task for T&M',
-    taskStatusId: TaskStatusEnum.preApproval.index,
+    status: TaskStatus.preApproval,
   );
   await DaoTask().insert(task);
   return task;

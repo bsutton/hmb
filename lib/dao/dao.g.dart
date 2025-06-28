@@ -40,7 +40,6 @@ export 'dao_system.dart';
 export 'dao_task.dart';
 export 'dao_task_item.dart';
 export 'dao_task_item_type.dart';
-export 'dao_task_status.dart';
 export 'dao_time_entry.dart';
 export 'dao_tool.dart';
 export 'dao_version.dart';

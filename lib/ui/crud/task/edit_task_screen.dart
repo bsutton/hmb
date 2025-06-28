@@ -6,7 +6,6 @@ import 'package:june/june.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao_task.dart';
-import '../../../dao/dao_task_status.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/platform_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
@@ -90,10 +89,10 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   Future<void> _loadInitialTaskStatus() async {
     TaskStatus? taskStatus;
-    if (currentEntity?.taskStatusId != null) {
-      taskStatus = await DaoTaskStatus().getById(currentEntity!.taskStatusId);
+    if (currentEntity?.status != null) {
+      taskStatus = currentEntity?.status;
     }
-    taskStatus ??= await DaoTaskStatus().getByEnum(TaskStatusEnum.preApproval);
+    taskStatus ??= TaskStatus.preApproval;
 
     setState(() {
       June.getState(SelectedTaskStatus.new).taskStatus = taskStatus;
@@ -169,8 +168,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
     title: 'Task Status',
     selectedItem: () async => June.getState(SelectedTaskStatus.new).taskStatus,
-    // ignore: discarded_futures
-    items: (filter) => DaoTaskStatus().getByFilter(filter),
+    items: (filter) async => TaskStatus.getByFilter(filter),
     format: (item) => item.name,
     onChanged: (item) {
       setState(() {
@@ -193,7 +191,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       name: _nameController.text,
       description: _descriptionController.text,
       assumption: _assumptionController.text,
-      taskStatusId: June.getState(SelectedTaskStatus.new).taskStatus!.id,
+      status: June.getState(SelectedTaskStatus.new).taskStatus!,
     );
   }
 
@@ -203,7 +201,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     name: _nameController.text,
     description: _descriptionController.text,
     assumption: _assumptionController.text,
-    taskStatusId: June.getState(SelectedTaskStatus.new).taskStatus!.id,
+    status: June.getState(SelectedTaskStatus.new).taskStatus!,
   );
 
   @override

@@ -203,7 +203,7 @@ where t.id =?
 
     for (final task in tasks) {
       // Fetch task status to check if it's completed
-      final status = await DaoTaskStatus().getById(task.taskStatusId);
+      final status = task.status;
 
       // Fetch checklist items related to the task
       final taskItems = await DaoTaskItem().getByTask(task.id);
@@ -216,14 +216,14 @@ where t.id =?
         );
 
         // If the task is completed, add to completed effort and earned cost
-        if ((status?.isComplete() ?? false) || item.completed) {
+        if ((status.isComplete()) || item.completed) {
           completedLabourHours += item.estimatedLabourHours!;
           completedMaterialCost += item.estimatedMaterialUnitCost!
               .multiplyByFixed(item.estimatedMaterialQuantity!);
         }
       }
 
-      if (status?.isComplete() ?? false) {
+      if (status.isComplete()) {
         completedTasks++;
       }
 

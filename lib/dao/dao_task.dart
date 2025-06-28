@@ -176,9 +176,9 @@ WHERE ti.id = ?
     final estimates = <TaskEstimatedValue>[];
     for (final task in tasks) {
       final hourlyRate = await DaoTask().getHourlyRate(task);
-      final taskStatus = await DaoTaskStatus().getById(task.taskStatusId);
+      final taskStatus = task.status;
 
-      if (!taskStatus!.isCancelled()) {
+      if (!taskStatus.isCancelled()) {
         final estimate = await getEstimateForTask(task, hourlyRate);
         if (!estimate.total.isZero) {
           estimates.add(estimate);
@@ -324,9 +324,9 @@ WHERE ti.id = ?
   Future<void> markRejected(int taskId) async {
     final task = await getById(taskId);
 
-    task?.taskStatusId = (await DaoTaskStatus().getByEnum(
-      TaskStatusEnum.cancelled,
-    )).id;
+    task?.status = TaskStatus.cancelled;
+
+    await update(task!);
   }
 }
 

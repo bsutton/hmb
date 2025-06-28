@@ -145,8 +145,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
     final included = <Task>[];
     for (final task in tasks) {
-      final status = await DaoTaskStatus().getById(task.taskStatusId);
-      final complete = status?.isComplete() ?? false;
+      final status = task.status;
+      final complete = status.isComplete();
       if ((showCompleted && complete) || (!showCompleted && !complete)) {
         included.add(task);
       }
@@ -158,11 +158,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      FutureBuilderEx(
-        // ignore: discarded_futures
-        future: DaoTaskStatus().getById(task.taskStatusId),
-        builder: (context, status) => Text(status?.name ?? 'Not Set'),
-      ),
+      Text(task.status.name),
       FutureBuilderEx(
         future: DaoTask()
             // ignore: discarded_futures
@@ -191,11 +187,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      FutureBuilderEx(
-        // ignore: discarded_futures
-        future: DaoTaskStatus().getById(task.taskStatusId),
-        builder: (context, status) => Text(status?.name ?? 'Not Set'),
-      ),
+      Text(task.status.name),
       FutureBuilderEx(
         // ignore: discarded_futures
         future: DaoTimeEntry().getByTask(task.id),

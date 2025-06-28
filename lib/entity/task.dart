@@ -1,5 +1,7 @@
 import 'entity.dart';
+import 'task_status.dart';
 
+/// Task entity storing status as enum but persisting only the id.
 class Task extends Entity<Task> {
   Task({
     required super.id,
@@ -7,36 +9,17 @@ class Task extends Entity<Task> {
     required this.name,
     required this.description,
     required this.assumption,
-    required this.taskStatusId,
+    required this.status,
     required super.createdDate,
     required super.modifiedDate,
-    // this.billingType =
-    //     BillingType.timeAndMaterial // New field for BillingType
   }) : super();
-
-  factory Task.fromMap(Map<String, dynamic> map) => Task(
-    id: map['id'] as int,
-    jobId: map['job_id'] as int,
-    name: map['name'] as String,
-    description: map['description'] as String,
-    assumption: map['assumption'] as String,
-    taskStatusId: map['task_status_id'] as int,
-    createdDate: DateTime.parse(map['createdDate'] as String),
-    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-    // billingType: BillingType.values.firstWhere(
-    //     (e) => e.name == map['billing_type'],
-    //     orElse: () =>
-    //         BillingType.timeAndMaterial), // New field for BillingType
-  );
 
   Task.forInsert({
     required this.jobId,
     required this.name,
     required this.description,
-    required this.taskStatusId,
+    required this.status,
     this.assumption = '',
-    // this.billingType =
-    //     BillingType.timeAndMaterial // New field for BillingType
   }) : super.forInsert();
 
   Task.forUpdate({
@@ -45,17 +28,25 @@ class Task extends Entity<Task> {
     required this.name,
     required this.description,
     required this.assumption,
-    required this.taskStatusId,
-    // this.billingType =
-    //     BillingType.timeAndMaterial // New field for BillingType
+    required this.status,
   }) : super.forUpdate();
+
+  factory Task.fromMap(Map<String, dynamic> map) => Task(
+    id: map['id'] as int,
+    jobId: map['job_id'] as int,
+    name: map['name'] as String,
+    description: map['description'] as String,
+    assumption: map['assumption'] as String,
+    status: TaskStatus.fromId(map['task_status_id'] as int),
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+  );
+
   int jobId;
   String name;
   String description;
   String assumption;
-  int taskStatusId;
-  // If [billingType] is null then take it from the Job.
-  // BillingType? billingType;
+  TaskStatus status;
 
   @override
   Map<String, dynamic> toMap() => {
@@ -64,13 +55,12 @@ class Task extends Entity<Task> {
     'name': name,
     'description': description,
     'assumption': assumption,
-    'task_status_id': taskStatusId,
-    // 'billing_type': billingType?.name, // New field for BillingType
+    'task_status_id': status.id,
     'createdDate': createdDate.toIso8601String(),
     'modifiedDate': modifiedDate.toIso8601String(),
   };
 
   @override
   String toString() =>
-      'Task(id: $id, jobId: $jobId, name: $name, statusID: $taskStatusId, assumption: $assumption)';
+      r'Task(id: $id, jobId: $jobId, name: $name, status: ${status.name}, assumption: $assumption)';
 }
