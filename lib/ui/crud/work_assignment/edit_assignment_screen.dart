@@ -5,7 +5,6 @@ import 'package:sqflite/sqlite_api.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/util.g.dart';
 import '../../widgets/select/select.g.dart';
 import '../base_nested/edit_nested_screen.dart';
 
@@ -140,20 +139,31 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
                   'Tasks to assign',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                ...tasks.map(
-                  (t) => CheckboxListTile(
-                    value: _selectedTasks.contains(t.id),
-                    title: Text(t.name),
-                    subtitle: Text(RichTextHelper.toPlainText(t.assumption)),
-                    onChanged: (on) => setState(() {
-                      if (on ?? false) {
-                        _selectedTasks.add(t.id);
-                      } else {
-                        _selectedTasks.remove(t.id);
-                      }
-                    }),
-                  ),
-                ),
+                ...tasks
+                    .
+                    /// exclude tasks that are cancelled or on hold.
+                    where(
+                      (task) =>
+                          !(task.status == TaskStatus.cancelled ||
+                              task.status == TaskStatus.onHold),
+                    )
+                    .map(
+                      (t) => CheckboxListTile(
+                        value: _selectedTasks.contains(t.id),
+                        title: Text(
+                          t.name,
+                          style: const TextStyle(color: Colors.blue),
+                        ),
+                        subtitle: Text(t.assumption),
+                        onChanged: (on) => setState(() {
+                          if (on ?? false) {
+                            _selectedTasks.add(t.id);
+                          } else {
+                            _selectedTasks.remove(t.id);
+                          }
+                        }),
+                      ),
+                    ),
               ],
             );
           },
