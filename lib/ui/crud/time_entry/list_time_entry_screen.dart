@@ -29,11 +29,11 @@ class TimeEntryListScreen extends StatelessWidget {
         TimeEntryEditScreen(task: parent.parent!, timeEntry: timeEntry),
     canEdit: (timeEntry) => !timeEntry.billed,
     // ignore: discarded_futures
-    onDelete: (timeEntry) => DaoTimeEntry().delete(timeEntry!.id),
-    canDelete: (timeEntry) => !timeEntry.billed,
+    onDelete: (timeEntry) => DaoTimeEntry().delete(timeEntry.id),
+    canDelete: (timeEntry)  => !timeEntry.billed,
     // ignore: discarded_futures
     onInsert: (timeEntry, transaction) =>
-        DaoTimeEntry().insert(timeEntry!, transaction),
+        DaoTimeEntry().insert(timeEntry, transaction),
     details: (timeEntry, details) => Row(
       children: [
         Text('Billed: ${timeEntry.billed}'),

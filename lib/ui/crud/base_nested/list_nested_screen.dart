@@ -51,10 +51,10 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
   final Widget Function(P entity)? filterBar;
   final Widget Function(C entity, CardDetail cardDetail) details;
   final Widget Function(C? entity) onEdit;
-  final Allowed<C>? canEdit;
-  final Allowed<C>? canDelete;
-  final Future<void> Function(C? entity) onDelete;
-  final Future<void> Function(C? entity, Transaction transaction) onInsert;
+  final bool Function(C)? canEdit;
+  final bool Function(C)? canDelete;
+  final Future<void> Function(C entity) onDelete;
+  final Future<void> Function(C entity, Transaction transaction) onInsert;
   final Future<List<C>> Function() fetchList;
   final Dao<C> dao;
   final String parentTitle;
@@ -204,12 +204,8 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
     // ignore: unnecessary_async
     onDelete: () async => _confirmDelete(entity),
     onEdit: () => widget.onEdit(entity),
-    canEdit: widget.canEdit == null
-        ? () => true
-        : () => widget.canEdit!(entity),
-    canDelete: widget.canDelete == null
-        ? () => true
-        : () => widget.canDelete!(entity),
+    canEdit: () => widget.canEdit?.call(entity) ?? true,
+    canDelete: () async => await widget.canDelete?.call(entity) ?? true,
     onRefresh: _refreshEntityList,
     child: Padding(
       padding: const EdgeInsets.only(left: 8),
