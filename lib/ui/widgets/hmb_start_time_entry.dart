@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
+import 'package:june/state_manager/src/simple/list_notifier.dart';
 
 import '../../dao/dao_job.dart';
 import '../../dao/dao_task.dart';
@@ -32,6 +33,28 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   Timer? _timer;
   late TimeEntry? timeEntry;
 
+  late Disposer disposer;
+
+  @override
+  void initState() {
+    super.initState();
+    disposer = June.getState<TimeEntryState>(TimeEntryState.new).addListener(
+      () {
+        final activeEntry = June.getState<TimeEntryState>(
+          TimeEntryState.new,
+        ).activeTimeEntry;
+
+
+        if (timeEntry != null && activeEntry != timeEntry) {
+          /// we are no longer the active timer.
+          timeEntry = null;
+          _timer?.cancel();
+        }
+      },
+    );
+  }
+
+
   @override
   Future<void> asyncInitState() async {
     final entry = await DaoTimeEntry().getActiveEntry();
@@ -57,25 +80,28 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder: (context) => GestureDetector(
-      child: Row(
-        children: [
-          IconButton(
+    builder: (context) => Row(
+      children: [
+        JuneBuilder(
+          TimeEntryState.new,
+          builder: (timeEntryState) => IconButton(
             padding: const EdgeInsets.only(top: 8, bottom: 8),
             visualDensity: const VisualDensity(horizontal: -4),
             // start / stop icon
-            icon: Icon(timeEntry != null ? Icons.stop : Icons.play_arrow),
+            icon: Icon(
+              timeEntryState.activeTimeEntry != null &&
+                      timeEntry == timeEntryState.activeTimeEntry
+                  ? Icons.stop
+                  : Icons.play_arrow,
+            ),
             onPressed: () => timeEntry != null
                 // ignore: discarded_futures
                 ? _stop(widget.task)
                 : unawaited(_start(widget.task)),
           ),
-          _buildElapsedTime(timeEntry),
-        ],
-      ),
-      onTap: () => timeEntry != null
-          ? unawaited(_stop(widget.task))
-          : unawaited(_start(widget.task)),
+        ),
+        _buildElapsedTime(timeEntry),
+      ],
     ),
   );
 
@@ -283,12 +309,12 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
       if (stoppedTimeEntry != null) {
         stoppedTimeEntry.endTime!.add(const Duration(minutes: 1));
         await DaoTimeEntry().update(stoppedTimeEntry);
+        timeEntry = null;
         June.getState<TimeEntryState>(
           TimeEntryState.new,
         ).clearActiveTimeEntry();
 
         _timer?.cancel();
-        timeEntry = null;
         setState(() {});
         return stoppedTimeEntry;
       }
@@ -315,11 +341,10 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
       /// be the active job.
       final job = await DaoJob().markActive(task.jobId);
       _startTimer(newTimeEntry);
+      timeEntry = newTimeEntry;
       June.getState<TimeEntryState>(
         TimeEntryState.new,
       ).setActiveTimeEntry(newTimeEntry, widget.task);
-      timeEntry = newTimeEntry;
-      setState(() {});
 
       widget.onStart(job);
     }
@@ -341,6 +366,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   void dispose() {
     super.dispose();
     _timer?.cancel();
+    disposer();
   }
 
   Widget _buildElapsedTime(TimeEntry? timeEntry) {
