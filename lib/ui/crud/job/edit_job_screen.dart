@@ -132,9 +132,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
       // to do this.
       // ignore: discarded_futures
       final jobStatus = await DaoJobStatus().getById(1);
-      June.getState(SelectJobStatus.new)
-        ..jobStatusId = jobStatus?.id
-        ..setState();
+      June.getState(SelectJobStatus.new).jobStatusId = jobStatus?.id;
     }
   }
 
@@ -271,9 +269,7 @@ You can set a default booking fee from System | Billing screen''');
       initialContact: state.contactId,
       customer: customer,
       onSelected: (contact) {
-        June.getState(_JobBillingContact.new)
-          ..contactId = contact?.id
-          ..setState();
+        June.getState(_JobBillingContact.new).contactId = contact?.id;
       },
     ),
   );
@@ -286,9 +282,7 @@ You can set a default booking fee from System | Billing screen''');
       initialContact: state.contactId,
       customer: customer,
       onSelected: (contact) {
-        June.getState(_SelectedContact.new)
-          ..contactId = contact?.id
-          ..setState();
+        June.getState(_SelectedContact.new).contactId = contact?.id;
       },
     ),
   );
@@ -301,9 +295,7 @@ You can set a default booking fee from System | Billing screen''');
           initialSite: state,
           customer: customer,
           onSelected: (site) {
-            June.getState(SelectedSite.new)
-              ..siteId = site?.id
-              ..setState();
+            June.getState(SelectedSite.new).siteId = site?.id;
           },
         ),
       );
@@ -313,22 +305,16 @@ You can set a default booking fee from System | Billing screen''');
     selectedCustomer: June.getState(SelectedCustomer.new),
     onSelected: (customer) {
       // 1. Update the selected customer ID
-      June.getState(SelectedCustomer.new)
-        ..customerId = customer?.id
-        ..setState();
+      June.getState(SelectedCustomer.new).customerId = customer?.id;
 
       // 2. Clear site and contact selections
-      June.getState(SelectedSite.new)
-        ..siteId = null
-        ..setState();
-      June.getState(_SelectedContact.new)
-        ..contactId = null
-        ..setState();
+      June.getState(SelectedSite.new).siteId = null;
+
+      June.getState(_SelectedContact.new).contactId = null;
 
       // 3. Reset billing contact to the customer's default billingContactId
       June.getState(_JobBillingContact.new)
-        ..contactId = customer?.billingContactId
-        ..setState();
+        .contactId = customer?.billingContactId;
 
       // 4. Pull the customer's rate (and booking-fee if you have it) into the text fields
       setState(() {
@@ -700,7 +686,14 @@ You can set a default booking fee from System | Billing screen''');
 class SelectJobStatus extends JuneState {
   SelectJobStatus();
 
-  int? jobStatusId;
+  int? _jobStatusId;
+
+  int? get jobStatusId => _jobStatusId;
+
+  set jobStatusId(int? value) {
+    _jobStatusId = value;
+    setState();
+  }
 }
 
 class ActivityJobsState extends JuneState {}
@@ -709,10 +702,24 @@ class ActivityJobsState extends JuneState {}
 class _SelectedContact extends JuneState {
   _SelectedContact();
 
-  int? contactId;
+  int? _contactId;
+
+  int? get contactId => _contactId;
+
+  set contactId(int? value) {
+    _contactId = value;
+    setState();
+  }
 }
 
 /// State object to persist the selected billing contact ID across this screen.
 class _JobBillingContact extends JuneState {
-  int? contactId;
+  int? _contactId;
+
+  int? get contactId => _contactId;
+
+  set contactId(int? value) {
+    _contactId = value;
+    setState();
+  }
 }

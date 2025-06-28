@@ -19,9 +19,7 @@ class _DesktopBackGestureSuppressState
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        June.getState(IgnoreDesktopGesture.new)
-          ..ignored = true
-          ..setState();
+        June.getState(IgnoreDesktopGesture.new).ignored = true;
       }
     });
   }
@@ -33,9 +31,7 @@ class _DesktopBackGestureSuppressState
       final gestureState = June.getState(IgnoreDesktopGesture.new);
 
       if (!gestureState.isDisposed) {
-        gestureState
-          ..ignored = false
-          ..setState();
+        gestureState.ignored = false;
       }
     });
 
@@ -47,6 +43,12 @@ class _DesktopBackGestureSuppressState
 }
 
 class IgnoreDesktopGesture extends JuneState {
-  // ignore: omit_obvious_property_types
-  bool ignored = false;
+  var _ignored = false;
+
+  bool get ignored => _ignored;
+
+  set ignored(bool value) {
+    _ignored = value;
+    setState();
+  }
 }

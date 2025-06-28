@@ -141,9 +141,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       HMBStartTimeEntry(
         task: task,
         onStart: (job) {
-          June.getState(SelectJobStatus.new)
-            ..jobStatusId = job.jobStatusId
-            ..setState();
+          June.getState(SelectJobStatus.new).jobStatusId = job.jobStatusId;
         },
       ),
     ],
@@ -178,9 +176,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       HMBStartTimeEntry(
         task: task,
         onStart: (job) {
-          June.getState(SelectJobStatus.new)
-            ..jobStatusId = job.jobStatusId
-            ..setState();
+          June.getState(SelectJobStatus.new).jobStatusId = job.jobStatusId;
         },
       ),
     ],
@@ -195,6 +191,6 @@ class ShowCompletedTasksState extends JuneState {
 
   void toggle() {
     _showCompletedTasks = !_showCompletedTasks;
-    refresh(); // Notify listeners to rebuild
+    setState(); // Notify listeners to rebuild
   }
 }

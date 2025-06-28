@@ -71,5 +71,12 @@ class SelectCustomerState extends State<SelectCustomer> {
 class SelectedCustomer extends JuneState {
   SelectedCustomer();
 
-  int? customerId;
+  int? _customerId;
+
+  int? get customerId => _customerId;
+
+  set customerId(int? arg) {
+    _customerId = arg;
+    setState();
+  }
 }

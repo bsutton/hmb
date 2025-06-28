@@ -216,5 +216,12 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 }
 
 class SelectedTaskStatus extends JuneState {
-  TaskStatus? taskStatus;
+  TaskStatus? _taskStatus;
+
+  TaskStatus? get taskStatus => _taskStatus;
+
+  set taskStatus(TaskStatus? value) {
+    _taskStatus = value;
+    setState();
+  }
 }

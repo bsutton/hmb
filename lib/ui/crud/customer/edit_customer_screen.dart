@@ -203,5 +203,11 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
 class CustomerBillingContact extends JuneState {
   CustomerBillingContact();
 
-  Contact? contact;
+  Contact? _contact;
+  Contact? get contact => _contact;
+
+  set contact(Contact? aContact) {
+    _contact = aContact;
+    setState();
+  }
 }

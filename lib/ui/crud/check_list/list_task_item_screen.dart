@@ -218,6 +218,6 @@ class ShowCompltedItems extends JuneState {
 
   void toggle() {
     _showCompletedTasks = !_showCompletedTasks;
-    refresh(); // Notify listeners to rebuild
+    setState(); // Notify listeners to rebuild
   }
 }

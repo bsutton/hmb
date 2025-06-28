@@ -77,5 +77,6 @@ class SelectedJobs extends JuneState {
     selected
       ..clear()
       ..addAll(jobs);
+    setState();
   }
 }

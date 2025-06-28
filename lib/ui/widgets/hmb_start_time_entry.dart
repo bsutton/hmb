@@ -367,7 +367,7 @@ class TimeEntryState extends JuneState {
       activeTimeEntry = entry;
       this.task = task;
       if (doRefresh) {
-        refresh();
+        setState();
       }
     }
   }
@@ -375,7 +375,7 @@ class TimeEntryState extends JuneState {
   void clearActiveTimeEntry() {
     activeTimeEntry = null;
     task = null;
-    refresh();
+    setState();
   }
 }
 

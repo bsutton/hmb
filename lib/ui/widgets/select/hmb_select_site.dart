@@ -88,5 +88,12 @@ class HMBSelectSiteState extends State<HMBSelectSite> {
 class SelectedSite extends JuneState {
   SelectedSite();
 
-  int? siteId;
+  int? _siteId;
+
+  int? get siteId => _siteId;
+
+  set siteId(int? value) {
+    _siteId = value;
+    setState();
+  }
 }

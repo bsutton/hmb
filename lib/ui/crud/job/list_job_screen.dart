@@ -97,6 +97,6 @@ class FilterState extends JuneState {
 
   void toggle() {
     _showOnHoldAndFinalised = !_showOnHoldAndFinalised;
-    refresh();
+    setState();
   }
 }

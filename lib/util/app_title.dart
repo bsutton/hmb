@@ -2,7 +2,14 @@ import 'package:june/june.dart';
 
 class HMBTitle extends JuneState {
   // ignore: omit_obvious_property_types
-  String title = 'HMB';
+  String _title = 'HMB';
+
+  String get title => _title;
+
+  set title(String value) {
+    _title = value;
+    setState();
+  }
 }
 
 void setAppTitle(String pageTitle) {
@@ -13,9 +20,7 @@ void setAppTitle(String pageTitle) {
   Future.delayed(Duration.zero, () {
     final currentTitle = June.getState(HMBTitle.new);
     if (currentTitle.title != pageTitle) {
-      June.getState(HMBTitle.new)
-        ..title = pageTitle
-        ..setState();
+      June.getState(HMBTitle.new).title = pageTitle;
     }
   });
 }
