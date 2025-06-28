@@ -43,12 +43,12 @@ Uint8List _compressImageTask(String absolutePath) {
 
 /// Generates a PDF for a WorkAssignment,
 /// including task photos under each task.
-Future<File> generateAssignmentPdf(WorkAssignment assignment) async {
+Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
   final pdf = pw.Document();
   final system = await DaoSystem().get();
   final useMetric = system.preferredUnitSystem == PreferredUnitSystem.metric;
   final systemColor = PdfColor.fromInt(system.billingColour);
-  final satDao = DoaWorkAssignment();
+  final satDao = DaoWorkAssignmentTask();
   final supplierDao = DaoSupplier();
   final taskDao = DaoTask();
 

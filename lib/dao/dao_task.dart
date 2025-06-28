@@ -80,8 +80,6 @@ class DaoTask extends Dao<Task> {
         core.delete(absolutePathToPhoto);
       }
     }
-
-    await DoaWorkAssignment().deleteByTask(taskId);
   }
 
   Future<Task> getTaskForItem(TaskItem item) async {
@@ -277,6 +275,7 @@ WHERE ti.id = ?
     await DaoTimeEntry().deleteByTask(id, transaction);
     await DaoTaskItem().deleteByTask(id, transaction);
     await deleteTaskPhotos(id, transaction: transaction);
+    await DaoWorkAssignmentTask().deleteByTask(id, transaction: transaction);
     await super.delete(id);
     return id;
   }

@@ -34,7 +34,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
     _selectedContact = currentEntity?.contactId;
 
     if (currentEntity != null) {
-      final tasks = await DoaWorkAssignment().getByAssignment(
+      final tasks = await DaoWorkAssignmentTask().getByAssignment(
         currentEntity!.id,
       );
       _selectedTasks = tasks.map((j) => j.taskId).toSet();
@@ -58,7 +58,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
       );
   @override
   Future<void> postSave(Transaction transaction, Operation operation) async {
-    final dao = DoaWorkAssignment();
+    final dao = DaoWorkAssignmentTask();
     if (operation == Operation.update) {
       await dao.deleteByAssignment(currentEntity!.id, transaction: transaction);
     }

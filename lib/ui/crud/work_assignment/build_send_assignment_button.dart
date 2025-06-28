@@ -7,7 +7,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../widgets/media/pdf_preview.dart';
 import '../../widgets/widgets.g.dart';
-import 'generate_assignment_pdf.dart';
+import 'generate_work_assignment_pdf.dart';
 
 class BuildSendAssignmentButton extends StatelessWidget {
   const BuildSendAssignmentButton({
@@ -23,8 +23,12 @@ class BuildSendAssignmentButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sent = assignment.sent;
-    final buttonLabel = sent ? 'View/Send... (Sent)' : 'View/Send...';
+    final sent = assignment.status;
+    final buttonLabel = switch (sent) {
+      WorkAssignmentStatus.unsent => 'View/Send...',
+      WorkAssignmentStatus.sent => 'View/Send... (Sent)',
+      WorkAssignmentStatus.modified => 'View/Send... (Modified)',
+    };
 
     return HMBButtonSecondary(
       label: buttonLabel,
@@ -43,7 +47,7 @@ class BuildSendAssignmentButton extends StatelessWidget {
 
         final file = await BlockingUI().runAndWait(
           label: 'Generating Assignment',
-          () => generateAssignmentPdf(assignment),
+          () => generateWorkAssignmentPdf(assignment),
         );
 
         final systemEmail = (await DaoSystem().get()).emailAddress;
@@ -56,7 +60,7 @@ class BuildSendAssignmentButton extends StatelessWidget {
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => PdfPreviewScreen(
-              title: 'Assignment #${assignment.id}',
+              title: 'Work Assignment #${assignment.id}',
               filePath: file.path,
               preferredRecipient: recipients.first,
               emailSubject: 'Work Assignment #${assignment.id}',
@@ -64,7 +68,7 @@ class BuildSendAssignmentButton extends StatelessWidget {
                   '''
 ${primaryContact.firstName},
 
-Please find attached the work assignment for Job ${job.summary}.
+Please find attached the Work Assignment for Job ${job.summary}.
 ''',
               emailRecipients: [...recipients],
               onSent: () => DaoWorkAssigment().markSent(assignment),

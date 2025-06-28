@@ -5,5 +5,5 @@
 // https://onepub.dev
 //
 export 'edit_assignment_screen.dart';
-export 'generate_assignment_pdf.dart';
+export 'generate_work_assignment_pdf.dart';
 export 'list_assignment_screen.dart';

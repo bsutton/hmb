@@ -70,7 +70,7 @@ class SupplierAndTasks {
     final supplier = await DaoSupplier().getById(assignment.supplierId);
     final contact = await DaoContact().getById(assignment.contactId);
 
-    final assignedTasks = await DoaWorkAssignment().getByAssignment(
+    final assignedTasks = await DaoWorkAssignmentTask().getByAssignment(
       assignment.id,
     );
 

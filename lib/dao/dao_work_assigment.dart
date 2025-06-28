@@ -17,7 +17,7 @@ class DaoWorkAssigment extends Dao<WorkAssignment> {
   @override
   Future<int> delete(int id, [Transaction? txn]) async {
     final db = withinTransaction(txn);
-    await DoaWorkAssignment().deleteByAssignment(id, transaction: txn);
+    await DaoWorkAssignmentTask().deleteByAssignment(id, transaction: txn);
     return db.delete(tableName, where: 'id = ?', whereArgs: [id]);
   }
 
@@ -36,7 +36,7 @@ class DaoWorkAssigment extends Dao<WorkAssignment> {
   JuneStateCreator get juneRefresher => WorkAssignmentState.new;
 
   Future<void> markSent(WorkAssignment assignment) async {
-    assignment.sent = true;
+    assignment.status = WorkAssignmentStatus.sent;
     await update(assignment);
   }
 }

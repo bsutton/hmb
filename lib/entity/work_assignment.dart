@@ -1,6 +1,18 @@
-// lib/src/entity/supplier_assignment.dart
-
 import 'entity.dart';
+
+enum WorkAssignmentStatus {
+  // the work assignment hasn't been emailed to the supplier.
+  unsent(0),
+  // the work assignment has been emailed to the supplier.
+  sent(1),
+  // the work assignment has been modified since it was last
+  // sent to the supplier.
+  modified(2);
+
+  const WorkAssignmentStatus(this.ordinal);
+
+  final int ordinal;
+}
 
 class WorkAssignment extends Entity<WorkAssignment> {
   WorkAssignment({
@@ -8,17 +20,17 @@ class WorkAssignment extends Entity<WorkAssignment> {
     required this.jobId,
     required this.supplierId,
     required this.contactId,
-    required this.sent,
+    required this.status,
     required super.createdDate,
     required super.modifiedDate,
   }) : super();
 
-  /// For inserts, `sent` defaults to false.
+  /// For inserts, status defaults to unsent.
   WorkAssignment.forInsert({
     required this.jobId,
     required this.supplierId,
     required this.contactId,
-    this.sent = false,
+    this.status = WorkAssignmentStatus.unsent,
   }) : super.forInsert() {
     createdDate = DateTime.now();
     modifiedDate = DateTime.now();
@@ -29,8 +41,8 @@ class WorkAssignment extends Entity<WorkAssignment> {
     required this.jobId,
     required this.supplierId,
     required this.contactId,
-    bool? sent,
-  }) : sent = sent ?? (entity as WorkAssignment).sent,
+    WorkAssignmentStatus? status,
+  }) : status = status ?? (entity as WorkAssignment).status,
        super.forUpdate() {
     modifiedDate = DateTime.now();
   }
@@ -40,7 +52,7 @@ class WorkAssignment extends Entity<WorkAssignment> {
     jobId: m['job_id'] as int,
     supplierId: m['supplier_id'] as int,
     contactId: m['contact_id'] as int,
-    sent: (m['sent'] as int) == 1,
+    status: WorkAssignmentStatus.values[m['status'] as int],
     createdDate: DateTime.parse(m['created_date'] as String),
     modifiedDate: DateTime.parse(m['modified_date'] as String),
   );
@@ -51,7 +63,7 @@ class WorkAssignment extends Entity<WorkAssignment> {
     'job_id': jobId,
     'supplier_id': supplierId,
     'contact_id': contactId,
-    'sent': sent ? 1 : 0,
+    'status': status.ordinal,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
@@ -59,5 +71,5 @@ class WorkAssignment extends Entity<WorkAssignment> {
   int jobId;
   int supplierId;
   int contactId;
-  bool sent;
+  WorkAssignmentStatus status;
 }

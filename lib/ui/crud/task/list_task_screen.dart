@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 
-import '../../../dao/dao_photo.dart'; // Import the Photo DAO
-import '../../../dao/dao_task.dart';
-import '../../../dao/dao_task_status.dart';
-import '../../../dao/dao_time_entry.dart';
+import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/format.dart';
+import '../../dialog/dialog.g.dart';
 import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/text/hmb_text.dart';
@@ -83,10 +81,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
             onEdit: (task) =>
                 TaskEditScreen(job: widget.parent.parent!, task: task),
             // ignore: discarded_futures
-            onDelete: (task) => DaoTask().delete(task!.id),
+            onDelete: onDelete,
             // ignore: discarded_futures
             onInsert: (task, transaction) =>
-                DaoTask().insert(task!, transaction),
+                DaoTask().insert(task, transaction),
             details: (task, details) => details == CardDetail.full
                 ? _buildFullTasksDetails(task)
                 : _buildTaskSummary(task),
@@ -95,6 +93,48 @@ class _TaskListScreenState extends State<TaskListScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> onDelete(Task? task) async {
+    if (task == null) {
+      return;
+    }
+
+    // if there is are any work assignment for this task then warn the user.
+    final taskAssignments = await DaoWorkAssignmentTask().getByTask(task);
+    if (taskAssignments.isNotEmpty) {
+      final message = StringBuffer()
+        ..writeln(
+          'Deleting this Task will affect the following Work Assignments',
+        );
+      final assignedTo = <String>[];
+      for (final assignment in taskAssignments) {
+        final workAssignment = await DaoWorkAssigment().getById(
+          assignment.assignmentId,
+        );
+        if (workAssignment != null) {
+          final supplier = await DaoSupplier().getById(
+            workAssignment.supplierId,
+          );
+          if (supplier != null) {
+            assignedTo.add(supplier.name);
+            message.writeln('${supplier.name} #${workAssignment.id}');
+          }
+        }
+      }
+      if (mounted) {
+        await askUserToContinue(
+          context: context,
+          title: 'Task is assigned to Work Assignment',
+          message: message.toString(),
+          yesLabel: 'Continue?',
+          noLabel: 'Cancel',
+          onConfirmed: () async {
+            await DaoTask().delete(task.id);
+          },
+        );
+      }
+    }
   }
 
   Future<List<Task>> _fetchTasks() async {
