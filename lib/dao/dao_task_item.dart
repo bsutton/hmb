@@ -125,7 +125,7 @@ AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
   /// shopping items
   Future<List<TaskItem>> getShoppingItems({
     List<Job>? jobs,
-    Supplier? supplier,
+    int? supplierId,
   }) async {
     final db = withoutTransaction();
 
@@ -135,7 +135,7 @@ AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
         ? 'AND j.id IN (${List.filled(jobIds.length, '?').join(',')})'
         : '';
 
-    final supplierClause = supplier != null ? 'AND ti.supplier_id = ?' : '';
+    final supplierClause = supplierId != null ? 'AND ti.supplier_id = ?' : '';
 
     final sql =
         '''
@@ -157,8 +157,8 @@ SELECT ti.*
     if (jobIds.isNotEmpty) {
       params.addAll(jobIds);
     }
-    if (supplier != null) {
-      params.add(supplier.id);
+    if (supplierId != null) {
+      params.add(supplierId);
     }
 
     return toList(await db.rawQuery(sql, params));
@@ -209,7 +209,7 @@ SELECT ti.*
   Future<List<TaskItem>> getPurchasedItems({
     required DateTime since,
     required List<Job> jobs,
-    Supplier? supplier,
+    int? supplierId,
   }) async {
     final db = withoutTransaction();
 
@@ -238,9 +238,9 @@ SELECT ti.*
       sql.write(' AND j.id IN ($placeholders)');
       params.addAll(jobs.map((j) => j.id));
     }
-    if (supplier != null) {
+    if (supplierId != null) {
       sql.write(' AND ti.supplier_id = ?');
-      params.add(supplier.id);
+      params.add(supplierId);
     }
 
     sql.write(' ORDER BY ti.modified_date DESC');
@@ -251,7 +251,7 @@ SELECT ti.*
   /// “Returned” tab (items that have already been returned)
   Future<List<TaskItem>> getReturnedItems({
     List<Job>? jobs,
-    Supplier? supplier,
+    int? supplierId,
   }) async {
     final db = withoutTransaction();
 
@@ -274,9 +274,9 @@ SELECT ti.*
     }
 
     // Optional supplier filter
-    if (supplier != null) {
+    if (supplierId != null) {
       sql.write(' AND ti.supplier_id = ?');
-      params.add(supplier.id);
+      params.add(supplierId);
     }
 
     // Most recent returns first

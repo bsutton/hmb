@@ -92,7 +92,7 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
   static ShoppingMode _selectedMode = ShoppingMode.toPurchase;
   final _taskItems = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
-  Supplier? _selectedSupplier;
+  final selectedSupplier = SelectedSupplier();
   String? filter;
   static ScheduleFilter _selectedScheduleFilter = ScheduleFilter.all;
 
@@ -108,18 +108,18 @@ class _ShoppingScreenState extends DeferredState<ShoppingScreen> {
       case ShoppingMode.toPurchase:
         taskItems = await DaoTaskItem().getShoppingItems(
           jobs: _selectedJobs,
-          supplier: _selectedSupplier,
+          supplierId: selectedSupplier.selected,
         );
       case ShoppingMode.purchased:
         taskItems = await DaoTaskItem().getPurchasedItems(
           since: DateTime.now().subtract(const Duration(days: 1)),
           jobs: _selectedJobs,
-          supplier: _selectedSupplier,
+          supplierId: selectedSupplier.selected,
         );
       case ShoppingMode.returns:
         taskItems = await DaoTaskItem().getReturnedItems(
           jobs: _selectedJobs,
-          supplier: _selectedSupplier,
+          supplierId: selectedSupplier.selected,
         );
     }
 
@@ -213,16 +213,12 @@ Allows you to filter the shopping list to items from specific Jobs.
 If your Job isn't showing then you need to update its status to an Active one such as 'Scheduled, In Progress...' ''',
                 ),
                 const SizedBox(height: 10),
-                HMBDroplist<Supplier>(
-                  selectedItem: () async => _selectedSupplier,
-                  items: (filter) => DaoSupplier().getByFilter(filter),
-                  format: (supplier) => supplier.name,
-                  onChanged: (supplier) async {
-                    _selectedSupplier = supplier;
+                SelectSupplier(
+                  selectedSupplier: selectedSupplier,
+                  onSelected: (supplier) async {
+                    selectedSupplier.selected = supplier?.id;
                     await _loadTaskItems();
                   },
-                  title: 'Supplier',
-                  required: false,
                 ).help(
                   'Filter by Supplier',
                   'When adding Task Items, if you enter the supplier you can filter by supplier',

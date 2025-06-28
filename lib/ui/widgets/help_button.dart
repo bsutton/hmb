@@ -95,19 +95,24 @@ class HelpWrapper extends StatelessWidget {
   final String title;
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(child: child),
-      if (helpChild != null)
-        HelpButton(tooltip: tooltip, dialogTitle: title, child: helpChild)
-      else
-        HelpButton.text(
-          tooltip: tooltip,
-          dialogTitle: title,
-          helpText: helpText,
-        ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    // If the child is already Flexible (Expanded/Flexible), don't wrap it again.
+    final rowChild = child is Flexible ? child : Expanded(child: child);
+
+    return Row(
+      children: [
+        rowChild,
+        if (helpChild != null)
+          HelpButton(tooltip: tooltip, dialogTitle: title, child: helpChild)
+        else
+          HelpButton.text(
+            tooltip: tooltip,
+            dialogTitle: title,
+            helpText: helpText,
+          ),
+      ],
+    );
+  }
 }
 
 extension HelpWrapperEx on Widget {
