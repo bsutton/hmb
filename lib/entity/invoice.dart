@@ -2,9 +2,7 @@ import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../api/xero/models/xero_invoice.dart';
-import '../dao/dao_contact.dart';
-import '../dao/dao_invoice_line.dart';
-import '../dao/dao_job.dart';
+import '../dao/dao.g.dart';
 import '../util/exceptions.dart';
 import '../util/local_date.dart';
 import 'entity.dart';
@@ -121,6 +119,15 @@ class Invoice extends Entity<Invoice> {
         '''You must assign a Contact to the Job before you can upload an invoice''',
       );
     }
+    final system = await DaoSystem().get();
+
+    if (Strings.isBlank(system.invoiceLineAccountCode) ||
+        Strings.isBlank(system.invoiceLineItemCode)) {
+      throw InvoiceException(
+        'You must set the Account Code and Item Code in System | Integration before you can upload an invoice',
+      );
+    }
+
     final xeroContact = contact.toXeroContact();
 
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
@@ -133,7 +140,12 @@ class Invoice extends Entity<Invoice> {
       dueDate: invoice.dueDate,
       lineItems: invoiceLines
           .where((line) => line.status == LineChargeableStatus.normal)
-          .map((line) => line.toXeroLineItem())
+          .map(
+            (line) => line.toXeroLineItem(
+              accountCode: system.invoiceLineAccountCode!,
+              itemCode: system.invoiceLineItemCode!,
+            ),
+          )
           .toList(),
       lineAmountTypes: 'Inclusive',
     ); // All amounts are inclusive of tax.

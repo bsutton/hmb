@@ -117,15 +117,12 @@ class InvoiceLine extends Entity<InvoiceLine> {
     'from_booking_fee': fromBookingFee ? 1 : 0,
   };
 
-  XeroLineItem toXeroLineItem() => XeroLineItem(
+  XeroLineItem toXeroLineItem({required String accountCode, required String itemCode}) => XeroLineItem(
     description: description,
     quantity: quantity,
     unitAmount: unitPrice,
     lineTotal: lineTotal,
-    // TODO(bsutton): fix these so that they can be configured
-    //from the system
-    /// table.
-    accountCode: '240',
-    itemCode: 'IHS-Labour',
+    accountCode: accountCode, // '240',
+    itemCode: itemCode, // 'IHS-Labour',
   );
 }

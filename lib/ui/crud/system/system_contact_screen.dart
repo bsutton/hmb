@@ -134,7 +134,7 @@ class SystemContactInformationScreenState
             SaveAndClose(
               onSave: save,
               showSaveOnly: false,
-              onCancel: () async => context.go('/dashboard'),
+              onCancel: () async => context.pop(),
             ),
             Expanded(
               child: Padding(
