@@ -117,7 +117,9 @@ class _DimensionWidgetState extends State<DimensionWidget> {
                     ),
                 onChanged: (value) {
                   setState(() {
-                    selectedUnitsState.selected = value ?? selectedUnit;
+                    selectedUnitsState
+                      ..selected = value ?? selectedUnit
+                      ..setState();
                   });
                 },
               ),
