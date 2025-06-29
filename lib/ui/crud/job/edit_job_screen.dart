@@ -159,7 +159,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
                   _showSummary(),
                   _chooseCustomer(),
                   _chooseStatus(job),
-                  if (widget.job != null) _buildScheduleButtons(),
+                  if (currentEntity != null) _buildScheduleButtons(),
                   _chooseBillingType(),
                   _chooseBillingContact(customer, job),
                   _showHourlyRate(),
@@ -313,8 +313,8 @@ You can set a default booking fee from System | Billing screen''');
       June.getState(_SelectedContact.new).contactId = null;
 
       // 3. Reset billing contact to the customer's default billingContactId
-      June.getState(_JobBillingContact.new)
-        .contactId = customer?.billingContactId;
+      June.getState(_JobBillingContact.new).contactId =
+          customer?.billingContactId;
 
       // 4. Pull the customer's rate (and booking-fee if you have it) into the text fields
       setState(() {
@@ -360,7 +360,7 @@ You can set a default booking fee from System | Billing screen''');
         );
         return;
       }
-      final jobId = widget.job!.id;
+      final jobId = currentEntity!.id;
       final firstActivity = await _getFirstActivity();
       if (mounted) {
         // Fetch upcoming activity for that job
@@ -389,7 +389,7 @@ You can set a default booking fee from System | Billing screen''');
     final now = DateTime.now();
 
     final daoJobActivity = DaoJobActivity();
-    final jobActivities = await daoJobActivity.getByJob(widget.job!.id);
+    final jobActivities = await daoJobActivity.getByJob(currentEntity!.id);
     JobActivity? nextActivity;
     for (final e in jobActivities) {
       if (e.start.isAfter(now)) {
@@ -404,7 +404,7 @@ You can set a default booking fee from System | Billing screen''');
     ActivityJobsState.new,
     builder: (context) => FutureBuilderEx<List<JobActivity>>(
       // ignore: discarded_futures
-      future: DaoJobActivity().getByJob(widget.job!.id),
+      future: DaoJobActivity().getByJob(currentEntity!.id),
       builder: (context, activities) {
         final jobActivities = activities ?? [];
         final nextActivity = _nextAcitivty(jobActivities);
