@@ -102,7 +102,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
     // if there is are any work assignment for this task then warn the user.
     final taskAssignments = await DaoWorkAssignmentTask().getByTask(task);
-    if (taskAssignments.isNotEmpty) {
+    if (taskAssignments.isEmpty) {
+      await DaoTask().delete(task.id);
+    } else {
       final message = StringBuffer()
         ..writeln(
           'Deleting this Task will affect the following Work Assignments',
