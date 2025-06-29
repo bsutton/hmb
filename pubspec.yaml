@@ -1,6 +1,6 @@
 name: hmb
 description: "Hold My Beer. Customer, Job management and billing for solo trades people."
-publish_to: 'none' 
+publish_to: 'none'
 
 # The following defines the version and build number for your application.
 # In Android, build-name is used as versionName while build-number used as versionCode.
@@ -10,7 +10,7 @@ publish_to: 'none'
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.10.3
+version: 0.10.4
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
