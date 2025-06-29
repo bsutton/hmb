@@ -28,7 +28,7 @@ class ReturnItemCard extends ShoppingItemCard {
 
     return HMBIconButton(
       icon: const Icon(Icons.delete, color: Colors.red),
-      showBackground: false,,
+      showBackground: false,
       enabled: canReturn,
       onPressed: () async {
         await _delete(itemContext, context);
