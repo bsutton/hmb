@@ -43,6 +43,7 @@ class BuildSendAssignmentButton extends StatelessWidget {
 
     return HMBButtonSecondary(
       label: buttonLabel,
+      hint: 'View and optionally Send the Work Assignment to the supplier',
       onPressed: () async {
         final job = await DaoJob().getById(assignment.jobId);
         if (job == null) {

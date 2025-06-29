@@ -106,9 +106,15 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
       spacing: 8,
       runSpacing: 8,
       children: [
-        HMBButton(label: 'Send...', onPressed: _sendQuote),
+        HMBButton(
+          label: 'Send...',
+          hint: 'Send the quote by email',
+          onPressed: _sendQuote,
+        ),
         HMBButton(
           label: 'Create Milestones',
+          hint:
+              'Create payment milestones that are used to generate invoices for a Fixed Price Job',
           onPressed: () async {
             await Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -117,7 +123,11 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
             );
           },
         ),
-        HMBButton(label: 'Create Invoice', onPressed: _createInvoice),
+        HMBButton(
+          label: 'Create Invoice',
+          hint: 'Create an Invoice for this quote - the entire amount',
+          onPressed: _createInvoice,
+        ),
       ],
     ),
   );
@@ -154,6 +164,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                         group.lineApprovalStatus != LineApprovalStatus.rejected)
                       HMBButton(
                         label: 'Reject',
+                        hint: 'Mark this Task as rejected',
                         onPressed: () async =>
                             _rejectQuoteGroup(group, groupWrap.lines),
                       ),
@@ -252,10 +263,12 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
             actions: [
               HMBButton(
                 label: 'Cancel',
+                hint: "Don't view the quote",
                 onPressed: () => Navigator.of(context).pop(),
               ),
               HMBButton(
                 label: 'OK',
+                hint: 'View and optionally email this quote',
                 onPressed: () {
                   Navigator.of(context).pop({
                     'displayCosts': tempDisplayCosts,
@@ -398,10 +411,12 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
           actions: [
             HMBButton(
               label: 'Cancel',
+              hint: "Don't reject this quote group",
               onPressed: () => Navigator.pop(context, false),
             ),
             HMBButton(
               label: 'Reject',
+              hint: 'Reject all tasks in this Quote Group',
               onPressed: () => Navigator.pop(context, alsoRejectTask),
             ),
           ],

@@ -58,6 +58,7 @@ class _ToolListScreenState extends State<ToolListScreen> {
           child: HMBButton.withIcon(
             onPressed: () => unawaited(_startStockTake(context)),
             label: 'Start Stock Take',
+            hint: 'Undertake a stock take of your tools adding new tools to your Tool inventory',
             icon: const Icon(Icons.inventory),
           ),
         ),

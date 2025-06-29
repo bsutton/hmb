@@ -259,10 +259,12 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
         children: [
           HMBButton(
             label: 'Cancel',
+            hint: "Don't select any Template",
             onPressed: () => Navigator.of(context).pop(),
           ),
           HMBButton(
             label: 'Select',
+            hint: 'Select the template',
             onPressed: () async {
               if (_selectedTemplate != null) {
                 final values = <String, String>{};

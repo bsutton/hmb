@@ -69,6 +69,7 @@ class HMBPhoneIcon extends StatelessWidget {
         actions: <Widget>[
           HMBButton(
             label: 'Call',
+            hint: 'Open your phone dialer app to call this number',
             onPressed: () {
               Navigator.of(context).pop();
               unawaited(_call(context, phoneNo));
@@ -76,6 +77,7 @@ class HMBPhoneIcon extends StatelessWidget {
           ),
           HMBButton(
             label: 'Text',
+            hint: 'Send a Text/SMS message',
             onPressed: () async {
               // await _showTextInputDialog(context, phoneNo);
               final template = await showMessageTemplateDialog(
@@ -100,6 +102,7 @@ class HMBPhoneIcon extends StatelessWidget {
           ),
           HMBButton(
             label: 'Cancel',
+            hint: 'Take no action',
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -201,12 +204,14 @@ class HMBPhoneIcon extends StatelessWidget {
           actions: <Widget>[
             HMBButton(
               label: 'Cancel',
+              hint: "Don't send the message",
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             HMBButton(
               label: 'Send...',
+              hint: 'Send the message using your devices Text/SMS app',
               onPressed: () {
                 Navigator.of(context).pop(text);
               },

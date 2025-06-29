@@ -166,10 +166,12 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
         actions: [
           HMBButton(
             label: 'Cancel',
+            hint: "Don't delete the quote",
             onPressed: () => Navigator.of(context).pop(false),
           ),
           HMBButton(
             label: 'Delete',
+            hint: 'Delete this quote',
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],

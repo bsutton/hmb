@@ -41,14 +41,20 @@ class SaveAndClose extends StatelessWidget {
           HMBButton(
             onPressed: () => unawaited(onSave(close: false)),
             label: 'Save',
+            hint: "Save your changes but don't close the window",
           ),
         const HMBSpacer(width: true),
         HMBButton(
           label: 'Save & Close',
+          hint: 'Save your changes and close this window',
           onPressed: () => unawaited(onSave(close: true)),
         ),
         const HMBSpacer(width: true),
-        HMBButton(onPressed: onCancel, label: 'Cancel'),
+        HMBButton(
+          onPressed: onCancel,
+          label: 'Cancel',
+          hint: "Dont' save any changes",
+        ),
       ],
     ),
   );

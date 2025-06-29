@@ -217,12 +217,14 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
           actions: <Widget>[
             HMBButton(
               label: 'Cancel',
+              hint: "Don't delete the photo",
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             HMBButton(
               label: 'Delete',
+              hint: 'Delete this photo',
               onPressed: () async {
                 await widget.controller.deletePhoto(photoMeta);
                 if (context.mounted) {

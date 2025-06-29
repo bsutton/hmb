@@ -223,6 +223,7 @@ class _JobEstimateBuilderScreenState
             _buildTaskItems(task),
             HMBButton(
               label: 'Add Item',
+              hint: 'Add an Item (to purchase, pack or labor) to an Task',
               onPressed: () => unawaited(_addItemToTask(task)),
             ),
           ],

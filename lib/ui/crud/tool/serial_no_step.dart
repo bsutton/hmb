@@ -61,7 +61,10 @@ class SerialNumberStep extends WizardStep {
           controller: _serialNumberController,
           decoration: const InputDecoration(labelText: 'Serial Number'),
         ),
-        HMBButton(label: 'Scan Barcode', onPressed: _scanBarcode),
+        HMBButton(label: 'Scan Barcode', onPressed: _scanBarcode,
+        hint: "Scan a tool's serial number bar code to extract the serial number",
+        ),
+
         const SizedBox(height: 24),
         CapturePhoto(
           tool: toolWizardState.tool!,

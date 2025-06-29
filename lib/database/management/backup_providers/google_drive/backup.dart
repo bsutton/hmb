@@ -19,8 +19,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
 
-import '../../../../ui/widgets/hmb_button.dart';
-import '../../../../ui/widgets/hmb_toast.dart';
+import '../../../../ui/widgets/widgets.g.dart';
 
 class BackupAuthGoogleScreen extends StatefulWidget {
   const BackupAuthGoogleScreen({required this.pathToBackup, super.key});
@@ -54,9 +53,10 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
       automaticallyImplyLeading: false,
       actions: [
         if (_currentUser != null)
-          IconButton(
+          HMBIconButton(
             icon: const Icon(Icons.exit_to_app),
             onPressed: _googleSignIn.signOut,
+            hint: 'Sign out of Google Drive',
           ),
       ],
     ),
@@ -72,6 +72,7 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
             const SizedBox(height: 20),
             HMBButton(
               label: 'Upload File to Google Drive',
+              hint: 'Backup you data to Google Drive, excluding photos',
               onPressed: () => unawaited(_uploadFile(context)),
             ),
           ],

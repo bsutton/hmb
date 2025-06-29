@@ -31,10 +31,12 @@ Future<void> askUserToContinue({
       actions: [
         HMBButton(
           label: noLabel,
+          hint: "Don't continue with the action",
           onPressed: () => Navigator.of(context).pop(false),
         ),
         HMBButton(
           label: yesLabel,
+          hint: 'Continue with the action',
           onPressed: () => Navigator.of(context).pop(true),
         ),
       ],

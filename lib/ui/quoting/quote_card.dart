@@ -136,6 +136,7 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                 children: [
                   HMBButton(
                     label: 'Approved',
+                    hint: 'Mark the quote as approved by the customer',
                     // disable when already approved
                     enabled: !isApproved,
                     onPressed: () async {
@@ -147,6 +148,7 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                   const SizedBox(width: 8),
                   HMBButton(
                     label: 'Rejected',
+                    hint: 'Mark the quote as rejected',
                     // disable when already rejected
                     enabled: !isRejected,
                     onPressed: () async {

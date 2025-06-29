@@ -519,6 +519,7 @@ class WizardState extends State<Wizard> {
       children: [
         HMBButtonSecondary(
           label: widget.cancelLabel,
+          hint: 'Close the Wizard',
           onPressed: _inTransition || _pageLoading
               ? null
               : () async {
@@ -527,6 +528,7 @@ class WizardState extends State<Wizard> {
         ),
         HMBButtonPrimary(
           label: 'Back',
+          hint: 'Move back to the previous page',
           // BACK BUTTON
           onPressed:
               isFirstVisible(_currentStepIndex) || _inTransition || _pageLoading
@@ -537,6 +539,9 @@ class WizardState extends State<Wizard> {
         ),
         // NEXT BUTTON
         HMBButtonPrimary(
+          hint: isLastVisible(_currentStepIndex)
+              ? 'Close the Wizard'
+              : 'Move to the next page',
           label: isLastVisible(_currentStepIndex) ? 'Done' : 'Next',
           onPressed: _inTransition || _pageLoading ? null : _onNext,
         ),

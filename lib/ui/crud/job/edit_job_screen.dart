@@ -364,6 +364,7 @@ You can set a default booking fee from System | Billing screen''');
 
   Widget _buildScheduleButton() => HMBButton(
     label: 'Schedule',
+    hint: 'Schedule this Job',
     onPressed: () async {
       if ((await DaoSystem().get()).getOperatingHours().noOpenDays()) {
         HMBToast.error(

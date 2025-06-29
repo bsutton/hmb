@@ -86,6 +86,7 @@ class _JobCardState extends State<JobCard> {
                 children: [
                   HMBButton(
                     label: 'Update Estimates',
+                    hint: 'Add/Edit labour and materials costs to Job',
                     onPressed: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
@@ -100,6 +101,7 @@ class _JobCardState extends State<JobCard> {
                   const SizedBox(width: 16),
                   HMBButton(
                     label: 'Create Quote',
+                    hint: 'Create a Fixed price Quote based on your Estimates',
                     onPressed: () async {
                       await _createQuote();
                       widget.onEstimatesUpdated();

@@ -241,6 +241,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
               HMBButton.withIcon(
                 label: 'Capture Photo',
+                hint: 'Take a photo of your tool using the phones camera',
                 icon: const Icon(Icons.camera_alt),
                 onPressed: () async {
                   final capturedPhoto = await _photoController.takePhoto();

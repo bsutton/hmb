@@ -19,10 +19,12 @@ import 'color_ex.dart';
 import 'layout/hmb_empty.dart';
 import 'svg.dart';
 
+/// A generic HMB button with optional hint shown on long press.
 class HMBButton extends StatelessWidget {
   const HMBButton({
     required this.label,
     required this.onPressed,
+    required this.hint,
     this.enabled = true,
     super.key,
     this.color = HMBColors.buttonLabel,
@@ -32,6 +34,7 @@ class HMBButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     required this.icon,
+    required this.hint,
     this.enabled = true,
     this.color = HMBColors.buttonLabel,
     super.key,
@@ -39,30 +42,38 @@ class HMBButton extends StatelessWidget {
 
   final String label;
   final Icon? icon;
-  final void Function() onPressed;
+  final VoidCallback onPressed;
   final bool enabled;
   final Color color;
+  final String hint;
 
   @override
   Widget build(BuildContext context) {
-    if (icon != null) {
-      return ElevatedButton.icon(
-        onPressed: (enabled ? onPressed : null),
-        label: Text(label, style: TextStyle(color: color)),
-        icon: icon,
-      );
-    }
-    return ElevatedButton(
-      onPressed: (enabled ? onPressed : null),
-      child: Text(label, style: TextStyle(color: color)),
+    final button = icon != null
+        ? ElevatedButton.icon(
+            onPressed: enabled ? onPressed : null,
+            label: Text(label, style: TextStyle(color: color)),
+            icon: icon,
+          )
+        : ElevatedButton(
+            onPressed: enabled ? onPressed : null,
+            child: Text(label, style: TextStyle(color: color)),
+          );
+
+    return Tooltip(
+      message: hint,
+      triggerMode: TooltipTriggerMode.longPress,
+      child: button,
     );
   }
 }
 
+/// A primary-styled button with optional SVG icon and hint on long press.
 class HMBButtonPrimary extends StatelessWidget {
   const HMBButtonPrimary({
     required this.label,
     required this.onPressed,
+    required this.hint,
     super.key,
     this.enabled = true,
   }) : svg = null,
@@ -71,6 +82,7 @@ class HMBButtonPrimary extends StatelessWidget {
   const HMBButtonPrimary.withSvg({
     required this.label,
     required this.svg,
+    required this.hint,
     super.key,
     this.onPressed,
     this.enabled = true,
@@ -85,60 +97,90 @@ class HMBButtonPrimary extends StatelessWidget {
   final Color? svgColor;
 
   final bool enabled;
+  final String hint;
 
   @override
-  Widget build(BuildContext context) => ElevatedButton.icon(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.deepPurple,
-      disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
-      disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12),
-    ),
-    onPressed: (enabled ? onPressed : null),
-    label: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
-    icon: svg == null
-        ? const HMBEmpty()
-        : Svg(svg!, height: 24, width: 24, color: svgColor),
-  );
+  Widget build(BuildContext context) {
+    final btn = ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.deepPurple,
+        disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
+        disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12),
+      ),
+      onPressed: enabled ? onPressed : null,
+      label: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
+      icon: svg == null
+          ? const HMBEmpty()
+          : Svg(svg!, height: 24, width: 24, color: svgColor),
+    );
+
+    return Tooltip(
+      message: hint,
+      triggerMode: TooltipTriggerMode.longPress,
+      child: btn,
+    );
+  }
 }
 
+/// A secondary-styled button with hint on long press.
 class HMBButtonSecondary extends StatelessWidget {
   const HMBButtonSecondary({
     required this.label,
     required this.onPressed,
+    required this.hint,
     super.key,
   });
+
   final String label;
   final VoidCallback? onPressed;
+  final String hint;
 
   @override
-  Widget build(BuildContext context) => ElevatedButton(
-    onPressed: onPressed,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.purple,
-      disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
-      disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12),
-    ),
-    child: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
-  );
+  Widget build(BuildContext context) {
+    final btn = ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.purple,
+        disabledForegroundColor: (Colors.grey[500]!).withSafeOpacity(0.38),
+        disabledBackgroundColor: (Colors.grey[500]!).withSafeOpacity(0.12),
+      ),
+      child: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
+    );
+
+    return Tooltip(
+      message: hint,
+      triggerMode: TooltipTriggerMode.longPress,
+      child: btn,
+    );
+  }
 }
 
+/// A link-style button that launches a URL and shows a hint on long press.
 class HMBLinkButton extends StatelessWidget {
   const HMBLinkButton({
     required this.label,
-    required this.onPressed,
     required this.link,
+    required this.hint,
     super.key,
   });
 
   final String label;
   final String link;
-  final VoidCallback? onPressed;
+  final String hint;
 
   @override
-  Widget build(BuildContext context) => TextButton(
-    onPressed: () => unawaited(_launchURL(link)),
-    child: Text(label, style: const TextStyle(color: Colors.blue)),
-  );
+  Widget build(BuildContext context) {
+    final btn = TextButton(
+      onPressed: () => unawaited(_launchURL(link)),
+      child: Text(label, style: const TextStyle(color: Colors.blue)),
+    );
+
+    return Tooltip(
+      message: hint,
+      triggerMode: TooltipTriggerMode.longPress,
+      child: btn,
+    );
+  }
 
   Future<void> _launchURL(String url) async {
     final uri = Uri.parse(url);

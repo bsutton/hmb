@@ -333,10 +333,12 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
           HMBButton(
             onPressed: () => Navigator.of(context).pop(false),
             label: 'Cancel',
+            hint: "Don't move the item to the shopping list",
           ),
           HMBButton(
             onPressed: () => Navigator.of(context).pop(true),
             label: 'Confirm',
+            hint: 'Move the item to the shopping list',
           ),
         ],
       ),

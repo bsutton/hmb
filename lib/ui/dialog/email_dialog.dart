@@ -117,12 +117,14 @@ $businessDetails
     actions: <Widget>[
       HMBButton(
         label: 'Cancel',
+        hint: "Don't send the email",
         onPressed: () {
           Navigator.of(context).pop(false);
         },
       ),
       HMBButton(
         label: 'Send...',
+        hint: 'Send the email using your devices email app. You will have another opportunity to cancel the send.',
         onPressed: () async {
           if (!(Platform.isAndroid || Platform.isIOS)) {
             HMBToast.error('This platform does not support sending emails');

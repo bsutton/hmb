@@ -133,9 +133,12 @@ Future<void> markAsCompleted(
           HMBButton(
             onPressed: () => Navigator.of(context).pop(false),
             label: 'Cancel',
+            hint: "Don't mark the item as complete",
           ),
           HMBButton(
             onPressed: () => Navigator.of(context).pop(true),
+            hint:
+                'Mark the Item as complete. Completed Items will appear on T&M Invoices',
             label: 'Complete',
           ),
         ],
@@ -175,10 +178,13 @@ Future<void> markAsCompleted(
               HMBButton(
                 onPressed: () => Navigator.of(context).pop(false),
                 label: 'No',
+                hint: "Don't add the tool to your tool inventory",
               ),
               HMBButton(
                 onPressed: () => Navigator.of(context).pop(true),
                 label: 'Yes',
+                hint:
+                    'Add the tool to you tool your tool inventory and optionally capture the receipt, serial number and a photo.',
               ),
             ],
           ),

@@ -225,9 +225,12 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
       ),
     ),
     actions: [
-      HMBButton(label: 'Cancel', onPressed: () => Navigator.of(context).pop()),
+      HMBButton(label: 'Cancel', 
+      hint: "Don't select any the task",
+      onPressed: () => Navigator.of(context).pop()),
       HMBButton(
         label: 'OK',
+        hint: 'Continue with the selected the tasks',
         onPressed: () {
           final selectedTaskIds = _selectedTasks.entries
               .where((entry) => entry.value)

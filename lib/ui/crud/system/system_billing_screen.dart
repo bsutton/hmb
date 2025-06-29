@@ -186,6 +186,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         actions: [
           HMBButton(
             label: 'Select',
+            hint: 'Confirm selection of the Colour',
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -323,6 +324,7 @@ The shape of your Logo. Your logo will appear on Invoices and Quotes.'''),
             const SizedBox(height: 20),
             HMBButton.withIcon(
               label: 'Upload Logo',
+              hint: 'Upload a image which will be displayed on Invoices and Quotes',
               icon: const Icon(Icons.upload_file),
               onPressed: _pickLogo,
             ),

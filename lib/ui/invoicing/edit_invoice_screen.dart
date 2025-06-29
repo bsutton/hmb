@@ -101,6 +101,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                   children: [
                     HMBButton(
                       label: 'Upload to Xero',
+                      hint: 'Upload the invoice to Xero',
                       onPressed: () {
                         BlockingUI().run(() async {
                           await _uploadInvoiceToXero();
@@ -110,7 +111,8 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                     const SizedBox(width: 16),
                     HMBButton(
                       label: 'Delete Invoice',
-
+                      hint:
+                          'Delete the local invoice and the Xero invoice if it has been uploaded ',
                       onPressed: () async {
                         await _deleteInvoice();
                       },
@@ -271,10 +273,12 @@ Total: ${line.lineTotal}'''),
         actions: <Widget>[
           HMBButton(
             label: 'Cancel',
+            hint: "Don't delete the Invoice line",
             onPressed: () => Navigator.of(context).pop(false),
           ),
           HMBButton(
             label: 'Delete',
+            hint: 'Delete the Invoice line',
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],

@@ -127,6 +127,7 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
               const SizedBox(height: 20),
               HMBButton.withIcon(
                 label: 'Backup to ${_provider.name}',
+                hint: 'Backup your data - excluding photos',
                 onPressed: () async {
                   setState(() {
                     _isLoading = true;
@@ -171,6 +172,7 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
 
   HMBButton _buildRestoreButton(BuildContext context) => HMBButton.withIcon(
     label: 'Restore from ${_provider.name}',
+    hint: 'Restore you data - excluding photos',
     icon: const Icon(Icons.restore, size: 24),
     onPressed: () async {
       _provider.useDebugPath = !_useProductionPath;

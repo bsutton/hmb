@@ -44,6 +44,9 @@ class _JobListScreenState extends State<JobListScreen> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             HMBButtonPrimary(
+              hint: June.getState(FilterState.new)._showOnHoldAndFinalised
+                  ? 'Show Jobs active Jobs'
+                  : 'Show Jobs that are on hold or have been finalised.',
               onPressed: () {
                 setState(() {
                   June.getState(FilterState.new).toggle();

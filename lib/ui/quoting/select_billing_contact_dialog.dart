@@ -70,9 +70,12 @@ class _SelectBillingContactDialogState
       onSelected: widget.onSelected,
     ),
     actions: [
-      HMBButton(label: 'Cancel', onPressed: () => Navigator.pop(context)),
+      HMBButton(label: 'Cancel',
+      hint: "Don't change the billing Contact",
+       onPressed: () => Navigator.pop(context)),
       HMBButton(
         label: 'OK',
+        hint: 'Change the billing Contact to the select one',
         onPressed: () {
           if (contact == null) {
             HMBToast.error('Please select a contact.');

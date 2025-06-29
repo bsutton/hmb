@@ -78,6 +78,7 @@ class _BackupScreenState extends State<BackupScreen> {
             const SizedBox(height: 20),
             HMBButton.withIcon(
               label: 'Backup & Email Database',
+              hint: 'Backup your database and email it to your self',
               onPressed: () async {
                 await WakelockPlus.enable();
                 try {
@@ -101,6 +102,7 @@ class _BackupScreenState extends State<BackupScreen> {
             const SizedBox(height: 20),
             HMBButton.withIcon(
               label: 'Restore Database',
+              hint: 'Restore a database from Google Drive - all data since the backup occured will be lost',
               onPressed: () async {
                 try {
                   await EmailBackupProvider(

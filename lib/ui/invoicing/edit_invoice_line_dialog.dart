@@ -88,12 +88,14 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
     actions: <Widget>[
       HMBButton(
         label: 'Cancel',
+        hint: 'Cancel the changes',
         onPressed: () {
           Navigator.of(context).pop();
         },
       ),
       HMBButton(
         label: 'Save',
+        hint: 'Save the changes',
         onPressed: () {
           final quantity = Fixed.parse(_quantityController.text);
           final unitPrice = Money.parse(

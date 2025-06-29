@@ -87,9 +87,12 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
         ],
       ),
       actions: [
-        HMBButton(label: 'Cancel', onPressed: () => Navigator.pop(context)),
+        HMBButton(label: 'Cancel', 
+        hint: "Don't start the timer",
+        onPressed: () => Navigator.pop(context)),
         HMBButton(
           label: 'OK',
+          hint: 'Start the timer',
           onPressed: () {
             final note = noteController.text;
             TimeEntry timeEntry;

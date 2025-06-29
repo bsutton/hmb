@@ -37,6 +37,7 @@ class BuildSendButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => HMBButton(
     label: 'View/Send...',
+    hint: 'View and optionally email the Invoice',
     onPressed: () async {
       var billBookingFee = true;
       var displayCosts = true;
@@ -180,8 +181,10 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
             HMBButton(
               onPressed: () => Navigator.of(context).pop(),
               label: 'Cancel',
+              hint: "Don't send the invoice",
             ),
             HMBButton(
+              hint: 'View and optionally send the invoice',
               onPressed: () {
                 Navigator.of(context).pop({
                   'displayCosts': tempDisplayCosts,

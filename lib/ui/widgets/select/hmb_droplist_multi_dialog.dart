@@ -166,6 +166,7 @@ class _HMBDroplistMultiSelectDialogState<T>
         Padding(
           padding: const EdgeInsets.all(16),
           child: HMBButton(
+            hint: 'Close the selection window with your selections',
             label: 'Done',
             onPressed: () => Navigator.of(context).pop(_selectedItems),
           ),

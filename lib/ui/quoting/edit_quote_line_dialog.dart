@@ -88,12 +88,14 @@ class _EditQuoteLineDialogState extends State<EditQuoteLineDialog> {
     actions: <Widget>[
       HMBButton(
         label: 'Cancel',
+        hint: "Don't save the quote line changes",
         onPressed: () {
           Navigator.of(context).pop();
         },
       ),
       HMBButton(
         label: 'Save',
+        hint: 'Save the quote line changes',
         onPressed: () {
           final quantity = Fixed.parse(_quantityController.text);
           final unitPrice = Money.parse(

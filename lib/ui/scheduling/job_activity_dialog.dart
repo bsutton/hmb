@@ -255,13 +255,18 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     children: [
       // Delete button on the left
       if (widget.isEditing)
-        HMBButtonSecondary(onPressed: _handleDelete, label: 'Delete')
+        HMBButtonSecondary(
+          onPressed: _handleDelete,
+          label: 'Delete',
+          hint: 'Delete this activite',
+        )
       else
         const SizedBox(), // Placeholder for alignment when not editing
       // Cancel and Save buttons on the right
       Row(
         children: [
           HMBButtonSecondary(
+            hint: "Don't save the changes",
             onPressed: () => Navigator.of(context).pop(
               widget.isEditing
                   ? JobActivityUpdateAction(EditAction.cancel, null)
@@ -271,6 +276,7 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
           ),
           const HMBSpacer(width: true),
           HMBButtonPrimary(
+            hint: 'Save the event',
             onPressed: _handleSave,
             label: widget.isEditing ? 'Update Event' : 'Add Event',
           ),

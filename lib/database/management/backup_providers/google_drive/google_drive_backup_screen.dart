@@ -159,6 +159,7 @@ class _GoogleDriveBackupScreenState
             const SizedBox(height: 40),
             HMBButton.withIcon(
               label: 'Sign Out',
+              hint: 'Signout of Google Drive',
               icon: const Icon(Icons.logout),
               onPressed: () async {
                 final googleSignIn = GoogleSignIn();
@@ -188,6 +189,7 @@ class _GoogleDriveBackupScreenState
     children: [
       HMBButton.withIcon(
         label: 'Backup to ${_provider.name}',
+        hint: 'Backup your data - excluding photos',
         icon: const Icon(Icons.backup, size: 24),
         onPressed: () async {
           await _performBackup();
@@ -224,6 +226,7 @@ class _GoogleDriveBackupScreenState
 
   HMBButton _buildRestoreButton(BuildContext context) => HMBButton.withIcon(
     label: 'Restore from ${_provider.name}',
+    hint: 'Restore you data - excluding photos',
     icon: const Icon(Icons.restore, size: 24),
     onPressed: () async {
       _provider.useDebugPath = !false;
@@ -272,6 +275,7 @@ class _GoogleDriveBackupScreenState
     // Sync Photos Button
     HMBButton.withIcon(
       label: 'Sync Photos',
+      hint: 'Copy your photos to google drive - including receipts and tools',
       icon: const Icon(Icons.cloud_upload, size: 24),
       onPressed: () async {
         await WakelockPlus.enable();
@@ -339,6 +343,7 @@ class _GoogleDriveBackupScreenState
             HMBButton.withIcon(
               icon: const Icon(Icons.login, color: Colors.white),
               label: 'Sign in to Google',
+              hint: 'Sign into Google Drive so you can back up your data and Sync your photos',
               onPressed: () async {
                 GoogleDriveAuth? auth;
                 try {

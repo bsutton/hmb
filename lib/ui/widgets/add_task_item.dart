@@ -122,9 +122,11 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
           HMBButton(
             label: 'Cancel',
             onPressed: () => Navigator.of(context).pop(),
+            hint: "Don't add this task Item",
           ),
           HMBButton(
             label: 'Add',
+            hint: 'Add this item',
             onPressed: () => _addTaskItem(
               selectedJob: selectedJob,
               selectedTask: selectedTask,

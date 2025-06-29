@@ -134,9 +134,12 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
         ],
       ),
       actions: [
-        HMBButton(label: 'Cancel', onPressed: () => Navigator.pop(context)),
+        HMBButton(label: 'Cancel', 
+        hint: "Don't stop the timer",
+        onPressed: () => Navigator.pop(context)),
         HMBButton(
           label: 'OK',
+          hint: 'Start the timer',
           onPressed: () async {
             final stopDateTime = DateTime(
               selectedDate.year,

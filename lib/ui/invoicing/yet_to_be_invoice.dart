@@ -129,6 +129,7 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
                       ),
                       HMBButton(
                         label: 'Invoice',
+                        hint: 'Create an invoice for this job',
                         // ignore: discarded_futures
                         onPressed: () => _createInvoiceFor(job),
                       ),

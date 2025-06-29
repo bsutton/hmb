@@ -69,10 +69,12 @@ class ToolStockTakeWizard extends StatefulWidget {
                 actions: [
                   HMBButton(
                     label: 'No',
+                    hint: "Don't run the stock take wizard",
                     onPressed: () => Navigator.of(dialogContext).pop(false),
                   ),
                   HMBButton(
                     label: 'Yes',
+                    hint: 'Run the stock take wizard to add another tool',
                     onPressed: () => Navigator.of(dialogContext).pop(true),
                   ),
                 ],

@@ -61,6 +61,7 @@ class _CapturePhotoState extends State<CapturePhoto> {
         children: [
           HMBButton.withIcon(
             label: 'Capture Photo',
+            hint: 'Take a photo using the phones camera',
             icon: const Icon(Icons.camera_alt),
             onPressed: () => unawaited(
               _takePhoto(widget.title, (capturedPhoto) async {
