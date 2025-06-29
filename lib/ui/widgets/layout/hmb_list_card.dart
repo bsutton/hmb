@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../hmb_icon_button.dart';
+
 typedef OnDelete = Future<void> Function();
 typedef OnEdit = Widget Function();
 typedef Allowed = bool Function();
@@ -43,9 +45,11 @@ class HMBCrudListCard extends StatelessWidget {
                 Expanded(child: title),
                 Visibility(
                   visible: canDelete?.call() ?? true,
-                  child: IconButton(
+                  child: HMBIconButton(
+                    showBackground: false,
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: onDelete,
+                    hint: 'Delete',
                   ),
                 ),
               ],

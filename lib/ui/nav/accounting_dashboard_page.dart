@@ -40,9 +40,8 @@ class AccountingDashboardPage extends StatelessWidget {
       DashletCard<void>(
         label: 'Milestones',
         icon: Icons.flag,
-        dashletValue: () => Future.value(const DashletValue(null)),
+        dashletValue: () async => const DashletValue<String>('fixed price'),
         route: '/accounting/milestones',
-        widgetBuilder: (_, _) => const SizedBox.shrink(),
       ),
       const ReceiptDashlet(),
     ],

@@ -73,9 +73,11 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
-                  IconButton(
+                  HMBIconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: widget.onDelete,
+                    showBackground: false,
+                    onPressed: () async =>  widget.onDelete(),
+                    hint: 'Delete Quote'
                   ),
                 ],
               ),

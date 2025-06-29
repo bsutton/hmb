@@ -26,14 +26,15 @@ class ReturnItemCard extends ShoppingItemCard {
             itemType == TaskItemTypeEnum.toolsBuy) &&
         !itemContext.wasReturned;
 
-    return IconButton(
-      icon: Icon(Icons.delete, color: canReturn ? Colors.red : Colors.grey),
-      onPressed: canReturn
-          ? () async {
-              await _delete(itemContext, context);
-              await onReload();
-            }
-          : null,
+    return HMBIconButton(
+      icon: const Icon(Icons.delete, color: Colors.red),
+      showBackground: false,,
+      enabled: canReturn,
+      onPressed: () async {
+        await _delete(itemContext, context);
+        await onReload();
+      },
+      hint: 'Delete Item',
     );
   }
 

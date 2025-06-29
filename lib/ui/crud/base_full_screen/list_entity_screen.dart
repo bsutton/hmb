@@ -164,11 +164,13 @@ class EntityListScreenState<T extends Entity<T>>
     );
   }
 
-  IconButton _buildDeleteButton(T entity) => IconButton(
+  Widget _buildDeleteButton(T entity) => HMBIconButton(
     icon: const Icon(Icons.delete, color: Colors.red),
+    showBackground: false,
     onPressed: () async {
       await _confirmDelete(entity);
     },
+    hint: 'Delete',
   );
 
   Widget _buildCard(T entity) => FutureBuilderEx<Color>(

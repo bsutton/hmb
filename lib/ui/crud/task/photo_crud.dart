@@ -155,12 +155,14 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
     ),
   );
 
-  IconButton _buildDeleteButton(PhotoMeta photoMeta) => IconButton(
+  Widget _buildDeleteButton(PhotoMeta photoMeta) => HMBIconButton(
     icon: const Icon(Icons.delete),
+    showBackground: false,
     onPressed: () async {
       await _showConfirmDeleteDialog(context, photoMeta);
       PhotoGallery.notify();
     },
+    hint: 'Delete Photo',
   );
 
   Widget _buildCommentField(PhotoMeta photoMeta) {

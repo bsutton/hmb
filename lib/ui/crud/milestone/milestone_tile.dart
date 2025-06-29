@@ -13,6 +13,8 @@ import '../../../entity/milestone.dart';
 import '../../../util/money_ex.dart';
 import '../../invoicing/edit_invoice_screen.dart';
 import '../../invoicing/invoice_details.dart';
+import '../../widgets/hmb_add_button.dart';
+import '../../widgets/hmb_icon_button.dart';
 import '../../widgets/hmb_link_internal.dart';
 import '../../widgets/hmb_toast.dart';
 
@@ -248,16 +250,18 @@ class _MilestoneTileState extends State<MilestoneTile> {
                 )
               else ...[
                 if (_isEditable)
-                  IconButton(
-                    icon: const Icon(Icons.receipt, color: Colors.blue),
+                  HMBButtonAdd(
                     onPressed: disabled ? null : _onInvoicePressed,
-                    tooltip: 'Invoice this Milestone',
+                    enabled: true,
+                    small: true,
+                    hint: 'Invoice this Milestone',
                   ),
                 if (_isEditable)
-                  IconButton(
+                  HMBIconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: disabled ? null : _onDeletePressed,
-                    tooltip: 'Delete this Milestone',
+                    enabled: !disabled,
+                    onPressed: () async => _onDeletePressed(),
+                    hint: 'Delete this Milestone',
                   ),
               ],
             ],
