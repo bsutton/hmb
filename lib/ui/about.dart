@@ -25,7 +25,7 @@ class _AboutScreenState extends State<AboutScreen> {
     body: Center(
       child: Column(
         children: [
-          const Text("Hold My Beer (HMB) - I'm a handyman"),
+          const Text('Hold My Beer (HMB) - for solo Trades people'),
           Text('Version: $packageVersion'),
           FutureBuilderEx(
             // ignore: discarded_futures
