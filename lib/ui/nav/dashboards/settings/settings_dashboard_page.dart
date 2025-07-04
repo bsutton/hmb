@@ -13,7 +13,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'nav.g.dart';
+import '../../nav.g.dart';
 
 class SettingsDashboardPage extends StatelessWidget {
   const SettingsDashboardPage({super.key});
@@ -51,10 +51,10 @@ class SettingsDashboardPage extends StatelessWidget {
         widgetBuilder: (_, _) => const SizedBox.shrink(),
       ),
       DashletCard<void>(
-        label: 'Integration',
+        label: 'Integrations',
         icon: Icons.extension,
         dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/system/integration',
+        route: '/system/integrations',
         widgetBuilder: (_, _) => const SizedBox.shrink(),
       ),
       DashletCard<void>(

@@ -26,7 +26,7 @@ import '../crud/supplier/list_supplier_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
 import '../crud/system/system_contact_screen.dart';
-import '../crud/system/system_integration_screen.dart';
+import '../crud/system/xero_integration_screen.dart';
 import '../crud/tool/list_tool_screen.dart';
 import '../error.dart';
 import '../invoicing/list_invoice_screen.dart';
@@ -38,6 +38,7 @@ import '../task_items/list_shopping_screen.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../wizard/setup_wizard.dart';
+import 'dashboards/integration/integration_dashboard.dart';
 import 'nav.g.dart';
 import 'splash_router.dart';
 
@@ -180,9 +181,14 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
           const HomeScaffold(initialScreen: SystemContactInformationScreen()),
     ),
     GoRoute(
-      path: '/system/integration',
+      path: '/system/integrations',
       builder: (_, _) =>
-          const HomeScaffold(initialScreen: SystemIntegrationScreen()),
+          const HomeScaffold(initialScreen: IntegrationDashboardPage()),
+    ),
+    GoRoute(
+      path: '/system/integrations/xero',
+      builder: (_, _) =>
+          const HomeScaffold(initialScreen: XeroIntegrationScreen()),
     ),
     GoRoute(
       path: '/system/about',

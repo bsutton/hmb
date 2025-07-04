@@ -9,25 +9,21 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-/// Dashlet for active jobs count
-library;
-
+// lib/src/ui/dashboard/manufacturers_dashlet.dart
 import 'package:flutter/material.dart';
 
-import '../../../dao/dao.g.dart';
-import '../dashlet_card.dart';
+import '../../../dashlet_card.dart';
 
-class JobsDashlet extends StatelessWidget {
-  const JobsDashlet({super.key});
+/// Dashlet for Manufacturers shortcut
+class ManufacturersDashlet extends StatelessWidget {
+  const ManufacturersDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<int>(
-    label: 'Jobs',
-    icon: Icons.work,
-    dashletValue: () async {
-      final jobs = await DaoJob().getActiveJobs(null);
-      return DashletValue(jobs.length);
-    },
-    route: '/jobs',
+  Widget build(BuildContext context) => DashletCard<void>(
+    label: 'Manufacturers',
+    icon: Icons.factory,
+    dashletValue: () => Future.value(const DashletValue(null)),
+    route: '/extras/manufacturers',
+    widgetBuilder: (_, _) => const SizedBox.shrink(),
   );
 }

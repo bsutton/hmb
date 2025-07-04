@@ -14,31 +14,30 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../../../dao/dao.g.dart';
-import '../../../util/util.g.dart';
-import '../dashlet_card.dart';
+import '../../../../dao/dao.g.dart';
+import '../../../../util/util.g.dart';
+import '../../dashlet_card.dart';
 
-class InvoiceDashlet extends StatelessWidget {
-  const InvoiceDashlet({super.key});
+class ReceiptDashlet extends StatelessWidget {
+  const ReceiptDashlet({super.key});
 
   @override
   Widget build(BuildContext context) => DashletCard<String>(
-    label: 'Invoices',
-    icon: Icons.receipt_long,
-    dashletValue: getInvoicedThisMonth,
-    route: '/accounting/invoices',
+    label: 'Receipts',
+    icon: Icons.receipt,
+    dashletValue: getReceiptsThisMonth,
+    route: '/accounting/receipts',
   );
 
-  Future<DashletValue<String>> getInvoicedThisMonth() async {
-    final invoices = await DaoInvoice().getAll();
+  Future<DashletValue<String>> getReceiptsThisMonth() async {
     final now = DateTime.now();
+    final receipts = await DaoReceipt().getByFilter(
+      dateFrom: DateTime(now.year, now.month),
+      dateTo: DateTime(now.year, now.month + 1, 0),
+    );
     var total = MoneyEx.zero;
-    for (final inv in invoices) {
-      if (inv.sent &&
-          inv.createdDate.year == now.year &&
-          inv.createdDate.month == now.month) {
-        total += inv.totalAmount;
-      }
+    for (final r in receipts) {
+      total += r.totalIncludingTax;
     }
     return DashletValue('mtd: ${total.format('S#')}');
   }

@@ -15,8 +15,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'dashboard.dart';
-import 'dashlet_card.dart';
+import '../../dashboard.dart';
+import '../../dashlet_card.dart';
 
 class HelpDashboardPage extends StatelessWidget {
   const HelpDashboardPage({super.key});

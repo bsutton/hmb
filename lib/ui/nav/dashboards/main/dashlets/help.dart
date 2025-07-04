@@ -9,21 +9,21 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/src/ui/dashboard/settings_dashlet.dart
+// lib/src/ui/dashboard/help_dashlet.dart
 import 'package:flutter/material.dart';
 
-import '../dashlet_card.dart';
+import '../../../dashlet_card.dart';
 
-/// Dashlet for Settings sub-dashboard
-class SettingsDashlet extends StatelessWidget {
-  const SettingsDashlet({super.key});
+/// Dashlet for Help sub-dashboard
+class HelpDashlet extends StatelessWidget {
+  const HelpDashlet({super.key});
 
   @override
   Widget build(BuildContext context) => DashletCard<void>(
-    label: 'Settings',
-    icon: Icons.settings,
+    label: 'Help',
+    icon: Icons.help,
     dashletValue: () => Future.value(const DashletValue(null)),
-    route: '/dashboard/settings',
+    route: '/dashboard/help',
     widgetBuilder: (_, _) => const SizedBox.shrink(),
   );
 }

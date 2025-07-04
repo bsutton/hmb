@@ -9,26 +9,25 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/src/ui/dashboard/suppliers_dashlet.dart
+/// Dashlet for active jobs count
+library;
+
 import 'package:flutter/material.dart';
 
-import '../../../dao/dao.g.dart';
-import '../dashlet_card.dart';
+import '../../../../../dao/dao.g.dart';
+import '../../../dashlet_card.dart';
 
-/// Dashlet for total suppliers count
-class SuppliersDashlet extends StatelessWidget {
-  const SuppliersDashlet({super.key});
+class JobsDashlet extends StatelessWidget {
+  const JobsDashlet({super.key});
 
   @override
   Widget build(BuildContext context) => DashletCard<int>(
-    label: 'Suppliers',
-    icon: Icons.store,
-    dashletValue: getSupplierCount,
-    route: '/suppliers',
+    label: 'Jobs',
+    icon: Icons.work,
+    dashletValue: () async {
+      final jobs = await DaoJob().getActiveJobs(null);
+      return DashletValue(jobs.length);
+    },
+    route: '/jobs',
   );
-
-  Future<DashletValue<int>> getSupplierCount() async {
-    final count = await DaoSupplier().count();
-    return DashletValue(count);
-  }
 }

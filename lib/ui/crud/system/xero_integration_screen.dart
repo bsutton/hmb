@@ -21,17 +21,17 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/widgets.g.dart';
 
-class SystemIntegrationScreen extends StatefulWidget {
-  const SystemIntegrationScreen({super.key, this.showButtons = true});
+class XeroIntegrationScreen extends StatefulWidget {
+  const XeroIntegrationScreen({super.key, this.showButtons = true});
 
   final bool showButtons;
 
   @override
   // ignore: library_private_types_in_public_api
-  SystemIntegrationScreenState createState() => SystemIntegrationScreenState();
+  XeroIntegrationScreenState createState() => XeroIntegrationScreenState();
 }
 
-class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
+class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _xeroClientIdController = TextEditingController();
@@ -43,7 +43,7 @@ class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
   @override
   void initState() {
     super.initState();
-    setAppTitle('System Integrations');
+    setAppTitle('Xero Integration');
     _initializeControllers();
   }
 
@@ -53,8 +53,9 @@ class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
         _xeroClientIdController.text = system.xeroClientId ?? '';
         _xeroClientSecretController.text = system.xeroClientSecret ?? '';
         _invoiceLineAccountCodeController.text =
-            system.invoiceLineAccountCode ?? '';
-        _invoiceLineItemCodeController.text = system.invoiceLineItemCode ?? '';
+            system.invoiceLineRevenueAccountCode ?? '';
+        _invoiceLineItemCodeController.text =
+            system.invoiceLineInventoryItemCode ?? '';
         _xeroEnabled = system.enableXeroIntegration;
         setState(() {});
       }),
@@ -88,15 +89,15 @@ class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
     system
       ..xeroClientId = _xeroClientIdController.text
       ..xeroClientSecret = _xeroClientSecretController.text
-      ..invoiceLineAccountCode = _invoiceLineAccountCodeController.text
-      ..invoiceLineItemCode = _invoiceLineItemCodeController.text
+      ..invoiceLineRevenueAccountCode = _invoiceLineAccountCodeController.text
+      ..invoiceLineInventoryItemCode = _invoiceLineItemCodeController.text
       ..enableXeroIntegration = _xeroEnabled;
     await DaoSystem().update(system);
 
     if (mounted) {
       HMBToast.info('saved');
       if (close) {
-        context.go('/dashboard/settings');
+        context.go('/system/integrations');
       }
     }
     return true;
@@ -159,13 +160,13 @@ class SystemIntegrationScreenState extends State<SystemIntegrationScreen> {
           labelText: 'Invoice Line Revenue Account Code',
         ).help('Account Code', '''
 The Revenue Account Code to assign to invoice lines when uploading them to Xero.
-This Revenue Code must already existing in Xero'''),
+This Revenue Account Code must existing in Xero'''),
         HMBTextField(
           controller: _invoiceLineItemCodeController,
-          labelText: 'Invoice Line Revenue Account Name',
-        ).help('Account Name', '''
-The Revenue Account Name to assign to invoice lines when uploading them to Xero.\n
-This Revenue Name must match the name in Xero for the above Account Code'''),
+          labelText: 'Invoice Line Inventory Item Code',
+        ).help('Item Code', '''
+The Inventory Item Code to assign to invoice lines when uploading them to Xero.\n
+This Inventory Item Code must exist in Xero'''),
       ],
     ),
   );

@@ -11,14 +11,14 @@
 
 import 'package:flutter/material.dart';
 
-import '../crud/system/system_integration_screen.dart';
+import '../crud/system/xero_integration_screen.dart';
 import '../widgets/wizard.dart';
 import '../widgets/wizard_step.dart';
 
 class IntegrationWizardStep extends WizardStep {
   IntegrationWizardStep() : super(title: 'System Integration');
 
-  final _stateKey = GlobalKey<SystemIntegrationScreenState>();
+  final _stateKey = GlobalKey<XeroIntegrationScreenState>();
 
   @override
   Future<void> onNext(
@@ -35,5 +35,5 @@ class IntegrationWizardStep extends WizardStep {
 
   @override
   Widget build(BuildContext context) =>
-      SystemIntegrationScreen(key: _stateKey, showButtons: false);
+      XeroIntegrationScreen(key: _stateKey, showButtons: false);
 }

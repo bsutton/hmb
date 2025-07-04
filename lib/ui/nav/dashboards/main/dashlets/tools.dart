@@ -9,21 +9,21 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/src/ui/dashboard/manufacturers_dashlet.dart
+// lib/src/ui/dashboard/tools_dashlet.dart
 import 'package:flutter/material.dart';
 
-import '../dashlet_card.dart';
+import '../../../dashlet_card.dart';
 
-/// Dashlet for Manufacturers shortcut
-class ManufacturersDashlet extends StatelessWidget {
-  const ManufacturersDashlet({super.key});
+/// Dashlet for Tools shortcut
+class ToolsDashlet extends StatelessWidget {
+  const ToolsDashlet({super.key});
 
   @override
   Widget build(BuildContext context) => DashletCard<void>(
-    label: 'Manufacturers',
-    icon: Icons.factory,
+    label: 'Tools',
+    icon: Icons.build,
     dashletValue: () => Future.value(const DashletValue(null)),
-    route: '/extras/manufacturers',
+    route: '/extras/tools',
     widgetBuilder: (_, _) => const SizedBox.shrink(),
   );
 }
