@@ -181,7 +181,11 @@ class XeroAuth2 {
     await _clearSavedCredentials();
   }
 
+  // TODO(bsutton): change to the PKCE grant type so
   /// Loads the Xero client credentials from your database/system settings.
+  /// that we don't need to store a secret key
+  /// and so that uses don't need to interact with xero
+  /// developer account.
   Future<XeroSecretIdentity> _fetchSecretIdentity() async {
     final system = await DaoSystem().get();
 

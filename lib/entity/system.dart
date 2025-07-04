@@ -63,8 +63,8 @@ class System extends Entity<System> {
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
-    required this.invoiceLineAccountCode,
-    required this.invoiceLineItemCode,
+    required this.invoiceLineRevenueAccountCode,
+    required this.invoiceLineInventoryItemCode,
     required this.enableXeroIntegration,
     required this.businessName,
     required this.businessNumber,
@@ -109,8 +109,8 @@ class System extends Entity<System> {
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
-    required this.invoiceLineAccountCode,
-    required this.invoiceLineItemCode,
+    required this.invoiceLineRevenueAccountCode,
+    required this.invoiceLineInventoryItemCode,
     required this.businessName,
     required this.businessNumber,
     required this.businessNumberLabel,
@@ -154,8 +154,8 @@ class System extends Entity<System> {
     required this.simCardNo,
     required this.xeroClientId,
     required this.xeroClientSecret,
-    required this.invoiceLineAccountCode,
-    required this.invoiceLineItemCode,
+    required this.invoiceLineRevenueAccountCode,
+    required this.invoiceLineInventoryItemCode,
     required this.enableXeroIntegration,
     required this.businessName,
     required this.businessNumber,
@@ -205,8 +205,8 @@ class System extends Entity<System> {
     simCardNo: map['sim_card_no'] as int?,
     xeroClientId: map['xero_client_id'] as String?,
     xeroClientSecret: map['xero_client_secret'] as String?,
-    invoiceLineAccountCode: map['invoice_line_account_code'] as String?,
-    invoiceLineItemCode: map['invoice_line_item_code'] as String?,
+    invoiceLineRevenueAccountCode: map['invoice_line_account_code'] as String?,
+    invoiceLineInventoryItemCode: map['invoice_line_item_code'] as String?,
     enableXeroIntegration: (map['enable_xero_integration'] as int? ?? 1) == 1,
     businessName: map['business_name'] as String?,
     businessNumber: map['business_number'] as String?,
@@ -263,8 +263,8 @@ class System extends Entity<System> {
 
   /// Used to categorise invoice lineItems sent
   /// to the external accounting package.
-  String? invoiceLineAccountCode;
-  String? invoiceLineItemCode;
+  String? invoiceLineRevenueAccountCode;
+  String? invoiceLineInventoryItemCode;
   bool enableXeroIntegration;
   String? businessName;
   String? businessNumber;
@@ -328,8 +328,8 @@ class System extends Entity<System> {
     'sim_card_no': simCardNo,
     'xero_client_id': xeroClientId,
     'xero_client_secret': xeroClientSecret,
-    'invoice_line_account_code': invoiceLineAccountCode,
-    'invoice_line_item_code': invoiceLineItemCode,
+    'invoice_line_account_code': invoiceLineRevenueAccountCode,
+    'invoice_line_item_code': invoiceLineInventoryItemCode,
     'enable_xero_integration': enableXeroIntegration ? 1 : 0,
     'business_name': businessName,
     'business_number': businessNumber,

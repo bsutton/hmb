@@ -132,8 +132,8 @@ class Invoice extends Entity<Invoice> {
     }
     final system = await DaoSystem().get();
 
-    if (Strings.isBlank(system.invoiceLineAccountCode) ||
-        Strings.isBlank(system.invoiceLineItemCode)) {
+    if (Strings.isBlank(system.invoiceLineRevenueAccountCode) ||
+        Strings.isBlank(system.invoiceLineInventoryItemCode)) {
       throw InvoiceException(
         'You must set the Account Code and Item Code in System | Integration before you can upload an invoice',
       );
@@ -153,8 +153,8 @@ class Invoice extends Entity<Invoice> {
           .where((line) => line.status == LineChargeableStatus.normal)
           .map(
             (line) => line.toXeroLineItem(
-              accountCode: system.invoiceLineAccountCode!,
-              itemCode: system.invoiceLineItemCode!,
+              accountCode: system.invoiceLineRevenueAccountCode!,
+              itemCode: system.invoiceLineInventoryItemCode!,
             ),
           )
           .toList(),
