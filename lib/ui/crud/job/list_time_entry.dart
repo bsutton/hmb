@@ -9,13 +9,14 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/format.dart';
+import '../base_full_screen/list_entity_screen.dart';
+import 'edit_time_entry_screen.dart';
 
 class TimeEntryListScreen extends StatefulWidget {
   const TimeEntryListScreen({required this.job, super.key});
@@ -26,83 +27,49 @@ class TimeEntryListScreen extends StatefulWidget {
   State<TimeEntryListScreen> createState() => _TimeEntryListScreenState();
 }
 
-class _TimeEntryListScreenState extends DeferredState<TimeEntryListScreen> {
-  late Future<List<TimeEntry>> _timeEntries;
-
-  @override
-  Future<void> asyncInitState() async {
-    await _refreshTimeEntries();
-  }
-
-  Future<void> _refreshTimeEntries() async {
-    setState(() {
-      _timeEntries = _fetchAndSortTimeEntries();
-    });
-  }
-
-  Future<List<TimeEntry>> _fetchAndSortTimeEntries() async {
-    final entries = await DaoTimeEntry().getByJob(widget.job.id);
-    entries.sort(
-      (a, b) => a.startTime.compareTo(b.startTime),
-    ); // Sort by start time
-    return entries;
-  }
-
-  Duration _calculateTotalDuration(List<TimeEntry> timeEntries) => timeEntries
-      .fold<Duration>(Duration.zero, (total, entry) => total + entry.duration);
-
+class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text('Time Entries for Job: ${widget.job.summary}')),
-    body: FutureBuilderEx<List<TimeEntry>>(
-      future: _timeEntries,
-      builder: (context, timeEntries) {
-        if (timeEntries!.isEmpty) {
-          return const Center(child: Text('No time entries found.'));
-        }
-
-        final totalDuration = _calculateTotalDuration(timeEntries);
-
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Total Hours Worked: ${totalDuration.inHours}h ${totalDuration.inMinutes.remainder(60)}m',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: timeEntries.length,
-                itemBuilder: (context, index) {
-                  final timeEntry = timeEntries[index];
-                  return FutureBuilderEx<Task?>(
-                    // ignore: discarded_futures
-                    future: DaoTask().getById(timeEntry.taskId),
-                    waitingBuilder: (context) =>
-                        const ListTile(title: Text('Loading task...')),
-                    builder: (context, task) {
-                      if (task == null) {
-                        return const ListTile(title: Text('Task not found'));
-                      }
-                      return TimeEntryTile(
-                        timeEntry: timeEntry,
-                        taskName: task.name,
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
+    appBar: AppBar(title: const Text('Time Entries')),
+    body: EntityListScreen<TimeEntry>(
+      // parent: Parent(widget.job),
+      pageTitle: 'Time Entries',
+      // entityNameSingular: 'Time Entry',
+      // entityNamePlural: 'Time Entries',
+      dao: DaoTimeEntry(),
+      // onDelete: (entry) => DaoTimeEntry().delete(entry.id),
+      // onInsert: (entry, tx) => DaoTimeEntry().insert(entry, tx),
+      fetchList: (filter) => DaoTimeEntry().getByJob(widget.job.id),
+      title: (entry) async => _getTitle(entry),
+      onEdit: (entry) => TimeEntryEditScreen(job: widget.job, timeEntry: entry),
+      details: (entry) => FutureBuilderEx(
+        future: getDetails(entry),
+        builder: (context, detail) =>
+            TimeEntryTile(timeEntry: entry, taskName: detail!.task.name),
+      ),
     ),
   );
+
+  Future<Widget> _getTitle(TimeEntry entry) async {
+    final task = await DaoTask().getById(entry.taskId);
+
+    return Text(
+      'Task: ${task!.name}',
+      style: const TextStyle(fontWeight: FontWeight.bold),
+    );
+  }
+
+  Future<_Details> getDetails(TimeEntry entry) async {
+    final task = await DaoTask().getById(entry.taskId);
+
+    return _Details(task!, entry);
+  }
+}
+
+class _Details {
+  _Details(this.task, this.timeEntry);
+  Task task;
+  TimeEntry timeEntry;
 }
 
 class TimeEntryTile extends StatelessWidget {
@@ -116,29 +83,55 @@ class TimeEntryTile extends StatelessWidget {
   final String taskName;
 
   @override
-  Widget build(BuildContext context) => Card(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: ListTile(
-      title: Text(
-        'Task: $taskName',
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Start Time: ${formatDateTime(timeEntry.startTime)}'),
-          Text(
-            'End Time: ${timeEntry.endTime != null ? formatDateTime(timeEntry.endTime!) : "Ongoing"}',
+  Widget build(BuildContext context) => ListTile(
+    subtitle: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Start Time: ${formatDateTime(timeEntry.startTime)}'),
+        Text(
+          'End Time: ${timeEntry.endTime != null ? formatDateTime(timeEntry.endTime!) : "Ongoing"}',
+        ),
+        Text('Duration: ${formatDuration(timeEntry.duration)}'),
+        if (timeEntry.note != null && timeEntry.note!.isNotEmpty)
+          Text('Note: ${timeEntry.note}'),
+        Text('Billed: ${timeEntry.billed ? "Yes" : "No"}'),
+      ],
+    ),
+    trailing: timeEntry.invoiceLineId != null
+        ? const Icon(Icons.receipt_long, color: Colors.green)
+        : const Icon(Icons.receipt_long_outlined, color: Colors.grey),
+  );
+
+  Widget buildTimeEntryTile(TimeEntry timeEntry) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // left side: all your labels in a column
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('Start Time: ${formatDateTime(timeEntry.startTime)}'),
+              if (timeEntry.endTime != null)
+                Text('End Time: ${formatDateTime(timeEntry.endTime!)}'),
+              if (timeEntry.endTime == null) const Text('End Time: Ongoing'),
+              Text('Duration: ${formatDuration(timeEntry.duration)}'),
+              if (timeEntry.note?.isNotEmpty ?? false)
+                Text('Note: ${timeEntry.note}'),
+              Text('Billed: ${timeEntry.billed ? "Yes" : "No"}'),
+            ],
           ),
-          Text('Duration: ${formatDuration(timeEntry.duration)}'),
-          if (timeEntry.note != null && timeEntry.note!.isNotEmpty)
-            Text('Note: ${timeEntry.note}'),
-          Text('Billed: ${timeEntry.billed ? "Yes" : "No"}'),
-        ],
-      ),
-      trailing: timeEntry.invoiceLineId != null
-          ? const Icon(Icons.check_circle, color: Colors.green)
-          : const Icon(Icons.hourglass_empty, color: Colors.grey),
+        ),
+
+        // right side: invoiced / not-invoiced icon
+        Icon(
+          timeEntry.invoiceLineId != null
+              ? Icons.receipt_long
+              : Icons.receipt_long_outlined,
+          color: timeEntry.invoiceLineId != null ? Colors.green : Colors.grey,
+        ),
+      ],
     ),
   );
 }
