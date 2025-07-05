@@ -19,6 +19,8 @@ import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/app_title.dart';
 import '../../util/format.dart';
+import '../widgets/layout/hmb_spacer.dart';
+import '../widgets/select/hmb_filter_line.dart';
 import '../widgets/select/select.g.dart';
 import '../widgets/widgets.g.dart';
 import 'list_packing_screen.dart';
@@ -84,6 +86,11 @@ class ShoppingScreen extends StatefulWidget {
 class ShoppingScreenState extends DeferredState<ShoppingScreen> {
   static ShoppingMode _selectedMode = ShoppingMode.toPurchase;
   static ScheduleFilter _selectedScheduleFilter = ScheduleFilter.all;
+
+  final _jobKey = GlobalKey<HMBDroplistMultiSelectState<Job>>();
+  final _searchKey = GlobalKey<HMBSearchState>();
+  final _supplierKey = GlobalKey<HMBSelectSupplierState>();
+  final _scheduleKey = GlobalKey<HMBDroplistState<ScheduleFilter>>();
 
   final _taskItems = <TaskItemContext>[];
   List<Job> _selectedJobs = [];
@@ -152,46 +159,6 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
     setState(() {});
   }
 
-  Future<void> _showAdvancedFilters() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: _buildFilters(),
-      ),
-    );
-  }
-
-  Widget _buildFilters() => ListView(
-    padding: const EdgeInsets.all(16),
-    shrinkWrap: true,
-    children: [
-      HMBSelectSupplier(
-        selectedSupplier: selectedSupplier,
-        onSelected: (sup) async {
-          selectedSupplier.selected = sup?.id;
-          await _loadTaskItems();
-        },
-      ).help('Filter by Supplier', 'Only show items for the chosen supplier'),
-      const SizedBox(height: 16),
-      HMBDroplist<ScheduleFilter>(
-        selectedItem: () async => _selectedScheduleFilter,
-        items: (f) async => ScheduleFilter.values,
-        format: (s) => s.displayName,
-        onChanged: (sel) async {
-          _selectedScheduleFilter = sel ?? ScheduleFilter.all;
-          await _loadTaskItems();
-        },
-        title: 'Schedule',
-        required: false,
-      ).help(
-        'Filter by Schedule',
-        'Only show items scheduled in the selected range',
-      ),
-    ],
-  );
-
   @override
   Widget build(BuildContext context) => Scaffold(
     body: Surface(
@@ -200,68 +167,10 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(8),
-            child: LayoutBuilder(
-              builder: (ctx, cons) {
-                final isMobile = cons.maxWidth < 900;
-                final icon = Icon(
-                  _hasAdvancedSelection
-                      ? Icons.filter_alt_off
-                      : Icons.filter_alt,
-                );
-                if (isMobile) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: HMBDroplist<ShoppingMode>(
-                              selectedItem: () async => _selectedMode,
-                              items: (f) async => ShoppingMode.values,
-                              format: (m) => m.displayName,
-                              onChanged: (m) async {
-                                _selectedMode = m ?? ShoppingMode.toPurchase;
-                                await _loadTaskItems();
-                              },
-                              title: 'View',
-                              required: false,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: icon,
-                            tooltip: 'Advanced Filters',
-                            onPressed: _showAdvancedFilters,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      HMBDroplistMultiSelect<Job>(
-                        initialItems: () async => _selectedJobs,
-                        items: (filter) => DaoJob().getActiveJobs(filter),
-                        format: (j) => j.summary,
-                        onChanged: (list) async {
-                          _selectedJobs = list;
-                          await _loadTaskItems();
-                        },
-                        title: 'Jobs',
-                        required: false,
-                      ),
-                      const SizedBox(height: 8),
-                      HMBSearchWithAdd(
-                        onSearch: (f) async {
-                          filter = f;
-                          await _loadTaskItems();
-                        },
-                        onAdd: () async {
-                          await showAddItemDialog(context, AddType.shopping);
-                          await _loadTaskItems();
-                        },
-                      ),
-                    ],
-                  );
-                }
-                return Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
                     Expanded(
                       child: HMBDroplist<ShoppingMode>(
@@ -276,42 +185,46 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                         required: false,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: HMBDroplistMultiSelect<Job>(
-                        initialItems: () async => _selectedJobs,
-                        items: (filter) => DaoJob().getActiveJobs(filter),
-                        format: (j) => j.summary,
-                        onChanged: (list) async {
-                          _selectedJobs = list;
-                          await _loadTaskItems();
-                        },
-                        title: 'Jobs',
-                        required: false,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: HMBSearchWithAdd(
-                        onSearch: (f) async {
-                          filter = f;
-                          await _loadTaskItems();
-                        },
-                        onAdd: () async {
-                          await showAddItemDialog(context, AddType.shopping);
-                          await _loadTaskItems();
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: icon,
-                      tooltip: 'Advanced Filters',
-                      onPressed: _showAdvancedFilters,
+                    const HMBSpacer(width: true),
+                    HMBButtonAdd(
+                      onAdd: () async {
+                        await showAddItemDialog(context, AddType.shopping);
+                        await _loadTaskItems();
+                      },
+                      enabled: true,
                     ),
                   ],
-                );
-              },
+                ),
+                HMBFilterLine(
+                  onClearAll: () async {
+                    _jobKey.currentState?.clear();
+                    // _supplierKey.currentState?.clear();
+                    // selectedSupplier
+                    //   ..selected = null
+                    //   ..setState();
+                    _supplierKey.currentState?.clear();
+                    _searchKey.currentState?.clear();
+                    // _selectedScheduleFilter = ScheduleFilter.all;
+                    _scheduleKey.currentState?.clear();
+                    await _loadTaskItems();
+                    setState(() {});
+                  },
+                  lineBuilder: (context) => HMBDroplistMultiSelect<Job>(
+                    key: _jobKey,
+                    initialItems: () async => _selectedJobs,
+                    items: (filter) => DaoJob().getActiveJobs(filter),
+                    format: (j) => j.summary,
+
+                    onChanged: (list) async {
+                      _selectedJobs = list;
+                      await _loadTaskItems();
+                    },
+                    title: 'Jobs',
+                    required: false,
+                  ),
+                  sheetBuilder: (context) => _buildFilters(),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -361,6 +274,49 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
     ),
   );
 
+  Widget _buildFilters() => ListView(
+    padding: const EdgeInsets.all(16),
+    shrinkWrap: true,
+    children: [
+      Column(
+        children: [
+          const SizedBox(height: 8),
+          HMBSearch(
+            key: _searchKey,
+            onSearch: (f) async {
+              filter = f;
+              await _loadTaskItems();
+            },
+          ),
+        ],
+      ),
+
+      HMBSelectSupplier(
+        key: _supplierKey,
+        selectedSupplier: selectedSupplier,
+        onSelected: (sup) async {
+          selectedSupplier.selected = sup?.id;
+          await _loadTaskItems();
+        },
+      ).help('Filter by Supplier', 'Only show items for the chosen supplier'),
+      const SizedBox(height: 16),
+      HMBDroplist<ScheduleFilter>(
+        key: _scheduleKey,
+        selectedItem: () async => _selectedScheduleFilter,
+        items: (f) async => ScheduleFilter.values,
+        format: (s) => s.displayName,
+        onChanged: (sel) async {
+          _selectedScheduleFilter = sel ?? ScheduleFilter.all;
+          await _loadTaskItems();
+        },
+        title: 'Schedule',
+        required: false,
+      ).help(
+        'Filter by Schedule',
+        'Only show items scheduled in the selected range',
+      ),
+    ],
+  );
   Widget _buildShoppingItem(BuildContext context, TaskItemContext ctx) {
     switch (_selectedMode) {
       case ShoppingMode.toPurchase:
