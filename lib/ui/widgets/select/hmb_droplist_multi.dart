@@ -11,6 +11,7 @@
 
 import 'dart:async';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
@@ -19,155 +20,140 @@ import '../layout/labeled_container.dart';
 import '../surface.dart';
 import 'hmb_droplist_multi_dialog.dart';
 
-class HMBDroplistMultiSelect<T> extends FormField<List<T>> {
-  HMBDroplistMultiSelect({
-    required Future<List<T>> Function() initialItems,
-    required Future<List<T>> Function(String? filter) items,
-    required String Function(T) format,
-    required void Function(List<T>) onChanged,
-    required String title,
-    Color? backgroundColor,
-    super.onSaved,
-    super.initialValue,
-    bool required = true,
-    super.key,
-  }) : super(
-         autovalidateMode: AutovalidateMode.always,
-         builder: (state) => _HMBDroplistMultiSelect<T>(
-           key: ValueKey(initialItems),
-           state: state,
-           initialItems: initialItems,
-           items: items,
-           format: format,
-           onChanged: onChanged,
-           title: title,
-           backgroundColor: backgroundColor ?? SurfaceElevation.e4.color,
-         ),
-         validator: (value) {
-           if (required && (value == null || value.isEmpty)) {
-             return 'Please select at least one item';
-           }
-           return null;
-         },
-       );
-
-  static Widget placeHolder() => const HMBPlaceHolder(height: 30);
-}
-
-class _HMBDroplistMultiSelect<T> extends StatefulWidget {
-  const _HMBDroplistMultiSelect({
-    required this.state,
+/// A multi-select dropdown list field with async loading, built on DeferredState.
+class HMBDroplistMultiSelect<T> extends StatefulWidget {
+  const HMBDroplistMultiSelect({
     required this.initialItems,
     required this.items,
     required this.format,
     required this.onChanged,
     required this.title,
-    required super.key,
-    required this.backgroundColor,
+    this.onSaved,
+    this.backgroundColor,
+    this.required = true,
+    super.key,
   });
 
-  final FormFieldState<List<T>> state;
+  /// Loads the currently selected items asynchronously.
   final Future<List<T>> Function() initialItems;
+
+  /// Fetches the list of items, optionally filtered by filter.
   final Future<List<T>> Function(String? filter) items;
+
+  /// Formats each item for display.
   final String Function(T) format;
+
+  /// Called when the selection changes.
   final void Function(List<T>) onChanged;
+
+  /// Title displayed above the field.
   final String title;
-  final Color backgroundColor;
+
+  /// Called when the form is saved (optional).
+  final void Function(List<T>?)? onSaved;
+
+  /// Background color of the field container.
+  final Color? backgroundColor;
+
+  /// Whether selection is required.
+  final bool required;
+
+  /// A placeholder widget to show before items load.
+  static Widget placeHolder() => const HMBPlaceHolder(height: 30);
 
   @override
-  _HMBDroplistMultiSelectState<T> createState() =>
-      _HMBDroplistMultiSelectState<T>();
+  HMBDroplistMultiSelectState<T> createState() =>
+      HMBDroplistMultiSelectState<T>();
 }
 
-class _HMBDroplistMultiSelectState<T>
-    extends State<_HMBDroplistMultiSelect<T>> {
+class HMBDroplistMultiSelectState<T>
+    extends DeferredState<HMBDroplistMultiSelect<T>> {
   List<T> _selectedItems = [];
-  var _loading = true;
 
   @override
-  void initState() {
-    super.initState();
-    unawaited(_loadSelectedItems());
+  Future<void> asyncInitState() async {
+    _selectedItems = await widget.initialItems();
   }
 
-  Future<void> _loadSelectedItems() async {
-    try {
-      _selectedItems = await widget.initialItems();
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
-      widget.state.didChange(_selectedItems);
-      // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
-      print('Error loading items: $e');
-    }
+  void clear() {
+    _selectedItems.clear();
+    setState(() {});
   }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: () async {
-      final selectedItems = await showDialog<List<T>>(
-        context: context,
-        builder: (context) => HMBDroplistMultiSelectDialog<T>(
-          getItems: widget.items,
-          formatItem: widget.format,
-          title: widget.title,
-          selectedItems: _selectedItems,
-        ),
-      );
-
-      if (selectedItems != null) {
-        if (mounted) {
-          setState(() {
-            _selectedItems = selectedItems;
-          });
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder: (context) => FormField<List<T>>(
+      onSaved: widget.onSaved,
+      initialValue: _selectedItems,
+      autovalidateMode: AutovalidateMode.always,
+      validator: (value) {
+        if (widget.required && (value == null || value.isEmpty)) {
+          return 'Please select at least one item';
         }
-        widget.state.didChange(selectedItems);
-        widget.onChanged(selectedItems);
-      }
-    },
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        LabeledContainer(
-          labelText: widget.title,
-          isError: widget.state.hasError,
-          backgroundColor: widget.backgroundColor,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (_loading)
-                const CircularProgressIndicator()
-              else
-                Text(
-                  _selectedItems.isNotEmpty
-                      ? _selectedItems.map(widget.format).join(', ')
-                      : 'Select ${widget.title}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: widget.state.hasError
-                        ? Theme.of(context).colorScheme.error
-                        : HMBColors.textPrimary,
-                  ),
+        return null;
+      },
+      builder: (state) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () async {
+              final selected = await showDialog<List<T>>(
+                context: context,
+                builder: (_) => HMBDroplistMultiSelectDialog<T>(
+                  getItems: widget.items,
+                  formatItem: widget.format,
+                  title: widget.title,
+                  selectedItems: _selectedItems,
                 ),
-              const Icon(Icons.arrow_drop_down, color: HMBColors.dropboxArrow),
-            ],
-          ),
-        ),
-        if (widget.state.hasError)
-          Padding(
-            padding: const EdgeInsets.only(top: 4, left: 8),
-            child: Text(
-              widget.state.errorText ?? '',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontSize: 12,
+              );
+              if (selected != null) {
+                _selectedItems = selected;
+                setState(() {});
+                state.didChange(selected);
+                widget.onChanged(selected);
+              }
+            },
+            child: LabeledContainer(
+              labelText: widget.title,
+              backgroundColor:
+                  widget.backgroundColor ?? SurfaceElevation.e4.color,
+              isError: state.hasError,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _selectedItems.isNotEmpty
+                        ? _selectedItems.map(widget.format).join(', ')
+                        : 'Select ${widget.title}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: state.hasError
+                          ? Theme.of(context).colorScheme.error
+                          : HMBColors.textPrimary,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    color: HMBColors.dropboxArrow,
+                  ),
+                ],
               ),
             ),
           ),
-      ],
+          if (state.hasError)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 8),
+              child: Text(
+                state.errorText ?? '',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+        ],
+      ),
     ),
   );
 }

@@ -34,6 +34,8 @@ class HMBSelectSupplier extends StatefulWidget {
 }
 
 class HMBSelectSupplierState extends State<HMBSelectSupplier> {
+  final _droplistKey = GlobalKey<HMBDroplistState<Supplier>>();
+
   Future<Supplier?> _getInitialSupplier() =>
       DaoSupplier().getById(widget.selectedSupplier.selected);
 
@@ -63,8 +65,11 @@ class HMBSelectSupplierState extends State<HMBSelectSupplier> {
   }
 
   @override
-  Widget build(BuildContext context) => Expanded(
-    child: HMBDroplist<Supplier>(
+  Widget build(BuildContext context) => JuneBuilder(
+    () => widget.selectedSupplier,
+    id: widget.selectedSupplier,
+    builder: (context) => HMBDroplist<Supplier>(
+      key: _droplistKey,
       title: widget.isRequired ? 'Supplier *' : 'Supplier',
       selectedItem: _getInitialSupplier,
       onChanged: _onSupplierChanged,
@@ -74,6 +79,11 @@ class HMBSelectSupplierState extends State<HMBSelectSupplier> {
       required: widget.isRequired,
     ),
   );
+
+  void clear() {
+    _droplistKey.currentState?.clear();
+    June.getState(SelectedSupplier.new).selected = null;
+  }
 }
 
 class SelectedSupplier extends JuneState {
@@ -81,8 +91,8 @@ class SelectedSupplier extends JuneState {
 
   set selected(int? value) {
     _selected = value;
-    setState();
+    setState([this]);
   }
 
-  int get selected => _selected ?? 0;
+  int? get selected => _selected;
 }
