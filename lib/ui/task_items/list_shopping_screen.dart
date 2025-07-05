@@ -167,7 +167,7 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
     padding: const EdgeInsets.all(16),
     shrinkWrap: true,
     children: [
-      SelectSupplier(
+      HMBSelectSupplier(
         selectedSupplier: selectedSupplier,
         onSelected: (sup) async {
           selectedSupplier.selected = sup?.id;

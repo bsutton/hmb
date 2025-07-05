@@ -18,8 +18,8 @@ import '../../../ui/widgets/hmb_add_button.dart';
 import '../../crud/customer/edit_customer_screen.dart';
 import 'hmb_droplist.dart';
 
-class SelectCustomer extends StatefulWidget {
-  const SelectCustomer({
+class HMBSelectCustomer extends StatefulWidget {
+  const HMBSelectCustomer({
     required this.selectedCustomer,
     super.key,
     this.onSelected,
@@ -29,10 +29,10 @@ class SelectCustomer extends StatefulWidget {
   final void Function(Customer? customer)? onSelected;
 
   @override
-  SelectCustomerState createState() => SelectCustomerState();
+  HMBSelectCustomerState createState() => HMBSelectCustomerState();
 }
 
-class SelectCustomerState extends State<SelectCustomer> {
+class HMBSelectCustomerState extends State<HMBSelectCustomer> {
   Future<Customer?> _getInitialCustomer() =>
       DaoCustomer().getById(widget.selectedCustomer.customerId);
 

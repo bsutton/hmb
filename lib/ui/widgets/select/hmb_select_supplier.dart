@@ -17,8 +17,8 @@ import '../../../entity/supplier.dart';
 import '../../crud/supplier/edit_supplier_screen.dart';
 import 'hmb_droplist.dart';
 
-class SelectSupplier extends StatefulWidget {
-  const SelectSupplier({
+class HMBSelectSupplier extends StatefulWidget {
+  const HMBSelectSupplier({
     required this.selectedSupplier,
     super.key,
     this.onSelected,
@@ -30,10 +30,10 @@ class SelectSupplier extends StatefulWidget {
   final bool isRequired; // New field to indicate if the selection is required
 
   @override
-  SelectSupplierState createState() => SelectSupplierState();
+  HMBSelectSupplierState createState() => HMBSelectSupplierState();
 }
 
-class SelectSupplierState extends State<SelectSupplier> {
+class HMBSelectSupplierState extends State<HMBSelectSupplier> {
   Future<Supplier?> _getInitialSupplier() =>
       DaoSupplier().getById(widget.selectedSupplier.selected);
 

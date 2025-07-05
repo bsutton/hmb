@@ -20,7 +20,7 @@ import '../../../util/money_ex.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/select/hmb_droplist.dart';
-import '../../widgets/select/select_supplier.dart';
+import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../task/photo_crud.dart';
@@ -146,7 +146,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       ),
 
       // SUPPLIER: now using your SelectSupplier widget
-      SelectSupplier(
+      HMBSelectSupplier(
         selectedSupplier: selectedSupplier,
         isRequired: true,
 

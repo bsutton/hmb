@@ -40,8 +40,8 @@ import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/media/rich_editor.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/hmb_select_contact.dart';
+import '../../widgets/select/hmb_select_customer.dart';
 import '../../widgets/select/hmb_select_site.dart';
-import '../../widgets/select/select_customer.dart';
 import '../../widgets/text/hmb_expanding_text_block.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../base_full_screen/edit_entity_screen.dart';
@@ -312,7 +312,7 @@ You can set a default booking fee from System | Billing screen''');
       );
 
   /// Customer selector: when changed, clear dependent fields and re-seed defaults.
-  Widget _chooseCustomer() => SelectCustomer(
+  Widget _chooseCustomer() => HMBSelectCustomer(
     selectedCustomer: June.getState(SelectedCustomer.new),
     onSelected: (customer) {
       // 1. Update the selected customer ID

@@ -35,7 +35,7 @@ import '../../../util/platform_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/select/hmb_droplist.dart';
-import '../../widgets/select/select_supplier.dart';
+import '../../widgets/select/hmb_select_supplier.dart';
 import '../base_nested/edit_nested_screen.dart';
 import 'dimensions.dart';
 

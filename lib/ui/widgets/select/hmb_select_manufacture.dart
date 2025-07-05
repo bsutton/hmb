@@ -18,8 +18,8 @@ import '../../../ui/widgets/hmb_add_button.dart';
 import '../../crud/manufacturer/edit_manufacturer_screen.dart';
 import 'hmb_droplist.dart';
 
-class SelectManufacturer extends StatefulWidget {
-  const SelectManufacturer({
+class HMBSelectManufacturer extends StatefulWidget {
+  const HMBSelectManufacturer({
     required this.selectedManufacturer,
     super.key,
     this.onSelected,
@@ -31,10 +31,10 @@ class SelectManufacturer extends StatefulWidget {
   final bool isRequired; // New field to indicate if the selection is required
 
   @override
-  SelectManufacturerState createState() => SelectManufacturerState();
+  HMBSelectManufacturerState createState() => HMBSelectManufacturerState();
 }
 
-class SelectManufacturerState extends State<SelectManufacturer> {
+class HMBSelectManufacturerState extends State<HMBSelectManufacturer> {
   Future<Manufacturer?> _getInitialManufacturer() =>
       DaoManufacturer().getById(widget.selectedManufacturer.manufacturerId);
 

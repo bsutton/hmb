@@ -20,8 +20,8 @@ import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_date_time_picker.dart';
 import '../../widgets/hmb_toast.dart';
-import '../../widgets/select/select_manufacture.dart';
-import '../../widgets/select/select_supplier.dart';
+import '../../widgets/select/hmb_select_manufacture.dart';
+import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/wizard.dart';
 import '../../widgets/wizard_step.dart';
 import '../category/select_category.dart';
@@ -122,7 +122,7 @@ class ToolDetailsStep extends WizardStep {
               controller: descriptionController,
               labelText: 'Description',
             ),
-            SelectSupplier(
+            HMBSelectSupplier(
               selectedSupplier: selectedSupplier,
               onSelected: (supplier) {
                 setState(() {
@@ -130,7 +130,7 @@ class ToolDetailsStep extends WizardStep {
                 });
               },
             ),
-            SelectManufacturer(
+            HMBSelectManufacturer(
               selectedManufacturer: selectedManufacturer,
               onSelected: (manufacturer) {
                 setState(() {

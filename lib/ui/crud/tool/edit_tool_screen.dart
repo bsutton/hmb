@@ -28,8 +28,8 @@ import '../../widgets/hmb_date_time_picker.dart';
 import '../../widgets/media/captured_photo.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_thumbnail.dart';
-import '../../widgets/select/select_manufacture.dart';
-import '../../widgets/select/select_supplier.dart';
+import '../../widgets/select/hmb_select_manufacture.dart';
+import '../../widgets/select/hmb_select_supplier.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../category/select_category.dart';
 import '../task/photo_crud.dart';
@@ -124,7 +124,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
             controller: _descriptionController,
             labelText: 'Description',
           ),
-          SelectSupplier(
+          HMBSelectSupplier(
             selectedSupplier: selectedSupplier,
             onSelected: (supplier) {
               setState(() {
@@ -132,7 +132,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
               });
             },
           ),
-          SelectManufacturer(
+          HMBSelectManufacturer(
             selectedManufacturer: selectedManufacturer,
             onSelected: (manufacturer) {
               setState(() {
