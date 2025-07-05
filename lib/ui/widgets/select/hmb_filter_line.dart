@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'hmb_filter_sheet.dart';
 
-/// A single filter line widget showing custom content on the left
+/// A single filter line widget with an associated
+/// sheet for additional advanced filter options.
+///
+/// The widget returned by [lineBuilder] is shown on the left
 /// and a filter icon button on the right.
 ///
-/// [builder] should return the widget (e.g., a TextField or dropdown)
-/// to place on the left side.
+/// If the users clicks the filter button then a bottom sheet is
+/// displayed with the content of [sheetBuilder]
 class HMBFilterLine extends StatelessWidget {
   const HMBFilterLine({
     required this.lineBuilder,
