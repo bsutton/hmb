@@ -89,7 +89,7 @@ class HMBSelectSiteState extends State<HMBSelectSite> {
               required: false,
             ),
           ),
-          HMBButtonAdd(enabled: true, onPressed: _addSite),
+          HMBButtonAdd(enabled: true, onAdd: _addSite),
         ],
       );
     }

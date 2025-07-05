@@ -76,7 +76,7 @@ class HMBSelectManufacturerState extends State<HMBSelectManufacturer> {
           required: widget.isRequired,
         ),
       ),
-      Center(child: HMBButtonAdd(enabled: true, onPressed: _addManufacturer)),
+      Center(child: HMBButtonAdd(enabled: true, onAdd: _addManufacturer)),
     ],
   );
 }

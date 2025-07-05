@@ -262,7 +262,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
               else ...[
                 if (_isEditable)
                   HMBButtonAdd(
-                    onPressed: disabled ? null : _onInvoicePressed,
+                    onAdd: disabled ? null : _onInvoicePressed,
                     enabled: true,
                     small: true,
                     hint: 'Invoice this Milestone',

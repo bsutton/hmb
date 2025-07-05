@@ -74,7 +74,7 @@ class HMBSelectCustomerState extends State<HMBSelectCustomer> {
           onAdd: _addCustomer,
         ),
       ),
-      Center(child: HMBButtonAdd(enabled: true, onPressed: _addCustomer)),
+      Center(child: HMBButtonAdd(enabled: true, onAdd: _addCustomer)),
     ],
   );
 }

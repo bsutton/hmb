@@ -56,7 +56,7 @@ ${widget.site?.addressLine1}, ${widget.site?.addressLine2}, ${widget.site?.subur
         ),
       HMBButtonAdd(
         enabled: true,
-        onPressed: () async {
+        onAdd: () async {
           final site = await Navigator.push<Site>(
             context,
             MaterialPageRoute<Site>(

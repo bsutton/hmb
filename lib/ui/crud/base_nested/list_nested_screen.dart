@@ -114,7 +114,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
 
   Widget _buildAddButton(BuildContext context) => HMBButtonAdd(
     enabled: widget.parent.parent != null,
-    onPressed: () async {
+    onAdd: () async {
       if (context.mounted) {
         await Navigator.push(
           context,

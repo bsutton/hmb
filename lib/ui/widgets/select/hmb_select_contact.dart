@@ -115,7 +115,7 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
               padding: const EdgeInsets.only(
                 top: 16,
               ), // tweak this to align visually
-              child: HMBButtonAdd(enabled: true, onPressed: _addContact),
+              child: HMBButtonAdd(enabled: true, onAdd: _addContact),
             ),
           ],
         );

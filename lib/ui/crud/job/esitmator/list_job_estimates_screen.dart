@@ -122,7 +122,7 @@ class _JobEstimatesListScreenState
             children: [
               Expanded(
                 child: HMBSearch(
-                  onChanged: (filter) async => _onSearchChanged(filter),
+                  onSearch: (filter) async => _onSearchChanged(filter),
                 ),
               ),
             ],

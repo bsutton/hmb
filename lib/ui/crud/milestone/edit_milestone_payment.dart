@@ -248,7 +248,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
           HMBButtonAdd(
             enabled: true,
             hint: 'Add Milestone',
-            onPressed: _addMilestone,
+            onAdd: _addMilestone,
           ),
         ],
       ),

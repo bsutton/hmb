@@ -73,7 +73,7 @@ class SelectCategoryState extends State<SelectCategory> {
           format: (category) => category.name,
         ),
       ),
-      Center(child: HMBButtonAdd(enabled: true, onPressed: _addCategory)),
+      Center(child: HMBButtonAdd(enabled: true, onAdd: _addCategory)),
     ],
   );
 }

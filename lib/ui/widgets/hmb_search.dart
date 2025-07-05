@@ -18,13 +18,13 @@ import 'hmb_add_button.dart';
 /// then pass in a [HMBSearchController]
 class HMBSearch extends StatefulWidget {
   const HMBSearch({
-    required this.onChanged,
+    required this.onSearch,
     this.label = 'Search',
     super.key,
     this.controller,
   });
 
-  final Future<void> Function(String? filter) onChanged;
+  final Future<void> Function(String? filter) onSearch;
 
   final String label;
 
@@ -39,6 +39,11 @@ class HMBSearchState extends State<HMBSearch> {
   late final HMBSearchController? filterController;
 
   String? filter;
+
+  void clear() {
+    filter = null;
+    filterController?.clear();
+  }
 
   @override
   void initState() {
@@ -71,7 +76,7 @@ class HMBSearchState extends State<HMBSearch> {
           controller: filterController!,
           onChanged: (newValue) async {
             filter = newValue;
-            await widget.onChanged(filter);
+            await widget.onSearch(filter);
           },
         ),
       ),
@@ -80,7 +85,7 @@ class HMBSearchState extends State<HMBSearch> {
         onPressed: () async {
           filterController?.clear();
           filter = null;
-          await widget.onChanged(filter);
+          await widget.onSearch(filter);
         },
       ),
     ],
@@ -111,13 +116,13 @@ class HMBSearchWithAdd extends StatelessWidget {
     children: [
       Expanded(
         child: HMBSearch(
-          onChanged: (filter) async {
+          onSearch: (filter) async {
             onSearch(filter?.trim().toLowerCase());
           },
           controller: controller,
         ),
       ),
-      HMBButtonAdd(onPressed: () async => onAdd(), enabled: true, hint: hint),
+      HMBButtonAdd(onAdd: () async => onAdd(), enabled: true, hint: hint),
     ],
   );
 }
