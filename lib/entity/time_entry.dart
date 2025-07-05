@@ -12,7 +12,10 @@
 import 'package:money2/money2.dart';
 
 import 'entity.dart';
+import 'entity.g.dart' show Supplier, Task;
 
+/// A record of time spent on a [Task], optionally linked to an invoice line
+/// and/or a [Supplier].
 class TimeEntry extends Entity<TimeEntry> {
   TimeEntry({
     required super.id,
@@ -24,6 +27,7 @@ class TimeEntry extends Entity<TimeEntry> {
     this.note,
     this.billed = false,
     this.invoiceLineId,
+    this.supplierId,
   }) : super();
 
   factory TimeEntry.fromMap(Map<String, dynamic> map) => TimeEntry(
@@ -36,18 +40,22 @@ class TimeEntry extends Entity<TimeEntry> {
     note: map['notes'] as String?,
     billed: map['billed'] == 1,
     invoiceLineId: map['invoice_line_id'] as int?,
+    supplierId: map['supplier_id'] as int?,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
 
+  /// Create a new entry for insertion (ID, created/modified dates set by DB)
   TimeEntry.forInsert({
     required this.taskId,
     required this.startTime,
     this.endTime,
     this.note,
     this.billed = false,
+    this.supplierId,
   }) : super.forInsert();
 
+  /// Update an existing entry (modifiedDate set by DB)
   TimeEntry.forUpdate({
     required super.entity,
     required this.taskId,
@@ -55,10 +63,11 @@ class TimeEntry extends Entity<TimeEntry> {
     this.endTime,
     this.note,
     this.billed = false,
+    this.supplierId,
   }) : super.forUpdate();
 
-  /// entries over this interval are considered suspicions
-  /// so we warn the user in case the entered the end time incorrectly.
+  /// entries over this interval are considered suspicious,
+  /// so we warn the user in case they entered the end time incorrectly.
   static const longDurationHours = 12;
 
   int taskId;
@@ -67,9 +76,12 @@ class TimeEntry extends Entity<TimeEntry> {
   String? note;
   bool billed;
 
-  /// If the time_enty has been billed then this is the invoice line
-  /// that it has been billed to.
+  /// If the time entry has been invoiced then this is the invoice line
+  /// that it was billed to.
   int? invoiceLineId;
+
+  /// Optional supplier associated with this time entry.
+  int? supplierId;
 
   Duration get duration {
     final end = endTime ?? DateTime.now();
@@ -86,6 +98,7 @@ class TimeEntry extends Entity<TimeEntry> {
     String? note,
     bool? billed,
     int? invoiceLineId,
+    int? supplierId,
     DateTime? createdDate,
     DateTime? modifiedDate,
   }) => TimeEntry(
@@ -96,6 +109,7 @@ class TimeEntry extends Entity<TimeEntry> {
     note: note ?? this.note,
     billed: billed ?? this.billed,
     invoiceLineId: invoiceLineId ?? this.invoiceLineId,
+    supplierId: supplierId ?? this.supplierId,
     createdDate: createdDate ?? this.createdDate,
     modifiedDate: modifiedDate ?? this.modifiedDate,
   );
@@ -111,6 +125,7 @@ class TimeEntry extends Entity<TimeEntry> {
     'notes': note,
     'billed': billed ? 1 : 0,
     'invoice_line_id': invoiceLineId,
+    'supplier_id': supplierId,
   };
 
   /// Did this current entry's endTime fall in the last quarter hour?
@@ -122,8 +137,7 @@ class TimeEntry extends Entity<TimeEntry> {
   bool recentlyStopped(DateTime now) =>
       endTime == null || now.difference(endTime!).inMinutes.abs() <= 15;
 
-  /// Calulate the charge for this [TimeEntry] based on the given
-  /// [hourlyRate]
+  /// Calculate the labour charge based on an [hourlyRate].
   Money calcLabourCharge(Money hourlyRate) {
     final minutes = duration.inMinutes / 60;
     return hourlyRate.multiplyByFixed(Fixed.fromNum(minutes));
