@@ -32,6 +32,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Time Entries')),
     body: EntityListScreen<TimeEntry>(
+      cardHeight: 220,
       // parent: Parent(widget.job),
       pageTitle: 'Time Entries',
       // entityNameSingular: 'Time Entry',
@@ -54,7 +55,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
     final task = await DaoTask().getById(entry.taskId);
 
     return Text(
-      'Task: ${task!.name}',
+      '${formatDate(entry.startTime)} Task: ${task!.name} ',
       style: const TextStyle(fontWeight: FontWeight.bold),
     );
   }
@@ -87,6 +88,11 @@ class TimeEntryTile extends StatelessWidget {
     subtitle: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (timeEntry.supplierId != null)
+          FutureBuilderEx(
+            future: DaoSupplier().getById(timeEntry.supplierId),
+            builder: (context, supplier) => Text('Supplier: ${supplier!.name}'),
+          ),
         Text('Start Time: ${formatDateTime(timeEntry.startTime)}'),
         Text(
           'End Time: ${timeEntry.endTime != null ? formatDateTime(timeEntry.endTime!) : "Ongoing"}',
@@ -100,38 +106,5 @@ class TimeEntryTile extends StatelessWidget {
     trailing: timeEntry.invoiceLineId != null
         ? const Icon(Icons.receipt_long, color: Colors.green)
         : const Icon(Icons.receipt_long_outlined, color: Colors.grey),
-  );
-
-  Widget buildTimeEntryTile(TimeEntry timeEntry) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // left side: all your labels in a column
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text('Start Time: ${formatDateTime(timeEntry.startTime)}'),
-              if (timeEntry.endTime != null)
-                Text('End Time: ${formatDateTime(timeEntry.endTime!)}'),
-              if (timeEntry.endTime == null) const Text('End Time: Ongoing'),
-              Text('Duration: ${formatDuration(timeEntry.duration)}'),
-              if (timeEntry.note?.isNotEmpty ?? false)
-                Text('Note: ${timeEntry.note}'),
-              Text('Billed: ${timeEntry.billed ? "Yes" : "No"}'),
-            ],
-          ),
-        ),
-
-        // right side: invoiced / not-invoiced icon
-        Icon(
-          timeEntry.invoiceLineId != null
-              ? Icons.receipt_long
-              : Icons.receipt_long_outlined,
-          color: timeEntry.invoiceLineId != null ? Colors.green : Colors.grey,
-        ),
-      ],
-    ),
   );
 }

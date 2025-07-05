@@ -29,7 +29,7 @@ import '../../widgets/text/hmb_text.dart';
 import '../../widgets/text/hmb_text_block.dart';
 import '../../widgets/text/hmb_text_clickable.dart';
 import '../../widgets/text/hmb_text_themes.dart';
-import 'list_time_entry.dart';
+import 'list_time_entry_screen.dart';
 
 class JobCard extends StatefulWidget {
   const JobCard({required this.job, super.key});

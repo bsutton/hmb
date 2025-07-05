@@ -18,4 +18,4 @@
 export 'edit_job_screen.dart';
 export 'job_card.dart';
 export 'list_job_screen.dart';
-export 'list_time_entry.dart';
+export 'list_time_entry_screen.dart';
