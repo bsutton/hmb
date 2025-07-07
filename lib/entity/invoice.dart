@@ -124,7 +124,7 @@ class Invoice extends Entity<Invoice> {
 
   Future<XeroInvoice> toXeroInvoice(Invoice invoice) async {
     final job = await DaoJob().getById(invoice.jobId);
-    final contact = await DaoContact().getPrimaryForJob(job?.id);
+    final contact = await DaoContact().getBillingContactByJob(job!);
     if (contact == null) {
       throw InvoiceException(
         '''You must assign a Contact to the Job before you can upload an invoice''',

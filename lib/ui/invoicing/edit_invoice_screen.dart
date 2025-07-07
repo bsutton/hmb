@@ -231,10 +231,12 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       setState(() {});
     } catch (e, st) {
       if (!e.toString().contains('You must provide an email address for')) {
-        await Sentry.captureException(
-          e,
-          stackTrace: st,
-          hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}),
+        unawaited(
+          Sentry.captureException(
+            e,
+            stackTrace: st,
+            hint: Hint.withMap({'hint': 'UploadInvoiceToXero'}),
+          ),
         );
       }
       HMBToast.error(
