@@ -103,10 +103,6 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
     await _loadTaskItems();
   }
 
-  bool get _hasAdvancedSelection =>
-      selectedSupplier.selected == 0 ||
-      _selectedScheduleFilter != ScheduleFilter.all;
-
   Future<void> _loadTaskItems() async {
     List<TaskItem> items;
     switch (_selectedMode) {
@@ -198,13 +194,8 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                 HMBFilterLine(
                   onClearAll: () async {
                     _jobKey.currentState?.clear();
-                    // _supplierKey.currentState?.clear();
-                    // selectedSupplier
-                    //   ..selected = null
-                    //   ..setState();
-                    _supplierKey.currentState?.clear();
+                    selectedSupplier.selected = null;
                     _searchKey.currentState?.clear();
-                    // _selectedScheduleFilter = ScheduleFilter.all;
                     _scheduleKey.currentState?.clear();
                     await _loadTaskItems();
                     setState(() {});
