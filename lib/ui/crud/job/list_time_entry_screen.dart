@@ -15,6 +15,9 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/format.dart';
+import '../../widgets/help_button.dart';
+import '../../widgets/select/hmb_select_task.dart';
+import '../../widgets/select/select.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_time_entry_screen.dart';
 
@@ -28,19 +31,128 @@ class TimeEntryListScreen extends StatefulWidget {
 }
 
 class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
+  final _supplierFilter = SelectedSupplier();
+  final _taskFilter = SelectedTask();
+  DateTime? _selectedDate;
+
+  Future<List<TimeEntry>> _fetchFiltered(String? search) async {
+    var list = await DaoTimeEntry().getByJob(widget.job.id);
+    // search in notes
+    if (search != null && search.isNotEmpty) {
+      list = list
+          .where(
+            (e) => (e.note?.toLowerCase() ?? '').contains(search.toLowerCase()),
+          )
+          .toList();
+    }
+    // supplier filter
+    if (_supplierFilter.selected != null) {
+      list = list
+          .where((e) => e.supplierId == _supplierFilter.selected)
+          .toList();
+    }
+
+    // task filter
+    if (_taskFilter.taskId != null) {
+      list = list.where((e) => e.taskId == _taskFilter.taskId).toList();
+    }
+    // date filter (by startTime on same day)
+    if (_selectedDate != null) {
+      final sel = _selectedDate!;
+      list = list.where((e) {
+        final dt = e.startTime;
+        return dt.year == sel.year &&
+            dt.month == sel.month &&
+            dt.day == sel.day;
+      }).toList();
+    }
+    return list;
+  }
+
+  Widget _buildFilterSheet(BuildContext context) => StatefulBuilder(
+    builder: (context, sheetSetState) => ListView(
+      padding: const EdgeInsets.all(16),
+      shrinkWrap: true,
+      children: [
+        HMBSelectTask(
+          selectedTask: _taskFilter,
+          job: widget.job,
+          onSelected: (task) {
+            _taskFilter.taskId = task?.id;
+            sheetSetState(() {});
+          },
+        ),
+
+        HMBSelectSupplier(
+          selectedSupplier: _supplierFilter,
+          onSelected: (sup) async {
+            _supplierFilter.selected = sup?.id;
+            sheetSetState(() {});
+          },
+        ).help(
+          'Filter by Supplier',
+          'Only show entries for the chosen supplier',
+        ),
+        const SizedBox(height: 16),
+        ListTile(
+          key: ValueKey(_selectedDate),
+          title: const Text('Date'),
+          subtitle: Text(
+            _selectedDate != null ? formatDate(_selectedDate!) : 'Select date',
+          ),
+          trailing: const Icon(Icons.calendar_today),
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+              initialDate: _selectedDate ?? DateTime.now(),
+            );
+            if (picked != null) {
+              _selectedDate = picked;
+              sheetSetState(() {});
+            }
+          },
+        ),
+      ],
+    ),
+  );
+
+  void _clearAllFilters() {
+    setState(() {
+      _supplierFilter.selected = null;
+      _taskFilter.taskId = null;
+      _selectedDate = null;
+    });
+  }
+
+  Future<Widget> _getTitle(TimeEntry entry) async {
+    final task = await DaoTask().getById(entry.taskId);
+    return Text(
+      '${formatDate(entry.startTime)} Task: ${task!.name}',
+      style: const TextStyle(fontWeight: FontWeight.bold),
+    );
+  }
+
+  Future<_Details> getDetails(TimeEntry entry) async {
+    final task = await DaoTask().getById(entry.taskId);
+    return _Details(task!, entry);
+  }
+
+  final _entityListKey = GlobalKey<EntityListScreenState>();
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Time Entries')),
     body: EntityListScreen<TimeEntry>(
-      cardHeight: 220,
-      // parent: Parent(widget.job),
+      key: _entityListKey,
       pageTitle: 'Time Entries',
-      // entityNameSingular: 'Time Entry',
-      // entityNamePlural: 'Time Entries',
       dao: DaoTimeEntry(),
-      // onDelete: (entry) => DaoTimeEntry().delete(entry.id),
-      // onInsert: (entry, tx) => DaoTimeEntry().insert(entry, tx),
-      fetchList: (filter) => DaoTimeEntry().getByJob(widget.job.id),
+      fetchList: _fetchFiltered,
+      filterSheetBuilder: _buildFilterSheet,
+      onFilterSheetClosed: () async =>
+          await _entityListKey.currentState?.refresh(),
+      onClearAll: _clearAllFilters,
+      cardHeight: 220,
       title: (entry) async => _getTitle(entry),
       onEdit: (entry) => TimeEntryEditScreen(job: widget.job, timeEntry: entry),
       details: (entry) => FutureBuilderEx(
@@ -50,21 +162,6 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
       ),
     ),
   );
-
-  Future<Widget> _getTitle(TimeEntry entry) async {
-    final task = await DaoTask().getById(entry.taskId);
-
-    return Text(
-      '${formatDate(entry.startTime)} Task: ${task!.name} ',
-      style: const TextStyle(fontWeight: FontWeight.bold),
-    );
-  }
-
-  Future<_Details> getDetails(TimeEntry entry) async {
-    final task = await DaoTask().getById(entry.taskId);
-
-    return _Details(task!, entry);
-  }
 }
 
 class _Details {

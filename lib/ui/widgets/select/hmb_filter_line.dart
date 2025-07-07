@@ -15,6 +15,7 @@ class HMBFilterLine extends StatelessWidget {
     required this.lineBuilder,
     required this.sheetBuilder,
     required this.onClearAll,
+    this.onSheetClosed,
 
     // required this.onFilterTap,
     super.key,
@@ -27,6 +28,7 @@ class HMBFilterLine extends StatelessWidget {
   final WidgetBuilder lineBuilder;
   final WidgetBuilder sheetBuilder;
   final VoidCallback? onClearAll;
+  final VoidCallback? onSheetClosed;
 
   /// Called when the filter icon is pressed
   // final VoidCallback onFilterTap;
@@ -57,6 +59,7 @@ class HMBFilterLine extends StatelessWidget {
               onClearAll: onClearAll,
             ),
           );
+          onSheetClosed?.call();
         },
       ),
     ],

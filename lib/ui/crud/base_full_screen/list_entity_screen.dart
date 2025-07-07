@@ -18,12 +18,14 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/app_title.dart';
-import '../../dialog/hmb_ask_user_to_continue.dart';
+import '../../dialog/dialog.g.dart';
 import '../../widgets/hmb_icon_button.dart';
 import '../../widgets/hmb_search.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/select/hmb_filter_line.dart';
 import '../../widgets/surface.dart';
 
+/// A generic list screen with optional search/add and advanced filters.
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   EntityListScreen({
     required this.dao,
@@ -34,6 +36,13 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     this.cardHeight = 300,
     this.background,
     Future<List<T>> Function(String? filter)? fetchList,
+
+    /// If non-null, enables advanced filtering via this sheet.
+    this.filterSheetBuilder,
+    this.onFilterSheetClosed,
+
+    /// Called when the user clears all filters.
+    this.onClearAll,
     super.key,
   }) {
     // ignore: discarded_futures
@@ -49,6 +58,9 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
 
   late final Future<List<T>> Function(String? filter) _fetchList;
   final Dao<T> dao;
+  final WidgetBuilder? filterSheetBuilder;
+  final VoidCallback? onClearAll;
+  final VoidCallback? onFilterSheetClosed;
 
   @override
   EntityListScreenState<T> createState() => EntityListScreenState<T>();
@@ -56,10 +68,12 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
 
 class EntityListScreenState<T extends Entity<T>>
     extends DeferredState<EntityListScreen<T>> {
-  late List<T> entityList = [];
+  List<T> entityList = [];
   String? filterOption;
   late final TextEditingController filterController;
   final _scrollController = ScrollController();
+
+  var _isFilterActive = false;
 
   @override
   void initState() {
@@ -71,23 +85,15 @@ class EntityListScreenState<T extends Entity<T>>
 
   @override
   Future<void> asyncInitState() async {
-    await _fetchEntities();
+    await refresh();
   }
 
-  Future<void> _fetchEntities([String? filter]) async {
-    final list = await widget._fetchList(filter);
+  Future<void> refresh() async {
+    final list = await widget._fetchList(filterOption);
     if (mounted) {
       setState(() {
         entityList = list;
       });
-    }
-  }
-
-  /// Called when we want to refresh the entire list (e.g., after the user searches).
-  Future<void> _refreshEntityList() async {
-    // Re-fetch from the database (or custom fetch) with the current filter.
-    if (mounted) {
-      await _fetchEntities(filterOption);
     }
   }
 
@@ -112,37 +118,57 @@ class EntityListScreenState<T extends Entity<T>>
     });
   }
 
+  Future<void> _clearAll() async {
+    widget.onClearAll?.call();
+    filterOption = null;
+    setState(() => _isFilterActive = false);
+    await refresh();
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      backgroundColor: SurfaceElevation.e0.color,
-      toolbarHeight: 80,
-      titleSpacing: 0,
-      title: Surface(
-        elevation: SurfaceElevation.e0,
-        child: HMBSearchWithAdd(
-          onSearch: (newValue) async {
-            filterOption = newValue;
-            await _refreshEntityList();
-          },
-          onAdd: () async {
-            if (context.mounted) {
-              final newEntity = await Navigator.push<T?>(
-                context,
-                MaterialPageRoute(builder: (context) => widget.onEdit(null)),
-              );
-              if (newEntity != null) {
-                _partialRefresh(newEntity);
-              }
-            }
-          },
-        ),
+  Widget build(BuildContext context) {
+    final searchAdd = HMBSearchWithAdd(
+      onSearch: (newValue) async {
+        filterOption = newValue;
+        await refresh();
+      },
+      onAdd: () async {
+        if (context.mounted) {
+          final newEntity = await Navigator.push<T?>(
+            context,
+            MaterialPageRoute(builder: (context) => widget.onEdit(null)),
+          );
+          if (newEntity != null) {
+            _partialRefresh(newEntity);
+          }
+        }
+      },
+    );
+
+    Widget titleRow;
+    if (widget.filterSheetBuilder != null) {
+      titleRow = HMBFilterLine(
+        lineBuilder: (_) => searchAdd,
+        sheetBuilder: widget.filterSheetBuilder!,
+        onClearAll: _clearAll,
+        onSheetClosed: widget.onFilterSheetClosed,
+        isActive: _isFilterActive,
+      );
+    } else {
+      titleRow = searchAdd;
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: SurfaceElevation.e0.color,
+        toolbarHeight: 80,
+        titleSpacing: 0,
+        title: Surface(elevation: SurfaceElevation.e0, child: titleRow),
+        automaticallyImplyLeading: false,
       ),
-      automaticallyImplyLeading: false,
-      // actions: _commands(),
-    ),
-    body: Surface(elevation: SurfaceElevation.e0, child: _buildList()),
-  );
+      body: Surface(elevation: SurfaceElevation.e0, child: _buildList()),
+    );
+  }
 
   Widget _buildList() {
     if (entityList.isEmpty) {
@@ -168,10 +194,7 @@ class EntityListScreenState<T extends Entity<T>>
       controller: _scrollController,
       itemCount: entityList.length,
       itemExtent: widget.cardHeight,
-      itemBuilder: (context, index) {
-        final entity = entityList[index];
-        return _buildCard(entity);
-      },
+      itemBuilder: (context, index) => _buildCard(entityList[index]),
     );
   }
 
@@ -191,7 +214,7 @@ class EntityListScreenState<T extends Entity<T>>
         widget.background?.call(entity) ??
         Future.value(SurfaceElevation.e6.color),
     builder: (context, cardColor) => Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: GestureDetector(
         onTap: () async {
           // Navigate to the edit screen
