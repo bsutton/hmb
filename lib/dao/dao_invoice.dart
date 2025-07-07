@@ -19,6 +19,7 @@ import 'package:strings/strings.dart';
 import '../api/external_accounting.dart';
 import '../api/xero/models/xero_contact.dart';
 import '../api/xero/xero_api.dart';
+import '../api/xero/xero_extract_error_message.dart';
 import '../entity/entity.g.dart';
 import '../util/exceptions.dart';
 import '../util/money_ex.dart';
@@ -129,18 +130,21 @@ class DaoInvoice extends Dao<Invoice> {
     // Fetch the job associated with the invoice
     final job = await DaoJob().getById(invoice.jobId);
 
-    final contact = await DaoContact().getPrimaryForJob(job!.id);
+    final billingContact = await DaoContact().getBillingContactByJob(job!);
+
     // Fetch the primary contact for the customer
-    if (contact == null) {
+    if (billingContact == null) {
       throw Exception('You must select a contact for the Job');
     }
-    if (Strings.isBlank(contact.emailAddress)) {
-      throw Exception('''
-You must provide an email address for the Contact ${contact.fullname}''');
+    if (Strings.isBlank(billingContact.emailAddress)) {
+      throw Exception(
+        '''
+You must provide an email address for the Contact ${billingContact.fullname}''',
+      );
     }
 
     // Check if the contact exists in Xero
-    final contactResponse = await xeroApi.getContact(contact.fullname);
+    final contactResponse = await xeroApi.getContact(billingContact.fullname);
     String xeroContactId;
 
     if (contactResponse.statusCode == 200) {
@@ -154,7 +158,7 @@ You must provide an email address for the Contact ${contact.fullname}''');
         xeroContactId = contacts.first['ContactID'] as String;
       } else {
         // Create the contact in Xero if it doesn't exist
-        final xeroContact = XeroContact.fromContact(contact);
+        final xeroContact = XeroContact.fromContact(billingContact);
         final createContactResponse = await xeroApi.createContact(
           xeroContact.toJson(),
         );
@@ -170,7 +174,7 @@ You must provide an email address for the Contact ${contact.fullname}''');
                   as String;
           // Update the local contact with the Xero contact ID
           await DaoContact().update(
-            contact.copyWith(xeroContactId: xeroContactId),
+            billingContact.copyWith(xeroContactId: xeroContactId),
           );
         } else {
           throw Exception('Failed to create contact in Xero');
@@ -187,9 +191,8 @@ You must provide an email address for the Contact ${contact.fullname}''');
 
     final createInvoiceResponse = await xeroApi.uploadInvoice(xeroInvoice);
     if (createInvoiceResponse.statusCode != 200) {
-      throw Exception(
-        'Failed to create invoice in Xero: ${createInvoiceResponse.body}',
-      );
+      final error = extractXeroErrorMessage(createInvoiceResponse.body);
+      throw Exception(error);
     }
     final responseBody = jsonDecode(createInvoiceResponse.body);
 
