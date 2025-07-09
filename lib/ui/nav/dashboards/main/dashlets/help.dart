@@ -12,7 +12,7 @@
 // lib/src/ui/dashboard/help_dashlet.dart
 import 'package:flutter/material.dart';
 
-import '../../../dashlet_card.dart';
+import '../../dashlet_card.dart';
 
 /// Dashlet for Help sub-dashboard
 class HelpDashlet extends StatelessWidget {

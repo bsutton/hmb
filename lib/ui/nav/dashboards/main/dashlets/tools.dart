@@ -12,7 +12,7 @@
 // lib/src/ui/dashboard/tools_dashlet.dart
 import 'package:flutter/material.dart';
 
-import '../../../dashlet_card.dart';
+import '../../dashlet_card.dart';
 
 /// Dashlet for Tools shortcut
 class ToolsDashlet extends StatelessWidget {

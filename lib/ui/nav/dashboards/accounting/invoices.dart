@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../dao/dao.g.dart';
 import '../../../../util/util.g.dart';
-import '../../dashlet_card.dart';
+import '../dashlet_card.dart';
 
 class InvoiceDashlet extends StatelessWidget {
   const InvoiceDashlet({super.key});

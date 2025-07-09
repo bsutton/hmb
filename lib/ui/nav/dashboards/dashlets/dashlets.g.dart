@@ -15,13 +15,16 @@
 // barrel_create is sponsored by OnePub the dart private repository
 // https://onepub.dev
 //
-export 'dashboards/dashboard.dart';
-export 'dashboards/accounting/accounting_dashboard_page.dart';
-export 'dashboards/help/help_dashboard_page.dart';
-export 'dashboards/main/dashlets/schedule.dart';
-export 'dashboards/main/main_dashboard_page.dart';
-export 'dashboards/settings/settings_dashboard_page.dart';
-export 'dashboards/dashlet_card.dart';
-export 'error_page.dart';
-export 'home_scaffold.dart';
-export 'route.dart';
+export '../accounting/invoices.dart';
+export '../accounting/receipt.dart';
+export '../main/dashlets/accounting.dart';
+export '../main/dashlets/customers.dart';
+export '../main/dashlets/google_backup.dart';
+export '../main/dashlets/help.dart';
+export '../main/dashlets/job.dart';
+export '../main/dashlets/manufacturers.dart';
+export '../main/dashlets/packing.dart';
+export '../main/dashlets/settings.dart';
+export '../main/dashlets/shopping.dart';
+export '../main/dashlets/supplier.dart';
+export '../main/dashlets/tools.dart';

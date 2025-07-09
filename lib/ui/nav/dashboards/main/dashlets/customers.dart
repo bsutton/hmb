@@ -13,7 +13,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../dao/dao.g.dart';
-import '../../../dashlet_card.dart';
+import '../../dashlet_card.dart';
 
 /// Dashlet for total customers count
 class CustomersDashlet extends StatelessWidget {

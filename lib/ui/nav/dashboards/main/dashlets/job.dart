@@ -15,7 +15,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../../../dao/dao.g.dart';
-import '../../../dashlet_card.dart';
+import '../../dashlet_card.dart';
 
 class JobsDashlet extends StatelessWidget {
   const JobsDashlet({super.key});

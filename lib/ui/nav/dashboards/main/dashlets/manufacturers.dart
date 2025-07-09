@@ -12,7 +12,7 @@
 // lib/src/ui/dashboard/manufacturers_dashlet.dart
 import 'package:flutter/material.dart';
 
-import '../../../dashlet_card.dart';
+import '../../dashlet_card.dart';
 
 /// Dashlet for Manufacturers shortcut
 class ManufacturersDashlet extends StatelessWidget {

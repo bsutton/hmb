@@ -14,9 +14,9 @@
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
-import '../../util/app_title.dart';
+import '../../../util/app_title.dart';
 import 'dashlet_card.dart';
-import 'route.dart';
+import '../route.dart';
 
 /// Main dashboard page wired up to refresh on return
 class DashboardPage extends StatefulWidget {
