@@ -18,6 +18,7 @@ import '../../../util/format.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/select/hmb_select_task.dart';
 import '../../widgets/select/select.g.dart';
+import '../../widgets/text/text.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_time_entry_screen.dart';
 
@@ -69,6 +70,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
     return list;
   }
 
+  /// Show filter window with Task and Supplier selection.
   Widget _buildFilterSheet(BuildContext context) => StatefulBuilder(
     builder: (context, sheetSetState) => ListView(
       padding: const EdgeInsets.all(16),
@@ -128,9 +130,9 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
 
   Future<Widget> _getTitle(TimeEntry entry) async {
     final task = await DaoTask().getById(entry.taskId);
-    return Text(
-      '${formatDate(entry.startTime)} Task: ${task!.name}',
-      style: const TextStyle(fontWeight: FontWeight.bold),
+    return HMBTextLine(
+      formatDate(entry.startTime),
+      // style: const TextStyle(fontWeight: FontWeight.bold),
     );
   }
 
@@ -145,6 +147,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
   Widget build(BuildContext context) => Scaffold(
     body: EntityListScreen<TimeEntry>(
       key: _entityListKey,
+
       pageTitle: 'Time Entries',
       dao: DaoTimeEntry(),
       fetchList: _fetchFiltered,
@@ -152,7 +155,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
       onFilterSheetClosed: () async =>
           await _entityListKey.currentState?.refresh(),
       onClearAll: _clearAllFilters,
-      cardHeight: 220,
+      cardHeight: 260,
       title: (entry) async => _getTitle(entry),
       onEdit: (entry) => TimeEntryEditScreen(job: widget.job, timeEntry: entry),
       details: (entry) => FutureBuilderEx(
@@ -180,19 +183,21 @@ class TimeEntryTile extends StatelessWidget {
   final TimeEntry timeEntry;
   final String taskName;
 
+  static const format = 'h:mm a';
   @override
   Widget build(BuildContext context) => ListTile(
+    contentPadding: EdgeInsets.zero,
     subtitle: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        HMBTextLine(taskName),
         if (timeEntry.supplierId != null)
           FutureBuilderEx(
             future: DaoSupplier().getById(timeEntry.supplierId),
             builder: (context, supplier) => Text('Supplier: ${supplier!.name}'),
           ),
-        Text('Start Time: ${formatDateTime(timeEntry.startTime)}'),
         Text(
-          'End Time: ${timeEntry.endTime != null ? formatDateTime(timeEntry.endTime!) : "Ongoing"}',
+          'Time: ${formatTime(timeEntry.startTime, format)} - ${timeEntry.endTime != null ? formatTime(timeEntry.endTime!, format) : "Ongoing"}',
         ),
         Text('Duration: ${formatDuration(timeEntry.duration)}'),
         if (timeEntry.note != null && timeEntry.note!.isNotEmpty)
