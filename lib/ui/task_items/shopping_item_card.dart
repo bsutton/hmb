@@ -26,7 +26,6 @@ abstract class ShoppingItemCard extends StatelessWidget {
   const ShoppingItemCard({
     required this.itemContext,
     required this.onReload,
-
     super.key,
   });
 
@@ -41,18 +40,22 @@ abstract class ShoppingItemCard extends StatelessWidget {
     onTap: () => showShoppingItemDialog(context, itemContext, onReload),
     child: SurfaceCard(
       title: itemContext.taskItem.description,
-      height: 240,
+      height: 260,
       body: FutureBuilderEx<CustomerAndJob>(
         future: CustomerAndJob.fetch(itemContext),
         builder: (_, details) {
           final det = details!;
           return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              ItemCardCommon(
-                customerAndJob: det,
-                taskItem: itemContext.taskItem,
+              // <-- Make the text column take all available space
+              Expanded(
+                child: ItemCardCommon(
+                  customerAndJob: det,
+                  taskItem: itemContext.taskItem,
+                ),
               ),
+              const SizedBox(width: 8),
+              // <-- Action buttons stay at their intrinsic size
               buildActions(context, det),
             ],
           );
