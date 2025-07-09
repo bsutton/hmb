@@ -144,7 +144,7 @@ class Invoice extends Entity<Invoice> {
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
 
     final xeroInvoice = XeroInvoice(
-      reference: job!.summary,
+      reference: job.summary,
       type: 'ACCREC',
       contact: xeroContact,
       issueDate: LocalDate.fromDateTime(invoice.createdDate),
