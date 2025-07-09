@@ -337,22 +337,31 @@ class CustomerAndJob {
   CustomerAndJob._internal(
     this.customer,
     this.job,
+    this.task,
     this.supplier,
     this.nextActivity,
   );
   static Future<CustomerAndJob> fetch(TaskItemContext itemContext) async {
     final job = await DaoJob().getJobForTask(itemContext.task.id);
+    final task = await DaoTask().getById(itemContext.task.id);
     final customer = await DaoCustomer().getByJob(job!.id);
     final supplier = itemContext.taskItem.supplierId == null
         ? null
         : await DaoSupplier().getById(itemContext.taskItem.supplierId);
     final nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
 
-    return CustomerAndJob._internal(customer!, job, supplier, nextActivity);
+    return CustomerAndJob._internal(
+      customer!,
+      job,
+      task!,
+      supplier,
+      nextActivity,
+    );
   }
 
   final Customer customer;
   final Job job;
+  final Task task;
   final Supplier? supplier;
   final JobActivity? nextActivity;
 

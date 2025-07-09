@@ -32,9 +32,10 @@ class ItemCardCommon extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      HMBTextLine('Customer: ${customerAndJob.customer.name}'),
+      HMBTextLine(customerAndJob.customer.name),
       HMBTextLine('Job: ${customerAndJob.job.summary}'),
-      HMBTextLine('Supplier: ${customerAndJob.supplier?.name}'),
+      HMBTextLine('Task: ${customerAndJob.task.name}'),
+      HMBTextLine('Supplier: ${customerAndJob.supplier?.name ?? ''}'),
       HMBTextLine('Qty: ${taskItem.actualMaterialQuantity ?? MoneyEx.zero}'),
       HMBTextLine(
         'Unit Cost: ${taskItem.actualMaterialUnitCost ?? MoneyEx.zero}',
