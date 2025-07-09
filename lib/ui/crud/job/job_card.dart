@@ -20,7 +20,6 @@ import '../../../util/format.dart';
 import '../../../util/local_date.dart';
 import '../../../util/rich_text_helper.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
-import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/surface.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
@@ -59,7 +58,7 @@ class _JobCardState extends DeferredState<JobCard> {
     super.didUpdateWidget(old);
   }
 
-  static const cardHeight = 594.0;
+  static const cardHeight = 560.0;
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
     waitingBuilder: (context) => const HMBPlaceHolder(height: cardHeight),
@@ -95,8 +94,6 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
       const HMBText('Description:', bold: true),
       HMBTextBlock(RichTextHelper.toPlainText(job.description)),
       const SizedBox(height: 8),
-      PhotoGallery.forJob(job: job),
-      const SizedBox(height: 16),
       buildStatistics(job),
     ],
   );

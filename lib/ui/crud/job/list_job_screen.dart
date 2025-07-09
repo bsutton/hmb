@@ -70,7 +70,7 @@ class _JobListScreenState extends State<JobListScreen> {
               onEdit: (job) => JobEditScreen(job: job),
               fetchList: _fetchJobs,
               title: (job) => HMBCardTitle(job.summary),
-              cardHeight: 773,
+              cardHeight: 700,
               background: (job) async =>
                   (await DaoJobStatus().getById(
                     job.jobStatusId,
