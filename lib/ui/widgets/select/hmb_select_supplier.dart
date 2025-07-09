@@ -66,16 +66,22 @@ class HMBSelectSupplierState extends State<HMBSelectSupplier> {
   Widget build(BuildContext context) => JuneBuilder(
     () => widget.selectedSupplier,
     id: widget.selectedSupplier,
-    builder: (context) => HMBDroplist<Supplier>(
-      key: ValueKey(widget.selectedSupplier._selected),
-      title: widget.isRequired ? 'Supplier *' : 'Supplier',
-      selectedItem: _getInitialSupplier,
-      onChanged: _onSupplierChanged,
-      onAdd: _addSupplier,
-      items: _getSuppliers,
-      format: (supplier) => supplier.name,
-      required: widget.isRequired,
-    ),
+    builder: (context) {
+      // print(
+      //   'build called: hash: ${widget.selectedSupplier.hashCode} value: ${widget.selectedSupplier._selected}',
+      // );
+      final hmbDroplist = HMBDroplist<Supplier>(
+        key: ValueKey(widget.selectedSupplier._selected),
+        title: widget.isRequired ? 'Supplier *' : 'Supplier',
+        selectedItem: _getInitialSupplier,
+        onChanged: _onSupplierChanged,
+        onAdd: _addSupplier,
+        items: _getSuppliers,
+        format: (supplier) => supplier.name,
+        required: widget.isRequired,
+      );
+      return hmbDroplist;
+    },
   );
 
   // void clear() {
@@ -85,11 +91,15 @@ class HMBSelectSupplierState extends State<HMBSelectSupplier> {
 }
 
 class SelectedSupplier extends JuneState {
+  // SelectedSupplier() {
+  //   print('created selected supplier: $hashCode');
+  // }
   int? _selected;
 
   set selected(int? value) {
     _selected = value;
     setState([this]);
+    // print('setting state to $value for hash $hashCode');
   }
 
   int? get selected => _selected;
