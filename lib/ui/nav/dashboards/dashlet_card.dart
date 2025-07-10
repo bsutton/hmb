@@ -9,8 +9,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/src/ui/dashboard/dashlet_card.dart
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -34,17 +32,19 @@ typedef DashletWidgetBuilder<T> =
 const double kDashletMaxWidth = 300;
 const double kDashletMaxHeight = 300;
 
-/// A reusable dashlet card widget that reloads its data when the dashboard resumes
+/// A reusable dashlet card widget that reloads its data when the dashboard resumes.
+/// Supports an optional compact mode for embedding in tighter UIs (e.g. job card).
 class DashletCard<T> extends StatefulWidget {
   const DashletCard({
     required this.label,
     required this.icon,
     required this.dashletValue,
-    super.key,
     this.route,
     this.widgetBuilder,
     this.builder,
     this.onTapOverride,
+    this.compact = false,
+    super.key,
   });
 
   final String label;
@@ -54,6 +54,7 @@ class DashletCard<T> extends StatefulWidget {
   final DashletWidgetBuilder<T>? widgetBuilder;
   final DashletWidgetBuilder<T>? builder;
   final VoidCallback? onTapOverride;
+  final bool compact;
 
   @override
   State<DashletCard<T>> createState() => _DashletCardState<T>();
@@ -63,12 +64,27 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Choose sizes based on compact flag
+    final maxW = widget.compact ? 140.0 : kDashletMaxWidth;
+    final maxH = widget.compact ? 140.0 : kDashletMaxHeight;
+    final minW = widget.compact ? 80.0 : 100.0;
+    final minH = widget.compact ? 80.0 : 100.0;
+    final iconSize = widget.compact ? 24.0 : 40.0;
+    final labelStyle = widget.compact
+        ? theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)
+        : theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600);
+    final valueStyle = widget.compact
+        ? theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)
+        : theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold);
+    final spacing1 = widget.compact ? 4.0 : 8.0;
+    final spacing2 = widget.compact ? 2.0 : 4.0;
+
     return ConstrainedBox(
-      constraints: const BoxConstraints(
-        maxWidth: kDashletMaxWidth,
-        maxHeight: kDashletMaxHeight,
-        minHeight: 100,
-        minWidth: 100,
+      constraints: BoxConstraints(
+        maxWidth: maxW,
+        maxHeight: maxH,
+        minWidth: minW,
+        minHeight: minH,
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -79,55 +95,61 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 4,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(widget.icon, size: 40, color: theme.colorScheme.primary),
-              const SizedBox(height: 8),
-              Text(
-                widget.label,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+          child: Padding(
+            padding: EdgeInsets.all(widget.compact ? 6 : 12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  widget.icon,
+                  size: iconSize,
+                  color: theme.colorScheme.primary,
                 ),
-              ),
-              const SizedBox(height: 4),
-              JuneBuilder(
-                DashboardReloaded.new,
-                builder: (_) => FutureBuilderEx<DashletValue<T>>(
-                  // ignore: discarded_futures
-                  future: widget.dashletValue(),
-                  builder: (ctx, dv) {
-                    if (dv == null) {
-                      return const SizedBox();
-                    }
-                    if (widget.widgetBuilder != null) {
-                      return widget.widgetBuilder!(ctx, dv);
-                    }
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          dv.value.toString(),
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (dv.secondValue != null) ...[
-                          const SizedBox(height: 2),
+                SizedBox(height: spacing1),
+                Text(
+                  widget.label,
+                  textAlign: TextAlign.center,
+                  style: labelStyle,
+                  maxLines: widget.compact ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: spacing2),
+                JuneBuilder(
+                  DashboardReloaded.new,
+                  builder: (_) => FutureBuilderEx<DashletValue<T>>(
+                    future: widget.dashletValue(),
+                    builder: (ctx, dv) {
+                      if (dv == null) {
+                        return const SizedBox();
+                      }
+                      if (widget.widgetBuilder != null) {
+                        return widget.widgetBuilder!(ctx, dv);
+                      }
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                           Text(
-                            dv.secondValue!,
+                            dv.value.toString(),
+                            style: valueStyle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall,
                           ),
+                          if (dv.secondValue != null) ...[
+                            SizedBox(height: spacing2),
+                            Text(
+                              dv.secondValue!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
                         ],
-                      ],
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -135,11 +157,9 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
   }
 
   Future<void> _handleTap(BuildContext context) async {
-    /// a route was passed.
     if (widget.route != null) {
       await GoRouter.of(context).push(widget.route!);
     } else {
-      // A builder was passed with a value.
       final dv = await widget.dashletValue();
       if (!context.mounted) {
         return;

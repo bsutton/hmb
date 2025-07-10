@@ -12,15 +12,16 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../../dao/dao.g.dart';
-import '../../../entity/entity.g.dart';
-import '../../../util/format.dart';
-import '../../widgets/help_button.dart';
-import '../../widgets/select/hmb_select_task.dart';
-import '../../widgets/select/select.g.dart';
-import '../../widgets/text/text.g.dart';
-import '../base_full_screen/list_entity_screen.dart';
+import '../../../../dao/dao.g.dart';
+import '../../../../entity/entity.g.dart';
+import '../../../../util/format.dart';
+import '../../../widgets/help_button.dart';
+import '../../../widgets/select/hmb_select_task.dart';
+import '../../../widgets/select/select.g.dart';
+import '../../../widgets/text/text.g.dart';
+import '../../base_full_screen/list_entity_screen.dart';
 import 'edit_time_entry_screen.dart';
+import 'job_statistics_header.dart';
 
 class TimeEntryListScreen extends StatefulWidget {
   const TimeEntryListScreen({required this.job, super.key});
@@ -140,24 +141,34 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: EntityListScreen<TimeEntry>(
-      key: _entityListKey,
-
-      pageTitle: 'Time Entries',
-      dao: DaoTimeEntry(),
-      fetchList: _fetchFiltered,
-      filterSheetBuilder: _buildFilterSheet,
-      onFilterSheetClosed: () async =>
-          await _entityListKey.currentState?.refresh(),
-      onClearAll: _clearAllFilters,
-      cardHeight: 260,
-      title: (entry) async => _getTitle(entry),
-      onEdit: (entry) => TimeEntryEditScreen(job: widget.job, timeEntry: entry),
-      details: (entry) => FutureBuilderEx(
-        future: getDetails(entry),
-        builder: (context, detail) =>
-            TimeEntryTile(timeEntry: entry, taskName: detail!.task.name),
-      ),
+    body: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Show the job stats up top:
+        JobStatisticsHeader(job: widget.job),
+        // Then the filterable list itself:
+        Expanded(
+          child: EntityListScreen<TimeEntry>(
+            key: _entityListKey,
+            pageTitle: 'Time Entries',
+            dao: DaoTimeEntry(),
+            fetchList: _fetchFiltered,
+            filterSheetBuilder: _buildFilterSheet,
+            onFilterSheetClosed: () async =>
+                await _entityListKey.currentState?.refresh(),
+            onClearAll: _clearAllFilters,
+            cardHeight: 260,
+            title: (entry) async => HMBTextLine(formatDate(entry.startTime)),
+            onEdit: (entry) =>
+                TimeEntryEditScreen(job: widget.job, timeEntry: entry),
+            details: (entry) => FutureBuilderEx<_Details>(
+              future: getDetails(entry),
+              builder: (ctx, detail) =>
+                  TimeEntryTile(timeEntry: entry, taskName: detail!.task.name),
+            ),
+          ),
+        ),
+      ],
     ),
   );
 }

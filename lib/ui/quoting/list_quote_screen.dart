@@ -27,8 +27,9 @@ import 'quote_card.dart';
 import 'quote_details_screen.dart';
 
 class QuoteListScreen extends StatefulWidget {
-  const QuoteListScreen({super.key});
+  const QuoteListScreen({super.key, this.job});
 
+  final Job? job;
   @override
   _QuoteListScreenState createState() => _QuoteListScreenState();
 }

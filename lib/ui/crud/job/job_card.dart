@@ -26,9 +26,8 @@ import '../../widgets/text/hmb_phone_text.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../../widgets/text/hmb_text_block.dart';
-import '../../widgets/text/hmb_text_clickable.dart';
 import '../../widgets/text/hmb_text_themes.dart';
-import 'list_time_entry_screen.dart';
+import 'min_job_dashboard.dart';
 
 class JobCard extends StatefulWidget {
   const JobCard({required this.job, super.key});
@@ -94,7 +93,7 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
       const HMBText('Description:', bold: true),
       HMBTextBlock(RichTextHelper.toPlainText(job.description)),
       const SizedBox(height: 8),
-      buildStatistics(job),
+      MiniJobDashboard(job: job),
     ],
   );
 
@@ -137,77 +136,6 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
       );
     },
   );
-
-  Widget buildStatistics(Job job) => FutureBuilderEx(
-    waitingBuilder: (_) => const HMBPlaceHolder(height: 97),
-    // ignore: discarded_futures
-    future: DaoJob().getJobStatistics(job),
-    builder: (context, remainingTasks) {
-      if (remainingTasks == null) {
-        return const CircularProgressIndicator();
-      }
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final isMobile = constraints.maxWidth < 800;
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: isMobile
-                ? _buildMobileLayout(remainingTasks, context)
-                : _buildDesktopLayout(remainingTasks, context),
-          );
-        },
-      );
-    },
-  );
-
-  Widget _buildMobileLayout(JobStatistics stats, BuildContext context) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [..._buildStatistics(stats)],
-      );
-
-  Widget _buildDesktopLayout(JobStatistics stats, BuildContext context) =>
-      Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: 45,
-            child: Row(children: [..._buildStatistics(stats)]),
-          ),
-        ],
-      );
-
-  List<Widget> _buildStatistics(JobStatistics remainingTasks) => [
-    HMBText(
-      'Tasks: ${remainingTasks.completedTasks}/${remainingTasks.totalTasks}',
-      bold: true,
-    ),
-    const SizedBox(width: 16),
-    HMBText(
-      'Est. Effort(hrs): ${remainingTasks.completedLabourHours.format('0.00')}/${remainingTasks.expectedLabourHours.format('0.00')}',
-      bold: true,
-    ),
-    const SizedBox(width: 16),
-    HMBText(
-      'Earnings: ${remainingTasks.completedMaterialCost}/${remainingTasks.totalMaterialCost}',
-      bold: true,
-    ),
-    const SizedBox(width: 16),
-    HMBTextClickable(
-      text: 'Worked: ${remainingTasks.worked}/${remainingTasks.workedHours}hrs',
-      bold: true,
-      onPressed: () async {
-        await Navigator.push(
-          context,
-          MaterialPageRoute<void>(
-            builder: (context) => TimeEntryListScreen(job: job),
-          ),
-        );
-      },
-    ),
-  ];
 }
 
 class InvoiceScreenArguments {

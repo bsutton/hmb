@@ -22,8 +22,9 @@ import '../../../widgets/layout/hmb_spacer.dart';
 import 'job_card.dart'; // The JobCard from previous snippet
 
 class JobEstimatesListScreen extends StatefulWidget {
-  const JobEstimatesListScreen({super.key});
+  const JobEstimatesListScreen({super.key, this.job});
 
+  final Job? job;
   @override
   _JobEstimatesListScreenState createState() => _JobEstimatesListScreenState();
 }

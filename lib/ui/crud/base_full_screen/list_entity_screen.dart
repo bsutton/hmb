@@ -33,6 +33,18 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     required this.pageTitle,
     required this.title,
     required this.details,
+
+    /// Only implement onAdd if you need to override the default
+    /// behavour (such as showing your own UI)
+    /// when adding a new entity - normally an entity is created
+    /// and then [onEdit] is called.
+    this.onAdd,
+
+    /// Only implement onDdelete if you need to override the default
+    /// behavour (such as showing your own UI)
+    /// when adding a deleting an entity
+    /// Return true if the delete occured
+    this.onDelete,
     this.cardHeight = 300,
     this.background,
     Future<List<T>> Function(String? filter)? fetchList,
@@ -52,6 +64,8 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   final String pageTitle;
   final FutureOr<Widget> Function(T entity) title;
   final Widget Function(T entity) details;
+  final Future<T?> Function()? onAdd;
+  final Future<bool> Function(T entity)? onDelete;
   final Widget Function(T? entity) onEdit;
   final Future<Color> Function(T entity)? background;
   final double cardHeight;
@@ -133,14 +147,17 @@ class EntityListScreenState<T extends Entity<T>>
         await refresh();
       },
       onAdd: () async {
-        if (context.mounted) {
-          final newEntity = await Navigator.push<T?>(
+        T? newEntity;
+        if (widget.onAdd != null) {
+          newEntity = await widget.onAdd!.call();
+        } else if (context.mounted) {
+          newEntity = await Navigator.push<T?>(
             context,
             MaterialPageRoute(builder: (context) => widget.onEdit(null)),
           );
-          if (newEntity != null) {
-            _partialRefresh(newEntity);
-          }
+        }
+        if (newEntity != null) {
+          _partialRefresh(newEntity);
         }
       },
     );
@@ -277,9 +294,17 @@ class EntityListScreenState<T extends Entity<T>>
   }
 
   Future<void> _delete(T entity) async {
+    var remove = false;
     try {
-      await widget.dao.delete(entity.id);
-      _removeFromList(entity);
+      if (widget.onDelete != null) {
+        remove = await widget.onDelete!.call(entity);
+      } else {
+        await widget.dao.delete(entity.id);
+        remove = true;
+      }
+      if (remove) {
+        _removeFromList(entity);
+      }
     }
     // ignore: avoid_catches_without_on_clauses
     catch (e) {

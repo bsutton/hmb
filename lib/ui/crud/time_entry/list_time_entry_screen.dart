@@ -25,7 +25,12 @@ class TimeEntryListScreen extends StatelessWidget {
   final Parent<Task> parent;
 
   @override
-  Widget build(BuildContext context) => NestedEntityListScreen<TimeEntry, Task>(
+  Widget build(BuildContext context) => 
+  
+  
+  
+  
+  NestedEntityListScreen<TimeEntry, Task>(
     parent: parent,
     entityNamePlural: 'Time Entries',
     entityNameSingular: 'Time Entry',

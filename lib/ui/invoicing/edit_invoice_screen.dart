@@ -27,7 +27,6 @@ import '../../dao/dao_task_item.dart';
 import '../../dao/dao_time_entry.dart';
 import '../../entity/invoice_line.dart';
 import '../../util/format.dart';
-import '../dialog/hmb_ask_user_to_continue.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_icon_button.dart';
@@ -109,14 +108,6 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                       },
                     ),
                     const SizedBox(width: 16),
-                    HMBButton(
-                      label: 'Delete Invoice',
-                      hint:
-                          'Delete the local invoice and the Xero invoice if it has been uploaded ',
-                      onPressed: () async {
-                        await _deleteInvoice();
-                      },
-                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -167,42 +158,6 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       );
     },
   );
-
-  Future<void> _deleteInvoice() async {
-    await askUserToContinue(
-      context: context,
-      title: 'Delete Confirmation',
-      message: 'Are you sure you want to delete this invoice?',
-      onConfirmed: () async {
-        try {
-          final invoiceDetails = await _invoiceDetails;
-          final sent = invoiceDetails.invoice.sent;
-          if (sent) {
-            HMBToast.error(
-              'This invoice has been sent to the customer and cannot be deleted',
-            );
-            return;
-          }
-
-          if (await ExternalAccounting().isEnabled()) {
-            if (Strings.isNotBlank(invoiceDetails.invoice.invoiceNum)) {
-              await _xeroApi.login();
-              await BlockingUI().runAndWait(() async {
-                await _xeroApi.deleteInvoice(invoiceDetails.invoice);
-              }, label: 'Deleting Invoice');
-            }
-          }
-          await DaoInvoice().delete(invoiceDetails.invoice.id);
-          HMBToast.info('Invoice ${invoiceDetails.invoice.bestNumber} deleted');
-          if (mounted) {
-            Navigator.pop(context); // Close after deletion
-          }
-        } catch (e) {
-          HMBToast.error('Failed to delete invoice: $e');
-        }
-      },
-    );
-  }
 
   Future<void> _uploadInvoiceToXero() async {
     if (!(await ExternalAccounting().isEnabled())) {

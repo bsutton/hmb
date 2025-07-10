@@ -15,12 +15,12 @@ import 'package:intl/intl.dart';
 
 import 'package:sqflite_common/sqlite_api.dart';
 
-import '../../../dao/dao.g.dart';
-import '../../../entity/entity.g.dart';
-import '../../dialog/long_duration_dialog.dart';
-import '../../widgets/fields/fields.g.dart';
-import '../../widgets/select/select.g.dart';
-import '../base_nested/edit_nested_screen.dart';
+import '../../../../dao/dao.g.dart';
+import '../../../../entity/entity.g.dart';
+import '../../../dialog/long_duration_dialog.dart';
+import '../../../widgets/fields/fields.g.dart';
+import '../../../widgets/select/select.g.dart';
+import '../../base_nested/edit_nested_screen.dart';
 
 class TimeEntryEditScreen extends StatefulWidget {
   const TimeEntryEditScreen({required this.job, this.timeEntry, super.key});
