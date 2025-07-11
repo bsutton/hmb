@@ -55,7 +55,6 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
           TimeEntryState.new,
         ).activeTimeEntry;
 
-
         if (timeEntry != null && activeEntry != timeEntry) {
           /// we are no longer the active timer.
           timeEntry = null;
@@ -64,7 +63,6 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
       },
     );
   }
-
 
   @override
   Future<void> asyncInitState() async {
@@ -95,21 +93,25 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
       children: [
         JuneBuilder(
           TimeEntryState.new,
-          builder: (timeEntryState) => IconButton(
-            padding: const EdgeInsets.only(top: 8, bottom: 8),
-            visualDensity: const VisualDensity(horizontal: -4),
-            // start / stop icon
-            icon: Icon(
-              timeEntryState.activeTimeEntry != null &&
-                      timeEntry == timeEntryState.activeTimeEntry
-                  ? Icons.stop
-                  : Icons.play_arrow,
-            ),
-            onPressed: () => timeEntry != null
-                // ignore: discarded_futures
-                ? _stop(widget.task)
-                : unawaited(_start(widget.task)),
-          ),
+          builder: (timeEntryState) {
+            final isActive =
+                timeEntryState.activeTimeEntry != null &&
+                timeEntry == timeEntryState.activeTimeEntry;
+
+            return IconButton(
+              padding: const EdgeInsets.only(top: 8, bottom: 8),
+              visualDensity: const VisualDensity(horizontal: -4),
+              // start / stop icon
+              icon: Icon(
+                isActive ? Icons.stop : Icons.play_arrow,
+                color: isActive ? Colors.red : Colors.blue,
+              ),
+              onPressed: () => timeEntry != null
+                  // ignore: discarded_futures
+                  ? _stop(widget.task)
+                  : unawaited(_start(widget.task)),
+            );
+          },
         ),
         _buildElapsedTime(timeEntry),
       ],
