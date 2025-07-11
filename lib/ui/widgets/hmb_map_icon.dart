@@ -56,7 +56,7 @@ class HMBMapIcon extends StatelessWidget {
           icon: const Icon(Icons.copy),
           onPressed: () => Strings.isEmpty(address)
               ? null
-              : unawaited(clipboardCopyTo(context, address)),
+              : unawaited(clipboardCopyTo( address)),
           color: Strings.isEmpty(address) ? Colors.grey : Colors.blue,
           tooltip: 'Copy Address to the Clipboard',
         ),

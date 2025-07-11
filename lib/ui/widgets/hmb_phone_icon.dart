@@ -51,7 +51,7 @@ class HMBPhoneIcon extends StatelessWidget {
         icon: const Icon(Icons.copy),
         onPressed: () async => Strings.isEmpty(phoneNo)
             ? null
-            : await clipboardCopyTo(context, phoneNo),
+            : await clipboardCopyTo(phoneNo),
         color: Strings.isEmpty(phoneNo) ? Colors.grey : Colors.blue,
         tooltip: 'Copy Phone No. to the Clipboard',
       ),
