@@ -14,8 +14,13 @@ import 'package:flutter/services.dart';
 import '../ui/widgets/hmb_toast.dart';
 
 /// Copies [data] to the clipboard.
-Future<void> clipboardCopyTo( String data) async {
+Future<void> clipboardCopyTo(String data) async {
   await Clipboard.setData(ClipboardData(text: data));
 
-    HMBToast.info('Copy $data to the clipboard');
+  HMBToast.info('Copy $data to the clipboard');
 }
+
+Future<bool> clipboardHasText() async => Clipboard.hasStrings();
+
+Future<String> clipboardGetText() async =>
+    (await Clipboard.getData('text/plain'))?.text ?? '';
