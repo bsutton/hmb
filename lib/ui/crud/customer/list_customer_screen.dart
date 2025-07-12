@@ -24,6 +24,7 @@ import '../../widgets/text/hmb_phone_text.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
+import 'customer_creator.dart';
 import 'edit_customer_screen.dart';
 
 class CustomerListScreen extends StatelessWidget {
@@ -32,10 +33,12 @@ class CustomerListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => EntityListScreen<Customer>(
     pageTitle: 'Customers',
+
     dao: DaoCustomer(),
     title: (entity) => HMBCardHeading(entity.name),
     // ignore: discarded_futures
     fetchList: (filter) => DaoCustomer().getByFilter(filter),
+    onAdd: () async => CustomerCreator.show(context),
     onEdit: (customer) => CustomerEditScreen(customer: customer),
     details: (entity) {
       final customer = entity;

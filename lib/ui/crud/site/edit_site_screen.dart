@@ -19,7 +19,9 @@ import '../../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/entity.dart';
 import '../../../entity/site.dart';
+import '../../widgets/fields/fields.g.dart';
 import '../base_nested/edit_nested_screen.dart';
+import '../customer/customer_paste_panel.dart';
 
 class SiteEditScreen<P extends Entity<P>> extends StatefulWidget {
   const SiteEditScreen({
@@ -84,36 +86,51 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     editor: (site) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (site == null) CustomerPastePanel(onExtract: _onExtract),
         // Add other form fields for the new fields
-        TextFormField(
+        HMBTextField(
           controller: _addressLine1Controller,
-          decoration: const InputDecoration(labelText: 'Address Line 1'),
+          labelText: 'Address Line 1',
+          textCapitalization: TextCapitalization.words,
         ),
-        TextFormField(
+        HMBTextField(
           controller: _addressLine2Controller,
-          decoration: const InputDecoration(labelText: 'Address Line 2'),
+          labelText: 'Address Line 2',
+          textCapitalization: TextCapitalization.words,
         ),
-        TextFormField(
+        HMBTextField(
           controller: _suburbController,
-          decoration: const InputDecoration(labelText: 'Suburb'),
+          labelText: 'Suburb',
           keyboardType: TextInputType.name,
+          textCapitalization: TextCapitalization.words,
+          onChanged: print,
         ),
-        TextFormField(
+        HMBTextField(
           controller: _stateController,
-          decoration: const InputDecoration(labelText: 'State'),
+          labelText: 'State',
           keyboardType: TextInputType.name,
+          textCapitalization: TextCapitalization.words,
         ),
-        TextFormField(
+        HMBTextField(
           controller: _postcodeController,
-          decoration: const InputDecoration(labelText: 'Postcode'),
+          labelText: 'Postcode',
+          textCapitalization: TextCapitalization.characters,
         ),
-        TextFormField(
+        HMBTextField(
           controller: _accessDetailsController, // New field
-          decoration: const InputDecoration(labelText: 'Access Details'),
+          labelText: 'Access Details',
         ),
       ],
     ),
   );
+
+  void _onExtract(ParsedCustomer parsedCustomer) {
+    _addressLine1Controller.text = parsedCustomer.address.street;
+    _suburbController.text = parsedCustomer.address.city;
+    _stateController.text = parsedCustomer.address.state;
+    _postcodeController.text = parsedCustomer.address.postalCode;
+    setState(() {});
+  }
 
   @override
   Future<Site> forUpdate(Site site) async => Site.forUpdate(
