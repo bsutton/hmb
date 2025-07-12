@@ -56,6 +56,7 @@ class Customer extends Entity<Customer> {
     required this.billingContactId,
   }) : super.forUpdate();
 
+  
   factory Customer.fromMap(Map<String, dynamic> map) => Customer(
     id: map['id'] as int,
     name: map['name'] as String,
@@ -67,6 +68,31 @@ class Customer extends Entity<Customer> {
     hourlyRate: MoneyEx.fromInt(map['default_hourly_rate'] as int?),
     billingContactId: map['billing_contact_id'] as int?,
   );
+
+
+  /// Returns a copy of this [Customer] with the given fields replaced.
+  Customer copyWith({
+    int? id,
+    String? name,
+    String? description,
+    bool? disbarred,
+    CustomerType? customerType,
+    Money? hourlyRate,
+    int? billingContactId,
+    DateTime? createdDate,
+    DateTime? modifiedDate,
+  }) => Customer(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    disbarred: disbarred ?? this.disbarred,
+    customerType: customerType ?? this.customerType,
+    hourlyRate: hourlyRate ?? this.hourlyRate,
+    billingContactId: billingContactId ?? this.billingContactId,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+  );
+  
   final String name;
   final String? description;
   final bool disbarred;
