@@ -129,16 +129,16 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     if (!mounted) {
       return null;
     }
-    final invoiceOptions = await selectTasksToInvoice(
-      context: context,
-      job: job,
-      title: 'Tasks to bill',
-    );
-
-    if (invoiceOptions == null) {
-      return null;
-    }
     try {
+      final invoiceOptions = await selectTasksToInvoice(
+        context: context,
+        job: job,
+        title: 'Tasks to bill',
+      );
+
+      if (invoiceOptions == null) {
+        return null;
+      }
       if (invoiceOptions.selectedTaskIds.isNotEmpty ||
           invoiceOptions.billBookingFee) {
         return await createTimeAndMaterialsInvoice(
