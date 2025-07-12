@@ -129,9 +129,6 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
     });
   }
 
-  Future<Widget> _getTitle(TimeEntry entry) async =>
-      HMBTextLine(formatDate(entry.startTime));
-
   Future<_Details> getDetails(TimeEntry entry) async {
     final task = await DaoTask().getById(entry.taskId);
     return _Details(task!, entry);
