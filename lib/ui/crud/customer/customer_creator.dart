@@ -3,7 +3,9 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
+import '../../../util/parse/parse_customer.dart';
 import '../../../util/util.g.dart';
+import '../../dialog/source_context.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/widgets.g.dart';
@@ -34,6 +36,7 @@ class _CustomerCreatorState extends State<CustomerCreator> {
 
   final _firstName = TextEditingController();
   final _surname = TextEditingController();
+  final _mobileNo = TextEditingController();
   final _email = TextEditingController();
   final _customerName = TextEditingController();
   final _addressLine1 = TextEditingController();
@@ -46,6 +49,7 @@ class _CustomerCreatorState extends State<CustomerCreator> {
   void dispose() {
     _firstName.dispose();
     _surname.dispose();
+    _mobileNo.dispose();
     _email.dispose();
     _customerName.dispose();
     _addressLine1.dispose();
@@ -93,7 +97,13 @@ class _CustomerCreatorState extends State<CustomerCreator> {
                     labelText: 'Surname',
                     textCapitalization: TextCapitalization.words,
                   ),
-                  HMBTextField(controller: _email, labelText: 'Email Address'),
+                  HMBPhoneField(
+                    controller: _mobileNo,
+                    labelText: 'Mobile No.',
+                    sourceContext: SourceContext(),
+                  ),
+
+                  HMBEmailField(controller: _email, labelText: 'Email Address'),
                   HMBTextField(
                     controller: _addressLine1,
                     labelText: 'Address Line 1',
@@ -118,7 +128,7 @@ class _CustomerCreatorState extends State<CustomerCreator> {
                   HMBTextField(
                     controller: _postcode,
                     labelText: 'Postcode',
-                    textCapitalization: TextCapitalization.words,
+                    textCapitalization: TextCapitalization.characters,
                   ),
                 ],
               ),
@@ -148,6 +158,7 @@ class _CustomerCreatorState extends State<CustomerCreator> {
     }
 
     _email.text = parsedCustomer.email;
+    _mobileNo.text = parsedCustomer.mobile;
 
     _firstName.text = parsedCustomer.firstname;
     _surname.text = parsedCustomer.surname;
@@ -193,7 +204,7 @@ class _CustomerCreatorState extends State<CustomerCreator> {
       final contact = Contact.forInsert(
         firstName: _firstName.text,
         surname: _surname.text,
-        mobileNumber: '',
+        mobileNumber: _mobileNo.text,
         landLine: '',
         officeNumber: '',
         emailAddress: _email.text,
