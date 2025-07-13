@@ -174,7 +174,7 @@ class CheckListItem extends Entity<CheckListItem> {
   /// The estimated cost per unit of material.
   Money? estimatedMaterialUnitCost;
 
-  /// The esitmated quantity of the materials.
+  /// The estimated quantity of the materials.
   Fixed? estimatedMaterialQuantity;
 
   // T&M uses the actuals, Fixed uses the estimates for
