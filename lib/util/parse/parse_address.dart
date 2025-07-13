@@ -32,7 +32,7 @@ class ParsedAddress {
       Strings.isBlank(postalCode);
 
   // ---------- implementation ----------
-  static List<ParsedAddress> _parseAddressList(String multilineInput) {
+  static List<ParsedAddress> parseAddressList(String multilineInput) {
     final lines = multilineInput
         .split('\n')
         .map((l) => l.trim())

@@ -112,7 +112,9 @@ class ParsedCustomer {
       RegExp(_emailRe).firstMatch(text ?? '')?.group(0) ?? '';
 
   static String _parsePhone(String? input) {
-    if (Strings.isBlank(input)) return '';
+    if (Strings.isBlank(input)) {
+      return '';
+    }
 
     final util = PhoneNumberUtil.instance;
     final region = _deviceRegion() ?? 'AU';
