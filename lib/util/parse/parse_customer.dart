@@ -3,12 +3,17 @@
 //   'Unable to extract any customer details from the message. You can copy and paste the details manually.',
 // );
 
+import 'dart:ui';
+
+import 'package:dlibphonenumber/dlibphonenumber.dart';
 import 'package:strings/strings.dart';
 
-import '../../dao/dao.g.dart';
-import 'parse.dart';
+import '../../dao/dao_system.dart';
 import 'parse_address.dart';
 
+/// --------------------------
+/// ParsedCustomer
+/// --------------------------
 class ParsedCustomer {
   ParsedCustomer({
     required this.customerName,
@@ -19,16 +24,35 @@ class ParsedCustomer {
     required this.address,
   });
 
+  // ---------- factory parser ----------
   static Future<ParsedCustomer> parse(String text) async {
     final system = await DaoSystem().get();
-    final userFirstname = system.firstname ?? '';
-    final userSurname = system.surname ?? '';
-    final email = parseEmail(text);
-    final mobile = parsePhone(text);
+    final recipientFirstName = system.firstname ?? '';
+    final recipientSurname = system.surname ?? '';
+
+    // 1️⃣  Extract core items (email, phone, address)
+    final email = _parseEmail(text);
+    final mobile = _parsePhone(text);
     final address = ParsedAddress.parse(text);
 
+    // 2️⃣  Remove street + city tokens from the text before name search
+    var scrubbed = text;
+    if (address.street.isNotEmpty) {
+      scrubbed = scrubbed.replaceAll(
+        RegExp(RegExp.escape(address.street), caseSensitive: false),
+        '*' * address.street.length,
+      );
+    }
+    if (address.city.isNotEmpty) {
+      scrubbed = scrubbed.replaceAll(
+        RegExp(RegExp.escape(address.city), caseSensitive: false),
+        '*' * address.city.length,
+      );
+    }
+
+    // 3️⃣  Find a name that isn’t the recipient’s
     final nameRegex = RegExp(r'\b([A-Z][a-z]+)\s+([A-Z][a-z]+)\b');
-    final matches = nameRegex.allMatches(text);
+    final matches = nameRegex.allMatches(scrubbed);
 
     var firstName = '';
     var lastName = '';
@@ -38,10 +62,10 @@ class ParsedCustomer {
       final candidateLast = match.group(2) ?? '';
 
       final isRecipientName =
-          candidateFirst.toLowerCase() == userFirstname.toLowerCase() ||
-          candidateFirst.toLowerCase() == userSurname.toLowerCase() ||
-          candidateLast.toLowerCase() == userFirstname.toLowerCase() ||
-          candidateLast.toLowerCase() == userSurname.toLowerCase();
+          candidateFirst.equalsIgnoreCase(recipientFirstName) ||
+          candidateFirst.equalsIgnoreCase(recipientSurname) ||
+          candidateLast.equalsIgnoreCase(recipientFirstName) ||
+          candidateLast.equalsIgnoreCase(recipientSurname);
 
       if (!isRecipientName) {
         firstName = candidateFirst;
@@ -62,6 +86,7 @@ class ParsedCustomer {
     );
   }
 
+  // ---------- public fields ----------
   String customerName;
   String email;
   String mobile;
@@ -76,4 +101,44 @@ class ParsedCustomer {
       Strings.isBlank(mobile) &&
       Strings.isBlank(customerName) &&
       address.isEmpty();
+
+  // ---------- private helpers ----------
+  static const _emailRe =
+      r'''(?:[a-z0-9!#\$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#\$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])''';
+
+  static String _parseEmail(String? text) =>
+      RegExp(_emailRe).firstMatch(text ?? '')?.group(0) ?? '';
+
+  static String _parsePhone(String? input) {
+    if (Strings.isBlank(input)) return '';
+
+    final util = PhoneNumberUtil.instance;
+    final region = _deviceRegion() ?? 'AU';
+
+    for (final len in [
+      Leniency.exactGrouping,
+      Leniency.strictGrouping,
+      Leniency.valid,
+      Leniency.possible,
+    ]) {
+      final matches = util.findNumbers(input!, region, len, Int64(20));
+      if (matches.isNotEmpty) {
+        return _formatPhone(matches.first.number, region);
+      }
+    }
+    return '';
+  }
+
+  static String? _deviceRegion() =>
+      PlatformDispatcher.instance.locale.countryCode;
+
+  static String _formatPhone(PhoneNumber phone, String defaultRegion) {
+    final util = PhoneNumberUtil.instance;
+    final isLocal =
+        phone.countryCode == util.getCountryCodeForRegion(defaultRegion);
+    final fmt = isLocal
+        ? PhoneNumberFormat.national
+        : PhoneNumberFormat.international;
+    return util.format(phone, fmt);
+  }
 }

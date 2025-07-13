@@ -1,5 +1,13 @@
+// parsed_customer.dart
+// --------------------------------------------------------------
+// One file containing both ParsedCustomer and ParsedAddress.
+// --------------------------------------------------------------
+
 import 'package:strings/strings.dart';
 
+/// --------------------------
+/// ParsedAddress
+/// --------------------------
 class ParsedAddress {
   ParsedAddress({
     this.street = '',
@@ -9,77 +17,8 @@ class ParsedAddress {
   });
 
   factory ParsedAddress.parse(String text) =>
-      parseAddressList(text).firstOrNull ?? ParsedAddress();
-
-  static List<ParsedAddress> parseAddressList(String multilineInput) {
-    final lines = multilineInput
-        .split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
-
-    // only return non-empty addresses.
-    return lines
-        .map(parseAddressEsri)
-        .where((address) => !address.isEmpty())
-        .toList();
-  }
-
-  /// Attempt to extract address components from a string formatted like an Esri address.
-  /// https://stackoverflow.com/questions/11160192/how-to-parse-freeform-street-postal-address-out-of-text-and-into-components
-  static ParsedAddress parseAddressEsri(String input) {
-    final address = ParsedAddress();
-    final tokens = input.trim().split(RegExp(r'\s+'));
-    if (tokens.isEmpty) {
-      return address;
-    }
-
-    for (var i = 0; i < tokens.length; i++) {
-      final anchor = tokens[i];
-      if (!RegExp(r'^\d+[A-Za-z]?(/\d+)?$').hasMatch(anchor)) {
-        continue;
-      }
-
-      // Try to find the street suffix in the tokens following the anchor
-      var suffixIndex = -1;
-      for (var j = i + 1; j < tokens.length; j++) {
-        final word = tokens[j].toLowerCase().replaceAll(RegExp(r'[^\w]'), '');
-        if (streetSuffixes.contains(word)) {
-          suffixIndex = j;
-          break;
-        }
-      }
-
-      // If no suffix found, this is not a valid street → continue searching
-      if (suffixIndex == -1) {
-        continue;
-      }
-
-      // Valid street found → extract street and city
-      final streetTokens = tokens.sublist(i, suffixIndex + 1);
-      final cityTokens = tokens.sublist(suffixIndex + 1);
-
-      address
-        ..street = _stripTrailingPunctuation(streetTokens.join(' '))
-        ..city = _stripTrailingPunctuation(
-          _truncateWords(cityTokens.join(' '), 3).join(' '),
-        )
-        ..state = ''
-        ..postalCode = '';
-
-      return address;
-    }
-
-    // No valid street pattern found
-    return address;
-  }
-
-  // Limit city and state to at most 3 words each
-  static List<String> _truncateWords(String input, int maxWords) {
-    final words = input.trim().split(RegExp(r'\s+'));
-    return words.take(maxWords).toList();
-  }
-
+      _parseAddressEsri(text.replaceAll('\n', '').replaceAll('\r\n', ''));
+  // ---------- public fields ----------
   String street;
   String city;
   String state;
@@ -90,57 +29,131 @@ class ParsedAddress {
       Strings.isBlank(city) &&
       Strings.isBlank(state) &&
       Strings.isBlank(postalCode);
-  // Remove trailing punctuation
-  static String _stripTrailingPunctuation(String input) =>
-      input.trim().replaceAll(RegExp(r'[.,;:!]+$'), '');
-}
 
-const streetSuffixes = {
-  'st',
-  'street',
-  'rd',
-  'road',
-  'ave',
-  'avenue',
-  'blvd',
-  'boulevard',
-  'dr',
-  'drive',
-  'ln',
-  'lane',
-  'ct',
-  'court',
-  'cr',
-  'crescent',
-  'pl',
-  'place',
-  'sq',
-  'square',
-  'pde',
-  'parade',
-  'tce',
-  'terrace',
-  'ter',
-  'hwy',
-  'highway',
-  'way',
-  'gr',
-  'grove',
-  'walk',
-  'cct',
-  'circuit',
-  'row',
-  'trl',
-  'trail',
-  'bvd',
-  'cl',
-  'close',
-  'mews',
-  'esplanade',
-  'bypass',
-  'view',
-  'outlook',
-  'bend',
-  'loop',
-  'retreat',
-};
+  // ---------- implementation ----------
+  static List<ParsedAddress> _parseAddressList(String multilineInput) {
+    final lines = multilineInput
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
+    return lines
+        .map(_parseAddressEsri)
+        .where((addr) => !addr.isEmpty())
+        .toList();
+  }
+
+  static ParsedAddress _parseAddressEsri(String input) {
+    final addr = ParsedAddress();
+    final tokens = input.trim().split(RegExp(r'\s+'));
+    if (tokens.isEmpty) {
+      return addr;
+    }
+
+    // 1️⃣  Find first token that looks like a unit or street number.
+    for (var i = 0; i < tokens.length; i++) {
+      final anchor = tokens[i];
+
+      // Skip if token contains any disallowed characters
+      if (RegExp(r'''[(){}\[\]<>:;"\'!@#\$%^&*+=?~]''').hasMatch(anchor)) {
+        continue;
+      }
+
+      if (!RegExp(r'^\d+[A-Za-z]?(/\d+)?$').hasMatch(anchor)) {
+        continue;
+      }
+
+      // 2️⃣  Find a known street suffix after the anchor.
+      var suffixIndex = -1;
+      for (var j = i + 1; j < tokens.length; j++) {
+        // Skip if original token has disallowed characters
+        if (RegExp(r'''[(){}\[\]<>:;"\'!@#\$%^&*+=?~]''').hasMatch(tokens[j])) {
+          continue;
+        }
+
+        final word = tokens[j].toLowerCase().replaceAll(RegExp(r'[^\w]'), '');
+        if (_streetSuffixes.contains(word)) {
+          suffixIndex = j;
+          break;
+        }
+      }
+      if (suffixIndex == -1) {
+        continue; // no suffix → keep searching
+      }
+
+      // 3️⃣  Street = anchor … suffix,  City = remaining tokens.
+      final streetTokens = tokens.sublist(i, suffixIndex + 1);
+      final cityTokens = tokens.sublist(suffixIndex + 1);
+
+      addr
+        ..street = _stripTrailingPunctuation(streetTokens.join(' '))
+        ..city = _stripTrailingPunctuation(
+          _truncateWords(cityTokens.join(' '), 3).join(' '),
+        )
+        ..state = ''
+        ..postalCode = '';
+      return addr;
+    }
+
+    // No valid street pattern found
+    return addr;
+  }
+
+  // util helpers
+  static String _stripTrailingPunctuation(String s) =>
+      s.trim().replaceAll(RegExp(r'[.,;:!]+$'), '');
+
+  static List<String> _truncateWords(String s, int max) =>
+      s.trim().split(RegExp(r'\s+')).take(max).toList();
+
+  static const _streetSuffixes = {
+    'st',
+    'street',
+    'rd',
+    'road',
+    'ave',
+    'avenue',
+    'blvd',
+    'boulevard',
+    'dr',
+    'drive',
+    'ln',
+    'lane',
+    'ct',
+    'court',
+    'cr',
+    'crescent',
+    'pl',
+    'place',
+    'sq',
+    'square',
+    'pde',
+    'parade',
+    'tce',
+    'terrace',
+    'ter',
+    'hwy',
+    'highway',
+    'way',
+    'gr',
+    'grove',
+    'walk',
+    'cct',
+    'circuit',
+    'row',
+    'trl',
+    'trail',
+    'bvd',
+    'cl',
+    'close',
+    'mews',
+    'esplanade',
+    'bypass',
+    'view',
+    'outlook',
+    'bend',
+    'loop',
+    'retreat',
+  };
+}
