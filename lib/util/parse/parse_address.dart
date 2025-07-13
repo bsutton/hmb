@@ -17,7 +17,8 @@ class ParsedAddress {
   });
 
   factory ParsedAddress.parse(String text) =>
-      _parseAddressEsri(text.replaceAll('\n', '').replaceAll('\r\n', ''));
+      // _parseAddressEsri(text.replaceAll('\n', '').replaceAll('\r\n', ''));
+      _parseAddressEsri(text);
   // ---------- public fields ----------
   String street;
   String city;
@@ -64,10 +65,10 @@ class ParsedAddress {
         continue;
       }
 
-      // 2️⃣  Find a known street suffix after the anchor.
+      // 2️⃣  Find a known street suffix after the anchor within 3 tokens.
       var suffixIndex = -1;
-      for (var j = i + 1; j < tokens.length; j++) {
-        // Skip if original token has disallowed characters
+      for (var j = i + 1; j <= i + 3 && j < tokens.length; j++) {
+        // Skip if token has disallowed punctuation
         if (RegExp(r'''[(){}\[\]<>:;"\'!@#\$%^&*+=?~]''').hasMatch(tokens[j])) {
           continue;
         }
@@ -86,11 +87,28 @@ class ParsedAddress {
       final streetTokens = tokens.sublist(i, suffixIndex + 1);
       final cityTokens = tokens.sublist(suffixIndex + 1);
 
+      final cleanCityTokens = <String>[];
+      for (final token in cityTokens) {
+        if (cleanCityTokens.length >= 3) {
+          break;
+        }
+
+        // Reject token if it has disallowed punctuation
+        if (RegExp(r'''[(){}\[\]<>:;"'!@#\$%^&*+=?~]''').hasMatch(token)) {
+          break;
+        }
+
+        // Reject token if it doesn't start with an uppercase letter
+        if (!RegExp('^[A-Z]').hasMatch(token)) {
+          break;
+        }
+
+        cleanCityTokens.add(token);
+      }
+
       addr
-        ..street = _stripTrailingPunctuation(streetTokens.join(' '))
-        ..city = _stripTrailingPunctuation(
-          _truncateWords(cityTokens.join(' '), 3).join(' '),
-        )
+        ..street = streetTokens.map(_stripTrailingPunctuation).join(' ')
+        ..city = cleanCityTokens.map(_stripTrailingPunctuation).join(' ')
         ..state = ''
         ..postalCode = '';
       return addr;

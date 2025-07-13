@@ -30,13 +30,24 @@ class ParsedCustomer {
     final recipientFirstName = system.firstname ?? '';
     final recipientSurname = system.surname ?? '';
 
+    // 0️⃣  SCRUB recipient’s name tokens first  –––––––––––––––––––––––––
+    final tokens = text.split(RegExp(r'\s+')).map((token) {
+      final clean = token.replaceAll(RegExp(r'[^\w]'), ''); // strip punctuation
+      if (clean.equalsIgnoreCase(recipientFirstName) ||
+          clean.equalsIgnoreCase(recipientSurname)) {
+        return '*' * token.length; // preserve spacing
+      }
+      return token;
+    }).toList();
+    final scrubbedText = tokens.join(' ');
+
     // 1️⃣  Extract core items (email, phone, address)
-    final email = _parseEmail(text);
-    final mobile = _parsePhone(text);
-    final address = ParsedAddress.parse(text);
+    final email = _parseEmail(scrubbedText);
+    final mobile = _parsePhone(scrubbedText);
+    final address = ParsedAddress.parse(scrubbedText);
 
     // 2️⃣  Remove street + city tokens from the text before name search
-    var scrubbed = text;
+    var scrubbed = scrubbedText;
     if (address.street.isNotEmpty) {
       scrubbed = scrubbed.replaceAll(
         RegExp(RegExp.escape(address.street), caseSensitive: false),
@@ -52,26 +63,17 @@ class ParsedCustomer {
 
     // 3️⃣  Find a name that isn’t the recipient’s
     final nameRegex = RegExp(r'\b([A-Z][a-z]+)\s+([A-Z][a-z]+)\b');
-    final matches = nameRegex.allMatches(scrubbed);
 
     var firstName = '';
     var lastName = '';
 
+    final matches = nameRegex.allMatches(scrubbed).toList().reversed;
+
     for (final match in matches) {
-      final candidateFirst = match.group(1) ?? '';
-      final candidateLast = match.group(2) ?? '';
-
-      final isRecipientName =
-          candidateFirst.equalsIgnoreCase(recipientFirstName) ||
-          candidateFirst.equalsIgnoreCase(recipientSurname) ||
-          candidateLast.equalsIgnoreCase(recipientFirstName) ||
-          candidateLast.equalsIgnoreCase(recipientSurname);
-
-      if (!isRecipientName) {
-        firstName = candidateFirst;
-        lastName = candidateLast;
-        break;
-      }
+      firstName =
+       match.group(1) ?? '';
+      lastName = match.group(2) ?? '';
+      break;
     }
 
     final customerName = '$firstName $lastName'.trim();
