@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hmb/ui/crud/customer/parse_address.dart';
+import 'package:hmb/util/parse/parse_address.dart';
 
 void main() {
   testWidgets('parse address ...', (tester) async {

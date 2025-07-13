@@ -1,13 +1,11 @@
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:strings/strings.dart';
 
-import '../../../util/parse.dart';
+import '../../../util/parse/parse_customer.dart';
 import '../../../util/util.g.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
-import 'parse_address.dart';
 
 class CustomerPastePanel extends StatefulWidget {
   const CustomerPastePanel({required this.onExtract, super.key});
@@ -72,8 +70,8 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
         children: [
           const HMBSpacer(width: true),
           HMBButton(
-            onPressed: () =>
-                widget.onExtract(ParsedCustomer.parse(controller.text)),
+            onPressed: () async =>
+                widget.onExtract(await ParsedCustomer.parse(controller.text)),
             label: 'Extract',
             hint: 'Extract customer details from the message',
           ),
@@ -81,67 +79,4 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
       ),
     ],
   );
-}
-
-// {
-// HMBToast.info(
-//   'Unable to extract any customer details from the message. You can copy and paste the details manually.',
-// );
-
-class ParsedCustomer {
-  ParsedCustomer({
-    required this.customerName,
-    required this.email,
-    required this.firstname,
-    required this.surname,
-    required this.mobile,
-    required this.address,
-  });
-
-  factory ParsedCustomer.parse(String text) {
-    final email = parseEmail(text);
-    final mobile = parsePhone(text);
-
-    final nameMatch = RegExp(
-      r'\b([A-Z][a-z]+)\s+([A-Z][a-z]+)\b',
-    ).firstMatch(text);
-    final matchCount = nameMatch?.groupCount ?? 0;
-    var firstName = '';
-    if (matchCount > 0) {
-      firstName = nameMatch!.group(1) ?? '';
-    }
-
-    var surname = '';
-    if (matchCount > 1) {
-      surname = nameMatch!.group(2) ?? '';
-    }
-
-    final address = ParsedAddress.parse(text);
-
-    final customerName = '$firstName $surname';
-
-    return ParsedCustomer(
-      customerName: customerName,
-      email: email,
-      mobile: mobile,
-      firstname: firstName,
-      surname: surname,
-      address: address,
-    );
-  }
-
-  String customerName;
-  String email;
-  String mobile;
-  String firstname;
-  String surname;
-  ParsedAddress address;
-
-  bool isEmpty() =>
-      Strings.isBlank(firstname) &&
-      Strings.isBlank(surname) &&
-      Strings.isBlank(email) &&
-      Strings.isBlank(mobile) &&
-      Strings.isBlank(customerName) &&
-      address.isEmpty();
 }
