@@ -19,11 +19,11 @@ class AccountingDashlet extends StatelessWidget {
   const AccountingDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<void>(
+  Widget build(BuildContext context) => DashletCard<void>.route(
     label: 'Accounting',
+    hint: 'Create Estimates, Quotes and Invoices and scan Receipts',
     icon: Icons.account_balance_wallet,
-    dashletValue: () => Future.value(const DashletValue(null)),
-    route: '/dashboard/accounting',
-    widgetBuilder: (_, _) => const SizedBox.shrink(),
+    value: () => Future.value(const DashletValue(null)),
+    route: '/home/accounting',
   );
 }

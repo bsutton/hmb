@@ -3,7 +3,7 @@
 
  Note: This software is licensed under the GNU General Public License, with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+ • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -11,8 +11,10 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../util/parse/parse.dart';
 import '../../dialog/source_context.dart';
 import '../hmb_phone_icon.dart';
+import 'hmb_text_field.dart';
 
 class HMBPhoneField extends StatelessWidget {
   const HMBPhoneField({
@@ -29,13 +31,13 @@ class HMBPhoneField extends StatelessWidget {
   final SourceContext sourceContext;
 
   @override
-  Widget build(BuildContext context) => TextFormField(
+  Widget build(BuildContext context) => HMBTextField(
     controller: controller,
     keyboardType: TextInputType.phone,
-    decoration: InputDecoration(
-      labelText: labelText,
-      suffixIcon: HMBPhoneIcon(controller.text, sourceContext: sourceContext),
-    ),
+
+    labelText: labelText,
+    suffixIcon: HMBPhoneIcon(controller.text, sourceContext: sourceContext),
     validator: validator,
+    onPaste: parsePhone,
   );
 }

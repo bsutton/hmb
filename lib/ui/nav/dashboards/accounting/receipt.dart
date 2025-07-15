@@ -22,11 +22,12 @@ class ReceiptDashlet extends StatelessWidget {
   const ReceiptDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<String>(
+  Widget build(BuildContext context) => DashletCard<String>.route(
     label: 'Receipts',
+    hint: 'Track and Scan receipts',
     icon: Icons.receipt,
-    dashletValue: getReceiptsThisMonth,
-    route: '/accounting/receipts',
+    value: getReceiptsThisMonth,
+    route: '/home/accounting/receipts',
   );
 
   Future<DashletValue<String>> getReceiptsThisMonth() async {

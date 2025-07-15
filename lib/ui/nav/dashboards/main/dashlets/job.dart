@@ -21,13 +21,14 @@ class JobsDashlet extends StatelessWidget {
   const JobsDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<int>(
+  Widget build(BuildContext context) => DashletCard<int>.route(
     label: 'Jobs',
+    hint: 'Create, Estimate, Quote, Track and Invoice Jobs',
     icon: Icons.work,
-    dashletValue: () async {
+    value: () async {
       final jobs = await DaoJob().getActiveJobs(null);
       return DashletValue(jobs.length);
     },
-    route: '/jobs',
+    route: '/home/jobs',
   );
 }

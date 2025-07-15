@@ -159,9 +159,9 @@ class _SplashScreenState extends State<SplashScreen> {
     if (context.mounted) {
       if (firstRun) {
         firstRun = false;
-        context.go('/system/wizard');
+        context.go('/home/settings/wizard');
       } else {
-        context.go('/dashboard');
+        context.go('/home');
       }
     }
   }

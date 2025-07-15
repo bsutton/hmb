@@ -19,6 +19,7 @@ import '../../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/entity.dart';
 import '../../../entity/site.dart';
+import '../../../util/parse/parse_customer.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../base_nested/edit_nested_screen.dart';
 import '../customer/customer_paste_panel.dart';

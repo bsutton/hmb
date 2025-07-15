@@ -27,6 +27,7 @@ import 'util/hmb_theme.dart';
 import 'util/log.dart';
 import 'util/platform_ex.dart';
 
+const appName = 'HNB';
 //----------------------------------------------------------------------
 
 // the navigator key you already passed into GoRouter
@@ -41,7 +42,7 @@ Future<void> main(List<String> args) async {
   SentryWidgetsFlutterBinding.ensureInitialized();
 
   // grab package info for logging
-final packageInfo = await PackageInfo.fromPlatform();
+  final packageInfo = await PackageInfo.fromPlatform();
   Log.i('Package Name: ${packageInfo.packageName}');
 
   // initialize Sentry

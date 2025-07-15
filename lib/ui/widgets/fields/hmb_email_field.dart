@@ -13,8 +13,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:strings/strings.dart';
 
+import '../../../util/parse/parse.dart';
 import '../../../util/platform_ex.dart';
 import '../hmb_mail_to_icon.dart';
+import 'fields.g.dart';
 
 class HMBEmailField extends StatelessWidget {
   const HMBEmailField({
@@ -35,21 +37,20 @@ class HMBEmailField extends StatelessWidget {
   final bool autofocus;
 
   @override
-  Widget build(BuildContext context) => TextFormField(
+  Widget build(BuildContext context) => HMBTextField(
     controller: controller,
     autofocus: isNotMobile,
     inputFormatters: [LowerCaseTextFormatter()], // force lowercase
-    decoration: InputDecoration(
-      labelText: labelText,
-      suffixIcon: HMBMailToIcon(controller.text),
-    ),
+    labelText: labelText,
+    suffixIcon: HMBMailToIcon(controller.text),
+    onPaste: parseEmail,
     validator: (value) {
       if (required && (value == null || value.isEmpty)) {
         return 'Please enter the email address';
       }
 
       if (Strings.isNotBlank(value)) {
-        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value!)) {
+        if (!isValidEmail(value!)) {
           return 'Please enter a valid email address';
         }
       }

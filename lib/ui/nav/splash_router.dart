@@ -37,7 +37,7 @@ class SplashRouter extends StatelessWidget {
       return;
     }
 
-    final next = launchState.isFirstRun ? '/system/wizard' : '/dashboard';
+    final next = launchState.isFirstRun ? '/home/settings/wizard' : '/home';
     // Replace splash route (not push) so it is removed
     GoRouter.of(context).clearStackAndNavigate(next);
   }

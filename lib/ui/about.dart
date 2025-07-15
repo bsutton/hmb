@@ -44,6 +44,7 @@ class _AboutScreenState extends State<AboutScreen> {
             builder: (context, version) => Text('Database Version: $version'),
           ),
           const Text('Author: S. Brett Sutton'),
+          const Text('Copyright © OnePub IP Pty Ltd 2025+'),
         ],
       ),
     ),

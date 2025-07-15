@@ -20,11 +20,12 @@ class CustomersDashlet extends StatelessWidget {
   const CustomersDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<int>(
+  Widget build(BuildContext context) => DashletCard<int>.route(
     label: 'Customers',
+    hint: 'Maintain your list of customers',
     icon: Icons.people,
-    dashletValue: getCustomerCount,
-    route: '/customers',
+    value: getCustomerCount,
+    route: '/home/customers',
   );
 
   Future<DashletValue<int>> getCustomerCount() async {

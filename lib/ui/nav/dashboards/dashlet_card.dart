@@ -32,28 +32,64 @@ typedef DashletWidgetBuilder<T> =
 const double kDashletMaxWidth = 300;
 const double kDashletMaxHeight = 300;
 
+typedef OnTap = void Function(BuildContext context);
+
 /// A reusable dashlet card widget that reloads its data when the dashboard resumes.
 /// Supports an optional compact mode for embedding in tighter UIs (e.g. job card).
+/// A default valueBuilder is used to display the [value] unless
+/// a [valueBuilder] is passed, in which case it is passed the [value]
+/// and the resulting Widget is displayed.
 class DashletCard<T> extends StatefulWidget {
-  const DashletCard({
+  /// Create a [DashletCard] that when tapped navigates to a full screen
+  /// containing the widget returned by [builder]
+  const DashletCard.builder({
     required this.label,
+    required this.hint,
     required this.icon,
-    required this.dashletValue,
-    this.route,
-    this.widgetBuilder,
-    this.builder,
-    this.onTapOverride,
+    required this.value,
+    required this.builder,
+    this.valueBuilder,
     this.compact = false,
     super.key,
-  });
+  }) : route = null,
+       onTap = null;
+
+  /// Create a [DashletCard] that when tapped
+  /// calls [onTap].
+  const DashletCard.onTap({
+    required this.label,
+    required this.hint,
+    required this.icon,
+    required OnTap this.onTap,
+    required this.value,
+    this.valueBuilder,
+    this.compact = false,
+    super.key,
+  }) : route = null,
+       builder = null;
+
+  /// Create a [DashletCard] that when tapped
+  /// routes to [route]
+  const DashletCard.route({
+    required this.label,
+    required this.hint,
+    required this.icon,
+    required this.value,
+    required String this.route,
+    this.valueBuilder,
+    this.compact = false,
+    super.key,
+  }) : builder = null,
+       onTap = null;
 
   final String label;
+  final String hint;
   final IconData icon;
-  final Future<DashletValue<T>> Function() dashletValue;
+  final Future<DashletValue<T>> Function() value;
+  final DashletWidgetBuilder<T>? valueBuilder;
   final String? route;
-  final DashletWidgetBuilder<T>? widgetBuilder;
   final DashletWidgetBuilder<T>? builder;
-  final VoidCallback? onTapOverride;
+  final OnTap? onTap;
   final bool compact;
 
   @override
@@ -86,69 +122,50 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
         minWidth: minW,
         minHeight: minH,
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: widget.onTapOverride ?? () => unawaited(_handleTap(context)),
-        child: Card(
-          color: theme.colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 4,
-          child: Padding(
-            padding: EdgeInsets.all(widget.compact ? 6 : 12),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  widget.icon,
-                  size: iconSize,
-                  color: theme.colorScheme.primary,
-                ),
-                SizedBox(height: spacing1),
-                Text(
-                  widget.label,
-                  textAlign: TextAlign.center,
-                  style: labelStyle,
-                  maxLines: widget.compact ? 1 : 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: spacing2),
-                JuneBuilder(
-                  DashboardReloaded.new,
-                  builder: (_) => FutureBuilderEx<DashletValue<T>>(
-                    future: widget.dashletValue(),
-                    builder: (ctx, dv) {
-                      if (dv == null) {
-                        return const SizedBox();
-                      }
-                      if (widget.widgetBuilder != null) {
-                        return widget.widgetBuilder!(ctx, dv);
-                      }
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            dv.value.toString(),
-                            style: valueStyle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (dv.secondValue != null) ...[
-                            SizedBox(height: spacing2),
-                            Text(
-                              dv.secondValue!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
-                        ],
-                      );
-                    },
+      child: Tooltip(
+        message: widget.hint,
+        triggerMode: TooltipTriggerMode.longPress,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => widget.onTap != null
+              ? widget.onTap!(context)
+              : unawaited(_handleTap(context)),
+          child: Card(
+            color: theme.colorScheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 4,
+            child: Padding(
+              padding: EdgeInsets.all(widget.compact ? 6 : 12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    widget.icon,
+                    size: iconSize,
+                    color: theme.colorScheme.primary,
                   ),
-                ),
-              ],
+                  SizedBox(height: spacing1),
+                  Text(
+                    widget.label,
+                    textAlign: TextAlign.center,
+                    style: labelStyle,
+                    maxLines: widget.compact ? 1 : 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: spacing2),
+                  JuneBuilder(
+                    DashboardReloaded.new,
+                    builder: (_) => FutureBuilderEx<DashletValue<T>>(
+                      future: widget.value(),
+                      builder: (ctx, dv) => widget.valueBuilder != null
+                          ? widget.valueBuilder!(ctx, dv!)
+                          : _buildDashletValue(dv, valueStyle, spacing2, theme),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -156,20 +173,60 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
     );
   }
 
+  RenderObjectWidget _buildDashletValue(
+    DashletValue<dynamic>? dv,
+    TextStyle? valueStyle,
+    double spacing2,
+    ThemeData theme,
+  ) {
+    if (dv == null) {
+      return const SizedBox();
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          dv.value?.toString() ?? '',
+          style: valueStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (dv.secondValue != null) ...[
+          SizedBox(height: spacing2),
+          Text(
+            dv.secondValue!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ],
+    );
+  }
+
   Future<void> _handleTap(BuildContext context) async {
     if (widget.route != null) {
       await GoRouter.of(context).push(widget.route!);
-    } else {
-      final dv = await widget.dashletValue();
-      if (!context.mounted) {
+      return;
+    }
+
+    {
+      if (widget.onTap != null) {
+        widget.onTap!(context);
         return;
       }
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(
-          builder: (c) => (widget.builder ?? widget.widgetBuilder)!(c, dv),
-          fullscreenDialog: true,
-        ),
-      );
+      if (widget.builder != null) {
+        final dv = await widget.value();
+        if (!context.mounted) {
+          return;
+        }
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (c) => widget.builder!(c, dv),
+            fullscreenDialog: true,
+          ),
+        );
+      }
     }
   }
 }

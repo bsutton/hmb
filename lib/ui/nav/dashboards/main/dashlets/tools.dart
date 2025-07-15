@@ -19,11 +19,12 @@ class ToolsDashlet extends StatelessWidget {
   const ToolsDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<void>(
+  Widget build(BuildContext context) => DashletCard<void>.route(
     label: 'Tools',
+    hint: 'Maintain a list of tools, warranty details and receipts',
     icon: Icons.build,
-    dashletValue: () => Future.value(const DashletValue(null)),
-    route: '/extras/tools',
-    widgetBuilder: (_, _) => const SizedBox.shrink(),
+    value: () => Future.value(const DashletValue(null)),
+    route: '/home/tools',
+    valueBuilder: (_, _) => const SizedBox.shrink(),
   );
 }

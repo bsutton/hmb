@@ -19,11 +19,12 @@ class SettingsDashlet extends StatelessWidget {
   const SettingsDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<void>(
+  Widget build(BuildContext context) => DashletCard<void>.route(
     label: 'Settings',
+    hint: 'SMS Templates, Business, Billing, Contact and Integration Details',
     icon: Icons.settings,
-    dashletValue: () => Future.value(const DashletValue(null)),
-    route: '/dashboard/settings',
-    widgetBuilder: (_, _) => const SizedBox.shrink(),
+    value: () => Future.value(const DashletValue(null)),
+    route: '/home/settings',
+    valueBuilder: (_, _) => const SizedBox.shrink(),
   );
 }

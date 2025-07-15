@@ -53,7 +53,7 @@ class DatabaseErrorDialog extends StatelessWidget {
                   foregroundColor: theme.colorScheme.onSecondary,
                 ),
                 onPressed: () {
-                  context.go('/system/backup/google/restore');
+                  context.go('/home/settings/backup/google/restore');
                 },
                 child: const Text('Restore Database'),
               ),

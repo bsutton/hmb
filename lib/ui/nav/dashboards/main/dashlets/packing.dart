@@ -19,11 +19,12 @@ class PackingDashlet extends StatelessWidget {
   const PackingDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<int>(
+  Widget build(BuildContext context) => DashletCard<int>.route(
     label: 'Packing',
+    hint: 'Create a packing list for specific Jobs',
     icon: Icons.inventory_2,
-    dashletValue: getPackingItems,
-    route: '/packing',
+    value: getPackingItems,
+    route: '/home/packing',
   );
 
   Future<DashletValue<int>> getPackingItems() async {

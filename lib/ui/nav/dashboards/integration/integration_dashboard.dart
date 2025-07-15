@@ -21,12 +21,12 @@ class IntegrationDashboardPage extends StatelessWidget {
   Widget build(BuildContext context) => DashboardPage(
     title: 'Integrations',
     dashlets: [
-      DashletCard<void>(
+      DashletCard<void>.route(
         label: 'Xero',
+        hint: 'Configure integration with Xero to upload Invoices',
         icon: Icons.extension,
-        dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/system/integrations/xero',
-        widgetBuilder: (_, _) => const SizedBox.shrink(),
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/integrations/xero',
       ),
     ],
   );

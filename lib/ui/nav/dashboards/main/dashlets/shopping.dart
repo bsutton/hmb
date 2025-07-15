@@ -20,12 +20,13 @@ class ShoppingDashlet extends StatelessWidget {
   const ShoppingDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<int>(
+  Widget build(BuildContext context) => DashletCard<int>.route(
     label: 'Shopping',
+    hint: 'Maintain a list of items to be purchased for each Job',
     icon: Icons.shopping_cart,
     // ignore: discarded_futures
-    dashletValue: getShopping,
-    route: '/shopping',
+    value: getShopping,
+    route: '/home/shopping',
   );
 
   Future<DashletValue<int>> getShopping() async {

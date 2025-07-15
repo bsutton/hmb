@@ -19,11 +19,12 @@ class ManufacturersDashlet extends StatelessWidget {
   const ManufacturersDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<void>(
+  Widget build(BuildContext context) => DashletCard<void>.route(
     label: 'Manufacturers',
+    hint: 'Maintain a list of Tool manufactures',
     icon: Icons.factory,
-    dashletValue: () => Future.value(const DashletValue(null)),
-    route: '/extras/manufacturers',
-    widgetBuilder: (_, _) => const SizedBox.shrink(),
+    value: () => Future.value(const DashletValue(null)),
+    route: '/home/manufacturers',
+    valueBuilder: (_, _) => const SizedBox.shrink(),
   );
 }

@@ -108,13 +108,13 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                       },
                     ),
                     const SizedBox(width: 16),
+                    const SizedBox(width: 16),
+                    BuildSendButton(
+                      context: context,
+                      mounted: mounted,
+                      invoice: invoice,
+                    ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                BuildSendButton(
-                  context: context,
-                  mounted: mounted,
-                  invoice: invoice,
                 ),
                 const SizedBox(height: 16),
                 // Show all line groups and lines inline

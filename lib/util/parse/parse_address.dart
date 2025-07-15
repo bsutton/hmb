@@ -122,9 +122,6 @@ class ParsedAddress {
   static String _stripTrailingPunctuation(String s) =>
       s.trim().replaceAll(RegExp(r'[.,;:!]+$'), '');
 
-  static List<String> _truncateWords(String s, int max) =>
-      s.trim().split(RegExp(r'\s+')).take(max).toList();
-
   static const _streetSuffixes = {
     'st',
     'street',

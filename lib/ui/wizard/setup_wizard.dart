@@ -12,6 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../main.dart';
 import '../../util/app_title.dart';
 import '../../util/log.dart';
 import '../widgets/wizard.dart';
@@ -35,7 +36,7 @@ class _SetupWizardState extends State<SetupWizard> {
   @override
   void initState() {
     super.initState();
-    setAppTitle('HMB Setup Wizard'); // optional title setter
+    setAppTitle('$appName Setup Wizard'); // optional title setter
   }
 
   @override
@@ -79,9 +80,9 @@ class _SetupWizardState extends State<SetupWizard> {
         }
 
         if (widget.launchedFromSettings) {
-          context.go('/dashboard/settings');
+          context.go('/home/settings');
         } else {
-          context.go('/dashboard');
+          context.go('/home');
         }
       },
     );

@@ -20,11 +20,12 @@ class SuppliersDashlet extends StatelessWidget {
   const SuppliersDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<int>(
+  Widget build(BuildContext context) => DashletCard<int>.route(
     label: 'Suppliers',
-    icon: Icons.store,
-    dashletValue: getSupplierCount,
-    route: '/suppliers',
+    hint: 'Maintain a list of Suppliers, for Tools and Trades',
+    icon: Icons.add_card,
+    value: getSupplierCount,
+    route: '/home/suppliers',
   );
 
   Future<DashletValue<int>> getSupplierCount() async {

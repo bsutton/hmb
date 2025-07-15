@@ -14,6 +14,7 @@
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
@@ -68,6 +69,10 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
             billBookingFee: options.billBookingFee,
           );
           HMBToast.info('Invoice created for "${job.summary}".');
+          if (mounted) {
+            context.go('/home/accounting/invoices');
+            return;
+          }
         } else {
           HMBToast.info('Select at least one Task or the Booking Fee.');
         }

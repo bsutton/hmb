@@ -29,28 +29,30 @@ class MiniJobDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const dashletSize = 100.0;
+    const dashletSize = 90.0;
     return Center(
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
         children: [
           _dashlet(
-            child: DashletCard<String>(
-              compact: true,
+            child: DashletCard<String>.builder(
               label: 'Estimate',
+              hint: "Build an Estimate of a Job's cost",
               icon: Icons.calculate,
-              dashletValue: () async => const DashletValue(''),
+              compact: true,
+              value: () async => const DashletValue(''),
               builder: (_, _) => JobEstimatesListScreen(job: job),
             ),
             size: dashletSize,
           ),
           _dashlet(
-            child: DashletCard<int>(
-              compact: true,
+            child: DashletCard<int>.builder(
               label: 'Quotes',
+              hint: 'Quote a job based on an Estimate',
               icon: Icons.format_quote,
-              dashletValue: () async {
+              compact: true,
+              value: () async {
                 final all = await DaoQuote().getByFilter(null);
                 final list = all.where((q) => q.jobId == job.id).toList();
                 return DashletValue<int>(list.length);
@@ -60,11 +62,12 @@ class MiniJobDashboard extends StatelessWidget {
             size: dashletSize,
           ),
           _dashlet(
-            child: DashletCard<int>(
-              compact: true,
+            child: DashletCard<int>.builder(
               label: 'Track',
+              hint: 'Track and View time recorded against Job Tasks',
               icon: Icons.access_time,
-              dashletValue: () async {
+              compact: true,
+              value: () async {
                 final list = await DaoTimeEntry().getByJob(job.id);
                 return DashletValue<int>(list.length);
               },
@@ -73,11 +76,12 @@ class MiniJobDashboard extends StatelessWidget {
             size: dashletSize,
           ),
           _dashlet(
-            child: DashletCard<int>(
-              compact: true,
+            child: DashletCard<int>.builder(
               label: 'Invoices',
+              hint: 'Invoice a Job',
               icon: Icons.attach_money,
-              dashletValue: () async {
+              compact: true,
+              value: () async {
                 final all = await DaoInvoice().getByFilter(null);
                 final list = all.where((i) => i.jobId == job.id).toList();
                 return DashletValue<int>(list.length);

@@ -33,7 +33,7 @@ class MainDashboardPage extends StatelessWidget {
         SuppliersDashlet(),
         ToolsDashlet(),
         ManufacturersDashlet(),
-        GoogleBackupDashlset(),
+        BackupDashlet(),
         SettingsDashlet(),
       ],
     ),

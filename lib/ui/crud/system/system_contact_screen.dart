@@ -126,7 +126,7 @@ class SystemContactInformationScreenState
       if (mounted) {
         HMBToast.info('saved');
         if (close) {
-          context.go('/dashboard/settings');
+          context.go('/home/settings');
         }
       }
       return true;

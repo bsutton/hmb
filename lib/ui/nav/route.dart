@@ -38,6 +38,7 @@ import '../task_items/list_shopping_screen.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../wizard/setup_wizard.dart';
+import 'dashboards/backup/backup_dashboard.dart';
 import 'dashboards/integration/integration_dashboard.dart';
 import 'nav.g.dart';
 import 'splash_router.dart';
@@ -76,150 +77,10 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
 
     // This where the user lands after we finish initialising.
     GoRoute(
-      path: '/dashboard',
+      path: '/home',
       builder: (_, _) => const HomeScaffold(initialScreen: MainDashboardPage()),
+      routes: [...dashboardRoutes()],
     ),
-
-    GoRoute(
-      path: '/dashboard/accounting',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: AccountingDashboardPage()),
-    ),
-    GoRoute(
-      path: '/dashboard/settings',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: SettingsDashboardPage()),
-    ),
-    GoRoute(
-      path: '/dashboard/help',
-      builder: (_, _) => const HomeScaffold(initialScreen: HelpDashboardPage()),
-    ),
-    // 3) Jobs route (replaces the old root builder).
-    GoRoute(
-      path: '/jobs',
-      builder: (_, _) => const HomeScaffold(initialScreen: JobListScreen()),
-    ),
-
-    // 4) All other routes directly from the top level:
-    GoRoute(
-      path: '/customers',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: CustomerListScreen()),
-    ),
-    GoRoute(
-      path: '/suppliers',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: SupplierListScreen()),
-    ),
-    GoRoute(
-      path: '/shopping',
-      builder: (_, _) => const HomeScaffold(initialScreen: ShoppingScreen()),
-    ),
-    GoRoute(
-      path: '/packing',
-      builder: (_, _) => const HomeScaffold(initialScreen: PackingScreen()),
-    ),
-    GoRoute(
-      path: '/schedule',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: SchedulePage(dialogMode: false)),
-    ),
-    GoRoute(
-      path: '/accounting/quotes',
-      builder: (_, _) => const HomeScaffold(initialScreen: QuoteListScreen()),
-    ),
-    GoRoute(
-      path: '/accounting/invoices',
-      builder: (_, _) => const HomeScaffold(initialScreen: InvoiceListScreen()),
-    ),
-
-    GoRoute(
-      path: '/accounting/to_be_invoiced',
-      builder: (_, _) => HomeScaffold(initialScreen: YetToBeInvoicedScreen()),
-    ),
-    GoRoute(
-      path: '/accounting/estimator',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: JobEstimatesListScreen()),
-    ),
-    GoRoute(
-      path: '/accounting/milestones',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: ListMilestoneScreen()),
-    ),
-    GoRoute(
-      path: '/accounting/receipts',
-      builder: (_, _) => const HomeScaffold(initialScreen: ReceiptListScreen()),
-    ),
-    GoRoute(
-      path: '/extras/tools',
-      builder: (_, _) => const HomeScaffold(initialScreen: ToolListScreen()),
-    ),
-    GoRoute(
-      path: '/extras/manufacturers',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: ManufacturerListScreen()),
-    ),
-    GoRoute(
-      path: '/system/sms_templates',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: MessageTemplateListScreen()),
-    ),
-    GoRoute(
-      path: '/system/business',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: SystemBusinessScreen()),
-    ),
-    GoRoute(
-      path: '/system/billing',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: SystemBillingScreen()),
-    ),
-    GoRoute(
-      path: '/system/contact',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: SystemContactInformationScreen()),
-    ),
-    GoRoute(
-      path: '/system/integrations',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: IntegrationDashboardPage()),
-    ),
-    GoRoute(
-      path: '/system/integrations/xero',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: XeroIntegrationScreen()),
-    ),
-    GoRoute(
-      path: '/system/about',
-      builder: (_, _) => const HomeScaffold(initialScreen: AboutScreen()),
-    ),
-    GoRoute(
-      path: '/system/backup/google',
-      builder: (_, _) =>
-          const HomeScaffold(initialScreen: GoogleDriveBackupScreen()),
-    ),
-    GoRoute(
-      path: '/system/backup/google/restore',
-      builder: (_, _) => const HomeScaffold(
-        initialScreen: GoogleDriveBackupScreen(restoreOnly: true),
-      ),
-    ),
-    GoRoute(
-      path: '/system/backup/local',
-      builder: (_, _) => const HomeScaffold(initialScreen: LocalBackupScreen()),
-    ),
-
-    GoRoute(
-      path: '/system/wizard',
-      builder: (context, state) {
-        final fromSettings = state.extra as bool? ?? false;
-        return HomeScaffold(
-          initialScreen: SetupWizard(launchedFromSettings: fromSettings),
-        );
-      },
-    ),
-
     GoRoute(
       path: '/photo_viewer',
       builder: (context, state) {
@@ -237,6 +98,167 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     // GoRoute(path: '/testpdf', builder: (context, state) => const TestPdfZoom()),
   ],
 );
+
+List<GoRoute> dashboardRoutes() => [
+  // 3) Jobs route (replaces the old root builder).
+  GoRoute(
+    path: 'jobs',
+    builder: (_, _) => const HomeScaffold(initialScreen: JobListScreen()),
+  ),
+  GoRoute(
+    path: 'help',
+    builder: (_, _) => const HomeScaffold(initialScreen: HelpDashboardPage()),
+    routes: helpRoutes(),
+  ),
+
+  GoRoute(
+    path: 'schedule',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: SchedulePage(dialogMode: false)),
+  ),
+  GoRoute(
+    path: 'shopping',
+    builder: (_, _) => const HomeScaffold(initialScreen: ShoppingScreen()),
+  ),
+  GoRoute(
+    path: 'packing',
+    builder: (_, _) => const HomeScaffold(initialScreen: PackingScreen()),
+  ),
+  GoRoute(
+    path: 'accounting',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: AccountingDashboardPage()),
+    routes: accountingRoutes(),
+  ),
+  GoRoute(
+    path: 'customers',
+    builder: (_, _) => const HomeScaffold(initialScreen: CustomerListScreen()),
+  ),
+  GoRoute(
+    path: 'suppliers',
+    builder: (_, _) => const HomeScaffold(initialScreen: SupplierListScreen()),
+  ),
+  GoRoute(
+    path: 'tools',
+    builder: (_, _) => const HomeScaffold(initialScreen: ToolListScreen()),
+  ),
+  GoRoute(
+    path: 'manufacturers',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: ManufacturerListScreen()),
+  ),
+  GoRoute(
+    path: 'backup',
+    builder: (_, _) => const HomeScaffold(initialScreen: BackupDashboardPage()),
+    routes: backupRoutes(),
+  ),
+
+  GoRoute(
+    path: 'settings',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: SettingsDashboardPage()),
+    routes: settingRoutes(),
+  ),
+];
+
+// 4) All other routes directly from the top level:
+List<GoRoute> accountingRoutes() => [
+  GoRoute(
+    path: 'quotes',
+    builder: (_, _) => const HomeScaffold(initialScreen: QuoteListScreen()),
+  ),
+  GoRoute(
+    path: 'invoices',
+    builder: (_, _) => const HomeScaffold(initialScreen: InvoiceListScreen()),
+  ),
+
+  GoRoute(
+    path: 'to_be_invoiced',
+    builder: (_, _) => HomeScaffold(initialScreen: YetToBeInvoicedScreen()),
+  ),
+  GoRoute(
+    path: 'estimator',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: JobEstimatesListScreen()),
+  ),
+  GoRoute(
+    path: 'milestones',
+    builder: (_, _) => const HomeScaffold(initialScreen: ListMilestoneScreen()),
+  ),
+  GoRoute(
+    path: 'receipts',
+    builder: (_, _) => const HomeScaffold(initialScreen: ReceiptListScreen()),
+  ),
+];
+
+/// Setting Dashboard Route
+List<GoRoute> settingRoutes() => [
+  GoRoute(
+    path: 'sms_templates',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: MessageTemplateListScreen()),
+  ),
+  GoRoute(
+    path: 'business',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: SystemBusinessScreen()),
+  ),
+  GoRoute(
+    path: 'billing',
+    builder: (_, _) => const HomeScaffold(initialScreen: SystemBillingScreen()),
+  ),
+  GoRoute(
+    path: 'contact',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: SystemContactInformationScreen()),
+  ),
+  GoRoute(
+    path: 'integrations',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: IntegrationDashboardPage()),
+    routes: [
+      GoRoute(
+        path: 'xero',
+        builder: (_, _) =>
+            const HomeScaffold(initialScreen: XeroIntegrationScreen()),
+      ),
+    ],
+  ),
+  GoRoute(
+    path: 'wizard',
+    builder: (context, state) {
+      final fromSettings = state.extra as bool? ?? false;
+      return HomeScaffold(
+        initialScreen: SetupWizard(launchedFromSettings: fromSettings),
+      );
+    },
+  ),
+];
+
+List<GoRoute> helpRoutes() => [
+  GoRoute(
+    path: 'about',
+    builder: (_, _) => const HomeScaffold(initialScreen: AboutScreen()),
+  ),
+];
+
+List<GoRoute> backupRoutes() => [
+  GoRoute(
+    path: 'google/backup',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: GoogleDriveBackupScreen()),
+  ),
+  GoRoute(
+    path: 'google/restore',
+    builder: (_, _) => const HomeScaffold(
+      initialScreen: GoogleDriveBackupScreen(restoreOnly: true),
+    ),
+  ),
+  GoRoute(
+    path: 'local/backup',
+    builder: (_, _) => const HomeScaffold(initialScreen: LocalBackupScreen()),
+  ),
+];
 
 /// A global RouteObserver that you can attach to GoRouter
 final routeObserver = RouteObserver<ModalRoute<void>>();

@@ -22,11 +22,12 @@ class InvoiceDashlet extends StatelessWidget {
   const InvoiceDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<String>(
+  Widget build(BuildContext context) => DashletCard<String>.route(
     label: 'Invoices',
+    hint: 'Create, View, Upload and Send Invocies',
     icon: Icons.receipt_long,
-    dashletValue: getInvoicedThisMonth,
-    route: '/accounting/invoices',
+    value: getInvoicedThisMonth,
+    route: '/home/accounting/invoices',
   );
 
   Future<DashletValue<String>> getInvoicedThisMonth() async {

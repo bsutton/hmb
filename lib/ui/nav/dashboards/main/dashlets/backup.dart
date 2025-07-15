@@ -18,20 +18,22 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../../../database/factory/flutter_database_factory.dart';
 import '../../../../../database/management/backup_providers/google_drive/api.dart';
 import '../../../../../database/management/backup_providers/google_drive/background_backup/background_backup.g.dart';
+import '../../../../../main.dart';
 import '../../../../../util/format.dart';
 import '../../dashlet_card.dart';
 
 /// Dashlet for pending shopping items count
-class GoogleBackupDashlset extends StatelessWidget {
-  const GoogleBackupDashlset({super.key});
+class BackupDashlet extends StatelessWidget {
+  const BackupDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<void>(
+  Widget build(BuildContext context) => DashletCard<void>.route(
     label: 'Backup',
+    hint: 'Backup $appName to your Google Cloud account',
     icon: Icons.cloud,
-    dashletValue: () => Future.value(const DashletValue(null)),
-    route: '/system/backup/google',
-    widgetBuilder: (_, _) => _buildLastBackup(),
+    value: () => Future.value(const DashletValue(null)),
+    route: '/home/backup',
+    valueBuilder: (_, _) => _buildLastBackup(),
   );
 
   FutureBuilderEx<DateTime?> _buildLastBackup() => FutureBuilderEx<DateTime?>(

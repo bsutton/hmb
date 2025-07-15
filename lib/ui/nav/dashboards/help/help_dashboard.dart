@@ -15,6 +15,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../main.dart';
 import '../dashboard.dart';
 import '../dashlet_card.dart';
 
@@ -35,46 +36,38 @@ class HelpDashboardPage extends StatelessWidget {
     body: DashboardPage(
       title: 'Help',
       dashlets: [
-        DashletCard<void>(
+        DashletCard<void>.onTap(
           label: 'Getting Started',
+          hint: 'Instructions on learning how to use $appName',
           icon: Icons.info_outline,
-          dashletValue: () => Future.value(const DashletValue(null)),
-          onTapOverride: () =>
+          value: () => Future.value(const DashletValue(null)),
+          onTap: (_) =>
               unawaited(_launchURL('https://hmb.onepub.dev/getting-started')),
-          widgetBuilder: (_, _) => const SizedBox.shrink(),
         ),
-        DashletCard<void>(
+        DashletCard<void>.onTap(
           label: 'Report an Issue',
+          hint: 'Report an bug or problem with $appName',
           icon: Icons.bug_report,
-          dashletValue: () => Future.value(const DashletValue(null)),
-          onTapOverride: () =>
+          value: () => Future.value(const DashletValue(null)),
+          onTap: (_) =>
               unawaited(_launchURL('https://github.com/bsutton/hmb/issues')),
-          widgetBuilder: (_, _) => const SizedBox.shrink(),
         ),
-        DashletCard<void>(
+        DashletCard<void>.onTap(
           label: 'Community Discussions',
+          hint: 'Join community discussions to get help with $appName',
           icon: Icons.forum,
-          dashletValue: () => Future.value(const DashletValue(null)),
-          onTapOverride: () => unawaited(
+          value: () => Future.value(const DashletValue(null)),
+          onTap: (_) => unawaited(
             _launchURL('https://github.com/bsutton/hmb/discussions'),
           ),
-          widgetBuilder: (_, _) => const SizedBox.shrink(),
         ),
-        DashletCard<void>(
+        DashletCard<void>.route(
           label: 'About',
+          hint: 'Version, Author and Copyright information',
           icon: Icons.info,
-          dashletValue: () => Future.value(const DashletValue(null)),
-          route: '/system/about',
-          widgetBuilder: (_, _) => const SizedBox.shrink(),
+          value: () => Future.value(const DashletValue(null)),
+          route: '/home/help/about',
         ),
-
-        //  DashletCard<void>(
-        //   label: 'Test PDF',
-        //   icon: Icons.info,
-        //   dashletValue: () => Future.value(const DashletValue(null)),
-        //   route: '/testpdf',
-        //   widgetBuilder: (_, _) => const SizedBox.shrink(),
-        // ),
       ],
     ),
   );

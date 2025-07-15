@@ -265,7 +265,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
     if (mounted) {
       HMBToast.info('saved');
       if (close) {
-        context.go('/dashboard/settings');
+        context.go('/home/settings');
       }
     }
     return true;

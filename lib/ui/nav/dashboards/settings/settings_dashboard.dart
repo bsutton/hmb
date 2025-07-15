@@ -13,6 +13,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../main.dart';
 import '../../nav.g.dart';
 
 class SettingsDashboardPage extends StatelessWidget {
@@ -22,57 +23,55 @@ class SettingsDashboardPage extends StatelessWidget {
   Widget build(BuildContext context) => DashboardPage(
     title: 'Settings',
     dashlets: [
-      DashletCard<void>(
+      DashletCard<void>.route(
         label: 'SMS Templates',
+        hint: 'Maintain SMS Templates to speed up sending text messages',
         icon: Icons.message,
-        dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/system/sms_templates',
-        widgetBuilder: (_, _) => const SizedBox.shrink(),
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/sms_templates',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
-      DashletCard<void>(
+      DashletCard<void>.route(
         label: 'Business',
+        hint: 'Maintain your Business Name/No. Unit System, Web links and Operating Hours',
         icon: Icons.business,
-        dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/system/business',
-        widgetBuilder: (_, _) => const SizedBox.shrink(),
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/business',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
-      DashletCard<void>(
+      DashletCard<void>.route(
         label: 'Billing',
+        hint: 'Maintain rates, bank details, payment options and formatting for Invoices and Quotes',
         icon: Icons.account_balance,
-        dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/system/billing',
-        widgetBuilder: (_, _) => const SizedBox.shrink(),
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/billing',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
-      DashletCard<void>(
+      DashletCard<void>.route(
         label: 'Contact',
+        hint: 'Maintain your buinsess Contact Details used on Quotes and Invoices',
         icon: Icons.contact_phone,
-        dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/system/contact',
-        widgetBuilder: (_, _) => const SizedBox.shrink(),
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/contact',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
-      DashletCard<void>(
+      DashletCard<void>.route(
         label: 'Integrations',
+        hint: 'Configure integrations to third party systems like Accounting Packages',
         icon: Icons.extension,
-        dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/system/integrations',
-        widgetBuilder: (_, _) => const SizedBox.shrink(),
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/integrations',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
-      DashletCard<void>(
+      DashletCard<void>.onTap(
         label: 'Setup Wizard',
+        hint: 'Run the setup wizard',
         icon: Icons.auto_fix_high,
-        dashletValue: () => Future.value(const DashletValue(null)),
-        onTapOverride: () => context.push('/system/wizard', extra: true),
-        route: '/system/wizard',
-        widgetBuilder: (_, _) => const SizedBox.shrink(),
+        value: () => Future.value(const DashletValue(null)),
+        onTap: (_) => context.push('/home/settings/wizard', extra: true),
+        valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
 
-      DashletCard<void>(
-        label: 'Backup Local',
-        icon: Icons.save,
-        dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/system/backup/local',
-        widgetBuilder: (_, _) => const SizedBox.shrink(),
-      ),
     ],
   );
 }

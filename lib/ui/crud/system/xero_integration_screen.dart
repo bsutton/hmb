@@ -97,7 +97,7 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
     if (mounted) {
       HMBToast.info('saved');
       if (close) {
-        context.go('/system/integrations');
+        context.go('/home/settings/integrations');
       }
     }
     return true;

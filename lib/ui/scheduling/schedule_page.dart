@@ -150,7 +150,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
         "Before you Schedule a job, you must first set your opening hours from the 'Settings | Business' page.",
       );
       if (mounted) {
-        context.go('/dashboard/settings');
+        context.go('/home/settings');
       }
     }
     await _initPage();

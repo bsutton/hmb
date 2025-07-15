@@ -26,33 +26,37 @@ class AccountingDashboardPage extends StatelessWidget {
   Widget build(BuildContext context) => DashboardPage(
     title: 'Accounting',
     dashlets: [
-      DashletCard<void>(
+      DashletCard<void>.route(
         label: 'Estimator',
+        hint: 'Create estimates for a Job',
         icon: Icons.calculate,
-        dashletValue: () => Future.value(const DashletValue(null)),
-        route: '/accounting/estimator',
-        widgetBuilder: (_, _) => const SizedBox.shrink(),
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/accounting/estimator',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
-      DashletCard<String>(
+      DashletCard<String>.route(
         label: 'Quotes',
+        hint: 'Quote a Job based on an Estimate',
         icon: Icons.format_quote,
         // ignore: discarded_futures
-        dashletValue: getQuoteValue,
-        route: '/accounting/quotes',
+        value: getQuoteValue,
+        route: '/home/accounting/quotes',
       ),
-      DashletCard<int>(
+      DashletCard<int>.route(
         label: 'To Be Invoiced',
+        hint: 'List of Jobs that have unbilled hours',
         icon: Icons.attach_money,
         // ignore: discarded_futures
-        dashletValue: getYetToBeInvoiced,
-        route: '/accounting/to_be_invoiced',
+        value: getYetToBeInvoiced,
+        route: '/home/accounting/to_be_invoiced',
       ),
       const InvoiceDashlet(),
-      DashletCard<void>(
+      DashletCard<void>.route(
         label: 'Milestones',
+        hint: 'Create and Invoice Milestone Payments for Fixed price Jobs',
         icon: Icons.flag,
-        dashletValue: () async => const DashletValue<String>('fixed price'),
-        route: '/accounting/milestones',
+        value: () async => const DashletValue<String>('fixed price'),
+        route: '/home/accounting/milestones',
       ),
       const ReceiptDashlet(),
     ],

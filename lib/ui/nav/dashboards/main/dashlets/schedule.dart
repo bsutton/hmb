@@ -21,12 +21,13 @@ class NextJobDashlet extends StatelessWidget {
   const NextJobDashlet({super.key});
 
   @override
-  Widget build(BuildContext context) => DashletCard<JobActivity?>(
+  Widget build(BuildContext context) => DashletCard<JobActivity?>.builder(
     label: 'Schedule',
+    hint: 'Create and View your Job schedule',
     icon: Icons.schedule,
     // ignore: discarded_futures
-    dashletValue: getNextJob,
-    widgetBuilder: (ctx, dv) {
+    value: getNextJob,
+    valueBuilder: (ctx, dv) {
       if (dv.value == null) {
         return Text('—', style: Theme.of(ctx).textTheme.titleSmall);
       }

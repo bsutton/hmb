@@ -32,7 +32,7 @@ class HomeScaffold extends StatelessWidget {
       // ▶️ Home button replaces the old drawer
       leading: IconButton(
         icon: const Icon(Icons.home),
-        onPressed: () => GoRouter.of(context).go('/dashboard'),
+        onPressed: () => GoRouter.of(context).go('/home'),
       ),
       title: JuneBuilder(HMBTitle.new, builder: (title) => Text(title.title)),
     ),
