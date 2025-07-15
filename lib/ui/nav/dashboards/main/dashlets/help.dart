@@ -12,7 +12,7 @@
 // lib/src/ui/dashboard/help_dashlet.dart
 import 'package:flutter/material.dart';
 
-import '../../../../../main.dart';
+import '../../../../../src/appname.dart';
 import '../../dashlet_card.dart';
 
 /// Dashlet for Help sub-dashboard

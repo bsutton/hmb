@@ -13,7 +13,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../main.dart';
 import '../../nav.g.dart';
 
 class SettingsDashboardPage extends StatelessWidget {
@@ -33,7 +32,8 @@ class SettingsDashboardPage extends StatelessWidget {
       ),
       DashletCard<void>.route(
         label: 'Business',
-        hint: 'Maintain your Business Name/No. Unit System, Web links and Operating Hours',
+        hint:
+            'Maintain your Business Name/No. Unit System, Web links and Operating Hours',
         icon: Icons.business,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/settings/business',
@@ -41,7 +41,8 @@ class SettingsDashboardPage extends StatelessWidget {
       ),
       DashletCard<void>.route(
         label: 'Billing',
-        hint: 'Maintain rates, bank details, payment options and formatting for Invoices and Quotes',
+        hint:
+            'Maintain rates, bank details, payment options and formatting for Invoices and Quotes',
         icon: Icons.account_balance,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/settings/billing',
@@ -49,7 +50,8 @@ class SettingsDashboardPage extends StatelessWidget {
       ),
       DashletCard<void>.route(
         label: 'Contact',
-        hint: 'Maintain your buinsess Contact Details used on Quotes and Invoices',
+        hint:
+            'Maintain your buinsess Contact Details used on Quotes and Invoices',
         icon: Icons.contact_phone,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/settings/contact',
@@ -57,7 +59,8 @@ class SettingsDashboardPage extends StatelessWidget {
       ),
       DashletCard<void>.route(
         label: 'Integrations',
-        hint: 'Configure integrations to third party systems like Accounting Packages',
+        hint:
+            'Configure integrations to third party systems like Accounting Packages',
         icon: Icons.extension,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/settings/integrations',
@@ -71,7 +74,6 @@ class SettingsDashboardPage extends StatelessWidget {
         onTap: (_) => context.push('/home/settings/wizard', extra: true),
         valueBuilder: (_, _) => const SizedBox.shrink(),
       ),
-
     ],
   );
 }

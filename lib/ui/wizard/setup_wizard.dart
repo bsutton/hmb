@@ -12,7 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../main.dart';
+import '../../src/appname.dart';
 import '../../util/app_title.dart';
 import '../../util/log.dart';
 import '../widgets/wizard.dart';

@@ -20,6 +20,7 @@ import 'package:strings/strings.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../dao/dao_system.dart';
+import '../../../../src/appname.dart';
 import '../../../../ui/dialog/hmb_file_picker_linux.dart';
 import '../../../../util/exceptions.dart';
 import '../../../../util/paths.dart'
@@ -117,7 +118,7 @@ class EmailBackupProvider extends BackupProvider {
 
       final email = Email(
         body: 'Attached is the HMB database backup.',
-        subject: 'HMB Database Backup',
+        subject: '$appName Database Backup',
         recipients: [
           system.emailAddress!,
         ], // Replace with the recipient's email address
