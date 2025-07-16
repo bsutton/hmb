@@ -80,7 +80,7 @@ Future<void> uploadPhotosInBackup({
     for (final part in cloudStorageParts) {
       parentId = await driveApi.getOrCreateFolderId(
         part,
-        parentFolderId: parentId,
+        parentId: parentId,
       );
     }
 

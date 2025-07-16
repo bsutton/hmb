@@ -11,6 +11,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'hmb_tooltip.dart';
+
 enum HMBIconButtonSize { small, standard, large }
 
 /// Displays an icon button with configurable size and tooltip shown on long press.
@@ -59,9 +61,9 @@ class _HMBIconButtonState extends State<HMBIconButton> {
       }
     },
     behavior: HitTestBehavior.opaque,
-    child: Tooltip(
+    child: HMBTooltip(
       key: _tooltipKey,
-      message: widget.hint ?? '',
+      hint: widget.hint ?? '',
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: (widget.showBackground)

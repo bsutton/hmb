@@ -1,3 +1,5 @@
+# 0.11.0
+- migrated to the latest google signin api.
 # 0.5.0
 - major rework of the quote PDF to improve formating and provide control
  over whether items and totals are displayed in the quote.

@@ -27,7 +27,7 @@ import 'util/hmb_theme.dart';
 import 'util/log.dart';
 import 'util/platform_ex.dart';
 
-const appName = 'HNB';
+
 //----------------------------------------------------------------------
 
 // the navigator key you already passed into GoRouter

@@ -53,6 +53,8 @@ class HMBDroplist<T> extends StatefulWidget {
 class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
   T? _selectedItem;
 
+  bool get hasSelection => _selectedItem != null;
+
   @override
   Future<void> asyncInitState() async {
     _selectedItem = widget.initialValue ?? await widget.selectedItem();

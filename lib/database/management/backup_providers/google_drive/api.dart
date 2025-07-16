@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License, with the
+ following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products for third
+     parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -14,7 +16,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:googleapis/drive/v3.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 
@@ -29,52 +30,69 @@ class GoogleDriveAuth {
 
   static Future<GoogleDriveAuth> init() async {
     final api = GoogleDriveAuth();
-
-    // Use signInOnline for desktop platforms
-    final account = await api._signin();
+    final account = await api._signIn();
     if (account == null) {
       throw BackupException('Google sign-in canceled.');
     }
 
-    api._authHeaders = await account.authHeaders;
+    final auth = await account.authorizationClient.authorizeScopes([
+      drive.DriveApi.driveFileScope,
+    ]);
+
+    api._authHeaders = {'Authorization': 'Bearer ${auth.accessToken}'};
 
     return api;
   }
 
   Future<void> signOut() async {
-    final googleSignIn = GoogleSignIn();
-    await googleSignIn.signOut();
+    await GoogleSignIn.instance.signOut();
   }
 
   Future<bool> get isSignedIn async {
+    final signIn = GoogleSignIn.instance;
+    await signIn.initialize();
+
     try {
-      final googleSignIn = GoogleSignIn(
-        scopes: [drive.DriveApi.driveFileScope],
-      );
-      final account =
-          googleSignIn.currentUser ?? await googleSignIn.signInSilently();
-      if (account == null) {
-        return false;
-      }
-      final headers = await account.authHeaders;
-      return headers['Authorization']?.startsWith('Bearer ') ?? false;
+      await signIn.attemptLightweightAuthentication();
     } catch (_) {
       return false;
     }
+
+    final stream = signIn.authenticationEvents;
+    await for (final event in stream) {
+      if (event is GoogleSignInAuthenticationEventSignIn) {
+        final auth = await event.user.authorizationClient
+            .authorizationForScopes([drive.DriveApi.driveFileScope]);
+        return auth?.accessToken != null;
+      }
+    }
+
+    return false;
   }
 
-  Future<GoogleSignInAccount?> _signin() async {
-    final googleSignIn = GoogleSignIn(scopes: [drive.DriveApi.driveFileScope]);
+  Future<GoogleSignInAccount?> _signIn() async {
+    final signIn = GoogleSignIn.instance;
+    await signIn.initialize();
 
     try {
-      return (await googleSignIn.isSignedIn())
-          ? googleSignIn.signInSilently()
-          : googleSignIn.signIn();
-      // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
-      HMBToast.error('Error signing in: $e');
-      return null;
+      await signIn.attemptLightweightAuthentication();
+    } catch (_) {
+      // Ignore and try interactive auth next
     }
+
+    final stream = signIn.authenticationEvents;
+    await for (final event in stream) {
+      if (event is GoogleSignInAuthenticationEventSignIn) {
+        return event.user;
+      }
+    }
+
+    if (signIn.supportsAuthenticate()) {
+      return signIn.authenticate(scopeHint: [drive.DriveApi.driveFileScope]);
+    }
+
+    HMBToast.error('Google sign-in failed: no user authenticated');
+    return null;
   }
 }
 
@@ -91,10 +109,7 @@ class GoogleDriveApi {
 
   static Future<GoogleDriveApi> selfAuth() async {
     final auth = await GoogleDriveAuth.init();
-
-    final api = await GoogleDriveApi.fromHeaders(auth.authHeaders);
-    await api.init();
-    return api;
+    return GoogleDriveApi.fromHeaders(auth.authHeaders);
   }
 
   var _initialised = false;
@@ -102,14 +117,11 @@ class GoogleDriveApi {
   late final drive.DriveApi _driveApi;
   late AuthenticatedClient? _authClient;
 
-  FilesResource get files => _driveApi.files;
+  drive.FilesResource get files => _driveApi.files;
 
   Future<void> init() async {
     if (!_initialised) {
       _authClient = AuthenticatedClient(http.Client(), _authHeaders);
-
-      // final authHeaders = await account.authHeaders;
-      // final authenticateClient = GoogleAuthClient(authHeaders);
       _driveApi = drive.DriveApi(_authClient!);
       _initialised = true;
     }
@@ -121,63 +133,43 @@ class GoogleDriveApi {
     _initialised = false;
   }
 
-  /// Sends an HTTP request and asynchronously returns the response.
   Future<StreamedResponse> send(BaseRequest request) =>
       _authClient!.send(request);
 
-  Future<String> getOrCreateFolderId(
-    String folderName, {
-    String? parentFolderId,
-  }) async {
+  Future<String> getOrCreateFolderId(String name, {String? parentId}) async {
     var q =
-        "mimeType='application/vnd.google-apps.folder' and name='$folderName' and trashed=false";
-    if (parentFolderId != null) {
-      q += " and '$parentFolderId' in parents";
+        "mimeType='application/vnd.google-apps.folder' and name='$name' and trashed=false";
+    if (parentId != null) {
+      q += " and '$parentId' in parents";
     }
 
-    final folders = await _driveApi.files.list(q: q);
-    if (folders.files != null && folders.files!.isNotEmpty) {
-      return folders.files!.first.id!;
-    } else {
-      final folder = drive.File()
-        ..name = folderName
-        ..mimeType = 'application/vnd.google-apps.folder';
-      if (parentFolderId != null) {
-        folder.parents = [parentFolderId];
-      }
-      final createdFolder = await _driveApi.files.create(folder);
-      return createdFolder.id!;
+    final res = await _driveApi.files.list(q: q);
+    if (res.files case final list when list != null && list.isNotEmpty) {
+      return list.first.id!;
     }
+
+    final folderMeta = drive.File()
+      ..name = name
+      ..mimeType = 'application/vnd.google-apps.folder'
+      ..parents = parentId == null ? null : <String>[parentId];
+
+    final created = await _driveApi.files.create(folderMeta);
+    return created.id!;
   }
 
-
-  Future<String> getHMBFolder() async {
-    var hmbFolderId = await getOrCreateFolderId('hmb');
-
+  Future<String> _hmbFolder() async {
+    var id = await getOrCreateFolderId('hmb');
     if (kDebugMode) {
-      hmbFolderId = await getOrCreateFolderId(
-        'debug',
-        parentFolderId: hmbFolderId,
-      );
+      id = await getOrCreateFolderId('debug', parentId: id);
     }
-    return hmbFolderId;
-  }
-  Future<String> getBackupFolder() async {
-    final backupsFolderId = await getOrCreateFolderId(
-      'backups',
-      parentFolderId: await getHMBFolder(),
-    );
-    return backupsFolderId;
+    return id;
   }
 
+  Future<String> getBackupFolder() async =>
+      getOrCreateFolderId('backups', parentId: await _hmbFolder());
 
-  Future<String> getPhotoSyncFolder() async {
-    final photoFolderId = await getOrCreateFolderId(
-      'photos',
-      parentFolderId: await getHMBFolder(),
-    );
-    return photoFolderId;
-  }
+  Future<String> getPhotoSyncFolder() async =>
+      getOrCreateFolderId('photos', parentId: await _hmbFolder());
 }
 
 class GoogleAuthClient extends http.BaseClient {

@@ -38,7 +38,7 @@ class _JobEstimatesListScreenState
 
   @override
   Future<void> asyncInitState() async {
-    setAppTitle('Estimates');
+    setAppTitle('Estimator');
     await _refreshJobs();
   }
 

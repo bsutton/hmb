@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'hmb_filter_sheet.dart';
 
+typedef BoolCallback = bool Function();
+
 /// A single filter line widget with an associated
 /// sheet for additional advanced filter options.
 ///
@@ -15,12 +17,9 @@ class HMBFilterLine extends StatelessWidget {
     required this.lineBuilder,
     required this.sheetBuilder,
     required this.onClearAll,
+    required this.isActive,
     this.onSheetClosed,
-
-    // required this.onFilterTap,
     super.key,
-    this.icon = Icons.tune,
-    this.isActive = false,
     this.tooltip = 'Filter',
   });
 
@@ -30,14 +29,14 @@ class HMBFilterLine extends StatelessWidget {
   final VoidCallback? onClearAll;
   final VoidCallback? onSheetClosed;
 
+  /// Whether filter is currently active (affects icon)
+  final BoolCallback isActive;
+
   /// Called when the filter icon is pressed
   // final VoidCallback onFilterTap;
 
   /// Icon when filter is inactive
-  final IconData icon;
-
-  /// Whether filter is currently active (affects icon)
-  final bool isActive;
+  static const IconData icon = Icons.tune;
 
   /// Tooltip for the icon button
   final String tooltip;
@@ -48,8 +47,10 @@ class HMBFilterLine extends StatelessWidget {
       // left content
       Expanded(child: lineBuilder(context)),
       IconButton(
-        icon: Icon(icon),
+        icon: const Icon(icon),
         tooltip: tooltip,
+        color: isActive() ? Colors.blue : Colors.grey,
+
         onPressed: () async {
           await showModalBottomSheet<void>(
             context: context,

@@ -37,6 +37,7 @@ import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/select/hmb_droplist_multi.dart';
+import '../widgets/select/hmb_filter_line.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'list_shopping_screen.dart';
@@ -128,57 +129,13 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
     body: Surface(
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                HMBSearchWithAdd(
-                  onSearch: (filter) async {
-                    this.filter = filter;
-                    await _loadTaskItems();
-                  },
-                  onAdd: () async {
-                    await showAddItemDialog(context, AddType.packing);
-                    await _loadTaskItems();
-                  },
-                ),
-                HMBDroplistMultiSelect<Job>(
-                  initialItems: () async => _selectedJobs,
-                  // ignore: discarded_futures
-                  items: (filter) => DaoJob().getActiveJobs(filter),
-                  format: (job) => job.summary,
-                  onChanged: (selectedJobs) async {
-                    _selectedJobs = selectedJobs;
-                    await _loadTaskItems();
-                  },
-                  title: 'Jobs',
-                  backgroundColor: SurfaceElevation.e4.color,
-                  required: false,
-                ).help(
-                  'Filter by Job',
-                  '''
-Allows you to filter the packing list to items from specific Jobs.
-
-If your Job isn't showing then you need to update its status to an Active one such as 'Scheduled, In Progress...' ''',
-                ),
-                const SizedBox(height: 10),
-                HMBDroplist<ScheduleFilter>(
-                  selectedItem: () async => _selectedScheduleFilter,
-                  items: (filter) async => ScheduleFilter.values,
-                  format: (schedule) => schedule.displayName,
-                  onChanged: (schedule) async {
-                    _selectedScheduleFilter = schedule ?? ScheduleFilter.all;
-                    await _loadTaskItems();
-                  },
-                  title: 'Schedule',
-                  required: false,
-                ).help(
-                  'Filter by Schedule',
-                  'Filter packing items by job scheduled date (Today, Next 3 Days, or This Week)',
-                ),
-              ],
-            ),
+          HMBFilterLine(
+            lineBuilder: _buildSearchLine,
+            sheetBuilder: _buildFilter,
+            onClearAll: () => setState(() {}),
+            isActive: () =>
+                _selectedJobs.isNotEmpty ||
+                _selectedScheduleFilter != ScheduleFilter.all,
           ),
           Expanded(
             child: DeferredBuilder(
@@ -187,44 +144,97 @@ If your Job isn't showing then you need to update its status to an Active one su
                 if (taskItemsContexts.isEmpty) {
                   return _showEmpty();
                 }
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isMobile = constraints.maxWidth < 900;
-                    return isMobile
-                        ? ListView.builder(
-                            // Mobile layout
-                            padding: const EdgeInsets.all(8),
-                            itemCount: taskItemsContexts.length,
-                            itemBuilder: (context, index) => _buildListItem(
-                              context,
-                              taskItemsContexts[index],
-                            ),
-                          )
-                        // Desktop layout
-                        : GridView.builder(
-                            padding: const EdgeInsets.all(8),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  childAspectRatio: 1.5,
-                                  mainAxisSpacing:
-                                      16, // Added vertical spacing between items
-                                  crossAxisSpacing: 16,
-                                ),
-                            itemCount: taskItemsContexts.length,
-                            itemBuilder: (context, index) => _buildListItem(
-                              context,
-                              taskItemsContexts[index],
-                            ),
-                          );
-                  },
-                );
+                return _buildLayout(context);
               },
             ),
           ),
         ],
       ),
     ),
+  );
+
+  Widget _buildSearchLine(BuildContext context) => HMBSearchWithAdd(
+    onSearch: (filter) async {
+      this.filter = filter;
+      await _loadTaskItems();
+    },
+    onAdd: () async {
+      await showAddItemDialog(context, AddType.packing);
+      await _loadTaskItems();
+    },
+  );
+
+  Widget _buildLayout(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final isMobile = constraints.maxWidth < 900;
+      return isMobile
+          ? ListView.builder(
+              // Mobile layout
+              padding: const EdgeInsets.all(8),
+              itemCount: taskItemsContexts.length,
+              itemBuilder: (context, index) =>
+                  _buildListItem(context, taskItemsContexts[index]),
+            )
+          // Desktop layout
+          : GridView.builder(
+              padding: const EdgeInsets.all(8),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 1.5,
+                mainAxisSpacing: 16, // Added vertical spacing between items
+                crossAxisSpacing: 16,
+              ),
+              itemCount: taskItemsContexts.length,
+              itemBuilder: (context, index) =>
+                  _buildListItem(context, taskItemsContexts[index]),
+            );
+    },
+  );
+  Widget _buildFilter(BuildContext context) => Column(
+    children: [
+      Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            HMBDroplistMultiSelect<Job>(
+              initialItems: () async => _selectedJobs,
+              // ignore: discarded_futures
+              items: (filter) => DaoJob().getActiveJobs(filter),
+              format: (job) => job.summary,
+              onChanged: (selectedJobs) async {
+                _selectedJobs = selectedJobs;
+                await _loadTaskItems();
+              },
+              title: 'Jobs',
+              backgroundColor: SurfaceElevation.e4.color,
+              required: false,
+            ).help(
+              'Filter by Job',
+              '''
+Allows you to filter the packing list to items from specific Jobs.
+
+If your Job isn't showing then you need to update its status to an Active one such as 'Scheduled, In Progress...' ''',
+            ),
+            const SizedBox(height: 10),
+            HMBDroplist<ScheduleFilter>(
+              selectedItem: () async => _selectedScheduleFilter,
+              items: (filter) async => ScheduleFilter.values,
+              format: (schedule) => schedule.displayName,
+              onChanged: (schedule) async {
+                _selectedScheduleFilter = schedule ?? ScheduleFilter.all;
+                await _loadTaskItems();
+              },
+              title: 'Schedule',
+              required: false,
+            ).help(
+              'Filter by Schedule',
+              'Filter packing items by job scheduled date (Today, Next 3 Days, or This Week)',
+            ),
+          ],
+        ),
+      ),
+    ],
   );
 
   Center _showEmpty() => const Center(

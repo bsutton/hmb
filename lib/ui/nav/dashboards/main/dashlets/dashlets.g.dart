@@ -18,8 +18,8 @@
 export '../../accounting/invoices.dart';
 export '../../accounting/receipt.dart';
 export 'accounting.dart';
-export 'customers.dart';
 export 'backup.dart';
+export 'customers.dart';
 export 'help.dart';
 export 'job.dart';
 export 'manufacturers.dart';

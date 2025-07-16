@@ -70,6 +70,8 @@ class HMBDroplistMultiSelectState<T>
     extends DeferredState<HMBDroplistMultiSelect<T>> {
   List<T> _selectedItems = [];
 
+  bool hasSelections() => _selectedItems.isNotEmpty;
+
   @override
   Future<void> asyncInitState() async {
     _selectedItems = await widget.initialItems();

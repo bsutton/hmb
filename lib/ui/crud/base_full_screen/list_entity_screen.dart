@@ -169,7 +169,7 @@ class EntityListScreenState<T extends Entity<T>>
         sheetBuilder: widget.filterSheetBuilder!,
         onClearAll: _clearAll,
         onSheetClosed: widget.onFilterSheetClosed,
-        isActive: _isFilterActive,
+        isActive: () => _isFilterActive,
       );
     } else {
       titleRow = searchAdd;

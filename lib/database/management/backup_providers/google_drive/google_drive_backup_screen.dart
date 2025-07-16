@@ -162,7 +162,7 @@ class _GoogleDriveBackupScreenState
               hint: 'Signout of Google Drive',
               icon: const Icon(Icons.logout),
               onPressed: () async {
-                final googleSignIn = GoogleSignIn();
+                final googleSignIn = GoogleSignIn.instance;
                 await googleSignIn.signOut();
                 setState(() {
                   _isGoogleSignedIn = false;

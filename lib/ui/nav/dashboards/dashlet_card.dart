@@ -16,6 +16,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
 
+import '../../widgets/hmb_tooltip.dart';
 import 'dashboard.dart';
 
 /// Holds primary and optional secondary values for a dashlet
@@ -122,9 +123,8 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
         minWidth: minW,
         minHeight: minH,
       ),
-      child: Tooltip(
-        message: widget.hint,
-        triggerMode: TooltipTriggerMode.longPress,
+      child: HMBTooltip(
+        hint: widget.hint, 
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () => widget.onTap != null

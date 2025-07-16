@@ -16,6 +16,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../util/hmb_theme.dart';
 import 'color_ex.dart';
+import 'hmb_tooltip.dart';
 import 'layout/hmb_empty.dart';
 import 'svg.dart';
 
@@ -60,9 +61,8 @@ class HMBButton extends StatelessWidget {
             child: Text(label, style: TextStyle(color: color)),
           );
 
-    return Tooltip(
-      message: hint,
-      triggerMode: TooltipTriggerMode.longPress,
+    return HMBTooltip(
+      hint: hint,
       child: button,
     );
   }
@@ -114,9 +114,8 @@ class HMBButtonPrimary extends StatelessWidget {
           : Svg(svg!, height: 24, width: 24, color: svgColor),
     );
 
-    return Tooltip(
-      message: hint,
-      triggerMode: TooltipTriggerMode.longPress,
+    return HMBTooltip(
+      hint: hint,
       child: btn,
     );
   }
@@ -147,9 +146,8 @@ class HMBButtonSecondary extends StatelessWidget {
       child: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
     );
 
-    return Tooltip(
-      message: hint,
-      triggerMode: TooltipTriggerMode.longPress,
+    return HMBTooltip(
+      hint: hint,
       child: btn,
     );
   }
@@ -175,9 +173,8 @@ class HMBLinkButton extends StatelessWidget {
       child: Text(label, style: const TextStyle(color: Colors.blue)),
     );
 
-    return Tooltip(
-      message: hint,
-      triggerMode: TooltipTriggerMode.longPress,
+    return HMBTooltip(
+      hint: hint,
       child: btn,
     );
   }

@@ -24,7 +24,7 @@ import '../../../../database/management/backup_providers/google_drive/background
     hide ProgressUpdate;
 import '../../../../database/management/backup_providers/google_drive/google_drive.g.dart';
 import '../../../../database/versions/versions.g.dart';
-import '../../../../main.dart';
+import '../../../../src/appname.dart';
 import '../../../../util/util.g.dart';
 import '../../../widgets/widgets.g.dart';
 import '../dashboard.dart';
@@ -44,7 +44,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   var _syncRunning = false;
 
   late final BackupProvider _provider;
-  late Future<DateTime?> _lastBackupFuture;
+  DateTime? _lastBackup;
   late final StreamSubscription<ProgressUpdate> _backupSub;
   late final StreamSubscription<ProgressUpdate> _photoSub;
 
@@ -69,7 +69,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
 
     if (await GoogleDriveAuth().isSignedIn) {
       // Load last backup date
-      _lastBackupFuture = _refreshLastBackup();
+      _lastBackup = await _refreshLastBackup();
       _isGoogleSignedIn = true;
     }
   }
@@ -96,73 +96,73 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: DashboardPage(
-      title: 'Backup',
-      dashlets: [
-        DashletCard<void>.onTap(
-          label: 'Backup',
-          hint:
-              'Backup your $appName data to your Google Drive Account (recommended)',
-          icon: Icons.info_outline,
-          onTap: (_) => _performBackup(),
-          value: () async {
-            final lastBackupDate = await _lastBackupFuture;
-
-            return DashletValue<String>(
-              lastBackupDate == null
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder: (context) => Scaffold(
+      body: DashboardPage(
+        title: 'Backup',
+        dashlets: [
+          DashletCard<void>.onTap(
+            label: 'Backup',
+            hint:
+                'Backup your $appName data to your Google Drive Account (recommended)',
+            icon: Icons.info_outline,
+            onTap: (_) => _performBackup(),
+            value: () async => DashletValue<String>(
+              _lastBackup == null
                   ? 'No backups yet'
-                  : 'Last: ${formatDateTime(lastBackupDate)}',
-            );
-          },
-        ),
-        DashletCard<void>.onTap(
-          label: 'Restore',
-          hint: 'Restore $appName data from your Google Drive Account',
-          icon: Icons.bug_report,
-          value: () => Future.value(const DashletValue(null)),
-          onTap: _performRestore,
-        ),
+                  : 'Last: ${formatDateTime(_lastBackup!)}',
+            ),
+          ),
+          DashletCard<void>.onTap(
+            label: 'Restore',
+            hint: 'Restore $appName data from your Google Drive Account',
+            icon: Icons.bug_report,
+            value: () => Future.value(const DashletValue(null)),
+            onTap: _performRestore,
+          ),
 
-              DashletCard<void>.route(
-        label: 'Backup Local',
-        hint: 'Make a local backup of $appName database - using Google Drive is safer.',
-        icon: Icons.save,
-        value: () => Future.value(const DashletValue(null)),
-        route: '/home/backup/local/backup',
-        valueBuilder: (_, _) => const SizedBox.shrink(),
+          DashletCard<void>.route(
+            label: 'Backup Local',
+            hint:
+                'Make a local backup of $appName database - using Google Drive is safer.',
+            icon: Icons.save,
+            value: () => Future.value(const DashletValue(null)),
+            route: '/home/backup/local/backup',
+            valueBuilder: (_, _) => const SizedBox.shrink(),
+          ),
+
+          DashletCard<void>.onTap(
+            label: 'Sync Photos',
+            hint:
+                'Copy your photos to google drive - including receipts and tools',
+            icon: Icons.forum,
+            value: () async => const DashletValue(null),
+            valueBuilder: (_, _) => _syncPhotoBuilder(),
+            onTap: (_) async => _syncPhotos(),
+          ),
+
+          DashletCard<void>.onTap(
+            label: 'Signout',
+            hint: 'Sign out of your Google Drive Account',
+            icon: Icons.info,
+            value: () => Future.value(const DashletValue(null)),
+            onTap: (_) async => signout(),
+          ),
+        ],
       ),
-
-        DashletCard<void>.onTap(
-          label: 'Sync Photos',
-          hint:
-              'Copy your photos to google drive - including receipts and tools',
-          icon: Icons.forum,
-          value: () async => const DashletValue(null),
-          valueBuilder: (_, _) => _syncPhotoBuilder(),
-          onTap: (_) async => _syncPhotos(),
-        ),
-
-        DashletCard<void>.onTap(
-          label: 'Signout',
-          hint: 'Sign out of your Google Drive Account',
-          icon: Icons.info,
-          value: () => Future.value(const DashletValue(null)),
-          onTap: (_) async => signout(),
-        ),
-      ],
     ),
   );
 
-  FutureBuilderEx<DateTime?> _buildLastBackup() => FutureBuilderEx<DateTime?>(
-    future: _lastBackupFuture,
-    builder: (context, lastBackupDate) {
-      final text = lastBackupDate == null
-          ? 'No backups yet'
-          : 'Last: ${formatDateTime(lastBackupDate)}';
-      return Center(child: Text(text, style: const TextStyle(fontSize: 16)));
-    },
-  );
+  // FutureBuilderEx<DateTime?> _buildLastBackup() => FutureBuilderEx<DateTime?>(
+  //   future: _lastBackupFuture,
+  //   builder: (context, lastBackupDate) {
+  //     final text = lastBackupDate == null
+  //         ? 'No backups yet'
+  //         : 'Last: ${formatDateTime(lastBackupDate)}';
+  //     return Center(child: Text(text, style: const TextStyle(fontSize: 16)));
+  //   },
+  // );
 
   Future<void> _performBackup() async {
     setState(() {
@@ -285,7 +285,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
                 try {
                   auth = await GoogleDriveAuth.init();
                   if (await auth.isSignedIn && mounted) {
-                    _lastBackupFuture = _refreshLastBackup();
+                    _lastBackup = await _refreshLastBackup();
                     _isGoogleSignedIn = true;
                     setState(() {});
                   }

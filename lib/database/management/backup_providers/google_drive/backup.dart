@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License, with the
+ following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products for third
+     parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -12,6 +14,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -27,23 +30,71 @@ class BackupAuthGoogleScreen extends StatefulWidget {
   final String pathToBackup;
 
   @override
-  // ignore: library_private_types_in_public_api
   _BackupAuthGoogleScreenState createState() => _BackupAuthGoogleScreenState();
 }
 
-class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
+class _BackupAuthGoogleScreenState
+    extends DeferredState<BackupAuthGoogleScreen> {
   GoogleSignInAccount? _currentUser;
-
-  final _googleSignIn = GoogleSignIn(scopes: [drive.DriveApi.driveFileScope]);
+  late StreamSubscription<GoogleSignInAuthenticationEvent> _authSubscription;
 
   @override
-  void initState() {
+  Future<void> asyncInitState() async {
     super.initState();
-    _googleSignIn.onCurrentUserChanged.listen((account) {
-      setState(() {
-        _currentUser = account;
-      });
+    await _initGoogleSignIn();
+  }
+
+  Future<void> _initGoogleSignIn() async {
+    final signIn = GoogleSignIn.instance;
+
+    await signIn.initialize(
+      /// OAuth Client in Google Play Console: HMB-Production-Signed-By-Google
+      clientId:
+          '704526923643-ot7i0jpo27urkkibm1gsqpji7f2nigt3.apps.googleusercontent.com',
+
+      /// OAuth Client in Google Play Console: HMB for Google Sign-in - this is the serverClientId
+      serverClientId:
+          '704526923643-vdu784t5s102g2uanosrd72rnv1cd795.apps.googleusercontent.com',
+    );
+
+    _authSubscription = signIn.authenticationEvents.listen((event) {
+      if (event is GoogleSignInAuthenticationEventSignIn) {
+        setState(() {
+          _currentUser = event.user;
+        });
+      } else if (event is GoogleSignInAuthenticationEventSignOut) {
+        setState(() {
+          _currentUser = null;
+        });
+      }
     });
+
+    // Try silent sign-in
+    try {
+      await signIn.attemptLightweightAuthentication();
+    } catch (_) {
+      // ignore
+    }
+
+    // If no user, fall back to interactive
+    if (_currentUser == null && signIn.supportsAuthenticate()) {
+      try {
+        final user = await signIn.authenticate(
+          scopeHint: const [drive.DriveApi.driveFileScope],
+        );
+        setState(() {
+          _currentUser = user;
+        });
+      } catch (e) {
+        HMBToast.error('Google sign-in failed: $e');
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_authSubscription.cancel());
+    super.dispose();
   }
 
   @override
@@ -55,24 +106,23 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
         if (_currentUser != null)
           HMBIconButton(
             icon: const Icon(Icons.exit_to_app),
-            onPressed: _googleSignIn.signOut,
+            onPressed: GoogleSignIn.instance.signOut,
             hint: 'Sign out of Google Drive',
           ),
       ],
     ),
     body: FutureBuilderEx(
-      // ignore: discarded_futures
-      future: _signin(context),
+      future: _ensureSignedIn(),
       waitingBuilder: (context) =>
           const Center(child: CircularProgressIndicator()),
-      builder: (context, auth) => Center(
+      builder: (context, success) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const SizedBox(height: 20),
             HMBButton(
               label: 'Upload File to Google Drive',
-              hint: 'Backup you data to Google Drive, excluding photos',
+              hint: 'Backup your data to Google Drive, excluding photos',
               onPressed: () => unawaited(_uploadFile(context)),
             ),
           ],
@@ -82,16 +132,20 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
   );
 
   Future<void> _uploadFile(BuildContext context) async {
-    final authHeaders = await _currentUser?.authHeaders;
-    if (authHeaders == null) {
+    if (_currentUser == null) {
       if (context.mounted) {
         HMBToast.info('Not signed in');
       }
       return;
     }
 
-    final authenticateClient = AuthenticatedClient(http.Client(), authHeaders);
-    final driveApi = drive.DriveApi(authenticateClient);
+    final auth = await _currentUser!.authorizationClient.authorizeScopes([
+      drive.DriveApi.driveFileScope,
+    ]);
+
+    final headers = {'Authorization': 'Bearer ${auth.accessToken}'};
+    final client = AuthenticatedClient(http.Client(), headers);
+    final driveApi = drive.DriveApi(client);
 
     final driveFile = drive.File()..name = basename(widget.pathToBackup);
 
@@ -102,17 +156,7 @@ class _BackupAuthGoogleScreenState extends State<BackupAuthGoogleScreen> {
     print('Uploaded file: ${response.id}');
   }
 
-  Future<GoogleSignInAccount?> _signin(BuildContext context) async {
-    try {
-      return (await _googleSignIn.isSignedIn())
-          ? _googleSignIn.signInSilently()
-          : _googleSignIn.signIn();
-      // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
-      HMBToast.error('Error signing in: $e');
-      return null;
-    }
-  }
+  Future<bool> _ensureSignedIn() async => _currentUser != null;
 }
 
 class AuthenticatedClient extends http.BaseClient {

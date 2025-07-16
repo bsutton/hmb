@@ -22,7 +22,7 @@ class SuppliersDashlet extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DashletCard<int>.route(
     label: 'Suppliers',
-    hint: 'Maintain a list of Suppliers, for Tools and Trades',
+    hint: 'Maintain a list of Suppliers, for Tools and Trades people',
     icon: Icons.add_card,
     value: getSupplierCount,
     route: '/home/suppliers',
