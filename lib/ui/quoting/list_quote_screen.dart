@@ -23,6 +23,7 @@ import '../invoicing/select_job_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/select/hmb_filter_line.dart';
 import 'quote_card.dart';
 import 'quote_details_screen.dart';
 
@@ -57,12 +58,11 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
   // Load quotes from the DAO.
   Future<void> _loadQuotes() async {
     final quotes = await _fetchFilteredQuotes();
-    setState(() {
-      _quotes = quotes;
+    _quotes = quotes;
 
-      /// force the AnimatedList to be fully rebuilt without animations.
-      _listKey = GlobalKey<AnimatedListState>();
-    });
+    /// force the AnimatedList to be fully rebuilt without animations.
+    _listKey = GlobalKey<AnimatedListState>();
+    setState(() {});
   }
 
   Future<List<Quote>> _fetchFilteredQuotes() async {
@@ -182,43 +182,42 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
       try {
         await DaoQuote().delete(quote.id);
         HMBToast.info('Quote deleted successfully.');
-        // _removeQuoteFromList(quote);
+        _removeQuoteFromList(quote);
       } catch (e) {
         HMBToast.error('Failed to delete quote: $e');
       }
     }
   }
 
-  // // Called when a QuoteCard signals removal (after an approve/reject action).
-  // void _removeQuoteFromList(Quote removedQuote) {
-  //   final index = _quotes.indexWhere((q) => q.id == removedQuote.id);
-  //   if (index != -1) {
-  //     final removedItem = _quotes.removeAt(index);
-  //     _listKey.currentState?.removeItem(
-  //       index,
-  //       (context, animation) => ClipRect(
-  //         child: FadeTransition(
-  //           opacity: animation,
-  //           child: SizeTransition(
-  //             sizeFactor: animation,
-  //             child: QuoteCard(
-  //               key: ValueKey(removedItem.id),
-  //               quote: removedItem,
-  //               onDelete: () {},
-  //               onStateChanged: (_) {},
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //       duration: _duration,
-  //     );
-  //   }
-  // }
+  // // Called when a quote is deleted
+  void _removeQuoteFromList(Quote removedQuote) {
+    final index = _quotes.indexWhere((q) => q.id == removedQuote.id);
+    if (index != -1) {
+      final removedItem = _quotes.removeAt(index);
+      _listKey.currentState?.removeItem(
+        index,
+        (context, animation) => ClipRect(
+          child: FadeTransition(
+            opacity: animation,
+            child: SizeTransition(
+              sizeFactor: animation,
+              child: QuoteCard(
+                key: ValueKey(removedItem.id),
+                quote: removedItem,
+                onDelete: () {},
+                onStateChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+        duration: _duration,
+      );
+    }
+  }
 
   Future<void> _onFilterChanged(String value) async {
     filterText = value;
     await _loadQuotes();
-    setState(() {});
   }
 
   @override
@@ -226,31 +225,26 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
     appBar: AppBar(
       automaticallyImplyLeading: false,
       toolbarHeight: 80,
-      title: HMBSearchWithAdd(
-        onSearch: (filter) => unawaited(_onFilterChanged(filter ?? '')),
-        onAdd: _createQuote,
+      title: HMBFilterLine(
+        lineBuilder: (context) => HMBSearchWithAdd(
+          onSearch: (filter) => unawaited(_onFilterChanged(filter ?? '')),
+          onAdd: _createQuote,
+        ),
+        sheetBuilder: _buildFilterSheet,
+        onClearAll: () async {
+          _includeApproved = true;
+          _includeRejected = false;
+          _includeInvoiced = false;
+          await _loadQuotes();
+        },
+        isActive: () =>
+            !_includeApproved || _includeRejected || _includeInvoiced,
       ),
     ),
     body: DeferredBuilder(
       this,
       builder: (context) => Column(
         children: [
-          // --- FILTER SECTION ---
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.filter_list),
-                  label: const Text('Filters'),
-                  onPressed: _showFilterDialog,
-                ),
-              ),
-            ),
-          ),
-          // --- END FILTER SECTION ---
           Expanded(
             child: _quotes.isEmpty
                 ? const Center(child: Text('No quotes found.'))
@@ -297,57 +291,48 @@ class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
     return focus;
   }
 
-  Future<void> _showFilterDialog() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Filter Quotes',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                title: const Text('Include Approved'),
-                value: _includeApproved,
-                onChanged: (val) {
-                  setModalState(() => _includeApproved = val);
-                },
-              ),
-              SwitchListTile(
-                title: const Text('Include Invoiced'),
-                value: _includeInvoiced,
-                onChanged: (val) {
-                  setModalState(() => _includeInvoiced = val);
-                },
-              ),
-              SwitchListTile(
-                title: const Text('Include Rejected'),
-                value: _includeRejected,
-                onChanged: (val) {
-                  setModalState(() => _includeRejected = val);
-                },
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  await _loadQuotes();
-                  setState(() {});
-                },
-                child: const Text('Apply Filters'),
-              ),
-            ],
+  Widget _buildFilterSheet(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(16),
+
+    /// StatefulBuilder so that the switches reflect  changes
+    child: StatefulBuilder(
+      builder: (context, setModalState) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Filter Quotes',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-        ),
+          const SizedBox(height: 12),
+          SwitchListTile(
+            title: const Text('Include Approved'),
+            value: _includeApproved,
+            onChanged: (val) async {
+              _includeApproved = val;
+              setModalState(() {});
+              await _loadQuotes();
+            },
+          ),
+          SwitchListTile(
+            title: const Text('Include Invoiced'),
+            value: _includeInvoiced,
+            onChanged: (val) async {
+              _includeInvoiced = val;
+              setModalState(() {});
+              await _loadQuotes();
+            },
+          ),
+          SwitchListTile(
+            title: const Text('Include Rejected'),
+            value: _includeRejected,
+            onChanged: (val) async {
+              _includeRejected = val;
+              setModalState(() {});
+              await _loadQuotes();
+            },
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
