@@ -5,7 +5,7 @@ import '../hmb_button.dart';
 /// A bottom sheet wrapper that displays dynamic filter content.
 ///
 /// Use [contentBuilder] to supply the sheet's form fields or widgets.
-class HMBFilterSheet extends StatelessWidget {
+class HMBFilterSheet extends StatefulWidget {
   const HMBFilterSheet({
     required this.contentBuilder,
     super.key,
@@ -23,27 +23,35 @@ class HMBFilterSheet extends StatelessWidget {
   final VoidCallback? onClearAll;
 
   @override
+  State<HMBFilterSheet> createState() => _HMBFilterSheetState();
+}
+
+class _HMBFilterSheetState extends State<HMBFilterSheet> {
+  @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(
-      left: padding.left,
-      right: padding.right,
-      top: padding.top,
-      bottom: MediaQuery.of(context).viewInsets.bottom + padding.bottom,
+      left: widget.padding.left,
+      right: widget.padding.right,
+      top: widget.padding.top,
+      bottom: MediaQuery.of(context).viewInsets.bottom + widget.padding.bottom,
     ),
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         // dynamic filter fields
-        contentBuilder(context),
+        widget.contentBuilder(context),
 
         // optional clear-all button
-        if (onClearAll != null) ...[
+        if (widget.onClearAll != null) ...[
           const SizedBox(height: 16),
           // alignment: Alignment.centerRight,
           SizedBox(
             width: double.infinity,
             child: HMBButtonPrimary(
-              onPressed: () => onClearAll?.call(),
+              onPressed: () {
+                widget.onClearAll?.call();
+                setState(() {});
+              },
               label: 'Clear All',
               hint: 'Clear all search filters',
             ),

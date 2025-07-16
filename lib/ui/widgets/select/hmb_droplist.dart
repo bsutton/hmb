@@ -78,6 +78,7 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
     this,
     builder: (aacontext) => FormField<T>(
       onSaved: widget.onSaved,
+      key: ValueKey(_selectedItem),
       initialValue: _selectedItem,
       autovalidateMode: AutovalidateMode.always,
       validator: (value) {
@@ -94,6 +95,7 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
               final selected = await showDialog<T>(
                 context: context,
                 builder: (_) => HMBDroplistDialog<T>(
+                  key: ValueKey(_selectedItem),
                   getItems: widget.items,
                   formatItem: widget.format,
                   title: widget.title,

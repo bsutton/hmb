@@ -71,6 +71,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
   List<Job> _selectedJobs = [];
   String? filter;
 
+  final _scheduleFilterKey = GlobalKey<HMBDroplistState<ScheduleFilter>>();
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Packing List');
@@ -132,7 +133,12 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
           HMBFilterLine(
             lineBuilder: _buildSearchLine,
             sheetBuilder: _buildFilter,
-            onClearAll: () => setState(() {}),
+            onClearAll: () async {
+              _selectedJobs.clear();
+              _selectedScheduleFilter = ScheduleFilter.all;
+              _scheduleFilterKey.currentState?.clear();
+              await _loadTaskItems();
+            },
             isActive: () =>
                 _selectedJobs.isNotEmpty ||
                 _selectedScheduleFilter != ScheduleFilter.all,
@@ -218,6 +224,7 @@ If your Job isn't showing then you need to update its status to an Active one su
             ),
             const SizedBox(height: 10),
             HMBDroplist<ScheduleFilter>(
+              key: _scheduleFilterKey,
               selectedItem: () async => _selectedScheduleFilter,
               items: (filter) async => ScheduleFilter.values,
               format: (schedule) => schedule.displayName,
