@@ -196,14 +196,17 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                     _jobKey.currentState?.clear();
                     selectedSupplier.selected = null;
                     _searchKey.currentState?.clear();
+                    filter = null;
                     _scheduleKey.currentState?.clear();
+                    _selectedScheduleFilter = ScheduleFilter.all;
                     await _loadTaskItems();
                     setState(() {});
                   },
                   isActive: () =>
                       (_jobKey.currentState?.hasSelections() ?? false) ||
                       selectedSupplier.selected != null ||
-                      (_scheduleKey.currentState?.hasSelection ?? false),
+                      (_scheduleKey.currentState?.hasSelection ?? false) ||
+                      Strings.isNotBlank(filter),
                   lineBuilder: (context) => HMBDroplistMultiSelect<Job>(
                     key: _jobKey,
                     initialItems: () async => _selectedJobs,
