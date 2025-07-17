@@ -11,6 +11,7 @@
 
 // lib/src/ui/dashboard/help_dashboard_page.dart
 import 'dart:async';
+import 'dart:io';
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
@@ -67,10 +68,12 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   Future<void> asyncInitState() async {
     _provider = _getProvider();
 
-    if (await GoogleDriveAuth().isSignedIn) {
-      // Load last backup date
-      _lastBackup = await _refreshLastBackup();
-      _isGoogleSignedIn = true;
+    if (!Platform.isLinux) {
+      if (await GoogleDriveAuth().isSignedIn) {
+        // Load last backup date
+        _lastBackup = await _refreshLastBackup();
+        _isGoogleSignedIn = true;
+      }
     }
   }
 
