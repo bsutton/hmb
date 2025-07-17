@@ -74,11 +74,24 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
   }
 
   @override
+  void didUpdateWidget(covariant HMBDroplist<T> old) {
+    super.didUpdateWidget(old);
+    // if the parent’s selectedItem() would now return something different...
+    // ignore: discarded_futures
+    widget.selectedItem().then((newSelection) {
+      if (newSelection != _selectedItem) {
+        setState(() {
+          _selectedItem = newSelection;
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
     builder: (aacontext) => FormField<T>(
       onSaved: widget.onSaved,
-      key: ValueKey(_selectedItem),
       initialValue: _selectedItem,
       autovalidateMode: AutovalidateMode.always,
       validator: (value) {
@@ -95,7 +108,6 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
               final selected = await showDialog<T>(
                 context: context,
                 builder: (_) => HMBDroplistDialog<T>(
-                  key: ValueKey(_selectedItem),
                   getItems: widget.items,
                   formatItem: widget.format,
                   title: widget.title,
