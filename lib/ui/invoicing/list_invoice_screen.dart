@@ -9,7 +9,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart' show Strings;
 
@@ -51,11 +51,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     selectedJob = widget.job;
   }
 
-  // Future<void> _refresh() async {
-  //   setState(() {});
-  //   return _fetchFilteredInvoices();
-  // }
-
   @override
   Widget build(BuildContext context) => Surface(
     elevation: SurfaceElevation.e0,
@@ -64,7 +59,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         Expanded(
           child: EntityListScreen<Invoice>(
             title: (inv) => Text('Invoice #${inv.id}'),
-            key: ValueKey<String?>(filterText ?? '')..toString(),
+            // key: ValueKey<String?>(
+            //   '$filterText:${selectedJob?.id}:${selectedCustomer?.id}',
+            // ),
             pageTitle: 'Invoices',
             dao: DaoInvoice(),
             fetchList: (_) async => _fetchFilteredInvoices(),
@@ -78,9 +75,18 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
             cardHeight: 250,
             background: (_) async => Colors.transparent,
             details: _buildInvoiceCard,
-            filterSheetBuilder: (widget.job == null)
-                ? (_) => _buildFilterSheet()
+            filterSheetBuilder: widget.job == null
+                ? _buildFilterSheet // <— this is already a Widget Function(void)
                 : null,
+            isFilterActive: () =>
+                selectedJob != null ||
+                selectedCustomer != null ||
+                Strings.isNotBlank(filterText),
+            onFiltersCleared: () async {
+              selectedJob = null;
+              selectedCustomer = null;
+              filterText = null;
+            },
           ),
         ),
       ],
@@ -162,11 +168,12 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     return null;
   }
 
-  Widget _buildFilterSheet() => Padding(
+  Widget _buildFilterSheet(void Function() onChange) => Padding(
     padding: const EdgeInsets.all(8),
     child: Column(
       children: [
         HMBDroplist<Job>(
+          // key: ValueKey(selectedJob),
           title: 'Filter by Job',
           items: (filter) => DaoJob().getActiveJobs(filter),
           format: (job) => job.summary,
@@ -174,10 +181,12 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
           selectedItem: () async => selectedJob,
           onChanged: (job) async {
             selectedJob = job;
+            onChange();
           },
         ),
         const SizedBox(height: 8),
         HMBDroplist<Customer>(
+          // key: ValueKey(selectedCustomer),
           title: 'Filter by Customer',
           items: (filter) => DaoCustomer().getByFilter(filter),
           format: (customer) => customer.name,
@@ -185,6 +194,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
           selectedItem: () async => selectedCustomer,
           onChanged: (customer) async {
             selectedCustomer = customer;
+            onChange();
           },
         ),
       ],

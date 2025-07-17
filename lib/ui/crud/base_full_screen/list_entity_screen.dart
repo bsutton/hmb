@@ -12,18 +12,15 @@
 import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/app_title.dart';
 import '../../dialog/dialog.g.dart';
-import '../../widgets/hmb_icon_button.dart';
-import '../../widgets/hmb_search.dart';
-import '../../widgets/hmb_toast.dart';
 import '../../widgets/select/hmb_filter_line.dart';
-import '../../widgets/surface.dart';
+import '../../widgets/widgets.g.dart';
 
 /// A generic list screen with optional search/add and advanced filters.
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
@@ -54,7 +51,8 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     this.onFilterSheetClosed,
 
     /// Called when the user clears all filters.
-    this.onClearAll,
+    this.onFiltersCleared,
+    this.isFilterActive,
     super.key,
   }) {
     // ignore: discarded_futures
@@ -72,9 +70,10 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
 
   late final Future<List<T>> Function(String? filter) _fetchList;
   final Dao<T> dao;
-  final WidgetBuilder? filterSheetBuilder;
-  final VoidCallback? onClearAll;
+  final FilterSheetBuilder? filterSheetBuilder;
+  final VoidCallback? onFiltersCleared;
   final VoidCallback? onFilterSheetClosed;
+  final BoolCallback? isFilterActive;
 
   @override
   EntityListScreenState<T> createState() => EntityListScreenState<T>();
@@ -86,8 +85,6 @@ class EntityListScreenState<T extends Entity<T>>
   String? filterOption;
   late final TextEditingController filterController;
   final _scrollController = ScrollController();
-
-  var _isFilterActive = false;
 
   @override
   void initState() {
@@ -133,11 +130,12 @@ class EntityListScreenState<T extends Entity<T>>
   }
 
   Future<void> _clearAll() async {
-    widget.onClearAll?.call();
+    widget.onFiltersCleared?.call();
     filterOption = null;
-    setState(() => _isFilterActive = false);
     await refresh();
   }
+
+  final _filterSheetKey = GlobalKey<_FilterSheetState>();
 
   @override
   Widget build(BuildContext context) {
@@ -166,10 +164,18 @@ class EntityListScreenState<T extends Entity<T>>
     if (widget.filterSheetBuilder != null) {
       titleRow = HMBFilterLine(
         lineBuilder: (_) => searchAdd,
-        sheetBuilder: widget.filterSheetBuilder!,
+        sheetBuilder: (context) => FilterSheet(
+          sheetBuilder: widget.filterSheetBuilder!,
+          onChange: () async {
+            _filterSheetKey.currentState!.refresh();
+            await refresh();
+          },
+          key: _filterSheetKey,
+        ),
+
         onClearAll: _clearAll,
         onSheetClosed: widget.onFilterSheetClosed,
-        isActive: () => _isFilterActive,
+        isActive: () => widget.isFilterActive?.call() ?? false,
       );
     } else {
       titleRow = searchAdd;
@@ -310,5 +316,35 @@ class EntityListScreenState<T extends Entity<T>>
     catch (e) {
       HMBToast.error(e.toString());
     }
+  }
+}
+
+typedef FilterSheetBuilder = Widget Function(void Function() onChange);
+
+class FilterSheet extends StatefulWidget {
+  const FilterSheet({
+    required this.sheetBuilder,
+    required this.onChange,
+    super.key,
+  });
+
+  final FilterSheetBuilder sheetBuilder;
+  final void Function() onChange;
+
+  @override
+  State<FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<FilterSheet> {
+  final _stateBuilderKey = GlobalKey<StatefulBuilderState>();
+  @override
+  Widget build(BuildContext context) => StatefulBuilder(
+    key: _stateBuilderKey,
+    builder: (context, setState) => widget.sheetBuilder(widget.onChange),
+  );
+
+  /// cause the fitler sheet to rebuild.
+  void refresh() {
+    _stateBuilderKey.currentState!.setState(() {});
   }
 }

@@ -72,53 +72,48 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
   }
 
   /// Show filter window with Task and Supplier selection.
-  Widget _buildFilterSheet(BuildContext context) => StatefulBuilder(
-    builder: (context, sheetSetState) => ListView(
-      padding: const EdgeInsets.all(16),
-      shrinkWrap: true,
-      children: [
-        HMBSelectTask(
-          selectedTask: _taskFilter,
-          job: widget.job,
-          onSelected: (task) {
-            _taskFilter.taskId = task?.id;
-            sheetSetState(() {});
-          },
-        ),
+  Widget _buildFilterSheet(void Function() onChange) => ListView(
+    padding: const EdgeInsets.all(16),
+    shrinkWrap: true,
+    children: [
+      HMBSelectTask(
+        selectedTask: _taskFilter,
+        job: widget.job,
+        onSelected: (task) {
+          _taskFilter.taskId = task?.id;
+          onChange();
+        },
+      ),
 
-        HMBSelectSupplier(
-          selectedSupplier: _supplierFilter,
-          onSelected: (sup) async {
-            _supplierFilter.selected = sup?.id;
-            sheetSetState(() {});
-          },
-        ).help(
-          'Filter by Supplier',
-          'Only show entries for the chosen supplier',
+      HMBSelectSupplier(
+        selectedSupplier: _supplierFilter,
+        onSelected: (sup) async {
+          _supplierFilter.selected = sup?.id;
+          onChange();
+        },
+      ).help('Filter by Supplier', 'Only show entries for the chosen supplier'),
+      const SizedBox(height: 16),
+      ListTile(
+        key: ValueKey(_selectedDate),
+        title: const Text('Date'),
+        subtitle: Text(
+          _selectedDate != null ? formatDate(_selectedDate!) : 'Select date',
         ),
-        const SizedBox(height: 16),
-        ListTile(
-          key: ValueKey(_selectedDate),
-          title: const Text('Date'),
-          subtitle: Text(
-            _selectedDate != null ? formatDate(_selectedDate!) : 'Select date',
-          ),
-          trailing: const Icon(Icons.calendar_today),
-          onTap: () async {
-            final picked = await showDatePicker(
-              context: context,
-              firstDate: DateTime(2000),
-              lastDate: DateTime.now(),
-              initialDate: _selectedDate ?? DateTime.now(),
-            );
-            if (picked != null) {
-              _selectedDate = picked;
-              sheetSetState(() {});
-            }
-          },
-        ),
-      ],
-    ),
+        trailing: const Icon(Icons.calendar_today),
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            firstDate: DateTime(2000),
+            lastDate: DateTime.now(),
+            initialDate: _selectedDate ?? DateTime.now(),
+          );
+          if (picked != null) {
+            _selectedDate = picked;
+          }
+          onChange();
+        },
+      ),
+    ],
   );
 
   void _clearAllFilters() {
@@ -153,7 +148,11 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
             filterSheetBuilder: _buildFilterSheet,
             onFilterSheetClosed: () async =>
                 await _entityListKey.currentState?.refresh(),
-            onClearAll: _clearAllFilters,
+            onFiltersCleared: _clearAllFilters,
+            isFilterActive: () =>
+                _supplierFilter.selected != null ||
+                _taskFilter.taskId != null ||
+                _selectedDate != null,
             cardHeight: 260,
             title: (entry) async => HMBTextLine(formatDate(entry.startTime)),
             onEdit: (entry) =>
