@@ -74,8 +74,8 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
   }
 
   @override
-  void didUpdateWidget(covariant HMBDroplist<T> old) {
-    super.didUpdateWidget(old);
+  void didUpdateWidget(covariant HMBDroplist<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
     // if the parent’s selectedItem() would now return something different...
     // ignore: discarded_futures
     widget.selectedItem().then((newSelection) {
