@@ -46,8 +46,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
   @override
   void initState() {
-    setAppTitle('Invoices');
     super.initState();
+    setAppTitle('Invoices');
     selectedJob = widget.job;
   }
 
