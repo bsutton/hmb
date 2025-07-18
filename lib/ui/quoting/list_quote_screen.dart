@@ -9,21 +9,18 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// quote_list_screen.dart
-import 'dart:async';
-
-import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide StatefulBuilder;
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../../util/util.g.dart';
+import '../../util/app_title.dart';
+import '../../util/format.dart';
+import '../crud/base_full_screen/base_full_screen.g.dart';
 import '../invoicing/dialog_select_tasks.dart';
 import '../invoicing/select_job_dialog.dart';
-import '../widgets/hmb_button.dart';
-import '../widgets/hmb_search.dart';
-import '../widgets/hmb_toast.dart';
-import '../widgets/select/hmb_filter_line.dart';
+import '../widgets/layout/layout.g.dart';
+import '../widgets/select/hmb_droplist.dart';
+import '../widgets/widgets.g.dart';
 import 'quote_card.dart';
 import 'quote_details_screen.dart';
 
@@ -31,308 +28,214 @@ class QuoteListScreen extends StatefulWidget {
   const QuoteListScreen({super.key, this.job});
 
   final Job? job;
+
   @override
-  _QuoteListScreenState createState() => _QuoteListScreenState();
+  State<QuoteListScreen> createState() => _QuoteListScreenState();
 }
 
-class _QuoteListScreenState extends DeferredState<QuoteListScreen> {
-  // Local list of quotes.
-  List<Quote> _quotes = [];
-  var _listKey = GlobalKey<AnimatedListState>();
-
+class _QuoteListScreenState extends State<QuoteListScreen> {
   Job? selectedJob;
   Customer? selectedCustomer;
-  String? filterText;
-  // When false (default) do not display approved/rejected quotes.
   var _includeApproved = true;
-  var _includeRejected = false;
   var _includeInvoiced = false;
-  final _duration = const Duration(milliseconds: 300);
+  var _includeRejected = false;
 
   @override
-  Future<void> asyncInitState() async {
+  void initState() {
+    super.initState();
     setAppTitle('Quotes');
-    await _loadQuotes();
+    selectedJob = widget.job;
   }
 
-  // Load quotes from the DAO.
-  Future<void> _loadQuotes() async {
-    final quotes = await _fetchFilteredQuotes();
-    _quotes = quotes;
-
-    /// force the AnimatedList to be fully rebuilt without animations.
-    _listKey = GlobalKey<AnimatedListState>();
-    setState(() {});
-  }
-
-  Future<List<Quote>> _fetchFilteredQuotes() async {
-    var filteredQuotes = await DaoQuote().getByFilter(filterText);
+  Future<List<Quote>> _fetchFilteredQuotes(String? filter) async {
+    // Base text filter (from the built‑in search box):
+    var quotes = await DaoQuote().getByFilter(filter);
 
     // Job filter
     if (selectedJob != null) {
-      filteredQuotes = filteredQuotes
-          .where((q) => q.jobId == selectedJob!.id)
-          .toList();
+      quotes = quotes.where((q) => q.jobId == selectedJob!.id).toList();
     }
 
     // Customer filter
     if (selectedCustomer != null) {
-      final forCustomer = <Quote>[];
-      for (final quote in filteredQuotes) {
-        final job = await DaoJob().getById(quote.jobId);
+      final byCustomer = <Quote>[];
+      for (final q in quotes) {
+        final job = await DaoJob().getById(q.jobId);
         if (job?.customerId == selectedCustomer!.id) {
-          forCustomer.add(quote);
+          byCustomer.add(q);
         }
       }
-      filteredQuotes = forCustomer;
+      quotes = byCustomer;
     }
 
-    final invoiced = filteredQuotes
-        .where((q) => q.state == QuoteState.invoiced)
-        .toList();
-    final approved = filteredQuotes
-        .where((q) => q.state == QuoteState.approved)
-        .toList();
-    final rejected = filteredQuotes
-        .where((q) => q.state == QuoteState.rejected)
-        .toList();
+    // Split by state
+    final invoiced = quotes.where((q) => q.state == QuoteState.invoiced);
+    final approved = quotes.where((q) => q.state == QuoteState.approved);
+    final rejected = quotes.where((q) => q.state == QuoteState.rejected);
+    final awaiting = quotes.where(
+      (q) => q.state == QuoteState.reviewing || q.state == QuoteState.sent,
+    );
 
-    final awaiting = filteredQuotes
-        .where(
-          (q) => q.state == QuoteState.reviewing || q.state == QuoteState.sent,
-        )
-        .toList();
-
-    final quotes = <Quote>[];
+    // Reassemble in desired order
+    final result = <Quote>[];
     if (_includeInvoiced) {
-      quotes.addAll(invoiced);
+      result.addAll(invoiced);
     }
-
     if (_includeApproved) {
-      quotes.addAll(approved);
+      result.addAll(approved);
     }
     if (_includeRejected) {
-      quotes.addAll(rejected);
+      result.addAll(rejected);
     }
-
-    quotes.addAll(awaiting);
-
-    return quotes..sort((a, b) => -a.modifiedDate.compareTo(b.modifiedDate));
+    result
+      ..addAll(awaiting)
+      // Most‑recent first
+      ..sort((a, b) => -a.modifiedDate.compareTo(b.modifiedDate));
+    return result;
   }
 
-  Future<void> _createQuote() async {
+  Future<Quote?> _createQuote() async {
     final job = await SelectJobDialog.show(context);
     if (job == null) {
-      return;
+      return null;
     }
-    if (mounted) {
-      final quoteOptions = await selectTaskToQuote(
-        context: context,
-        job: job,
-        title: 'Tasks to quote',
-      );
-      if (quoteOptions != null) {
-        try {
-          if (!quoteOptions.billBookingFee &&
-              quoteOptions.selectedTaskIds.isEmpty) {
-            HMBToast.error(
-              'You must select a task or the booking fee',
-              acknowledgmentRequired: true,
-            );
-            return;
-          }
-          // Assume create returns the new Quote.
-          final newQuote = await DaoQuote().create(job, quoteOptions);
-          // Insert the new quote at the beginning (or any desired position).
-          setState(() {
-            _quotes.insert(0, newQuote);
-          });
-          _listKey.currentState?.insertItem(0, duration: _duration);
-        } catch (e) {
-          HMBToast.error(
-            'Failed to create quote: $e',
-            acknowledgmentRequired: true,
-          );
-        }
-      }
-    }
-  }
 
-  Future<void> _deleteQuote(Quote quote) async {
-    final confirmed = await showDialog<bool>(
+    if (!mounted) {
+      return null;
+    }
+
+    final opts = await selectTaskToQuote(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Quote'),
-        content: const Text('Are you sure you want to delete this quote?'),
-        actions: [
-          HMBButton(
-            label: 'Cancel',
-            hint: "Don't delete the quote",
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          HMBButton(
-            label: 'Delete',
-            hint: 'Delete this quote',
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
+      job: job,
+      title: 'Tasks to Quote',
     );
-    if (confirmed ?? false) {
-      try {
-        await DaoQuote().delete(quote.id);
-        HMBToast.info('Quote deleted successfully.');
-        _removeQuoteFromList(quote);
-      } catch (e) {
-        HMBToast.error('Failed to delete quote: $e');
-      }
+    if (opts == null) {
+      return null;
     }
-  }
 
-  // // Called when a quote is deleted
-  void _removeQuoteFromList(Quote removedQuote) {
-    final index = _quotes.indexWhere((q) => q.id == removedQuote.id);
-    if (index != -1) {
-      final removedItem = _quotes.removeAt(index);
-      _listKey.currentState?.removeItem(
-        index,
-        (context, animation) => ClipRect(
-          child: FadeTransition(
-            opacity: animation,
-            child: SizeTransition(
-              sizeFactor: animation,
-              child: QuoteCard(
-                key: ValueKey(removedItem.id),
-                quote: removedItem,
-                onDelete: () {},
-                onStateChanged: (_) {},
-              ),
-            ),
-          ),
-        ),
-        duration: _duration,
+    if (!opts.billBookingFee && opts.selectedTaskIds.isEmpty) {
+      HMBToast.error(
+        'You must select a task or the booking fee',
+        acknowledgmentRequired: true,
       );
+      return null;
     }
-  }
 
-  Future<void> _onFilterChanged(String value) async {
-    filterText = value;
-    await _loadQuotes();
+    try {
+      return await DaoQuote().create(job, opts);
+    } catch (e) {
+      HMBToast.error(
+        'Failed to create quote: $e',
+        acknowledgmentRequired: true,
+      );
+      return null;
+    }
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      automaticallyImplyLeading: false,
-      toolbarHeight: 80,
-      title: HMBFilterLine(
-        lineBuilder: (context) => HMBSearchWithAdd(
-          onSearch: (filter) => unawaited(_onFilterChanged(filter ?? '')),
-          onAdd: _createQuote,
-        ),
-        sheetBuilder: _buildFilterSheet,
-        onClearAll: () async {
-          _includeApproved = true;
-          _includeRejected = false;
-          _includeInvoiced = false;
-          await _loadQuotes();
-        },
-        isActive: () =>
-            !_includeApproved || _includeRejected || _includeInvoiced,
-      ),
-    ),
-    body: DeferredBuilder(
-      this,
-      builder: (context) => Column(
-        children: [
-          Expanded(
-            child: _quotes.isEmpty
-                ? const Center(child: Text('No quotes found.'))
-                : AnimatedList(
-                    key: _listKey,
-                    initialItemCount: _quotes.length,
-                    itemBuilder: (context, index, animation) {
-                      final quote = _quotes[index];
-                      return SizeTransition(
-                        sizeFactor: animation,
-                        child: GestureDetector(
-                          onTap: () async {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (context) =>
-                                    QuoteDetailsScreen(quoteId: quote.id),
-                              ),
-                            );
-                          },
-                          child: QuoteCard(
-                            key: ValueKey(quote.id),
-                            quote: quote,
-                            // ignore: discarded_futures
-                            onDelete: () => _deleteQuote(quote),
-                            // ignore: discarded_futures
-                            onStateChanged: (_) async {
-                              await _fetchFilteredQuotes();
-                              setState(() {});
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+  Widget build(BuildContext context) => Surface(
+    elevation: SurfaceElevation.e0,
+    child: Column(
+      children: [
+        Expanded(
+          child: EntityListScreen<Quote>(
+            pageTitle: 'Quotes',
+            dao: DaoQuote(),
+            title: (quote) => Text(
+              'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            fetchList: _fetchFilteredQuotes,
+            onAdd: _createQuote,
+            onEdit: (q) => QuoteDetailsScreen(quoteId: q!.id),
+            cardHeight: 280,
+            background: (_) async => Colors.transparent,
+            details: _buildQuoteCard,
+            filterSheetBuilder: _buildFilterSheet,
+            isFilterActive: () =>
+                widget.job == null &&
+                    (selectedJob != null || selectedCustomer != null) ||
+                !_includeApproved ||
+                !_includeInvoiced ||
+                !_includeRejected,
+            onFiltersCleared: () {
+              selectedJob = widget.job;
+              selectedCustomer = null;
+              _includeApproved = true;
+              _includeInvoiced = true;
+              _includeRejected = true;
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 
-  List<Quote> removeAll(List<Quote> focus, List<Quote> other) {
-    final bIds = other.map((b) => b.id).toSet();
-    focus.removeWhere((a) => bIds.contains(a.id));
-    return focus;
-  }
+  Widget _buildQuoteCard(Quote quote) => QuoteCard(
+    key: ValueKey(quote.id),
+    quote: quote,
+    onStateChanged: (_) => setState(() {}),
+  );
 
-  Widget _buildFilterSheet(BuildContext context) => Padding(
+  Widget _buildFilterSheet(void Function() onChange) => Padding(
     padding: const EdgeInsets.all(16),
-
-    /// StatefulBuilder so that the switches reflect  changes
-    child: StatefulBuilder(
-      builder: (context, setModalState) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Filter Quotes',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          SwitchListTile(
-            title: const Text('Include Approved'),
-            value: _includeApproved,
-            onChanged: (val) async {
-              _includeApproved = val;
-              setModalState(() {});
-              await _loadQuotes();
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Job dropdown
+        if (widget.job == null)
+          HMBDroplist<Job>(
+            title: 'Filter by Job',
+            items: (f) => DaoJob().getActiveJobs(f),
+            format: (j) => j.summary,
+            required: false,
+            selectedItem: () async => selectedJob,
+            onChanged: (j) {
+              selectedJob = j;
+              onChange();
             },
           ),
-          SwitchListTile(
-            title: const Text('Include Invoiced'),
-            value: _includeInvoiced,
-            onChanged: (val) async {
-              _includeInvoiced = val;
-              setModalState(() {});
-              await _loadQuotes();
+        if (widget.job == null) const HMBSpacer(height: true),
+        // Customer dropdown
+        if (widget.job == null)
+          HMBDroplist<Customer>(
+            title: 'Filter by Customer',
+            items: (f) => DaoCustomer().getByFilter(f),
+            format: (c) => c.name,
+            required: false,
+            selectedItem: () async => selectedCustomer,
+            onChanged: (c) {
+              selectedCustomer = c;
+              onChange();
             },
           ),
-          SwitchListTile(
-            title: const Text('Include Rejected'),
-            value: _includeRejected,
-            onChanged: (val) async {
-              _includeRejected = val;
-              setModalState(() {});
-              await _loadQuotes();
-            },
-          ),
-        ],
-      ),
+        if (widget.job == null) const HMBSpacer(height: true),
+        // State switches
+        SwitchListTile(
+          title: const Text('Include Approved'),
+          value: _includeApproved,
+          onChanged: (v) {
+            _includeApproved = v;
+            onChange();
+          },
+        ),
+        SwitchListTile(
+          title: const Text('Include Invoiced'),
+          value: _includeInvoiced,
+          onChanged: (v) {
+            _includeInvoiced = v;
+            onChange();
+          },
+        ),
+        SwitchListTile(
+          title: const Text('Include Rejected'),
+          value: _includeRejected,
+          onChanged: (v) {
+            _includeRejected = v;
+            onChange();
+          },
+        ),
+      ],
     ),
   );
 }
