@@ -211,8 +211,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
               return null;
             },
           ),
-          HMBTextArea(controller: _purposeController, labelText: 'Purpose'),
           _chooseItemType(taskItem),
+          HMBTextArea(controller: _purposeController, labelText: 'Purpose'),
           if (June.getState(SelectedCheckListItemType.new).selected != 0) ...[
             _chooseSupplier(taskItem),
             ..._buildFieldsBasedOnItemType(),
