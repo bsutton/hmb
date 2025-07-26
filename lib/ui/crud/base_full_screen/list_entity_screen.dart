@@ -36,8 +36,9 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     /// when adding a new entity - normally an entity is created
     /// and then [onEdit] is called.
     this.onAdd,
+    this.canAdd = true,
 
-    /// Only implement onDdelete if you need to override the default
+    /// Only implement onDelete if you need to override the default
     /// behavour (such as showing your own UI)
     /// when adding a deleting an entity
     /// Return true if the delete occured
@@ -54,6 +55,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     this.onFiltersCleared,
     this.isFilterActive,
     super.key,
+    this.showBackButton = false,
   }) {
     // ignore: discarded_futures
     _fetchList = fetchList ?? (_) => dao.getAll();
@@ -68,12 +70,19 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   final Future<Color> Function(T entity)? background;
   final double cardHeight;
 
+  final bool canAdd;
+
   late final Future<List<T>> Function(String? filter) _fetchList;
   final Dao<T> dao;
   final FilterSheetBuilder? filterSheetBuilder;
   final VoidCallback? onFiltersCleared;
   final VoidCallback? onFilterSheetClosed;
   final BoolCallback? isFilterActive;
+
+  /// show the back arrow at the top of the screen.
+  /// Used when the EntityList is shown from mini-dashboard
+  /// to make back navigation clear.
+  final bool showBackButton;
 
   @override
   EntityListScreenState<T> createState() => EntityListScreenState<T>();
@@ -139,11 +148,14 @@ class EntityListScreenState<T extends Entity<T>>
 
   @override
   Widget build(BuildContext context) {
-    final searchAdd = HMBSearchWithAdd(
+    final Widget searchAdd;
+
+    searchAdd = HMBSearchWithAdd(
       onSearch: (newValue) async {
         filterOption = newValue;
         await refresh();
       },
+      showAdd: widget.canAdd,
       onAdd: () async {
         T? newEntity;
         if (widget.onAdd != null) {
@@ -187,7 +199,7 @@ class EntityListScreenState<T extends Entity<T>>
         toolbarHeight: 80,
         titleSpacing: 0,
         title: Surface(elevation: SurfaceElevation.e0, child: titleRow),
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: widget.showBackButton,
       ),
       body: Surface(elevation: SurfaceElevation.e0, child: _buildList()),
     );
@@ -195,23 +207,42 @@ class EntityListScreenState<T extends Entity<T>>
 
   Widget _buildList() {
     if (entityList.isEmpty) {
-      return Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Click'),
-            HMBIconButton(
-              enabled: false,
-              size: HMBIconButtonSize.small,
-              icon: const Icon(Icons.add),
-              hint: 'Not this one',
-              onPressed: () async {},
-            ),
+      if (widget.canAdd) {
+        return Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Click'),
+              HMBIconButton(
+                enabled: false,
+                size: HMBIconButtonSize.small,
+                icon: const Icon(Icons.add),
+                hint: 'Not this one',
+                onPressed: () async {},
+              ),
 
-            Text('to add ${widget.pageTitle}.'),
-          ],
-        ),
-      );
+              Text('to add ${widget.pageTitle}.'),
+            ],
+          ),
+        );
+      } else {
+        return Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('No items found. Check the Filter '),
+              HMBIconButton(
+                enabled: false,
+                size: HMBIconButtonSize.small,
+                icon: const Icon(Icons.tune),
+                hint:
+                    'Click the Filter Icon in the top right hand corner to view active filters',
+                onPressed: () async {},
+              ),
+            ],
+          ),
+        );
+      }
     }
     return ListView.builder(
       controller: _scrollController,
