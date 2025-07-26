@@ -59,6 +59,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         Expanded(
           child: EntityListScreen<Invoice>(
             title: (inv) => Text('Invoice #${inv.id}'),
+            showBackButton: widget.job != null,
             // key: ValueKey<String?>(
             //   '$filterText:${selectedJob?.id}:${selectedCustomer?.id}',
             // ),
