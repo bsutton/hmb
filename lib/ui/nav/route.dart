@@ -10,18 +10,14 @@
 */
 
 import 'package:flutter/widgets.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../dao/dao.g.dart';
 import '../../database/management/backup_providers/google_drive/google_drive_backup_screen.dart';
 import '../../database/management/backup_providers/local/local_backup_screen.dart';
-import '../../entity/job.dart';
 import '../about.dart';
 import '../crud/customer/list_customer_screen.dart';
 import '../crud/job/esitmator/list_job_estimates_screen.dart';
 import '../crud/job/list_job_screen.dart';
-import '../crud/job/tracking/list_time_entry_screen.dart';
 import '../crud/manufacturer/list_manufacturer_screen.dart';
 import '../crud/message_template/list_message_template.dart';
 import '../crud/milestone/list_milestone_screen.dart';
@@ -108,7 +104,7 @@ List<GoRoute> dashboardRoutes() => [
   GoRoute(
     path: 'jobs',
     builder: (_, _) => const HomeScaffold(initialScreen: JobListScreen()),
-    routes: jobRoutes(),
+    // routes: jobRoutes(),
   ),
   GoRoute(
     path: 'help',
