@@ -20,6 +20,7 @@ import '../../../entity/task.dart';
 import '../../../entity/time_entry.dart';
 import '../../dialog/long_duration_dialog.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/hmb_toast.dart';
 import '../base_nested/edit_nested_screen.dart';
 
 class TimeEntryEditScreen extends StatefulWidget {
@@ -140,6 +141,11 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
       final endTime = _parseDateTime(_endTimeController.text);
       final startTime =
           _parseDateTime(_startTimeController.text) ?? DateTime.now();
+
+      if (endTime != null && endTime.isBefore(startTime)) {
+        HMBToast.error('End must be after the start');
+        return false;
+      }
 
       final duration = endTime!.difference(startTime);
       if (duration.inHours > TimeEntry.longDurationHours) {

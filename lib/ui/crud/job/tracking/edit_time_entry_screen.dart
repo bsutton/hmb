@@ -19,6 +19,7 @@ import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
 import '../../../dialog/long_duration_dialog.dart';
 import '../../../widgets/fields/fields.g.dart';
+import '../../../widgets/hmb_toast.dart';
 import '../../../widgets/select/select.g.dart';
 import '../../base_nested/edit_nested_screen.dart';
 
@@ -178,6 +179,10 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
             DateTime.now();
         final end = _combine(_endDateController.text, _endTimeController.text);
         if (end != null) {
+          if (end.isBefore(start)) {
+            HMBToast.error('End must be after the Start');
+            return false;
+          }
           final duration = end.difference(start);
           if (duration.inHours > TimeEntry.longDurationHours) {
             final confirm = await showLongDurationDialog(context, duration);
