@@ -19,14 +19,14 @@ typedef OnToggled = void Function(bool on);
 class HMBToggle extends StatefulWidget {
   const HMBToggle({
     required this.label,
-    required this.tooltip,
+    required this.hint,
     required this.initialValue,
     required this.onToggled,
     super.key,
   });
   final String label;
   final bool initialValue;
-  final String tooltip;
+  final String hint;
   final OnToggled onToggled;
 
   @override
@@ -46,7 +46,7 @@ class _HMBToggleState extends State<HMBToggle> {
     children: [
       HMBTextLabel(widget.label),
       IconButton(
-        tooltip: widget.tooltip,
+        tooltip: widget.hint,
         onPressed: () {
           on = !on;
           widget.onToggled(on);
