@@ -195,7 +195,7 @@ class HMBTextHeadline2 extends StatelessWidget {
   });
   final String text;
   final Color color;
-  static const fontSize = 26.0;
+  static const fontSize = 24.0;
 
   @override
   Widget build(BuildContext context) => Padding(
