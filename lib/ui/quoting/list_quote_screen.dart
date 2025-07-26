@@ -95,9 +95,14 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
   }
 
   Future<Quote?> _createQuote() async {
-    final job = await SelectJobDialog.show(context);
-    if (job == null) {
-      return null;
+    Job? job;
+    if (widget.job == null) {
+      job = await SelectJobDialog.show(context);
+      if (job == null) {
+        return null;
+      }
+    } else {
+      job = widget.job;
     }
 
     if (!mounted) {
@@ -106,7 +111,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
 
     final opts = await selectTaskToQuote(
       context: context,
-      job: job,
+      job: job!,
       title: 'Tasks to Quote',
     );
     if (opts == null) {
@@ -140,6 +145,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
         Expanded(
           child: EntityListScreen<Quote>(
             pageTitle: 'Quotes',
+            showBackButton: widget.job != null,
             dao: DaoQuote(),
             title: (quote) => Text(
               'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
