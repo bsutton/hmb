@@ -27,7 +27,7 @@ import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../../widgets/text/hmb_text_block.dart';
 import '../../widgets/text/hmb_text_themes.dart';
-import 'min_job_dashboard.dart';
+import 'mini_job_dashboard.dart';
 
 class JobCard extends StatefulWidget {
   const JobCard({required this.job, super.key});

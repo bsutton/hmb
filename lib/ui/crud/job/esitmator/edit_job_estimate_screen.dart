@@ -22,11 +22,11 @@ import '../../../../entity/job.dart';
 import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
-import '../../../../util/hmb_theme.dart';
 import '../../../../util/money_ex.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_icon_button.dart';
 import '../../../widgets/hmb_search.dart';
+import '../../../widgets/layout/hmb_full_page_child_screen.dart';
 import '../../../widgets/layout/hmb_spacer.dart';
 import '../../../widgets/media/photo_gallery.dart';
 import '../../../widgets/surface.dart';
@@ -147,13 +147,13 @@ class _JobEstimateBuilderScreenState
   }
 
   @override
-  Widget build(BuildContext context) => DeferredBuilder(
-    this,
-    builder: (context) {
-      final tasks = filteredTasks();
-      return Scaffold(
-        appBar: AppBar(title: const Text('Estimate Builder')),
-        body: Column(
+  Widget build(BuildContext context) => HMBFullPageChildScreen(
+    title: 'Estimate Builder',
+    child: DeferredBuilder(
+      this,
+      builder: (context) {
+        final tasks = filteredTasks();
+        return Column(
           children: [
             SizedBox(
               height: 160,
@@ -181,9 +181,9 @@ class _JobEstimateBuilderScreenState
               ),
             ),
           ],
-        ),
-      );
-    },
+        );
+      },
+    ),
   );
 
   Widget _buildTotals() => SurfaceCard(
@@ -202,7 +202,7 @@ class _JobEstimateBuilderScreenState
   Widget _buildTaskCard(Task task) => Column(
     children: [
       Surface(
-        margin: const EdgeInsets.all(HMBTheme.padding),
+        elevation: SurfaceElevation.e1,
         child: Column(
           children: [
             ListTile(
