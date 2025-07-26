@@ -28,9 +28,14 @@ Future<InvoiceOptions?> selectTaskToQuote({
 }) async {
   final estimates = await DaoTask().getEstimatesForJob(job.id);
 
-  final contact =
-      await DaoContact().getBillingContactByJob(job) ??
-      (throw Exception('No primary contact found for job'));
+  final contact = await DaoContact().getBillingContactByJob(job);
+
+  if (contact == null) {
+    HMBToast.error(
+      'You must select a Contact on the Job, before you can create a quote',
+    );
+    return null;
+  }
   if (context.mounted) {
     final invoiceOptions = await showDialog<InvoiceOptions>(
       context: context,
@@ -225,9 +230,11 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
       ),
     ),
     actions: [
-      HMBButton(label: 'Cancel', 
-      hint: "Don't select any the task",
-      onPressed: () => Navigator.of(context).pop()),
+      HMBButton(
+        label: 'Cancel',
+        hint: "Don't select any the task",
+        onPressed: () => Navigator.of(context).pop(),
+      ),
       HMBButton(
         label: 'OK',
         hint: 'Continue with the selected the tasks',
