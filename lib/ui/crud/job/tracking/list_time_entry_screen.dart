@@ -132,40 +132,38 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
   final _entityListKey = GlobalKey<EntityListScreenState>();
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Show the job stats up top:
-        JobStatisticsHeader(job: widget.job),
-        // Then the filterable list itself:
-        Expanded(
-          child: EntityListScreen<TimeEntry>(
-            key: _entityListKey,
-            pageTitle: 'Time Entries',
-            dao: DaoTimeEntry(),
-            fetchList: _fetchFiltered,
-            filterSheetBuilder: _buildFilterSheet,
-            onFilterSheetClosed: () async =>
-                await _entityListKey.currentState?.refresh(),
-            onFiltersCleared: _clearAllFilters,
-            isFilterActive: () =>
-                _supplierFilter.selected != null ||
-                _taskFilter.taskId != null ||
-                _selectedDate != null,
-            cardHeight: 260,
-            title: (entry) async => HMBTextLine(formatDate(entry.startTime)),
-            onEdit: (entry) =>
-                TimeEntryEditScreen(job: widget.job, timeEntry: entry),
-            details: (entry) => FutureBuilderEx<_Details>(
-              future: getDetails(entry),
-              builder: (ctx, detail) =>
-                  TimeEntryTile(timeEntry: entry, taskName: detail!.task.name),
-            ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Show the job stats up top:
+      JobStatisticsHeader(job: widget.job),
+      // Then the filterable list itself:
+      Expanded(
+        child: EntityListScreen<TimeEntry>(
+          key: _entityListKey,
+          pageTitle: 'Time Entries',
+          dao: DaoTimeEntry(),
+          fetchList: _fetchFiltered,
+          filterSheetBuilder: _buildFilterSheet,
+          onFilterSheetClosed: () async =>
+              await _entityListKey.currentState?.refresh(),
+          onFiltersCleared: _clearAllFilters,
+          isFilterActive: () =>
+              _supplierFilter.selected != null ||
+              _taskFilter.taskId != null ||
+              _selectedDate != null,
+          cardHeight: 260,
+          title: (entry) async => HMBTextLine(formatDate(entry.startTime)),
+          onEdit: (entry) =>
+              TimeEntryEditScreen(job: widget.job, timeEntry: entry),
+          details: (entry) => FutureBuilderEx<_Details>(
+            future: getDetails(entry),
+            builder: (ctx, detail) =>
+                TimeEntryTile(timeEntry: entry, taskName: detail!.task.name),
           ),
         ),
-      ],
-    ),
+      ),
+    ],
   );
 }
 
