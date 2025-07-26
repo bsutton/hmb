@@ -19,6 +19,7 @@ import '../../../../entity/task_item_type.dart';
 import '../../../../util/money_ex.dart';
 import '../../../invoicing/dialog_select_tasks.dart';
 import '../../../quoting/quote_details_screen.dart';
+import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/text/hmb_text_themes.dart';
 import '../../../widgets/widgets.g.dart';
 import '../edit_job_screen.dart';
@@ -40,80 +41,68 @@ class JobCard extends StatefulWidget {
 
 class _JobCardState extends State<JobCard> {
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 360,
-    child: FutureBuilderEx<CompleteJobInfo>(
-      // ignore: discarded_futures
-      future: _loadCompleteJobInfo(widget.job),
-      builder: (context, info) {
-        final labourCharges = info!.totals.labourCharges;
-        final materialCharges = info.totals.materialsCharges;
-        final combinedCharges = labourCharges + materialCharges;
+  Widget build(BuildContext context) => FutureBuilderEx<CompleteJobInfo>(
+    // ignore: discarded_futures
+    future: _loadCompleteJobInfo(widget.job),
+    builder: (context, info) {
+      final labourCharges = info!.totals.labourCharges;
+      final materialCharges = info.totals.materialsCharges;
+      final combinedCharges = labourCharges + materialCharges;
 
-        return Surface(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.job.summary,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          HMBLinkInternal(
+            label: 'Job #: ${widget.job.id}',
+            navigateTo: () async => JobEditScreen(job: widget.job),
+          ),
+
+          if (info.quoteNumber != null)
+            HMBLinkInternal(
+              label: 'Quote #: ${info.quoteNumber}',
+              navigateTo: () async =>
+                  QuoteDetailsScreen(quoteId: info.quoteId!),
+            ),
+
+          HMBTextLine('Status: ${info.statusName}'),
+          HMBTextLine('Labour: $labourCharges'),
+          HMBTextLine('Materials: $materialCharges'),
+          HMBTextLine('Combined: $combinedCharges'),
+          const HMBSpacer(height: true),
+          Row(
             children: [
-              Text(
-                widget.job.summary,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              HMBButton(
+                label: 'Update Estimates',
+                hint: 'Add/Edit labour and materials costs to Job',
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) =>
+                          JobEstimateBuilderScreen(job: widget.job),
+                    ),
+                  );
+                  // After returning, refresh totals
+                  widget.onEstimatesUpdated();
+                },
               ),
-              const SizedBox(height: 8),
-              HMBTextLine('Customer: ${info.customerName}'),
-              HMBLinkInternal(
-                label: 'Job #: ${widget.job.id}',
-                navigateTo: () async => JobEditScreen(job: widget.job),
-              ),
-
-              if (info.quoteNumber != null)
-                HMBLinkInternal(
-                  label: 'Quote #: ${info.quoteNumber}',
-                  navigateTo: () async =>
-                      QuoteDetailsScreen(quoteId: info.quoteId!),
-                ),
-
-              HMBTextLine('Status: ${info.statusName}'),
-              const SizedBox(height: 16),
-              HMBTextLine('Labour: $labourCharges'),
-              HMBTextLine('Materials: $materialCharges'),
-              HMBTextLine('Combined: $combinedCharges'),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  HMBButton(
-                    label: 'Update Estimates',
-                    hint: 'Add/Edit labour and materials costs to Job',
-                    onPressed: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (context) =>
-                              JobEstimateBuilderScreen(job: widget.job),
-                        ),
-                      );
-                      // After returning, refresh totals
-                      widget.onEstimatesUpdated();
-                    },
-                  ),
-                  const SizedBox(width: 16),
-                  HMBButton(
-                    label: 'Create Quote',
-                    hint: 'Create a Fixed price Quote based on your Estimates',
-                    onPressed: () async {
-                      await _createQuote();
-                      widget.onEstimatesUpdated();
-                    },
-                  ),
-                ],
+              const HMBSpacer(width: true),
+              HMBButton(
+                label: 'Create Quote',
+                hint: 'Create a Fixed price Quote based on your Estimates',
+                onPressed: () async {
+                  await _createQuote();
+                  widget.onEstimatesUpdated();
+                },
               ),
             ],
           ),
-        );
-      },
-    ),
+        ],
+      );
+    },
   );
 
   Future<void> _createQuote() async {
