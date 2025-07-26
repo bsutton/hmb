@@ -36,9 +36,11 @@ class ItemCardCommon extends StatelessWidget {
       HMBTextLine('Job: ${customerAndJob.job.summary}'),
       HMBTextLine('Task: ${customerAndJob.task.name}'),
       HMBTextLine('Supplier: ${customerAndJob.supplier?.name ?? ''}'),
-      HMBTextLine('Qty: ${taskItem.actualMaterialQuantity ?? MoneyEx.zero}'),
       HMBTextLine(
-        'Unit Cost: ${taskItem.actualMaterialUnitCost ?? MoneyEx.zero}',
+        'Qty: ${taskItem.actualMaterialQuantity ?? taskItem.estimatedMaterialQuantity ?? MoneyEx.zero}',
+      ),
+      HMBTextLine(
+        'Unit Cost: ${taskItem.actualMaterialUnitCost ?? taskItem.estimatedMaterialUnitCost ?? MoneyEx.zero}',
       ),
     ],
   );
