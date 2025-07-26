@@ -98,6 +98,7 @@ class HMBSearchWithAdd extends StatelessWidget {
   const HMBSearchWithAdd({
     required this.onSearch,
     required this.onAdd,
+    this.showAdd = true,
     this.controller,
     this.hint = 'Add',
     super.key,
@@ -106,6 +107,7 @@ class HMBSearchWithAdd extends StatelessWidget {
   final void Function(String? filter) onSearch;
 
   final void Function() onAdd;
+  final bool showAdd;
 
   final String? hint;
 
@@ -122,7 +124,8 @@ class HMBSearchWithAdd extends StatelessWidget {
           controller: controller,
         ),
       ),
-      HMBButtonAdd(onAdd: () async => onAdd(), enabled: true, hint: hint),
+      if (showAdd)
+        HMBButtonAdd(onAdd: () async => onAdd(), enabled: true, hint: hint),
     ],
   );
 }
