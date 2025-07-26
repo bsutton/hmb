@@ -15,10 +15,11 @@ import '../../../dao/dao_invoice.dart';
 import '../../../dao/dao_quote.dart';
 import '../../../dao/dao_time_entry.dart';
 import '../../../entity/job.dart';
-import '../../invoicing/invoicing.g.dart';
+import '../../invoicing/list_invoice_screen.dart';
 import '../../nav/dashboards/dashlet_card.dart';
-import '../../quoting/quoting.g.dart';
-import 'esitmator/list_job_estimates_screen.dart';
+import '../../quoting/list_quote_screen.dart';
+import '../../widgets/layout/hmb_full_page_child_screen.dart';
+import 'esitmator/edit_job_estimate_screen.dart';
 import 'tracking/list_time_entry_screen.dart';
 
 /// A compact dashboard for a single Job,
@@ -42,7 +43,7 @@ class MiniJobDashboard extends StatelessWidget {
               icon: Icons.calculate,
               compact: true,
               value: () async => const DashletValue(''),
-              builder: (_, _) => JobEstimatesListScreen(job: job),
+              builder: (_, _) => JobEstimateBuilderScreen(job: job),
             ),
             size: dashletSize,
           ),
@@ -57,7 +58,12 @@ class MiniJobDashboard extends StatelessWidget {
                 final list = all.where((q) => q.jobId == job.id).toList();
                 return DashletValue<int>(list.length);
               },
-              builder: (_, _) => QuoteListScreen(job: job),
+              builder: (_, _) => HMBFullPageChildScreen(
+                title: 'Quotes',
+                child: QuoteListScreen(job: job),
+              ),
+
+              // route: '/home/jobs/quotes/${job.id}',
             ),
             size: dashletSize,
           ),
@@ -71,7 +77,12 @@ class MiniJobDashboard extends StatelessWidget {
                 final list = await DaoTimeEntry().getByJob(job.id);
                 return DashletValue<int>(list.length);
               },
-              builder: (_, _) => TimeEntryListScreen(job: job),
+
+              builder: (_, _) => HMBFullPageChildScreen(
+                title: 'Time Entries',
+                child: TimeEntryListScreen(job: job),
+              ),
+              // route: '/home/jobs/track/${job.id}',
             ),
             size: dashletSize,
           ),
@@ -86,7 +97,12 @@ class MiniJobDashboard extends StatelessWidget {
                 final list = all.where((i) => i.jobId == job.id).toList();
                 return DashletValue<int>(list.length);
               },
-              builder: (_, _) => InvoiceListScreen(job: job),
+              builder: (_, _) => HMBFullPageChildScreen(
+                title: 'Invoices',
+                child: InvoiceListScreen(job: job),
+              ),
+
+              // route: '/home/jobs/invoices/${job.id}',
             ),
             size: dashletSize,
           ),
