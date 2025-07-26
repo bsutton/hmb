@@ -409,7 +409,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
         // Extended hours button
         HMBToggle(
           label: 'Extended',
-          tooltip: 'Show full 24 hrs',
+          hint: 'Show full 24 hrs',
           initialValue: false,
           onToggled: (value) {
             setState(() {
