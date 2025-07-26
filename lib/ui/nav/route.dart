@@ -10,14 +10,18 @@
 */
 
 import 'package:flutter/widgets.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../dao/dao.g.dart';
 import '../../database/management/backup_providers/google_drive/google_drive_backup_screen.dart';
 import '../../database/management/backup_providers/local/local_backup_screen.dart';
+import '../../entity/job.dart';
 import '../about.dart';
 import '../crud/customer/list_customer_screen.dart';
 import '../crud/job/esitmator/list_job_estimates_screen.dart';
 import '../crud/job/list_job_screen.dart';
+import '../crud/job/tracking/list_time_entry_screen.dart';
 import '../crud/manufacturer/list_manufacturer_screen.dart';
 import '../crud/message_template/list_message_template.dart';
 import '../crud/milestone/list_milestone_screen.dart';
@@ -104,6 +108,7 @@ List<GoRoute> dashboardRoutes() => [
   GoRoute(
     path: 'jobs',
     builder: (_, _) => const HomeScaffold(initialScreen: JobListScreen()),
+    routes: jobRoutes(),
   ),
   GoRoute(
     path: 'help',
@@ -160,6 +165,53 @@ List<GoRoute> dashboardRoutes() => [
     routes: settingRoutes(),
   ),
 ];
+
+// List<GoRoute> jobRoutes() => [
+//   GoRoute(
+//     name: 'estimate',
+//     path: 'estimates/:jobId',
+//     builder: (context, state) {
+//       final jobId = state.pathParameters['jobId']!;
+//       return FutureBuilderEx<Job?>(
+//         future: DaoJob().getById(int.parse(jobId)),
+//         builder: (ctx, job) => JobEstimatesListScreen(job: job),
+//       );
+//     },
+//   ),
+//   GoRoute(
+//     name: 'quotes',
+//     path: 'quotes/:jobId',
+//     builder: (context, state) {
+//       final jobId = state.pathParameters['jobId']!;
+//       return FutureBuilderEx<Job?>(
+//         future: DaoJob().getById(int.parse(jobId)),
+//         builder: (ctx, job) => QuoteListScreen(job: job),
+//       );
+//     },
+//   ),
+//   GoRoute(
+//     name: 'track',
+//     path: 'track/:jobId',
+//     builder: (context, state) {
+//       final jobId = state.pathParameters['jobId']!;
+//       return FutureBuilderEx<Job?>(
+//         future: DaoJob().getById(int.parse(jobId)),
+//         builder: (ctx, job) => TimeEntryListScreen(job: job!),
+//       );
+//     },
+//   ),
+//   GoRoute(
+//     name: 'invoices',
+//     path: 'invoices/:jobId',
+//     builder: (context, state) {
+//       final jobId = state.pathParameters['jobId']!;
+//       return FutureBuilderEx<Job?>(
+//         future: DaoJob().getById(int.parse(jobId)),
+//         builder: (ctx, job) => InvoiceListScreen(job: job),
+//       );
+//     },
+//   ),
+// ];
 
 // 4) All other routes directly from the top level:
 List<GoRoute> accountingRoutes() => [
