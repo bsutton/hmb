@@ -75,7 +75,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
               children: [
                 HMBToggle(
                   label: 'Show Completed',
-                  tooltip: showCompleted
+                  hint: showCompleted
                       ? 'Show Only Non-Completed Tasks'
                       : 'Show Completed Tasks',
                   initialValue: June.getState(

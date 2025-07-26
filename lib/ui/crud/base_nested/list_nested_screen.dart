@@ -138,7 +138,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
     children: [
       HMBToggle(
         label: 'Show details',
-        tooltip: 'Show/Hide full card details',
+        hint: 'Show/Hide full card details',
         initialValue: cardDetail == CardDetail.full,
         onToggled: (on) {
           setState(() {
