@@ -31,10 +31,10 @@ import '../backup.dart';
 import '../backup_provider.dart';
 import '../backup_selection.dart';
 import '../progress_update.dart';
-import 'api.dart';
 import 'background_backup/google_drive_backup_provider.dart';
 import 'background_backup/photo_sync_params.dart';
 import 'background_backup/photo_sync_service.dart';
+import 'google_drive_auth.dart';
 
 class GoogleDriveBackupScreen extends StatefulWidget {
   const GoogleDriveBackupScreen({super.key, this.restoreOnly = false});
@@ -343,7 +343,8 @@ class _GoogleDriveBackupScreenState
             HMBButton.withIcon(
               icon: const Icon(Icons.login, color: Colors.white),
               label: 'Sign in to Google',
-              hint: 'Sign into Google Drive so you can back up your data and Sync your photos',
+              hint:
+                  'Sign into Google Drive so you can back up your data and Sync your photos',
               onPressed: () async {
                 GoogleDriveAuth? auth;
                 try {

@@ -27,7 +27,8 @@ import '../../../../../util/paths.dart'
     if (dart.library.ui) '../../../../../util/paths_flutter.dart';
 import '../../backup.dart';
 import '../../backup_provider.dart';
-import '../api.dart';
+import '../google_drive_api.dart';
+import '../google_drive_auth.dart';
 import 'backup_params.dart';
 import 'photo_sync_service.dart';
 import 'progress_update.dart';
@@ -145,7 +146,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
         params,
         onError: errorPort.sendPort,
         onExit: exitPort.sendPort,
-        debugName: 'google drive backup'
+        debugName: 'google drive backup',
       );
 
       errorPort.listen((e) => emitProgress(r'Error: $e', 3, 3));

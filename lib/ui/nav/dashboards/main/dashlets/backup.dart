@@ -16,8 +16,8 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../../../database/factory/flutter_database_factory.dart';
-import '../../../../../database/management/backup_providers/google_drive/api.dart';
 import '../../../../../database/management/backup_providers/google_drive/background_backup/background_backup.g.dart';
+import '../../../../../database/management/backup_providers/google_drive/google_drive_auth.dart';
 import '../../../../../src/appname.dart';
 import '../../../../../util/format.dart';
 import '../../dashlet_card.dart';

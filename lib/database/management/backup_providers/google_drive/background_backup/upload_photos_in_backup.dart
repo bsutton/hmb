@@ -19,7 +19,7 @@ import 'package:googleapis/drive/v3.dart' as gdrive show File;
 import 'package:http/http.dart' as http;
 
 import '../../progress_update.dart';
-import '../api.dart';
+import '../google_drive_api.dart';
 import 'photo_sync_params.dart';
 import 'photo_sync_service.dart';
 
@@ -78,10 +78,7 @@ Future<void> uploadPhotosInBackup({
 
     var parentId = photoSyncFolderId;
     for (final part in cloudStorageParts) {
-      parentId = await driveApi.getOrCreateFolderId(
-        part,
-        parentId: parentId,
-      );
+      parentId = await driveApi.getOrCreateFolderId(part, parentId: parentId);
     }
 
     // Upload file to final destination

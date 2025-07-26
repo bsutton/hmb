@@ -39,7 +39,7 @@ class BackupDashboardPage extends StatefulWidget {
 }
 
 class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
-  var _isLoading = false;
+  var _isDbOffline = false;
   var _stageDescription = '';
   var _photoStageDescription = '';
   var _syncRunning = false;
@@ -62,7 +62,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     });
   }
 
-  var _isGoogleSignedIn = false;
 
   @override
   Future<void> asyncInitState() async {
@@ -72,7 +71,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       if (await GoogleDriveAuth().isSignedIn) {
         // Load last backup date
         _lastBackup = await _refreshLastBackup();
-        _isGoogleSignedIn = true;
       }
     }
   }
@@ -110,7 +108,8 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
             hint:
                 'Backup your $appName data to your Google Drive Account (recommended)',
             icon: Icons.info_outline,
-            onTap: (_) => _performBackup(),
+            onTap: (_) =>
+                BlockingUI().run(_performBackup, label: 'Performing Backup'),
             value: () async => DashletValue<String>(
               _lastBackup == null
                   ? 'No backups yet'
@@ -169,7 +168,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
 
   Future<void> _performBackup() async {
     setState(() {
-      _isLoading = true;
+      _isDbOffline = true;
       _stageDescription = 'Starting backup...';
     });
 
@@ -184,8 +183,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         HMBToast.error('Error during backup: $e');
       }
     } finally {
+      _isDbOffline = false;
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {});
       }
       await WakelockPlus.disable();
     }
@@ -204,7 +204,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     );
     if (selected != null) {
       setState(() {
-        _isLoading = true;
+        _isDbOffline = true;
         _stageDescription = 'Starting restore...';
       });
       await WakelockPlus.enable();
@@ -223,7 +223,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         }
       } finally {
         if (mounted) {
-          setState(() => _isLoading = false);
+          setState(() => _isDbOffline = false);
         }
         _provider.useDebugPath = false;
         await WakelockPlus.disable();
@@ -289,7 +289,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
                   auth = await GoogleDriveAuth.init();
                   if (await auth.isSignedIn && mounted) {
                     _lastBackup = await _refreshLastBackup();
-                    _isGoogleSignedIn = true;
                     setState(() {});
                   }
                 } catch (e) {
@@ -360,7 +359,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         const SizedBox(height: 8),
         Text(_photoStageDescription, style: const TextStyle(fontSize: 16)),
       ],
-      if (!_syncRunning)
+      if (!_isDbOffline && !_syncRunning)
         FutureBuilderEx<List<PhotoPayload>>(
           // ignore: discarded_futures
           future: DaoPhoto().getUnsyncedPhotos(),

@@ -14,91 +14,24 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 
-import '../../../../../util/exceptions.dart';
-import '../../../../ui/widgets/hmb_toast.dart';
 import 'backup.dart';
-
-class GoogleDriveAuth {
-  late final Map<String, String> _authHeaders;
-
-  Map<String, String> get authHeaders => _authHeaders;
-
-  static Future<GoogleDriveAuth> init() async {
-    final api = GoogleDriveAuth();
-    final account = await api._signIn();
-    if (account == null) {
-      throw BackupException('Google sign-in canceled.');
-    }
-
-    final auth = await account.authorizationClient.authorizeScopes([
-      drive.DriveApi.driveFileScope,
-    ]);
-
-    api._authHeaders = {'Authorization': 'Bearer ${auth.accessToken}'};
-
-    return api;
-  }
-
-  Future<void> signOut() async {
-    await GoogleSignIn.instance.signOut();
-  }
-
-  Future<bool> get isSignedIn async {
-    final signIn = GoogleSignIn.instance;
-    await signIn.initialize();
-
-    try {
-      await signIn.attemptLightweightAuthentication();
-    } catch (_) {
-      return false;
-    }
-
-    final stream = signIn.authenticationEvents;
-    await for (final event in stream) {
-      if (event is GoogleSignInAuthenticationEventSignIn) {
-        final auth = await event.user.authorizationClient
-            .authorizationForScopes([drive.DriveApi.driveFileScope]);
-        return auth?.accessToken != null;
-      }
-    }
-
-    return false;
-  }
-
-  Future<GoogleSignInAccount?> _signIn() async {
-    final signIn = GoogleSignIn.instance;
-    await signIn.initialize();
-
-    try {
-      await signIn.attemptLightweightAuthentication();
-    } catch (_) {
-      // Ignore and try interactive auth next
-    }
-
-    final stream = signIn.authenticationEvents;
-    await for (final event in stream) {
-      if (event is GoogleSignInAuthenticationEventSignIn) {
-        return event.user;
-      }
-    }
-
-    if (signIn.supportsAuthenticate()) {
-      return signIn.authenticate(scopeHint: [drive.DriveApi.driveFileScope]);
-    }
-
-    HMBToast.error('Google sign-in failed: no user authenticated');
-    return null;
-  }
-}
+import 'google_drive_auth.dart';
 
 class GoogleDriveApi {
   GoogleDriveApi._internal(this._authHeaders);
 
+  var _initialised = false;
+  final Map<String, String> _authHeaders;
+  late final drive.DriveApi _driveApi;
+  late AuthenticatedClient? _authClient;
+
+  drive.FilesResource get files => _driveApi.files;
+
+  /// fromHeaders
   static Future<GoogleDriveApi> fromHeaders(
     Map<String, String> authHeaders,
   ) async {
@@ -107,17 +40,11 @@ class GoogleDriveApi {
     return api;
   }
 
+  /// selfAuth
   static Future<GoogleDriveApi> selfAuth() async {
     final auth = await GoogleDriveAuth.init();
     return GoogleDriveApi.fromHeaders(auth.authHeaders);
   }
-
-  var _initialised = false;
-  final Map<String, String> _authHeaders;
-  late final drive.DriveApi _driveApi;
-  late AuthenticatedClient? _authClient;
-
-  drive.FilesResource get files => _driveApi.files;
 
   Future<void> init() async {
     if (!_initialised) {
@@ -170,14 +97,4 @@ class GoogleDriveApi {
 
   Future<String> getPhotoSyncFolder() async =>
       getOrCreateFolderId('photos', parentId: await _hmbFolder());
-}
-
-class GoogleAuthClient extends http.BaseClient {
-  GoogleAuthClient(this._headers);
-  final Map<String, String> _headers;
-  final _client = http.Client();
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) =>
-      _client.send(request..headers.addAll(_headers));
 }

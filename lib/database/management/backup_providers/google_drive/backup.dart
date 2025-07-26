@@ -22,7 +22,9 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
 
+import '../../../../ui/widgets/layout/layout.g.dart';
 import '../../../../ui/widgets/widgets.g.dart';
+import 'google_drive_auth.dart';
 
 class BackupAuthGoogleScreen extends StatefulWidget {
   const BackupAuthGoogleScreen({required this.pathToBackup, super.key});
@@ -35,60 +37,13 @@ class BackupAuthGoogleScreen extends StatefulWidget {
 
 class _BackupAuthGoogleScreenState
     extends DeferredState<BackupAuthGoogleScreen> {
-  GoogleSignInAccount? _currentUser;
   late StreamSubscription<GoogleSignInAuthenticationEvent> _authSubscription;
 
+  late GoogleDriveAuth auth;
   @override
   Future<void> asyncInitState() async {
     super.initState();
-    await _initGoogleSignIn();
-  }
-
-  Future<void> _initGoogleSignIn() async {
-    final signIn = GoogleSignIn.instance;
-
-    await signIn.initialize(
-      /// OAuth Client in Google Play Console: HMB-Production-Signed-By-Google
-      clientId:
-          '704526923643-ot7i0jpo27urkkibm1gsqpji7f2nigt3.apps.googleusercontent.com',
-
-      /// OAuth Client in Google Play Console: HMB for Google Sign-in - this is the serverClientId
-      serverClientId:
-          '704526923643-vdu784t5s102g2uanosrd72rnv1cd795.apps.googleusercontent.com',
-    );
-
-    _authSubscription = signIn.authenticationEvents.listen((event) {
-      if (event is GoogleSignInAuthenticationEventSignIn) {
-        setState(() {
-          _currentUser = event.user;
-        });
-      } else if (event is GoogleSignInAuthenticationEventSignOut) {
-        setState(() {
-          _currentUser = null;
-        });
-      }
-    });
-
-    // Try silent sign-in
-    try {
-      await signIn.attemptLightweightAuthentication();
-    } catch (_) {
-      // ignore
-    }
-
-    // If no user, fall back to interactive
-    if (_currentUser == null && signIn.supportsAuthenticate()) {
-      try {
-        final user = await signIn.authenticate(
-          scopeHint: const [drive.DriveApi.driveFileScope],
-        );
-        setState(() {
-          _currentUser = user;
-        });
-      } catch (e) {
-        HMBToast.error('Google sign-in failed: $e');
-      }
-    }
+    auth = await GoogleDriveAuth.init();
   }
 
   @override
@@ -103,12 +58,20 @@ class _BackupAuthGoogleScreenState
       title: const Text('Backup File to Google Drive'),
       automaticallyImplyLeading: false,
       actions: [
-        if (_currentUser != null)
-          HMBIconButton(
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: GoogleSignIn.instance.signOut,
-            hint: 'Sign out of Google Drive',
-          ),
+        FutureBuilderEx(
+          future: auth.isSignedIn,
+          builder: (context, isSignedIn) {
+            if (isSignedIn!) {
+              return HMBIconButton(
+                icon: const Icon(Icons.exit_to_app),
+                onPressed: auth.signOut,
+                hint: 'Sign out of Google Drive',
+              );
+            } else {
+              return const HMBEmpty();
+            }
+          },
+        ),
       ],
     ),
     body: FutureBuilderEx(
@@ -132,18 +95,19 @@ class _BackupAuthGoogleScreenState
   );
 
   Future<void> _uploadFile(BuildContext context) async {
-    if (_currentUser == null) {
+    if (await auth.isSignedIn) {
       if (context.mounted) {
         HMBToast.info('Not signed in');
       }
       return;
     }
 
-    final auth = await _currentUser!.authorizationClient.authorizeScopes([
-      drive.DriveApi.driveFileScope,
-    ]);
+    // final auth = await _currentUser!.authorizationClient.authorizeScopes([
+    //   drive.DriveApi.driveFileScope,
+    // ]);
 
-    final headers = {'Authorization': 'Bearer ${auth.accessToken}'};
+    final headers =
+        auth.authHeaders; //  {'Authorization': 'Bearer ${auth.accessToken}'};
     final client = AuthenticatedClient(http.Client(), headers);
     final driveApi = drive.DriveApi(client);
 
@@ -156,7 +120,7 @@ class _BackupAuthGoogleScreenState
     print('Uploaded file: ${response.id}');
   }
 
-  Future<bool> _ensureSignedIn() async => _currentUser != null;
+  Future<bool> _ensureSignedIn() async => auth.isSignedIn;
 }
 
 class AuthenticatedClient extends http.BaseClient {

@@ -15,7 +15,7 @@ import 'dart:isolate';
 
 import '../../../../../dao/dao_photo.dart';
 import '../../progress_update.dart';
-import '../api.dart';
+import '../google_drive_auth.dart';
 import 'photo_sync_params.dart';
 import 'upload_photos_in_backup.dart';
 
