@@ -11,7 +11,6 @@
 
 // lib/src/ui/dashboard/help_dashboard_page.dart
 import 'dart:async';
-import 'dart:io';
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +43,8 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   var _photoStageDescription = '';
   var _syncRunning = false;
 
+  late final GoogleDriveAuth auth;
+
   late final BackupProvider _provider;
   DateTime? _lastBackup;
   late final StreamSubscription<ProgressUpdate> _backupSub;
@@ -62,13 +63,13 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     });
   }
 
-
   @override
   Future<void> asyncInitState() async {
     _provider = _getProvider();
+    auth = await GoogleDriveAuth.instance();
 
-    if (!Platform.isLinux) {
-      if (await GoogleDriveAuth().isSignedIn) {
+    if (auth.isAuthSupported()) {
+      if (auth.isSignedIn) {
         // Load last backup date
         _lastBackup = await _refreshLastBackup();
       }
@@ -97,63 +98,85 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   }
 
   @override
-  Widget build(BuildContext context) => DeferredBuilder(
-    this,
-    builder: (context) => Scaffold(
-      body: DashboardPage(
-        title: 'Backup',
-        dashlets: [
-          DashletCard<void>.onTap(
-            label: 'Backup',
-            hint:
-                'Backup your $appName data to your Google Drive Account (recommended)',
-            icon: Icons.info_outline,
-            onTap: (_) =>
-                BlockingUI().run(_performBackup, label: 'Performing Backup'),
-            value: () async => DashletValue<String>(
-              _lastBackup == null
-                  ? 'No backups yet'
-                  : 'Last: ${formatDateTime(_lastBackup!)}',
-            ),
-          ),
-          DashletCard<void>.onTap(
-            label: 'Restore',
-            hint: 'Restore $appName data from your Google Drive Account',
-            icon: Icons.bug_report,
-            value: () => Future.value(const DashletValue(null)),
-            onTap: _performRestore,
-          ),
+  Widget build(BuildContext context) => Scaffold(
+    body: DeferredBuilder(
+      this,
+      builder: (context) {
+        if (!auth.isAuthSupported()) {
+          return _buildUnsupportedPlatformMessage(context);
+        }
 
-          DashletCard<void>.route(
-            label: 'Backup Local',
-            hint:
-                'Make a local backup of $appName database - using Google Drive is safer.',
-            icon: Icons.save,
-            value: () => Future.value(const DashletValue(null)),
-            route: '/home/backup/local/backup',
-            valueBuilder: (_, _) => const SizedBox.shrink(),
-          ),
-
-          DashletCard<void>.onTap(
-            label: 'Sync Photos',
-            hint:
-                'Copy your photos to google drive - including receipts and tools',
-            icon: Icons.forum,
-            value: () async => const DashletValue(null),
-            valueBuilder: (_, _) => _syncPhotoBuilder(),
-            onTap: (_) async => _syncPhotos(),
-          ),
-
-          DashletCard<void>.onTap(
-            label: 'Signout',
-            hint: 'Sign out of your Google Drive Account',
-            icon: Icons.info,
-            value: () => Future.value(const DashletValue(null)),
-            onTap: (_) async => signout(),
-          ),
-        ],
-      ),
+        if (auth.isSignedIn) {
+          return _buildDashboard();
+        } else {
+          return _buildSignInPrompt(context);
+        }
+      },
     ),
+  );
+
+  DashboardPage _buildDashboard() => DashboardPage(
+    title: 'Backup',
+    dashlets: [
+      DashletCard<void>.onTap(
+        label: 'Backup',
+        hint:
+            'Backup your $appName data to your Google Drive Account (recommended)',
+        icon: Icons.info_outline,
+        onTap: (_) =>
+            BlockingUI().run(_performBackup, label: 'Performing Backup'),
+        value: () async => const DashletValue(null),
+        valueBuilder: (_, _) {
+          final text = !auth.isSignedIn
+              ? 'Not Signed In'
+              : _lastBackup == null
+              ? 'No backups yet'
+              : 'Last: ${formatDateTime(_lastBackup!)}';
+          return Center(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+          );
+        },
+      ),
+
+      DashletCard<void>.onTap(
+        label: 'Restore',
+        hint: 'Restore $appName data from your Google Drive Account',
+        icon: Icons.bug_report,
+        value: () => Future.value(const DashletValue(null)),
+        onTap: _performRestore,
+      ),
+
+      DashletCard<void>.route(
+        label: 'Backup Local',
+        hint:
+            'Make a local backup of $appName database - using Google Drive is safer.',
+        icon: Icons.save,
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/backup/local/backup',
+        valueBuilder: (_, _) => const SizedBox.shrink(),
+      ),
+
+      DashletCard<void>.onTap(
+        label: 'Sync Photos',
+        hint: 'Copy your photos to google drive - including receipts and tools',
+        icon: Icons.forum,
+        value: () async => const DashletValue(null),
+        valueBuilder: (_, _) => _syncPhotoBuilder(),
+        onTap: (_) async => _syncPhotos(),
+      ),
+
+      DashletCard<void>.onTap(
+        label: 'Signout',
+        hint: 'Sign out of your Google Drive Account',
+        icon: Icons.info,
+        value: () => Future.value(const DashletValue(null)),
+        onTap: (_) async => signout(),
+      ),
+    ],
   );
 
   // FutureBuilderEx<DateTime?> _buildLastBackup() => FutureBuilderEx<DateTime?>(
@@ -286,10 +309,25 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
               onPressed: () async {
                 GoogleDriveAuth? auth;
                 try {
-                  auth = await GoogleDriveAuth.init();
-                  if (await auth.isSignedIn && mounted) {
-                    _lastBackup = await _refreshLastBackup();
+                  auth = await GoogleDriveAuth.instance();
+                  await auth.signIn();
+                  if (auth.isSignedIn && mounted) {
+                    /// kick off a refresh but we need to rebuild the ui
+                    /// now to remove the 'google login' screen.
                     setState(() {});
+                    Future.delayed(Duration.zero, () async {
+                      _lastBackup = await _refreshLastBackup();
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    });
+                  }
+                } on GoogleAuthResult catch (e) {
+                  await auth?.signOut();
+                  if (mounted) {
+                    if (!e.wasCancelled) {
+                      HMBToast.error('Sign-in failed: $e');
+                    }
                   }
                 } catch (e) {
                   /// ensure we are not left in a 'half signed-in'
@@ -349,8 +387,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
 
   Future<void> signout() async {
     GoogleDriveAuth? auth;
-    auth = await GoogleDriveAuth.init();
+    auth = await GoogleDriveAuth.instance();
     await auth.signOut();
+    setState(() {});
   }
 
   Widget _syncPhotoBuilder() => Column(

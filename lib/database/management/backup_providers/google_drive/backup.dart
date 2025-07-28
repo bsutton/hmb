@@ -43,7 +43,7 @@ class _BackupAuthGoogleScreenState
   @override
   Future<void> asyncInitState() async {
     super.initState();
-    auth = await GoogleDriveAuth.init();
+    auth = await GoogleDriveAuth.instance();
   }
 
   @override
@@ -53,49 +53,47 @@ class _BackupAuthGoogleScreenState
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Backup File to Google Drive'),
-      automaticallyImplyLeading: false,
-      actions: [
-        FutureBuilderEx(
-          future: auth.isSignedIn,
-          builder: (context, isSignedIn) {
-            if (isSignedIn!) {
-              return HMBIconButton(
-                icon: const Icon(Icons.exit_to_app),
-                onPressed: auth.signOut,
-                hint: 'Sign out of Google Drive',
-              );
-            } else {
-              return const HMBEmpty();
-            }
-          },
-        ),
-      ],
-    ),
-    body: FutureBuilderEx(
-      future: _ensureSignedIn(),
-      waitingBuilder: (context) =>
-          const Center(child: CircularProgressIndicator()),
-      builder: (context, success) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const SizedBox(height: 20),
-            HMBButton(
-              label: 'Upload File to Google Drive',
-              hint: 'Backup your data to Google Drive, excluding photos',
-              onPressed: () => unawaited(_uploadFile(context)),
-            ),
-          ],
+  Widget build(BuildContext context) {
+    Widget signOut;
+    if (auth.isSignedIn) {
+      signOut = HMBIconButton(
+        icon: const Icon(Icons.exit_to_app),
+        onPressed: auth.signOut,
+        hint: 'Sign out of Google Drive',
+      );
+    } else {
+      signOut = const HMBEmpty();
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Backup File to Google Drive'),
+        automaticallyImplyLeading: false,
+        actions: [signOut],
+      ),
+      body: FutureBuilderEx(
+        future: _ensureSignedIn(),
+        waitingBuilder: (context) =>
+            const Center(child: CircularProgressIndicator()),
+        builder: (context, success) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const SizedBox(height: 20),
+              HMBButton(
+                label: 'Upload File to Google Drive',
+                hint: 'Backup your data to Google Drive, excluding photos',
+                onPressed: () => unawaited(_uploadFile(context)),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 
   Future<void> _uploadFile(BuildContext context) async {
-    if (await auth.isSignedIn) {
+    if (auth.isSignedIn) {
       if (context.mounted) {
         HMBToast.info('Not signed in');
       }

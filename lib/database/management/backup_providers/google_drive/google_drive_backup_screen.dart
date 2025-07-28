@@ -83,8 +83,9 @@ class _GoogleDriveBackupScreenState
   Future<void> asyncInitState() async {
     setAppTitle('Backup & Restore');
     _provider = _getProvider();
+    final gdriveAuth = await GoogleDriveAuth.instance();
 
-    if (await GoogleDriveAuth().isSignedIn) {
+    if (gdriveAuth.isSignedIn) {
       // Load last backup date
       _lastBackupFuture = _refreshLastBackup();
       _isGoogleSignedIn = true;
@@ -348,8 +349,8 @@ class _GoogleDriveBackupScreenState
               onPressed: () async {
                 GoogleDriveAuth? auth;
                 try {
-                  auth = await GoogleDriveAuth.init();
-                  if (await auth.isSignedIn && mounted) {
+                  auth = await GoogleDriveAuth.instance();
+                  if (auth.isSignedIn && mounted) {
                     _lastBackupFuture = _refreshLastBackup();
                     _isGoogleSignedIn = true;
                     setState(() {});

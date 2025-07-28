@@ -42,7 +42,7 @@ class GoogleDriveApi {
 
   /// selfAuth
   static Future<GoogleDriveApi> selfAuth() async {
-    final auth = await GoogleDriveAuth.init();
+    final auth = await GoogleDriveAuth.instance();
     return GoogleDriveApi.fromHeaders(auth.authHeaders);
   }
 

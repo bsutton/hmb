@@ -15,6 +15,6 @@
 // barrel_create is sponsored by OnePub the dart private repository
 // https://onepub.dev
 //
-export 'google_drive_auth.dart';
 export 'backup.dart';
+export 'google_drive_auth.dart';
 export 'google_drive_backup_screen.dart';

@@ -71,7 +71,7 @@ No backups available in ${backups!.location}'''),
                     final backup = backups.backups[index];
                     return ListTile(
                       title: Text(
-                        ' ${formatDateTime(backup.when)} ${backup.size}',
+                        ' ${formatDate(backup.when, format: 'Y/M/d H:ma')} ${backup.size}',
                       ),
                       onTap: () {
                         Navigator.pop(context, backup);

@@ -52,7 +52,7 @@ class PhotoSyncService {
       return;
     }
 
-    final headers = (await GoogleDriveAuth.init()).authHeaders;
+    final headers = (await GoogleDriveAuth.instance()).authHeaders;
     await _startSync(photos: photos, authHeaders: headers);
   }
 

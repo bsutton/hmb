@@ -136,7 +136,7 @@ class GoogleDriveBackupProvider extends BackupProvider {
         sendPort: receivePort.sendPort,
         pathToZip: pathToZippedBackup,
         pathToBackupFile: pathToDatabaseCopy,
-        authHeaders: (await GoogleDriveAuth.init()).authHeaders,
+        authHeaders: (await GoogleDriveAuth.instance()).authHeaders,
         progressStageStart: 1,
         progressStageEnd: 3,
       );

@@ -9,9 +9,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/src/ui/dashboard/shopping_dashlet.dart
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -36,13 +33,15 @@ class BackupDashlet extends StatelessWidget {
     valueBuilder: (_, _) => _buildLastBackup(),
   );
 
-  FutureBuilderEx<DateTime?> _buildLastBackup() => FutureBuilderEx<DateTime?>(
+  Widget _buildLastBackup() => FutureBuilderEx<BackupStatus>(
     // ignore: discarded_futures
     future: _getLastBackup(),
-    builder: (context, lastBackupDate) {
-      final text = lastBackupDate == null
+    builder: (context, backupStatus) {
+      final text = backupStatus!.notSignedIn
+          ? 'Not Signed In'
+          : backupStatus.lastBackup == null
           ? 'No backups yet'
-          : 'Last: ${formatDateTime(lastBackupDate)}';
+          : 'Last: ${formatDateTime(backupStatus.lastBackup!)}';
       return Center(
         child: Text(
           text,
@@ -53,12 +52,15 @@ class BackupDashlet extends StatelessWidget {
     },
   );
 
-  Future<DateTime?> _getLastBackup() async {
+  Future<BackupStatus> _getLastBackup() async {
     DateTime? last;
+    var notSignedIn = true;
     try {
-      // google api's not supported on linux.
-      if (Platform.isAndroid || Platform.isIOS) {
-        if (await GoogleDriveAuth().isSignedIn) {
+      final auth = await GoogleDriveAuth.instance();
+
+      if (auth.isAuthSupported()) {
+        if (auth.isSignedIn) {
+          notSignedIn = false;
           final backups = await GoogleDriveBackupProvider(
             FlutterDatabaseFactory(),
           ).getBackups();
@@ -71,6 +73,12 @@ class BackupDashlet extends StatelessWidget {
     } catch (_) {
       last = null;
     }
-    return last;
+    return BackupStatus(notSignedIn: notSignedIn, lastBackup: last);
   }
+}
+
+class BackupStatus {
+  BackupStatus({required this.notSignedIn, required this.lastBackup});
+  final bool notSignedIn;
+  final DateTime? lastBackup;
 }
