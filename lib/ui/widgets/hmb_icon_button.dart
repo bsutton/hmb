@@ -64,24 +64,21 @@ class _HMBIconButtonState extends State<HMBIconButton> {
     child: HMBTooltip(
       key: _tooltipKey,
       hint: widget.hint ?? '',
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: (widget.showBackground)
-            ? CircleAvatar(
-                backgroundColor: Colors.lightBlue,
-                radius: _buttonSize / 2,
-                child: IconButton(
-                  icon: widget.icon,
-                  onPressed: widget.enabled ? widget.onPressed : null,
-                  iconSize: _buttonSize * 0.5,
-                ),
-              )
-            : IconButton(
+      child: (widget.showBackground)
+          ? CircleAvatar(
+              backgroundColor: Colors.lightBlue,
+              radius: _buttonSize / 2,
+              child: IconButton(
                 icon: widget.icon,
                 onPressed: widget.enabled ? widget.onPressed : null,
                 iconSize: _buttonSize * 0.5,
               ),
-      ),
+            )
+          : IconButton(
+              icon: widget.icon,
+              onPressed: widget.enabled ? widget.onPressed : null,
+              iconSize: _buttonSize * 0.5,
+            ),
     ),
   );
 }
