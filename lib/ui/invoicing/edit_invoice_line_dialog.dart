@@ -77,7 +77,7 @@ class _EditInvoiceLineDialogState extends State<EditInvoiceLineDialog> {
                 .map(
                   (status) => DropdownMenuItem<LineChargeableStatus>(
                     value: status,
-                    child: Text(status.toString().split('.').last),
+                    child: Text(status.description),
                   ),
                 )
                 .toList(),

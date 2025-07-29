@@ -16,13 +16,18 @@ import 'entity.dart';
 
 enum LineChargeableStatus {
   /// The line item is chargable
-  normal,
+  normal('Chargable'),
 
   /// The line item will be show but the amount will be 0
-  noCharge,
+  noCharge('No Charge'),
 
   /// The line item is not chargable and will be hidden from the user
-  noChargeHidden,
+  noChargeHidden('No Charge and Hidden');
+
+
+  const LineChargeableStatus(this.description);
+
+  final String description;
 }
 
 class InvoiceLine extends Entity<InvoiceLine> {
@@ -128,7 +133,10 @@ class InvoiceLine extends Entity<InvoiceLine> {
     'from_booking_fee': fromBookingFee ? 1 : 0,
   };
 
-  XeroLineItem toXeroLineItem({required String accountCode, required String itemCode}) => XeroLineItem(
+  XeroLineItem toXeroLineItem({
+    required String accountCode,
+    required String itemCode,
+  }) => XeroLineItem(
     description: description,
     quantity: quantity,
     unitAmount: unitPrice,
