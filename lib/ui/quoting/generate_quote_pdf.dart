@@ -18,12 +18,10 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:strings/strings.dart';
 
-import '../../dao/dao_quote_line.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/quote.dart';
 import '../../entity/system.dart';
 import '../../util/format.dart';
-import '../../util/money_ex.dart';
 import '../../util/rich_text_helper.dart';
 import 'job_quote.dart';
 
@@ -35,9 +33,7 @@ Future<File> generateQuotePdf(
 }) async {
   final pdf = pw.Document();
   final system = await DaoSystem().get();
-  final lines = await DaoQuoteLine().getByQuoteId(quote.id);
   final jobQuote = await JobQuote.fromQuoteId(quote.id, excludeHidden: true);
-
 
   final totalAmount = jobQuote.total;
   final phone = await formatPhone(system.bestPhone);
