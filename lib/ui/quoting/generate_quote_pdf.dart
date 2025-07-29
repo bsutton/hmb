@@ -36,13 +36,10 @@ Future<File> generateQuotePdf(
   final pdf = pw.Document();
   final system = await DaoSystem().get();
   final lines = await DaoQuoteLine().getByQuoteId(quote.id);
-  final jobQuote = await JobQuote.fromQuoteId(quote.id);
+  final jobQuote = await JobQuote.fromQuoteId(quote.id, excludeHidden: true);
 
-  final totalAmount = lines.fold(
-    MoneyEx.zero,
-    (sum, line) => sum + line.lineTotal,
-  );
 
+  final totalAmount = jobQuote.total;
   final phone = await formatPhone(system.bestPhone);
   final logo = await _getLogo(system);
   final systemColor = PdfColor.fromInt(system.billingColour);

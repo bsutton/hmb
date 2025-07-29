@@ -134,7 +134,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
 
   Widget _buildQuoteLines() => FutureBuilderEx<JobQuote>(
     // ignore: discarded_futures
-    future: JobQuote.fromQuoteId(_quote.id),
+    future: JobQuote.fromQuoteId(_quote.id, excludeHidden: false),
     builder: (context, jobQuote) {
       if (jobQuote == null || jobQuote.groups.isEmpty) {
         return const ListTile(title: Text('No quote lines found.'));
@@ -154,7 +154,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Task: ${group.name}',
+                      'Task: ${group.name} ${groupWrap.total}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -179,9 +179,17 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                         .map(
                           (line) => ListTile(
                             title: Text(line.description),
-                            subtitle: Text(
-                              'Qty: ${line.quantity} × ${line.unitCharge} = '
-                              '${line.lineTotal}',
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Qty: ${line.quantity} × ${line.unitCharge} = '
+                                  '${line.lineTotal}',
+                                ),
+                                Text(
+                                  'Status: ${line.lineChargeableStatus.description}',
+                                ),
+                              ],
                             ),
                             trailing: IconButton(
                               icon: const Icon(Icons.edit),

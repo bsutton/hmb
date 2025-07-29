@@ -13,6 +13,7 @@ import 'package:money2/money2.dart';
 
 import '../../dao/dao_quote_line.dart';
 import '../../dao/dao_quote_line_group.dart';
+import '../../entity/invoice_line.dart';
 import '../../entity/quote_line.dart';
 import '../../entity/quote_line_group.dart';
 import '../../util/money_ex.dart';
@@ -22,16 +23,36 @@ class JobQuote {
   final int quoteId;
   final List<QuoteLineGroupWithLines> groups;
 
-  static Future<JobQuote> fromQuoteId(int quoteId) async {
+  Money get total =>
+      groups.fold(MoneyEx.zero, (sum, group) => sum + group.total);
+
+  static Future<JobQuote> fromQuoteId(
+    int quoteId, {
+    required bool excludeHidden,
+  }) async {
     final quoteLineGroups = await DaoQuoteLineGroup().getByQuoteId(quoteId);
     final groupsWithLines = await Future.wait(
       quoteLineGroups.map((group) async {
         final lines = await DaoQuoteLine().getByQuoteLineGroupId(group.id);
-        return QuoteLineGroupWithLines(group: group, lines: lines);
+
+        final filteredLines = excludeHidden
+            ? lines.where(
+                (line) =>
+                    line.lineChargeableStatus == LineChargeableStatus.normal,
+              )
+            : lines;
+        return QuoteLineGroupWithLines(
+          group: group,
+          lines: filteredLines.toList(),
+        );
       }).toList(),
     );
 
-    return JobQuote(quoteId: quoteId, groups: groupsWithLines);
+    final filteredGroups = excludeHidden
+        ? groupsWithLines.where((group) => group.hasVisible)
+        : groupsWithLines;
+
+    return JobQuote(quoteId: quoteId, groups: filteredGroups.toList());
   }
 }
 
@@ -40,6 +61,11 @@ class QuoteLineGroupWithLines {
   final QuoteLineGroup group;
   final List<QuoteLine> lines;
 
-  Money get total =>
-      lines.fold(MoneyEx.zero, (running, line) => running + line.lineTotal);
+  Money get total => lines
+      .where((line) => line.lineChargeableStatus == LineChargeableStatus.normal)
+      .fold(MoneyEx.zero, (running, line) => running + line.lineTotal);
+
+  bool get hasVisible => lines
+      .where((line) => line.lineChargeableStatus == LineChargeableStatus.normal)
+      .isNotEmpty;
 }

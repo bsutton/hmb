@@ -45,6 +45,8 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     super.initState();
     setAppTitle('Quotes');
     selectedJob = widget.job;
+    _includeInvoiced = widget.job != null;
+    _includeRejected = widget.job != null;
   }
 
   Future<List<Quote>> _fetchFilteredQuotes(String? filter) async {
@@ -145,7 +147,6 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
         Expanded(
           child: EntityListScreen<Quote>(
             pageTitle: 'Quotes',
-            showBackButton: widget.job != null,
             dao: DaoQuote(),
             title: (quote) => Text(
               'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
@@ -154,10 +155,9 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
             fetchList: _fetchFilteredQuotes,
             onAdd: _createQuote,
             onEdit: (q) => QuoteDetailsScreen(quoteId: q!.id),
-            cardHeight: 280,
             background: (_) async => Colors.transparent,
             details: _buildQuoteCard,
-            filterSheetBuilder: _buildFilterSheet,
+            filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
             isFilterActive: () =>
                 widget.job == null &&
                     (selectedJob != null || selectedCustomer != null) ||

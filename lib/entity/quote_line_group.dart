@@ -64,6 +64,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
   String assumption;
   LineApprovalStatus lineApprovalStatus;
 
+
   QuoteLineGroup copyWith({
     int? id,
     int? quoteId,
