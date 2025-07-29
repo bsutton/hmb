@@ -16,6 +16,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
 
+import '../../../util/app_title.dart';
 import '../../widgets/hmb_tooltip.dart';
 import 'dashboard.dart';
 
@@ -124,7 +125,7 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
         minHeight: minH,
       ),
       child: HMBTooltip(
-        hint: widget.hint, 
+        hint: widget.hint,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () => widget.onTap != null
@@ -220,12 +221,15 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
         if (!context.mounted) {
           return;
         }
+        final appTitle = June.getState(HMBTitle.new).title;
         await Navigator.of(context).push<void>(
           MaterialPageRoute<void>(
             builder: (c) => widget.builder!(c, dv),
             fullscreenDialog: true,
           ),
         );
+        /// restore the app title once the child is poped.
+        setAppTitle(appTitle);
       }
     }
   }
