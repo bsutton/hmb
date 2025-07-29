@@ -110,7 +110,13 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
             selectedItem: () async => DaoSupplier().getById(_selectedSupplier),
             title: 'Supplier',
             format: (supplier) => supplier.name,
-            items: (filter) async => suppliers!,
+            items: (filter) async => suppliers!
+                .where(
+                  (supplier) => supplier.name.toLowerCase().contains(
+                    filter!.toLowerCase(),
+                  ),
+                )
+                .toList(),
             onChanged: (supplier) {
               _selectedSupplier = supplier?.id;
               // force the contact drop list to show, now
