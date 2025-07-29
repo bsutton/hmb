@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../text/text.g.dart';
-import 'hmb_padding.dart';
 
 class HMBFullPageChildScreen extends StatelessWidget {
   const HMBFullPageChildScreen({
@@ -20,6 +19,6 @@ class HMBFullPageChildScreen extends StatelessWidget {
       title: HMBTextHeadline(title),
       backgroundColor: Colors.purple,
     ),
-    body: HMBPadding(child: child),
+    body: child,
   );
 }
