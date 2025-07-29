@@ -140,41 +140,32 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Surface(
-    elevation: SurfaceElevation.e0,
-    child: Column(
-      children: [
-        Expanded(
-          child: EntityListScreen<Quote>(
-            pageTitle: 'Quotes',
-            dao: DaoQuote(),
-            title: (quote) => Text(
-              'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            fetchList: _fetchFilteredQuotes,
-            onAdd: _createQuote,
-            onEdit: (q) => QuoteDetailsScreen(quoteId: q!.id),
-            background: (_) async => Colors.transparent,
-            details: _buildQuoteCard,
-            filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
-            isFilterActive: () =>
-                widget.job == null &&
-                    (selectedJob != null || selectedCustomer != null) ||
-                !_includeApproved ||
-                !_includeInvoiced ||
-                !_includeRejected,
-            onFiltersCleared: () {
-              selectedJob = widget.job;
-              selectedCustomer = null;
-              _includeApproved = true;
-              _includeInvoiced = true;
-              _includeRejected = true;
-            },
-          ),
-        ),
-      ],
+  Widget build(BuildContext context) => EntityListScreen<Quote>(
+    pageTitle: 'Quotes',
+    dao: DaoQuote(),
+    title: (quote) => Text(
+      'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
+      style: const TextStyle(fontWeight: FontWeight.bold),
     ),
+    fetchList: _fetchFilteredQuotes,
+    onAdd: _createQuote,
+    onEdit: (q) => QuoteDetailsScreen(quoteId: q!.id),
+    background: (_) async => Colors.transparent,
+    details: _buildQuoteCard,
+    filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
+    isFilterActive: () =>
+        widget.job == null &&
+            (selectedJob != null || selectedCustomer != null) ||
+        !_includeApproved ||
+        !_includeInvoiced ||
+        !_includeRejected,
+    onFiltersCleared: () {
+      selectedJob = widget.job;
+      selectedCustomer = null;
+      _includeApproved = true;
+      _includeInvoiced = true;
+      _includeRejected = true;
+    },
   );
 
   Widget _buildQuoteCard(Quote quote) => QuoteCard(

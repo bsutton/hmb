@@ -52,43 +52,34 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Surface(
-    elevation: SurfaceElevation.e0,
-    child: Column(
-      children: [
-        Expanded(
-          child: EntityListScreen<Invoice>(
-            title: (inv) => Text('Invoice #${inv.id}'),
-            // key: ValueKey<String?>(
-            //   '$filterText:${selectedJob?.id}:${selectedCustomer?.id}',
-            // ),
-            pageTitle: 'Invoices',
-            dao: DaoInvoice(),
-            fetchList: (_) async => _fetchFilteredInvoices(),
-            onAdd: () async => _createInvoice(),
-            onEdit: (invoice) => FutureBuilderEx(
-              future: InvoiceDetails.load(invoice!.id),
-              builder: (context, invoiceDetails) =>
-                  InvoiceEditScreen(invoiceDetails: invoiceDetails!),
-            ),
-            onDelete: (entity) async => _deleteInvoice(entity),
-            cardHeight: 250,
-            background: (_) async => Colors.transparent,
-            details: _buildInvoiceCard,
-            filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
-            isFilterActive: () =>
-                selectedJob != null ||
-                selectedCustomer != null ||
-                Strings.isNotBlank(filterText),
-            onFiltersCleared: () async {
-              selectedJob = null;
-              selectedCustomer = null;
-              filterText = null;
-            },
-          ),
-        ),
-      ],
+  Widget build(BuildContext context) => EntityListScreen<Invoice>(
+    title: (inv) => Text('Invoice #${inv.id}'),
+    // key: ValueKey<String?>(
+    //   '$filterText:${selectedJob?.id}:${selectedCustomer?.id}',
+    // ),
+    pageTitle: 'Invoices',
+    dao: DaoInvoice(),
+    fetchList: (_) async => _fetchFilteredInvoices(),
+    onAdd: () async => _createInvoice(),
+    onEdit: (invoice) => FutureBuilderEx(
+      future: InvoiceDetails.load(invoice!.id),
+      builder: (context, invoiceDetails) =>
+          InvoiceEditScreen(invoiceDetails: invoiceDetails!),
     ),
+    onDelete: (entity) async => _deleteInvoice(entity),
+    cardHeight: 250,
+    background: (_) async => Colors.transparent,
+    details: _buildInvoiceCard,
+    filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
+    isFilterActive: () =>
+        selectedJob != null ||
+        selectedCustomer != null ||
+        Strings.isNotBlank(filterText),
+    onFiltersCleared: () async {
+      selectedJob = null;
+      selectedCustomer = null;
+      filterText = null;
+    },
   );
 
   Future<List<Invoice>> _fetchFilteredInvoices() async {
@@ -208,37 +199,34 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
               InvoiceEditScreen(invoiceDetails: invoiceDetails),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Issued: ${formatDate(invoiceDetails!.invoice.createdDate)}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text('Customer: ${invoiceDetails.customer?.name ?? 'N/A'}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Issued: ${formatDate(invoiceDetails!.invoice.createdDate)}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Text('Customer: ${invoiceDetails.customer?.name ?? 'N/A'}'),
 
-            if (widget.job == null)
-              HMBLinkInternal(
-                label:
-                    'Job: #${invoiceDetails.job.id} - ${invoiceDetails.job.summary} ',
-                navigateTo: () async => JobEditScreen(job: invoiceDetails.job),
-              ),
-            Text(
-              'Xero: ${invoiceDetails.invoice.invoiceNum == null ? 'Not uploaded' : '#${invoiceDetails.invoice.invoiceNum}'}',
+          if (widget.job == null)
+            HMBLinkInternal(
+              label:
+                  'Job: #${invoiceDetails.job.id} - ${invoiceDetails.job.summary} ',
+              navigateTo: () async => JobEditScreen(job: invoiceDetails.job),
             ),
-            Text('Total: ${invoiceDetails.invoice.totalAmount}'),
-            if (invoiceDetails.invoice.sent)
-              const Text(
-                'Sent',
-                style: TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
+          Text(
+            'Xero: ${invoiceDetails.invoice.invoiceNum == null ? 'Not uploaded' : '#${invoiceDetails.invoice.invoiceNum}'}',
+          ),
+          Text('Total: ${invoiceDetails.invoice.totalAmount}'),
+          if (invoiceDetails.invoice.sent)
+            const Text(
+              'Sent',
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     ),
   );
