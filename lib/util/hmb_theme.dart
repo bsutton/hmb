@@ -15,6 +15,8 @@ class HMBTheme {
   static const double padding = 8;
   static const double margin = 8;
 
+  static const marginInset = EdgeInsets.all(margin);
+
   static const colors = HMBColors();
 
   /// padding to separate a page layout from the

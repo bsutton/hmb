@@ -53,8 +53,10 @@ class Surface extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
   @override
   Widget build(BuildContext context) => Container(
-    padding: margin,
-    child: Container(color: elevation.color, padding: padding, child: child),
+    color: elevation.color,
+    margin: margin,
+    padding: padding,
+    child: child,
   );
 
   @override

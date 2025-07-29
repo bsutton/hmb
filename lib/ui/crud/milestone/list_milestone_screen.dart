@@ -23,10 +23,9 @@ import '../../../../entity/customer.dart';
 import '../../../../entity/job.dart';
 import '../../../../entity/milestone.dart';
 import '../../../../entity/quote.dart';
-import '../../../../util/money_ex.dart';
-import '../../../util/app_title.dart';
+import '../../../util/util.g.dart';
 import '../../quoting/select_quote_dialog.dart';
-import '../../widgets/hmb_search.dart';
+import '../../widgets/layout/hmb_list_page.dart';
 import 'edit_milestone_payment.dart';
 
 class ListMilestoneScreen extends StatefulWidget {
@@ -118,54 +117,31 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      toolbarHeight: 80,
-      automaticallyImplyLeading: false,
-      title: HMBSearchWithAdd(
-        onSearch: (filter) {
-          this.filter = filter?.toLowerCase();
-          // ignore: discarded_futures
-          _summaries = _fetchMilestoneSummaries();
-          setState(() {});
-        },
-        onAdd: _createMilestone,
-      ),
-    ),
-    body: FutureBuilderEx<List<QuoteMilestoneSummary>>(
-      future: _summaries,
-      builder: (context, summaries) {
-        if (summaries == null || summaries.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(8),
-              child: Text(
-                'No milestones found - create milestone payments from the Billing/Quote screen.',
-              ),
-            ),
-          );
-        }
-
-        return ListView.builder(
-          itemCount: summaries.length,
-          itemBuilder: (context, index) {
-            final summary = summaries[index];
-            return _buildMilestoneSummaryCard(summary);
-          },
-        );
+  Widget build(
+    BuildContext context,
+  ) => FutureBuilderEx<List<QuoteMilestoneSummary>>(
+    future: _summaries,
+    builder: (_, summaries) => HMBListPage(
+      emptyMessage:
+          'No milestones found - create milestone payments from the Billing/Quote screen.',
+      itemCount: summaries!.length,
+      itemBuilder: (context, index) {
+        final summary = summaries[index];
+        return _buildMilestoneSummaryCard(summary);
       },
+      onSearch: (filter) {
+        this.filter = filter?.toLowerCase();
+        // ignore: discarded_futures
+        _summaries = _fetchMilestoneSummaries();
+        setState(() {});
+      },
+      onAdd: _createMilestone,
     ),
   );
 
-  Widget _buildMilestoneSummaryCard(QuoteMilestoneSummary summary) => Card(
-    margin: const EdgeInsets.all(8),
-    child: ListTile(
-      title: Text(
-        summary.job.summary,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildMilestoneSummaryCard(QuoteMilestoneSummary summary) =>
+      HMBListCard(
+        title: summary.job.summary,
         children: [
           Text('Customer: ${summary.customer?.name ?? "N/A"}'),
           Text('Job #: ${summary.job.id}'),
@@ -175,21 +151,19 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
           Text('Invoiced to date: ${summary.invoicedValue}'),
           Text('Total Value: ${summary.totalValue}'),
         ],
-      ),
-      onTap: () async {
-        // Navigate to EditMilestonesScreen for this quote
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (context) =>
-                EditMilestonesScreen(quoteId: summary.quote.id),
-          ),
-        );
-        setState(() {
-          _summaries = _fetchMilestoneSummaries();
-        });
-      },
-    ),
-  );
+        onTap: () async {
+          // Navigate to EditMilestonesScreen for this quote
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) =>
+                  EditMilestonesScreen(quoteId: summary.quote.id),
+            ),
+          );
+          setState(() {
+            _summaries = _fetchMilestoneSummaries();
+          });
+        },
+      );
 
   Future<void> _createMilestone() async {
     final quote = await SelectQuoteDialog.show(context);
