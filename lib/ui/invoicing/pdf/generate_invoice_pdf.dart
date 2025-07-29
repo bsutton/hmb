@@ -167,7 +167,13 @@ Future<File> generateInvoicePdf(
                               fontWeight: pw.FontWeight.bold,
                             ),
                           ),
-                        if (billingContact != null) ...[
+
+                        /// We often enter the customer name as the
+                        /// first/surname of the first contact,
+                        /// so avoid repeating them.
+                        if (billingContact != null &&
+                            billingContact.fullname.trim() !=
+                                customer?.name.trim()) ...[
                           pw.SizedBox(height: 4),
                           pw.Text(
                             'Attention: ${billingContact.fullname}',
