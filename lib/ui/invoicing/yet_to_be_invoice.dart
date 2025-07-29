@@ -101,32 +101,22 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
           future: DaoCustomer().getByJob(job.id),
           builder: (context, customer) => HMBListCard(
             title: 'Customer: ${customer?.name ?? '—'}',
-
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Job summary as an internal link
-                      HMBLinkInternal(
-                        label: 'Job : #${job.id} ${job.summary}',
-                        navigateTo: () async => JobEditScreen(job: job),
-                      ),
-                      const HMBSpacer(height: true),
-                      HMBText('Type: ${job.billingType.display}'),
-                    ],
-                  ),
-
-                  HMBButton(
-                    label: 'Invoice',
-                    hint: 'Create an invoice for this job',
-                    // ignore: discarded_futures
-                    onPressed: () => _createInvoiceFor(job),
-                  ),
-                ],
+            actions: [
+              HMBButton(
+                label: 'Invoice',
+                hint: 'Create an invoice for this job',
+                // ignore: discarded_futures
+                onPressed: () => _createInvoiceFor(job),
               ),
+            ],
+            children: [
+              // Job summary as an internal link
+              HMBLinkInternal(
+                label: 'Job : #${job.id} ${job.summary}',
+                navigateTo: () async => JobEditScreen(job: job),
+              ),
+              const HMBSpacer(height: true),
+              HMBText('Type: ${job.billingType.display}'),
             ],
           ),
         );
