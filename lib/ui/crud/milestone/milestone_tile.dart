@@ -270,6 +270,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
                 if (_isEditable)
                   HMBIconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
+                    showBackground: false,
                     enabled: !disabled,
                     onPressed: () async => _onDeletePressed(),
                     hint: 'Delete this Milestone',
