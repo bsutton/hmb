@@ -59,7 +59,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         Expanded(
           child: EntityListScreen<Invoice>(
             title: (inv) => Text('Invoice #${inv.id}'),
-            showBackButton: widget.job != null,
             // key: ValueKey<String?>(
             //   '$filterText:${selectedJob?.id}:${selectedCustomer?.id}',
             // ),
@@ -76,9 +75,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
             cardHeight: 250,
             background: (_) async => Colors.transparent,
             details: _buildInvoiceCard,
-            filterSheetBuilder: widget.job == null
-                ? _buildFilterSheet // <— this is already a Widget Function(void)
-                : null,
+            filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
             isFilterActive: () =>
                 selectedJob != null ||
                 selectedCustomer != null ||
