@@ -18,6 +18,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/app_title.dart';
+import '../../../util/util.g.dart';
 import '../../dialog/dialog.g.dart';
 import '../../widgets/select/hmb_filter_line.dart';
 import '../../widgets/widgets.g.dart';
@@ -193,15 +194,18 @@ class EntityListScreenState<T extends Entity<T>>
       titleRow = searchAdd;
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: SurfaceElevation.e0.color,
-        toolbarHeight: 80,
-        titleSpacing: 0,
-        title: Surface(elevation: SurfaceElevation.e0, child: titleRow),
-        automaticallyImplyLeading: widget.showBackButton,
+    return Surface(
+      elevation: SurfaceElevation.e0,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: SurfaceElevation.e0.color,
+          toolbarHeight: 80,
+          titleSpacing: 0,
+          title: titleRow,
+          automaticallyImplyLeading: widget.showBackButton,
+        ),
+        body: _buildList(),
       ),
-      body: Surface(elevation: SurfaceElevation.e0, child: _buildList()),
     );
   }
 
