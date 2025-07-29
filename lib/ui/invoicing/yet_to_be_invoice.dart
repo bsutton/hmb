@@ -21,7 +21,8 @@ import '../../entity/entity.g.dart';
 import '../../util/app_title.dart';
 import '../crud/job/job.g.dart';
 import '../widgets/hmb_link_internal.dart';
-import '../widgets/surface.dart';
+import '../widgets/layout/hmb_list_page.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/text/text.g.dart';
 import '../widgets/widgets.g.dart' show HMBButton, HMBToast;
 import 'dialog_select_tasks.dart';
@@ -87,65 +88,49 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: Surface(
-      elevation: SurfaceElevation.e0,
-      child: DeferredBuilder(
-        this,
-        builder: (context) {
-          if (_jobs.isEmpty) {
-            return const Center(child: Text('No jobs yet to invoice.'));
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: _jobs.length,
-            itemBuilder: (context, index) {
-              final job = _jobs[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder: (context) => HMBListPage(
+      emptyMessage: 'No jobs yet to invoice.',
+
+      itemCount: _jobs.length,
+      itemBuilder: (context, index) {
+        final job = _jobs[index];
+
+        return FutureBuilderEx(
+          future: DaoCustomer().getByJob(job.id),
+          builder: (context, customer) => HMBListCard(
+            title: 'Customer: ${customer?.name ?? '—'}',
+
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Job summary as an internal link
-                            HMBLinkInternal(
-                              label: 'Job : #${job.id} ${job.summary}',
-                              navigateTo: () async => JobEditScreen(job: job),
-                            ),
-                            const SizedBox(height: 4),
-                            FutureBuilderEx<Customer?>(
-                              // ignore: discarded_futures
-                              future: DaoCustomer().getByJob(job.id),
-                              builder: (ctx, customer) =>
-                                  HMBText('Customer: ${customer?.name ?? '—'}'),
-                            ),
-                            const SizedBox(height: 4),
-                            HMBText('Type: ${job.billingType.display}'),
-                          ],
-                        ),
+                      // Job summary as an internal link
+                      HMBLinkInternal(
+                        label: 'Job : #${job.id} ${job.summary}',
+                        navigateTo: () async => JobEditScreen(job: job),
                       ),
-                      HMBButton(
-                        label: 'Invoice',
-                        hint: 'Create an invoice for this job',
-                        // ignore: discarded_futures
-                        onPressed: () => _createInvoiceFor(job),
-                      ),
+                      const HMBSpacer(height: true),
+                      HMBText('Type: ${job.billingType.display}'),
                     ],
                   ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+
+                  HMBButton(
+                    label: 'Invoice',
+                    hint: 'Create an invoice for this job',
+                    // ignore: discarded_futures
+                    onPressed: () => _createInvoiceFor(job),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     ),
   );
 }
