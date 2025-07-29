@@ -31,6 +31,7 @@ import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_icon_button.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/layout/hmb_list_page.dart';
 import '../widgets/surface.dart';
 import 'edit_invoice_line_dialog.dart';
 import 'invoice_details.dart';
@@ -125,28 +126,29 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                   ),
                   const SizedBox(height: 8),
                   for (final line in group.lines) ...[
-                    ListTile(
-                      title: Text(line.description),
-                      subtitle: Text(
-                        'Qty: ${line.quantity}, Unit: ${line.unitPrice}, Status: ${line.status.toString().split('.').last}',
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('Total: ${line.lineTotal}'),
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () =>
-                                unawaited(_editInvoiceLine(context, line)),
-                          ),
-                          HMBIconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            showBackground: false,
-                            onPressed: () async => _deleteInvoiceLine(line),
-                            hint: 'Delete Invocie',
-                          ),
-                        ],
-                      ),
+                    HMBListCard(
+                      title: line.description,
+                      actions: [
+                        HMBIconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          showBackground: false,
+                          onPressed: () async =>
+                              unawaited(_editInvoiceLine(context, line)),
+                          hint: 'Edit Invoice Line',
+                        ),
+                        HMBIconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          showBackground: false,
+                          onPressed: () async => _deleteInvoiceLine(line),
+                          hint: 'Delete Invoice Line',
+                        ),
+                      ],
+                      children: [
+                        Text(
+                          'Qty: ${line.quantity}, Unit: ${line.unitPrice}, Status: ${line.status.description}',
+                        ),
+                        Text('Total: ${line.lineTotal}'),
+                      ],
                     ),
                   ],
                   const SizedBox(height: 16),
