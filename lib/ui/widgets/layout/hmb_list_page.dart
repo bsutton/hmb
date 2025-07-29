@@ -59,6 +59,7 @@ class HMBListCard extends StatelessWidget {
   const HMBListCard({
     required this.title,
     required this.children,
+    this.actions,
     this.onTap,
     super.key,
   });
@@ -66,6 +67,7 @@ class HMBListCard extends StatelessWidget {
   final String title;
   final List<Widget> children;
   final void Function()? onTap;
+  final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -75,9 +77,19 @@ class HMBListCard extends StatelessWidget {
         top: HMBTheme.margin,
         // bottom: HMBTheme.margin,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [HMBTextHeadline2(title), ...children],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [HMBTextHeadline2(title), ...children],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [...?actions],
+          ),
+        ],
       ),
     ),
   );
