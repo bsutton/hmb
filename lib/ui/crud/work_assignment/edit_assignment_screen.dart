@@ -16,6 +16,7 @@ import 'package:sqflite/sqlite_api.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/select/select.g.dart';
 import '../base_nested/edit_nested_screen.dart';
 
@@ -93,9 +94,14 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
           DaoWorkAssigment().insert(workAssignment!, transaction),
       entityState: this,
       editor: (workAssignment) => _buildEditor(),
+      crossValidator: () async {
+        if (_selectedTasks.isEmpty) {
+          HMBToast.error('You must select at least one Task');
+          return false;
+        }
 
-      // crossValidator:
-      //     () async => _selectedSupplier != null && _selectedContact != null,
+        return true;
+      },
     ),
   );
 
