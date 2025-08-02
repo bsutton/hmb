@@ -123,7 +123,7 @@ should create an invoice for time and materials job with correct rates and mark 
       Fixed.fromNum(2, decimalDigits: 3),
       MoneyEx.fromInt(200),
       Percentage.zero,
-      await DaoTaskItemType().getMaterialsBuy(),
+      TaskItemType.materialsBuy,
     );
 
     // Create invoice grouped by date

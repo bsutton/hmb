@@ -106,16 +106,16 @@ where ti.completed = 0
     var query = '''
 SELECT ti.* 
 FROM task_item ti
-JOIN task_item_type tit
-  ON ti.item_type_id = tit.id
 JOIN task t
   ON ti.task_id = t.id
 JOIN job j
   ON t.job_id = j.id
 JOIN job_status js
   ON j.job_status_id = js.id
-WHERE (tit.name = 'Materials - stock' 
-OR tit.name = 'Tools - own') 
+WHERE (ti.item_type_id = 2 -- 'Materials - stock' 
+OR ti.item_type_id = 4 -- 'Tools - own'
+OR ti.item_type_id = 6 -- 'Consumables - stock'
+) 
 AND ti.completed = 0
 AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
 ''';
@@ -152,11 +152,12 @@ AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
         '''
 SELECT ti.*
   FROM task_item ti
-  JOIN task_item_type tit ON ti.item_type_id = tit.id
   JOIN task t               ON ti.task_id       = t.id
   JOIN job j                ON t.job_id         = j.id
   JOIN job_status js        ON j.job_status_id  = js.id
- WHERE (tit.name = 'Materials - buy' OR tit.name = 'Tools - buy')
+ WHERE (ti.item_type_id = 1 -- 'Materials - buy' 
+  OR ti.item_type_id = 3 -- 'Tools - buy'
+  )
    AND ti.completed = 0
    AND ti.is_return = 0
    AND js.name NOT IN ( 'Rejected', 'On Hold')
@@ -177,7 +178,7 @@ SELECT ti.*
 
   /// Calculate charge
   Money calculateCharge({
-    required int? itemTypeId,
+    required TaskItemType itemType,
     required Percentage margin,
     required LabourEntryMode labourEntryMode,
     required Fixed estimatedLabourHours,
@@ -189,17 +190,19 @@ SELECT ti.*
   }) {
     Money? estimatedCost;
 
-    switch (itemTypeId) {
-      case 1:
-      case 2:
-      case 3:
-      case 4:
+    switch (itemType) {
+      case TaskItemType.materialsBuy:
+      case TaskItemType.materialsStock:
+      case TaskItemType.toolsBuy:
+      case TaskItemType.toolsOwn:
+      case TaskItemType.consumablesStock:
+      case TaskItemType.consumablesBuy:
         {
           final quantity = estimatedMaterialQuantity;
           estimatedCost = estimatedMaterialUnitCost.multiplyByFixed(quantity);
           charge = estimatedCost.plusPercentage(margin);
         }
-      case 5:
+      case TaskItemType.labour:
         {
           if (labourEntryMode == LabourEntryMode.hours) {
             estimatedCost = hourlyRate.multiplyByFixed(estimatedLabourHours);
@@ -227,10 +230,11 @@ SELECT ti.*
     final sql = StringBuffer('''
 SELECT ti.*
   FROM task_item ti
-  JOIN task_item_type tit ON ti.item_type_id = tit.id
   JOIN task t               ON ti.task_id       = t.id
   JOIN job j                ON t.job_id         = j.id
- WHERE (tit.name = 'Materials - buy' OR tit.name = 'Tools - buy')
+ WHERE (ti.item_type_id = 1 -- 'Materials - buy' 
+ OR ti.item_type_id = 3 -- 'Tools - buy'
+ )
    AND ti.completed = 1
    AND ti.is_return = 0
    AND ti.modified_date >= ?
@@ -269,7 +273,6 @@ SELECT ti.*
     final sql = StringBuffer('''
 SELECT ti.*
   FROM task_item ti
-  JOIN task_item_type tit ON ti.item_type_id = tit.id
   JOIN task t               ON ti.task_id       = t.id
   JOIN job j                ON t.job_id         = j.id
  WHERE ti.is_return = 1

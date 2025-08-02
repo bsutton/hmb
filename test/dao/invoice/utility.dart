@@ -54,7 +54,7 @@ Future<TaskItem> insertLabourEstimates(
     taskId: task!.id, // Assuming a check list ID
     description: 'Labour',
     purpose: '',
-    itemTypeId: (await DaoTaskItemType().getLabour()).id,
+    itemType: TaskItemType.labour,
     estimatedLabourHours: hours,
     estimatedLabourCost: labourCost,
     margin: Percentage.ten, // 10% margin
@@ -83,7 +83,7 @@ Future<TaskItem> insertMaterials(
     taskId: task!.id,
     description: 'Completed Material Item',
     purpose: '',
-    itemTypeId: checkListItemType.id,
+    itemType: checkListItemType,
     estimatedMaterialUnitCost: unitCost,
     estimatedMaterialQuantity: quantity,
     margin: margin,

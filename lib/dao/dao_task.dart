@@ -155,7 +155,10 @@ WHERE ti.id = ?
 
       /// Material costs.
       for (final item in await DaoTaskItem().getByTask(task.id)) {
-        if (item.itemTypeId == TaskItemTypeEnum.materialsBuy.id) {
+        if (item.itemType == TaskItemType.materialsBuy ||
+            item.itemType == TaskItemType.materialsStock ||
+            item.itemType == TaskItemType.consumablesBuy ||
+            item.itemType == TaskItemType.consumablesStock) {
           if ((includeBilled && item.billed) || !item.billed) {
             // Materials and tools to be purchased
             totalMaterialCharges +=
@@ -214,11 +217,11 @@ WHERE ti.id = ?
     final billingType = await DaoTask().getBillingType(task);
 
     for (final item in taskItems) {
-      if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
+      if (item.itemType == TaskItemType.labour) {
         // Labour check list item
         estimatedLabourCharge += item.calcLabourCharges(hourlyRate);
         estimatedLabourHours += item.estimatedLabourHours ?? Fixed.zero;
-      } else if (item.itemTypeId == TaskItemTypeEnum.materialsBuy.id) {
+      } else if (item.itemType == TaskItemType.materialsBuy) {
         // Materials and tools to be purchased
         estimatedMaterialsCharge += item.calcMaterialCharges(billingType);
       }
@@ -418,7 +421,7 @@ class TaskEstimatedValue {
   Money estimatedMaterialsCharge;
 
   /// Estimated labour (in hours) for the task taken
-  /// from [CheckListItem]s of type [TaskItemTypeEnum.labour]
+  /// from [CheckListItem]s of type [TaskItemType.labour]
   Money estimatedLabourCharge;
 
   Fixed estimatedLabourHours;

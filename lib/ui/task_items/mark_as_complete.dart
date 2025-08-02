@@ -31,18 +31,20 @@ Future<void> markAsCompleted(
   final costController = TextEditingController();
   final quantityController = TextEditingController();
   final taskItem = itemContext.taskItem;
-  final itemType = TaskItemTypeEnum.fromId(taskItem.itemTypeId);
+  final itemType = taskItem.itemType;
 
   // TODO(bsutton): need to rework this as part of allowing  a T&M job
   // to invoice a Fixed priced task.
   switch (itemType) {
-    case TaskItemTypeEnum.materialsBuy:
-    case TaskItemTypeEnum.materialsStock:
-    case TaskItemTypeEnum.toolsBuy:
-    case TaskItemTypeEnum.toolsOwn:
+    case TaskItemType.materialsBuy:
+    case TaskItemType.materialsStock:
+    case TaskItemType.toolsOwn:
+    case TaskItemType.toolsBuy:
+    case TaskItemType.consumablesStock:
+    case TaskItemType.consumablesBuy:
       costController.text = taskItem.estimatedMaterialUnitCost.toString();
       quantityController.text = taskItem.estimatedMaterialQuantity.toString();
-    case TaskItemTypeEnum.labour:
+    case TaskItemType.labour:
       if (taskItem.labourEntryMode == LabourEntryMode.hours) {
         costController.text = itemContext.taskItem.estimatedLabourHours
             .toString();
@@ -165,7 +167,8 @@ Future<void> markAsCompleted(
     }
 
     // If it's a "Tools - buy" item, prompt to add to the tool list
-    if (taskItem.itemTypeId == (await DaoTaskItemType().getToolsBuy()).id) {
+    if (taskItem.itemType == TaskItemType.toolsBuy ||
+        taskItem.itemType == TaskItemType.consumablesBuy) {
       if (context.mounted) {
         final addTool = await showDialog<bool>(
           context: context,

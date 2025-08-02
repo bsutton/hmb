@@ -27,7 +27,7 @@ enum AddType { packing, shopping }
 Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
   Job? selectedJob;
   Task? selectedTask;
-  TaskItemTypeEnum? selectedItemType;
+  TaskItemType? selectedItemType;
   final descriptionController = TextEditingController();
   final purposeController = TextEditingController();
   final quantityController = TextEditingController();
@@ -73,22 +73,24 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                 ),
               const SizedBox(height: 10),
               // Item Type Selection Dropdown
-              HMBDroplist<TaskItemTypeEnum>(
+              HMBDroplist<TaskItemType>(
                 title: 'Item Type',
                 selectedItem: () async => selectedItemType,
                 items: (filter) async => [
                   ...switch (addType) {
                     AddType.shopping => [
-                      TaskItemTypeEnum.toolsBuy,
-                      TaskItemTypeEnum.materialsBuy,
+                      TaskItemType.materialsBuy,
+                      TaskItemType.consumablesBuy,
+                      TaskItemType.toolsBuy,
                     ],
                     AddType.packing => [
-                      TaskItemTypeEnum.toolsOwn,
-                      TaskItemTypeEnum.materialsStock,
+                      TaskItemType.materialsStock,
+                      TaskItemType.consumablesStock,
+                      TaskItemType.toolsOwn,
                     ],
                   },
                 ],
-                format: (type) => type.description,
+                format: (type) => type.name,
                 onChanged: (type) {
                   setState(() {
                     selectedItemType = type;
@@ -147,7 +149,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
 Future<void> _addTaskItem({
   required Job? selectedJob,
   required Task? selectedTask,
-  required TaskItemTypeEnum? selectedItemType,
+  required TaskItemType? selectedItemType,
   required TextEditingController quantityController,
   required TextEditingController unitCostController,
   required TextEditingController descriptionController,
@@ -163,7 +165,7 @@ Future<void> _addTaskItem({
       taskId: selectedTask.id,
       description: descriptionController.text,
       purpose: purposeController.text,
-      itemTypeId: selectedItemType.id,
+      itemType: selectedItemType,
       estimatedMaterialQuantity: quantity,
       estimatedMaterialUnitCost: unitCost,
       dimension1: Fixed.zero,

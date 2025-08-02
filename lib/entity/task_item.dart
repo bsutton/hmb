@@ -53,7 +53,7 @@ class TaskItem extends Entity<TaskItem> {
     required super.modifiedDate,
     required this.taskId,
     required this.description,
-    required this.itemTypeId,
+    required this.itemType,
     required this.estimatedMaterialUnitCost,
     required this.estimatedMaterialQuantity,
     required this.estimatedLabourHours,
@@ -85,7 +85,7 @@ class TaskItem extends Entity<TaskItem> {
   factory TaskItem.forInsert({
     required int taskId,
     required String description,
-    required int itemTypeId,
+    required TaskItemType itemType,
     required Percentage margin,
     required MeasurementType measurementType,
     required Fixed dimension1,
@@ -117,7 +117,7 @@ class TaskItem extends Entity<TaskItem> {
       modifiedDate: now,
       taskId: taskId,
       description: description,
-      itemTypeId: itemTypeId,
+      itemType: itemType,
       estimatedMaterialUnitCost: estimatedMaterialUnitCost,
       estimatedMaterialQuantity: estimatedMaterialQuantity,
       estimatedLabourHours: estimatedLabourHours,
@@ -150,7 +150,7 @@ class TaskItem extends Entity<TaskItem> {
     required TaskItem existing,
     required int taskId,
     required String description,
-    required int itemTypeId,
+    required TaskItemType itemType,
     required Money? estimatedMaterialUnitCost,
     required Fixed estimatedMaterialQuantity,
     required Fixed estimatedLabourHours,
@@ -182,7 +182,7 @@ class TaskItem extends Entity<TaskItem> {
       modifiedDate: now,
       taskId: taskId,
       description: description,
-      itemTypeId: itemTypeId,
+      itemType: itemType,
       estimatedMaterialUnitCost: estimatedMaterialUnitCost,
       estimatedMaterialQuantity: estimatedMaterialQuantity,
       estimatedLabourHours: estimatedLabourHours,
@@ -217,7 +217,7 @@ class TaskItem extends Entity<TaskItem> {
     modifiedDate: DateTime.parse(map['modified_date'] as String),
     taskId: map['task_id'] as int,
     description: map['description'] as String,
-    itemTypeId: map['item_type_id'] as int,
+    itemType: TaskItemType.fromId(map['item_type_id'] as int),
     estimatedMaterialUnitCost: MoneyEx.fromInt(
       map['estimated_material_unit_cost'] as int?,
     ),
@@ -273,7 +273,7 @@ class TaskItem extends Entity<TaskItem> {
 
   // Primary fields
   final int taskId;
-  int itemTypeId;
+  TaskItemType itemType;
   String description;
   String purpose;
 
@@ -323,13 +323,15 @@ class TaskItem extends Entity<TaskItem> {
     if (chargeSet) {
       return _charge!;
     }
-    switch (TaskItemTypeEnum.fromId(itemTypeId)) {
-      case TaskItemTypeEnum.materialsBuy:
-      case TaskItemTypeEnum.materialsStock:
-      case TaskItemTypeEnum.toolsBuy:
-      case TaskItemTypeEnum.toolsOwn:
+    switch (itemType) {
+      case TaskItemType.materialsStock:
+      case TaskItemType.materialsBuy:
+      case TaskItemType.toolsOwn:
+      case TaskItemType.toolsBuy:
+      case TaskItemType.consumablesStock:
+      case TaskItemType.consumablesBuy:
         return calcMaterialCharges(billingType);
-      case TaskItemTypeEnum.labour:
+      case TaskItemType.labour:
         return calcLabourCharges(hourlyRate);
     }
   }
@@ -410,7 +412,8 @@ class TaskItem extends Entity<TaskItem> {
   }
 
   bool get hasDimensions =>
-      (itemTypeId == 1 || itemTypeId == 2) &&
+      (itemType == TaskItemType.materialsBuy ||
+          itemType == TaskItemType.materialsStock) &&
       (dimension1.isPositive || dimension2.isPositive || dimension3.isPositive);
 
   @override
@@ -418,7 +421,7 @@ class TaskItem extends Entity<TaskItem> {
     'id': id,
     'task_id': taskId,
     'description': description,
-    'item_type_id': itemTypeId,
+    'item_type_id': itemType.id,
     'estimated_material_unit_cost': estimatedMaterialUnitCost
         ?.twoDigits()
         .minorUnits
@@ -469,7 +472,7 @@ class TaskItem extends Entity<TaskItem> {
   TaskItem copyWith({
     int? taskId,
     String? description,
-    int? itemTypeId,
+    TaskItemType? itemType,
     Money? estimatedMaterialUnitCost,
     Fixed? estimatedMaterialQuantity,
     Fixed? estimatedLabourHours,
@@ -501,7 +504,7 @@ class TaskItem extends Entity<TaskItem> {
     taskId: taskId ?? this.taskId,
     description: description ?? this.description,
     purpose: purpose ?? this.purpose,
-    itemTypeId: itemTypeId ?? this.itemTypeId,
+    itemType: itemType ?? this.itemType,
     estimatedMaterialUnitCost:
         estimatedMaterialUnitCost ?? this.estimatedMaterialUnitCost,
     estimatedLabourHours: estimatedLabourHours ?? this.estimatedLabourHours,
@@ -541,7 +544,7 @@ class TaskItem extends Entity<TaskItem> {
       modifiedDate: now,
       taskId: taskId,
       description: description,
-      itemTypeId: itemTypeId,
+      itemType: itemType,
       estimatedMaterialUnitCost: estimatedMaterialUnitCost,
       estimatedMaterialQuantity: estimatedMaterialQuantity,
       estimatedLabourHours: estimatedLabourHours,

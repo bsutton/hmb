@@ -187,7 +187,7 @@ class DaoQuote extends Dao<Quote> {
       // Materials & Tools
       final items = await DaoTaskItem().getByTask(estimate.task.id);
       for (final item in items.where((i) => !i.billed)) {
-        if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
+        if (item.itemType == TaskItemType.labour) {
           continue;
         }
 

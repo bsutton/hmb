@@ -201,9 +201,11 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
           }
 
           final materials = data.taskItems.where((item) {
-            final type = TaskItemTypeEnum.fromId(item.itemTypeId);
-            return type == TaskItemTypeEnum.materialsBuy ||
-                type == TaskItemTypeEnum.materialsStock;
+            final type = item.itemType;
+            return type == TaskItemType.materialsBuy ||
+                type == TaskItemType.materialsStock ||
+                type == TaskItemType.consumablesStock ||
+                type == TaskItemType.consumablesBuy;
           }).toList();
 
           if (materials.isNotEmpty) {

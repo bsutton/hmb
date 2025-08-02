@@ -22,6 +22,7 @@ import '../../../entity/entity.dart';
 import '../../../entity/job.dart';
 import '../../../entity/task.dart';
 import '../../../entity/task_item.dart';
+import '../../../entity/task_item_type.dart';
 import '../../../util/money_ex.dart';
 import '../../task_items/task_items.g.dart';
 import '../../widgets/hmb_toggle.dart';
@@ -163,17 +164,17 @@ class _TaskItemListScreenState<P extends Entity<P>>
     BillingType billingType,
     Money hourlyRate,
   ) {
-    switch (taskItem.itemTypeId) {
-      case 5: // Labour
+    switch (taskItem.itemType) {
+      case TaskItemType.labour: // Labour
         return _buildLabourFields(taskItem, billingType, hourlyRate);
-      case 1: // Materials - buy
-      case 3: // Tools - buy
+      case TaskItemType.materialsBuy: // Materials - buy
+      case TaskItemType.toolsBuy: // Tools - buy
+      case TaskItemType.consumablesBuy:
         return _buildBuyFields(taskItem, billingType, hourlyRate);
-      case 2: // Materials - stock
-      case 4: // Tools - stock
+      case TaskItemType.materialsStock: // Materials - stock
+      case TaskItemType.toolsOwn: // Tools - stock
+      case TaskItemType.consumablesStock:
         return _buildStockFields(taskItem, billingType, hourlyRate);
-      default:
-        return [];
     }
   }
 

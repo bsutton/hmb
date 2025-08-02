@@ -74,9 +74,9 @@ Future<Money> createByTask(
         continue;
       }
 
-      final itemType = TaskItemTypeEnum.fromId(taskItem.itemTypeId);
-      if (itemType == TaskItemTypeEnum.labour ||
-          itemType == TaskItemTypeEnum.toolsOwn) {
+      final itemType = taskItem.itemType;
+      if (itemType == TaskItemType.labour ||
+          itemType == TaskItemType.toolsOwn) {
         continue;
       }
 
@@ -160,7 +160,7 @@ Future<Money> _timeAndMaterialsLabour(
   return totalLabourAmount;
 }
 
-/// CheckListItems of type [TaskItemTypeEnum.labour] estimates
+/// CheckListItems of type [TaskItemType.labour] estimates
 /// are used on an invoice.
 Future<Money> _fixedPriceLabour(
   List<LabourForTaskOnDate> labourForDates,

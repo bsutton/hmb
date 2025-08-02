@@ -177,7 +177,7 @@ class _JobCardState extends State<JobCard> {
       final billingType = await DaoTask().getBillingType(task);
 
       for (final item in items) {
-        if (item.itemTypeId == TaskItemTypeEnum.labour.id) {
+        if (item.itemType == TaskItemType.labour) {
           totalLabour += item.calcLabourCharges(hourlyRate);
         } else {
           totalMaterials += item.calcMaterialCharges(billingType);

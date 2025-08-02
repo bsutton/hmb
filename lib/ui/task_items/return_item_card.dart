@@ -31,10 +31,11 @@ class ReturnItemCard extends ShoppingItemCard {
   @override
   Widget buildActions(BuildContext context, CustomerAndJob det) {
     final ti = itemContext.taskItem;
-    final itemType = TaskItemTypeEnum.fromId(ti.itemTypeId);
+    final itemType = ti.itemType;
     final canReturn =
-        (itemType == TaskItemTypeEnum.materialsBuy ||
-            itemType == TaskItemTypeEnum.toolsBuy) &&
+        (itemType == TaskItemType.materialsBuy ||
+            itemType == TaskItemType.toolsBuy ||
+            itemType == TaskItemType.consumablesBuy) &&
         !itemContext.wasReturned;
 
     return HMBIconButton(

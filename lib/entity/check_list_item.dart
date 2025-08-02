@@ -204,13 +204,15 @@ class CheckListItem extends Entity<CheckListItem> {
       return _charge!;
     }
 
-    switch (TaskItemTypeEnum.fromId(itemTypeId)) {
-      case TaskItemTypeEnum.materialsBuy:
-      case TaskItemTypeEnum.materialsStock:
-      case TaskItemTypeEnum.toolsBuy:
-      case TaskItemTypeEnum.toolsOwn:
+    switch (TaskItemType.fromId(itemTypeId)) {
+      case TaskItemType.materialsStock:
+      case TaskItemType.materialsBuy:
+      case TaskItemType.toolsOwn:
+      case TaskItemType.toolsBuy:
+      case TaskItemType.consumablesStock:
+      case TaskItemType.consumablesBuy:
         return calcMaterialCost(billingType).plusPercentage(margin);
-      case TaskItemTypeEnum.labour:
+      case TaskItemType.labour:
         return calcLabourCost(hourlyRate).plusPercentage(margin);
     }
   }

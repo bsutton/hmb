@@ -10,7 +10,6 @@
 */
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/money_ex.dart';
 import 'package:money2/money2.dart';
@@ -50,7 +49,7 @@ void main() {
         Fixed.fromNum(1),
         MoneyEx.dollars(200), // $200 estimated cost
         Percentage.twenty, // 20% margin
-        (await DaoTaskItemType().getById(TaskItemTypeEnum.materialsBuy.id))!,
+        TaskItemType.fromId(TaskItemType.materialsBuy.id),
       );
 
       // // Create invoice for the job

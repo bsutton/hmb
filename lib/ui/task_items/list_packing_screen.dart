@@ -313,11 +313,12 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
       );
 
   Future<void> _moveToShoppingList(TaskItemContext itemContext) async {
-    final itemType = TaskItemTypeEnum.fromId(itemContext.taskItem.itemTypeId);
+    final itemType = itemContext.taskItem.itemType;
     // Determine the new item type
     final newType = switch (itemType) {
-      TaskItemTypeEnum.toolsOwn => TaskItemTypeEnum.toolsBuy,
-      TaskItemTypeEnum.materialsStock => TaskItemTypeEnum.materialsBuy,
+      TaskItemType.toolsOwn => TaskItemType.toolsBuy,
+      TaskItemType.consumablesStock => TaskItemType.consumablesBuy,
+      TaskItemType.materialsStock => TaskItemType.materialsBuy,
       _ => null, // Other types are not moved
     };
     if (newType == null) {
@@ -330,7 +331,7 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
     if (confirmed != true) {
       return;
     }
-    final taskItem = itemContext.taskItem..itemTypeId = newType.id;
+    final taskItem = itemContext.taskItem..itemType = newType;
     await DaoTaskItem().update(taskItem);
     await _loadTaskItems();
     HMBToast.info('Item moved to shopping list.');

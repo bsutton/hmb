@@ -81,7 +81,7 @@ class HMBSearchState extends State<HMBSearch> {
         ),
       ),
       IconButton(
-        padding: const EdgeInsets.all(0),
+        padding: EdgeInsets.zero,
         icon: const Icon(Icons.clear),
         onPressed: () async {
           filterController?.clear();

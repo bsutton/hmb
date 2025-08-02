@@ -21,7 +21,6 @@ import 'package:sqflite_common/sqlite_api.dart';
 import '../../../dao/dao_supplier.dart';
 import '../../../dao/dao_system.dart';
 import '../../../dao/dao_task_item.dart';
-import '../../../dao/dao_task_item_type.dart';
 import '../../../entity/job.dart';
 import '../../../entity/supplier.dart';
 import '../../../entity/system.dart';
@@ -163,7 +162,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     June.getState(SelectedMeasurementType.new).selected =
         currentEntity?.measurementType;
     June.getState(SelectedCheckListItemType.new).selected =
-        currentEntity?.itemTypeId;
+        currentEntity?.itemType;
     return system;
   }
 
@@ -213,7 +212,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
           ),
           _chooseItemType(taskItem),
           HMBTextArea(controller: _purposeController, labelText: 'Purpose'),
-          if (June.getState(SelectedCheckListItemType.new).selected != 0) ...[
+          if (June.getState(SelectedCheckListItemType.new).selected !=
+              null) ...[
             _chooseSupplier(taskItem),
             ..._buildFieldsBasedOnItemType(),
             HMBTextField(
@@ -238,16 +238,14 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         title: 'Item Type',
         selectedItem:
             // ignore: discarded_futures
-            () => DaoTaskItemType().getById(
-              June.getState(SelectedCheckListItemType.new).selected,
-            ),
+            () async => June.getState(SelectedCheckListItemType.new).selected,
+
         // ignore: discarded_futures
-        items: (filter) => DaoTaskItemType().getByFilter(filter),
+        items: (filter) async => TaskItemType.getByFilter(filter),
         format: (checklistItemType) => checklistItemType.name,
         onChanged: (itemType) {
           setState(() {
-            June.getState(SelectedCheckListItemType.new).selected =
-                itemType?.id;
+            June.getState(SelectedCheckListItemType.new).selected = itemType;
           });
         },
       );
@@ -276,16 +274,17 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     final widgets = <Widget>[];
 
     switch (June.getState(SelectedCheckListItemType.new).selected) {
-      case 0:
-        break;
-      case 1: // Materials - buy
-      case 3: // Tools - buy
+      case TaskItemType.materialsBuy: // Materials - buy
+      case TaskItemType.toolsBuy: // Tools - buy
+      case TaskItemType.consumablesBuy:
         widgets.addAll(_buildBuyFields());
-      case 2: // Materials - stock
-      case 4: // Tools - stock
+      case TaskItemType.materialsStock: // Materials - stock
+      case TaskItemType.toolsOwn: // Tools - stock
+      case TaskItemType.consumablesStock:
         widgets.addAll(_buildStockFields());
-      case 5: // Labour
+      case TaskItemType.labour: // Labour
         widgets.addAll(_buildLabourFields());
+      case null:
     }
 
     return widgets;
@@ -351,7 +350,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     var charge = MoneyEx.tryParse(_chargeController.text);
 
     charge = DaoTaskItem().calculateCharge(
-      itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
+      itemType: June.getState(SelectedCheckListItemType.new).selected!,
       margin: margin,
       labourEntryMode: _labourEntryMode,
       estimatedLabourHours: estimatedLabourHours,
@@ -469,7 +468,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     taskId: taskItem.taskId,
     description: _descriptionController.text,
     purpose: _purposeController.text,
-    itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
+    itemType: June.getState(SelectedCheckListItemType.new).selected!,
     estimatedMaterialUnitCost: MoneyEx.tryParse(
       _estimatedMaterialUnitCostController.text,
     ),
@@ -509,7 +508,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     taskId: widget.parent!.id,
     description: _descriptionController.text,
     purpose: _purposeController.text,
-    itemTypeId: June.getState(SelectedCheckListItemType.new).selected,
+    itemType: June.getState(SelectedCheckListItemType.new).selected!,
     estimatedMaterialUnitCost: MoneyEx.tryParse(
       _estimatedMaterialUnitCostController.text,
     ),
@@ -552,12 +551,12 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
 }
 
 class SelectedCheckListItemType extends JuneState {
-  int? _selected;
+  TaskItemType? _selected;
 
-  set selected(int? value) {
+  set selected(TaskItemType? value) {
     _selected = value;
     setState();
   }
 
-  int get selected => _selected ?? 0;
+  TaskItemType? get selected => _selected;
 }

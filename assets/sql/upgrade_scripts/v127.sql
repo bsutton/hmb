@@ -1,0 +1,1 @@
+drop table task_item_type;

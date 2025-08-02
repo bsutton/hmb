@@ -121,12 +121,12 @@ Future<Money> emitMaterialsByTask(
     final taskItems = await DaoTaskItem().getByTask(taskId);
     var invoiceLineGroupId = -1;
     for (final item in taskItems) {
-      final itemType = TaskItemTypeEnum.fromId(item.itemTypeId);
+      final itemType = item.itemType;
       // skip time entries, tools-own, zero-charge, uncompleted or already billed
       if (item.billed ||
           !item.completed ||
-          itemType == TaskItemTypeEnum.labour ||
-          itemType == TaskItemTypeEnum.toolsOwn ||
+          itemType == TaskItemType.labour ||
+          itemType == TaskItemType.toolsOwn ||
           item.getCharge(billingType, hourlyRate) == MoneyEx.zero) {
         continue;
       }

@@ -9,73 +9,84 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'entity.dart';
+import 'package:strings/strings.dart';
 
 /// Must match the db entries.
-enum TaskItemTypeEnum {
-  materialsBuy(1, 'Materials - buy'),
-  materialsStock(2, 'Materials - stock'),
-  toolsBuy(3, 'Tools - buy'),
-  toolsOwn(4, 'Tools - own'),
-  labour(5, 'Labour');
-
-  const TaskItemTypeEnum(this.id, this.description);
-
-  final int id;
-  final String description;
-
-  static TaskItemTypeEnum fromId(int id) => values[id - 1];
-}
-
-class TaskItemType extends Entity<TaskItemType> {
-  TaskItemType({
-    required super.id,
-    required this.name,
-    required this.description,
-    required this.toPurchase,
-    required this.colorCode,
-    required super.createdDate,
-    required super.modifiedDate,
-  }) : super();
-
-  TaskItemType.forInsert({
-    required this.name,
-    required this.description,
-    required this.toPurchase,
-    required this.colorCode,
-  }) : super.forInsert();
-
-  TaskItemType.forUpdate({
-    required super.entity,
-    required this.name,
-    required this.description,
-    required this.toPurchase,
-    required this.colorCode,
-  }) : super.forUpdate();
-
-  factory TaskItemType.fromMap(Map<String, dynamic> map) => TaskItemType(
-    id: map['id'] as int,
-    name: map['name'] as String,
-    description: map['description'] as String,
-    toPurchase: map['to_purchase'] as int == 1,
-    colorCode: map['color_code'] as String,
-    createdDate: DateTime.parse(map['created_date'] as String),
-    modifiedDate: DateTime.parse(map['modified_date'] as String),
+enum TaskItemType {
+  materialsBuy(
+    1,
+    name: 'Materials - buy',
+    description: 'Materials need to be purchased',
+    color: '#FFFFE0',
+    toPurchase: true,
+  ),
+  materialsStock(
+    2,
+    name: 'Materials - stock',
+    description: 'Materials to be taken from stock',
+    color: '#D3D3D3',
+    toPurchase: false,
+  ),
+  toolsBuy(
+    3,
+    name: 'Tools - buy',
+    description: 'Tool that needs to be purchased',
+    color: '#90EE90',
+    toPurchase: true,
+  ),
+  toolsOwn(
+    4,
+    name: 'Tools - own',
+    description: 'Tool that we own',
+    color: '#FAFAD2',
+    toPurchase: false,
+  ),
+  labour(
+    5,
+    name: 'Labour',
+    description: 'Work to be done',
+    color: '#87CEFA',
+    toPurchase: false,
+  ),
+  consumablesStock(
+    6,
+    name: 'Consumables - stock',
+    description: 'Drills, Sand Paper etc held in stock',
+    color: '#87CEFA',
+    toPurchase: true,
+  ),
+  consumablesBuy(
+    7,
+    name: 'Consumables - buy',
+    description: 'Drills, Sand Paper etc to be purchased',
+    color: '#87CEFA',
+    toPurchase: true,
   );
 
-  String name;
-  String description;
-  bool toPurchase;
-  String colorCode;
+  const TaskItemType(
+    this.id, {
+    required this.name,
+    required this.description,
+    required this.color,
+    required this.toPurchase,
+  });
 
-  @override
-  Map<String, dynamic> toMap() => {
-    'id': id,
-    'name': name,
-    'description': description,
-    'to_purchase': toPurchase ? 1 : 0,
-    'color_code': colorCode,
-    'created_date': createdDate.toIso8601String(),
-    'modified_date': modifiedDate.toIso8601String(),
-  };
+  final int id;
+  final String name;
+  final String description;
+  final String color;
+  final bool toPurchase;
+
+  static TaskItemType fromId(int id) => values[id - 1];
+
+  static List<TaskItemType> getByFilter(String? filter) =>
+      Strings.isBlank(filter)
+      ? TaskItemType.values
+      : TaskItemType.values
+            .where(
+              (type) =>
+                  type.name.toLowerCase().contains(filter!.toLowerCase()) ||
+                  type.description.toLowerCase().contains(filter.toLowerCase()),
+            )
+            .toList();
 }
