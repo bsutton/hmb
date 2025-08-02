@@ -26,9 +26,11 @@ import '../../../../util/money_ex.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_icon_button.dart';
 import '../../../widgets/hmb_search.dart';
+import '../../../widgets/hmb_toggle.dart';
 import '../../../widgets/layout/hmb_full_page_child_screen.dart';
 import '../../../widgets/layout/hmb_spacer.dart';
 import '../../../widgets/media/photo_gallery.dart';
+import '../../../widgets/select/hmb_filter_line.dart';
 import '../../../widgets/surface.dart';
 import '../../../widgets/text/hmb_text_themes.dart';
 import '../../check_list/edit_task_item_screen.dart';
@@ -52,6 +54,11 @@ class _JobEstimateBuilderScreenState
   Money _totalMaterialsCost = MoneyEx.zero;
   Money _totalCombinedCost = MoneyEx.zero;
 
+  var _showToBeEstimated = true;
+  var _showCompleted = false;
+  var _showActive = false;
+  var _showWithdrawn = false;
+
   var _filter = '';
 
   @override
@@ -62,19 +69,29 @@ class _JobEstimateBuilderScreenState
   }
 
   Future<void> _loadTasks() async {
-    final tasks = await DaoTask().getTasksByJob(widget.job.id);
-    _tasks = tasks;
+    _tasks = await DaoTask().getTasksByJob(widget.job.id);
+
     await _calculateTotals();
     setState(() {});
   }
 
   List<Task> filteredTasks() {
-    final filtered = <Task>[];
+    var filtered = <Task>[];
+
+    filtered = _tasks
+        .where(
+          (task) =>
+              _showActive && task.status.isActive() ||
+              _showCompleted && task.status.isComplete() ||
+              _showToBeEstimated && task.status.toBeEstimated() ||
+              _showWithdrawn && task.status.isWithdrawn(),
+        )
+        .toList();
 
     if (Strings.isBlank(_filter)) {
-      return _tasks;
+      return filtered;
     }
-    for (final task in _tasks) {
+    for (final task in filtered) {
       if (task.name.toLowerCase().contains(_filter) ||
           task.description.toLowerCase().contains(_filter)) {
         filtered.add(task);
@@ -88,6 +105,9 @@ class _JobEstimateBuilderScreenState
     var totalMaterials = MoneyEx.zero;
 
     for (final task in _tasks) {
+      if (task.status.isWithdrawn()) {
+        continue;
+      }
       final items = await DaoTaskItem().getByTask(task.id);
 
       final hourlyRate = await DaoTask().getHourlyRate(task);
@@ -162,12 +182,27 @@ class _JobEstimateBuilderScreenState
             ),
             Surface(
               elevation: SurfaceElevation.e0,
-              child: HMBSearchWithAdd(
-                hint: 'Add Task',
-                onSearch: (filter) => setState(() {
-                  _filter = filter ?? '';
-                }),
-                onAdd: _addNewTask,
+              child: HMBFilterLine(
+                lineBuilder: (context) => HMBSearchWithAdd(
+                  hint: 'Add Task',
+                  onSearch: (filter) => setState(() {
+                    _filter = filter ?? '';
+                  }),
+                  onAdd: _addNewTask,
+                ),
+                sheetBuilder: (context) => _buildFilter(),
+                onReset: () {
+                  _showToBeEstimated = true;
+                  _showCompleted = false;
+                  _showActive = false;
+                  _showWithdrawn = false;
+                  setState(() {});
+                },
+                isActive: () =>
+                    !_showToBeEstimated ||
+                    !_showCompleted ||
+                    !_showActive ||
+                    !_showWithdrawn,
               ),
             ),
             const HMBSpacer(height: true),
@@ -206,8 +241,8 @@ class _JobEstimateBuilderScreenState
         child: Column(
           children: [
             ListTile(
-              title: HMBTextHeadline3(task.name),
-              subtitle: HMBTextHeadline3(task.description),
+              title: HMBTextHeadline(task.name),
+              subtitle: HMBTextBody(task.description),
               trailing: HMBIconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
                 onPressed: () => _deleteTask(task),
@@ -326,6 +361,48 @@ class _JobEstimateBuilderScreenState
     }
     return TaskAndRate.fromTask(task);
   }
+
+  Widget _buildFilter() => Column(
+    children: [
+      HMBToggle(
+        label: 'Show To Be Estimated',
+        hint:
+            'Show tasks can be estimated as they have not started no been cancelled',
+        initialValue: _showToBeEstimated,
+        onToggled: (value) {
+          _showToBeEstimated = value;
+          setState(() {});
+        },
+      ),
+      HMBToggle(
+        label: 'Show Complete',
+        hint: 'Show tasks that have been completed or cancelled',
+        initialValue: _showCompleted,
+        onToggled: (value) {
+          _showCompleted = value;
+          setState(() {});
+        },
+      ),
+      HMBToggle(
+        label: 'Show Active',
+        hint: 'Show tasks that currently active',
+        initialValue: _showActive,
+        onToggled: (value) {
+          _showActive = value;
+          setState(() {});
+        },
+      ),
+      HMBToggle(
+        label: 'Show Withdrawn',
+        hint: 'Show tasks have been cancelled or placed on hold',
+        initialValue: _showWithdrawn,
+        onToggled: (value) {
+          _showWithdrawn = value;
+          setState(() {});
+        },
+      ),
+    ],
+  );
 }
 
 class ItemsAndRate {

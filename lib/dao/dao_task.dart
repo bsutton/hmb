@@ -192,7 +192,7 @@ WHERE ti.id = ?
       final hourlyRate = await DaoTask().getHourlyRate(task);
       final taskStatus = task.status;
 
-      if (!taskStatus.isCancelled()) {
+      if (!taskStatus.isWithdrawn()) {
         final estimate = await getEstimateForTask(task, hourlyRate);
         if (!estimate.total.isZero) {
           estimates.add(estimate);

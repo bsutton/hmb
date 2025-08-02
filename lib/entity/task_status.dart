@@ -94,10 +94,19 @@ enum TaskStatus {
   /// Column value for `name` in the database.
   String get colValue => name;
 
-  bool isCancelled() => name == 'Cancelled';
+  bool isWithdrawn() => this == cancelled || this == onHold;
 
-  bool isComplete() =>
-      this == toBeScheduled || this == completed || this == cancelled;
+  bool isComplete() => this == completed;
+
+  bool toBeEstimated() => this == preApproval;
+
+  bool isActive() =>
+      this == toBeScheduled ||
+      this == approved ||
+      this == inProgress ||
+      this == awaitingMaterials;
+
+  bool isInActive() => this == onHold || this == completed || this == cancelled;
 
   @override
   String toString() => 'name: $name, description: $description';
