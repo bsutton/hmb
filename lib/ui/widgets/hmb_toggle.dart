@@ -48,8 +48,10 @@ class _HMBToggleState extends State<HMBToggle> {
       IconButton(
         tooltip: widget.hint,
         onPressed: () {
-          on = !on;
-          widget.onToggled(on);
+          setState(() {
+            on = !on;
+            widget.onToggled(on);
+          });
         },
         iconSize: 25,
         icon: Icon(on ? Icons.toggle_on : Icons.toggle_off),
