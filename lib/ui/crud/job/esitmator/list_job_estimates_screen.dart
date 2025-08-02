@@ -14,7 +14,6 @@ import 'package:flutter/material.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
 import '../../../../util/app_title.dart';
-import '../../../widgets/layout/hmb_spacer.dart';
 import '../../../widgets/text/text.g.dart';
 import '../../base_full_screen/base_full_screen.g.dart';
 import 'job_card.dart';
@@ -81,13 +80,9 @@ class _JobEstimatesListScreenState extends State<JobEstimatesListScreen> {
     showBackButton: widget.job != null,
     title: (job) async =>
         HMBTextHeadline((await _getCustomer(job))?.name ?? 'Unknown'),
-    details: (job) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const HMBSpacer(height: true),
+    details: (job) =>
         JobCard(job: job, onEstimatesUpdated: () => setState(() {})),
-      ],
-    ),
+
     cardHeight: 370,
     filterSheetBuilder: _buildFilterSheet,
     isFilterActive: () => _onlyShowQutableJobs,

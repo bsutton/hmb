@@ -28,6 +28,7 @@ import '../../../widgets/hmb_icon_button.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toggle.dart';
 import '../../../widgets/layout/hmb_full_page_child_screen.dart';
+import '../../../widgets/layout/hmb_padding.dart';
 import '../../../widgets/layout/hmb_spacer.dart';
 import '../../../widgets/media/photo_gallery.dart';
 import '../../../widgets/select/hmb_filter_line.dart';
@@ -205,14 +206,15 @@ class _JobEstimateBuilderScreenState
                     !_showWithdrawn,
               ),
             ),
-            const HMBSpacer(height: true),
             Expanded(
-              child: ListView.builder(
-                itemCount: tasks.length,
-                itemBuilder: (context, index) {
-                  final task = tasks[index];
-                  return _buildTaskCard(task);
-                },
+              child: HMBPadding(
+                child: ListView.builder(
+                  itemCount: tasks.length,
+                  itemBuilder: (context, index) {
+                    final task = tasks[index];
+                    return _buildTaskCard(task);
+                  },
+                ),
               ),
             ),
           ],
@@ -237,7 +239,7 @@ class _JobEstimateBuilderScreenState
   Widget _buildTaskCard(Task task) => Column(
     children: [
       Surface(
-        elevation: SurfaceElevation.e1,
+        elevation: SurfaceElevation.e8,
         child: Column(
           children: [
             ListTile(
@@ -255,6 +257,7 @@ class _JobEstimateBuilderScreenState
               padding: const EdgeInsets.only(left: 16),
               child: PhotoGallery.forTask(task: task),
             ),
+            const HMBSpacer(height: true),
             _buildTaskItems(task),
             HMBButton(
               label: 'Add Item',
@@ -290,16 +293,24 @@ class _JobEstimateBuilderScreenState
     Task task,
     Money hourlyRate,
     BillingType billingType,
-  ) => ListTile(
-    title: Text(item.description),
-    subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
-    trailing: HMBIconButton(
-      icon: const Icon(Icons.delete, color: Colors.red),
-      showBackground: false,
-      onPressed: () => _deleteItem(item),
-      hint: 'Delete Estimate',
-    ),
-    onTap: () => unawaited(_editItem(item, task)),
+  ) => Column(
+    children: [
+      Surface(
+        elevation: SurfaceElevation.e16,
+        child: ListTile(
+          title: Text(item.description),
+          subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
+          trailing: HMBIconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            showBackground: false,
+            onPressed: () => _deleteItem(item),
+            hint: 'Delete Estimate',
+          ),
+          onTap: () => unawaited(_editItem(item, task)),
+        ),
+      ),
+      const HMBSpacer(height: true),
+    ],
   );
 
   Future<void> _addItemToTask(Task task) async {
