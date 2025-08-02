@@ -46,11 +46,8 @@ class NextJobDashlet extends StatelessWidget {
         ],
       );
     },
-    builder: (_, dv) => SchedulePage(
-      defaultView: ScheduleView.week,
-      initialActivityId: dv.value?.id,
-      dialogMode: true,
-    ),
+    builder: (_, dv) =>
+        SchedulePage(initialActivityId: dv.value?.id, dialogMode: true),
   );
 
   Future<DashletValue<JobActivity?>> getNextJob() async {
