@@ -159,7 +159,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
         !_includeApproved ||
         !_includeInvoiced ||
         !_includeRejected,
-    onFiltersCleared: () {
+    onFilterReset: () {
       selectedJob = widget.job;
       selectedCustomer = null;
       _includeApproved = true;

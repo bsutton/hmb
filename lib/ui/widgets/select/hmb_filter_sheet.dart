@@ -10,7 +10,7 @@ class HMBFilterSheet extends StatefulWidget {
     required this.contentBuilder,
     super.key,
     this.padding = const EdgeInsets.all(16),
-    this.onClearAll,
+    this.onReset,
   });
 
   /// Content builder for the sheet body
@@ -19,8 +19,8 @@ class HMBFilterSheet extends StatefulWidget {
   /// Padding around sheet content
   final EdgeInsets padding;
 
-  /// Callback to clear all filters; if provided, a "Clear All" button is shown
-  final VoidCallback? onClearAll;
+  /// Callback to reset  filters to their original state; if provided, a "Reset" button is shown
+  final VoidCallback? onReset;
 
   @override
   State<HMBFilterSheet> createState() => _HMBFilterSheetState();
@@ -42,18 +42,18 @@ class _HMBFilterSheetState extends State<HMBFilterSheet> {
         widget.contentBuilder(context),
 
         // optional clear-all button
-        if (widget.onClearAll != null) ...[
+        if (widget.onReset != null) ...[
           const SizedBox(height: 16),
           // alignment: Alignment.centerRight,
           SizedBox(
             width: double.infinity,
             child: HMBButtonPrimary(
               onPressed: () {
-                widget.onClearAll?.call();
+                widget.onReset?.call();
                 setState(() {});
               },
-              label: 'Clear All',
-              hint: 'Clear all search filters',
+              label: 'Reset All',
+              hint: 'Reset filters to their default',
             ),
           ),
         ],

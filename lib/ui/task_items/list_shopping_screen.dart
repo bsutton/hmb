@@ -192,7 +192,7 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                   ],
                 ),
                 HMBFilterLine(
-                  onClearAll: () async {
+                  onReset: () async {
                     _jobKey.currentState?.clear();
                     selectedSupplier.selected = null;
                     _searchKey.currentState?.clear();

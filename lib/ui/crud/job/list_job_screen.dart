@@ -50,7 +50,7 @@ class _JobListScreenState extends State<JobListScreen> {
             cardHeight: 700,
             filterSheetBuilder: _buildFilterSheet,
             isFilterActive: () => _showOldJobs,
-            onFiltersCleared: () {
+            onFilterReset: () {
               _showOldJobs = false;
             },
             background: (job) async =>

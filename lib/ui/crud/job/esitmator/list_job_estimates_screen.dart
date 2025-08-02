@@ -91,7 +91,7 @@ class _JobEstimatesListScreenState extends State<JobEstimatesListScreen> {
     cardHeight: 370,
     filterSheetBuilder: _buildFilterSheet,
     isFilterActive: () => _onlyShowQutableJobs,
-    onFiltersCleared: () {
+    onFilterReset: () {
       _onlyShowQutableJobs = false;
     },
     canAdd: false,

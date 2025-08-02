@@ -147,7 +147,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
           filterSheetBuilder: _buildFilterSheet,
           onFilterSheetClosed: () async =>
               await _entityListKey.currentState?.refresh(),
-          onFiltersCleared: _clearAllFilters,
+          onFilterReset: _clearAllFilters,
           isFilterActive: () =>
               _supplierFilter.selected != null ||
               _taskFilter.taskId != null ||

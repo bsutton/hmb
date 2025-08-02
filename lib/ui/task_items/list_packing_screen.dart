@@ -133,7 +133,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
           HMBFilterLine(
             lineBuilder: _buildSearchLine,
             sheetBuilder: _buildFilter,
-            onClearAll: () async {
+            onReset: () async {
               _selectedJobs.clear();
               _selectedScheduleFilter = ScheduleFilter.all;
               _scheduleFilterKey.currentState?.clear();

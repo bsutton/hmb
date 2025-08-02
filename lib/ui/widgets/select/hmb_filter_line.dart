@@ -16,7 +16,7 @@ class HMBFilterLine extends StatelessWidget {
   const HMBFilterLine({
     required this.lineBuilder,
     required this.sheetBuilder,
-    required this.onClearAll,
+    required this.onReset,
     required this.isActive,
     this.onSheetClosed,
     super.key,
@@ -26,7 +26,7 @@ class HMBFilterLine extends StatelessWidget {
   /// Builds the left-hand content area
   final WidgetBuilder lineBuilder;
   final WidgetBuilder sheetBuilder;
-  final VoidCallback? onClearAll;
+  final VoidCallback? onReset;
   final VoidCallback? onSheetClosed;
 
   /// Whether filter is currently active (affects icon)
@@ -55,10 +55,8 @@ class HMBFilterLine extends StatelessWidget {
           await showModalBottomSheet<void>(
             context: context,
             isScrollControlled: true,
-            builder: (_) => HMBFilterSheet(
-              contentBuilder: sheetBuilder,
-              onClearAll: onClearAll,
-            ),
+            builder: (_) =>
+                HMBFilterSheet(contentBuilder: sheetBuilder, onReset: onReset),
           );
           onSheetClosed?.call();
         },

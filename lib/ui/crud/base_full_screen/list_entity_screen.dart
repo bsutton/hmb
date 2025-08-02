@@ -53,7 +53,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     this.onFilterSheetClosed,
 
     /// Called when the user clears all filters.
-    this.onFiltersCleared,
+    this.onFilterReset,
     this.isFilterActive,
     super.key,
     this.showBackButton = false,
@@ -76,7 +76,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   late final Future<List<T>> Function(String? filter) _fetchList;
   final Dao<T> dao;
   final FilterSheetBuilder? filterSheetBuilder;
-  final VoidCallback? onFiltersCleared;
+  final VoidCallback? onFilterReset;
   final VoidCallback? onFilterSheetClosed;
   final BoolCallback? isFilterActive;
 
@@ -139,8 +139,8 @@ class EntityListScreenState<T extends Entity<T>>
     });
   }
 
-  Future<void> _clearAll() async {
-    widget.onFiltersCleared?.call();
+  Future<void> _resetFilters() async {
+    widget.onFilterReset?.call();
     filterOption = null;
     await refresh();
   }
@@ -186,7 +186,7 @@ class EntityListScreenState<T extends Entity<T>>
           key: _filterSheetKey,
         ),
 
-        onClearAll: _clearAll,
+        onReset: _resetFilters,
         onSheetClosed: widget.onFilterSheetClosed,
         isActive: () => widget.isFilterActive?.call() ?? false,
       );

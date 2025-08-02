@@ -75,7 +75,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         selectedJob != null ||
         selectedCustomer != null ||
         Strings.isNotBlank(filterText),
-    onFiltersCleared: () async {
+    onFilterReset: () async {
       selectedJob = null;
       selectedCustomer = null;
       filterText = null;
