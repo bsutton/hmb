@@ -4,7 +4,6 @@ import 'package:future_builder_ex/future_builder_ex.dart' show FutureBuilderEx;
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
 import '../../../widgets/text/text.g.dart';
-import 'list_time_entry_screen.dart';
 
 /// Shows tasks, effort, earnings and worked‐hours for a Job.
 class JobStatisticsHeader extends StatelessWidget {
@@ -33,16 +32,7 @@ class JobStatisticsHeader extends StatelessWidget {
           'Earnings: ${stats.completedMaterialCost}/${stats.totalMaterialCost}',
           bold: true,
         ),
-        HMBTextClickable(
-          text: 'Worked: ${stats.worked}/${stats.workedHours}hrs',
-          bold: true,
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute<void>(
-              builder: (_) => TimeEntryListScreen(job: job),
-            ),
-          ),
-        ),
+        HMBText('Worked: ${stats.worked}/${stats.workedHours}hrs', bold: true),
       ];
 
       return Padding(
