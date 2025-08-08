@@ -69,7 +69,6 @@ class AssignmentListScreen extends StatelessWidget {
         onEdit: (assignment) =>
             AssignmentEditScreen(job: parent.parent!, assignment: assignment),
         onDelete: (assignment) => DaoWorkAssigment().delete(assignment.id),
-        onInsert: (assignment, tx) => DaoWorkAssigment().insert(assignment, tx),
         cardHeight: 200,
       );
 }

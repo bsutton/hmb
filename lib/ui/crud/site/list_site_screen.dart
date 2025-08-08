@@ -42,9 +42,6 @@ class SiteListScreen<P extends Entity<P>> extends StatelessWidget {
     // ignore: discarded_futures
     onDelete: (site) => daoJoin.deleteFromParent(site, parent.parent!),
     // ignore: discarded_futures
-    onInsert: (site, transaction) =>
-        daoJoin.insertForParent(site, parent.parent!, transaction),
-    // ignore: discarded_futures
     fetchList: () => daoJoin.getByParent(parent.parent),
     // title: (site) => Text('${site.addressLine1} ${site.suburb}') as Widget,
     title: (site) => HMBSiteText(label: '', site: site),

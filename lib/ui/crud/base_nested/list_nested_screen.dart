@@ -14,7 +14,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
-import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entity.g.dart';
@@ -40,7 +39,6 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
     required this.dao,
     required this.onEdit,
     required this.onDelete,
-    required this.onInsert,
     required this.entityNamePlural,
     required this.title,
     required this.details,
@@ -65,7 +63,6 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
   final bool Function(C)? canEdit;
   final bool Function(C)? canDelete;
   final Future<void> Function(C entity) onDelete;
-  final Future<void> Function(C entity, Transaction transaction) onInsert;
   final Future<List<C>> Function() fetchList;
   final Dao<C> dao;
   final String parentTitle;
