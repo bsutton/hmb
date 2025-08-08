@@ -138,12 +138,10 @@ class _JobCardState extends State<JobCard> {
     final customer = job.customerId != null
         ? await DaoCustomer().getById(job.customerId)
         : null;
-    final jobStatus = job.jobStatusId != null
-        ? await DaoJobStatus().getById(job.jobStatusId)
-        : null;
+    final jobStatus = job.status;
 
     final customerName = customer?.name ?? 'N/A';
-    final statusName = jobStatus?.name ?? 'Unknown';
+    final statusName = jobStatus.name;
 
     // Fetch the quotes for this job and pick the most recent one
     final quotes = await DaoQuote().getByJobId(job.id);

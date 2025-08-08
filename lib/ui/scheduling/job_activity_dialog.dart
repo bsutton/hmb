@@ -16,10 +16,10 @@ import 'package:strings/strings.dart';
 import '../../dao/dao_contact.dart';
 import '../../dao/dao_job.dart';
 import '../../dao/dao_job_activity.dart';
-import '../../dao/dao_job_status.dart';
 import '../../entity/contact.dart';
 import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
+import '../../entity/job_status.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
@@ -483,26 +483,18 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     // Next, check the job’s status
     final job = await DaoJob().getById(_selectedJob!.id);
     if (job != null) {
-      final jobStatus = await DaoJobStatus().getById(job.jobStatusId);
-      if (jobStatus != null) {
-        final statusesThatShouldBecomeScheduled = [
-          'prospecting',
-          'quoting',
-          'awaiting approval',
-          'to be scheduled',
-          'on hold',
-        ];
+      final jobStatus = job.status;
+      final statusesThatShouldBecomeScheduled = [
+        JobStatus.prospecting,
+        JobStatus.quoting,
+        JobStatus.awaitingApproval,
+        JobStatus.toBeScheduled,
+        JobStatus.onHold,
+      ];
 
-        // Convert the jobStatus name or statusEnum to lower, compare
-        final currentStatus = jobStatus.name.toLowerCase();
-        if (statusesThatShouldBecomeScheduled.contains(currentStatus)) {
-          // fetch the “Scheduled” status
-          final scheduledStatus = await DaoJobStatus().getByName('Scheduled');
-          if (scheduledStatus != null) {
-            job.jobStatusId = scheduledStatus.id;
-            await DaoJob().update(job);
-          }
-        }
+      if (statusesThatShouldBecomeScheduled.contains(jobStatus)) {
+        job.status = JobStatus.scheduled;
+        await DaoJob().update(job);
       }
     }
   }

@@ -12,100 +12,141 @@
 import 'dart:ui';
 
 import '../util/hex_to_color.dart';
-import 'entity.dart';
-import 'job_status_enum.dart';
+import 'job_status_stage.dart';
 
-class JobStatus extends Entity<JobStatus> {
-  JobStatus({
-    required super.id,
-    required this.name,
-    required this.description,
-    required this.colorCode,
-    required this.hidden,
-    required super.createdDate,
-    required super.modifiedDate,
-    required this.statusEnum,
-  }) : super();
-
-  JobStatus.forInsert({
-    required this.name,
-    required this.description,
-    required this.colorCode,
-    required this.statusEnum,
-    this.hidden = 0, // Default value for new entries
-  }) : super.forInsert();
-
-  JobStatus.forUpdate({
-    required super.entity,
-    required this.name,
-    required this.description,
-    required this.colorCode,
-    required this.hidden,
-    required this.statusEnum,
-  }) : super.forUpdate();
-
-  factory JobStatus.fromMap(Map<String, dynamic> map) => JobStatus(
-    id: map['id'] as int,
-    name: map['name'] as String,
-    description: map['description'] as String,
-    colorCode: map['color_code'] as String,
-    hidden: (map['hidden'] as int?) ?? 0,
-    createdDate: DateTime.parse(map['createdDate'] as String),
-    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
-    statusEnum: JobStatusEnumExtension.fromName(
-      map['status_enum'] as String? ?? '',
-    ),
+enum JobStatus {
+  prospecting(
+    id: 'Prospecting',
+    displayName: 'Prospecting',
+    description: 'A customer has contacted us about a potential job',
+    colorCode: '#ADD8E6',
+    stage: JobStatusStage.preStart,
+    ordinal: 1,
+  ),
+  quoting(
+    id: 'Quoting',
+    displayName: 'Quoting',
+    description: 'Preparing a quote for the job',
+    colorCode: '#ADD8E6',
+    stage: JobStatusStage.preStart,
+    ordinal: 2,
+  ),
+  awaitingApproval(
+    id: 'AwaitingApproval',
+    displayName: 'Awaiting Approval',
+    description: 'Waiting on the client to approve quote',
+    colorCode: '#ADD8E6',
+    stage: JobStatusStage.preStart,
+    ordinal: 3,
+  ),
+  toBeScheduled(
+    id: 'ToBeScheduled',
+    displayName: 'To be Scheduled',
+    description: 'Customer agreed to proceed but no start date set',
+    colorCode: '#FFFFE0',
+    stage: JobStatusStage.preStart,
+    ordinal: 4,
+  ),
+  scheduled(
+    id: 'Scheduled',
+    displayName: 'Scheduled',
+    description: 'Job has been approved and scheduled',
+    colorCode: '#FFD700',
+    stage: JobStatusStage.preStart,
+    ordinal: 5,
+  ),
+  inProgress(
+    id: 'InProgress',
+    displayName: 'In Progress',
+    description: 'The Job is currently in progress',
+    colorCode: '#87CEFA',
+    stage: JobStatusStage.progressing,
+    ordinal: 6,
+  ),
+  onHold(
+    id: 'OnHold',
+    displayName: 'On Hold',
+    description: 'The Job is on hold',
+    colorCode: '#FAFAD2',
+    stage: JobStatusStage.onHold,
+    ordinal: 7,
+  ),
+  awaitingMaterials(
+    id: 'AwaitingMaterials',
+    displayName: 'Awaiting Materials',
+    description: 'The job is paused until materials are available',
+    colorCode: '#D3D3D3',
+    stage: JobStatusStage.onHold,
+    ordinal: 8,
+  ),
+  progressPayment(
+    id: 'ProgressPayment',
+    displayName: 'Progress Payment',
+    description: 'Job stage complete — progress payment required',
+    colorCode: '#F08080',
+    stage: JobStatusStage.finalised,
+    ordinal: 9,
+  ),
+  completed(
+    id: 'Completed',
+    displayName: 'Completed',
+    description: 'The Job is completed',
+    colorCode: '#90EE90',
+    stage: JobStatusStage.finalised,
+    ordinal: 10,
+  ),
+  awaitingPayment(
+    id: 'AwaitingPayment',
+    displayName: 'Awaiting Payment',
+    description: 'Approved but awaiting payment',
+    colorCode: '#FFD700',
+    stage: JobStatusStage.onHold,
+    ordinal: 11,
+  ),
+  toBeBilled(
+    id: 'ToBeBilled',
+    displayName: 'To be Billed',
+    description: 'Completed — needs to be billed',
+    colorCode: '#FFA07A',
+    stage: JobStatusStage.finalised,
+    ordinal: 12,
+  ),
+  rejected(
+    id: 'Rejected',
+    displayName: 'Rejected',
+    description: 'The Job was rejected by the Customer',
+    colorCode: '#FFB6C1',
+    stage: JobStatusStage.finalised,
+    ordinal: 13,
   );
 
-  String name;
-  String description;
-  String colorCode;
-  int hidden;
-  JobStatusEnum statusEnum;
+  const JobStatus({
+    required this.id,
+    required this.displayName,
+    required this.description,
+    required this.colorCode,
+    required this.stage,
+    required this.ordinal,
+  });
 
-  @override
-  Map<String, dynamic> toMap() => {
-    'id': id,
-    'name': name,
-    'description': description,
-    'color_code': colorCode,
-    'hidden': hidden,
-    'createdDate': createdDate.toIso8601String(),
-    'modifiedDate': modifiedDate.toIso8601String(),
-    'status_enum': statusEnum.name,
-  };
+  final String id;
+  final String displayName;
+  final String description;
+  final String colorCode;
+  final JobStatusStage stage;
+  final int ordinal;
+
+  static JobStatus fromId(String id) =>
+      values.firstWhere((e) => e.id == id, orElse: () => JobStatus.prospecting);
 
   Color getColour() => hexToColor(colorCode);
 
-  @override
-  // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
+  static List<JobStatus> byOrdinal() => values
+    ..sort((a, b) => a.ordinal - b.ordinal)
+    ..toList();
 
-    return other is JobStatus &&
-        other.id == id &&
-        other.name == name &&
-        other.description == description &&
-        other.colorCode == colorCode &&
-        other.hidden == hidden &&
-        other.createdDate == createdDate &&
-        other.modifiedDate == modifiedDate &&
-        other.statusEnum == statusEnum;
-  }
-
-  @override
-  // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  int get hashCode =>
-      id.hashCode ^
-      name.hashCode ^
-      description.hashCode ^
-      colorCode.hashCode ^
-      hidden.hashCode ^
-      createdDate.hashCode ^
-      modifiedDate.hashCode ^
-      statusEnum.hashCode;
+  static Iterable<JobStatus> preStart() =>
+      values.where((status) => status.stage == JobStatusStage.preStart);
 
   @override
   String toString() => 'id: $id, name: $name, description: $description';

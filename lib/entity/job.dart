@@ -12,6 +12,7 @@
 import 'package:money2/money2.dart';
 
 import 'entity.dart';
+import 'job_status.dart';
 
 enum BillingType {
   timeAndMaterial('Time and Materials'),
@@ -30,7 +31,7 @@ class Job extends Entity<Job> {
     required this.assumption,
     required this.siteId,
     required this.contactId,
-    required this.jobStatusId,
+    required this.status,
     required this.hourlyRate,
     required this.bookingFee,
     required this.lastActive,
@@ -47,7 +48,7 @@ class Job extends Entity<Job> {
     required this.description,
     required this.siteId,
     required this.contactId,
-    required this.jobStatusId,
+    required this.status,
     required this.hourlyRate,
     required this.bookingFee,
     required this.billingContactId,
@@ -65,7 +66,7 @@ class Job extends Entity<Job> {
     required this.assumption,
     required this.siteId,
     required this.contactId,
-    required this.jobStatusId,
+    required this.status,
     required this.hourlyRate,
     required this.bookingFee,
     required this.billingContactId,
@@ -82,7 +83,7 @@ class Job extends Entity<Job> {
     assumption: map['assumption'] as String,
     siteId: map['site_id'] as int?,
     contactId: map['contact_id'] as int?,
-    jobStatusId: map['job_status_id'] as int?,
+    status: JobStatus.fromId(map['status_id'] as String),
     hourlyRate: Money.fromInt(map['hourly_rate'] as int? ?? 0, isoCode: 'AUD'),
     bookingFee: Money.fromInt(map['booking_fee'] as int? ?? 0, isoCode: 'AUD'),
     createdDate: DateTime.parse(map['created_date'] as String),
@@ -105,7 +106,7 @@ class Job extends Entity<Job> {
     'assumption': assumption,
     'site_id': siteId,
     'contact_id': contactId,
-    'job_status_id': jobStatusId,
+    'status_id': status.id,
     'hourly_rate': hourlyRate?.minorUnits.toInt(),
     'booking_fee': bookingFee?.minorUnits.toInt(),
     'last_active': lastActive ? 1 : 0,
@@ -122,7 +123,7 @@ class Job extends Entity<Job> {
   String assumption;
   int? siteId;
   int? contactId;
-  int? jobStatusId;
+  JobStatus status;
   Money? hourlyRate;
   Money? bookingFee;
   bool lastActive;

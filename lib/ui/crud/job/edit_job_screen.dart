@@ -113,7 +113,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   Future<void> asyncInitState() async {
     // existing selections
     June.getState(SelectedCustomer.new).customerId = widget.job?.customerId;
-    June.getState(SelectJobStatus.new).jobStatusId = widget.job?.jobStatusId;
+    June.getState(SelectJobStatus.new).jobStatus = widget.job?.status;
     June.getState(SelectedSite.new).siteId = widget.job?.siteId;
     June.getState(_SelectedContact.new).contactId = widget.job?.contactId;
     _selectedBillingType =
@@ -139,11 +139,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
         _bookingFeeController.text =
             system.defaultBookingFee?.amount.toString() ?? '0.00';
       });
-      // Hard coded id of the 'Prospecting' status (1), probably not a great way
-      // to do this.
-      // ignore: discarded_futures
-      final jobStatus = await DaoJobStatus().getById(1);
-      June.getState(SelectJobStatus.new).jobStatusId = jobStatus?.id;
+      June.getState(SelectJobStatus.new).jobStatus = JobStatus.prospecting;
     }
   }
 
@@ -338,15 +334,15 @@ You can set a default booking fee from System | Billing screen''');
   );
 
   Widget _chooseStatus(Job? job) => JuneBuilder(
-    () => SelectJobStatus()..jobStatusId = job?.jobStatusId,
+    () => SelectJobStatus()..jobStatus = job?.status,
     builder: (jobStatus) => HMBDroplist<JobStatus>(
       title: 'Status',
       items:
           // ignore: discarded_futures
-          (filter) => DaoJobStatus().getAll(orderByClause: 'ordinal asc'),
+          (filter) async => JobStatus.byOrdinal(),
       // ignore: discarded_futures
-      selectedItem: () => DaoJobStatus().getById(jobStatus.jobStatusId),
-      onChanged: (status) => jobStatus.jobStatusId = status?.id,
+      selectedItem: () async => jobStatus._jobStatus,
+      onChanged: (status) => jobStatus.jobStatus = status,
       format: (value) => value.name,
     ),
   );
@@ -535,7 +531,8 @@ You can set a default booking fee from System | Billing screen''');
     assumption: jsonEncode(_assumptionController.document),
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(_SelectedContact.new).contactId,
-    jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
+    status:
+        June.getState(SelectJobStatus.new).jobStatus ?? JobStatus.prospecting,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
     bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
     bookingFeeInvoiced: job.bookingFeeInvoiced,
@@ -551,7 +548,8 @@ You can set a default booking fee from System | Billing screen''');
     assumption: jsonEncode(_assumptionController.document),
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(_SelectedContact.new).contactId,
-    jobStatusId: June.getState(SelectJobStatus.new).jobStatusId,
+    status:
+        June.getState(SelectJobStatus.new).jobStatus ?? JobStatus.prospecting,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
     bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
     billingType: _selectedBillingType,
@@ -698,12 +696,12 @@ You can set a default booking fee from System | Billing screen''');
 class SelectJobStatus extends JuneState {
   SelectJobStatus();
 
-  int? _jobStatusId;
+  JobStatus? _jobStatus = JobStatus.prospecting;
 
-  int? get jobStatusId => _jobStatusId;
+  JobStatus? get jobStatus => _jobStatus;
 
-  set jobStatusId(int? value) {
-    _jobStatusId = value;
+  set jobStatus(JobStatus? value) {
+    _jobStatus = value;
     setState();
   }
 }

@@ -99,33 +99,57 @@ where ti.completed = 0
     );
   }
 
-  Future<List<TaskItem>> getPackingItems({List<Job>? jobs}) async {
+  /// Get items that need to be backed.
+  Future<List<TaskItem>> getPackingItems({
+    required bool showPreApprovalJobs,
+    required bool showPreApprovedTask,
+    List<Job>? jobs,
+  }) async {
     final db = withoutTransaction();
 
-    // Base query for retrieving packing items
-    var query = '''
-SELECT ti.* 
-FROM task_item ti
-JOIN task t
-  ON ti.task_id = t.id
-JOIN job j
-  ON t.job_id = j.id
-JOIN job_status js
-  ON j.job_status_id = js.id
-WHERE (ti.item_type_id = 2 -- 'Materials - stock' 
-OR ti.item_type_id = 4 -- 'Tools - own'
-OR ti.item_type_id = 6 -- 'Consumables - stock'
-) 
-AND ti.completed = 0
-AND js.name NOT IN ('Prospecting', 'Rejected', 'On Hold', 'Awaiting Payment')
-''';
+    var query =
+        '''
+          SELECT ti.* 
+          FROM task_item ti
+          JOIN task t ON ti.task_id = t.id
+          JOIN job j ON t.job_id = j.id
+          WHERE (
+              ti.item_type_id = ${TaskItemType.materialsStock.id}
+              OR ti.item_type_id = ${TaskItemType.toolsOwn.id}
+              OR ti.item_type_id = ${TaskItemType.consumablesStock.id}
+          )
+          AND ti.completed = 0
+          ''';
 
-    final parameters = <int>[];
+    // Define job statuses that we want to show to the user.
+    final allowedStatuses = {JobStatus.inProgress};
+
+    for (final status in JobStatus.values) {
+      if (showPreApprovalJobs) {
+        if (status.stage == JobStatusStage.preStart) {
+          allowedStatuses.add(status);
+        }
+      }
+    }
+
+    final placeholders = List.filled(allowedStatuses.length, '?').join(',');
+    query += ' AND j.status_id  IN ($placeholders)';
+
+    // Filter out tasks with status = preApproval
+    if (!showPreApprovedTask) {
+      query +=
+          '''
+              AND t.task_status_id in ('${TaskStatus.preApproval.id}', '${TaskStatus.toBeScheduled.id}')
+            ''';
+    }
+
+    // Add job ID filtering
+    final parameters = <Object>[
+      ...(allowedStatuses.map((status) => status.id)),
+    ];
     if (jobs != null && jobs.isNotEmpty) {
-      // Add filtering for specific jobs if provided
       final jobIds = jobs.map((job) => job.id).toList();
       final placeholders = List.filled(jobIds.length, '?').join(',');
-
       query += ' AND j.id IN ($placeholders)';
       parameters.addAll(jobIds);
     }
@@ -154,13 +178,13 @@ SELECT ti.*
   FROM task_item ti
   JOIN task t               ON ti.task_id       = t.id
   JOIN job j                ON t.job_id         = j.id
-  JOIN job_status js        ON j.job_status_id  = js.id
- WHERE (ti.item_type_id = 1 -- 'Materials - buy' 
-  OR ti.item_type_id = 3 -- 'Tools - buy'
+ WHERE (ti.item_type_id = ${TaskItemType.materialsBuy.id}
+ OR ti.item_type_id = ${TaskItemType.consumablesBuy.id}
+  OR ti.item_type_id = ${TaskItemType.toolsBuy.id}
   )
    AND ti.completed = 0
    AND ti.is_return = 0
-   AND js.name NOT IN ( 'Rejected', 'On Hold')
+   AND j.status_id NOT IN ( '${JobStatus.rejected.id}', '${JobStatus.onHold.id}')
    $jobClause
    $supplierClause
 ''';

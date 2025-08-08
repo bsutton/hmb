@@ -12,9 +12,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../dao/dao_job.dart';
-import '../../../dao/dao_job_status.dart';
 import '../../../entity/job.dart';
-import '../../../entity/job_status_enum.dart';
+import '../../../entity/job_status_stage.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
@@ -53,9 +52,7 @@ class _JobListScreenState extends State<JobListScreen> {
             onFilterReset: () {
               _showOldJobs = false;
             },
-            background: (job) async =>
-                (await DaoJobStatus().getById(job.jobStatusId))?.getColour() ??
-                Colors.green,
+            background: (job) async => job.status.getColour(),
             details: (job) => JobCard(job: job, key: ValueKey(job.hashCode)),
           ),
         ),
@@ -67,16 +64,15 @@ class _JobListScreenState extends State<JobListScreen> {
     final jobs = await DaoJob().getByFilter(filter);
     final selected = <Job>[];
     for (final job in jobs) {
-      final jobStatus = await DaoJobStatus().getById(job.jobStatusId);
-      final status = jobStatus?.statusEnum;
+      final stage = job.status.stage;
       if (_showOldJobs) {
-        if (status == JobStatusEnum.onHold ||
-            status == JobStatusEnum.finalised) {
+        if (stage == JobStatusStage.onHold ||
+            stage == JobStatusStage.finalised) {
           selected.add(job);
         }
       } else {
-        if (status == JobStatusEnum.preStart ||
-            status == JobStatusEnum.progressing) {
+        if (stage == JobStatusStage.preStart ||
+            stage == JobStatusStage.progressing) {
           selected.add(job);
         }
       }

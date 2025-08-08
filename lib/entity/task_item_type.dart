@@ -15,49 +15,49 @@ import 'package:strings/strings.dart';
 enum TaskItemType {
   materialsBuy(
     1,
-    name: 'Materials - buy',
+    label: 'Materials - buy',
     description: 'Materials need to be purchased',
     color: '#FFFFE0',
     toPurchase: true,
   ),
   materialsStock(
     2,
-    name: 'Materials - stock',
+    label: 'Materials - stock',
     description: 'Materials to be taken from stock',
     color: '#D3D3D3',
     toPurchase: false,
   ),
   toolsBuy(
     3,
-    name: 'Tools - buy',
+    label: 'Tools - buy',
     description: 'Tool that needs to be purchased',
     color: '#90EE90',
     toPurchase: true,
   ),
   toolsOwn(
     4,
-    name: 'Tools - own',
+    label: 'Tools - own',
     description: 'Tool that we own',
     color: '#FAFAD2',
     toPurchase: false,
   ),
   labour(
     5,
-    name: 'Labour',
+    label: 'Labour',
     description: 'Work to be done',
     color: '#87CEFA',
     toPurchase: false,
   ),
   consumablesStock(
     6,
-    name: 'Consumables - stock',
+    label: 'Consumables - stock',
     description: 'Drills, Sand Paper etc held in stock',
     color: '#87CEFA',
     toPurchase: true,
   ),
   consumablesBuy(
     7,
-    name: 'Consumables - buy',
+    label: 'Consumables - buy',
     description: 'Drills, Sand Paper etc to be purchased',
     color: '#87CEFA',
     toPurchase: true,
@@ -65,14 +65,14 @@ enum TaskItemType {
 
   const TaskItemType(
     this.id, {
-    required this.name,
+    required this.label,
     required this.description,
     required this.color,
     required this.toPurchase,
   });
 
   final int id;
-  final String name;
+  final String label;
   final String description;
   final String color;
   final bool toPurchase;
@@ -85,7 +85,7 @@ enum TaskItemType {
       : TaskItemType.values
             .where(
               (type) =>
-                  type.name.toLowerCase().contains(filter!.toLowerCase()) ||
+                  type.label.toLowerCase().contains(filter!.toLowerCase()) ||
                   type.description.toLowerCase().contains(filter.toLowerCase()),
             )
             .toList();

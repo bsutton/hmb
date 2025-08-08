@@ -27,7 +27,7 @@ export 'invoice_line_group.dart';
 export 'job.dart';
 export 'job_activity.dart';
 export 'job_status.dart';
-export 'job_status_enum.dart';
+export 'job_status_stage.dart';
 export 'manufacturer.dart';
 export 'message_template.dart';
 export 'milestone.dart';

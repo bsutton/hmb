@@ -28,7 +28,10 @@ class PackingDashlet extends StatelessWidget {
   );
 
   Future<DashletValue<int>> getPackingItems() async {
-    final items = await DaoTaskItem().getPackingItems();
+    final items = await DaoTaskItem().getPackingItems(
+      showPreApprovalJobs: false,
+      showPreApprovedTask: false,
+    );
 
     final count = items.where((it) => !it.completed).length;
     return DashletValue(count);

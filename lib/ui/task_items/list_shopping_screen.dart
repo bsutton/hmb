@@ -230,11 +230,11 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
               this,
               builder: (ctx) {
                 if (_taskItems.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'No Shopping Items found\n'
                       '- Shopping items are taken from Task Items\n'
-                      '  that are marked as "Materials - buy" or "Tools - buy".\n'
+                      '  that are marked as "${TaskItemType.materialsBuy.label}", "${TaskItemType.toolsBuy.label}" or "${TaskItemType.consumablesBuy.label}".\n'
                       "If you were expecting to see items here - check the Job's Status is active.",
                       textAlign: TextAlign.center,
                     ),

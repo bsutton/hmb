@@ -190,7 +190,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       HMBStartTimeEntry(
         task: task,
         onStart: (job) {
-          June.getState(SelectJobStatus.new).jobStatusId = job.jobStatusId;
+          June.getState(SelectJobStatus.new).jobStatus = job.status;
         },
       ),
     ],
@@ -221,7 +221,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       HMBStartTimeEntry(
         task: task,
         onStart: (job) {
-          June.getState(SelectJobStatus.new).jobStatusId = job.jobStatusId;
+          June.getState(SelectJobStatus.new).jobStatus = job.status;
         },
       ),
     ],

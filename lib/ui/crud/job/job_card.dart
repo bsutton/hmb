@@ -59,19 +59,14 @@ class _JobCardState extends DeferredState<JobCard> {
 
   static const cardHeight = 560.0;
   @override
-  Widget build(BuildContext context) => FutureBuilderEx(
+  Widget build(BuildContext context) => FutureBuilderEx<Customer?>(
     waitingBuilder: (context) => const HMBPlaceHolder(height: cardHeight),
     // ignore: discarded_futures
-    future: DaoJobStatus().getById(job.jobStatusId),
-    builder: (context, jobStatus) => FutureBuilderEx<Customer?>(
-      waitingBuilder: (context) => const HMBPlaceHolder(height: cardHeight),
-      // ignore: discarded_futures
-      future: DaoCustomer().getById(job.customerId),
-      builder: (context, customer) => Surface(
-        padding: EdgeInsets.zero,
-        elevation: SurfaceElevation.e6,
-        child: _buildDetails(customer, jobStatus),
-      ),
+    future: DaoCustomer().getById(job.customerId),
+    builder: (context, customer) => Surface(
+      padding: EdgeInsets.zero,
+      elevation: SurfaceElevation.e6,
+      child: _buildDetails(customer, job.status),
     ),
   );
 

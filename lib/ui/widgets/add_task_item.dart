@@ -90,7 +90,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                     ],
                   },
                 ],
-                format: (type) => type.name,
+                format: (type) => type.label,
                 onChanged: (type) {
                   setState(() {
                     selectedItemType = type;

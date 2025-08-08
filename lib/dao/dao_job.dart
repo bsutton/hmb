@@ -14,9 +14,7 @@ import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:strings/strings.dart';
 
-import '../entity/customer.dart';
-import '../entity/job.dart';
-import '../entity/job_status_enum.dart';
+import '../entity/entity.g.dart';
 import '../util/money_ex.dart';
 import 'dao.g.dart';
 
@@ -76,11 +74,8 @@ class DaoJob extends Dao<Job> {
     job!.lastActive = true;
     job.modifiedDate = DateTime.now();
 
-    final jobStatus = await DaoJobStatus().getById(job.jobStatusId);
-    if (jobStatus!.statusEnum == JobStatusEnum.preStart) {
-      final inProgress = await DaoJobStatus().getInProgress();
-
-      job.jobStatusId = inProgress!.id;
+    if (job.status.stage == JobStatusStage.preStart) {
+      job.status = JobStatus.inProgress;
     }
     await update(job);
 
@@ -97,11 +92,8 @@ class DaoJob extends Dao<Job> {
     job!.lastActive = true;
     job.modifiedDate = DateTime.now();
 
-    final jobStatus = await DaoJobStatus().getById(job.jobStatusId);
-    if (jobStatus!.statusEnum == JobStatusEnum.preStart) {
-      final quoting = await DaoJobStatus().getQuoting();
-
-      job.jobStatusId = quoting!.id;
+    if (job.status.stage == JobStatusStage.preStart) {
+      job.status = JobStatus.quoting;
     }
     await update(job);
 
@@ -124,12 +116,10 @@ select j.*
 from job j
 join customer c
   on c.id = j.customer_id
-join job_status js
-  on j.job_status_id = js.id
 where j.summary like ?
 or j.description like ?
 or c.name like ?
-or js.name like ?
+or js.status_id like ?
 order by j.modified_date desc
 ''',
         [likeArg, likeArg, likeArg, likeArg],
@@ -168,8 +158,7 @@ where t.id =?
         '''
     SELECT j.*
     FROM job j
-    JOIN job_status js ON j.job_status_id = js.id
-    WHERE js.name NOT IN ( 'Rejected', 'On Hold', 'Awaiting Payment', 'Completed', 'To be Billed')
+    WHERE j.status_id NOT IN ( '${JobStatus.rejected.id}', '${JobStatus.onHold.id}', '${JobStatus.awaitingPayment.id}', '${JobStatus.completed.id}', '${JobStatus.toBeBilled.id}')
     AND (j.summary LIKE ? OR j.description LIKE ?)
     ORDER BY j.modified_date DESC
     ''',
@@ -183,20 +172,19 @@ where t.id =?
     final db = withoutTransaction();
     final likeArg = filter != null ? '%$filter%' : '%%';
 
-    // Use the enum's name property to match the `status_enum` column in the database
-    final preStartStatus = JobStatusEnum.preStart.name;
+    final preStartList =
+        ''' '${JobStatus.preStart().map((status) => status.id).join("', '")}' ''';
 
     return toList(
       await db.rawQuery(
         '''
     SELECT j.*
     FROM job j
-    JOIN job_status js ON j.job_status_id = js.id
-    WHERE js.status_enum = ?
+    WHERE j.status_id in ($preStartList)
     AND (j.summary LIKE ? OR j.description LIKE ?)
     ORDER BY j.modified_date DESC
   ''',
-        [preStartStatus, likeArg, likeArg],
+        [likeArg, likeArg],
       ),
     );
   }

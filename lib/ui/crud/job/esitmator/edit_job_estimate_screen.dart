@@ -65,7 +65,7 @@ class _JobEstimateBuilderScreenState
   @override
   Future<void> asyncInitState() async {
     final job = await DaoJob().markQuoting(widget.job.id);
-    widget.job.jobStatusId = job.jobStatusId;
+    widget.job.status = job.status;
     await _loadTasks();
   }
 

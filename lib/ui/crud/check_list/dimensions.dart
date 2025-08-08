@@ -77,7 +77,7 @@ class _DimensionWidgetState extends State<DimensionWidget> {
     SelectedCheckListItemType.new,
     builder: (selectedItemTypeState) {
       if (!_itemTypesWithDimensions.contains(
-        selectedItemTypeState.selected!.name,
+        selectedItemTypeState.selected!.label,
       )) {
         return const HMBEmpty();
       } else {

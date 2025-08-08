@@ -242,7 +242,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
 
         // ignore: discarded_futures
         items: (filter) async => TaskItemType.getByFilter(filter),
-        format: (checklistItemType) => checklistItemType.name,
+        format: (checklistItemType) => checklistItemType.label,
         onChanged: (itemType) {
           setState(() {
             June.getState(SelectedCheckListItemType.new).selected = itemType;

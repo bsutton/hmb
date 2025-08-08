@@ -35,10 +35,12 @@ import '../widgets/hmb_button.dart';
 import '../widgets/hmb_colours.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/hmb_toggle.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/select/hmb_droplist_multi.dart';
 import '../widgets/select/hmb_filter_line.dart';
 import '../widgets/surface.dart';
+import '../widgets/text/hmb_text.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'list_shopping_screen.dart';
 import 'mark_as_complete.dart';
@@ -68,8 +70,12 @@ class TaskItemContext {
 
 class _PackingScreenState extends DeferredState<PackingScreen> {
   final taskItemsContexts = <TaskItemContext>[];
+
+  /// Filters
   List<Job> _selectedJobs = [];
   String? filter;
+  var _showPreApprovedJobs = false;
+  var _showPreApprovedTasks = false;
 
   final _scheduleFilterKey = GlobalKey<HMBDroplistState<ScheduleFilter>>();
   @override
@@ -78,9 +84,16 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
     await _loadTaskItems();
   }
 
+  ///
+  /// Fetch the list of valid Task Items
+  ///
   Future<void> _loadTaskItems() async {
     // Get packing items filtered by the selected jobs.
-    final taskItems = await DaoTaskItem().getPackingItems(jobs: _selectedJobs);
+    final taskItems = await DaoTaskItem().getPackingItems(
+      jobs: _selectedJobs,
+      showPreApprovalJobs: _showPreApprovedJobs,
+      showPreApprovedTask: _showPreApprovedTasks,
+    );
     taskItemsContexts.clear();
 
     for (final taskItem in taskItems) {
@@ -137,11 +150,15 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
               _selectedJobs.clear();
               _selectedScheduleFilter = ScheduleFilter.all;
               _scheduleFilterKey.currentState?.clear();
+              _showPreApprovedJobs = false;
+              _showPreApprovedTasks = false;
               await _loadTaskItems();
             },
             isActive: () =>
                 _selectedJobs.isNotEmpty ||
-                _selectedScheduleFilter != ScheduleFilter.all,
+                _selectedScheduleFilter != ScheduleFilter.all ||
+                !_showPreApprovedJobs ||
+                !_showPreApprovedTasks,
           ),
           Expanded(
             child: DeferredBuilder(
@@ -196,6 +213,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
             );
     },
   );
+
   Widget _buildFilter(BuildContext context) => Column(
     children: [
       Padding(
@@ -237,6 +255,28 @@ If your Job isn't showing then you need to update its status to an Active one su
             ).help(
               'Filter by Schedule',
               'Filter packing items by job scheduled date (Today, Next 3 Days, or This Week)',
+            ),
+            HMBToggle(
+              label: 'Show Jobs awaiting Approval ',
+              hint:
+                  'Show Jobs that are marked as Prospecting, Quoting or Awaiting Approval ',
+              initialValue: _showPreApprovedJobs,
+              onToggled: (value) async {
+                _showPreApprovedJobs = value;
+                await _loadTaskItems();
+              },
+            ),
+            HMBToggle(
+              label: 'Show Tasks awaiting Approval',
+              hint: 'Show Tasks that are marked as  Awaiting Approval',
+              initialValue: _showPreApprovedTasks,
+              onToggled: (value) async {
+                _showPreApprovedTasks = value;
+                await _loadTaskItems();
+              },
+            ),
+            const HMBText(
+              'Note: Complete, Cancelled and On Hold jobs are not shown',
             ),
           ],
         ),
@@ -299,12 +339,17 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
               children: [
                 IconButton(
                   icon: const Icon(Icons.shopping_cart, color: Colors.blue),
-                  onPressed: () => unawaited(_moveToShoppingList(itemContext)),
+                  onPressed: () async {
+                    await _moveToShoppingList(itemContext);
+                    await _loadTaskItems();
+                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () =>
-                      unawaited(markAsCompleted(itemContext, context)),
+                  onPressed: () async {
+                    await markAsCompleted(itemContext, context);
+                    await _loadTaskItems();
+                  },
                 ),
               ],
             ),
