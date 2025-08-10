@@ -22,11 +22,13 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../api/xero/handyman/app_starts_logging.dart';
 import '../../dao/dao.g.dart';
+import '../../dao/dao_todo.dart';
 import '../../database/factory/factory.g.dart';
 import '../../database/management/backup_providers/local/local_backup_provider.dart';
 import '../../database/versions/asset_script_source.dart';
 import '../../installer/linux/install.dart';
 import '../../util/hmb_theme.dart';
+import '../../util/notifications/local_notifs.dart';
 import '../dialog/database_error_dialog.dart';
 import 'widgets.g.dart';
 
@@ -137,6 +139,7 @@ class _SplashScreenState extends State<SplashScreen> {
       await _initDb(context);
       await _initializeTimeEntryState(refresh: false);
       unawaited(logAppStartup());
+      await _initScheduler();
 
       // ignore: avoid_catches_without_on_clauses
       // } catch (e, stackTrace) {
@@ -184,6 +187,11 @@ class _SplashScreenState extends State<SplashScreen> {
       final task = await DaoTask().getById(activeEntry.taskId);
       timeEntryState.setActiveTimeEntry(activeEntry, task, doRefresh: refresh);
     }
+  }
+
+  Future<void> _initScheduler() async {
+    final openTodos = await DaoToDo().getOpenWithReminders();
+    await LocalNotifs().resyncFromToDos(openTodos);
   }
 
   // on linux this is:

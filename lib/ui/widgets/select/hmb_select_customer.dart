@@ -23,10 +23,11 @@ class HMBSelectCustomer extends StatefulWidget {
     required this.selectedCustomer,
     super.key,
     this.onSelected,
+    this.required = false,
   });
   final SelectedCustomer selectedCustomer;
-
   final void Function(Customer? customer)? onSelected;
+  final bool required;
 
   @override
   HMBSelectCustomerState createState() => HMBSelectCustomerState();
@@ -72,6 +73,7 @@ class HMBSelectCustomerState extends State<HMBSelectCustomer> {
           items: _getCustomers,
           format: (customer) => customer.name,
           onAdd: _addCustomer,
+          required: widget.required,
         ),
       ),
       Center(child: HMBButtonAdd(enabled: true, onAdd: _addCustomer)),

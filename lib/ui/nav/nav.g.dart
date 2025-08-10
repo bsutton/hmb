@@ -20,7 +20,7 @@ export 'dashboards/dashboard.dart';
 export 'dashboards/dashlet_card.dart';
 export 'dashboards/help/help_dashboard.dart';
 export 'dashboards/main/dashlets/schedule.dart';
-export 'dashboards/main/main_dashboard.dart';
+export 'dashboards/main/home_dashboard.dart';
 export 'dashboards/settings/settings_dashboard.dart';
 export 'error_page.dart';
 export 'home_scaffold.dart';

@@ -27,6 +27,7 @@ import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
 import '../crud/system/system_contact_screen.dart';
 import '../crud/system/xero_integration_screen.dart';
+import '../crud/todo/list_todo_screen.dart';
 import '../crud/tool/list_tool_screen.dart';
 import '../error.dart';
 import '../invoicing/list_invoice_screen.dart';
@@ -104,7 +105,10 @@ List<GoRoute> dashboardRoutes() => [
   GoRoute(
     path: 'jobs',
     builder: (_, _) => const HomeScaffold(initialScreen: JobListScreen()),
-    // routes: jobRoutes(),
+  ),
+  GoRoute(
+    path: 'todo',
+    builder: (_, _) => HomeScaffold(initialScreen: ToDoListScreen()),
   ),
   GoRoute(
     path: 'help',

@@ -29,7 +29,8 @@ class HMBButton extends StatelessWidget {
     this.enabled = true,
     super.key,
     this.color = HMBColors.buttonLabel,
-  }) : icon = null;
+  }) : icon = null,
+       _smallFlag = false;
 
   const HMBButton.withIcon({
     required this.label,
@@ -39,7 +40,29 @@ class HMBButton extends StatelessWidget {
     this.enabled = true,
     this.color = HMBColors.buttonLabel,
     super.key,
-  });
+  }) : _smallFlag = false;
+
+  /// Small variant (compact height/padding/font).
+  const HMBButton.small({
+    required this.label,
+    required this.onPressed,
+    required this.hint,
+    this.enabled = true,
+    this.color = HMBColors.buttonLabel,
+    super.key,
+  }) : icon = null,
+       _smallFlag = true;
+
+  /// Small variant with leading icon.
+  const HMBButton.smallWithIcon({
+    required this.label,
+    required this.onPressed,
+    required this.icon,
+    required this.hint,
+    this.enabled = true,
+    this.color = HMBColors.buttonLabel,
+    super.key,
+  }) : _smallFlag = true;
 
   final String label;
   final Icon? icon;
@@ -47,6 +70,7 @@ class HMBButton extends StatelessWidget {
   final bool enabled;
   final Color color;
   final String hint;
+  final bool _smallFlag;
 
   @override
   Widget build(BuildContext context) {
@@ -55,17 +79,28 @@ class HMBButton extends StatelessWidget {
             onPressed: enabled ? onPressed : null,
             label: Text(label, style: TextStyle(color: color)),
             icon: icon,
+            style: _smallFlag ? _smallStyle(context) : null,
           )
         : ElevatedButton(
             onPressed: enabled ? onPressed : null,
+            style: _smallFlag ? _smallStyle(context) : null,
             child: Text(label, style: TextStyle(color: color)),
           );
 
-    return HMBTooltip(
-      hint: hint,
-      child: button,
-    );
+    return HMBTooltip(hint: hint, child: button);
   }
+
+  ButtonStyle _smallStyle(BuildContext context) => ElevatedButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    minimumSize: const Size(0, 28),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    visualDensity: VisualDensity.compact,
+    textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: color,
+    ),
+  );
 }
 
 /// A primary-styled button with optional SVG icon and hint on long press.
@@ -114,10 +149,7 @@ class HMBButtonPrimary extends StatelessWidget {
           : Svg(svg!, height: 24, width: 24, color: svgColor),
     );
 
-    return HMBTooltip(
-      hint: hint,
-      child: btn,
-    );
+    return HMBTooltip(hint: hint, child: btn);
   }
 }
 
@@ -146,10 +178,7 @@ class HMBButtonSecondary extends StatelessWidget {
       child: Text(label, style: const TextStyle(color: HMBColors.buttonLabel)),
     );
 
-    return HMBTooltip(
-      hint: hint,
-      child: btn,
-    );
+    return HMBTooltip(hint: hint, child: btn);
   }
 }
 
@@ -173,10 +202,7 @@ class HMBLinkButton extends StatelessWidget {
       child: Text(label, style: const TextStyle(color: Colors.blue)),
     );
 
-    return HMBTooltip(
-      hint: hint,
-      child: btn,
-    );
+    return HMBTooltip(hint: hint, child: btn);
   }
 
   Future<void> _launchURL(String url) async {

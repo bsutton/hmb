@@ -64,3 +64,108 @@ DateTime? parseDateTime(String? value) => dateFormat.tryParse(value ?? '');
 
 //   return localClone.getValueOrThrow().localDateTime.toDateTimeLocal();
 // }
+
+/// Returns a compact human label for a due date.
+/// Examples:
+///  - Overdue 2h
+///  - Overdue 3d
+///  - Today 09:30
+///  - Tomorrow 14:00
+///  - Thu 08:15
+///  - 18 Aug
+///  - 18 Aug 2026   // different year
+String formatDue(DateTime due, {DateTime? now, bool includeTime = true}) {
+  final n = (now ?? DateTime.now()).toLocal();
+  final d = due.toLocal();
+
+  final atMidnight = DateTime(d.year, d.month, d.day);
+  final nowMidnight = DateTime(n.year, n.month, n.day);
+
+  final dayDelta = atMidnight.difference(nowMidnight).inDays;
+
+  // Overdue
+  if (d.isBefore(n)) {
+    final age = _compactAge(n.difference(d));
+    return age == null ? 'Overdue' : 'Overdue $age';
+  }
+
+  // Today / Tomorrow / Next 6 days -> weekday
+  if (dayDelta == 0) {
+    final t = includeTime ? _hm(d) : '';
+    return t.isEmpty ? 'Today' : 'Today $t';
+  }
+  if (dayDelta == 1) {
+    final t = includeTime ? _hm(d) : '';
+    return t.isEmpty ? 'Tomorrow' : 'Tomorrow $t';
+  }
+  if (dayDelta >= 2 && dayDelta <= 6) {
+    final t = includeTime ? ' ${_hm(d)}' : '';
+    return '${_wk(d.weekday)}$t';
+  }
+
+  // Beyond a week: 18 Aug or 18 Aug 2026 if year differs
+  final base = '${_dd(d.day)} ${_mon(d.month)}';
+  if (d.year != n.year) {
+    return '$base ${d.year}';
+  }
+  return base;
+}
+
+
+
+/// Returns a compact age like "5m", "2h", "3d".
+/// Returns null if under 1 minute (too small to show).
+String? _compactAge(Duration d) {
+  final mins = d.inMinutes;
+  if (mins < 1) {
+    return null;
+  }
+  if (mins < 60) {
+    return '${mins}m';
+  }
+  final hours = d.inHours;
+  if (hours < 24) {
+    return '${hours}h';
+  }
+  final days = d.inDays;
+  return '${days}d';
+}
+
+String _dd(int day) => day < 10 ? '0$day' : '$day';
+
+String _hm(DateTime d) => '${_two(d.hour)}:${_two(d.minute)}';
+
+String _two(int v) => v < 10 ? '0$v' : '$v';
+
+String _wk(int weekday) {
+  const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // DateTime.weekday: Mon=1..Sun=7
+  return names[(weekday - 1) % 7];
+}
+
+String _mon(int month) {
+  const m = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return m[(month - 1).clamp(0, 11)];
+}
+
+/// Convenience if you need a boolean check elsewhere.
+bool isOverdue(DateTime? due, {DateTime? now}) {
+  if (due == null) {
+    return false;
+  }
+  final n = (now ?? DateTime.now()).toLocal();
+  return due.toLocal().isBefore(n);
+}

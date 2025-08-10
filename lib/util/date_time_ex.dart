@@ -30,4 +30,8 @@ extension DateTimeEx on DateTime {
       weekday - 1 == DayName.sat.index || weekday - 1 == DayName.sun.index;
 
   bool isAfterOrEqual(DateTime other) => isAfter(other) || this == other;
+
+  /// True if this and [other] share the same yyyy-mm-dd.
+  bool sameDay(DateTime other) =>
+      year == other.year && month == other.month && day == other.day;
 }
