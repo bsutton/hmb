@@ -119,7 +119,7 @@ class _MessageTemplateEditScreenState extends State<MessageTemplateEditScreen>
   );
 
   @override
-  Future<void> saved() async {
+  Future<void> postSave(_) async {
     setState(() {});
   }
 }

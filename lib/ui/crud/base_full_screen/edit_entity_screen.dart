@@ -22,7 +22,7 @@ abstract class EntityState<E extends Entity<E>> {
 
   /// Called to notify that the entity has just been saved.
   /// [currentEntity] will have the saved value.
-  Future<void> saved();
+  Future<void> postSave(E entity);
   E? currentEntity;
 }
 
@@ -39,6 +39,7 @@ class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
     required this.entityName,
     required this.entityState,
     required this.dao,
+    this.preSave,
     this.scrollController,
     CrossValidator<E>? crossValidator,
     super.key,
@@ -47,6 +48,11 @@ class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
   final String entityName;
   final Dao<E> dao;
 
+  /// Overload [preSave] if you need to take an action before
+  /// saving the entity and optionally abort the save.
+  /// This method is called after the form has been validated
+  /// and the new/updated entity assembled.
+  final Future<bool> Function(E entity)? preSave;
   final Widget Function(E? entity, {required bool isNew}) editor;
   final EntityState<E> entityState;
   final ScrollController? scrollController;
@@ -118,13 +124,18 @@ class EntityEditScreenState<E extends Entity<E>>
           final updatedEntity = await widget.entityState.forUpdate(
             widget.entityState.currentEntity!,
           );
-          await widget.dao.update(updatedEntity);
-          widget.entityState.currentEntity = updatedEntity;
+          if (widget.preSave == null ||
+              (await widget.preSave!(updatedEntity))) {
+            await widget.dao.update(updatedEntity);
+            widget.entityState.currentEntity = updatedEntity;
+          }
         } else {
           // Insert new entity
           final newEntity = await widget.entityState.forInsert();
-          await widget.dao.insert(newEntity);
-          widget.entityState.currentEntity = newEntity;
+          if (widget.preSave == null || (await widget.preSave!(newEntity))) {
+            await widget.dao.insert(newEntity);
+            widget.entityState.currentEntity = newEntity;
+          }
         }
         await saved();
 
@@ -145,7 +156,7 @@ class EntityEditScreenState<E extends Entity<E>>
   }
 
   Future<void> saved() async {
-    await widget.entityState.saved();
+    await widget.entityState.postSave(widget.entityState.currentEntity!);
     setState(() {});
   }
 

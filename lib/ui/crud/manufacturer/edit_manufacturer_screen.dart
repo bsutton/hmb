@@ -100,7 +100,7 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
   );
 
   @override
-  Future<void> saved() async {
+  Future<void> postSave(_) async {
     setState(() {});
   }
 }

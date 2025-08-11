@@ -86,7 +86,7 @@ class _CategoryEditScreenState extends State<CategoryEditScreen>
   );
 
   @override
-  Future<void> saved() async {
+  Future<void> postSave(_) async {
     setState(() {});
   }
 }

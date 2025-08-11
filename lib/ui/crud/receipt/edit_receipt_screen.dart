@@ -211,7 +211,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   );
 
   @override
-  Future<void> saved() async {
+  Future<void> postSave(_) async {
     // update the controller to point at the newly‐saved entity
     _photoCtrl = PhotoController<Receipt>(
       parent: currentEntity,
