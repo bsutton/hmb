@@ -193,6 +193,17 @@ where t.id =?
     );
   }
 
+  /// Mark the job as scheduled if it is in a pre-start state.
+  Future<void> markScheduled(Job job) async {
+      final jobStatus = job.status;
+
+      if (jobStatus.stage == JobStatusStage.preStart) {
+        job.status = JobStatus.scheduled;
+        await DaoJob().update(job);
+      }
+
+  }
+
   /// Get Quotable Jobs - now filtered by `preStart` status
   Future<List<Job>> getQuotableJobs(String? filter) async {
     final db = withoutTransaction();
