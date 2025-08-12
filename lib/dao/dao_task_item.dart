@@ -99,62 +99,76 @@ where ti.completed = 0
     );
   }
 
-  /// Get items that need to be backed.
+  /// Get items that need to be packed.
   Future<List<TaskItem>> getPackingItems({
-    required bool showPreApprovalJobs,
+    required bool showPreScheduledJobs,
     required bool showPreApprovedTask,
     List<Job>? jobs,
   }) async {
     final db = withoutTransaction();
 
-    var query =
-        '''
-          SELECT ti.* 
-          FROM task_item ti
-          JOIN task t ON ti.task_id = t.id
-          JOIN job j ON t.job_id = j.id
-          WHERE (
-              ti.item_type_id = ${TaskItemType.materialsStock.id}
-              OR ti.item_type_id = ${TaskItemType.toolsOwn.id}
-              OR ti.item_type_id = ${TaskItemType.consumablesStock.id}
-          )
-          AND ti.completed = 0
-          ''';
+    const baseQuery = '''
+      SELECT ti.*
+        FROM task_item ti
+        JOIN task t ON ti.task_id = t.id
+        JOIN job j ON t.job_id = j.id
+    ''';
 
-    // Define job statuses that we want to show to the user.
-    final allowedStatuses = {JobStatus.inProgress};
-
-    for (final status in JobStatus.values) {
-      if (showPreApprovalJobs) {
-        if (status.stage == JobStatusStage.preStart) {
-          allowedStatuses.add(status);
-        }
-      }
-    }
-
-    final placeholders = List.filled(allowedStatuses.length, '?').join(',');
-    query += ' AND j.status_id  IN ($placeholders)';
-
-    // Filter out tasks with status = preApproval
-    if (!showPreApprovedTask) {
-      query +=
-          '''
-              AND t.task_status_id in ('${TaskStatus.preApproval.id}', '${TaskStatus.toBeScheduled.id}')
-            ''';
-    }
-
-    // Add job ID filtering
-    final parameters = <Object>[
-      ...(allowedStatuses.map((status) => status.id)),
+    final conditions = <String>[
+      '''
+      ti.item_type_id IN (${TaskItemType.materialsStock.id}, 
+          ${TaskItemType.toolsOwn.id}, 
+          ${TaskItemType.consumablesStock.id})''',
+      'ti.completed = 0',
     ];
+    final parameters = <Object>[];
+
+    // ————— Job status filtering —————
+    final allowedStatusIds = <String>[
+      JobStatus.inProgress.id,
+      JobStatus.scheduled.id,
+    ];
+    if (showPreScheduledJobs) {
+      allowedStatusIds.addAll(
+        JobStatus.values
+            .where((s) => s.stage == JobStatusStage.preStart)
+            .map((s) => s.id),
+      );
+    }
+    final statusPlaceholders = List.filled(
+      allowedStatusIds.length,
+      '?',
+    ).join(', ');
+    conditions.add('j.status_id IN ($statusPlaceholders)');
+    parameters.addAll(allowedStatusIds);
+
+    // ————— Task status filtering —————
+    // when showPreApprovedTask==false, exclude pre-approval & to-be-scheduled
+    if (!showPreApprovedTask) {
+      final excludeIds = <int>[
+        TaskStatus.preApproval.id,
+        TaskStatus.toBeScheduled.id,
+      ];
+      final excludePlaceholders = List.filled(
+        excludeIds.length,
+        '?',
+      ).join(', ');
+      conditions.add('t.task_status_id NOT IN ($excludePlaceholders)');
+      parameters.addAll(excludeIds);
+    }
+
+    // ————— Optional job ID filtering —————
     if (jobs != null && jobs.isNotEmpty) {
       final jobIds = jobs.map((job) => job.id).toList();
-      final placeholders = List.filled(jobIds.length, '?').join(',');
-      query += ' AND j.id IN ($placeholders)';
+      final jobPlaceholders = List.filled(jobIds.length, '?').join(', ');
+      conditions.add('j.id IN ($jobPlaceholders)');
       parameters.addAll(jobIds);
     }
 
-    return toList(await db.rawQuery(query, parameters));
+    // assemble final query & execute
+    final query = '$baseQuery WHERE ${conditions.join(' AND ')}';
+    final results = await db.rawQuery(query, parameters);
+    return toList(results);
   }
 
   /// shopping items
