@@ -54,7 +54,7 @@ class DesktopNotifScheduler {
     _removeById(n.id);
 
     final t = n.scheduledAtMillis;
-    final list = _queue.putIfAbsent(t, () => <Notif>[])..add(n);
+    _queue.putIfAbsent(t, () => <Notif>[]).add(n);
   }
 
   void cancel(int id) => _removeById(id);
