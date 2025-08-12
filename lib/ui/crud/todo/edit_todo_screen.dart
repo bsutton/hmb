@@ -81,7 +81,7 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
       crossValidator: () async => switch (_parentType) {
         ToDoParentType.job => selectedJob.jobId != null,
         ToDoParentType.customer => selectedCustomer.customerId != null,
-        _ => selectedCustomer.customerId == null && selectedJob.jobId != null,
+        _ => selectedCustomer.customerId == null && selectedJob.jobId == null,
       },
 
       editor: (entity, {required isNew}) => Column(
@@ -89,47 +89,13 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
         children: [
           HMBTextField(controller: _title, labelText: 'Title', required: true),
           HMBTextArea(controller: _note, labelText: 'Notes'),
-          HMBSelectChips<ToDoPriority>(
-            label: 'Priority',
-            value: _priority,
-            items: ToDoPriority.values,
-            toText: (v) => v.name,
-            onChanged: (v) => setState(() => _priority = v!),
-          ),
-          HMBDateTimeField(
-            label: 'Due By',
-            mode: HMBDateTimeFieldMode.dateOnly,
-            initialDateTime:
-                _dueDate ?? DateTime.now().add(const Duration(days: 3)),
-            onChanged: (d) => _dueDate = d,
-          ),
-          HMBDateTimeField(
-            label: 'Reminder',
-            mode: HMBDateTimeFieldMode.dateOnly,
-            initialDateTime:
-                _remindAt ?? DateTime.now().add(const Duration(days: 2)),
-            onChanged: (d) => _remindAt = d,
-          ),
-          HMBSelectChips<ToDoStatus>(
-            label: 'Status',
-            value: _status,
-            items: ToDoStatus.values,
-            toText: (v) => v.name,
-            onChanged: (v) {
-              setState(() {
-                _status = v!;
-                _completedDate = _status == ToDoStatus.done
-                    ? DateTime.now()
-                    : null;
-              });
-            },
-          ),
+
           // Context picker (None / Job / Customer)
           HMBSelectChips<ToDoParentType?>(
             label: 'Context',
             value: _parentType,
             items: const [null, ToDoParentType.job, ToDoParentType.customer],
-            toText: (v) => v == null ? 'None' : v.name,
+            format: (v) => v == null ? 'None' : v.name,
             onChanged: (v) => setState(() {
               _parentType = v;
               selectedCustomer.customerId = null;
@@ -154,6 +120,41 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
                 setState(() {});
               },
             ),
+          HMBSelectChips<ToDoPriority>(
+            label: 'Priority',
+            value: _priority,
+            items: ToDoPriority.values,
+            format: (v) => v.name,
+            onChanged: (v) => setState(() => _priority = v!),
+          ),
+          HMBDateTimeField(
+            label: 'Due By',
+            mode: HMBDateTimeFieldMode.dateOnly,
+            initialDateTime:
+                _dueDate ?? DateTime.now().add(const Duration(days: 3)),
+            onChanged: (d) => _dueDate = d,
+          ),
+          HMBDateTimeField(
+            label: 'Reminder',
+            mode: HMBDateTimeFieldMode.dateOnly,
+            initialDateTime:
+                _remindAt ?? DateTime.now().add(const Duration(days: 2)),
+            onChanged: (d) => _remindAt = d,
+          ),
+          HMBSelectChips<ToDoStatus>(
+            label: 'Status',
+            value: _status,
+            items: ToDoStatus.values,
+            format: (v) => v.name,
+            onChanged: (v) {
+              setState(() {
+                _status = v!;
+                _completedDate = _status == ToDoStatus.done
+                    ? DateTime.now()
+                    : null;
+              });
+            },
+          ),
         ],
       ),
     ),
