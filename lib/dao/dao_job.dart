@@ -83,7 +83,7 @@ class DaoJob extends Dao<Job> {
   }
 
   /// Marks the job as 'in quoting' if it is
-  /// in a pre-start state.
+  /// in a [JobStatus.prospecting] state.
   Future<Job> markQuoting(int jobId) async {
     final job = await getById(jobId);
 
@@ -92,7 +92,7 @@ class DaoJob extends Dao<Job> {
     job!.lastActive = true;
     job.modifiedDate = DateTime.now();
 
-    if (job.status.stage == JobStatusStage.preStart) {
+    if (job.status == JobStatus.prospecting) {
       job.status = JobStatus.quoting;
     }
     await update(job);
@@ -119,10 +119,9 @@ join customer c
 where j.summary like ?
 or j.description like ?
 or c.name like ?
-or js.status_id like ?
 order by j.modified_date desc
 ''',
-        [likeArg, likeArg, likeArg, likeArg],
+        [likeArg, likeArg, likeArg],
       ),
     );
   }
@@ -163,6 +162,33 @@ where t.id =?
     ORDER BY j.modified_date DESC
     ''',
         [likeArg, likeArg],
+      ),
+    );
+  }
+
+  Future<List<Job>> getSchedulableJobs(String? filter) async {
+    final db = withoutTransaction();
+    final likeArg = filter != null ? '''%$filter%''' : '%%';
+
+    final canBeScheduled = JobStatus.canBeScheduled().map(
+      (status) => status.id,
+    );
+
+    final canBeScheduledPlaceHolders = List.filled(
+      canBeScheduled.length,
+      '?',
+    ).join(',');
+
+    return toList(
+      await db.rawQuery(
+        '''
+    SELECT j.*
+    FROM job j
+    WHERE j.status_id IN ( $canBeScheduledPlaceHolders )
+    AND (j.summary LIKE ? OR j.description LIKE ?)
+    ORDER BY j.modified_date DESC
+    ''',
+        [...canBeScheduled, likeArg, likeArg],
       ),
     );
   }
@@ -327,9 +353,6 @@ where c.id =?
     return bestEmail;
   }
 
-  @override
-  JuneStateCreator get juneRefresher => JobState.new;
-
   Future<bool> hasQuoteableItems(Job job) async {
     final estimates = await DaoTask().getEstimatesForJob(job.id);
 
@@ -391,6 +414,9 @@ where c.id =?
     }
     return ready;
   }
+
+  @override
+  JuneStateCreator get juneRefresher => JobState.new;
 }
 
 /// Used to notify the UI that the time entry has changed.

@@ -23,6 +23,7 @@ import '../../util/money_ex.dart';
 import '../crud/base_full_screen/base_full_screen.g.dart';
 import '../crud/job/edit_job_screen.dart';
 import '../widgets/select/hmb_droplist.dart';
+import '../widgets/select/hmb_select_job.dart';
 import '../widgets/widgets.g.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_screen.dart';
@@ -40,7 +41,7 @@ class InvoiceListScreen extends StatefulWidget {
 
 class _InvoiceListScreenState extends State<InvoiceListScreen> {
   // late List<Invoice> _invoices;
-  Job? selectedJob;
+  final selectedJob = SelectedJob();
   Customer? selectedCustomer;
   String? filterText;
 
@@ -48,7 +49,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   void initState() {
     super.initState();
     setAppTitle('Invoices');
-    selectedJob = widget.job;
+    selectedJob.jobId = widget.job?.id;
   }
 
   @override
@@ -72,11 +73,11 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     details: _buildInvoiceCard,
     filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
     isFilterActive: () =>
-        selectedJob != null ||
+        selectedJob.jobId != null ||
         selectedCustomer != null ||
         Strings.isNotBlank(filterText),
     onFilterReset: () async {
-      selectedJob = null;
+      selectedJob.jobId = null;
       selectedCustomer = null;
       filterText = null;
     },
@@ -84,8 +85,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
   Future<List<Invoice>> _fetchFilteredInvoices() async {
     var invoices = await DaoInvoice().getByFilter(filterText);
-    if (selectedJob != null) {
-      invoices = invoices.where((i) => i.jobId == selectedJob!.id).toList();
+    if (selectedJob.jobId != null) {
+      invoices = invoices.where((i) => i.jobId == selectedJob.jobId).toList();
     }
     if (selectedCustomer != null) {
       final filtered = <Invoice>[];
@@ -161,18 +162,15 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     padding: const EdgeInsets.all(8),
     child: Column(
       children: [
-        HMBDroplist<Job>(
-          // key: ValueKey(selectedJob),
-          title: 'Filter by Job',
-          items: (filter) => DaoJob().getActiveJobs(filter),
-          format: (job) => job.summary,
-          required: false,
-          selectedItem: () async => selectedJob,
-          onChanged: (job) async {
-            selectedJob = job;
+        HMBSelectJob(
+          title: 'Filter By Job',
+          selectedJobId: selectedJob,
+          onSelected: (job) => setState(() {
+            selectedJob.jobId = job?.id;
             onChange();
-          },
+          }),
         ),
+
         const SizedBox(height: 8),
         HMBDroplist<Customer>(
           // key: ValueKey(selectedCustomer),

@@ -20,6 +20,7 @@ import '../invoicing/dialog_select_tasks.dart';
 import '../invoicing/select_job_dialog.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
+import '../widgets/select/hmb_select_job.dart';
 import '../widgets/widgets.g.dart';
 import 'quote_card.dart';
 import 'quote_details_screen.dart';
@@ -34,7 +35,7 @@ class QuoteListScreen extends StatefulWidget {
 }
 
 class _QuoteListScreenState extends State<QuoteListScreen> {
-  Job? selectedJob;
+  final selectedJob = SelectedJob();
   Customer? selectedCustomer;
   var _includeApproved = true;
   var _includeInvoiced = false;
@@ -44,7 +45,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
   void initState() {
     super.initState();
     setAppTitle('Quotes');
-    selectedJob = widget.job;
+    selectedJob.jobId = widget.job?.id;
     _includeInvoiced = widget.job != null;
     _includeRejected = widget.job != null;
   }
@@ -54,8 +55,8 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     var quotes = await DaoQuote().getByFilter(filter);
 
     // Job filter
-    if (selectedJob != null) {
-      quotes = quotes.where((q) => q.jobId == selectedJob!.id).toList();
+    if (selectedJob.jobId != null) {
+      quotes = quotes.where((q) => q.jobId == selectedJob.jobId).toList();
     }
 
     // Customer filter
@@ -155,12 +156,12 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
     isFilterActive: () =>
         widget.job == null &&
-            (selectedJob != null || selectedCustomer != null) ||
+            (selectedJob.jobId != null || selectedCustomer != null) ||
         !_includeApproved ||
         !_includeInvoiced ||
         !_includeRejected,
     onFilterReset: () {
-      selectedJob = widget.job;
+      selectedJob.jobId = widget.job?.id;
       selectedCustomer = null;
       _includeApproved = true;
       _includeInvoiced = true;
@@ -181,17 +182,17 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
       children: [
         // Job dropdown
         if (widget.job == null)
-          HMBDroplist<Job>(
-            title: 'Filter by Job',
-            items: (f) => DaoJob().getActiveJobs(f),
-            format: (j) => j.summary,
-            required: false,
-            selectedItem: () async => selectedJob,
-            onChanged: (j) {
-              selectedJob = j;
+          HMBSelectJob(
+            title: 'Filter By Job',
+            selectedJobId: selectedJob,
+            // ignore: discarded_futures
+            // items: (filter) => DaoJob().getSchedulableJobs(filter),
+            onSelected: (job) => setState(() {
+              selectedJob.jobId = job?.id;
               onChange();
-            },
+            }),
           ),
+
         if (widget.job == null) const HMBSpacer(height: true),
         // Customer dropdown
         if (widget.job == null)
