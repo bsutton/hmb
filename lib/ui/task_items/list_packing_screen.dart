@@ -24,6 +24,7 @@ import '../../dao/dao_task_item.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
+import '../../entity/job_status.dart';
 import '../../entity/task.dart';
 import '../../entity/task_item.dart';
 import '../../entity/task_item_type.dart';
@@ -74,7 +75,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
   /// Filters
   List<Job> _selectedJobs = [];
   String? filter;
-  var _showPreApprovedJobs = false;
+  var _showPreScheduledJobs = false;
   var _showPreApprovedTasks = false;
 
   final _scheduleFilterKey = GlobalKey<HMBDroplistState<ScheduleFilter>>();
@@ -91,7 +92,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
     // Get packing items filtered by the selected jobs.
     final taskItems = await DaoTaskItem().getPackingItems(
       jobs: _selectedJobs,
-      showPreApprovalJobs: _showPreApprovedJobs,
+      showPreScheduledJobs: _showPreScheduledJobs,
       showPreApprovedTask: _showPreApprovedTasks,
     );
     taskItemsContexts.clear();
@@ -150,14 +151,14 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
               _selectedJobs.clear();
               _selectedScheduleFilter = ScheduleFilter.all;
               _scheduleFilterKey.currentState?.clear();
-              _showPreApprovedJobs = false;
+              _showPreScheduledJobs = false;
               _showPreApprovedTasks = false;
               await _loadTaskItems();
             },
             isActive: () =>
                 _selectedJobs.isNotEmpty ||
                 _selectedScheduleFilter != ScheduleFilter.all ||
-                !_showPreApprovedJobs ||
+                !_showPreScheduledJobs ||
                 !_showPreApprovedTasks,
           ),
           Expanded(
@@ -257,12 +258,11 @@ If your Job isn't showing then you need to update its status to an Active one su
               'Filter packing items by job scheduled date (Today, Next 3 Days, or This Week)',
             ),
             HMBToggle(
-              label: 'Show Jobs awaiting Approval ',
-              hint:
-                  'Show Jobs that are marked as Prospecting, Quoting or Awaiting Approval ',
-              initialValue: _showPreApprovedJobs,
+              label: 'Show Jobs pre scheduling',
+              hint: _preSchedulingHint(),
+              initialValue: _showPreScheduledJobs,
               onToggled: (value) async {
-                _showPreApprovedJobs = value;
+                _showPreScheduledJobs = value;
                 await _loadTaskItems();
               },
             ),
@@ -284,12 +284,12 @@ If your Job isn't showing then you need to update its status to an Active one su
     ],
   );
 
-  Center _showEmpty() => const Center(
+  Center _showEmpty() => Center(
     child: Text('''
 No Packing Items found 
 
 - A Job must be Active (Scheduled, In Progress...) for items to appear.
-Packing items are taken from Task items that are marked as "Materials - stock" or "Tools - own".
+Packing items are taken from Task items that are marked as "${TaskItemType.materialsStock.label}", "${TaskItemType.consumablesStock.label} or  "${TaskItemType.toolsOwn.label}".
 
 
 '''),
@@ -407,6 +407,16 @@ Packing items are taken from Task items that are marked as "Materials - stock" o
       ),
     );
     return confirmed;
+  }
+
+  String _preSchedulingHint() {
+    final preStartStatuses = JobStatus.preStart();
+
+    final statuses = Strings.conjuctionJoin(
+      preStartStatuses.map((status) => status.displayName).toList(),
+    );
+
+    return 'Show Jobs that are marked as $statuses';
   }
 }
 
