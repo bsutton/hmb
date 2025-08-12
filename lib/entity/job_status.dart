@@ -21,6 +21,7 @@ enum JobStatus {
     description: 'A customer has contacted us about a potential job',
     colorCode: '#ADD8E6',
     stage: JobStatusStage.preStart,
+    schedulingAllowed: false,
     ordinal: 1,
   ),
   quoting(
@@ -29,6 +30,7 @@ enum JobStatus {
     description: 'Preparing a quote for the job',
     colorCode: '#ADD8E6',
     stage: JobStatusStage.preStart,
+    schedulingAllowed: false,
     ordinal: 2,
   ),
   awaitingApproval(
@@ -37,7 +39,17 @@ enum JobStatus {
     description: 'Waiting on the client to approve quote',
     colorCode: '#ADD8E6',
     stage: JobStatusStage.preStart,
+    schedulingAllowed: false,
     ordinal: 3,
+  ),
+  awaitingPayment(
+    id: 'AwaitingPayment',
+    displayName: 'Awaiting Payment',
+    description: 'Approved but awaiting payment',
+    colorCode: '#FFD700',
+    stage: JobStatusStage.preStart,
+    schedulingAllowed: true,
+    ordinal: 4,
   ),
   toBeScheduled(
     id: 'ToBeScheduled',
@@ -45,15 +57,17 @@ enum JobStatus {
     description: 'Customer agreed to proceed but no start date set',
     colorCode: '#FFFFE0',
     stage: JobStatusStage.preStart,
-    ordinal: 4,
+    schedulingAllowed: true,
+    ordinal: 5,
   ),
   scheduled(
     id: 'Scheduled',
     displayName: 'Scheduled',
     description: 'Job has been approved and scheduled',
     colorCode: '#FFD700',
-    stage: JobStatusStage.preStart,
-    ordinal: 5,
+    stage: JobStatusStage.progressing,
+    schedulingAllowed: true,
+    ordinal: 6,
   ),
   inProgress(
     id: 'InProgress',
@@ -61,7 +75,8 @@ enum JobStatus {
     description: 'The Job is currently in progress',
     colorCode: '#87CEFA',
     stage: JobStatusStage.progressing,
-    ordinal: 6,
+    schedulingAllowed: true,
+    ordinal: 7,
   ),
   onHold(
     id: 'OnHold',
@@ -69,7 +84,8 @@ enum JobStatus {
     description: 'The Job is on hold',
     colorCode: '#FAFAD2',
     stage: JobStatusStage.onHold,
-    ordinal: 7,
+    schedulingAllowed: true,
+    ordinal: 8,
   ),
   awaitingMaterials(
     id: 'AwaitingMaterials',
@@ -77,39 +93,35 @@ enum JobStatus {
     description: 'The job is paused until materials are available',
     colorCode: '#D3D3D3',
     stage: JobStatusStage.onHold,
-    ordinal: 8,
-  ),
-  progressPayment(
-    id: 'ProgressPayment',
-    displayName: 'Progress Payment',
-    description: 'Job stage complete — progress payment required',
-    colorCode: '#F08080',
-    stage: JobStatusStage.finalised,
+    schedulingAllowed: true,
     ordinal: 9,
   ),
+  // progressPayment(
+  //   id: 'ProgressPayment',
+  //   displayName: 'Progress Payment',
+  //   description: 'Job stage complete — progress payment required',
+  //   colorCode: '#F08080',
+  //   stage: JobStatusStage.finalised,
+  //   ordinal: 9,
+  // ),
   completed(
     id: 'Completed',
     displayName: 'Completed',
     description: 'The Job is completed',
     colorCode: '#90EE90',
     stage: JobStatusStage.finalised,
+    schedulingAllowed: false,
     ordinal: 10,
   ),
-  awaitingPayment(
-    id: 'AwaitingPayment',
-    displayName: 'Awaiting Payment',
-    description: 'Approved but awaiting payment',
-    colorCode: '#FFD700',
-    stage: JobStatusStage.onHold,
-    ordinal: 11,
-  ),
+
   toBeBilled(
     id: 'ToBeBilled',
     displayName: 'To be Billed',
     description: 'Completed — needs to be billed',
     colorCode: '#FFA07A',
     stage: JobStatusStage.finalised,
-    ordinal: 12,
+    schedulingAllowed: false,
+    ordinal: 11,
   ),
   rejected(
     id: 'Rejected',
@@ -117,7 +129,8 @@ enum JobStatus {
     description: 'The Job was rejected by the Customer',
     colorCode: '#FFB6C1',
     stage: JobStatusStage.finalised,
-    ordinal: 13,
+    schedulingAllowed: false,
+    ordinal: 12,
   );
 
   const JobStatus({
@@ -126,6 +139,7 @@ enum JobStatus {
     required this.description,
     required this.colorCode,
     required this.stage,
+    required this.schedulingAllowed,
     required this.ordinal,
   });
 
@@ -135,18 +149,29 @@ enum JobStatus {
   final String colorCode;
   final JobStatusStage stage;
   final int ordinal;
+  // JobStatus' that can be
+  // scheduled.
+  final bool schedulingAllowed;
 
-  static JobStatus fromId(String id) =>
-      values.firstWhere((e) => e.id == id, orElse: () => JobStatus.prospecting);
+  static JobStatus get startingStatus => JobStatus.prospecting;
+
+  static JobStatus fromId(String id) => values.firstWhere(
+    (e) => e.id == id,
+    orElse: () => JobStatus.startingStatus,
+  );
 
   Color getColour() => hexToColor(colorCode);
 
-  static List<JobStatus> byOrdinal() => values
+  static List<JobStatus> byOrdinal() => values.toList()
     ..sort((a, b) => a.ordinal - b.ordinal)
     ..toList();
 
   static Iterable<JobStatus> preStart() =>
       values.where((status) => status.stage == JobStatusStage.preStart);
+
+  /// Returns a list of JobStatus' that can be scheduled.
+  static Iterable<JobStatus> canBeScheduled() =>
+      values.where((status) => status.schedulingAllowed);
 
   @override
   String toString() => 'id: $id, name: $name, description: $description';
