@@ -10,6 +10,7 @@
 */
 
 import 'package:calendar_view/calendar_view.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
@@ -17,9 +18,7 @@ import '../../dao/dao_contact.dart';
 import '../../dao/dao_job.dart';
 import '../../dao/dao_job_activity.dart';
 import '../../entity/contact.dart';
-import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
-import '../../entity/job_status.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
@@ -29,7 +28,7 @@ import '../widgets/hmb_date_time_picker.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/layout/hmb_scroll_for_keyboard.dart';
 import '../widgets/layout/hmb_spacer.dart';
-import '../widgets/select/hmb_droplist.dart';
+import '../widgets/select/hmb_select_job.dart';
 import 'job_activity_ex.dart';
 
 class JobActivityUpdateAction {
@@ -48,7 +47,8 @@ enum EditAction { delete, update, cancel }
 
 enum AddAction { add, cancel }
 
-/// The dialog for adding/editing job events
+/// The dialog for adding/editing job events to the
+/// schedule.
 class JobActivityDialog extends StatefulWidget {
   JobActivityDialog.edit({
     required CalendarEventData<JobActivityEx> this.event,
@@ -99,32 +99,24 @@ class JobActivityDialog extends StatefulWidget {
   _JobActivityDialogState createState() => _JobActivityDialogState();
 }
 
-class _JobActivityDialogState extends State<JobActivityDialog> {
+class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
   late LocalDate _eventDate;
   late LocalTime _startTime;
   late LocalTime _endTime;
+  late Duration duration;
 
   JobActivityStatus _status = JobActivityStatus.tentative; // Default status
   String? _notes;
-  Job? _selectedJob;
+  final _selectedJob = SelectedJob();
   final _form = GlobalKey<FormState>();
   DateTime? _noticeSentDate;
 
   @override
-  void initState() {
-    super.initState();
-
+  Future<void> asyncInitState() async {
     if (widget.event == null) {
       // If we have a preSelectedJobId, fetch that job from DB
       if (widget.preSelectedJobId != null) {
-        // ignore: discarded_futures
-        DaoJob().getById(widget.preSelectedJobId).then((job) {
-          if (mounted && job != null) {
-            setState(() {
-              _selectedJob = job;
-            });
-          }
-        });
+        _selectedJob.jobId = widget.preSelectedJobId;
       }
 
       // default times
@@ -136,11 +128,13 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
       _eventDate = (widget.event!.startTime ?? DateTime.now()).toLocalDate();
       _startTime = (widget.event!.startTime ?? DateTime.now()).toLocalTime();
       _endTime = (widget.event!.endTime ?? DateTime.now()).toLocalTime();
-      _selectedJob = widget.event?.event!.job;
+      _selectedJob.jobId = widget.event?.event!.job.id;
       _status = widget.event!.event!.jobActivity.status;
       _notes = widget.event!.event!.jobActivity.notes;
       _noticeSentDate = widget.event!.event!.jobActivity.noticeSentDate;
     }
+    // Calculate the duration
+    duration = _endTime.difference(_startTime);
   }
 
   @override
@@ -149,55 +143,52 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     final isSmallScreen =
         screenWidth < 600; // Define threshold for small screens
 
-    // Calculate the duration
-    final duration = _endTime.difference(_startTime);
-
-    return Form(
-      key: _form,
-      child: HMBScrollForKeyboard(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 15),
-              HMBDroplist<Job>(
-                selectedItem: () async => _selectedJob,
-                // ignore: discarded_futures
-                items: (filter) => DaoJob().getActiveJobs(filter),
-                format: (job) => job.summary,
-                onChanged: (job) => setState(() {
-                  _selectedJob = job;
-                }),
-                title: 'Select Job',
-              ),
-              const HMBSpacer(height: true),
-              // Display event date
-              _buildEventDate(context),
-
-              const HMBSpacer(height: true),
-              ..._buildStartEndDates(isSmallScreen),
-              // Display the duration
-              _buildDuration(duration),
-              // Status dropdown
-              _buildStatus(),
-              const HMBSpacer(height: true),
-              // Notes field
-              _buildNotes(),
-              const HMBSpacer(height: true),
-              if (_noticeSentDate != null)
-                Text('Notice sent on: ${formatDateTime(_noticeSentDate!)}'),
-              const HMBSpacer(height: true),
-
-              // Contact option
-              if (widget.isEditing || _selectedJob != null)
-                ElevatedButton(
-                  onPressed: _showContactOptions,
-                  child: const Text('Send Notice'),
+    return DeferredBuilder(
+      this,
+      builder: (context) => Form(
+        key: _form,
+        child: HMBScrollForKeyboard(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 15),
+                HMBSelectJob(
+                  selectedJobId: _selectedJob,
+                  // ignore: discarded_futures
+                  onSelected: (job) => setState(() {
+                    _selectedJob.jobId = job?.id;
+                  }),
                 ),
-              const SizedBox(height: 30),
-              _buildButtons(context),
-            ],
+                const HMBSpacer(height: true),
+                // Display event date
+                _buildEventDate(context),
+
+                const HMBSpacer(height: true),
+                ..._buildStartEndDates(isSmallScreen),
+                // Display the duration
+                _buildDuration(duration),
+                // Status dropdown
+                _buildStatus(),
+                const HMBSpacer(height: true),
+                // Notes field
+                _buildNotes(),
+                const HMBSpacer(height: true),
+                if (_noticeSentDate != null)
+                  Text('Notice sent on: ${formatDateTime(_noticeSentDate!)}'),
+                const HMBSpacer(height: true),
+
+                // Contact option
+                if (widget.isEditing || _selectedJob.jobId != null)
+                  ElevatedButton(
+                    onPressed: _showContactOptions,
+                    child: const Text('Send Notice'),
+                  ),
+                const SizedBox(height: 30),
+                _buildButtons(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -256,9 +247,9 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
       // Delete button on the left
       if (widget.isEditing)
         HMBButtonSecondary(
-          onPressed: _handleDelete,
           label: 'Delete',
           hint: 'Delete this activite',
+          onPressed: _handleDelete,
         )
       else
         const SizedBox(), // Placeholder for alignment when not editing
@@ -266,19 +257,19 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
       Row(
         children: [
           HMBButtonSecondary(
+            label: 'Cancel',
             hint: "Don't save the changes",
             onPressed: () => Navigator.of(context).pop(
               widget.isEditing
                   ? JobActivityUpdateAction(EditAction.cancel, null)
                   : JobActivityAddAction(AddAction.cancel, null),
             ),
-            label: 'Cancel',
           ),
           const HMBSpacer(width: true),
           HMBButtonPrimary(
+            label: widget.isEditing ? 'Update Event' : 'Add Event',
             hint: 'Save the event',
             onPressed: _handleSave,
-            label: widget.isEditing ? 'Update Event' : 'Add Event',
           ),
         ],
       ),
@@ -317,7 +308,10 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     initialDateTime: _endTime.toDateTime(),
     width: 200,
     onChanged: (date) {
-      setState(() => _endTime = date.toLocalTime());
+      setState(() {
+        _endTime = date.toLocalTime();
+        duration = _endTime.difference(_startTime);
+      });
     },
     validator: (date) {
       if (date == null) {
@@ -343,6 +337,7 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
       if (_startTime.isAfter(_endTime)) {
         _endTime = _startTime.addDuration(const Duration(hours: 1));
       }
+      duration = _endTime.difference(_startTime);
       setState(() => {});
     },
   );
@@ -358,12 +353,6 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   /// Save Event
   Future<void> _handleSave() async {
     if (!(_form.currentState?.validate() ?? true)) {
-      return;
-    }
-
-    if (_selectedJob == null) {
-      HMBToast.error('Please select a job for the event.');
-
       return;
     }
 
@@ -385,6 +374,7 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
           .atDate(_eventDate)
           .subtract(const Duration(minutes: 1))
           .toLocalTime();
+      duration = _endTime.difference(_startTime);
     }
 
     // Check for overlapping events
@@ -426,7 +416,7 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     late JobActivity jobEvent;
     if (widget.isEditing) {
       jobEvent = widget.event!.event!.jobActivity.copyWith(
-        jobId: _selectedJob!.id,
+        jobId: _selectedJob.jobId,
         start: _startTime.atDate(_eventDate),
         end: _endTime.atDate(_eventDate),
         status: _status,
@@ -436,7 +426,7 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
     } else {
       /// new job event.
       jobEvent = JobActivity.forInsert(
-        jobId: _selectedJob!.id,
+        jobId: _selectedJob.jobId!,
         start: _startTime.atDate(_eventDate),
         end: _endTime.atDate(_eventDate),
         status: _status,
@@ -462,10 +452,11 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   }
 
   Future<JobActivityEx?> _checkForOverlappingEvents() async {
-    final jobEvents = await DaoJobActivity().getByJob(_selectedJob!.id);
+    final jobEvents = await DaoJobActivity().getByJob(_selectedJob.jobId);
     for (final event in jobEvents) {
       final startDate = _startTime.atDate(_eventDate);
       final endDate = _endTime.atDate(_eventDate);
+
       if ((startDate.isBefore(event.end) && startDate.isAfter(event.start)) ||
           (endDate.isAfter(event.start) && endDate.isBefore(event.end)) ||
           (startDate.isBefore(event.start) && endDate.isAfter(event.end))) {
@@ -481,21 +472,9 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
 
   Future<void> _updateJobStatus() async {
     // Next, check the job’s status
-    final job = await DaoJob().getById(_selectedJob!.id);
+    final job = await DaoJob().getById(_selectedJob.jobId);
     if (job != null) {
-      final jobStatus = job.status;
-      final statusesThatShouldBecomeScheduled = [
-        JobStatus.prospecting,
-        JobStatus.quoting,
-        JobStatus.awaitingApproval,
-        JobStatus.toBeScheduled,
-        JobStatus.onHold,
-      ];
-
-      if (statusesThatShouldBecomeScheduled.contains(jobStatus)) {
-        job.status = JobStatus.scheduled;
-        await DaoJob().update(job);
-      }
+      await DaoJob().markScheduled(job);
     }
   }
 
@@ -549,8 +528,8 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   }
 
   Future<List<ContactOption>> _getCustomerContacts() async {
-    // final job = await DaoJob().getById(_selectedJob!.id);
-    final contactId = _selectedJob?.contactId;
+    final job = await DaoJob().getById(_selectedJob.jobId);
+    final contactId = job!.contactId;
     if (contactId != null) {
       final contactOptions = <ContactOption>[];
 
@@ -600,6 +579,8 @@ class _JobActivityDialogState extends State<JobActivityDialog> {
   }
 
   void _sendNotice(ContactOption contact) {
+    // TODO(bsutton): send customer notice that their job has been schuled
+    // as well as notice if we change the job.
     // Implement your logic to send the notice via email or SMS
     // You can use the contact.method and contact.detail to determine how to send the notice
 

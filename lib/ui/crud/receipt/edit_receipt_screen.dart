@@ -19,7 +19,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/money_ex.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/media/photo_controller.dart';
-import '../../widgets/select/hmb_droplist.dart';
+import '../../widgets/select/hmb_select_job.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_full_screen/edit_entity_screen.dart';
@@ -36,7 +36,7 @@ class ReceiptEditScreen extends StatefulWidget {
 class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     implements EntityState<Receipt> {
   late DateTime _date;
-  Job? _job;
+  final _selectedJob = SelectedJob();
   int? _supplierId;
 
   @override
@@ -64,7 +64,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   Future<void> asyncInitState() async {
     currentEntity = widget.receipt;
     _date = currentEntity?.receiptDate ?? DateTime.now();
-    _job = await DaoJob().getById(currentEntity?.jobId);
+    _selectedJob.jobId = currentEntity?.jobId;
     _supplierId = currentEntity?.supplierId;
     selectedSupplier.selected = _supplierId;
 
@@ -132,19 +132,13 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       ),
 
       // Job dropdown (unchanged)
-      HMBDroplist<Job>(
-        title: 'Select Job',
-        selectedItem: () async => _job,
+      HMBSelectJob(
+        selectedJobId: _selectedJob,
         // ignore: discarded_futures
-        items: (filter) => DaoJob().getActiveJobs(filter),
-        format: (job) => job.summary,
-        onChanged: (job) {
-          setState(() {
-            _job = job;
-          });
-        },
+        onSelected: (job) => setState(() {
+          _selectedJob.jobId = job?.id;
+        }),
       ),
-
       // SUPPLIER: now using your SelectSupplier widget
       HMBSelectSupplier(
         selectedSupplier: selectedSupplier,
@@ -193,7 +187,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   Future<Receipt> forUpdate(Receipt receipt) async => Receipt.forUpdate(
     entity: receipt,
     receiptDate: _date,
-    jobId: _job!.id,
+    jobId: _selectedJob.jobId!,
     supplierId: _supplierId!,
     totalExcludingTax: MoneyEx.tryParse(_totalExclCtrl.text),
     tax: MoneyEx.tryParse(_taxCtrl.text),
@@ -203,7 +197,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   @override
   Future<Receipt> forInsert() async => Receipt.forInsert(
     receiptDate: _date,
-    jobId: _job!.id,
+    jobId: _selectedJob.jobId!,
     supplierId: _supplierId!,
     totalExcludingTax: MoneyEx.tryParse(_totalExclCtrl.text),
     tax: MoneyEx.tryParse(_taxCtrl.text),
