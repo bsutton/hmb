@@ -11,14 +11,17 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../dao/dao_invoice.dart';
-import '../../../dao/dao_quote.dart';
-import '../../../dao/dao_time_entry.dart';
+import '../../../dao/dao.g.dart';
+import '../../../dao/dao_todo.dart';
 import '../../../entity/job.dart';
 import '../../invoicing/list_invoice_screen.dart';
 import '../../nav/dashboards/dashlet_card.dart';
 import '../../quoting/list_quote_screen.dart';
 import '../../widgets/layout/hmb_full_page_child_screen.dart';
+import '../base_nested/list_nested_screen.dart';
+import '../task/list_task_screen.dart';
+import '../todo/list_todo_screen.dart';
+import '../work_assignment/list_assignment_screen.dart';
 import 'esitmator/edit_job_estimate_screen.dart';
 import 'tracking/list_time_entry_screen.dart';
 
@@ -30,7 +33,7 @@ class MiniJobDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const dashletSize = 90.0;
+    const dashletSize = 100.0;
     return Center(
       child: Wrap(
         spacing: 8,
@@ -61,6 +64,63 @@ class MiniJobDashboard extends StatelessWidget {
               builder: (_, _) => HMBFullPageChildScreen(
                 title: 'Quotes',
                 child: QuoteListScreen(job: job),
+              ),
+
+              // route: '/home/jobs/quotes/${job.id}',
+            ),
+            size: dashletSize,
+          ),
+          _dashlet(
+            child: DashletCard<int>.builder(
+              label: 'Tasks',
+              hint: 'Task to be completed for this Job',
+              icon: Icons.task,
+              compact: true,
+              value: () async {
+                final all = await DaoTask().getTasksByJob(job.id);
+                return DashletValue<int>(all.length);
+              },
+              builder: (_, _) => HMBFullPageChildScreen(
+                title: 'Tasks',
+                child: TaskListScreen(parent: Parent(job), extended: true),
+              ),
+
+              // route: '/home/jobs/quotes/${job.id}',
+            ),
+            size: dashletSize,
+          ),
+          _dashlet(
+            child: DashletCard<int>.builder(
+              label: 'Assign',
+              hint: 'Assign tasks to sub-contractors (Suppliers)',
+              icon: Icons.task,
+              compact: true,
+              value: () async {
+                final all = await DaoWorkAssigment().getByJob(job.id);
+                return DashletValue<int>(all.length);
+              },
+              builder: (_, _) => HMBFullPageChildScreen(
+                title: 'Assignments',
+                child: AssignmentListScreen(parent: Parent(job)),
+              ),
+
+              // route: '/home/jobs/quotes/${job.id}',
+            ),
+            size: dashletSize,
+          ),
+          _dashlet(
+            child: DashletCard<int>.builder(
+              label: 'Todo',
+              hint: 'Add action items to the job',
+              icon: Icons.task,
+              compact: true,
+              value: () async {
+                final all = await DaoToDo().getByJob(job.id);
+                return DashletValue<int>(all.length);
+              },
+              builder: (_, _) => HMBFullPageChildScreen(
+                title: 'Todo',
+                child: ToDoListScreen(),
               ),
 
               // route: '/home/jobs/quotes/${job.id}',

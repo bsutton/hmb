@@ -32,7 +32,6 @@ import '../../widgets/circle.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_button.dart';
-import '../../widgets/hmb_child_crud_card.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/layout/hmb_spacer.dart';
@@ -45,9 +44,6 @@ import '../../widgets/select/hmb_select_site.dart';
 import '../../widgets/text/hmb_expanding_text_block.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../base_full_screen/edit_entity_screen.dart';
-import '../base_nested/list_nested_screen.dart';
-import '../task/list_task_screen.dart';
-import '../work_assignment/list_assignment_screen.dart';
 import 'list_job_screen.dart';
 
 class JobEditScreen extends StatefulWidget {
@@ -82,10 +78,13 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   @override
   Job? currentEntity;
 
+  late final JobStatus originalJobStatus;
+
   @override
   void initState() {
     super.initState();
     currentEntity ??= widget.job;
+    originalJobStatus = currentEntity?.status ?? JobStatus.startingStatus;
     scrollController = ScrollController();
 
     _summaryController = TextEditingController(text: widget.job?.summary ?? '');
@@ -139,7 +138,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
         _bookingFeeController.text =
             system.defaultBookingFee?.amount.toString() ?? '0.00';
       });
-      June.getState(SelectJobStatus.new).jobStatus = JobStatus.prospecting;
+      June.getState(SelectJobStatus.new).jobStatus = JobStatus.startingStatus;
     }
   }
 
@@ -156,6 +155,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
           dao: DaoJob(),
           scrollController: scrollController,
           entityState: this,
+
           editor: (job, {required isNew}) => Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -186,8 +186,8 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
               const HMBSpacer(height: true),
               // Display task photos
               if (job != null) PhotoGallery.forJob(job: job),
-              _manageAssignments(job),
-              _manageTasks(job),
+              // _manageAssignments(job),
+              // _manageTasks(job),
             ],
           ),
         ),
@@ -255,17 +255,17 @@ A once off fee applied to this Job.
 
 You can set a default booking fee from System | Billing screen''');
 
-  /// manage tasks
-  Widget _manageTasks(Job? job) => HMBChildCrudCard(
-    headline: 'Tasks',
-    crudListScreen: TaskListScreen(parent: Parent(job), extended: true),
-  );
+  // /// manage tasks
+  // Widget _manageTasks(Job? job) => HMBChildCrudCard(
+  //   headline: 'Tasks',
+  //   crudListScreen: TaskListScreen(parent: Parent(job), extended: true),
+  // );
 
-  /// manage assignments
-  Widget _manageAssignments(Job? job) => HMBChildCrudCard(
-    headline: 'Work Assignments',
-    crudListScreen: AssignmentListScreen(parent: Parent(job)),
-  );
+  // /// manage assignments
+  // Widget _manageAssignments(Job? job) => HMBChildCrudCard(
+  //   headline: 'Work Assignments',
+  //   crudListScreen: AssignmentListScreen(parent: Parent(job)),
+  // );
 
   /// choose billing contact
   Widget _chooseBillingContact(Customer? customer, Job? job) => JuneBuilder(
@@ -343,7 +343,7 @@ You can set a default booking fee from System | Billing screen''');
       // ignore: discarded_futures
       selectedItem: () async => jobStatus._jobStatus,
       onChanged: (status) => jobStatus.jobStatus = status,
-      format: (value) => value.name,
+      format: (value) => value.displayName,
     ),
   );
 
@@ -532,7 +532,8 @@ You can set a default booking fee from System | Billing screen''');
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(_SelectedContact.new).contactId,
     status:
-        June.getState(SelectJobStatus.new).jobStatus ?? JobStatus.prospecting,
+        June.getState(SelectJobStatus.new).jobStatus ??
+        JobStatus.startingStatus,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
     bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
     bookingFeeInvoiced: job.bookingFeeInvoiced,
@@ -549,7 +550,8 @@ You can set a default booking fee from System | Billing screen''');
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(_SelectedContact.new).contactId,
     status:
-        June.getState(SelectJobStatus.new).jobStatus ?? JobStatus.prospecting,
+        June.getState(SelectJobStatus.new).jobStatus ??
+        JobStatus.startingStatus,
     hourlyRate: MoneyEx.tryParse(_hourlyRateController.text),
     bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
     billingType: _selectedBillingType,
@@ -573,7 +575,9 @@ You can set a default booking fee from System | Billing screen''');
   }
 
   @override
-  Future<void> saved() async => setState(() {});
+  Future<void> postSave(Job entity) async {
+    setState(() {});
+  }
 
   Widget _buildDescription(Job? job) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -696,7 +700,7 @@ You can set a default booking fee from System | Billing screen''');
 class SelectJobStatus extends JuneState {
   SelectJobStatus();
 
-  JobStatus? _jobStatus = JobStatus.prospecting;
+  JobStatus? _jobStatus = JobStatus.startingStatus;
 
   JobStatus? get jobStatus => _jobStatus;
 
