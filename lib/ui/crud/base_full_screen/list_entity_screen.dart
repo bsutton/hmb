@@ -41,8 +41,10 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
 
     /// Only implement onDelete if you need to override the default
     /// behavour (such as showing your own UI)
-    /// when adding a deleting an entity
-    /// Return true if the delete occured
+    /// when deleting an entity.
+    /// If you override this method then you are responsible for
+    /// deleting the entity.
+    /// Return true if the delete occurred
     this.onDelete,
     this.cardHeight = 300,
     this.background,
