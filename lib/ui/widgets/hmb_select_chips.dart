@@ -25,7 +25,7 @@ class HMBSelectChips<T> extends StatelessWidget {
     required this.label,
     required this.items,
     required this.value,
-    required this.toText,
+    required this.format,
     required this.onChanged,
     super.key,
     this.tone = HMBChipTone.neutral,
@@ -36,7 +36,7 @@ class HMBSelectChips<T> extends StatelessWidget {
   final String label;
   final List<T> items;
   final T? value;
-  final String Function(T) toText;
+  final String Function(T) format;
   final ValueChanged<T?> onChanged;
   final HMBChipTone tone;
   final double spacing;
@@ -62,7 +62,7 @@ class HMBSelectChips<T> extends StatelessWidget {
         children: items.map((item) {
           final selected = value == item;
           return ChoiceChip(
-            label: Text(toText(item)),
+            label: Text(format(item)),
             selected: selected,
             onSelected: (_) => onChanged(item),
             checkmarkColor: Colors.white,
