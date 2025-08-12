@@ -20,6 +20,7 @@ import '../../dialog/dialog.g.dart';
 import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/text/hmb_text.dart';
+import '../base_full_screen/list_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import '../job/edit_job_screen.dart';
 import 'edit_task_screen.dart';
@@ -60,17 +61,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Flexible(
-          child: NestedEntityListScreen<Task, Job>(
+          child: EntityListScreen<Task>(
             key: ValueKey(showCompleted),
-            parent: widget.parent,
-            parentTitle: 'Job',
-            entityNamePlural: 'Tasks',
-            entityNameSingular: 'Task',
+            pageTitle: 'Task',
             dao: DaoTask(),
             // ignore: discarded_futures
             fetchList: _fetchTasks,
             title: (entity) => Text(entity.name),
-            filterBar: (entity) => Row(
+            filterSheetBuilder: (entity) => Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 HMBToggle(
@@ -93,28 +91,22 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 TaskEditScreen(job: widget.parent.parent!, task: task),
             // ignore: discarded_futures
             onDelete: onDelete,
+
             // ignore: discarded_futures
-            onInsert: (task, transaction) =>
-                DaoTask().insert(task, transaction),
-            details: (task, details) => details == CardDetail.full
-                ? _buildFullTasksDetails(task)
-                : _buildTaskSummary(task),
-            extended: widget.extended,
+            details: _buildFullTasksDetails,
+            // : _buildTaskSummary(task),
           ),
         ),
       ],
     );
   }
 
-  Future<void> onDelete(Task? task) async {
-    if (task == null) {
-      return;
-    }
-
+  Future<bool> onDelete(Task task) async {
     // if there is are any work assignment for this task then warn the user.
     final taskAssignments = await DaoWorkAssignmentTask().getByTask(task);
     if (taskAssignments.isEmpty) {
       await DaoTask().delete(task.id);
+      return true;
     } else {
       final message = StringBuffer()
         ..writeln(
@@ -135,6 +127,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           }
         }
       }
+      var deleted = false;
       if (mounted) {
         await askUserToContinue(
           context: context,
@@ -144,13 +137,15 @@ class _TaskListScreenState extends State<TaskListScreen> {
           noLabel: 'Cancel',
           onConfirmed: () async {
             await DaoTask().delete(task.id);
+            deleted = true;
           },
         );
       }
+      return deleted;
     }
   }
 
-  Future<List<Task>> _fetchTasks() async {
+  Future<List<Task>> _fetchTasks(String? filter) async {
     final showCompleted = June.getState(
       ShowCompletedTasksState.new,
     )._showCompletedTasks;

@@ -117,7 +117,7 @@ Future<Job> createJob(
     description: 'This is a T&M job',
     siteId: 1, // Assuming a site ID
     contactId: contact?.id ?? 1, // Assuming a contact ID
-    status: JobStatus.prospecting, // Assuming a job status ID
+    status: JobStatus.startingStatus, // Assuming a job status ID
     hourlyRate: hourlyRate, // $50 per hour
     bookingFee: bookingFee, // $100 Booking Fee
     billingType: billingType,
