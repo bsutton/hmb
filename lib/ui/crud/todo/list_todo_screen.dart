@@ -7,6 +7,7 @@ import '../../dialog/hmb_snooze_picker.dart';
 import '../../widgets/hmb_chip.dart';
 import '../../widgets/hmb_menu_chip.dart';
 import '../../widgets/hmb_select_chips.dart';
+import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/select/hmb_entity_chip.dart';
 import '../../widgets/text/text.g.dart';
 import '../../widgets/widgets.g.dart';
@@ -55,7 +56,8 @@ class ToDoListScreen extends StatelessWidget {
   Column _buildCard(ToDo t, BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      if (t.note != null) HMBTextBody(t.note!),
+      if (t.note != null) HMBTextBlock(t.note!, maxLines: 4),
+      const HMBSpacer(height: true),
       Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -107,26 +109,16 @@ class ToDoListScreen extends StatelessWidget {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HMBTextHeadline3('Filters'),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              HMBSelectChips<ToDoStatus>(
-                label: 'Status',
-                items: ToDoStatus.values,
-                value: toDoListStatusFilter,
-                onChanged: (v) {
-                  toDoListStatusFilter = v!;
-                  onChange();
-                },
-                toText: (status) => status.name,
-              ),
-            ],
+          HMBSelectChips<ToDoStatus>(
+            label: 'Status',
+            items: ToDoStatus.values,
+            value: toDoListStatusFilter,
+            onChanged: (v) {
+              toDoListStatusFilter = v!;
+              onChange();
+            },
+            format: (status) => status.name,
           ),
-          const SizedBox(height: 8),
-          HMBTextLabel('Default is “Open”. Change here to view Done.'),
         ],
       );
 }
