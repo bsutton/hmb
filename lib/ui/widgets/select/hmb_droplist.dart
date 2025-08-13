@@ -32,6 +32,7 @@ class HMBDroplist<T> extends StatefulWidget {
     this.onSaved,
     this.initialValue,
     this.required = true,
+    this.showSearch = true,
     super.key,
   });
 
@@ -45,6 +46,7 @@ class HMBDroplist<T> extends StatefulWidget {
   final void Function(T?)? onSaved;
   final T? initialValue;
   final bool required;
+  final bool showSearch;
 
   @override
   HMBDroplistState<T> createState() => HMBDroplistState<T>();
@@ -114,6 +116,7 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
                   selectedItem: _selectedItem,
                   allowClear: !widget.required,
                   onAdd: widget.onAdd != null ? _handleAdd : null,
+                  showSearch: widget.showSearch
                 ),
               );
               if (selected != null || !widget.required) {

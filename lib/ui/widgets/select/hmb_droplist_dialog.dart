@@ -27,6 +27,7 @@ class HMBDroplistDialog<T> extends StatefulWidget {
     this.allowClear = false,
     this.onAdd, // Optional "Add" button callback
     super.key,
+    this.showSearch = true,
   });
 
   final Future<List<T>> Function(String? filter) getItems;
@@ -35,6 +36,7 @@ class HMBDroplistDialog<T> extends StatefulWidget {
   final T? selectedItem;
   final bool allowClear;
   final Future<void> Function()? onAdd; // Optional "Add" button callback
+  final bool showSearch;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -157,57 +159,57 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
               ),
             ),
           ),
-        Surface(
-          elevation: SurfaceElevation.e6,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    style: const TextStyle(color: HMBColors.textPrimary),
-                    decoration: InputDecoration(
-                      labelText: 'Search',
-                      labelStyle: const TextStyle(
-                        color: HMBColors.inputDecoration,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      suffixIcon: IconButton(
-                        icon: const Icon(
-                          Icons.clear,
-                          color: HMBColors.inputDecoration,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.text = '';
-                            _filter = '';
-                            _loading = true;
-                          });
-                          unawaited(_loadItems());
-                        },
-                      ),
-                    ),
-                    onChanged: _onFilterChanged,
-                  ),
-                ),
-                if (widget.onAdd != null)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: HMBIconButton(
-                      onPressed: _handleAdd,
-                      icon: const Icon(Icons.add),
-                      hint: 'Add ${widget.title}',
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
+        if (widget.showSearch) _buildSearch(),
         const SizedBox(height: 16),
       ],
+    ),
+  );
+
+  Surface _buildSearch() => Surface(
+    elevation: SurfaceElevation.e6,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(color: HMBColors.textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Search',
+                labelStyle: const TextStyle(color: HMBColors.inputDecoration),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                suffixIcon: IconButton(
+                  icon: const Icon(
+                    Icons.clear,
+                    color: HMBColors.inputDecoration,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _searchController.text = '';
+                      _filter = '';
+                      _loading = true;
+                    });
+                    unawaited(_loadItems());
+                  },
+                ),
+              ),
+              onChanged: _onFilterChanged,
+            ),
+          ),
+          if (widget.onAdd != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: HMBIconButton(
+                onPressed: _handleAdd,
+                icon: const Icon(Icons.add),
+                hint: 'Add ${widget.title}',
+              ),
+            ),
+        ],
+      ),
     ),
   );
 }
