@@ -25,7 +25,7 @@ Future<Invoice> createTimeAndMaterialsInvoice(
   required bool billBookingFee,
 }) async {
   if (job.hourlyRate == MoneyEx.zero) {
-    throw InvoiceException('Hourly rate must be set for job ${job.summary}');
+    throw InvoiceException("Hourly rate must be set for job '${job.summary}'");
   }
 
   assert(

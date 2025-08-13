@@ -25,7 +25,7 @@ Future<Invoice> createFixedPriceInvoice(
 ) async {
   final job = await DaoJob().getById(quote.jobId);
   if (job!.hourlyRate == MoneyEx.zero) {
-    throw InvoiceException('Hourly rate must be set for job ${job.summary}');
+    throw InvoiceException("Hourly rate must be set for job '${job.summary}'");
   }
 
   final totalAmount = quote.totalAmount;

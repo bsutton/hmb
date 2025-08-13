@@ -113,7 +113,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     }
 
     if (job.hourlyRate == MoneyEx.zero) {
-      HMBToast.error('Hourly rate must be set for job ${job.summary}');
+      HMBToast.error("Hourly rate must be set for job '${job.summary}'");
       return null;
     }
 
