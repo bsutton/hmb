@@ -57,7 +57,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
     if (widget.items != null) {
       jobs = await widget.items?.call(filter);
     } else {
-      jobs = await DaoJob().getByFilter(filter);
+      jobs = await DaoJob().getActiveJobs(filter);
     }
 
     final jc = <JobAndCustomer>[];
