@@ -14,6 +14,8 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao_job.dart';
 import '../../../entity/job.dart';
 import '../../../entity/job_status_stage.dart';
+import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/select/select.g.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
@@ -32,6 +34,7 @@ class JobListScreen extends StatefulWidget {
 
 class _JobListScreenState extends State<JobListScreen> {
   var _showOldJobs = false;
+  var _order = JobOrder.active;
 
   @override
   Widget build(BuildContext context) => Surface(
@@ -48,9 +51,10 @@ class _JobListScreenState extends State<JobListScreen> {
             title: (job) => HMBCardTitle(job.summary),
             cardHeight: 700,
             filterSheetBuilder: _buildFilterSheet,
-            isFilterActive: () => _showOldJobs,
+            isFilterActive: () => _showOldJobs || _order != JobOrder.active,
             onFilterReset: () {
               _showOldJobs = false;
+              _order = JobOrder.active;
             },
             background: (job) async => job.status.getColour(),
             details: (job) => JobCard(job: job, key: ValueKey(job.hashCode)),
@@ -61,7 +65,7 @@ class _JobListScreenState extends State<JobListScreen> {
   );
 
   Future<List<Job>> _fetchJobs(String? filter) async {
-    final jobs = await DaoJob().getByFilter(filter);
+    final jobs = await DaoJob().getByFilter(filter, order: _order);
     final selected = <Job>[];
     for (final job in jobs) {
       final stage = job.status.stage;
@@ -80,7 +84,19 @@ class _JobListScreenState extends State<JobListScreen> {
     return selected;
   }
 
-  Widget _buildFilterSheet(void Function() onChange) =>
+  Widget _buildFilterSheet(void Function() onChange) => Column(
+    children: [
+      HMBDroplist<JobOrder>(
+        title: 'Sort Order',
+        selectedItem: () async => _order,
+        items: (_) async => JobOrder.values,
+        format: (order) => order.description,
+        onChanged: (order) {
+          _order = order!;
+          onChange();
+        },
+      ),
+      const HMBSpacer(height: true),
       SwitchListTile(
         title: const Text('Show only Old Jobs'),
         value: _showOldJobs,
@@ -93,7 +109,9 @@ class _JobListScreenState extends State<JobListScreen> {
       ).help(
         'Show only Old Jobs',
         'Only show Jobs that are on hold or have been finalised.',
-      );
+      ),
+    ],
+  );
 }
 
 // class FilterState extends JuneState {

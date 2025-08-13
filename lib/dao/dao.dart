@@ -42,5 +42,8 @@ abstract class Dao<T extends Entity<T>> extends DaoBase<T> {
 
   T fromMap(Map<String, dynamic> map);
 
+  T? getFirstOrNull(List<Map<String, Object?>> data) =>
+      data.isNotEmpty ? fromMap(data.first) : null;
+
   String get tableName;
 }

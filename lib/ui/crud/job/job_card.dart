@@ -11,7 +11,6 @@
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
@@ -19,7 +18,6 @@ import '../../../util/date_time_ex.dart';
 import '../../../util/format.dart';
 import '../../../util/local_date.dart';
 import '../../../util/rich_text_helper.dart';
-import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/surface.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
@@ -42,11 +40,13 @@ class JobCard extends StatefulWidget {
 class _JobCardState extends DeferredState<JobCard> {
   late Job job;
   late final JobActivity? nextActivity;
+  late final Customer? customer;
 
   @override
   Future<void> asyncInitState() async {
     job = widget.job;
     nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
+    customer = await DaoCustomer().getById(job.customerId);
   }
 
   @override
@@ -59,11 +59,9 @@ class _JobCardState extends DeferredState<JobCard> {
 
   static const cardHeight = 560.0;
   @override
-  Widget build(BuildContext context) => FutureBuilderEx<Customer?>(
-    waitingBuilder: (context) => const HMBPlaceHolder(height: cardHeight),
-    // ignore: discarded_futures
-    future: DaoCustomer().getById(job.customerId),
-    builder: (context, customer) => Surface(
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder: (context) => Surface(
       padding: EdgeInsets.zero,
       elevation: SurfaceElevation.e6,
       child: _buildDetails(customer, job.status),

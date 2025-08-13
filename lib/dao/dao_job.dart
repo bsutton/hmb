@@ -18,6 +18,15 @@ import '../entity/entity.g.dart';
 import '../util/money_ex.dart';
 import 'dao.g.dart';
 
+enum JobOrder {
+  active('Most Recently Accessed'),
+  created('Oldest Jobs first'),
+  recent('Newest Jobs First');
+
+  const JobOrder(this.description);
+  final String description;
+}
+
 class DaoJob extends Dao<Job> {
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
@@ -53,7 +62,7 @@ class DaoJob extends Dao<Job> {
       orderBy: 'modified_date desc',
       limit: 1,
     );
-    return data.isNotEmpty ? fromMap(data.first) : null;
+    return getFirstOrNull(data);
   }
 
   /// Marks the job as 'in progress' if it is
@@ -101,28 +110,47 @@ class DaoJob extends Dao<Job> {
   }
 
   /// search for jobs given a user supplied filter string.
-  Future<List<Job>> getByFilter(String? filter) async {
+  Future<List<Job>> getByFilter(
+    String? filter, {
+    JobOrder order = JobOrder.active,
+  }) async {
     final db = withoutTransaction();
 
-    if (Strings.isBlank(filter)) {
-      return getAll();
-    }
-
-    final likeArg = '''%$filter%''';
-    return toList(
-      await db.rawQuery(
-        '''
-select j.*
-from job j
-join customer c
-  on c.id = j.customer_id
+    final args = <String>[];
+    var whereClause = '';
+    if (Strings.isNotBlank(filter)) {
+      final likeArg = '''%$filter%''';
+      whereClause = '''
 where j.summary like ?
 or j.description like ?
-or c.name like ?
-order by j.modified_date desc
-''',
-        [likeArg, likeArg, likeArg],
-      ),
+or coalesce(c.name, '') like ?''';
+
+      args.addAll([likeArg, likeArg, likeArg]);
+    }
+
+    final String orderByColumn;
+    var sort = 'desc';
+
+    switch (order) {
+      case JobOrder.active:
+        orderByColumn = 'j.modified_date';
+      case JobOrder.created:
+        orderByColumn = 'j.created_date';
+        sort = 'asc';
+      case JobOrder.recent:
+        orderByColumn = 'j.created_date';
+        sort = 'desc';
+    }
+
+    return toList(
+      await db.rawQuery('''
+select j.*
+from job j
+left join customer c
+  on c.id = j.customer_id
+$whereClause
+order by $orderByColumn $sort
+''', args),
     );
   }
 
@@ -144,7 +172,7 @@ where t.id =?
       [taskId],
     );
 
-    return toList(data).first;
+    return getFirstOrNull(data);
   }
 
   /// Only Jobs that we consider to be active.
@@ -193,15 +221,23 @@ where t.id =?
     );
   }
 
+  Future<void> markAwaitingApproval(Job job) async {
+    final canBeApproved = JobStatus.canBeAwaitingApproved(job);
+
+    if (canBeApproved) {
+      job.status = JobStatus.awaitingApproval;
+      await DaoJob().update(job);
+    }
+  }
+
   /// Mark the job as scheduled if it is in a pre-start state.
   Future<void> markScheduled(Job job) async {
-      final jobStatus = job.status;
+    final jobStatus = job.status;
 
-      if (jobStatus.stage == JobStatusStage.preStart) {
-        job.status = JobStatus.scheduled;
-        await DaoJob().update(job);
-      }
-
+    if (jobStatus.stage == JobStatusStage.preStart) {
+      job.status = JobStatus.scheduled;
+      await DaoJob().update(job);
+    }
   }
 
   /// Get Quotable Jobs - now filtered by `preStart` status
@@ -315,6 +351,23 @@ join customer c
 where c.id =?
 ''',
         [customer.id],
+      ),
+    );
+  }
+
+  Future<Job?> getByQuoteId(int quoteId) async {
+    final db = withoutTransaction();
+
+    return getFirstOrNull(
+      await db.rawQuery(
+        '''
+select j.* 
+from quote q
+join job j
+  on q.job_id = j.id
+where q.id=?
+''',
+        [quoteId],
       ),
     );
   }
