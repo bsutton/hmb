@@ -18,11 +18,7 @@ import '../entity/entity.g.dart';
 import '../ui/invoicing/dialog_select_tasks.dart';
 import '../util/exceptions.dart';
 import '../util/money_ex.dart';
-import 'dao.dart';
-import 'dao_quote_line.dart';
-import 'dao_quote_line_group.dart';
-import 'dao_task.dart';
-import 'dao_task_item.dart';
+import 'dao.g.dart';
 
 class DaoQuote extends Dao<Quote> {
   @override
@@ -114,7 +110,7 @@ class DaoQuote extends Dao<Quote> {
     final estimates = await DaoTask().getEstimatesForJob(job.id);
 
     if (job.hourlyRate == MoneyEx.zero) {
-      throw InvoiceException('Hourly rate must be set for job ${job.summary}');
+      throw InvoiceException("Hourly rate must be set for job '${job.summary}'");
     }
 
     var totalAmount = MoneyEx.zero;
@@ -282,9 +278,9 @@ class DaoQuote extends Dao<Quote> {
       updateState(quoteId, QuoteState.rejected, transaction: transaction);
 
   /// quote sent
-  Future<int> markQuoteSent(int quoteId, {Transaction? transaction}) {
+  Future<int> markQuoteSent(int quoteId, {Transaction? transaction}) async {
     final db = withinTransaction(transaction);
-    return db.update(
+    await db.update(
       tableName,
       {
         'state': QuoteState.sent.name,
@@ -294,6 +290,11 @@ class DaoQuote extends Dao<Quote> {
       where: 'id = ?',
       whereArgs: [quoteId],
     );
+
+    final job = await DaoJob().getByQuoteId(quoteId);
+    await DaoJob().markAwaitingApproval(job!);
+
+    return quoteId;
   }
 
   @override

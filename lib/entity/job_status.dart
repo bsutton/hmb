@@ -12,7 +12,7 @@
 import 'dart:ui';
 
 import '../util/hex_to_color.dart';
-import 'job_status_stage.dart';
+import 'entity.g.dart';
 
 enum JobStatus {
   prospecting(
@@ -168,6 +168,9 @@ enum JobStatus {
 
   static Iterable<JobStatus> preStart() =>
       values.where((status) => status.stage == JobStatusStage.preStart);
+
+  static bool canBeAwaitingApproved(Job job) =>
+      job.status == JobStatus.prospecting || job.status == JobStatus.quoting;
 
   /// Returns a list of JobStatus' that can be scheduled.
   static Iterable<JobStatus> canBeScheduled() =>
