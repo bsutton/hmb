@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import '../../../dao/dao.g.dart';
 import '../../../dao/dao_todo.dart';
 import '../../../entity/todo.dart';
+import '../../../util/date_time_ex.dart';
+import '../../../util/local_time.dart';
 import '../../../util/notifications/local_notifs.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/hmb_select_chips.dart';
@@ -129,16 +131,22 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
           ),
           HMBDateTimeField(
             label: 'Due By',
-            mode: HMBDateTimeFieldMode.dateOnly,
+            mode: HMBDateTimeFieldMode.dateAndTime,
             initialDateTime:
-                _dueDate ?? DateTime.now().add(const Duration(days: 3)),
+                _dueDate ??
+                DateTime.now()
+                    .add(const Duration(days: 3))
+                    .withTime(const LocalTime(hour: 9, minute: 0)),
             onChanged: (d) => _dueDate = d,
           ),
           HMBDateTimeField(
             label: 'Reminder',
-            mode: HMBDateTimeFieldMode.dateOnly,
+            mode: HMBDateTimeFieldMode.dateAndTime,
             initialDateTime:
-                _remindAt ?? DateTime.now().add(const Duration(days: 2)),
+                _remindAt ??
+                DateTime.now()
+                    .add(const Duration(days: 2))
+                    .withTime(const LocalTime(hour: 9, minute: 0)),
             onChanged: (d) => _remindAt = d,
           ),
           HMBSelectChips<ToDoStatus>(
