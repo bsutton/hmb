@@ -57,7 +57,6 @@ class _JobCardState extends DeferredState<JobCard> {
     super.didUpdateWidget(old);
   }
 
-  
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
@@ -75,7 +74,6 @@ class _JobCardState extends DeferredState<JobCard> {
       HMBCardHeading(customer?.name ?? 'Not Set'),
       const SizedBox(height: 8),
       _buildContactPoints(),
-      const SizedBox(height: 8),
       HMBJobSiteText(label: '', job: job),
       const SizedBox(height: 8),
       HMBText('''

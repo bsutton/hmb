@@ -49,7 +49,7 @@ class _JobListScreenState extends State<JobListScreen> {
             onEdit: (job) => JobEditScreen(job: job),
             fetchList: _fetchJobs,
             title: (job) => HMBCardTitle(job.summary),
-            cardHeight: 740,
+            cardHeight: 840,
             filterSheetBuilder: _buildFilterSheet,
             isFilterActive: () => _showOldJobs || _order != JobOrder.active,
             onFilterReset: () {
