@@ -41,7 +41,7 @@ class _JobEstimatesListScreenState extends State<JobEstimatesListScreen> {
     if (_onlyShowQutableJobs) {
       rawJobs = await DaoJob().getQuotableJobs(filter);
     } else {
-      rawJobs = await DaoJob().getByFilter(filter);
+      rawJobs = await DaoJob().getActiveJobs(filter);
     }
 
     final jobList = <Job>[];
