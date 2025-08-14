@@ -31,8 +31,6 @@ typedef DashletWidgetBuilder<T> =
     Widget Function(BuildContext context, DashletValue<T> dv);
 
 /// Maximum size constraints for dashlets (desktop screens)
-const double kDashletMaxWidth = 300;
-const double kDashletMaxHeight = 300;
 
 typedef OnTap = void Function(BuildContext context);
 
@@ -103,10 +101,6 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     // Choose sizes based on compact flag
-    final maxW = widget.compact ? 140.0 : kDashletMaxWidth;
-    final maxH = widget.compact ? 140.0 : kDashletMaxHeight;
-    final minW = widget.compact ? 80.0 : 100.0;
-    final minH = widget.compact ? 80.0 : 100.0;
     final iconSize = widget.compact ? 24.0 : 40.0;
     final labelStyle = widget.compact
         ? theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)
@@ -117,57 +111,46 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
     final spacing1 = widget.compact ? 4.0 : 8.0;
     final spacing2 = widget.compact ? 2.0 : 4.0;
 
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: maxW,
-        maxHeight: maxH,
-        minWidth: minW,
-        minHeight: minH,
-      ),
-      child: HMBTooltip(
-        hint: widget.hint,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => widget.onTap != null
-              ? widget.onTap!(context)
-              : unawaited(_handleTap(context)),
-          child: Card(
-            color: theme.colorScheme.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 4,
-            child: Padding(
-              padding: EdgeInsets.all(widget.compact ? 6 : 12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    widget.icon,
-                    size: iconSize,
-                    color: theme.colorScheme.primary,
-                  ),
-                  SizedBox(height: spacing1),
-                  Text(
-                    widget.label,
-                    textAlign: TextAlign.center,
-                    style: labelStyle,
-                    maxLines: widget.compact ? 1 : 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: spacing2),
-                  JuneBuilder(
-                    DashboardReloaded.new,
-                    builder: (_) => FutureBuilderEx<DashletValue<T>>(
-                      future: widget.value(),
-                      builder: (ctx, dv) => widget.valueBuilder != null
-                          ? widget.valueBuilder!(ctx, dv!)
-                          : _buildDashletValue(dv, valueStyle, spacing2, theme),
-                    ),
-                  ),
-                ],
+    return HMBTooltip(
+      hint: widget.hint,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => widget.onTap != null
+            ? widget.onTap!(context)
+            : unawaited(_handleTap(context)),
+        child: Card(
+          color: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 4,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                widget.icon,
+                size: iconSize,
+                color: theme.colorScheme.primary,
               ),
-            ),
+              SizedBox(height: spacing1),
+              Text(
+                widget.label,
+                textAlign: TextAlign.center,
+                style: labelStyle,
+                maxLines: widget.compact ? 1 : 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: spacing2),
+              JuneBuilder(
+                DashboardReloaded.new,
+                builder: (_) => FutureBuilderEx<DashletValue<T>>(
+                  future: widget.value(),
+                  builder: (ctx, dv) => widget.valueBuilder != null
+                      ? widget.valueBuilder!(ctx, dv!)
+                      : _buildDashletValue(dv, valueStyle, spacing2, theme),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -228,6 +211,7 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
             fullscreenDialog: true,
           ),
         );
+
         /// restore the app title once the child is poped.
         setAppTitle(appTitle);
       }
