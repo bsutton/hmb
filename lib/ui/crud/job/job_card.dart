@@ -57,7 +57,7 @@ class _JobCardState extends DeferredState<JobCard> {
     super.didUpdateWidget(old);
   }
 
-  static const cardHeight = 560.0;
+  
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
