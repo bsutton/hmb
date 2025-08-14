@@ -16,7 +16,6 @@ import 'package:june/june.dart';
 
 import '../../../util/app_title.dart';
 import '../route.dart';
-import 'dashlet_card.dart';
 
 /// Main dashboard page wired up to refresh on return
 class DashboardPage extends StatefulWidget {
@@ -63,13 +62,25 @@ class DashboardState extends State<DashboardPage> with RouteAware {
       alignment: Alignment.topCenter,
       child: Padding(
         padding: const EdgeInsets.only(top: 16),
-        child: GridView.extent(
-          maxCrossAxisExtent: kDashletMaxWidth,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          shrinkWrap: true,
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: widget.dashlets,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const spacing = 16.0;
+            const minTileWidth = 150.0; // Keep tiles to at lest 150
+            final count =
+                ((constraints.maxWidth + spacing) / (minTileWidth + spacing))
+                    .floor()
+                    .clamp(1, 6);
+
+            return GridView.builder(
+              itemCount: widget.dashlets.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: count,
+                crossAxisSpacing: spacing,
+                mainAxisSpacing: spacing,
+              ),
+              itemBuilder: (_, i) => widget.dashlets[i],
+            );
+          },
         ),
       ),
     ),
