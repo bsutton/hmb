@@ -557,10 +557,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: "970d33d79e1da667b6da222575fd7f2e30e323ca76251504477e6d51405b2d9a"
+      sha256: ef7d2a085c1b1d69d17b6842d0734aad90156de08df6bd3c12496d0bd6ddf8e2
       url: "https://pub.dev"
     source: hosted
-    version: "10.2.4"
+    version: "10.3.1"
   file_selector_linux:
     dependency: transitive
     description:
@@ -1042,10 +1042,10 @@ packages:
     dependency: "direct main"
     description:
       name: infinite_calendar_view
-      sha256: f1ea3e6fde536fb21eab31d5dfc831731c88e4860fe632fcbffec9f798af3710
+      sha256: a6d0e69e397bfd2342c2600281f8208db8b9f35aca1feef6dd2df0afe55880e2
       url: "https://pub.dev"
     source: hosted
-    version: "2.6.0"
+    version: "2.7.0"
   ini:
     dependency: transitive
     description:
@@ -1210,10 +1210,10 @@ packages:
     dependency: "direct main"
     description:
       name: money2
-      sha256: "3bf7aadc647ba1b36225743a46a22efdfceaf63a1257eecdd8d372dbe0b6a911"
+      sha256: "8992486ed715acecbf8af0a1f523a7df225d5a5f6e88ac28c2a3ee22ec779dde"
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.3"
+    version: "6.0.5"
   native_synchronization_temp:
     dependency: transitive
     description:
@@ -1258,18 +1258,18 @@ packages:
     dependency: "direct main"
     description:
       name: package_info_plus
-      sha256: "7976bfe4c583170d6cdc7077e3237560b364149fcd268b5f53d95a991963b191"
+      sha256: "16eee997588c60225bda0488b6dcfac69280a6b7a3cf02c741895dd370a02968"
       url: "https://pub.dev"
     source: hosted
-    version: "8.3.0"
+    version: "8.3.1"
   package_info_plus_platform_interface:
     dependency: transitive
     description:
       name: package_info_plus_platform_interface
-      sha256: "6c935fb612dff8e3cc9632c2b301720c77450a126114126ffaafe28d2e87956c"
+      sha256: "202a487f08836a592a6bd4f901ac69b3a8f146af552bbd14407b6b41e1c3f086"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.0"
+    version: "3.2.1"
   parchment:
     dependency: transitive
     description:
@@ -1514,10 +1514,10 @@ packages:
     dependency: transitive
     description:
       name: protobuf
-      sha256: "6153efcc92a06910918f3db8231fd2cf828ac81e50ebd87adc8f8a8cb3caff0e"
+      sha256: de9c9eb2c33f8e933a42932fe1dc504800ca45ebc3d673e6ed7f39754ee4053e
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.1"
+    version: "4.2.0"
   provider:
     dependency: "direct main"
     description:
@@ -1687,10 +1687,10 @@ packages:
     dependency: transitive
     description:
       name: source_gen
-      sha256: fc787b1f89ceac9580c3616f899c9a447413cbdac1df071302127764c023a134
+      sha256: "7b19d6ba131c6eb98bfcbf8d56c1a7002eba438af2e7ae6f8398b2b0f4f381e3"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "3.1.0"
   source_map_stack_trace:
     dependency: transitive
     description:
@@ -1838,9 +1838,10 @@ packages:
   strings:
     dependency: "direct main"
     description:
-      path: "../strings"
-      relative: true
-    source: path
+      name: strings
+      sha256: "8eccabcaad5f3b2d02b2bf8ca31ce1466fac7339229fd0472d63790f8c18095f"
+      url: "https://pub.dev"
+    source: hosted
     version: "4.0.1"
   sum_types:
     dependency: transitive
