@@ -14,9 +14,14 @@ import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_todo_screen.dart';
 
-class ToDoListScreen extends StatelessWidget {
-  ToDoListScreen({super.key});
+class ToDoListScreen extends StatefulWidget {
+  const ToDoListScreen({super.key});
 
+  @override
+  State<ToDoListScreen> createState() => _ToDoListScreenState();
+}
+
+class _ToDoListScreenState extends State<ToDoListScreen> {
   // Default to showing open items only.
   ToDoStatus toDoListStatusFilter = ToDoStatus.open;
 
@@ -105,6 +110,7 @@ class ToDoListScreen extends StatelessWidget {
       ),
     ],
   );
+
   Widget _buildFilterSheet(BuildContext context, void Function() onChange) =>
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,

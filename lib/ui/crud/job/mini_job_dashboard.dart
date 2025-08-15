@@ -118,7 +118,7 @@ class MiniJobDashboard extends StatelessWidget {
                 final all = await DaoToDo().getByJob(job.id);
                 return DashletValue<int>(all.length);
               },
-              builder: (_, _) => HMBFullPageChildScreen(
+              builder: (_, _) => const HMBFullPageChildScreen(
                 title: 'Todo',
                 child: ToDoListScreen(),
               ),

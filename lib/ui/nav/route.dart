@@ -108,7 +108,7 @@ List<GoRoute> dashboardRoutes() => [
   ),
   GoRoute(
     path: 'todo',
-    builder: (_, _) => HomeScaffold(initialScreen: ToDoListScreen()),
+    builder: (_, _) => const HomeScaffold(initialScreen: ToDoListScreen()),
   ),
   GoRoute(
     path: 'help',
