@@ -253,7 +253,7 @@ The email address used to send you notices such as a successful backup.'''),
           ),
 
           DropdownButtonFormField<String>(
-            value: _selectedCountryCode,
+            initialValue: _selectedCountryCode,
             decoration: const InputDecoration(labelText: 'Country Code'),
             items: _countryCodes
                 .map(

@@ -161,7 +161,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
           ),
           DropdownButtonFormField<String>(
             isExpanded: true,
-            value: _selectedCountryCode,
+            initialValue: _selectedCountryCode,
             decoration: const InputDecoration(labelText: 'Country Code'),
             items: _countryCodes
                 .map(

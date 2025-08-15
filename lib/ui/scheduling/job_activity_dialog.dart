@@ -204,7 +204,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
 
   DropdownButtonFormField<JobActivityStatus> _buildStatus() =>
       DropdownButtonFormField<JobActivityStatus>(
-        value: _status,
+        initialValue: _status,
         decoration: const InputDecoration(labelText: 'Status'),
         items: JobActivityStatus.values
             .map(
