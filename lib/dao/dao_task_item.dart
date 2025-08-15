@@ -146,8 +146,7 @@ where ti.completed = 0
     // when showPreApprovedTask==false, exclude pre-approval & to-be-scheduled
     if (!showPreApprovedTask) {
       final excludeIds = <int>[
-        TaskStatus.preApproval.id,
-        TaskStatus.toBeScheduled.id,
+        TaskStatus.awaitingApproval.id,
       ];
       final excludePlaceholders = List.filled(
         excludeIds.length,

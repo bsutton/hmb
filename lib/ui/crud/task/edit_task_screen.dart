@@ -103,7 +103,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     if (currentEntity?.status != null) {
       taskStatus = currentEntity?.status;
     }
-    taskStatus ??= TaskStatus.preApproval;
+    taskStatus ??= TaskStatus.awaitingApproval;
 
     setState(() {
       June.getState(SelectedTaskStatus.new).taskStatus = taskStatus;

@@ -17,7 +17,7 @@ import 'task.dart';
 /// DO NOT CHANGE THE [id]s as they are used in the db
 /// to refer to a specific status.
 enum TaskStatus {
-  preApproval(
+  awaitingApproval(
     7,
     'Awaiting Approval',
     'The task is yet to be approved by the customer.',
@@ -30,13 +30,6 @@ enum TaskStatus {
     'The task has been approved by the customer.',
     '#3CB371',
     2,
-  ),
-  toBeScheduled(
-    1,
-    'To be scheduled',
-    'The customer has agreed to proceed but we have not set a start date',
-    '#FFFFE0',
-    3,
   ),
   inProgress(
     5,
@@ -98,13 +91,10 @@ enum TaskStatus {
 
   bool isComplete() => this == completed;
 
-  bool toBeEstimated() => this == preApproval;
+  bool toBeEstimated() => this == awaitingApproval;
 
   bool isActive() =>
-      this == approved ||
-      this == toBeScheduled ||
-      this == inProgress ||
-      this == awaitingMaterials;
+      this == approved || this == inProgress || this == awaitingMaterials;
 
   bool isInActive() => this == onHold || this == completed || this == cancelled;
 
