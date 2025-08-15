@@ -10,20 +10,16 @@
 */
 
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/format.dart';
 import '../../dialog/dialog.g.dart';
-import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/hmb_toggle.dart';
-import '../../widgets/text/hmb_text.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
-import '../job/edit_job_screen.dart';
 import 'edit_task_screen.dart';
+import 'list_task_card.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({
@@ -162,68 +158,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return included;
   }
 
-  Column _buildFullTasksDetails(Task task) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(task.status.name),
-      FutureBuilderEx(
-        future: DaoTask()
-            // ignore: discarded_futures
-            .getAccruedValueForTask(task: task, includeBilled: true),
-        builder: (context, taskAccruedValue) => Row(
-          children: [
-            HMBText(
-              'Effort(hrs): ${taskAccruedValue!.earnedLabourHours.format('0.00')}/${taskAccruedValue.taskEstimatedValue.estimatedLabourHours.format('0.00')}',
-            ),
-            HMBText(
-              ' Earnings: ${taskAccruedValue.earnedMaterialCharges}/${taskAccruedValue.taskEstimatedValue.estimatedMaterialsCharge}',
-            ),
-          ],
-        ),
-      ),
-      HMBStartTimeEntry(
-        task: task,
-        onStart: (job) {
-          June.getState(SelectJobStatus.new).jobStatus = job.status;
-        },
-      ),
-    ],
-  );
-
-  Column _buildTaskSummary(Task task) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(task.status.name),
-      FutureBuilderEx(
-        // ignore: discarded_futures
-        future: DaoTimeEntry().getByTask(task.id),
-        builder: (context, timeEntries) => Text(
-          formatDuration(
-            timeEntries!.fold<Duration>(
-              Duration.zero,
-              (a, b) => a + b.duration,
-            ),
-          ),
-        ),
-      ),
-      FutureBuilderEx<int>(
-        // ignore: discarded_futures
-        future: _getPhotoCount(task.id),
-        builder: (context, photoCount) => Text('Photos: ${photoCount ?? 0}'),
-      ), // Display photo count
-      HMBStartTimeEntry(
-        task: task,
-        onStart: (job) {
-          June.getState(SelectJobStatus.new).jobStatus = job.status;
-        },
-      ),
-    ],
-  );
-
-  Future<int> _getPhotoCount(int taskId) async =>
-      (await DaoPhoto().getByParent(taskId, ParentType.task)).length;
+  Widget _buildFullTasksDetails(Task task) =>
+      ListTaskCard(task: task, summary: false);
 }
 
 class ShowCompletedTasksState extends JuneState {
