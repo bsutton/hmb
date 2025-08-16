@@ -1,87 +1,9 @@
 import 'package:fsm2/fsm2.dart';
 
+import '../dao/dao_job.dart';
 import '../entity/entity.g.dart';
-
-/// --- fsm2 State types (1:1 with your JobStatus enum) ---
-abstract class JobState extends State {}
-
-class Prospecting extends JobState {}
-
-class Quoting extends JobState {}
-
-class AwaitingApproval extends JobState {}
-
-class AwaitingPayment extends JobState {}
-
-class ToBeScheduled extends JobState {}
-
-class Scheduled extends JobState {}
-
-class InProgress extends JobState {}
-
-class OnHold extends JobState {}
-
-class AwaitingMaterials extends JobState {}
-
-class Completed extends JobState {}
-
-class ToBeBilled extends JobState {}
-
-class Rejected extends JobState {}
-
-/// --- Events (user actions) ---
-abstract class JobEvent extends Event {
-  JobEvent(this.job);
-  final Job job;
-}
-
-class StartQuoting extends JobEvent {
-  StartQuoting(super.job);
-}
-
-class SubmitQuote extends JobEvent {
-  SubmitQuote(super.job);
-}
-
-class ApproveQuote extends JobEvent {
-  ApproveQuote(super.job);
-}
-
-class RecordDeposit extends JobEvent {
-  RecordDeposit(super.job);
-}
-
-class ScheduleJob extends JobEvent {
-  ScheduleJob(super.job);
-}
-
-class StartWork extends JobEvent {
-  StartWork(super.job);
-}
-
-class PauseJob extends JobEvent {
-  PauseJob(super.job);
-}
-
-class ResumeJob extends JobEvent {
-  ResumeJob(super.job);
-}
-
-class MaterialsArrived extends JobEvent {
-  MaterialsArrived(super.job);
-}
-
-class CompleteJob extends JobEvent {
-  CompleteJob(super.job);
-}
-
-class RaiseInvoice extends JobEvent {
-  RaiseInvoice(super.job);
-}
-
-class RejectJob extends JobEvent {
-  RejectJob(super.job);
-}
+import 'job_events.dart';
+import 'job_states.dart';
 
 /// Helper: map between enum and fsm2 state Type.
 Type _stateTypeFor(JobStatus s) {
@@ -113,61 +35,6 @@ Type _stateTypeFor(JobStatus s) {
   }
 }
 
-JobStatus _statusForStateType(Type t) {
-  if (t == Prospecting) {
-    return JobStatus.prospecting;
-  }
-  if (t == Quoting) {
-    return JobStatus.quoting;
-  }
-  if (t == AwaitingApproval) {
-    return JobStatus.awaitingApproval;
-  }
-  if (t == AwaitingPayment) {
-    return JobStatus.awaitingPayment;
-  }
-  if (t == ToBeScheduled) {
-    return JobStatus.toBeScheduled;
-  }
-  if (t == Scheduled) {
-    return JobStatus.scheduled;
-  }
-  if (t == InProgress) {
-    return JobStatus.inProgress;
-  }
-  if (t == OnHold) {
-    return JobStatus.onHold;
-  }
-  if (t == AwaitingMaterials) {
-    return JobStatus.awaitingMaterials;
-  }
-  if (t == Completed) {
-    return JobStatus.completed;
-  }
-  if (t == ToBeBilled) {
-    return JobStatus.toBeBilled;
-  }
-  if (t == Rejected) {
-    return JobStatus.rejected;
-  }
-  throw StateError('Unknown state type: $t');
-}
-
-/// Event factories so we can build real Event instances for guard checking & firing.
-final Map<Type, JobEvent Function(Job)> _eventFactory = {
-  StartQuoting: StartQuoting.new,
-  SubmitQuote: SubmitQuote.new,
-  ApproveQuote: ApproveQuote.new,
-  RecordDeposit: RecordDeposit.new,
-  ScheduleJob: ScheduleJob.new,
-  StartWork: StartWork.new,
-  PauseJob: PauseJob.new,
-  ResumeJob: ResumeJob.new,
-  MaterialsArrived: MaterialsArrived.new,
-  CompleteJob: CompleteJob.new,
-  RaiseInvoice: RaiseInvoice.new,
-  RejectJob: RejectJob.new,
-};
 
 /// What the UI cares about: a target JobStatus to show, and a way to fire it.
 class Next {
@@ -181,93 +48,123 @@ class Next {
 }
 
 /// Build the job FSM (wire transitions once).
-Future<StateMachine> buildJobMachine() async {
-  final machine = await StateMachine.create(
-    (g) => g
-      ..initialState<Prospecting>()
-      ..state<Prospecting>((b) => b..on<StartQuoting, Quoting>())
+
+Future<StateMachine> buildJobMachine(Job job) async {
+  final machine = await StateMachine.create(production: true, (g) {
+    // Hydrate the state from the job
+    switch (job.status) {
+      case JobStatus.prospecting:
+        g.initialState<Prospecting>();
+      case JobStatus.quoting:
+        g.initialState<Quoting>();
+      case JobStatus.awaitingApproval:
+        g.initialState<AwaitingApproval>();
+      case JobStatus.awaitingPayment:
+        g.initialState<AwaitingPayment>();
+      case JobStatus.toBeScheduled:
+        g.initialState<ToBeScheduled>();
+      case JobStatus.scheduled:
+        g.initialState<Scheduled>();
+      case JobStatus.inProgress:
+        g.initialState<InProgress>();
+      case JobStatus.onHold:
+        g.initialState<OnHold>();
+      case JobStatus.awaitingMaterials:
+        g.initialState<AwaitingMaterials>();
+      case JobStatus.completed:
+        g.initialState<Completed>();
+      case JobStatus.toBeBilled:
+        g.initialState<ToBeBilled>();
+      case JobStatus.rejected:
+        g.initialState<Rejected>();
+    }
+
+    // Super/parent state via nesting
+    g
+      // children (inherit RejectJob → Rejected)
+      ..state<Prospecting>(
+        (b) => b
+          ..on<StartQuoting, Quoting>(
+            sideEffect: (e) async =>
+                _updateJobStatus(e.job, JobStatus.awaitingApproval),
+          )
+          ..on<RejectJob, Rejected>(),
+      )
       ..state<Quoting>(
         (b) => b
-          ..on<SubmitQuote, AwaitingApproval>()
+          ..on<SubmitQuote, AwaitingApproval>(
+            sideEffect: (e) async =>
+                _updateJobStatus(e.job, JobStatus.awaitingPayment),
+          )
           ..on<RejectJob, Rejected>(),
       )
       ..state<AwaitingApproval>(
         (b) => b
           ..on<ApproveQuote, AwaitingPayment>(
-            sideEffect: (e) async => e.job.status = JobStatus.awaitingPayment,
-          )
-          ..on<ApproveQuote, ToBeScheduled>(
-            sideEffect: (e) async => e.job.status == JobStatus.toBeScheduled,
+            sideEffect: (e) async =>
+                _updateJobStatus(e.job, JobStatus.awaitingPayment),
           )
           ..on<RejectJob, Rejected>(),
       )
-      ..state<AwaitingPayment>((b) => b..on<RecordDeposit, ToBeScheduled>())
-      ..state<ToBeScheduled>((b) => b..on<ScheduleJob, Scheduled>())
+      ..state<AwaitingPayment>(
+        (b) => b
+          ..on<RecordDeposit, ToBeScheduled>()
+          ..on<ScheduleJob, Scheduled>()
+          ..on<RejectJob, Rejected>(),
+      )
+      ..state<ToBeScheduled>(
+        (b) => b
+          ..on<ScheduleJob, Scheduled>()
+          ..on<RejectJob, Rejected>(),
+      )
       ..state<Scheduled>(
         (b) => b
           ..on<StartWork, InProgress>()
-          ..on<PauseJob, OnHold>(),
+          ..on<PauseJob, OnHold>()
+          ..on<RejectJob, Rejected>(),
       )
       ..state<InProgress>(
         (b) => b
           ..on<PauseJob, OnHold>()
-          ..on<CompleteJob, Completed>(),
+          ..on<CompleteJob, Completed>()
+          ..on<RejectJob, Rejected>(),
       )
       ..state<OnHold>(
         (b) => b
           ..on<ResumeJob, InProgress>()
-          ..on<MaterialsArrived, AwaitingMaterials>(),
+          ..on<MaterialsArrived, AwaitingMaterials>()
+          ..on<RejectJob, Rejected>(),
       )
-      ..state<AwaitingMaterials>((b) => b..on<ResumeJob, InProgress>())
-      ..state<Completed>((b) => b..on<RaiseInvoice, ToBeBilled>())
-      ..state<ToBeBilled>((b) => b)
-      ..state<Rejected>((b) => b),
-  );
+      ..state<AwaitingMaterials>(
+        (b) => b
+          ..on<ResumeJob, InProgress>()
+          ..on<RejectJob, Rejected>(),
+      )
+      ..state<Completed>(
+        (b) => b
+          ..on<RaiseInvoice, ToBeBilled>()
+          ..on<RejectJob, Rejected>(),
+      )
+      ..state<ToBeBilled>((b) => b..on<RejectJob, Rejected>())
+      // terminal-ish state sits outside; not rejectable itself
+      ..state<Rejected>(
+        (b) => b
+          ..on<ApproveQuote, AwaitingPayment>(
+            sideEffect: (e) async =>
+                _updateJobStatus(e.job, JobStatus.awaitingApproval),
+          ), // e.g., “unreject” flow if you want it
+      );
+  });
 
   return machine;
 }
 
-/// Find the currently-active leaf state Type (simple non-nested machine).
-Future<Type> _activeLeafType(StateMachine m) async {
-  // We could also use stateOfMind, but this is explicit and reliable for a flat machine.
-  if (await m.isInState<Prospecting>()) {
-    return Prospecting;
-  }
-  if (await m.isInState<Quoting>()) {
-    return Quoting;
-  }
-  if (await m.isInState<AwaitingApproval>()) {
-    return AwaitingApproval;
-  }
-  if (await m.isInState<AwaitingPayment>()) {
-    return AwaitingPayment;
-  }
-  if (await m.isInState<ToBeScheduled>()) {
-    return ToBeScheduled;
-  }
-  if (await m.isInState<Scheduled>()) {
-    return Scheduled;
-  }
-  if (await m.isInState<InProgress>()) {
-    return InProgress;
-  }
-  if (await m.isInState<OnHold>()) {
-    return OnHold;
-  }
-  if (await m.isInState<AwaitingMaterials>()) {
-    return AwaitingMaterials;
-  }
-  if (await m.isInState<Completed>()) {
-    return Completed;
-  }
-  if (await m.isInState<ToBeBilled>()) {
-    return ToBeBilled;
-  }
-  if (await m.isInState<Rejected>()) {
-    return Rejected;
-  }
-  throw StateError('Could not determine active state.');
+Future<void> _updateJobStatus(Job job, JobStatus status) async {
+  job.status = status;
+
+  await DaoJob().update(job);
 }
+
 
 /// Return *guarded* next steps as JobStatus values + a way to trigger them.
 ///
@@ -289,7 +186,7 @@ Future<List<Next>> nextFromFsm({
     },
   ); // debug helper; fine to use at runtime too. :contentReference[oaicite:2]{index=2}
 
-  final activeType = await _activeLeafType(machine);
+  final activeType = await currentState(machine);
   final def = defs[activeType];
   if (def == null) {
     return const [];
@@ -303,7 +200,7 @@ Future<List<Next>> nextFromFsm({
 
   for (final td in transitions) {
     // td.eventType and td.toState.stateType are available on TransitionDefinition.
-    final factory = _eventFactory[td.triggerEvents.first];
+    final factory = eventFactory[td.triggerEvents.first];
     if (factory == null) {
       continue; // unknown or internal event
     }
@@ -320,7 +217,7 @@ Future<List<Next>> nextFromFsm({
     }
 
     final toType = triggerable.targetStates.first;
-    final toStatus = _statusForStateType(toType);
+    final toStatus = statusForStateType(toType);
 
     out.add(
       Next(

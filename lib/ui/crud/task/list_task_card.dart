@@ -18,7 +18,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/util.g.dart';
 import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/text/hmb_text.dart';
-import '../job/edit_job_screen.dart';
+import '../job/edit_job_card.dart';
 
 class ListTaskCard extends StatelessWidget {
   const ListTaskCard({required this.task, required this.summary, super.key});
