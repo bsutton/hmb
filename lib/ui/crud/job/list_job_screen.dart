@@ -20,7 +20,7 @@ import '../../widgets/text/hmb_text_themes.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_job_screen.dart';
-import 'job_card.dart';
+import 'list_job_card.dart';
 
 class JobListScreen extends StatefulWidget {
   const JobListScreen({super.key});
@@ -57,7 +57,8 @@ class _JobListScreenState extends State<JobListScreen> {
               _order = JobOrder.active;
             },
             background: (job) async => job.status.getColour(),
-            details: (job) => JobCard(job: job, key: ValueKey(job.hashCode)),
+            details: (job) =>
+                ListJobCard(job: job, key: ValueKey(job.hashCode)),
           ),
         ),
       ],

@@ -27,17 +27,17 @@ import '../../widgets/text/hmb_text_block.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import 'mini_job_dashboard.dart';
 
-class JobCard extends StatefulWidget {
-  const JobCard({required this.job, super.key});
+class ListJobCard extends StatefulWidget {
+  const ListJobCard({required this.job, super.key});
 
   final Job job;
 
   @override
   // ignore: library_private_types_in_public_api
-  _JobCardState createState() => _JobCardState();
+  _ListJobCardState createState() => _ListJobCardState();
 }
 
-class _JobCardState extends DeferredState<JobCard> {
+class _ListJobCardState extends DeferredState<ListJobCard> {
   late Job job;
   late final JobActivity? nextActivity;
   late final Customer? customer;
@@ -50,7 +50,7 @@ class _JobCardState extends DeferredState<JobCard> {
   }
 
   @override
-  void didUpdateWidget(JobCard old) {
+  void didUpdateWidget(ListJobCard old) {
     if (job != widget.job) {
       job = widget.job;
     }
