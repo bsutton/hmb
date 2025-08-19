@@ -99,7 +99,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
           selectedItem: _getInitialJob,
           onChanged: _onJobChanged,
           items: _getJobs,
-          format: (jc) => '${jc.job!.summary}\n${jc.customer!.name}',
+          format: (jc) => '${jc.job!.summary}\n${jc.customer?.name?? ''}',
           required: widget.required,
         ),
       ),
