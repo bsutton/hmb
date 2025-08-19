@@ -131,11 +131,7 @@ class DaoBase<T extends Entity<T>> {
 
   DatabaseExecutor withoutTransaction() => db;
 
-  Future<void> withTransaction(
-    Future<void> Function(Transaction transaction) callback,
-  ) async {
-    await db.transaction((transaction) async {
-      await callback(transaction);
-    });
-  }
+  Future<R> withTransaction<R>(
+    Future<R> Function(Transaction transaction) callback,
+  ) async => db.transaction((transaction) async => callback(transaction));
 }
