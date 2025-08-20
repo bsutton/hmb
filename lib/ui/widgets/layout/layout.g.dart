@@ -22,6 +22,7 @@ export 'hmb_list_card.dart';
 export 'hmb_list_page.dart';
 export 'hmb_padding.dart';
 export 'hmb_placeholder.dart';
+export 'hmb_row.dart';
 export 'hmb_scroll_for_keyboard.dart';
 export 'hmb_spacer.dart';
 export 'hmb_text_scroll.dart';
