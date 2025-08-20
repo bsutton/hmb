@@ -30,30 +30,6 @@ class ListTodoCard extends StatelessWidget {
               format: (customer) => customer.name,
             ),
           HMBChip(label: 'Priority: ${todo.priority.name}'),
-          HMBMenuChip<SnoozeOption>(
-            label: 'Snooze',
-            icon: Icons.snooze,
-            tone: HMBChipTone.accent,
-            values: SnoozeOption.values,
-            format: (o) => o.description,
-            itemIcon: (o) => o.icon,
-            onSelected: (o) async {
-              var duration = o.duration;
-              if (duration == null) {
-                // For "Pick…": compute base (same logic your DAO uses)
-                final base = todo.dueDate ?? DateTime.now();
-                duration = await HMBSnoozePicker.pickSnoozeDuration(
-                  context,
-                  base: base,
-                  initial: base.add(const Duration(hours: 2)),
-                );
-              }
-
-              if (duration != null) {
-                await DaoToDo().snooze(todo, o.duration!);
-              }
-            },
-          ),
         ],
       ),
       if (todo.parentType == ToDoParentType.job)
@@ -62,12 +38,43 @@ class ListTodoCard extends StatelessWidget {
           hint: 'Covert the todo item into a Job Task',
           onPressed: () => DaoToDo().convertToTask(todo),
         ),
-      if (todo.dueDate != null)
-        HMBChip(
-          label: formatDue(todo.dueDate!), // Overdue/Today/Thu 09:00
-          tone: dueTone(todo.dueDate), // red/purple/neutral
-        ),
+      HMBRow(
+        children: [
+          if (todo.dueDate != null)
+            HMBChip(
+              label: formatDue(todo.dueDate!), // Overdue/Today/Thu 09:00
+              tone: dueTone(todo.dueDate), // red/purple/neutral
+            ),
+          _buildSnooze(context),
+        ],
+      ),
       if (Strings.isNotBlank(todo.note)) HMBTextBlock(todo.note!, maxLines: 4),
     ],
   );
+
+  HMBMenuChip<SnoozeOption> _buildSnooze(BuildContext context) =>
+      HMBMenuChip<SnoozeOption>(
+        label: 'Snooze',
+        icon: Icons.snooze,
+        tone: HMBChipTone.accent,
+        values: SnoozeOption.values,
+        format: (o) => o.description,
+        itemIcon: (o) => o.icon,
+        onSelected: (o) async {
+          var duration = o.duration;
+          if (duration == null) {
+            // For "Pick…": compute base (same logic your DAO uses)
+            final base = todo.dueDate ?? DateTime.now();
+            duration = await HMBSnoozePicker.pickSnoozeDuration(
+              context,
+              base: base,
+              initial: base.add(const Duration(hours: 2)),
+            );
+          }
+
+          if (duration != null) {
+            await DaoToDo().snooze(todo, o.duration!);
+          }
+        },
+      );
 }
