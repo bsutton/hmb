@@ -4,6 +4,6 @@
 // barrel_create is sponsored by OnePub the dart private repository
 // https://onepub.dev
 //
-export 'dimensions.dart';
-export 'edit_task_item_screen.dart';
-export 'list_task_item_screen.dart';
+export 'parse.dart';
+export 'parse_address.dart';
+export 'parse_customer.dart';

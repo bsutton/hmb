@@ -16,12 +16,13 @@ import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 import 'package:june/state_manager/src/simple/list_notifier.dart';
 
-import '../../dao/dao_job.dart';
 import '../../dao/dao_task.dart';
 import '../../dao/dao_time_entry.dart';
 import '../../entity/job.dart';
 import '../../entity/task.dart';
 import '../../entity/time_entry.dart';
+import '../../fsm/job_events.dart';
+import '../../fsm/job_status_fsm.dart';
 import '../../util/format.dart';
 import '../dialog/start_timer_dialog.dart';
 import '../dialog/stop_timer_dialog.dart';
@@ -352,7 +353,8 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
 
       /// If we are running a timer for a job then it must
       /// be the active job.
-      final job = await DaoJob().markActive(task.jobId);
+
+      final job = await transitionJobById(task.jobId, StartWork.new);
       _startTimer(newTimeEntry);
       timeEntry = newTimeEntry;
       June.getState<TimeEntryState>(

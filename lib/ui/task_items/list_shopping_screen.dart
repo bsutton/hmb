@@ -20,7 +20,6 @@ import '../../entity/entity.g.dart';
 import '../../util/app_title.dart';
 import '../../util/format.dart';
 import '../widgets/layout/hmb_spacer.dart';
-import '../widgets/select/hmb_filter_line.dart';
 import '../widgets/select/select.g.dart';
 import '../widgets/widgets.g.dart';
 import 'list_packing_screen.dart';

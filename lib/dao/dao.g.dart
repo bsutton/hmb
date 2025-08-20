@@ -1,14 +1,3 @@
-/*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
-
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
-   • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
-
- See the full license on GitHub:
- https://github.com/bsutton/hmb/blob/main/LICENSE
-*/
-
 //
 // Generated file. Do not modify.
 // Created by `barrel_create`
@@ -34,6 +23,7 @@ export 'dao_invoice_line_group.dart';
 export 'dao_invoice_time_and_materials.dart';
 export 'dao_job.dart';
 export 'dao_job_activity.dart';
+export 'dao_job_move.dart';
 export 'dao_manufacturer.dart';
 export 'dao_message_template.dart';
 export 'dao_milestone.dart';
@@ -50,6 +40,7 @@ export 'dao_system.dart';
 export 'dao_task.dart';
 export 'dao_task_item.dart';
 export 'dao_time_entry.dart';
+export 'dao_todo.dart';
 export 'dao_tool.dart';
 export 'dao_version.dart';
 export 'dao_work_assigment.dart';

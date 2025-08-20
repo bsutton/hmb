@@ -42,7 +42,6 @@ import '../wizard/setup_wizard.dart';
 import 'dashboards/backup/backup_dashboard.dart';
 import 'dashboards/integration/integration_dashboard.dart';
 import 'nav.g.dart';
-import 'splash_router.dart';
 
 GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
   navigatorKey: navigatorKey,

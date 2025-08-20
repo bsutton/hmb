@@ -21,7 +21,6 @@ import '../../entity/entity.g.dart';
 import '../../util/app_title.dart';
 import '../crud/job/job.g.dart';
 import '../widgets/hmb_link_internal.dart';
-import '../widgets/layout/hmb_list_page.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/text/text.g.dart';
 import '../widgets/widgets.g.dart' show HMBButton, HMBToast;

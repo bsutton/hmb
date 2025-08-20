@@ -22,7 +22,6 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../api/xero/handyman/app_starts_logging.dart';
 import '../../dao/dao.g.dart';
-import '../../dao/dao_todo.dart';
 import '../../database/factory/factory.g.dart';
 import '../../database/management/backup_providers/local/local_backup_provider.dart';
 import '../../database/versions/asset_script_source.dart';

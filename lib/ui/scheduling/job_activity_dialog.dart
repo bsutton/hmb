@@ -19,6 +19,8 @@ import '../../dao/dao_job.dart';
 import '../../dao/dao_job_activity.dart';
 import '../../entity/contact.dart';
 import '../../entity/job_activity.dart';
+import '../../fsm/job_events.dart';
+import '../../fsm/job_status_fsm.dart';
 import '../../util/date_time_ex.dart';
 import '../../util/format.dart';
 import '../../util/local_date.dart';
@@ -474,7 +476,8 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     // Next, check the job’s status
     final job = await DaoJob().getById(_selectedJob.jobId);
     if (job != null) {
-      await DaoJob().markScheduled(job);
+      (await buildJobMachine(job)).applyEvent(ScheduleJob(job));
+      
     }
   }
 
