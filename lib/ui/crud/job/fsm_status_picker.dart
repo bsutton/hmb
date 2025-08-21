@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:fsm2/fsm2.dart' show StateMachine;
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
@@ -9,13 +9,60 @@ import 'package:june/june.dart';
 import '../../../entity/entity.g.dart';
 import '../../../fsm/job_status_fsm.dart'
     show Next, buildJobMachine, nextFromFsm;
-import '../../widgets/hmb_chip.dart';
 import '../../widgets/widgets.g.dart';
 import 'edit_job_card.dart';
 
+Future<void> showJobStatusDialog(BuildContext context, Job job) async {
+  await showDialog<void>(
+    context: context,
+    builder: (context) => Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Update Job Status',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            // The picker runs side-effects and calls back on success.
+            FsmStatusPicker(
+              job: job,
+              onStatusChanged: () {
+                Navigator.of(context).pop(); // close on success
+              },
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 class FsmStatusPicker extends StatefulWidget {
-  const FsmStatusPicker({required this.job, super.key});
+  const FsmStatusPicker({
+    required this.job,
+    this.onStatusChanged, // NEW
+    super.key,
+  });
+
   final Job job;
+
+  /// Called after a successful transition (lets the parent close the dialog).
+  final VoidCallback? onStatusChanged; // NEW
 
   @override
   State<FsmStatusPicker> createState() => _FsmStatusPickerState();
@@ -46,9 +93,6 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
 
   Future<void> _hydrate() async {
     _loading = Completer<void>();
-    setState(() {
-      _loading = Completer<void>();
-    });
     try {
       _lastHydratedStatus = widget.job.status;
       final machine = await buildJobMachine(widget.job);
@@ -56,19 +100,15 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
       if (!mounted) {
         return;
       }
-      setState(() {
-        _machine = machine;
-        _next = next;
-        _loading.complete();
-      });
+      _machine = machine;
+      _next = next;
+      _loading.complete();
     } catch (e) {
       if (!mounted) {
         return;
       }
-      setState(() {
-        _next = const [];
-        _loading.complete();
-      });
+      _next = const [];
+      _loading.complete();
       HMBToast.error('Failed to build job workflow: $e');
     }
   }
@@ -83,12 +123,14 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
     try {
       await step.fire(_machine!); // runs side-effects & persists
       // Keep the UI model in sync with the new status.
-      June.getState(SelectJobStatus.new).jobStatus = widget.job.status;
-      HMBToast.info('Status updated to ${widget.job.status.displayName}');
+      widget.job.status = step.to;
+      June.getState(SelectJobStatus.new).jobStatus = step.to;
+
+      widget.onStatusChanged?.call(); // NEW: tell parent we succeeded
     } catch (e) {
       HMBToast.error('Could not change status: $e');
     } finally {
-      await _hydrate(); // recompute next steps from the new state
+      await _hydrate();
       if (mounted) {
         setState(() {
           _firing = false;
@@ -135,7 +177,7 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
                     children: _next
                         .map(
                           (n) => HMBButton(
-                            enabled: _firing,
+                            enabled: !_firing,
                             onPressed: () => _moveTo(n),
                             label: n.to.displayName,
                             hint: '',

@@ -3,73 +3,40 @@ import 'package:fsm2/fsm2.dart';
 import '../entity/job_status.dart';
 
 /// --- fsm2 State types (1:1 with your JobStatus enum) ---
-abstract class JobState extends State {}
+sealed class JobState extends State {
+  const JobState({required this.visible, required this.status});
+  // True if this [JobState] should be
+  // shown as a potiential transition to a user.
+  /// States with [visible] = false indicate states
+  /// that are transitioned to via indirect actions
+  /// such as Scheduling work.
+  final bool visible;
 
-class JobLifecycle extends JobState {}
-
-class Prospecting extends JobState {}
-
-class Quoting extends JobState {}
-
-class AwaitingApproval extends JobState {}
-
-class AwaitingPayment extends JobState {}
-
-class ToBeScheduled extends JobState {}
-
-class Scheduled extends JobState {}
-
-class InProgress extends JobState {}
-
-class OnHold extends JobState {}
-
-class AwaitingMaterials extends JobState {}
-
-class Completed extends JobState {}
-
-class ToBeBilled extends JobState {}
-
-class Rejected extends JobState {}
-
-JobStatus statusForStateType(Type t) {
-  if (t == Prospecting) {
-    return JobStatus.prospecting;
-  }
-  if (t == Quoting) {
-    return JobStatus.quoting;
-  }
-  if (t == AwaitingApproval) {
-    return JobStatus.awaitingApproval;
-  }
-  if (t == AwaitingPayment) {
-    return JobStatus.awaitingPayment;
-  }
-  if (t == ToBeScheduled) {
-    return JobStatus.toBeScheduled;
-  }
-  if (t == Scheduled) {
-    return JobStatus.scheduled;
-  }
-  if (t == InProgress) {
-    return JobStatus.inProgress;
-  }
-  if (t == OnHold) {
-    return JobStatus.onHold;
-  }
-  if (t == AwaitingMaterials) {
-    return JobStatus.awaitingMaterials;
-  }
-  if (t == Completed) {
-    return JobStatus.completed;
-  }
-  if (t == ToBeBilled) {
-    return JobStatus.toBeBilled;
-  }
-  if (t == Rejected) {
-    return JobStatus.rejected;
-  }
-  throw StateError('Unknown state type: $t');
+  final JobStatus status;
 }
+
+// If you keep this, it can now be trivial:
+JobStatus statusFromType(JobState s) => s.status;
+
+Type stateTypeFromStatus(JobStatus s) =>
+    _allStates.firstWhere((st) => st.status == s).runtimeType;
+
+JobState stateFromType(Type t) => switch (t) {
+  // const so we match on the Type rather than an instance of the
+  const (Prospecting) => const Prospecting(),
+  const (Quoting) => const Quoting(),
+  const (AwaitingApproval) => const AwaitingApproval(),
+  const (AwaitingPayment) => const AwaitingPayment(),
+  const (ToBeScheduled) => const ToBeScheduled(),
+  const (Scheduled) => const Scheduled(),
+  const (InProgress) => const InProgress(),
+  const (OnHold) => const OnHold(),
+  const (AwaitingMaterials) => const AwaitingMaterials(),
+  const (Completed) => const Completed(),
+  const (ToBeBilled) => const ToBeBilled(),
+  const (Rejected) => const Rejected(),
+  _ => throw ArgumentError('Unknown JobState type: $t'),
+};
 
 /// Find the currently-active leaf state Type (simple non-nested machine).
 Future<Type> currentState(StateMachine m) async {
@@ -111,4 +78,71 @@ Future<Type> currentState(StateMachine m) async {
     return Rejected;
   }
   throw StateError('Could not determine active state.');
+}
+
+const _allStates = <JobState>[
+  Prospecting(),
+  Quoting(),
+  AwaitingApproval(),
+  AwaitingPayment(),
+  ToBeScheduled(),
+  Scheduled(),
+  InProgress(),
+  OnHold(),
+  AwaitingMaterials(),
+  Completed(),
+  ToBeBilled(),
+  Rejected(),
+];
+
+// Leaf states — each sets its own visibility and status:
+final class Prospecting extends JobState {
+  const Prospecting() : super(visible: true, status: JobStatus.prospecting);
+}
+
+final class Quoting extends JobState {
+  const Quoting() : super(visible: true, status: JobStatus.quoting);
+}
+
+final class AwaitingApproval extends JobState {
+  const AwaitingApproval()
+    : super(visible: true, status: JobStatus.awaitingApproval);
+}
+
+final class AwaitingPayment extends JobState {
+  const AwaitingPayment()
+    : super(visible: true, status: JobStatus.awaitingPayment);
+}
+
+final class ToBeScheduled extends JobState {
+  const ToBeScheduled() : super(visible: true, status: JobStatus.toBeScheduled);
+}
+
+final class Scheduled extends JobState {
+  const Scheduled() : super(visible: false, status: JobStatus.scheduled);
+}
+
+final class InProgress extends JobState {
+  const InProgress() : super(visible: true, status: JobStatus.inProgress);
+}
+
+final class OnHold extends JobState {
+  const OnHold() : super(visible: true, status: JobStatus.onHold);
+}
+
+final class AwaitingMaterials extends JobState {
+  const AwaitingMaterials()
+    : super(visible: true, status: JobStatus.awaitingMaterials);
+}
+
+final class Completed extends JobState {
+  const Completed() : super(visible: true, status: JobStatus.completed);
+}
+
+final class ToBeBilled extends JobState {
+  const ToBeBilled() : super(visible: true, status: JobStatus.toBeBilled);
+}
+
+final class Rejected extends JobState {
+  const Rejected() : super(visible: true, status: JobStatus.rejected);
 }

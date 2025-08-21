@@ -5,37 +5,6 @@ import '../entity/entity.g.dart';
 import 'job_events.dart';
 import 'job_states.dart';
 
-/// Helper: map between enum and fsm2 state Type.
-Type _stateTypeFor(JobStatus s) {
-  switch (s) {
-    case JobStatus.prospecting:
-      return Prospecting;
-    case JobStatus.quoting:
-      return Quoting;
-    case JobStatus.awaitingApproval:
-      return AwaitingApproval;
-    case JobStatus.awaitingPayment:
-      return AwaitingPayment;
-    case JobStatus.toBeScheduled:
-      return ToBeScheduled;
-    case JobStatus.scheduled:
-      return Scheduled;
-    case JobStatus.inProgress:
-      return InProgress;
-    case JobStatus.onHold:
-      return OnHold;
-    case JobStatus.awaitingMaterials:
-      return AwaitingMaterials;
-    case JobStatus.completed:
-      return Completed;
-    case JobStatus.toBeBilled:
-      return ToBeBilled;
-    case JobStatus.rejected:
-      return Rejected;
-  }
-}
-
-
 /// What the UI cares about: a target JobStatus to show, and a way to fire it.
 class Next {
   const Next({required this.to, required this.fire});
@@ -45,6 +14,27 @@ class Next {
 
   /// Fire the underlying fsm2 event to do the transition.
   final Future<void> Function(StateMachine machine) fire;
+}
+
+typedef BuildEvent = JobEvent Function(Job job);
+
+/// Transitions the [Job] and then returns the updated [Job]
+Future<Job> transitionJobById(int jobid, BuildEvent buildEvent) async {
+  final job = await DaoJob().getById(jobid);
+  final event = buildEvent(job!);
+  final machine = await buildJobMachine(job);
+
+  machine.applyEvent(event);
+
+  return (await DaoJob().getById(jobid))!;
+}
+
+/// Transitions the [Job] and then returns the updated [Job]
+Future<Job> transitionJob(Job job, BuildEvent buildEvent) async {
+  final machine = await buildJobMachine(job);
+  final event = buildEvent(job);
+  machine.applyEvent(event);
+  return (await DaoJob().getById(job.id))!;
 }
 
 /// Build the job FSM (wire transitions once).
@@ -84,47 +74,49 @@ Future<StateMachine> buildJobMachine(Job job) async {
       // children (inherit RejectJob → Rejected)
       ..state<Prospecting>(
         (b) => b
-          ..on<StartQuoting, Quoting>(
-            sideEffect: (e) async =>
-                _updateJobStatus(e.job, JobStatus.awaitingApproval),
-          )
+          ..on<StartQuoting, Quoting>()
+          ..on<PaymentReceived, ToBeScheduled>()
+          ..on<StartWork, InProgress>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<Quoting>(
         (b) => b
-          ..on<SubmitQuote, AwaitingApproval>(
-            sideEffect: (e) async =>
-                _updateJobStatus(e.job, JobStatus.awaitingPayment),
-          )
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.quoting))
+          ..on<SubmitQuote, AwaitingApproval>()
+          ..on<StartWork, InProgress>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<AwaitingApproval>(
         (b) => b
-          ..on<ApproveQuote, AwaitingPayment>(
-            sideEffect: (e) async =>
-                _updateJobStatus(e.job, JobStatus.awaitingPayment),
-          )
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.awaitingApproval))
+          ..on<ApproveQuote, AwaitingPayment>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<AwaitingPayment>(
         (b) => b
-          ..on<RecordDeposit, ToBeScheduled>()
+          ..onEnter(
+            (_, _) async => _updateJobStatus(job, JobStatus.awaitingPayment),
+          )
+          ..on<PaymentReceived, ToBeScheduled>()
           ..on<ScheduleJob, Scheduled>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<ToBeScheduled>(
         (b) => b
           ..on<ScheduleJob, Scheduled>()
+          ..on<StartWork, InProgress>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<Scheduled>(
         (b) => b
+          ..onEnter((_, _) async => DaoJob().markScheduled(job))
           ..on<StartWork, InProgress>()
           ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<InProgress>(
         (b) => b
+          ..onEnter((_, _) => _inProgress(job))
           ..on<PauseJob, OnHold>()
           ..on<CompleteJob, Completed>()
           ..on<RejectJob, Rejected>(),
@@ -132,7 +124,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<OnHold>(
         (b) => b
           ..on<ResumeJob, InProgress>()
-          ..on<MaterialsArrived, AwaitingMaterials>()
+          ..on<MaterialsArrived, InProgress>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<AwaitingMaterials>(
@@ -159,12 +151,16 @@ Future<StateMachine> buildJobMachine(Job job) async {
   return machine;
 }
 
+Future<void> _inProgress(Job job) async {
+  await DaoJob().markActive(job.id);
+  await _updateJobStatus(job, JobStatus.inProgress);
+}
+
 Future<void> _updateJobStatus(Job job, JobStatus status) async {
   job.status = status;
 
   await DaoJob().update(job);
 }
-
 
 /// Return *guarded* next steps as JobStatus values + a way to trigger them.
 ///
@@ -216,8 +212,12 @@ Future<List<Next>> nextFromFsm({
       continue;
     }
 
-    final toType = triggerable.targetStates.first;
-    final toStatus = statusForStateType(toType);
+    final toType = stateFromType(triggerable.targetStates.first);
+
+    if (!toType.visible) {
+      continue;
+    }
+    final toStatus = statusFromType(toType);
 
     out.add(
       Next(

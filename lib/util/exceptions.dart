@@ -37,3 +37,7 @@ class InvalidPathException extends HMBException {
 class IntegrationDisabledExcpetion extends HMBException {
   IntegrationDisabledExcpetion(super.message);
 }
+
+class TaskMoveException extends HMBException {
+  TaskMoveException(super.message);
+}

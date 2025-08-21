@@ -183,9 +183,11 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
 
                 // Contact option
                 if (widget.isEditing || _selectedJob.jobId != null)
-                  ElevatedButton(
+                  HMBButtonSecondary(
                     onPressed: _showContactOptions,
-                    child: const Text('Send Notice'),
+                    label: 'Send Notice',
+                    hint:
+                        'Send a text message to the user confirming the schedule.',
                   ),
                 const SizedBox(height: 30),
                 _buildButtons(context),
@@ -477,7 +479,6 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     final job = await DaoJob().getById(_selectedJob.jobId);
     if (job != null) {
       (await buildJobMachine(job)).applyEvent(ScheduleJob(job));
-      
     }
   }
 
@@ -582,19 +583,16 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
   }
 
   void _sendNotice(ContactOption contact) {
-    // TODO(bsutton): send customer notice that their job has been schuled
+    // TODO(bsutton): send customer notice that their job has been scheduled
     // as well as notice if we change the job.
     // Implement your logic to send the notice via email or SMS
     // You can use the contact.method and contact.detail to determine how to send the notice
 
     // For demonstration purposes, we just show a snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Notice sent to ${contact.contact.firstName} via ${contact.method.name} (${contact.detail})',
-        ),
-      ),
-    );
+    HMBToast.info('Not yet implemented');
+    // HMBToast.info(
+    //   'Notice sent to ${contact.contact.firstName} via ${contact.method.name} (${contact.detail})',
+    // );
 
     // Record the date the notice was sent
     setState(() {

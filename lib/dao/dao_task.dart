@@ -268,9 +268,6 @@ WHERE ti.id = ?
   //   return totalCost;
   // }
 
-  @override
-  JuneStateCreator get juneRefresher => TaskState.new;
-
   Future<void> deleteByJob(int id, {Transaction? transaction}) async {
     final db = withinTransaction(transaction);
 
@@ -342,11 +339,73 @@ WHERE ti.id = ?
 
     await update(task!);
   }
+
+  Future<bool> isTaskBilled({
+    required Task task,
+    required DaoTaskItem daoTaskItem,
+    required DaoTimeEntry daoTimeEntry,
+  }) async {
+    final items = await daoTaskItem.getByTask(task.id);
+    if (items.any((i) => i.billed || i.invoiceLineId != null)) {
+      return true;
+    }
+
+    final time = await daoTimeEntry.getByTask(task.id);
+    if (time.any((te) => te.billed || te.invoiceLineId != null)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  Future<bool> hasWorkAssignment({
+    required Task task,
+    required DaoWorkAssignmentTask daoWAT,
+  }) async {
+    final links = await daoWAT.getByTask(task);
+    return links.isNotEmpty;
+  }
+
+  /// True when:
+  /// - job is Fixed Price AND
+  /// - there exists an APPROVED Quote for the job AND
+  /// - that quote has a QuoteLineGroup for the task where lineApprovalStatus != rejected
+  ///
+  /// If the group is REJECTED, we allow the move (as per requirement).
+  Future<bool> isTaskLockedByApprovedFixedQuote({
+    required Job job,
+    required Task task,
+    required List<Quote> approvedQuotes,
+    required DaoQuoteLineGroup daoQLG,
+  }) async {
+    if (job.billingType != BillingType.fixedPrice) {
+      return false;
+    }
+    if (approvedQuotes.isEmpty) {
+      return false;
+    }
+
+    for (final q in approvedQuotes) {
+      final groups = await daoQLG.getByQuoteId(q.id);
+      for (final g in groups) {
+        if (g.taskId == task.id) {
+          // blocked unless explicitly rejected
+          if (g.lineApprovalStatus != LineApprovalStatus.rejected) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  @override
+  JuneStateCreator get juneRefresher => TaskRefresher.new;
 }
 
 /// Used to notify the UI that the time entry has changed.
-class TaskState extends JuneState {
-  TaskState();
+class TaskRefresher extends JuneState {
+  TaskRefresher();
 }
 
 /// Holds the value earned from labour and materials

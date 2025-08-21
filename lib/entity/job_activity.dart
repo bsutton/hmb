@@ -37,6 +37,8 @@ enum JobActivityStatus {
   }
 }
 
+/// Used to hold an activity in the schedule
+/// for a specific job.
 class JobActivity extends Entity<JobActivity> {
   JobActivity({
     required this.jobId,

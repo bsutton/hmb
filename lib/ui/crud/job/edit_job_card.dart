@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:calendar_view/calendar_view.dart';
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
@@ -20,6 +21,7 @@ import '../../widgets/circle.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_button.dart';
+import '../../widgets/hmb_chip.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/layout/hmb_spacer.dart';
@@ -31,7 +33,6 @@ import '../../widgets/select/hmb_select_customer.dart';
 import '../../widgets/select/hmb_select_site.dart';
 import '../../widgets/text/hmb_expanding_text_block.dart';
 import '../../widgets/text/hmb_text.dart';
-import 'edit_job_screen.dart';
 import 'fsm_status_picker.dart';
 import 'list_job_screen.dart';
 
@@ -79,39 +80,57 @@ class EditJobCard extends StatefulWidget {
   State<EditJobCard> createState() => _EditJobCardState();
 }
 
-class _EditJobCardState extends State<EditJobCard> {
+class _EditJobCardState extends DeferredState<EditJobCard> {
   // Version counters to force RichEditor text refresh
   var _descriptionVersion = 0;
   var _assumptionVersion = 0;
 
+  Job? job;
+
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      const HMBSpacer(height: true),
-      HMBFormSection(
-        children: [
-          _showSummary(),
-          _chooseCustomer(),
-          _chooseStatus(widget.job),
-          if (widget.job != null) _buildScheduleButtons(),
-          _chooseBillingType(),
-          _chooseBillingContact(),
-          _showHourlyRate(),
-          _showBookingFee(),
-          const HMBSpacer(height: true),
-          _buildDescription(),
-          const SizedBox(height: 12),
-          _buildAssumption(),
-          const SizedBox(height: 12),
-          _chooseContact(),
-          _chooseSite(),
-        ],
-      ),
-      const HMBSpacer(height: true),
-      if (widget.job != null) PhotoGallery.forJob(job: widget.job!),
-    ],
+  void initState() {
+    super.initState();
+    job = widget.job;
+  }
+
+  @override
+  Future<void> asyncInitState() async {
+    if (widget.job != null) {
+      await DaoJob().markActive(widget.job!.id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const HMBSpacer(height: true),
+        HMBFormSection(
+          children: [
+            _showSummary(),
+            _chooseCustomer(),
+            _chooseStatus(job),
+            if (job != null) _buildScheduleButtons(),
+            _chooseBillingType(),
+            _chooseBillingContact(),
+            _showHourlyRate(),
+            _showBookingFee(),
+            const HMBSpacer(height: true),
+            _buildDescription(),
+            const SizedBox(height: 12),
+            _buildAssumption(),
+            const SizedBox(height: 12),
+            _chooseContact(),
+            _chooseSite(),
+          ],
+        ),
+        const HMBSpacer(height: true),
+        if (job != null) PhotoGallery.forJob(job: job!),
+      ],
+    ),
   );
 
   // --- Field builders -------------------------------------------------------
@@ -202,7 +221,7 @@ You can set a default booking fee from System | Billing screen''');
   );
 
   JuneBuilder<SelectedSite> _chooseSite() => JuneBuilder(
-    () => SelectedSite()..siteId = widget.job?.siteId,
+    () => SelectedSite()..siteId = job?.siteId,
     builder: (state) => HMBSelectSite(
       key: ValueKey(state.siteId),
       initialSite: state,
@@ -214,6 +233,7 @@ You can set a default booking fee from System | Billing screen''');
   );
 
   Widget _chooseCustomer() => HMBSelectCustomer(
+    required: true,
     selectedCustomer: June.getState(SelectedCustomer.new),
     onSelected: (customer) {
       June.getState(SelectedCustomer.new).customerId = customer?.id;
@@ -233,24 +253,33 @@ You can set a default booking fee from System | Billing screen''');
       });
     },
   );
-
-  // replace your existing _chooseStatus with this shim:
-Widget _chooseStatus(Job? job) =>
-    job == null ? _chooseStatusForNewJob() : FsmStatusPicker(job: job);
-
-// keep the old dropdown for creating brand new jobs
-Widget _chooseStatusForNewJob() => JuneBuilder(
-  () => SelectJobStatus()..jobStatus = JobStatus.startingStatus,
-  builder: (jobStatus) => HMBDroplist<JobStatus>(
-    title: 'Status',
-    items: (filter) async => JobStatus.byOrdinal(),
-    selectedItem: () async => jobStatus.jobStatus,
-    onChanged: (status) => jobStatus.jobStatus = status,
-    format: (value) => value.displayName,
-  ),
-);
-
-
+  Widget _chooseStatus(Job? job) => Padding(
+    padding: const EdgeInsets.only(top: 8, bottom: 8),
+    child: Row(
+      children: [
+        const Text('Status:', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(width: 8),
+        JuneBuilder(
+          SelectJobStatus.new,
+          builder: (selectedJobStatus) => HMBChip(
+            label:
+                selectedJobStatus.jobStatus?.displayName ??
+                JobStatus.startingStatus.displayName,
+          ),
+        ),
+        const HMBSpacer(width: true),
+        HMBButton(
+          enabled: job != null,
+          label: 'Update',
+          hint: 'Change job status',
+          onPressed: () async {
+            await showJobStatusDialog(context, job!);
+            setState(() {});
+          },
+        ),
+      ],
+    ),
+  );
   // Widget _chooseStatus(Job? job) => JuneBuilder(
   //   () => SelectJobStatus()..jobStatus = job?.status,
   //   builder: (jobStatus) => HMBDroplist<JobStatus>(
@@ -286,14 +315,14 @@ Widget _chooseStatusForNewJob() => JuneBuilder(
         );
         return;
       }
-      final jobId = widget.job!.id;
+      final jobId = job!.id;
       final firstActivity = await _getFirstActivity(jobId);
       if (!mounted) {
         return;
       }
 
       await Navigator.of(context).push(
-        MaterialPageRoute<void>(
+        MaterialPageRoute<bool>(
           builder: (_) => SchedulePage(
             defaultView: ScheduleView.week,
             initialActivityId: firstActivity?.id,
@@ -306,8 +335,25 @@ Widget _chooseStatusForNewJob() => JuneBuilder(
 
       setAppTitle(JobListScreen.pageTitle);
       June.getState(ActivityJobsState.new).setState();
+
+      await _checkIfScheduled();
+      setState(() {});
     },
   );
+
+  Future<void> _checkIfScheduled() async {
+    // reload the job as it's state may have changed
+    // if the user scheduled a job in the above call
+    // to SchedulePage.
+    // Scheduling a Job may not actually change the status
+    // in which case  we don't want to overwrite the status
+    final tempJob = await DaoJob().getById(job?.id);
+    if (tempJob!.status == JobStatus.scheduled) {
+      June.getState(SelectJobStatus.new)
+        ..jobStatus = JobStatus.scheduled
+        ..setState();
+    }
+  }
 
   Future<JobActivity?> _getFirstActivity(int jobId) async {
     final now = DateTime.now();
@@ -324,7 +370,7 @@ Widget _chooseStatusForNewJob() => JuneBuilder(
   Widget _buildActivityButton() => JuneBuilder(
     ActivityJobsState.new,
     builder: (context) => FutureBuilderEx<List<JobActivity>>(
-      future: DaoJobActivity().getByJob(widget.job!.id),
+      future: DaoJobActivity().getByJob(job!.id),
       builder: (context, activities) {
         final jobActivities = activities ?? [];
         final nextActivity = _nextActivity(jobActivities);
@@ -343,7 +389,7 @@ Widget _chooseStatusForNewJob() => JuneBuilder(
                 builder: (_) => SchedulePage(
                   defaultView: ScheduleView.week,
                   initialActivityId: selected.id,
-                  defaultJob: widget.job?.id,
+                  defaultJob: job?.id,
                   dialogMode: true,
                 ),
                 fullscreenDialog: true,
@@ -352,6 +398,7 @@ Widget _chooseStatusForNewJob() => JuneBuilder(
 
             setAppTitle(JobListScreen.pageTitle);
             June.getState(ActivityJobsState.new).setState();
+            await _checkIfScheduled();
           },
           child: Row(
             children: [
@@ -359,7 +406,7 @@ Widget _chooseStatusForNewJob() => JuneBuilder(
                 Circle(color: nextActivity.status.color, child: const Text('')),
               const SizedBox(width: 5),
               Text(
-                'Activities: $nextWhen',
+                'Next: $nextWhen',
                 style: TextStyle(
                   color: nextActivity != null && _isToday(nextActivity.start)
                       ? Colors.orangeAccent
@@ -580,3 +627,7 @@ class SelectJobStatus extends JuneState {
     setState();
   }
 }
+
+/// Used to rebuild the activity button when
+/// a job gets scheduled.
+class ActivityJobsState extends JuneState {}

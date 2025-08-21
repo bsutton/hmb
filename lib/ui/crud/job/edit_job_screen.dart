@@ -275,5 +275,3 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     setState(() {});
   }
 }
-
-class ActivityJobsState extends JuneState {}
