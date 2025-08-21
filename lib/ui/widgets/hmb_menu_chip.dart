@@ -121,7 +121,7 @@ class HMBMenuChip<T> extends StatelessWidget {
   Color _fgColor(BuildContext context) {
     switch (tone) {
       case HMBChipTone.accent:
-        return Theme.of(context).colorScheme.primary;
+        return Colors.white;
       case HMBChipTone.danger:
         return Colors.red.shade400;
       case HMBChipTone.warning:
