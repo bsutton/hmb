@@ -194,27 +194,25 @@ class _DashletCardState<T> extends State<DashletCard<T>> {
       return;
     }
 
-    {
-      if (widget.onTap != null) {
-        widget.onTap!(context);
+    if (widget.onTap != null) {
+      widget.onTap!(context);
+      return;
+    }
+    if (widget.builder != null) {
+      final dv = await widget.value();
+      if (!context.mounted) {
         return;
       }
-      if (widget.builder != null) {
-        final dv = await widget.value();
-        if (!context.mounted) {
-          return;
-        }
-        final appTitle = June.getState(HMBTitle.new).title;
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (c) => widget.builder!(c, dv),
-            fullscreenDialog: true,
-          ),
-        );
+      final appTitle = June.getState(HMBTitle.new).title;
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (c) => widget.builder!(c, dv),
+          fullscreenDialog: true,
+        ),
+      );
 
-        /// restore the app title once the child is poped.
-        setAppTitle(appTitle);
-      }
+      /// restore the app title once the child is poped.
+      setAppTitle(appTitle);
     }
   }
 }
