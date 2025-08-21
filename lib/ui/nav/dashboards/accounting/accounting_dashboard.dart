@@ -28,7 +28,8 @@ class AccountingDashboardPage extends StatelessWidget {
     dashlets: [
       DashletCard<void>.route(
         label: 'Estimator',
-        hint: 'Create estimates for a Job by adding Tasks, Labour and Materials',
+        hint:
+            'Create estimates for a Job by adding Tasks, Labour and Materials',
         icon: Icons.calculate,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/accounting/estimator',
