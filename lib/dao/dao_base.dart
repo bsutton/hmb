@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.dart';
@@ -136,5 +135,5 @@ class DaoBase<T extends Entity<T>> {
 
   Future<R> withTransaction<R>(
     Future<R> Function(Transaction transaction) callback,
-  ) async => db.transaction((transaction) async => callback(transaction));
+  ) => db.transaction((transaction) => callback(transaction));
 }

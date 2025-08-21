@@ -212,8 +212,6 @@ abstract class BackupProvider {
       // Replace the existing database with the selected backup
       final dbFile = File(dbPath);
       copy(pathToBackupFile, dbFile.path, overwrite: true);
-
-      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       throw BackupException('Error restoring database: $e');
     } finally {

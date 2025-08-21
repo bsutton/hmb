@@ -167,7 +167,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                       HMBButton(
                         label: 'Reject',
                         hint: 'Mark this Task as rejected',
-                        onPressed: () async =>
+                        onPressed: ()  =>
                             _rejectQuoteGroup(group, groupWrap.lines),
                       ),
                   ],

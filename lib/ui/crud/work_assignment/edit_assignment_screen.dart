@@ -92,7 +92,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
     builder: (_) => NestedEntityEditScreen<WorkAssignment, Job>(
       entityName: 'Assignment',
       dao: DaoWorkAssigment(),
-      onInsert: (workAssignment, transaction) async =>
+      onInsert: (workAssignment, transaction)  =>
           DaoWorkAssigment().insert(workAssignment!, transaction),
       entityState: this,
       editor: (workAssignment) => _buildEditor(),
@@ -115,7 +115,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
         FutureBuilderEx<List<Supplier>>(
           future: DaoSupplier().getAll(orderByClause: 'name COLLATE NOCASE'),
           builder: (c, suppliers) => HMBDroplist<Supplier>(
-            selectedItem: () async => DaoSupplier().getById(_selectedSupplier),
+            selectedItem: ()  => DaoSupplier().getById(_selectedSupplier),
             title: 'Supplier',
             format: (supplier) => supplier.name,
             items: (filter) async => suppliers!
@@ -141,7 +141,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
           FutureBuilderEx<List<Contact>>(
             future: DaoContactSupplier().getBySupplier(_selectedSupplier!),
             builder: (context, contacts) => HMBDroplist<Contact>(
-              selectedItem: () async => DaoContact().getById(_selectedContact),
+              selectedItem: ()  => DaoContact().getById(_selectedContact),
               title: 'Supplier Contact',
               format: (contacts) => contacts.fullname,
               items: (filter) async => contacts!,

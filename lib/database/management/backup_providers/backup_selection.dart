@@ -26,10 +26,10 @@ class BackupSelectionScreen extends StatefulWidget {
   final BackupProvider backupProvider;
 
   @override
-  _BackupSelectionScreenState createState() => _BackupSelectionScreenState();
+  BackupSelectionScreenState createState() => BackupSelectionScreenState();
 }
 
-class _BackupSelectionScreenState extends DeferredState<BackupSelectionScreen> {
+class BackupSelectionScreenState extends DeferredState<BackupSelectionScreen> {
   late Future<Backups> _backupsFuture;
 
   @override

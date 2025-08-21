@@ -23,7 +23,7 @@ Future<void> clipboardCopyTo(String data) async {
   HMBToast.info('Copy $data to the clipboard');
 }
 
-Future<bool> clipboardHasText() async => Clipboard.hasStrings();
+Future<bool> clipboardHasText()  => Clipboard.hasStrings();
 
 Future<String> clipboardGetText() async =>
     (await Clipboard.getData('text/plain'))?.text ?? '';

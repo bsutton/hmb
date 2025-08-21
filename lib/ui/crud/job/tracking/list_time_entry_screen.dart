@@ -88,7 +88,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
 
       HMBSelectSupplier(
         selectedSupplier: _supplierFilter,
-        onSelected: (sup) async {
+        onSelected: (sup)  {
           _supplierFilter.selected = sup?.id;
           onChange();
         },
@@ -154,7 +154,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
               _taskFilter.taskId != null ||
               _selectedDate != null,
           cardHeight: 260,
-          title: (entry) async => HMBTextLine(formatDate(entry.startTime)),
+          title: (entry)  => HMBTextLine(formatDate(entry.startTime)),
           onEdit: (entry) =>
               TimeEntryEditScreen(job: widget.job, timeEntry: entry),
           details: (entry) => FutureBuilderEx<_Details>(

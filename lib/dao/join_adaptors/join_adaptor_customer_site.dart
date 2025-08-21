@@ -12,8 +12,6 @@
 */
 
 
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../entity/customer.dart';

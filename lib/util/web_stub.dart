@@ -10,7 +10,6 @@
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
-*/
 
 /// Used to import nothing when doing a conditional import.
 library;

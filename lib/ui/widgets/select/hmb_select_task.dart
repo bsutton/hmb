@@ -65,10 +65,10 @@ class HMBSelectTaskState extends State<HMBSelectTask> {
               child: HMBDroplist<Task>(
                 key: ValueKey(widget.selectedTask.taskId),
                 title: 'Task',
-                selectedItem: () async => _getInitialTask(),
+                selectedItem: ()  => _getInitialTask(),
                 items: (filter) => DaoTask().getTasksByJob(widget.job!.id),
                 format: (task) => task.name,
-                onChanged: (task) async => _onTaskChanged(task),
+                onChanged: (task)  => _onTaskChanged(task),
                 required: widget.required,
               ),
             ),

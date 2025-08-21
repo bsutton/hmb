@@ -141,7 +141,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                         HMBIconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           showBackground: false,
-                          onPressed: () async => _deleteInvoiceLine(line),
+                          onPressed: ()  => _deleteInvoiceLine(line),
                           hint: 'Delete Invoice Line',
                         ),
                       ],

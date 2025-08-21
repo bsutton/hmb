@@ -13,6 +13,7 @@
 
 import 'package:sqflite_common/sqlite_api.dart';
 
+// they are useful
 // ignore: one_member_abstracts
 abstract class HMBDatabaseFactory {
   Future<Database> openDatabase(

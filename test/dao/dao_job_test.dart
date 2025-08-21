@@ -10,8 +10,6 @@
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
-ps://github.com/bsutton/hmb/blob/main/LICENSE
-*/
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';

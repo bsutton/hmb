@@ -94,7 +94,7 @@ class _SplashScreenState extends State<SplashScreen> {
           // Blocking UI handles loading/errors
           BlockingUITransition(
             // key: _blockingUIKey,
-            slowAction: () async => _initialise(context),
+            slowAction: ()  => _initialise(context),
             builder: (context, _) => const SizedBox.shrink(),
             errorBuilder: (context, error) =>
                 DatabaseErrorDialog(error: error.toString()),

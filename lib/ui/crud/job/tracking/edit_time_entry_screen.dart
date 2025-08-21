@@ -135,7 +135,7 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
     super.dispose();
   }
 
-  Future<DateTime?> _pickDate(BuildContext context, DateTime? initial) async =>
+  Future<DateTime?> _pickDate(BuildContext context, DateTime? initial)  =>
       showDatePicker(
         context: context,
         initialDate: initial ?? DateTime.now(),
@@ -146,7 +146,7 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
   Future<TimeOfDay?> _pickTime(
     BuildContext context,
     TimeOfDay? initial,
-  ) async => showTimePicker(
+  )  => showTimePicker(
     context: context,
     initialTime: initial ?? TimeOfDay.now(),
     builder: (ctx, child) => MediaQuery(

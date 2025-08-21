@@ -45,7 +45,7 @@ class HMBEntityChip<E extends Entity<E>> extends StatelessWidget {
     icon: icon,
     format: format,
     prefix: prefix ?? 'Job',
-    loader: () async => DaoJob().getById(id),
+    loader: () => DaoJob().getById(id),
     fallbackLabel: '#$id',
     onTapDefault: (ctx, e) async {
       await Navigator.push(
@@ -72,7 +72,7 @@ class HMBEntityChip<E extends Entity<E>> extends StatelessWidget {
     icon: icon,
     format: format,
     prefix: prefix ?? 'Customer',
-    loader: () async => DaoCustomer().getById(id),
+    loader: () => DaoCustomer().getById(id),
     fallbackLabel: '#$id',
     onTapDefault: (ctx, e) async {
       await Navigator.push(

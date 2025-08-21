@@ -57,7 +57,7 @@ class DaoWorkAssignmentTask extends Dao<WorkAssignmentTask> {
   Future<void> deleteByTask(
     int taskId, {
     Transaction? transaction,
-  }) async => withTransaction((txn) async {
+  })  => withTransaction((txn) async {
     // 1️⃣ fetch assignment IDs linked to this task
     final rows = await txn.query(
       tableName,

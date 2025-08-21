@@ -114,7 +114,7 @@ class _JobEstimatesListScreenState extends State<JobEstimatesListScreen> {
   );
 }
 
-Future<Customer?> _getCustomer(Job job) async => DaoCustomer().getByJob(job.id);
+Future<Customer?> _getCustomer(Job job)  => DaoCustomer().getByJob(job.id);
 
 class CustomerAndJob {
   CustomerAndJob({

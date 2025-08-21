@@ -95,7 +95,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<AwaitingPayment>(
         (b) => b
           ..onEnter(
-            (_, _) async => _updateJobStatus(job, JobStatus.awaitingPayment),
+            (_, _)  => _updateJobStatus(job, JobStatus.awaitingPayment),
           )
           ..on<PaymentReceived, ToBeScheduled>()
           ..on<ScheduleJob, Scheduled>()
@@ -109,7 +109,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       )
       ..state<Scheduled>(
         (b) => b
-          ..onEnter((_, _) async => DaoJob().markScheduled(job))
+          ..onEnter((_, _)  => DaoJob().markScheduled(job))
           ..on<StartWork, InProgress>()
           ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
@@ -142,7 +142,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<Rejected>(
         (b) => b
           ..on<ApproveQuote, AwaitingPayment>(
-            sideEffect: (e) async =>
+            sideEffect: (e) =>
                 _updateJobStatus(e.job, JobStatus.awaitingApproval),
           ), // e.g., “unreject” flow if you want it
       );
@@ -167,9 +167,9 @@ Future<void> _updateJobStatus(Job job, JobStatus status) async {
 /// How it works:
 /// 1) We locate the active state's StateDefinition via `traverseTree()`.
 /// 2) We list its transitions with `getTransitions(includeInherited: true)`.
-/// 3) For each transition, we build the appropriate Event with your 
+/// 3) For each transition, we build the appropriate Event with your
 /// Job payload,
-///    then ask `findTriggerableTransition(fromType, event)` to see if 
+///    then ask `findTriggerableTransition(fromType, event)` to see if
 /// it would fire.
 ///    If yes, we include the mapped target JobStatus. :contentReference
 /// [oaicite:1]
@@ -180,12 +180,9 @@ Future<List<Next>> nextFromFsm({
 }) async {
   // Build a lookup of state type -> definition
   final defs = <Type, StateDefinition<State>>{};
-  await machine.traverseTree(
-    (sd, _) {
-      defs[sd.stateType] = sd;
-    },
-  ); // debug helper; fine to use at runtime too. :contentReference[oaicite:2]
-  {index=2}
+  await machine.traverseTree((sd, _) {
+    defs[sd.stateType] = sd;
+  });
 
   final activeType = await currentState(machine);
   final def = defs[activeType];
@@ -195,13 +192,13 @@ Future<List<Next>> nextFromFsm({
 
   final out = <Next>[];
 
-  // All static (i.e., declared) transitions, including those 
+  // All static (i.e., declared) transitions, including those
   //inherited from parents.
   final transitions = def
       .getTransitions(); // :contentReference[oaicite:3]{index=3}
 
   for (final td in transitions) {
-    // td.eventType and td.toState.stateType are available on 
+    // td.eventType and td.toState.stateType are available on
     // TransitionDefinition.
     final factory = eventFactory[td.triggerEvents.first];
     if (factory == null) {
@@ -210,7 +207,7 @@ Future<List<Next>> nextFromFsm({
 
     final event = factory(job);
 
-    // Ask fsm2 if this event would actually trigger from the active 
+    // Ask fsm2 if this event would actually trigger from the active
     //state *right now*.
     final triggerable = await def.findTriggerableTransition(
       activeType,
