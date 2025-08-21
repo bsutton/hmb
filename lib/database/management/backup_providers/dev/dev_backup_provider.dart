@@ -83,14 +83,6 @@ class DevBackupProvider extends BackupProvider {
   Future<String> get photosRootPath async =>
       join(DartProject.self.pathToProjectRoot, 'photos');
 
-  @override
-  Future<String> get databasePath async => join(
-    DartProject.self.pathToProjectRoot,
-    '.dart_tool',
-    'sqflite_common_ffi',
-    'databases',
-    'handyman.db',
-  );
 
   @override
   Future<String> get backupLocation async => _pathToBackups();

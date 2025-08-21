@@ -14,8 +14,6 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
-import 'package:path/path.dart';
-import 'package:sqflite_common/sqflite.dart' as sql;
 import 'package:strings/strings.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -179,10 +177,6 @@ class EmailBackupProvider extends BackupProvider {
 
   @override
   Future<String> get photosRootPath => getPhotosRootPath();
-
-  @override
-  Future<String> get databasePath async =>
-      join(await sql.getDatabasesPath(), 'handyman.db');
 
   @override
   Future<String> get backupLocation => throw UnimplementedError();

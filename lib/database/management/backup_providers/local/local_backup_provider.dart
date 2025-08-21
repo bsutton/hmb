@@ -15,7 +15,6 @@ import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sqflite_common/sqflite.dart';
 
 import '../../../../util/log.dart';
 import '../../../../util/paths.dart'
@@ -103,10 +102,6 @@ class LocalBackupProvider extends BackupProvider {
 
   @override
   Future<String> get photosRootPath => getPhotosRootPath();
-
-  @override
-  Future<String> get databasePath async =>
-      join(await getDatabasesPath(), 'handyman.db');
 
   @override
   Future<void> syncPhotos() {

@@ -20,7 +20,6 @@ import 'package:flutter/foundation.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:path/path.dart';
 import 'package:sentry/sentry.dart';
-import 'package:sqflite_common/sqflite.dart' as sql;
 
 import '../../../../../util/exceptions.dart';
 import '../../../../../util/paths.dart'
@@ -210,10 +209,6 @@ class GoogleDriveBackupProvider extends BackupProvider {
 
   @override
   Future<String> get photosRootPath => getPhotosRootPath();
-
-  @override
-  Future<String> get databasePath async =>
-      join(await sql.getDatabasesPath(), 'handyman.db');
 
   @override
   Future<String> get backupLocation async =>
