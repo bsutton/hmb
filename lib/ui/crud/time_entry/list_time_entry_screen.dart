@@ -15,7 +15,7 @@ import '../../../dao/dao_time_entry.dart';
 import '../../../entity/task.dart';
 import '../../../entity/time_entry.dart';
 import '../../../util/format.dart';
-import '../../widgets/layout/hmb_row_gap.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_time_entry_screen.dart';
 
@@ -25,12 +25,7 @@ class TimeEntryListScreen extends StatelessWidget {
   final Parent<Task> parent;
 
   @override
-  Widget build(BuildContext context) => 
-  
-  
-  
-  
-  NestedEntityListScreen<TimeEntry, Task>(
+  Widget build(BuildContext context) => NestedEntityListScreen<TimeEntry, Task>(
     parent: parent,
     entityNamePlural: 'Time Entries',
     entityNameSingular: 'Time Entry',
@@ -46,11 +41,10 @@ class TimeEntryListScreen extends StatelessWidget {
     canEdit: (timeEntry) => !timeEntry.billed,
     // ignore: discarded_futures
     onDelete: (timeEntry) => DaoTimeEntry().delete(timeEntry.id),
-    canDelete: (timeEntry)  => !timeEntry.billed,
-    details: (timeEntry, details) => Row(
+    canDelete: (timeEntry) => !timeEntry.billed,
+    details: (timeEntry, details) => HMBRow(
       children: [
         Text('Billed: ${timeEntry.billed}'),
-        const HMBRowGap(),
         Text(
           '''Duration: ${timeEntry.endTime == null ? 'running' : formatDuration(timeEntry.endTime!.difference(timeEntry.startTime))}''',
         ),
