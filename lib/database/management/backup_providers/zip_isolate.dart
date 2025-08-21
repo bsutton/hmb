@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
@@ -50,7 +49,7 @@ Future<void> zipBackup({
     ),
     onError: errorPort.sendPort,
     onExit: exitPort.sendPort,
-    debugName: 'zipBackup'
+    debugName: 'zipBackup',
   );
 
   // Listen for progress updates from the isolate
@@ -195,6 +194,14 @@ Future<void> _expandZippedFileToDisk(
 }
 
 class _ZipParams {
+  final SendPort sendPort;
+  final String pathToZip;
+  final String pathToBackupFile;
+  final String photosRootPath;
+  final String zipPhotoRoot;
+  final int progressStageStart;
+  final int progressStageEnd;
+
   _ZipParams({
     required this.sendPort,
     required this.pathToZip,
@@ -204,11 +211,4 @@ class _ZipParams {
     required this.progressStageStart,
     required this.progressStageEnd,
   });
-  final SendPort sendPort;
-  final String pathToZip;
-  final String pathToBackupFile;
-  final String photosRootPath;
-  final String zipPhotoRoot;
-  final int progressStageStart;
-  final int progressStageEnd;
 }

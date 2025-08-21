@@ -1,3 +1,4 @@
+
 analyzer:
   plugins:
     - custom_lint
@@ -17,3 +18,9 @@ linter:
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
+
+
+custom_lint:
+  debug: true
+  # Optional, will cause custom_lint to log its internal debug information
+  verbose: true

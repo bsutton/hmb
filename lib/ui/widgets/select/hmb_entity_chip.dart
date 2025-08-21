@@ -16,6 +16,20 @@ import '../hmb_chip.dart';
 /// Generic entity chip that resolves [id] to an entity label and
 /// (by default) navigates to the editor when tapped.
 class HMBEntityChip<E extends Entity<E>> extends StatelessWidget {
+  final int id;
+  final Future<E?> Function() loader;
+  final String fallbackLabel;
+  final HMBChipTone tone;
+  final IconData? icon;
+  final String? prefix;
+  final String Function(E entity) format;
+
+  /// Override navigation. If null, default navigation is used.
+  final void Function(BuildContext context, E entity)? onTap;
+
+  /// Default navigation used when [onTap] is null.
+  final void Function(BuildContext context, E entity) onTapDefault;
+
   const HMBEntityChip._({
     required this.id,
     required this.loader,
@@ -84,20 +98,6 @@ class HMBEntityChip<E extends Entity<E>> extends StatelessWidget {
     },
     onTap: onTap,
   );
-
-  final int id;
-  final Future<E?> Function() loader;
-  final String fallbackLabel;
-  final HMBChipTone tone;
-  final IconData? icon;
-  final String? prefix;
-  final String Function(E entity) format;
-
-  /// Override navigation. If null, default navigation is used.
-  final void Function(BuildContext context, E entity)? onTap;
-
-  /// Default navigation used when [onTap] is null.
-  final void Function(BuildContext context, E entity) onTapDefault;
 
   @override
   Widget build(BuildContext context) => FutureBuilder<E?>(

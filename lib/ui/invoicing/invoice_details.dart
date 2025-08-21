@@ -16,6 +16,11 @@ import '../../entity/entity.g.dart';
 import '../../util/exceptions.dart';
 
 class InvoiceDetails {
+  final Invoice invoice;
+  final Job job;
+  final Customer? customer;
+  final List<InvoiceLineGroupDetails> lineGroups;
+
   InvoiceDetails({
     required this.invoice,
     required this.job,
@@ -49,16 +54,11 @@ class InvoiceDetails {
       lineGroups: groupDetails,
     );
   }
-
-  final Invoice invoice;
-  final Job job;
-  final Customer? customer;
-  final List<InvoiceLineGroupDetails> lineGroups;
 }
 
 class InvoiceLineGroupDetails {
-  InvoiceLineGroupDetails({required this.group, required this.lines});
-
   final InvoiceLineGroup group;
   final List<InvoiceLine> lines;
+
+  InvoiceLineGroupDetails({required this.group, required this.lines});
 }

@@ -24,15 +24,16 @@ import 'tool_details_step.dart';
 import 'tool_photo_step.dart';
 
 class ToolStockTakeWizard extends StatefulWidget {
+  final WizardCompletion onFinish;
+  final Money? cost;
+  final String? name;
+
   const ToolStockTakeWizard({
     required this.onFinish,
     super.key,
     this.cost,
     this.name,
   });
-  final WizardCompletion onFinish;
-  final Money? cost;
-  final String? name;
 
   @override
   State<ToolStockTakeWizard> createState() => _ToolStockTakeWizardState();

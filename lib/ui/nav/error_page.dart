@@ -18,10 +18,10 @@ import 'package:flutter/material.dart';
 /// [errorMessage] is displayed in the center of the screen.
 /// [onRetry] is an optional callback for a “Try Again” button.
 class ErrorPage extends StatelessWidget {
-  const ErrorPage({required this.errorMessage, super.key, this.onRetry});
-
   final String errorMessage;
   final VoidCallback? onRetry;
+
+  const ErrorPage({required this.errorMessage, super.key, this.onRetry});
 
   @override
   Widget build(BuildContext context) => Scaffold(

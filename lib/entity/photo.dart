@@ -16,6 +16,23 @@ import 'entity.dart';
 enum ParentType { task, tool, receipt }
 
 class Photo extends Entity<Photo> {
+  int parentId;
+  ParentType parentType;
+  String filePath;
+  String comment;
+
+  /// Backup location path
+  /// The [pathToCloudStorage] is set once we upload the photo.
+  String? pathToCloudStorage;
+
+  /// Backup path structure version
+  /// The [pathVersion] is set once we upload the photo.
+  int? pathVersion;
+
+  /// The last time the photo was backed up.
+  /// Normally we would only ever backup a photo once.
+  DateTime? lastBackupDate;
+
   Photo({
     required super.id,
     required this.parentId,
@@ -64,23 +81,6 @@ class Photo extends Entity<Photo> {
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
-
-  int parentId;
-  ParentType parentType;
-  String filePath;
-  String comment;
-
-  /// Backup location path
-  /// The [pathToCloudStorage] is set once we upload the photo.
-  String? pathToCloudStorage;
-
-  /// Backup path structure version
-  /// The [pathVersion] is set once we upload the photo.
-  int? pathVersion;
-
-  /// The last time the photo was backed up.
-  /// Normally we would only ever backup a photo once.
-  DateTime? lastBackupDate;
 
   @override
   Map<String, dynamic> toMap() => {

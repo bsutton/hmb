@@ -16,17 +16,18 @@ import 'package:flutter/material.dart';
 import '../source_context.dart';
 
 abstract class Source<T> {
-  Source({required this.name});
   String name;
+
+  /// Used to notify the source holder that the source has changed.
+  void Function(T? value, ResetFields resetFields)? _onChangeNotifier;
+
+  Source({required this.name});
 
   /// The source should call onChanged to notify
   /// providers that a new value exist.
   void onChanged(T? value, ResetFields resetFields) {
     _onChangeNotifier?.call(value, resetFields);
   }
-
-  /// Used to notify the source holder that the source has changed.
-  void Function(T? value, ResetFields resetFields)? _onChangeNotifier;
 
   // /// Used by the field picker to notify the ui
   // /// that a new value has been picked.
@@ -61,14 +62,15 @@ abstract class Source<T> {
 }
 
 class ResetFields {
+  bool contact;
+  bool customer;
+  bool job;
+  bool site;
+
   ResetFields({
     this.contact = false,
     this.customer = false,
     this.job = false,
     this.site = false,
   });
-  bool contact;
-  bool customer;
-  bool job;
-  bool site;
 }

@@ -24,16 +24,16 @@ import '../base_nested/list_nested_screen.dart';
 import 'edit_contact_screen.dart';
 
 class ContactListScreen<P extends Entity<P>> extends StatelessWidget {
+  final Parent<P> parent;
+  final DaoJoinAdaptor<Contact, P> daoJoin;
+  final String parentTitle;
+
   const ContactListScreen({
     required this.parent,
     required this.daoJoin,
     required this.parentTitle,
     super.key,
   });
-
-  final Parent<P> parent;
-  final DaoJoinAdaptor<Contact, P> daoJoin;
-  final String parentTitle;
 
   @override
   Widget build(BuildContext context) => NestedEntityListScreen<Contact, P>(

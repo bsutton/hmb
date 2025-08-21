@@ -25,9 +25,9 @@ import 'edit_job_screen.dart';
 import 'list_job_card.dart';
 
 class JobListScreen extends StatefulWidget {
-  const JobListScreen({super.key});
-
   static const pageTitle = 'Jobs';
+
+  const JobListScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api

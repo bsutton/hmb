@@ -7,8 +7,9 @@ import '../../../widgets/text/text.g.dart';
 
 /// Shows tasks, effort, earnings and worked‐hours for a Job.
 class JobStatisticsHeader extends StatelessWidget {
-  const JobStatisticsHeader({required this.job, super.key});
   final Job job;
+
+  const JobStatisticsHeader({required this.job, super.key});
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx<JobStatistics>(

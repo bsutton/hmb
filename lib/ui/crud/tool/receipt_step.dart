@@ -20,9 +20,9 @@ import 'capture_photo.dart';
 import 'stock_take_wizard.dart';
 
 class ReceiptStep extends WizardStep {
-  ReceiptStep(this.wizard) : super(title: 'Receipt');
-
   ToolWizardState wizard;
+
+  ReceiptStep(this.wizard) : super(title: 'Receipt');
 
   @override
   Widget build(BuildContext context) => Padding(

@@ -22,6 +22,10 @@ enum CheckListType {
 }
 
 class CheckList extends Entity<CheckList> {
+  String name;
+  String description;
+  CheckListType listType;
+
   CheckList({
     required super.id,
     required this.name,
@@ -52,10 +56,6 @@ class CheckList extends Entity<CheckList> {
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
-
-  String name;
-  String description;
-  CheckListType listType;
 
   @override
   Map<String, dynamic> toMap() => {

@@ -16,10 +16,10 @@ import 'package:flutter/widgets.dart';
 typedef OnSwipe = void Function();
 
 class HMBSwipeLeft extends StatelessWidget {
-  const HMBSwipeLeft({required this.child, required this.onSwipe, super.key});
-
   final Widget child;
   final OnSwipe onSwipe;
+
+  const HMBSwipeLeft({required this.child, required this.onSwipe, super.key});
 
   @override
   Widget build(BuildContext context) => GestureDetector(

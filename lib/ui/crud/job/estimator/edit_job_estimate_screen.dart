@@ -41,9 +41,9 @@ import '../../check_list/list_task_item_screen.dart';
 import '../../task/edit_task_screen.dart';
 
 class JobEstimateBuilderScreen extends StatefulWidget {
-  const JobEstimateBuilderScreen({required this.job, super.key});
-
   final Job job;
+
+  const JobEstimateBuilderScreen({required this.job, super.key});
 
   @override
   _JobEstimateBuilderScreenState createState() =>
@@ -419,11 +419,11 @@ class _JobEstimateBuilderScreenState
 }
 
 class ItemsAndRate {
-  ItemsAndRate(this.items, this.hourlyRate, this.billingType);
-
   List<TaskItem> items;
   Money hourlyRate;
   BillingType billingType;
+
+  ItemsAndRate(this.items, this.hourlyRate, this.billingType);
 
   static Future<ItemsAndRate> fromTask(Task task) async {
     final hourlyRate = await DaoTask().getHourlyRate(task);

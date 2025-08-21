@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 // ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
 
 import 'package:dcli_core/dcli_core.dart' as core;
@@ -22,16 +21,16 @@ import '../../../../util/paths.dart'
 import '../entity/photo.dart';
 
 class PhotoMeta {
+  final Photo photo;
+  final String title;
+  String? comment;
+  String? _absolutePath;
+
   PhotoMeta({required this.photo, required this.title, required this.comment});
 
   PhotoMeta.fromPhoto({required this.photo})
     : comment = photo.comment,
       title = '';
-
-  final Photo photo;
-  final String title;
-  String? comment;
-  String? _absolutePath;
 
   String get absolutePathTo {
     assert(_absolutePath != null, 'You must call the resolve method first');

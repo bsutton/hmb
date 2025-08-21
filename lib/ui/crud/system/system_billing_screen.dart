@@ -42,9 +42,10 @@ import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 
 class SystemBillingScreen extends StatefulWidget {
+  final bool showButtons;
+  
   const SystemBillingScreen({super.key, this.showButtons = true});
 
-  final bool showButtons;
 
   @override
   // ignore: library_private_types_in_public_api

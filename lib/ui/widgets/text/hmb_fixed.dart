@@ -15,15 +15,16 @@ import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
 class HMBFixed extends StatelessWidget {
+  final String label;
+  final bool verticalPadding;
+  final Fixed? amount;
+
   const HMBFixed({
     required this.label,
     required this.amount,
     super.key,
     this.verticalPadding = true,
   });
-  final String label;
-  final bool verticalPadding;
-  final Fixed? amount;
 
   @override
   Widget build(BuildContext context) => Column(

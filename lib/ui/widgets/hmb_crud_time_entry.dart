@@ -42,14 +42,14 @@ import 'hmb_start_time_entry.dart';
 // }
 
 class HMBCrudTimeEntry extends StatefulWidget {
+  final String parentTitle;
+  final Parent<Task> parent;
+
   const HMBCrudTimeEntry({
     required this.parentTitle,
     required this.parent,
     super.key,
   });
-
-  final String parentTitle;
-  final Parent<Task> parent;
 
   @override
   HMBCrudTimeEntryState createState() => HMBCrudTimeEntryState();

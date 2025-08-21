@@ -6,6 +6,11 @@ import 'color_ex.dart';
 enum HMBChipTone { neutral, accent, danger, warning }
 
 class HMBChip extends StatelessWidget {
+  final String label;
+  final HMBChipTone tone;
+  final IconData? icon;
+  final VoidCallback? onTap;
+
   const HMBChip({
     required this.label,
     super.key,
@@ -13,11 +18,6 @@ class HMBChip extends StatelessWidget {
     this.icon,
     this.onTap,
   });
-
-  final String label;
-  final HMBChipTone tone;
-  final IconData? icon;
-  final VoidCallback? onTap;
 
   Color _backgroundColor(BuildContext context) {
     switch (tone) {

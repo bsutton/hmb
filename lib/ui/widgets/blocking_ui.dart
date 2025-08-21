@@ -116,6 +116,11 @@ class BlockingOverlay extends StatelessWidget {
 /// From 1000ms to completion it shows a label 'Just a moment...'
 ///
 class _BlockingOverlayWidget extends StatefulWidget {
+  final BlockingOverlayState blockingOverlayState;
+
+  final TopOrTailPlacement placement;
+  final bool hideHelpIcon;
+
   /// [placement] controls where the spinning placement indicator goes
   /// We normally use [TopOrTailPlacement.top] during the Registration
   /// Wizard and
@@ -130,11 +135,6 @@ class _BlockingOverlayWidget extends StatefulWidget {
     this.placement = TopOrTailPlacement.bottom,
     this.hideHelpIcon = true,
   });
-
-  final BlockingOverlayState blockingOverlayState;
-
-  final TopOrTailPlacement placement;
-  final bool hideHelpIcon;
 
   @override
   State<StatefulWidget> createState() => _BlockingOverlayWidgetState();
@@ -231,6 +231,11 @@ typedef ErrorBuilder = Widget Function(BuildContext, Object error);
 ///
 ///
 class BlockingUITransition<T> extends StatefulWidget {
+  final BlockingWidgetBuilder<T> builder;
+  final ErrorBuilder? errorBuilder;
+  final Future<T> Function() slowAction;
+  final String? label;
+
   const BlockingUITransition({
     required this.slowAction,
     required this.builder,
@@ -238,11 +243,6 @@ class BlockingUITransition<T> extends StatefulWidget {
     this.label,
     super.key,
   });
-
-  final BlockingWidgetBuilder<T> builder;
-  final ErrorBuilder? errorBuilder;
-  final Future<T> Function() slowAction;
-  final String? label;
 
   @override
   State<BlockingUITransition<T>> createState() =>
@@ -435,9 +435,6 @@ class BlockingUI {
 /// so that we can dump call site stack traces for debugging
 /// purposes.
 class RunningSlowAction<T> {
-  RunningSlowAction(this.label, this.slowAction, this.end)
-    : completer = CompleterEx<T>(debugName: label),
-      stackTrace = StackTraceImpl(skipFrames: 2);
   final String? label;
 
   final Future<T> Function() slowAction;
@@ -447,6 +444,10 @@ class RunningSlowAction<T> {
 
   /// The stack trace of where the [BlockingUI.run] method was called from.
   StackTraceImpl stackTrace;
+
+  RunningSlowAction(this.label, this.slowAction, this.end)
+    : completer = CompleterEx<T>(debugName: label),
+      stackTrace = StackTraceImpl(skipFrames: 2);
 
   void start() {
     // Now call the long running function.

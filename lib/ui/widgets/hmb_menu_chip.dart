@@ -9,21 +9,6 @@ import 'color_ex.dart';
 import 'hmb_chip.dart';
 
 class HMBMenuChip<T> extends StatelessWidget {
-  const HMBMenuChip({
-    required this.label,
-    required this.values,
-    required this.format,
-    required this.onSelected,
-    super.key,
-    this.tone = HMBChipTone.neutral,
-    this.icon,
-    this.enabled = true,
-    this.tooltip,
-    this.offset = const Offset(0, 8),
-    this.itemIcon, // optional: icon per value
-    this.itemEnabled, // optional: enable/disable per value
-  });
-
   final String label;
   final List<T> values;
   final String Function(T value) format;
@@ -38,6 +23,21 @@ class HMBMenuChip<T> extends StatelessWidget {
   /// Optional builders for popup rows
   final IconData? Function(T value)? itemIcon;
   final bool Function(T value)? itemEnabled;
+
+  const HMBMenuChip({
+    required this.label,
+    required this.values,
+    required this.format,
+    required this.onSelected,
+    super.key,
+    this.tone = HMBChipTone.neutral,
+    this.icon,
+    this.enabled = true,
+    this.tooltip,
+    this.offset = const Offset(0, 8),
+    this.itemIcon, // optional: icon per value
+    this.itemEnabled, // optional: enable/disable per value
+  });
 
   @override
   Widget build(BuildContext context) {

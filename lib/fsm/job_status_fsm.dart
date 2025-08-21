@@ -7,13 +7,13 @@ import 'job_states.dart';
 
 /// What the UI cares about: a target JobStatus to show, and a way to fire it.
 class Next {
-  const Next({required this.to, required this.fire});
-
   /// The target status the user would be moving to.
   final JobStatus to;
 
   /// Fire the underlying fsm2 event to do the transition.
   final Future<void> Function(StateMachine machine) fire;
+
+  const Next({required this.to, required this.fire});
 }
 
 typedef BuildEvent = JobEvent Function(Job job);
@@ -94,9 +94,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       )
       ..state<AwaitingPayment>(
         (b) => b
-          ..onEnter(
-            (_, _)  => _updateJobStatus(job, JobStatus.awaitingPayment),
-          )
+          ..onEnter((_, _) => _updateJobStatus(job, JobStatus.awaitingPayment))
           ..on<PaymentReceived, ToBeScheduled>()
           ..on<ScheduleJob, Scheduled>()
           ..on<RejectJob, Rejected>(),
@@ -109,7 +107,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       )
       ..state<Scheduled>(
         (b) => b
-          ..onEnter((_, _)  => DaoJob().markScheduled(job))
+          ..onEnter((_, _) => DaoJob().markScheduled(job))
           ..on<StartWork, InProgress>()
           ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),

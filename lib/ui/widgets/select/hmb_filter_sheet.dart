@@ -6,22 +6,22 @@ import '../hmb_button.dart';
 ///
 /// Use [contentBuilder] to supply the sheet's form fields or widgets.
 class HMBFilterSheet extends StatefulWidget {
-  const HMBFilterSheet({
-    required this.contentBuilder,
-    super.key,
-    this.padding = const EdgeInsets.all(16),
-    this.onReset,
-  });
-
   /// Content builder for the sheet body
   final WidgetBuilder contentBuilder;
 
   /// Padding around sheet content
   final EdgeInsets padding;
 
-  /// Callback to reset  filters to their original state; 
+  /// Callback to reset  filters to their original state;
   /// if provided, a "Reset" button is shown
   final VoidCallback? onReset;
+
+  const HMBFilterSheet({
+    required this.contentBuilder,
+    super.key,
+    this.padding = const EdgeInsets.all(16),
+    this.onReset,
+  });
 
   @override
   State<HMBFilterSheet> createState() => _HMBFilterSheetState();

@@ -21,15 +21,16 @@ import '../../crud/customer/edit_customer_screen.dart';
 import 'hmb_droplist.dart';
 
 class HMBSelectCustomer extends StatefulWidget {
+  final SelectedCustomer selectedCustomer;
+  final void Function(Customer? customer)? onSelected;
+  final bool required;
+
   const HMBSelectCustomer({
     required this.selectedCustomer,
     super.key,
     this.onSelected,
     this.required = false,
   });
-  final SelectedCustomer selectedCustomer;
-  final void Function(Customer? customer)? onSelected;
-  final bool required;
 
   @override
   HMBSelectCustomerState createState() => HMBSelectCustomerState();
@@ -84,9 +85,9 @@ class HMBSelectCustomerState extends State<HMBSelectCustomer> {
 }
 
 class SelectedCustomer extends JuneState {
-  SelectedCustomer();
-
   int? _customerId;
+  
+  SelectedCustomer();
 
   int? get customerId => _customerId;
 

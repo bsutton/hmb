@@ -34,9 +34,9 @@ import '../base_full_screen/edit_entity_screen.dart';
 import 'edit_job_card.dart';
 
 class JobEditScreen extends StatefulWidget {
-  const JobEditScreen({super.key, this.job});
   final Job? job;
 
+  const JobEditScreen({super.key, this.job});
   @override
   _JobEditScreenState createState() => _JobEditScreenState();
 }

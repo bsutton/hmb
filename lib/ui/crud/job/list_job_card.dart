@@ -32,9 +32,9 @@ import '../../widgets/text/hmb_text_themes.dart';
 import 'mini_job_dashboard.dart';
 
 class ListJobCard extends StatefulWidget {
-  const ListJobCard({required this.job, super.key});
-
   final Job job;
+
+  const ListJobCard({required this.job, super.key});
 
   @override
   // ignore: library_private_types_in_public_api

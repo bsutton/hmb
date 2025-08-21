@@ -17,6 +17,13 @@ import 'package:money2/money2.dart';
 import 'entity.dart';
 
 class Receipt extends Entity<Receipt> {
+  final DateTime receiptDate;
+  final int jobId;
+  final int supplierId;
+  final Money totalExcludingTax; // stored as cents
+  final Money tax; // stored as cents
+  final Money totalIncludingTax; // stored as cents
+
   Receipt({
     required super.id,
     required this.receiptDate,
@@ -65,12 +72,6 @@ class Receipt extends Entity<Receipt> {
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
-  final DateTime receiptDate;
-  final int jobId;
-  final int supplierId;
-  final Money totalExcludingTax; // stored as cents
-  final Money tax; // stored as cents
-  final Money totalIncludingTax; // stored as cents
 
   @override
   Map<String, dynamic> toMap() => {

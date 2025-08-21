@@ -20,9 +20,9 @@ import '../widgets/wizard.dart';
 import '../widgets/wizard_step.dart';
 
 class BusinessWizardStep extends WizardStep {
-  BusinessWizardStep() : super(title: 'Business Details');
-
   final _stateKey = GlobalKey<SystemBusinessScreenState>();
+
+  BusinessWizardStep() : super(title: 'Business Details');
 
   @override
   Future<void> onNext(

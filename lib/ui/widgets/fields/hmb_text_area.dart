@@ -14,6 +14,12 @@
 import 'package:flutter/material.dart';
 
 class HMBTextArea extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode? focusNode;
+  final String labelText;
+  final int maxLines;
+  final bool leadingPadding;
+
   const HMBTextArea({
     required this.controller,
     required this.labelText,
@@ -22,12 +28,6 @@ class HMBTextArea extends StatelessWidget {
     this.leadingPadding = true,
     super.key,
   });
-
-  final TextEditingController controller;
-  final FocusNode? focusNode;
-  final String labelText;
-  final int maxLines;
-  final bool leadingPadding;
 
   @override
   Widget build(BuildContext context) => Column(

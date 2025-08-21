@@ -18,6 +18,13 @@ enum MessageTemplateOwner { user, system }
 enum MessageType { sms, email }
 
 class MessageTemplate extends Entity<MessageTemplate> {
+  String title;
+  String message;
+  MessageType messageType; // Indicates whether the template is for SMS or email
+  MessageTemplateOwner owner; // Identifies if it's a user or system template
+  bool enabled; // Indicates if the template is enabled
+  int ordinal; // Indicates the order of the template
+
   MessageTemplate({
     required super.id,
     required this.title,
@@ -61,13 +68,6 @@ class MessageTemplate extends Entity<MessageTemplate> {
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
-
-  String title;
-  String message;
-  MessageType messageType; // Indicates whether the template is for SMS or email
-  MessageTemplateOwner owner; // Identifies if it's a user or system template
-  bool enabled; // Indicates if the template is enabled
-  int ordinal; // Indicates the order of the template
 
   @override
   Map<String, dynamic> toMap() => {

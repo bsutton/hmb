@@ -18,6 +18,11 @@ import '../hmb_phone_icon.dart';
 import 'hmb_text_field.dart';
 
 class HMBPhoneField extends StatelessWidget {
+  final TextEditingController controller;
+  final String labelText;
+  final String? Function(String? value)? validator;
+  final SourceContext sourceContext;
+
   const HMBPhoneField({
     required this.labelText,
     required this.controller,
@@ -25,11 +30,6 @@ class HMBPhoneField extends StatelessWidget {
     this.validator,
     super.key,
   });
-
-  final TextEditingController controller;
-  final String labelText;
-  final String? Function(String? value)? validator;
-  final SourceContext sourceContext;
 
   @override
   Widget build(BuildContext context) => HMBTextField(

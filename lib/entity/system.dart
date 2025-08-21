@@ -44,6 +44,53 @@ enum LogoAspectRatio {
 }
 
 class System extends Entity<System> {
+  String? fromEmail;
+  String? bsb;
+  String? accountNo;
+  String? addressLine1;
+  String? addressLine2;
+  String? suburb;
+  String? state;
+  String? postcode;
+  String? mobileNumber;
+  String? landLine;
+  String? officeNumber;
+  String? emailAddress;
+  String? webUrl;
+  Money? defaultHourlyRate;
+  String? termsUrl;
+  Money? defaultBookingFee;
+  int? simCardNo;
+  String? xeroClientId;
+  String? xeroClientSecret;
+
+  /// Used to categorise invoice lineItems sent
+  /// to the external accounting package.
+  String? invoiceLineRevenueAccountCode;
+  String? invoiceLineInventoryItemCode;
+  bool enableXeroIntegration;
+  String? businessName;
+  String? businessNumber;
+  String? businessNumberLabel;
+  String? countryCode;
+  String? paymentLinkUrl;
+  bool? showBsbAccountOnInvoice;
+  bool? showPaymentLinkOnInvoice;
+  PreferredUnitSystem preferredUnitSystem;
+  String logoPath;
+  LogoAspectRatio logoAspectRatio;
+  int billingColour;
+  int paymentTermsInDays;
+  String paymentOptions;
+  String? firstname;
+  String? surname;
+  String? operatingHours;
+
+  /// OAuth2 tokens for ChatGPT API
+  String? chatgptAccessToken;
+  String? chatgptRefreshToken;
+  DateTime? chatgptTokenExpiry;
+
   System({
     required super.id,
     required this.fromEmail,
@@ -243,53 +290,6 @@ class System extends Entity<System> {
         DateTime.now(),
   );
 
-  String? fromEmail;
-  String? bsb;
-  String? accountNo;
-  String? addressLine1;
-  String? addressLine2;
-  String? suburb;
-  String? state;
-  String? postcode;
-  String? mobileNumber;
-  String? landLine;
-  String? officeNumber;
-  String? emailAddress;
-  String? webUrl;
-  Money? defaultHourlyRate;
-  String? termsUrl;
-  Money? defaultBookingFee;
-  int? simCardNo;
-  String? xeroClientId;
-  String? xeroClientSecret;
-
-  /// Used to categorise invoice lineItems sent
-  /// to the external accounting package.
-  String? invoiceLineRevenueAccountCode;
-  String? invoiceLineInventoryItemCode;
-  bool enableXeroIntegration;
-  String? businessName;
-  String? businessNumber;
-  String? businessNumberLabel;
-  String? countryCode;
-  String? paymentLinkUrl;
-  bool? showBsbAccountOnInvoice;
-  bool? showPaymentLinkOnInvoice;
-  PreferredUnitSystem preferredUnitSystem;
-  String logoPath;
-  LogoAspectRatio logoAspectRatio;
-  int billingColour;
-  int paymentTermsInDays;
-  String paymentOptions;
-  String? firstname;
-  String? surname;
-  String? operatingHours;
-
-  /// OAuth2 tokens for ChatGPT API
-  String? chatgptAccessToken;
-  String? chatgptRefreshToken;
-  DateTime? chatgptTokenExpiry;
-
   void setOperatingHours(OperatingHours schedule) {
     operatingHours = schedule.toJson();
   }
@@ -378,7 +378,7 @@ enum DayName {
   /// Returns the Dart enum name (e.g., "mon") as the JSON string.
   String toJson() => name;
 
-  /// Looks up the appropriate DayName based on the enum name string 
+  /// Looks up the appropriate DayName based on the enum name string
   /// (e.g., "mon").
   /// Throws a StateError if the provided dayStr doesn't match any known enum.
   static DayName fromJson(String dayStr) =>

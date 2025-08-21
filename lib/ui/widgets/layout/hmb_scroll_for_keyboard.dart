@@ -17,9 +17,9 @@ import 'package:flutter/material.dart';
 /// scroll to every field when the keyboard is displayed.
 ///
 class HMBScrollForKeyboard extends StatelessWidget {
-  const HMBScrollForKeyboard({required this.child, super.key});
-
   final Widget child;
+
+  const HMBScrollForKeyboard({required this.child, super.key});
 
   @override
   Widget build(BuildContext context) => Padding(

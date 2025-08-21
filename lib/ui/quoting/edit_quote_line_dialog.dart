@@ -19,8 +19,9 @@ import '../../entity/quote_line.dart';
 import '../widgets/hmb_button.dart';
 
 class EditQuoteLineDialog extends StatefulWidget {
-  const EditQuoteLineDialog({required this.line, super.key});
   final QuoteLine line;
+
+  const EditQuoteLineDialog({required this.line, super.key});
 
   @override
   // ignore: library_private_types_in_public_api

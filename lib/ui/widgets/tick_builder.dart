@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -29,6 +28,11 @@ typedef OnTick = void Function(int index);
 
 ///
 class TickBuilder extends StatefulWidget {
+  final TickerBuilder _builder;
+  final Duration _interval;
+  final int _limit;
+  final bool _active;
+
   /// Create a TickBuilder
   /// [interval] is the time between each tick. We could the [builder]
   ///  for each tick.
@@ -46,10 +50,6 @@ class TickBuilder extends StatefulWidget {
        _interval = interval,
        _limit = limit,
        _active = active;
-  final TickerBuilder _builder;
-  final Duration _interval;
-  final int _limit;
-  final bool _active;
 
   @override
   State<StatefulWidget> createState() => _TickBuilderState();

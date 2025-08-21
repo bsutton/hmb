@@ -342,6 +342,12 @@ Future<List<TaskItemContext>> withContext(List<TaskItem> items) async {
 }
 
 class CustomerAndJob {
+  final Customer customer;
+  final Job job;
+  final Task task;
+  final Supplier? supplier;
+  final JobActivity? nextActivity;
+
   CustomerAndJob._internal(
     this.customer,
     this.job,
@@ -366,12 +372,6 @@ class CustomerAndJob {
       nextActivity,
     );
   }
-
-  final Customer customer;
-  final Job job;
-  final Task task;
-  final Supplier? supplier;
-  final JobActivity? nextActivity;
 
   String dateOfNextActivity() {
     if (nextActivity == null) {

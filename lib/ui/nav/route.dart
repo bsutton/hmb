@@ -18,7 +18,7 @@ import '../../database/management/backup_providers/google_drive/google_drive_bac
 import '../../database/management/backup_providers/local/local_backup_screen.dart';
 import '../about.dart';
 import '../crud/customer/list_customer_screen.dart';
-import '../crud/job/esitmator/list_job_estimates_screen.dart';
+import '../crud/job/estimator/list_job_estimates_screen.dart';
 import '../crud/job/list_job_screen.dart';
 import '../crud/manufacturer/list_manufacturer_screen.dart';
 import '../crud/message_template/list_message_template.dart';

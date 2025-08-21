@@ -24,12 +24,24 @@ import '../blocking_ui.dart';
 import '../desktop_back_gesture_suppress.dart';
 
 class EmailBlocked {
-  EmailBlocked({required this.blocked, required this.reason});
   String reason;
   bool blocked;
+
+  EmailBlocked({required this.blocked, required this.reason});
 }
 
 class PdfPreviewScreen extends StatelessWidget {
+  final pdfViewerController = PdfViewerController();
+  final controller = ScrollController();
+  final String title;
+  final String filePath;
+  final String emailSubject;
+  final String emailBody;
+  final String preferredRecipient;
+  final List<String> emailRecipients;
+  final Future<void> Function() onSent;
+  final Future<EmailBlocked> Function() canEmail;
+
   PdfPreviewScreen({
     required this.title,
     required this.emailSubject,
@@ -41,17 +53,6 @@ class PdfPreviewScreen extends StatelessWidget {
     required this.onSent,
     super.key,
   });
-
-  final String title;
-  final String filePath;
-  final String emailSubject;
-  final String emailBody;
-  final String preferredRecipient;
-  final List<String> emailRecipients;
-  final Future<void> Function() onSent;
-  final Future<EmailBlocked> Function() canEmail;
-
-  final controller = ScrollController();
 
   Future<void> _showEmailDialog(BuildContext context) async {
     final system = await DaoSystem().get();
@@ -87,7 +88,6 @@ class PdfPreviewScreen extends StatelessWidget {
     }
   }
 
-  final pdfViewerController = PdfViewerController();
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(

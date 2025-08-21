@@ -19,18 +19,17 @@ import 'redirect_handler.dart';
 
 /// Minimal App Link-based handler for mobile/web.
 class AppLinkRedirectHandler extends RedirectHandler {
+  late final StreamController<Uri> _streamController;
+  late StreamSubscription<Uri> subscription;
+
+  final RedirectHandlerConfig config;
+
   AppLinkRedirectHandler(this.config) {
     _streamController = StreamController<Uri>.broadcast();
   }
 
-  late final StreamController<Uri> _streamController;
-
-  RedirectHandlerConfig config;
-
   @override
   Uri get redirectUri => config.redirectUri;
-
-  late StreamSubscription<Uri> subscription;
 
   @override
   Future<void> start() async {

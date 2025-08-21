@@ -14,6 +14,9 @@
 import 'entity.dart';
 
 class Category extends Entity<Category> {
+  final String name;
+  final String? description;
+
   Category({
     required super.id,
     required this.name,
@@ -39,8 +42,6 @@ class Category extends Entity<Category> {
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
 
-  final String name;
-  final String? description;
 
   @override
   Map<String, dynamic> toMap() => {

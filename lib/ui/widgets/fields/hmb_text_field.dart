@@ -19,6 +19,22 @@ import 'package:strings/strings.dart';
 import '../../../util/hmb_theme.dart';
 
 class HMBTextField extends StatelessWidget {
+
+  final TextEditingController controller;
+  final FocusNode? focusNode;
+  final String labelText;
+  final String? Function(String? value)? validator;
+  final bool autofocus;
+  final bool required;
+  final bool leadingSpace;
+  final TextInputType keyboardType;
+  final void Function(String?)? onChanged;
+  final String Function(String?)? onPaste;
+  final TextCapitalization textCapitalization;
+  final bool enabled;
+  final Widget? suffixIcon;
+  final List<TextInputFormatter> inputFormatters;
+  
   /// A customizable text field that supports disabling/enabling input.
   const HMBTextField({
     required this.controller,
@@ -37,21 +53,6 @@ class HMBTextField extends StatelessWidget {
     this.suffixIcon,
     this.inputFormatters = const [],
   });
-
-  final TextEditingController controller;
-  final FocusNode? focusNode;
-  final String labelText;
-  final String? Function(String? value)? validator;
-  final bool autofocus;
-  final bool required;
-  final bool leadingSpace;
-  final TextInputType keyboardType;
-  final void Function(String?)? onChanged;
-  final String Function(String?)? onPaste;
-  final TextCapitalization textCapitalization;
-  final bool enabled;
-  final Widget? suffixIcon;
-  final List<TextInputFormatter> inputFormatters;
 
   @override
   Widget build(BuildContext context) => Shortcuts(

@@ -17,12 +17,12 @@ import '../source_context.dart';
 import 'source.dart';
 
 class TextSource extends Source<String> {
-  TextSource({required this.label}) : super(name: 'text');
-
   final String label;
   final controller = TextEditingController();
 
   String? text;
+
+  TextSource({required this.label}) : super(name: 'text');
 
   @override
   Widget widget() => TextFormField(

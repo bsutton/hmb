@@ -15,8 +15,12 @@ import '../util/local_time.dart';
 import 'system.dart';
 
 class OperatingDay {
-  // e.g. "17:00"
+  final DayName dayName;
+  LocalTime? start;
+  LocalTime? end;
+  bool open;
 
+  
   OperatingDay({required this.dayName, this.start, this.end, this.open = true});
 
   /// Construct from a JSON map, expecting:
@@ -31,10 +35,6 @@ class OperatingDay {
     end: const LocalTimeConverter().fromJson(json['end'] as String?),
     open: ((json['open'] as int?) ?? 1) == 1,
   );
-  final DayName dayName;
-  LocalTime? start; // e.g. "08:00"
-  LocalTime? end;
-  bool open;
 
   /// Convert this OperatingDay instance back to a JSON-like map.
   Map<String, dynamic> toJson() => {

@@ -17,9 +17,9 @@ import '../source_context.dart';
 import 'source.dart';
 
 class NoopSource extends Source<String> {
-  NoopSource() : super(name: 'text');
-
   String? text;
+
+  NoopSource() : super(name: 'text');
 
   @override
   Widget? widget() => null;

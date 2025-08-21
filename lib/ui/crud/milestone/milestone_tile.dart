@@ -32,6 +32,15 @@ import '../../widgets/hmb_link_internal.dart';
 import '../../widgets/hmb_toast.dart';
 
 class MilestoneTile extends StatefulWidget {
+  final Milestone milestone;
+  final Money quoteTotal;
+  final ValueChanged<Milestone> onDelete;
+  final ValueChanged<Milestone> onSave;
+  final Future<void> Function(Milestone milestone) onInvoice;
+  final void Function({required Milestone milestone, required bool isEditing})
+  onEditingStatusChanged;
+  final bool isOtherTileEditing;
+
   const MilestoneTile({
     required this.milestone,
     required this.quoteTotal,
@@ -42,15 +51,6 @@ class MilestoneTile extends StatefulWidget {
     required this.isOtherTileEditing,
     super.key,
   });
-
-  final Milestone milestone;
-  final Money quoteTotal;
-  final ValueChanged<Milestone> onDelete;
-  final ValueChanged<Milestone> onSave;
-  final Future<void> Function(Milestone milestone) onInvoice;
-  final void Function({required Milestone milestone, required bool isEditing})
-  onEditingStatusChanged;
-  final bool isOtherTileEditing;
 
   @override
   _MilestoneTileState createState() => _MilestoneTileState();
@@ -195,7 +195,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
                     final inv = invoice;
                     return inv == null
                         ? const Text('Not Invoiced')
-                        // Make invoice number clickable to open 
+                        // Make invoice number clickable to open
                         // InvoiceEditScreen
                         : HMBLinkInternal(
                             label: 'Invoice: ${inv.bestNumber}',

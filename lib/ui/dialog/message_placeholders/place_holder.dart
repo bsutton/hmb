@@ -14,10 +14,6 @@
 import 'source.dart';
 
 abstract class PlaceHolder<S> {
-  /// [base] e.g. job
-  /// [name] e.g. job.cost
-  PlaceHolder({required this.name, required this.base, required this.source});
-
   // factory PlaceHolder.fromName(String name) {
   //   final placeholder = placeHolders[name];
   //   if (placeholder != null) {
@@ -27,7 +23,7 @@ abstract class PlaceHolder<S> {
   //   }
   // }
 
-  String name;
+  final String name;
 
   /// the part of the placeholder name that is used
   /// to get an entity.
@@ -35,7 +31,11 @@ abstract class PlaceHolder<S> {
   /// 'job' is the key.
   final String base;
 
-  Source<S> source;
+  final Source<S> source;
+
+  /// [base] e.g. job
+  /// [name] e.g. job.cost
+  PlaceHolder({required this.name, required this.base, required this.source});
 
   /// Returns the underlying [Source] value as a formatted
   /// String.

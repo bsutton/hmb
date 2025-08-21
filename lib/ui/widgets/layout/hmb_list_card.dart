@@ -23,6 +23,14 @@ typedef Allowed = bool Function();
 typedef OnRefresh = Future<void> Function();
 
 class HMBCrudListCard extends StatelessWidget {
+  final Widget child;
+  final OnDelete onDelete;
+  final OnEdit onEdit;
+  final OnRefresh onRefresh;
+  final Widget title;
+  final Allowed? canEdit;
+  final Allowed? canDelete;
+
   const HMBCrudListCard({
     required this.child,
     required this.title,
@@ -34,13 +42,6 @@ class HMBCrudListCard extends StatelessWidget {
     super.key,
   });
 
-  final Widget child;
-  final OnDelete onDelete;
-  final OnEdit onEdit;
-  final OnRefresh onRefresh;
-  final Widget title;
-  final Allowed? canEdit;
-  final Allowed? canDelete;
 
   @override
   Widget build(BuildContext context) => GestureDetector(

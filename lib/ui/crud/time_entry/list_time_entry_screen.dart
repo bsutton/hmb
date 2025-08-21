@@ -22,9 +22,9 @@ import '../base_nested/list_nested_screen.dart';
 import 'edit_time_entry_screen.dart';
 
 class TimeEntryListScreen extends StatelessWidget {
-  const TimeEntryListScreen({required this.parent, super.key});
-
   final Parent<Task> parent;
+
+  const TimeEntryListScreen({required this.parent, super.key});
 
   @override
   Widget build(BuildContext context) => NestedEntityListScreen<TimeEntry, Task>(

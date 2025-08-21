@@ -34,6 +34,15 @@ import 'site_source.dart';
 import 'text_holder.dart';
 
 class PlaceHolderManager {
+  static PlaceHolderManager? placeHolderManager;
+  late final CustomerSource customerSource;
+  late final JobSource jobSource;
+  late final ContactSource contactSource;
+  late final SiteSource siteSource;
+  late final JobActivitySource jobActivitySource;
+
+  final Map<String, PlaceHolder<dynamic>> placeholders = {};
+
   factory PlaceHolderManager() {
     placeHolderManager ??= PlaceHolderManager._internal();
 
@@ -95,14 +104,6 @@ class PlaceHolderManager {
     /// Signature
     placeholders[SignatureHolder.tagName] = SignatureHolder();
   }
-  static PlaceHolderManager? placeHolderManager;
-  late final CustomerSource customerSource;
-  late final JobSource jobSource;
-  late final ContactSource contactSource;
-  late final SiteSource siteSource;
-  late final JobActivitySource jobActivitySource;
-
-  final Map<String, PlaceHolder<dynamic>> placeholders = {};
 
   List<Widget> buildFields(SourceContext data) => [
     customerSource.widget(),

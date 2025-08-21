@@ -18,16 +18,18 @@ import '../../entity/entity.g.dart';
 
 /// Helper class to load both Job and Customer details for a given Quote.
 class JobAndCustomer {
+  final Job job;
+  final Customer customer;
+  final Contact? primaryContact;
+  final Contact? billingContact;
+
   JobAndCustomer({
     required this.job,
     required this.customer,
     required this.primaryContact,
     required this.billingContact,
   });
-  final Job job;
-  final Customer customer;
-  final Contact? primaryContact;
-  final Contact? billingContact;
+  
   static Future<JobAndCustomer> fromQuote(Quote quote) async {
     final job = await DaoJob().getById(quote.jobId);
     if (job == null) {

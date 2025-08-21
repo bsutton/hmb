@@ -14,6 +14,11 @@
 import 'package:flutter/material.dart';
 
 class Circle extends StatelessWidget {
+  final double diameter;
+  final Widget child;
+  final Color color;
+  final bool shadow;
+
   const Circle({
     required this.child,
     super.key,
@@ -21,10 +26,6 @@ class Circle extends StatelessWidget {
     this.diameter = 20,
     this.shadow = false,
   });
-  final double diameter;
-  final Widget child;
-  final Color color;
-  final bool shadow;
 
   @override
   Widget build(BuildContext context) {

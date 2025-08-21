@@ -25,9 +25,9 @@ import 'build_send_assignment_button.dart';
 import 'edit_assignment_screen.dart';
 
 class AssignmentListScreen extends StatelessWidget {
-  const AssignmentListScreen({required this.parent, super.key});
-
   final Parent<Job> parent;
+
+  const AssignmentListScreen({required this.parent, super.key});
 
   @override
   Widget build(BuildContext context) =>
@@ -76,6 +76,10 @@ class AssignmentListScreen extends StatelessWidget {
 }
 
 class SupplierAndTasks {
+  final Supplier supplier;
+  final Contact contact;
+  final List<Task> tasks;
+
   SupplierAndTasks._(this.supplier, this.contact, this.tasks);
 
   static Future<SupplierAndTasks> get(WorkAssignment assignment) async {
@@ -99,9 +103,4 @@ class SupplierAndTasks {
 
     return SupplierAndTasks._(supplier!, contact!, tasks);
   }
-
-  final Supplier supplier;
-  final Contact contact;
-
-  final List<Task> tasks;
 }

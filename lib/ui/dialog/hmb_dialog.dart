@@ -14,6 +14,13 @@
 import 'package:flutter/material.dart';
 
 class HMBDialog extends StatelessWidget {
+  final Widget title;
+  final Widget content;
+  final List<Widget>? actions;
+  final EdgeInsets insetPadding;
+  final EdgeInsets titlePadding;
+  final EdgeInsets contentPadding;
+
   const HMBDialog({
     required this.title,
     required this.content,
@@ -24,12 +31,6 @@ class HMBDialog extends StatelessWidget {
     this.contentPadding = const EdgeInsets.all(8),
   });
 
-  final Widget title;
-  final Widget content;
-  final List<Widget>? actions;
-  final EdgeInsets insetPadding;
-  final EdgeInsets titlePadding;
-  final EdgeInsets contentPadding;
 
   @override
   Widget build(BuildContext context) => Dialog(

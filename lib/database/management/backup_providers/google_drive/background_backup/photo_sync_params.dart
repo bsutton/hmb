@@ -23,12 +23,28 @@ import '../../../../../util/photo_meta.dart';
 
 /// A simple payload representing a photo record for syncing.
 class PhotoPayload {
+  /// id of photo entity in db
+  final int id;
+
+  /// Where the photo is stored on the device.
+  final String absolutePathToLocalPhoto;
+  final DateTime createdAt;
+
+  /// The path to the cloud storage where this photo
+  /// will be stored.
+  /// This path is relative to the 'hmb/photo' folder.
+  /// In debug mode it will be relative to 'hmb/debug/photo'.
+  final String pathToCloudStorage;
+
   const PhotoPayload({
     required this.id,
     required this.absolutePathToLocalPhoto,
     required this.createdAt,
     required this.pathToCloudStorage,
   });
+
+  static String sanitize(String input) =>
+      input.replaceAll(RegExp(r'[\\/:*?"<>|]'), '').trim();
 
   static Future<PhotoPayload> fromPhoto(Photo photo) async {
     String storagePath;
@@ -48,22 +64,6 @@ class PhotoPayload {
       pathToCloudStorage: storagePath,
     );
   }
-
-  /// id of photo entity in db
-  final int id;
-
-  /// Where the photo is stored on the device.
-  final String absolutePathToLocalPhoto;
-  final DateTime createdAt;
-
-  /// The path to the cloud storage where this photo
-  /// will be stored.
-  /// This path is relative to the 'hmb/photo' folder.
-  /// In debug mode it will be relative to 'hmb/debug/photo'.
-  final String pathToCloudStorage;
-
-  static String sanitize(String input) =>
-      input.replaceAll(RegExp(r'[\\/:*?"<>|]'), '').trim();
 
   static Future<String> _getPathForTask(Photo photo) async {
     final task = await DaoTask().getForPhoto(photo);
@@ -134,12 +134,13 @@ class PhotoPayload {
 
 /// Parameters passed into the isolate for photo syncing.
 class PhotoSyncParams {
+  final SendPort sendPort;
+  final Map<String, String> authHeaders;
+  final List<PhotoPayload> photos;
+
   PhotoSyncParams({
     required this.sendPort,
     required this.authHeaders,
     required this.photos,
   });
-  final SendPort sendPort;
-  final Map<String, String> authHeaders;
-  final List<PhotoPayload> photos;
 }

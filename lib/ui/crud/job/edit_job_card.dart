@@ -37,24 +37,6 @@ import 'fsm_status_picker.dart';
 import 'list_job_screen.dart';
 
 class EditJobCard extends StatefulWidget {
-  const EditJobCard({
-    required this.job,
-    required this.customer,
-    required this.summaryController,
-    required this.descriptionController,
-    required this.assumptionController,
-    required this.hourlyRateController,
-    required this.bookingFeeController,
-    required this.summaryFocusNode,
-    required this.descriptionFocusNode,
-    required this.assumptionFocusNode,
-    required this.hourlyRateFocusNode,
-    required this.bookingFeeFocusNode,
-    required this.selectedBillingType,
-    required this.onBillingTypeChanged,
-    super.key,
-  });
-
   final Job? job;
   final Customer? customer;
 
@@ -75,6 +57,24 @@ class EditJobCard extends StatefulWidget {
   // Billing type state is owned by parent (so saves still work there).
   final BillingType selectedBillingType;
   final ValueChanged<BillingType> onBillingTypeChanged;
+
+  const EditJobCard({
+    required this.job,
+    required this.customer,
+    required this.summaryController,
+    required this.descriptionController,
+    required this.assumptionController,
+    required this.hourlyRateController,
+    required this.bookingFeeController,
+    required this.summaryFocusNode,
+    required this.descriptionFocusNode,
+    required this.assumptionFocusNode,
+    required this.hourlyRateFocusNode,
+    required this.bookingFeeFocusNode,
+    required this.selectedBillingType,
+    required this.onBillingTypeChanged,
+    super.key,
+  });
 
   @override
   State<EditJobCard> createState() => _EditJobCardState();
@@ -603,9 +603,9 @@ class JobBillingContact extends JuneState {
 
 /// State object to persist the selected contact ID across screens.
 class SelectedContact extends JuneState {
-  SelectedContact();
-
   int? _contactId;
+
+  SelectedContact();
 
   int? get contactId => _contactId;
 
@@ -616,9 +616,9 @@ class SelectedContact extends JuneState {
 }
 
 class SelectJobStatus extends JuneState {
-  SelectJobStatus();
 
   JobStatus? _jobStatus = JobStatus.startingStatus;
+  SelectJobStatus();
 
   JobStatus? get jobStatus => _jobStatus;
 

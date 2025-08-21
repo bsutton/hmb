@@ -19,6 +19,11 @@ import 'text/hmb_text_themes.dart';
 typedef OnToggled = void Function(bool on);
 
 class HMBToggle extends StatefulWidget {
+  final String label;
+  final bool initialValue;
+  final String hint;
+  final OnToggled onToggled;
+
   const HMBToggle({
     required this.label,
     required this.hint,
@@ -26,10 +31,6 @@ class HMBToggle extends StatefulWidget {
     required this.onToggled,
     super.key,
   });
-  final String label;
-  final bool initialValue;
-  final String hint;
-  final OnToggled onToggled;
 
   @override
   State<HMBToggle> createState() => _HMBToggleState();

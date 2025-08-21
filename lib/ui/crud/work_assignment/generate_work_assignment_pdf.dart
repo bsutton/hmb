@@ -30,14 +30,15 @@ import '../../../util/util.g.dart';
 
 /// Internal data holder for task plus its resolved photos
 class _TaskData {
+  final Task task;
+  final List<PhotoMeta> photos;
+  final List<TaskItem> taskItems;
+
   _TaskData({
     required this.task,
     required this.photos,
     required this.taskItems,
   });
-  final Task task;
-  final List<PhotoMeta> photos;
-  final List<TaskItem> taskItems;
 }
 
 /// Top-level function to run in an isolate:

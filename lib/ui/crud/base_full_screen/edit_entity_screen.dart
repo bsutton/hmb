@@ -36,17 +36,6 @@ Future<bool> noOpValidator() async => true;
 /// validate form fields. If there is an error you should display it
 /// as this class will NOT.
 class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
-  const EntityEditScreen({
-    required this.editor,
-    required this.entityName,
-    required this.entityState,
-    required this.dao,
-    this.preSave,
-    this.scrollController,
-    CrossValidator<E>? crossValidator,
-    super.key,
-  }) : crossValidator = crossValidator ?? noOpValidator;
-
   final String entityName;
   final Dao<E> dao;
 
@@ -58,8 +47,19 @@ class EntityEditScreen<E extends Entity<E>> extends StatefulWidget {
   final Widget Function(E? entity, {required bool isNew}) editor;
   final EntityState<E> entityState;
   final ScrollController? scrollController;
-
   final Future<bool> Function() crossValidator;
+
+  const EntityEditScreen({
+    required this.editor,
+    required this.entityName,
+    required this.entityState,
+    required this.dao,
+    this.preSave,
+    this.scrollController,
+    CrossValidator<E>? crossValidator,
+    super.key,
+  }) : crossValidator = crossValidator ?? noOpValidator;
+
   @override
   EntityEditScreenState createState() => EntityEditScreenState<E>();
 }
@@ -145,7 +145,7 @@ class EntityEditScreenState<E extends Entity<E>>
           Navigator.of(context).pop(widget.entityState.currentEntity);
         }
       } catch (error) {
-        // Check if the error indicates a duplicate name (unique 
+        // Check if the error indicates a duplicate name (unique
         //constraint violation)
         if (error.toString().contains('UNIQUE constraint failed')) {
           HMBToast.error(

@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 import 'package:strings/strings.dart';
@@ -23,6 +22,10 @@ import 'local_date.dart';
 /// the time component.
 @immutable
 class LocalTime {
+  final int hour;
+  final int minute;
+  final int second;
+
   const LocalTime({required this.hour, required this.minute, this.second = 0});
 
   factory LocalTime.parse(String time) {
@@ -37,15 +40,6 @@ class LocalTime {
     : hour = dateTime.hour,
       minute = dateTime.minute,
       second = dateTime.second;
-  final int hour;
-  final int minute;
-  final int second;
-
-  DateTime toDateTime() {
-    final now = DateTime.now();
-
-    return DateTime(now.year, now.month, now.day, hour, minute, second);
-  }
 
   static DateTime stripDate(DateTime dateTime) => DateTime(
     0,
@@ -57,6 +51,12 @@ class LocalTime {
     dateTime.millisecond,
     dateTime.microsecond,
   );
+
+  DateTime toDateTime() {
+    final now = DateTime.now();
+
+    return DateTime(now.year, now.month, now.day, hour, minute, second);
+  }
 
   // ignore: prefer_constructors_over_static_methods
   static LocalTime now() {

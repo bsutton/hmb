@@ -28,8 +28,9 @@ import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 
 class SupplierEditScreen extends StatefulWidget {
-  const SupplierEditScreen({super.key, this.supplier});
   final Supplier? supplier;
+
+  const SupplierEditScreen({super.key, this.supplier});
 
   @override
   SupplierEditScreenState createState() => SupplierEditScreenState();

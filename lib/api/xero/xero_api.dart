@@ -22,22 +22,21 @@ import 'models/xero_invoice.dart';
 import 'xero_auth.dart';
 
 class XeroApi {
+  static const _baseUrl = 'https://api.xero.com/api.xro/2.0/';
+  static final _instance = XeroApi._internal();
+
+  String? _tenantId;
+
+  XeroAuth2 xeroAuth;
   factory XeroApi() => _instance;
 
   XeroApi._internal() : xeroAuth = XeroAuth2();
 
-  static final _instance = XeroApi._internal();
 
   Future<void> login() async {
     await xeroAuth.login();
     await getTenantId();
   }
-
-  final _baseUrl = 'https://api.xero.com/api.xro/2.0/';
-
-  String? _tenantId;
-
-  XeroAuth2 xeroAuth;
 
   Future<http.Response> uploadInvoice(XeroInvoice xeroInvoice) async {
     await _checkIntegration();

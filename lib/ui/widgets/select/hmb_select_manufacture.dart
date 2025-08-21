@@ -21,16 +21,16 @@ import '../../crud/manufacturer/edit_manufacturer_screen.dart';
 import 'hmb_droplist.dart';
 
 class HMBSelectManufacturer extends StatefulWidget {
+  final SelectedManufacturer selectedManufacturer;
+  final void Function(Manufacturer? manufacturer)? onSelected;
+  final bool isRequired; // New field to indicate if the selection is required
+
   const HMBSelectManufacturer({
     required this.selectedManufacturer,
     super.key,
     this.onSelected,
     this.isRequired = false, // New parameter with default value
   });
-
-  final SelectedManufacturer selectedManufacturer;
-  final void Function(Manufacturer? manufacturer)? onSelected;
-  final bool isRequired; // New field to indicate if the selection is required
 
   @override
   HMBSelectManufacturerState createState() => HMBSelectManufacturerState();
@@ -84,7 +84,7 @@ class HMBSelectManufacturerState extends State<HMBSelectManufacturer> {
 }
 
 class SelectedManufacturer extends JuneState {
-  SelectedManufacturer();
-
   int? manufacturerId;
+
+  SelectedManufacturer();
 }

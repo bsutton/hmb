@@ -25,6 +25,20 @@ enum BillingType {
 }
 
 class Job extends Entity<Job> {
+  int? customerId;
+  String summary;
+  String description;
+  String assumption;
+  int? siteId;
+  int? contactId;
+  JobStatus status;
+  Money? hourlyRate;
+  Money? bookingFee;
+  bool lastActive;
+  BillingType billingType;
+  bool bookingFeeInvoiced;
+  int? billingContactId;
+
   Job({
     required super.id,
     required this.customerId,
@@ -118,18 +132,4 @@ class Job extends Entity<Job> {
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
-
-  int? customerId;
-  String summary;
-  String description;
-  String assumption;
-  int? siteId;
-  int? contactId;
-  JobStatus status;
-  Money? hourlyRate;
-  Money? bookingFee;
-  bool lastActive;
-  BillingType billingType;
-  bool bookingFeeInvoiced;
-  int? billingContactId;
 }

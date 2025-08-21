@@ -9,6 +9,62 @@ import 'package:strings/strings.dart';
 /// ParsedAddress
 /// --------------------------
 class ParsedAddress {
+  static const _streetSuffixes = {
+    'st',
+    'street',
+    'rd',
+    'road',
+    'ave',
+    'avenue',
+    'blvd',
+    'boulevard',
+    'dr',
+    'drive',
+    'ln',
+    'lane',
+    'ct',
+    'court',
+    'cr',
+    'crescent',
+    'pl',
+    'place',
+    'sq',
+    'square',
+    'pde',
+    'parade',
+    'tce',
+    'terrace',
+    'ter',
+    'hwy',
+    'highway',
+    'way',
+    'gr',
+    'grove',
+    'walk',
+    'cct',
+    'circuit',
+    'row',
+    'trl',
+    'trail',
+    'bvd',
+    'cl',
+    'close',
+    'mews',
+    'esplanade',
+    'bypass',
+    'view',
+    'outlook',
+    'bend',
+    'loop',
+    'retreat',
+  };
+
+  // ---------- public fields ----------
+  String street;
+  String city;
+  String state;
+  String postalCode;
+
   ParsedAddress({
     this.street = '',
     this.city = '',
@@ -19,11 +75,6 @@ class ParsedAddress {
   factory ParsedAddress.parse(String text) =>
       // _parseAddressEsri(text.replaceAll('\n', '').replaceAll('\r\n', ''));
       _parseAddressEsri(text);
-  // ---------- public fields ----------
-  String street;
-  String city;
-  String state;
-  String postalCode;
 
   bool isEmpty() =>
       Strings.isBlank(street) &&
@@ -121,54 +172,4 @@ class ParsedAddress {
   // util helpers
   static String _stripTrailingPunctuation(String s) =>
       s.trim().replaceAll(RegExp(r'[.,;:!]+$'), '');
-
-  static const _streetSuffixes = {
-    'st',
-    'street',
-    'rd',
-    'road',
-    'ave',
-    'avenue',
-    'blvd',
-    'boulevard',
-    'dr',
-    'drive',
-    'ln',
-    'lane',
-    'ct',
-    'court',
-    'cr',
-    'crescent',
-    'pl',
-    'place',
-    'sq',
-    'square',
-    'pde',
-    'parade',
-    'tce',
-    'terrace',
-    'ter',
-    'hwy',
-    'highway',
-    'way',
-    'gr',
-    'grove',
-    'walk',
-    'cct',
-    'circuit',
-    'row',
-    'trl',
-    'trail',
-    'bvd',
-    'cl',
-    'close',
-    'mews',
-    'esplanade',
-    'bypass',
-    'view',
-    'outlook',
-    'bend',
-    'loop',
-    'retreat',
-  };
 }

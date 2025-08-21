@@ -21,17 +21,16 @@ import '../widgets/widgets.g.dart';
 void Function(Contact? contact)? onSelected;
 
 class SelectBillingContactDialog extends StatefulWidget {
+  final Customer customer;
+  final Contact? initialContact;
+  final void Function(Contact? contact)? onSelected;
+
   const SelectBillingContactDialog({
     required this.customer,
     required this.initialContact,
     required this.onSelected,
     super.key,
   });
-
-  final Customer customer;
-  final Contact? initialContact;
-
-  final void Function(Contact? contact)? onSelected;
 
   // June.getState(SelectedContact.new).contactId = customer.billingContactId;
   static Future<Contact?> show(

@@ -19,8 +19,9 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 
 class ManufacturerEditScreen extends StatefulWidget {
-  const ManufacturerEditScreen({super.key, this.manufacturer});
   final Manufacturer? manufacturer;
+
+  const ManufacturerEditScreen({super.key, this.manufacturer});
 
   @override
   ManufacturerEditScreenState createState() => ManufacturerEditScreenState();

@@ -20,6 +20,25 @@ enum ToDoPriority { none, low, medium, high }
 enum ToDoParentType { job, customer }
 
 class ToDo extends Entity<ToDo> {
+  final String title;
+  final String? note;
+
+  /// Optional due-by date/time.
+  final DateTime? dueDate;
+
+  /// Optional reminder time (for local notifications).
+  final DateTime? remindAt;
+
+  final ToDoPriority priority;
+  final ToDoStatus status;
+
+  /// Optional linkage to Job/Customer (or null for personal).
+  final ToDoParentType? parentType;
+  final int? parentId;
+
+  /// Set when status becomes `done`.
+  final DateTime? completedDate;
+
   ToDo({
     required super.id,
     required this.title,
@@ -88,25 +107,6 @@ class ToDo extends Entity<ToDo> {
         ? DateTime.parse(map['completed_date'] as String)
         : null,
   );
-
-  final String title;
-  final String? note;
-
-  /// Optional due-by date/time.
-  final DateTime? dueDate;
-
-  /// Optional reminder time (for local notifications).
-  final DateTime? remindAt;
-
-  final ToDoPriority priority;
-  final ToDoStatus status;
-
-  /// Optional linkage to Job/Customer (or null for personal).
-  final ToDoParentType? parentType;
-  final int? parentId;
-
-  /// Set when status becomes `done`.
-  final DateTime? completedDate;
 
   @override
   Map<String, dynamic> toMap() => {

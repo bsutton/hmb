@@ -20,16 +20,16 @@ import '../../crud/supplier/edit_supplier_screen.dart';
 import 'hmb_droplist.dart';
 
 class HMBSelectSupplier extends StatefulWidget {
+  final SelectedSupplier selectedSupplier;
+  final void Function(Supplier? supplier)? onSelected;
+  final bool isRequired; // New field to indicate if the selection is required
+
   const HMBSelectSupplier({
     required this.selectedSupplier,
     super.key,
     this.onSelected,
     this.isRequired = false, // New parameter with default value
   });
-
-  final SelectedSupplier selectedSupplier;
-  final void Function(Supplier? supplier)? onSelected;
-  final bool isRequired; // New field to indicate if the selection is required
 
   @override
   HMBSelectSupplierState createState() => HMBSelectSupplierState();

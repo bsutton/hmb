@@ -22,21 +22,9 @@ import '../layout/labeled_container.dart';
 import '../surface.dart';
 import 'hmb_droplist_multi_dialog.dart';
 
-/// A multi-select dropdown list field with async loading, 
+/// A multi-select dropdown list field with async loading,
 /// built on DeferredState.
 class HMBDroplistMultiSelect<T> extends StatefulWidget {
-  const HMBDroplistMultiSelect({
-    required this.initialItems,
-    required this.items,
-    required this.format,
-    required this.onChanged,
-    required this.title,
-    this.onSaved,
-    this.backgroundColor,
-    this.required = true,
-    super.key,
-  });
-
   /// Loads the currently selected items asynchronously.
   final Future<List<T>> Function() initialItems;
 
@@ -61,9 +49,20 @@ class HMBDroplistMultiSelect<T> extends StatefulWidget {
   /// Whether selection is required.
   final bool required;
 
+  const HMBDroplistMultiSelect({
+    required this.initialItems,
+    required this.items,
+    required this.format,
+    required this.onChanged,
+    required this.title,
+    this.onSaved,
+    this.backgroundColor,
+    this.required = true,
+    super.key,
+  });
+
   /// A placeholder widget to show before items load.
   static Widget placeHolder() => const HMBPlaceHolder(height: 30);
-
   @override
   HMBDroplistMultiSelectState<T> createState() =>
       HMBDroplistMultiSelectState<T>();

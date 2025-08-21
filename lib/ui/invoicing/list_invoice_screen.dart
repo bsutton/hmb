@@ -33,9 +33,10 @@ import 'invoice_details.dart';
 import 'select_job_dialog.dart';
 
 class InvoiceListScreen extends StatefulWidget {
+  final Job? job;
+  
   const InvoiceListScreen({super.key, this.job});
 
-  final Job? job;
 
   @override
   State<InvoiceListScreen> createState() => _InvoiceListScreenState();

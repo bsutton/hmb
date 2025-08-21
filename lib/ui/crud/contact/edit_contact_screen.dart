@@ -28,15 +28,16 @@ import '../../widgets/fields/hmb_phone_field.dart';
 import '../base_nested/edit_nested_screen.dart';
 
 class ContactEditScreen<P extends Entity<P>> extends StatefulWidget {
+  final DaoJoinAdaptor daoJoin;
+  final P parent;
+  final Contact? contact;
+
   const ContactEditScreen({
     required this.parent,
     required this.daoJoin,
     super.key,
     this.contact,
   });
-  final DaoJoinAdaptor daoJoin;
-  final P parent;
-  final Contact? contact;
 
   @override
   // ignore: library_private_types_in_public_api

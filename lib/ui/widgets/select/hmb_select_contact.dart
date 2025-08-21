@@ -25,14 +25,6 @@ import 'hmb_droplist.dart';
 /// Allows the user to select a contact owned by a customer
 /// and associate them with another entity (e.g. as billing contact).
 class HMBSelectContact extends StatefulWidget {
-  const HMBSelectContact({
-    required this.initialContact,
-    required this.customer,
-    this.onSelected,
-    this.title = 'Contact',
-    super.key,
-  });
-
   /// The customer that owns the contact.
   final Customer? customer;
 
@@ -43,6 +35,14 @@ class HMBSelectContact extends StatefulWidget {
 
   /// Label for the field.
   final String title;
+
+  const HMBSelectContact({
+    required this.initialContact,
+    required this.customer,
+    this.onSelected,
+    this.title = 'Contact',
+    super.key,
+  });
 
   @override
   HMBSelectContactState createState() => HMBSelectContactState();

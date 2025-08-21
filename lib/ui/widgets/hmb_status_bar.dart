@@ -20,16 +20,16 @@ import '../../entity/time_entry.dart';
 import 'hmb_start_time_entry.dart';
 
 class HMBStatusBar extends StatelessWidget {
+  final TimeEntry? activeTimeEntry;
+  final Task? task;
+  final VoidCallback onTimeEntryEnded;
+
   const HMBStatusBar({
     required this.activeTimeEntry,
     required this.task,
     required this.onTimeEntryEnded,
     super.key,
   });
-
-  final TimeEntry? activeTimeEntry;
-  final Task? task;
-  final VoidCallback onTimeEntryEnded;
 
   @override
   Widget build(BuildContext context) {

@@ -17,6 +17,14 @@ import '../api/xero/models/xero_contact.dart';
 import 'entity.dart';
 
 class Contact extends Entity<Contact> {
+  String firstName;
+  String surname;
+  String mobileNumber;
+  String landLine;
+  String officeNumber;
+  String emailAddress;
+  String? xeroContactId;
+
   Contact({
     required super.id,
     required this.firstName,
@@ -63,14 +71,6 @@ class Contact extends Entity<Contact> {
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
-
-  String firstName;
-  String surname;
-  String mobileNumber;
-  String landLine;
-  String officeNumber;
-  String emailAddress;
-  String? xeroContactId;
 
   String get fullname => '$firstName $surname';
 

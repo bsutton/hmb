@@ -22,6 +22,11 @@ import 'hmb_add_button.dart';
 /// Displays the primary site of a parent
 /// and allows the user to select/update the primary site.
 class HMBSitePrimary<P extends Entity<P>> extends StatefulWidget {
+  final String label;
+  final Site? site;
+  final P parent;
+  final DaoJoinAdaptor<Site, P> daoJoin;
+
   const HMBSitePrimary({
     required this.label,
     required this.parent,
@@ -29,10 +34,6 @@ class HMBSitePrimary<P extends Entity<P>> extends StatefulWidget {
     required this.daoJoin,
     super.key,
   });
-  final String label;
-  final Site? site;
-  final P parent;
-  final DaoJoinAdaptor<Site, P> daoJoin;
 
   @override
   State<HMBSitePrimary<P>> createState() => _HMBSitePrimaryState<P>();

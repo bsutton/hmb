@@ -21,12 +21,12 @@ import '../source_context.dart';
 import 'source.dart';
 
 class ContactSource extends Source<Contact> {
-  ContactSource() : super(name: 'contact');
+  Contact? contact;
   final customerNotifier = ValueNotifier<CustomerContact>(
     CustomerContact(null, null),
   );
 
-  Contact? contact;
+  ContactSource() : super(name: 'contact');
 
   @override
   Widget widget() => ValueListenableBuilder(
@@ -68,7 +68,8 @@ class ContactSource extends Source<Contact> {
 }
 
 class CustomerContact {
-  CustomerContact(this.customer, this.contact);
   Customer? customer;
   Contact? contact;
+
+  CustomerContact(this.customer, this.contact);
 }

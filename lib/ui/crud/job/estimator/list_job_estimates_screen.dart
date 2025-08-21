@@ -21,9 +21,9 @@ import '../../base_full_screen/base_full_screen.g.dart';
 import 'job_card.dart';
 
 class JobEstimatesListScreen extends StatefulWidget {
-  const JobEstimatesListScreen({super.key, this.job});
-
   final Job? job;
+
+  const JobEstimatesListScreen({super.key, this.job});
 
   @override
   State<JobEstimatesListScreen> createState() => _JobEstimatesListScreenState();
@@ -114,18 +114,18 @@ class _JobEstimatesListScreenState extends State<JobEstimatesListScreen> {
   );
 }
 
-Future<Customer?> _getCustomer(Job job)  => DaoCustomer().getByJob(job.id);
+Future<Customer?> _getCustomer(Job job) => DaoCustomer().getByJob(job.id);
 
 class CustomerAndJob {
+  final Customer customer;
+  final Job job;
+  final bool hasBillables;
+  final String? contactName;
+
   CustomerAndJob({
     required this.customer,
     required this.job,
     required this.hasBillables,
     this.contactName,
   });
-
-  final Customer customer;
-  final Job job;
-  final bool hasBillables;
-  final String? contactName;
 }

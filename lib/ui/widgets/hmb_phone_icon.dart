@@ -29,10 +29,10 @@ import 'hmb_button.dart';
 import 'hmb_toast.dart';
 
 class HMBPhoneIcon extends StatelessWidget {
-  const HMBPhoneIcon(this.phoneNo, {required this.sourceContext, super.key});
   final String phoneNo;
-
   final SourceContext sourceContext;
+
+  const HMBPhoneIcon(this.phoneNo, {required this.sourceContext, super.key});
 
   @override
   Widget build(BuildContext context) => Row(
@@ -51,9 +51,8 @@ class HMBPhoneIcon extends StatelessWidget {
       IconButton(
         iconSize: 22,
         icon: const Icon(Icons.copy),
-        onPressed: () async => Strings.isEmpty(phoneNo)
-            ? null
-            : await clipboardCopyTo(phoneNo),
+        onPressed: () async =>
+            Strings.isEmpty(phoneNo) ? null : await clipboardCopyTo(phoneNo),
         color: Strings.isEmpty(phoneNo) ? Colors.grey : Colors.blue,
         tooltip: 'Copy Phone No. to the Clipboard',
       ),

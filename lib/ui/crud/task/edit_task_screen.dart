@@ -33,15 +33,15 @@ import '../base_nested/list_nested_screen.dart';
 import 'photo_crud.dart';
 
 class TaskEditScreen extends StatefulWidget {
-  TaskEditScreen({required this.job, super.key, this.task}) {
-    // for the moment we don't let tasks override the billing type.
-    billingType = job.billingType;
-  }
-
   final Job job;
   final Task? task;
 
   late final BillingType billingType;
+
+  TaskEditScreen({required this.job, super.key, this.task}) {
+    // for the moment we don't let tasks override the billing type.
+    billingType = job.billingType;
+  }
 
   @override
   // ignore: library_private_types_in_public_api

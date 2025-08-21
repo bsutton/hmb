@@ -99,6 +99,11 @@ Future<InvoiceOptions?> selectTasksToInvoice({
 }
 
 class DialogTaskSelection extends StatefulWidget {
+  final String title;
+  final Job job;
+  final List<TaskSelector> taskSelectors;
+  final Contact contact;
+
   const DialogTaskSelection({
     required this.job,
     required this.taskSelectors,
@@ -106,11 +111,6 @@ class DialogTaskSelection extends StatefulWidget {
     required this.title,
     super.key,
   });
-
-  final String title;
-  final Job job;
-  final List<TaskSelector> taskSelectors;
-  final Contact contact;
 
   @override
   _DialogTaskSelectionState createState() => _DialogTaskSelectionState();
@@ -269,23 +269,24 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 }
 
 class TaskSelector {
-  TaskSelector(this.task, this.description, this.value);
   final Task task;
   final String description;
   final Money value;
+
+  TaskSelector(this.task, this.description, this.value);
 }
 
 class InvoiceOptions {
+  List<int> selectedTaskIds = [];
+  // ignore: omit_obvious_property_types
+  bool billBookingFee = true;
+  bool groupByTask;
+  Contact contact;
+
   InvoiceOptions({
     required this.selectedTaskIds,
     required this.billBookingFee,
     required this.groupByTask,
     required this.contact,
   });
-
-  List<int> selectedTaskIds = [];
-  // ignore: omit_obvious_property_types
-  bool billBookingFee = true;
-  bool groupByTask;
-  Contact contact;
 }

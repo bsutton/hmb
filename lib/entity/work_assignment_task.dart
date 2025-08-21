@@ -16,6 +16,9 @@
 import 'entity.dart';
 
 class WorkAssignmentTask extends Entity<WorkAssignmentTask> {
+  int assignmentId;
+  int taskId;
+
   WorkAssignmentTask({
     required super.id,
     required this.assignmentId,
@@ -52,7 +55,4 @@ class WorkAssignmentTask extends Entity<WorkAssignmentTask> {
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
-
-  int assignmentId;
-  int taskId;
 }

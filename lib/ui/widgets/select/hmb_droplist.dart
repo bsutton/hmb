@@ -23,6 +23,18 @@ import 'hmb_droplist_dialog.dart';
 
 /// A dropdown list field with async loading, built on DeferredState.
 class HMBDroplist<T> extends StatefulWidget {
+  final Future<T?> Function() selectedItem;
+  final Future<List<T>> Function(String? filter) items;
+  final String Function(T) format;
+  final void Function(T?) onChanged;
+  final String title;
+  final Future<void> Function()? onAdd;
+  final Color? backgroundColor;
+  final void Function(T?)? onSaved;
+  final T? initialValue;
+  final bool required;
+  final bool showSearch;
+
   const HMBDroplist({
     required this.selectedItem,
     required this.items,
@@ -37,18 +49,6 @@ class HMBDroplist<T> extends StatefulWidget {
     this.showSearch = true,
     super.key,
   });
-
-  final Future<T?> Function() selectedItem;
-  final Future<List<T>> Function(String? filter) items;
-  final String Function(T) format;
-  final void Function(T?) onChanged;
-  final String title;
-  final Future<void> Function()? onAdd;
-  final Color? backgroundColor;
-  final void Function(T?)? onSaved;
-  final T? initialValue;
-  final bool required;
-  final bool showSearch;
 
   @override
   HMBDroplistState<T> createState() => HMBDroplistState<T>();

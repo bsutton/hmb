@@ -18,6 +18,12 @@ import 'entity.dart';
 enum LineApprovalStatus { preApproval, approved, rejected }
 
 class QuoteLineGroup extends Entity<QuoteLineGroup> {
+  int quoteId;
+  int? taskId;
+  String name;
+  String assumption;
+  LineApprovalStatus lineApprovalStatus;
+
   QuoteLineGroup({
     required super.id,
     required this.quoteId,
@@ -59,12 +65,6 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
-
-  int quoteId;
-  int? taskId;
-  String name;
-  String assumption;
-  LineApprovalStatus lineApprovalStatus;
 
   QuoteLineGroup copyWith({
     int? id,

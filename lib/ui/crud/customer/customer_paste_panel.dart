@@ -8,9 +8,9 @@ import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 
 class CustomerPastePanel extends StatefulWidget {
-  const CustomerPastePanel({required this.onExtract, super.key});
-
   final void Function(ParsedCustomer) onExtract;
+
+  const CustomerPastePanel({required this.onExtract, super.key});
 
   @override
   State<CustomerPastePanel> createState() => _CustomerPastePanelState();

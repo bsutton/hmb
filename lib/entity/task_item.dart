@@ -47,9 +47,55 @@ enum LabourEntryMode {
   String toSqlString() => _display;
 }
 
-/// A single task item, including estimates, actuals, billing, URL, 
+/// A single task item, including estimates, actuals, billing, URL,
 /// purpose, and return linkage
 class TaskItem extends Entity<TaskItem> {
+  // Primary fields
+  final int taskId;
+  TaskItemType itemType;
+  String description;
+  String purpose;
+
+  // Estimates
+  final Fixed? estimatedLabourHours;
+  final Money? estimatedLabourCost;
+  final Money? estimatedMaterialUnitCost;
+  final Fixed? estimatedMaterialQuantity;
+
+  // Actuals
+  Money? actualMaterialUnitCost;
+  Fixed? actualMaterialQuantity;
+  Money? actualCost;
+
+  // Margin %
+  final Percentage margin;
+
+  // Computed charge
+  Money? _charge;
+  bool chargeSet;
+
+  // Status
+  bool completed;
+  bool billed;
+  int? invoiceLineId;
+
+  // Dimensions
+  final MeasurementType? measurementType;
+  final Fixed dimension1;
+  final Fixed dimension2;
+  final Fixed dimension3;
+  final Units? units;
+  final String url;
+
+  // Supplier
+  int? supplierId;
+
+  // Labour mode
+  final LabourEntryMode labourEntryMode;
+
+  // Return linkage
+  final int? sourceTaskItemId;
+  final bool isReturn;
   TaskItem._({
     required super.id,
     required super.createdDate,
@@ -273,53 +319,6 @@ class TaskItem extends Entity<TaskItem> {
     sourceTaskItemId: map['source_task_item_id'] as int?,
     isReturn: (map['is_return'] as int? ?? 0) == 1,
   );
-
-  // Primary fields
-  final int taskId;
-  TaskItemType itemType;
-  String description;
-  String purpose;
-
-  // Estimates
-  final Fixed? estimatedLabourHours;
-  final Money? estimatedLabourCost;
-  final Money? estimatedMaterialUnitCost;
-  final Fixed? estimatedMaterialQuantity;
-
-  // Actuals
-  Money? actualMaterialUnitCost;
-  Fixed? actualMaterialQuantity;
-  Money? actualCost;
-
-  // Margin %
-  final Percentage margin;
-
-  // Computed charge
-  Money? _charge;
-  bool chargeSet;
-
-  // Status
-  bool completed;
-  bool billed;
-  int? invoiceLineId;
-
-  // Dimensions
-  final MeasurementType? measurementType;
-  final Fixed dimension1;
-  final Fixed dimension2;
-  final Fixed dimension3;
-  final Units? units;
-  final String url;
-
-  // Supplier
-  int? supplierId;
-
-  // Labour mode
-  final LabourEntryMode labourEntryMode;
-
-  // Return linkage
-  final int? sourceTaskItemId;
-  final bool isReturn;
 
   /// Charge calculation...
   Money getCharge(BillingType billingType, Money hourlyRate) {

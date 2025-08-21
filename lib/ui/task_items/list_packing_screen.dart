@@ -58,17 +58,18 @@ class PackingScreen extends StatefulWidget {
 }
 
 class TaskItemContext {
+  TaskItem taskItem;
+  Task task;
+  BillingType billingType;
+  // If true this item is a return (to supplier) item.
+  bool wasReturned;
+
   TaskItemContext({
     required this.task,
     required this.taskItem,
     required this.billingType,
     required this.wasReturned,
   });
-  TaskItem taskItem;
-  Task task;
-  BillingType billingType;
-  // If true this item is a return (to supplier) item.
-  bool wasReturned;
 }
 
 class _PackingScreenState extends DeferredState<PackingScreen> {
@@ -108,7 +109,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
           Strings.isBlank(filter) ||
           taskItem.description.toLowerCase().contains(filter!.toLowerCase());
 
-      // If a schedule filter is selected (other than "All") check the job's 
+      // If a schedule filter is selected (other than "All") check the job's
       //next activity.
       if (include && _selectedScheduleFilter != ScheduleFilter.all) {
         final job = await DaoJob().getJobForTask(task!.id);
@@ -424,6 +425,10 @@ Packing items are taken from Task items that are marked as "${TaskItemType.mater
 }
 
 class JobDetail {
+  final Job job;
+  final JobActivity? nextActivity;
+  final Customer customer;
+
   JobDetail._(this.job, this.nextActivity, this.customer);
   static Future<JobDetail> get(Task task) async {
     final job = await DaoJob().getJobForTask(task.id);
@@ -431,10 +436,6 @@ class JobDetail {
     final customer = (await DaoCustomer().getByJob(job.id))!;
     return JobDetail._(job, nextActivity, customer);
   }
-
-  final Job job;
-  final JobActivity? nextActivity;
-  final Customer customer;
 
   String dateOfNextActivity() {
     if (nextActivity == null) {

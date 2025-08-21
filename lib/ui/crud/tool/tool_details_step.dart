@@ -30,15 +30,6 @@ import '../category/select_category.dart';
 import 'stock_take_wizard.dart';
 
 class ToolDetailsStep extends WizardStep {
-  ToolDetailsStep(
-    this.toolWizardState, {
-    required String? name,
-    required this.cost,
-  }) : super(title: 'Tool Details') {
-    nameController.text = name ?? '';
-    costController.text = cost?.toString() ?? '';
-  }
-
   final ToolWizardState toolWizardState;
   final Money? cost;
 
@@ -51,6 +42,15 @@ class ToolDetailsStep extends WizardStep {
   final selectedManufacturer = SelectedManufacturer();
   final selectedCategory = SelectedCategory();
   var _selectedDatePurchased = DateTime.now();
+
+  ToolDetailsStep(
+    this.toolWizardState, {
+    required String? name,
+    required this.cost,
+  }) : super(title: 'Tool Details') {
+    nameController.text = name ?? '';
+    costController.text = cost?.toString() ?? '';
+  }
 
   @override
   Future<void> onNext(

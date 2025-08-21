@@ -14,6 +14,13 @@
 import 'package:money2/money2.dart';
 
 class XeroLineItem {
+  final String description;
+  final Fixed quantity;
+  final Money unitAmount;
+  final Money lineTotal;
+  final String accountCode;
+  final String itemCode;
+
   XeroLineItem({
     required this.description,
     required this.quantity,
@@ -22,12 +29,6 @@ class XeroLineItem {
     required this.accountCode,
     required this.itemCode,
   });
-  final String description;
-  final Fixed quantity;
-  final Money unitAmount;
-  final Money lineTotal;
-  final String accountCode;
-  final String itemCode;
 
   Map<String, dynamic> toJson() => {
     'Description': description,

@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'dart:io';
 
 import 'package:dcli/dcli.dart';
@@ -20,9 +19,9 @@ import 'package:hmb/database/management/backup_providers/backup_provider.dart';
 import 'package:path/path.dart';
 
 class TestBackupProvider extends BackupProvider {
-  TestBackupProvider(super.databaseFactory, this.pathToDatabase);
-
   String pathToDatabase;
+
+  TestBackupProvider(super.databaseFactory, this.pathToDatabase);
 
   @override
   String get name => 'Test Backup';

@@ -16,6 +16,14 @@ import 'xero_contact.dart';
 import 'xero_line_item.dart';
 
 class XeroInvoice {
+  final String reference;
+  final String type;
+  final XeroContact contact;
+  final List<XeroLineItem> lineItems;
+  final LocalDate issueDate;
+  final LocalDate dueDate;
+  final String lineAmountTypes;
+
   XeroInvoice({
     required this.reference,
     required this.type,
@@ -25,13 +33,6 @@ class XeroInvoice {
     required this.dueDate,
     required this.lineAmountTypes,
   });
-  final String reference;
-  final String type;
-  final XeroContact contact;
-  final List<XeroLineItem> lineItems;
-  final LocalDate issueDate;
-  final LocalDate dueDate;
-  final String lineAmountTypes;
 
   /// toJson
   Map<String, dynamic> toJson() => {

@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite/sqflite.dart';
@@ -482,8 +481,6 @@ where q.id=?
     return ready;
   }
 
-
-
   @override
   JuneStateCreator get juneRefresher => JobRefresher.new;
 }
@@ -494,6 +491,15 @@ class JobRefresher extends JuneState {
 }
 
 class JobStatistics {
+  final int totalTasks;
+  final int completedTasks;
+  final Fixed expectedLabourHours;
+  final Fixed completedLabourHours;
+  final Money totalMaterialCost;
+  final Money completedMaterialCost;
+  final Money worked;
+  final Fixed workedHours;
+
   JobStatistics({
     required this.totalTasks,
     required this.completedTasks,
@@ -504,12 +510,4 @@ class JobStatistics {
     required this.worked,
     required this.workedHours,
   });
-  final int totalTasks;
-  final int completedTasks;
-  final Fixed expectedLabourHours;
-  final Fixed completedLabourHours;
-  final Money totalMaterialCost;
-  final Money completedMaterialCost;
-  final Money worked;
-  final Fixed workedHours;
 }

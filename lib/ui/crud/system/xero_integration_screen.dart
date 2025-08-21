@@ -24,9 +24,10 @@ import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/widgets.g.dart';
 
 class XeroIntegrationScreen extends StatefulWidget {
+  final bool showButtons;
+  
   const XeroIntegrationScreen({super.key, this.showButtons = true});
 
-  final bool showButtons;
 
   @override
   // ignore: library_private_types_in_public_api

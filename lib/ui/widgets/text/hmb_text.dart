@@ -11,12 +11,17 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
 
 class HMBText extends StatelessWidget {
+  final String labelText;
+  final bool verticalPadding;
+  final bool bold;
+  final bool underline;
+  final Color? color;
+
   /// If [verticalPadding] is true, vertical padding is added before the text.
   const HMBText(
     this.labelText, {
@@ -26,12 +31,6 @@ class HMBText extends StatelessWidget {
     this.underline = false,
     Color? color,
   }) : color = color ?? HMBColors.textPrimary;
-
-  final String labelText;
-  final bool verticalPadding;
-  final bool bold;
-  final bool underline;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) => Padding(

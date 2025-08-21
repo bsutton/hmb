@@ -36,15 +36,17 @@ import '../widgets/select/hmb_select_job.dart';
 import 'job_activity_ex.dart';
 
 class JobActivityUpdateAction {
-  JobActivityUpdateAction(this.action, this.jobActivity);
   JobActivityEx? jobActivity;
   EditAction action;
+
+  JobActivityUpdateAction(this.action, this.jobActivity);
 }
 
 class JobActivityAddAction {
-  JobActivityAddAction(this.action, this.jobActivity);
   JobActivityEx? jobActivity;
   AddAction action;
+
+  JobActivityAddAction(this.action, this.jobActivity);
 }
 
 enum EditAction { delete, update, cancel }
@@ -54,6 +56,11 @@ enum AddAction { add, cancel }
 /// The dialog for adding/editing job events to the
 /// schedule.
 class JobActivityDialog extends StatefulWidget {
+  final int? preSelectedJobId;
+  final CalendarEventData<JobActivityEx>? event;
+  final DateTime? when;
+  final bool isEditing;
+
   JobActivityDialog.edit({
     required CalendarEventData<JobActivityEx> this.event,
     this.preSelectedJobId,
@@ -67,11 +74,6 @@ class JobActivityDialog extends StatefulWidget {
     super.key,
   }) : event = null,
        isEditing = false;
-
-  final int? preSelectedJobId;
-  final CalendarEventData<JobActivityEx>? event;
-  final DateTime? when;
-  final bool isEditing;
 
   static Future<JobActivityAddAction> showAdd({
     required BuildContext context,
@@ -588,14 +590,14 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     // TODO(bsutton): send customer notice that their job has been scheduled
     // as well as notice if we change the job.
     // Implement your logic to send the notice via email or SMS
-    // You can use the contact.method and contact.detail to determine how to 
+    // You can use the contact.method and contact.detail to determine how to
     //send the notice
 
     // For demonstration purposes, we just show a snackbar
     HMBToast.info('Not yet implemented');
     // HMBToast.info(
-    //   'Notice sent to ${contact.contact.firstName} 
-    //via ${contact.method.name} 
+    //   'Notice sent to ${contact.contact.firstName}
+    //via ${contact.method.name}
     // (${contact.detail})',
     // );
 
@@ -631,17 +633,17 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
 }
 
 class ContactOption {
+  final Contact contact;
+  final String detail;
+  final ContactMethod method;
+  final bool isPrimary;
+
   ContactOption({
     required this.contact,
     required this.detail,
     required this.method,
     this.isPrimary = false,
   });
-
-  final Contact contact;
-  final String detail;
-  final ContactMethod method;
-  final bool isPrimary;
 }
 
 enum ContactMethod { email, sms }

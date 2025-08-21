@@ -56,17 +56,17 @@ class HMBFilePickerDialog {
 }
 
 class _FilePickerDialog extends StatefulWidget {
+  final Directory directory;
+  final ValueChanged<String> onFileSelected;
+  final List<String>? allowedExtensions;
+  final bool showHidden;
+
   const _FilePickerDialog({
     required this.directory,
     required this.onFileSelected,
     this.allowedExtensions,
     this.showHidden = false,
   });
-
-  final Directory directory;
-  final ValueChanged<String> onFileSelected;
-  final List<String>? allowedExtensions;
-  final bool showHidden;
 
   @override
   __FilePickerDialogState createState() => __FilePickerDialogState();
@@ -205,7 +205,8 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
 }
 
 class BreadcrumbItem {
-  BreadcrumbItem(this.name, this.directory);
   final String name;
   final Directory directory;
+  
+  BreadcrumbItem(this.name, this.directory);
 }

@@ -22,6 +22,13 @@ import '../../ui/widgets/hmb_toast.dart';
 import '../widgets/hmb_button.dart';
 
 class EmailDialog extends StatefulWidget {
+  final String subject;
+  final String body;
+  final String preferredRecipient;
+  final List<String> emailRecipients;
+  final System system;
+  final String filePath;
+
   const EmailDialog({
     required this.subject,
     required this.body,
@@ -32,12 +39,6 @@ class EmailDialog extends StatefulWidget {
     super.key,
   });
 
-  final String subject;
-  final String body;
-  final String preferredRecipient;
-  final List<String> emailRecipients;
-  final System system;
-  final String filePath;
 
   @override
   // ignore: library_private_types_in_public_api

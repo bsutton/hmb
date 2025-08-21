@@ -20,10 +20,6 @@ import 'redirect_handler.dart';
 /// Starts a micro http server that handles the auth auth_complete
 /// request.
 class LocalServerRedirectHandler extends RedirectHandler {
-  LocalServerRedirectHandler(this.config);
-  // Private constructor with port configuration
-  // LocalServerRedirectHandler._(this.port);
-
   RedirectHandlerConfig config;
   var _running = false;
   HttpServer? server;
@@ -33,6 +29,8 @@ class LocalServerRedirectHandler extends RedirectHandler {
 
   // Stream controller for managing subscriptions to auth notifications
   final _authStreamController = StreamController<Uri>.broadcast();
+
+  LocalServerRedirectHandler(this.config);
 
   // Start the server
   @override

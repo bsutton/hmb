@@ -30,6 +30,16 @@ enum QuoteState {
 }
 
 class Quote extends Entity<Quote> {
+  int jobId;
+  Money totalAmount;
+  String assumption;
+  String? quoteNum;
+  String? externalQuoteId;
+  QuoteState state;
+  DateTime? dateSent;
+  DateTime? dateApproved;
+  int? billingContactId;
+
   Quote({
     required super.id,
     required this.jobId,
@@ -89,16 +99,6 @@ class Quote extends Entity<Quote> {
         : null,
     billingContactId: map['billing_contact_id'] as int?,
   );
-
-  int jobId;
-  Money totalAmount;
-  String assumption;
-  String? quoteNum;
-  String? externalQuoteId;
-  QuoteState state;
-  DateTime? dateSent;
-  DateTime? dateApproved;
-  int? billingContactId;
 
   String get bestNumber => externalQuoteId ?? quoteNum ?? '$id';
 

@@ -12,8 +12,9 @@ import '../../widgets/widgets.g.dart';
 import '../base_full_screen/base_full_screen.g.dart';
 
 class ToDoEditScreen extends StatefulWidget {
-  const ToDoEditScreen({super.key, this.toDo});
   final ToDo? toDo;
+  
+  const ToDoEditScreen({super.key, this.toDo});
 
   @override
   State<ToDoEditScreen> createState() => _ToDoEditScreenState();

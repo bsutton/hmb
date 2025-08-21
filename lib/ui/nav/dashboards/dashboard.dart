@@ -21,16 +21,16 @@ import '../route.dart';
 
 /// Main dashboard page wired up to refresh on return
 class DashboardPage extends StatefulWidget {
+  final String title;
+  final List<Widget> dashlets;
+
   const DashboardPage({required this.title, required this.dashlets, super.key});
 
   @override
   State<DashboardPage> createState() => DashboardState();
-
-  final String title;
-  final List<Widget> dashlets;
 }
 
-/// Base state class for any dashboard-like page that needs to refresh 
+/// Base state class for any dashboard-like page that needs to refresh
 /// on return.
 class DashboardState extends State<DashboardPage> with RouteAware {
   @override
@@ -52,7 +52,7 @@ class DashboardState extends State<DashboardPage> with RouteAware {
     onDashboardResumed();
   }
 
-  /// Called when returning to this dashboard. Default refreshes 
+  /// Called when returning to this dashboard. Default refreshes
   /// and resets title.
   @protected
   void onDashboardResumed() {

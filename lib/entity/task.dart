@@ -16,6 +16,12 @@ import 'task_status.dart';
 
 /// Task entity storing status as enum but persisting only the id.
 class Task extends Entity<Task> {
+  int jobId;
+  String name;
+  String description;
+  String assumption;
+  TaskStatus status;
+
   Task({
     required super.id,
     required this.jobId,
@@ -54,12 +60,6 @@ class Task extends Entity<Task> {
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
-
-  int jobId;
-  String name;
-  String description;
-  String assumption;
-  TaskStatus status;
 
   @override
   Map<String, dynamic> toMap() => {

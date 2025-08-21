@@ -25,9 +25,9 @@ import 'edit_time_entry_screen.dart';
 import 'job_statistics_header.dart';
 
 class TimeEntryListScreen extends StatefulWidget {
-  const TimeEntryListScreen({required this.job, super.key});
-
   final Job job;
+
+  const TimeEntryListScreen({required this.job, super.key});
 
   @override
   State<TimeEntryListScreen> createState() => _TimeEntryListScreenState();
@@ -88,7 +88,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
 
       HMBSelectSupplier(
         selectedSupplier: _supplierFilter,
-        onSelected: (sup)  {
+        onSelected: (sup) {
           _supplierFilter.selected = sup?.id;
           onChange();
         },
@@ -154,7 +154,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
               _taskFilter.taskId != null ||
               _selectedDate != null,
           cardHeight: 260,
-          title: (entry)  => HMBTextLine(formatDate(entry.startTime)),
+          title: (entry) => HMBTextLine(formatDate(entry.startTime)),
           onEdit: (entry) =>
               TimeEntryEditScreen(job: widget.job, timeEntry: entry),
           details: (entry) => FutureBuilderEx<_Details>(
@@ -169,22 +169,23 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
 }
 
 class _Details {
-  _Details(this.task, this.timeEntry);
   Task task;
   TimeEntry timeEntry;
+
+  _Details(this.task, this.timeEntry);
 }
 
 class TimeEntryTile extends StatelessWidget {
+  static const format = 'h:mm a';
+
+  final TimeEntry timeEntry;
+  final String taskName;
+
   const TimeEntryTile({
     required this.timeEntry,
     required this.taskName,
     super.key,
   });
-
-  final TimeEntry timeEntry;
-  final String taskName;
-
-  static const format = 'h:mm a';
   @override
   Widget build(BuildContext context) => ListTile(
     contentPadding: EdgeInsets.zero,

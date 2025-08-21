@@ -23,9 +23,10 @@ import '../../../util/hmb_theme.dart';
 import '../layout/hmb_placeholder.dart';
 
 class HMBSiteText extends StatelessWidget {
-  const HMBSiteText({required this.label, required this.site, super.key});
   final String label;
   final Site? site;
+
+  const HMBSiteText({required this.label, required this.site, super.key});
 
   @override
   Widget build(BuildContext context) => Row(
@@ -61,9 +62,10 @@ class HMBSiteText extends StatelessWidget {
 }
 
 class HMBJobSiteText extends StatelessWidget {
-  const HMBJobSiteText({required this.label, required this.job, super.key});
   final String label;
   final Job? job;
+
+  const HMBJobSiteText({required this.label, required this.job, super.key});
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(

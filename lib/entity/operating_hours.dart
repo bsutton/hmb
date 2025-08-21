@@ -22,6 +22,11 @@ import 'operating_day.dart';
 import 'system.dart';
 
 class OperatingHours {
+  /// A Map of  OperatingDay objects, one for each day you operate.
+  /// The key is the short day name. e.g. Mon
+  ///
+  final Map<DayName, OperatingDay> days;
+
   OperatingHours({required this.days}) {
     final missing = <DayName>[];
     // back fill any missing days
@@ -58,11 +63,6 @@ class OperatingHours {
 
     return OperatingHours(days: dayMap);
   }
-
-  /// A Map of  OperatingDay objects, one for each day you operate.
-  /// The key is the short day name. e.g. Mon
-  ///
-  final Map<DayName, OperatingDay> days;
 
   /// Converts the OperatingHours instance back to a JSON string.
   String toJson() {
@@ -150,7 +150,7 @@ class OperatingHours {
 
   bool inOperatingHours(JobActivity activity) {
     // 1) Check if the activity is on a single day.
-    //    If it spans multiple calendar days, return false 
+    //    If it spans multiple calendar days, return false
     //(or handle specially).
     if (activity.start.toLocalDate() != activity.end.toLocalDate()) {
       return false;
@@ -173,7 +173,7 @@ class OperatingHours {
     }
 
     // 4) Compare the activities time range to the day’s start/end times.
-    //    If either start or end is null, treat 
+    //    If either start or end is null, treat
     //as “no configured hours,” i.e., closed.
     if (operatingDay.start == null || operatingDay.end == null) {
       return false;

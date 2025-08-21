@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -21,9 +20,9 @@ import '../widgets/wizard.dart';
 import '../widgets/wizard_step.dart';
 
 class BillingWizardStep extends WizardStep {
-  BillingWizardStep() : super(title: 'Billing Details');
-
   final stateKey = GlobalKey<SystemBillingScreenState>();
+
+  BillingWizardStep() : super(title: 'Billing Details');
 
   @override
   Future<void> onNext(

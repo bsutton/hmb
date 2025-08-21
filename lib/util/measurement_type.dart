@@ -22,40 +22,6 @@ Map<String, MeasurementType> _measurementTypes = {
 };
 
 class MeasurementType {
-  /// Defines a type of measurement such
-  /// as length, weight, volume and includes
-  /// both the imperial and metric units for that
-  /// type of measurement.
-  ///
-  /// The [name] of the MeasurementType such as 'volume'.
-  /// The [defaultMetric] Units used by the metric system.
-  /// The [defaultImperial] Units used by the imperial system.
-  /// The list of [metric] units for this measurement type.
-  /// The list of [imperial] units for this measurement type.
-  const MeasurementType({
-    required this.name,
-    required this.defaultMetric,
-    required this.defaultImperial,
-    required this.metric,
-    required this.imperial,
-  });
-
-  final String name;
-  final Units defaultMetric;
-  final Units defaultImperial;
-
-  final List<Units> metric;
-  final List<Units> imperial;
-
-  static MeasurementType get defaultMeasurementType => length;
-
-  static MeasurementType? fromName(String name) => _measurementTypes[name];
-
-  static List<MeasurementType> get list => _measurementTypes.values.toList();
-
-  @override
-  String toString() => name;
-
   // Use the defined variables in the MeasurementType constructors
   static const length = MeasurementType(
     name: 'length',
@@ -88,6 +54,39 @@ class MeasurementType {
     metric: [Units.t, Units.kg, Units.g],
     imperial: [Units.ton, Units.lb, Units.oz],
   );
+
+  final String name;
+  final Units defaultMetric;
+  final Units defaultImperial;
+
+  final List<Units> metric;
+  final List<Units> imperial;
+
+  /// Defines a type of measurement such
+  /// as length, weight, volume and includes
+  /// both the imperial and metric units for that
+  /// type of measurement.
+  ///
+  /// The [name] of the MeasurementType such as 'volume'.
+  /// The [defaultMetric] Units used by the metric system.
+  /// The [defaultImperial] Units used by the imperial system.
+  /// The list of [metric] units for this measurement type.
+  /// The list of [imperial] units for this measurement type.
+  const MeasurementType({
+    required this.name,
+    required this.defaultMetric,
+    required this.defaultImperial,
+    required this.metric,
+    required this.imperial,
+  });
+
+  static MeasurementType? fromName(String name) => _measurementTypes[name];
+  static MeasurementType get defaultMeasurementType => length;
+
+  static List<MeasurementType> get list => _measurementTypes.values.toList();
+
+  @override
+  String toString() => name;
 }
 
 enum PreferredUnitSystem { metric, imperial }

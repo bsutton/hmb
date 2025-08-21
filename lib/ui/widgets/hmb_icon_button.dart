@@ -17,9 +17,16 @@ import 'hmb_tooltip.dart';
 
 enum HMBIconButtonSize { small, standard, large }
 
-/// Displays an icon button with configurable size and tooltip shown 
+/// Displays an icon button with configurable size and tooltip shown
 /// on long press.
 class HMBIconButton extends StatefulWidget {
+  final Future<void> Function()? onPressed;
+  final bool enabled;
+  final Icon icon;
+  final String? hint;
+  final HMBIconButtonSize size;
+  final bool showBackground;
+
   const HMBIconButton({
     required this.onPressed,
     required this.hint,
@@ -29,13 +36,6 @@ class HMBIconButton extends StatefulWidget {
     this.size = HMBIconButtonSize.standard,
     super.key,
   });
-
-  final Future<void> Function()? onPressed;
-  final bool enabled;
-  final Icon icon;
-  final String? hint;
-  final HMBIconButtonSize size;
-  final bool showBackground;
 
   @override
   _HMBIconButtonState createState() => _HMBIconButtonState();

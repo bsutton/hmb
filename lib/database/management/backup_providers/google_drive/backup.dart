@@ -27,9 +27,9 @@ import '../../../../ui/widgets/widgets.g.dart';
 import 'google_drive_auth.dart';
 
 class BackupAuthGoogleScreen extends StatefulWidget {
-  const BackupAuthGoogleScreen({required this.pathToBackup, super.key});
-
   final String pathToBackup;
+
+  const BackupAuthGoogleScreen({required this.pathToBackup, super.key});
 
   @override
   _BackupAuthGoogleScreenState createState() => _BackupAuthGoogleScreenState();
@@ -122,9 +122,10 @@ class _BackupAuthGoogleScreenState
 }
 
 class AuthenticatedClient extends http.BaseClient {
-  AuthenticatedClient(this._client, this._headers);
   final http.Client _client;
   final Map<String, String> _headers;
+
+  AuthenticatedClient(this._client, this._headers);
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) =>

@@ -171,16 +171,17 @@ class DbTimeEntryChanged extends JuneState {
 /// Used to accumulate all time entries, for a specific task and date
 /// that haven't yet been billed.
 class LabourForTaskOnDate {
+  Task task;
+  LocalDate date;
+  List<TimeEntry> timeEntries;
+  late Duration hours;
+
   LabourForTaskOnDate(this.task, this.date, this.timeEntries) {
     hours = timeEntries.fold(
       Duration.zero,
       (sum, value) => sum + value.duration,
     );
   }
-  Task task;
-  LocalDate date;
-  List<TimeEntry> timeEntries;
-  late Duration hours;
 
   Fixed get durationInHours =>
       Fixed.fromNum(hours.inMinutes / 60, decimalDigits: 2);

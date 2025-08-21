@@ -20,8 +20,9 @@ import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 
 class MessageTemplateEditScreen extends StatefulWidget {
-  const MessageTemplateEditScreen({super.key, this.messageTemplate});
   final MessageTemplate? messageTemplate;
+
+  const MessageTemplateEditScreen({super.key, this.messageTemplate});
 
   @override
   // ignore: library_private_types_in_public_api

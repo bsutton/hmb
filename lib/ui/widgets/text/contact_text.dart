@@ -17,9 +17,10 @@ import '../../../entity/contact.dart';
 import '../../../util/hmb_theme.dart';
 
 class ContactText extends StatelessWidget {
-  const ContactText({required this.label, required this.contact, super.key});
   final String label;
   final Contact? contact;
+
+  const ContactText({required this.label, required this.contact, super.key});
 
   @override
   Widget build(BuildContext context) => Padding(

@@ -17,6 +17,17 @@ import 'package:flutter_svg/flutter_svg.dart';
 enum LOCATION { vaadin, icons }
 
 class Svg extends StatelessWidget {
+  static const vaadinAsset = 'assets/vaadin-svg/';
+  static const iconAsset = 'assets/icons/';
+
+  final String filename;
+  final String? label;
+  final double width;
+  final double height;
+  final LOCATION location;
+  final void Function()? onTap;
+  final Color? color;
+
   ///
   /// We are having sizing problems.
   /// The aim is to have the SVG fill its parent if the width/height are not specified.
@@ -35,16 +46,6 @@ class Svg extends StatelessWidget {
     this.onTap,
     this.color,
   });
-  final String filename;
-  final String? label;
-  final double width;
-  final double height;
-  final LOCATION location;
-  final void Function()? onTap;
-  final Color? color;
-
-  static const vaadinAsset = 'assets/vaadin-svg/';
-  static const iconAsset = 'assets/icons/';
 
   @override
   Widget build(BuildContext context) => buildSvg();

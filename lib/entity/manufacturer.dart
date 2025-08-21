@@ -14,6 +14,12 @@
 import 'entity.dart';
 
 class Manufacturer extends Entity<Manufacturer> {
+  String name;
+  String? description;
+  String? contactNumber;
+  String? email;
+  String? address;
+
   Manufacturer({
     required super.id,
     required this.name,
@@ -52,12 +58,6 @@ class Manufacturer extends Entity<Manufacturer> {
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
-
-  String name;
-  String? description;
-  String? contactNumber;
-  String? email;
-  String? address;
 
   @override
   Map<String, dynamic> toMap() => {

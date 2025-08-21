@@ -21,16 +21,16 @@ import '../crud/contact/list_contact_screen.dart';
 import 'hmb_child_crud_card.dart';
 
 class HMBCrudContact<P extends Entity<P>> extends StatefulWidget {
+  final DaoJoinAdaptor<Contact, P> daoJoin;
+  final Parent<P> parent;
+  final String parentTitle;
+
   const HMBCrudContact({
     required this.parent,
     required this.daoJoin,
     required this.parentTitle,
     super.key,
   });
-
-  final DaoJoinAdaptor<Contact, P> daoJoin;
-  final Parent<P> parent;
-  final String parentTitle;
 
   @override
   // ignore: library_private_types_in_public_api

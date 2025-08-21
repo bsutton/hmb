@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -21,6 +20,8 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'hmb_database_factory.dart' as local;
 
 class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
+  static FlutterDatabaseFactory? instance;
+
   factory FlutterDatabaseFactory() {
     if (instance == null) {
       instance = FlutterDatabaseFactory._();
@@ -31,7 +32,6 @@ class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
   }
 
   FlutterDatabaseFactory._();
-  static FlutterDatabaseFactory? instance;
 
   void initDatabaseFactory({required bool isWeb}) {
     if (isWeb) {

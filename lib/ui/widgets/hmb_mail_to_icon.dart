@@ -23,8 +23,9 @@ import '../../util/clip_board.dart';
 import 'hmb_toast.dart';
 
 class HMBMailToIcon extends StatelessWidget {
-  const HMBMailToIcon(this.email, {super.key});
   final String? email;
+
+  const HMBMailToIcon(this.email, {super.key});
 
   @override
   Widget build(BuildContext context) => Row(

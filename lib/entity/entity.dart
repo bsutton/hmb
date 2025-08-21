@@ -12,6 +12,10 @@
 */
 
 abstract class Entity<T> {
+  int id;
+  DateTime createdDate;
+  DateTime modifiedDate;
+
   Entity({
     required this.id,
     required this.createdDate,
@@ -26,10 +30,6 @@ abstract class Entity<T> {
     : id = entity.id,
       createdDate = entity.createdDate,
       modifiedDate = DateTime.now();
-
-  int id;
-  DateTime createdDate;
-  DateTime modifiedDate;
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes

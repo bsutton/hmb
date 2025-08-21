@@ -183,6 +183,14 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
 }
 
 class QuoteMilestoneSummary {
+  final Quote quote;
+  final Job job;
+  final Customer? customer;
+  final Money totalValue;
+  final int milestoneCount;
+  final Money invoicedValue;
+  final int invoicedCount;
+
   QuoteMilestoneSummary({
     required this.quote,
     required this.job,
@@ -193,13 +201,6 @@ class QuoteMilestoneSummary {
     required this.invoicedCount,
   });
 
-  final Quote quote;
-  final Job job;
-  final Customer? customer;
-  final Money totalValue;
-  final int milestoneCount;
-  final Money invoicedValue;
-  final int invoicedCount;
 
   bool matches(String? filter) {
     if (Strings.isBlank(filter)) {

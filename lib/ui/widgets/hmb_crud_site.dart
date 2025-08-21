@@ -23,16 +23,16 @@ import '../crud/site/list_site_screen.dart';
 import 'hmb_child_crud_card.dart';
 
 class HBMCrudSite<P extends Entity<P>> extends StatelessWidget {
+  final DaoJoinAdaptor<Site, P> daoJoin;
+  final Parent<P> parent;
+  final String parentTitle;
+
   const HBMCrudSite({
     required this.parent,
     required this.daoJoin,
     required this.parentTitle,
     super.key,
   });
-
-  final DaoJoinAdaptor<Site, P> daoJoin;
-  final Parent<P> parent;
-  final String parentTitle;
 
   @override
   Widget build(BuildContext context) => HMBChildCrudCard(

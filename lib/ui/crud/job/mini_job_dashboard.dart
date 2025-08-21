@@ -23,7 +23,7 @@ import '../base_nested/list_nested_screen.dart';
 import '../task/list_task_screen.dart';
 import '../todo/list_todo_screen.dart';
 import '../work_assignment/list_assignment_screen.dart';
-import 'esitmator/edit_job_estimate_screen.dart';
+import 'estimator/edit_job_estimate_screen.dart';
 import 'tracking/list_time_entry_screen.dart';
 
 typedef OnResume = void Function();
@@ -31,8 +31,9 @@ typedef OnResume = void Function();
 /// A compact dashboard for a single Job,
 /// displaying fixed-size DashletCards in one or more rows.
 class MiniJobDashboard extends StatelessWidget {
-  const MiniJobDashboard({required this.job, super.key});
   final Job job;
+
+  const MiniJobDashboard({required this.job, super.key});
 
   @override
   Widget build(BuildContext context) {

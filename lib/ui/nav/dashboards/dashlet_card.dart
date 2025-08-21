@@ -24,9 +24,10 @@ import 'dashboard.dart';
 
 /// Holds primary and optional secondary values for a dashlet
 class DashletValue<T> {
-  const DashletValue(this.value, [this.secondValue]);
   final T value;
   final String? secondValue;
+
+  const DashletValue(this.value, [this.secondValue]);
 }
 
 typedef DashletWidgetBuilder<T> =
@@ -36,7 +37,7 @@ typedef DashletWidgetBuilder<T> =
 
 typedef OnTap = void Function(BuildContext context);
 
-/// A reusable dashlet card widget that reloads its data when the 
+/// A reusable dashlet card widget that reloads its data when the
 /// dashboard resumes.
 /// Supports an optional compact mode for embedding in tighter UIs
 ///  (e.g. job card).
@@ -44,6 +45,16 @@ typedef OnTap = void Function(BuildContext context);
 /// a [valueBuilder] is passed, in which case it is passed the [value]
 /// and the resulting Widget is displayed.
 class DashletCard<T> extends StatefulWidget {
+  final String label;
+  final String hint;
+  final IconData icon;
+  final Future<DashletValue<T>> Function() value;
+  final DashletWidgetBuilder<T>? valueBuilder;
+  final String? route;
+  final DashletWidgetBuilder<T>? builder;
+  final OnTap? onTap;
+  final bool compact;
+
   /// Create a [DashletCard] that when tapped navigates to a full screen
   /// containing the widget returned by [builder]
   const DashletCard.builder({
@@ -85,16 +96,6 @@ class DashletCard<T> extends StatefulWidget {
     super.key,
   }) : builder = null,
        onTap = null;
-
-  final String label;
-  final String hint;
-  final IconData icon;
-  final Future<DashletValue<T>> Function() value;
-  final DashletWidgetBuilder<T>? valueBuilder;
-  final String? route;
-  final DashletWidgetBuilder<T>? builder;
-  final OnTap? onTap;
-  final bool compact;
 
   @override
   State<DashletCard<T>> createState() => _DashletCardState<T>();

@@ -27,14 +27,6 @@ import '../../widgets/text/hmb_text.dart';
 import 'edit_task_item_screen.dart';
 
 class DimensionWidget extends StatefulWidget {
-  const DimensionWidget({
-    required this.taskItem,
-    required this.dimension1Controller,
-    required this.dimension2Controller,
-    required this.dimension3Controller,
-    super.key,
-  });
-
   final TaskItem? taskItem;
 
   final TextEditingController dimension1Controller;
@@ -42,6 +34,14 @@ class DimensionWidget extends StatefulWidget {
   final TextEditingController dimension2Controller;
 
   final TextEditingController dimension3Controller;
+
+  const DimensionWidget({
+    required this.taskItem,
+    required this.dimension1Controller,
+    required this.dimension2Controller,
+    required this.dimension3Controller,
+    super.key,
+  });
 
   @override
   State<DimensionWidget> createState() => _DimensionWidgetState();

@@ -26,9 +26,10 @@ import '../../widgets/hmb_toast.dart';
 import '../base_nested/edit_nested_screen.dart';
 
 class TimeEntryEditScreen extends StatefulWidget {
-  const TimeEntryEditScreen({required this.task, super.key, this.timeEntry});
   final Task task;
   final TimeEntry? timeEntry;
+
+  const TimeEntryEditScreen({required this.task, super.key, this.timeEntry});
 
   @override
   // ignore: library_private_types_in_public_api

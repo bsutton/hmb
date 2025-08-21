@@ -29,6 +29,11 @@ import 'hmb_dialog.dart';
 import 'long_duration_dialog.dart';
 
 class StopTimerDialog extends StatefulWidget {
+  final Task task;
+  final TimeEntry timeEntry;
+  final bool showTask;
+  final DateTime stopTime;
+
   const StopTimerDialog({
     required this.task,
     required this.showTask,
@@ -36,11 +41,6 @@ class StopTimerDialog extends StatefulWidget {
     required this.stopTime,
     super.key,
   });
-
-  final Task task;
-  final TimeEntry timeEntry;
-  final bool showTask;
-  final DateTime stopTime;
 
   @override
   State<StopTimerDialog> createState() => _StopTimerDialogState();

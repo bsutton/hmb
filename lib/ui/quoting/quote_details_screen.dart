@@ -30,8 +30,9 @@ import 'job_quote.dart';
 import 'select_billing_contact_dialog.dart';
 
 class QuoteDetailsScreen extends StatefulWidget {
-  const QuoteDetailsScreen({required this.quoteId, super.key});
   final int quoteId;
+
+  const QuoteDetailsScreen({required this.quoteId, super.key});
 
   @override
   _QuoteDetailsScreenState createState() => _QuoteDetailsScreenState();
@@ -167,7 +168,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                       HMBButton(
                         label: 'Reject',
                         hint: 'Mark this Task as rejected',
-                        onPressed: ()  =>
+                        onPressed: () =>
                             _rejectQuoteGroup(group, groupWrap.lines),
                       ),
                   ],

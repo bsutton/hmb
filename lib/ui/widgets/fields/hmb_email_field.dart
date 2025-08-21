@@ -21,6 +21,14 @@ import '../hmb_mail_to_icon.dart';
 import 'fields.g.dart';
 
 class HMBEmailField extends StatelessWidget {
+  final TextEditingController controller;
+  final String? Function(String? value)? validator;
+
+  final String labelText;
+  final bool required;
+
+  final bool autofocus;
+
   const HMBEmailField({
     required this.labelText,
     required this.controller,
@@ -29,14 +37,6 @@ class HMBEmailField extends StatelessWidget {
     this.validator,
     this.autofocus = false,
   });
-
-  final TextEditingController controller;
-  final String? Function(String? value)? validator;
-
-  final String labelText;
-  final bool required;
-
-  final bool autofocus;
 
   @override
   Widget build(BuildContext context) => HMBTextField(

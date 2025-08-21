@@ -16,6 +16,15 @@ import 'package:strings/strings.dart';
 import 'entity.dart';
 
 class Site extends Entity<Site> {
+  String addressLine1;
+  String addressLine2;
+  String suburb;
+  String state;
+  String postcode;
+
+  /// Hold info such as pin codes for lock boxes.
+  String? accessDetails;
+
   Site({
     required super.id,
     required this.addressLine1,
@@ -58,14 +67,6 @@ class Site extends Entity<Site> {
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
-  String addressLine1;
-  String addressLine2;
-  String suburb;
-  String state;
-  String postcode;
-
-  /// Hold info such as pin codes for lock boxes.
-  String? accessDetails;
 
   String get address => Strings.join(
     [addressLine1, addressLine2, suburb, state, postcode],

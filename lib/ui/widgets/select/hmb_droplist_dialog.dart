@@ -21,6 +21,14 @@ import '../hmb_icon_button.dart';
 import '../surface.dart';
 
 class HMBDroplistDialog<T> extends StatefulWidget {
+  final Future<List<T>> Function(String? filter) getItems;
+  final String Function(T) formatItem;
+  final String title;
+  final T? selectedItem;
+  final bool allowClear;
+  final Future<void> Function()? onAdd; // Optional "Add" button callback
+  final bool showSearch;
+
   const HMBDroplistDialog({
     required this.getItems,
     required this.formatItem,
@@ -31,14 +39,6 @@ class HMBDroplistDialog<T> extends StatefulWidget {
     super.key,
     this.showSearch = true,
   });
-
-  final Future<List<T>> Function(String? filter) getItems;
-  final String Function(T) formatItem;
-  final String title;
-  final T? selectedItem;
-  final bool allowClear;
-  final Future<void> Function()? onAdd; // Optional "Add" button callback
-  final bool showSearch;
 
   @override
   // ignore: library_private_types_in_public_api

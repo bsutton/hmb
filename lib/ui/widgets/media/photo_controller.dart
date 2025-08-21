@@ -26,19 +26,19 @@ import 'captured_photo.dart';
 import 'photo_gallery.dart';
 
 class PhotoController<E extends Entity<E>> {
-  PhotoController({required E? parent, required this.parentType, this.filter})
-    : _entity = parent;
-
-  Future<void> load() async {
-    await _loadPhotos();
-  }
-
   E? _entity;
   ParentType parentType;
   final bool Function(E, Photo)? filter;
   final List<PhotoMeta> _photos = [];
   // List to hold comment controllers for each photo
   final List<TextEditingController> _commentControllers = [];
+
+  PhotoController({required E? parent, required this.parentType, this.filter})
+    : _entity = parent;
+
+  Future<void> load() async {
+    await _loadPhotos();
+  }
 
   E? get parent => _entity;
 

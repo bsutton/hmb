@@ -13,15 +13,8 @@ typedef BoolCallback = bool Function();
 /// If the users clicks the filter button then a bottom sheet is
 /// displayed with the content of [sheetBuilder]
 class HMBFilterLine extends StatelessWidget {
-  const HMBFilterLine({
-    required this.lineBuilder,
-    required this.sheetBuilder,
-    required this.onReset,
-    required this.isActive,
-    this.onSheetClosed,
-    super.key,
-    this.tooltip = 'Filter',
-  });
+  /// Icon when filter is inactive
+  static const IconData icon = Icons.tune;
 
   /// Builds the left-hand content area
   final WidgetBuilder lineBuilder;
@@ -32,14 +25,18 @@ class HMBFilterLine extends StatelessWidget {
   /// Whether filter is currently active (affects icon)
   final BoolCallback isActive;
 
-  /// Called when the filter icon is pressed
-  // final VoidCallback onFilterTap;
-
-  /// Icon when filter is inactive
-  static const IconData icon = Icons.tune;
-
   /// Tooltip for the icon button
   final String tooltip;
+
+  const HMBFilterLine({
+    required this.lineBuilder,
+    required this.sheetBuilder,
+    required this.onReset,
+    required this.isActive,
+    this.onSheetClosed,
+    super.key,
+    this.tooltip = 'Filter',
+  });
 
   @override
   Widget build(BuildContext context) => Row(

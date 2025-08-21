@@ -22,16 +22,16 @@ import '../desktop_back_gesture_suppress.dart';
 import '../hmb_toast.dart';
 
 class FullScreenPhotoViewer extends StatelessWidget {
+  final String imagePath;
+  final String title;
+  final String? comment;
+
   const FullScreenPhotoViewer({
     required this.imagePath,
     required this.title,
     required this.comment,
     super.key,
   });
-
-  final String imagePath;
-  final String title;
-  final String? comment;
 
   @override
   Widget build(BuildContext context) => Scaffold(

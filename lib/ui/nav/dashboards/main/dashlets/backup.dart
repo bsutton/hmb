@@ -80,7 +80,8 @@ class BackupDashlet extends StatelessWidget {
 }
 
 class BackupStatus {
-  BackupStatus({required this.notSignedIn, required this.lastBackup});
   final bool notSignedIn;
   final DateTime? lastBackup;
+
+  BackupStatus({required this.notSignedIn, required this.lastBackup});
 }

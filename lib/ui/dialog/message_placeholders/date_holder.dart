@@ -19,9 +19,6 @@ import 'date_source.dart';
 import 'place_holder.dart';
 
 class ServiceDate extends PlaceHolder<LocalDate> {
-  ServiceDate({required this.dateSource})
-    : super(name: tagName, base: _tagBase, source: dateSource);
-
   static String tagName = 'date.service';
   static const _tagBase = 'date.service';
 
@@ -29,19 +26,22 @@ class ServiceDate extends PlaceHolder<LocalDate> {
 
   final DateSource dateSource;
 
+  ServiceDate({required this.dateSource})
+    : super(name: tagName, base: _tagBase, source: dateSource);
+
   @override
   Future<String> value() async => formatLocalDate(dateSource.date!);
 }
 
 class DueDate extends PlaceHolder<LocalDate> {
-  DueDate({required this.dateSource})
-    : super(name: tagName, base: _tagBase, source: dateSource);
-
   static String tagName = 'invoice.due_date';
   static const _tagBase = 'invoice.due_date';
   static String label = 'Due Date';
 
   final DateSource dateSource;
+
+  DueDate({required this.dateSource})
+    : super(name: tagName, base: _tagBase, source: dateSource);
 
   @override
   Future<String> value() async =>

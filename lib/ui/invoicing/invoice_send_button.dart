@@ -25,6 +25,10 @@ import '../widgets/media/pdf_preview.dart';
 import 'pdf/generate_invoice_pdf.dart';
 
 class BuildSendButton extends StatelessWidget {
+  final BuildContext context;
+  final bool mounted;
+  final Invoice invoice;
+
   const BuildSendButton({
     required this.context,
     required this.mounted,
@@ -32,9 +36,6 @@ class BuildSendButton extends StatelessWidget {
     super.key,
   });
 
-  final BuildContext context;
-  final bool mounted;
-  final Invoice invoice;
 
   @override
   Widget build(BuildContext context) => HMBButton(

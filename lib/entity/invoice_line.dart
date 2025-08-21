@@ -32,6 +32,15 @@ enum LineChargeableStatus {
 }
 
 class InvoiceLine extends Entity<InvoiceLine> {
+  int invoiceId;
+  int invoiceLineGroupId;
+  String description;
+  Fixed quantity;
+  Money unitPrice;
+  Money lineTotal;
+  LineChargeableStatus status;
+  bool fromBookingFee;
+
   InvoiceLine({
     required super.id,
     required this.invoiceId,
@@ -83,15 +92,6 @@ class InvoiceLine extends Entity<InvoiceLine> {
         .values[map['status'] as int? ?? LineChargeableStatus.normal.index],
     fromBookingFee: map['from_booking_fee'] == 1,
   );
-
-  int invoiceId;
-  int invoiceLineGroupId;
-  String description;
-  Fixed quantity;
-  Money unitPrice;
-  Money lineTotal;
-  LineChargeableStatus status;
-  bool fromBookingFee;
 
   InvoiceLine copyWith({
     int? id,

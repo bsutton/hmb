@@ -19,6 +19,23 @@ import 'entity.g.dart' show Supplier, Task;
 /// A record of time spent on a [Task], optionally linked to an invoice line
 /// and/or a [Supplier].
 class TimeEntry extends Entity<TimeEntry> {
+  /// entries over this interval are considered suspicious,
+  /// so we warn the user in case they entered the end time incorrectly.
+  static const longDurationHours = 12;
+
+  int taskId;
+  DateTime startTime;
+  DateTime? endTime;
+  String? note;
+  bool billed;
+
+  /// If the time entry has been invoiced then this is the invoice line
+  /// that it was billed to.
+  int? invoiceLineId;
+
+  /// Optional supplier associated with this time entry.
+  int? supplierId;
+
   TimeEntry({
     required super.id,
     required this.taskId,
@@ -67,23 +84,6 @@ class TimeEntry extends Entity<TimeEntry> {
     this.billed = false,
     this.supplierId,
   }) : super.forUpdate();
-
-  /// entries over this interval are considered suspicious,
-  /// so we warn the user in case they entered the end time incorrectly.
-  static const longDurationHours = 12;
-
-  int taskId;
-  DateTime startTime;
-  DateTime? endTime;
-  String? note;
-  bool billed;
-
-  /// If the time entry has been invoiced then this is the invoice line
-  /// that it was billed to.
-  int? invoiceLineId;
-
-  /// Optional supplier associated with this time entry.
-  int? supplierId;
 
   Duration get duration {
     final end = endTime ?? DateTime.now();

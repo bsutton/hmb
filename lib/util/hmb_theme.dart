@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/material.dart';
 
 class HMBTheme {
@@ -29,7 +28,6 @@ class HMBTheme {
 }
 
 class HMBColors {
-  const HMBColors();
   static const primary = Color(0xFFBB86FC);
   static const accent = Color(0xFF03DAC5);
 
@@ -124,4 +122,5 @@ class HMBColors {
   static const surface16dp = Color(0xFF323232);
   static const surface24dp = Color(0xFF353535);
   static const surface32dp = Color(0xFF373737);
+  const HMBColors();
 }

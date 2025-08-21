@@ -21,9 +21,10 @@ import '../../entity/quote_line_group.dart';
 import '../../util/money_ex.dart';
 
 class JobQuote {
-  JobQuote({required this.quoteId, required this.groups});
   final int quoteId;
   final List<QuoteLineGroupWithLines> groups;
+
+  JobQuote({required this.quoteId, required this.groups});
 
   Money get total =>
       groups.fold(MoneyEx.zero, (sum, group) => sum + group.total);
@@ -59,9 +60,10 @@ class JobQuote {
 }
 
 class QuoteLineGroupWithLines {
-  QuoteLineGroupWithLines({required this.group, required this.lines});
   final QuoteLineGroup group;
   final List<QuoteLine> lines;
+
+  QuoteLineGroupWithLines({required this.group, required this.lines});
 
   Money get total => lines
       .where((line) => line.lineChargeableStatus == LineChargeableStatus.normal)

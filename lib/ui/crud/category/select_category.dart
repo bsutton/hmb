@@ -21,14 +21,14 @@ import '../../widgets/select/hmb_droplist.dart';
 import 'edit_category_screen.dart';
 
 class SelectCategory extends StatefulWidget {
+  final SelectedCategory selectedCategory;
+  final void Function(Category? category)? onSelected;
+
   const SelectCategory({
     required this.selectedCategory,
     super.key,
     this.onSelected,
   });
-  final SelectedCategory selectedCategory;
-
-  final void Function(Category? category)? onSelected;
 
   @override
   SelectCategoryState createState() => SelectCategoryState();
@@ -81,7 +81,7 @@ class SelectCategoryState extends State<SelectCategory> {
 }
 
 class SelectedCategory extends JuneState {
-  SelectedCategory();
-
   int? categoryId;
+
+  SelectedCategory();
 }

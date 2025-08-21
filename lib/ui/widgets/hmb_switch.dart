@@ -14,6 +14,15 @@
 import 'package:flutter/material.dart';
 
 class HMBSwitch extends StatelessWidget {
+  final bool? initialValue;
+  final FocusNode? focusNode;
+  final String labelText;
+  final bool autofocus;
+  final bool leadingSpace;
+
+  // ignore: avoid_positional_boolean_parameters
+  final void Function(bool newValue) onChanged;
+
   const HMBSwitch({
     required this.labelText,
     required this.initialValue,
@@ -23,15 +32,6 @@ class HMBSwitch extends StatelessWidget {
     super.key,
     this.leadingSpace = true,
   });
-
-  final bool? initialValue;
-  final FocusNode? focusNode;
-  final String labelText;
-  final bool autofocus;
-  final bool leadingSpace;
-
-  // ignore: avoid_positional_boolean_parameters
-  final void Function(bool newValue) onChanged;
 
   @override
   Widget build(BuildContext context) => Column(

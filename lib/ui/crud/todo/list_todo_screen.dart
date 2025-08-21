@@ -10,9 +10,9 @@ import 'edit_todo_screen.dart';
 import 'list_todo_card.dart';
 
 class ToDoListScreen extends StatefulWidget {
-  const ToDoListScreen({this.job, super.key});
-
   final Job? job;
+
+  const ToDoListScreen({this.job, super.key});
 
   @override
   State<ToDoListScreen> createState() => _ToDoListScreenState();

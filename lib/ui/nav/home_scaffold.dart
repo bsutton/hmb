@@ -24,8 +24,9 @@ import '../widgets/hmb_status_bar.dart';
 ///  • a Home button in the AppBar
 ///  • the HMB status bar
 class HomeScaffold extends StatelessWidget {
-  const HomeScaffold({required this.initialScreen, super.key});
   final Widget initialScreen;
+
+  const HomeScaffold({required this.initialScreen, super.key});
 
   @override
   Widget build(BuildContext context) => Scaffold(

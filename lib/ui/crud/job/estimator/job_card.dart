@@ -28,14 +28,14 @@ import '../edit_job_screen.dart';
 import 'edit_job_estimate_screen.dart';
 
 class JobCard extends StatefulWidget {
+  final Job job;
+  final VoidCallback onEstimatesUpdated;
+
   const JobCard({
     required this.job,
     required this.onEstimatesUpdated,
     super.key,
   });
-
-  final Job job;
-  final VoidCallback onEstimatesUpdated;
 
   @override
   _JobCardState createState() => _JobCardState();
@@ -194,14 +194,20 @@ class _JobCardState extends State<JobCard> {
 
 /// Holds totals for a job
 class JobTotals {
-  JobTotals({required this.labourCharges, required this.materialsCharges});
-
   final Money labourCharges;
   final Money materialsCharges;
+
+  JobTotals({required this.labourCharges, required this.materialsCharges});
 }
 
 /// Holds all required details for displaying the job card fields.
 class CompleteJobInfo {
+  final JobTotals totals;
+  final String customerName;
+  final String statusName;
+  final String? quoteNumber;
+  final int? quoteId;
+
   CompleteJobInfo({
     required this.totals,
     required this.customerName,
@@ -210,9 +216,4 @@ class CompleteJobInfo {
     this.quoteId,
   });
 
-  final JobTotals totals;
-  final String customerName;
-  final String statusName;
-  final String? quoteNumber;
-  final int? quoteId;
 }

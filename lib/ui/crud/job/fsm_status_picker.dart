@@ -53,16 +53,16 @@ Future<void> showJobStatusDialog(BuildContext context, Job job) async {
 }
 
 class FsmStatusPicker extends StatefulWidget {
+  final Job job;
+
+  /// Called after a successful transition (lets the parent close the dialog).
+  final VoidCallback? onStatusChanged; // NEW
+
   const FsmStatusPicker({
     required this.job,
     this.onStatusChanged, // NEW
     super.key,
   });
-
-  final Job job;
-
-  /// Called after a successful transition (lets the parent close the dialog).
-  final VoidCallback? onStatusChanged; // NEW
 
   @override
   State<FsmStatusPicker> createState() => _FsmStatusPickerState();

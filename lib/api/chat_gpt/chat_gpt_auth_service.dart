@@ -23,10 +23,6 @@ import 'chat_gpt_redirect_handler_config.dart';
 
 /// Manages OAuth2 login/refresh for ChatGPT and persists tokens in the system table.
 class ChatGptAuth {
-  factory ChatGptAuth() => _instance;
-  ChatGptAuth._();
-  static final _instance = ChatGptAuth._();
-
   static const _clientId = 'YOUR_CLIENT_ID';
   static final Uri _authorizationEndpoint = Uri.parse(
     'https://auth.openai.com/oauth/authorize',
@@ -36,8 +32,14 @@ class ChatGptAuth {
   );
   static const _scopes = <String>['openid', 'chatgpt.extract', 'user.read'];
 
+  static final _instance = ChatGptAuth._();
+
   late oauth2.AuthorizationCodeGrant? _grant;
   oauth2.Client? _client;
+
+  factory ChatGptAuth() => _instance;
+
+  ChatGptAuth._();
 
   /// Ensures the user is logged in: reuse valid token, refresh expired,
   ///  or do full OAuth.

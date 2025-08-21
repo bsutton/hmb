@@ -16,6 +16,13 @@ import 'entity.dart';
 enum SupplierType { residential, realestate, tradePartner, community }
 
 class Supplier extends Entity<Supplier> {
+  String name;
+  String? businessNumber;
+  String? description;
+  String? bsb;
+  String? accountNumber;
+  String? service;
+
   Supplier({
     required super.id,
     required this.name,
@@ -58,13 +65,6 @@ class Supplier extends Entity<Supplier> {
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
-
-  String name;
-  String? businessNumber;
-  String? description;
-  String? bsb;
-  String? accountNumber;
-  String? service;
 
   @override
   Map<String, dynamic> toMap() => {

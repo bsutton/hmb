@@ -33,24 +33,20 @@ import '../base_nested/list_nested_screen.dart';
 import 'edit_task_item_screen.dart';
 
 class TaskItemListScreen extends StatefulWidget {
-  const TaskItemListScreen({required this.task, super.key});
-
   final Task? task;
 
-  // final Parent<Task> parent;
-
-  // final DaoJoinAdaptor<CheckListItem, Task> daoJoin;
-  // final TaskItemType? checkListItemType;
+  const TaskItemListScreen({required this.task, super.key});
 
   @override
   State<TaskItemListScreen> createState() => _TaskItemListScreenState<Task>();
 }
 
 class TaskAndRate {
-  TaskAndRate(this.task, this.rate, this.billingType);
   Task? task;
   Money rate;
   BillingType billingType;
+
+  TaskAndRate(this.task, this.rate, this.billingType);
 
   static Future<TaskAndRate> fromTask(Task task) async {
     final hourlyRate = await DaoTask().getHourlyRate(task);

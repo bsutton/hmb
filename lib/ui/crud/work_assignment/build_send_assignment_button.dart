@@ -23,6 +23,10 @@ import '../../widgets/widgets.g.dart';
 import 'generate_work_assignment_pdf.dart';
 
 class BuildSendAssignmentButton extends StatelessWidget {
+  final BuildContext context;
+  final bool mounted;
+  final WorkAssignment assignment;
+
   const BuildSendAssignmentButton({
     required this.context,
     required this.mounted,
@@ -30,9 +34,6 @@ class BuildSendAssignmentButton extends StatelessWidget {
     super.key,
   });
 
-  final BuildContext context;
-  final bool mounted;
-  final WorkAssignment assignment;
 
   @override
   Widget build(BuildContext context) {

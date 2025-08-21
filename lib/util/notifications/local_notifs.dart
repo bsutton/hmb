@@ -10,17 +10,18 @@ import 'desktop_scheduler.dart';
 import 'notif.dart';
 
 class LocalNotifs {
-  factory LocalNotifs() => _instance;
-  LocalNotifs._();
+  // Small drift guard to avoid "fire on save" when times are near-now.
+  static const _grace = Duration(seconds: 60);
+
   static final _instance = LocalNotifs._();
 
   final _fln = FlutterLocalNotificationsPlugin();
   DesktopNotifScheduler? _desktop;
   var _inited = false;
 
-  // Small drift guard to avoid "fire on save" when times are near-now.
-  static const _grace = Duration(seconds: 60);
+  factory LocalNotifs() => _instance;
 
+  LocalNotifs._();
   Future<void> init() async {
     if (_inited) {
       return;

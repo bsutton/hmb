@@ -30,14 +30,14 @@ import '../dialog/start_timer_dialog.dart';
 import '../dialog/stop_timer_dialog.dart';
 
 class HMBStartTimeEntry extends StatefulWidget {
+  final Task? task;
+  final void Function(Job job) onStart;
+
   const HMBStartTimeEntry({
     required this.task,
     required this.onStart,
     super.key,
   });
-
-  final Task? task;
-  final void Function(Job job) onStart;
 
   @override
   State<StatefulWidget> createState() => HMBStartTimeEntryState();
@@ -423,8 +423,8 @@ class TimeEntryState extends JuneState {
 }
 
 class StopStartTime {
-  StopStartTime({required this.startTime, required this.priorTaskStopTime});
-
   DateTime startTime;
   DateTime? priorTaskStopTime;
+
+  StopStartTime({required this.startTime, required this.priorTaskStopTime});
 }

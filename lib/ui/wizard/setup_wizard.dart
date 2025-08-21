@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -26,10 +25,10 @@ import 'integration_page.dart';
 import 'intro_step.dart';
 
 class SetupWizard extends StatefulWidget {
-  const SetupWizard({required this.launchedFromSettings, super.key});
-
   /// True if launched from the settings dashboard
   final bool launchedFromSettings;
+
+  const SetupWizard({required this.launchedFromSettings, super.key});
 
   @override
   _SetupWizardState createState() => _SetupWizardState();

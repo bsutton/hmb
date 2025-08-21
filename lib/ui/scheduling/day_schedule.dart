@@ -39,6 +39,12 @@ import 'schedule_page.dart'; // so we have JobAddNotice, etc.
 
 /// A single-day view of activity
 class DaySchedule extends StatefulWidget with ScheduleHelper {
+  final LocalDate initialDate;
+  final int? defaultJob;
+  final bool showExtendedHours;
+  final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
+  final Key dayKey;
+
   DaySchedule(
     this.initialDate, {
     required this.defaultJob,
@@ -47,12 +53,6 @@ class DaySchedule extends StatefulWidget with ScheduleHelper {
     required this.dayKey,
     super.key,
   });
-
-  final LocalDate initialDate;
-  final int? defaultJob;
-  final bool showExtendedHours;
-  final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
-  final Key dayKey;
 
   @override
   State<DaySchedule> createState() => _DayScheduleState();
@@ -63,7 +63,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
   late final System system;
   late final OperatingHours operatingHours;
   var _hasActivitiesInExtendedHours = false;
-  // New state variables to hold the computed bounds when there are 
+  // New state variables to hold the computed bounds when there are
   //extended activities.
   int? _computedStartHour;
   int? _computedEndHour;
@@ -89,7 +89,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     super.dispose();
   }
 
-  /// Fetch activities for [currentDate] from DB and compute extended 
+  /// Fetch activities for [currentDate] from DB and compute extended
   /// hour bounds if needed.
   Future<void> _loadActivitiesForDay() async {
     print('loadingDays');
@@ -254,7 +254,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final dayOperating = system.getOperatingHours().day(
       DayName.fromDate(currentDate),
     );
-    // If operating hours are not defined (non-operating day), 
+    // If operating hours are not defined (non-operating day),
     //show the full day.
     if (dayOperating.start == null || dayOperating.end == null) {
       return 0;
@@ -278,7 +278,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final dayOperating = system.getOperatingHours().day(
       DayName.fromDate(currentDate),
     );
-    // If operating hours are not defined (non-operating day), 
+    // If operating hours are not defined (non-operating day),
     //show the full day.
     if (dayOperating.start == null || dayOperating.end == null) {
       return 24;
@@ -333,7 +333,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Wrap the first two rows in a Row so we can have 
+                    // Wrap the first two rows in a Row so we can have
                     //a two-row column at the end.
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -22,6 +22,12 @@ import 'hmb_droplist.dart';
 /// owned by a customer and associate them with another
 /// entity e.g. a job.
 class HMBSelectTask extends StatefulWidget {
+  /// The customer that owns the site.
+  final Job? job;
+  final SelectedTask selectedTask;
+  final void Function(Task? task)? onSelected;
+  final bool required;
+
   const HMBSelectTask({
     required this.selectedTask,
     required this.job,
@@ -29,12 +35,6 @@ class HMBSelectTask extends StatefulWidget {
     this.onSelected,
     this.required = false,
   });
-
-  /// The customer that owns the site.
-  final Job? job;
-  final SelectedTask selectedTask;
-  final void Function(Task? task)? onSelected;
-  final bool required;
 
   @override
   HMBSelectTaskState createState() => HMBSelectTaskState();
@@ -80,9 +80,9 @@ class HMBSelectTaskState extends State<HMBSelectTask> {
 }
 
 class SelectedTask extends JuneState {
-  SelectedTask();
-
   int? _taskId;
+
+  SelectedTask();
 
   int? get taskId => _taskId;
 

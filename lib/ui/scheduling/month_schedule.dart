@@ -30,6 +30,15 @@ import 'schedule_page.dart';
 
 /// A single-month view of activities
 class MonthSchedule extends StatefulWidget with ScheduleHelper {
+  final LocalDate initialDate;
+  final int? defaultJob;
+  final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
+
+  final GlobalKey<MonthViewState<JobActivityEx>> monthKey;
+  final SchedulePageState schedulePageState;
+
+  final bool showWeekends;
+
   const MonthSchedule(
     this.initialDate, {
     required this.onPageChange,
@@ -39,15 +48,6 @@ class MonthSchedule extends StatefulWidget with ScheduleHelper {
     required this.schedulePageState,
     super.key,
   });
-
-  final LocalDate initialDate;
-  final int? defaultJob;
-  final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
-
-  final GlobalKey<MonthViewState<JobActivityEx>> monthKey;
-  final SchedulePageState schedulePageState;
-
-  final bool showWeekends;
 
   @override
   State<MonthSchedule> createState() => _MonthScheduleState();

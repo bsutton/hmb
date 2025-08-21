@@ -17,8 +17,8 @@ import 'package:flutter/widgets.dart';
 ///
 /// we have vendored the method as we need access to the [StatefulBuilderState]
 /// which in the Flutter implementation is a private class.
-/// 
-/// A platonic widget that both has state and calls a closure to obtain 
+///
+/// A platonic widget that both has state and calls a closure to obtain
 /// its child widget.
 ///
 /// {@youtube 560 315 https://www.youtube.com/watch?v=syvT63CosNE}
@@ -27,7 +27,7 @@ import 'package:flutter/widgets.dart';
 /// rebuild instead of a typical [State]'s [State.setState].
 ///
 /// Since the [builder] is re-invoked when the [StateSetter] is called, any
-/// variables that represents state should be kept outside the 
+/// variables that represents state should be kept outside the
 /// [builder] function.
 ///
 /// {@tool snippet}
@@ -67,10 +67,6 @@ import 'package:flutter/widgets.dart';
 ///
 ///  * [Builder], the platonic stateless widget.
 class StatefulBuilder extends StatefulWidget {
-  /// Creates a widget that both has state and delegates its
-  ///  build to a callback.
-  const StatefulBuilder({required this.builder, super.key});
-
   /// Called to obtain the child widget.
   ///
   /// This function is called whenever this widget is included in its parent's
@@ -79,6 +75,10 @@ class StatefulBuilder extends StatefulWidget {
   /// a new tree of widgets and so a new Builder child will not be [identical]
   /// to the corresponding old one.
   final StatefulWidgetBuilder builder;
+
+  /// Creates a widget that both has state and delegates its
+  ///  build to a callback.
+  const StatefulBuilder({required this.builder, super.key});
 
   @override
   State<StatefulBuilder> createState() => StatefulBuilderState();

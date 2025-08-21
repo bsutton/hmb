@@ -15,9 +15,10 @@ import 'package:flutter/widgets.dart';
 import 'package:june/june.dart';
 
 class DesktopBackGestureSuppress extends StatefulWidget {
+  final Widget child;
+  
   const DesktopBackGestureSuppress({required this.child, super.key});
 
-  final Widget child;
 
   @override
   State<DesktopBackGestureSuppress> createState() =>

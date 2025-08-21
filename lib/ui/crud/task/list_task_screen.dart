@@ -24,13 +24,14 @@ import 'edit_task_screen.dart';
 import 'list_task_card.dart';
 
 class TaskListScreen extends StatefulWidget {
+  final Parent<Job> parent;
+  final bool extended;
+
   const TaskListScreen({
     required this.parent,
     required this.extended,
     super.key,
   });
-  final Parent<Job> parent;
-  final bool extended;
 
   @override
   // ignore: library_private_types_in_public_api

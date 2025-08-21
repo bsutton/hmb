@@ -33,9 +33,10 @@ import '../../widgets/hmb_toast.dart';
 import '../../widgets/save_and_close.dart';
 
 class SystemContactInformationScreen extends StatefulWidget {
+  final bool showButtons;
+  
   const SystemContactInformationScreen({super.key, this.showButtons = true});
 
-  final bool showButtons;
   @override
   // ignore: library_private_types_in_public_api
   SystemContactInformationScreenState createState() =>

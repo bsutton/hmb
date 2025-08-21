@@ -25,6 +25,11 @@ import '../../../util/paths.dart'
 /// use a relative path so that we can the database
 /// between devices and still access the photos on each device.
 class CapturedPhoto {
+  /// Path to the captured photo relative to HMB's main
+  /// photo storage area as designated by photosRootPath which
+  /// is different on each device.
+  late final String relativePath;
+
   CapturedPhoto({required this.relativePath});
 
   CapturedPhoto.fromRelative({required this.relativePath});
@@ -39,11 +44,6 @@ class CapturedPhoto {
 
     return CapturedPhoto.fromAbsolute(absolutePathToPhoto: saveTo);
   }
-
-  /// Path to the captured photo relative to HMB's main
-  /// photo storage area as designated by photosRootPath which
-  /// is different on each device.
-  late final String relativePath;
 
   /// Get the abosolute path to the photo with HMB storage
   /// given a [relativePath] which is relative to the HMB storage.

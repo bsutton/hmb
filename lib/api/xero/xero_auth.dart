@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'dart:async';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -26,8 +25,9 @@ import 'redirect_handler.dart';
 
 /// Thrown when Xero OAuth is misused or not fully initialized
 class XeroException implements Exception {
-  XeroException(this.message);
   final String message;
+
+  XeroException(this.message);
 
   @override
   String toString() => 'XeroException: $message';
@@ -35,20 +35,14 @@ class XeroException implements Exception {
 
 /// Holds the Xero clientId/clientSecret from your database/system config.
 class XeroSecretIdentity {
-  XeroSecretIdentity({required this.clientId, required this.clientSecret});
   final String clientId;
   final String clientSecret;
+
+  XeroSecretIdentity({required this.clientId, required this.clientSecret});
 }
 
 /// Manages Xero OAuth2 login, refresh, and logout.
 class XeroAuth2 {
-  factory XeroAuth2() {
-    _instance ??= XeroAuth2._();
-    return _instance!;
-  }
-
-  XeroAuth2._();
-
   /// somewhere to store credentials so we don't have to
   /// auth every time
   static const _credentialsKey = 'xero_credentials';
@@ -68,6 +62,13 @@ class XeroAuth2 {
   /// The authorization code grant flow reference.
   oauth2.AuthorizationCodeGrant? grant;
 
+  factory XeroAuth2() {
+    _instance ??= XeroAuth2._();
+    return _instance!;
+  }
+
+  XeroAuth2._();
+
   /// Access token getter, throws if not valid.
   String get accessToken {
     if (client == null || client!.credentials.isExpired) {
@@ -79,7 +80,7 @@ class XeroAuth2 {
   /// Tries to log in to Xero:
   /// 1) Reuses a valid token, if available.
   /// 2) Otherwise, tries to refresh if expired.
-  /// 3) Otherwise, does a full OAuth flow (desktop=local 
+  /// 3) Otherwise, does a full OAuth flow (desktop=local
   /// server, mobile=app link).
   Future<void> login() async {
     if (await isLoggedIn()) {

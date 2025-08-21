@@ -403,17 +403,17 @@ Future<List<GroupedLine>> groupByInvoiceLineGroup(
 }
 
 class GroupedLine {
+  final int? key;
+  final String title;
+  final List<InvoiceLine> items;
+  final Money total;
+
   GroupedLine({
     required this.key,
     required this.title,
     required this.items,
     required this.total,
   });
-
-  final int? key;
-  final String title;
-  final List<InvoiceLine> items;
-  final Money total;
 
   Fixed get quantity =>
       items.map((line) => line.quantity).reduce((lhs, rhs) => lhs + rhs);

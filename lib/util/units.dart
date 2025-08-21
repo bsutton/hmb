@@ -11,48 +11,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:fixed/fixed.dart';
 
 abstract class Units {
-  const Units(this.name, {this.labels = const []});
-
-  final String name;
-  final List<String> labels;
-
-  static Units? fromName(String unitName) => _unitsMap[unitName];
-
-  static Units defaultUnits = mm;
-
-  @override
-  String toString() => name;
-
-  int get dimensions;
-
-  String format(List<Fixed> values);
-
-  String calc(List<String> values) {
-    final fixes = <Fixed>[];
-
-    for (final value in values) {
-      fixes.add(Fixed.tryParse(value) ?? Fixed.zero);
-    }
-    return _calc(fixes).toString();
-  }
-
-  Fixed _calc(List<Fixed> values);
-
-  String get measure;
-
-  // Calculation functions
-  Fixed linearCalc(Fixed value) => value; // 1D calculation
-  Fixed areaCalc(Fixed d1, Fixed d2) =>
-      (d1 * d2).copyWith(decimalDigits: 3); // 2D calculation
-  Fixed volumeCalc(Fixed d1, Fixed d2, Fixed d3) =>
-      (d1 * d2 * d3).copyWith(decimalDigits: 3); // 3D calculation
-
-  // Define named variables for each unit with labels
-
   /// linear units
   static const Units mm = Units1D('mm', labels: ['Length']);
   static const Units cm = Units1D('cm', labels: ['Length']);
@@ -109,6 +70,43 @@ abstract class Units {
   static const Units ton = Units1D('ton', labels: ['Weight']);
   static const Units lb = Units1D('lb', labels: ['Weight']);
   static const Units oz = Units1D('oz', labels: ['Weight']);
+  static Units defaultUnits = mm;
+
+  final String name;
+  final List<String> labels;
+
+  const Units(this.name, {this.labels = const []});
+
+  static Units? fromName(String unitName) => _unitsMap[unitName];
+
+  @override
+  String toString() => name;
+
+  int get dimensions;
+
+  String format(List<Fixed> values);
+
+  String calc(List<String> values) {
+    final fixes = <Fixed>[];
+
+    for (final value in values) {
+      fixes.add(Fixed.tryParse(value) ?? Fixed.zero);
+    }
+    return _calc(fixes).toString();
+  }
+
+  Fixed _calc(List<Fixed> values);
+
+  String get measure;
+
+  // Calculation functions
+  Fixed linearCalc(Fixed value) => value; // 1D calculation
+  Fixed areaCalc(Fixed d1, Fixed d2) =>
+      (d1 * d2).copyWith(decimalDigits: 3); // 2D calculation
+  Fixed volumeCalc(Fixed d1, Fixed d2, Fixed d3) =>
+      (d1 * d2 * d3).copyWith(decimalDigits: 3); // 3D calculation
+
+  // Define named variables for each unit with labels
 }
 
 class Units1D extends Units {
@@ -129,11 +127,11 @@ class Units1D extends Units {
 }
 
 class Units2D extends Units {
-  const Units2D(super.name, {required this.measure, super.labels = const []});
-
   /// The unit in which this unit is measured. e.g. mm
   @override
   final String measure;
+
+  const Units2D(super.name, {required this.measure, super.labels = const []});
 
   @override
   int get dimensions => 2;
@@ -148,11 +146,11 @@ class Units2D extends Units {
 }
 
 class Units3D extends Units {
-  const Units3D(super.name, {required this.measure, super.labels = const []});
-
   /// The unit in which this unit is measured. e.g mm.
   @override
   final String measure;
+
+  const Units3D(super.name, {required this.measure, super.labels = const []});
 
   @override
   int get dimensions => 3;

@@ -4,8 +4,8 @@ import '../entity/entity.g.dart';
 
 /// --- Events (user actions) ---
 sealed class JobEvent extends Event {
-  JobEvent(this.job);
   final Job job;
+  JobEvent(this.job);
 }
 
 class StartQuoting extends JobEvent {
@@ -56,7 +56,7 @@ class RejectJob extends JobEvent {
   RejectJob(super.job);
 }
 
-/// Event factories so we can build real Event instances for guard 
+/// Event factories so we can build real Event instances for guard
 /// checking & firing.
 final Map<Type, JobEvent Function(Job)> eventFactory = {
   StartQuoting: StartQuoting.new,

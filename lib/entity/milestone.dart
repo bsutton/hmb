@@ -18,6 +18,15 @@ import '../util/local_date.dart';
 import '../util/money_ex.dart';
 
 class Milestone extends Entity<Milestone> {
+  int quoteId;
+  int? invoiceId;
+  int milestoneNumber;
+  Money paymentAmount;
+  Percentage paymentPercentage;
+  String? milestoneDescription;
+  LocalDate? dueDate;
+  bool edited;
+
   Milestone({
     required super.id,
     required this.quoteId,
@@ -59,15 +68,6 @@ class Milestone extends Entity<Milestone> {
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
-
-  int quoteId;
-  int? invoiceId;
-  int milestoneNumber;
-  Money paymentAmount;
-  Percentage paymentPercentage;
-  String? milestoneDescription;
-  LocalDate? dueDate;
-  bool edited;
 
   @override
   Map<String, dynamic> toMap() => {

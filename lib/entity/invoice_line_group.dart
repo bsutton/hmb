@@ -16,6 +16,9 @@ import 'entity.dart';
 /// Allows us to group invoice lines together.
 /// Currently used to group all lines related to a specific task.
 class InvoiceLineGroup extends Entity<InvoiceLineGroup> {
+  int invoiceId;
+  String name;
+
   InvoiceLineGroup({
     required super.id,
     required this.invoiceId,
@@ -41,9 +44,6 @@ class InvoiceLineGroup extends Entity<InvoiceLineGroup> {
         createdDate: DateTime.parse(map['created_date'] as String),
         modifiedDate: DateTime.parse(map['modified_date'] as String),
       );
-
-  int invoiceId;
-  String name;
 
   InvoiceLineGroup copyWith({
     int? id,

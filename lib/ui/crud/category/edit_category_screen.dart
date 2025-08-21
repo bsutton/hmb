@@ -20,8 +20,8 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 
 class CategoryEditScreen extends StatefulWidget {
-  const CategoryEditScreen({super.key, this.category});
   final Category? category;
+  const CategoryEditScreen({super.key, this.category});
 
   @override
   _CategoryEditScreenState createState() => _CategoryEditScreenState();

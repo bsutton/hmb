@@ -15,16 +15,6 @@ import 'notif.dart';
 ///
 /// Uses wall-clock UTC millis to avoid TZ drift.
 class DesktopNotifScheduler {
-  DesktopNotifScheduler({
-    required FlutterLocalNotificationsPlugin fln,
-    required NotificationDetails Function(Notif) buildDetails,
-    Duration tick = const Duration(seconds: 15),
-    Duration fireGrace = const Duration(seconds: 60),
-  }) : _fln = fln,
-       _buildDetails = buildDetails,
-       _tick = tick,
-       _fireGrace = fireGrace;
-
   final FlutterLocalNotificationsPlugin _fln;
   final NotificationDetails Function(Notif) _buildDetails;
   final Duration _tick;
@@ -34,6 +24,16 @@ class DesktopNotifScheduler {
 
   /// Keyed by UTC millis → list of notifs at that instant.
   final SplayTreeMap<int, List<Notif>> _queue = SplayTreeMap();
+
+  DesktopNotifScheduler({
+    required FlutterLocalNotificationsPlugin fln,
+    required NotificationDetails Function(Notif) buildDetails,
+    Duration tick = const Duration(seconds: 15),
+    Duration fireGrace = const Duration(seconds: 60),
+  }) : _fln = fln,
+       _buildDetails = buildDetails,
+       _tick = tick,
+       _fireGrace = fireGrace;
 
   bool get isRunning => _timer?.isActive ?? false;
 

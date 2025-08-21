@@ -27,6 +27,29 @@ import '../../widgets/widgets.g.dart';
 
 /// A generic list screen with optional search/add and advanced filters.
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
+  final String pageTitle;
+  final FutureOr<Widget> Function(T entity) title;
+  final Widget Function(T entity) details;
+  final Future<T?> Function()? onAdd;
+  final Future<bool> Function(T entity)? onDelete;
+  final Widget Function(T? entity) onEdit;
+  final Future<Color> Function(T entity)? background;
+  final double cardHeight;
+
+  final bool canAdd;
+
+  late final Future<List<T>> Function(String? filter) _fetchList;
+  final Dao<T> dao;
+  final FilterSheetBuilder? filterSheetBuilder;
+  final VoidCallback? onFilterReset;
+  final VoidCallback? onFilterSheetClosed;
+  final BoolCallback? isFilterActive;
+
+  /// show the back arrow at the top of the screen.
+  /// Used when the EntityList is shown from mini-dashboard
+  /// to make back navigation clear.
+  final bool showBackButton;
+
   EntityListScreen({
     required this.dao,
     required this.onEdit,
@@ -65,29 +88,6 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     // ignore: discarded_futures
     _fetchList = fetchList ?? (_) => dao.getAll();
   }
-
-  final String pageTitle;
-  final FutureOr<Widget> Function(T entity) title;
-  final Widget Function(T entity) details;
-  final Future<T?> Function()? onAdd;
-  final Future<bool> Function(T entity)? onDelete;
-  final Widget Function(T? entity) onEdit;
-  final Future<Color> Function(T entity)? background;
-  final double cardHeight;
-
-  final bool canAdd;
-
-  late final Future<List<T>> Function(String? filter) _fetchList;
-  final Dao<T> dao;
-  final FilterSheetBuilder? filterSheetBuilder;
-  final VoidCallback? onFilterReset;
-  final VoidCallback? onFilterSheetClosed;
-  final BoolCallback? isFilterActive;
-
-  /// show the back arrow at the top of the screen.
-  /// Used when the EntityList is shown from mini-dashboard
-  /// to make back navigation clear.
-  final bool showBackButton;
 
   @override
   EntityListScreenState<T> createState() => EntityListScreenState<T>();
@@ -361,14 +361,14 @@ class EntityListScreenState<T extends Entity<T>>
 typedef FilterSheetBuilder = Widget Function(void Function() onChange);
 
 class FilterSheet extends StatefulWidget {
+  final FilterSheetBuilder sheetBuilder;
+  final void Function() onChange;
+
   const FilterSheet({
     required this.sheetBuilder,
     required this.onChange,
     super.key,
   });
-
-  final FilterSheetBuilder sheetBuilder;
-  final void Function() onChange;
 
   @override
   State<FilterSheet> createState() => _FilterSheetState();

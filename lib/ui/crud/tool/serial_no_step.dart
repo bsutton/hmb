@@ -24,12 +24,12 @@ import 'capture_photo.dart';
 import 'stock_take_wizard.dart';
 
 class SerialNumberStep extends WizardStep {
-  SerialNumberStep(this.toolWizardState) : super(title: 'Serial No');
-
   final _serialNumberController = TextEditingController();
 
   ToolWizardState toolWizardState;
   String? _serialPhotoPath;
+
+  SerialNumberStep(this.toolWizardState) : super(title: 'Serial No');
 
   Future<void> _scanBarcode() async {
     if (_serialPhotoPath != null) {

@@ -22,6 +22,17 @@ import 'entity.dart';
 import 'invoice_line.dart';
 
 class Invoice extends Entity<Invoice> {
+  int jobId;
+  Money totalAmount;
+  String? invoiceNum;
+  String? externalInvoiceId;
+  late LocalDate dueDate;
+
+  /// The invoice has been marked as sent on the remote accounting system
+  /// sent invoices must be voided rather than deleted.
+  bool sent;
+  int? billingContactId;
+
   Invoice({
     required super.id,
     required this.jobId,
@@ -72,17 +83,6 @@ class Invoice extends Entity<Invoice> {
     sent: (map['sent'] as int) == 1,
     billingContactId: map['billing_contact_id'] as int?,
   );
-
-  int jobId;
-  Money totalAmount;
-  String? invoiceNum;
-  String? externalInvoiceId;
-  late LocalDate dueDate;
-
-  /// The invoice has been marked as sent on the remote accounting system
-  /// sent invoices must be voided rather than deleted.
-  bool sent;
-  int? billingContactId;
 
   String get bestNumber => invoiceNum ?? '$id';
 

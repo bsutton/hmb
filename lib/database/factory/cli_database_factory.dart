@@ -18,6 +18,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'hmb_database_factory.dart' as local;
 
 class CliDatabaseFactory implements local.HMBDatabaseFactory {
+  static CliDatabaseFactory? instance;
+  
   factory CliDatabaseFactory() {
     if (instance == null) {
       instance = CliDatabaseFactory._();
@@ -28,7 +30,6 @@ class CliDatabaseFactory implements local.HMBDatabaseFactory {
   }
 
   CliDatabaseFactory._();
-  static CliDatabaseFactory? instance;
 
   void initDatabaseFactory() {
     if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {

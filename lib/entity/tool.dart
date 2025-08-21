@@ -17,6 +17,18 @@ import '../util/money_ex.dart';
 import 'entity.dart';
 
 class Tool extends Entity<Tool> {
+  final String name;
+  final int? categoryId;
+  final int? supplierId;
+  final int? manufacturerId;
+  final DateTime? datePurchased;
+  final String? serialNumber;
+  final int? receiptPhotoId;
+  final int? serialNumberPhotoId;
+  final int? warrantyPeriod;
+  final Money? cost;
+  final String? description;
+
   Tool({
     required super.id,
     required this.name,
@@ -81,18 +93,6 @@ class Tool extends Entity<Tool> {
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
-
-  final String name;
-  final int? categoryId;
-  final int? supplierId;
-  final int? manufacturerId;
-  final DateTime? datePurchased;
-  final String? serialNumber;
-  final int? receiptPhotoId;
-  final int? serialNumberPhotoId;
-  final int? warrantyPeriod;
-  final Money? cost;
-  final String? description;
 
   @override
   Map<String, dynamic> toMap() => {

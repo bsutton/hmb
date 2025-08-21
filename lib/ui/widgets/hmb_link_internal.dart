@@ -14,14 +14,14 @@
 import 'package:flutter/material.dart';
 
 class HMBLinkInternal extends StatelessWidget {
+  final String label;
+  final Future<Widget> Function() navigateTo;
+
   const HMBLinkInternal({
     required this.label,
     required this.navigateTo,
     super.key,
   });
-
-  final String label;
-  final Future<Widget> Function() navigateTo;
 
   @override
   Widget build(BuildContext context) => InkWell(

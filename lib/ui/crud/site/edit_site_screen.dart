@@ -27,15 +27,16 @@ import '../base_nested/edit_nested_screen.dart';
 import '../customer/customer_paste_panel.dart';
 
 class SiteEditScreen<P extends Entity<P>> extends StatefulWidget {
+  final P parent;
+  final Site? site;
+  final DaoJoinAdaptor<Site, P> daoJoin;
+
   const SiteEditScreen({
     required this.parent,
     required this.daoJoin,
     super.key,
     this.site,
   });
-  final P parent;
-  final Site? site;
-  final DaoJoinAdaptor<Site, P> daoJoin;
 
   @override
   _SiteEditScreenState createState() => _SiteEditScreenState();

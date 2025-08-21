@@ -35,8 +35,9 @@ import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 
 class CustomerEditScreen extends StatefulWidget {
-  const CustomerEditScreen({super.key, this.customer});
   final Customer? customer;
+
+  const CustomerEditScreen({super.key, this.customer});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -214,9 +215,10 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
 }
 
 class CustomerBillingContact extends JuneState {
+  Contact? _contact;
+
   CustomerBillingContact();
 
-  Contact? _contact;
   Contact? get contact => _contact;
 
   set contact(Contact? aContact) {

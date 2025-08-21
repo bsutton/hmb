@@ -19,6 +19,61 @@ import '../util/units.dart';
 import 'entity.g.dart';
 
 class CheckListItem extends Entity<CheckListItem> {
+  LabourEntryMode labourEntryMode;
+
+  int checkListId;
+  String description;
+  int itemTypeId;
+
+  // Labour
+  /// For T&M the 'actual' is taken from time_entry's
+  /// The estimated labour hours used when [LabourEntryMode.hours] is used.
+  Fixed? estimatedLabourHours;
+
+  /// The estimated labour cost.
+  /// Used when [LabourEntryMode.dollars] is used.
+  Money? estimatedLabourCost;
+
+  // Materials - estimates used for Quote and Estimate
+  /// The estimated cost per unit of material.
+  Money? estimatedMaterialUnitCost;
+
+  /// The estimated quantity of the materials.
+  Fixed? estimatedMaterialQuantity;
+
+  // T&M uses the actuals, Fixed uses the estimates for
+  // the Invoice.
+  // Recorded after the material has been purchased.
+  Money? actualMaterialUnitCost;
+  Fixed? actualMaterialQuantity;
+
+  // Only used by Fixed for P&L reporting
+  Money? actualCost;
+
+  /// The margin to apply to the costs to derive the
+  /// charge.
+  Percentage margin;
+
+  /// The amount we will charge the customer.
+  /// For T&M this is an estimate
+  /// for Fixed this is the actual.
+  /// If null then the charge is calculated from
+  /// the estimation fields. If non-null
+  /// then the charge is used and the estimates
+  /// are ignored.
+  Money? _charge;
+
+  bool completed;
+  bool billed;
+  int? invoiceLineId;
+  MeasurementType measurementType;
+  Fixed dimension1;
+  Fixed dimension2;
+  Fixed dimension3;
+  Units units;
+  String url;
+  int? supplierId;
+
   CheckListItem({
     required super.id,
     required this.checkListId,
@@ -157,50 +212,6 @@ class CheckListItem extends Entity<CheckListItem> {
   }) : _charge = charge,
        super.forUpdate();
 
-  LabourEntryMode labourEntryMode;
-
-  int checkListId;
-  String description;
-  int itemTypeId;
-
-  // Labour
-  /// For T&M the 'actual' is taken from time_entry's
-  /// The estimated labour hours used when [LabourEntryMode.hours] is used.
-  Fixed? estimatedLabourHours;
-
-  /// The estimated labour cost.
-  /// Used when [LabourEntryMode.dollars] is used.
-  Money? estimatedLabourCost;
-
-  // Materials - estimates used for Quote and Estimate
-  /// The estimated cost per unit of material.
-  Money? estimatedMaterialUnitCost;
-
-  /// The estimated quantity of the materials.
-  Fixed? estimatedMaterialQuantity;
-
-  // T&M uses the actuals, Fixed uses the estimates for
-  // the Invoice.
-  // Recorded after the material has been purchased.
-  Money? actualMaterialUnitCost;
-  Fixed? actualMaterialQuantity;
-
-  // Only used by Fixed for P&L reporting
-  Money? actualCost;
-
-  /// The margin to apply to the costs to derive the
-  /// charge.
-  Percentage margin;
-
-  /// The amount we will charge the customer.
-  /// For T&M this is an estimate
-  /// for Fixed this is the actual.
-  /// If null then the charge is calculated from
-  /// the estimation fields. If non-null
-  /// then the charge is used and the estimates
-  /// are ignored.
-  Money? _charge;
-
   Money getCharge(BillingType billingType, Money hourlyRate) {
     if (_charge != null) {
       return _charge!;
@@ -252,17 +263,6 @@ class CheckListItem extends Entity<CheckListItem> {
     }
     return MoneyEx.zero;
   }
-
-  bool completed;
-  bool billed;
-  int? invoiceLineId;
-  MeasurementType measurementType;
-  Fixed dimension1;
-  Fixed dimension2;
-  Fixed dimension3;
-  Units units;
-  String url;
-  int? supplierId;
 
   bool get hasCost =>
       estimatedMaterialUnitCost != null &&

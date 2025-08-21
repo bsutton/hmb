@@ -186,12 +186,12 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
 }
 
 class CustomerAndQuote {
-  CustomerAndQuote(this.customer, this.quote, this.job, {this.contactName});
-
   final Customer customer;
   final Job job;
   final Quote quote;
   final String? contactName;
+
+  CustomerAndQuote(this.customer, this.quote, this.job, {this.contactName});
 
   static Future<List<CustomerAndQuote>> getQuotes({
     required bool showAllQuotes,

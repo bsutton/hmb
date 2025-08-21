@@ -19,6 +19,9 @@ import '../../entity/job_activity.dart';
 
 /// Our extended class that includes the Job, etc.
 class JobActivityEx {
+  final JobActivity jobActivity;
+  final Job job;
+
   JobActivityEx._({required this.jobActivity, required this.job});
 
   static Future<JobActivityEx> fromActivity(JobActivity jobActivity) async {
@@ -26,9 +29,6 @@ class JobActivityEx {
 
     return JobActivityEx._(job: job!, jobActivity: jobActivity);
   }
-
-  final JobActivity jobActivity;
-  final Job job;
 
   /// Convert to [CalendarEventData] for the calendar_view package
   CalendarEventData<JobActivityEx> get eventData => CalendarEventData(

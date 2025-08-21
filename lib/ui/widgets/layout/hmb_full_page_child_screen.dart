@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import '../text/text.g.dart';
 
 class HMBFullPageChildScreen extends StatelessWidget {
+  final Widget child;
+  final String title;
+
   const HMBFullPageChildScreen({
     required this.child,
     required this.title,
     super.key,
   });
 
-  final Widget child;
-  final String title;
 
   @override
   Widget build(BuildContext context) => Scaffold(

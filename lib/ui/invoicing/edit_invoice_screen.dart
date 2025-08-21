@@ -40,9 +40,10 @@ import 'invoice_details.dart';
 import 'invoice_send_button.dart';
 
 class InvoiceEditScreen extends StatefulWidget {
+  final InvoiceDetails invoiceDetails;
+  
   const InvoiceEditScreen({required this.invoiceDetails, super.key});
 
-  final InvoiceDetails invoiceDetails;
 
   @override
   State<InvoiceEditScreen> createState() => _InvoiceEditScreenState();

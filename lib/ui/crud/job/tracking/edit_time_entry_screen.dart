@@ -26,10 +26,10 @@ import '../../../widgets/select/select.g.dart';
 import '../../base_nested/edit_nested_screen.dart';
 
 class TimeEntryEditScreen extends StatefulWidget {
-  const TimeEntryEditScreen({required this.job, this.timeEntry, super.key});
-
   final Job job;
   final TimeEntry? timeEntry;
+
+  const TimeEntryEditScreen({required this.job, this.timeEntry, super.key});
 
   @override
   _TimeEntryEditScreenState createState() => _TimeEntryEditScreenState();
@@ -135,7 +135,7 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
     super.dispose();
   }
 
-  Future<DateTime?> _pickDate(BuildContext context, DateTime? initial)  =>
+  Future<DateTime?> _pickDate(BuildContext context, DateTime? initial) =>
       showDatePicker(
         context: context,
         initialDate: initial ?? DateTime.now(),
@@ -143,17 +143,15 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
         lastDate: DateTime(2101),
       );
 
-  Future<TimeOfDay?> _pickTime(
-    BuildContext context,
-    TimeOfDay? initial,
-  )  => showTimePicker(
-    context: context,
-    initialTime: initial ?? TimeOfDay.now(),
-    builder: (ctx, child) => MediaQuery(
-      data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: false),
-      child: child!,
-    ),
-  );
+  Future<TimeOfDay?> _pickTime(BuildContext context, TimeOfDay? initial) =>
+      showTimePicker(
+        context: context,
+        initialTime: initial ?? TimeOfDay.now(),
+        builder: (ctx, child) => MediaQuery(
+          data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: false),
+          child: child!,
+        ),
+      );
 
   DateTime? _combine(String dateText, String timeText) {
     if (dateText.isEmpty || timeText.isEmpty) {

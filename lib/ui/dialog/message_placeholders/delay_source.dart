@@ -17,10 +17,6 @@ import '../source_context.dart';
 import 'source.dart';
 
 class DelaySource extends Source<String> {
-  DelaySource() : super(name: 'delay');
-
-  String delay = periods[0];
-
   static const periods = <String>[
     '10 minutes',
     '15 minutes',
@@ -31,6 +27,10 @@ class DelaySource extends Source<String> {
     '1.5 hours',
     '2 hours',
   ];
+
+  String delay = periods[0];
+
+  DelaySource() : super(name: 'delay');
 
   /// Delay Period placeholder drop list
   @override

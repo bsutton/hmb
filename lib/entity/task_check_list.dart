@@ -14,6 +14,9 @@
 import 'entity.dart';
 
 class TaskCheckList extends Entity<TaskCheckList> {
+  int taskId;
+  int checkListId;
+
   TaskCheckList({
     required super.id,
     required this.taskId,
@@ -38,9 +41,6 @@ class TaskCheckList extends Entity<TaskCheckList> {
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
-
-  int taskId;
-  int checkListId;
 
   @override
   Map<String, dynamic> toMap() => {

@@ -21,14 +21,15 @@ import '../widgets/text/hmb_text_themes.dart';
 import 'list_shopping_screen.dart';
 
 class ItemCardCommon extends StatelessWidget {
+  final CustomerAndJob customerAndJob;
+  final TaskItem taskItem;
+
   const ItemCardCommon({
     required this.customerAndJob,
     required this.taskItem,
     super.key,
   });
 
-  final CustomerAndJob customerAndJob;
-  final TaskItem taskItem;
 
   @override
   Widget build(BuildContext context) => Column(

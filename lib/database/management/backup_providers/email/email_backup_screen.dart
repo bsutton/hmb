@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -23,9 +22,9 @@ import '../../../versions/asset_script_source.dart';
 import 'email_backup.dart';
 
 class BackupScreen extends StatefulWidget {
-  const BackupScreen({required this.pathToBackup, super.key});
-
   final String pathToBackup;
+
+  const BackupScreen({required this.pathToBackup, super.key});
 
   @override
   _BackupScreenState createState() => _BackupScreenState();
@@ -105,7 +104,8 @@ class _BackupScreenState extends State<BackupScreen> {
             const SizedBox(height: 20),
             HMBButton.withIcon(
               label: 'Restore Database',
-              hint: '''Restore a database from Google Drive - all data since the backup occured will be lost''',
+              hint:
+                  '''Restore a database from Google Drive - all data since the backup occured will be lost''',
               onPressed: () async {
                 try {
                   await EmailBackupProvider(

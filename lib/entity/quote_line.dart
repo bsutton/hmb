@@ -19,6 +19,14 @@ import 'entity.dart';
 import 'invoice_line.dart';
 
 class QuoteLine extends Entity<QuoteLine> {
+  int quoteId;
+  int? quoteLineGroupId;
+  String description;
+  Fixed quantity;
+  Money unitCharge;
+  Money lineTotal;
+  LineChargeableStatus lineChargeableStatus;
+
   QuoteLine({
     required super.id,
     required this.quoteId,
@@ -67,14 +75,6 @@ class QuoteLine extends Entity<QuoteLine> {
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
-
-  int quoteId;
-  int? quoteLineGroupId;
-  String description;
-  Fixed quantity;
-  Money unitCharge;
-  Money lineTotal;
-  LineChargeableStatus lineChargeableStatus;
 
   QuoteLine copyWith({
     int? id,

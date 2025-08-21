@@ -18,14 +18,14 @@ import 'package:flutter/material.dart';
 import 'layout/hmb_spacer.dart';
 
 class HMBChildCrudCard extends StatelessWidget {
+  final Widget crudListScreen;
+  final String? headline;
+
   const HMBChildCrudCard({
     required this.crudListScreen,
     this.headline,
     super.key,
   });
-
-  final Widget crudListScreen;
-  final String? headline;
 
   @override
   Widget build(BuildContext context) => Column(

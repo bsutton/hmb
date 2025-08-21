@@ -28,6 +28,9 @@ import 'photo_carousel.dart';
 import 'thumbnail.dart';
 
 class PhotoGallery extends StatelessWidget {
+  final computeManager = ComputeManager<Thumbnail, Thumbnail>();
+  late final Future<List<PhotoMeta>> Function() _fetchPhotos;
+
   PhotoGallery.forJob({required Job job, super.key}) {
     _fetchPhotos = () async {
       final tasks = await DaoTask().getTasksByJob(job.id);
@@ -71,9 +74,6 @@ class PhotoGallery extends StatelessWidget {
             )
             .toList();
   }
-  final computeManager = ComputeManager<Thumbnail, Thumbnail>();
-
-  late final Future<List<PhotoMeta>> Function() _fetchPhotos;
 
   @override
   Widget build(BuildContext context) => JuneBuilder(

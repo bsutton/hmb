@@ -52,6 +52,12 @@ final _referenceDate = LocalDate(2000, 1, 3);
 
 /// A convenience data class for combining a [Job] and its [Customer].
 class JobAndCustomer {
+  final Job job;
+  final Customer customer;
+  final Site? site;
+  final String? bestPhoneNo;
+  final String? bestEmailAddress;
+
   JobAndCustomer(
     this.job,
     this.customer,
@@ -68,26 +74,12 @@ class JobAndCustomer {
     final emailAddress = await DaoJob().getBestEmail(job);
     return JobAndCustomer(job, customer!, site, phoneNo, emailAddress);
   }
-
-  final Job job;
-  final Customer customer;
-  final Site? site;
-  final String? bestPhoneNo;
-  final String? bestEmailAddress;
 }
 
-/// The main schedule page. This is the "shell" that holds a [PageView] 
+/// The main schedule page. This is the "shell" that holds a [PageView]
 /// of either
 /// [DaySchedule], [WeekSchedule], or [MonthSchedule].
 class SchedulePage extends StatefulWidget with ScheduleHelper {
-  const SchedulePage({
-    required this.dialogMode,
-    super.key,
-    this.defaultView = ScheduleView.day,
-    this.defaultJob,
-    this.initialActivityId,
-  });
-
   /// If true, we show an [AppBar], otherwise we might show a different UI
   final bool dialogMode;
 
@@ -99,6 +91,14 @@ class SchedulePage extends StatefulWidget with ScheduleHelper {
 
   /// If we want the schedule to jump to a specific activity
   final int? initialActivityId;
+
+  const SchedulePage({
+    required this.dialogMode,
+    super.key,
+    this.defaultView = ScheduleView.day,
+    this.defaultJob,
+    this.initialActivityId,
+  });
 
   @override
   State<SchedulePage> createState() => SchedulePageState();
@@ -127,7 +127,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   /// date range (e.g. day)
   var _focusDate = LocalDate.today();
 
-  /// A guard to prevent infinite `_onPageChanged` loops if we call 
+  /// A guard to prevent infinite `_onPageChanged` loops if we call
   /// jumpToPage inside it.
   var _isAdjustingPage = false;
 
@@ -166,7 +166,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   }
 
   /// Initialize the page controller with the correct starting index:
-  /// - If [SchedulePage.initialActivityId] is provided, fetch that activities' 
+  /// - If [SchedulePage.initialActivityId] is provided, fetch that activities'
   /// date from DB.
   /// - Otherwise, use [DateTime.now()].
   Future<void> _initPage() async {

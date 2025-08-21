@@ -26,9 +26,9 @@ import 'message_placeholders/source.dart';
 import 'source_context.dart';
 
 class MessageTemplateDialog extends StatefulWidget {
-  const MessageTemplateDialog({required this.sourceContext, super.key});
-
   final SourceContext sourceContext;
+
+  const MessageTemplateDialog({required this.sourceContext, super.key});
 
   @override
   _MessageTemplateDialogState createState() => _MessageTemplateDialogState();
@@ -336,10 +336,10 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
 }
 
 class SelectedMessageTemplate {
-  SelectedMessageTemplate({required this.template, required this.values});
-
   final MessageTemplate template;
   final Map<String, String> values;
+
+  SelectedMessageTemplate({required this.template, required this.values});
 
   String getFormattedMessage() {
     var message = template.message;

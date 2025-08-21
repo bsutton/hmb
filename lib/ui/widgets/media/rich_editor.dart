@@ -23,14 +23,14 @@ import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class RichEditorController {
+  late ParchmentDocument document;
+  late final FleatherController controller;
+
   /// [parchmentAsJsonString] contains the parchment
   /// encode as json then encoded to a string.
   RichEditorController({required String parchmentAsJsonString}) {
     _initController(parchmentAsJsonString);
   }
-
-  late ParchmentDocument document;
-  late final FleatherController controller;
 
   TextSelection get selection => controller.selection;
 
@@ -62,14 +62,14 @@ class RichEditorController {
 }
 
 class RichEditor extends StatefulWidget {
+  final RichEditorController controller;
+  final FocusNode focusNode;
+
   const RichEditor({
     required this.controller,
     required this.focusNode,
     super.key,
   });
-
-  final RichEditorController controller;
-  final FocusNode focusNode;
 
   @override
   State<RichEditor> createState() => _RichEditorState();

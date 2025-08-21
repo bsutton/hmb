@@ -18,9 +18,9 @@ import '../widgets/wizard.dart';
 import '../widgets/wizard_step.dart';
 
 class IntegrationWizardStep extends WizardStep {
-  IntegrationWizardStep() : super(title: 'System Integration');
-
   final _stateKey = GlobalKey<XeroIntegrationScreenState>();
+
+  IntegrationWizardStep() : super(title: 'System Integration');
 
   @override
   Future<void> onNext(

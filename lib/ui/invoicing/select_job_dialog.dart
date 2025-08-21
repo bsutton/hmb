@@ -184,11 +184,11 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
 }
 
 class CustomerAndJob {
-  CustomerAndJob(this.customer, this.job, {required this.hasBillables});
-
   final Customer customer;
   final Job job;
   final bool hasBillables;
+
+  CustomerAndJob(this.customer, this.job, {required this.hasBillables});
 
   static Future<List<CustomerAndJob>> getJobs({
     required bool showAllJobs,

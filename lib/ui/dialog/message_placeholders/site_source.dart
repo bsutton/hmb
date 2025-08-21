@@ -21,10 +21,11 @@ import '../source_context.dart';
 import 'source.dart';
 
 class SiteSource extends Source<Site> {
-  SiteSource() : super(name: 'site');
   final customerNotifier = ValueNotifier<Customer?>(null);
 
   Site? site;
+
+  SiteSource() : super(name: 'site');
 
   @override
   Widget widget() => ValueListenableBuilder(

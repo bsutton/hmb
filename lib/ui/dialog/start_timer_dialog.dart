@@ -27,15 +27,16 @@ import '../widgets/text/hmb_text.dart';
 import 'hmb_dialog.dart';
 
 class StartTimerDialog extends StatefulWidget {
+  final Task task;
+  final bool showTask;
+  final DateTime startTime;
+
   const StartTimerDialog({
     required this.task,
     required this.showTask,
     required this.startTime,
     super.key,
   });
-  final Task task;
-  final bool showTask;
-  final DateTime startTime;
 
   @override
   State<StartTimerDialog> createState() => _StartTimerDialogState();

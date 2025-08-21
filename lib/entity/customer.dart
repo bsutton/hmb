@@ -27,6 +27,13 @@ enum CustomerType {
 }
 
 class Customer extends Entity<Customer> {
+  final String name;
+  final String? description;
+  final bool disbarred;
+  final CustomerType customerType;
+  final Money hourlyRate;
+  final int? billingContactId;
+
   Customer({
     required super.id,
     required this.name,
@@ -92,13 +99,6 @@ class Customer extends Entity<Customer> {
     createdDate: createdDate ?? this.createdDate,
     modifiedDate: modifiedDate ?? this.modifiedDate,
   );
-
-  final String name;
-  final String? description;
-  final bool disbarred;
-  final CustomerType customerType;
-  final Money hourlyRate;
-  final int? billingContactId;
 
   @override
   Map<String, dynamic> toMap() => {

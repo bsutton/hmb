@@ -28,6 +28,12 @@ import 'schedule_helper.dart';
 
 /// A single-week view of activities
 class WeekSchedule extends StatefulWidget with ScheduleHelper {
+  final LocalDate initialDate;
+  final int? defaultJob;
+  final bool showExtendedHours;
+  final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
+  final Key weekKey;
+
   const WeekSchedule(
     this.initialDate, {
     required this.onPageChange,
@@ -36,12 +42,6 @@ class WeekSchedule extends StatefulWidget with ScheduleHelper {
     required this.weekKey,
     super.key,
   });
-
-  final LocalDate initialDate;
-  final int? defaultJob;
-  final bool showExtendedHours;
-  final Future<LocalDate> Function(LocalDate targetDate) onPageChange;
-  final Key weekKey;
 
   @override
   State<WeekSchedule> createState() => _WeekScheduleState();
@@ -262,6 +262,12 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
 
 /// This will be used in day and week view
 class DefaultEventTile<T> extends StatelessWidget {
+  final DateTime date;
+  final List<CalendarEventData<T>> events;
+  final Rect boundary;
+  final DateTime startDuration;
+  final DateTime endDuration;
+
   const DefaultEventTile({
     required this.date,
     required this.events,
@@ -270,12 +276,6 @@ class DefaultEventTile<T> extends StatelessWidget {
     required this.endDuration,
     super.key,
   });
-
-  final DateTime date;
-  final List<CalendarEventData<T>> events;
-  final Rect boundary;
-  final DateTime startDuration;
-  final DateTime endDuration;
 
   @override
   Widget build(BuildContext context) {

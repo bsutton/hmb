@@ -21,10 +21,11 @@ import '../versions/script_source.dart';
 import 'backup_providers/backup_provider.dart';
 
 class DatabaseHelper {
-  factory DatabaseHelper() => instance;
-  DatabaseHelper._();
   static Database? _database;
   static final instance = DatabaseHelper._();
+
+  factory DatabaseHelper() => instance;
+  DatabaseHelper._();
 
   Database get database => _database!;
 

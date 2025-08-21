@@ -28,6 +28,11 @@ enum WorkAssignmentStatus {
 }
 
 class WorkAssignment extends Entity<WorkAssignment> {
+  int jobId;
+  int supplierId;
+  int contactId;
+  WorkAssignmentStatus status;
+
   WorkAssignment({
     required super.id,
     required this.jobId,
@@ -80,9 +85,4 @@ class WorkAssignment extends Entity<WorkAssignment> {
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
-
-  int jobId;
-  int supplierId;
-  int contactId;
-  WorkAssignmentStatus status;
 }

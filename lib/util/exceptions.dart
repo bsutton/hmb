@@ -11,11 +11,10 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 class HMBException implements Exception {
-  HMBException(this.message);
+  final String message;
 
-  String message;
+  HMBException(this.message);
 
   @override
   String toString() => message;

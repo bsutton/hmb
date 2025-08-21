@@ -11,18 +11,27 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/material.dart';
 
 import 'text/hmb_text_themes.dart';
 import 'wizard.dart';
 
 abstract class WizardStep {
-  WizardStep({required String title}) : _title = title, key = GlobalKey();
   final GlobalKey key;
   final String _title;
 
   WizardState? wizardState;
+
+  /// if [hidden] returns true then the step will not be shown
+  /// in the set of steps.
+  /// You can hide/unhide steps in a wizard to change the steps
+  /// shown to a user based on a selection they make whilst in the
+  /// wizard. If you change the 'hidden' state of a step you
+  /// need to call [setState] to force the wizard to redraw.
+  // ignore: omit_obvious_property_types
+  bool hidden = false;
+
+  WizardStep({required String title}) : _title = title, key = GlobalKey();
 
   Widget build(BuildContext context);
 
@@ -38,15 +47,6 @@ abstract class WizardStep {
   /// but the wizard will stop the user selecting it
   /// and the wizard will skip over it.
   bool get isActive => true;
-
-  /// if [hidden] returns true then the step will not be shown
-  /// in the set of steps.
-  /// You can hide/unhide steps in a wizard to change the steps
-  /// shown to a user based on a selection they make whilst in the
-  /// wizard. If you change the 'hidden' state of a step you
-  /// need to call [setState] to force the wizard to redraw.
-  // ignore: omit_obvious_property_types
-  bool hidden = false;
 
   void setState(VoidCallback fn) {
     wizardState?.refresh(fn);

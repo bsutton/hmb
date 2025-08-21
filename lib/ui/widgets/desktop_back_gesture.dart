@@ -53,11 +53,11 @@ import 'desktop_back_gesture_suppress.dart';
 /// );
 /// ```
 class DesktopBackGesture extends StatelessWidget {
-  const DesktopBackGesture({
-    required this.child,
-    required this.navigatorKey,
-    super.key,
-  });
+  /// Mouse button code for "Back" (thumb button)
+  static const kBackMouseButton = 8;
+
+  /// Threshold for horizontal drag to count as a "back" swipe
+  static const double _dragThreshold = 20;
 
   /// The widget subtree containing your app's Router/Navigator
   final Widget child;
@@ -65,11 +65,11 @@ class DesktopBackGesture extends StatelessWidget {
   /// The same GlobalKey passed into GoRouter
   final GlobalKey<NavigatorState> navigatorKey;
 
-  /// Mouse button code for "Back" (thumb button)
-  static const kBackMouseButton = 8;
-
-  /// Threshold for horizontal drag to count as a "back" swipe
-  static const double _dragThreshold = 20;
+  const DesktopBackGesture({
+    required this.child,
+    required this.navigatorKey,
+    super.key,
+  });
 
   bool _shouldPop(NavigatorState? nav) => nav != null && nav.canPop();
 

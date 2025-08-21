@@ -21,6 +21,11 @@ import 'package:flutter/services.dart';
 /// you have to swipe really fast with the mouse
 /// for it to work.
 class DesktopSwipe extends StatelessWidget {
+  final Widget child;
+  final void Function() onHome;
+  final void Function() onNext;
+  final void Function() onPrevious;
+
   const DesktopSwipe({
     required this.child,
     required this.onHome,
@@ -28,12 +33,6 @@ class DesktopSwipe extends StatelessWidget {
     required this.onPrevious,
     super.key,
   });
-
-  final Widget child;
-
-  final void Function() onHome;
-  final void Function() onNext;
-  final void Function() onPrevious;
 
   @override
   Widget build(BuildContext context) =>

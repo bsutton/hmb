@@ -20,17 +20,17 @@ import 'xero_auth.dart';
 
 /// Minimal App Link-based handler for mobile/web.
 class AppLinkRedirectHandler extends RedirectHandler {
+  late final StreamController<Uri> _streamController;
+  late StreamSubscription<Uri> subscription;
+
   AppLinkRedirectHandler() {
     _streamController = StreamController<Uri>.broadcast();
   }
-
-  late final StreamController<Uri> _streamController;
 
   @override
   Uri get redirectUri =>
       Uri.parse('https://ivanhoehandyman.com.au/${XeroAuth2.redirectPath}');
 
-  late StreamSubscription<Uri> subscription;
 
   @override
   Future<void> start() async {

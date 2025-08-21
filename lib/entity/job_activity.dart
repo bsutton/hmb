@@ -42,6 +42,13 @@ enum JobActivityStatus {
 /// Used to hold an activity in the schedule
 /// for a specific job.
 class JobActivity extends Entity<JobActivity> {
+  int jobId;
+  DateTime start;
+  DateTime end;
+  JobActivityStatus status;
+  String? notes;
+  DateTime? noticeSentDate;
+
   JobActivity({
     required this.jobId,
     required this.start,
@@ -106,13 +113,6 @@ class JobActivity extends Entity<JobActivity> {
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
-
-  int jobId;
-  DateTime start;
-  DateTime end;
-  JobActivityStatus status;
-  String? notes;
-  DateTime? noticeSentDate;
 
   JobActivity copyWith({
     int? id,

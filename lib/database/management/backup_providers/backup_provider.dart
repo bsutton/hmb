@@ -32,9 +32,18 @@ import 'zip_isolate.dart';
 const dbFileName = 'handyman.db';
 
 abstract class BackupProvider {
+  static const _restoreStageCount = 9;
+  final _progressController = StreamController<ProgressUpdate>.broadcast();
+  final HMBDatabaseFactory databaseFactory;
+
+  // ignore: omit_obvious_property_types
+  bool useDebugPath = false;
+
   BackupProvider(this.databaseFactory);
 
-  final _progressController = StreamController<ProgressUpdate>.broadcast();
+  /// A descrive name of the provider we show to the
+  /// user when offering a backup option.
+  String get name;
 
   Stream<ProgressUpdate> get progressStream => _progressController.stream;
 
@@ -43,12 +52,6 @@ abstract class BackupProvider {
       ProgressUpdate(stageDescription, stageNo, stageCount),
     );
   }
-
-  /// A descrive name of the provider we show to the
-  /// user when offering a backup option.
-  String get name;
-
-  HMBDatabaseFactory databaseFactory;
 
   /// Stores the zipped backup file to a [BackupProvider]s
   /// defined location.
@@ -186,8 +189,6 @@ abstract class BackupProvider {
     });
   }
 
-  static const _restoreStageCount = 9;
-
   /// Fetchs the backup from storage and makes
   /// it available on the local file system
   /// returning a [File] object to the local file.
@@ -285,12 +286,22 @@ abstract class BackupProvider {
 
     return join(await getDatabasesPath(), 'handyman.db');
   }
-
-  // ignore: omit_obvious_property_types
-  bool useDebugPath = false;
 }
 
 class BackupResult {
+  bool success;
+
+  /// Path to the database that was backed up.
+  final String pathToSource;
+
+  /// Path to the location of the backup zip file
+  /// which contains the db and photos.
+  final String pathToBackup;
+
+  late int sourceSize;
+  late int backupSize;
+  late String status;
+
   BackupResult({
     required this.pathToSource,
     required this.pathToBackup,
@@ -305,18 +316,6 @@ class BackupResult {
       backupSize = stat(pathToBackup).size;
     }
   }
-
-  /// Path to the database that was backed up.
-  String pathToSource;
-
-  /// Path to the location of the backup zip file
-  /// which contains the db and photos.
-  String pathToBackup;
-  bool success;
-
-  late int sourceSize;
-  late int backupSize;
-  late String status;
 
   @override
   String toString() {

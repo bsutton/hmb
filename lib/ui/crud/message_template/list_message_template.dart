@@ -43,8 +43,9 @@ class MessageTemplateListScreen extends StatelessWidget {
 }
 
 class SmsTemplateDetails extends StatelessWidget {
-  const SmsTemplateDetails(this.smsTemplate, {super.key});
   final MessageTemplate smsTemplate;
+  
+  const SmsTemplateDetails(this.smsTemplate, {super.key});
 
   @override
   Widget build(BuildContext context) => Surface(

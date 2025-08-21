@@ -39,13 +39,13 @@ import 'background_backup/photo_sync_service.dart';
 import 'google_drive_auth.dart';
 
 class GoogleDriveBackupScreen extends StatefulWidget {
+  final bool restoreOnly;
+
   const GoogleDriveBackupScreen({super.key, this.restoreOnly = false});
 
   @override
   _GoogleDriveBackupScreenState createState() =>
       _GoogleDriveBackupScreenState();
-
-  final bool restoreOnly;
 }
 
 class _GoogleDriveBackupScreenState

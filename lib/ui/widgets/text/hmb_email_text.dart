@@ -23,9 +23,10 @@ import '../hmb_mail_to_icon.dart';
 import '../layout/hmb_placeholder.dart';
 
 class HMBEmailText extends StatelessWidget {
-  const HMBEmailText({required this.email, this.label, super.key});
   final String? label;
   final String? email;
+
+  const HMBEmailText({required this.email, this.label, super.key});
 
   @override
   Widget build(BuildContext context) => Row(
@@ -49,9 +50,10 @@ class HMBEmailText extends StatelessWidget {
 }
 
 class HMBJobEmailText extends StatelessWidget {
-  const HMBJobEmailText({required this.job, this.label, super.key});
   final String? label;
   final Job job;
+
+  const HMBJobEmailText({required this.job, this.label, super.key});
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(

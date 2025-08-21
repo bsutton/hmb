@@ -29,15 +29,16 @@ import '../layout/hmb_placeholder.dart';
 /// If the phoneNum is null then we display nothing.
 
 class HMBPhoneText extends StatelessWidget {
+  final String? label;
+  final String? phoneNo;
+  final SourceContext sourceContext;
+
   const HMBPhoneText({
     required this.phoneNo,
     required this.sourceContext,
     this.label,
     super.key,
   });
-  final String? label;
-  final String? phoneNo;
-  final SourceContext sourceContext;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -66,9 +67,10 @@ class HMBPhoneText extends StatelessWidget {
 /// Displays the label and phoneNum.
 /// If the phoneNum is null then we display nothing.
 class HMBJobPhoneText extends StatelessWidget {
-  const HMBJobPhoneText({required this.job, this.label, super.key});
   final String? label;
   final Job job;
+
+  const HMBJobPhoneText({required this.job, this.label, super.key});
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx<SourceContext>(

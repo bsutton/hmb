@@ -41,6 +41,11 @@ import '../base_nested/edit_nested_screen.dart';
 import 'dimensions.dart';
 
 class TaskItemEditScreen extends StatefulWidget {
+  final Task? parent;
+  final TaskItem? taskItem;
+  final BillingType billingType; // 'Fixed Price' or 'Time and Materials'
+  final Money hourlyRate;
+
   const TaskItemEditScreen({
     required this.parent,
     required this.billingType,
@@ -48,11 +53,6 @@ class TaskItemEditScreen extends StatefulWidget {
     super.key,
     this.taskItem,
   });
-
-  final Task? parent;
-  final TaskItem? taskItem;
-  final BillingType billingType; // 'Fixed Price' or 'Time and Materials'
-  final Money hourlyRate;
 
   @override
   // ignore: library_private_types_in_public_api

@@ -5,6 +5,13 @@ import '../text/hmb_text_themes.dart';
 import '../widgets.g.dart';
 
 class HMBListPage extends StatefulWidget {
+  final String emptyMessage;
+  final NullableIndexedWidgetBuilder itemBuilder;
+  final int itemCount;
+
+  final void Function()? onAdd;
+  final void Function(String? filter)? onSearch;
+
   const HMBListPage({
     required this.emptyMessage,
     required this.itemCount,
@@ -16,13 +23,6 @@ class HMBListPage extends StatefulWidget {
 
   @override
   State<HMBListPage> createState() => _HMBListPageState();
-
-  final String emptyMessage;
-  final NullableIndexedWidgetBuilder itemBuilder;
-  final int itemCount;
-
-  final void Function()? onAdd;
-  final void Function(String? filter)? onSearch;
 }
 
 class _HMBListPageState extends State<HMBListPage> {
@@ -56,6 +56,11 @@ class _HMBListPageState extends State<HMBListPage> {
 }
 
 class HMBListCard extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+  final void Function()? onTap;
+  final List<Widget>? actions;
+
   const HMBListCard({
     required this.title,
     required this.children,
@@ -63,11 +68,6 @@ class HMBListCard extends StatelessWidget {
     this.onTap,
     super.key,
   });
-
-  final String title;
-  final List<Widget> children;
-  final void Function()? onTap;
-  final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) => GestureDetector(

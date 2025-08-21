@@ -36,6 +36,13 @@ enum Operation { insert, update }
 /// as this class will NOT.
 class NestedEntityEditScreen<C extends Entity<C>, P extends Entity<P>>
     extends StatefulWidget {
+  final String entityName;
+  final Dao<C> dao;
+  final Widget Function(C? entity) editor;
+  final NestedEntityState<C> entityState;
+  final Future<void> Function(C? entity, Transaction transaction) onInsert;
+  final Future<bool> Function() crossValidator;
+
   const NestedEntityEditScreen({
     required this.editor,
     required this.onInsert,
@@ -45,14 +52,6 @@ class NestedEntityEditScreen<C extends Entity<C>, P extends Entity<P>>
     CrossValidator<C>? crossValidator,
     super.key,
   }) : crossValidator = crossValidator ?? noOpValidator;
-
-  final String entityName;
-  final Dao<C> dao;
-  final Widget Function(C? entity) editor;
-  final NestedEntityState<C> entityState;
-  final Future<void> Function(C? entity, Transaction transaction) onInsert;
-
-  final Future<bool> Function() crossValidator;
 
   @override
   NestedEntityEditScreenState createState() =>
@@ -156,7 +155,7 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
           setState(() {});
         }
       } catch (error) {
-        // Check if the error indicates a duplicate name (unique 
+        // Check if the error indicates a duplicate name (unique
         //constraint violation)
         if (error.toString().contains('UNIQUE constraint failed')) {
           HMBToast.error(

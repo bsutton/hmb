@@ -26,13 +26,14 @@ import '../widgets/widgets.g.dart';
 import 'job_and_customer.dart';
 
 class QuoteCard extends StatefulWidget {
+  final Quote quote;
+  final ValueChanged<Quote> onStateChanged;
+
   const QuoteCard({
     required this.quote,
     required this.onStateChanged,
     super.key,
   });
-  final Quote quote;
-  final ValueChanged<Quote> onStateChanged;
 
   @override
   _QuoteCardState createState() => _QuoteCardState();

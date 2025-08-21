@@ -21,10 +21,6 @@ import 'package:settings_yaml/settings_yaml.dart';
 import '../../../../util/paths_flutter.dart';
 
 class GoogleDriveAuth {
-  /// Make the ctor private
-  /// You must call init to get the single instance.
-  GoogleDriveAuth._();
-
   /// OAuth Client in Google Play Console: HMB-Production-Signed-By-Google
   static const _clientId =
       '''704526923643-ot7i0jpo27urkkibm1gsqpji7f2nigt3.apps.googleusercontent.com''';
@@ -34,18 +30,22 @@ class GoogleDriveAuth {
   static const _serverClientId =
       '''704526923643-vdu784t5s102g2uanosrd72rnv1cd795.apps.googleusercontent.com''';
 
+  static var _initialised = false;
+  static late GoogleDriveAuth _instance;
+
   final scopes = [drive.DriveApi.driveFileScope];
 
   var _signedIn = false;
 
   late Map<String, String> _authHeaders;
 
-  // StreamSubscription<GoogleSignInAuthenticationEvent>? _authSubscription;
+  var _awaitingAuth = Completer<GoogleAuthResult>();
+
+  /// Make the ctor private
+  /// You must call init to get the single instance.
+  GoogleDriveAuth._();
 
   Map<String, String> get authHeaders => _authHeaders;
-
-  static var _initialised = false;
-  static late GoogleDriveAuth _instance;
 
   static Future<GoogleDriveAuth> instance() async {
     if (_initialised) {
@@ -57,8 +57,6 @@ class GoogleDriveAuth {
 
     return _instance;
   }
-
-  var _awaitingAuth = Completer<GoogleAuthResult>();
 
   /// initialised [GoogleSignIn]
   Future<void> _initialise() async {
@@ -144,7 +142,7 @@ class GoogleDriveAuth {
     /// The operation was canceled by the user.
     GoogleSignInExceptionCode.canceled => GoogleAuthResult.cancelled(),
 
-    /// The operation was interrupted for a reason other than 
+    /// The operation was interrupted for a reason other than
     /// being intentionally
     /// canceled by the user.
     GoogleSignInExceptionCode.interrupted => GoogleAuthResult.failure(
@@ -197,9 +195,10 @@ class GoogleDriveAuth {
 }
 
 class GoogleAuthClient extends http.BaseClient {
-  GoogleAuthClient(this._headers);
   final Map<String, String> _headers;
   final _client = http.Client();
+
+  GoogleAuthClient(this._headers);
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) =>
@@ -207,6 +206,12 @@ class GoogleAuthClient extends http.BaseClient {
 }
 
 class GoogleAuthResult {
+  bool authenticated;
+  final bool _wasCancelled;
+
+  /// If the auth faile dt
+  String error;
+
   GoogleAuthResult.success()
     : authenticated = true,
       error = '',
@@ -216,21 +221,17 @@ class GoogleAuthResult {
     : authenticated = false,
       error = 'User Cancelled the signing',
       _wasCancelled = true;
+
   GoogleAuthResult.failure(this.error)
     : authenticated = false,
       _wasCancelled = false;
+
   GoogleAuthResult.exception(GoogleSignInException exception)
     : authenticated = false,
       _wasCancelled = exception.code == GoogleSignInExceptionCode.canceled,
       error = exception.toString();
-  bool authenticated;
-  final bool _wasCancelled;
-
-  /// If the auth faile dt
-  String error;
 
   bool get wasCancelled => _wasCancelled;
-
   @override
   String toString() => error;
 }

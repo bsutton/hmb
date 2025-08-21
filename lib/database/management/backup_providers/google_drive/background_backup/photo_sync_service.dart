@@ -24,25 +24,28 @@ import 'upload_photos_in_backup.dart';
 /// Used by the photo upload isolate to indicate
 /// that it successfully uploaded a photo.
 class PhotoUploaded {
+  final int id;
+  final String pathToStorageLocation;
+  final int pathVersion;
+
   PhotoUploaded(this.id, this.pathToStorageLocation, this.pathVersion);
-  int id;
-  String pathToStorageLocation;
-  int pathVersion;
 }
 
 class PhotoSyncService {
-  factory PhotoSyncService() => _instance;
-  PhotoSyncService._();
   static final _instance = PhotoSyncService._();
-
-  final StreamController<ProgressUpdate> _controller =
-      StreamController.broadcast();
-  Stream<ProgressUpdate> get progressStream => _controller.stream;
 
   Isolate? _isolate;
   ReceivePort? _receivePort;
   ReceivePort? _errorPort;
   ReceivePort? _exitPort;
+
+  final StreamController<ProgressUpdate> _controller =
+      StreamController.broadcast();
+
+  factory PhotoSyncService() => _instance;
+  PhotoSyncService._();
+
+  Stream<ProgressUpdate> get progressStream => _controller.stream;
 
   bool get isRunning => _isolate != null;
 

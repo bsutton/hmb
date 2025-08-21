@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 /// Returns a string wrapped with the selected ansi
 /// fg color codes.
 library;
@@ -61,64 +60,6 @@ String grey(
 
 ///
 class AnsiColor {
-  ///
-  const AnsiColor(int code) : _code = code;
-
-  ///
-  static String reset() => _emmit(resetCode);
-
-  ///
-  static String fgReset() => _emmit(fgResetCode);
-
-  ///
-  static String bgReset() => _emmit(bgResetCode);
-
-  final int _code;
-
-  ///
-  int get code => _code;
-
-  ///
-  String apply(String text, {AnsiColor bgcolor = none}) =>
-      _apply(this, text, bgcolor: bgcolor);
-
-  static String _apply(
-    AnsiColor color,
-    String text, {
-    AnsiColor bgcolor = none,
-  }) => '${_fg(color.code)}${_bg(bgcolor.code)}$text$_reset';
-
-  static String get _reset => '$esc${resetCode}m';
-
-  static String _fg(int code) {
-    String output;
-
-    if (code == none.code) {
-      output = '';
-    } else if (code > 39) {
-      output = '$esc$fgColor${code}m';
-    } else {
-      output = '$esc${code}m';
-    }
-    return output;
-  }
-
-  // background colors are fg color + 10
-  static String _bg(int code) {
-    String output;
-
-    if (code == none.code) {
-      output = '';
-    } else if (code > 49) {
-      output = '$esc$bgColor${code + 10}m';
-    } else {
-      output = '$esc${code + 10}m';
-    }
-    return output;
-  }
-
-  static String _emmit(String ansicode) => '$esc${ansicode}m';
-
   /// ANSI Control Sequence Introducer, signals the terminal for new settings.
   static const esc = '\x1B[';
 
@@ -166,12 +107,70 @@ class AnsiColor {
   ///
   static const orange = AnsiColor(208);
 
-  ///
-  static AnsiColor grey({double level = 0.5}) =>
-      AnsiColor(232 + (level.clamp(0.0, 1.0) * 23).round());
-
   /// passing this as the background color will cause
   /// the background code to be suppressed resulting
   /// in the default background color.
   static const none = AnsiColor(-1);
+
+  final int _code;
+
+  ///
+  const AnsiColor(int code) : _code = code;
+
+  ///
+  static AnsiColor grey({double level = 0.5}) =>
+      AnsiColor(232 + (level.clamp(0.0, 1.0) * 23).round());
+
+  ///
+  static String reset() => _emmit(resetCode);
+
+  ///
+  static String fgReset() => _emmit(fgResetCode);
+
+  ///
+  static String bgReset() => _emmit(bgResetCode);
+
+  ///
+  int get code => _code;
+
+  ///
+  String apply(String text, {AnsiColor bgcolor = none}) =>
+      _apply(this, text, bgcolor: bgcolor);
+
+  static String _apply(
+    AnsiColor color,
+    String text, {
+    AnsiColor bgcolor = none,
+  }) => '${_fg(color.code)}${_bg(bgcolor.code)}$text$_reset';
+
+  static String get _reset => '$esc${resetCode}m';
+
+  static String _fg(int code) {
+    String output;
+
+    if (code == none.code) {
+      output = '';
+    } else if (code > 39) {
+      output = '$esc$fgColor${code}m';
+    } else {
+      output = '$esc${code}m';
+    }
+    return output;
+  }
+
+  // background colors are fg color + 10
+  static String _bg(int code) {
+    String output;
+
+    if (code == none.code) {
+      output = '';
+    } else if (code > 49) {
+      output = '$esc$bgColor${code + 10}m';
+    } else {
+      output = '$esc${code + 10}m';
+    }
+    return output;
+  }
+
+  static String _emmit(String ansicode) => '$esc${ansicode}m';
 }

@@ -8,16 +8,6 @@ import 'package:meta/meta.dart';
 /// A lightweight description of a local notification.
 @immutable
 class Notif {
-  const Notif({
-    required this.id,
-    required this.title,
-    required this.body,
-    required this.scheduledAtMillis,
-    this.payload,
-    this.channelId = 'hmb_default',
-    this.channelName = 'Reminders',
-  });
-
   final int id;
   final String title;
   final String body;
@@ -31,4 +21,14 @@ class Notif {
   /// Android channel info.
   final String channelId;
   final String channelName;
+
+  const Notif({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.scheduledAtMillis,
+    this.payload,
+    this.channelId = 'hmb_default',
+    this.channelName = 'Reminders',
+  });
 }

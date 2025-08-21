@@ -22,11 +22,6 @@ import 'xero_auth.dart';
 /// Starts a micro http server that handles the xero/auth_complete
 /// request.
 class LocalServerRedirectHandler extends RedirectHandler {
-  // Private constructor with port configuration
-  LocalServerRedirectHandler._(this.port);
-
-  factory LocalServerRedirectHandler.self() => _instance;
-
   /// Note this port MUST match the port configured via
   /// https://developer.xero.com/ under the list
   /// fo Redirect URIs.
@@ -41,6 +36,11 @@ class LocalServerRedirectHandler extends RedirectHandler {
 
   // Stream controller for managing subscriptions to auth notifications
   final _authStreamController = StreamController<Uri>.broadcast();
+
+  // Private constructor with port configuration
+  LocalServerRedirectHandler._(this.port);
+
+  factory LocalServerRedirectHandler.self() => _instance;
 
   // Start the server
   @override

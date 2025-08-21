@@ -16,6 +16,13 @@ import 'package:sqflite_common/sqlite_api.dart';
 import '../entity/entity.dart';
 
 class DaoBase<T extends Entity<T>> {
+  Database db;
+
+  final void Function(DaoBase<T> dao, int? entityId) _notify;
+
+  late T Function(Map<String, dynamic> map) _fromMap;
+  late String _tableName;
+
   DaoBase(this.db, this._notify);
 
   /// Use this method when you need to do db operations
@@ -30,13 +37,6 @@ class DaoBase<T extends Entity<T>> {
       .._fromMap = fromMap;
     return dao;
   }
-
-  Database db;
-
-  final void Function(DaoBase<T> dao, int? entityId) _notify;
-
-  late T Function(Map<String, dynamic> map) _fromMap;
-  late String _tableName;
 
   // ignore: avoid_setters_without_getters
   set tableName(String tableName) => _tableName = tableName;

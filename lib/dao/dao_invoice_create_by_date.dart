@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:money2/money2.dart';
 
 import '../entity/entity.g.dart';
@@ -126,7 +125,7 @@ Future<Money> emitMaterialsByTask(
     var invoiceLineGroupId = -1;
     for (final item in taskItems) {
       final itemType = item.itemType;
-      // skip time entries, tools-own, zero-charge, uncompleted 
+      // skip time entries, tools-own, zero-charge, uncompleted
       // or already billed
       if (item.billed ||
           !item.completed ||
@@ -180,6 +179,11 @@ Future<Money> emitMaterialsByTask(
 /// Accumulates all timeentries (that haven't been billed)
 /// for the given [date], grouped by task.
 class TasksForDate {
+  final Job job;
+  final LocalDate date;
+  final taskForDate = <TaskEntries>[];
+  final List<int> selectedTaskIds;
+
   TasksForDate(this.date, this.job, this.selectedTaskIds);
 
   Future<void> build() async {
@@ -203,17 +207,13 @@ class TasksForDate {
       }
     }
   }
-
-  final Job job;
-  final LocalDate date;
-  final taskForDate = <TaskEntries>[];
-  final List<int> selectedTaskIds;
 }
 
 class TaskEntries {
-  TaskEntries(this.task);
   final Task task;
   final _timeEntries = <TimeEntry>[];
+
+  TaskEntries(this.task);
 
   Fixed get durationInHours {
     final hours = _timeEntries.fold(

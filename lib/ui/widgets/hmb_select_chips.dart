@@ -21,6 +21,15 @@ import 'hmb_chip.dart';
 /// )
 /// ```
 class HMBSelectChips<T> extends StatelessWidget {
+  final String label;
+  final List<T> items;
+  final T? value;
+  final String Function(T) format;
+  final ValueChanged<T?> onChanged;
+  final HMBChipTone tone;
+  final double spacing;
+  final double runSpacing;
+
   const HMBSelectChips({
     required this.label,
     required this.items,
@@ -32,15 +41,6 @@ class HMBSelectChips<T> extends StatelessWidget {
     this.spacing = 8.0,
     this.runSpacing = 8.0,
   });
-
-  final String label;
-  final List<T> items;
-  final T? value;
-  final String Function(T) format;
-  final ValueChanged<T?> onChanged;
-  final HMBChipTone tone;
-  final double spacing;
-  final double runSpacing;
 
   @override
   Widget build(BuildContext context) => Column(

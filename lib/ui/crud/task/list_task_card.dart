@@ -23,9 +23,10 @@ import '../../widgets/text/hmb_text.dart';
 import '../job/edit_job_card.dart';
 
 class ListTaskCard extends StatelessWidget {
-  const ListTaskCard({required this.task, required this.summary, super.key});
   final Task task;
   final bool summary;
+  
+  const ListTaskCard({required this.task, required this.summary, super.key});
 
   @override
   Widget build(BuildContext context) {

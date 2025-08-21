@@ -17,6 +17,13 @@ import '../../../util/hmb_theme.dart';
 
 /// Displays a multi-line block of text
 class HMBTextBlock extends StatelessWidget {
+  final String textBlock;
+  final bool verticalPadding;
+  final bool bold;
+  final bool underline;
+  final int maxLines;
+  final Color? color;
+
   /// If [verticalPadding] is true, vertical padding is added before the text.
   const HMBTextBlock(
     this.textBlock, {
@@ -27,13 +34,6 @@ class HMBTextBlock extends StatelessWidget {
     this.maxLines = 3,
     Color? color,
   }) : color = color ?? HMBColors.textPrimary;
-
-  final String textBlock;
-  final bool verticalPadding;
-  final bool bold;
-  final bool underline;
-  final int maxLines;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) => Padding(

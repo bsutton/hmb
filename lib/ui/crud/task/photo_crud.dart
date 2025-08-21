@@ -32,16 +32,16 @@ import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_gallery.dart';
 
 class PhotoCrud<E extends Entity<E>> extends StatefulWidget {
+  final String parentName;
+  final ParentType parentType;
+  final PhotoController<E> controller;
+
   const PhotoCrud({
     required this.parentName,
     required this.parentType,
     required this.controller,
     super.key,
   });
-
-  final String parentName;
-  final ParentType parentType;
-  final PhotoController<E> controller;
 
   @override
   State<PhotoCrud> createState() => _PhotoCrudState<E>();

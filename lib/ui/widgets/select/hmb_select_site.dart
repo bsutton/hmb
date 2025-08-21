@@ -26,17 +26,17 @@ import 'hmb_droplist.dart';
 /// owned by a customer and associate them with another
 /// entity e.g. a job.
 class HMBSelectSite extends StatefulWidget {
+  /// The customer that owns the site.
+  final Customer? customer;
+  final SelectedSite initialSite;
+  final void Function(Site? site)? onSelected;
+
   const HMBSelectSite({
     required this.initialSite,
     required this.customer,
     super.key,
     this.onSelected,
   });
-
-  /// The customer that owns the site.
-  final Customer? customer;
-  final SelectedSite initialSite;
-  final void Function(Site? site)? onSelected;
 
   @override
   HMBSelectSiteState createState() => HMBSelectSiteState();
@@ -99,9 +99,9 @@ class HMBSelectSiteState extends State<HMBSelectSite> {
 }
 
 class SelectedSite extends JuneState {
-  SelectedSite();
-
   int? _siteId;
+
+  SelectedSite();
 
   int? get siteId => _siteId;
 

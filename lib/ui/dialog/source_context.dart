@@ -22,6 +22,16 @@ import '../../entity/supplier.dart';
 import '../../util/local_date.dart';
 
 class SourceContext {
+  Customer? customer;
+  Job? job;
+  Contact? contact;
+  Supplier? supplier;
+  Site? site;
+  Invoice? invoice;
+  String? delayPeriod;
+  LocalDate? originalDate;
+  JobActivity? jobActivity;
+
   SourceContext({
     this.customer,
     this.job,
@@ -52,16 +62,6 @@ class SourceContext {
 
   //   return sourceContext;
   // }
-
-  Customer? customer;
-  Job? job;
-  Contact? contact;
-  Supplier? supplier;
-  Site? site;
-  Invoice? invoice;
-  String? delayPeriod;
-  LocalDate? originalDate;
-  JobActivity? jobActivity;
 
   /// Fetches related entities based on the provided entities.
   /// The fetching is done in a hierarchical order based on the importance

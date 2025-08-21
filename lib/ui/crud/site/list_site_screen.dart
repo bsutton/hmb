@@ -22,17 +22,17 @@ import '../base_nested/list_nested_screen.dart';
 import 'edit_site_screen.dart';
 
 class SiteListScreen<P extends Entity<P>> extends StatelessWidget {
+  final Parent<P> parent;
+
+  final DaoJoinAdaptor<Site, P> daoJoin;
+  final String parentTitle;
+
   const SiteListScreen({
     required this.parent,
     required this.daoJoin,
     required this.parentTitle,
     super.key,
   });
-
-  final Parent<P> parent;
-
-  final DaoJoinAdaptor<Site, P> daoJoin;
-  final String parentTitle;
 
   @override
   Widget build(BuildContext context) => NestedEntityListScreen<Site, P>(

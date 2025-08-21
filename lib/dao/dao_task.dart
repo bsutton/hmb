@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:dcli_core/dcli_core.dart' as core;
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
@@ -70,7 +69,7 @@ class DaoTask extends Dao<Task> {
   //     return toList(data).first;
   //   }
 
-  Future<Task?> getForPhoto(Photo photo)  {
+  Future<Task?> getForPhoto(Photo photo) {
     assert(
       photo.parentType == ParentType.task,
       'The photo must be owned by Task',
@@ -371,7 +370,7 @@ WHERE ti.id = ?
   /// True when:
   /// - job is Fixed Price AND
   /// - there exists an APPROVED Quote for the job AND
-  /// - that quote has a QuoteLineGroup for the task where 
+  /// - that quote has a QuoteLineGroup for the task where
   ///     lineApprovalStatus != rejected
   ///
   /// If the group is REJECTED, we allow the move (as per requirement).
@@ -416,15 +415,6 @@ class TaskRefresher extends JuneState {
 /// For FixedPrice this is based on the estimates
 /// for Time and Materials this is based on actuals.
 class TaskAccruedValue {
-  TaskAccruedValue({
-    required this.taskEstimatedValue,
-    required this.earnedMaterialCharges,
-    required this.earnedLabourCharges,
-    required Money hourlyRate,
-  }) : earnedLabourHours = hourlyRate == MoneyEx.zero
-           ? Fixed.zero
-           : earnedLabourCharges.divideByFixed(hourlyRate.amount).amount;
-
   final TaskEstimatedValue taskEstimatedValue;
 
   /// The total worth of materials that have
@@ -448,6 +438,15 @@ class TaskAccruedValue {
   /// In this case we dived the charge by the tasks hourly rate.
   Fixed earnedLabourHours;
 
+  TaskAccruedValue({
+    required this.taskEstimatedValue,
+    required this.earnedMaterialCharges,
+    required this.earnedLabourCharges,
+    required Money hourlyRate,
+  }) : earnedLabourHours = hourlyRate == MoneyEx.zero
+           ? Fixed.zero
+           : earnedLabourCharges.divideByFixed(hourlyRate.amount).amount;
+
   Fixed get estimatedLabourHours => taskEstimatedValue.estimatedLabourHours;
 
   /// The total of labour changes and materials
@@ -462,15 +461,6 @@ class TaskAccruedValue {
 }
 
 class TaskEstimatedValue {
-  TaskEstimatedValue({
-    required this.task,
-    required this.estimatedMaterialsCharge,
-    required this.estimatedLabourCharge,
-    required this.hourlyRate,
-    required this.estimatedLabourHours,
-  });
-
-
   Task task;
   Money hourlyRate;
 
@@ -485,5 +475,14 @@ class TaskEstimatedValue {
   Fixed estimatedLabourHours;
 
   /// Total charges including the margin.
+
+  TaskEstimatedValue({
+    required this.task,
+    required this.estimatedMaterialsCharge,
+    required this.estimatedLabourCharge,
+    required this.hourlyRate,
+    required this.estimatedLabourHours,
+  });
+
   Money get total => estimatedMaterialsCharge + estimatedLabourCharge;
 }

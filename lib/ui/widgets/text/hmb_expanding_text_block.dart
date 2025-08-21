@@ -18,6 +18,12 @@ import '../../../util/hmb_theme.dart';
 /// Displays a multi-line block of text that expands/contracts
 /// based on content.
 class HMBExpandingTextBlock extends StatelessWidget {
+  final String textBlock;
+  final bool verticalPadding;
+  final bool bold;
+  final bool underline;
+  final Color? color;
+
   /// If [verticalPadding] is true, vertical padding is added before the text.
   const HMBExpandingTextBlock(
     this.textBlock, {
@@ -27,12 +33,6 @@ class HMBExpandingTextBlock extends StatelessWidget {
     this.underline = false,
     Color? color,
   }) : color = color ?? HMBColors.textPrimary;
-
-  final String textBlock;
-  final bool verticalPadding;
-  final bool bold;
-  final bool underline;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) => Padding(

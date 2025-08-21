@@ -15,7 +15,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-/// A small help icon that, when tapped, opens a dialog showing user 
+/// A small help icon that, when tapped, opens a dialog showing user
 /// help content.
 ///
 /// Usage example:
@@ -43,6 +43,17 @@ import 'package:flutter/material.dart';
 /// )
 ///
 class HelpButton extends StatelessWidget {
+  /// The tooltip text shown on long press or mouse hover (optional).
+  final String tooltip;
+
+  /// Title text shown at the top of the help dialog.
+  final String dialogTitle;
+
+  /// The main body widgets of the dialog (e.g. Text, images, etc.).
+  final Widget? child;
+
+  final String? helpText;
+
   const HelpButton({
     required this.child,
     super.key,
@@ -56,17 +67,6 @@ class HelpButton extends StatelessWidget {
     this.tooltip = 'Help',
     this.dialogTitle = 'Help',
   }) : child = null;
-
-  /// The tooltip text shown on long press or mouse hover (optional).
-  final String tooltip;
-
-  /// Title text shown at the top of the help dialog.
-  final String dialogTitle;
-
-  /// The main body widgets of the dialog (e.g. Text, images, etc.).
-  final Widget? child;
-
-  final String? helpText;
 
   Future<void> _showHelpDialog(BuildContext context) async {
     await showDialog<void>(
@@ -93,6 +93,12 @@ class HelpButton extends StatelessWidget {
 }
 
 class HelpWrapper extends StatelessWidget {
+  final Widget child;
+  final Widget? helpChild;
+  final String? helpText;
+  final String tooltip;
+  final String title;
+
   const HelpWrapper({
     required this.child,
     required this.tooltip,
@@ -101,12 +107,6 @@ class HelpWrapper extends StatelessWidget {
     this.helpText,
     super.key,
   });
-
-  final Widget child;
-  final Widget? helpChild;
-  final String? helpText;
-  final String tooltip;
-  final String title;
 
   @override
   Widget build(BuildContext context) {

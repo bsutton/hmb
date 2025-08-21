@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/material.dart';
 
 import '../crud/system/system_contact_screen.dart';
@@ -19,9 +18,9 @@ import '../widgets/wizard.dart';
 import '../widgets/wizard_step.dart';
 
 class ContactWizardStep extends WizardStep {
-  ContactWizardStep() : super(title: 'Contact Information');
-
   final stateKey = GlobalKey<SystemContactInformationScreenState>();
+
+  ContactWizardStep() : super(title: 'Contact Information');
 
   @override
   Future<void> onNext(

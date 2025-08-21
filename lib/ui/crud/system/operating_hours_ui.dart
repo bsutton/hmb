@@ -21,15 +21,17 @@ import '../../widgets/text/hmb_text_themes.dart';
 import '../../widgets/widgets.g.dart';
 
 class OperatingHoursController {
+  final OperatingHours operatingHours;
+  
   OperatingHoursController({required this.operatingHours});
 
-  final OperatingHours operatingHours;
 }
 
 class OperatingHoursUi extends StatefulWidget {
+  final OperatingHoursController controller;
+
   const OperatingHoursUi({required this.controller, super.key});
 
-  final OperatingHoursController controller;
 
   @override
   State<OperatingHoursUi> createState() => _OperatingHoursUiState();

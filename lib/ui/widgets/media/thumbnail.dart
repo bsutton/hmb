@@ -25,7 +25,12 @@ import '../../../util/exceptions.dart';
 import '../../../util/photo_meta.dart';
 
 class Thumbnail {
+  String source;
+  String pathToThumbNail;
+
   Thumbnail({required this.source, required this.pathToThumbNail});
+
+  bool exists() => core.exists(source);
 
   static Future<Thumbnail> fromMeta(PhotoMeta meta) async {
     await meta.resolve();
@@ -43,11 +48,6 @@ class Thumbnail {
 
     return Thumbnail(source: source, pathToThumbNail: target);
   }
-
-  String source;
-  String pathToThumbNail;
-
-  bool exists() => core.exists(source);
 
   // Function to generate a thumbnail (to be run in a background isolate)
   // returns a path to the generated image

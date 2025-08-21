@@ -22,10 +22,11 @@ import '../source_context.dart';
 import 'source.dart';
 
 class JobActivitySource extends Source<JobActivity> {
-  JobActivitySource() : super(name: 'job_activity');
   final notifier = ValueNotifier<JobAndActivity>(JobAndActivity(null, null));
 
   JobActivity? jobActivity;
+
+  JobActivitySource() : super(name: 'job_activity');
 
   @override
   Widget widget() => ValueListenableBuilder(
@@ -66,8 +67,8 @@ class JobActivitySource extends Source<JobActivity> {
 }
 
 class JobAndActivity {
-  JobAndActivity(this.jobActivity, this.job);
-
   Job? job;
   JobActivity? jobActivity;
+
+  JobAndActivity(this.jobActivity, this.job);
 }

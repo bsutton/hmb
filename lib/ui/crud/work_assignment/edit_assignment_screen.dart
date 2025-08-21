@@ -23,10 +23,10 @@ import '../../widgets/select/select.g.dart';
 import '../base_nested/edit_nested_screen.dart';
 
 class AssignmentEditScreen extends StatefulWidget {
-  const AssignmentEditScreen({required this.job, super.key, this.assignment});
-
   final WorkAssignment? assignment;
   final Job job;
+
+  const AssignmentEditScreen({required this.job, super.key, this.assignment});
 
   @override
   _AssignmentEditScreenState createState() => _AssignmentEditScreenState();
@@ -92,7 +92,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
     builder: (_) => NestedEntityEditScreen<WorkAssignment, Job>(
       entityName: 'Assignment',
       dao: DaoWorkAssigment(),
-      onInsert: (workAssignment, transaction)  =>
+      onInsert: (workAssignment, transaction) =>
           DaoWorkAssigment().insert(workAssignment!, transaction),
       entityState: this,
       editor: (workAssignment) => _buildEditor(),
@@ -115,7 +115,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
         FutureBuilderEx<List<Supplier>>(
           future: DaoSupplier().getAll(orderByClause: 'name COLLATE NOCASE'),
           builder: (c, suppliers) => HMBDroplist<Supplier>(
-            selectedItem: ()  => DaoSupplier().getById(_selectedSupplier),
+            selectedItem: () => DaoSupplier().getById(_selectedSupplier),
             title: 'Supplier',
             format: (supplier) => supplier.name,
             items: (filter) async => suppliers!
@@ -141,7 +141,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
           FutureBuilderEx<List<Contact>>(
             future: DaoContactSupplier().getBySupplier(_selectedSupplier!),
             builder: (context, contacts) => HMBDroplist<Contact>(
-              selectedItem: ()  => DaoContact().getById(_selectedContact),
+              selectedItem: () => DaoContact().getById(_selectedContact),
               title: 'Supplier Contact',
               format: (contacts) => contacts.fullname,
               items: (filter) async => contacts!,

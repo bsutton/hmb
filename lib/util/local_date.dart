@@ -23,6 +23,8 @@ import 'local_time.dart';
 ///  component.
 @immutable
 class LocalDate {
+  final DateTime date;
+  
   /// Creates a [LocalDate] with the date set to today's date.
   /// This is the same as calling [LocalDate()].
   /// required by json.
@@ -49,7 +51,6 @@ class LocalDate {
     }
   }
 
-  final DateTime date;
 
   int get weekday => date.weekday;
 

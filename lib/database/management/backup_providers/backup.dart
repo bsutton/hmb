@@ -11,8 +11,14 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 class Backup {
+  String id;
+  DateTime when;
+  String pathTo;
+  String size;
+  String status;
+  String error;
+
   Backup({
     required this.id,
     required this.when,
@@ -21,11 +27,4 @@ class Backup {
     required this.status,
     required this.error,
   });
-
-  String id;
-  DateTime when;
-  String pathTo;
-  String size;
-  String status;
-  String error;
 }

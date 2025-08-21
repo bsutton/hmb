@@ -28,8 +28,9 @@ import '../base_full_screen/edit_entity_screen.dart';
 import '../task/photo_crud.dart';
 
 class ReceiptEditScreen extends StatefulWidget {
-  const ReceiptEditScreen({super.key, this.receipt});
   final Receipt? receipt;
+  
+  const ReceiptEditScreen({super.key, this.receipt});
 
   @override
   State<ReceiptEditScreen> createState() => _ReceiptEditScreenState();

@@ -18,6 +18,12 @@ import 'hmb_icon_button.dart';
 /// Displays the primary site of a parent
 /// and allows the user to select/update the primary site.
 class HMBButtonAdd extends StatelessWidget {
+  final Future<void> Function()? onAdd;
+  final bool enabled;
+  final bool small;
+
+  final String? hint;
+
   const HMBButtonAdd({
     required this.onAdd,
     required this.enabled,
@@ -25,11 +31,6 @@ class HMBButtonAdd extends StatelessWidget {
     this.small = false,
     super.key,
   });
-  final Future<void> Function()? onAdd;
-  final bool enabled;
-  final bool small;
-
-  final String? hint;
 
   @override
   Widget build(BuildContext context) => HMBIconButton(

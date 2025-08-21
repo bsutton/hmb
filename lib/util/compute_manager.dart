@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'dart:async';
 import 'dart:collection';
 
@@ -19,14 +18,22 @@ import 'package:flutter/foundation.dart';
 
 // A class to represent a task
 class ComputeTask<T, R> {
-  ComputeTask(this.function, this.data, this.completer);
   final ComputeCallback<T, R?> function;
   final T data;
   final Completer<R?> completer;
+  
+  ComputeTask(this.function, this.data, this.completer);
 }
 
 /// Run a task in an isolate but limit the number of concurrent isolates.
 class ComputeManager<T, R> {
+  // ignore: strict_raw_type
+  static ComputeManager? _self;
+
+  final int maxConcurrentTasks;
+  var _runningTasks = 0;
+  final Queue<ComputeTask<T, R>> _taskQueue = Queue();
+
   factory ComputeManager({int maxConcurrentTasks = 2}) =>
       (_self ??= ComputeManager<T, R>._init(
             maxConcurrentTasks: maxConcurrentTasks,
@@ -34,13 +41,6 @@ class ComputeManager<T, R> {
           as ComputeManager<T, R>;
 
   ComputeManager._init({this.maxConcurrentTasks = 2});
-
-  // ignore: strict_raw_type
-  static ComputeManager? _self;
-
-  final int maxConcurrentTasks;
-  var _runningTasks = 0;
-  final Queue<ComputeTask<T, R>> _taskQueue = Queue();
 
   Future<R?> enqueueCompute(ComputeCallback<T, R?> function, T data) {
     final completer = Completer<R?>();

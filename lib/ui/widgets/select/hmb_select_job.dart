@@ -15,6 +15,12 @@ import 'hmb_droplist.dart';
 /// Allows the user to select a Job from the database.
 /// You can optionally preselect an initial job and handle selection changes.
 class HMBSelectJob extends StatefulWidget {
+  final SelectedJob selectedJobId;
+  final void Function(Job? job)? onSelected;
+  final Future<List<Job>> Function(String? filter)? items;
+  final bool required;
+  final String title;
+
   const HMBSelectJob({
     required this.selectedJobId,
     super.key,
@@ -24,20 +30,15 @@ class HMBSelectJob extends StatefulWidget {
     this.required = false,
   });
 
-  final SelectedJob selectedJobId;
-  final void Function(Job? job)? onSelected;
-  final Future<List<Job>> Function(String? filter)? items;
-  final bool required;
-  final String title;
-
   @override
   State<HMBSelectJob> createState() => _HMBSelectJobState();
 }
 
 class JobAndCustomer {
-  JobAndCustomer(this.job, this.customer);
   Job? job;
   Customer? customer;
+
+  JobAndCustomer(this.job, this.customer);
 }
 
 class _HMBSelectJobState extends State<HMBSelectJob> {
@@ -99,7 +100,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
           selectedItem: _getInitialJob,
           onChanged: _onJobChanged,
           items: _getJobs,
-          format: (jc) => '${jc.job!.summary}\n${jc.customer?.name?? ''}',
+          format: (jc) => '${jc.job!.summary}\n${jc.customer?.name ?? ''}',
           required: widget.required,
         ),
       ),
@@ -109,9 +110,10 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
 }
 
 class SelectedJob extends JuneState {
+  int? _jobId;
+
   SelectedJob();
 
-  int? _jobId;
   int? get jobId => _jobId;
 
   set jobId(int? value) {

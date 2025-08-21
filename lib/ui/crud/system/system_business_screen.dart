@@ -34,9 +34,9 @@ import '../../widgets/select/hmb_droplist.dart';
 import 'operating_hours_ui.dart';
 
 class SystemBusinessScreen extends StatefulWidget {
-  const SystemBusinessScreen({super.key, this.showButtons = true});
-
   final bool showButtons;
+
+  const SystemBusinessScreen({super.key, this.showButtons = true});
 
   @override
   SystemBusinessScreenState createState() => SystemBusinessScreenState();

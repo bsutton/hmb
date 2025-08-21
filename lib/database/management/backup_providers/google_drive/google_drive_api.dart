@@ -22,12 +22,12 @@ import 'backup.dart';
 import 'google_drive_auth.dart';
 
 class GoogleDriveApi {
-  GoogleDriveApi._internal(this._authHeaders);
-
   var _initialised = false;
   final Map<String, String> _authHeaders;
   late final drive.DriveApi _driveApi;
   late AuthenticatedClient? _authClient;
+
+  GoogleDriveApi._internal(this._authHeaders);
 
   drive.FilesResource get files => _driveApi.files;
 

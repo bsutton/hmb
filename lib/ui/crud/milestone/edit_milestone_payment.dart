@@ -29,8 +29,9 @@ import '../../widgets/text/hmb_text.dart';
 import 'milestone_tile.dart';
 
 class EditMilestonesScreen extends StatefulWidget {
-  const EditMilestonesScreen({required this.quoteId, super.key});
   final int quoteId;
+  
+  const EditMilestonesScreen({required this.quoteId, super.key});
 
   @override
   _EditMilestonesScreenState createState() => _EditMilestonesScreenState();

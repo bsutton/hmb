@@ -25,6 +25,11 @@ import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_thumbnail.dart';
 
 class CapturePhoto extends StatefulWidget {
+  final Tool tool;
+  final String title;
+  final String comment;
+  final Future<int> Function(Photo) onCaptured;
+  
   const CapturePhoto({
     required this.tool,
     required this.title,
@@ -33,10 +38,6 @@ class CapturePhoto extends StatefulWidget {
     super.key,
   });
 
-  final Tool tool;
-  final String title;
-  final String comment;
-  final Future<int> Function(Photo) onCaptured;
 
   @override
   State<CapturePhoto> createState() => _CapturePhotoState();

@@ -21,6 +21,11 @@ import '../color_ex.dart';
 import 'full_screen_photo_view.dart';
 
 class PhotoThumbnail extends StatelessWidget {
+  late final String? photoPath;
+  final String title;
+  final String? comment;
+  late final bool hasPhoto;
+
   PhotoThumbnail({
     required this.photoPath,
     required this.title,
@@ -43,11 +48,6 @@ class PhotoThumbnail extends StatelessWidget {
       key: key,
     );
   }
-
-  late final String? photoPath;
-  final String title;
-  final String? comment;
-  late final bool hasPhoto;
 
   @override
   Widget build(BuildContext context) => GestureDetector(

@@ -12,9 +12,9 @@ import '../../widgets/widgets.g.dart';
 import 'list_todo_screen.dart';
 
 class ListTodoCard extends StatelessWidget {
-  const ListTodoCard({required this.todo, super.key});
-
   final ToDo todo;
+
+  const ListTodoCard({required this.todo, super.key});
 
   @override
   Widget build(BuildContext context) => HMBColumn(

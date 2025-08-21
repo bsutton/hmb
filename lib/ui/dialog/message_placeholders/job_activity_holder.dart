@@ -21,12 +21,12 @@ import 'date_source.dart';
 import 'place_holder.dart';
 
 class JobActivityDate extends PlaceHolder<JobActivity> {
-  JobActivityDate({required super.source})
-    : super(name: tagName, base: _tagBase);
-
   static String tagName = 'job_activity.start_date';
   static const _tagBase = 'job_activity';
   static String label = 'Activity Date';
+
+  JobActivityDate({required super.source})
+    : super(name: tagName, base: _tagBase);
 
   @override
   Future<String> value() async =>
@@ -34,12 +34,12 @@ class JobActivityDate extends PlaceHolder<JobActivity> {
 }
 
 class JobActivityTime extends PlaceHolder<JobActivity> {
-  JobActivityTime({required super.source})
-    : super(name: tagName, base: _tagBase);
-
   static String tagName = 'job_activity.start_time';
   static const _tagBase = 'job_activity';
   static String label = 'Activity Time';
+
+  JobActivityTime({required super.source})
+    : super(name: tagName, base: _tagBase);
 
   @override
   Future<String> value() async => source.value != null
@@ -48,14 +48,14 @@ class JobActivityTime extends PlaceHolder<JobActivity> {
 }
 
 class OriginalDate extends PlaceHolder<LocalDate> {
-  OriginalDate({required this.dateSource})
-    : super(name: tagName, base: _tagBase, source: dateSource);
-
   static String tagName = 'job_activity.original_date';
   static const _tagBase = 'job_activity.original_date';
   static String label = 'Original Date';
 
   DateSource dateSource;
+
+  OriginalDate({required this.dateSource})
+    : super(name: tagName, base: _tagBase, source: dateSource);
 
   @override
   Future<String> value() async => formatLocalDate(dateSource.date!);

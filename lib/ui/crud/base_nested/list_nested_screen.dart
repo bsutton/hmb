@@ -26,9 +26,9 @@ import '../../widgets/hmb_toggle.dart';
 import '../../widgets/layout/hmb_list_card.dart';
 
 class Parent<P extends Entity<P>> {
-  Parent(this.parent);
-
   P? parent;
+
+  Parent(this.parent);
 }
 
 enum CardDetail { full, summary }
@@ -37,6 +37,24 @@ typedef Allowed<C> = bool Function(C entity);
 
 class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
     extends StatefulWidget {
+  final Parent<P> parent;
+  final String entityNamePlural;
+  final Widget Function(C entity) title;
+  final Widget Function(P entity)? filterBar;
+  final Widget Function(C entity, CardDetail cardDetail) details;
+  final Widget Function(C? entity) onEdit;
+  final bool Function(C)? canEdit;
+  final bool Function(C)? canDelete;
+  final Future<void> Function(C entity) onDelete;
+  final Future<List<C>> Function() fetchList;
+  final Dao<C> dao;
+  final String parentTitle;
+  final String entityNameSingular;
+  final double cardHeight;
+
+  /// All cards are displayed on screen rather than in a listview.
+  final bool extended;
+
   const NestedEntityListScreen({
     required this.dao,
     required this.onEdit,
@@ -55,24 +73,6 @@ class NestedEntityListScreen<C extends Entity<C>, P extends Entity<P>>
     this.cardHeight = 212,
     super.key,
   });
-
-  final Parent<P> parent;
-  final String entityNamePlural;
-  final Widget Function(C entity) title;
-  final Widget Function(P entity)? filterBar;
-  final Widget Function(C entity, CardDetail cardDetail) details;
-  final Widget Function(C? entity) onEdit;
-  final bool Function(C)? canEdit;
-  final bool Function(C)? canDelete;
-  final Future<void> Function(C entity) onDelete;
-  final Future<List<C>> Function() fetchList;
-  final Dao<C> dao;
-  final String parentTitle;
-  final String entityNameSingular;
-  final double cardHeight;
-
-  /// All cards are displayed on screen rather than in a listview.
-  final bool extended;
 
   @override
   NestedEntityListScreenState createState() =>

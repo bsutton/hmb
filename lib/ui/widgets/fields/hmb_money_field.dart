@@ -18,6 +18,9 @@ import 'hmb_money_editing_controller.dart';
 import 'hmb_text_field.dart';
 
 class HMBMoneyField extends HMBTextField {
+  final String fieldName;
+  final bool nonZero;
+
   factory HMBMoneyField({
     required HMBMoneyEditingController controller,
     required String labelText,
@@ -56,9 +59,6 @@ class HMBMoneyField extends HMBTextField {
     super.leadingSpace = true,
     super.validator,
   }) : super(keyboardType: TextInputType.number);
-
-  final String fieldName;
-  final bool nonZero;
 
   // ignore: avoid_positional_boolean_parameters
   static String? validation(String? value, bool nonZero, String fieldName) {

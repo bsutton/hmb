@@ -25,14 +25,14 @@ import 'shopping_item_dialog.dart';
 /// Base card for a shopping item. Tapping the card opens its detail/edit dialog
 /// and then calls [onReload] after edits.
 abstract class ShoppingItemCard extends StatelessWidget {
+  final TaskItemContext itemContext;
+  final Future<void> Function() onReload;
+
   const ShoppingItemCard({
     required this.itemContext,
     required this.onReload,
     super.key,
   });
-
-  final TaskItemContext itemContext;
-  final Future<void> Function() onReload;
 
   /// Build specific action buttons (e.g. ✓ for purchase, ↩ for return).
   Widget buildActions(BuildContext context, CustomerAndJob det);

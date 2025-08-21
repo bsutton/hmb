@@ -19,8 +19,9 @@ import '../../util/money_ex.dart';
 import '../widgets/hmb_button.dart';
 
 class EditInvoiceLineDialog extends StatefulWidget {
-  const EditInvoiceLineDialog({required this.line, super.key});
   final InvoiceLine line;
+  
+  const EditInvoiceLineDialog({required this.line, super.key});
 
   @override
   // ignore: library_private_types_in_public_api

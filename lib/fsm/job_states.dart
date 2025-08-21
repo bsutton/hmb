@@ -4,7 +4,6 @@ import '../entity/job_status.dart';
 
 /// --- fsm2 State types (1:1 with your JobStatus enum) ---
 sealed class JobState extends State {
-  const JobState({required this.visible, required this.status});
   // True if this [JobState] should be
   // shown as a potiential transition to a user.
   /// States with [visible] = false indicate states
@@ -13,6 +12,8 @@ sealed class JobState extends State {
   final bool visible;
 
   final JobStatus status;
+
+  const JobState({required this.visible, required this.status});
 }
 
 // If you keep this, it can now be trivial:
@@ -40,7 +41,7 @@ JobState stateFromType(Type t) => switch (t) {
 
 /// Find the currently-active leaf state Type (simple non-nested machine).
 Future<Type> currentState(StateMachine m) async {
-  // We could also use stateOfMind, but this is explicit and reliable 
+  // We could also use stateOfMind, but this is explicit and reliable
   //for a flat machine.
   if (await m.isInState<Prospecting>()) {
     return Prospecting;

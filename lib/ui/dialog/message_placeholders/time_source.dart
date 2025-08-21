@@ -20,11 +20,11 @@ import '../source_context.dart';
 import 'source.dart';
 
 class TimeSource extends Source<LocalTime> {
-  TimeSource({required this.label}) : super(name: 'time');
-
   final String label;
 
   LocalTime? localTime;
+
+  TimeSource({required this.label}) : super(name: 'time');
 
   @override
   Widget widget() => HMBDateTimeField(

@@ -14,6 +14,11 @@
 import 'package:flutter/material.dart';
 
 class LabeledContainer extends StatelessWidget {
+  final String labelText;
+  final Widget child;
+  final bool isError;
+  final Color backgroundColor;
+
   const LabeledContainer({
     required this.labelText,
     required this.child,
@@ -21,10 +26,6 @@ class LabeledContainer extends StatelessWidget {
     this.isError = false,
     super.key,
   });
-  final String labelText;
-  final Widget child;
-  final bool isError;
-  final Color backgroundColor;
 
   @override
   Widget build(BuildContext context) => Stack(

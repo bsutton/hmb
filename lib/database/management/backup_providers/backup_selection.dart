@@ -21,9 +21,9 @@ import 'backup.dart';
 import 'backup_provider.dart';
 
 class BackupSelectionScreen extends StatefulWidget {
-  const BackupSelectionScreen({required this.backupProvider, super.key});
-
   final BackupProvider backupProvider;
+
+  const BackupSelectionScreen({required this.backupProvider, super.key});
 
   @override
   BackupSelectionScreenState createState() => BackupSelectionScreenState();
@@ -91,7 +91,8 @@ No backups available in ${backups!.location}'''),
 }
 
 class Backups {
-  Backups(this.backups, this.location);
   List<Backup> backups;
   String location;
+
+  Backups(this.backups, this.location);
 }

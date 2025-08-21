@@ -24,6 +24,14 @@ import 'svg.dart';
 
 /// A generic HMB button with optional hint shown on long press.
 class HMBButton extends StatelessWidget {
+  final String label;
+  final Icon? icon;
+  final VoidCallback onPressed;
+  final bool enabled;
+  final Color color;
+  final String hint;
+  final bool _smallFlag;
+
   const HMBButton({
     required this.label,
     required this.onPressed,
@@ -66,14 +74,6 @@ class HMBButton extends StatelessWidget {
     super.key,
   }) : _smallFlag = true;
 
-  final String label;
-  final Icon? icon;
-  final VoidCallback onPressed;
-  final bool enabled;
-  final Color color;
-  final String hint;
-  final bool _smallFlag;
-
   @override
   Widget build(BuildContext context) {
     final button = icon != null
@@ -107,6 +107,16 @@ class HMBButton extends StatelessWidget {
 
 /// A primary-styled button with optional SVG icon and hint on long press.
 class HMBButtonPrimary extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+
+  final String? svg;
+
+  final Color? svgColor;
+
+  final bool enabled;
+  final String hint;
+
   const HMBButtonPrimary({
     required this.label,
     required this.onPressed,
@@ -125,16 +135,6 @@ class HMBButtonPrimary extends StatelessWidget {
     this.enabled = true,
     this.svgColor,
   });
-
-  final String label;
-  final VoidCallback? onPressed;
-
-  final String? svg;
-
-  final Color? svgColor;
-
-  final bool enabled;
-  final String hint;
 
   @override
   Widget build(BuildContext context) {
@@ -157,16 +157,16 @@ class HMBButtonPrimary extends StatelessWidget {
 
 /// A secondary-styled button with hint on long press.
 class HMBButtonSecondary extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final String hint;
+
   const HMBButtonSecondary({
     required this.label,
     required this.onPressed,
     required this.hint,
     super.key,
   });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final String hint;
 
   @override
   Widget build(BuildContext context) {
@@ -186,16 +186,16 @@ class HMBButtonSecondary extends StatelessWidget {
 
 /// A link-style button that launches a URL and shows a hint on long press.
 class HMBLinkButton extends StatelessWidget {
+  final String label;
+  final String link;
+  final String hint;
+
   const HMBLinkButton({
     required this.label,
     required this.link,
     required this.hint,
     super.key,
   });
-
-  final String label;
-  final String link;
-  final String hint;
 
   @override
   Widget build(BuildContext context) {

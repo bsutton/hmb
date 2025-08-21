@@ -19,9 +19,9 @@ import '../widgets/hmb_toast.dart';
 import 'hmb_dialog.dart';
 
 class DatabaseErrorDialog extends StatelessWidget {
-  const DatabaseErrorDialog({required this.error, super.key});
-
   final String error;
+
+  const DatabaseErrorDialog({required this.error, super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -38,8 +38,9 @@ import '../category/select_category.dart';
 import '../task/photo_crud.dart';
 
 class ToolEditScreen extends StatefulWidget {
-  const ToolEditScreen({super.key, this.tool});
   final Tool? tool;
+  
+  const ToolEditScreen({super.key, this.tool});
 
   @override
   _ToolEditScreenState createState() => _ToolEditScreenState();

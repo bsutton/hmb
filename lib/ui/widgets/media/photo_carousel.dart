@@ -26,14 +26,14 @@ import '../layout/hmb_spacer.dart';
 import '../text/hmb_text_themes.dart';
 
 class PhotoCarousel extends StatefulWidget {
+  final List<PhotoMeta> photos;
+  final int initialIndex;
+
   const PhotoCarousel({
     required this.photos,
     required this.initialIndex,
     super.key,
   });
-
-  final List<PhotoMeta> photos;
-  final int initialIndex;
 
   @override
   State<PhotoCarousel> createState() => _PhotoCarouselState();
@@ -119,7 +119,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
                     // The PageView displays one photo per page.
                     _buildPhoto(),
                     // Title and optional comment
-                    // Give extra space on the right (right: 80) so it doesn't 
+                    // Give extra space on the right (right: 80) so it doesn't
                     //overlap buttons.
 
                     // Previous & Next FABs at the bottom

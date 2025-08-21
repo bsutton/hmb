@@ -14,9 +14,10 @@
 import 'package:flutter/material.dart';
 
 class HMBSpacer extends StatelessWidget {
-  const HMBSpacer({this.width = false, this.height = false, super.key});
   final bool width;
   final bool height;
+
+  const HMBSpacer({this.width = false, this.height = false, super.key});
 
   @override
   Widget build(BuildContext context) =>

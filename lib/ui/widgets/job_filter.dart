@@ -21,9 +21,9 @@ import '../../entity/job.dart';
 import 'select/hmb_droplist_multi.dart';
 
 class JobFilterWidget extends StatefulWidget {
-  const JobFilterWidget({required this.onJobSelectionChanged, super.key});
-
   final ValueChanged<List<Job>> onJobSelectionChanged;
+
+  const JobFilterWidget({required this.onJobSelectionChanged, super.key});
 
   @override
   State<JobFilterWidget> createState() => _JobFilterWidgetState();

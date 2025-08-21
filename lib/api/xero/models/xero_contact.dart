@@ -17,6 +17,10 @@ import '../../../entity/contact.dart';
 import '../../../util/exceptions.dart';
 
 class XeroContact {
+  final String name;
+  final String email;
+  final String phone;
+
   XeroContact({required this.name, required this.email, required this.phone}) {
     if (Strings.isBlank(name) || Strings.isBlank(email)) {
       throw XeroException(
@@ -31,10 +35,6 @@ class XeroContact {
     email: contact.emailAddress,
     phone: contact.bestPhone,
   );
-
-  final String name;
-  final String email;
-  final String phone;
 
   Map<String, dynamic> toJson() {
     if (Strings.isNotBlank(phone)) {

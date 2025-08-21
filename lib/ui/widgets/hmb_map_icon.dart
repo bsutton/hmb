@@ -21,8 +21,9 @@ import '../../util/clip_board.dart';
 import '../../util/google_maps.dart';
 
 class HMBMapIcon extends StatelessWidget {
-  const HMBMapIcon(this.site, {super.key});
   final Site? site;
+
+  const HMBMapIcon(this.site, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +59,7 @@ class HMBMapIcon extends StatelessWidget {
           icon: const Icon(Icons.copy),
           onPressed: () => Strings.isEmpty(address)
               ? null
-              : unawaited(clipboardCopyTo( address)),
+              : unawaited(clipboardCopyTo(address)),
           color: Strings.isEmpty(address) ? Colors.grey : Colors.blue,
           tooltip: 'Copy Address to the Clipboard',
         ),
