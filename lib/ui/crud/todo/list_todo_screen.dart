@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../dao/dao_todo.dart';
-import '../../../entity/todo.dart';
+import '../../../entity/entity.g.dart';
 import '../../../util/util.g.dart';
 import '../../widgets/text/text.g.dart';
 import '../../widgets/widgets.g.dart';
@@ -10,7 +10,9 @@ import 'edit_todo_screen.dart';
 import 'list_todo_card.dart';
 
 class ToDoListScreen extends StatefulWidget {
-  const ToDoListScreen({super.key});
+  const ToDoListScreen({this.job, super.key});
+
+  final Job? job;
 
   @override
   State<ToDoListScreen> createState() => _ToDoListScreenState();
@@ -20,26 +22,30 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
   // Default to showing open items only.
   ToDoStatus toDoListStatusFilter = ToDoStatus.open;
 
+  final entitListKey = GlobalKey<EntityListScreenState>();
+
   @override
   Widget build(BuildContext context) => EntityListScreen<ToDo>(
+    key: entitListKey,
     pageTitle: 'Todo',
     dao: DaoToDo(),
     // Order: overdue first, then today, then upcoming.
-    fetchList: (filter) =>
-        DaoToDo().getFiltered(filter: filter, status: toDoListStatusFilter),
+    fetchList: _fetchTodos,
     filterSheetBuilder: (onChange) => _buildFilterSheet(context, onChange),
     onFilterReset: () => toDoListStatusFilter = ToDoStatus.open,
     isFilterActive: () => toDoListStatusFilter == ToDoStatus.done,
     onEdit: (todo) => ToDoEditScreen(toDo: todo),
-    title: (t) => Row(
+    title: (todo) => Row(
       children: [
         Checkbox(
-          value: t.status == ToDoStatus.done,
+          value: todo.status == ToDoStatus.done,
           onChanged: (_) async {
-            await DaoToDo().toggleDone(t);
+            await DaoToDo().toggleDone(todo);
+            await entitListKey.currentState!.refresh();
+            HMBToast.info('Marked ${todo.title} as done');
           },
         ),
-        Expanded(child: HMBTextHeadline2(t.title)),
+        Expanded(child: HMBTextHeadline2(todo.title)),
       ],
     ),
     background: (t) async => t.status == ToDoStatus.open && isOverdue(t.dueDate)
@@ -47,6 +53,25 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
         : SurfaceElevation.e6.color,
     details: (t) => ListTodoCard(todo: t),
   );
+
+  Future<List<ToDo>> _fetchTodos(String? filter) async {
+    var todos = await DaoToDo().getFiltered(
+      filter: filter,
+      status: toDoListStatusFilter,
+    );
+
+    if (widget.job != null) {
+      todos = todos
+          .where(
+            (q) =>
+                q.parentId == widget.job!.id &&
+                q.parentType == ToDoParentType.job,
+          )
+          .toList();
+    }
+
+    return todos;
+  }
 
   Widget _buildFilterSheet(BuildContext context, void Function() onChange) =>
       Column(

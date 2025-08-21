@@ -18,6 +18,7 @@ class ListTodoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBColumn(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       HMBRow(
         children: [

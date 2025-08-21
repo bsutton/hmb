@@ -12,7 +12,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../dao/dao.g.dart';
-import '../../../dao/dao_todo.dart';
 import '../../../entity/job.dart';
 import '../../invoicing/list_invoice_screen.dart';
 import '../../nav/dashboards/dashlet_card.dart';
@@ -24,6 +23,8 @@ import '../todo/list_todo_screen.dart';
 import '../work_assignment/list_assignment_screen.dart';
 import 'esitmator/edit_job_estimate_screen.dart';
 import 'tracking/list_time_entry_screen.dart';
+
+typedef OnResume = void Function();
 
 /// A compact dashboard for a single Job,
 /// displaying fixed-size DashletCards in one or more rows.
@@ -118,9 +119,9 @@ class MiniJobDashboard extends StatelessWidget {
                 final all = await DaoToDo().getByJob(job.id);
                 return DashletValue<int>(all.length);
               },
-              builder: (_, _) => const HMBFullPageChildScreen(
+              builder: (_, _) => HMBFullPageChildScreen(
                 title: 'Todo',
-                child: ToDoListScreen(),
+                child: ToDoListScreen(job: job),
               ),
 
               // route: '/home/jobs/quotes/${job.id}',
