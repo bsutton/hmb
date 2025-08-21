@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -19,7 +21,8 @@ import 'dao_task.dart';
 import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
 
-/// Group by Task then Dates within that task, followed by materials and returns.
+/// Group by Task then Dates within that task,
+///  followed by materials and returns.
 Future<Money> createByTask(
   int invoiceId,
   Job job,
@@ -143,7 +146,7 @@ Future<Money> _timeAndMaterialsLabour(
       invoiceId: invoiceId,
       invoiceLineGroupId: invoiceLineGroupId,
       description:
-          'Labour: ${task.name} on ${formatLocalDate(labourForDay.date)} — Hours: $hoursWorked',
+          '''Labour: ${task.name} on ${formatLocalDate(labourForDay.date)} — Hours: $hoursWorked''',
       quantity: hoursWorked,
       unitPrice: job.hourlyRate!,
       lineTotal: lineTotal,

@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -56,7 +58,6 @@ class Customer extends Entity<Customer> {
     required this.billingContactId,
   }) : super.forUpdate();
 
-  
   factory Customer.fromMap(Map<String, dynamic> map) => Customer(
     id: map['id'] as int,
     name: map['name'] as String,
@@ -68,7 +69,6 @@ class Customer extends Entity<Customer> {
     hourlyRate: MoneyEx.fromInt(map['default_hourly_rate'] as int?),
     billingContactId: map['billing_contact_id'] as int?,
   );
-
 
   /// Returns a copy of this [Customer] with the given fields replaced.
   Customer copyWith({
@@ -92,7 +92,7 @@ class Customer extends Entity<Customer> {
     createdDate: createdDate ?? this.createdDate,
     modifiedDate: modifiedDate ?? this.modifiedDate,
   );
-  
+
   final String name;
   final String? description;
   final bool disbarred;

@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -376,7 +378,8 @@ enum DayName {
   /// Returns the Dart enum name (e.g., "mon") as the JSON string.
   String toJson() => name;
 
-  /// Looks up the appropriate DayName based on the enum name string (e.g., "mon").
+  /// Looks up the appropriate DayName based on the enum name string 
+  /// (e.g., "mon").
   /// Throws a StateError if the provided dayStr doesn't match any known enum.
   static DayName fromJson(String dayStr) =>
       DayName.values.firstWhere((e) => e.name == dayStr);

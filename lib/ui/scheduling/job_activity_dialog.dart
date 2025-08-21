@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -187,7 +189,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                     onPressed: _showContactOptions,
                     label: 'Send Notice',
                     hint:
-                        'Send a text message to the user confirming the schedule.',
+                        '''Send a text message to the user confirming the schedule.''',
                   ),
                 const SizedBox(height: 30),
                 _buildButtons(context),
@@ -393,8 +395,8 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
         builder: (context) => AlertDialog(
           title: const Text('Event Overlap'),
           content: Text(
-            'This event overlaps with another event: ${overlappingEvent.job.summary} '
-            '(${formatDateTime(overlappingEvent.jobActivity.start)} - ${formatDateTime(overlappingEvent.jobActivity.end)}). '
+            '''This event overlaps with another event: ${overlappingEvent.job.summary} '''
+            '''(${formatDateTime(overlappingEvent.jobActivity.start)} - ${formatDateTime(overlappingEvent.jobActivity.end)}). '''
             'Do you want to continue?',
           ),
           actions: [
@@ -586,12 +588,15 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     // TODO(bsutton): send customer notice that their job has been scheduled
     // as well as notice if we change the job.
     // Implement your logic to send the notice via email or SMS
-    // You can use the contact.method and contact.detail to determine how to send the notice
+    // You can use the contact.method and contact.detail to determine how to 
+    //send the notice
 
     // For demonstration purposes, we just show a snackbar
     HMBToast.info('Not yet implemented');
     // HMBToast.info(
-    //   'Notice sent to ${contact.contact.firstName} via ${contact.method.name} (${contact.detail})',
+    //   'Notice sent to ${contact.contact.firstName} 
+    //via ${contact.method.name} 
+    // (${contact.detail})',
     // );
 
     // Record the date the notice was sent

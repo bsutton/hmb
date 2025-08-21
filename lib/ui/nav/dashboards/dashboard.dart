@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -28,7 +30,8 @@ class DashboardPage extends StatefulWidget {
   final List<Widget> dashlets;
 }
 
-/// Base state class for any dashboard-like page that needs to refresh on return.
+/// Base state class for any dashboard-like page that needs to refresh 
+/// on return.
 class DashboardState extends State<DashboardPage> with RouteAware {
   @override
   void initState() {
@@ -49,7 +52,8 @@ class DashboardState extends State<DashboardPage> with RouteAware {
     onDashboardResumed();
   }
 
-  /// Called when returning to this dashboard. Default refreshes and resets title.
+  /// Called when returning to this dashboard. Default refreshes 
+  /// and resets title.
   @protected
   void onDashboardResumed() {
     setAppTitle(widget.title);

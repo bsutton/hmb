@@ -77,7 +77,9 @@ class HMBEntityChip<E extends Entity<E>> extends StatelessWidget {
     onTapDefault: (ctx, e) async {
       await Navigator.push(
         ctx,
-        MaterialPageRoute<void>(builder: (_) => CustomerEditScreen(customer: e)),
+        MaterialPageRoute<void>(
+          builder: (_) => CustomerEditScreen(customer: e),
+        ),
       );
     },
     onTap: onTap,

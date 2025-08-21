@@ -1,13 +1,16 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
+
 
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -102,7 +105,7 @@ class _BackupScreenState extends State<BackupScreen> {
             const SizedBox(height: 20),
             HMBButton.withIcon(
               label: 'Restore Database',
-              hint: 'Restore a database from Google Drive - all data since the backup occured will be lost',
+              hint: '''Restore a database from Google Drive - all data since the backup occured will be lost''',
               onPressed: () async {
                 try {
                   await EmailBackupProvider(

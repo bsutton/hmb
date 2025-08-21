@@ -40,7 +40,8 @@ JobState stateFromType(Type t) => switch (t) {
 
 /// Find the currently-active leaf state Type (simple non-nested machine).
 Future<Type> currentState(StateMachine m) async {
-  // We could also use stateOfMind, but this is explicit and reliable for a flat machine.
+  // We could also use stateOfMind, but this is explicit and reliable 
+  //for a flat machine.
   if (await m.isInState<Prospecting>()) {
     return Prospecting;
   }

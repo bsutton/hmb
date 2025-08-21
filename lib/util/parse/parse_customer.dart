@@ -1,6 +1,7 @@
 // {
 // HMBToast.info(
-//   'Unable to extract any customer details from the message. You can copy and paste the details manually.',
+//   'Unable to extract any customer details from the message. 
+//You can copy and paste the details manually.',
 // );
 
 import 'dart:ui';

@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -117,7 +119,7 @@ Future<String> _initiateResumableUpload(
   if (response.statusCode != 200 && response.statusCode != 201) {
     final body = await response.stream.bytesToString();
     throw Exception(
-      'Failed to initiate resumable upload. Status: ${response.statusCode}, Body: $body',
+      '''Failed to initiate resumable upload. Status: ${response.statusCode}, Body: $body''',
     );
   }
 
@@ -129,7 +131,8 @@ Future<String> _initiateResumableUpload(
 }
 
 // --------------------
-// _parseRange: Parses the range header returned by Drive during chunked uploads.
+// _parseRange: Parses the range header returned by 
+//Drive during chunked uploads.
 // --------------------
 int _parseRange(String? rangeHeader) {
   if (rangeHeader == null) {

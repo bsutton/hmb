@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -233,8 +235,8 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                     child: Text(
                       'No Shopping Items found\n'
                       '- Shopping items are taken from Task Items\n'
-                      '  that are marked as "${TaskItemType.materialsBuy.label}", "${TaskItemType.toolsBuy.label}" or "${TaskItemType.consumablesBuy.label}".\n'
-                      "If you were expecting to see items here - check the Job's Status is active.",
+                      '''  that are marked as "${TaskItemType.materialsBuy.label}", "${TaskItemType.toolsBuy.label}" or "${TaskItemType.consumablesBuy.label}".\n'''
+                      """If you were expecting to see items here - check the Job's Status is active.""",
                       textAlign: TextAlign.center,
                     ),
                   );

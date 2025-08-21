@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -121,7 +123,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       DashletCard<void>.onTap(
         label: 'Backup',
         hint:
-            'Backup your $appName data to your Google Drive Account (recommended)',
+            '''Backup your $appName data to your Google Drive Account (recommended)''',
         icon: Icons.info_outline,
         onTap: (_) =>
             BlockingUI().run(_performBackup, label: 'Performing Backup'),
@@ -153,7 +155,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       DashletCard<void>.route(
         label: 'Backup Local',
         hint:
-            'Make a local backup of $appName database - using Google Drive is safer.',
+            '''Make a local backup of $appName database - using Google Drive is safer.''',
         icon: Icons.save,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/backup/local/backup',
@@ -166,7 +168,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         icon: Icons.forum,
         value: () async => const DashletValue(null),
         valueBuilder: (_, _) => _syncPhotoBuilder(),
-        onTap: (_) async => _syncPhotos(),
+        onTap: (_)  => _syncPhotos(),
       ),
 
       DashletCard<void>.onTap(
@@ -174,12 +176,13 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         hint: 'Sign out of your Google Drive Account',
         icon: Icons.info,
         value: () => Future.value(const DashletValue(null)),
-        onTap: (_) async => signout(),
+        onTap: (_)  => signout(),
       ),
     ],
   );
 
-  // FutureBuilderEx<DateTime?> _buildLastBackup() => FutureBuilderEx<DateTime?>(
+  // FutureBuilderEx<DateTime?> _buildLastBackup() => 
+  // FutureBuilderEx<DateTime?>(
   //   future: _lastBackupFuture,
   //   builder: (context, lastBackupDate) {
   //     final text = lastBackupDate == null
@@ -295,7 +298,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                'To enable cloud backups, please sign in to your Google account.',
+                '''To enable cloud backups, please sign in to your Google account.''',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, color: Colors.white70),
               ),
@@ -305,7 +308,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
               icon: const Icon(Icons.login, color: Colors.white),
               label: 'Sign in to Google',
               hint:
-                  'Sign into Google Drive so you can back up your data and Sync your photos',
+                  '''Sign into Google Drive so you can back up your data and Sync your photos''',
               onPressed: () async {
                 GoogleDriveAuth? auth;
                 try {

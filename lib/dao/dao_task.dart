@@ -1,13 +1,16 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
+
 
 import 'package:dcli_core/dcli_core.dart' as core;
 import 'package:june/june.dart';
@@ -296,7 +299,6 @@ WHERE ti.id = ?
   Future<BillingType> getBillingType(Task task) async {
     final job = await DaoJob().getById(task.jobId);
 
-    // return task.billingType ?? job?.billingType ?? BillingType.timeAndMaterial;
     return job?.billingType ?? BillingType.timeAndMaterial;
   }
 
@@ -369,7 +371,8 @@ WHERE ti.id = ?
   /// True when:
   /// - job is Fixed Price AND
   /// - there exists an APPROVED Quote for the job AND
-  /// - that quote has a QuoteLineGroup for the task where lineApprovalStatus != rejected
+  /// - that quote has a QuoteLineGroup for the task where 
+  ///     lineApprovalStatus != rejected
   ///
   /// If the group is REJECTED, we allow the move (as per requirement).
   Future<bool> isTaskLockedByApprovedFixedQuote({
@@ -467,10 +470,6 @@ class TaskEstimatedValue {
     required this.estimatedLabourHours,
   });
 
-  //  : estimatedLabourHours =
-  //          hourlyRate == MoneyEx.zero
-  //              ? Fixed.zero
-  //              : estimatedLabourCharge.divideByFixed(hourlyRate.amount).amount;
 
   Task task;
   Money hourlyRate;

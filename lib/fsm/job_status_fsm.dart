@@ -167,9 +167,13 @@ Future<void> _updateJobStatus(Job job, JobStatus status) async {
 /// How it works:
 /// 1) We locate the active state's StateDefinition via `traverseTree()`.
 /// 2) We list its transitions with `getTransitions(includeInherited: true)`.
-/// 3) For each transition, we build the appropriate Event with your Job payload,
-///    then ask `findTriggerableTransition(fromType, event)` to see if it would fire.
-///    If yes, we include the mapped target JobStatus. :contentReference[oaicite:1]{index=1}
+/// 3) For each transition, we build the appropriate Event with your 
+/// Job payload,
+///    then ask `findTriggerableTransition(fromType, event)` to see if 
+/// it would fire.
+///    If yes, we include the mapped target JobStatus. :contentReference
+/// [oaicite:1]
+/// {index=1}
 Future<List<Next>> nextFromFsm({
   required StateMachine machine,
   required Job job,
@@ -180,7 +184,8 @@ Future<List<Next>> nextFromFsm({
     (sd, _) {
       defs[sd.stateType] = sd;
     },
-  ); // debug helper; fine to use at runtime too. :contentReference[oaicite:2]{index=2}
+  ); // debug helper; fine to use at runtime too. :contentReference[oaicite:2]
+  {index=2}
 
   final activeType = await currentState(machine);
   final def = defs[activeType];
@@ -190,12 +195,14 @@ Future<List<Next>> nextFromFsm({
 
   final out = <Next>[];
 
-  // All static (i.e., declared) transitions, including those inherited from parents.
+  // All static (i.e., declared) transitions, including those 
+  //inherited from parents.
   final transitions = def
       .getTransitions(); // :contentReference[oaicite:3]{index=3}
 
   for (final td in transitions) {
-    // td.eventType and td.toState.stateType are available on TransitionDefinition.
+    // td.eventType and td.toState.stateType are available on 
+    // TransitionDefinition.
     final factory = eventFactory[td.triggerEvents.first];
     if (factory == null) {
       continue; // unknown or internal event
@@ -203,7 +210,8 @@ Future<List<Next>> nextFromFsm({
 
     final event = factory(job);
 
-    // Ask fsm2 if this event would actually trigger from the active state *right now*.
+    // Ask fsm2 if this event would actually trigger from the active 
+    //state *right now*.
     final triggerable = await def.findTriggerableTransition(
       activeType,
       event,

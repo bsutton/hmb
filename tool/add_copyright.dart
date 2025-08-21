@@ -1,6 +1,7 @@
 import 'dart:io';
 
-/// A simple Dart script to prepend a copyright and license header to all Dart files
+/// A simple Dart script to prepend a copyright and license header 
+/// to all Dart files
 /// Usage: dart run add_copyright.dart from your root_directory
 
 void main(List<String> args) {
@@ -15,16 +16,19 @@ void main(List<String> args) {
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License, 
+      with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products for 
+    third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 ''';
 
-  // Recursively find all .dart files, excluding any under a ".history" directory
+  // Recursively find all .dart files, excluding any under a ".history"
+  // directory
   final dartFiles = <File>[];
   for (final entity in rootDir.listSync(recursive: true, followLinks: false)) {
     if (entity is File &&

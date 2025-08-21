@@ -19,7 +19,8 @@ class HMBFilterSheet extends StatefulWidget {
   /// Padding around sheet content
   final EdgeInsets padding;
 
-  /// Callback to reset  filters to their original state; if provided, a "Reset" button is shown
+  /// Callback to reset  filters to their original state; 
+  /// if provided, a "Reset" button is shown
   final VoidCallback? onReset;
 
   @override

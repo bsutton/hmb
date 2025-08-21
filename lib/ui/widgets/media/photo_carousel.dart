@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -117,7 +119,8 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
                     // The PageView displays one photo per page.
                     _buildPhoto(),
                     // Title and optional comment
-                    // Give extra space on the right (right: 80) so it doesn't overlap buttons.
+                    // Give extra space on the right (right: 80) so it doesn't 
+                    //overlap buttons.
 
                     // Previous & Next FABs at the bottom
                     Positioned(
@@ -147,7 +150,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
           imageProvider: FileImage(File(photoMeta.absolutePathTo)),
           backgroundDecoration: const BoxDecoration(color: Colors.black),
           minScale: PhotoViewComputedScale.contained,
-          maxScale: PhotoViewComputedScale.covered * 2.0,               
+          maxScale: PhotoViewComputedScale.covered * 2.0,
           initialScale: PhotoViewComputedScale.contained,
         ),
       );

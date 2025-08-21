@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -87,7 +89,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Invoice #${invoice.id} Issued: ${formatDate(invoice.createdDate)}',
+                  '''Invoice #${invoice.id} Issued: ${formatDate(invoice.createdDate)}''',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -145,7 +147,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                       ],
                       children: [
                         Text(
-                          'Qty: ${line.quantity}, Unit: ${line.unitPrice}, Status: ${line.status.description}',
+                          '''Qty: ${line.quantity}, Unit: ${line.unitPrice}, Status: ${line.status.description}''',
                         ),
                         Text('Total: ${line.lineTotal}'),
                       ],

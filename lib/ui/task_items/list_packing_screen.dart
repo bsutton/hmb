@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -106,7 +108,8 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
           Strings.isBlank(filter) ||
           taskItem.description.toLowerCase().contains(filter!.toLowerCase());
 
-      // If a schedule filter is selected (other than "All") check the job's next activity.
+      // If a schedule filter is selected (other than "All") check the job's 
+      //next activity.
       if (include && _selectedScheduleFilter != ScheduleFilter.all) {
         final job = await DaoJob().getJobForTask(task!.id);
         if (job != null) {
@@ -255,7 +258,7 @@ If your Job isn't showing then you need to update its status to an Active one su
               required: false,
             ).help(
               'Filter by Schedule',
-              'Filter packing items by job scheduled date (Today, Next 3 Days, or This Week)',
+              '''Filter packing items by job scheduled date (Today, Next 3 Days, or This Week)''',
             ),
             HMBToggle(
               label: 'Show Jobs pre scheduling',

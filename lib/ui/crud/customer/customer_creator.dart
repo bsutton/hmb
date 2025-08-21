@@ -152,7 +152,7 @@ class _CustomerCreatorState extends State<CustomerCreator> {
   void _onExtract(ParsedCustomer parsedCustomer) {
     if (parsedCustomer.isEmpty()) {
       HMBToast.info(
-        'Unable to extract any customer details from the message. You can copy and paste the details manually.',
+        '''Unable to extract any customer details from the message. You can copy and paste the details manually.''',
       );
       return;
     }
@@ -241,7 +241,8 @@ class _CustomerCreatorState extends State<CustomerCreator> {
         Navigator.of(context).pop(customer2);
       }
     } catch (error) {
-      // Check if the error indicates a duplicate name (unique constraint violation)
+      // Check if the error indicates a duplicate name (unique constraint 
+      // violation)
       if (error.toString().contains('UNIQUE constraint failed')) {
         HMBToast.error(
           'A Customer with the name ${_customerName.text} already exists.',

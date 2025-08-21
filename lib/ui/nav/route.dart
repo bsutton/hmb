@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -52,7 +54,8 @@ GoRouter createGoRouter(GlobalKey<NavigatorState> navigatorKey) => GoRouter(
     HMBToast.error('Route Error: ${state.error}');
   },
   redirect: (context, state) {
-    // If the deep link is the Xero OAuth callback, do not change the current route.
+    // If the deep link is the Xero OAuth callback, do not change
+    // the current route.
     if (state.matchedLocation == '/xero/auth_complete') {
       // Return the current location so that no navigation occurs
       // as we are directly handling the intent in the xero auth code.

@@ -1,13 +1,16 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
+
 
 import 'dart:async';
 
@@ -417,7 +420,8 @@ class WizardState extends State<Wizard> {
     color: Colors.grey.shade400,
   );
 
-  /// Show the step's build if it's the current step; otherwise show a placeholder.
+  /// Show the step's build if it's the current step; otherwise 
+  /// show a placeholder.
   Widget buildStepBody(WizardStep step, int index) {
     final isCurrentStep = _isCurrent(index);
 

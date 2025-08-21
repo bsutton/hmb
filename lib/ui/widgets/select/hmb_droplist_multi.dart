@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -20,7 +22,8 @@ import '../layout/labeled_container.dart';
 import '../surface.dart';
 import 'hmb_droplist_multi_dialog.dart';
 
-/// A multi-select dropdown list field with async loading, built on DeferredState.
+/// A multi-select dropdown list field with async loading, 
+/// built on DeferredState.
 class HMBDroplistMultiSelect<T> extends StatefulWidget {
   const HMBDroplistMultiSelect({
     required this.initialItems,

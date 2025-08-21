@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -34,8 +36,10 @@ typedef DashletWidgetBuilder<T> =
 
 typedef OnTap = void Function(BuildContext context);
 
-/// A reusable dashlet card widget that reloads its data when the dashboard resumes.
-/// Supports an optional compact mode for embedding in tighter UIs (e.g. job card).
+/// A reusable dashlet card widget that reloads its data when the 
+/// dashboard resumes.
+/// Supports an optional compact mode for embedding in tighter UIs
+///  (e.g. job card).
 /// A default valueBuilder is used to display the [value] unless
 /// a [valueBuilder] is passed, in which case it is passed the [value]
 /// and the resulting Widget is displayed.

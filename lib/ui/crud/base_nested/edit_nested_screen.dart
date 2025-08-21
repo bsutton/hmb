@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -154,10 +156,11 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
           setState(() {});
         }
       } catch (error) {
-        // Check if the error indicates a duplicate name (unique constraint violation)
+        // Check if the error indicates a duplicate name (unique 
+        //constraint violation)
         if (error.toString().contains('UNIQUE constraint failed')) {
           HMBToast.error(
-            'A ${widget.entityName.toLowerCase()} with that name already exists.',
+            '''A ${widget.entityName.toLowerCase()} with that name already exists.''',
           );
         } else {
           rethrow;

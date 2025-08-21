@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -74,7 +76,8 @@ class JobAndCustomer {
   final String? bestEmailAddress;
 }
 
-/// The main schedule page. This is the "shell" that holds a [PageView] of either
+/// The main schedule page. This is the "shell" that holds a [PageView] 
+/// of either
 /// [DaySchedule], [WeekSchedule], or [MonthSchedule].
 class SchedulePage extends StatefulWidget with ScheduleHelper {
   const SchedulePage({
@@ -124,7 +127,8 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   /// date range (e.g. day)
   var _focusDate = LocalDate.today();
 
-  /// A guard to prevent infinite `_onPageChanged` loops if we call jumpToPage inside it.
+  /// A guard to prevent infinite `_onPageChanged` loops if we call 
+  /// jumpToPage inside it.
   var _isAdjustingPage = false;
 
   late final OperatingHours operatingHours;
@@ -147,7 +151,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
     operatingHours = (await DaoSystem().get()).getOperatingHours();
     if (operatingHours.noOpenDays()) {
       HMBToast.error(
-        "Before you Schedule a job, you must first set your opening hours from the 'Settings | Business' page.",
+        """Before you Schedule a job, you must first set your opening hours from the 'Settings | Business' page.""",
       );
       if (mounted) {
         context.go('/home/settings');
@@ -162,7 +166,8 @@ class SchedulePageState extends DeferredState<SchedulePage> {
   }
 
   /// Initialize the page controller with the correct starting index:
-  /// - If [SchedulePage.initialActivityId] is provided, fetch that activities' date from DB.
+  /// - If [SchedulePage.initialActivityId] is provided, fetch that activities' 
+  /// date from DB.
   /// - Otherwise, use [DateTime.now()].
   Future<void> _initPage() async {
     _currentFirstDateOnPage = await operatingHours.getNextOpenDate(

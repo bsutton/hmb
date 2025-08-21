@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -148,7 +150,8 @@ class OperatingHours {
 
   bool inOperatingHours(JobActivity activity) {
     // 1) Check if the activity is on a single day.
-    //    If it spans multiple calendar days, return false (or handle specially).
+    //    If it spans multiple calendar days, return false 
+    //(or handle specially).
     if (activity.start.toLocalDate() != activity.end.toLocalDate()) {
       return false;
     }
@@ -170,7 +173,8 @@ class OperatingHours {
     }
 
     // 4) Compare the activities time range to the day’s start/end times.
-    //    If either start or end is null, treat as “no configured hours,” i.e., closed.
+    //    If either start or end is null, treat 
+    //as “no configured hours,” i.e., closed.
     if (operatingDay.start == null || operatingDay.end == null) {
       return false;
     }

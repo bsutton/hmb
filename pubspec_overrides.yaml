@@ -3,8 +3,8 @@ dependency_overrides:
   #   path: ../flutter_calendar_view
   # mailto:
   #   path: ../../mailto
-  # future_builder_ex:
-  #   path: ../../future_builder_ex
+  fsm2:
+    path: ../fsm2
 
   # money:
   #   path: ../money2

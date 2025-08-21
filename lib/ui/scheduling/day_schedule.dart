@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -61,7 +63,8 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
   late final System system;
   late final OperatingHours operatingHours;
   var _hasActivitiesInExtendedHours = false;
-  // New state variables to hold the computed bounds when there are extended activities.
+  // New state variables to hold the computed bounds when there are 
+  //extended activities.
   int? _computedStartHour;
   int? _computedEndHour;
   late LocalDate currentDate;
@@ -86,7 +89,8 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     super.dispose();
   }
 
-  /// Fetch activities for [currentDate] from DB and compute extended hour bounds if needed.
+  /// Fetch activities for [currentDate] from DB and compute extended 
+  /// hour bounds if needed.
   Future<void> _loadActivitiesForDay() async {
     print('loadingDays');
     // Set a date range: midnight -> midnight next day
@@ -250,7 +254,8 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final dayOperating = system.getOperatingHours().day(
       DayName.fromDate(currentDate),
     );
-    // If operating hours are not defined (non-operating day), show the full day.
+    // If operating hours are not defined (non-operating day), 
+    //show the full day.
     if (dayOperating.start == null || dayOperating.end == null) {
       return 0;
     }
@@ -273,7 +278,8 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final dayOperating = system.getOperatingHours().day(
       DayName.fromDate(currentDate),
     );
-    // If operating hours are not defined (non-operating day), show the full day.
+    // If operating hours are not defined (non-operating day), 
+    //show the full day.
     if (dayOperating.start == null || dayOperating.end == null) {
       return 24;
     }
@@ -327,7 +333,8 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Wrap the first two rows in a Row so we can have a two-row column at the end.
+                    // Wrap the first two rows in a Row so we can have 
+                    //a two-row column at the end.
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

@@ -1,13 +1,16 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
+
 
 import 'package:money2/money2.dart';
 
@@ -104,7 +107,8 @@ Future<int> createInvoiceGroupForDate(int invoiceId, LocalDate workDate) {
   return DaoInvoiceLineGroup().insert(invoiceLineGroup);
 }
 
-/// Add materials (and returns) at the end of the invoice, grouped under their respective tasks
+/// Add materials (and returns) at the end of the invoice,
+///  grouped under their respective tasks
 Future<Money> emitMaterialsByTask(
   Job job,
   int invoiceId,
@@ -122,7 +126,8 @@ Future<Money> emitMaterialsByTask(
     var invoiceLineGroupId = -1;
     for (final item in taskItems) {
       final itemType = item.itemType;
-      // skip time entries, tools-own, zero-charge, uncompleted or already billed
+      // skip time entries, tools-own, zero-charge, uncompleted 
+      // or already billed
       if (item.billed ||
           !item.completed ||
           itemType == TaskItemType.labour ||

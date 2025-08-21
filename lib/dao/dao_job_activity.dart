@@ -1,13 +1,16 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
+
 
 import '../entity/job_activity.dart';
 import '../util/local_date.dart';
@@ -44,7 +47,7 @@ class DaoJobActivity extends Dao<JobActivity> {
     final results = await db.query(
       tableName,
       where:
-          '(start_date >= ? AND start_date < ?) OR (end_date > ? AND end_date <= ?)',
+          '''(start_date >= ? AND start_date < ?) OR (end_date > ? AND end_date <= ?)''',
       whereArgs: <Object>[
         start.toIso8601String(),
         end.toIso8601String(),

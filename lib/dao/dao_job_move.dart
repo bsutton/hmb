@@ -61,7 +61,7 @@ extension JobCopyMove on DaoJob {
         daoQLG: daoQuoteLineGroup,
       )) {
         nonMovableReasons[t] =
-            'is part of an approved fixed-price quote and the quote line group is not rejected.';
+            '''is part of an approved fixed-price quote and the quote line group is not rejected.''';
         continue;
       }
     }

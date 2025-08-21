@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -135,7 +137,7 @@ class Invoice extends Entity<Invoice> {
     if (Strings.isBlank(system.invoiceLineRevenueAccountCode) ||
         Strings.isBlank(system.invoiceLineInventoryItemCode)) {
       throw InvoiceException(
-        'You must set the Account Code and Item Code in System | Integration before you can upload an invoice',
+        '''You must set the Account Code and Item Code in System | Integration before you can upload an invoice''',
       );
     }
 

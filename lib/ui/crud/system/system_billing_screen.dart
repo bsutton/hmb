@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -324,7 +326,8 @@ The shape of your Logo. Your logo will appear on Invoices and Quotes.'''),
             const SizedBox(height: 20),
             HMBButton.withIcon(
               label: 'Upload Logo',
-              hint: 'Upload a image which will be displayed on Invoices and Quotes',
+              hint:
+                  '''Upload a image which will be displayed on Invoices and Quotes''',
               icon: const Icon(Icons.upload_file),
               onPressed: _pickLogo,
             ),

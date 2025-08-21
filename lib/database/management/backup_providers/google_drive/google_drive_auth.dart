@@ -27,11 +27,12 @@ class GoogleDriveAuth {
 
   /// OAuth Client in Google Play Console: HMB-Production-Signed-By-Google
   static const _clientId =
-      '704526923643-ot7i0jpo27urkkibm1gsqpji7f2nigt3.apps.googleusercontent.com';
+      '''704526923643-ot7i0jpo27urkkibm1gsqpji7f2nigt3.apps.googleusercontent.com''';
 
-  /// OAuth Client in Google Play Console: HMB for Google Sign-in - this is the serverClientId
+  /// OAuth Client in Google Play Console: HMB for Google
+  ///  Sign-in - this is the serverClientId
   static const _serverClientId =
-      '704526923643-vdu784t5s102g2uanosrd72rnv1cd795.apps.googleusercontent.com';
+      '''704526923643-vdu784t5s102g2uanosrd72rnv1cd795.apps.googleusercontent.com''';
 
   final scopes = [drive.DriveApi.driveFileScope];
 
@@ -143,7 +144,8 @@ class GoogleDriveAuth {
     /// The operation was canceled by the user.
     GoogleSignInExceptionCode.canceled => GoogleAuthResult.cancelled(),
 
-    /// The operation was interrupted for a reason other than being intentionally
+    /// The operation was interrupted for a reason other than 
+    /// being intentionally
     /// canceled by the user.
     GoogleSignInExceptionCode.interrupted => GoogleAuthResult.failure(
       'Sign in interrupted',

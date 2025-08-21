@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -335,7 +337,7 @@ class _GoogleDriveBackupScreenState
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                'To enable cloud backups, please sign in to your Google account.',
+                '''To enable cloud backups, please sign in to your Google account.''',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, color: Colors.white70),
               ),
@@ -345,7 +347,7 @@ class _GoogleDriveBackupScreenState
               icon: const Icon(Icons.login, color: Colors.white),
               label: 'Sign in to Google',
               hint:
-                  'Sign into Google Drive so you can back up your data and Sync your photos',
+                  '''Sign into Google Drive so you can back up your data and Sync your photos''',
               onPressed: () async {
                 GoogleDriveAuth? auth;
                 try {

@@ -1,13 +1,16 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
+
 
 import 'dart:async';
 
@@ -76,7 +79,8 @@ class XeroAuth2 {
   /// Tries to log in to Xero:
   /// 1) Reuses a valid token, if available.
   /// 2) Otherwise, tries to refresh if expired.
-  /// 3) Otherwise, does a full OAuth flow (desktop=local server, mobile=app link).
+  /// 3) Otherwise, does a full OAuth flow (desktop=local 
+  /// server, mobile=app link).
   Future<void> login() async {
     if (await isLoggedIn()) {
       return;

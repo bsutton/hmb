@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -64,10 +66,10 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     if (!difference.isZero) {
       if (difference.isNegative) {
         _errorMessage =
-            'Total milestone amounts exceed the Quotation Total by ${-difference}';
+            '''Total milestone amounts exceed the Quotation Total by ${-difference}''';
       } else {
         _errorMessage =
-            'Total milestone amounts are less than the Quote total by $difference';
+            '''Total milestone amounts are less than the Quote total by $difference''';
       }
     } else {
       _errorMessage = '';
@@ -282,7 +284,8 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
                       // ignore: unnecessary_async
                       (milestone) async =>
                           _onMilestoneInvoice(context, milestone),
-                  // If editingMilestoneId is set and not equal to this milestone's id,
+                  // If editingMilestoneId is set and not equal to this 
+                  //milestone's id,
                   // then this tile is grayed out.
                   isOtherTileEditing:
                       editingMilestoneId != null &&

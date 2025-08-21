@@ -56,7 +56,8 @@ class RejectJob extends JobEvent {
   RejectJob(super.job);
 }
 
-/// Event factories so we can build real Event instances for guard checking & firing.
+/// Event factories so we can build real Event instances for guard 
+/// checking & firing.
 final Map<Type, JobEvent Function(Job)> eventFactory = {
   StartQuoting: StartQuoting.new,
   SubmitQuote: SubmitQuote.new,

@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -15,7 +17,8 @@ import 'dart:io';
 import '../../../dao/dao_system.dart';
 import '../../../src/version/version.g.dart';
 
-/// Helper to obfuscate a business name by keeping the first character of each word
+/// Helper to obfuscate a business name by keeping the first character of
+///  each word
 /// and replacing the rest with asterisks.
 String obfuscateBusinessName(String name) => name
     .split(' ')

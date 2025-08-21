@@ -1,9 +1,11 @@
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products for third parties is strictly prohibited.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
@@ -58,7 +60,8 @@ class _ToolListScreenState extends State<ToolListScreen> {
           child: HMBButton.withIcon(
             onPressed: () => unawaited(_startStockTake(context)),
             label: 'Start Stock Take',
-            hint: 'Undertake a stock take of your tools adding new tools to your Tool inventory',
+            hint:
+                '''Undertake a stock take of your tools adding new tools to your Tool inventory''',
             icon: const Icon(Icons.inventory),
           ),
         ),
