@@ -62,14 +62,14 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     // ),
     pageTitle: 'Invoices',
     dao: DaoInvoice(),
-    fetchList: (_)  => _fetchFilteredInvoices(),
-    onAdd: ()  => _createInvoice(),
+    fetchList: (_) => _fetchFilteredInvoices(),
+    onAdd: _createInvoice,
     onEdit: (invoice) => FutureBuilderEx(
       future: InvoiceDetails.load(invoice!.id),
       builder: (context, invoiceDetails) =>
           InvoiceEditScreen(invoiceDetails: invoiceDetails!),
     ),
-    onDelete: (entity)  => _deleteInvoice(entity),
+    onDelete: _deleteInvoice,
     cardHeight: 250,
     background: (_) async => Colors.transparent,
     details: _buildInvoiceCard,
@@ -78,7 +78,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         selectedJob.jobId != null ||
         selectedCustomer != null ||
         Strings.isNotBlank(filterText),
-    onFilterReset: ()  {
+    onFilterReset: () {
       selectedJob.jobId = null;
       selectedCustomer = null;
       filterText = null;
@@ -181,7 +181,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
           format: (customer) => customer.name,
           required: false,
           selectedItem: () async => selectedCustomer,
-          onChanged: (customer)  {
+          onChanged: (customer) {
             selectedCustomer = customer;
             onChange();
           },
