@@ -479,13 +479,15 @@ where q.id=?
     return ready;
   }
 
+
+
   @override
-  JuneStateCreator get juneRefresher => JobState.new;
+  JuneStateCreator get juneRefresher => JobRefresher.new;
 }
 
 /// Used to notify the UI that the time entry has changed.
-class JobState extends JuneState {
-  JobState();
+class JobRefresher extends JuneState {
+  JobRefresher();
 }
 
 class JobStatistics {
