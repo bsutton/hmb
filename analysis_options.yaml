@@ -1,24 +1,12 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
-
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
-# include: package:flutter_lints/flutter.yaml
 analyzer:
   plugins:
     - custom_lint
-  # errors:
-  #   avoid_catches_without_on_clauses: ignore
-  #   avoid_classes_with_only_static_members: ignore
-  #   document_ignores: ignore
-  #   library_private_types_in_public_api: ignore
-  #   lines_longer_than_80_chars: ignore
-  #   unnecessary_async: ignore
-  #   unsafe_variance: ignore
+  errors:
+    avoid_catches_without_on_clauses: ignore
+    avoid_classes_with_only_static_members: ignore
+    document_ignores: ignore
+    library_private_types_in_public_api: ignore
+    unsafe_variance: ignore
     
 include: package:lint_hard/all.yaml
 
