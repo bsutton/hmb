@@ -11,6 +11,7 @@
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
+import 'package:june/june.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
@@ -18,6 +19,7 @@ import '../../../util/date_time_ex.dart';
 import '../../../util/format.dart';
 import '../../../util/local_date.dart';
 import '../../../util/rich_text_helper.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/surface.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
@@ -67,25 +69,27 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
     ),
   );
 
-  Widget _buildDetails(Customer? customer, JobStatus? jobStatus) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildDetails(Customer? customer, JobStatus? jobStatus) => JuneBuilder(
+    JobRefresher.new,
+    builder: (jobRefresher) => HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
 
-    children: [
-      HMBCardHeading(customer?.name ?? 'Not Set'),
-      const SizedBox(height: 8),
-      _buildContactPoints(),
-      HMBJobSiteText(label: '', job: job),
-      const SizedBox(height: 8),
-      HMBText('''
-Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
-      const SizedBox(height: 8),
-      _buildNextActivity(),
-      const SizedBox(height: 8),
-      const HMBText('Description:', bold: true),
-      HMBTextBlock(RichTextHelper.toPlainText(job.description)),
-      const SizedBox(height: 8),
-      MiniJobDashboard(job: job),
-    ],
+      children: [
+        HMBCardHeading(customer?.name ?? 'Not Set'),
+        _buildContactPoints(),
+        HMBJobSiteText(label: '', job: job),
+        HMBRow(
+          children: [
+            HMBText('Job #${job.id}', bold: true),
+            HMBText('Status: ${jobStatus?.displayName ?? 'Status Unknown'}'),
+          ],
+        ),
+        _buildNextActivity(),
+        const HMBText('Description:', bold: true),
+        HMBTextBlock(RichTextHelper.toPlainText(job.description)),
+        MiniJobDashboard(job: job),
+      ],
+    ),
   );
 
   Widget _buildNextActivity() {
@@ -127,10 +131,4 @@ Job #${job.id} Status: ${jobStatus?.name ?? "Status Unknown"}'''),
       );
     },
   );
-}
-
-class InvoiceScreenArguments {
-  const InvoiceScreenArguments({required this.job});
-
-  final Job job;
 }
