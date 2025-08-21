@@ -58,3 +58,4 @@ android/key.properties.zip
 *.run.lock
 android/app/.cxx
 .sentry-native
+database/handyman.db
