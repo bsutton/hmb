@@ -267,18 +267,16 @@ class TaskItem extends Entity<TaskItem> {
     taskId: map['task_id'] as int,
     description: map['description'] as String,
     itemType: TaskItemType.fromId(map['item_type_id'] as int),
-    estimatedMaterialUnitCost: MoneyEx.fromInt(
+    estimatedMaterialUnitCost: MoneyEx.moneyOrNull(
       map['estimated_material_unit_cost'] as int?,
     ),
-    estimatedMaterialQuantity: Fixed.fromInt(
-      map['estimated_material_quantity'] as int? ?? 0,
-      decimalDigits: 3,
+    estimatedMaterialQuantity: FixedEx.fromIntOrNull(
+      map['estimated_material_quantity'] as int?,
     ),
-    estimatedLabourHours: Fixed.fromInt(
-      map['estimated_labour_hours'] as int? ?? 0,
-      decimalDigits: 3,
+    estimatedLabourHours: FixedEx.fromIntOrNull(
+      map['estimated_labour_hours'] as int?,
     ),
-    estimatedLabourCost: MoneyEx.fromInt(
+    estimatedLabourCost: MoneyEx.moneyOrNull(
       map['estimated_labour_cost'] as int? ?? 0,
     ),
     margin: Percentage.fromInt(map['margin'] as int? ?? 0, decimalDigits: 3),
@@ -308,14 +306,13 @@ class TaskItem extends Entity<TaskItem> {
     labourEntryMode: LabourEntryMode.fromString(
       map['labour_entry_mode'] as String,
     ),
-    actualMaterialUnitCost: MoneyEx.fromInt(
-      map['actual_material_unit_cost'] as int? ?? 0,
+    actualMaterialUnitCost: MoneyEx.moneyOrNull(
+      map['actual_material_unit_cost'] as int?,
     ),
-    actualMaterialQuantity: Fixed.fromInt(
-      map['actual_material_quantity'] as int? ?? 0,
-      decimalDigits: 3,
+    actualMaterialQuantity: FixedEx.fromIntOrNull(
+      map['actual_material_quantity'] as int?,
     ),
-    actualCost: MoneyEx.fromInt(map['actual_cost'] as int? ?? 0),
+    actualCost: MoneyEx.moneyOrNull(map['actual_cost'] as int?),
     sourceTaskItemId: map['source_task_item_id'] as int?,
     isReturn: (map['is_return'] as int? ?? 0) == 1,
   );

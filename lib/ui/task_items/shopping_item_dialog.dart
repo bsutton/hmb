@@ -37,10 +37,16 @@ Future<void> showShoppingItemDialog(
   final descriptionController = TextEditingController(text: item.description);
   final purposeController = TextEditingController(text: item.purpose);
   final costController = TextEditingController(
-    text: item.actualMaterialUnitCost?.toString() ?? '',
+    text:
+        (item.actualMaterialUnitCost ?? item.estimatedMaterialUnitCost)
+            ?.toString() ??
+        '',
   );
   final quantityController = TextEditingController(
-    text: item.actualMaterialQuantity?.toString() ?? '',
+    text:
+        (item.actualMaterialQuantity ?? item.estimatedMaterialQuantity)
+            ?.toString() ??
+        '',
   );
   Supplier? selectedSupplier;
   if (item.supplierId != null) {

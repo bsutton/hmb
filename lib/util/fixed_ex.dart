@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
@@ -33,6 +32,14 @@ extension FixedEx on Fixed {
 
   static Fixed fromInt(int? amount) =>
       Fixed.fromInt(amount ?? 0, decimalDigits: 3);
+
+  static Fixed? fromIntOrNull(int? amount, {int decimalDigits = 3}) {
+    if (amount == null) {
+      return null;
+    } else {
+      return Fixed.fromInt(amount, decimalDigits: decimalDigits);
+    }
+  }
 
   static bool isZeroOrNull(Fixed? amount) => amount == null || amount.isZero;
 }
