@@ -1,6 +1,6 @@
 import 'package:fsm2/fsm2.dart';
 
-import '../dao/dao_job.dart';
+import '../dao/dao.g.dart';
 import '../entity/entity.g.dart';
 import 'job_events.dart';
 import 'job_states.dart';
@@ -101,13 +101,19 @@ Future<StateMachine> buildJobMachine(Job job) async {
       )
       ..state<ToBeScheduled>(
         (b) => b
+          ..onEnter((_, _) async {
+            await _approveTasks(job);
+          })
           ..on<ScheduleJob, Scheduled>()
           ..on<StartWork, InProgress>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<Scheduled>(
         (b) => b
-          ..onEnter((_, _) => DaoJob().markScheduled(job))
+          ..onEnter((_, _) async {
+            await DaoJob().markScheduled(job);
+            await _approveTasks(job);
+          })
           ..on<StartWork, InProgress>()
           ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
@@ -152,6 +158,16 @@ Future<StateMachine> buildJobMachine(Job job) async {
 Future<void> _inProgress(Job job) async {
   await DaoJob().markActive(job.id);
   await _updateJobStatus(job, JobStatus.inProgress);
+  await _approveTasks(job);
+}
+
+Future<void> _approveTasks(Job job) async {
+  final daoTask = DaoTask();
+  final tasks = await daoTask.getTasksByJob(job.id);
+
+  for (final task in tasks) {
+    await daoTask.jobHasBeenApproved(task);
+  }
 }
 
 Future<void> _updateJobStatus(Job job, JobStatus status) async {

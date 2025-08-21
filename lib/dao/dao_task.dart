@@ -403,6 +403,32 @@ WHERE ti.id = ?
 
   @override
   JuneStateCreator get juneRefresher => TaskRefresher.new;
+
+  /// If the job has been approved then we mark the
+  /// task as [TaskStatus.approved] providing it is in
+  /// an appropriate state.
+  Future<void> jobHasBeenApproved(Task task) async {
+    final status = switch (task.status) {
+      TaskStatus.approved => TaskStatus.approved,
+      TaskStatus.awaitingApproval => TaskStatus.approved,
+      TaskStatus.inProgress => TaskStatus.approved,
+
+      /// The job been approved does not magically cause
+      /// the materials to arrive. We are unlikely to
+      /// be in this state unless the user has driven
+      /// the job through an unusual path, but still..
+      TaskStatus.awaitingMaterials => task.status,
+
+      /// If a task is onHold, and the job is accepted then
+      /// we assume that the task is on hold for a reason.
+      TaskStatus.onHold => task.status,
+      TaskStatus.completed => task.status,
+      TaskStatus.cancelled => task.status,
+    };
+
+    task.status = status;
+    await update(task);
+  }
 }
 
 /// Used to notify the UI that the time entry has changed.
