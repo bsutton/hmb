@@ -5,7 +5,7 @@ import 'layout.g.dart';
 class HMBColumn extends StatelessWidget {
   const HMBColumn({
     required this.children,
-    this.crossAxisAlignment = CrossAxisAlignment.start,
+    this.crossAxisAlignment = CrossAxisAlignment.center,
     super.key,
   });
 

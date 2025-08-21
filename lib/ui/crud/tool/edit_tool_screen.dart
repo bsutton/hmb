@@ -25,6 +25,7 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/grayed_out.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_date_time_picker.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/captured_photo.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_thumbnail.dart';
@@ -162,59 +163,60 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
               _selectedDatePurchased = datePurchased;
             },
           ),
-          const SizedBox(height: 16),
-          _buildPhotoField(
-            enabled: !isNew,
-            context,
-            title: 'Serial Number Photo',
-            photoId: _serialNumberPhotoId,
-            onCapture: (capturedPhoto) async {
-              // Create a new Photo entity
-              final newPhoto = Photo.forInsert(
-                parentId: currentEntity?.id ?? 0,
+          HMBColumn(
+            children: [
+              _buildPhotoField(
+                enabled: !isNew,
+                context,
+                title: 'Serial Number Photo',
+                photoId: _serialNumberPhotoId,
+                onCapture: (capturedPhoto) async {
+                  // Create a new Photo entity
+                  final newPhoto = Photo.forInsert(
+                    parentId: currentEntity?.id ?? 0,
+                    parentType: ParentType.tool,
+                    filePath: capturedPhoto.relativePath,
+                    comment: 'Serial Number Photo',
+                  );
+
+                  // Insert the photo into the DB
+                  final photoId = await DaoPhoto().insert(newPhoto);
+
+                  // Update the state
+                  setState(() {
+                    _serialNumberPhotoId = photoId;
+                  });
+                },
+              ),
+              _buildPhotoField(
+                context,
+                enabled: !isNew,
+                title: 'Receipt Photo',
+                photoId: _receiptPhotoId,
+                onCapture: (capturedPhoto) async {
+                  // Create a new Photo entity
+                  final newPhoto = Photo.forInsert(
+                    parentId: currentEntity?.id ?? 0,
+                    parentType: ParentType.tool,
+                    filePath: capturedPhoto.relativePath,
+                    comment: 'Receipt Photo',
+                  );
+
+                  // Insert the photo into the DB
+                  final photoId = await DaoPhoto().insert(newPhoto);
+
+                  // Update the state
+                  setState(() {
+                    _receiptPhotoId = photoId;
+                  });
+                },
+              ),
+              PhotoCrud<Tool>(
+                parentName: 'Tool',
                 parentType: ParentType.tool,
-                filePath: capturedPhoto.relativePath,
-                comment: 'Serial Number Photo',
-              );
-
-              // Insert the photo into the DB
-              final photoId = await DaoPhoto().insert(newPhoto);
-
-              // Update the state
-              setState(() {
-                _serialNumberPhotoId = photoId;
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildPhotoField(
-            context,
-            enabled: !isNew,
-            title: 'Receipt Photo',
-            photoId: _receiptPhotoId,
-            onCapture: (capturedPhoto) async {
-              // Create a new Photo entity
-              final newPhoto = Photo.forInsert(
-                parentId: currentEntity?.id ?? 0,
-                parentType: ParentType.tool,
-                filePath: capturedPhoto.relativePath,
-                comment: 'Receipt Photo',
-              );
-
-              // Insert the photo into the DB
-              final photoId = await DaoPhoto().insert(newPhoto);
-
-              // Update the state
-              setState(() {
-                _receiptPhotoId = photoId;
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          PhotoCrud<Tool>(
-            parentName: 'Tool',
-            parentType: ParentType.tool,
-            controller: _photoController,
+                controller: _photoController,
+              ),
+            ],
           ),
         ],
       ),
@@ -292,19 +294,23 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
   }
 
   @override
-  Future<Tool> forInsert() async => Tool.forInsert(
-    name: _nameController.text,
-    categoryId: selectedCategory.categoryId,
-    description: _descriptionController.text,
-    serialNumber: _serialNumberController.text,
-    supplierId: selectedSupplier.selected,
-    manufacturerId: selectedManufacturer.manufacturerId,
-    warrantyPeriod: int.tryParse(_warrantyPeriodController.text),
-    cost: MoneyEx.tryParse(_costController.text),
-    receiptPhotoId: _receiptPhotoId,
-    serialNumberPhotoId: _serialNumberPhotoId,
-    datePurchased: _selectedDatePurchased,
-  );
+  Future<Tool> forInsert() async {
+    final tool = Tool.forInsert(
+      name: _nameController.text,
+      categoryId: selectedCategory.categoryId,
+      description: _descriptionController.text,
+      serialNumber: _serialNumberController.text,
+      supplierId: selectedSupplier.selected,
+      manufacturerId: selectedManufacturer.manufacturerId,
+      warrantyPeriod: int.tryParse(_warrantyPeriodController.text),
+      cost: MoneyEx.tryParse(_costController.text),
+      receiptPhotoId: _receiptPhotoId,
+      serialNumberPhotoId: _serialNumberPhotoId,
+      datePurchased: _selectedDatePurchased,
+    );
+    _photoController.parent = tool;
+    return tool;
+  }
 
   @override
   Future<void> postSave(_) async {
