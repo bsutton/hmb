@@ -34,10 +34,10 @@ class Job extends Entity<Job> {
     required this.status,
     required this.hourlyRate,
     required this.bookingFee,
+    required this.billingContactId,
     required this.lastActive,
     required super.createdDate,
     required super.modifiedDate,
-    required this.billingContactId,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,
   }) : super();
