@@ -16,7 +16,6 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 
-// Example imports (replace with your actual ones):
 import '../../dao/dao_job_activity.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/operating_hours.dart';
