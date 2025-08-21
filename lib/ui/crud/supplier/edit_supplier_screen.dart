@@ -19,7 +19,7 @@ import '../../../entity/supplier.dart';
 import '../../../util/platform_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
-import '../../widgets/hbm_crud_contact.dart';
+import '../../widgets/hmb_crud_contact.dart';
 import '../../widgets/hmb_crud_site.dart';
 import '../../widgets/layout/hmb_form_section.dart';
 import '../base_full_screen/edit_entity_screen.dart';
