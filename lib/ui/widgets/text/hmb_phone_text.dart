@@ -49,7 +49,7 @@ class HMBPhoneText extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              '${plusSpace(label)} $phoneNo',
+              '${plusSpace(label)}$phoneNo',
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: HMBColors.textPrimary),
             ),

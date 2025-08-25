@@ -37,7 +37,7 @@ class HMBEmailText extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              '${plusSpace(label)} ${email ?? ''}',
+              '${plusSpace(label)}${email ?? ''}',
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: HMBColors.textPrimary),
             ),

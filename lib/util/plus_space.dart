@@ -11,11 +11,12 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:strings/strings.dart';
 
-/// If [label] is non null then we add a space before it.
+/// If [label] is not blank then we add a space after it.
 /// otherwise we return an empty string.
 String plusSpace(String? label) {
-  if (label != null) {
+  if (Strings.isNotBlank(label)) {
     return '$label ';
   }
 
