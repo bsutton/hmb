@@ -22,8 +22,11 @@ import '../../../entity/entity.g.dart';
 import '../../../util/app_title.dart';
 import '../../../util/util.g.dart';
 import '../../dialog/dialog.g.dart';
+import '../../widgets/layout/hmb_row.dart';
 import '../../widgets/select/hmb_filter_line.dart';
 import '../../widgets/widgets.g.dart';
+
+typedef BuildActionItems<T> = List<Widget> Function(T entity);
 
 /// A generic list screen with optional search/add and advanced filters.
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
@@ -35,6 +38,10 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   final Widget Function(T? entity) onEdit;
   final Future<Color> Function(T entity)? background;
   final double cardHeight;
+
+  /// Widgets to place in the cards action menu
+  /// which also contains the delete button.
+  final BuildActionItems<T>? buildActionItems;
 
   final bool canAdd;
 
@@ -56,6 +63,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     required this.pageTitle,
     required this.title,
     required this.details,
+    super.key,
 
     /// Only implement onAdd if you need to override the default
     /// behavour (such as showing your own UI)
@@ -82,8 +90,8 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     /// Called when the user clears all filters.
     this.onFilterReset,
     this.isFilterActive,
-    super.key,
     this.showBackButton = false,
+    this.buildActionItems,
   }) {
     // ignore: discarded_futures
     _fetchList = fetchList ?? (_) => dao.getAll();
@@ -95,15 +103,20 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
 
 class EntityListScreenState<T extends Entity<T>>
     extends DeferredState<EntityListScreen<T>> {
+  BuildActionItems<T>? buildActionItems;
   List<T> entityList = [];
   String? filterOption;
   late final TextEditingController filterController;
   final _scrollController = ScrollController();
 
+  static List<Widget> _noItems<T>(T entity) => <Widget>[];
+
   @override
   void initState() {
     super.initState();
     filterController = TextEditingController();
+
+    buildActionItems = widget.buildActionItems ?? _noItems;
 
     setAppTitle(widget.pageTitle);
   }
@@ -200,6 +213,7 @@ class EntityListScreenState<T extends Entity<T>>
 
     return Surface(
       elevation: SurfaceElevation.e0,
+      padding: EdgeInsets.zero,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: SurfaceElevation.e0.color,
@@ -275,51 +289,56 @@ class EntityListScreenState<T extends Entity<T>>
         // ignore: discarded_futures
         widget.background?.call(entity) ??
         Future.value(SurfaceElevation.e6.color),
-    builder: (context, cardColor) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: GestureDetector(
-        onTap: () async {
-          // Navigate to the edit screen
-          final updatedEntity = await Navigator.push<T?>(
-            context,
-            MaterialPageRoute(builder: (context) => widget.onEdit(entity)),
-          );
-          // If user successfully saved or created a new entity
-          if (updatedEntity != null) {
-            _partialRefresh(updatedEntity);
-          }
-        },
-        child: Surface(
-          elevation: SurfaceElevation.e6,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: FutureBuilderEx(
-                      future:
-                          ((widget.title is Future)
-                                  // ignore: discarded_futures
-                                  ? widget.title(entity)
-                                  // ignore: discarded_futures
-                                  : Future.value(widget.title(entity)))
-                              as Future<Widget>,
-                      builder: (context, title) => title!,
-                    ),
+    builder: (context, cardColor) => GestureDetector(
+      onTap: () async {
+        // Navigate to the edit screen
+        final updatedEntity = await Navigator.push<T?>(
+          context,
+          MaterialPageRoute(builder: (context) => widget.onEdit(entity)),
+        );
+        // If user successfully saved or created a new entity
+        if (updatedEntity != null) {
+          _partialRefresh(updatedEntity);
+        }
+      },
+      child: Surface(
+        elevation: SurfaceElevation.e6,
+        margin: const EdgeInsets.only(bottom: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: FutureBuilderEx(
+                    future:
+                        ((widget.title is Future)
+                                // ignore: discarded_futures
+                                ? widget.title(entity)
+                                // ignore: discarded_futures
+                                : Future.value(widget.title(entity)))
+                            as Future<Widget>,
+                    builder: (context, title) => title!,
                   ),
-                  _buildDeleteButton(entity),
-                ],
-              ),
-              // Body (details)
-              Expanded(child: widget.details(entity)),
-            ],
-          ),
+                ),
+                _actionMenu(entity),
+              ],
+            ),
+            // Body (details)
+            Expanded(child: widget.details(entity)),
+          ],
         ),
       ),
     ),
+  );
+
+  Widget _actionMenu(T entity) => HMBRow(
+    children: [
+      ...widget.buildActionItems?.call(entity) ?? [],
+      _buildDeleteButton(entity),
+    ],
   );
 
   Future<void> _confirmDelete(T entity) async {
