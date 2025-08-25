@@ -98,7 +98,13 @@ class GoogleDriveAuth {
   }
 
   /// returns true if the current platform supports google signin.
-  bool isAuthSupported() => GoogleSignIn.instance.supportsAuthenticate();
+  static bool isAuthSupported() {
+    try {
+      return GoogleSignIn.instance.supportsAuthenticate();
+      // ignore: avoid_catching_errors
+    } on UnimplementedError catch (_) {}
+    return false;
+  }
 
   Future<void> signOut() async {
     await GoogleSignIn.instance.signOut();

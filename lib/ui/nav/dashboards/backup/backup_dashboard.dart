@@ -68,9 +68,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   @override
   Future<void> asyncInitState() async {
     _provider = _getProvider();
-    auth = await GoogleDriveAuth.instance();
 
-    if (auth.isAuthSupported()) {
+    if (GoogleDriveAuth.isAuthSupported()) {
+      auth = await GoogleDriveAuth.instance();
       if (auth.isSignedIn) {
         // Load last backup date
         _lastBackup = await _refreshLastBackup();
@@ -104,7 +104,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     body: DeferredBuilder(
       this,
       builder: (context) {
-        if (!auth.isAuthSupported()) {
+        if (!GoogleDriveAuth.isAuthSupported()) {
           return _buildUnsupportedPlatformMessage(context);
         }
 
@@ -168,7 +168,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         icon: Icons.forum,
         value: () async => const DashletValue(null),
         valueBuilder: (_, _) => _syncPhotoBuilder(),
-        onTap: (_)  => _syncPhotos(),
+        onTap: (_) => _syncPhotos(),
       ),
 
       DashletCard<void>.onTap(
@@ -176,12 +176,12 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         hint: 'Sign out of your Google Drive Account',
         icon: Icons.info,
         value: () => Future.value(const DashletValue(null)),
-        onTap: (_)  => signout(),
+        onTap: (_) => signout(),
       ),
     ],
   );
 
-  // FutureBuilderEx<DateTime?> _buildLastBackup() => 
+  // FutureBuilderEx<DateTime?> _buildLastBackup() =>
   // FutureBuilderEx<DateTime?>(
   //   future: _lastBackupFuture,
   //   builder: (context, lastBackupDate) {
