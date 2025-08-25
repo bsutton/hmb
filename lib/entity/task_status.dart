@@ -20,50 +20,62 @@ import 'task.dart';
 /// to refer to a specific status.
 enum TaskStatus {
   awaitingApproval(
-    7,
-    'Awaiting Approval',
-    'The task is yet to be approved by the customer.',
-    '#FFDAB9',
-    1,
+    id: 1,
+    name: 'Awaiting Approval',
+    description: 'The task is yet to be approved by the customer.',
+    colorCode: '#FFDAB9',
+    ordinal: 1,
   ),
   approved(
-    8,
-    'Approved',
-    'The task has been approved by the customer.',
-    '#3CB371',
-    2,
+    id: 2,
+    name: 'Approved',
+    description: 'The task has been approved by the customer.',
+    colorCode: '#3CB371',
+    ordinal: 2,
   ),
   inProgress(
-    5,
-    'In Progress',
-    'The task is currently in progress',
-    '#87CEFA',
-    4,
+    id: 3,
+    name: 'In Progress',
+    description: 'The task is currently in progress',
+    colorCode: '#87CEFA',
+    ordinal: 3,
   ),
   awaitingMaterials(
-    2,
-    'Awaiting Materials',
-    'The task is paused until materials are available',
-    '#D3D3D3',
-    5,
+    id: 4,
+    name: 'Awaiting Materials',
+    description: 'The task is paused until materials are available',
+    colorCode: '#D3D3D3',
+    ordinal: 4,
   ),
-  onHold(4, 'On Hold', 'The task is on hold', '#FAFAD2', 6),
-  completed(3, 'Completed', 'The task is completed', '#90EE90', 7),
+  onHold(
+    id: 5,
+    name: 'On Hold',
+    description: 'The task is on hold',
+    colorCode: '#FAFAD2',
+    ordinal: 5,
+  ),
+  completed(
+    id: 6,
+    name: 'Completed',
+    description: 'The task is completed',
+    colorCode: '#90EE90',
+    ordinal: 6,
+  ),
   cancelled(
-    6,
-    'Cancelled',
-    'The Task has been cancelled by the customer',
-    '#57CEFA',
-    8,
+    id: 7,
+    name: 'Cancelled',
+    description: 'The Task has been cancelled by the customer',
+    colorCode: '#57CEFA',
+    ordinal: 7,
   );
 
-  const TaskStatus(
-    this.id,
-    this.name,
-    this.description,
-    this.colorCode,
-    this.ordinal,
-  );
+  const TaskStatus({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.colorCode,
+    required this.ordinal,
+  });
 
   /// Primary key id in the database.
   final int id;
@@ -83,7 +95,7 @@ enum TaskStatus {
   /// Lookup by database id.
   static TaskStatus fromId(int id) => TaskStatus.values.firstWhere(
     (e) => e.id == id,
-    orElse: () => throw ArgumentError(r'Invalid TaskStatus id: $id'),
+    orElse: () => throw ArgumentError('Invalid TaskStatus id: $id'),
   );
 
   /// Column value for `name` in the database.
