@@ -26,7 +26,9 @@ enum QuoteState {
 
   /// The quote has been approved and we have
   ///  created at least one invoice from the quote.
-  invoiced,
+  invoiced;
+
+  bool get isPostApproval => this == approved || this == invoiced;
 }
 
 class Quote extends Entity<Quote> {
