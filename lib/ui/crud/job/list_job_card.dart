@@ -22,13 +22,13 @@ import '../../../util/format.dart';
 import '../../../util/local_date.dart';
 import '../../../util/rich_text_helper.dart';
 import '../../widgets/layout/layout.g.dart';
-import '../../widgets/surface.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
 import '../../widgets/text/hmb_site_text.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../../widgets/text/hmb_text_block.dart';
 import '../../widgets/text/hmb_text_themes.dart';
+import '../../widgets/widgets.g.dart';
 import 'mini_job_dashboard.dart';
 
 class ListJobCard extends StatefulWidget {
@@ -113,24 +113,21 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
   Widget _buildContactPoints() => LayoutBuilder(
     builder: (context, constraints) {
       final isMobile = constraints.maxWidth < 600;
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: isMobile
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  HMBJobPhoneText(job: job),
-                  HMBJobEmailText(job: job),
-                ],
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  HMBJobPhoneText(job: job),
-                  Expanded(child: HMBJobEmailText(job: job)),
-                ],
-              ),
-      );
+      return isMobile
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                HMBJobPhoneText(job: job),
+                HMBJobEmailText(job: job),
+              ],
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                HMBJobPhoneText(job: job),
+                Expanded(child: HMBJobEmailText(job: job)),
+              ],
+            );
     },
   );
 }
