@@ -12,7 +12,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -97,6 +96,11 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
       _runPubGet();
       needPubGet = false;
     }
+
+    /// remove the pdfx wasm modules as the add 4mb and
+    /// they are only useful on web.
+    /// https://github.com/espresso3389/pdfrx/tree/master/packages/pdfrx#note-for-building-release-builds
+    'dart run pdfrx:remove_wasm_modules'.run;
     if (release) {
       buildAppBundle(newVersion);
     } else {
