@@ -18,6 +18,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:toastification/toastification.dart';
 
@@ -61,6 +62,7 @@ Future<void> main(List<String> args) async {
       // camera & deep link init
       initCamera();
       initAppLinks();
+      initPdfrx();
 
       // finally launch the app
       runApp(const HmbApp());
@@ -162,4 +164,8 @@ void initAppLinks() {
   //     HMBToast.error('Someone asked for xero');
   //   }
   // });
+}
+
+void initPdfrx() {
+  pdfrxFlutterInitialize();
 }
