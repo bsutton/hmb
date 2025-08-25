@@ -67,11 +67,12 @@ class DaoBase<T extends Entity<T>> {
     return toList(await executor.query(_tableName, orderBy: orderByClause));
   }
 
-  Future<T?> getById(int? entityId) async {
+  Future<T?> getById(int? entityId, [Transaction? transaction]) async {
     if (entityId == null) {
       return null;
     }
-    final value = await db.query(
+    final executor = transaction ?? db;
+    final value = await executor.query(
       _tableName,
       where: 'id =?',
       whereArgs: [entityId],
