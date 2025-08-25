@@ -21,6 +21,7 @@ import '../../widgets/select/select.g.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
+import 'copy_job.dart';
 import 'edit_job_screen.dart';
 import 'list_job_card.dart';
 
@@ -38,6 +39,16 @@ class _JobListScreenState extends State<JobListScreen> {
   var _showOldJobs = false;
   var _order = JobOrder.active;
 
+  List<Widget> _buildActionItems(Job job) => [
+    IconButton(
+      tooltip: 'Copy job & move tasks',
+      icon: const Icon(Icons.copy),
+      onPressed: () => _onCopyAndMovePressed(job),
+    ),
+  ];
+
+  final _entityListKey = GlobalKey<EntityListScreenState<Job>>();
+
   @override
   Widget build(BuildContext context) => Surface(
     elevation: SurfaceElevation.e0,
@@ -46,6 +57,7 @@ class _JobListScreenState extends State<JobListScreen> {
       children: [
         Flexible(
           child: EntityListScreen<Job>(
+            key: _entityListKey,
             dao: DaoJob(),
             pageTitle: JobListScreen.pageTitle,
             onEdit: (job) => JobEditScreen(job: job),
@@ -61,6 +73,7 @@ class _JobListScreenState extends State<JobListScreen> {
             background: (job) async => job.status.getColour(),
             details: (job) =>
                 ListJobCard(job: job, key: ValueKey(job.hashCode)),
+            buildActionItems: _buildActionItems,
           ),
         ),
       ],
@@ -115,6 +128,36 @@ class _JobListScreenState extends State<JobListScreen> {
       ),
     ],
   );
+
+  Future<void> _onCopyAndMovePressed(Job job) async {
+    final result = await selectTasksToMoveAndDescribeJob(
+      context: context,
+      job: job,
+    );
+    if (result == null) {
+      return;
+    }
+
+    try {
+      final newJob = await DaoJob().copyJobAndMoveTasks(
+        job: job,
+        tasksToMove: result.selectedTasks,
+        summary: result.summary, // <-- pass new description
+        // newJobStatus: JobStatus.prospecting, // optional override
+      );
+
+      HMBToast.info(
+        '''Created Job #${newJob.id} and moved ${result.selectedTasks.length} task(s).''',
+      );
+
+      await _entityListKey.currentState!.refresh();
+      // June.getState(
+      //   JobRefresher.new,
+      // ).setState(); // if your refresher supports it
+    } catch (e) {
+      HMBToast.error(e.toString());
+    }
+  }
 }
 
 // class FilterState extends JuneState {
