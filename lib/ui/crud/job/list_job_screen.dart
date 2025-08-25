@@ -50,35 +50,38 @@ class _JobListScreenState extends State<JobListScreen> {
   final _entityListKey = GlobalKey<EntityListScreenState<Job>>();
 
   @override
-  Widget build(BuildContext context) => Surface(
-    elevation: SurfaceElevation.e0,
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Flexible(
-          child: EntityListScreen<Job>(
-            key: _entityListKey,
-            dao: DaoJob(),
-            pageTitle: JobListScreen.pageTitle,
-            onEdit: (job) => JobEditScreen(job: job),
-            fetchList: _fetchJobs,
-            title: (job) => HMBCardTitle(job.summary),
-            cardHeight: 840,
-            filterSheetBuilder: _buildFilterSheet,
-            isFilterActive: () => _showOldJobs || _order != JobOrder.active,
-            onFilterReset: () {
-              _showOldJobs = false;
-              _order = JobOrder.active;
-            },
-            background: (job) async => job.status.getColour(),
-            details: (job) =>
-                ListJobCard(job: job, key: ValueKey(job.hashCode)),
-            buildActionItems: _buildActionItems,
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return Surface(
+      elevation: SurfaceElevation.e0,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: EntityListScreen<Job>(
+              key: _entityListKey,
+              dao: DaoJob(),
+              pageTitle: JobListScreen.pageTitle,
+              onEdit: (job) => JobEditScreen(job: job),
+              fetchList: _fetchJobs,
+              title: (job) => HMBCardTitle(job.summary),
+              cardHeight: size.width < 456 ? 840 : 750,
+              filterSheetBuilder: _buildFilterSheet,
+              isFilterActive: () => _showOldJobs || _order != JobOrder.active,
+              onFilterReset: () {
+                _showOldJobs = false;
+                _order = JobOrder.active;
+              },
+              background: (job) async => job.status.getColour(),
+              details: (job) =>
+                  ListJobCard(job: job, key: ValueKey(job.hashCode)),
+              buildActionItems: _buildActionItems,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 
   Future<List<Job>> _fetchJobs(String? filter) async {
     final jobs = await DaoJob().getByFilter(filter, order: _order);
