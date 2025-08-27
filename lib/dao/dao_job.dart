@@ -178,21 +178,34 @@ where t.id =?
     return getFirstOrNull(data);
   }
 
-  /// Only Jobs that we consider to be active.
+  /// Only Jobs that we consider to be active, filtered by
+  /// (summary | description | customer.name), case-insensitive.
   Future<List<Job>> getActiveJobs(String? filter) async {
     final db = withoutTransaction();
-    final likeArg = filter != null ? '''%$filter%''' : '%%';
+    final likeArg = (filter != null && filter.isNotEmpty) ? '%$filter%' : '%%';
 
     return toList(
       await db.rawQuery(
         '''
-    SELECT j.*
-    FROM job j
-    WHERE j.status_id NOT IN ( '${JobStatus.rejected.id}', '${JobStatus.onHold.id}', '${JobStatus.awaitingPayment.id}', '${JobStatus.completed.id}', '${JobStatus.toBeBilled.id}')
-    AND (j.summary LIKE ? OR j.description LIKE ?)
-    ORDER BY j.modified_date DESC
-    ''',
-        [likeArg, likeArg],
+      SELECT j.*
+      FROM job j
+      LEFT JOIN customer c
+        ON c.id = j.customer_id
+      WHERE j.status_id NOT IN (
+        '${JobStatus.rejected.id}',
+        '${JobStatus.onHold.id}',
+        '${JobStatus.awaitingPayment.id}',
+        '${JobStatus.completed.id}',
+        '${JobStatus.toBeBilled.id}'
+      )
+      AND (
+        j.summary LIKE ? COLLATE NOCASE
+        OR j.description LIKE ? COLLATE NOCASE
+        OR COALESCE(c.name, '') LIKE ? COLLATE NOCASE
+      )
+      ORDER BY j.modified_date DESC
+      ''',
+        [likeArg, likeArg, likeArg],
       ),
     );
   }
