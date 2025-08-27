@@ -4,11 +4,13 @@ import 'layout.g.dart';
 
 class HMBColumn extends StatelessWidget {
   final CrossAxisAlignment crossAxisAlignment;
+  final MainAxisAlignment mainAxisAlignment;
 
   final List<Widget> children;
 
   const HMBColumn({
     required this.children,
+    this.mainAxisAlignment = MainAxisAlignment.start,
     this.crossAxisAlignment = CrossAxisAlignment.center,
     super.key,
   });
