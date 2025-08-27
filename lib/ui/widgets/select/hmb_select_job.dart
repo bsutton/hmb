@@ -15,14 +15,14 @@ import 'hmb_droplist.dart';
 /// Allows the user to select a Job from the database.
 /// You can optionally preselect an initial job and handle selection changes.
 class HMBSelectJob extends StatefulWidget {
-  final SelectedJob selectedJobId;
+  final SelectedJob selectedJob;
   final void Function(Job? job)? onSelected;
   final Future<List<Job>> Function(String? filter)? items;
   final bool required;
   final String title;
 
   const HMBSelectJob({
-    required this.selectedJobId,
+    required this.selectedJob,
     super.key,
     this.onSelected,
     this.title = 'Job',
@@ -43,7 +43,7 @@ class JobAndCustomer {
 
 class _HMBSelectJobState extends State<HMBSelectJob> {
   Future<JobAndCustomer?> _getInitialJob() async {
-    final job = await DaoJob().getById(widget.selectedJobId.jobId);
+    final job = await DaoJob().getById(widget.selectedJob.jobId);
     if (job == null) {
       return null;
     }
@@ -73,7 +73,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
 
   void _onJobChanged(JobAndCustomer? jc) {
     setState(() {
-      widget.selectedJobId.jobId = jc?.job?.id;
+      widget.selectedJob.jobId = jc?.job?.id;
     });
     widget.onSelected?.call(jc?.job);
   }
@@ -85,7 +85,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
     );
     if (job != null) {
       setState(() {
-        widget.selectedJobId.jobId = job.id;
+        widget.selectedJob.jobId = job.id;
       });
       widget.onSelected?.call(job);
     }

@@ -161,7 +161,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
               children: [
                 const SizedBox(height: 15),
                 HMBSelectJob(
-                  selectedJobId: _selectedJob,
+                  selectedJob: _selectedJob,
                   // ignore: discarded_futures
                   onSelected: (job) => setState(() {
                     _selectedJob.jobId = job?.id;

@@ -22,6 +22,7 @@ import '../../entity/entity.g.dart';
 import '../../util/app_title.dart';
 import '../../util/format.dart';
 import '../widgets/layout/hmb_spacer.dart';
+import '../widgets/select/hmb_select_job_multi.dart';
 import '../widgets/select/select.g.dart';
 import '../widgets/widgets.g.dart';
 import 'list_packing_screen.dart';
@@ -208,18 +209,13 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                       selectedSupplier.selected != null ||
                       (_scheduleKey.currentState?.hasSelection ?? false) ||
                       Strings.isNotBlank(filter),
-                  lineBuilder: (context) => HMBDroplistMultiSelect<Job>(
+                  lineBuilder: (context) => HMBSelectJobMulti(
                     key: _jobKey,
-                    initialItems: () async => _selectedJobs,
-                    items: (filter) => DaoJob().getActiveJobs(filter),
-                    format: (j) => j.summary,
-
+                    initialJobs: _selectedJobs,
                     onChanged: (list) async {
                       _selectedJobs = list;
                       await _loadTaskItems();
                     },
-                    title: 'Jobs',
-                    required: false,
                   ),
                   sheetBuilder: (context) => _buildFilters(),
                 ),
@@ -355,6 +351,7 @@ class CustomerAndJob {
     this.supplier,
     this.nextActivity,
   );
+
   static Future<CustomerAndJob> fetch(TaskItemContext itemContext) async {
     final job = await DaoJob().getJobForTask(itemContext.task.id);
     final task = await DaoTask().getById(itemContext.task.id);

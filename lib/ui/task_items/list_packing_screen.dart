@@ -39,9 +39,10 @@ import '../widgets/hmb_colours.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/hmb_toggle.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
-import '../widgets/select/hmb_droplist_multi.dart';
 import '../widgets/select/hmb_filter_line.dart';
+import '../widgets/select/hmb_select_job_multi.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/hmb_text.dart';
 import '../widgets/text/hmb_text_themes.dart';
@@ -223,29 +224,16 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
     children: [
       Padding(
         padding: const EdgeInsets.all(8),
-        child: Column(
+        child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            HMBDroplistMultiSelect<Job>(
-              initialItems: () async => _selectedJobs,
-              // ignore: discarded_futures
-              items: (filter) => DaoJob().getActiveJobs(filter),
-              format: (job) => job.summary,
+            HMBSelectJobMulti(
+              initialJobs: _selectedJobs,
               onChanged: (selectedJobs) async {
                 _selectedJobs = selectedJobs;
                 await _loadTaskItems();
               },
-              title: 'Jobs',
-              backgroundColor: SurfaceElevation.e4.color,
-              required: false,
-            ).help(
-              'Filter by Job',
-              '''
-Allows you to filter the packing list to items from specific Jobs.
-
-If your Job isn't showing then you need to update its status to an Active one such as 'Scheduled, In Progress...' ''',
             ),
-            const SizedBox(height: 10),
             HMBDroplist<ScheduleFilter>(
               key: _scheduleFilterKey,
               selectedItem: () async => _selectedScheduleFilter,

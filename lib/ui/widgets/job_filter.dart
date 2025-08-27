@@ -18,7 +18,7 @@ import 'package:june/june.dart';
 
 import '../../dao/dao_job.dart';
 import '../../entity/job.dart';
-import 'select/hmb_droplist_multi.dart';
+import 'select/hmb_select_job_multi.dart';
 
 class JobFilterWidget extends StatefulWidget {
   final ValueChanged<List<Job>> onJobSelectionChanged;
@@ -64,12 +64,8 @@ class _JobFilterWidgetState extends State<JobFilterWidget> {
           }
         },
       ),
-      HMBDroplistMultiSelect<Job>(
-        title: 'Select Jobs',
-        initialItems: () async => June.getState(SelectedJobs.new).selected,
-        // ignore: discarded_futures
-        items: (filter) => DaoJob().getByFilter(filter),
-        format: (job) => job.summary,
+      HMBSelectJobMulti(
+        initialJobs: June.getState(SelectedJobs.new).selected,
         onChanged: (job) {
           setState(() {
             June.getState(SelectedJobs.new).reset(job);

@@ -34,9 +34,8 @@ import 'select_job_dialog.dart';
 
 class InvoiceListScreen extends StatefulWidget {
   final Job? job;
-  
-  const InvoiceListScreen({super.key, this.job});
 
+  const InvoiceListScreen({super.key, this.job});
 
   @override
   State<InvoiceListScreen> createState() => _InvoiceListScreenState();
@@ -167,7 +166,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
       children: [
         HMBSelectJob(
           title: 'Filter By Job',
-          selectedJobId: selectedJob,
+          selectedJob: selectedJob,
           onSelected: (job) => setState(() {
             selectedJob.jobId = job?.id;
             onChange();

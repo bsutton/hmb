@@ -13,7 +13,7 @@ import '../base_full_screen/base_full_screen.g.dart';
 
 class ToDoEditScreen extends StatefulWidget {
   final ToDo? toDo;
-  
+
   const ToDoEditScreen({super.key, this.toDo});
 
   @override
@@ -104,7 +104,7 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
           ),
           if (_parentType == ToDoParentType.job)
             HMBSelectJob(
-              selectedJobId: selectedJob,
+              selectedJob: selectedJob,
               required: true,
               onSelected: (job) async {
                 await _getParent(ToDoParentType.job, job?.id);

@@ -21,13 +21,13 @@ import '../../util/money_ex.dart';
 import '../../util/units.dart';
 import 'fields/hmb_text_field.dart';
 import 'hmb_button.dart';
-import 'select/hmb_droplist.dart';
+import 'select/select.g.dart';
 import 'text/hmb_text_themes.dart';
 
 enum AddType { packing, shopping }
 
 Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
-  Job? selectedJob;
+  final selectedJob = SelectedJob();
   Task? selectedTask;
   TaskItemType? selectedItemType;
   final descriptionController = TextEditingController();
@@ -47,25 +47,25 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Job Selection Dropdown
-              HMBDroplist<Job>(
+              HMBSelectJob(
                 title: 'Select Job',
-                selectedItem: () async => selectedJob,
+                selectedJob: selectedJob,
                 items: (filter) => DaoJob().getActiveJobs(filter),
-                format: (job) => job.summary,
-                onChanged: (job) {
+                onSelected: (job) {
                   setState(() {
-                    selectedJob = job;
+                    selectedJob.jobId = job?.id;
                     selectedTask = null; // Reset task selection
                   });
                 },
               ),
               const SizedBox(height: 10),
               // Task Selection Dropdown (dependent on selected job)
-              if (selectedJob != null)
+              if (selectedJob.jobId != null)
                 HMBDroplist<Task>(
                   title: 'Select Task',
                   selectedItem: () async => selectedTask,
-                  items: (filter) => DaoTask().getTasksByJob(selectedJob!.id),
+                  items: (filter) =>
+                      DaoTask().getTasksByJob(selectedJob.jobId!),
                   format: (task) => task.name,
                   onChanged: (task) {
                     setState(() {
@@ -132,7 +132,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
             label: 'Add',
             hint: 'Add this item',
             onPressed: () => _addTaskItem(
-              selectedJob: selectedJob,
+              selectedJobId: selectedJob.jobId,
               selectedTask: selectedTask,
               selectedItemType: selectedItemType,
               quantityController: quantityController,
@@ -149,7 +149,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
 }
 
 Future<void> _addTaskItem({
-  required Job? selectedJob,
+  required int? selectedJobId,
   required Task? selectedTask,
   required TaskItemType? selectedItemType,
   required TextEditingController quantityController,
@@ -158,7 +158,9 @@ Future<void> _addTaskItem({
   required TextEditingController purposeController,
   required BuildContext context,
 }) async {
-  if (selectedJob != null && selectedTask != null && selectedItemType != null) {
+  if (selectedJobId != null &&
+      selectedTask != null &&
+      selectedItemType != null) {
     final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
     final unitCost = MoneyEx.tryParse(unitCostController.text);
 

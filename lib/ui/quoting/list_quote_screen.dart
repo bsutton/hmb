@@ -186,7 +186,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
         if (widget.job == null)
           HMBSelectJob(
             title: 'Filter By Job',
-            selectedJobId: selectedJob,
+            selectedJob: selectedJob,
             // ignore: discarded_futures
             // items: (filter) => DaoJob().getSchedulableJobs(filter),
             onSelected: (job) => setState(() {

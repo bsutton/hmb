@@ -29,7 +29,7 @@ import '../task/photo_crud.dart';
 
 class ReceiptEditScreen extends StatefulWidget {
   final Receipt? receipt;
-  
+
   const ReceiptEditScreen({super.key, this.receipt});
 
   @override
@@ -136,7 +136,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
 
       // Job dropdown (unchanged)
       HMBSelectJob(
-        selectedJobId: _selectedJob,
+        selectedJob: _selectedJob,
         // ignore: discarded_futures
         onSelected: (job) => setState(() {
           _selectedJob.jobId = job?.id;
