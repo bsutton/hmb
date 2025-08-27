@@ -6,12 +6,6 @@
         {
             "previewLimit": 50,
             "driver": "SQLite",
-            "name": "hmb",
-            "database": "${workspaceFolder:hmb}/.dart_tool/sqflite_common_ffi/databases/handyman.db"
-        },
-        {
-            "previewLimit": 50,
-            "driver": "SQLite",
             "name": "temp_db",
             "database": "C:\\Users\\bsutt\\AppData\\Local\\Temp\\.dclitmp\\af8c110c-9693-44cb-a305-fa025a3adc59\\handyman_test_temp.db"
         },
@@ -20,6 +14,12 @@
             "driver": "SQLite",
             "name": "test_db",
             "database": "${workspaceFolder:hmb}/test/fixture/db/handyman_test.db"
+        },
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "hmb",
+            "database": "${workspaceFolder:hmb}/database/handyman.db"
         }
     ],
 
