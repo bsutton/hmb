@@ -281,6 +281,8 @@ where t.id =?
   Future<JobStatistics> getJobStatistics(Job job) async {
     final tasks = await DaoTask().getTasksByJob(job.id);
 
+    final hourlyRate = await DaoJob().getHourlyRate(job.id);
+
     final totalTasks = tasks.length;
     var completedTasks = 0;
     var expectedLabourHours = Fixed.zero;
@@ -298,7 +300,18 @@ where t.id =?
 
       // Calculate effort and cost from checklist items
       for (final item in taskItems) {
-        expectedLabourHours += item.estimatedLabourHours!;
+        final Fixed hours;
+        switch (item.labourEntryMode) {
+          case LabourEntryMode.hours:
+            hours = item.estimatedLabourHours!;
+          case LabourEntryMode.dollars:
+            hours = Fixed.fromNum(
+              item.estimatedLabourCost!.dividedBy(hourlyRate),
+            );
+        }
+
+        expectedLabourHours += hours;
+
         totalMaterialCost += item.estimatedMaterialUnitCost!.multiplyByFixed(
           item.estimatedMaterialQuantity!,
         );
