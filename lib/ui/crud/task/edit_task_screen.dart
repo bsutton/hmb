@@ -25,11 +25,9 @@ import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_crud_checklist_item.dart';
-import '../../widgets/hmb_crud_time_entry.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../base_nested/edit_nested_screen.dart';
-import '../base_nested/list_nested_screen.dart';
 import 'photo_crud.dart';
 
 class TaskEditScreen extends StatefulWidget {
@@ -159,7 +157,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
         ),
         // _chooseBillingType(),
         _buildItemList(task),
-        HMBCrudTimeEntry(parentTitle: 'Task', parent: Parent(task)),
         PhotoCrud<Task>(
           parentName: 'Task',
           parentType: ParentType.task,
