@@ -16,14 +16,15 @@ import 'dart:io';
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
 
 import '../../../../ui/widgets/layout/layout.g.dart';
+import '../../../../ui/widgets/text/hmb_text_themes.dart';
 import '../../../../ui/widgets/widgets.g.dart';
+import 'google_drive_api.dart';
 import 'google_drive_auth.dart';
 
 class BackupAuthGoogleScreen extends StatefulWidget {
@@ -40,10 +41,15 @@ class _BackupAuthGoogleScreenState
   late StreamSubscription<GoogleSignInAuthenticationEvent> _authSubscription;
 
   late GoogleDriveAuth auth;
+  late bool googleDriveSupported;
+
   @override
   Future<void> asyncInitState() async {
     super.initState();
-    auth = await GoogleDriveAuth.instance();
+    googleDriveSupported = await GoogleDriveApi.isSupported();
+    if (googleDriveSupported) {
+      auth = await GoogleDriveAuth.instance();
+    }
   }
 
   @override
@@ -55,7 +61,7 @@ class _BackupAuthGoogleScreenState
   @override
   Widget build(BuildContext context) {
     Widget signOut;
-    if (auth.isSignedIn) {
+    if (googleDriveSupported) {
       signOut = HMBIconButton(
         icon: const Icon(Icons.exit_to_app),
         onPressed: auth.signOut,
@@ -71,20 +77,21 @@ class _BackupAuthGoogleScreenState
         automaticallyImplyLeading: false,
         actions: [signOut],
       ),
-      body: FutureBuilderEx(
-        future: _ensureSignedIn(),
-        waitingBuilder: (context) =>
-            const Center(child: CircularProgressIndicator()),
-        builder: (context, success) => Center(
-          child: Column(
+      body: DeferredBuilder(
+        this,
+        // future: _ensureSignedIn(),
+        builder: (context) => Center(
+          child: HMBColumn(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              const SizedBox(height: 20),
-              HMBButton(
-                label: 'Upload File to Google Drive',
-                hint: 'Backup your data to Google Drive, excluding photos',
-                onPressed: () => unawaited(_uploadFile(context)),
-              ),
+              if (googleDriveSupported)
+                HMBButton(
+                  label: 'Upload File to Google Drive',
+                  hint: 'Backup your data to Google Drive, excluding photos',
+                  onPressed: () => unawaited(_uploadFile(context)),
+                ),
+              if (!googleDriveSupported)
+                const HMBTextLine('Google Drive is not supported.'),
             ],
           ),
         ),

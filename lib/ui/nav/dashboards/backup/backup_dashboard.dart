@@ -65,11 +65,13 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     });
   }
 
+  var authIsSupported = false;
   @override
   Future<void> asyncInitState() async {
     _provider = _getProvider();
+    authIsSupported = await GoogleDriveAuth.isAuthSupported();
 
-    if (GoogleDriveAuth.isAuthSupported()) {
+    if (authIsSupported) {
       auth = await GoogleDriveAuth.instance();
       if (auth.isSignedIn) {
         // Load last backup date
@@ -104,7 +106,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     body: DeferredBuilder(
       this,
       builder: (context) {
-        if (!GoogleDriveAuth.isAuthSupported()) {
+        if (!authIsSupported) {
           return _buildUnsupportedPlatformMessage(context);
         }
 

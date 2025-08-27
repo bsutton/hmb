@@ -21,17 +21,25 @@ import 'package:http/http.dart';
 import 'backup.dart';
 import 'google_drive_auth.dart';
 
+enum GoogleDriveStatus { signedIn, signedOut, notSupported }
+
 class GoogleDriveApi {
   var _initialised = false;
-  final Map<String, String> _authHeaders;
   late final drive.DriveApi _driveApi;
   late AuthenticatedClient? _authClient;
+  Map<String, String> authHeaders;
 
-  GoogleDriveApi._internal(this._authHeaders);
+  GoogleDriveStatus status;
+
+  GoogleDriveApi._internal(this.authHeaders)
+    : status = GoogleDriveStatus.signedIn;
 
   drive.FilesResource get files => _driveApi.files;
 
-  /// fromHeaders
+  /// Use this method if you need access to google drive
+  /// from an isolate.
+  /// You do the auth in the main isolate and then pass
+  /// the headers to the worker isolate via a map.
   static Future<GoogleDriveApi> fromHeaders(
     Map<String, String> authHeaders,
   ) async {
@@ -40,15 +48,26 @@ class GoogleDriveApi {
     return api;
   }
 
-  /// selfAuth
+  static Future<bool> isSupported() => GoogleDriveAuth.isAuthSupported();
+
+  /// Call this method to get an authenticated
+  /// [GoogleDriveApi] instance.
+  /// If necessary it will trigger a UI auth sequence.
+  /// You MUST call [isSupported] first otherwise an
+  /// [UnimplementedError] may be thrown.
   static Future<GoogleDriveApi> selfAuth() async {
+    if (!await GoogleDriveAuth.isAuthSupported()) {
+      throw UnimplementedError(
+        'Google Drive is not supported on this platform',
+      );
+    }
     final auth = await GoogleDriveAuth.instance();
     return GoogleDriveApi.fromHeaders(auth.authHeaders);
   }
 
   Future<void> init() async {
     if (!_initialised) {
-      _authClient = AuthenticatedClient(http.Client(), _authHeaders);
+      _authClient = AuthenticatedClient(http.Client(), authHeaders);
       _driveApi = drive.DriveApi(_authClient!);
       _initialised = true;
     }

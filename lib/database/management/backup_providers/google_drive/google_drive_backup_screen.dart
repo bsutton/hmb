@@ -36,6 +36,7 @@ import '../progress_update.dart';
 import 'background_backup/google_drive_backup_provider.dart';
 import 'background_backup/photo_sync_params.dart';
 import 'background_backup/photo_sync_service.dart';
+import 'google_drive_api.dart';
 import 'google_drive_auth.dart';
 
 class GoogleDriveBackupScreen extends StatefulWidget {
@@ -85,12 +86,18 @@ class _GoogleDriveBackupScreenState
   Future<void> asyncInitState() async {
     setAppTitle('Backup & Restore');
     _provider = _getProvider();
-    final gdriveAuth = await GoogleDriveAuth.instance();
 
-    if (gdriveAuth.isSignedIn) {
-      // Load last backup date
-      _lastBackupFuture = _refreshLastBackup();
-      _isGoogleSignedIn = true;
+    if (await GoogleDriveApi.isSupported()) {
+      final gdriveAuth = await GoogleDriveAuth.instance();
+
+      if (gdriveAuth.isSignedIn) {
+        // Load last backup date
+        _lastBackupFuture = _refreshLastBackup();
+        _isGoogleSignedIn = true;
+      }
+    } else {
+      _isGoogleSignedIn = false;
+      _lastBackupFuture = Future.value(null);
     }
   }
 

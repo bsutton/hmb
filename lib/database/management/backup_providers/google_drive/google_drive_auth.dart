@@ -58,6 +58,19 @@ class GoogleDriveAuth {
     return _instance;
   }
 
+  /// returns true if the current platform supports google signin.
+  static Future<bool> isAuthSupported() async {
+    try {
+      // return GoogleSignIn.instance.supportsAuthenticate();
+      // ignore: unnecessary_statements
+      await instance();
+      // ignore: avoid_catching_errors
+    } on UnimplementedError catch (_) {
+      return false;
+    }
+    return true;
+  }
+
   /// initialised [GoogleSignIn]
   Future<void> _initialise() async {
     final signIn = GoogleSignIn.instance;
@@ -95,15 +108,6 @@ class GoogleDriveAuth {
     unawaited(signIn.attemptLightweightAuthentication());
 
     await _awaitingAuth.future;
-  }
-
-  /// returns true if the current platform supports google signin.
-  static bool isAuthSupported() {
-    try {
-      return GoogleSignIn.instance.supportsAuthenticate();
-      // ignore: avoid_catching_errors
-    } on UnimplementedError catch (_) {}
-    return false;
   }
 
   Future<void> signOut() async {

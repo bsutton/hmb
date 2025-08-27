@@ -16,7 +16,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../../../database/factory/flutter_database_factory.dart';
 import '../../../../../database/management/backup_providers/google_drive/background_backup/background_backup.g.dart';
-import '../../../../../database/management/backup_providers/google_drive/google_drive_auth.dart';
+import '../../../../../database/management/backup_providers/google_drive/google_drive.g.dart';
 import '../../../../../src/appname.dart';
 import '../../../../../util/format.dart';
 import '../../dashlet_card.dart';
@@ -39,11 +39,14 @@ class BackupDashlet extends StatelessWidget {
     // ignore: discarded_futures
     future: _getLastBackup(),
     builder: (context, backupStatus) {
-      final text = backupStatus!.notSignedIn
-          ? 'Not Signed In'
-          : backupStatus.lastBackup == null
-          ? 'No backups yet'
-          : 'Last: ${formatDateTime(backupStatus.lastBackup!)}';
+      final text = switch (backupStatus!.driveStatus) {
+        GoogleDriveStatus.signedIn =>
+          backupStatus.lastBackup == null
+              ? 'No backups yet'
+              : 'Last: ${formatDateTime(backupStatus.lastBackup!)}',
+        GoogleDriveStatus.signedOut => 'Not Signed In',
+        GoogleDriveStatus.notSupported => 'Not Supported',
+      };
       return Center(
         child: Text(
           text,
@@ -56,12 +59,13 @@ class BackupDashlet extends StatelessWidget {
 
   Future<BackupStatus> _getLastBackup() async {
     DateTime? last;
-    var notSignedIn = true;
+    var status = GoogleDriveStatus.notSupported;
     try {
-      if (GoogleDriveAuth.isAuthSupported()) {
+      if (await GoogleDriveApi.isSupported()) {
+        status = GoogleDriveStatus.signedOut;
         final auth = await GoogleDriveAuth.instance();
         if (auth.isSignedIn) {
-          notSignedIn = false;
+          status = GoogleDriveStatus.signedIn;
           final backups = await GoogleDriveBackupProvider(
             FlutterDatabaseFactory(),
           ).getBackups();
@@ -71,16 +75,14 @@ class BackupDashlet extends StatelessWidget {
           }
         }
       }
-    } catch (_) {
-      last = null;
-    }
-    return BackupStatus(notSignedIn: notSignedIn, lastBackup: last);
+    } catch (_) {}
+    return BackupStatus(driveStatus: status, lastBackup: last);
   }
 }
 
 class BackupStatus {
-  final bool notSignedIn;
+  final GoogleDriveStatus driveStatus;
   final DateTime? lastBackup;
 
-  BackupStatus({required this.notSignedIn, required this.lastBackup});
+  BackupStatus({required this.driveStatus, required this.lastBackup});
 }
