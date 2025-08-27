@@ -77,6 +77,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
           ..on<StartQuoting, Quoting>()
           ..on<PaymentReceived, ToBeScheduled>()
           ..on<StartWork, InProgress>()
+          ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<Quoting>(
@@ -84,12 +85,14 @@ Future<StateMachine> buildJobMachine(Job job) async {
           ..onEnter((_, _) => _updateJobStatus(job, JobStatus.quoting))
           ..on<SubmitQuote, AwaitingApproval>()
           ..on<StartWork, InProgress>()
+          ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<AwaitingApproval>(
         (b) => b
           ..onEnter((_, _) => _updateJobStatus(job, JobStatus.awaitingApproval))
           ..on<ApproveQuote, AwaitingPayment>()
+          ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<AwaitingPayment>(
@@ -97,6 +100,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
           ..onEnter((_, _) => _updateJobStatus(job, JobStatus.awaitingPayment))
           ..on<PaymentReceived, ToBeScheduled>()
           ..on<ScheduleJob, Scheduled>()
+          ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<ToBeScheduled>(
@@ -106,6 +110,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
           })
           ..on<ScheduleJob, Scheduled>()
           ..on<StartWork, InProgress>()
+          ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<Scheduled>(
@@ -121,8 +126,8 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<InProgress>(
         (b) => b
           ..onEnter((_, _) => _inProgress(job))
-          ..on<PauseJob, OnHold>()
           ..on<CompleteJob, Completed>()
+          ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<OnHold>(
@@ -134,6 +139,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<AwaitingMaterials>(
         (b) => b
           ..on<ResumeJob, InProgress>()
+          ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
       )
       ..state<Completed>(
@@ -141,7 +147,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
           ..on<RaiseInvoice, ToBeBilled>()
           ..on<RejectJob, Rejected>(),
       )
-      ..state<ToBeBilled>((b) => b..on<RejectJob, Rejected>())
+      ..state<ToBeBilled>((b) => b..on<CompleteJob, Completed>())
       // terminal-ish state sits outside; not rejectable itself
       ..state<Rejected>(
         (b) => b
