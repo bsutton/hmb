@@ -84,9 +84,11 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
     // ignore: discarded_futures
     widget.selectedItem().then((newSelection) {
       if (newSelection != _selectedItem) {
-        setState(() {
-          _selectedItem = newSelection;
-        });
+        if (mounted) {
+          setState(() {
+            _selectedItem = newSelection;
+          });
+        }
       }
     });
   }
