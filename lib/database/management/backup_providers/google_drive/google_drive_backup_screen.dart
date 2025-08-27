@@ -97,7 +97,7 @@ class _GoogleDriveBackupScreenState
       }
     } else {
       _isGoogleSignedIn = false;
-      _lastBackupFuture = Future.value(null);
+      _lastBackupFuture = Future.value();
     }
   }
 
