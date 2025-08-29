@@ -12,7 +12,9 @@
 */
 
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
@@ -59,17 +61,8 @@ class GoogleDriveAuth {
   }
 
   /// returns true if the current platform supports google signin.
-  static Future<bool> isAuthSupported() async {
-    try {
-      // return GoogleSignIn.instance.supportsAuthenticate();
-      // ignore: unnecessary_statements
-      await instance();
-      // ignore: avoid_catching_errors
-    } on UnimplementedError catch (_) {
-      return false;
-    }
-    return true;
-  }
+  static bool isAuthSupported()  =>
+      Platform.isAndroid || Platform.isIOS || Platform.isMacOS || kIsWeb;
 
   /// initialised [GoogleSignIn]
   Future<void> _initialise() async {

@@ -48,7 +48,7 @@ class GoogleDriveApi {
     return api;
   }
 
-  static Future<bool> isSupported() => GoogleDriveAuth.isAuthSupported();
+  static bool isSupported() => GoogleDriveAuth.isAuthSupported();
 
   /// Call this method to get an authenticated
   /// [GoogleDriveApi] instance.
@@ -56,7 +56,7 @@ class GoogleDriveApi {
   /// You MUST call [isSupported] first otherwise an
   /// [UnimplementedError] may be thrown.
   static Future<GoogleDriveApi> selfAuth() async {
-    if (!await GoogleDriveAuth.isAuthSupported()) {
+    if (!GoogleDriveAuth.isAuthSupported()) {
       throw UnimplementedError(
         'Google Drive is not supported on this platform',
       );

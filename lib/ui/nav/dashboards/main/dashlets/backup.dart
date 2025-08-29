@@ -61,7 +61,7 @@ class BackupDashlet extends StatelessWidget {
     DateTime? last;
     var status = GoogleDriveStatus.notSupported;
     try {
-      if (await GoogleDriveApi.isSupported()) {
+      if (GoogleDriveApi.isSupported()) {
         status = GoogleDriveStatus.signedOut;
         final auth = await GoogleDriveAuth.instance();
         if (auth.isSignedIn) {

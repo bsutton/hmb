@@ -87,7 +87,7 @@ class _GoogleDriveBackupScreenState
     setAppTitle('Backup & Restore');
     _provider = _getProvider();
 
-    if (await GoogleDriveApi.isSupported()) {
+    if ( GoogleDriveApi.isSupported()) {
       final gdriveAuth = await GoogleDriveAuth.instance();
 
       if (gdriveAuth.isSignedIn) {

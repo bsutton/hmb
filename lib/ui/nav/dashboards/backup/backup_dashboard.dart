@@ -69,7 +69,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   @override
   Future<void> asyncInitState() async {
     _provider = _getProvider();
-    authIsSupported = await GoogleDriveAuth.isAuthSupported();
+    authIsSupported = GoogleDriveAuth.isAuthSupported();
 
     if (authIsSupported) {
       auth = await GoogleDriveAuth.instance();

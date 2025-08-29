@@ -46,7 +46,7 @@ class _BackupAuthGoogleScreenState
   @override
   Future<void> asyncInitState() async {
     super.initState();
-    googleDriveSupported = await GoogleDriveApi.isSupported();
+    googleDriveSupported =  GoogleDriveApi.isSupported();
     if (googleDriveSupported) {
       auth = await GoogleDriveAuth.instance();
     }
