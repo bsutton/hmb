@@ -124,8 +124,6 @@ class _BackupAuthGoogleScreenState
     final response = await driveApi.files.create(driveFile, uploadMedia: media);
     print('Uploaded file: ${response.id}');
   }
-
-  Future<bool> _ensureSignedIn() async => auth.isSignedIn;
 }
 
 class AuthenticatedClient extends http.BaseClient {
