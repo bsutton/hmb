@@ -300,27 +300,38 @@ where t.id =?
 
       // Calculate effort and cost from checklist items
       for (final item in taskItems) {
-        final Fixed hours;
-        switch (item.labourEntryMode) {
-          case LabourEntryMode.hours:
-            hours = item.estimatedLabourHours!;
-          case LabourEntryMode.dollars:
-            hours = Fixed.fromNum(
-              item.estimatedLabourCost!.dividedBy(hourlyRate),
+        var hours = Fixed.zero;
+        var materialCost = MoneyEx.zero;
+        switch (item.itemType) {
+          case TaskItemType.materialsBuy:
+          case TaskItemType.materialsStock:
+          case TaskItemType.consumablesStock:
+          case TaskItemType.consumablesBuy:
+            materialCost = item.estimatedMaterialUnitCost!.multiplyByFixed(
+              item.estimatedMaterialQuantity!,
             );
+
+          case TaskItemType.toolsBuy:
+          case TaskItemType.toolsOwn:
+            materialCost = MoneyEx.zero;
+          case TaskItemType.labour:
+            switch (item.labourEntryMode) {
+              case LabourEntryMode.hours:
+                hours = item.estimatedLabourHours!;
+              case LabourEntryMode.dollars:
+                hours = Fixed.fromNum(
+                  item.estimatedLabourCost!.dividedBy(hourlyRate),
+                );
+            }
         }
 
         expectedLabourHours += hours;
-
-        totalMaterialCost += item.estimatedMaterialUnitCost!.multiplyByFixed(
-          item.estimatedMaterialQuantity!,
-        );
+        totalMaterialCost += materialCost;
 
         // If the task is completed, add to completed effort and earned cost
         if ((status.isComplete()) || item.completed) {
-          completedLabourHours += item.estimatedLabourHours!;
-          completedMaterialCost += item.estimatedMaterialUnitCost!
-              .multiplyByFixed(item.estimatedMaterialQuantity!);
+          completedLabourHours += hours;
+          completedMaterialCost += materialCost;
         }
       }
 
