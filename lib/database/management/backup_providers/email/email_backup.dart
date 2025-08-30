@@ -23,8 +23,7 @@ import '../../../../dao/dao_system.dart';
 import '../../../../src/appname.dart';
 import '../../../../ui/dialog/hmb_file_picker_linux.dart';
 import '../../../../util/exceptions.dart';
-import '../../../../util/paths.dart'
-    if (dart.library.ui) '../../../../util/paths_flutter.dart';
+import '../../../../util/paths.dart';
 import '../../../versions/asset_script_source.dart';
 import '../backup.dart';
 import '../backup_provider.dart';

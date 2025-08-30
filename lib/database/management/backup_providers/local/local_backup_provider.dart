@@ -19,8 +19,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../util/log.dart';
-import '../../../../util/paths.dart'
-    if (dart.library.ui) '../../../../util/paths_flutter.dart';
+import '../../../../util/paths.dart';
 import '../backup.dart';
 import '../backup_provider.dart';
 

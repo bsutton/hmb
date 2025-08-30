@@ -24,8 +24,7 @@ import 'package:path/path.dart';
 import 'package:sentry/sentry.dart';
 
 import '../../../../../util/exceptions.dart';
-import '../../../../../util/paths.dart'
-    if (dart.library.ui) '../../../../../util/paths_flutter.dart';
+import '../../../../../util/paths.dart';
 import '../../backup.dart';
 import '../../backup_provider.dart';
 import '../google_drive_api.dart';

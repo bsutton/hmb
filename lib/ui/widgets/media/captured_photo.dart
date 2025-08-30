@@ -16,8 +16,8 @@ import 'dart:async';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 
-import '../../../util/paths.dart'
-    if (dart.library.ui) '../../../util/paths_flutter.dart';
+import '../../../util/paths.dart';
+
 
 /// Handles storing a photo into HMB's storage area and
 /// then making a relative path available.
