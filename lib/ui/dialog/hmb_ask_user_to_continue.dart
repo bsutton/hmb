@@ -13,13 +13,12 @@
 
 import 'package:flutter/material.dart';
 
+import '../../util/types.dart';
 import '../widgets/hmb_button.dart';
-
-typedef OnConfirmed = Future<void> Function();
 
 Future<void> askUserToContinue({
   required BuildContext context,
-  required OnConfirmed onConfirmed,
+  required AsyncVoidCallback onConfirmed,
   required String title,
   required String message,
   String noLabel = 'No',

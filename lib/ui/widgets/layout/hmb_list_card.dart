@@ -15,12 +15,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../util/types.dart';
 import '../hmb_icon_button.dart';
 
-typedef OnDelete = Future<void> Function();
+typedef OnDelete = AsyncVoidCallback;
 typedef OnEdit = Widget Function();
 typedef Allowed = bool Function();
-typedef OnRefresh = Future<void> Function();
+typedef OnRefresh = AsyncVoidCallback;
 
 class HMBCrudListCard extends StatelessWidget {
   final Widget child;
@@ -41,7 +42,6 @@ class HMBCrudListCard extends StatelessWidget {
     this.canDelete,
     super.key,
   });
-
 
   @override
   Widget build(BuildContext context) => GestureDetector(

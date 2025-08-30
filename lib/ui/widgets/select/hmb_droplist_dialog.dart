@@ -16,6 +16,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
+import '../../../util/types.dart';
 import '../color_ex.dart';
 import '../hmb_icon_button.dart';
 import '../surface.dart';
@@ -26,7 +27,7 @@ class HMBDroplistDialog<T> extends StatefulWidget {
   final String title;
   final T? selectedItem;
   final bool allowClear;
-  final Future<void> Function()? onAdd; // Optional "Add" button callback
+  final AsyncVoidCallback? onAdd; // Optional "Add" button callback
   final bool showSearch;
 
   const HMBDroplistDialog({

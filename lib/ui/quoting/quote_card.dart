@@ -20,6 +20,7 @@ import 'package:strings/strings.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/format.dart';
+import '../../util/types.dart';
 import '../crud/job/edit_job_screen.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
@@ -49,7 +50,7 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
     jc = await JobAndCustomer.fromQuote(quote);
   }
 
-  Future<void> _updateQuote(Future<void> Function() action) async {
+  Future<void> _updateQuote(AsyncVoidCallback action) async {
     try {
       await action();
       quote = (await DaoQuote().getById(quote.id))!;

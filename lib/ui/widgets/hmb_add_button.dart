@@ -13,12 +13,13 @@
 
 import 'package:flutter/material.dart';
 
+import '../../util/types.dart';
 import 'hmb_icon_button.dart';
 
 /// Displays the primary site of a parent
 /// and allows the user to select/update the primary site.
 class HMBButtonAdd extends StatelessWidget {
-  final Future<void> Function()? onAdd;
+  final AsyncVoidCallback? onAdd;
   final bool enabled;
   final bool small;
 

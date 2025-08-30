@@ -15,12 +15,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../util/types.dart';
 import 'hmb_button.dart';
 import 'layout/hmb_spacer.dart';
 
 class SaveAndClose extends StatelessWidget {
   final Future<void> Function({required bool close}) onSave;
-  final Future<void> Function() onCancel;
+  final AsyncVoidCallback onCancel;
   final bool showSaveOnly;
 
   /// The [showSaveOnly] argument controls whether the 'Save' button

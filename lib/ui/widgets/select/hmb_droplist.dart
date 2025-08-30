@@ -17,6 +17,7 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 
 import '../../../util/hmb_theme.dart';
+import '../../../util/types.dart';
 import '../layout/labeled_container.dart';
 import '../surface.dart';
 import 'hmb_droplist_dialog.dart';
@@ -28,7 +29,7 @@ class HMBDroplist<T> extends StatefulWidget {
   final String Function(T) format;
   final void Function(T?) onChanged;
   final String title;
-  final Future<void> Function()? onAdd;
+  final AsyncVoidCallback? onAdd;
   final Color? backgroundColor;
   final void Function(T?)? onSaved;
   final T? initialValue;

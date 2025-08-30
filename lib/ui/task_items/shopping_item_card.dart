@@ -16,6 +16,7 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
+import '../../util/types.dart';
 import '../widgets/widgets.g.dart';
 import 'item_card_common.dart';
 import 'list_packing_screen.dart';
@@ -26,7 +27,7 @@ import 'shopping_item_dialog.dart';
 /// and then calls [onReload] after edits.
 abstract class ShoppingItemCard extends StatelessWidget {
   final TaskItemContext itemContext;
-  final Future<void> Function() onReload;
+  final AsyncVoidCallback onReload;
 
   const ShoppingItemCard({
     required this.itemContext,

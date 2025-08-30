@@ -22,6 +22,7 @@ import '../../dao/dao_task_item.dart';
 import '../../entity/supplier.dart';
 import '../../util/fixed_ex.dart';
 import '../../util/money_ex.dart';
+import '../../util/types.dart';
 import '../widgets/fields/fields.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'task_items.g.dart';
@@ -31,7 +32,7 @@ import 'task_items.g.dart';
 Future<void> showShoppingItemDialog(
   BuildContext context,
   TaskItemContext ctx,
-  Future<void> Function() onReload,
+  AsyncVoidCallback onReload,
 ) async {
   final item = ctx.taskItem;
   final descriptionController = TextEditingController(text: item.description);

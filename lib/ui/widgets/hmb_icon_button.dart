@@ -13,6 +13,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../util/types.dart';
 import 'hmb_tooltip.dart';
 
 enum HMBIconButtonSize { small, standard, large }
@@ -20,7 +21,7 @@ enum HMBIconButtonSize { small, standard, large }
 /// Displays an icon button with configurable size and tooltip shown
 /// on long press.
 class HMBIconButton extends StatefulWidget {
-  final Future<void> Function()? onPressed;
+  final AsyncVoidCallback? onPressed;
   final bool enabled;
   final Icon icon;
   final String? hint;
