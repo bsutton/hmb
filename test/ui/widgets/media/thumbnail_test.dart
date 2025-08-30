@@ -36,7 +36,7 @@ void main() {
       parentType: ParentType.task,
       lastBackupDate: DateTime.now(),
       comment: 'None',
-      filePath: pathToPhoto,
+      filename: pathToPhoto,
     );
     final meta = PhotoMeta.fromPhoto(photo: photo);
 

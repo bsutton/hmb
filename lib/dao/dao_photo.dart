@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -10,7 +11,6 @@
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
-
 
 import 'package:june/june.dart';
 
@@ -31,19 +31,17 @@ class DaoPhoto extends Dao<Photo> {
     );
   }
 
-  Future<List<String>> getAllPhotoPaths() async {
+  Future<List<String>> getAllPhotoFileNames() async {
     final db = withoutTransaction();
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
-      columns: ['filePath'],
+      columns: ['fileName'],
     );
-    return maps.map((map) => map['filePath'] as String).toList();
+    return maps.map((map) => map['fileName'] as String).toList();
   }
 
   /// Returns the list of photos that have not been backed up yet.
   Future<List<PhotoPayload>> getUnsyncedPhotos() async {
-    // You can add a query method to DaoPhoto that returns only 
-    //photos with a null last_backup_date.
     final db = withoutTransaction();
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
@@ -60,9 +58,10 @@ class DaoPhoto extends Dao<Photo> {
   /// Updates the photo record to mark it as backed up.
   Future<void> updatePhotoSyncStatus(int photoId) async {
     final db = withoutTransaction();
-    // Raw SQL update statement:
     await db.rawUpdate(
-      "UPDATE photo SET last_backup_date = datetime('now') WHERE id = ?",
+      'UPDATE photo '
+      "SET last_backup_date = datetime('now') "
+      'WHERE id = ?',
       [photoId],
     );
   }

@@ -29,7 +29,7 @@ class CapturePhoto extends StatefulWidget {
   final String title;
   final String comment;
   final Future<int> Function(Photo) onCaptured;
-  
+
   const CapturePhoto({
     required this.tool,
     required this.title,
@@ -37,7 +37,6 @@ class CapturePhoto extends StatefulWidget {
     required this.onCaptured,
     super.key,
   });
-
 
   @override
   State<CapturePhoto> createState() => _CapturePhotoState();
@@ -72,7 +71,7 @@ class _CapturePhotoState extends State<CapturePhoto> {
                 final newPhoto = Photo.forInsert(
                   parentId: widget.tool.id,
                   parentType: ParentType.tool,
-                  filePath: capturedPhoto.relativePath,
+                  filename: capturedPhoto.filename,
                   comment: widget.comment,
                 );
                 photoId = await widget.onCaptured(newPhoto);

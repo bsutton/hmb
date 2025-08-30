@@ -28,11 +28,11 @@ class CapturedPhoto {
   /// Path to the captured photo relative to HMB's main
   /// photo storage area as designated by photosRootPath which
   /// is different on each device.
-  late final String relativePath;
+  late final String filename;
 
-  CapturedPhoto({required this.relativePath});
+  CapturedPhoto({required this.filename});
 
-  CapturedPhoto.fromRelative({required this.relativePath});
+  CapturedPhoto.fromRelative({required this.filename});
 
   /// Save a captured photo to HMB's photo storage area.
   /// Call [relative] to obtain the path to save to the db.
@@ -46,24 +46,21 @@ class CapturedPhoto {
   }
 
   /// Get the abosolute path to the photo with HMB storage
-  /// given a [relativePath] which is relative to the HMB storage.
+  /// given a [filename] which is relative to the HMB storage.
   Future<String?> get absolutePath async =>
-      join(await getPhotosRootPath(), relativePath);
+      join(await getPhotosRootPath(), filename);
 
   static Future<CapturedPhoto> fromAbsolute({
     required String absolutePathToPhoto,
   }) async {
-    final relativePathToPhoto = relative(
-      absolutePathToPhoto,
-      from: await getPhotosRootPath(),
-    );
+    final filename = basename(absolutePathToPhoto);
 
     assert(
-      relativePathToPhoto != absolutePathToPhoto,
+      filename != absolutePathToPhoto,
       '''
-The relative call failed probably because $relativePathToPhoto isn't relative to $absolutePathToPhoto''',
+The filename call failed probably because $filename isn't relative to $absolutePathToPhoto''',
     );
 
-    return CapturedPhoto(relativePath: relativePathToPhoto);
+    return CapturedPhoto(filename: filename);
   }
 }

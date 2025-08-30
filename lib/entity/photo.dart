@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -18,7 +19,10 @@ enum ParentType { task, tool, receipt }
 class Photo extends Entity<Photo> {
   int parentId;
   ParentType parentType;
-  String filePath;
+
+  /// Stores the file name (sans path) within the photo cache.
+  String filename;
+
   String comment;
 
   /// Backup location path
@@ -37,7 +41,7 @@ class Photo extends Entity<Photo> {
     required super.id,
     required this.parentId,
     required this.parentType,
-    required this.filePath,
+    required this.filename,
     required this.comment,
     required this.lastBackupDate,
     required super.createdDate,
@@ -49,7 +53,7 @@ class Photo extends Entity<Photo> {
   Photo.forInsert({
     required this.parentId,
     required this.parentType,
-    required this.filePath,
+    required this.filename,
     required this.comment,
     this.pathToCloudStorage,
     this.pathVersion = 1,
@@ -60,7 +64,7 @@ class Photo extends Entity<Photo> {
     required super.entity,
     required this.parentId,
     required this.parentType,
-    required this.filePath,
+    required this.filename,
     required this.comment,
     this.pathToCloudStorage,
     this.pathVersion,
@@ -71,7 +75,7 @@ class Photo extends Entity<Photo> {
     id: map['id'] as int,
     parentId: map['parentId'] as int,
     parentType: ParentType.values.byName(map['parentType'] as String),
-    filePath: map['filePath'] as String,
+    filename: map['filename'] as String, // <- renamed column
     comment: map['comment'] as String,
     lastBackupDate: map['last_backup_date'] == null
         ? null
@@ -87,7 +91,7 @@ class Photo extends Entity<Photo> {
     'id': id,
     'parentId': parentId,
     'parentType': parentType.name,
-    'filePath': filePath,
+    'filename': filename, // <- renamed column
     'comment': comment,
     'last_backup_date': lastBackupDate?.toIso8601String(),
     'path_to_cloud_storage': pathToCloudStorage,

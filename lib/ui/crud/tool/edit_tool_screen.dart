@@ -39,7 +39,7 @@ import '../task/photo_crud.dart';
 
 class ToolEditScreen extends StatefulWidget {
   final Tool? tool;
-  
+
   const ToolEditScreen({super.key, this.tool});
 
   @override
@@ -178,7 +178,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
                   final newPhoto = Photo.forInsert(
                     parentId: currentEntity?.id ?? 0,
                     parentType: ParentType.tool,
-                    filePath: capturedPhoto.relativePath,
+                    filename: capturedPhoto.filename,
                     comment: 'Serial Number Photo',
                   );
 
@@ -201,7 +201,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
                   final newPhoto = Photo.forInsert(
                     parentId: currentEntity?.id ?? 0,
                     parentType: ParentType.tool,
-                    filePath: capturedPhoto.relativePath,
+                    filename: capturedPhoto.filename,
                     comment: 'Receipt Photo',
                   );
 

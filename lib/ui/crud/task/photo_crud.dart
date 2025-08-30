@@ -95,7 +95,7 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
             final newPhoto = Photo.forInsert(
               parentId: parent!.id,
               parentType: widget.parentType,
-              filePath: capturedPhoto.relativePath,
+              filename: capturedPhoto.filename,
               comment: '',
             );
             await widget.controller.addPhoto(
