@@ -18,7 +18,7 @@ import '../../../dao/dao_supplier.dart';
 import '../../../dao/join_adaptors/join_adaptor_supplier_contact.dart';
 import '../../../dao/join_adaptors/join_adaptor_supplier_site.dart';
 import '../../../entity/supplier.dart';
-import '../../../util/platform_ex.dart';
+import '../../../util/flutter/platform_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_crud_contact.dart';

@@ -16,8 +16,8 @@ import 'dart:async';
 import 'package:completer_ex/completer_ex.dart';
 import 'package:flutter/material.dart';
 
-import '../../util/hmb_theme.dart';
-import '../../util/log.dart';
+import '../../util/dart/log.dart';
+import '../../util/flutter/hmb_theme.dart';
 import 'blocking_ui.dart';
 import 'circle.dart';
 import 'grayed_out.dart';

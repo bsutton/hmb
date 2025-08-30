@@ -19,6 +19,7 @@ import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../widgets/select/hmb_select_contact.dart';
 import '../widgets/widgets.g.dart';
+import 'invoice_options.dart';
 
 enum Showing { showQuote, showInvoice }
 
@@ -274,19 +275,4 @@ class TaskSelector {
   final Money value;
 
   TaskSelector(this.task, this.description, this.value);
-}
-
-class InvoiceOptions {
-  List<int> selectedTaskIds = [];
-  // ignore: omit_obvious_property_types
-  bool billBookingFee = true;
-  bool groupByTask;
-  Contact contact;
-
-  InvoiceOptions({
-    required this.selectedTaskIds,
-    required this.billBookingFee,
-    required this.groupByTask,
-    required this.contact,
-  });
 }

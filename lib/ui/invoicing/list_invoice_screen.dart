@@ -15,13 +15,13 @@ import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart' show Strings;
 
-import '../../../util/format.dart';
 import '../../api/external_accounting.dart';
 import '../../api/xero/xero.g.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../../util/app_title.dart';
-import '../../util/money_ex.dart';
+import '../../util/dart/format.dart';
+import '../../util/dart/money_ex.dart';
+import '../../util/flutter/app_title.dart';
 import '../crud/base_full_screen/base_full_screen.g.dart';
 import '../crud/job/edit_job_screen.dart';
 import '../widgets/select/hmb_droplist.dart';

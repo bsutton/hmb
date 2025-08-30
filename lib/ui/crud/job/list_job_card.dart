@@ -16,11 +16,12 @@ import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
 import '../../../dao/dao.g.dart';
+import '../../../dao/dao_notifications.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/date_time_ex.dart';
-import '../../../util/format.dart';
-import '../../../util/local_date.dart';
-import '../../../util/rich_text_helper.dart';
+import '../../../util/dart/date_time_ex.dart';
+import '../../../util/dart/format.dart';
+import '../../../util/dart/local_date.dart';
+import '../../../util/flutter/rich_text_helper.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
@@ -72,7 +73,7 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
   );
 
   Widget _buildDetails(Customer? customer, JobStatus? jobStatus) => JuneBuilder(
-    JobRefresher.new,
+    JuneDaoNotifier.refresherForTable(DaoJob.tableName),
     builder: (jobRefresher) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
 

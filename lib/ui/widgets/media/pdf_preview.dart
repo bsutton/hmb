@@ -19,7 +19,7 @@ import 'package:zoom_view/zoom_view.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../ui/widgets/hmb_toast.dart';
-import '../../../util/types.dart';
+import '../../../util/dart/types.dart';
 import '../../dialog/email_dialog.dart';
 import '../blocking_ui.dart';
 import '../desktop_back_gesture_suppress.dart';

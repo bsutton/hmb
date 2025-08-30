@@ -11,19 +11,17 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
 import 'dao.g.dart';
 
 /// Join table DAO: maps suppliers ⇄ contacts
 class DaoContactSupplier extends Dao<Contact> {
+  static const tableName = 'supplier_contact';
+  DaoContactSupplier() : super(tableName);
   @override
   Contact fromMap(Map<String, dynamic> map) => Contact.fromMap(map);
-
-  @override
-  String get tableName => 'supplier_contact';
 
   /// Fetch all Contact rows for a given supplier
   Future<List<Contact>> getBySupplier(int supplierId) async {
@@ -78,12 +76,4 @@ class DaoContactSupplier extends Dao<Contact> {
       whereArgs: [supplier.id, contact.id],
     );
   }
-
-  @override
-  JuneStateCreator get juneRefresher => ContactSupplierState.new;
-}
-
-/// UI refresher state for supplier-contact joins
-class ContactSupplierState extends JuneState {
-  ContactSupplierState();
 }

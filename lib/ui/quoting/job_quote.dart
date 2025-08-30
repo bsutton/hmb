@@ -18,7 +18,7 @@ import '../../dao/dao_quote_line_group.dart';
 import '../../entity/invoice_line.dart';
 import '../../entity/quote_line.dart';
 import '../../entity/quote_line_group.dart';
-import '../../util/money_ex.dart';
+import '../../util/dart/money_ex.dart';
 
 class JobQuote {
   final int quoteId;

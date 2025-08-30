@@ -15,8 +15,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../src/appname.dart';
-import '../../util/app_title.dart';
-import '../../util/log.dart';
+import '../../util/dart/log.dart';
+import '../../util/flutter/app_title.dart';
 import '../widgets/wizard.dart';
 import 'billing_page.dart';
 import 'business_page.dart';

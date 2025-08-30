@@ -13,7 +13,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../util/types.dart';
+import '../../util/dart/types.dart';
 import '../widgets/hmb_button.dart';
 
 Future<void> askUserToContinue({

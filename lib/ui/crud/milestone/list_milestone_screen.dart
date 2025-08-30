@@ -25,7 +25,7 @@ import '../../../../entity/customer.dart';
 import '../../../../entity/job.dart';
 import '../../../../entity/milestone.dart';
 import '../../../../entity/quote.dart';
-import '../../../util/util.g.dart';
+import '../../../util/flutter/flutter_util.g.dart';
 import '../../quoting/select_quote_dialog.dart';
 import '../../widgets/layout/hmb_list_page.dart';
 import 'edit_milestone_payment.dart';

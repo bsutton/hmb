@@ -12,7 +12,7 @@
 */
 
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';

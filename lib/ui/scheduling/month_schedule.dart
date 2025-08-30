@@ -17,11 +17,12 @@ import 'package:flutter/material.dart';
 
 import '../../dao/dao_job_activity.dart';
 import '../../dao/dao_system.dart';
+import '../../entity/flutter_extensions/job_activity_status_ex.dart';
 import '../../entity/operating_hours.dart';
 import '../../entity/system.dart';
-import '../../util/date_time_ex.dart';
-import '../../util/format.dart'; // For formatTime() or similar
-import '../../util/local_date.dart';
+import '../../util/dart/date_time_ex.dart';
+import '../../util/dart/format.dart'; // For formatTime() or similar
+import '../../util/dart/local_date.dart';
 import '../widgets/circle.dart';
 import '../widgets/surface.dart';
 import 'job_activity_ex.dart';

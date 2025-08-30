@@ -11,19 +11,18 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter/material.dart';
-import 'package:june/june.dart';
-
 import 'entity.dart';
 
+enum JobActivityStatusColor { orange, blue, green }
+
 enum JobActivityStatus {
-  tentative(Colors.orange),
-  proposed(Colors.blue),
-  confirmed(Colors.green);
+  tentative(JobActivityStatusColor.orange),
+  proposed(JobActivityStatusColor.blue),
+  confirmed(JobActivityStatusColor.green);
 
-  const JobActivityStatus(this.color);
+  const JobActivityStatus(this.statusColour);
 
-  final Color color;
+  final JobActivityStatusColor statusColour;
 
   static JobActivityStatus fromName(String name) {
     switch (name) {
@@ -135,9 +134,4 @@ class JobActivity extends Entity<JobActivity> {
     createdDate: createdDate ?? this.createdDate,
     modifiedDate: modifiedDate ?? this.modifiedDate,
   );
-}
-
-/// Optional if you have a "JuneState" system.
-class JobActivityState extends JuneState {
-  JobActivityState();
 }

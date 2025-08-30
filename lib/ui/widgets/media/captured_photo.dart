@@ -16,7 +16,7 @@ import 'dart:async';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 
-import '../../../util/paths.dart';
+import '../../../util/dart/paths.dart';
 
 
 /// Handles storing a photo into HMB's storage area and

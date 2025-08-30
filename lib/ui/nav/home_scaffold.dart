@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
 
-import '../../util/app_title.dart';
+import '../../util/flutter/app_title.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/hmb_status_bar.dart';
 
@@ -43,10 +43,12 @@ class HomeScaffold extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // Show active time entry bar when appropriate
-        JuneBuilder<TimeEntryState>(
-          TimeEntryState.new,
+        JuneBuilder<ActiveTimeEntryState>(
+          ActiveTimeEntryState.new,
           builder: (_) {
-            final state = June.getState<TimeEntryState>(TimeEntryState.new);
+            final state = June.getState<ActiveTimeEntryState>(
+              ActiveTimeEntryState.new,
+            );
             if (state.activeTimeEntry != null) {
               return HMBStatusBar(
                 activeTimeEntry: state.activeTimeEntry,

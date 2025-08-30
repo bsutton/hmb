@@ -23,8 +23,8 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:path/path.dart';
 import 'package:sentry/sentry.dart';
 
-import '../../../../../util/exceptions.dart';
-import '../../../../../util/paths.dart';
+import '../../../../../util/dart/exceptions.dart';
+import '../../../../../util/dart/paths.dart';
 import '../../backup.dart';
 import '../../backup_provider.dart';
 import '../google_drive_api.dart';

@@ -16,7 +16,7 @@ import 'dart:io';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/material.dart';
 
-import '../../../util/photo_meta.dart';
+import '../../../util/dart/photo_meta.dart';
 import '../color_ex.dart';
 import 'full_screen_photo_view.dart';
 

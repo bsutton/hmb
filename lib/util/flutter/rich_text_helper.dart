@@ -13,7 +13,7 @@
 
 import 'package:fleather/fleather.dart';
 
-import '../ui/widgets/media/rich_editor.dart';
+import '../../ui/widgets/media/rich_editor.dart';
 
 class RichTextHelper {
   static String toPlainText(String richText) =>

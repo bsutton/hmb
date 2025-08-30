@@ -25,7 +25,7 @@ import '../../entity/task.dart';
 import '../../entity/time_entry.dart';
 import '../../fsm/job_events.dart';
 import '../../fsm/job_status_fsm.dart';
-import '../../util/format.dart';
+import '../../util/dart/format.dart';
 import '../dialog/start_timer_dialog.dart';
 import '../dialog/stop_timer_dialog.dart';
 
@@ -52,19 +52,18 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   @override
   void initState() {
     super.initState();
-    disposer = June.getState<TimeEntryState>(TimeEntryState.new).addListener(
-      () {
-        final activeEntry = June.getState<TimeEntryState>(
-          TimeEntryState.new,
-        ).activeTimeEntry;
+    disposer = June.getState<ActiveTimeEntryState>(ActiveTimeEntryState.new)
+        .addListener(() {
+          final activeEntry = June.getState<ActiveTimeEntryState>(
+            ActiveTimeEntryState.new,
+          ).activeTimeEntry;
 
-        if (timeEntry != null && activeEntry != timeEntry) {
-          /// we are no longer the active timer.
-          timeEntry = null;
-          _timer?.cancel();
-        }
-      },
-    );
+          if (timeEntry != null && activeEntry != timeEntry) {
+            /// we are no longer the active timer.
+            timeEntry = null;
+            _timer?.cancel();
+          }
+        });
   }
 
   @override
@@ -81,8 +80,8 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
         _initTimer(entry);
         if (entry != null) {
           final task = widget.task;
-          June.getState<TimeEntryState>(
-            TimeEntryState.new,
+          June.getState<ActiveTimeEntryState>(
+            ActiveTimeEntryState.new,
           ).setActiveTimeEntry(entry, task);
         }
       });
@@ -95,7 +94,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
     builder: (context) => Row(
       children: [
         JuneBuilder(
-          TimeEntryState.new,
+          ActiveTimeEntryState.new,
           builder: (timeEntryState) {
             final isActive =
                 timeEntryState.activeTimeEntry != null &&
@@ -326,8 +325,8 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
         stoppedTimeEntry.endTime!.add(const Duration(minutes: 1));
         await DaoTimeEntry().update(stoppedTimeEntry);
         timeEntry = null;
-        June.getState<TimeEntryState>(
-          TimeEntryState.new,
+        June.getState<ActiveTimeEntryState>(
+          ActiveTimeEntryState.new,
         ).clearActiveTimeEntry();
 
         _timer?.cancel();
@@ -359,8 +358,8 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
       final job = await transitionJobById(task.jobId, StartWork.new);
       _startTimer(newTimeEntry);
       timeEntry = newTimeEntry;
-      June.getState<TimeEntryState>(
-        TimeEntryState.new,
+      June.getState<ActiveTimeEntryState>(
+        ActiveTimeEntryState.new,
       ).setActiveTimeEntry(newTimeEntry, widget.task);
 
       widget.onStart(job);
@@ -397,7 +396,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   }
 }
 
-class TimeEntryState extends JuneState {
+class ActiveTimeEntryState extends JuneState {
   TimeEntry? activeTimeEntry;
   Task? task;
 

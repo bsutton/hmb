@@ -16,7 +16,7 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../util/types.dart';
+import '../../util/dart/types.dart';
 import '../widgets/widgets.g.dart';
 import 'item_card_common.dart';
 import 'list_packing_screen.dart';

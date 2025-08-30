@@ -14,6 +14,7 @@
 import 'package:calendar_view/calendar_view.dart';
 
 import '../../dao/dao_job.dart';
+import '../../entity/flutter_extensions/job_activity_status_ex.dart';
 import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
 

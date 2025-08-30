@@ -1,8 +1,8 @@
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 
-import '../../../util/parse/parse_customer.dart';
-import '../../../util/util.g.dart';
+import '../../../util/dart/parse/parse_customer.dart';
+import '../../../util/flutter/flutter_util.g.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';

@@ -13,7 +13,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../util/hmb_theme.dart';
+import '../../../util/flutter/hmb_theme.dart';
 
 /// Displays a multi-line block of text that expands/contracts
 /// based on content.

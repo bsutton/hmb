@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../util/util.g.dart';
+import '../../util/flutter/flutter_util.g.dart';
 import 'color_ex.dart';
 
 enum HMBChipTone { neutral, accent, danger, warning }

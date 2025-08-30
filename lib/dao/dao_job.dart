@@ -11,15 +11,31 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:june/june.dart';
 import 'package:money2/money2.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
-import '../entity/entity.g.dart';
-import '../util/exceptions.dart';
-import '../util/money_ex.dart';
-import 'dao.g.dart';
+import '../entity/customer.dart';
+import '../entity/job.dart';
+import '../entity/job_status.dart';
+import '../entity/job_status_stage.dart';
+import '../entity/quote.dart';
+import '../entity/task.dart';
+import '../entity/task_item.dart';
+import '../entity/task_item_type.dart';
+import '../util/dart/exceptions.dart';
+import '../util/dart/money_ex.dart';
+import 'dao.dart';
+import 'dao_contact.dart';
+import 'dao_customer.dart';
+import 'dao_invoice.dart';
+import 'dao_quote.dart';
+import 'dao_quote_line_group.dart';
+import 'dao_system.dart';
+import 'dao_task.dart';
+import 'dao_task_item.dart';
+import 'dao_time_entry.dart';
+import 'dao_work_assignment_task.dart';
 
 enum JobOrder {
   active('Most Recently Accessed'),
@@ -31,6 +47,10 @@ enum JobOrder {
 }
 
 class DaoJob extends Dao<Job> {
+  static const tableName = 'job';
+
+  DaoJob() : super(tableName);
+
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
     final db = withinTransaction(transaction);
@@ -42,9 +62,6 @@ class DaoJob extends Dao<Job> {
     // Delete the job itself
     return db.delete(tableName, where: 'id = ?', whereArgs: [id]);
   }
-
-  @override
-  String get tableName => 'job';
 
   @override
   Job fromMap(Map<String, dynamic> map) => Job.fromMap(map);
@@ -635,14 +652,6 @@ where q.id=?
       return newJob;
     });
   }
-
-  @override
-  JuneStateCreator get juneRefresher => JobRefresher.new;
-}
-
-/// Used to notify the UI that the time entry has changed.
-class JobRefresher extends JuneState {
-  JobRefresher();
 }
 
 class JobStatistics {

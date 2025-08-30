@@ -13,7 +13,7 @@
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../../util/exceptions.dart';
+import '../../util/dart/exceptions.dart';
 
 class InvoiceDetails {
   final Invoice invoice;

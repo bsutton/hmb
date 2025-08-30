@@ -18,6 +18,7 @@ import '../../entity/version.dart';
 import '../../src/version/version.g.dart' as code;
 import '../management/backup_providers/backup_provider.dart';
 import '../management/db_utility.dart';
+import 'post_upgrade_131.dart';
 import 'post_upgrade_77.dart';
 import 'script_source.dart';
 
@@ -82,6 +83,7 @@ Future<void> upgradeDb({
 
 final upgradeActions = <int, Future<void> Function(Database)>{
   77: postv77Upgrade,
+  131: postv131Upgrade,
 };
 
 /// We can't use the Dao layer as it uses June which assumes

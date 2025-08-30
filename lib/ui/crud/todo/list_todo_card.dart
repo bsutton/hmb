@@ -3,7 +3,7 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao_todo.dart';
 import '../../../entity/todo.dart';
-import '../../../util/format.dart';
+import '../../../util/dart/format.dart';
 import '../../dialog/hmb_snooze_picker.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_entity_chip.dart';

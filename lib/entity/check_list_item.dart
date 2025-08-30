@@ -13,9 +13,9 @@
 
 import 'package:money2/money2.dart';
 
-import '../util/measurement_type.dart';
-import '../util/money_ex.dart';
-import '../util/units.dart';
+import '../util/dart/measurement_type.dart';
+import '../util/dart/money_ex.dart';
+import '../util/dart/units.dart';
 import 'entity.g.dart';
 
 class CheckListItem extends Entity<CheckListItem> {

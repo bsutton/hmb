@@ -18,7 +18,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/photo_meta.dart';
+import '../../../util/dart/photo_meta.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/media/captured_photo.dart';
 import '../../widgets/media/photo_controller.dart';

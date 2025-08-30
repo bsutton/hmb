@@ -19,7 +19,7 @@ import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
 import '../../entity/site.dart';
 import '../../entity/supplier.dart';
-import '../../util/local_date.dart';
+import '../../util/dart/local_date.dart';
 
 class SourceContext {
   Customer? customer;

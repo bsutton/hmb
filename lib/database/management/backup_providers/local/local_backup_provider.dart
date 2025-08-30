@@ -18,8 +18,8 @@ import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../../../../util/log.dart';
-import '../../../../util/paths.dart';
+import '../../../../util/dart/log.dart';
+import '../../../../util/dart/paths.dart';
 import '../backup.dart';
 import '../backup_provider.dart';
 

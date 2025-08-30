@@ -1,0 +1,47 @@
+SQL Asset list generated: assets/sql/upgrade_list.json
+Backing up database prior to upgrade
+Saving backup to /home/bsutton/git/hmb/backups/hmb-backup-25-08-30.zip
+Upgrade database from Version 130
+Upgrading to 131 via assets/sql/upgrade_scripts/v131.sql
+running Instance of 'ProjectScriptSource'.pathToScript
+running: CREATE TABLE IF NOT EXISTS photo_new (
+  id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+  parentId              INTEGER NOT NULL,
+  parentType            TEXT    NOT NULL,      
+  filename              TEXT    NOT NULL,      
+  comment               TEXT    NOT NULL,
+  last_backup_date      TEXT,                  
+  path_to_cloud_storage TEXT,
+  path_version          INTEGER,
+  created_date          TEXT    NOT NULL,      
+  modified_date         TEXT    NOT NULL       
+)
+running: INSERT INTO photo_new (
+  id,
+  parentId,
+  parentType,
+  filename,
+  comment,
+  last_backup_date,
+  path_to_cloud_storage,
+  path_version,
+  created_date,
+  modified_date
+)
+SELECT
+  id,
+  parentId,
+  parentType,
+  filePath,              
+  comment,
+  last_backup_date,
+  path_to_cloud_storage,
+  path_version,
+  created_date,
+  modified_date
+FROM photo
+running: DROP TABLE photo
+running: ALTER TABLE photo_new RENAME TO photo
+running: CREATE INDEX IF NOT EXISTS idx_photo_parent
+  ON photo(parentId, parentType)
+Clean test database created at: /home/bsutton/git/hmb/test/fixture/db/handyman_test.db

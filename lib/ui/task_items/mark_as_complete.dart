@@ -19,7 +19,7 @@ import '../../dao/dao.g.dart';
 import '../../entity/supplier.dart';
 import '../../entity/task_item.dart';
 import '../../entity/task_item_type.dart';
-import '../../util/util.g.dart';
+import '../../util/flutter/flutter_util.g.dart';
 import '../crud/tool/tool.g.dart';
 import '../widgets/fields/fields.g.dart';
 import '../widgets/select/hmb_droplist.dart';

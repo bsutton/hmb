@@ -18,7 +18,7 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/money_ex.dart';
+import '../../../util/dart/money_ex.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/select/hmb_select_job.dart';

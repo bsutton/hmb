@@ -14,21 +14,20 @@
 // lib/main.dart
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:june/june.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:pdfrx/pdfrx.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:toastification/toastification.dart';
 
-import 'ui/nav/route.dart'; // your existing router defs
+import 'ui/nav/nav.g.dart';
 import 'ui/widgets/blocking_ui.dart';
 import 'ui/widgets/desktop_back_gesture.dart';
-import 'ui/widgets/media/desktop_camera_delegate.dart';
-import 'util/hmb_theme.dart';
-import 'util/log.dart';
-import 'util/platform_ex.dart';
+import 'util/dart/log.dart';
+import 'util/flutter/hmb_theme.dart';
+import 'util/flutter/platform_ex.dart';
 
 //----------------------------------------------------------------------
 
@@ -59,12 +58,6 @@ Future<void> main(List<String> args) async {
       options.replay.onErrorSampleRate = 1.0;
     },
     appRunner: () {
-      // camera & deep link init
-      initCamera();
-      initAppLinks();
-      initPdfrx();
-
-      // finally launch the app
       runApp(const HmbApp());
     },
   );
@@ -79,7 +72,7 @@ class HmbApp extends StatelessWidget {
   Widget build(BuildContext context) => ToastificationWrapper(
     child: MaterialApp.router(
       theme: theme,
-      routerConfig: createGoRouter(_rootNavKey), // unchanged
+      routerConfig: createGoRouter(_rootNavKey, _bootstrap), // unchanged
       builder: (context, mainAppWindow) => DesktopBackGesture(
         navigatorKey: _rootNavKey,
         child: Stack(
@@ -144,28 +137,17 @@ ThemeData get theme => ThemeData(
   visualDensity: VisualDensity.adaptivePlatformDensity,
 );
 
-void initCamera() {
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    /// Add camera support to Image Picker on Windows.
-    DesktopCameraDelegate.register();
+/// this is we we do all the heavy initialisation of the app after
+/// we have the splash screen up and displayed.
+Future<void> _bootstrap(BuildContext context) async {
+  final launchState = June.getState<BootStrapper>(BootStrapper.new);
+  await launchState.initialize();
+
+  if (!context.mounted) {
+    return;
   }
-}
 
-void initAppLinks() {
-  // Uncomment and implement deep linking if needed
-  // final _appLinks = AppLinks(); // AppLinks is singleton
-
-  // Subscribe to all events (initial link and further)
-  // _appLinks.uriLinkStream.listen((uri) {
-  //   HMBToast.info('Hi from app link');
-  //   HMBToast.info('Got a link $uri');
-  //   HMBToast.info('deeplink: $uri');
-  //   if (uri.path == XeroAuth.redirectPath) {
-  //     HMBToast.error('Someone asked for xero');
-  //   }
-  // });
-}
-
-void initPdfrx() {
-  pdfrxFlutterInitialize();
+  final next = launchState.isFirstRun ? '/home/settings/wizard' : '/home';
+  // Replace splash route (not push) so it is removed
+  GoRouter.of(context).clearStackAndNavigate(next);
 }

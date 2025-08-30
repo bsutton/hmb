@@ -19,7 +19,7 @@ import '../../../dao/dao_site.dart';
 import '../../../entity/job.dart';
 import '../../../entity/site.dart';
 import '../../../ui/widgets/hmb_map_icon.dart';
-import '../../../util/hmb_theme.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../layout/hmb_placeholder.dart';
 
 class HMBSiteText extends StatelessWidget {

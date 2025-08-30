@@ -13,7 +13,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../util/hmb_theme.dart';
+import '../../../util/flutter/hmb_theme.dart';
 
 class HMBText extends StatelessWidget {
   final String labelText;

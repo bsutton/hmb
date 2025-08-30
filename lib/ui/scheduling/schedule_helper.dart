@@ -15,8 +15,8 @@ import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 
 import '../../dao/dao_job_activity.dart';
-import '../../util/format.dart';
-import '../../util/local_date.dart';
+import '../../util/dart/format.dart';
+import '../../util/dart/local_date.dart';
 import 'job_activity_dialog.dart';
 import 'job_activity_ex.dart';
 

@@ -12,14 +12,16 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:june/june.dart';
-
 import '../database/management/backup_providers/google_drive/background_backup/photo_sync_params.dart';
 import '../entity/photo.dart';
-import '../util/util.g.dart';
+import '../util/dart/format.dart';
+import '../util/dart/photo_meta.dart';
 import 'dao.g.dart';
 
 class DaoPhoto extends Dao<Photo> {
+  static const tableName = 'photo';
+  DaoPhoto() : super(tableName);
+
   Future<List<Photo>> getByParent(int parentId, ParentType parentType) async {
     final db = withoutTransaction();
     return toList(
@@ -68,12 +70,6 @@ class DaoPhoto extends Dao<Photo> {
 
   @override
   Photo fromMap(Map<String, dynamic> map) => Photo.fromMap(map);
-
-  @override
-  JuneStateCreator get juneRefresher => PhotoState.new;
-
-  @override
-  String get tableName => 'photo';
 
   static Future<List<PhotoMeta>> getByTask(int taskId) async {
     final task = await DaoTask().getById(taskId);
@@ -128,8 +124,4 @@ class DaoPhoto extends Dao<Photo> {
         return getByReceipt(parentId);
     }
   }
-}
-
-class PhotoState extends JuneState {
-  PhotoState();
 }

@@ -18,7 +18,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
 
-import '../../../util/app_title.dart';
+import '../../../util/flutter/app_title.dart';
 import '../../widgets/hmb_tooltip.dart';
 import 'dashboard.dart';
 

@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:june/june.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
@@ -20,8 +19,9 @@ import 'dao.dart';
 import 'dao_photo.dart';
 
 class DaoTool extends Dao<Tool> {
-  @override
-  String get tableName => 'tool';
+  static const tableName = 'tool';
+
+  DaoTool() : super(tableName);
 
   @override
   Tool fromMap(Map<String, dynamic> map) => Tool.fromMap(map);
@@ -84,11 +84,4 @@ order by t.name
 
     await db.delete(tableName, where: 'id = ?', whereArgs: [id]);
   }
-
-  @override
-  JuneStateCreator get juneRefresher => DbToolChanged.new;
-}
-
-class DbToolChanged extends JuneState {
-  DbToolChanged();
 }

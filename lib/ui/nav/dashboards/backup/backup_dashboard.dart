@@ -27,7 +27,7 @@ import '../../../../database/management/backup_providers/google_drive/background
 import '../../../../database/management/backup_providers/google_drive/google_drive.g.dart';
 import '../../../../database/versions/versions.g.dart';
 import '../../../../src/appname.dart';
-import '../../../../util/util.g.dart';
+import '../../../../util/flutter/flutter_util.g.dart';
 import '../../../widgets/widgets.g.dart';
 import '../dashboard.dart';
 import '../dashlet_card.dart';

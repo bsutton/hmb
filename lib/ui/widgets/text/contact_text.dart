@@ -14,7 +14,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../entity/contact.dart';
-import '../../../util/hmb_theme.dart';
+import '../../../util/flutter/hmb_theme.dart';
 
 class ContactText extends StatelessWidget {
   final String label;

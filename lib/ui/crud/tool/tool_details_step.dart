@@ -17,7 +17,7 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao_tool.dart';
 import '../../../entity/tool.dart';
-import '../../../util/money_ex.dart';
+import '../../../util/dart/money_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_date_time_picker.dart';

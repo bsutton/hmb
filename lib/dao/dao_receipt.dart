@@ -11,23 +11,15 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/src/dao/dao_receipt.dart
-import 'package:june/june.dart';
-
 import '../entity/receipt.dart';
 import 'dao.dart';
 
-class ReceiptState extends JuneState {}
-
 class DaoReceipt extends Dao<Receipt> {
-  @override
-  String get tableName => 'receipt';
+  static const tableName = 'receipt';
+  DaoReceipt() : super(tableName);
 
   @override
   Receipt fromMap(Map<String, dynamic> map) => Receipt.fromMap(map);
-
-  @override
-  JuneStateCreator get juneRefresher => ReceiptState.new;
 
   /// Filter receipts by optional criteria
   Future<List<Receipt>> getByFilter({

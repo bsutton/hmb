@@ -14,6 +14,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../dao/dao_job.dart';
+import '../../../entity/flutter_extensions/job_status_ex.dart';
 import '../../../entity/job.dart';
 import '../../../entity/job_status_stage.dart';
 import '../../widgets/layout/hmb_spacer.dart';

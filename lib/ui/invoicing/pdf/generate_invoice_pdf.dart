@@ -20,8 +20,8 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/format.dart';
-import '../../../util/money_ex.dart';
+import '../../../util/dart/format.dart';
+import '../../../util/dart/money_ex.dart';
 
 Future<File> generateInvoicePdf(
   Invoice invoice, {

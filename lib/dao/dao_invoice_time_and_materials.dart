@@ -15,9 +15,9 @@
 import 'package:fixed/fixed.dart';
 
 import '../entity/entity.g.dart';
-import '../util/exceptions.dart';
-import '../util/local_date.dart';
-import '../util/money_ex.dart';
+import '../util/dart/exceptions.dart';
+import '../util/dart/local_date.dart';
+import '../util/dart/money_ex.dart';
 import 'dao.g.dart';
 
 Future<Invoice> createTimeAndMaterialsInvoice(

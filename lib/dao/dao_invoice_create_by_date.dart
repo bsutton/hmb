@@ -14,9 +14,9 @@
 import 'package:money2/money2.dart';
 
 import '../entity/entity.g.dart';
-import '../util/format.dart';
-import '../util/local_date.dart';
-import '../util/money_ex.dart';
+import '../util/dart/format.dart';
+import '../util/dart/local_date.dart';
+import '../util/dart/money_ex.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';

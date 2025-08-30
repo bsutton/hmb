@@ -20,7 +20,7 @@ import '../../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../../entity/contact.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/entity.dart';
-import '../../../util/platform_ex.dart';
+import '../../../util/flutter/platform_ex.dart';
 import '../../dialog/source_context.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_name_field.dart';

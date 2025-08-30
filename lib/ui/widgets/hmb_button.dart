@@ -16,7 +16,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../util/hmb_theme.dart';
+import '../../util/flutter/hmb_theme.dart';
 import 'color_ex.dart';
 import 'hmb_tooltip.dart';
 import 'layout/hmb_empty.dart';

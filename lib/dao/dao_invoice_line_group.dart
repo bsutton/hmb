@@ -11,15 +11,14 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/invoice_line_group.dart';
 import 'dao.dart';
 
 class DaoInvoiceLineGroup extends Dao<InvoiceLineGroup> {
-  @override
-  String get tableName => 'invoice_line_group';
+  static const tableName = 'invoice_line_group';
+  DaoInvoiceLineGroup() : super(tableName);
 
   @override
   InvoiceLineGroup fromMap(Map<String, dynamic> map) =>
@@ -48,9 +47,6 @@ class DaoInvoiceLineGroup extends Dao<InvoiceLineGroup> {
     );
   }
 
-  @override
-  JuneStateCreator get juneRefresher => InvoiceLineGroupState.new;
-
   Future<void> deleteByInvoiceId(
     int invoiceId, [
     Transaction? transaction,
@@ -59,9 +55,4 @@ class DaoInvoiceLineGroup extends Dao<InvoiceLineGroup> {
 
     await db.delete(tableName, where: 'invoice_id =?', whereArgs: [invoiceId]);
   }
-}
-
-/// Used to notify the UI that the time entry has changed.
-class InvoiceLineGroupState extends JuneState {
-  InvoiceLineGroupState();
 }

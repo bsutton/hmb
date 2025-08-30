@@ -13,8 +13,8 @@
 
 // ignore_for_file: omit_obvious_property_types
 
-import '../../../util/format.dart';
-import '../../../util/local_date.dart';
+import '../../../util/dart/format.dart';
+import '../../../util/dart/local_date.dart';
 import 'date_source.dart';
 import 'place_holder.dart';
 

@@ -14,7 +14,7 @@
 
 import 'package:june/june.dart';
 
-import '../src/appname.dart';
+import '../../src/appname.dart';
 
 class HMBTitle extends JuneState {
   // ignore: omit_obvious_property_types

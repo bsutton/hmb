@@ -11,10 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
 import 'package:money2/money2.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/customer.dart';
@@ -22,13 +20,12 @@ import 'dao.dart';
 import 'dao_system.dart';
 
 class DaoCustomer extends Dao<Customer> {
+  static const tableName = 'customer';
+  DaoCustomer() : super(tableName);
   Future<void> createTable(Database db, int version) async {}
 
   @override
   Customer fromMap(Map<String, dynamic> map) => Customer.fromMap(map);
-
-  @override
-  String get tableName => 'customer';
 
   /// Get the customer passed on the passed job.
   Future<Customer?> getByJob(int? jobId) async {
@@ -103,9 +100,6 @@ order by c.modifiedDate desc
     return hourlyRate;
   }
 
-  @override
-  JuneStateCreator get juneRefresher => CustomerState.new;
-
   /// Get the customer associated with the given contact ID.
   Future<Customer?> getByContact(int contactId) async {
     final db = withoutTransaction();
@@ -149,9 +143,4 @@ order by c.modifiedDate desc
 
     return fromMap(data.first);
   }
-}
-
-/// Used to notify the UI that the time entry has changed.
-class CustomerState extends JuneState {
-  CustomerState();
 }

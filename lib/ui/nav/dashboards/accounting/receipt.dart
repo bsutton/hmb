@@ -17,7 +17,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../../dao/dao.g.dart';
-import '../../../../util/util.g.dart';
+import '../../../../util/flutter/flutter_util.g.dart';
 import '../dashlet_card.dart';
 
 class ReceiptDashlet extends StatelessWidget {

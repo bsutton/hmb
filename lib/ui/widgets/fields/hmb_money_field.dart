@@ -13,7 +13,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../util/money_ex.dart';
+import '../../../util/dart/money_ex.dart';
 import 'hmb_money_editing_controller.dart';
 import 'hmb_text_field.dart';
 

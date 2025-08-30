@@ -20,8 +20,8 @@ import 'package:path/path.dart';
 import 'package:sentry/sentry.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../../../util/build_mode.dart';
-import '../../../util/exceptions.dart';
+import '../../../util/dart/build_mode.dart';
+import '../../../util/dart/exceptions.dart';
 import '../../factory/hmb_database_factory.dart';
 import '../../versions/script_source.dart';
 import '../database_helper.dart';

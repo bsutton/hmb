@@ -20,7 +20,7 @@ import 'package:flutter/services.dart';
 import 'package:pasteboard/pasteboard.dart';
 import 'package:photo_view/photo_view.dart';
 
-import '../../../util/photo_meta.dart';
+import '../../../util/dart/photo_meta.dart';
 import '../desktop_back_gesture_suppress.dart';
 import '../layout/hmb_spacer.dart';
 import '../text/hmb_text_themes.dart';

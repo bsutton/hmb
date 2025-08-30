@@ -15,7 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../../../entity/operating_hours.dart';
 import '../../../entity/system.dart';
-import '../../../util/local_time.dart';
+import '../../../util/dart/local_time.dart';
 import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../../widgets/widgets.g.dart';

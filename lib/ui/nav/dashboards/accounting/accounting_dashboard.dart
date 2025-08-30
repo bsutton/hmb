@@ -16,8 +16,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
-import '../../../../util/util.g.dart';
-import '../../nav.g.dart';
+import '../../../../util/flutter/flutter_util.g.dart';
+import '../dashboard.dart';
+import '../dashlet_card.dart';
 import 'invoices.dart';
 import 'receipt.dart';
 

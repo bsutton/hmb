@@ -3,8 +3,8 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/parse/parse_customer.dart';
-import '../../../util/util.g.dart';
+import '../../../util/dart/parse/parse_customer.dart';
+import '../../../util/flutter/flutter_util.g.dart';
 import '../../dialog/source_context.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/layout/hmb_spacer.dart';

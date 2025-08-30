@@ -12,21 +12,19 @@
 */
 
 
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/check_list.dart';
 import '../entity/task.dart';
 import 'dao.dart';
 
 class DaoCheckListTask extends Dao<CheckList> {
+  static const tableName = 'task_check_list';
+  DaoCheckListTask() : super(tableName);
   Future<void> createTable(Database db, int version) async {}
 
   @override
   CheckList fromMap(Map<String, dynamic> map) => CheckList.fromMap(map);
-
-  @override
-  String get tableName => 'task_check_list';
 
   Future<void> deleteJoin(
     int? taskId,
@@ -62,12 +60,4 @@ class DaoCheckListTask extends Dao<CheckList> {
       whereArgs: [task.id, checklist.id],
     );
   }
-
-  @override
-  JuneStateCreator get juneRefresher => CheckListTaskState.new;
-}
-
-/// Used to notify the UI that the time entry has changed.
-class CheckListTaskState extends JuneState {
-  CheckListTaskState();
 }

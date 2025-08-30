@@ -16,7 +16,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../entity/invoice.dart';
-import '../../util/exceptions.dart';
+import '../../util/dart/exceptions.dart';
 import '../external_accounting.dart';
 import 'models/xero_invoice.dart';
 import 'xero_auth.dart';

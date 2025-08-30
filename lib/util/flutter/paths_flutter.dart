@@ -17,7 +17,18 @@
 /// flutter or cli.
 library;
 
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart' as pp;
+
 typedef Path = String;
 
 /// Device specific to where all photos are stored for HMB.
-Future<Path> getPhotosRootPath() async => throw UnimplementedError();
+Future<String> getPhotosRootPath() async =>
+    (await pp.getApplicationDocumentsDirectory()).path;
+
+/// Device specific to where all photos are stored for HMB.
+Future<String> getSettingsPath() async =>
+    join((await pp.getApplicationDocumentsDirectory()).path, 'settings');
+
+Future<Path> getTemporaryDirectory() async =>
+    (await pp.getTemporaryDirectory()).path;

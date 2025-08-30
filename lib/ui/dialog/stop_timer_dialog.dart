@@ -20,7 +20,7 @@ import '../../entity/task.dart';
 import '../../entity/time_entry.dart';
 import '../../ui/widgets/hmb_date_time_picker.dart';
 import '../../ui/widgets/hmb_toast.dart';
-import '../../util/format.dart';
+import '../../util/dart/format.dart';
 import '../widgets/fields/hmb_text_area.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/layout/hmb_spacer.dart';

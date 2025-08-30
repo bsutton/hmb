@@ -11,21 +11,19 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
 import 'package:money2/money2.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
-import '../util/util.g.dart';
+import '../util/dart/money_ex.dart';
 import 'dao.dart';
 
 class DaoTaskItem extends Dao<TaskItem> {
-  @override
-  TaskItem fromMap(Map<String, dynamic> map) => TaskItem.fromMap(map);
+  static const tableName = 'task_item';
+  DaoTaskItem() : super(tableName);
 
   @override
-  String get tableName => 'task_item';
+  TaskItem fromMap(Map<String, dynamic> map) => TaskItem.fromMap(map);
 
   Future<List<TaskItem>> getByTask(int? taskId) async {
     final db = withoutTransaction();
@@ -148,9 +146,7 @@ where ti.completed = 0
     // ————— Task status filtering —————
     // when showPreApprovedTask==false, exclude pre-approval & to-be-scheduled
     if (!showPreApprovedTask) {
-      final excludeIds = <int>[
-        TaskStatus.awaitingApproval.id,
-      ];
+      final excludeIds = <int>[TaskStatus.awaitingApproval.id];
       final excludePlaceholders = List.filled(
         excludeIds.length,
         '?',
@@ -255,9 +251,6 @@ SELECT ti.*
 
     return charge;
   }
-
-  @override
-  JuneStateCreator get juneRefresher => TaskItemState.new;
 
   /// Items that have been purchased but not returned.
   Future<List<TaskItem>> getPurchasedItems({
@@ -379,8 +372,4 @@ SELECT ti.*
     );
     return rows.isNotEmpty;
   }
-}
-
-class TaskItemState extends JuneState {
-  TaskItemState();
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../util/hmb_theme.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../text/hmb_text_themes.dart';
 import '../widgets.g.dart';
 

@@ -20,7 +20,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:settings_yaml/settings_yaml.dart';
 
-import '../../../../util/paths_flutter.dart';
+import '../../../../util/flutter/paths_flutter.dart';
 
 class GoogleDriveAuth {
   /// OAuth Client in Google Play Console: HMB-Production-Signed-By-Google

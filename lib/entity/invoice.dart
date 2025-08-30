@@ -16,8 +16,8 @@ import 'package:strings/strings.dart';
 
 import '../api/xero/models/xero_invoice.dart';
 import '../dao/dao.g.dart';
-import '../util/exceptions.dart';
-import '../util/local_date.dart';
+import '../util/dart/exceptions.dart';
+import '../util/dart/local_date.dart';
 import 'entity.dart';
 import 'invoice_line.dart';
 

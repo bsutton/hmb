@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao_job_activity.dart';
 import '../../../entity/job.dart';
 import '../../../entity/job_activity.dart';
-import '../../../util/format.dart';
+import '../../../util/dart/format.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../source_context.dart';
 import 'source.dart';

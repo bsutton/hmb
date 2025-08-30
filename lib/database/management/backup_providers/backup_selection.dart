@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../ui/widgets/text/hmb_text.dart';
-import '../../../util/format.dart';
+import '../../../util/dart/format.dart';
 import 'backup.dart';
 import 'backup_provider.dart';
 

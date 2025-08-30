@@ -11,18 +11,17 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 // lib/src/dao/dao_work_assignment_task.dart
 
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
 import 'dao.g.dart';
 
 class DaoWorkAssignmentTask extends Dao<WorkAssignmentTask> {
-  @override
-  String get tableName => 'work_assignment_task';
+  static const tableName = 'work_assignment_task';
+
+  DaoWorkAssignmentTask() : super(tableName);
 
   @override
   WorkAssignmentTask fromMap(Map<String, dynamic> m) =>
@@ -57,7 +56,7 @@ class DaoWorkAssignmentTask extends Dao<WorkAssignmentTask> {
   Future<void> deleteByTask(
     int taskId, {
     Transaction? transaction,
-  })  => withTransaction((txn) async {
+  }) => withTransaction((txn) async {
     // 1️⃣ fetch assignment IDs linked to this task
     final rows = await txn.query(
       tableName,
@@ -92,12 +91,4 @@ class DaoWorkAssignmentTask extends Dao<WorkAssignmentTask> {
     );
     return toList(rows);
   }
-
-  @override
-  JuneStateCreator get juneRefresher => WorkAssignmentTaskState.new;
-}
-
-/// Used to notify the UI that the time entry has changed.
-class WorkAssignmentTaskState extends JuneState {
-  WorkAssignmentTaskState();
 }

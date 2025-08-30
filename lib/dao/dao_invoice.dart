@@ -11,21 +11,13 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'dart:convert';
-
-import 'package:june/june.dart';
 import 'package:money2/money2.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
-import '../api/external_accounting.dart';
-import '../api/xero/models/xero_contact.dart';
-import '../api/xero/xero_api.dart';
-import '../api/xero/xero_extract_error_message.dart';
+import '../api/accounting/accounting_adaptor.dart';
 import '../entity/entity.g.dart';
-import '../util/exceptions.dart';
-import '../util/money_ex.dart';
+import '../util/dart/money_ex.dart';
 import 'dao.dart';
 import 'dao_contact.dart';
 import 'dao_customer.dart';
@@ -35,8 +27,8 @@ import 'dao_job.dart';
 import 'dao_milestone.dart';
 
 class DaoInvoice extends Dao<Invoice> {
-  @override
-  String get tableName => 'invoice';
+  static const tableName = 'invoice ';
+  DaoInvoice() : super(tableName);
 
   @override
   Invoice fromMap(Map<String, dynamic> map) => Invoice.fromMap(map);
@@ -104,9 +96,6 @@ class DaoInvoice extends Dao<Invoice> {
     ).delete(tableName, where: 'job_id = ?', whereArgs: [jobId]);
   }
 
-  @override
-  JuneStateCreator get juneRefresher => InvoiceState.new;
-
   Future<void> recalculateTotal(int invoiceId) async {
     final lines = await DaoInvoiceLine().getByInvoiceId(invoiceId);
     var total = MoneyEx.zero;
@@ -124,95 +113,6 @@ class DaoInvoice extends Dao<Invoice> {
     final invoice = await DaoInvoice().getById(invoiceId);
     final updatedInvoice = invoice!.copyWith(totalAmount: total);
     await DaoInvoice().update(updatedInvoice);
-  }
-
-  ///
-  /// Uploads an invoice and returns the new Invoice Number
-  ///
-  Future<void> uploadInvoiceToXero(Invoice invoice, XeroApi xeroApi) async {
-    // Fetch the job associated with the invoice
-    final job = await DaoJob().getById(invoice.jobId);
-
-    final billingContact = await DaoContact().getBillingContactByJob(job!);
-
-    // Fetch the primary contact for the customer
-    if (billingContact == null) {
-      throw Exception('You must select a contact for the Job');
-    }
-    if (Strings.isBlank(billingContact.emailAddress)) {
-      throw Exception(
-        '''
-You must provide an email address for the Contact ${billingContact.fullname}''',
-      );
-    }
-
-    // Check if the contact exists in Xero
-    final contactResponse = await xeroApi.getContact(billingContact.fullname);
-    String xeroContactId;
-
-    if (contactResponse.statusCode == 200) {
-      final contacts =
-          /// its json.
-          // ignore: avoid_dynamic_calls
-          jsonDecode(contactResponse.body)['Contacts'] as List<dynamic>;
-      if (contacts.isNotEmpty) {
-        /// its json.
-        // ignore: avoid_dynamic_calls
-        xeroContactId = contacts.first['ContactID'] as String;
-      } else {
-        // Create the contact in Xero if it doesn't exist
-        final xeroContact = XeroContact.fromContact(billingContact);
-        final createContactResponse = await xeroApi.createContact(
-          xeroContact.toJson(),
-        );
-
-        if (createContactResponse.statusCode == 200) {
-          /// its json.
-          // ignore: avoid_dynamic_calls
-          xeroContactId =
-              /// its json.
-              // ignore: avoid_dynamic_calls
-              (jsonDecode(createContactResponse.body)['Contacts'] as List)
-                      .first['ContactID']
-                  as String;
-          // Update the local contact with the Xero contact ID
-          await DaoContact().update(
-            billingContact.copyWith(xeroContactId: xeroContactId),
-          );
-        } else {
-          throw Exception('Failed to create contact in Xero');
-        }
-      }
-    } else {
-      throw InvoiceException(
-        '''Failed to fetch contact from Xero Error: ${contactResponse.reasonPhrase}''',
-      );
-    }
-
-    // Create the invoice in Xero
-    final xeroInvoice = await invoice.toXeroInvoice(invoice);
-
-    final createInvoiceResponse = await xeroApi.uploadInvoice(xeroInvoice);
-    if (createInvoiceResponse.statusCode != 200) {
-      final error = extractXeroErrorMessage(createInvoiceResponse.body);
-      throw Exception(error);
-    }
-    final responseBody = jsonDecode(createInvoiceResponse.body);
-
-    /// its json.
-    // ignore: avoid_dynamic_calls
-    final invoiceNum = responseBody['Invoices'][0]['InvoiceNumber'] as String;
-
-    /// its json.
-    // ignore: avoid_dynamic_calls
-    final invoiceId = responseBody['Invoices'][0]['InvoiceID'] as String;
-
-    final completedInvoice = invoice.copyWith(
-      invoiceNum: invoiceNum,
-      externalInvoiceId: invoiceId,
-    );
-
-    await DaoInvoice().update(completedInvoice);
   }
 
   Future<List<String>> getEmailsByInvoice(Invoice invoice) async {
@@ -237,17 +137,10 @@ You must provide an email address for the Contact ${billingContact.fullname}''',
 
     await update(invoice);
 
-    if (await ExternalAccounting().isEnabled()) {
-      final xeroApi = XeroApi();
-      await xeroApi.login();
+    final accounting = AccountingAdaptor.get();
+    await accounting.login();
 
-      await xeroApi.markApproved(invoice);
-      await xeroApi.markAsSent(invoice);
-    }
+    await accounting.markApproved(invoice);
+    await accounting.markSent(invoice);
   }
-}
-
-/// Used to notify the UI that the time entry has changed.
-class InvoiceState extends JuneState {
-  InvoiceState();
 }

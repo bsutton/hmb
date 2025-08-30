@@ -26,9 +26,9 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
-import '../../../util/app_title.dart';
-import '../../../util/money_ex.dart';
-import '../../../util/uri_ex.dart';
+import '../../../util/dart/money_ex.dart';
+import '../../../util/dart/uri_ex.dart';
+import '../../../util/flutter/app_title.dart';
 import '../../widgets/color_ex.dart';
 import '../../widgets/fields/hmb_money_editing_controller.dart';
 import '../../widgets/fields/hmb_money_field.dart';

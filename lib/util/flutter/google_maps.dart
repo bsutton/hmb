@@ -15,7 +15,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../entity/site.dart';
+import '../../entity/site.dart';
 
 class GoogleMaps {
   GoogleMaps._();

@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:strings/strings.dart';
 
-import '../../../util/hmb_theme.dart';
+import '../../../util/flutter/hmb_theme.dart';
 
 class HMBTextField extends StatelessWidget {
 

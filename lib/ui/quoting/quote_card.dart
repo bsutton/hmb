@@ -19,8 +19,8 @@ import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../../util/format.dart';
-import '../../util/types.dart';
+import '../../util/dart/format.dart';
+import '../../util/dart/types.dart';
 import '../crud/job/edit_job_screen.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';

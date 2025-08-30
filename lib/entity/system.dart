@@ -14,8 +14,8 @@
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
-import '../util/local_date.dart';
-import '../util/measurement_type.dart';
+import '../util/dart/local_date.dart';
+import '../util/dart/measurement_type.dart';
 import 'entity.dart';
 import 'operating_hours.dart';
 

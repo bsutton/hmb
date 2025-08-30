@@ -20,7 +20,7 @@ import 'package:june/june.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/photo_meta.dart';
+import '../../../util/dart/photo_meta.dart';
 import '../../crud/task/photo_crud.dart';
 import 'captured_photo.dart';
 import 'photo_gallery.dart';

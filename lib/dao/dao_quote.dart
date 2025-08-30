@@ -12,19 +12,19 @@
 */
 
 import 'package:fixed/fixed.dart';
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/entity.g.dart';
-import '../ui/invoicing/dialog_select_tasks.dart';
-import '../util/exceptions.dart';
-import '../util/money_ex.dart';
+import '../ui/invoicing/invoice_options.dart';
+import '../util/dart/exceptions.dart';
+import '../util/dart/money_ex.dart';
 import 'dao.g.dart';
 
 class DaoQuote extends Dao<Quote> {
-  @override
-  String get tableName => 'quote';
+  static const tableName = 'quote';
+
+  DaoQuote() : super(tableName);
 
   @override
   Quote fromMap(Map<String, dynamic> map) => Quote.fromMap(map);
@@ -300,12 +300,4 @@ class DaoQuote extends Dao<Quote> {
 
     return quoteId;
   }
-
-  @override
-  JuneStateCreator get juneRefresher => QuoteStateNotifier.new;
-}
-
-/// Used to notify the UI that the quote has changed.
-class QuoteStateNotifier extends JuneState {
-  QuoteStateNotifier();
 }

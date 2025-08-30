@@ -11,14 +11,13 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:dcli/dcli.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/management/database_helper.dart';
 import 'package:hmb/database/versions/project_script_source.dart';
 import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqflite.dart';
 
 import 'backup_providers/test_backup_provider.dart';
 

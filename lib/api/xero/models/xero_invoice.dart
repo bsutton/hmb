@@ -11,7 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import '../../../util/local_date.dart';
+import '../../../util/dart/local_date.dart';
 import 'xero_contact.dart';
 import 'xero_line_item.dart';
 

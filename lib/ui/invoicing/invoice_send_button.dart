@@ -17,7 +17,7 @@ import 'package:strings/strings.dart';
 import '../../api/external_accounting.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/invoice.dart';
-import '../../util/format.dart';
+import '../../util/dart/format.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';

@@ -11,13 +11,13 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
-
 import '../entity/category.dart';
 import 'dao.dart';
 
 class DaoCategory extends Dao<Category> {
+  static const tableName = 'category';
+  DaoCategory() : super(tableName);
+
   Future<List<Category>> getByFilter(String? filter) async {
     if (filter == null || filter.isEmpty) {
       return getAll(orderByClause: 'name');
@@ -37,15 +37,4 @@ class DaoCategory extends Dao<Category> {
 
   @override
   Category fromMap(Map<String, dynamic> map) => Category.fromMap(map);
-
-  @override
-  JuneStateCreator get juneRefresher => CategoryState.new;
-
-  @override
-  String get tableName => 'category';
-}
-
-/// Used to notify the UI that the quote has changed.
-class CategoryState extends JuneState {
-  CategoryState();
 }

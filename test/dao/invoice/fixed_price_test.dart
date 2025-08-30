@@ -13,7 +13,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
-import 'package:hmb/util/money_ex.dart';
+import 'package:hmb/util/dart/money_ex.dart';
 import 'package:money2/money2.dart';
 
 import '../../database/management/db_utility_test.dart';

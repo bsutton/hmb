@@ -11,9 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/contact.dart';
@@ -27,13 +25,12 @@ import 'dao_customer.dart';
 import 'dao_job.dart';
 
 class DaoContact extends Dao<Contact> {
+  static const tableName = 'contact';
+  DaoContact() : super(tableName);
   Future<void> createTable(Database db, int version) async {}
 
   @override
   Contact fromMap(Map<String, dynamic> map) => Contact.fromMap(map);
-
-  @override
-  String get tableName => 'contact';
 
   ///
   /// returns the primary contact for the customer
@@ -235,9 +232,6 @@ where jo.id =?
     await insert(contact);
   }
 
-  @override
-  JuneStateCreator get juneRefresher => ContactState.new;
-
   Future<List<Contact>> getByFilter(Customer customer, String? filter) async {
     final db = withoutTransaction();
 
@@ -358,9 +352,4 @@ order by c.modifiedDate desc
     // No contact found
     return null;
   }
-}
-
-/// Used to notify the UI that the time entry has changed.
-class ContactState extends JuneState {
-  ContactState();
 }

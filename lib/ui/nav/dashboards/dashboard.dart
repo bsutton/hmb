@@ -16,7 +16,7 @@
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
 
-import '../../../util/app_title.dart';
+import '../../../util/flutter/app_title.dart';
 import '../route.dart';
 
 /// Main dashboard page wired up to refresh on return

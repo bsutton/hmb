@@ -13,7 +13,7 @@
 
 import 'package:money2/money2.dart';
 
-import '../util/money_ex.dart';
+import '../util/dart/money_ex.dart';
 import 'entity.dart';
 
 class Tool extends Entity<Tool> {

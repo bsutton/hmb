@@ -11,7 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import '../util/local_time.dart';
+import '../util/dart/local_time.dart';
 import 'system.dart';
 
 class OperatingDay {

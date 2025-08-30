@@ -14,8 +14,8 @@
 
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
-import 'package:hmb/util/measurement_type.dart';
-import 'package:hmb/util/units.dart';
+import 'package:hmb/util/dart/measurement_type.dart';
+import 'package:hmb/util/dart/units.dart';
 import 'package:money2/money2.dart';
 
 Future<TimeEntry> createTimeEntry(

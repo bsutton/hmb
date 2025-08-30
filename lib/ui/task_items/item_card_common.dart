@@ -16,7 +16,7 @@
 import 'package:flutter/material.dart';
 
 import '../../entity/task_item.dart';
-import '../../util/money_ex.dart';
+import '../../util/dart/money_ex.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'list_shopping_screen.dart';
 

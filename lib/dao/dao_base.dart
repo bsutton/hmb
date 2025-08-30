@@ -21,9 +21,9 @@ class DaoBase<T extends Entity<T>> {
   final void Function(DaoBase<T> dao, int? entityId) _notify;
 
   late T Function(Map<String, dynamic> map) _fromMap;
-  late String _tableName;
+  late final String tablename;
 
-  DaoBase(this.db, this._notify);
+  DaoBase(this.tablename, this.db, this._notify);
 
   /// Use this method when you need to do db operations
   /// from a non-flutter app - e.g. CLI apps.
@@ -32,14 +32,11 @@ class DaoBase<T extends Entity<T>> {
     String tableName,
     T Function(Map<String, dynamic> map) fromMap,
   ) {
-    final dao = DaoBase<T>(db, (_, _) {})
-      .._tableName = tableName
+    final dao = DaoBase<T>(tableName, db, (_, _) {})
+      ..tablename = tableName
       .._fromMap = fromMap;
     return dao;
   }
-
-  // ignore: avoid_setters_without_getters
-  set tableName(String tableName) => _tableName = tableName;
 
   // ignore: avoid_setters_without_getters
   set mapper(T Function(Map<String, dynamic> map) fromMap) =>
@@ -52,7 +49,7 @@ class DaoBase<T extends Entity<T>> {
     entity
       ..createdDate = DateTime.now()
       ..modifiedDate = DateTime.now();
-    final id = await executor.insert(_tableName, entity.toMap()..remove('id'));
+    final id = await executor.insert(tablename, entity.toMap()..remove('id'));
     entity.id = id;
 
     _notify(this, id);
@@ -64,7 +61,7 @@ class DaoBase<T extends Entity<T>> {
   ///  ```name desc, age```
   Future<List<T>> getAll({String? orderByClause}) async {
     final executor = db;
-    return toList(await executor.query(_tableName, orderBy: orderByClause));
+    return toList(await executor.query(tablename, orderBy: orderByClause));
   }
 
   Future<T?> getById(int? entityId, [Transaction? transaction]) async {
@@ -73,7 +70,7 @@ class DaoBase<T extends Entity<T>> {
     }
     final executor = transaction ?? db;
     final value = await executor.query(
-      _tableName,
+      tablename,
       where: 'id =?',
       whereArgs: [entityId],
     );
@@ -88,7 +85,7 @@ class DaoBase<T extends Entity<T>> {
     final executor = transaction ?? db;
     entity.modifiedDate = DateTime.now();
     final id = await executor.update(
-      _tableName,
+      tablename,
       entity.toMap(),
       where: 'id = ?',
       whereArgs: [entity.id],
@@ -101,7 +98,7 @@ class DaoBase<T extends Entity<T>> {
   Future<int> delete(int id, [Transaction? transaction]) {
     final executor = transaction ?? db;
     final rowsDeleted = executor.delete(
-      _tableName,
+      tablename,
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -118,7 +115,7 @@ class DaoBase<T extends Entity<T>> {
 
   /// Returns the total number of rows in the table, optionally filtered.
   Future<int> count({String? where, List<Object?>? whereArgs}) async {
-    final sql = StringBuffer('SELECT COUNT(*) AS count FROM $_tableName');
+    final sql = StringBuffer('SELECT COUNT(*) AS count FROM $tablename');
     if (where != null && where.isNotEmpty) {
       sql.write(' WHERE $where');
     }

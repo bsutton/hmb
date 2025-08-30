@@ -23,7 +23,7 @@ import 'package:money2/money2.dart';
 import '../../../dao/dao_invoice.dart';
 import '../../../entity/invoice.dart';
 import '../../../entity/milestone.dart';
-import '../../../util/money_ex.dart';
+import '../../../util/dart/money_ex.dart';
 import '../../invoicing/edit_invoice_screen.dart';
 import '../../invoicing/invoice_details.dart';
 import '../../widgets/hmb_add_button.dart';

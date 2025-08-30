@@ -15,9 +15,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../../dao/dao.g.dart';
 import '../../../../../entity/entity.g.dart';
-import '../../../../../util/util.g.dart';
+import '../../../../../util/flutter/flutter_util.g.dart';
 import '../../../../scheduling/schedule_page.dart';
-import '../../../nav.g.dart';
+import '../../dashlet_card.dart';
 
 class NextJobDashlet extends StatelessWidget {
   const NextJobDashlet({super.key});

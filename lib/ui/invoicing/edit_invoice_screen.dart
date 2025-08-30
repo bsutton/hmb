@@ -19,8 +19,8 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:strings/strings.dart';
 
+import '../../api/accounting/accounting_adaptor.dart';
 import '../../api/external_accounting.dart';
-import '../../api/xero/xero_api.dart';
 import '../../dao/dao_contact.dart';
 import '../../dao/dao_invoice.dart';
 import '../../dao/dao_invoice_line.dart';
@@ -28,7 +28,7 @@ import '../../dao/dao_invoice_line_group.dart';
 import '../../dao/dao_task_item.dart';
 import '../../dao/dao_time_entry.dart';
 import '../../entity/invoice_line.dart';
-import '../../util/format.dart';
+import '../../util/dart/format.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_icon_button.dart';
@@ -41,16 +41,14 @@ import 'invoice_send_button.dart';
 
 class InvoiceEditScreen extends StatefulWidget {
   final InvoiceDetails invoiceDetails;
-  
-  const InvoiceEditScreen({required this.invoiceDetails, super.key});
 
+  const InvoiceEditScreen({required this.invoiceDetails, super.key});
 
   @override
   State<InvoiceEditScreen> createState() => _InvoiceEditScreenState();
 }
 
 class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
-  final _xeroApi = XeroApi();
   late final int invoiceId;
   late Future<InvoiceDetails> _invoiceDetails;
 
@@ -142,7 +140,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                         HMBIconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           showBackground: false,
-                          onPressed: ()  => _deleteInvoiceLine(line),
+                          onPressed: () => _deleteInvoiceLine(line),
                           hint: 'Delete Invoice Line',
                         ),
                       ],
@@ -184,8 +182,10 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
         return;
       }
 
-      await _xeroApi.login();
-      await DaoInvoice().uploadInvoiceToXero(invoice, _xeroApi);
+      final adaptor = AccountingAdaptor.get();
+
+      await adaptor.login();
+      await adaptor.uploadInvoice(invoice);
       HMBToast.info('Invoice uploaded to Xero successfully');
       await _reloadInvoice();
       setState(() {});

@@ -11,17 +11,15 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/quote_line.dart';
 import 'dao.dart';
 import 'dao.g.dart';
 
 class DaoQuoteLine extends Dao<QuoteLine> {
-  @override
-  String get tableName => 'quote_line';
+  static const tableName = 'quote_line';
+  DaoQuoteLine() : super(tableName);
 
   @override
   QuoteLine fromMap(Map<String, dynamic> map) => QuoteLine.fromMap(map);
@@ -72,12 +70,4 @@ class DaoQuoteLine extends Dao<QuoteLine> {
       whereArgs: [quoteLineGroupId],
     );
   }
-
-  @override
-  JuneStateCreator get juneRefresher => QuoteLineState.new;
-}
-
-/// Used to notify the UI that the time entry has changed.
-class QuoteLineState extends JuneState {
-  QuoteLineState();
 }

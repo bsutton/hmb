@@ -11,14 +11,16 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/manufacturer.dart';
 import 'dao.dart';
 
 class DaoManufacturer extends Dao<Manufacturer> {
+  static const tableName = 'manufacturer';
+
+  DaoManufacturer() : super(tableName);
+
   Future<List<Manufacturer>> getByFilter(String? filter) async {
     final db = withoutTransaction();
 
@@ -42,13 +44,4 @@ order by m.name
 
   @override
   Manufacturer fromMap(Map<String, dynamic> map) => Manufacturer.fromMap(map);
-
-  @override
-  String get tableName => 'manufacturer';
-  @override
-  JuneStateCreator get juneRefresher => ManufacturerState.new;
-}
-
-class ManufacturerState extends JuneState {
-  ManufacturerState();
 }

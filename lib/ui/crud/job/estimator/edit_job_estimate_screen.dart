@@ -24,7 +24,7 @@ import '../../../../entity/job.dart';
 import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
-import '../../../../util/money_ex.dart';
+import '../../../../util/dart/money_ex.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_icon_button.dart';
 import '../../../widgets/hmb_search.dart';

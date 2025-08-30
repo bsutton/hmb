@@ -12,7 +12,7 @@
 */
 import 'package:flutter/material.dart';
 
-import '../../../util/parse/parse.dart';
+import '../../../util/dart/parse/parse.dart';
 import '../../dialog/source_context.dart';
 import '../hmb_phone_icon.dart';
 import 'hmb_text_field.dart';

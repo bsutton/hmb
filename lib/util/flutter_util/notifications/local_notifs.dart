@@ -5,9 +5,9 @@ import 'package:flutter_native_timezone_2025/flutter_native_timezone_2025.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../../entity/todo.dart';
-import 'desktop_scheduler.dart';
-import 'notif.dart';
+import '../../../entity/todo.dart';
+import '../../flutter/notifications/desktop_scheduler.dart';
+import '../../flutter/notifications/notif.dart';
 
 class LocalNotifs {
   // Small drift guard to avoid "fire on save" when times are near-now.

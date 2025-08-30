@@ -14,7 +14,7 @@
 // lib/src/ui/dashboard/main_dashboard_page.dart
 import 'package:flutter/material.dart';
 
-import '../../nav.g.dart';
+import '../dashboard.dart';
 import 'dashlets/dashlets.g.dart';
 
 class MainDashboardPage extends StatelessWidget {

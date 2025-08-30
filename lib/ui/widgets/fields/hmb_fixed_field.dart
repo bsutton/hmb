@@ -14,7 +14,7 @@
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
-import '../../../util/money_ex.dart';
+import '../../../util/dart/money_ex.dart';
 import 'hmb_text_field.dart';
 
 class HMBFixedField extends HMBTextField {

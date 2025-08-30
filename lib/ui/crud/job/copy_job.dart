@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/list_ex.dart';
+import '../../../util/dart/list_ex.dart';
 import '../../widgets/widgets.g.dart';
 
 /// Result returned from the move dialog

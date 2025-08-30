@@ -18,7 +18,7 @@ import 'package:money2/money2.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/job.dart';
 import '../../../../entity/task_item_type.dart';
-import '../../../../util/money_ex.dart';
+import '../../../../util/dart/money_ex.dart';
 import '../../../invoicing/dialog_select_tasks.dart';
 import '../../../quoting/quote_details_screen.dart';
 import '../../../widgets/layout/layout.g.dart';

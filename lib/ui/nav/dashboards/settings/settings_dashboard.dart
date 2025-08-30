@@ -15,7 +15,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../nav.g.dart';
+import '../dashboard.dart';
+import '../dashlet_card.dart';
 
 class SettingsDashboardPage extends StatelessWidget {
   const SettingsDashboardPage({super.key});

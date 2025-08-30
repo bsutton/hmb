@@ -12,20 +12,18 @@
 */
 
 import 'package:fixed/fixed.dart';
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
-import '../util/date_time_ex.dart';
-import '../util/local_date.dart';
+import '../util/dart/date_time_ex.dart';
+import '../util/dart/local_date.dart';
 import 'dao.dart';
 
 class DaoTimeEntry extends Dao<TimeEntry> {
+  static const tableName = 'time_entry';
+  DaoTimeEntry() : super(tableName);
   @override
   TimeEntry fromMap(Map<String, dynamic> map) => TimeEntry.fromMap(map);
-
-  @override
-  String get tableName => 'time_entry';
 
   Future<List<TimeEntry>> getByTask(int? taskId) async {
     final db = withoutTransaction();
@@ -55,9 +53,6 @@ class DaoTimeEntry extends Dao<TimeEntry> {
     assert(list.length <= 1, 'There should only ever by one active entry');
     return list.firstOrNull;
   }
-
-  @override
-  JuneStateCreator get juneRefresher => DbTimeEntryChanged.new;
 
   Future<void> markAsNotbilled(int invoiceLineId) async {
     final db = withoutTransaction();
@@ -164,9 +159,6 @@ class DaoTimeEntry extends Dao<TimeEntry> {
 /// ```dart
 /// DbTimeEntryChanged.notify();
 /// ```
-class DbTimeEntryChanged extends JuneState {
-  DbTimeEntryChanged();
-}
 
 /// Used to accumulate all time entries, for a specific task and date
 /// that haven't yet been billed.

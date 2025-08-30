@@ -16,7 +16,7 @@ import 'dart:async';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 
-import '../../../util/hmb_theme.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../layout/hmb_placeholder.dart';
 import '../layout/labeled_container.dart';
 import '../surface.dart';

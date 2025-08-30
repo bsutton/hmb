@@ -14,7 +14,7 @@
 import 'package:strings/strings.dart';
 
 import '../../../entity/contact.dart';
-import '../../../util/exceptions.dart';
+import '../../../util/dart/exceptions.dart';
 
 class XeroContact {
   final String name;

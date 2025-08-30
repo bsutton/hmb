@@ -11,14 +11,16 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/version.dart';
 import 'dao.dart';
 
 class DaoVersion extends Dao<Version> {
+  static const tableName = 'version';
+
+  DaoVersion() : super(tableName);
+
   Future<void> createTable(Database db, int version) async {
     await db.execute('''
       CREATE TABLE version (
@@ -46,14 +48,4 @@ class DaoVersion extends Dao<Version> {
     }
     return null;
   }
-
-  @override
-  String get tableName => 'version';
-  @override
-  JuneStateCreator get juneRefresher => VersionState.new;
-}
-
-/// Used to notify the UI when the version entry changes.
-class VersionState extends JuneState {
-  VersionState();
 }

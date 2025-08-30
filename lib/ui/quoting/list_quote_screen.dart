@@ -15,8 +15,8 @@ import 'package:flutter/material.dart' hide StatefulBuilder;
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../../util/app_title.dart';
-import '../../util/format.dart';
+import '../../util/dart/format.dart';
+import '../../util/flutter/app_title.dart';
 import '../crud/base_full_screen/base_full_screen.g.dart';
 import '../invoicing/dialog_select_tasks.dart';
 import '../invoicing/select_job_dialog.dart';

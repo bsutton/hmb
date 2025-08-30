@@ -11,14 +11,13 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import '../entity/job_activity.dart';
-import '../util/local_date.dart';
+import '../util/dart/local_date.dart';
 import 'dao.dart';
 
 class DaoJobActivity extends Dao<JobActivity> {
-  @override
-  String get tableName => 'job_activity';
+  static const  tableName = 'job_activity';
+  DaoJobActivity() : super(tableName);
 
   @override
   JobActivity fromMap(Map<String, dynamic> map) => JobActivity.fromMap(map);
@@ -106,6 +105,4 @@ class DaoJobActivity extends Dao<JobActivity> {
     return fromMap(data.first);
   }
 
-  @override
-  JobActivityState Function() get juneRefresher => JobActivityState.new;
 }

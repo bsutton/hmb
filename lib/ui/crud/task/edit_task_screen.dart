@@ -20,7 +20,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../../dao/dao_task.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/platform_ex.dart';
+import '../../../util/flutter/platform_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';

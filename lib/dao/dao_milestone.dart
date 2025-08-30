@@ -11,15 +11,13 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
-
 import '../entity/milestone.dart';
 import 'dao.dart';
 
 class DaoMilestone extends Dao<Milestone> {
-  @override
-  String get tableName => 'milestone';
+  static const tableName = 'milestone';
+
+  DaoMilestone() : super(tableName);
 
   @override
   Milestone fromMap(Map<String, dynamic> map) => Milestone.fromMap(map);
@@ -36,9 +34,6 @@ class DaoMilestone extends Dao<Milestone> {
     );
   }
 
-  @override
-  JuneStateCreator get juneRefresher => MilestonePaymentState.new;
-
   Future<void> detachFromInvoice(int invoiceId) async {
     await db.update(
       'milestone',
@@ -47,9 +42,4 @@ class DaoMilestone extends Dao<Milestone> {
       whereArgs: [invoiceId],
     );
   }
-}
-
-/// Used to notify the UI that the message template has changed.
-class MilestonePaymentState extends JuneState {
-  MilestonePaymentState();
 }

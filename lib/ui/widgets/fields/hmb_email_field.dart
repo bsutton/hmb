@@ -15,8 +15,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:strings/strings.dart';
 
-import '../../../util/parse/parse.dart';
-import '../../../util/platform_ex.dart';
+import '../../../util/dart/parse/parse.dart';
+import '../../../util/flutter/platform_ex.dart';
 import '../hmb_mail_to_icon.dart';
 import 'fields.g.dart';
 

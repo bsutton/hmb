@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao_todo.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/util.g.dart';
+import '../../../util/flutter/flutter_util.g.dart';
 import '../../widgets/text/text.g.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';

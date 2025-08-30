@@ -17,8 +17,8 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao_contact.dart';
 import '../../../entity/job.dart';
-import '../../../util/hmb_theme.dart';
-import '../../../util/plus_space.dart';
+import '../../../util/dart/plus_space.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../hmb_mail_to_icon.dart';
 import '../layout/hmb_placeholder.dart';
 

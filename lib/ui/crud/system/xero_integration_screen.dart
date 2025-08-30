@@ -18,7 +18,7 @@ import 'package:go_router/go_router.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_system.dart';
-import '../../../util/app_title.dart';
+import '../../../util/flutter/app_title.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/widgets.g.dart';

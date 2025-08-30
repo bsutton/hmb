@@ -14,7 +14,8 @@
 // lib/src/ui/dashboard/settings_dashboard_page.dart
 import 'package:flutter/material.dart';
 
-import '../../nav.g.dart';
+import '../dashboard.dart';
+import '../dashlet_card.dart';
 
 class IntegrationDashboardPage extends StatelessWidget {
   const IntegrationDashboardPage({super.key});

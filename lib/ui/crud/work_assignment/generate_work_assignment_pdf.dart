@@ -19,14 +19,14 @@ import 'dart:math';
 
 import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter/foundation.dart';
-import 'package:image/image.dart' as img;
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../../cache/hmb_image_cache.dart';
+import '../../../cache/image_cache_config.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/util.g.dart';
+import '../../../util/flutter/flutter_util.g.dart';
 
 /// Internal data holder for task plus its resolved photos
 class _TaskData {
@@ -39,20 +39,6 @@ class _TaskData {
     required this.photos,
     required this.taskItems,
   });
-}
-
-/// Top-level function to run in an isolate:
-/// reads, downsizes (max width 200px), JPEG-encodes (70% quality)
-/// and returns the compressed bytes.
-Uint8List _compressImageTask(String absolutePath) {
-  final raw = File(absolutePath).readAsBytesSync();
-  final original = img.decodeImage(raw);
-  if (original == null) {
-    return Uint8List(0);
-  }
-  final resized = img.copyResize(original, width: 200);
-  final jpeg = img.encodeJpg(resized, quality: 70);
-  return Uint8List.fromList(jpeg);
 }
 
 /// Generates a PDF for a WorkAssignment,
@@ -99,26 +85,27 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
   // --- Limit concurrent isolates for image compression
   // leaving 1 cpu so the UI will continue updating ---
   final maxConcurrent = max(1, Platform.numberOfProcessors - 1);
-  final compressedBytes = <String, Uint8List>{};
-  final allPaths = taskDataList
+  final compressedBytes = <Path, Uint8List>{};
+  final allMetas = taskDataList
       .expand((d) => d.photos)
-      .map((m) => m.absolutePathTo)
-      .where(exists)
+      .where((m) => exists(m.absolutePathTo))
       .toList();
 
-  for (var i = 0; i < allPaths.length; i += maxConcurrent) {
-    final batch = allPaths.skip(i).take(maxConcurrent).toList();
+  for (var i = 0; i < allMetas.length; i += maxConcurrent) {
+    final batch = allMetas.skip(i).take(maxConcurrent).toList();
     final futures = batch
         .map(
-          (path) =>
-              compute(_compressImageTask, path, debugLabel: 'Compress Image'),
+          (meta) => HMBImageCache().getVariantBytesForMeta(
+            meta: meta,
+            variant: ImageVariant.pdf,
+          ),
         )
         .toList();
     final results = await Future.wait(futures);
     for (var j = 0; j < batch.length; j++) {
       final bytes = results[j];
       if (bytes.isNotEmpty) {
-        compressedBytes[batch[j]] = bytes;
+        compressedBytes[batch[j].absolutePathTo] = bytes;
       }
     }
   }
@@ -315,7 +302,7 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
 
   // --- Write out the PDF ---
   final dir = await getTemporaryDirectory();
-  final out = File('${dir.path}/assignment_${assignment.id}.pdf');
+  final out = File('$dir/assignment_${assignment.id}.pdf');
   await out.writeAsBytes(await pdf.save());
   return out;
 }

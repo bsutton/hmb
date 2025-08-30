@@ -11,14 +11,15 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/supplier.dart';
 import 'dao.dart';
 
 class DaoSupplier extends Dao<Supplier> {
+  static const tableName = 'supplier';
+  DaoSupplier() : super(tableName);
+
   Future<List<Supplier>> getByFilter(String? filter) async {
     final db = withoutTransaction();
 
@@ -43,14 +44,4 @@ order by s.name COLLATE NOCASE
 
   @override
   Supplier fromMap(Map<String, dynamic> map) => Supplier.fromMap(map);
-
-  @override
-  String get tableName => 'supplier';
-  @override
-  JuneStateCreator get juneRefresher => SupplierState.new;
-}
-
-/// Used to notify the UI that the time entry has changed.
-class SupplierState extends JuneState {
-  SupplierState();
 }

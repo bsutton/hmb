@@ -11,10 +11,11 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'dart:ui';
 
-import '../util/hex_to_color.dart';
-import 'entity.g.dart';
+
+
+import 'job.dart';
+import 'job_status_stage.dart';
 
 enum JobStatus {
   prospecting(
@@ -162,7 +163,7 @@ enum JobStatus {
     orElse: () => JobStatus.startingStatus,
   );
 
-  Color getColour() => hexToColor(colorCode);
+ 
 
   static List<JobStatus> byOrdinal() => values.toList()
     ..sort((a, b) => a.ordinal - b.ordinal)

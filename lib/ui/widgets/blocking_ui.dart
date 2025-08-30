@@ -23,8 +23,8 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 import 'package:stacktrace_impl/stacktrace_impl.dart';
 
-import '../../util/hmb_theme.dart';
-import '../../util/stack_list.dart';
+import '../../util/dart/stack_list.dart';
+import '../../util/flutter/hmb_theme.dart';
 import 'color_ex.dart';
 import 'layout/position.dart';
 import 'text/hmb_text_themes.dart';

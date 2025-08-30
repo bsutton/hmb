@@ -17,8 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
 import '../../entity/site.dart';
-import '../../util/clip_board.dart';
-import '../../util/google_maps.dart';
+import '../../util/flutter/clip_board.dart';
+import '../../util/flutter/google_maps.dart';
 
 class HMBMapIcon extends StatelessWidget {
   final Site? site;

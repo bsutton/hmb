@@ -19,8 +19,8 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/app_title.dart';
-import '../../../util/util.g.dart';
+import '../../../util/flutter/app_title.dart';
+import '../../../util/flutter/flutter_util.g.dart';
 import '../../dialog/dialog.g.dart';
 import '../../widgets/layout/hmb_row.dart';
 import '../../widgets/select/hmb_filter_line.dart';

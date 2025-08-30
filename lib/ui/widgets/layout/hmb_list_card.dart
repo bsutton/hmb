@@ -15,7 +15,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../util/types.dart';
+import '../../../util/dart/types.dart';
 import '../hmb_icon_button.dart';
 
 typedef OnDelete = AsyncVoidCallback;

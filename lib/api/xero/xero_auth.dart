@@ -20,7 +20,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../dao/dao_system.dart';
 import '../../ui/widgets/hmb_toast.dart';
-import '../../util/exceptions.dart';
+import '../../util/dart/exceptions.dart';
 import 'redirect_handler.dart';
 
 /// Thrown when Xero OAuth is misused or not fully initialized

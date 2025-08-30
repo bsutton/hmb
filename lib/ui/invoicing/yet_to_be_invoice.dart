@@ -20,7 +20,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../../util/app_title.dart';
+import '../../util/flutter/app_title.dart';
 import '../crud/job/job.g.dart';
 import '../widgets/hmb_link_internal.dart';
 import '../widgets/layout/layout.g.dart';

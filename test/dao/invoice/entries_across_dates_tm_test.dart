@@ -15,9 +15,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
-import 'package:hmb/util/format.dart';
-import 'package:hmb/util/local_date.dart';
-import 'package:hmb/util/money_ex.dart';
+import 'package:hmb/util/dart/format.dart';
+import 'package:hmb/util/dart/local_date.dart';
+import 'package:hmb/util/dart/money_ex.dart';
 
 import '../../database/management/db_utility_test.dart';
 import 'utility.dart';

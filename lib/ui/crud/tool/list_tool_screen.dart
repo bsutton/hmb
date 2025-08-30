@@ -19,7 +19,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao_category.dart';
 import '../../../dao/dao_tool.dart';
 import '../../../entity/tool.dart';
-import '../../../util/format.dart';
+import '../../../util/dart/format.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/text/hmb_text_themes.dart';

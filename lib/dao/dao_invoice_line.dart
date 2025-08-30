@@ -11,9 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/invoice_line.dart';
 import 'dao.dart';
@@ -22,8 +20,8 @@ import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
 
 class DaoInvoiceLine extends Dao<InvoiceLine> {
-  @override
-  String get tableName => 'invoice_line';
+  static const tableName = 'invoice_line';
+  DaoInvoiceLine() : super(tableName);
 
   @override
   InvoiceLine fromMap(Map<String, dynamic> map) => InvoiceLine.fromMap(map);
@@ -74,9 +72,6 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
     await db.delete(tableName, where: 'invoice_id =?', whereArgs: [invoiceId]);
   }
 
-  @override
-  JuneStateCreator get juneRefresher => InvoiceLineState.new;
-
   Future<List<InvoiceLine>> getByInvoiceLineGroupId(int id) async {
     final db = withoutTransaction();
     return toList(
@@ -87,9 +82,4 @@ class DaoInvoiceLine extends Dao<InvoiceLine> {
       ),
     );
   }
-}
-
-/// Used to notify the UI that the time entry has changed.
-class InvoiceLineState extends JuneState {
-  InvoiceLineState();
 }

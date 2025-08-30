@@ -12,7 +12,7 @@
 */
 
 
-import '../entity/system.dart';
+import '../../entity/system.dart';
 import 'local_date.dart';
 import 'local_time.dart';
 

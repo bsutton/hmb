@@ -11,19 +11,19 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import '../../entity/entity.g.dart';
 
-import 'package:flutter/services.dart';
+class InvoiceOptions {
+  List<int> selectedTaskIds = [];
+  // ignore: omit_obvious_property_types
+  bool billBookingFee = true;
+  bool groupByTask;
+  Contact contact;
 
-import '../ui/widgets/hmb_toast.dart';
-
-/// Copies [data] to the clipboard.
-Future<void> clipboardCopyTo(String data) async {
-  await Clipboard.setData(ClipboardData(text: data));
-
-  HMBToast.info('Copy $data to the clipboard');
+  InvoiceOptions({
+    required this.selectedTaskIds,
+    required this.billBookingFee,
+    required this.groupByTask,
+    required this.contact,
+  });
 }
-
-Future<bool> clipboardHasText()  => Clipboard.hasStrings();
-
-Future<String> clipboardGetText() async =>
-    (await Clipboard.getData('text/plain'))?.text ?? '';

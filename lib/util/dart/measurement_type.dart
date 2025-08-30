@@ -11,7 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import '../dao/dao_system.dart';
+import '../../dao/dao_system.dart';
 import 'units.dart';
 
 Map<String, MeasurementType> _measurementTypes = {

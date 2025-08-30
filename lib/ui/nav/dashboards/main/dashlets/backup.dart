@@ -18,7 +18,7 @@ import '../../../../../database/factory/flutter_database_factory.dart';
 import '../../../../../database/management/backup_providers/google_drive/background_backup/background_backup.g.dart';
 import '../../../../../database/management/backup_providers/google_drive/google_drive.g.dart';
 import '../../../../../src/appname.dart';
-import '../../../../../util/format.dart';
+import '../../../../../util/dart/format.dart';
 import '../../dashlet_card.dart';
 
 /// Dashlet for pending shopping items count

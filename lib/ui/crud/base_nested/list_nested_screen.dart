@@ -18,6 +18,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 
 import '../../../dao/dao.dart';
+import '../../../dao/dao_notifications.dart';
 import '../../../entity/entity.g.dart';
 import '../../dialog/hmb_ask_user_to_continue.dart';
 import '../../widgets/hmb_add_button.dart';
@@ -151,7 +152,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   );
 
   JuneBuilder<JuneState> _buildBody() => JuneBuilder(
-    widget.dao.juneRefresher,
+    JuneDaoNotifier.refresherFor(widget.dao),
     builder: (context) {
       // return const HMBSpacer(height: true);
       // ignore: discarded_futures

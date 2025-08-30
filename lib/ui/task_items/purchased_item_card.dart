@@ -17,7 +17,7 @@ import 'package:fixed/fixed.dart';
 import 'package:flutter/material.dart';
 
 import '../../dao/dao.g.dart';
-import '../../util/util.g.dart';
+import '../../util/flutter/flutter_util.g.dart';
 import '../widgets/text/text.g.dart';
 import 'list_packing_screen.dart';
 import 'list_shopping_screen.dart';

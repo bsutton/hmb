@@ -19,7 +19,7 @@ import 'package:mailto/mailto.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
-import '../../util/clip_board.dart';
+import '../../util/flutter/clip_board.dart';
 import 'hmb_toast.dart';
 
 class HMBMailToIcon extends StatelessWidget {

@@ -23,8 +23,8 @@ import 'package:strings/strings.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/quote.dart';
 import '../../entity/system.dart';
-import '../../util/format.dart';
-import '../../util/rich_text_helper.dart';
+import '../../util/dart/format.dart';
+import '../../util/flutter/rich_text_helper.dart';
 import 'job_quote.dart';
 
 Future<File> generateQuotePdf(

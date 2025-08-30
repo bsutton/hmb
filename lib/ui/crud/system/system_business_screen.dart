@@ -21,10 +21,10 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
+import '../../../util/dart/measurement_type.dart';
+import '../../../util/dart/uri_ex.dart';
 // Import your new classes/enums
-import '../../../util/app_title.dart';
-import '../../../util/measurement_type.dart';
-import '../../../util/uri_ex.dart';
+import '../../../util/flutter/app_title.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_toast.dart';

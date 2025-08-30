@@ -18,8 +18,8 @@ import 'package:june/june.dart';
 
 import '../../../dao/dao_system.dart';
 import '../../../entity/task_item.dart';
-import '../../../util/measurement_type.dart';
-import '../../../util/units.dart';
+import '../../../util/dart/measurement_type.dart';
+import '../../../util/dart/units.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/hmb_empty.dart';
 import '../../widgets/select/hmb_droplist.dart';

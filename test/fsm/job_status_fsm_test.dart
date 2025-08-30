@@ -2,7 +2,7 @@
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/fsm/job_states.dart';
 import 'package:hmb/fsm/job_status_fsm.dart';
-import 'package:hmb/util/money_ex.dart';
+import 'package:hmb/util/dart/money_ex.dart';
 import 'package:test/test.dart';
 
 void main() {

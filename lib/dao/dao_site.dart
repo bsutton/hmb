@@ -11,9 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/customer.dart';
@@ -25,13 +23,12 @@ import 'dao_site_customer.dart';
 import 'dao_site_supplier.dart';
 
 class DaoSite extends Dao<Site> {
+  static const tableName = 'site';
+  DaoSite() : super(tableName);
   Future<void> createTable(Database db, int version) async {}
 
   @override
   Site fromMap(Map<String, dynamic> map) => Site.fromMap(map);
-
-  @override
-  String get tableName => 'site';
 
   /// returns the primary site for the customer
   Future<Site?> getPrimaryForCustomer(int? customerId) async {
@@ -219,12 +216,4 @@ where jo.id =?
   Future<void> insertForJob(Site site, Job job) async {
     await insert(site);
   }
-
-  @override
-  JuneStateCreator get juneRefresher => SiteState.new;
-}
-
-/// Used to notify the UI that the time entry has changed.
-class SiteState extends JuneState {
-  SiteState();
 }

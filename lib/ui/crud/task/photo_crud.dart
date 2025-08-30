@@ -23,7 +23,7 @@ import 'package:strings/strings.dart';
 
 import '../../../entity/entity.dart';
 import '../../../entity/photo.dart';
-import '../../../util/photo_meta.dart';
+import '../../../util/dart/photo_meta.dart';
 import '../../widgets/color_ex.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_icon_button.dart';

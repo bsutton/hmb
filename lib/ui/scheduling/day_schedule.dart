@@ -19,11 +19,12 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../dao/dao.g.dart';
+import '../../entity/flutter_extensions/job_activity_status_ex.dart';
 import '../../entity/operating_hours.dart';
 import '../../entity/system.dart';
-import '../../util/date_time_ex.dart';
-import '../../util/format.dart';
-import '../../util/local_date.dart';
+import '../../util/dart/date_time_ex.dart';
+import '../../util/dart/format.dart';
+import '../../util/dart/local_date.dart';
 import '../crud/job/edit_job_screen.dart';
 import '../dialog/dialog.g.dart';
 import '../widgets/circle.dart';

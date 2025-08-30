@@ -3,9 +3,9 @@ import 'package:flutter/widgets.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/todo.dart';
-import '../../../util/date_time_ex.dart';
-import '../../../util/local_time.dart';
-import '../../../util/notifications/local_notifs.dart';
+import '../../../util/dart/date_time_ex.dart';
+import '../../../util/dart/local_time.dart';
+import '../../../util/flutter/notifications/local_notifs.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/select/select.g.dart';
 import '../../widgets/widgets.g.dart';

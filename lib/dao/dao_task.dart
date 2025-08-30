@@ -12,21 +12,19 @@
 */
 
 import 'package:dcli_core/dcli_core.dart' as core;
-import 'package:june/june.dart';
 import 'package:money2/money2.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
-import '../util/money_ex.dart';
-import '../util/photo_meta.dart';
+import '../util/dart/money_ex.dart';
+import '../util/dart/photo_meta.dart';
 import 'dao.g.dart';
 
 class DaoTask extends Dao<Task> {
+  static const tableName = 'task';
+  DaoTask() : super(tableName);
   @override
   Task fromMap(Map<String, dynamic> map) => Task.fromMap(map);
-
-  @override
-  String get tableName => 'task';
 
   Future<List<Task>> getTasksByJob(int jobId) async {
     final db = withoutTransaction();
@@ -401,9 +399,6 @@ WHERE ti.id = ?
     return false;
   }
 
-  @override
-  JuneStateCreator get juneRefresher => TaskRefresher.new;
-
   /// If the job has been approved then we mark the
   /// task as [TaskStatus.approved] providing it is in
   /// an appropriate state.
@@ -429,11 +424,6 @@ WHERE ti.id = ?
     task.status = status;
     await update(task);
   }
-}
-
-/// Used to notify the UI that the time entry has changed.
-class TaskRefresher extends JuneState {
-  TaskRefresher();
 }
 
 /// Holds the value earned from labour and materials

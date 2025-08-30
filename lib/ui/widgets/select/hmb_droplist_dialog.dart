@@ -15,8 +15,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../util/hmb_theme.dart';
-import '../../../util/types.dart';
+import '../../../util/dart/types.dart';
+import '../../../util/flutter/hmb_theme.dart';
 import '../color_ex.dart';
 import '../hmb_icon_button.dart';
 import '../surface.dart';

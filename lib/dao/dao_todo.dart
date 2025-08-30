@@ -1,13 +1,11 @@
-import 'package:june/june.dart';
-
 import '../entity/todo.dart';
 import 'dao.g.dart';
 
 class DaoToDo extends Dao<ToDo> {
+  static const tableName = 'to_do';
+  DaoToDo() : super(tableName);
   @override
   ToDo fromMap(Map<String, dynamic> m) => ToDo.fromMap(m);
-  @override
-  String get tableName => 'to_do';
 
   Future<List<ToDo>> getFiltered({
     required ToDoStatus status,
@@ -96,9 +94,6 @@ class DaoToDo extends Dao<ToDo> {
     await update(u);
   }
 
-  @override
-  JuneStateCreator get juneRefresher => ToDoState.new;
-
   Future<void> convertToTask(ToDo t) async {
     // Implement with your existing Task CRUD; after creation you can mark done
     // or link the new task id back if you want a reference.
@@ -140,8 +135,4 @@ class DaoToDo extends Dao<ToDo> {
 
     return rows.map(ToDo.fromMap).toList();
   }
-}
-
-class ToDoState extends JuneState {
-  ToDoState();
 }

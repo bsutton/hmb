@@ -14,7 +14,7 @@
 
 // test/local_date_test.dart
 
-import 'package:hmb/util/local_date.dart';
+import 'package:hmb/util/dart/local_date.dart';
 import 'package:test/test.dart';
 
 void main() {

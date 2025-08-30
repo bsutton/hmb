@@ -11,21 +11,20 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:june/june.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/check_list.dart';
 import '../entity/check_list_item.dart';
 import 'dao.dart';
 
 class DaoCheckListItemCheckList extends Dao<CheckListItem> {
+  static const tableName = 'check_list_check_list_item';
+  DaoCheckListItemCheckList() : super(tableName);
+
   Future<void> createTable(Database db, int version) async {}
 
   @override
   CheckListItem fromMap(Map<String, dynamic> map) => CheckListItem.fromMap(map);
-
-  @override
-  String get tableName => 'check_list_check_list_item';
 
   Future<void> deleteJoin(
     CheckList checklist,
@@ -49,12 +48,4 @@ class DaoCheckListItemCheckList extends Dao<CheckListItem> {
       'check_list_item_id': checklistitem.id,
     });
   }
-
-  @override
-  JuneStateCreator get juneRefresher => CheckListItemCheckListState.new;
-}
-
-/// Used to notify the UI that the time entry has changed.
-class CheckListItemCheckListState extends JuneState {
-  CheckListItemCheckListState();
 }

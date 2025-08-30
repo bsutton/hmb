@@ -20,7 +20,7 @@ import '../../dao/dao.g.dart';
 import '../../entity/quote.dart';
 import '../../entity/quote_line.dart';
 import '../../entity/quote_line_group.dart';
-import '../../util/format.dart';
+import '../../util/dart/format.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../widgets/media/pdf_preview.dart';
 import '../widgets/widgets.g.dart' hide StatefulBuilder;
