@@ -6,6 +6,7 @@
 //
 export '../dart/ansi_color.dart';
 export '../dart/build_mode.dart';
+export '../dart/compute_manager.dart';
 export '../dart/date_time_ex.dart';
 export '../dart/exceptions.dart';
 export '../dart/fixed_ex.dart';
@@ -26,7 +27,6 @@ export '../dart/uri_ex.dart';
 export '../dart/web_stub.dart';
 export 'app_title.dart';
 export 'clip_board.dart';
-export 'compute_manager.dart';
 export 'focus_first.dart';
 export 'google_maps.dart';
 export 'hex_to_color.dart';

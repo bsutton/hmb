@@ -30,6 +30,7 @@ import '../../cache/hmb_image_cache.dart';
 import '../../dao/dao.g.dart';
 import '../../dao/dao_notifications.dart';
 import '../../database/factory/factory.g.dart';
+import '../../database/management/backup_providers/google_drive/background_backup/photo_sync_service.dart';
 import '../../database/management/backup_providers/local/local_backup_provider.dart';
 import '../../database/versions/asset_script_source.dart';
 import '../../installer/linux/install.dart';
@@ -147,7 +148,10 @@ class BootStrapper {
   }
 
   Future<void> initImageCache() async {
-    await HMBImageCache().init();
+    await HMBImageCache().init(
+      (photoId, pathToCacheStorage, cloudStoragePath) => PhotoSyncService()
+          .download(photoId, pathToCacheStorage, cloudStoragePath),
+    );
   }
 
   Future<void> initAccounting() async {

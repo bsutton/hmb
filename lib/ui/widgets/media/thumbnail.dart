@@ -20,9 +20,9 @@ import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../../../util/dart/compute_manager.dart';
 import '../../../util/dart/exceptions.dart';
 import '../../../util/dart/photo_meta.dart';
-import '../../../util/flutter/compute_manager.dart';
 
 class Thumbnail {
   String source;

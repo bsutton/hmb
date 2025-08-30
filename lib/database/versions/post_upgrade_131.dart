@@ -34,7 +34,12 @@ import '../../util/dart/photo_meta.dart';
 /// Safe to re-run.
 Future<void> postv131Upgrade(Database db) async {
   final cache = HMBImageCache();
-  await cache.init();
+  await cache.init((_, _, _) {
+    throw StateError(
+      '''
+This should never be called as each call for a variant provides its own downloader''',
+    );
+  }, (_) async => CompressResult('Should not be called', success: false));
 
   final daoPhoto = DaoBase<Photo>.direct(db, 'photo', Photo.fromMap);
   final photos = await daoPhoto.getAll();
@@ -116,7 +121,7 @@ Future<void> postv131Upgrade(Database db) async {
       // Keep migration resilient; skip errors per-photo.
       migrated++;
       continue;
-  }
+    }
   }
 
   // The cache trims as entries are added; nothing else required here.

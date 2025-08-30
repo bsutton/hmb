@@ -11,15 +11,14 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 // ignore_for_file: unused_local_variable
 
 import 'package:dcli/dcli.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/widgets/media/thumbnail.dart';
+import 'package:hmb/util/dart/compute_manager.dart';
 import 'package:hmb/util/dart/photo_meta.dart';
-import 'package:hmb/util/flutter/compute_manager.dart';
 import 'package:path/path.dart';
 
 void main() {

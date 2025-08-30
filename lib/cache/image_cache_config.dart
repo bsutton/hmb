@@ -18,8 +18,8 @@
  GPL terms per repo license.
 */
 
-
 import '../util/dart/paths.dart';
+import 'hmb_image_cache.dart';
 
 enum ImageVariant { general, pdf, thumb, raw }
 
@@ -52,8 +52,11 @@ class ImageCacheConfig {
   Future<void> Function(int photoId, Path localCachePath, Path cloadStoragePath)
   downloader;
 
+  Compressor compressor;
+
   ImageCacheConfig({
     required this.downloader,
-    this.maxBytes = 500 * 1024 * 1024, // 500MB total across all variants
+    required this.compressor, 
+    this.maxBytes = 500 * 1024 * 1024,// 500MB total across all variants, 
   });
 }

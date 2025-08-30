@@ -12,24 +12,17 @@ import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image/image.dart' as img;
 
+import 'hmb_image_cache.dart';
 import 'image_cache_config.dart';
 
 /// We support both WebP (general) and JPEG (pdf/thumb).
 /// This isolates CPU work to avoid jank.
 class ImageCompressJob {
-  final String srcPath;
+  CompressJob job;
 
-  final String dstPath;
+  ImageCompressJob({required this.job});
 
-  final ImageVariant variant;
-
-  ImageCompressJob({
-    required this.srcPath,
-    required this.dstPath,
-    required this.variant,
-  });
-
-  static Future<CompressResult> run(ImageCompressJob job) async {
+  static Future<CompressResult> run(CompressJob job) async {
     try {
       final src = job.srcPath;
       if (!exists(src)) {
@@ -108,12 +101,4 @@ class ImageCompressJob {
       return CompressResult('$e', success: false);
     }
   }
-}
-
-class CompressResult {
-  final bool success;
-
-  final String? error;
-
-  CompressResult(this.error, {required this.success});
 }

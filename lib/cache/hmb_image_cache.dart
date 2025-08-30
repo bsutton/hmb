@@ -13,20 +13,55 @@ import 'dart:typed_data';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart' as p;
 
-import '../database/management/backup_providers/google_drive/background_backup/background_backup.g.dart';
+import '../util/dart/compute_manager.dart';
 import '../util/dart/paths.dart';
 import '../util/dart/photo_meta.dart';
 import 'image_cache_config.dart';
-import 'image_compress_job.dart';
 
 typedef Key = String;
+
+typedef Compressor = Future<CompressResult> Function(CompressJob job);
+
+typedef Downloader =
+    Future<void> Function(
+      int photoId,
+      Path pathToCacheStorage,
+      Path pathToCloudStorage,
+    );
+
+class CompressResult {
+  final bool success;
+
+  final String? error;
+
+  CompressResult(this.error, {required this.success});
+}
+
+class CompressJob {
+  final String srcPath;
+
+  final String dstPath;
+
+  final ImageVariant variant;
+
+  CompressJob({
+    required this.srcPath,
+    required this.dstPath,
+    required this.variant,
+  });
+}
 
 /// LRU cache of *image variants* keyed by (photoId, variant).
 /// Filenames: `<photoId>__<variant>.<ext>`
 class HMBImageCache {
-  final ImageCacheConfig _config;
+  static const _cacheDirName = 'photo_image_cache';
 
-  final _cacheDirName = 'photo_image_cache';
+  // singleton
+  static HMBImageCache? _instance;
+
+  late final Downloader downloader;
+  late final Compressor compressor;
+  late final ImageCacheConfig _config;
   late String _cacheDir;
   late String _indexPath;
 
@@ -35,28 +70,19 @@ class HMBImageCache {
   var _totalBytes = 0;
   var _initialised = false;
 
-  // singleton
-  static HMBImageCache? _instance;
-
   factory HMBImageCache() {
-    _instance ??= HMBImageCache._();
+    _instance ??= HMBImageCache();
     return _instance!;
   }
 
-  HMBImageCache._()
-    : _config = ImageCacheConfig(
-        downloader: (photoId, pathToCacheStorage, cloudStoragePath) =>
-            PhotoSyncService().download(
-              photoId,
-              pathToCacheStorage,
-              cloudStoragePath,
-            ),
-      );
-
-  Future<void> init() async {
+  Future<void> init(Downloader downloader, Compressor compressor) async {
     if (_initialised) {
       return;
     }
+
+    this.downloader = downloader;
+
+    _config = ImageCacheConfig(downloader: downloader, compressor: compressor);
     final base = await getTemporaryDirectory();
     _cacheDir = p.join(base, _cacheDirName);
     if (!exists(_cacheDir)) {
@@ -85,10 +111,6 @@ class HMBImageCache {
 
     bool cacheRaw = false,
   }) async {
-    if (!_initialised) {
-      await init();
-    }
-
     await meta.resolve();
     final photoId = meta.photo.id;
     final localOriginalPath = meta.absolutePathTo;
@@ -136,10 +158,6 @@ class HMBImageCache {
     ensureOriginalAt,
     bool cacheRaw = false,
   }) async {
-    if (!_initialised) {
-      await init();
-    }
-
     final key = _key(photoId.toString(), variant);
     final existing = await _cachedIfExists(key);
     if (existing != null) {
@@ -228,9 +246,6 @@ class HMBImageCache {
   }
 
   Future<void> evictPhoto(String photoId) async {
-    if (!_initialised) {
-      await init();
-    }
     final keys = _entries.keys.where((k) => k.startsWith('$photoId|')).toList();
     for (final k in keys) {
       final e = _entries.remove(k);
@@ -247,9 +262,6 @@ class HMBImageCache {
   }
 
   Future<void> clear() async {
-    if (!_initialised) {
-      await init();
-    }
     if (exists(_cacheDir)) {
       for (final fse in Directory(_cacheDir).listSync()) {
         if (fse is File && p.basename(fse.path) != '_index.json') {
@@ -309,8 +321,8 @@ class HMBImageCache {
       return;
     }
     final res = await compute(
-      ImageCompressJob.run,
-      ImageCompressJob(srcPath: src, dstPath: dst, variant: variant),
+      _config.compressor,
+      CompressJob(srcPath: src, dstPath: dst, variant: variant),
       debugLabel: 'Compress Image:$variant',
     );
     if (res.success && exists(dst)) {
@@ -329,8 +341,8 @@ class HMBImageCache {
       await _upsertEntry(key, p.basename(dst));
       return;
     }
-    final res = await ImageCompressJob.run(
-      ImageCompressJob(srcPath: src, dstPath: dst, variant: variant),
+    final res = await _config.compressor(
+      CompressJob(srcPath: src, dstPath: dst, variant: variant),
     );
     if (res.success && exists(dst)) {
       await _upsertEntry(key, p.basename(dst));
@@ -479,9 +491,6 @@ class HMBImageCache {
     required ImageVariant variant,
     required DateTime when,
   }) async {
-    if (!_initialised) {
-      await init();
-    }
     final photoId = meta.photo.id.toString();
     final key = _key(photoId, variant);
     final e = _entries[key];
