@@ -12,9 +12,12 @@
 */
 
 import 'dart:async';
+import 'dart:developer';
+import 'dart:isolate';
 
-import 'package:sqflite_common/sqlite_api.dart';
+import 'package:sqflite_common/sqlite_api.dart' hide DatabaseException;
 
+import '../../util/dart/exceptions.dart';
 import '../../util/dart/types.dart';
 import '../factory/hmb_database_factory.dart';
 import '../versions/db_upgrade.dart';
@@ -28,7 +31,17 @@ class DatabaseHelper {
   factory DatabaseHelper() => instance;
   DatabaseHelper._();
 
-  Database get database => _database!;
+  Database get database {
+    if (_database == null) {
+      final isolate = '''
+${Service.getIsolateId(Isolate.current)} ${Isolate.current.debugName}''';
+      throw DatabaseException(
+        """
+The database isn't open, if this code is running in an isolate $isolate you will need to explicitly open the db""",
+      );
+    }
+    return _database!;
+  }
 
   Future<void> initDatabase({
     required ScriptSource src,
