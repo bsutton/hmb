@@ -33,7 +33,6 @@ class DaoBase<T extends Entity<T>> {
     T Function(Map<String, dynamic> map) fromMap,
   ) {
     final dao = DaoBase<T>(tableName, db, (_, _) {})
-      ..tablename = tableName
       .._fromMap = fromMap;
     return dao;
   }
