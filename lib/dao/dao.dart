@@ -11,7 +11,10 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:scope/scope.dart';
+
 import '../database/management/database_helper.dart';
+import '../database/versions/db_upgrade.dart';
 import '../entity/entity.dart';
 import 'dao_base.dart';
 
@@ -21,9 +24,13 @@ abstract class Dao<T extends Entity<T>> extends DaoBase<T> {
   /// initialised with a default No Op notifier.
   /// main.dart should initialise this with DaoNotifier
   static void Function(DaoBase dao, int? entityId) notifier = (_, _) {};
-  
+
   Dao(String tableName)
-    : super(tableName, DatabaseHelper.instance.database, notifier) {
+    : super(
+        tableName,
+        use(dbForUpgradeKey) ?? DatabaseHelper.instance.database,
+        notifier,
+      ) {
     super.mapper = fromMap;
   }
 

@@ -11,6 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:scope/scope.dart';
 import 'package:sqflite/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
@@ -21,6 +22,8 @@ import '../management/db_utility.dart';
 import 'post_upgrade_131.dart';
 import 'post_upgrade_77.dart';
 import 'script_source.dart';
+
+const dbForUpgradeKey = ScopeKey<Database>('dbForUpgrade');
 
 /// Upgrade the database by applying each upgrade script in order
 /// from the db's current version to the latest version.
@@ -65,10 +68,15 @@ Future<void> upgradeDb({
       print('Upgrading to $scriptVersion via $pathToScript');
       await _executeScript(db, src, pathToScript);
 
-      /// invoke any registered post upgrade actions for [scriptVersion]
-      if (upgradeActions.containsKey(scriptVersion)) {
-        await upgradeActions[scriptVersion]!.call(db);
-      }
+      /// As the db singleton hasn't been fully initialised at this point
+      /// we need to inject a db for Dao instances to use.
+      final scope = Scope()..value(dbForUpgradeKey, db);
+      await scope.run(() async {
+        /// invoke any registered post upgrade actions for [scriptVersion]
+        if (upgradeActions.containsKey(scriptVersion)) {
+          await upgradeActions[scriptVersion]!.call(db);
+        }
+      });
 
       await insertVersion(
         db,
