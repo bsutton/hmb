@@ -87,8 +87,9 @@ class _GoogleDriveBackupScreenState
     setAppTitle('Backup & Restore');
     _provider = _getProvider();
 
-    if ( GoogleDriveApi.isSupported()) {
+    if (GoogleDriveApi.isSupported()) {
       final gdriveAuth = await GoogleDriveAuth.instance();
+      await gdriveAuth.signInIfAutomatic();
 
       if (gdriveAuth.isSignedIn) {
         // Load last backup date
@@ -359,6 +360,7 @@ class _GoogleDriveBackupScreenState
                 GoogleDriveAuth? auth;
                 try {
                   auth = await GoogleDriveAuth.instance();
+                  await auth.signInIfAutomatic();
                   if (auth.isSignedIn && mounted) {
                     _lastBackupFuture = _refreshLastBackup();
                     _isGoogleSignedIn = true;

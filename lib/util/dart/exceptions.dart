@@ -24,6 +24,10 @@ class BackupException extends HMBException {
   BackupException(super.message);
 }
 
+class DatabaseException extends HMBException {
+  DatabaseException(super.message);
+}
+
 class InvoiceException extends HMBException {
   InvoiceException(super.message);
 }

@@ -61,7 +61,7 @@ class GoogleDriveAuth {
   }
 
   /// returns true if the current platform supports google signin.
-  static bool isAuthSupported()  =>
+  static bool isAuthSupported() =>
       Platform.isAndroid || Platform.isIOS || Platform.isMacOS || kIsWeb;
 
   /// initialised [GoogleSignIn]
@@ -91,14 +91,29 @@ class GoogleDriveAuth {
     _initialised = true;
   }
 
+  /// triggers and automatic signin
+  Future<void> signInIfAutomatic() async {
+    if ((await hasSignedIn()) && !isSignedIn) {
+      // this should trigger a silent signin.
+      await signIn();
+    }
+  }
+
   bool get isSignedIn => _signedIn;
 
   Future<void> signIn() async {
     final signIn = GoogleSignIn.instance;
 
-    /// trigger a signin event.
     _awaitingAuth = Completer<GoogleAuthResult>();
-    unawaited(signIn.attemptLightweightAuthentication());
+    if (await hasSignedIn()) {
+      unawaited(signIn.attemptLightweightAuthentication());
+    } else {
+      /// testing on android show that a call to
+      /// attemptLightweightAuthentication is always sufficient
+      /// but it may be different on other platforms so as
+      /// an act of caution.
+      unawaited(signIn.authenticate());
+    }
 
     await _awaitingAuth.future;
   }

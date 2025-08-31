@@ -73,6 +73,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
 
     if (authIsSupported) {
       auth = await GoogleDriveAuth.instance();
+      await auth.signInIfAutomatic();
       if (auth.isSignedIn) {
         // Load last backup date
         _lastBackup = await _refreshLastBackup();
@@ -109,7 +110,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         if (!authIsSupported) {
           return _buildUnsupportedPlatformMessage(context);
         }
-
         if (auth.isSignedIn) {
           return _buildDashboard();
         } else {

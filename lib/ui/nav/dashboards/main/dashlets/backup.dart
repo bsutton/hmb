@@ -64,6 +64,9 @@ class BackupDashlet extends StatelessWidget {
       if (GoogleDriveApi.isSupported()) {
         status = GoogleDriveStatus.signedOut;
         final auth = await GoogleDriveAuth.instance();
+
+        await auth.signInIfAutomatic();
+
         if (auth.isSignedIn) {
           status = GoogleDriveStatus.signedIn;
           final backups = await GoogleDriveBackupProvider(

@@ -46,7 +46,7 @@ class _BackupAuthGoogleScreenState
   @override
   Future<void> asyncInitState() async {
     super.initState();
-    googleDriveSupported =  GoogleDriveApi.isSupported();
+    googleDriveSupported = GoogleDriveApi.isSupported();
     if (googleDriveSupported) {
       auth = await GoogleDriveAuth.instance();
     }
@@ -100,6 +100,7 @@ class _BackupAuthGoogleScreenState
   }
 
   Future<void> _uploadFile(BuildContext context) async {
+    await auth.signInIfAutomatic();
     if (auth.isSignedIn) {
       if (context.mounted) {
         HMBToast.info('Not signed in');
