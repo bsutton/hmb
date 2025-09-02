@@ -21,7 +21,7 @@ import 'package:go_router/go_router.dart';
 import '../../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/flutter/app_title.dart';
-import '../crud/job/job.g.dart';
+import '../crud/job/full_page_list_job_card.dart';
 import '../widgets/hmb_link_internal.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/text/text.g.dart';
@@ -114,7 +114,7 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
               // Job summary as an internal link
               HMBLinkInternal(
                 label: 'Job : #${job.id} ${job.summary}',
-                navigateTo: () async => JobEditScreen(job: job),
+                navigateTo: () async => FullPageListJobCard(job),
               ),
               const HMBSpacer(height: true),
               HMBText('Type: ${job.billingType.display}'),

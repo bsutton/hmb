@@ -21,7 +21,7 @@ import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/types.dart';
-import '../crud/job/edit_job_screen.dart';
+import '../crud/job/full_page_list_job_card.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
 import 'job_and_customer.dart';
@@ -82,7 +82,7 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                     label: 'Job: #${quote.jobId}',
                     navigateTo: () async {
                       final job = await DaoJob().getById(quote.jobId);
-                      return JobEditScreen(job: job);
+                      return FullPageListJobCard(job!);
                     },
                   ),
                   const HMBSpacer(width: true),

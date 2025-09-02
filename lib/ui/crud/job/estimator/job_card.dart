@@ -25,6 +25,7 @@ import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/text/hmb_text_themes.dart';
 import '../../../widgets/widgets.g.dart';
 import '../edit_job_screen.dart';
+import '../full_page_list_job_card.dart';
 import 'edit_job_estimate_screen.dart';
 
 class JobCard extends StatefulWidget {
@@ -60,7 +61,7 @@ class _JobCardState extends State<JobCard> {
           ),
           HMBLinkInternal(
             label: 'Job #: ${widget.job.id}',
-            navigateTo: () async => JobEditScreen(job: widget.job),
+            navigateTo: () async => FullPageListJobCard( widget.job),
           ),
 
           if (info.quoteNumber != null)

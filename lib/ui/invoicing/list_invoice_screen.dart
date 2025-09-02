@@ -19,23 +19,23 @@ import '../../api/external_accounting.dart';
 import '../../api/xero/xero.g.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../../util/dart/format.dart';
 import '../../util/dart/money_ex.dart';
 import '../../util/flutter/app_title.dart';
 import '../crud/base_full_screen/base_full_screen.g.dart';
-import '../crud/job/edit_job_screen.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/select/hmb_select_job.dart';
 import '../widgets/widgets.g.dart';
 import 'dialog_select_tasks.dart';
 import 'edit_invoice_screen.dart';
 import 'invoice_details.dart';
+import 'list_invoice_card.dart';
 import 'select_job_dialog.dart';
 
 class InvoiceListScreen extends StatefulWidget {
-  final Job? job;
+  // The list of invoice are restricted to this job if passed.
+  final Job? jobRestriction;
 
-  const InvoiceListScreen({super.key, this.job});
+  const InvoiceListScreen({super.key, this.jobRestriction});
 
   @override
   State<InvoiceListScreen> createState() => _InvoiceListScreenState();
@@ -51,7 +51,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   void initState() {
     super.initState();
     setAppTitle('Invoices');
-    selectedJob.jobId = widget.job?.id;
+    selectedJob.jobId = widget.jobRestriction?.id;
   }
 
   @override
@@ -73,7 +73,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     cardHeight: 250,
     background: (_) async => Colors.transparent,
     details: _buildInvoiceCard,
-    filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
+    filterSheetBuilder: widget.jobRestriction == null
+        ? _buildFilterSheet
+        : null,
     isFilterActive: () =>
         selectedJob.jobId != null ||
         selectedCustomer != null ||
@@ -108,7 +110,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   }
 
   Future<Invoice?> _createInvoice() async {
-    final job = widget.job ?? await SelectJobDialog.show(context);
+    final job = widget.jobRestriction ?? await SelectJobDialog.show(context);
 
     if (job == null) {
       return null;
@@ -199,34 +201,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
               InvoiceEditScreen(invoiceDetails: invoiceDetails),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Issued: ${formatDate(invoiceDetails!.invoice.createdDate)}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          Text('Customer: ${invoiceDetails.customer?.name ?? 'N/A'}'),
-
-          if (widget.job == null)
-            HMBLinkInternal(
-              label:
-                  '''Job: #${invoiceDetails.job.id} - ${invoiceDetails.job.summary} ''',
-              navigateTo: () async => JobEditScreen(job: invoiceDetails.job),
-            ),
-          Text(
-            '''Xero: ${invoiceDetails.invoice.invoiceNum == null ? 'Not uploaded' : '#${invoiceDetails.invoice.invoiceNum}'}''',
-          ),
-          Text('Total: ${invoiceDetails.invoice.totalAmount}'),
-          if (invoiceDetails.invoice.sent)
-            const Text(
-              'Sent',
-              style: TextStyle(
-                color: Colors.green,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-        ],
+      child: ListInvoiceCard(
+        invoiceDetails: invoiceDetails!,
+        showJobDetails: widget.jobRestriction == null,
       ),
     ),
   );

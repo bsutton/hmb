@@ -163,7 +163,7 @@ class MiniJobDashboard extends StatelessWidget {
               },
               builder: (_, _) => HMBFullPageChildScreen(
                 title: 'Invoices',
-                child: InvoiceListScreen(job: job),
+                child: InvoiceListScreen(jobRestriction: job),
               ),
 
               // route: '/home/jobs/invoices/${job.id}',
