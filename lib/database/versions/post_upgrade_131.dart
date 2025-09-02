@@ -1,4 +1,6 @@
 // lib/src/database/migrations/postv131_upgrade.dart
+// ignore_for_file: unused_local_variable
+
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
  All Rights Reserved.
@@ -20,10 +22,7 @@ import 'package:dcli_core/dcli_core.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../cache/hmb_image_cache.dart';
-import '../../cache/image_cache_config.dart';
-import '../../dao/dao_base.dart';
 import '../../dao/dao_photo.dart';
-import '../../entity/photo.dart';
 import '../../util/dart/photo_meta.dart';
 
 /// Post v131: migrate local legacy photos into the unified cache.
@@ -58,11 +57,10 @@ This should never be called as each call for a variant provides its own download
         continue;
       }
 
-      final variantGeneral = Variant(meta, ImageVariant.general);
       // 1) Ensure GENERAL (display) variant is present.
       //    On first call this returns ORIGINAL path immediately and compresses
       //    WebP in background; subsequent runs will be a cache hit.
-      final generalPath = await cache.store(meta);
+      await cache.store(meta);
 
       // 4) Remove legacy thumbnail (if it exists) now that cache thumb exists.
       final legacyThumb = await meta.legacyThumbnailPathFor();
