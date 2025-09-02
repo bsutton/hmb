@@ -80,9 +80,11 @@ class HMBListCard extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [HMBTextHeadline2(title), ...children],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [HMBTextHeadline2(title), ...children],
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
