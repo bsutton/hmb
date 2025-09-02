@@ -30,6 +30,12 @@
     "dart.experimentalSidebarDevTools": true,
     // Customise which sections are shown in the sidebar, in an editor tab, or external browser.
     "dart.devToolsLocation": {
+        "inspector": "external",
+        "cpu-profiler": "external",
+        "logging": "external",
+        "memory": "external",
+        "network": "external",
+        "performance": "external",
         "default": "external",        // Default other tabs to an editor tab beside the current code editor
     },
 }
