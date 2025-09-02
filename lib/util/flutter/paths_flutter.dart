@@ -22,13 +22,21 @@ import 'package:path_provider/path_provider.dart' as pp;
 
 typedef Path = String;
 
+Path? _photosRootPath;
+Path? _settingsPath;
+Path? _tempDirectory;
+
 /// Device specific to where all photos are stored for HMB.
 Future<String> getPhotosRootPath() async =>
-    (await pp.getApplicationDocumentsDirectory()).path;
+    _photosRootPath ??= (await pp.getApplicationDocumentsDirectory()).path;
 
 /// Device specific to where all photos are stored for HMB.
-Future<String> getSettingsPath() async =>
-    join((await pp.getApplicationDocumentsDirectory()).path, 'settings');
+Future<String> getSettingsPath() async => _settingsPath ??= join(
+  (await pp.getApplicationDocumentsDirectory()).path,
+  'settings',
+);
 
+/// temporary directory which may be transient between
+/// reboots
 Future<Path> getTemporaryDirectory() async =>
-    (await pp.getTemporaryDirectory()).path;
+    _tempDirectory ??= (await pp.getTemporaryDirectory()).path;
