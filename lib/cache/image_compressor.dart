@@ -17,10 +17,10 @@ import 'image_cache_config.dart';
 
 /// We support both WebP (general) and JPEG (pdf/thumb).
 /// This isolates CPU work to avoid jank.
-class ImageCompressJob {
+class ImageCompressor {
   CompressJob job;
 
-  ImageCompressJob({required this.job});
+  ImageCompressor({required this.job});
 
   static Future<CompressResult> run(CompressJob job) async {
     try {
@@ -30,7 +30,7 @@ class ImageCompressJob {
       }
       final srcBytes = await File(src).readAsBytes();
 
-      switch (job.variant) {
+      switch (job.variant.variant) {
         case ImageVariant.general:
           // WebP, long edge resize, keep EXIF/orientation
           final out = await FlutterImageCompress.compressWithList(
@@ -41,7 +41,7 @@ class ImageCompressJob {
             quality: ImageCacheConfig.generalWebpQuality,
             keepExif: ImageCacheConfig.generalKeepExif,
           );
-          await File(job.dstPath)
+          await File(job.variant.cacheStoragePath)
               .create(recursive: true)
               .then(
                 (f) => f.writeAsBytes(Uint8List.fromList(out), flush: true),
@@ -68,7 +68,7 @@ class ImageCompressJob {
             resized,
             quality: ImageCacheConfig.pdfJpegQuality,
           );
-          await File(job.dstPath)
+          await File(job.variant.cacheStoragePath)
               .create(recursive: true)
               .then((f) => f.writeAsBytes(jpg, flush: true));
           return CompressResult(null, success: true);
@@ -88,7 +88,7 @@ class ImageCompressJob {
             resized,
             quality: ImageCacheConfig.thumbJpegQuality,
           );
-          await File(job.dstPath)
+          await File(job.variant.cacheStoragePath)
               .create(recursive: true)
               .then((f) => f.writeAsBytes(jpg, flush: true));
           return CompressResult(null, success: true);

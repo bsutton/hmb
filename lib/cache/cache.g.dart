@@ -6,4 +6,4 @@
 //
 export 'hmb_image_cache.dart';
 export 'image_cache_config.dart';
-export 'image_compress_job.dart';
+export 'image_compressor.dart';

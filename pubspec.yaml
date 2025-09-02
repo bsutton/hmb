@@ -86,6 +86,7 @@ dependencies:
   photo_view: ^0.15.0
   printing: ^5.13.1
   provider: ^6.1.2
+  scope: ^5.1.0
   sentry: ^9.1.0
   sentry_flutter: ^9.1.0
   # sms_advanced: # ^1.1.0

@@ -59,3 +59,4 @@ android/key.properties.zip
 android/app/.cxx
 .sentry-native
 database/*
+error.txt

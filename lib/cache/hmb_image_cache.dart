@@ -14,6 +14,7 @@ import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart' as p;
 
 import '../util/dart/compute_manager.dart';
+import '../util/dart/future_ex.dart';
 import '../util/dart/paths.dart';
 import '../util/dart/photo_meta.dart';
 import 'image_cache_config.dart';
@@ -22,12 +23,35 @@ typedef Key = String;
 
 typedef Compressor = Future<CompressResult> Function(CompressJob job);
 
-typedef Downloader =
-    Future<void> Function(
-      int photoId,
-      Path pathToCacheStorage,
-      Path pathToCloudStorage,
+class Variant {
+  final PhotoMeta meta;
+  final ImageVariant variant;
+  final Key key;
+
+  Variant(this.meta, this.variant) : key = '${meta.photo.id}|${variant.name}';
+
+  Path get cacheStoragePath {
+    final ext = switch (variant) {
+      ImageVariant.general => 'webp',
+      ImageVariant.pdf => 'jpg',
+      ImageVariant.thumb => 'jpg',
+      ImageVariant.raw => 'orig',
+    };
+    return p.join(
+      HMBImageCache._instance!._cacheDir,
+      '${_safe(meta.photo.id.toString())}__${variant.name}.$ext',
     );
+  }
+
+  Future<Path> get cloudStoragePath => meta.cloudStoragePath;
+
+  String _safe(String s) => s.replaceAll(RegExp('[^A-Za-z0-9._-]'), '_');
+
+  @override
+  String toString() => '${meta.photo.id}|${variant.name}';
+}
+
+typedef Downloader = Future<void> Function(Variant variant);
 
 class CompressResult {
   final bool success;
@@ -40,15 +64,9 @@ class CompressResult {
 class CompressJob {
   final String srcPath;
 
-  final String dstPath;
+  final Variant variant;
 
-  final ImageVariant variant;
-
-  CompressJob({
-    required this.srcPath,
-    required this.dstPath,
-    required this.variant,
-  });
+  CompressJob({required this.srcPath, required this.variant});
 }
 
 /// LRU cache of *image variants* keyed by (photoId, variant).
@@ -71,9 +89,11 @@ class HMBImageCache {
   var _initialised = false;
 
   factory HMBImageCache() {
-    _instance ??= HMBImageCache();
+    _instance ??= HMBImageCache._();
     return _instance!;
   }
+
+  HMBImageCache._();
 
   Future<void> init(Downloader downloader, Compressor compressor) async {
     if (_initialised) {
@@ -94,11 +114,65 @@ class HMBImageCache {
     _initialised = true;
   }
 
+  /// moves a image stored at [PhotoMeta] into
+  /// cache and triggers a background compression
+  /// and upload to cloud.
+  Future<void> store(PhotoMeta meta) async {
+    final rawVariant = Variant(meta, ImageVariant.raw);
+    final generalVariant = Variant(meta, ImageVariant.general);
+    final thumbnailVariant = Variant(meta, ImageVariant.thumb);
+
+    // copy the raw image into cache and let
+    // it expire naturally
+    copy(meta.absolutePathTo, rawVariant.cacheStoragePath);
+    await _upsertEntry(rawVariant);
+
+    await setLastAccess(
+      variant: rawVariant,
+      when: stat(meta.absolutePathTo).accessed,
+    );
+
+    // we need to actively upload images that havent' been synced.
+
+    // We need to find out why the index file is corrupt - are we better add this to the photo db.
+
+    // We need to find out why we ended up with an empth cache
+
+    /// compress the raw varient into a general
+    /// and then the general into a thumbnail
+    /// then evict the raw variant.
+    unawaited(
+      FutureEx.chain([
+        // compress raw image to create a general image
+        () => _compressAsync(
+          src: rawVariant.cacheStoragePath,
+          variant: generalVariant,
+        ),
+        // compress genral image to create a thumbnail image
+        () => _compressAsync(
+          src: generalVariant.cacheStoragePath,
+          variant: thumbnailVariant,
+        ),
+        // evict the raw image
+        () => evictVariant(rawVariant),
+        // sync the last access time to the original image
+        () => setLastAccess(
+          variant: generalVariant,
+          when: stat(meta.absolutePathTo).accessed,
+        ),
+        // sync the last access time to the original image
+        () => setLastAccess(
+          variant: thumbnailVariant,
+          when: stat(meta.absolutePathTo).accessed,
+        ),
+      ]),
+    );
+  }
   // ---------------------------------------------------------------------------
   // PhotoMeta-first API (primary)
   // ---------------------------------------------------------------------------
 
-  /// Returns a local path for [variant] of [meta].
+  /// Returns a local path for [ImageVariant] of [meta].
   ///
   /// - general: returns original immediately, compresses to WebP in background.
   /// - pdf/thumb: generates synchronously on first call, then cached.
@@ -106,24 +180,16 @@ class HMBImageCache {
   ///
   Future<Path> getVariantPathForMeta({
     required PhotoMeta meta,
-    required ImageVariant variant,
-    Future<void> Function(PhotoMeta meta, String storeToPath)? ensureOriginalAt,
+    required ImageVariant imageVariant,
+    Future<void> Function(Variant variant)? fetch,
 
     bool cacheRaw = false,
   }) async {
     await meta.resolve();
-    final photoId = meta.photo.id;
-    final localOriginalPath = meta.absolutePathTo;
 
     return getVariantPath(
-      photoId: photoId,
-      variant: variant,
-      localCachePath: localOriginalPath,
-      cloudStoragePath: await meta.cloudStoragePath,
-      ensureOriginalAt: (photoId, src, dst) =>
-          ensureOriginalAt?.call(meta, dst) ??
-          _config.downloader(photoId, src, dst),
-      cacheRaw: cacheRaw,
+      variant: Variant(meta, imageVariant),
+      fetch: (variant) => fetch?.call(variant) ?? _config.downloader(variant),
     );
   }
 
@@ -131,12 +197,12 @@ class HMBImageCache {
   Future<Uint8List> getVariantBytesForMeta({
     required PhotoMeta meta,
     required ImageVariant variant,
-    Future<void> Function(PhotoMeta meta, String storeToPath)? ensureOriginalAt,
+    Future<void> Function(Variant variant)? fetch,
   }) async {
     final path = await getVariantPathForMeta(
       meta: meta,
-      variant: variant,
-      ensureOriginalAt: ensureOriginalAt,
+      imageVariant: variant,
+      fetch: fetch,
     );
     return File(path).readAsBytes();
   }
@@ -146,93 +212,46 @@ class HMBImageCache {
   // ---------------------------------------------------------------------------
 
   Future<String> getVariantPath({
-    required int photoId,
-    required ImageVariant variant,
-    required String localCachePath,
-    required String cloudStoragePath,
-    Future<void> Function(
-      int photoId,
-      Path localCachPath,
-      Path cloudStoragePath,
-    )?
-    ensureOriginalAt,
-    bool cacheRaw = false,
+    required Variant variant,
+    Future<void> Function(Variant variant)? fetch,
   }) async {
-    final key = _key(photoId.toString(), variant);
+    final key = variant.key;
     final existing = await _cachedIfExists(key);
     if (existing != null) {
       await _touch(key);
       return existing;
     }
 
-    // ensure original is available
-    if (!exists(localCachePath)) {
-      createDir(p.dirname(localCachePath), recursive: true);
-      await (ensureOriginalAt?.call(
-            photoId,
-            localCachePath,
-            cloudStoragePath,
-          ) ??
-          _config.downloader(photoId, localCachePath, cloudStoragePath));
+    /// image doesn't exists locally, so lets download it.
+
+    final downloadVariant = Variant(variant.meta, ImageVariant.raw);
+    final parent = p.dirname(downloadVariant.cacheStoragePath);
+    if (!exists(parent)) {
+      createDir(p.dirname(downloadVariant.cacheStoragePath), recursive: true);
+    }
+    await (fetch?.call(variant) ?? _config.downloader(variant));
+
+    await _upsertEntry(downloadVariant);
+    await _trimIfNeeded();
+
+    if (downloadVariant.variant == variant.variant) {
+      return downloadVariant.cacheStoragePath;
     }
 
-    final variantPath = _variantPath(photoId, variant);
-
-    if (variant == ImageVariant.general) {
-      // non-blocking background compress
-      unawaited(
-        _backgroundCompress(
-          src: localCachePath,
-          dst: variantPath,
-          key: key,
-          variant: variant,
-        ),
-      );
-      return localCachePath;
-    }
-
-    if (variant == ImageVariant.raw) {
-      if (cacheRaw) {
-        if (!exists(variantPath)) {
-          copy(localCachePath, variantPath);
-        }
-        await _upsertEntry(key, p.basename(variantPath));
-        await _trimIfNeeded();
-        return variantPath;
-      } else {
-        return localCachePath;
-      }
-    }
-
-    // pdf/thumb sync compress (callers often need bytes immediately)
-    await _compressSync(
-      src: localCachePath,
-      dst: variantPath,
-      key: key,
-      variant: variant,
+    // non-blocking background compress
+    unawaited(
+      _compressAsync(src: downloadVariant.cacheStoragePath, variant: variant),
     );
-    return variantPath;
+
+    /// we don't wait for the compression just return the raw image.
+    return downloadVariant.cacheStoragePath;
   }
 
   Future<List<int>> getVariantBytes({
-    required int photoId,
-    required ImageVariant variant,
-    required String localCachePath,
-    required String cloudStoragePath,
-    required Future<void> Function(
-      int photoId,
-      Path pathToCacheStorage,
-      Path pathToCloudStorage,
-    )
-    ensureOriginalAt,
+    required Variant variant,
+    required Future<void> Function(Variant variant) fetch,
   }) async {
-    final path = await getVariantPath(
-      photoId: photoId,
-      variant: variant,
-      localCachePath: localCachePath,
-      cloudStoragePath: cloudStoragePath,
-      ensureOriginalAt: ensureOriginalAt,
-    );
+    final path = await getVariantPath(variant: variant, fetch: fetch);
     return File(path).readAsBytes();
   }
 
@@ -243,6 +262,18 @@ class HMBImageCache {
   Future<void> evictPhotoByMeta(PhotoMeta meta) async {
     await meta.resolve();
     await evictPhoto(meta.photo.id.toString());
+  }
+
+  Future<void> evictVariant(Variant variant) async {
+    final e = _entries.remove(variant.key);
+    if (e != null) {
+      final file = p.join(_cacheDir, e.fileName);
+      if (exists(file)) {
+        _totalBytes -= stat(file).size;
+        delete(file);
+        await _saveIndex();
+      }
+    }
   }
 
   Future<void> evictPhoto(String photoId) async {
@@ -278,20 +309,6 @@ class HMBImageCache {
   // Internals
   // ---------------------------------------------------------------------------
 
-  Path _key(String id, ImageVariant v) => '$id|${v.name}';
-
-  String _variantPath(int photoId, ImageVariant v) {
-    final ext = switch (v) {
-      ImageVariant.general => 'webp',
-      ImageVariant.pdf => 'jpg',
-      ImageVariant.thumb => 'jpg',
-      ImageVariant.raw => 'orig',
-    };
-    return p.join(_cacheDir, '${_safe(photoId.toString())}__${v.name}.$ext');
-  }
-
-  String _safe(String s) => s.replaceAll(RegExp('[^A-Za-z0-9._-]'), '_');
-
   /// Get the path image associated with [key] if it exists
   /// in the cache.
   Future<Path?> _cachedIfExists(Key key) async {
@@ -311,62 +328,59 @@ class HMBImageCache {
     return null;
   }
 
-  Future<void> _backgroundCompress({
+  /// Uses an isolate to compress the file.
+  Future<void> _compressAsync({
     required Path src,
-    required Path dst,
-    required Key key,
-    required ImageVariant variant,
+    required Variant variant,
   }) async {
-    if (exists(dst)) {
+    if (exists(variant.cacheStoragePath)) {
       return;
     }
     final res = await compute(
       _config.compressor,
-      CompressJob(srcPath: src, dstPath: dst, variant: variant),
+      CompressJob(srcPath: src, variant: variant),
       debugLabel: 'Compress Image:$variant',
     );
-    if (res.success && exists(dst)) {
-      await _upsertEntry(key, p.basename(dst));
+    if (res.success && exists(variant.cacheStoragePath)) {
+      await _upsertEntry(variant);
       await _trimIfNeeded();
     }
   }
 
   Future<void> _compressSync({
     required Path src,
-    required Path dst,
-    required Key key,
-    required ImageVariant variant,
+    required Variant variant,
   }) async {
-    if (exists(dst)) {
-      await _upsertEntry(key, p.basename(dst));
+    if (exists(variant.cacheStoragePath)) {
+      await _upsertEntry(variant);
       return;
     }
     final res = await _config.compressor(
-      CompressJob(srcPath: src, dstPath: dst, variant: variant),
+      CompressJob(srcPath: src, variant: variant),
     );
-    if (res.success && exists(dst)) {
-      await _upsertEntry(key, p.basename(dst));
+    if (res.success && exists(variant.cacheStoragePath)) {
+      await _upsertEntry(variant);
       await _trimIfNeeded();
     }
   }
 
-  Future<void> _upsertEntry(Key key, String fileName) async {
-    final path = p.join(_cacheDir, fileName);
+  Future<void> _upsertEntry(Variant variant) async {
+    final path = variant.cacheStoragePath;
     final size = stat(path).size;
     final now = DateTime.now();
     final entry = _Entry(
-      key: key,
-      fileName: fileName,
+      key: variant.key,
+      fileName: variant.cacheStoragePath,
       size: size,
       lastAccess: now,
     );
-    final prev = _entries[key];
+    final prev = _entries[variant.key];
     if (prev != null) {
       _totalBytes -= prev.size;
     }
-    _entries[key] = entry;
+    _entries[variant.key] = entry;
     _totalBytes += size;
-    await _touch(key);
+    await _touch(variant.key);
   }
 
   Future<void> _touch(Key key) async {
@@ -377,6 +391,8 @@ class HMBImageCache {
     e.lastAccess = DateTime.now();
     await _saveIndex();
   }
+
+  /// TODO:(bsutton) remove raw images from cache first
 
   Future<void> _trimIfNeeded() async {
     if (_totalBytes <= _config.maxBytes) {
@@ -486,14 +502,11 @@ class HMBImageCache {
 
   /// Seeds/overrides the LRU lastAccess for a cached [variant] of [meta].
   /// No-op if the variant isn’t cached yet.
-  Future<void> setLastAccessForMeta({
-    required PhotoMeta meta,
-    required ImageVariant variant,
+  Future<void> setLastAccess({
+    required Variant variant,
     required DateTime when,
   }) async {
-    final photoId = meta.photo.id.toString();
-    final key = _key(photoId, variant);
-    final e = _entries[key];
+    final e = _entries[variant.key];
     if (e == null) {
       return; // not cached yet; caller may re-run later
     }

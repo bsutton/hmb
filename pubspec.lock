@@ -1645,7 +1645,7 @@ packages:
     source: hosted
     version: "0.28.0"
   scope:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: scope
       sha256: "0b056e5b64ca16a2db9e1eb35cf7fd05a9e99a6b15140f82bfa651d081e4819b"

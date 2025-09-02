@@ -17,12 +17,12 @@
 // you can wire in PhotoSyncService().download lookup helpers here.
 
 import 'package:dcli_core/dcli_core.dart';
-import 'package:path/path.dart' as p;
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../cache/hmb_image_cache.dart';
 import '../../cache/image_cache_config.dart';
 import '../../dao/dao_base.dart';
+import '../../dao/dao_photo.dart';
 import '../../entity/photo.dart';
 import '../../util/dart/photo_meta.dart';
 
@@ -34,14 +34,14 @@ import '../../util/dart/photo_meta.dart';
 /// Safe to re-run.
 Future<void> postv131Upgrade(Database db) async {
   final cache = HMBImageCache();
-  await cache.init((_, _, _) {
+  await cache.init((_) {
     throw StateError(
       '''
 This should never be called as each call for a variant provides its own downloader''',
     );
   }, (_) async => CompressResult('Should not be called', success: false));
 
-  final daoPhoto = DaoBase<Photo>.direct(db, 'photo', Photo.fromMap);
+  final daoPhoto = DaoPhoto();
   final photos = await daoPhoto.getAll();
 
   var migrated = 0;
@@ -58,45 +58,11 @@ This should never be called as each call for a variant provides its own download
         continue;
       }
 
+      final variantGeneral = Variant(meta, ImageVariant.general);
       // 1) Ensure GENERAL (display) variant is present.
       //    On first call this returns ORIGINAL path immediately and compresses
       //    WebP in background; subsequent runs will be a cache hit.
-      final generalPath = await cache.getVariantPathForMeta(
-        meta: meta,
-        variant: ImageVariant.general,
-        ensureOriginalAt: (m, dst) async {
-          // Migration: we already have the original locally; just copy it.
-          if (!exists(dst)) {
-            createDir(p.dirname(dst), recursive: true);
-            copy(m.absolutePathTo, dst);
-          }
-        },
-      );
-
-      // 2) Ensure THUMBNAIL variant (sync generation).
-      final thumbPath = await cache.getVariantPathForMeta(
-        meta: meta,
-        variant: ImageVariant.thumb,
-        ensureOriginalAt: (m, dst) async {
-          if (!exists(dst)) {
-            createDir(p.dirname(dst), recursive: true);
-            copy(m.absolutePathTo, dst);
-          }
-        },
-      );
-
-      // 3) Seed LRU using legacy file's modification time.
-      final mtime = stat(absPath).modified;
-      await cache.setLastAccessForMeta(
-        meta: meta,
-        variant: ImageVariant.general,
-        when: mtime,
-      );
-      await cache.setLastAccessForMeta(
-        meta: meta,
-        variant: ImageVariant.thumb,
-        when: mtime,
-      );
+      final generalPath = await cache.store(meta);
 
       // 4) Remove legacy thumbnail (if it exists) now that cache thumb exists.
       final legacyThumb = await meta.legacyThumbnailPathFor();

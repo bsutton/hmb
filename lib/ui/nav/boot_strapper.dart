@@ -27,6 +27,7 @@ import '../../api/accounting/no_op_accounting_adaptor.dart';
 import '../../api/accounting/xero_accounting_adaptor.dart';
 import '../../api/xero/handyman/app_starts_logging.dart';
 import '../../cache/hmb_image_cache.dart';
+import '../../cache/image_compressor.dart';
 import '../../dao/dao.g.dart';
 import '../../dao/dao_notifications.dart';
 import '../../database/factory/factory.g.dart';
@@ -149,8 +150,12 @@ class BootStrapper {
 
   Future<void> initImageCache() async {
     await HMBImageCache().init(
-      (photoId, pathToCacheStorage, cloudStoragePath) => PhotoSyncService()
-          .download(photoId, pathToCacheStorage, cloudStoragePath),
+      (variant) async => PhotoSyncService().download(
+        variant.meta.photo.id,
+        variant.cacheStoragePath,
+        await variant.cloudStoragePath,
+      ),
+      ImageCompressor.run,
     );
   }
 
