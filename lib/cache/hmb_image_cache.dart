@@ -134,7 +134,8 @@ class HMBImageCache {
 
     // we need to actively upload images that havent' been synced.
 
-    // We need to find out why the index file is corrupt - are we better add this to the photo db.
+    // We need to find out why the index file is corrupt 
+    //  - are we better add this to the photo db.
 
     // We need to find out why we ended up with an empth cache
 
@@ -500,7 +501,7 @@ class HMBImageCache {
     await _trimIfNeeded();
   }
 
-  /// Seeds/overrides the LRU lastAccess for a cached [variant] of [meta].
+  /// Seeds/overrides the LRU lastAccess for a cached [variant].
   /// No-op if the variant isn’t cached yet.
   Future<void> setLastAccess({
     required Variant variant,

@@ -1,3 +1,5 @@
+// ignore_for_file: depend_on_referenced_packages
+
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
  All Rights Reserved.
@@ -31,7 +33,10 @@ void main() {
   Future<void> fakeDownloader(Variant v) async {
     /// we are run in an isolate
     final cache = HMBImageCache();
-    cache.init(downloader, compressor)
+    await cache.init(
+      (_) async {},
+      (_) async => CompressResult('OK', success: true),
+    );
     final raw = Variant(v.meta, ImageVariant.raw);
     final parent = p.dirname(raw.cacheStoragePath);
     if (!c.exists(parent)) {
@@ -370,11 +375,12 @@ Future<PhotoMeta> _metaFrom({
 class _FakePathProvider
     with t.Fake, MockPlatformInterfaceMixin
     implements PathProviderPlatform {
-  _FakePathProvider();
-
   // Create an isolated temp dir for the cache.
   final tempPath = c.createTempDir();
+
   final docPath = c.createTempDir();
+
+  _FakePathProvider();
 
   @override
   Future<String?> getTemporaryPath() async => tempPath;
