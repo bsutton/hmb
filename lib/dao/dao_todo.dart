@@ -12,38 +12,46 @@ class DaoToDo extends Dao<ToDo> {
     String? filter,
   }) async {
     final db = withoutTransaction();
-    final whereClause = StringBuffer('WHERE ');
+
+    final whereParts = <String>[];
     final args = <Object?>[];
 
-    if ((filter ?? '').trim().isNotEmpty) {
-      whereClause
-        ..write('title LIKE ?')
-        ..write(" AND '%?%")
-        ..write(' AND ');
+    // Optional case-insensitive text filter (matches title OR note).
+    final f = (filter ?? '').trim();
+    if (f.isNotEmpty) {
+      whereParts.add(
+        "(title LIKE '%' || ? || '%' COLLATE NOCASE "
+        "OR note LIKE '%' || ? || '%' COLLATE NOCASE)",
+      );
       args
-        ..add(filter)
-        ..add(filter);
+        ..add(f)
+        ..add(f);
     }
 
-    final state = status.name;
-    args.add(state);
-    whereClause.write(' status = ?');
+    // Required status filter
+    whereParts.add('status = ?');
+    args.add(status.name);
+
+    final whereSql = whereParts.isEmpty
+        ? ''
+        : 'WHERE ${whereParts.join(' AND ')}';
 
     // Derived ordering: overdue -> today -> upcoming -> none
     final sql =
         '''
-      SELECT * FROM to_do
-      $whereClause
-      ORDER BY
-        CASE
-          WHEN due_date IS NOT NULL AND datetime(due_date) < datetime('now') THEN 0
-          WHEN date(due_date) = date('now') THEN 1
-          WHEN due_date IS NOT NULL THEN 2
-          ELSE 3
-        END,
-        due_date ASC NULLS LAST,
-        modified_date DESC
-    ''';
+    SELECT * FROM to_do
+    $whereSql
+    ORDER BY
+      CASE
+        WHEN due_date IS NOT NULL AND datetime(due_date) < datetime('now') THEN 0
+        WHEN date(due_date) = date('now') THEN 1
+        WHEN due_date IS NOT NULL THEN 2
+        ELSE 3
+      END,
+      (due_date IS NULL),
+      due_date ASC,
+      modified_date DESC
+  ''';
 
     final rows = await db.rawQuery(sql, args);
     return rows.map(fromMap).toList();
