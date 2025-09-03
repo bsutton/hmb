@@ -294,14 +294,22 @@ class EntityListScreenState<T extends Entity<T>>
         Future.value(SurfaceElevation.e6.color),
     builder: (context, cardColor) => GestureDetector(
       onTap: () async {
-        // Navigate to the edit screen
-        final updatedEntity = await Navigator.push<T?>(
-          context,
-          MaterialPageRoute(builder: (context) => widget.onEdit(entity)),
-        );
-        // If user successfully saved or created a new entity
-        if (updatedEntity != null) {
-          _partialRefresh(updatedEntity);
+        /// make certain we have the latest version of the entity
+        /// becuase some action from the list card could have
+        /// changed it.
+        final currentEntity = await widget.dao.getById(entity.id);
+        if (context.mounted) {
+          // Navigate to the edit screen
+          final updatedEntity = await Navigator.push<T?>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => widget.onEdit(currentEntity),
+            ),
+          );
+          // If user successfully saved or created a new entity
+          if (updatedEntity != null) {
+            _partialRefresh(updatedEntity);
+          }
         }
       },
       child: Surface(
