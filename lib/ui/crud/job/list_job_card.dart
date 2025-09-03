@@ -80,7 +80,13 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
       children: [
         HMBCardHeading(customer?.name ?? 'Not Set'),
         _buildContactPoints(),
-        HMBJobSiteText(label: '', job: job),
+        HMBJobSiteText(
+          label: '',
+          job: job,
+          onMapClicked: () async {
+            await DaoJob().markActive(job.id);
+          },
+        ),
         HMBRow(
           children: [
             HMBText('Job #${job.id}', bold: true),

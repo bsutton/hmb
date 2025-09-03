@@ -26,7 +26,14 @@ class HMBSiteText extends StatelessWidget {
   final String label;
   final Site? site;
 
-  const HMBSiteText({required this.label, required this.site, super.key});
+  final void Function()? onMapClicked;
+
+  const HMBSiteText({
+    required this.label,
+    required this.site,
+    this.onMapClicked,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) => Row(
@@ -56,7 +63,7 @@ class HMBSiteText extends StatelessWidget {
           style: const TextStyle(color: HMBColors.textPrimary),
         ),
       ),
-      if (site != null) HMBMapIcon(site),
+      if (site != null) HMBMapIcon(site, onMapClicked: onMapClicked),
     ],
   );
 }
@@ -64,14 +71,22 @@ class HMBSiteText extends StatelessWidget {
 class HMBJobSiteText extends StatelessWidget {
   final String label;
   final Job? job;
+  final void Function()? onMapClicked;
 
-  const HMBJobSiteText({required this.label, required this.job, super.key});
+  const HMBJobSiteText({
+    required this.label,
+    required this.job,
+
+    this.onMapClicked,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
     waitingBuilder: (_) => const HMBPlaceHolder(height: 32),
     // ignore: discarded_futures
     future: DaoSite().getByJob(job),
-    builder: (context, site) => HMBSiteText(label: label, site: site),
+    builder: (context, site) =>
+        HMBSiteText(label: label, site: site, onMapClicked: onMapClicked),
   );
 }

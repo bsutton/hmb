@@ -390,7 +390,12 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
                     // Action icons row.
                     Row(
                       children: [
-                        HMBMapIcon(jobAndCustomer.site),
+                        HMBMapIcon(
+                          jobAndCustomer.site,
+                          onMapClicked: () async {
+                            await DaoJob().markActive(jobAndCustomer.job.id);
+                          },
+                        ),
                         HMBPhoneIcon(
                           jobAndCustomer.bestPhoneNo ?? '',
                           sourceContext: SourceContext(

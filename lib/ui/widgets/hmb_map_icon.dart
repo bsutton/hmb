@@ -23,7 +23,9 @@ import '../../util/flutter/google_maps.dart';
 class HMBMapIcon extends StatelessWidget {
   final Site? site;
 
-  const HMBMapIcon(this.site, {super.key});
+  final void Function()? onMapClicked;
+
+  const HMBMapIcon(this.site, {super.key, this.onMapClicked});
 
   @override
   Widget build(BuildContext context) {
@@ -48,18 +50,24 @@ class HMBMapIcon extends StatelessWidget {
           visualDensity: VisualDensity.compact,
           iconSize: 25,
           icon: const Icon(Icons.map),
-          onPressed: () => site == null
-              ? null
-              : unawaited(GoogleMaps.openMap(context, site!)),
+          onPressed: () {
+            if (site != null) {
+              unawaited(GoogleMaps.openMap(context, site!));
+              onMapClicked?.call();
+            }
+          },
           color: site != null && !site!.isEmpty() ? Colors.blue : Colors.grey,
           tooltip: 'Get Directions',
         ),
         IconButton(
           iconSize: 22,
           icon: const Icon(Icons.copy),
-          onPressed: () => Strings.isEmpty(address)
-              ? null
-              : unawaited(clipboardCopyTo(address)),
+          onPressed: () {
+            if (Strings.isNotEmpty(address)) {
+              unawaited(clipboardCopyTo(address));
+              onMapClicked?.call();
+            }
+          },
           color: Strings.isEmpty(address) ? Colors.grey : Colors.blue,
           tooltip: 'Copy Address to the Clipboard',
         ),
