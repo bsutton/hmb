@@ -468,7 +468,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   Future<TaskItem> forUpdate(TaskItem taskItem) async => taskItem.copyWith(
     description: _descriptionController.text,
     purpose: _purposeController.text,
-    itemType: June.getState(SelectedCheckListItemType.new).selected!,
+    itemType: June.getState(SelectedCheckListItemType.new).selected,
     estimatedMaterialUnitCost: MoneyEx.tryParse(
       _estimatedMaterialUnitCostController.text,
     ),
