@@ -99,6 +99,13 @@ class HmbApp extends StatelessWidget {
 }
 
 ThemeData get theme => ThemeData(
+  // swipe to go back on iOS
+  pageTransitionsTheme: const PageTransitionsTheme(
+    builders: {
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+    },
+  ),
   primaryColor: Colors.deepPurple,
   brightness: Brightness.dark, // This sets the overall theme brightness to dark
   scaffoldBackgroundColor: HMBColors.defaultBackground,
