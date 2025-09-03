@@ -99,6 +99,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
         (b) => b
           ..onEnter((_, _) => _updateJobStatus(job, JobStatus.awaitingPayment))
           ..on<PaymentReceived, ToBeScheduled>()
+          ..on<StartWork, InProgress>()
           ..on<ScheduleJob, Scheduled>()
           ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
@@ -126,6 +127,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<InProgress>(
         (b) => b
           ..onEnter((_, _) => _inProgress(job))
+          ..on<StartWork, InProgress>()
           ..on<CompleteJob, Completed>()
           ..on<PauseJob, OnHold>()
           ..on<RejectJob, Rejected>(),
