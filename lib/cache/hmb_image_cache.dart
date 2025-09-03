@@ -134,7 +134,7 @@ class HMBImageCache {
 
     // we need to actively upload images that havent' been synced.
 
-    // We need to find out why the index file is corrupt 
+    // We need to find out why the index file is corrupt
     //  - are we better add this to the photo db.
 
     // We need to find out why we ended up with an empth cache
@@ -393,7 +393,7 @@ class HMBImageCache {
     await _saveIndex();
   }
 
-  /// TODO:(bsutton) remove raw images from cache first
+  // TODO(bsutton): remove raw images from cache first
 
   Future<void> _trimIfNeeded() async {
     if (_totalBytes <= _config.maxBytes) {
