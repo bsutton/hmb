@@ -25,9 +25,10 @@ class MessageTemplateListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => EntityListScreen<MessageTemplate>(
-    pageTitle: 'SMS Templates',
+    entityNameSingular: 'SMS Template',
+    entityNamePlural: 'SMS Templates',
     dao: DaoMessageTemplate(),
-    title: (entity) => HMBTextHeadline2(entity.title),
+    listCardTitle: (entity) => HMBTextHeadline2(entity.title),
     // ignore: discarded_futures
     fetchList: (filter) => DaoMessageTemplate().getByFilter(filter),
     onEdit: (smsTemplate) =>

@@ -144,9 +144,10 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
 
   @override
   Widget build(BuildContext context) => EntityListScreen<Quote>(
-    pageTitle: 'Quotes',
+    entityNameSingular: 'Quote',
+    entityNamePlural: 'Quotes',
     dao: DaoQuote(),
-    title: (quote) => Text(
+    listCardTitle: (quote) => Text(
       'Quote #${quote.id} - Issued: ${formatDate(quote.createdDate)}',
       style: const TextStyle(fontWeight: FontWeight.bold),
     ),

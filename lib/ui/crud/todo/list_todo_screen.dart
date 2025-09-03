@@ -27,7 +27,8 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
   @override
   Widget build(BuildContext context) => EntityListScreen<ToDo>(
     key: entitListKey,
-    pageTitle: 'Todo',
+    entityNameSingular: 'To Do',
+    entityNamePlural: 'To Dos',
     dao: DaoToDo(),
     // Order: overdue first, then today, then upcoming.
     fetchList: _fetchTodos,
@@ -35,7 +36,7 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
     onFilterReset: () => toDoListStatusFilter = ToDoStatus.open,
     isFilterActive: () => toDoListStatusFilter == ToDoStatus.done,
     onEdit: (todo) => ToDoEditScreen(toDo: todo),
-    title: (todo) => Row(
+    listCardTitle: (todo) => Row(
       children: [
         Checkbox(
           value: todo.status == ToDoStatus.done,

@@ -56,11 +56,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
   @override
   Widget build(BuildContext context) => EntityListScreen<Invoice>(
-    title: (inv) => Text('Invoice #${inv.id}'),
-    // key: ValueKey<String?>(
-    //   '$filterText:${selectedJob?.id}:${selectedCustomer?.id}',
-    // ),
-    pageTitle: 'Invoices',
+    listCardTitle: (inv) => Text('Invoice #${inv.id}'),
+    entityNameSingular: 'Invoice',
+    entityNamePlural: 'Invoices',
     dao: DaoInvoice(),
     fetchList: (_) => _fetchFilteredInvoices(),
     onAdd: _createInvoice,

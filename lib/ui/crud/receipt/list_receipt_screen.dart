@@ -33,12 +33,13 @@ class ReceiptListScreen extends StatefulWidget {
 class _ReceiptListScreenState extends State<ReceiptListScreen> {
   @override
   Widget build(BuildContext context) => EntityListScreen<Receipt>(
-    pageTitle: 'Receipts',
+    entityNameSingular: 'Receipt',
+    entityNamePlural: 'Receipts',
     dao: DaoReceipt(),
     // ignore: discarded_futures
     fetchList: (_) => DaoReceipt().getByFilter(),
     onEdit: (receipt) => ReceiptEditScreen(receipt: receipt),
-    title: _getTitle,
+    listCardTitle: _getTitle,
     cardHeight: 480,
     listCard: (r) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,

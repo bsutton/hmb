@@ -24,9 +24,10 @@ class ManufacturerListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => EntityListScreen<Manufacturer>(
-    pageTitle: 'Manufacturers',
+    entityNameSingular: 'Manufacturer',
+    entityNamePlural: 'Manufacturers',
     dao: DaoManufacturer(),
-    title: (entity) => HMBTextHeadline2(entity.name),
+    listCardTitle: (entity) => HMBTextHeadline2(entity.name),
     // ignore: discarded_futures
     fetchList: (filter) => DaoManufacturer().getByFilter(filter),
     onEdit: (manufacturer) =>

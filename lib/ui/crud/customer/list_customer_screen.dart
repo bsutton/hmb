@@ -34,10 +34,11 @@ class CustomerListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => EntityListScreen<Customer>(
-    pageTitle: 'Customers',
+    entityNameSingular: 'Customer',
+    entityNamePlural: 'Customers',
 
     dao: DaoCustomer(),
-    title: (entity) => HMBCardHeading(entity.name),
+    listCardTitle: (entity) => HMBCardHeading(entity.name),
     // ignore: discarded_futures
     fetchList: (filter) => DaoCustomer().getByFilter(filter),
     onAdd: () => CustomerCreator.show(context),

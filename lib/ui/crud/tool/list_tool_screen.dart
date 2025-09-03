@@ -69,9 +69,10 @@ class _ToolListScreenState extends State<ToolListScreen> {
     ),
     body: EntityListScreen<Tool>(
       key: ValueKey(_refreshCounter),
-      pageTitle: 'Tools',
+      entityNameSingular: 'Tool',
+      entityNamePlural: 'Tools',
       dao: DaoTool(),
-      title: (entity) => HMBTextHeadline2(entity.name),
+      listCardTitle: (entity) => HMBTextHeadline2(entity.name),
       // ignore: discarded_futures
       fetchList: (filter) => DaoTool().getByFilter(filter),
       onEdit: (tool) => ToolEditScreen(tool: tool),

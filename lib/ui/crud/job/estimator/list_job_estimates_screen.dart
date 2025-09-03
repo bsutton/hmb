@@ -77,11 +77,12 @@ class _JobEstimatesListScreenState extends State<JobEstimatesListScreen> {
 
   @override
   Widget build(BuildContext context) => EntityListScreen<Job>(
-    pageTitle: 'Estimator',
+    entityNameSingular: 'Job',
+    entityNamePlural: 'Estimator',
     dao: DaoJob(), // dummy DAO just to meet API, not used
     fetchList: _fetchFiltered,
     showBackButton: widget.job != null,
-    title: (job) async =>
+    listCardTitle: (job) async =>
         HMBTextHeadline((await _getCustomer(job))?.name ?? 'Unknown'),
     listCard: (job) =>
         JobCard(job: job, onEstimatesUpdated: () => setState(() {})),

@@ -30,8 +30,10 @@ typedef BuildActionItems<T> = List<Widget> Function(T entity);
 
 /// A generic list screen with optional search/add and advanced filters.
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
-  final String pageTitle;
-  final FutureOr<Widget> Function(T entity) title;
+  final String entityNamePlural;
+  final String entityNameSingular;
+
+  final FutureOr<Widget> Function(T entity) listCardTitle;
   final Widget Function(T entity) listCard;
   final Future<T?> Function()? onAdd;
   final Future<bool> Function(T entity)? onDelete;
@@ -58,10 +60,11 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   final bool showBackButton;
 
   EntityListScreen({
+    required this.entityNamePlural,
+    required this.entityNameSingular,
+    required this.listCardTitle,
     required this.dao,
     required this.onEdit,
-    required this.pageTitle,
-    required this.title,
     required this.listCard,
     super.key,
 
@@ -118,7 +121,7 @@ class EntityListScreenState<T extends Entity<T>>
 
     buildActionItems = widget.buildActionItems ?? _noItems;
 
-    setAppTitle(widget.pageTitle);
+    setAppTitle(widget.entityNamePlural);
   }
 
   @override
@@ -243,7 +246,7 @@ class EntityListScreenState<T extends Entity<T>>
                 onPressed: () async {},
               ),
 
-              Text('to add ${widget.pageTitle}.'),
+              Text('to add ${widget.entityNamePlural}.'),
             ],
           ),
         );
@@ -252,7 +255,7 @@ class EntityListScreenState<T extends Entity<T>>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('No items found. Check the Filter '),
+              Text('No ${widget.entityNamePlural} found. Check the Filter '),
               HMBIconButton(
                 enabled: false,
                 size: HMBIconButtonSize.small,
@@ -280,7 +283,7 @@ class EntityListScreenState<T extends Entity<T>>
     onPressed: () async {
       await _confirmDelete(entity);
     },
-    hint: 'Delete',
+    hint: 'Delete this ${widget.entityNameSingular}',
   );
 
   Widget _buildCard(T entity) => FutureBuilderEx<Color>(
@@ -314,11 +317,11 @@ class EntityListScreenState<T extends Entity<T>>
                 Flexible(
                   child: FutureBuilderEx(
                     future:
-                        ((widget.title is Future)
+                        ((widget.listCardTitle is Future)
                                 // ignore: discarded_futures
-                                ? widget.title(entity)
+                                ? widget.listCardTitle(entity)
                                 // ignore: discarded_futures
-                                : Future.value(widget.title(entity)))
+                                : Future.value(widget.listCardTitle(entity)))
                             as Future<Widget>,
                     builder: (context, title) => title!,
                   ),
@@ -345,7 +348,8 @@ class EntityListScreenState<T extends Entity<T>>
     await askUserToContinue(
       context: context,
       title: 'Delete Confirmation',
-      message: 'Are you sure you want to delete this item?',
+      message:
+          'Are you sure you want to delete this ${widget.entityNameSingular}?',
       onConfirmed: () => _delete(entity),
     );
   }

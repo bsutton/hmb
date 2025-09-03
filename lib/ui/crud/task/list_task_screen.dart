@@ -61,12 +61,13 @@ class _TaskListScreenState extends State<TaskListScreen> {
       children: [
         Flexible(
           child: EntityListScreen<Task>(
+            entityNameSingular: 'Task',
+            entityNamePlural: 'Tasks',
             key: ValueKey(showCompleted),
-            pageTitle: 'Task',
             dao: DaoTask(),
             // ignore: discarded_futures
             fetchList: _fetchTasks,
-            title: (entity) => Text(entity.name),
+            listCardTitle: (entity) => Text(entity.name),
             filterSheetBuilder: (entity) => Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

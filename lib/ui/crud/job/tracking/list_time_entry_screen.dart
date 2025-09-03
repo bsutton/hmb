@@ -142,7 +142,8 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
       Expanded(
         child: EntityListScreen<TimeEntry>(
           key: _entityListKey,
-          pageTitle: 'Time Entries',
+          entityNameSingular: 'Time Entry',
+          entityNamePlural: 'Time Entries',
           dao: DaoTimeEntry(),
           fetchList: _fetchFiltered,
           filterSheetBuilder: _buildFilterSheet,
@@ -154,7 +155,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
               _taskFilter.taskId != null ||
               _selectedDate != null,
           cardHeight: 260,
-          title: (entry) => HMBTextLine(formatDate(entry.startTime)),
+          listCardTitle: (entry) => HMBTextLine(formatDate(entry.startTime)),
           onEdit: (entry) =>
               TimeEntryEditScreen(job: widget.job, timeEntry: entry),
           listCard: (entry) => FutureBuilderEx<_Details>(

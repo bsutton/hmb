@@ -60,12 +60,13 @@ class _JobListScreenState extends State<JobListScreen> {
         children: [
           Flexible(
             child: EntityListScreen<Job>(
+              entityNameSingular: 'Job',
+              entityNamePlural: JobListScreen.pageTitle,
               key: _entityListKey,
               dao: DaoJob(),
-              pageTitle: JobListScreen.pageTitle,
               onEdit: (job) => JobEditScreen(job: job),
               fetchList: _fetchJobs,
-              title: (job) => HMBCardTitle(job.summary),
+              listCardTitle: (job) => HMBCardTitle(job.summary),
               cardHeight: size.width < 456 ? 840 : 750,
               filterSheetBuilder: _buildFilterSheet,
               isFilterActive: () => _showOldJobs || _order != JobOrder.active,
