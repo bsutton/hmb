@@ -40,7 +40,7 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
     onEdit: (receipt) => ReceiptEditScreen(receipt: receipt),
     title: _getTitle,
     cardHeight: 480,
-    details: (r) => Column(
+    listCard: (r) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FutureBuilderEx(

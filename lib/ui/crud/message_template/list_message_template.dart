@@ -38,13 +38,13 @@ class MessageTemplateListScreen extends StatelessWidget {
     //     : const Center(
     //         child:
     //           HMBTextHeadline('You may not edit a System SMS Template')),
-    details: SmsTemplateDetails.new,
+    listCard: SmsTemplateDetails.new,
   );
 }
 
 class SmsTemplateDetails extends StatelessWidget {
   final MessageTemplate smsTemplate;
-  
+
   const SmsTemplateDetails(this.smsTemplate, {super.key});
 
   @override

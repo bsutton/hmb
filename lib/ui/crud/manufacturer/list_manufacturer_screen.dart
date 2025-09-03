@@ -31,7 +31,7 @@ class ManufacturerListScreen extends StatelessWidget {
     fetchList: (filter) => DaoManufacturer().getByFilter(filter),
     onEdit: (manufacturer) =>
         ManufacturerEditScreen(manufacturer: manufacturer),
-    details: (entity) {
+    listCard: (entity) {
       final manufacturer = entity;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,

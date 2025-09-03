@@ -157,7 +157,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
           title: (entry) => HMBTextLine(formatDate(entry.startTime)),
           onEdit: (entry) =>
               TimeEntryEditScreen(job: widget.job, timeEntry: entry),
-          details: (entry) => FutureBuilderEx<_Details>(
+          listCard: (entry) => FutureBuilderEx<_Details>(
             future: getDetails(entry),
             builder: (ctx, detail) =>
                 TimeEntryTile(timeEntry: entry, taskName: detail!.task.name),

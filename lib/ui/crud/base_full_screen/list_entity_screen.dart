@@ -32,7 +32,7 @@ typedef BuildActionItems<T> = List<Widget> Function(T entity);
 class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   final String pageTitle;
   final FutureOr<Widget> Function(T entity) title;
-  final Widget Function(T entity) details;
+  final Widget Function(T entity) listCard;
   final Future<T?> Function()? onAdd;
   final Future<bool> Function(T entity)? onDelete;
   final Widget Function(T? entity) onEdit;
@@ -62,7 +62,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     required this.onEdit,
     required this.pageTitle,
     required this.title,
-    required this.details,
+    required this.listCard,
     super.key,
 
     /// Only implement onAdd if you need to override the default
@@ -327,7 +327,7 @@ class EntityListScreenState<T extends Entity<T>>
               ],
             ),
             // Body (details)
-            Expanded(child: widget.details(entity)),
+            Expanded(child: widget.listCard(entity)),
           ],
         ),
       ),

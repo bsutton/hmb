@@ -51,7 +51,7 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
     background: (t) async => t.status == ToDoStatus.open && isOverdue(t.dueDate)
         ? SurfaceElevation.e6.color.withSafeOpacity(0.92)
         : SurfaceElevation.e6.color,
-    details: (t) => ListTodoCard(todo: t),
+    listCard: (t) => ListTodoCard(todo: t),
   );
 
   Future<List<ToDo>> _fetchTodos(String? filter) async {

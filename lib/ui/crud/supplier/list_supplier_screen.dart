@@ -38,7 +38,7 @@ class SupplierListScreen extends StatelessWidget {
     // ignore: discarded_futures
     fetchList: (filter) => DaoSupplier().getByFilter(filter),
     onEdit: (supplier) => SupplierEditScreen(supplier: supplier),
-    details: (entity) {
+    listCard: (entity) {
       final supplier = entity;
       return FutureBuilderEx(
         // ignore: discarded_futures

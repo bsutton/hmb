@@ -74,7 +74,7 @@ class _JobListScreenState extends State<JobListScreen> {
                 _order = JobOrder.active;
               },
               background: (job) async => job.status.getColour(),
-              details: (job) =>
+              listCard: (job) =>
                   ListJobCard(job: job, key: ValueKey(job.hashCode)),
               buildActionItems: _buildActionItems,
             ),

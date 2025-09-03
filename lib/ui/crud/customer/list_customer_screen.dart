@@ -40,9 +40,9 @@ class CustomerListScreen extends StatelessWidget {
     title: (entity) => HMBCardHeading(entity.name),
     // ignore: discarded_futures
     fetchList: (filter) => DaoCustomer().getByFilter(filter),
-    onAdd: ()  => CustomerCreator.show(context),
+    onAdd: () => CustomerCreator.show(context),
     onEdit: (customer) => CustomerEditScreen(customer: customer),
-    details: (entity) {
+    listCard: (entity) {
       final customer = entity;
       return FutureBuilderEx(
         waitingBuilder: (context) => const HMBPlaceHolder(height: 145),

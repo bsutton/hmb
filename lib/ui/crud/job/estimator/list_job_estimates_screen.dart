@@ -82,7 +82,7 @@ class _JobEstimatesListScreenState extends State<JobEstimatesListScreen> {
     showBackButton: widget.job != null,
     title: (job) async =>
         HMBTextHeadline((await _getCustomer(job))?.name ?? 'Unknown'),
-    details: (job) =>
+    listCard: (job) =>
         JobCard(job: job, onEstimatesUpdated: () => setState(() {})),
 
     cardHeight: 370,

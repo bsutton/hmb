@@ -76,7 +76,7 @@ class _ToolListScreenState extends State<ToolListScreen> {
       fetchList: (filter) => DaoTool().getByFilter(filter),
       onEdit: (tool) => ToolEditScreen(tool: tool),
       cardHeight: 470,
-      details: (entity) {
+      listCard: (entity) {
         final tool = entity;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -92,7 +92,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
             onDelete: onDelete,
 
             // ignore: discarded_futures
-            details: _buildFullTasksDetails,
+            listCard: _buildFullTasksDetails,
             // : _buildTaskSummary(task),
           ),
         ),
