@@ -211,7 +211,7 @@ class DaoQuote extends Dao<Quote> {
     }
 
     // Finalize
-    final updated = quote.copyWith(id: quoteId, totalAmount: totalAmount);
+    final updated = quote.copyWith(totalAmount: totalAmount);
     await update(updated);
     return updated;
   }

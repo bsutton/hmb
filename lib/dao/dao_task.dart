@@ -334,9 +334,9 @@ WHERE ti.id = ?
   Future<void> markRejected(int taskId) async {
     final task = await getById(taskId);
 
-    task?.status = TaskStatus.cancelled;
+    final updateTask = task?.copyWith(status: TaskStatus.cancelled);
 
-    await update(task!);
+    await update(updateTask!);
   }
 
   Future<bool> isTaskBilled({
@@ -421,8 +421,8 @@ WHERE ti.id = ?
       TaskStatus.cancelled => task.status,
     };
 
-    task.status = status;
-    await update(task);
+    final updatedTask = task.copyWith(status: status);
+    await update(updatedTask);
   }
 }
 

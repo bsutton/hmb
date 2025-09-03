@@ -191,8 +191,7 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
   );
 
   @override
-  Future<ToDo> forUpdate(ToDo entity) async => ToDo.forUpdate(
-    entity: entity,
+  Future<ToDo> forUpdate(ToDo entity) async => entity.copyWith(
     title: _title.text,
     note: _note.text.trim().isEmpty ? null : _note.text,
     priority: _priority,

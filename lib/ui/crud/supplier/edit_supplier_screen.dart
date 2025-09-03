@@ -138,8 +138,7 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
   );
 
   @override
-  Future<Supplier> forUpdate(Supplier supplier) async => Supplier.forUpdate(
-    entity: supplier,
+  Future<Supplier> forUpdate(Supplier supplier) async => supplier.copyWith(
     name: _nameController.text,
     businessNumber: _businessNumberController.text,
     description: _descriptionController.text,

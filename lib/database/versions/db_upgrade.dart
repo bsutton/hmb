@@ -98,9 +98,6 @@ final upgradeActions = <int, Future<void> Function(Database)>{
 Future<void> insertVersion(Database db, Version version) async {
   // We didn't have a version table before v71.
   if (version.dbVersion > 71) {
-    version
-      ..createdDate = DateTime.now()
-      ..modifiedDate = DateTime.now();
     final id = await db.insert('version', version.toMap()..remove('id'));
     version.id = id;
   }

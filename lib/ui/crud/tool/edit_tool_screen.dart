@@ -280,8 +280,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
   @override
   Future<Tool> forUpdate(Tool tool) async {
     await _photoController.save();
-    return Tool.forUpdate(
-      entity: tool,
+    return tool.copyWith(
       name: _nameController.text,
       categoryId: selectedCategory.categoryId,
       description: _descriptionController.text,

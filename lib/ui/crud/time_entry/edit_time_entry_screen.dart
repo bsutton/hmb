@@ -228,10 +228,9 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
   );
 
   @override
-  Future<TimeEntry> forUpdate(TimeEntry timeEntry) async => TimeEntry.forUpdate(
-    entity: timeEntry,
+  Future<TimeEntry> forUpdate(TimeEntry timeEntry) async => timeEntry.copyWith(
     taskId: widget.task.id,
-    startTime: _parseDateTime(_startTimeController.text)!,
+    startTime: _parseDateTime(_startTimeController.text),
     endTime: _endTimeController.text.isNotEmpty
         ? _parseDateTime(_endTimeController.text)
         : null,

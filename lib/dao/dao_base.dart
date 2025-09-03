@@ -32,8 +32,7 @@ class DaoBase<T extends Entity<T>> {
     String tableName,
     T Function(Map<String, dynamic> map) fromMap,
   ) {
-    final dao = DaoBase<T>(tableName, db, (_, _) {})
-      .._fromMap = fromMap;
+    final dao = DaoBase<T>(tableName, db, (_, _) {}).._fromMap = fromMap;
     return dao;
   }
 
@@ -45,9 +44,6 @@ class DaoBase<T extends Entity<T>> {
   /// Updating the passed in entity so that it has the assigned id.
   Future<int> insert(covariant T entity, [Transaction? transaction]) async {
     final executor = transaction ?? db;
-    entity
-      ..createdDate = DateTime.now()
-      ..modifiedDate = DateTime.now();
     final id = await executor.insert(tablename, entity.toMap()..remove('id'));
     entity.id = id;
 

@@ -322,11 +322,10 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
   );
 
   @override
-  Future<TimeEntry> forUpdate(TimeEntry timeEntry) async => TimeEntry.forUpdate(
-    entity: timeEntry,
+  Future<TimeEntry> forUpdate(TimeEntry timeEntry) async => timeEntry.copyWith(
     taskId: _selectedTask!.id,
     supplierId: _selectedSupplier.selected,
-    startTime: _combine(_startDateController.text, _startTimeController.text)!,
+    startTime: _combine(_startDateController.text, _startTimeController.text),
     endTime: _combine(_endDateController.text, _endTimeController.text),
     note: _noteController.text,
   );

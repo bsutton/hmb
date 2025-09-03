@@ -59,10 +59,7 @@ Future<Invoice> createFixedPriceInvoice(
   await DaoInvoiceLine().insert(invoiceLine);
 
   // Update the invoice total amount
-  final updatedInvoice = invoice.copyWith(
-    id: invoiceId,
-    totalAmount: totalAmount,
-  );
+  final updatedInvoice = invoice.copyWith(totalAmount: totalAmount);
   await DaoInvoice().update(updatedInvoice);
 
   return updatedInvoice;
@@ -103,5 +100,5 @@ Future<Invoice> createInvoiceFromMilestone(
 
   await DaoInvoiceLine().insert(invoiceLine);
 
-  return invoice.copyWith(id: invoiceId);
+  return invoice;
 }

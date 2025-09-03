@@ -52,19 +52,15 @@ void main() {
 }
 
 // Keep your helper consistent with your entity shape.
-Job _getJob() => Job(
-  id: 1,
+Job _getJob() => Job.forInsert(
   customerId: 1,
   summary: 'summary',
   description: 'description',
-  assumption: '',
   siteId: 1,
   contactId: 1,
   status: JobStatus.awaitingApproval,
   hourlyRate: MoneyEx.zero,
   bookingFee: MoneyEx.zero,
   lastActive: true,
-  createdDate: DateTime.now(),
-  modifiedDate: DateTime.now(),
   billingContactId: 1,
-);
+)..id = 1;

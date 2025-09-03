@@ -12,13 +12,10 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:meta/meta.dart';
-
-@immutable
 abstract class Entity<T extends Entity<T>> {
-  final int id;
+  int id;
+  DateTime modifiedDate;
   final DateTime createdDate;
-  final DateTime modifiedDate;
 
   Entity({required this.id, DateTime? createdDate, DateTime? modifiedDate})
     : createdDate = createdDate ?? DateTime.now(),

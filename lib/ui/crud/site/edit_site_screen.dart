@@ -137,8 +137,7 @@ class _SiteEditScreenState extends State<SiteEditScreen>
   }
 
   @override
-  Future<Site> forUpdate(Site site) async => Site.forUpdate(
-    entity: site,
+  Future<Site> forUpdate(Site site) async => site.copyWith(
     addressLine1: _addressLine1Controller.text,
     addressLine2: _addressLine2Controller.text,
     suburb: _suburbController.text,

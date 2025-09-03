@@ -165,8 +165,7 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
             }
 
             final note = noteController.text;
-            final timeEntry = TimeEntry.forUpdate(
-              entity: widget.timeEntry,
+            final timeEntry = widget.timeEntry.copyWith(
               taskId: widget.task.id,
               startTime: widget.timeEntry.startTime,
               endTime: stopDateTime,

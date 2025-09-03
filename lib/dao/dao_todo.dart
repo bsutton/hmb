@@ -51,8 +51,7 @@ class DaoToDo extends Dao<ToDo> {
 
   Future<void> toggleDone(ToDo t) async {
     final updated = t.status == ToDoStatus.done
-        ? ToDo.forUpdate(
-            entity: t,
+        ? t.copyWith(
             title: t.title,
             status: ToDoStatus.open,
             priority: t.priority,
@@ -62,8 +61,7 @@ class DaoToDo extends Dao<ToDo> {
             parentType: t.parentType,
             parentId: t.parentId,
           )
-        : ToDo.forUpdate(
-            entity: t,
+        : t.copyWith(
             title: t.title,
             status: ToDoStatus.done,
             priority: t.priority,
@@ -79,8 +77,7 @@ class DaoToDo extends Dao<ToDo> {
   Future<void> snooze(ToDo t, Duration by) async {
     final due = (t.dueDate ?? DateTime.now()).add(by);
     final remind = t.remindAt?.add(by);
-    final u = ToDo.forUpdate(
-      entity: t,
+    final u = t.copyWith(
       title: t.title,
       status: t.status,
       priority: t.priority,

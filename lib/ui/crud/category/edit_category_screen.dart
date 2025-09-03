@@ -75,8 +75,7 @@ class _CategoryEditScreenState extends State<CategoryEditScreen>
   );
 
   @override
-  Future<Category> forUpdate(Category category) async => Category.forUpdate(
-    entity: category,
+  Future<Category> forUpdate(Category category) async => category.copyWith(
     name: _nameController.text,
     description: _descriptionController.text,
   );

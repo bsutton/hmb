@@ -62,13 +62,11 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
   );
 
   @override
-  Future<WorkAssignment> forUpdate(WorkAssignment e) async =>
-      WorkAssignment.forUpdate(
-        entity: e,
-        jobId: e.jobId,
-        supplierId: _selectedSupplier!,
-        contactId: _selectedContact!,
-      );
+  Future<WorkAssignment> forUpdate(WorkAssignment e) async => e.copyWith(
+    jobId: e.jobId,
+    supplierId: _selectedSupplier,
+    contactId: _selectedContact,
+  );
   @override
   Future<void> postSave(Transaction transaction, Operation operation) async {
     final dao = DaoWorkAssignmentTask();

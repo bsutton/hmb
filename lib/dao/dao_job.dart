@@ -607,34 +607,28 @@ where q.id=?
 
     // Use withinTransaction so everything is atomic
     return withTransaction((transaction) async {
-      final now = DateTime.now();
-
       // 1. Insert new job
-      final inserted =
-          Job.forInsert(
-              customerId: job.customerId,
-              summary: summary,
-              description: job.description,
-              assumption: job.assumption,
-              siteId: job.siteId,
-              contactId: job.contactId,
-              status: newJobStatus ?? JobStatus.startingStatus,
-              hourlyRate: job.hourlyRate,
-              bookingFee: job.bookingFee,
-              billingContactId: job.billingContactId,
-              billingType: job.billingType,
-            )
-            ..lastActive = true
-            ..createdDate = now
-            ..modifiedDate = now;
+      final inserted = Job.forInsert(
+        customerId: job.customerId,
+        summary: summary,
+        description: job.description,
+        assumption: job.assumption,
+        siteId: job.siteId,
+        contactId: job.contactId,
+        status: newJobStatus ?? JobStatus.startingStatus,
+        hourlyRate: job.hourlyRate,
+        bookingFee: job.bookingFee,
+        billingContactId: job.billingContactId,
+        billingType: job.billingType,
+        lastActive: true,
+      );
 
       final newJobId = await insert(inserted, transaction);
       final newJob = (await getById(newJobId, transaction))!;
 
       // 2. Move tasks by updating jobId
       for (final t in tasksToMove) {
-        final moved = Task.forUpdate(
-          entity: t,
+        final moved = t.copyWith(
           jobId: newJobId,
           name: t.name,
           description: t.description,

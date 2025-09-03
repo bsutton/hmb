@@ -90,8 +90,7 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
 
   @override
   Future<Manufacturer> forUpdate(Manufacturer manufacturer) async =>
-      Manufacturer.forUpdate(
-        entity: manufacturer,
+      manufacturer.copyWith(
         name: _nameController.text,
         description: _descriptionController.text,
       );

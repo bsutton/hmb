@@ -148,8 +148,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   );
 
   @override
-  Future<Contact> forUpdate(Contact contact) async => Contact.forUpdate(
-    entity: contact,
+  Future<Contact> forUpdate(Contact contact) async => contact.copyWith(
     firstName: _firstNameController.text,
     surname: _surnameController.text,
     mobileNumber: _mobileNumberController.text,

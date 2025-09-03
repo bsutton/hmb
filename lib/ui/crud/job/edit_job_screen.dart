@@ -222,8 +222,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   String _activityDisplay(JobActivity e) => formatDateTimeAM(e.start);
 
   @override
-  Future<Job> forUpdate(Job job) async => Job.forUpdate(
-    entity: job,
+  Future<Job> forUpdate(Job job) async => job.copyWith(
     customerId: June.getState(SelectedCustomer.new).customerId,
     summary: _summaryController.text,
     description: jsonEncode(_descriptionController.document),

@@ -195,13 +195,12 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   @override
   Future<Task> forUpdate(Task task) async {
     await _photoController.save();
-    return Task.forUpdate(
-      entity: task,
+    return task.copyWith(
       jobId: widget.job.id,
       name: _nameController.text,
       description: _descriptionController.text,
       assumption: _assumptionController.text,
-      status: June.getState(SelectedTaskStatus.new).taskStatus!,
+      status: June.getState(SelectedTaskStatus.new).taskStatus,
     );
   }
 

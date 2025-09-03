@@ -187,11 +187,9 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
   );
 
   @override
-  Future<Receipt> forUpdate(Receipt receipt) async => Receipt.forUpdate(
-    entity: receipt,
-    receiptDate: _date,
-    jobId: _selectedJob.jobId!,
-    supplierId: _supplierId!,
+  Future<Receipt> forUpdate(Receipt receipt) async => receipt.copyWith(
+    jobId: _selectedJob.jobId,
+    supplierId: _supplierId,
     totalExcludingTax: MoneyEx.tryParse(_totalExclCtrl.text),
     tax: MoneyEx.tryParse(_taxCtrl.text),
     totalIncludingTax: MoneyEx.tryParse(_totalInclCtrl.text),

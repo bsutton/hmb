@@ -92,7 +92,6 @@ Future<Invoice> createTimeAndMaterialsInvoice(
 
   // Update the invoice total amount
   final updatedInvoice = invoice.copyWith(
-    id: invoiceId,
     totalAmount: totalAmount,
   );
   await DaoInvoice().update(updatedInvoice);

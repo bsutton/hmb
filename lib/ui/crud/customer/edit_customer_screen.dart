@@ -188,8 +188,7 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
   );
 
   @override
-  Future<Customer> forUpdate(Customer customer) async => Customer.forUpdate(
-    entity: customer,
+  Future<Customer> forUpdate(Customer customer) async => customer.copyWith(
     name: _nameController.text,
     description: _descriptionController.text,
     disbarred: _disbarred,

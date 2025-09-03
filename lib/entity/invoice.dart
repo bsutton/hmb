@@ -58,6 +58,7 @@ class Invoice extends Entity<Invoice> {
     this.sent = false,
   }) : super.forInsert();
 
+  @override
   Invoice copyWith({
     int? jobId,
     Money? totalAmount,
