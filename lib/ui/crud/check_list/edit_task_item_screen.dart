@@ -465,9 +465,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   }
 
   @override
-  Future<TaskItem> forUpdate(TaskItem taskItem) async => TaskItem.forUpdate(
-    existing: taskItem,
-    taskId: taskItem.taskId,
+  Future<TaskItem> forUpdate(TaskItem taskItem) async => taskItem.copyWith(
     description: _descriptionController.text,
     purpose: _purposeController.text,
     itemType: June.getState(SelectedCheckListItemType.new).selected!,
@@ -485,7 +483,6 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
         : null,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
-    completed: taskItem.completed,
     billed: false,
     labourEntryMode: _labourEntryMode,
     measurementType: June.getState(
