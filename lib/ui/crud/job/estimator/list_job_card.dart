@@ -25,7 +25,6 @@ import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/text/hmb_text_themes.dart';
 import '../../../widgets/widgets.g.dart';
 import '../full_page_list_job_card.dart';
-import 'edit_job_estimate_screen.dart';
 
 class JobCard extends StatefulWidget {
   final Job job;
@@ -77,21 +76,6 @@ class _JobCardState extends State<JobCard> {
           const HMBSpacer(height: true),
           Row(
             children: [
-              HMBButton(
-                label: 'Update Estimates',
-                hint: 'Add/Edit labour and materials costs to Job',
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (context) =>
-                          JobEstimateBuilderScreen(job: widget.job),
-                    ),
-                  );
-                  // After returning, refresh totals
-                  widget.onEstimatesUpdated();
-                },
-              ),
-              const HMBSpacer(width: true),
               HMBButton(
                 label: 'Create Quote',
                 hint: 'Create a Fixed price Quote based on your Estimates',

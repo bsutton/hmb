@@ -25,6 +25,7 @@ import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
 import '../../../../util/dart/money_ex.dart';
+import '../../../dialog/hmb_ask_user_to_continue.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_icon_button.dart';
 import '../../../widgets/hmb_search.dart';
@@ -163,10 +164,17 @@ class _JobEstimateBuilderScreenState
   }
 
   Future<void> _deleteTask(Task task) async {
-    await DaoTask().delete(task.id);
-    _tasks.removeWhere((t) => t.id == task.id);
-    await _calculateTotals();
-    setState(() {});
+    await askUserToContinue(
+      context: context,
+      title: 'Delete Task',
+      message: "Are you sure you want to delete '${task.name}'",
+      onConfirmed: () async {
+        await DaoTask().delete(task.id);
+        _tasks.removeWhere((t) => t.id == task.id);
+        await _calculateTotals();
+        setState(() {});
+      },
+    );
   }
 
   @override
@@ -251,7 +259,7 @@ class _JobEstimateBuilderScreenState
                 icon: const Icon(Icons.delete, color: Colors.red),
                 onPressed: () => _deleteTask(task),
                 showBackground: false,
-                hint: 'Delete Job',
+                hint: 'Delete Task',
               ),
               onTap: () => unawaited(_editTask(task)),
             ),
@@ -363,9 +371,17 @@ class _JobEstimateBuilderScreenState
   }
 
   Future<void> _deleteItem(TaskItem item) async {
-    await DaoTaskItem().delete(item.id);
-    await _calculateTotals();
-    setState(() {});
+    await askUserToContinue(
+      context: context,
+      title: 'Delete Estimate',
+      message:
+          "Are you sure you want to delete Task Item '${item.description}'",
+      onConfirmed: () async {
+        await DaoTaskItem().delete(item.id);
+        await _calculateTotals();
+        setState(() {});
+      },
+    );
   }
 
   Future<TaskAndRate> getTaskAndRate(Task? task) async {

@@ -18,7 +18,8 @@ import '../../../../entity/entity.g.dart';
 import '../../../../util/flutter/app_title.dart';
 import '../../../widgets/text/text.g.dart';
 import '../../base_full_screen/base_full_screen.g.dart';
-import 'job_card.dart';
+import 'edit_job_estimate_screen.dart';
+import 'list_job_card.dart';
 
 class JobEstimatesListScreen extends StatefulWidget {
   final Job? job;
@@ -92,10 +93,7 @@ class _JobEstimatesListScreenState extends State<JobEstimatesListScreen> {
       _onlyShowQutableJobs = false;
     },
     canAdd: false,
-    onEdit: (job) => JobCard(
-      job: job!,
-      onEstimatesUpdated: () => setState(() {}),
-    ), // no edit screen
+    onEdit: (job) => JobEstimateBuilderScreen(job: job!),
   );
 
   Widget _buildFilterSheet(void Function() onChange) => Column(

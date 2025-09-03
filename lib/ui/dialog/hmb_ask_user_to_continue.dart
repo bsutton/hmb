@@ -18,9 +18,9 @@ import '../widgets/hmb_button.dart';
 
 Future<void> askUserToContinue({
   required BuildContext context,
-  required AsyncVoidCallback onConfirmed,
   required String title,
   required String message,
+  required AsyncVoidCallback onConfirmed,
   String noLabel = 'No',
   String yesLabel = 'Yes',
 }) async {

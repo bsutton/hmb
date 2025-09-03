@@ -5,5 +5,5 @@
 // https://onepub.dev
 //
 export 'edit_job_estimate_screen.dart';
-export 'job_card.dart';
+export 'list_job_card.dart';
 export 'list_job_estimates_screen.dart';
