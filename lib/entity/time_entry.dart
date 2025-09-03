@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -11,6 +12,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+// lib/src/entity/time_entry.dart
 import 'package:money2/money2.dart';
 
 import 'entity.dart';
@@ -74,26 +76,7 @@ class TimeEntry extends Entity<TimeEntry> {
     this.supplierId,
   }) : super.forInsert();
 
-  /// Update an existing entry (modifiedDate set by DB)
-  TimeEntry.forUpdate({
-    required super.entity,
-    required this.taskId,
-    required this.startTime,
-    this.endTime,
-    this.note,
-    this.billed = false,
-    this.supplierId,
-  }) : super.forUpdate();
-
-  Duration get duration {
-    final end = endTime ?? DateTime.now();
-    return end.difference(startTime);
-  }
-
-  Fixed get hours => Fixed.fromNum(duration.inMinutes / 60);
-
   TimeEntry copyWith({
-    int? id,
     int? taskId,
     DateTime? startTime,
     DateTime? endTime,
@@ -101,10 +84,8 @@ class TimeEntry extends Entity<TimeEntry> {
     bool? billed,
     int? invoiceLineId,
     int? supplierId,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
   }) => TimeEntry(
-    id: id ?? this.id,
+    id: id,
     taskId: taskId ?? this.taskId,
     startTime: startTime ?? this.startTime,
     endTime: endTime ?? this.endTime,
@@ -112,9 +93,16 @@ class TimeEntry extends Entity<TimeEntry> {
     billed: billed ?? this.billed,
     invoiceLineId: invoiceLineId ?? this.invoiceLineId,
     supplierId: supplierId ?? this.supplierId,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
   );
+
+  Duration get duration {
+    final end = endTime ?? DateTime.now();
+    return end.difference(startTime);
+  }
+
+  Fixed get hours => Fixed.fromNum(duration.inMinutes / 60);
 
   @override
   Map<String, dynamic> toMap() => {
@@ -132,10 +120,10 @@ class TimeEntry extends Entity<TimeEntry> {
 
   /// Did this current entry's endTime fall in the last quarter hour?
   /// An entry that is still running or was stopped in the future
-  ///  is considered to be in the last quarter hour.
+  /// is considered to be in the last quarter hour.
   /// We do allow entries to be stopped in the future but only
-  /// within the next fifteen minutes - as we bill in fifteen minutes blocks
-  /// or part there of.
+  /// within the next fifteen minutes - as we bill in fifteen minutes
+  /// blocks or part thereof.
   bool recentlyStopped(DateTime now) =>
       endTime == null || now.difference(endTime!).inMinutes.abs() <= 15;
 

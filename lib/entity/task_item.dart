@@ -194,6 +194,72 @@ class TaskItem extends Entity<TaskItem> {
     );
   }
 
+  /// Copy method
+  TaskItem copyWith({
+    int? taskId,
+    String? description,
+    TaskItemType? itemType,
+    Money? estimatedMaterialUnitCost,
+    Fixed? estimatedMaterialQuantity,
+    Fixed? estimatedLabourHours,
+    Money? estimatedLabourCost,
+    Percentage? margin,
+    Money? charge,
+    bool? chargeSet,
+    bool? completed,
+    bool? billed,
+    int? invoiceLineId,
+    MeasurementType? measurementType,
+    Fixed? dimension1,
+    Fixed? dimension2,
+    Fixed? dimension3,
+    Units? units,
+    String? url,
+    String? purpose,
+    int? supplierId,
+    LabourEntryMode? labourEntryMode,
+    Money? actualMaterialUnitCost,
+    Fixed? actualMaterialQuantity,
+    Money? actualCost,
+    int? sourceTaskItemId,
+    bool? isReturn,
+  }) => TaskItem._(
+    id: id,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+    taskId: taskId ?? this.taskId,
+    description: description ?? this.description,
+    purpose: purpose ?? this.purpose,
+    itemType: itemType ?? this.itemType,
+    estimatedMaterialUnitCost:
+        estimatedMaterialUnitCost ?? this.estimatedMaterialUnitCost,
+    estimatedLabourHours: estimatedLabourHours ?? this.estimatedLabourHours,
+    estimatedMaterialQuantity:
+        estimatedMaterialQuantity ?? this.estimatedMaterialQuantity,
+    estimatedLabourCost: estimatedLabourCost ?? this.estimatedLabourCost,
+    charge: charge ?? _charge,
+    chargeSet: chargeSet ?? this.chargeSet,
+    margin: margin ?? this.margin,
+    completed: completed ?? this.completed,
+    billed: billed ?? this.billed,
+    invoiceLineId: invoiceLineId ?? this.invoiceLineId,
+    measurementType: measurementType ?? this.measurementType,
+    dimension1: dimension1 ?? this.dimension1,
+    dimension2: dimension2 ?? this.dimension2,
+    dimension3: dimension3 ?? this.dimension3,
+    units: units ?? this.units,
+    supplierId: supplierId ?? this.supplierId,
+    labourEntryMode: labourEntryMode ?? this.labourEntryMode,
+    url: url ?? this.url,
+    actualMaterialUnitCost:
+        actualMaterialUnitCost ?? this.actualMaterialUnitCost,
+    actualMaterialQuantity:
+        actualMaterialQuantity ?? this.actualMaterialQuantity,
+    actualCost: actualCost ?? this.actualCost,
+    sourceTaskItemId: sourceTaskItemId ?? this.sourceTaskItemId,
+    isReturn: isReturn ?? this.isReturn,
+  );
+
   /// Parse from database map
   factory TaskItem.fromMap(Map<String, dynamic> map) => TaskItem._(
     id: map['id'] as int,
@@ -408,72 +474,6 @@ class TaskItem extends Entity<TaskItem> {
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
-
-  /// Copy method
-  TaskItem copyWith({
-    int? taskId,
-    String? description,
-    TaskItemType? itemType,
-    Money? estimatedMaterialUnitCost,
-    Fixed? estimatedMaterialQuantity,
-    Fixed? estimatedLabourHours,
-    Money? estimatedLabourCost,
-    Percentage? margin,
-    Money? charge,
-    bool? chargeSet,
-    bool? completed,
-    bool? billed,
-    int? invoiceLineId,
-    MeasurementType? measurementType,
-    Fixed? dimension1,
-    Fixed? dimension2,
-    Fixed? dimension3, 
-    Units? units,
-    String? url,
-    String? purpose,
-    int? supplierId,
-    LabourEntryMode? labourEntryMode,
-    Money? actualMaterialUnitCost,
-    Fixed? actualMaterialQuantity,
-    Money? actualCost,
-    int? sourceTaskItemId,
-    bool? isReturn,
-  }) => TaskItem._(
-    id: id,
-    createdDate: createdDate,
-    modifiedDate: DateTime.now(),
-    taskId: taskId ?? this.taskId,
-    description: description ?? this.description,
-    purpose: purpose ?? this.purpose,
-    itemType: itemType ?? this.itemType,
-    estimatedMaterialUnitCost:
-        estimatedMaterialUnitCost ?? this.estimatedMaterialUnitCost,
-    estimatedLabourHours: estimatedLabourHours ?? this.estimatedLabourHours,
-    estimatedMaterialQuantity:
-        estimatedMaterialQuantity ?? this.estimatedMaterialQuantity,
-    estimatedLabourCost: estimatedLabourCost ?? this.estimatedLabourCost,
-    charge: charge ?? _charge,
-    chargeSet: chargeSet ?? this.chargeSet,
-    margin: margin ?? this.margin,
-    completed: completed ?? this.completed,
-    billed: billed ?? this.billed,
-    invoiceLineId: invoiceLineId ?? this.invoiceLineId,
-    measurementType: measurementType ?? this.measurementType,
-    dimension1: dimension1 ?? this.dimension1,
-    dimension2: dimension2 ?? this.dimension2,
-    dimension3: dimension3 ?? this.dimension3,
-    units: units ?? this.units,
-    supplierId: supplierId ?? this.supplierId,
-    labourEntryMode: labourEntryMode ?? this.labourEntryMode,
-    url: url ?? this.url,
-    actualMaterialUnitCost:
-        actualMaterialUnitCost ?? this.actualMaterialUnitCost,
-    actualMaterialQuantity:
-        actualMaterialQuantity ?? this.actualMaterialQuantity,
-    actualCost: actualCost ?? this.actualCost,
-    sourceTaskItemId: sourceTaskItemId ?? this.sourceTaskItemId,
-    isReturn: isReturn ?? this.isReturn,
-  );
 
   /// We are returning an purchased item to the store.
   /// Build a brand-new “return” record linked back to this original.

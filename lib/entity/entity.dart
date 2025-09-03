@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -11,41 +12,36 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-abstract class Entity<T> {
-  int id;
-  DateTime createdDate;
-  DateTime modifiedDate;
+import 'package:meta/meta.dart';
 
-  Entity({
-    required this.id,
-    required this.createdDate,
-    required this.modifiedDate,
-  });
+@immutable
+abstract class Entity<T extends Entity<T>> {
+  final int id;
+  final DateTime createdDate;
+  final DateTime modifiedDate;
+
+  Entity({required this.id, DateTime? createdDate, DateTime? modifiedDate})
+    : createdDate = createdDate ?? DateTime.now(),
+      modifiedDate = modifiedDate ?? DateTime.now();
+
+  // For new rows
   Entity.forInsert()
     : id = -1,
       createdDate = DateTime.now(),
       modifiedDate = DateTime.now();
 
-  Entity.forUpdate({required Entity<T> entity})
-    : id = entity.id,
-      createdDate = entity.createdDate,
-      modifiedDate = DateTime.now();
+  Map<String, Object?> toMap();
 
   @override
-  // ignore: avoid_equals_and_hash_code_on_mutable_classes
   bool operator ==(covariant Entity<T> other) {
-    if (identical(this, other) ||
-        other.id == id &&
-            other.createdDate == createdDate &&
-            other.modifiedDate == modifiedDate) {
+    if (identical(this, other)) {
       return true;
     }
-    return false;
+    return other.id == id &&
+        other.createdDate == createdDate &&
+        other.modifiedDate == modifiedDate;
   }
 
   @override
-  // ignore: avoid_equals_and_hash_code_on_mutable_classes
   int get hashCode => Object.hash(id, createdDate, modifiedDate);
-
-  Map<String, Object?> toMap();
 }

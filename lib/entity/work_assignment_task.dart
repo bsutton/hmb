@@ -19,7 +19,7 @@ class WorkAssignmentTask extends Entity<WorkAssignmentTask> {
   int assignmentId;
   int taskId;
 
-  WorkAssignmentTask({
+  WorkAssignmentTask._({
     required super.id,
     required this.assignmentId,
     required this.taskId,
@@ -32,14 +32,17 @@ class WorkAssignmentTask extends Entity<WorkAssignmentTask> {
     required this.taskId,
   }) : super.forInsert();
 
-  WorkAssignmentTask.forUpdate({
-    required super.entity,
-    required this.assignmentId,
-    required this.taskId,
-  }) : super.forUpdate();
+  WorkAssignmentTask copyWith({int? assignmentId, int? taskId}) =>
+      WorkAssignmentTask._(
+        id: id,
+        assignmentId: assignmentId ?? this.assignmentId,
+        taskId: taskId ?? this.taskId,
+        createdDate: createdDate,
+        modifiedDate: DateTime.now(),
+      );
 
   factory WorkAssignmentTask.fromMap(Map<String, dynamic> map) =>
-      WorkAssignmentTask(
+      WorkAssignmentTask._(
         id: map['id'] as int,
         assignmentId: map['assignment_id'] as int,
         taskId: map['task_id'] as int,

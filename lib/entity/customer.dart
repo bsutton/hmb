@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -55,15 +56,24 @@ class Customer extends Entity<Customer> {
     required this.billingContactId,
   }) : super.forInsert();
 
-  Customer.forUpdate({
-    required super.entity,
-    required this.name,
-    required this.description,
-    required this.disbarred,
-    required this.customerType,
-    required this.hourlyRate,
-    required this.billingContactId,
-  }) : super.forUpdate();
+  Customer copyWith({
+    String? name,
+    String? description,
+    bool? disbarred,
+    CustomerType? customerType,
+    Money? hourlyRate,
+    int? billingContactId,
+  }) => Customer(
+    id: id,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    disbarred: disbarred ?? this.disbarred,
+    customerType: customerType ?? this.customerType,
+    hourlyRate: hourlyRate ?? this.hourlyRate,
+    billingContactId: billingContactId ?? this.billingContactId,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory Customer.fromMap(Map<String, dynamic> map) => Customer(
     id: map['id'] as int,
@@ -75,29 +85,6 @@ class Customer extends Entity<Customer> {
     customerType: CustomerType.values[map['customerType'] as int],
     hourlyRate: MoneyEx.fromInt(map['default_hourly_rate'] as int?),
     billingContactId: map['billing_contact_id'] as int?,
-  );
-
-  /// Returns a copy of this [Customer] with the given fields replaced.
-  Customer copyWith({
-    int? id,
-    String? name,
-    String? description,
-    bool? disbarred,
-    CustomerType? customerType,
-    Money? hourlyRate,
-    int? billingContactId,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
-  }) => Customer(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    description: description ?? this.description,
-    disbarred: disbarred ?? this.disbarred,
-    customerType: customerType ?? this.customerType,
-    hourlyRate: hourlyRate ?? this.hourlyRate,
-    billingContactId: billingContactId ?? this.billingContactId,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
   );
 
   @override

@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -42,7 +43,7 @@ class Quote extends Entity<Quote> {
   DateTime? dateApproved;
   int? billingContactId;
 
-  Quote({
+  Quote._({
     required super.id,
     required this.jobId,
     required this.totalAmount,
@@ -53,7 +54,6 @@ class Quote extends Entity<Quote> {
     required this.state,
     this.externalQuoteId,
     this.dateSent,
-
     this.dateApproved,
     this.billingContactId,
   }) : super();
@@ -70,20 +70,32 @@ class Quote extends Entity<Quote> {
     this.billingContactId,
   }) : super.forInsert();
 
-  Quote.forUpdate({
-    required super.entity,
-    required this.jobId,
-    required this.totalAmount,
-    required this.assumption,
-    required this.quoteNum,
-    required this.state,
-    this.externalQuoteId,
-    this.dateSent,
-    this.dateApproved,
-    this.billingContactId,
-  }) : super.forUpdate();
+  Quote copyWith({
+    int? jobId,
+    String? assumption,
+    Money? totalAmount,
+    String? quoteNum,
+    String? externalQuoteId,
+    QuoteState? state,
+    DateTime? dateSent,
+    DateTime? dateApproved,
+    int? billingContactId,
+  }) => Quote._(
+    id: id,
+    jobId: jobId ?? this.jobId,
+    assumption: assumption ?? this.assumption,
+    totalAmount: totalAmount ?? this.totalAmount,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+    quoteNum: quoteNum ?? this.quoteNum,
+    externalQuoteId: externalQuoteId ?? this.externalQuoteId,
+    state: state ?? this.state,
+    dateSent: dateSent ?? this.dateSent,
+    dateApproved: dateApproved ?? this.dateApproved,
+    billingContactId: billingContactId ?? this.billingContactId,
+  );
 
-  factory Quote.fromMap(Map<String, dynamic> map) => Quote(
+  factory Quote.fromMap(Map<String, dynamic> map) => Quote._(
     id: map['id'] as int,
     jobId: map['job_id'] as int,
     totalAmount: Money.fromInt(map['total_amount'] as int, isoCode: 'AUD'),
@@ -103,34 +115,6 @@ class Quote extends Entity<Quote> {
   );
 
   String get bestNumber => externalQuoteId ?? quoteNum ?? '$id';
-
-  Quote copyWith({
-    int? id,
-    int? jobId,
-    String? assumption,
-    Money? totalAmount,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
-    String? quoteNum,
-    String? externalQuoteId,
-    QuoteState? state,
-    DateTime? dateSent,
-    DateTime? dateApproved,
-    int? billingContactId,
-  }) => Quote(
-    id: id ?? this.id,
-    jobId: jobId ?? this.jobId,
-    assumption: assumption ?? this.assumption,
-    totalAmount: totalAmount ?? this.totalAmount,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
-    quoteNum: quoteNum ?? this.quoteNum,
-    externalQuoteId: externalQuoteId ?? this.externalQuoteId,
-    state: state ?? this.state,
-    dateSent: dateSent ?? this.dateSent,
-    dateApproved: dateApproved ?? this.dateApproved,
-    billingContactId: billingContactId ?? this.billingContactId,
-  );
 
   @override
   Map<String, dynamic> toMap() => {

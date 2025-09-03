@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -49,21 +50,22 @@ class WorkAssignment extends Entity<WorkAssignment> {
     required this.supplierId,
     required this.contactId,
     this.status = WorkAssignmentStatus.unsent,
-  }) : super.forInsert() {
-    createdDate = DateTime.now();
-    modifiedDate = DateTime.now();
-  }
+  }) : super.forInsert();
 
-  WorkAssignment.forUpdate({
-    required super.entity,
-    required this.jobId,
-    required this.supplierId,
-    required this.contactId,
+  WorkAssignment copyWith({
+    int? jobId,
+    int? supplierId,
+    int? contactId,
     WorkAssignmentStatus? status,
-  }) : status = status ?? (entity as WorkAssignment).status,
-       super.forUpdate() {
-    modifiedDate = DateTime.now();
-  }
+  }) => WorkAssignment(
+    id: id,
+    jobId: jobId ?? this.jobId,
+    supplierId: supplierId ?? this.supplierId,
+    contactId: contactId ?? this.contactId,
+    status: status ?? this.status,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory WorkAssignment.fromMap(Map<String, dynamic> m) => WorkAssignment(
     id: m['id'] as int,

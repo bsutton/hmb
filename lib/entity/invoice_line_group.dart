@@ -19,7 +19,7 @@ class InvoiceLineGroup extends Entity<InvoiceLineGroup> {
   int invoiceId;
   String name;
 
-  InvoiceLineGroup({
+  InvoiceLineGroup._({
     required super.id,
     required this.invoiceId,
     required this.name,
@@ -30,34 +30,23 @@ class InvoiceLineGroup extends Entity<InvoiceLineGroup> {
   InvoiceLineGroup.forInsert({required this.invoiceId, required this.name})
     : super.forInsert();
 
-  InvoiceLineGroup.forUpdate({
-    required super.entity,
-    required this.invoiceId,
-    required this.name,
-  }) : super.forUpdate();
+  InvoiceLineGroup copyWith({int? invoiceId, String? name}) =>
+      InvoiceLineGroup._(
+        id: id,
+        invoiceId: invoiceId ?? this.invoiceId,
+        name: name ?? this.name,
+        createdDate: createdDate,
+        modifiedDate: DateTime.now(),
+      );
 
   factory InvoiceLineGroup.fromMap(Map<String, dynamic> map) =>
-      InvoiceLineGroup(
+      InvoiceLineGroup._(
         id: map['id'] as int,
         invoiceId: map['invoice_id'] as int,
         name: map['name'] as String,
         createdDate: DateTime.parse(map['created_date'] as String),
         modifiedDate: DateTime.parse(map['modified_date'] as String),
       );
-
-  InvoiceLineGroup copyWith({
-    int? id,
-    int? invoiceId,
-    String? name,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
-  }) => InvoiceLineGroup(
-    id: id ?? this.id,
-    invoiceId: invoiceId ?? this.invoiceId,
-    name: name ?? this.name,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
-  );
 
   @override
   Map<String, dynamic> toMap() => {

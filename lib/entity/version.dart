@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -28,11 +29,13 @@ class Version extends Entity<Version> {
   Version.forInsert({required this.dbVersion, required this.codeVersion})
     : super.forInsert();
 
-  Version.forUpdate({
-    required super.entity,
-    required this.dbVersion,
-    required this.codeVersion,
-  }) : super.forUpdate();
+  Version copyWith({int? dbVersion, String? codeVersion}) => Version(
+    id: id,
+    dbVersion: dbVersion ?? this.dbVersion,
+    codeVersion: codeVersion ?? this.codeVersion,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory Version.fromMap(Map<String, dynamic> map) => Version(
     id: map['id'] as int,

@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -45,15 +46,24 @@ class Receipt extends Entity<Receipt> {
     required this.totalIncludingTax,
   }) : super.forInsert();
 
-  Receipt.forUpdate({
-    required super.entity,
-    required this.receiptDate,
-    required this.jobId,
-    required this.supplierId,
-    required this.totalExcludingTax,
-    required this.tax,
-    required this.totalIncludingTax,
-  }) : super.forUpdate();
+  Receipt copyWith({
+    DateTime? receiptDate,
+    int? jobId,
+    int? supplierId,
+    Money? totalExcludingTax,
+    Money? tax,
+    Money? totalIncludingTax,
+  }) => Receipt(
+    id: id,
+    receiptDate: receiptDate ?? this.receiptDate,
+    jobId: jobId ?? this.jobId,
+    supplierId: supplierId ?? this.supplierId,
+    totalExcludingTax: totalExcludingTax ?? this.totalExcludingTax,
+    tax: tax ?? this.tax,
+    totalIncludingTax: totalIncludingTax ?? this.totalIncludingTax,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory Receipt.fromMap(Map<String, dynamic> map) => Receipt(
     id: map['id'] as int,

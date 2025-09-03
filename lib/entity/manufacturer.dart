@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -39,14 +40,22 @@ class Manufacturer extends Entity<Manufacturer> {
     this.address,
   }) : super.forInsert();
 
-  Manufacturer.forUpdate({
-    required super.entity,
-    required this.name,
-    this.description,
-    this.contactNumber,
-    this.email,
-    this.address,
-  }) : super.forUpdate();
+  Manufacturer copyWith({
+    String? name,
+    String? description,
+    String? contactNumber,
+    String? email,
+    String? address,
+  }) => Manufacturer(
+    id: id,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    contactNumber: contactNumber ?? this.contactNumber,
+    email: email ?? this.email,
+    address: address ?? this.address,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory Manufacturer.fromMap(Map<String, dynamic> map) => Manufacturer(
     id: map['id'] as int,

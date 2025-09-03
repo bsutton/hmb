@@ -60,16 +60,26 @@ class Photo extends Entity<Photo> {
     this.lastBackupDate,
   }) : super.forInsert();
 
-  Photo.forUpdate({
-    required super.entity,
-    required this.parentId,
-    required this.parentType,
-    required this.filename,
-    required this.comment,
-    this.pathToCloudStorage,
-    this.pathVersion,
-    this.lastBackupDate,
-  }) : super.forUpdate();
+  Photo copyWith({
+    int? parentId,
+    ParentType? parentType,
+    String? filename,
+    String? comment,
+    String? pathToCloudStorage,
+    int? pathVersion,
+    DateTime? lastBackupDate,
+  }) => Photo(
+    id: id,
+    parentId: parentId ?? this.parentId,
+    parentType: parentType ?? this.parentType,
+    filename: filename ?? this.filename,
+    comment: comment ?? this.comment,
+    lastBackupDate: lastBackupDate ?? this.lastBackupDate,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+    pathToCloudStorage: pathToCloudStorage ?? this.pathToCloudStorage,
+    pathVersion: pathVersion ?? this.pathVersion,
+  );
 
   factory Photo.fromMap(Map<String, dynamic> map) => Photo(
     id: map['id'] as int,

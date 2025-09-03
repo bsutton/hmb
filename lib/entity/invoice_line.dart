@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -27,7 +28,6 @@ enum LineChargeableStatus {
   noChargeHidden('No Charge and Hidden');
 
   const LineChargeableStatus(this.description);
-
   final String description;
 }
 
@@ -66,17 +66,28 @@ class InvoiceLine extends Entity<InvoiceLine> {
     this.fromBookingFee = false,
   }) : super.forInsert();
 
-  InvoiceLine.forUpdate({
-    required super.entity,
-    required this.invoiceId,
-    required this.description,
-    required this.quantity,
-    required this.unitPrice,
-    required this.lineTotal,
-    required this.invoiceLineGroupId,
-    this.status = LineChargeableStatus.normal,
-    this.fromBookingFee = false,
-  }) : super.forUpdate();
+  InvoiceLine copyWith({
+    int? invoiceId,
+    int? invoiceLineGroupId,
+    String? description,
+    Fixed? quantity,
+    Money? unitPrice,
+    Money? lineTotal,
+    LineChargeableStatus? status,
+    bool? fromBookingFee,
+  }) => InvoiceLine(
+    id: id,
+    invoiceId: invoiceId ?? this.invoiceId,
+    invoiceLineGroupId: invoiceLineGroupId ?? this.invoiceLineGroupId,
+    description: description ?? this.description,
+    quantity: quantity ?? this.quantity,
+    unitPrice: unitPrice ?? this.unitPrice,
+    lineTotal: lineTotal ?? this.lineTotal,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+    status: status ?? this.status,
+    fromBookingFee: fromBookingFee ?? this.fromBookingFee,
+  );
 
   factory InvoiceLine.fromMap(Map<String, dynamic> map) => InvoiceLine(
     id: map['id'] as int,
@@ -91,32 +102,6 @@ class InvoiceLine extends Entity<InvoiceLine> {
     status: LineChargeableStatus
         .values[map['status'] as int? ?? LineChargeableStatus.normal.index],
     fromBookingFee: map['from_booking_fee'] == 1,
-  );
-
-  InvoiceLine copyWith({
-    int? id,
-    int? invoiceId,
-    int? invoiceLineGroupId,
-    String? description,
-    Fixed? quantity,
-    Money? unitPrice,
-    Money? lineTotal,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
-    LineChargeableStatus? status,
-    bool? fromBookingFee,
-  }) => InvoiceLine(
-    id: id ?? this.id,
-    invoiceId: invoiceId ?? this.invoiceId,
-    invoiceLineGroupId: invoiceLineGroupId ?? this.invoiceLineGroupId,
-    description: description ?? this.description,
-    quantity: quantity ?? this.quantity,
-    unitPrice: unitPrice ?? this.unitPrice,
-    lineTotal: lineTotal ?? this.lineTotal,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
-    status: status ?? this.status,
-    fromBookingFee: fromBookingFee ?? this.fromBookingFee,
   );
 
   @override

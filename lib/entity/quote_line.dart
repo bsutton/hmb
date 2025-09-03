@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -50,16 +51,26 @@ class QuoteLine extends Entity<QuoteLine> {
     this.lineChargeableStatus = LineChargeableStatus.normal,
   }) : super.forInsert();
 
-  QuoteLine.forUpdate({
-    required super.entity,
-    required this.quoteId,
-    required this.description,
-    required this.quantity,
-    required this.unitCharge,
-    required this.lineTotal,
-    this.quoteLineGroupId,
-    this.lineChargeableStatus = LineChargeableStatus.normal,
-  }) : super.forUpdate();
+  QuoteLine copyWith({
+    int? quoteId,
+    int? quoteLineGroupId,
+    String? description,
+    Fixed? quantity,
+    Money? unitCharge,
+    Money? lineTotal,
+    LineChargeableStatus? lineChargeableStatus,
+  }) => QuoteLine(
+    id: id,
+    quoteId: quoteId ?? this.quoteId,
+    quoteLineGroupId: quoteLineGroupId ?? this.quoteLineGroupId,
+    description: description ?? this.description,
+    quantity: quantity ?? this.quantity,
+    unitCharge: unitCharge ?? this.unitCharge,
+    lineTotal: lineTotal ?? this.lineTotal,
+    lineChargeableStatus: lineChargeableStatus ?? this.lineChargeableStatus,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory QuoteLine.fromMap(Map<String, dynamic> map) => QuoteLine(
     id: map['id'] as int,
@@ -74,30 +85,6 @@ class QuoteLine extends Entity<QuoteLine> {
     ),
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
-  );
-
-  QuoteLine copyWith({
-    int? id,
-    int? quoteId,
-    int? quoteLineGroupId,
-    String? description,
-    Fixed? quantity,
-    Money? unitCharge,
-    Money? lineTotal,
-    LineChargeableStatus? lineChargeableStatus,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
-  }) => QuoteLine(
-    id: id ?? this.id,
-    quoteId: quoteId ?? this.quoteId,
-    quoteLineGroupId: quoteLineGroupId ?? this.quoteLineGroupId,
-    description: description ?? this.description,
-    quantity: quantity ?? this.quantity,
-    unitCharge: unitCharge ?? this.unitCharge,
-    lineTotal: lineTotal ?? this.lineTotal,
-    lineChargeableStatus: lineChargeableStatus ?? this.lineChargeableStatus,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
   );
 
   @override

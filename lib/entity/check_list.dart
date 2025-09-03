@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -41,12 +42,18 @@ class CheckList extends Entity<CheckList> {
     required this.listType,
   }) : super.forInsert();
 
-  CheckList.forUpdate({
-    required super.entity,
-    required this.name,
-    required this.description,
-    required this.listType,
-  }) : super.forUpdate();
+  CheckList copyWith({
+    String? name,
+    String? description,
+    CheckListType? listType,
+  }) => CheckList(
+    id: id,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    listType: listType ?? this.listType,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory CheckList.fromMap(Map<String, dynamic> map) => CheckList(
     id: map['id'] as int,

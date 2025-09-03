@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -44,15 +45,24 @@ class Supplier extends Entity<Supplier> {
     required this.service,
   }) : super.forInsert();
 
-  Supplier.forUpdate({
-    required super.entity,
-    required this.name,
-    required this.businessNumber,
-    required this.description,
-    required this.bsb,
-    required this.accountNumber,
-    required this.service,
-  }) : super.forUpdate();
+  Supplier copyWith({
+    String? name,
+    String? businessNumber,
+    String? description,
+    String? bsb,
+    String? accountNumber,
+    String? service,
+  }) => Supplier(
+    id: id,
+    name: name ?? this.name,
+    businessNumber: businessNumber ?? this.businessNumber,
+    description: description ?? this.description,
+    bsb: bsb ?? this.bsb,
+    accountNumber: accountNumber ?? this.accountNumber,
+    service: service ?? this.service,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory Supplier.fromMap(Map<String, dynamic> map) => Supplier(
     id: map['id'] as int,

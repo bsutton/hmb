@@ -52,6 +52,33 @@ class Milestone extends Entity<Milestone> {
     this.edited = false,
   }) : super.forInsert();
 
+  Milestone copyWith({
+    int? id,
+    int? quoteId,
+    int? invoiceId,
+    int? milestoneNumber,
+    Money? paymentAmount,
+    Percentage? paymentPercentage,
+    String? milestoneDescription,
+    LocalDate? dueDate,
+    bool? edited,
+    DateTime? createdDate,
+    DateTime? modifiedDate,
+  }) => Milestone(
+    id: id ?? this.id,
+    quoteId: quoteId ?? this.quoteId,
+    invoiceId: invoiceId ?? this.invoiceId,
+    milestoneNumber: milestoneNumber ?? this.milestoneNumber,
+    paymentAmount: paymentAmount?.twoDigits() ?? this.paymentAmount,
+    paymentPercentage:
+        paymentPercentage?.copyWith(decimalDigits: 2) ?? this.paymentPercentage,
+    milestoneDescription: milestoneDescription ?? this.milestoneDescription,
+    dueDate: dueDate ?? this.dueDate,
+    edited: edited ?? this.edited,
+    createdDate: createdDate ?? this.createdDate,
+    modifiedDate: modifiedDate ?? this.modifiedDate,
+  );
+
   factory Milestone.fromMap(Map<String, dynamic> map) => Milestone(
     id: map['id'] as int,
     quoteId: map['quote_id'] as int,
@@ -86,33 +113,6 @@ class Milestone extends Entity<Milestone> {
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
-
-  Milestone copyWith({
-    int? id,
-    int? quoteId,
-    int? invoiceId,
-    int? milestoneNumber,
-    Money? paymentAmount,
-    Percentage? paymentPercentage,
-    String? milestoneDescription,
-    LocalDate? dueDate,
-    bool? edited,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
-  }) => Milestone(
-    id: id ?? this.id,
-    quoteId: quoteId ?? this.quoteId,
-    invoiceId: invoiceId ?? this.invoiceId,
-    milestoneNumber: milestoneNumber ?? this.milestoneNumber,
-    paymentAmount: paymentAmount?.twoDigits() ?? this.paymentAmount,
-    paymentPercentage:
-        paymentPercentage?.copyWith(decimalDigits: 2) ?? this.paymentPercentage,
-    milestoneDescription: milestoneDescription ?? this.milestoneDescription,
-    dueDate: dueDate ?? this.dueDate,
-    edited: edited ?? this.edited,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
-  );
 
   int get hash => Object.hash(
     id,

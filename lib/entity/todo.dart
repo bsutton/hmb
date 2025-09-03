@@ -1,8 +1,9 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
- Note: This software is licensed under the GNU General Public License, with
- the following exceptions:
+ Note: This software is licensed under the GNU General Public License,
+ with the following exceptions:
    • Permitted for internal use within your own business or organization only.
    • Any external distribution, resale, or incorporation into products for
      third parties is strictly prohibited.
@@ -66,18 +67,30 @@ class ToDo extends Entity<ToDo> {
   }) : completedDate = null,
        super.forInsert();
 
-  ToDo.forUpdate({
-    required ToDo entity,
-    required this.title,
-    required this.status,
-    required this.priority,
-    this.note,
-    this.dueDate,
-    this.remindAt,
-    this.parentType,
-    this.parentId,
-    this.completedDate,
-  }) : super.forUpdate(entity: entity);
+  ToDo copyWith({
+    String? title,
+    String? note,
+    DateTime? dueDate,
+    DateTime? remindAt,
+    ToDoPriority? priority,
+    ToDoStatus? status,
+    ToDoParentType? parentType,
+    int? parentId,
+    DateTime? completedDate,
+  }) => ToDo(
+    id: id,
+    title: title ?? this.title,
+    note: note ?? this.note,
+    dueDate: dueDate ?? this.dueDate,
+    remindAt: remindAt ?? this.remindAt,
+    priority: priority ?? this.priority,
+    status: status ?? this.status,
+    parentType: parentType ?? this.parentType,
+    parentId: parentId ?? this.parentId,
+    completedDate: completedDate ?? this.completedDate,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory ToDo.fromMap(Map<String, dynamic> map) => ToDo(
     id: map['id'] as int,

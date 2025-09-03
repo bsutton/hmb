@@ -39,7 +39,7 @@ class Job extends Entity<Job> {
   bool bookingFeeInvoiced;
   int? billingContactId;
 
-  Job({
+  Job._({
     required super.id,
     required this.customerId,
     required this.summary,
@@ -74,24 +74,40 @@ class Job extends Entity<Job> {
     this.bookingFeeInvoiced = false,
   }) : super.forInsert();
 
-  Job.forUpdate({
-    required super.entity,
-    required this.customerId,
-    required this.summary,
-    required this.description,
-    required this.assumption,
-    required this.siteId,
-    required this.contactId,
-    required this.status,
-    required this.hourlyRate,
-    required this.bookingFee,
-    required this.billingContactId,
-    required this.bookingFeeInvoiced,
-    this.lastActive = false,
-    this.billingType = BillingType.timeAndMaterial,
-  }) : super.forUpdate();
+  Job copyWith({
+    int? customerId,
+    String? summary,
+    String? description,
+    String? assumption,
+    int? siteId,
+    int? contactId,
+    JobStatus? status,
+    Money? hourlyRate,
+    Money? bookingFee,
+    bool? lastActive,
+    BillingType? billingType,
+    bool? bookingFeeInvoiced,
+    int? billingContactId,
+  }) => Job._(
+    id: id,
+    customerId: customerId ?? this.customerId,
+    summary: summary ?? this.summary,
+    description: description ?? this.description,
+    assumption: assumption ?? this.assumption,
+    siteId: siteId ?? this.siteId,
+    contactId: contactId ?? this.contactId,
+    status: status ?? this.status,
+    hourlyRate: hourlyRate ?? this.hourlyRate,
+    bookingFee: bookingFee ?? this.bookingFee,
+    billingContactId: billingContactId ?? this.billingContactId,
+    lastActive: lastActive ?? this.lastActive,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+    billingType: billingType ?? this.billingType,
+    bookingFeeInvoiced: bookingFeeInvoiced ?? this.bookingFeeInvoiced,
+  );
 
-  factory Job.fromMap(Map<String, dynamic> map) => Job(
+  factory Job.fromMap(Map<String, dynamic> map) => Job._(
     id: map['id'] as int,
     customerId: map['customer_id'] as int?,
     summary: map['summary'] as String,

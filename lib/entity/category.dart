@@ -28,11 +28,13 @@ class Category extends Entity<Category> {
   Category.forInsert({required this.name, this.description})
     : super.forInsert();
 
-  Category.forUpdate({
-    required Category entity,
-    required this.name,
-    this.description,
-  }) : super.forUpdate(entity: entity);
+  Category copyWith({String? name, String? description}) => Category(
+    id: id,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory Category.fromMap(Map<String, dynamic> map) => Category(
     id: map['id'] as int,
@@ -41,7 +43,6 @@ class Category extends Entity<Category> {
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
-
 
   @override
   Map<String, dynamic> toMap() => {

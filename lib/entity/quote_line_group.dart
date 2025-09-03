@@ -24,7 +24,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
   String assumption;
   LineApprovalStatus lineApprovalStatus;
 
-  QuoteLineGroup({
+  QuoteLineGroup._({
     required super.id,
     required this.quoteId,
     required this.taskId,
@@ -43,16 +43,24 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     this.lineApprovalStatus = LineApprovalStatus.preApproval,
   }) : super.forInsert();
 
-  QuoteLineGroup.forUpdate({
-    required super.entity,
-    required this.quoteId,
-    required this.taskId,
-    required this.name,
-    required this.assumption,
-    this.lineApprovalStatus = LineApprovalStatus.preApproval,
-  }) : super.forUpdate();
+  QuoteLineGroup copyWith({
+    int? quoteId,
+    int? taskId,
+    String? name,
+    String? assumption,
+    LineApprovalStatus? lineApprovalStatus,
+  }) => QuoteLineGroup._(
+    id: id,
+    quoteId: quoteId ?? this.quoteId,
+    taskId: taskId ?? this.taskId,
+    name: name ?? this.name,
+    assumption: assumption ?? this.assumption,
+    lineApprovalStatus: lineApprovalStatus ?? this.lineApprovalStatus,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
-  factory QuoteLineGroup.fromMap(Map<String, dynamic> map) => QuoteLineGroup(
+  factory QuoteLineGroup.fromMap(Map<String, dynamic> map) => QuoteLineGroup._(
     id: map['id'] as int,
     quoteId: map['quote_id'] as int,
     taskId: map['task_id'] as int?,
@@ -61,29 +69,8 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     lineApprovalStatus: LineApprovalStatus.values.byName(
       map['line_approval_status'] as String,
     ),
-
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
-  );
-
-  QuoteLineGroup copyWith({
-    int? id,
-    int? quoteId,
-    int? taskId,
-    String? name,
-    String? assumption,
-    LineApprovalStatus? lineApprovalStatus,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
-  }) => QuoteLineGroup(
-    id: id ?? this.id,
-    quoteId: quoteId ?? this.quoteId,
-    taskId: taskId ?? this.taskId,
-    name: name ?? this.name,
-    assumption: assumption ?? this.assumption,
-    lineApprovalStatus: lineApprovalStatus ?? this.lineApprovalStatus,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
   );
 
   @override

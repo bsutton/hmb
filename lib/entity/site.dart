@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -25,7 +26,7 @@ class Site extends Entity<Site> {
   /// Hold info such as pin codes for lock boxes.
   String? accessDetails;
 
-  Site({
+  Site._({
     required super.id,
     required this.addressLine1,
     required this.addressLine2,
@@ -46,24 +47,33 @@ class Site extends Entity<Site> {
     required this.accessDetails,
   }) : super.forInsert();
 
-  Site.forUpdate({
-    required super.entity,
-    required this.addressLine1,
-    required this.addressLine2,
-    required this.suburb,
-    required this.state,
-    required this.postcode,
-    required this.accessDetails,
-  }) : super.forUpdate();
+  Site copyWith({
+    String? addressLine1,
+    String? addressLine2,
+    String? suburb,
+    String? state,
+    String? postcode,
+    String? accessDetails,
+  }) => Site._(
+    id: id,
+    addressLine1: addressLine1 ?? this.addressLine1,
+    addressLine2: addressLine2 ?? this.addressLine2,
+    suburb: suburb ?? this.suburb,
+    state: state ?? this.state,
+    postcode: postcode ?? this.postcode,
+    accessDetails: accessDetails ?? this.accessDetails,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
-  factory Site.fromMap(Map<String, dynamic> map) => Site(
+  factory Site.fromMap(Map<String, dynamic> map) => Site._(
     id: map['id'] as int,
     addressLine1: map['addressLine1'] as String,
     addressLine2: map['addressLine2'] as String,
     suburb: map['suburb'] as String,
     state: map['state'] as String,
     postcode: map['postcode'] as String,
-    accessDetails: map['accessDetails'] as String?, // New field
+    accessDetails: map['accessDetails'] as String?,
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
@@ -82,7 +92,7 @@ class Site extends Entity<Site> {
     'suburb': suburb,
     'state': state,
     'postcode': postcode,
-    'accessDetails': accessDetails, // New field
+    'accessDetails': accessDetails,
     'createdDate': createdDate.toIso8601String(),
     'modifiedDate': modifiedDate.toIso8601String(),
   };

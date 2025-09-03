@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -67,22 +68,26 @@ class JobActivity extends Entity<JobActivity> {
     this.status = JobActivityStatus.proposed, // Default status
     this.notes,
     this.noticeSentDate,
-  }) : super.forInsert() {
-    createdDate = DateTime.now();
-    modifiedDate = DateTime.now();
-  }
+  }) : super.forInsert();
 
-  JobActivity.forUpdate({
-    required super.entity, // the existing primary key
-    required this.jobId,
-    required this.start,
-    required this.end,
-    this.status = JobActivityStatus.proposed, // Default status
-    this.notes,
-    this.noticeSentDate,
-  }) : super.forUpdate() {
-    modifiedDate = DateTime.now();
-  }
+  JobActivity copyWith({
+    int? jobId,
+    DateTime? start,
+    DateTime? end,
+    JobActivityStatus? status,
+    String? notes,
+    DateTime? noticeSentDate,
+  }) => JobActivity(
+    id: id,
+    jobId: jobId ?? this.jobId,
+    start: start ?? this.start,
+    end: end ?? this.end,
+    status: status ?? this.status,
+    notes: notes ?? this.notes,
+    noticeSentDate: noticeSentDate ?? this.noticeSentDate,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
   factory JobActivity.fromMap(Map<String, dynamic> map) => JobActivity(
     id: map['id'] as int,
@@ -112,26 +117,4 @@ class JobActivity extends Entity<JobActivity> {
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
-
-  JobActivity copyWith({
-    int? id,
-    int? jobId,
-    DateTime? start,
-    DateTime? end,
-    JobActivityStatus? status,
-    String? notes,
-    DateTime? noticeSentDate,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
-  }) => JobActivity(
-    id: id ?? this.id,
-    jobId: jobId ?? this.jobId,
-    start: start ?? this.start,
-    end: end ?? this.end,
-    status: status ?? this.status,
-    notes: notes ?? this.notes,
-    noticeSentDate: noticeSentDate ?? this.noticeSentDate,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
-  );
 }

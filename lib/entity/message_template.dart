@@ -25,7 +25,7 @@ class MessageTemplate extends Entity<MessageTemplate> {
   bool enabled; // Indicates if the template is enabled
   int ordinal; // Indicates the order of the template
 
-  MessageTemplate({
+  MessageTemplate._({
     required super.id,
     required this.title,
     required this.message,
@@ -47,27 +47,37 @@ class MessageTemplate extends Entity<MessageTemplate> {
     this.ordinal = 0, // Default ordinal value
   }) : super.forInsert();
 
-  MessageTemplate.forUpdate({
-    required super.entity,
-    required this.title,
-    required this.message,
-    required this.messageType,
-    required this.owner,
-    required this.enabled,
-    required this.ordinal,
-  }) : super.forUpdate();
-
-  factory MessageTemplate.fromMap(Map<String, dynamic> map) => MessageTemplate(
-    id: map['id'] as int,
-    title: map['title'] as String,
-    message: map['message'] as String,
-    messageType: MessageType.values.byName(map['message_type'] as String),
-    owner: MessageTemplateOwner.values[map['owner'] as int],
-    enabled: map['enabled'] as int == 1,
-    ordinal: map['ordinal'] as int,
-    createdDate: DateTime.parse(map['createdDate'] as String),
-    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+  MessageTemplate copyWith({
+    String? title,
+    String? message,
+    MessageType? messageType,
+    MessageTemplateOwner? owner,
+    bool? enabled,
+    int? ordinal,
+  }) => MessageTemplate._(
+    id: id,
+    title: title ?? this.title,
+    message: message ?? this.message,
+    messageType: messageType ?? this.messageType,
+    owner: owner ?? this.owner,
+    enabled: enabled ?? this.enabled,
+    ordinal: ordinal ?? this.ordinal,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
   );
+
+  factory MessageTemplate.fromMap(Map<String, dynamic> map) =>
+      MessageTemplate._(
+        id: map['id'] as int,
+        title: map['title'] as String,
+        message: map['message'] as String,
+        messageType: MessageType.values.byName(map['message_type'] as String),
+        owner: MessageTemplateOwner.values[map['owner'] as int],
+        enabled: map['enabled'] as int == 1,
+        ordinal: map['ordinal'] as int,
+        createdDate: DateTime.parse(map['createdDate'] as String),
+        modifiedDate: DateTime.parse(map['modifiedDate'] as String),
+      );
 
   @override
   Map<String, dynamic> toMap() => {
@@ -81,26 +91,4 @@ class MessageTemplate extends Entity<MessageTemplate> {
     'createdDate': createdDate.toIso8601String(),
     'modifiedDate': modifiedDate.toIso8601String(),
   };
-
-  // copyWith method
-  MessageTemplate copyWith({
-    String? title,
-    String? message,
-    MessageType? messageType,
-    MessageTemplateOwner? owner,
-    bool? enabled,
-    int? ordinal,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
-  }) => MessageTemplate(
-    id: id,
-    title: title ?? this.title,
-    message: message ?? this.message,
-    messageType: messageType ?? this.messageType,
-    owner: owner ?? this.owner,
-    enabled: enabled ?? this.enabled,
-    ordinal: ordinal ?? this.ordinal,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
-  );
 }

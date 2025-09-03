@@ -25,7 +25,7 @@ class Contact extends Entity<Contact> {
   String emailAddress;
   String? xeroContactId;
 
-  Contact({
+  Contact._({
     required super.id,
     required this.firstName,
     required this.surname,
@@ -48,18 +48,28 @@ class Contact extends Entity<Contact> {
     this.xeroContactId,
   }) : super.forInsert();
 
-  Contact.forUpdate({
-    required super.entity,
-    required this.firstName,
-    required this.surname,
-    required this.mobileNumber,
-    required this.landLine,
-    required this.officeNumber,
-    required this.emailAddress,
-    this.xeroContactId,
-  }) : super.forUpdate();
+  Contact copyWith({
+    String? firstName,
+    String? surname,
+    String? mobileNumber,
+    String? landLine,
+    String? officeNumber,
+    String? emailAddress,
+    String? xeroContactId,
+  }) => Contact._(
+    id: id,
+    firstName: firstName ?? this.firstName,
+    surname: surname ?? this.surname,
+    mobileNumber: mobileNumber ?? this.mobileNumber,
+    landLine: landLine ?? this.landLine,
+    officeNumber: officeNumber ?? this.officeNumber,
+    emailAddress: emailAddress ?? this.emailAddress,
+    xeroContactId: xeroContactId ?? this.xeroContactId,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
-  factory Contact.fromMap(Map<String, dynamic> map) => Contact(
+  factory Contact.fromMap(Map<String, dynamic> map) => Contact._(
     id: map['id'] as int,
     firstName: map['firstName'] as String,
     surname: map['surname'] as String,
@@ -89,35 +99,6 @@ class Contact extends Entity<Contact> {
   };
 
   String abbreviated() => '$firstName $surname';
-
-  Contact copyWith({
-    int? id,
-    String? firstName,
-    String? surname,
-    String? mobileNumber,
-    String? landLine,
-    String? officeNumber,
-    String? emailAddress,
-    String? addressLine1,
-    String? city,
-    String? region,
-    String? postalCode,
-    String? country,
-    String? xeroContactId,
-    DateTime? createdDate,
-    DateTime? modifiedDate,
-  }) => Contact(
-    id: id ?? this.id,
-    firstName: firstName ?? this.firstName,
-    surname: surname ?? this.surname,
-    mobileNumber: mobileNumber ?? this.mobileNumber,
-    landLine: landLine ?? this.landLine,
-    officeNumber: officeNumber ?? this.officeNumber,
-    emailAddress: emailAddress ?? this.emailAddress,
-    xeroContactId: xeroContactId ?? this.xeroContactId,
-    createdDate: createdDate ?? this.createdDate,
-    modifiedDate: modifiedDate ?? this.modifiedDate,
-  );
 
   XeroContact toXeroContact() =>
       XeroContact(name: fullname, email: emailAddress, phone: bestPhone);

@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -16,13 +17,13 @@ import 'task_status.dart';
 
 /// Task entity storing status as enum but persisting only the id.
 class Task extends Entity<Task> {
-  int jobId;
-  String name;
-  String description;
-  String assumption;
-  TaskStatus status;
+  final int jobId;
+  final String name;
+  final String description;
+  final String assumption;
+  final TaskStatus status;
 
-  Task({
+  Task._({
     required super.id,
     required this.jobId,
     required this.name,
@@ -41,16 +42,24 @@ class Task extends Entity<Task> {
     this.assumption = '',
   }) : super.forInsert();
 
-  Task.forUpdate({
-    required super.entity,
-    required this.jobId,
-    required this.name,
-    required this.description,
-    required this.assumption,
-    required this.status,
-  }) : super.forUpdate();
+  Task copyWith({
+    int? jobId,
+    String? name,
+    String? description,
+    String? assumption,
+    TaskStatus? status,
+  }) => Task._(
+    id: id,
+    jobId: jobId ?? this.jobId,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    assumption: assumption ?? this.assumption,
+    status: status ?? this.status,
+    createdDate: createdDate,
+    modifiedDate: DateTime.now(),
+  );
 
-  factory Task.fromMap(Map<String, dynamic> map) => Task(
+  factory Task.fromMap(Map<String, dynamic> map) => Task._(
     id: map['id'] as int,
     jobId: map['job_id'] as int,
     name: map['name'] as String,
@@ -75,5 +84,6 @@ class Task extends Entity<Task> {
 
   @override
   String toString() =>
-      r'''Task(id: $id, jobId: $jobId, name: $name, status: ${status.name}, assumption: $assumption)''';
+      'Task(id: $id, jobId: $jobId, name: $name, status: ${status.name}, '
+      'assumption: $assumption)';
 }
