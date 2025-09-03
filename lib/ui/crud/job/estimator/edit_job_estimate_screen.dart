@@ -396,7 +396,7 @@ class _JobEstimateBuilderScreenState
       HMBToggle(
         label: 'Show To Be Estimated',
         hint:
-            '''Show tasks can be estimated as they have not started no been cancelled''',
+            '''Show tasks that can be estimated as they have not started no been cancelled''',
         initialValue: _showToBeEstimated,
         onToggled: (value) {
           _showToBeEstimated = value;
