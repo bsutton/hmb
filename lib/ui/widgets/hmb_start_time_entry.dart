@@ -22,16 +22,18 @@ import '../../dao/dao_task.dart';
 import '../../dao/dao_time_entry.dart';
 import '../../entity/job.dart';
 import '../../entity/task.dart';
+import '../../entity/task_status.dart';
 import '../../entity/time_entry.dart';
 import '../../fsm/job_events.dart';
 import '../../fsm/job_status_fsm.dart';
 import '../../util/dart/format.dart';
 import '../dialog/start_timer_dialog.dart';
 import '../dialog/stop_timer_dialog.dart';
+import 'hmb_toast.dart';
 
 class HMBStartTimeEntry extends StatefulWidget {
   final Task? task;
-  final void Function(Job job) onStart;
+  final void Function(Job job, Task task) onStart;
 
   const HMBStartTimeEntry({
     required this.task,
@@ -108,10 +110,23 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
                 isActive ? Icons.stop : Icons.play_arrow,
                 color: isActive ? Colors.red : Colors.blue,
               ),
-              onPressed: () => timeEntry != null
+              onPressed: () async {
+                if (timeEntry == null) {
+                  final canBeTimed = widget.task!.status.canBeTimed;
+
+                  if (!canBeTimed) {
+                    HMBToast.error(
+                      '''
+The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in order to be timed''',
+                    );
+                  } else {
+                    unawaited(_start(widget.task));
+                  }
+                } else {
                   // ignore: discarded_futures
-                  ? _stop(widget.task)
-                  : unawaited(_start(widget.task)),
+                  await _stop(widget.task);
+                }
+              },
             );
           },
         ),
@@ -357,12 +372,17 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
 
       final job = await transitionJobById(task.jobId, StartWork.new);
       _startTimer(newTimeEntry);
+
+      // mark the task as in progress.
+      widget.task!.status = TaskStatus.inProgress;
+      await DaoTask().update(widget.task!);
+
       timeEntry = newTimeEntry;
       June.getState<ActiveTimeEntryState>(
         ActiveTimeEntryState.new,
       ).setActiveTimeEntry(newTimeEntry, widget.task);
 
-      widget.onStart(job);
+      widget.onStart(job, widget.task!);
     }
   }
 

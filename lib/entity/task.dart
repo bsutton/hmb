@@ -17,11 +17,11 @@ import 'task_status.dart';
 
 /// Task entity storing status as enum but persisting only the id.
 class Task extends Entity<Task> {
-  final int jobId;
-  final String name;
-  final String description;
-  final String assumption;
-  final TaskStatus status;
+  int jobId;
+  String name;
+  String description;
+  String assumption;
+  TaskStatus status;
 
   Task._({
     required super.id,

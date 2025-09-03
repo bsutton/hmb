@@ -25,6 +25,7 @@ enum TaskStatus {
     description: 'The task is yet to be approved by the customer.',
     colorCode: '#FFDAB9',
     ordinal: 1,
+    canBeTimed: false,
   ),
   approved(
     id: 2,
@@ -32,6 +33,7 @@ enum TaskStatus {
     description: 'The task has been approved by the customer.',
     colorCode: '#3CB371',
     ordinal: 2,
+    canBeTimed: true,
   ),
   inProgress(
     id: 3,
@@ -39,6 +41,7 @@ enum TaskStatus {
     description: 'The task is currently in progress',
     colorCode: '#87CEFA',
     ordinal: 3,
+    canBeTimed: true,
   ),
   awaitingMaterials(
     id: 4,
@@ -46,6 +49,7 @@ enum TaskStatus {
     description: 'The task is paused until materials are available',
     colorCode: '#D3D3D3',
     ordinal: 4,
+    canBeTimed: true,
   ),
   onHold(
     id: 5,
@@ -53,6 +57,7 @@ enum TaskStatus {
     description: 'The task is on hold',
     colorCode: '#FAFAD2',
     ordinal: 5,
+    canBeTimed: true,
   ),
   completed(
     id: 6,
@@ -60,6 +65,7 @@ enum TaskStatus {
     description: 'The task is completed',
     colorCode: '#90EE90',
     ordinal: 6,
+    canBeTimed: false,
   ),
   cancelled(
     id: 7,
@@ -67,6 +73,7 @@ enum TaskStatus {
     description: 'The Task has been cancelled by the customer',
     colorCode: '#57CEFA',
     ordinal: 7,
+    canBeTimed: false,
   );
 
   const TaskStatus({
@@ -75,6 +82,7 @@ enum TaskStatus {
     required this.description,
     required this.colorCode,
     required this.ordinal,
+    required this.canBeTimed,
   });
 
   /// Primary key id in the database.
@@ -91,6 +99,8 @@ enum TaskStatus {
 
   /// Ordinal ordering (may be null).
   final int ordinal;
+
+  final bool canBeTimed;
 
   /// Lookup by database id.
   static TaskStatus fromId(int id) => TaskStatus.values.firstWhere(

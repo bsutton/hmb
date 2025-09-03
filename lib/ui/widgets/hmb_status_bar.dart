@@ -40,7 +40,7 @@ class HMBStatusBar extends StatelessWidget {
       color: Colors.purpleAccent,
       child: Row(
         children: [
-          HMBStartTimeEntry(task: task, onStart: (_) => {}),
+          HMBStartTimeEntry(task: task, onStart: (_, _) => {}),
           const SizedBox(width: 8),
           Expanded(
             child: FutureBuilderEx(

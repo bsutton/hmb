@@ -22,16 +22,36 @@ import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../job/edit_job_card.dart';
 
-class ListTaskCard extends StatelessWidget {
+class ListTaskCard extends StatefulWidget {
   final Task task;
   final bool summary;
-  
+
   const ListTaskCard({required this.task, required this.summary, super.key});
 
   @override
+  State<ListTaskCard> createState() => _ListTaskCardState();
+}
+
+class _ListTaskCardState extends State<ListTaskCard> {
+  late Task activeTask;
+
+  @override
+  void didUpdateWidget(covariant ListTaskCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    activeTask = widget.task;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    activeTask = widget.task;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (summary) {
-      return _buildTaskSummary(task);
+    if (widget.summary) {
+      return _buildTaskSummary(activeTask);
     } else {
       return _buildFullTaskDetails();
     }
@@ -41,11 +61,11 @@ class ListTaskCard extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(task.status.name),
+      Text(activeTask.status.name),
       FutureBuilderEx(
         future: DaoTask()
             // ignore: discarded_futures
-            .getAccruedValueForTask(task: task, includeBilled: true),
+            .getAccruedValueForTask(task: activeTask, includeBilled: true),
         builder: (context, taskAccruedValue) => Row(
           children: [
             HMBText(
@@ -58,10 +78,12 @@ class ListTaskCard extends StatelessWidget {
         ),
       ),
       HMBStartTimeEntry(
-        key: ValueKey(task),
-        task: task,
-        onStart: (job) {
+        key: ValueKey(activeTask),
+        task: activeTask,
+        onStart: (job, task) {
           June.getState(SelectJobStatus.new).jobStatus = job.status;
+          activeTask = task;
+          setState(() {});
         },
       ),
     ],
@@ -91,8 +113,10 @@ class ListTaskCard extends StatelessWidget {
       ), // Display photo count
       HMBStartTimeEntry(
         task: task,
-        onStart: (job) {
+        onStart: (job, task) {
           June.getState(SelectJobStatus.new).jobStatus = job.status;
+          activeTask = task;
+          setState(() {});
         },
       ),
     ],
