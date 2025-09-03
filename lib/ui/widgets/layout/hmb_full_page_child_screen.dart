@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../text/text.g.dart';
+import 'layout.g.dart';
 
 class HMBFullPageChildScreen extends StatelessWidget {
   final Widget child;
@@ -12,7 +13,6 @@ class HMBFullPageChildScreen extends StatelessWidget {
     super.key,
   });
 
-
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
@@ -20,6 +20,6 @@ class HMBFullPageChildScreen extends StatelessWidget {
       title: HMBTextHeadline(title),
       backgroundColor: Colors.purple,
     ),
-    body: child,
+    body: HMBPadding(child: child),
   );
 }
