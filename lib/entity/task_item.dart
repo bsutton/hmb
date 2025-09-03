@@ -194,71 +194,6 @@ class TaskItem extends Entity<TaskItem> {
     );
   }
 
-  /// Constructor for updating existing items
-  factory TaskItem.forUpdate({
-    required TaskItem existing,
-    required int taskId,
-    required String description,
-    required TaskItemType itemType,
-    required Money? estimatedMaterialUnitCost,
-    required Fixed estimatedMaterialQuantity,
-    required Fixed estimatedLabourHours,
-    required Money? estimatedLabourCost,
-    required Percentage margin,
-    required bool completed,
-    required bool billed,
-    required MeasurementType measurementType,
-    required Fixed dimension1,
-    required Fixed dimension2,
-    required Fixed dimension3,
-    required Units units,
-    required String url,
-    required String purpose,
-    required LabourEntryMode labourEntryMode,
-    Money? charge,
-    int? invoiceLineId,
-    int? supplierId,
-    Money? actualMaterialUnitCost,
-    Fixed? actualMaterialQuantity,
-    Money? actualCost,
-    int? sourceTaskItemId,
-    bool? isReturn,
-  }) {
-    final now = DateTime.now();
-    return TaskItem._(
-      id: existing.id,
-      createdDate: existing.createdDate,
-      modifiedDate: now,
-      taskId: taskId,
-      description: description,
-      itemType: itemType,
-      estimatedMaterialUnitCost: estimatedMaterialUnitCost,
-      estimatedMaterialQuantity: estimatedMaterialQuantity,
-      estimatedLabourHours: estimatedLabourHours,
-      estimatedLabourCost: estimatedLabourCost,
-      margin: margin,
-      charge: charge,
-      chargeSet: charge != null,
-      completed: completed,
-      billed: billed,
-      measurementType: measurementType,
-      dimension1: dimension1,
-      dimension2: dimension2,
-      dimension3: dimension3,
-      units: units,
-      url: url,
-      purpose: purpose,
-      labourEntryMode: labourEntryMode,
-      invoiceLineId: invoiceLineId,
-      supplierId: supplierId,
-      actualMaterialUnitCost: actualMaterialUnitCost,
-      actualMaterialQuantity: actualMaterialQuantity,
-      actualCost: actualCost,
-      sourceTaskItemId: sourceTaskItemId ?? existing.sourceTaskItemId,
-      isReturn: isReturn ?? existing.isReturn,
-    );
-  }
-
   /// Parse from database map
   factory TaskItem.fromMap(Map<String, dynamic> map) => TaskItem._(
     id: map['id'] as int,
@@ -370,8 +305,15 @@ class TaskItem extends Entity<TaskItem> {
     return cost.multiplyByFixed(quantity);
   }
 
-  void setCharge(Money value) {
-    _charge = value;
+  void setCharge({
+    required BillingType billingType,
+    required Money materialUnitCost,
+    required Fixed materialQuantity,
+  }) {
+    actualMaterialUnitCost = materialUnitCost;
+    actualMaterialQuantity = materialQuantity;
+
+    _charge = calcMaterialCharges(billingType);
     chargeSet = true; // Update chargeSet when charge is set
   }
 
@@ -485,7 +427,7 @@ class TaskItem extends Entity<TaskItem> {
     MeasurementType? measurementType,
     Fixed? dimension1,
     Fixed? dimension2,
-    Fixed? dimension3,
+    Fixed? dimension3, 
     Units? units,
     String? url,
     String? purpose,

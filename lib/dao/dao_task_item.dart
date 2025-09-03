@@ -55,17 +55,19 @@ WHERE task_id = ?
     );
   }
 
-  Future<void> markAsCompleted(
-    BillingType billingType,
-    TaskItem item,
-    Money unitCost,
-    Fixed quantity,
-  ) async {
+  Future<void> markAsCompleted({
+    required BillingType billingType,
+    required TaskItem item,
+    required Money materialUnitCost,
+    required Fixed materialQuantity,
+  }) async {
     item
       ..completed = true
-      ..actualMaterialUnitCost = unitCost
-      ..actualMaterialQuantity = quantity
-      ..setCharge(item.calcMaterialCharges(billingType));
+      ..setCharge(
+        billingType: billingType,
+        materialQuantity: materialQuantity,
+        materialUnitCost: materialUnitCost,
+      );
 
     await update(item);
   }
@@ -345,31 +347,17 @@ SELECT ti.*
     Fixed returnQuantity,
     Money returnUnitPrice,
   ) async {
-    final db = withoutTransaction();
-
-    // 1. Fetch the original
-    final rows = await db.query(
-      tableName,
-      where: 'id = ?',
-      whereArgs: [originalId],
-    );
-    if (rows.isEmpty) {
-      throw StateError('No TaskItem found with id=$originalId');
-    }
-    final original = TaskItem.fromMap(rows.first);
+    final taskItem = await DaoTaskItem().getById(originalId);
 
     // 2. Build and insert the return row
-    final returnItem = original.forReturn(returnQuantity, returnUnitPrice);
+    final returnItem = taskItem!.forReturn(returnQuantity, returnUnitPrice);
     await insert(returnItem);
   }
 
   /// True if the passsed [taskItemId] has been returned.
   Future<bool> wasReturned(int taskItemId) async {
-    final db = withoutTransaction();
-    final rows = await db.rawQuery(
-      'SELECT 1 FROM task_item WHERE source_task_item_id = ? LIMIT 1',
-      [taskItemId],
-    );
-    return rows.isNotEmpty;
+    final taskItem = await DaoTaskItem().getById(taskItemId);
+
+    return taskItem?.sourceTaskItemId != null;
   }
 }

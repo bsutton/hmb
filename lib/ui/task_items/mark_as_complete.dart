@@ -156,10 +156,10 @@ Future<void> markAsCompleted(
 
     // Mark as completed (sets actual cost/qty and charge)
     await DaoTaskItem().markAsCompleted(
-      itemContext.billingType,
-      taskItem,
-      unitCost,
-      quantity,
+      billingType: itemContext.billingType,
+      item: taskItem,
+      materialUnitCost: unitCost,
+      materialQuantity: quantity,
     );
 
     // Persist supplier change if any
