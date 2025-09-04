@@ -37,11 +37,25 @@ If your Job isn't showing then you need to update its status to an Active one su
       );
 }
 
+@immutable
 class CustomerAndJob {
   final Customer customer;
   final Job job;
 
-  CustomerAndJob._internal(this.customer, this.job);
+  const CustomerAndJob._internal(this.customer, this.job);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is CustomerAndJob &&
+        other.customer.id == customer.id &&
+        other.job.id == job.id;
+  }
+
+  @override
+  int get hashCode => Object.hash(customer.id, job.id);
 
   static Future<List<CustomerAndJob>> fromList(List<Job> jobs) async {
     final list = <CustomerAndJob>[];
