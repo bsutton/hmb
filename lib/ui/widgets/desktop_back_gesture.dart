@@ -31,7 +31,6 @@ import 'desktop_back_gesture_suppress.dart';
 ///
 /// On desktop it responds to:
 ///  • Alt+←
-///  • Backspace
 ///  • "BrowserBack" key
 ///  • Mouse thumb “back” button
 ///  • Edge (left) swipe to the right
@@ -104,8 +103,6 @@ class _DesktopBackGestureState extends State<DesktopBackGesture> {
         const ActivateIntent(),
     // BrowserBack key (some keyboards)
     const SingleActivator(LogicalKeyboardKey.goBack): const ActivateIntent(),
-    // Backspace (common desktop convention outside text fields)
-    const SingleActivator(LogicalKeyboardKey.backspace): const ActivateIntent(),
   };
 
   @override
