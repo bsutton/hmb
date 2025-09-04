@@ -54,8 +54,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
   @override
   Widget build(BuildContext context) {
     final showCompleted = June.getState(
-      ShowCompletedTasksState.new,
-    )._showCompletedTasks;
+      ShowInActiveTasksState.new,
+    )._showInActiveTasks;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -68,20 +68,23 @@ class _TaskListScreenState extends State<TaskListScreen> {
             // ignore: discarded_futures
             fetchList: _fetchTasks,
             listCardTitle: (entity) => Text(entity.name),
+
+            /// all filter modes exclude some data.
+            isFilterActive: () => true,
             filterSheetBuilder: (entity) => Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 HMBToggle(
-                  label: 'Show Completed',
+                  label: 'Show Inactive',
                   hint: showCompleted
-                      ? 'Show Only Non-Completed Tasks'
-                      : 'Show Completed Tasks',
+                      ? 'Show Only Active Tasks'
+                      : 'Show Inactive Tasks',
                   initialValue: June.getState(
-                    ShowCompletedTasksState.new,
-                  )._showCompletedTasks,
+                    ShowInActiveTasksState.new,
+                  )._showInActiveTasks,
                   onToggled: (value) {
                     setState(() {
-                      June.getState(ShowCompletedTasksState.new).toggle();
+                      June.getState(ShowInActiveTasksState.new).toggle();
                     });
                   },
                 ),
@@ -146,16 +149,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<List<Task>> _fetchTasks(String? filter) async {
-    final showCompleted = June.getState(
-      ShowCompletedTasksState.new,
-    )._showCompletedTasks;
+    final showInactive = June.getState(
+      ShowInActiveTasksState.new,
+    )._showInActiveTasks;
     final tasks = await DaoTask().getTasksByJob(widget.parent.parent!.id);
 
     final included = <Task>[];
     for (final task in tasks) {
       final status = task.status;
-      final complete = status.isComplete();
-      if ((showCompleted && complete) || (!showCompleted && !complete)) {
+      final intActive = status.isInActive();
+      if ((showInactive && intActive) || (!showInactive && !intActive)) {
         included.add(task);
       }
     }
@@ -166,11 +169,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
       ListTaskCard(task: task, summary: false);
 }
 
-class ShowCompletedTasksState extends JuneState {
-  var _showCompletedTasks = false;
+class ShowInActiveTasksState extends JuneState {
+  var _showInActiveTasks = false;
 
   void toggle() {
-    _showCompletedTasks = !_showCompletedTasks;
+    _showInActiveTasks = !_showInActiveTasks;
     setState(); // Notify listeners to rebuild
   }
 }
