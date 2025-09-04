@@ -25,7 +25,7 @@ import '../../entity/system.dart';
 import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
-import '../crud/job/edit_job_screen.dart';
+import '../crud/job/full_page_list_job_card.dart';
 import '../dialog/dialog.g.dart';
 import '../widgets/circle.dart';
 import '../widgets/hmb_link_internal.dart';
@@ -381,7 +381,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
                             HMBLinkInternal(
                               label: 'Job: #${jobAndCustomer.job.id}',
                               navigateTo: () async =>
-                                  JobEditScreen(job: jobAndCustomer.job),
+                                  FullPageListJobCard(jobAndCustomer.job),
                             ),
                           ],
                         ),
