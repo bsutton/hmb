@@ -114,11 +114,11 @@ class ToDo extends Entity<ToDo> {
           )
         : null,
     parentId: map['parent_id'] as int?,
-    createdDate: DateTime.parse(map['created_date'] as String),
-    modifiedDate: DateTime.parse(map['modified_date'] as String),
     completedDate: (map['completed_date'] as String?) != null
         ? DateTime.parse(map['completed_date'] as String)
         : null,
+    createdDate: DateTime.parse(map['created_date'] as String),
+    modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
 
   @override

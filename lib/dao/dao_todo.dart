@@ -140,4 +140,18 @@ class DaoToDo extends Dao<ToDo> {
 
     return rows.map(ToDo.fromMap).toList();
   }
+
+  /// Get a list of open todo's
+  Future<List<ToDo>> getOpenByJob(int jobId) async {
+    final db = withoutTransaction();
+    final rows = await db.query(
+      tableName, // e.g. 'to_do'
+      where: '''
+status = ? AND parent_type = '${ToDoParentType.job.name}' and parent_id = ?''',
+      whereArgs: [ToDoStatus.open.name, jobId],
+      orderBy: 'remind_at ASC, created_date ASC',
+    );
+
+    return rows.map(ToDo.fromMap).toList();
+  }
 }
