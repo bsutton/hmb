@@ -373,11 +373,11 @@ class TaskItem extends Entity<TaskItem> {
 
   void setCharge({
     required BillingType billingType,
-    required Money materialUnitCost,
-    required Fixed materialQuantity,
+    required Money actualMaterialUnitCost,
+    required Fixed actualMaterialQuantity,
   }) {
-    actualMaterialUnitCost = materialUnitCost;
-    actualMaterialQuantity = materialQuantity;
+    this.actualMaterialUnitCost = actualMaterialUnitCost;
+    this.actualMaterialQuantity = actualMaterialQuantity;
 
     _charge = calcMaterialCharges(billingType);
     chargeSet = true; // Update chargeSet when charge is set

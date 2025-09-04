@@ -44,8 +44,14 @@ Future<void> markAsCompleted(
     case TaskItemType.toolsBuy:
     case TaskItemType.consumablesStock:
     case TaskItemType.consumablesBuy:
-      costController.text = taskItem.estimatedMaterialUnitCost.toString();
-      quantityController.text = taskItem.estimatedMaterialQuantity.toString();
+      costController.text =
+          (taskItem.actualMaterialUnitCost ??
+                  taskItem.estimatedMaterialUnitCost)
+              .toString();
+      quantityController.text =
+          (taskItem.actualMaterialQuantity ??
+                  taskItem.estimatedMaterialQuantity)
+              .toString();
     case TaskItemType.labour:
       if (taskItem.labourEntryMode == LabourEntryMode.hours) {
         costController.text = itemContext.taskItem.estimatedLabourHours

@@ -65,8 +65,8 @@ WHERE task_id = ?
       ..completed = true
       ..setCharge(
         billingType: billingType,
-        materialQuantity: materialQuantity,
-        materialUnitCost: materialUnitCost,
+        actualMaterialQuantity: materialQuantity,
+        actualMaterialUnitCost: materialUnitCost,
       );
 
     await update(item);
