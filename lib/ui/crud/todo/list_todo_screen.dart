@@ -36,7 +36,7 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
     filterSheetBuilder: (onChange) => _buildFilterSheet(context, onChange),
     onFilterReset: () => toDoListStatusFilter = ToDoStatus.open,
     isFilterActive: () => toDoListStatusFilter == ToDoStatus.done,
-    onEdit: (todo) => ToDoEditScreen(toDo: todo),
+    onEdit: (todo) => ToDoEditScreen(toDo: todo, preselectedJob: widget.job),
     listCardTitle: (todo) => Row(
       children: [
         Checkbox(
