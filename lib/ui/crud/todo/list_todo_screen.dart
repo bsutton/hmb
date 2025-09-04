@@ -29,6 +29,7 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
     key: entitListKey,
     entityNameSingular: 'To Do',
     entityNamePlural: 'To Dos',
+    cardHeight: 200,
     dao: DaoToDo(),
     // Order: overdue first, then today, then upcoming.
     fetchList: _fetchTodos,

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:strings/strings.dart';
 
+import '../../../dao/dao_customer.dart';
+import '../../../dao/dao_job.dart';
 import '../../../dao/dao_todo.dart';
 import '../../../entity/todo.dart';
 import '../../../util/dart/format.dart';
@@ -9,6 +12,8 @@ import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_entity_chip.dart';
 import '../../widgets/text/text.g.dart';
 import '../../widgets/widgets.g.dart';
+import '../customer/list_customer_card.dart';
+import '../job/full_page_list_job_card.dart';
 import 'list_todo_screen.dart';
 
 class ListTodoCard extends StatelessWidget {
@@ -34,11 +39,23 @@ class ListTodoCard extends StatelessWidget {
         ],
       ),
       if (todo.parentType == ToDoParentType.job)
-        HMBButton.small(
-          label: 'Convert to Task',
-          hint: 'Covert the todo item into a Job Task',
-          onPressed: () => DaoToDo().convertToTask(todo),
+        FutureBuilderEx(
+          future: DaoJob().getById(todo.parentId),
+          builder: (context, job) => HMBLinkInternal(
+            label: 'Job: #${todo.parentId}',
+            navigateTo: () async => FullPageListJobCard(job!),
+          ),
         ),
+
+      if (todo.parentType == ToDoParentType.customer)
+        FutureBuilderEx(
+          future: DaoCustomer().getById(todo.parentId),
+          builder: (context, customer) => HMBLinkInternal(
+            label: 'Customer: #${todo.parentId}',
+            navigateTo: () async => FullPageListCustomerCard(customer!),
+          ),
+        ),
+
       HMBRow(
         children: [
           if (todo.dueDate != null)
