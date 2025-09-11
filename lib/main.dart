@@ -15,6 +15,8 @@
 
 import 'dart:async';
 
+import 'package:device_preview_plus/device_preview_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
@@ -58,7 +60,13 @@ Future<void> main(List<String> args) async {
       options.replay.onErrorSampleRate = 1.0;
     },
     appRunner: () {
-      runApp(const HmbApp());
+      runApp(
+        DevicePreview(
+          // ignore: avoid_redundant_argument_values
+          enabled: !kReleaseMode,
+          builder: (_) => const HmbApp(),
+        ),
+      );
     },
   );
 }
@@ -71,27 +79,33 @@ class HmbApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ToastificationWrapper(
     child: MaterialApp.router(
+      // required by [DevicePreview]
+      useInheritedMediaQuery: true,
       theme: theme,
-      routerConfig: createGoRouter(_rootNavKey, _bootstrap), // unchanged
-      builder: (context, mainAppWindow) => DesktopBackGesture(
-        navigatorKey: _rootNavKey,
-        child: Stack(
-          children: [
-            // Added a white border when running on desktop so users can
-            // see the edge of the app.
-            DecoratedBox(
-              position: DecorationPosition.foreground,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isMobile ? Colors.black : Colors.white,
-                ),
-              ),
-              child: mainAppWindow ?? const SizedBox.shrink(),
-            ),
+      routerConfig: createGoRouter(_rootNavKey, _bootstrap), 
+      builder: (context, mainAppWindow) => DevicePreview.appBuilder(
+        context,
 
-            //  an overlay for blocking UI during long operations
-            const BlockingOverlay(),
-          ],
+        DesktopBackGesture(
+          navigatorKey: _rootNavKey,
+          child: Stack(
+            children: [
+              // Added a white border when running on desktop so users can
+              // see the edge of the app.
+              DecoratedBox(
+                position: DecorationPosition.foreground,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isMobile ? Colors.black : Colors.white,
+                  ),
+                ),
+                child: mainAppWindow ?? const SizedBox.shrink(),
+              ),
+
+              //  an overlay for blocking UI during long operations
+              const BlockingOverlay(),
+            ],
+          ),
         ),
       ),
     ),
