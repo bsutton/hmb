@@ -22,13 +22,13 @@ import 'hmb_droplist.dart';
 class HMBSelectSupplier extends StatefulWidget {
   final SelectedSupplier selectedSupplier;
   final void Function(Supplier? supplier)? onSelected;
-  final bool isRequired; // New field to indicate if the selection is required
+  final bool required; // New field to indicate if the selection is required
 
   const HMBSelectSupplier({
     required this.selectedSupplier,
     super.key,
     this.onSelected,
-    this.isRequired = false, // New parameter with default value
+    this.required = false, // New parameter with default value
   });
 
   @override
@@ -75,13 +75,13 @@ class HMBSelectSupplierState extends State<HMBSelectSupplier> {
       // );
       final hmbDroplist = HMBDroplist<Supplier>(
         key: ValueKey(widget.selectedSupplier._selected),
-        title: widget.isRequired ? 'Supplier *' : 'Supplier',
+        title: widget.required ? 'Supplier *' : 'Supplier',
         selectedItem: _getInitialSupplier,
         onChanged: _onSupplierChanged,
         onAdd: _addSupplier,
         items: _getSuppliers,
         format: (supplier) => supplier.name,
-        required: widget.isRequired,
+        required: widget.required,
       );
       return hmbDroplist;
     },

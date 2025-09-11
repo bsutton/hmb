@@ -137,6 +137,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       // Job dropdown (unchanged)
       HMBSelectJob(
         selectedJob: _selectedJob,
+        required: true,
         // ignore: discarded_futures
         onSelected: (job) => setState(() {
           _selectedJob.jobId = job?.id;
@@ -145,7 +146,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       // SUPPLIER: now using your SelectSupplier widget
       HMBSelectSupplier(
         selectedSupplier: selectedSupplier,
-        isRequired: true,
+        required: true,
 
         onSelected: (supplier) => setState(() {
           _supplierId = supplier?.id;
