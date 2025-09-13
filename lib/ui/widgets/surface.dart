@@ -46,21 +46,33 @@ class Surface extends StatelessWidget {
   final SurfaceElevation elevation;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
+  final bool rounded;
 
   const Surface({
     required this.child,
     this.elevation = SurfaceElevation.e4,
     this.padding = const EdgeInsets.all(HMBTheme.padding),
     this.margin = EdgeInsets.zero,
+    this.rounded = false,
     super.key,
   });
   @override
-  Widget build(BuildContext context) => Container(
-    color: elevation.color,
-    margin: margin,
-    padding: padding,
-    child: child,
-  );
+  Widget build(BuildContext context) {
+    var decoration = BoxDecoration(color: elevation.color);
+    if (rounded) {
+      decoration = BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: elevation.color,
+      );
+    }
+    return Container(
+      decoration: decoration,
+
+      margin: margin,
+      padding: padding,
+      child: child,
+    );
+  }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {

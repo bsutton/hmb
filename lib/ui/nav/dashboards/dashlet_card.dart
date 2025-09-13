@@ -24,10 +24,12 @@ import 'dashboard.dart';
 
 /// Holds primary and optional secondary values for a dashlet
 class DashletValue<T> {
-  final T value;
+  final T? value;
   final String? secondValue;
 
   const DashletValue(this.value, [this.secondValue]);
+
+  const DashletValue.empty() : value = null, secondValue = null;
 }
 
 typedef DashletWidgetBuilder<T> =

@@ -24,7 +24,7 @@ import 'local_time.dart';
 @immutable
 class LocalDate {
   final DateTime date;
-  
+
   /// Creates a [LocalDate] with the date set to today's date.
   /// This is the same as calling [LocalDate()].
   /// required by json.
@@ -50,7 +50,6 @@ class LocalDate {
       return LocalDate.fromDateTime(dateTime);
     }
   }
-
 
   int get weekday => date.weekday;
 
@@ -78,6 +77,10 @@ class LocalDate {
 
   static DateTime stripTime(DateTime dateTime) =>
       DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+  DateTime startOfDay() => DateTime(year, month, day);
+
+  DateTime endOfDay() => DateTime(year, month, day, 23, 59, 59, 999);
 
   bool isAfter(LocalDate rhs) => date.isAfter(rhs.date);
 

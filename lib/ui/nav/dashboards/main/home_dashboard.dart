@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 
 import '../dashboard.dart';
 import 'dashlets/dashlets.g.dart';
+import 'dashlets/today.dart';
 
 class MainDashboardPage extends StatelessWidget {
   const MainDashboardPage({super.key});
@@ -26,6 +27,7 @@ class MainDashboardPage extends StatelessWidget {
       title: 'Dashboard',
       dashlets: [
         JobsDashlet(),
+        TodayDashlet(),
         HelpDashlet(),
         NextJobDashlet(),
         ToDoDashlet(),

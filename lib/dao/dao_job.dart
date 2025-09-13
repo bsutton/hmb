@@ -295,6 +295,25 @@ where t.id =?
     );
   }
 
+  /// Get all jobs with any of the given [statuses].
+  Future<List<Job>> getByStatuses(List<JobStatus> statuses) async {
+    if (statuses.isEmpty) {
+      return [];
+    }
+
+    final db = withoutTransaction();
+    final placeholders = List.filled(statuses.length, '?').join(',');
+
+    return toList(
+      await db.query(
+        tableName,
+        where: 'status_id IN ($placeholders)',
+        whereArgs: statuses.map((s) => s.id).toList(),
+        orderBy: 'modified_date DESC',
+      ),
+    );
+  }
+
   Future<JobStatistics> getJobStatistics(Job job) async {
     final tasks = await DaoTask().getTasksByJob(job.id);
 

@@ -37,6 +37,7 @@ import '../invoicing/list_invoice_screen.dart';
 import '../invoicing/yet_to_be_invoice.dart';
 import '../quoting/list_quote_screen.dart';
 import '../scheduling/schedule_page.dart';
+import '../scheduling/today/today_page.dart';
 import '../task_items/list_packing_screen.dart';
 import '../task_items/list_shopping_screen.dart';
 import '../widgets/hmb_toast.dart';
@@ -124,6 +125,11 @@ List<GoRoute> dashboardRoutes() => [
     path: 'todo',
     builder: (_, _) => const HomeScaffold(initialScreen: ToDoListScreen()),
   ),
+  GoRoute(
+    path: 'today',
+    builder: (_, _) => const HomeScaffold(initialScreen: TodayPage()),
+  ),
+
   GoRoute(
     path: 'help',
     builder: (_, _) => const HomeScaffold(initialScreen: HelpDashboardPage()),

@@ -16,7 +16,6 @@
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
@@ -25,8 +24,8 @@ import '../crud/job/full_page_list_job_card.dart';
 import '../widgets/hmb_link_internal.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/text/text.g.dart';
-import '../widgets/widgets.g.dart' show HMBButton, HMBToast;
-import 'dialog_select_tasks.dart';
+import '../widgets/widgets.g.dart' show HMBButton;
+import 'create_invoice_ui.dart';
 
 class YetToBeInvoicedScreen extends StatefulWidget {
   YetToBeInvoicedScreen({super.key}) {
@@ -54,40 +53,6 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
   Future<List<Job>> _fetchReadyJobs([String? filter]) =>
       DaoJob().readyToBeInvoiced(filter);
 
-  Future<void> _createInvoiceFor(Job job) async {
-    final options = await selectTasksToInvoice(
-      context: context,
-      job: job,
-      title: 'Tasks sto Invoice',
-    );
-    if (options != null) {
-      try {
-        if (options.selectedTaskIds.isNotEmpty || options.billBookingFee) {
-          await createTimeAndMaterialsInvoice(
-            job,
-            options.contact,
-            options.selectedTaskIds,
-            groupByTask: options.groupByTask,
-            billBookingFee: options.billBookingFee,
-          );
-          HMBToast.info('Invoice created for "${job.summary}".');
-          if (mounted) {
-            context.go('/home/accounting/invoices');
-            return;
-          }
-        } else {
-          HMBToast.info('Select at least one Task or the Booking Fee.');
-        }
-      } catch (e) {
-        HMBToast.error(
-          'Failed to create invoice: $e',
-          acknowledgmentRequired: true,
-        );
-      }
-      await _loadJobs();
-    }
-  }
-
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
@@ -107,7 +72,10 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
                 label: 'Invoice',
                 hint: 'Create an invoice for this job',
                 // ignore: discarded_futures
-                onPressed: () => _createInvoiceFor(job),
+                onPressed: () async {
+                  await createInvoiceFor(job, context);
+                  await _loadJobs();
+                },
               ),
             ],
             children: [

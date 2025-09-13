@@ -16,7 +16,7 @@ import '../util/dart/local_date.dart';
 import 'dao.dart';
 
 class DaoJobActivity extends Dao<JobActivity> {
-  static const  tableName = 'job_activity';
+  static const tableName = 'job_activity';
   DaoJobActivity() : super(tableName);
 
   @override
@@ -35,6 +35,34 @@ class DaoJobActivity extends Dao<JobActivity> {
         orderBy: 'start_date asc',
       ),
     );
+  }
+
+  /// Returns all activities scheduled on [date].
+  /// The activiites start and end date must fall within the given date.
+  Future<List<JobActivity>> getActivitiesForDate(LocalDate date) async {
+    final db = withoutTransaction();
+
+    final start = date.startOfDay();
+    final end = date.endOfDay();
+    final results = await db.query(
+      tableName,
+      where:
+          '''(start_date >= ? AND start_date < ?) OR (end_date > ? AND end_date <= ?)''',
+      whereArgs: <Object>[
+        start.toIso8601String(),
+        end.toIso8601String(),
+        start.toIso8601String(),
+        end.toIso8601String(),
+      ],
+      orderBy: 'start_date ASC', // ← next activity first
+    );
+
+    // Convert each row into a JobActivity
+    final jobEvents = <JobActivity>[];
+    for (final row in results) {
+      jobEvents.add(JobActivity.fromMap(row));
+    }
+    return jobEvents;
   }
 
   Future<List<JobActivity>> getActivitiesInRange(
@@ -104,5 +132,4 @@ class DaoJobActivity extends Dao<JobActivity> {
 
     return fromMap(data.first);
   }
-
 }

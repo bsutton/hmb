@@ -1,4 +1,5 @@
 import '../entity/todo.dart';
+import '../util/dart/local_date.dart';
 import 'dao.g.dart';
 
 class DaoToDo extends Dao<ToDo> {
@@ -119,6 +120,32 @@ class DaoToDo extends Dao<ToDo> {
     );
 
     return maps.map(ToDo.fromMap).toList();
+  }
+
+  /// Get open todos due today or overdue.
+  Future<List<ToDo>> getDueByDate(LocalDate dueBy) async {
+    final db = withoutTransaction();
+
+    final endOfDate = dueBy.endOfDay();
+    final endIso = endOfDate.toUtc().toIso8601String();
+
+    final rows = await db.query(
+      tableName,
+      where: '''
+      status = ?
+      AND due_date IS NOT NULL
+      AND (
+        due_date <= ?              
+      )
+    ''',
+      whereArgs: [
+        ToDoStatus.open.name,
+        endIso, // today upper bound
+      ],
+      orderBy: 'due_date ASC, created_date ASC',
+    );
+
+    return rows.map(ToDo.fromMap).toList();
   }
 
   /// Get a list of open todo's that have reminders set
