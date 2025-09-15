@@ -8,8 +8,9 @@ import '../../widgets/widgets.g.dart';
 import 'today_page.dart';
 
 class JobCard extends StatelessWidget {
-  const JobCard(this.jobAndActivity, {super.key});
   final JobAndActivity jobAndActivity;
+
+  const JobCard(this.jobAndActivity, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -41,8 +42,8 @@ class JobCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(width: 5),
                             Expanded(
                               child: Text(
                                 displayText,
