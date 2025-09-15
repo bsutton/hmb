@@ -4,6 +4,7 @@ import 'layout.g.dart';
 
 class HMBRow extends StatelessWidget {
   final CrossAxisAlignment crossAxisAlignment;
+  final MainAxisAlignment mainAxisAlignment;
 
   final List<Widget> children;
 
@@ -11,6 +12,7 @@ class HMBRow extends StatelessWidget {
     required this.children,
     this.crossAxisAlignment = CrossAxisAlignment.center,
     super.key,
+    this.mainAxisAlignment = MainAxisAlignment.start,
   });
 
   List<Widget> withSpacing(List<Widget> children) {
@@ -26,6 +28,7 @@ class HMBRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
+    mainAxisAlignment: mainAxisAlignment,
     crossAxisAlignment: crossAxisAlignment,
     children: withSpacing(children),
   );
