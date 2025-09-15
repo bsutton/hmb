@@ -197,16 +197,20 @@ class HMBTextHeadline extends StatelessWidget {
 class HMBTextHeadline2 extends StatelessWidget {
   final String text;
   final Color color;
+  final Color? backgroundColor;
   static const fontSize = 24.0;
 
   const HMBTextHeadline2(
     this.text, {
     super.key,
     this.color = HMBColors.textPrimary,
+    this.backgroundColor,
   });
 
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    color: backgroundColor,
     padding: const EdgeInsets.only(top: 8, bottom: 8),
     child: Text(
       text,
