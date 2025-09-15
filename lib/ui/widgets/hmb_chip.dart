@@ -36,7 +36,7 @@ class HMBChip extends StatelessWidget {
   Color _textColor(BuildContext context) {
     switch (tone) {
       case HMBChipTone.accent:
-        return Theme.of(context).colorScheme.primary;
+        return Colors.white;
       case HMBChipTone.danger:
         return Colors.red.shade400;
       case HMBChipTone.warning:
