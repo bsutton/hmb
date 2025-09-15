@@ -34,6 +34,8 @@ class LocalDate {
   /// Creates a [LocalDate] with todays date.
   LocalDate.today() : date = stripTime(DateTime.now());
 
+  factory LocalDate.tomorrow() => LocalDate.today().addDays(1);
+
   /// Creates a ]LocalDate] by taking the date component of the past
   /// DateTime.
   LocalDate.fromDateTime(DateTime dateTime) : date = stripTime(dateTime);
