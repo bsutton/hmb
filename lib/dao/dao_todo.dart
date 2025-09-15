@@ -83,20 +83,26 @@ class DaoToDo extends Dao<ToDo> {
     await update(updated);
   }
 
-  Future<void> snooze(ToDo t, Duration by) async {
-    final due = (t.dueDate ?? DateTime.now()).add(by);
-    final remind = t.remindAt?.add(by);
+  Future<void> snooze(ToDo t, DateTime dueDate) async {
+    DateTime? remind;
+
+    /// adjust the reminder.
+    if (t.dueDate != null && t.remindAt != null) {
+      final before = t.dueDate!.difference(t.remindAt!);
+      remind = dueDate.subtract(before);
+    }
     final u = t.copyWith(
       title: t.title,
       status: t.status,
       priority: t.priority,
       note: t.note,
-      dueDate: due,
+      dueDate: dueDate,
       remindAt: remind,
       parentType: t.parentType,
       parentId: t.parentId,
       completedDate: t.completedDate,
     );
+
     await update(u);
   }
 
@@ -127,7 +133,7 @@ class DaoToDo extends Dao<ToDo> {
     final db = withoutTransaction();
 
     final endOfDate = dueBy.endOfDay();
-    final endIso = endOfDate.toUtc().toIso8601String();
+    final endIso = endOfDate.toIso8601String();
 
     final rows = await db.query(
       tableName,
@@ -154,7 +160,6 @@ class DaoToDo extends Dao<ToDo> {
 
     // Include slightly past reminders so near-now saves aren’t missed.
     final cutoffIso = DateTime.now()
-        .toUtc()
         .subtract(const Duration(seconds: 60))
         .toIso8601String();
 

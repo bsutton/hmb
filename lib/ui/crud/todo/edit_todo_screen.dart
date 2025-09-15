@@ -4,13 +4,10 @@ import 'package:flutter/widgets.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/job.dart';
 import '../../../entity/todo.dart';
-import '../../../util/dart/date_time_ex.dart';
-import '../../../util/dart/local_time.dart';
 import '../../../util/flutter/notifications/local_notifs.dart';
-import '../../widgets/fields/fields.g.dart';
 import '../../widgets/select/select.g.dart';
-import '../../widgets/widgets.g.dart';
 import '../base_full_screen/base_full_screen.g.dart';
+import 'edit_todo_card.dart';
 
 class ToDoEditScreen extends StatefulWidget {
   final ToDo? toDo;
@@ -30,39 +27,27 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
   @override
   ToDo? currentEntity;
 
-  late TextEditingController _title;
-  late TextEditingController _note;
-  ToDoPriority _priority = ToDoPriority.none;
-  ToDoStatus _status = ToDoStatus.open;
+  late ToDo _draft;
+
 
   ToDoParentType? _parentType;
 
   final selectedJob = SelectedJob();
   final selectedCustomer = SelectedCustomer();
 
-  DateTime? _dueDate;
-  DateTime? _remindAt;
-  DateTime? _completedDate;
 
   @override
   Future<void> asyncInitState() async {
     currentEntity = widget.toDo;
 
-    if (currentEntity == null && widget.preselectedJob != null) {
-      _parentType = ToDoParentType.job;
-      await _getParent(_parentType, widget.preselectedJob?.id);
-    } else {
-      await _getParent(currentEntity?.parentType, currentEntity?.parentId);
-      _parentType = currentEntity?.parentType;
-    }
-
-    _title = TextEditingController(text: currentEntity?.title);
-    _note = TextEditingController(text: currentEntity?.note ?? '');
-    _priority = currentEntity?.priority ?? ToDoPriority.none;
-    _status = currentEntity?.status ?? ToDoStatus.open;
-    _dueDate = currentEntity?.dueDate;
-    _remindAt = currentEntity?.remindAt;
-    _completedDate = currentEntity?.completedDate;
+    // Seed a working draft from the entity (or a minimal new one)
+    _draft =
+        currentEntity ??
+        ToDo.forInsert(
+          title: '',
+          parentType: widget.preselectedJob != null ? ToDoParentType.job : null,
+          parentId: widget.preselectedJob?.id,
+        );
   }
 
   Future<void> _getParent(ToDoParentType? parentType, int? parentId) async {
@@ -88,96 +73,24 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
       entityName: 'To-Do',
       dao: DaoToDo(),
       entityState: this,
-      // Use this to schedule/cancel notifications after save.
       preSave: (todo) async => true,
-      crossValidator: () async => switch (_parentType) {
-        ToDoParentType.job => selectedJob.jobId != null,
-        ToDoParentType.customer => selectedCustomer.customerId != null,
-        _ => selectedCustomer.customerId == null && selectedJob.jobId == null,
+      crossValidator: () async {
+        // Validate based on the draft’s parentType/parentId
+        switch (_draft.parentType) {
+          case ToDoParentType.job:
+            return _draft.parentId != null;
+          case ToDoParentType.customer:
+            return _draft.parentId != null;
+          case null:
+            return true;
+        }
       },
-
-      editor: (entity, {required isNew}) => _buildCard(),
+      editor: (entity, {required isNew}) => ToDoEditorCard(
+        todo: _draft,
+        preselectedJob: widget.preselectedJob,
+        onChanged: (updated) => setState(() => _draft = updated),
+      ),
     ),
-  );
-
-  Column _buildCard() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      HMBTextField(controller: _title, labelText: 'Title', required: true),
-      HMBTextArea(controller: _note, labelText: 'Notes'),
-
-      // Context picker (None / Job / Customer)
-      if (widget.preselectedJob == null)
-        HMBSelectChips<ToDoParentType?>(
-          label: 'Context',
-          value: _parentType,
-          items: const [null, ToDoParentType.job, ToDoParentType.customer],
-          format: (v) => v == null ? 'None' : v.name,
-          onChanged: (v) => setState(() {
-            _parentType = v;
-            selectedCustomer.customerId = null;
-            selectedJob.jobId = null;
-          }),
-        ),
-      if (widget.preselectedJob == null && _parentType == ToDoParentType.job)
-        HMBSelectJob(
-          selectedJob: selectedJob,
-          required: true,
-          onSelected: (job) async {
-            await _getParent(ToDoParentType.job, job?.id);
-            setState(() {});
-          },
-        ),
-      if (widget.preselectedJob == null &&
-          _parentType == ToDoParentType.customer)
-        HMBSelectCustomer(
-          selectedCustomer: selectedCustomer,
-          required: true,
-          onSelected: (c) async {
-            await _getParent(ToDoParentType.customer, c?.id);
-            setState(() {});
-          },
-        ),
-      HMBSelectChips<ToDoPriority>(
-        label: 'Priority',
-        value: _priority,
-        items: ToDoPriority.values,
-        format: (v) => v.name,
-        onChanged: (v) => setState(() => _priority = v!),
-      ),
-      HMBDateTimeField(
-        label: 'Due By',
-        mode: HMBDateTimeFieldMode.dateAndTime,
-        initialDateTime:
-            _dueDate ??
-            DateTime.now()
-                .add(const Duration(days: 3))
-                .withTime(const LocalTime(hour: 9, minute: 0)),
-        onChanged: (d) => _dueDate = d,
-      ),
-      HMBDateTimeField(
-        label: 'Reminder',
-        mode: HMBDateTimeFieldMode.dateAndTime,
-        initialDateTime:
-            _remindAt ??
-            DateTime.now()
-                .add(const Duration(days: 2))
-                .withTime(const LocalTime(hour: 9, minute: 0)),
-        onChanged: (d) => _remindAt = d,
-      ),
-      HMBSelectChips<ToDoStatus>(
-        label: 'Status',
-        value: _status,
-        items: ToDoStatus.values,
-        format: (v) => v.name,
-        onChanged: (v) {
-          setState(() {
-            _status = v!;
-            _completedDate = _status == ToDoStatus.done ? DateTime.now() : null;
-          });
-        },
-      ),
-    ],
   );
 
   @override
@@ -193,29 +106,10 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
   }
 
   @override
-  Future<ToDo> forInsert() async => ToDo.forInsert(
-    title: _title.text,
-    note: _note.text.trim().isEmpty ? null : _note.text,
-    priority: _priority,
-    status: _status,
-    dueDate: _dueDate,
-    remindAt: _remindAt,
-    parentType: _parentType,
-    parentId: getParentId(),
-  );
+  Future<ToDo> forInsert() async => _draft;
 
   @override
-  Future<ToDo> forUpdate(ToDo entity) async => entity.copyWith(
-    title: _title.text,
-    note: _note.text.trim().isEmpty ? null : _note.text,
-    priority: _priority,
-    status: _status,
-    dueDate: _dueDate,
-    remindAt: _remindAt,
-    parentType: _parentType,
-    parentId: getParentId(),
-    completedDate: _completedDate,
-  );
+  Future<ToDo> forUpdate(ToDo entity) async => _draft;
 
   int? getParentId() => switch (_parentType) {
     ToDoParentType.job => selectedJob.jobId,

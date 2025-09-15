@@ -20,8 +20,8 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 // -- Example imports. Adapt for your project:
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/dart/local_date.dart';
-import '../../../util/flutter/app_title.dart';
+import '../../../util/flutter/flutter_util.g.dart';
+import '../../crud/todo/list_todo_card.dart';
 import '../../invoicing/create_invoice_ui.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/text.g.dart';
@@ -142,7 +142,9 @@ class TodayPage extends StatefulWidget {
 /// [TodayPageState]
 ///
 class TodayPageState extends DeferredState<TodayPage> {
-  late final Today today;
+  late Today today;
+
+  var todoRefresh = 0;
 
   @override
   Future<void> asyncInitState() async {
@@ -155,6 +157,12 @@ class TodayPageState extends DeferredState<TodayPage> {
     super.dispose();
   }
 
+  Future<void> refresh() async {
+    today = await Today.fetchToday();
+    todoRefresh++;
+    setState(() {});
+  }
+
   // BUILD
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -165,7 +173,7 @@ class TodayPageState extends DeferredState<TodayPage> {
         child: SizedBox(
           width: double.infinity,
           child: SingleChildScrollView(
-            child: Column(
+            child: HMBColumn(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [..._buildCards()],
             ),
@@ -176,108 +184,91 @@ class TodayPageState extends DeferredState<TodayPage> {
   );
 
   List<Widget> _buildCards() => [
-    ...jobList(today),
-    ...todoList(today),
-    ...shoppingList(today),
-    ...packingList(today),
-    ...quotingList(today),
-    ...invoicingList(today),
+    jobList(today),
+    todoList(today, refresh),
+    shoppingList(today),
+    packingList(today),
+    quotingList(today),
+    invoicingList(today),
   ];
+
+  Widget jobList(Today today) => Listing<JobAndActivity>(
+    title: 'Jobs',
+    list: today.activities,
+    emptyMessage: 'No jobs scheduled for today.',
+    cardBuilder: JobCard.new,
+  );
+
+  Widget todoList(Today today, VoidCallback onChange) => Listing<ToDo>(
+    key: ValueKey(todoRefresh),
+    title: 'To Do',
+    list: today.todos,
+    onChange: onChange,
+    emptyMessage: 'No To Dos.',
+    cardBuilder: (todo) => Column(
+      children: [
+        Row(
+          children: [
+            Checkbox(
+              value: todo.status == ToDoStatus.done,
+              onChanged: (_) async {
+                await DaoToDo().toggleDone(todo);
+                await refresh();
+                HMBToast.info('Marked ${todo.title} as done');
+              },
+            ),
+            Expanded(child: HMBTextHeadline2(todo.title)),
+          ],
+        ),
+        ToDoCard(todo, (todo) => onChange()),
+      ],
+    ),
+  );
+
+  Widget shoppingList(Today today) => Listing<TaskItem>(
+    title: 'Shopping',
+    list: today.shopping,
+    emptyMessage: 'No shopping for today.',
+    cardBuilder: ShoppingCard.new,
+  );
+
+  Widget packingList(Today today) => Listing<TaskItem>(
+    title: 'Packing',
+    list: today.packing,
+    emptyMessage: 'No packing for today.',
+    cardBuilder: PackingCard.new,
+  );
+
+  Widget quotingList(Today today) => Listing<Job>(
+    title: 'Quoting',
+    list: today.toBeQuoted,
+    emptyMessage: 'No quotes for today.',
+    cardBuilder: QuotingCard.new,
+  );
+
+  Widget invoicingList(Today today) => Listing<Job>(
+    title: 'Invoicing',
+    list: today.toBeInvoiced,
+    emptyMessage: 'No jobs need to be invoiced.',
+    cardBuilder: InvoiceCard.new,
+  );
 }
 
-List<Widget> jobList(Today today) => [
-  const HMBTextHeadline2('Jobs'),
-  HMBOneOf(
-    condition: today.activities.isEmpty,
-    onTrue: const HMBText('No jobs scheduled for today.'),
-    onFalse: HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: today.activities.map(JobCard.new).toList(),
-    ),
-  ),
-];
-
-List<Widget> todoList(Today today) => [
-  const HMBTextHeadline2('To Do'),
-  HMBOneOf(
-    condition: today.todos.isEmpty,
-    onTrue: const Surface(rounded: true, child: HMBText('No To Dos.')),
-    onFalse: HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: today.todos.map(ToDoCard.new).toList(),
-    ),
-  ),
-];
-
-List<Widget> shoppingList(Today today) => [
-  const HMBTextHeadline2('Shopping'),
-  Surface(
-    rounded: true,
-    child: HMBOneOf(
-      condition: today.shopping.isEmpty,
-      onTrue: const HMBText('No shopping for today.'),
-      onFalse: HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: today.shopping.map(ShoppingCard.new).toList(),
-      ),
-    ),
-  ),
-];
-
-List<Widget> packingList(Today today) => [
-  const HMBTextHeadline2('Packing'),
-  HMBOneOf(
-    condition: today.packing.isEmpty,
-    onTrue: const Surface(
-      rounded: true,
-      child: HMBText('No packing for today.'),
-    ),
-    onFalse: HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: today.packing.map(PackingCard.new).toList(),
-    ),
-  ),
-];
-
-List<Widget> quotingList(Today today) => [
-  const HMBTextHeadline2('Quoting'),
-  HMBOneOf(
-    condition: today.toBeQuoted.isEmpty,
-    onTrue: const Surface(
-      rounded: true,
-      child: HMBText('No quotes for today.'),
-    ),
-    onFalse: HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: today.toBeQuoted.map(QuotingCard.new).toList(),
-    ),
-  ),
-];
-List<Widget> invoicingList(Today today) => [
-  const HMBTextHeadline2('Invoicing'),
-  HMBOneOf(
-    condition: today.toBeInvoiced.isEmpty,
-    onTrue: const Surface(
-      rounded: true,
-      child: HMBText('No jobs need to be invoiced.'),
-    ),
-    onFalse: HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: today.toBeInvoiced.map(InvoiceCard.new).toList(),
-    ),
-  ),
-];
-
+// to do
 class ToDoCard extends StatelessWidget {
   final ToDo todo;
+  final void Function(ToDo) onChange;
 
-  const ToDoCard(this.todo, {super.key});
+  const ToDoCard(this.todo, this.onChange, {super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      Surface(rounded: true, child: HMBText(todo.title));
+  Widget build(BuildContext context) => Surface(
+    rounded: true,
+    child: ListTodoCard(todo: todo, onChange: onChange),
+  );
 }
 
+// shopping
 class ShoppingCard extends StatelessWidget {
   final TaskItem taskItem;
 
@@ -320,24 +311,6 @@ class PackingCard extends StatelessWidget {
       ),
     ),
   );
-}
-
-class JobAndTask {
-  final Customer customer;
-  final Job job;
-  final Task task;
-  final TaskItem taskItem;
-
-  JobAndTask._(this.customer, this.job, this.task, this.taskItem);
-
-  static Future<JobAndTask> fetch(TaskItem taskItem) async {
-    final task = await DaoTask().getTaskForItem(taskItem);
-
-    final job = await DaoJob().getJobForTask(task.id);
-    final customer = await DaoCustomer().getByJob(job!.id);
-
-    return JobAndTask._(customer!, job, task, taskItem);
-  }
 }
 
 class QuotingCard extends StatelessWidget {
@@ -398,4 +371,69 @@ class InvoiceCard extends StatelessWidget {
       ),
     ),
   );
+}
+
+class Listing<T> extends StatelessWidget {
+  final String title;
+  final List<T> list;
+  final Widget Function(T) cardBuilder;
+  final void Function()? onChange;
+  final String emptyMessage;
+
+  const Listing({
+    required this.title,
+    required this.list,
+    required this.cardBuilder,
+    required this.emptyMessage,
+    this.onChange,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      SizedBox(
+        width: double.infinity,
+        child: HMBTextHeadline2(
+          title,
+          backgroundColor: HMBColors.listCardBackgroundSelected,
+        ),
+      ),
+      HMBOneOf(
+        condition: list.isEmpty,
+        onTrue: HMBText(emptyMessage),
+        onFalse: HMBColumn(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: list
+              .map(
+                (entity) => Surface(
+                  rounded: true,
+                  padding: EdgeInsets.zero,
+                  child: cardBuilder(entity),
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    ],
+  );
+}
+
+class JobAndTask {
+  final Customer customer;
+  final Job job;
+  final Task task;
+  final TaskItem taskItem;
+
+  JobAndTask._(this.customer, this.job, this.task, this.taskItem);
+
+  static Future<JobAndTask> fetch(TaskItem taskItem) async {
+    final task = await DaoTask().getTaskForItem(taskItem);
+
+    final job = await DaoJob().getJobForTask(task.id);
+    final customer = await DaoCustomer().getByJob(job!.id);
+
+    return JobAndTask._(customer!, job, task, taskItem);
+  }
 }

@@ -6,7 +6,8 @@ import '../../../dao/dao_customer.dart';
 import '../../../dao/dao_job.dart';
 import '../../../dao/dao_todo.dart';
 import '../../../entity/todo.dart';
-import '../../../util/dart/format.dart';
+import '../../../util/dart/dart.g.dart';
+import '../../../util/flutter/notifications/local_notifs.dart';
 import '../../dialog/hmb_snooze_picker.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_entity_chip.dart';
@@ -18,14 +19,16 @@ import 'list_todo_screen.dart';
 
 class ListTodoCard extends StatelessWidget {
   final ToDo todo;
+  final void Function(ToDo)? onChange;
 
-  const ListTodoCard({required this.todo, super.key});
+  const ListTodoCard({required this.todo, this.onChange, super.key});
 
   @override
   Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       HMBRow(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           if (todo.parentType == null) const HMBChip(label: 'Personal'),
           if (todo.parentType == ToDoParentType.job)
@@ -36,16 +39,16 @@ class ListTodoCard extends StatelessWidget {
               format: (customer) => customer.name,
             ),
           HMBChip(label: 'Priority: ${todo.priority.name}'),
+          if (todo.parentType == ToDoParentType.job)
+            FutureBuilderEx(
+              future: DaoJob().getById(todo.parentId),
+              builder: (context, job) => HMBLinkInternal(
+                label: 'Job: #${todo.parentId}',
+                navigateTo: () async => FullPageListJobCard(job!),
+              ),
+            ),
         ],
       ),
-      if (todo.parentType == ToDoParentType.job)
-        FutureBuilderEx(
-          future: DaoJob().getById(todo.parentId),
-          builder: (context, job) => HMBLinkInternal(
-            label: 'Job: #${todo.parentId}',
-            navigateTo: () async => FullPageListJobCard(job!),
-          ),
-        ),
 
       if (todo.parentType == ToDoParentType.customer)
         FutureBuilderEx(
@@ -79,19 +82,40 @@ class ListTodoCard extends StatelessWidget {
         format: (o) => o.description,
         itemIcon: (o) => o.icon,
         onSelected: (o) async {
-          var duration = o.duration;
-          if (duration == null) {
-            // For "Pick…": compute base (same logic your DAO uses)
-            final base = todo.dueDate ?? DateTime.now();
-            duration = await HMBSnoozePicker.pickSnoozeDuration(
-              context,
-              base: base,
-              initial: base.add(const Duration(hours: 2)),
-            );
+          const am7 = LocalTime(hour: 7, minute: 0);
+          var newDue = todo.dueDate;
+          switch (o) {
+            case SnoozeOption.todayEve:
+              newDue = LocalDate.today().toDateTime(
+                time: const LocalTime(hour: 17, minute: 00),
+              );
+            case SnoozeOption.tomorrow:
+              newDue = LocalDate.tomorrow().toDateTime(time: am7);
+            case SnoozeOption.nextWeek:
+              newDue = LocalDate.today().addDays(7).toDateTime(time: am7);
+            case SnoozeOption.pick:
+              final base = todo.dueDate ?? DateTime.now();
+              final duration = await HMBSnoozePicker.pickSnoozeDuration(
+                context,
+                base: base,
+                initial: base.add(const Duration(hours: 2)),
+              );
+              if (duration != null) {
+                newDue = DateTime.now().add(duration);
+              }
           }
 
-          if (duration != null) {
-            await DaoToDo().snooze(todo, o.duration!);
+          if (todo.status == ToDoStatus.done || todo.remindAt == null) {
+            await LocalNotifs().cancelForToDo(todo.id);
+          }
+
+          if (todo.status == ToDoStatus.open && todo.remindAt != null) {
+            await LocalNotifs().scheduleForToDo(todo);
+          }
+
+          if (newDue != null) {
+            await DaoToDo().snooze(todo, newDue);
+            onChange?.call(todo);
           }
         },
       );
