@@ -19,10 +19,12 @@ class HMBTextArea extends StatelessWidget {
   final String labelText;
   final int maxLines;
   final bool leadingPadding;
+  final void Function(String?)? onChanged;
 
   const HMBTextArea({
     required this.controller,
     required this.labelText,
+    this.onChanged,
     this.maxLines = 6,
     this.focusNode,
     this.leadingPadding = true,
@@ -39,6 +41,7 @@ class HMBTextArea extends StatelessWidget {
         textInputAction: TextInputAction.newline,
         controller: controller,
         focusNode: focusNode,
+        onChanged: onChanged?.call,
         decoration: InputDecoration(
           labelText: labelText,
           border: const OutlineInputBorder(),
