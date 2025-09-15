@@ -117,15 +117,15 @@ class LocalNotifs {
     await init();
 
     // Normalize: treat n.scheduledAtMillis as UTC for cross-platform sanity.
-    final utcMs = n.scheduledAtMillis;
-    final nowUtcMs = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final ms = n.scheduledAtMillis;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
 
     // If slightly in the past (<= grace), nudge forward 1 minute.
     final isSlightlyPast =
-        utcMs < nowUtcMs && (nowUtcMs - utcMs) <= _grace.inMilliseconds;
+        ms < nowMs && (nowMs - ms) <= _grace.inMilliseconds;
     final targetUtcMs = isSlightlyPast
-        ? (nowUtcMs + const Duration(minutes: 1).inMilliseconds)
-        : utcMs;
+        ? (nowMs + const Duration(minutes: 1).inMilliseconds)
+        : ms;
 
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
       // Use tz-aware schedule on mobile/mac
@@ -155,7 +155,7 @@ class LocalNotifs {
     } else if (Platform.isWindows || Platform.isLinux) {
       // Enqueue into in-app scheduler (fires while app is open).
       // If way in the past (beyond grace), skip enqueue.
-      if (targetUtcMs + _grace.inMilliseconds < nowUtcMs) {
+      if (targetUtcMs + _grace.inMilliseconds < nowMs) {
         return;
       }
 
@@ -198,7 +198,7 @@ class LocalNotifs {
       id: _idForToDo(todo.id),
       title: 'Reminder',
       body: todo.title,
-      scheduledAtMillis: when.toUtc().millisecondsSinceEpoch,
+      scheduledAtMillis: when.millisecondsSinceEpoch,
       payload: {'type': 'todo', 'id': '${todo.id}'},
     );
     await schedule(n);
@@ -221,7 +221,7 @@ class LocalNotifs {
             id: _idForToDo(t.id),
             title: 'Reminder',
             body: t.title,
-            scheduledAtMillis: t.remindAt!.toUtc().millisecondsSinceEpoch,
+            scheduledAtMillis: t.remindAt!.millisecondsSinceEpoch,
             payload: {'type': 'todo', 'id': '${t.id}'},
           ),
         );

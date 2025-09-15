@@ -273,7 +273,7 @@ void main() {
             as String,
       );
 
-      final seed = DateTime(2001, 2, 3, 4, 5, 6).toUtc();
+      final seed = DateTime(2001, 2, 3, 4, 5, 6);
       await cache.setLastAccess(variant: general, when: seed);
 
       idx = await _readIndex();

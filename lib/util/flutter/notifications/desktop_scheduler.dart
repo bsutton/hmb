@@ -70,10 +70,10 @@ class DesktopNotifScheduler {
   // ---- internals -----------------------------------------------------------
 
   Future<void> _tickCheck() async {
-    final nowUtcMs = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
 
     // Collect all keys <= now+grace
-    final cutoff = nowUtcMs + _fireGrace.inMilliseconds;
+    final cutoff = nowMs + _fireGrace.inMilliseconds;
     final dueKeys = <int>[];
     for (final key in _queue.keys) {
       if (key <= cutoff) {
@@ -90,7 +90,7 @@ class DesktopNotifScheduler {
       final items = _queue.remove(key) ?? const <Notif>[];
       for (final n in items) {
         // If still clearly in the past beyond grace, skip firing.
-        if (n.scheduledAtMillis + _fireGrace.inMilliseconds < nowUtcMs) {
+        if (n.scheduledAtMillis + _fireGrace.inMilliseconds < nowMs) {
           continue;
         }
         await _fln.show(
