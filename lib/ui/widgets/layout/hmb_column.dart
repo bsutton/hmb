@@ -15,7 +15,15 @@ class HMBColumn extends StatelessWidget {
     super.key,
   });
 
-  List<Widget> withSpacing(List<Widget> children) {
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: crossAxisAlignment,
+    children: _withSpacing(children),
+  );
+
+
+  List<Widget> _withSpacing(List<Widget> children) {
     final out = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       if (i > 0) {
@@ -25,10 +33,4 @@ class HMBColumn extends StatelessWidget {
     }
     return out;
   }
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: crossAxisAlignment,
-    children: withSpacing(children),
-  );
 }
