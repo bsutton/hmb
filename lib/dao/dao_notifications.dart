@@ -17,90 +17,169 @@ import 'dao.g.dart';
 
 typedef DaoNotifierFn = void Function(DaoBase dao, int? entityId);
 
-/// Global notification hook. Set this from the app (Flutter) layer.
-/// In CLI tools, leave it unset (no-op).
 class DaoNotifications {
-  /// Optional notifier installed by the environment (Flutter adapter).
-  static DaoNotifierFn? notifier;
-
   DaoNotifications._();
 
-  /// Utility for DAOs to emit a change.
-  static void notify(DaoBase dao, int? entityId) {
-    final fn = notifier;
-    if (fn != null) {
-      fn(dao, entityId);
-    }
+  /// Utility for DAOs to emit a change; pass an entityId if you have it.
+  static void notify(DaoBase dao, [int? entityId]) {
+    JuneDaoNotifier.notify(dao, entityId);
   }
 }
 
-typedef JuneStateCreator = JuneState Function();
+typedef JuneStateCreator<T extends JuneState> = T Function();
+typedef NotifierFactory<T extends JuneState> = T Function();
 
 /// Install this once during Flutter app startup to wire DAOs to June.
 class JuneDaoNotifier {
-  /// Map of tableName -> June refresher constructor
-  static final Map<String, JuneStateCreator> _registry = {
-    DaoCategory.tableName: CategoryNotifier.new,
-    DaoCheckListItemCheckList.tableName: CheckListItemCheckListNotifier.new,
-    DaoCheckListTask.tableName: CheckListTaskNotifier.new,
-    DaoContact.tableName: ContactNotifier.new,
-    DaoContactSupplier.tableName: ContactSupplierNotifier.new,
-    DaoCustomer.tableName: CustomerNotifier.new,
-    DaoContactCustomer.tableName: ContactCustomerNotifier.new,
-    DaoInvoice.tableName: InvoiceNotifier.new,
-    DaoInvoiceLine.tableName: InvoiceLineNotifier.new,
-    DaoInvoiceLineGroup.tableName: InvoiceLineGroupNotifier.new,
-    DaoJob.tableName: JobStateNotifier.new,
-    DaoJobActivity.tableName: JobActivityNotifier.new,
-    DaoManufacturer.tableName: ManufacturerNotifier.new,
-    DaoMilestone.tableName: MilestoneNotifier.new,
-    DaoMessageTemplate.tableName: MessageTemplateNotifier.new,
-    DaoPhoto.tableName: PhotoNotifier.new,
-    DaoQuote.tableName: QuoteNotifier.new,
-    DaoQuoteLine.tableName: QuoteLineNotifier.new,
-    DaoQuoteLineGroup.tableName: QuoteLineGroupNotifier.new,
-    DaoReceipt.tableName: ReceiptNotifier.new,
-    DaoSite.tableName: SiteNotifier.new,
-    DaoSiteCustomer.tableName: SiteCustomerNotifier.new,
-    DaoSystem.tableName: SystemNotifier.new,
-    DaoSupplier.tableName: SupplierNotifier.new,
-    DaoSiteSupplier.tableName: SiteSupplierNotifier.new,
-    DaoTask.tableName: TaskNotifier.new,
-    DaoTaskItem.tableName: TaskItemNotifier.new,
-    DaoTimeEntry.tableName: TimeEntryNotifier.new,
-    DaoToDo.tableName: ToDoNotifier.new,
-    DaoTool.tableName: ToolNotifier.new,
-    DaoVersion.tableName: VersionNotifier.new,
-    DaoWorkAssigment.tableName: WorkAssignmentTaskNotifier.new,
-    DaoWorkAssignmentTask.tableName: WorkAssignmentTaskNotifier.new,
+  /// Map of tableName -> notify thunk.
+  /// We accept an optional entityId for future per-entity optimizations.
+  static final Map<String, void Function(int? entityId)> _notifiers = {
+    DaoCategory.tableName: (_) =>
+        June.getState<CategoryNotifier>(CategoryNotifier.new).setState(),
+
+    DaoCheckListItemCheckList.tableName: (_) =>
+        June.getState<CheckListItemCheckListNotifier>(
+          CheckListItemCheckListNotifier.new,
+        ).setState(),
+
+    DaoCheckListTask.tableName: (_) => June.getState<CheckListTaskNotifier>(
+      CheckListTaskNotifier.new,
+    ).setState(),
+
+    DaoContact.tableName: (_) =>
+        June.getState<ContactNotifier>(ContactNotifier.new).setState(),
+
+    DaoContactSupplier.tableName: (_) => June.getState<ContactSupplierNotifier>(
+      ContactSupplierNotifier.new,
+    ).setState(),
+
+    DaoCustomer.tableName: (_) =>
+        June.getState<CustomerNotifier>(CustomerNotifier.new).setState(),
+
+    DaoContactCustomer.tableName: (_) => June.getState<ContactCustomerNotifier>(
+      ContactCustomerNotifier.new,
+    ).setState(),
+
+    DaoInvoice.tableName: (_) =>
+        June.getState<InvoiceNotifier>(InvoiceNotifier.new).setState(),
+
+    DaoInvoiceLine.tableName: (_) =>
+        June.getState<InvoiceLineNotifier>(InvoiceLineNotifier.new).setState(),
+
+    DaoInvoiceLineGroup.tableName: (_) =>
+        June.getState<InvoiceLineGroupNotifier>(
+          InvoiceLineGroupNotifier.new,
+        ).setState(),
+
+    DaoJob.tableName: (_) =>
+        June.getState<JobStateNotifier>(JobStateNotifier.new).setState(),
+
+    DaoJobActivity.tableName: (_) =>
+        June.getState<JobActivityNotifier>(JobActivityNotifier.new).setState(),
+
+    DaoManufacturer.tableName: (_) => June.getState<ManufacturerNotifier>(
+      ManufacturerNotifier.new,
+    ).setState(),
+
+    DaoMilestone.tableName: (_) =>
+        June.getState<MilestoneNotifier>(MilestoneNotifier.new).setState(),
+
+    DaoMessageTemplate.tableName: (_) => June.getState<MessageTemplateNotifier>(
+      MessageTemplateNotifier.new,
+    ).setState(),
+
+    DaoPhoto.tableName: (_) =>
+        June.getState<PhotoNotifier>(PhotoNotifier.new).setState(),
+
+    DaoQuote.tableName: (_) =>
+        June.getState<QuoteNotifier>(QuoteNotifier.new).setState(),
+
+    DaoQuoteLine.tableName: (_) =>
+        June.getState<QuoteLineNotifier>(QuoteLineNotifier.new).setState(),
+
+    DaoQuoteLineGroup.tableName: (_) => June.getState<QuoteLineGroupNotifier>(
+      QuoteLineGroupNotifier.new,
+    ).setState(),
+
+    DaoReceipt.tableName: (_) =>
+        June.getState<ReceiptNotifier>(ReceiptNotifier.new).setState(),
+
+    DaoSite.tableName: (_) =>
+        June.getState<SiteNotifier>(SiteNotifier.new).setState(),
+
+    DaoSiteCustomer.tableName: (_) => June.getState<SiteCustomerNotifier>(
+      SiteCustomerNotifier.new,
+    ).setState(),
+
+    DaoSystem.tableName: (_) =>
+        June.getState<SystemNotifier>(SystemNotifier.new).setState(),
+
+    DaoSupplier.tableName: (_) =>
+        June.getState<SupplierNotifier>(SupplierNotifier.new).setState(),
+
+    DaoSiteSupplier.tableName: (_) => June.getState<SiteSupplierNotifier>(
+      SiteSupplierNotifier.new,
+    ).setState(),
+
+    DaoTask.tableName: (_) =>
+        June.getState<TaskNotifier>(TaskNotifier.new).setState(),
+
+    DaoTaskItem.tableName: (_) =>
+        June.getState<TaskItemNotifier>(TaskItemNotifier.new).setState(),
+
+    DaoTimeEntry.tableName: (_) =>
+        June.getState<TimeEntryNotifier>(TimeEntryNotifier.new).setState(),
+
+    DaoToDo.tableName: (_) =>
+        June.getState<ToDoNotifier>(ToDoNotifier.new).setState(),
+
+    DaoTool.tableName: (_) =>
+        June.getState<ToolNotifier>(ToolNotifier.new).setState(),
+
+    DaoVersion.tableName: (_) =>
+        June.getState<VersionNotifier>(VersionNotifier.new).setState(),
+
+    DaoWorkAssignment.tableName: (_) => June.getState<WorkAssignmentNotifier>(
+      WorkAssignmentNotifier.new,
+    ).setState(),
+
+    DaoWorkAssignmentTask.tableName: (_) =>
+        June.getState<WorkAssignmentTaskNotifier>(
+          WorkAssignmentTaskNotifier.new,
+        ).setState(),
   };
 
-  static JuneState Function() refresherFor(DaoBase baseDao) =>
-      refresherForTable(baseDao.tablename);
-
-  static JuneState Function() refresherForTable(String tableName) {
-    final refresher = _registry[tableName];
-
-    if (refresher == null) {
-      throw StateError('''
-Missing entry form the JuneDaoNotifier registry for $tableName''');
+  /// Notify listeners for this DAO/table. `entityId` is optional.
+  static void notify(DaoBase dao, [int? entityId]) {
+    final table = dao.tablename;
+    final thunk = _notifiers[table];
+    if (thunk == null) {
+      throw StateError('Missing JuneDaoNotifier entry for table: $table');
     }
-
-    return refresher;
+    thunk(entityId);
   }
 
-  /// Function that matches DaoBase's notifier signature.
-  void notify(DaoBase dao, int? entityId) {
-    final table = dao.tablename;
-    final creator = _registry[table];
-    if (creator == null) {
-      throw StateError(
-        'Missing entry form the JuneDaoNotifier registry for $table',
-      );
+  // === refreshers stay the same ===
+
+  static NotifierFactory<T> refresherForTable<T extends JuneState>(
+    DaoBase baseDao,
+  ) => refresherForTableName<T>(baseDao.tablename);
+
+  static NotifierFactory<T> refresherForTableName<T extends JuneState>(
+    String tableName,
+  ) {
+    final thunk = _notifiers[tableName];
+    if (thunk == null) {
+      throw StateError('Missing JuneDaoNotifier entry for table: $tableName');
     }
 
-    // Notify June for the specific table (optionally passing the entityId)
-    June.getState(creator).setState([if (entityId != null) entityId]);
+    return () => June.getState<T>(() {
+      throw StateError(
+        'No June state of type $T is registered for "$tableName". '
+        'Ensure the corresponding notifier is created at app startup '
+        'or call DaoNotifications.notify(dao) once to initialise it.',
+      );
+    });
   }
 }
 
