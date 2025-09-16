@@ -117,7 +117,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         );
       final assignedTo = <String>[];
       for (final assignment in taskAssignments) {
-        final workAssignment = await DaoWorkAssigment().getById(
+        final workAssignment = await DaoWorkAssignment().getById(
           assignment.assignmentId,
         );
         if (workAssignment != null) {

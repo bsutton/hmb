@@ -42,6 +42,6 @@ export 'dao_time_entry.dart';
 export 'dao_todo.dart';
 export 'dao_tool.dart';
 export 'dao_version.dart';
-export 'dao_work_assigment.dart';
+export 'dao_work_assignment.dart';
 export 'dao_work_assignment_task.dart';
 export 'database_extension.dart';

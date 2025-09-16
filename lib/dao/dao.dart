@@ -23,7 +23,7 @@ export '../database/management/database_helper.dart';
 abstract class Dao<T extends Entity<T>> extends DaoBase<T> {
   /// initialised with a default No Op notifier.
   /// main.dart should initialise this with DaoNotifier
-  static void Function(DaoBase dao, int? entityId) notifier = (_, _) {};
+  static void Function(DaoBase dao, [int? entityId]) notifier = (_, [_]) {};
 
   Dao(String tableName)
     : super(

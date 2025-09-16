@@ -13,10 +13,9 @@
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
-import 'package:june/june.dart';
 
 import '../../../dao/dao.g.dart';
-import '../../../dao/dao_notifications.dart';
+import '../../../dao/notification/dao_june_builder.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/date_time_ex.dart';
 import '../../../util/dart/format.dart';
@@ -72,34 +71,37 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
     ),
   );
 
-  Widget _buildDetails(Customer? customer, JobStatus? jobStatus) => JuneBuilder(
-    JuneDaoNotifier.refresherForTable(DaoJob.tableName),
-    builder: (jobRefresher) => HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildDetails(Customer? customer, JobStatus? jobStatus) =>
+      DaoJuneBuilder(
+        dao: DaoJob(),
+        builder: (jobRefresher) => HMBColumn(
+          crossAxisAlignment: CrossAxisAlignment.start,
 
-      children: [
-        HMBCardHeading(customer?.name ?? 'Not Set'),
-        _buildContactPoints(),
-        HMBJobSiteText(
-          label: '',
-          job: job,
-          onMapClicked: () async {
-            await DaoJob().markActive(job.id);
-          },
-        ),
-        HMBRow(
           children: [
-            HMBText('Job #${job.id}', bold: true),
-            HMBText('Status: ${jobStatus?.displayName ?? 'Status Unknown'}'),
+            HMBCardHeading(customer?.name ?? 'Not Set'),
+            _buildContactPoints(),
+            HMBJobSiteText(
+              label: '',
+              job: job,
+              onMapClicked: () async {
+                await DaoJob().markActive(job.id);
+              },
+            ),
+            HMBRow(
+              children: [
+                HMBText('Job #${job.id}', bold: true),
+                HMBText(
+                  'Status: ${jobStatus?.displayName ?? 'Status Unknown'}',
+                ),
+              ],
+            ),
+            _buildNextActivity(),
+            const HMBText('Description:', bold: true),
+            HMBTextBlock(RichTextHelper.toPlainText(job.description)),
+            MiniJobDashboard(job: job),
           ],
         ),
-        _buildNextActivity(),
-        const HMBText('Description:', bold: true),
-        HMBTextBlock(RichTextHelper.toPlainText(job.description)),
-        MiniJobDashboard(job: job),
-      ],
-    ),
-  );
+      );
 
   Widget _buildNextActivity() {
     String activity;

@@ -14,6 +14,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../dao/dao.g.dart';
+import '../../../dao/notification/dao_june_builder.dart';
 import '../../../entity/job.dart';
 import '../../invoicing/list_invoice_screen.dart';
 import '../../nav/dashboards/dashlet_card.dart';
@@ -100,7 +101,7 @@ class MiniJobDashboard extends StatelessWidget {
               icon: Icons.task,
               compact: true,
               value: () async {
-                final all = await DaoWorkAssigment().getByJob(job.id);
+                final all = await DaoWorkAssignment().getByJob(job.id);
                 return DashletValue<int>(all.length);
               },
               builder: (_, _) => HMBFullPageChildScreen(
@@ -113,18 +114,21 @@ class MiniJobDashboard extends StatelessWidget {
             size: dashletSize,
           ),
           _dashlet(
-            child: DashletCard<int>.builder(
-              label: 'Todo',
-              hint: 'Add action items to the job',
-              icon: Icons.task,
-              compact: true,
-              value: () async {
-                final open = await DaoToDo().getOpenByJob(job.id);
-                return DashletValue<int>(open.length);
-              },
-              builder: (_, _) => HMBFullPageChildScreen(
-                title: 'Todo',
-                child: ToDoListScreen(job: job),
+            child: DaoJuneBuilder(
+              dao: DaoToDo(),
+              builder: (context) => DashletCard<int>.builder(
+                label: 'Todo',
+                hint: 'Add action items to the job',
+                icon: Icons.task,
+                compact: true,
+                value: () async {
+                  final open = await DaoToDo().getOpenByJob(job.id);
+                  return DashletValue<int>(open.length);
+                },
+                builder: (_, _) => HMBFullPageChildScreen(
+                  title: 'Todo',
+                  child: ToDoListScreen(job: job),
+                ),
               ),
 
               // route: '/home/jobs/quotes/${job.id}',

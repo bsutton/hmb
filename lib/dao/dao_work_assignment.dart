@@ -18,10 +18,10 @@ import 'package:sqflite_common/sqlite_api.dart';
 import '../entity/entity.g.dart';
 import 'dao.g.dart';
 
-class DaoWorkAssigment extends Dao<WorkAssignment> {
+class DaoWorkAssignment extends Dao<WorkAssignment> {
   static const tableName = 'work_assignment';
 
-  DaoWorkAssigment() : super(tableName);
+  DaoWorkAssignment() : super(tableName);
 
   @override
   WorkAssignment fromMap(Map<String, dynamic> m) => WorkAssignment.fromMap(m);

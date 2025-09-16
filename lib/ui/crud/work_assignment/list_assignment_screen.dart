@@ -37,8 +37,8 @@ class AssignmentListScreen extends StatelessWidget {
         parentTitle: 'Job',
         entityNamePlural: 'Supplier Assignments',
         entityNameSingular: 'Supplier Assignment',
-        dao: DaoWorkAssigment(),
-        fetchList: () => DaoWorkAssigment().getByJob(parent.parent!.id),
+        dao: DaoWorkAssignment(),
+        fetchList: () => DaoWorkAssignment().getByJob(parent.parent!.id),
         details: (assignment, details) => FutureBuilderEx(
           future: SupplierAndTasks.get(assignment),
           builder: (context, supplierAndTasks) => Column(
@@ -70,7 +70,7 @@ class AssignmentListScreen extends StatelessWidget {
         ),
         onEdit: (assignment) =>
             AssignmentEditScreen(job: parent.parent!, assignment: assignment),
-        onDelete: (assignment) => DaoWorkAssigment().delete(assignment.id),
+        onDelete: (assignment) => DaoWorkAssignment().delete(assignment.id),
         cardHeight: 200,
       );
 }

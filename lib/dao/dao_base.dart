@@ -14,11 +14,12 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.dart';
+import '../util//dart/exceptions.dart' as hmb;
 
 class DaoBase<T extends Entity<T>> {
   Database db;
 
-  final void Function(DaoBase<T> dao, int? entityId) _notify;
+  final void Function(DaoBase<T> dao, [int? entityId]) _notify;
 
   late T Function(Map<String, dynamic> map) _fromMap;
   late final String tablename;
@@ -32,7 +33,8 @@ class DaoBase<T extends Entity<T>> {
     String tableName,
     T Function(Map<String, dynamic> map) fromMap,
   ) {
-    final dao = DaoBase<T>(tableName, db, (_, _) {}).._fromMap = fromMap;
+    final dao = DaoBase<T>(tableName, db, (_, [_]) {}).._fromMap = fromMap;
+    dao._notify(dao);
     return dao;
   }
 
@@ -45,6 +47,10 @@ class DaoBase<T extends Entity<T>> {
   Future<int> insert(covariant T entity, [Transaction? transaction]) async {
     final executor = transaction ?? db;
     final id = await executor.insert(tablename, entity.toMap()..remove('id'));
+    if (id == 0) {
+      // the insert faield.
+      throw hmb.DatabaseException('Insert for $T failed');
+    }
     entity.id = id;
 
     _notify(this, id);
@@ -79,14 +85,15 @@ class DaoBase<T extends Entity<T>> {
   Future<int> update(covariant T entity, [Transaction? transaction]) async {
     final executor = transaction ?? db;
     entity.modifiedDate = DateTime.now();
-    final id = await executor.update(
+    final count = await executor.update(
       tablename,
       entity.toMap(),
       where: 'id = ?',
       whereArgs: [entity.id],
     );
-    _notify(this, id);
-    return id;
+    assert(count == 1, 'We should always be only updating one entity');
+    _notify(this, entity.id);
+    return entity.id;
   }
 
   //// Returns the number of rows deleted.

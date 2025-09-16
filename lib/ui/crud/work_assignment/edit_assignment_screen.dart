@@ -89,9 +89,9 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
     this,
     builder: (_) => NestedEntityEditScreen<WorkAssignment, Job>(
       entityName: 'Assignment',
-      dao: DaoWorkAssigment(),
+      dao: DaoWorkAssignment(),
       onInsert: (workAssignment, transaction) =>
-          DaoWorkAssigment().insert(workAssignment!, transaction),
+          DaoWorkAssignment().insert(workAssignment!, transaction),
       entityState: this,
       editor: (workAssignment) => _buildEditor(),
       crossValidator: () async {
