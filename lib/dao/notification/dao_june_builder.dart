@@ -1,291 +1,162 @@
-/*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights
- Reserved.
-
- Note: This software is licensed under the GNU General Public
- License, with the following exceptions:
-   • Permitted for internal use within your own business or
-     organization only.
-   • Any external distribution, resale, or incorporation into
-     products for third parties is strictly prohibited.
-
- See the full license on GitHub:
- https://github.com/bsutton/hmb/blob/main/LICENSE
-*/
-
 import 'package:flutter/widgets.dart';
 import 'package:june/june.dart';
 
-import '../../entity/entity.g.dart';
 import '../dao.g.dart';
-import 'dao_notifications.dart';
 import 'notifiers.dart';
 
-typedef HmbWidgetBuilder = Widget Function(BuildContext context);
+typedef NotifierFactory<T extends JuneState> = T Function();
 
-// final JuneStateBuilder<T> builder;
+///
+/// Creates a JuneBuilder for a specific Dao class that will
+/// be rebuilt every time an update occurs agains that Dao
+/// .i.e a rebuild occurs on insert, update and delete as
+/// well as usage of the DaoBase.direct method.
+///
+/// For each Dao class we need to add a registry entry below.
+/// To use the builder add the following to your widget tree.
+///
+/// ```dart
+/// child: DaoJuneBuilder.builder(
+///              DaoToDo(),
+///              builder: (context) => Text('Some content')
+/// ```
+///
+class DaoJuneBuilder {
+  static final Map<String, _TypedEntry> _registry = {
+    DaoCategory.tableName: _reg<CategoryNotifier>(CategoryNotifier.new),
+    DaoCheckListItemCheckList.tableName: _reg<CheckListItemCheckListNotifier>(
+      CheckListItemCheckListNotifier.new,
+    ),
+    DaoCheckListTask.tableName: _reg<CheckListTaskNotifier>(
+      CheckListTaskNotifier.new,
+    ),
+    DaoContact.tableName: _reg<ContactNotifier>(ContactNotifier.new),
+    DaoContactSupplier.tableName: _reg<ContactSupplierNotifier>(
+      ContactSupplierNotifier.new,
+    ),
+    DaoCustomer.tableName: _reg<CustomerNotifier>(CustomerNotifier.new),
+    DaoContactCustomer.tableName: _reg<ContactCustomerNotifier>(
+      ContactCustomerNotifier.new,
+    ),
+    DaoInvoice.tableName: _reg<InvoiceNotifier>(InvoiceNotifier.new),
+    DaoInvoiceLine.tableName: _reg<InvoiceLineNotifier>(
+      InvoiceLineNotifier.new,
+    ),
+    DaoInvoiceLineGroup.tableName: _reg<InvoiceLineGroupNotifier>(
+      InvoiceLineGroupNotifier.new,
+    ),
+    DaoJob.tableName: _reg<JobStateNotifier>(JobStateNotifier.new),
+    DaoJobActivity.tableName: _reg<JobActivityNotifier>(
+      JobActivityNotifier.new,
+    ),
+    DaoManufacturer.tableName: _reg<ManufacturerNotifier>(
+      ManufacturerNotifier.new,
+    ),
+    DaoMilestone.tableName: _reg<MilestoneNotifier>(MilestoneNotifier.new),
+    DaoMessageTemplate.tableName: _reg<MessageTemplateNotifier>(
+      MessageTemplateNotifier.new,
+    ),
+    DaoPhoto.tableName: _reg<PhotoNotifier>(PhotoNotifier.new),
+    DaoQuote.tableName: _reg<QuoteNotifier>(QuoteNotifier.new),
+    DaoQuoteLine.tableName: _reg<QuoteLineNotifier>(QuoteLineNotifier.new),
+    DaoQuoteLineGroup.tableName: _reg<QuoteLineGroupNotifier>(
+      QuoteLineGroupNotifier.new,
+    ),
+    DaoReceipt.tableName: _reg<ReceiptNotifier>(ReceiptNotifier.new),
+    DaoSite.tableName: _reg<SiteNotifier>(SiteNotifier.new),
+    DaoSiteCustomer.tableName: _reg<SiteCustomerNotifier>(
+      SiteCustomerNotifier.new,
+    ),
+    DaoSystem.tableName: _reg<SystemNotifier>(SystemNotifier.new),
+    DaoSupplier.tableName: _reg<SupplierNotifier>(SupplierNotifier.new),
+    DaoSiteSupplier.tableName: _reg<SiteSupplierNotifier>(
+      SiteSupplierNotifier.new,
+    ),
+    DaoTask.tableName: _reg<TaskNotifier>(TaskNotifier.new),
+    DaoTaskItem.tableName: _reg<TaskItemNotifier>(TaskItemNotifier.new),
+    DaoTimeEntry.tableName: _reg<TimeEntryNotifier>(TimeEntryNotifier.new),
+    DaoToDo.tableName: _reg<ToDoNotifier>(ToDoNotifier.new),
+    DaoTool.tableName: _reg<ToolNotifier>(ToolNotifier.new),
+    DaoVersion.tableName: _reg<VersionNotifier>(VersionNotifier.new),
+    DaoWorkAssignment.tableName: _reg<WorkAssignmentNotifier>(
+      WorkAssignmentNotifier.new,
+    ),
+    DaoWorkAssignmentTask.tableName: _reg<WorkAssignmentTaskNotifier>(
+      WorkAssignmentTaskNotifier.new,
+    ),
+  };
 
-/// Wraps JuneBuilder so you don't have to specify the notifier type.
-/// It derives the notifier type from the provided DaoBase.
-class DaoJuneBuilder<T extends Entity<T>> extends StatelessWidget {
-  final DaoBase<T> dao;
-  final JuneStateBuilder builder;
-  final String? tag;
-  final bool permanent;
-
-  const DaoJuneBuilder({
-    required this.dao,
-    required this.builder,
-    this.tag,
-    this.permanent = true,
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final table = dao.tablename;
-    final factory = _builders[table];
-    if (factory == null) {
-      throw StateError(
-        'No DaoJuneBuilder entry for table "$table". '
-        'Did you add it to _builders?',
-      );
+  static void notify(DaoBase dao, [int? entityId]) {
+    final entry = _registry[dao.tablename];
+    if (entry == null) {
+      throw StateError('Missing registry entry for table: ${dao.tablename}');
     }
-    return factory(builder);
+    entry.notify(entityId);
   }
 
-  /// tableName -> widget factory that returns the correctly typed JuneBuilder.
-  /// Each entry captures the concrete notifier type, so inference never
-  /// collapses to `JuneState`.
-  static final Map<String, Widget Function(JuneStateBuilder builder)>
-  _builders = {
-    DaoCategory.tableName: (builder) => JuneBuilder<CategoryNotifier>(
-      JuneDaoNotifier.refresherForTable<CategoryNotifier>(DaoCategory()),
-      builder: builder,
-    ),
-
-    DaoCheckListItemCheckList.tableName: (builder) =>
-        JuneBuilder<CheckListItemCheckListNotifier>(
-          JuneDaoNotifier.refresherForTable<CheckListItemCheckListNotifier>(
-            DaoCheckListItemCheckList(),
-          ),
-
-          builder: builder,
-        ),
-
-    DaoCheckListTask.tableName: (builder) => JuneBuilder<CheckListTaskNotifier>(
-      JuneDaoNotifier.refresherForTable<CheckListTaskNotifier>(
-        DaoCheckListTask(),
-      ),
-
-      builder: builder,
-    ),
-
-    DaoContact.tableName: (builder) => JuneBuilder<ContactNotifier>(
-      JuneDaoNotifier.refresherForTable<ContactNotifier>(DaoContact()),
-
-      builder: builder,
-    ),
-
-    DaoContactSupplier.tableName: (builder) =>
-        JuneBuilder<ContactSupplierNotifier>(
-          JuneDaoNotifier.refresherForTable<ContactSupplierNotifier>(
-            DaoContactSupplier(),
-          ),
-
-          builder: builder,
-        ),
-
-    DaoCustomer.tableName: (builder) => JuneBuilder<CustomerNotifier>(
-      JuneDaoNotifier.refresherForTable<CustomerNotifier>(DaoCustomer()),
-
-      builder: builder,
-    ),
-
-    DaoContactCustomer.tableName: (builder) =>
-        JuneBuilder<ContactCustomerNotifier>(
-          JuneDaoNotifier.refresherForTable<ContactCustomerNotifier>(
-            DaoContactCustomer(),
-          ),
-
-          builder: builder,
-        ),
-
-    DaoInvoice.tableName: (builder) => JuneBuilder<InvoiceNotifier>(
-      JuneDaoNotifier.refresherForTable<InvoiceNotifier>(DaoInvoice()),
-
-      builder: builder,
-    ),
-
-    DaoInvoiceLine.tableName: (builder) => JuneBuilder<InvoiceLineNotifier>(
-      JuneDaoNotifier.refresherForTable<InvoiceLineNotifier>(DaoInvoiceLine()),
-
-      builder: builder,
-    ),
-
-    DaoInvoiceLineGroup.tableName: (builder) =>
-        JuneBuilder<InvoiceLineGroupNotifier>(
-          JuneDaoNotifier.refresherForTable<InvoiceLineGroupNotifier>(
-            DaoInvoiceLineGroup(),
-          ),
-
-          builder: builder,
-        ),
-
-    DaoJob.tableName: (builder) => JuneBuilder<JobStateNotifier>(
-      JuneDaoNotifier.refresherForTable<JobStateNotifier>(DaoJob()),
-
-      builder: builder,
-    ),
-
-    DaoJobActivity.tableName: (builder) => JuneBuilder<JobActivityNotifier>(
-      JuneDaoNotifier.refresherForTable<JobActivityNotifier>(DaoJobActivity()),
-
-      builder: builder,
-    ),
-
-    DaoManufacturer.tableName: (builder) => JuneBuilder<ManufacturerNotifier>(
-      JuneDaoNotifier.refresherForTable<ManufacturerNotifier>(
-        DaoManufacturer(),
-      ),
-
-      builder: builder,
-    ),
-
-    DaoMilestone.tableName: (builder) => JuneBuilder<MilestoneNotifier>(
-      JuneDaoNotifier.refresherForTable<MilestoneNotifier>(DaoMilestone()),
-
-      builder: builder,
-    ),
-
-    DaoMessageTemplate.tableName: (builder) =>
-        JuneBuilder<MessageTemplateNotifier>(
-          JuneDaoNotifier.refresherForTable<MessageTemplateNotifier>(
-            DaoMessageTemplate(),
-          ),
-
-          builder: builder,
-        ),
-
-    DaoPhoto.tableName: (builder) => JuneBuilder<PhotoNotifier>(
-      JuneDaoNotifier.refresherForTable<PhotoNotifier>(DaoPhoto()),
-
-      builder: builder,
-    ),
-
-    DaoQuote.tableName: (builder) => JuneBuilder<QuoteNotifier>(
-      JuneDaoNotifier.refresherForTable<QuoteNotifier>(DaoQuote()),
-
-      builder: builder,
-    ),
-
-    DaoQuoteLine.tableName: (builder) => JuneBuilder<QuoteLineNotifier>(
-      JuneDaoNotifier.refresherForTable<QuoteLineNotifier>(DaoQuoteLine()),
-
-      builder: builder,
-    ),
-
-    DaoQuoteLineGroup.tableName: (builder) =>
-        JuneBuilder<QuoteLineGroupNotifier>(
-          JuneDaoNotifier.refresherForTable<QuoteLineGroupNotifier>(
-            DaoQuoteLineGroup(),
-          ),
-
-          builder: builder,
-        ),
-
-    DaoReceipt.tableName: (builder) => JuneBuilder<ReceiptNotifier>(
-      JuneDaoNotifier.refresherForTable<ReceiptNotifier>(DaoReceipt()),
-
-      builder: builder,
-    ),
-
-    DaoSite.tableName: (builder) => JuneBuilder<SiteNotifier>(
-      JuneDaoNotifier.refresherForTable<SiteNotifier>(DaoSite()),
-
-      builder: builder,
-    ),
-
-    DaoSiteCustomer.tableName: (builder) => JuneBuilder<SiteCustomerNotifier>(
-      JuneDaoNotifier.refresherForTable<SiteCustomerNotifier>(
-        DaoSiteCustomer(),
-      ),
-
-      builder: builder,
-    ),
-
-    DaoSystem.tableName: (builder) => JuneBuilder<SystemNotifier>(
-      JuneDaoNotifier.refresherForTable<SystemNotifier>(DaoSystem()),
-
-      builder: builder,
-    ),
-
-    DaoSupplier.tableName: (builder) => JuneBuilder<SupplierNotifier>(
-      JuneDaoNotifier.refresherForTable<SupplierNotifier>(DaoSupplier()),
-
-      builder: builder,
-    ),
-
-    DaoSiteSupplier.tableName: (builder) => JuneBuilder<SiteSupplierNotifier>(
-      JuneDaoNotifier.refresherForTable<SiteSupplierNotifier>(
-        DaoSiteSupplier(),
-      ),
-
-      builder: builder,
-    ),
-
-    DaoTask.tableName: (builder) => JuneBuilder<TaskNotifier>(
-      JuneDaoNotifier.refresherForTable<TaskNotifier>(DaoTask()),
-
-      builder: builder,
-    ),
-
-    DaoTaskItem.tableName: (builder) => JuneBuilder<TaskItemNotifier>(
-      JuneDaoNotifier.refresherForTable<TaskItemNotifier>(DaoTaskItem()),
-
-      builder: builder,
-    ),
-
-    DaoTimeEntry.tableName: (builder) => JuneBuilder<TimeEntryNotifier>(
-      JuneDaoNotifier.refresherForTable<TimeEntryNotifier>(DaoTimeEntry()),
-
-      builder: builder,
-    ),
-
-    DaoToDo.tableName: (builder) => JuneBuilder<ToDoNotifier>(
-      JuneDaoNotifier.refresherForTable<ToDoNotifier>(DaoToDo()),
-
-      builder: builder,
-    ),
-
-    DaoTool.tableName: (builder) => JuneBuilder<ToolNotifier>(
-      JuneDaoNotifier.refresherForTable<ToolNotifier>(DaoTool()),
-      builder: builder,
-    ),
-
-    DaoVersion.tableName: (builder) => JuneBuilder<VersionNotifier>(
-      JuneDaoNotifier.refresherForTable<VersionNotifier>(DaoVersion()),
-
-      builder: builder,
-    ),
-
-    // Note: DaoWorkAssigment intentionally maps to WorkAssignmentNotifier.
-    DaoWorkAssignment.tableName: (builder) =>
-        JuneBuilder<WorkAssignmentNotifier>(
-          JuneDaoNotifier.refresherForTable<WorkAssignmentNotifier>(
-            DaoWorkAssignment(),
-          ),
-
-          builder: builder,
-        ),
-
-    DaoWorkAssignmentTask.tableName: (builder) =>
-        JuneBuilder<WorkAssignmentTaskNotifier>(
-          JuneDaoNotifier.refresherForTable<WorkAssignmentTaskNotifier>(
-            DaoWorkAssignmentTask(),
-          ),
-
-          builder: builder,
-        ),
-  };
+  /// Accepts a plain `WidgetBuilder` (BuildContext -> Widget).
+  /// Internally adapts it to the `JuneStateBuilder<T>`
+  /// that JuneBuilder expects.
+  static Widget builder(
+    DaoBase dao, {
+    required WidgetBuilder builder,
+    String? tag,
+    bool global = true,
+    bool autoRemove = true,
+    bool assignId = false,
+    Object? id,
+  }) {
+    final entry = _registry[dao.tablename];
+    if (entry == null) {
+      throw StateError('Missing registry entry for table: ${dao.tablename}');
+    }
+    return entry.buildFromContext(
+      builder,
+      tag: tag,
+      global: global,
+      autoRemove: autoRemove,
+      assignId: assignId,
+      id: id,
+    );
+  }
 }
+
+class _TypedEntry<T extends JuneState> {
+  final T Function() _create;
+  final void Function(T instance, int? entityId)? _onNotify;
+
+  _TypedEntry(this._create, [this._onNotify]);
+
+  void notify(int? entityId) {
+    final instance = June.getState<T>(_create);
+    if (_onNotify != null) {
+      _onNotify(instance, entityId);
+    } else {
+      instance.setState();
+    }
+  }
+
+  /// Wrap the caller's `WidgetBuilder` inside a `Builder`,
+  /// and ignore the `T` parameter JuneBuilder will give us.
+  Widget buildFromContext(
+    WidgetBuilder simpleBuilder, {
+    String? tag,
+    bool global = true,
+    bool autoRemove = true,
+    bool assignId = false,
+    Object? id,
+  }) => JuneBuilder<T>(
+    _create,
+    tag: tag,
+    global: global,
+    autoRemove: autoRemove,
+    assignId: assignId,
+    id: id,
+    builder: (_) => Builder(builder: (ctx) => simpleBuilder(ctx)),
+  );
+}
+
+_TypedEntry<T> _reg<T extends JuneState>(
+  T Function() create, {
+  void Function(T instance, int? entityId)? onNotify,
+}) => _TypedEntry<T>(create, onNotify);

@@ -29,7 +29,7 @@ import '../../api/xero/handyman/app_starts_logging.dart';
 import '../../cache/hmb_image_cache.dart';
 import '../../cache/image_compressor.dart';
 import '../../dao/dao.g.dart';
-import '../../dao/notification/dao_notifications.dart';
+import '../../dao/notification/dao_june_builder.dart';
 import '../../database/factory/factory.g.dart';
 import '../../database/management/backup_providers/google_drive/background_backup/photo_sync_service.dart';
 import '../../database/management/backup_providers/local/local_backup_provider.dart';
@@ -63,7 +63,7 @@ class BootStrapper {
     initPdfrx();
     await initImageCache();
 
-    Dao.notifier = DaoNotifications.notify;
+    Dao.notifier = DaoJuneBuilder.notify;
 
     /// initialise whatever accounting package the
     /// user is using.

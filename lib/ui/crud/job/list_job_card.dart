@@ -72,8 +72,8 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
   );
 
   Widget _buildDetails(Customer? customer, JobStatus? jobStatus) =>
-      DaoJuneBuilder(
-        dao: DaoJob(),
+      DaoJuneBuilder.builder(
+        DaoJob(),
         builder: (jobRefresher) => HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
 

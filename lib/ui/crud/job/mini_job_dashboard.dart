@@ -114,8 +114,8 @@ class MiniJobDashboard extends StatelessWidget {
             size: dashletSize,
           ),
           _dashlet(
-            child: DaoJuneBuilder(
-              dao: DaoToDo(),
+            child: DaoJuneBuilder.builder(
+              DaoToDo(),
               builder: (context) => DashletCard<int>.builder(
                 label: 'Todo',
                 hint: 'Add action items to the job',
