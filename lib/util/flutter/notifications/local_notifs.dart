@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_timezone_2025/flutter_native_timezone_2025.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
@@ -115,27 +116,32 @@ class LocalNotifs {
 
   Future<void> schedule(Notif n) async {
     await init();
+    await debugNotifPipeline(_fln);
 
     // Normalize: treat n.scheduledAtMillis as UTC for cross-platform sanity.
     final ms = n.scheduledAtMillis;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
 
     // If slightly in the past (<= grace), nudge forward 1 minute.
-    final isSlightlyPast =
-        ms < nowMs && (nowMs - ms) <= _grace.inMilliseconds;
-    final targetUtcMs = isSlightlyPast
+    final isSlightlyPast = ms < nowMs && (nowMs - ms) <= _grace.inMilliseconds;
+    final targetMs = isSlightlyPast
         ? (nowMs + const Duration(minutes: 1).inMilliseconds)
         : ms;
 
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
-      // Use tz-aware schedule on mobile/mac
-      final whenTz = tz.TZDateTime.fromMillisecondsSinceEpoch(
+      // Build a local wall-clock time in the current device timezone.
+      // This avoids UTC round-trips and preserves 9:00am as 9:00am across DST.
+      final local = DateTime.fromMillisecondsSinceEpoch(targetMs);
+      final whenTz = tz.TZDateTime(
         tz.local,
-        // convert UTC millis to TZ by first creating UTC DateTime
-        DateTime.fromMillisecondsSinceEpoch(
-          targetUtcMs,
-          isUtc: true,
-        ).toLocal().millisecondsSinceEpoch,
+        local.year,
+        local.month,
+        local.day,
+        local.hour,
+        local.minute,
+        local.second,
+        local.millisecond,
+        local.microsecond,
       );
 
       // If after grace it's still in the past, skip scheduling.
@@ -149,30 +155,29 @@ class LocalNotifs {
         n.body,
         whenTz,
         _buildDetails(n),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        // Inexact saves battery and avoids exact-alarm permission.
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         payload: _encodePayload(n.payload),
       );
     } else if (Platform.isWindows || Platform.isLinux) {
       // Enqueue into in-app scheduler (fires while app is open).
       // If way in the past (beyond grace), skip enqueue.
-      if (targetUtcMs + _grace.inMilliseconds < nowMs) {
+      if (targetMs + _grace.inMilliseconds < nowMs) {
         return;
       }
-
-      _desktop?.upsert(
-        Notif(
-          id: n.id,
-          title: n.title,
-          body: n.body,
-          scheduledAtMillis: targetUtcMs,
-          payload: n.payload,
-          channelId: n.channelId,
-          channelName: n.channelName,
-        ),
-      );
-    } else {
-      // Unknown platform: do nothing (avoid surprise toast on save)
     }
+
+    _desktop?.upsert(
+      Notif(
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        scheduledAtMillis: targetMs,
+        payload: n.payload,
+        channelId: n.channelId,
+        channelName: n.channelName,
+      ),
+    );
   }
 
   Future<void> cancel(int id) async {
@@ -198,6 +203,8 @@ class LocalNotifs {
       id: _idForToDo(todo.id),
       title: 'Reminder',
       body: todo.title,
+      // `when` is LOCAL; keep it local by passing its epoch
+      //ms straight through.
       scheduledAtMillis: when.millisecondsSinceEpoch,
       payload: {'type': 'todo', 'id': '${todo.id}'},
     );
@@ -283,5 +290,65 @@ class LocalNotifs {
       /* fall through */
     }
     return 'UTC';
+  }
+
+  Future<void> debugNotifPipeline(FlutterLocalNotificationsPlugin fln) async {
+    // 1) Permissions
+    final androidImpl = fln
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    final granted = await androidImpl?.areNotificationsEnabled() ?? true;
+    debugPrint('POST_NOTIFICATIONS granted: $granted');
+
+    // 2) Show immediately (channel creation + visuals)
+    await fln.show(
+      999001,
+      'Test immediate',
+      'If you see me, posting works',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'hmb_default',
+          'Reminders',
+          channelDescription: 'Reminders and alerts',
+          importance: Importance.high,
+          priority: Priority.high,
+          category: AndroidNotificationCategory.reminder,
+        ),
+        iOS: DarwinNotificationDetails(),
+        macOS: DarwinNotificationDetails(),
+      ),
+      payload: 'ping=now',
+    );
+
+    // 3) Schedule +10s (proves scheduling path)
+    final when = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 10));
+    await fln.zonedSchedule(
+      999002,
+      'Test scheduled',
+      'Should appear ~10s from now',
+      when,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'hmb_default',
+          'Reminders',
+          channelDescription: 'Reminders and alerts',
+          importance: Importance.high,
+          priority: Priority.high,
+          category: AndroidNotificationCategory.reminder,
+        ),
+        iOS: DarwinNotificationDetails(),
+        macOS: DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: 'ping=scheduled',
+    );
+
+    // 4) Inspect pending queue
+    final pending = await fln.pendingNotificationRequests();
+    debugPrint('Pending count: ${pending.length}');
+    for (final p in pending) {
+      debugPrint('Pending -> id=${p.id}, title=${p.title}');
+    }
   }
 }
