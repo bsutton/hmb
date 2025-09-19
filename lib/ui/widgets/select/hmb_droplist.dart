@@ -137,19 +137,24 @@ class HMBDroplistState<T> extends DeferredState<HMBDroplist<T>> {
                   widget.backgroundColor ?? SurfaceElevation.e4.color,
               isError: state.hasError,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    _selectedItem != null
-                        ? widget.format(_selectedItem as T)
-                        : 'Select a ${widget.title}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: state.hasError
-                          ? Theme.of(context).colorScheme.error
-                          : HMBColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      _selectedItem != null
+                          ? widget.format(_selectedItem as T)
+                          : 'Select a ${widget.title}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: state.hasError
+                            ? Theme.of(context).colorScheme.error
+                            : HMBColors.textPrimary,
+                      ),
+                      maxLines: 1, // keep it to one line
+                      overflow: TextOverflow.ellipsis, // show "…" if too long
+                      softWrap: false, // prevent wrapping
                     ),
                   ),
+                  const SizedBox(width: 8),
                   const Icon(
                     Icons.arrow_drop_down,
                     color: HMBColors.dropboxArrow,

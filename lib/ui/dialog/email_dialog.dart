@@ -22,6 +22,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/system.dart';
 import '../../ui/widgets/hmb_toast.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/select/hmb_droplist.dart';
 
 class EmailDialog extends StatefulWidget {
   final String subject;
@@ -100,19 +101,19 @@ $businessDetails
       content: SingleChildScrollView(
         child: ListBody(
           children: <Widget>[
-            DropdownButton<String>(
-              value: _selectedRecipient,
+            HMBDroplist<String>(
+              title: 'Recepients',
+              selectedItem: () async => _selectedRecipient,
               onChanged: (newValue) {
                 setState(() {
                   _selectedRecipient = newValue;
                 });
               },
-              items: emailRecipients
-                  .map(
-                    (recipient) => DropdownMenuItem<String>(
-                      value: recipient,
-                      child: Text(recipient),
-                    ),
+              format: (emailAddress) => emailAddress,
+              items: (filter) async => emailRecipients
+                  .where(
+                    (email) =>
+                        Strings.isBlank(filter) || email.contains(filter!),
                   )
                   .toList(),
             ),
