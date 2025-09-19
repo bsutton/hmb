@@ -27,12 +27,12 @@ class ListTodoCard extends StatelessWidget {
   Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      if (todo.parentType == ToDoParentType.job)
+        HMBEntityChip.job(id: todo.parentId!, format: (job) => job.summary),
       HMBRow(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           if (todo.parentType == null) const HMBChip(label: 'Personal'),
-          if (todo.parentType == ToDoParentType.job)
-            HMBEntityChip.job(id: todo.parentId!, format: (job) => job.summary),
           if (todo.parentType == ToDoParentType.customer)
             HMBEntityChip.customer(
               id: todo.parentId!,

@@ -14,7 +14,6 @@
 import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:intl/intl.dart';
 
-import 'layout/hmb_spacer.dart';
 import 'stateful_builder.dart';
 import 'text/hmb_text.dart';
 
@@ -95,92 +94,125 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
   }
 
   @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.end,
-    children: <Widget>[
-      HMBText(widget.label, bold: true),
-      const HMBSpacer(width: true),
-      if (widget.mode != HMBDateTimeFieldMode.timeOnly)
-        SizedBox(
-          width: widget.width,
-          child: StatefulBuilder(
-            key: dateKey,
-            builder: (context, setFormState) => FormField<DateTime>(
-              initialValue: selectedDateTime,
-              validator: (value) => widget.validator?.call(value),
-              builder: (field) => InkWell(
-                onTap: () async {
-                  final date = await _showDatePicker(context, selectedDateTime);
-                  if (date != null) {
-                    setState(() {
-                      selectedDateTime = DateTime(
-                        date.year,
-                        date.month,
-                        date.day,
-                        selectedDateTime.hour,
-                        selectedDateTime.minute,
-                      );
-                      dateController.text = dateFormat.format(selectedDateTime);
-                    });
-                    widget.onChanged(selectedDateTime);
-                    setFormState(() {
-                      field.didChange(selectedDateTime);
-                    });
-                  }
-                },
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: 'Select Date',
-                    errorText: field.errorText,
-                  ),
-                  child: Text(dateController.text),
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      // Tweak threshold as you like. ~480 works well for phones.
+      final narrow = constraints.maxWidth < 480.0;
+
+      Widget dateField() => SizedBox(
+        width: widget.width,
+        child: StatefulBuilder(
+          key: dateKey,
+          builder: (context, setFormState) => FormField<DateTime>(
+            initialValue: selectedDateTime,
+            validator: (value) => widget.validator?.call(value),
+            builder: (field) => InkWell(
+              onTap: () async {
+                final date = await _showDatePicker(context, selectedDateTime);
+                if (date != null) {
+                  setState(() {
+                    selectedDateTime = DateTime(
+                      date.year,
+                      date.month,
+                      date.day,
+                      selectedDateTime.hour,
+                      selectedDateTime.minute,
+                    );
+                    dateController.text = dateFormat.format(selectedDateTime);
+                  });
+                  widget.onChanged(selectedDateTime);
+                  setFormState(() {
+                    field.didChange(selectedDateTime);
+                  });
+                }
+              },
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Select Date',
+                  errorText: field.errorText,
                 ),
+                child: Text(dateController.text),
               ),
             ),
           ),
         ),
-      if (widget.mode == HMBDateTimeFieldMode.dateAndTime)
-        const HMBSpacer(width: true),
-      if (widget.mode != HMBDateTimeFieldMode.dateOnly)
-        SizedBox(
-          width: 100,
-          child: StatefulBuilder(
-            key: timeKey,
-            builder: (context, setFormState) => FormField<DateTime>(
-              initialValue: selectedDateTime,
-              validator: (value) => widget.validator?.call(value),
-              builder: (field) => InkWell(
-                onTap: () async {
-                  final time = await _showTimePicker(context, selectedDateTime);
-                  if (time != null) {
-                    setState(() {
-                      selectedDateTime = DateTime(
-                        selectedDateTime.year,
-                        selectedDateTime.month,
-                        selectedDateTime.day,
-                        time.hour,
-                        time.minute,
-                      );
-                      timeController.text = timeFormat.format(selectedDateTime);
-                    });
-                    widget.onChanged(selectedDateTime);
-                    setFormState(() {
-                      field.didChange(selectedDateTime);
-                    });
-                  }
-                },
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: 'Select Time',
-                    errorText: field.errorText,
-                  ),
-                  child: Text(timeController.text),
+      );
+
+      Widget timeField() => SizedBox(
+        width: 100,
+        child: StatefulBuilder(
+          key: timeKey,
+          builder: (context, setFormState) => FormField<DateTime>(
+            initialValue: selectedDateTime,
+            validator: (value) => widget.validator?.call(value),
+            builder: (field) => InkWell(
+              onTap: () async {
+                final time = await _showTimePicker(context, selectedDateTime);
+                if (time != null) {
+                  setState(() {
+                    selectedDateTime = DateTime(
+                      selectedDateTime.year,
+                      selectedDateTime.month,
+                      selectedDateTime.day,
+                      time.hour,
+                      time.minute,
+                    );
+                    timeController.text = timeFormat.format(selectedDateTime);
+                  });
+                  widget.onChanged(selectedDateTime);
+                  setFormState(() {
+                    field.didChange(selectedDateTime);
+                  });
+                }
+              },
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Select Time',
+                  errorText: field.errorText,
                 ),
+                child: Text(timeController.text),
               ),
             ),
           ),
         ),
-    ],
+      );
+
+      if (narrow) {
+        // Phone-width: put label on its own line, then the fields.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            HMBText(widget.label, bold: true),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (widget.mode != HMBDateTimeFieldMode.timeOnly)
+                  Expanded(child: dateField()),
+                if (widget.mode == HMBDateTimeFieldMode.dateAndTime)
+                  const SizedBox(width: 8),
+                if (widget.mode != HMBDateTimeFieldMode.dateOnly)
+                  Expanded(child: timeField()),
+              ],
+            ),
+          ],
+        );
+      }
+
+      // Wide screens: keep your original row, but it will only render when
+      // there's enough space so it won't overflow.
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          HMBText(widget.label, bold: true),
+          const SizedBox(width: 8),
+          if (widget.mode != HMBDateTimeFieldMode.timeOnly) dateField(),
+          if (widget.mode == HMBDateTimeFieldMode.dateAndTime)
+            const SizedBox(width: 8),
+          if (widget.mode != HMBDateTimeFieldMode.dateOnly) timeField(),
+        ],
+      );
+    },
   );
 
   Future<TimeOfDay?> _showTimePicker(

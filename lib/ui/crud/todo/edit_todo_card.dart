@@ -5,7 +5,9 @@ import '../../../entity/job.dart';
 import '../../../entity/todo.dart';
 import '../../../util/dart/dart.g.dart';
 import '../../widgets/fields/fields.g.dart';
+import '../../widgets/help_button.dart';
 import '../../widgets/hmb_date_time_picker.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/select.g.dart';
 import '../../widgets/widgets.g.dart' show HMBSelectChips;
 
@@ -69,7 +71,7 @@ class _ToDoEditorCardState extends State<ToDoEditorCard> {
   Widget build(BuildContext context) {
     final v = widget.todo;
 
-    return Column(
+    return HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Title & Notes
@@ -173,6 +175,9 @@ class _ToDoEditorCardState extends State<ToDoEditorCard> {
                   .add(const Duration(days: 2))
                   .withTime(const LocalTime(hour: 9, minute: 0)),
           onChanged: (d) => _emit(v.copyWith(remindAt: d)),
+        ).help(
+          'Reminders',
+          'Reminders may arrive a few minutes late to save battery',
         ),
 
         // Status (+ completedDate rule)
