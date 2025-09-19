@@ -314,10 +314,8 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
     final billingContact = await DaoContact().getBillingContactByJob(job);
     final site = await DaoSite().getById(job.siteId);
     final address = site?.address;
-    final contacts = await DaoContact().getByJob(_quote.jobId);
-    final emailRecipients = contacts
-        .map((contact) => contact.emailAddress)
-        .toList();
+
+    final emailRecipients = await DaoQuote().getEmailsByQuote(_quote);
 
     final preferredRecipient =
         billingContact?.emailAddress ?? emailRecipients.firstOrNull;

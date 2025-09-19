@@ -57,10 +57,19 @@ class _ContactEditScreenState extends State<ContactEditScreen>
   late TextEditingController _landlineController;
   late TextEditingController _officeNumberController;
   late TextEditingController _emailaddressController;
+  late TextEditingController _alternateEmailController;
   late FocusNode _firstNameFocusNode;
 
   @override
   Contact? currentEntity;
+
+  String? _emailOrNull(String s) {
+    final v = s.trim();
+    if (v.isEmpty) {
+      return null;
+    }
+    return v.toLowerCase();
+  }
 
   @override
   void initState() {
@@ -80,6 +89,9 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     _emailaddressController = TextEditingController(
       text: currentEntity?.emailAddress,
     );
+    _alternateEmailController = TextEditingController(
+      text: currentEntity?.alternateEmail,
+    );
 
     _firstNameFocusNode = FocusNode();
   }
@@ -92,6 +104,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     _landlineController.dispose();
     _officeNumberController.dispose();
     _emailaddressController.dispose();
+    _alternateEmailController.dispose();
     _firstNameFocusNode.dispose();
     super.dispose();
   }
@@ -143,6 +156,11 @@ class _ContactEditScreenState extends State<ContactEditScreen>
           sourceContext: SourceContext(contact: contact),
         ),
         HMBEmailField(controller: _emailaddressController, labelText: 'Email'),
+        // NEW: Alternate Email
+        HMBEmailField(
+          controller: _alternateEmailController,
+          labelText: 'Alternate Email',
+        ),
       ],
     ),
   );
@@ -155,6 +173,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     landLine: _landlineController.text,
     officeNumber: _officeNumberController.text,
     emailAddress: _emailaddressController.text.toLowerCase(),
+    alternateEmail: _emailOrNull(_alternateEmailController.text),
   );
 
   @override
@@ -165,7 +184,9 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     landLine: _landlineController.text,
     officeNumber: _officeNumberController.text,
     emailAddress: _emailaddressController.text.toLowerCase(),
+    alternateEmail: _emailOrNull(_alternateEmailController.text),
   );
+
   @override
   void refresh() {
     setState(() {});

@@ -12,7 +12,6 @@
 */
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:calendar_view/calendar_view.dart';
 import 'package:deferred_state/deferred_state.dart';
@@ -28,7 +27,6 @@ import '../../../util/dart/format.dart';
 import '../../../util/dart/local_date.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../widgets/circle.dart';
-import '../../widgets/media/rich_editor.dart';
 import '../../widgets/select/hmb_select_customer.dart';
 import '../../widgets/select/hmb_select_site.dart';
 import '../base_full_screen/edit_entity_screen.dart';
@@ -45,8 +43,8 @@ class JobEditScreen extends StatefulWidget {
 class _JobEditScreenState extends DeferredState<JobEditScreen>
     implements EntityState<Job> {
   late TextEditingController _summaryController;
-  late RichEditorController _descriptionController;
-  late RichEditorController _assumptionController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _assumptionController;
   late TextEditingController _hourlyRateController;
   late TextEditingController _bookingFeeController;
 
@@ -72,11 +70,11 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     scrollController = ScrollController();
 
     _summaryController = TextEditingController(text: widget.job?.summary ?? '');
-    _descriptionController = RichEditorController(
-      parchmentAsJsonString: widget.job?.description ?? '',
+    _descriptionController = TextEditingController(
+      text: widget.job?.description ?? '',
     );
-    _assumptionController = RichEditorController(
-      parchmentAsJsonString: widget.job?.assumption ?? '',
+    _assumptionController = TextEditingController(
+      text: widget.job?.assumption ?? '',
     );
     _hourlyRateController = TextEditingController(
       text: widget.job?.hourlyRate?.toString() ?? '',
@@ -225,8 +223,8 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   Future<Job> forUpdate(Job job) async => job.copyWith(
     customerId: June.getState(SelectedCustomer.new).customerId,
     summary: _summaryController.text,
-    description: jsonEncode(_descriptionController.document),
-    assumption: jsonEncode(_assumptionController.document),
+    description: _descriptionController.text,
+    assumption: _assumptionController.text,
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(SelectedContact.new).contactId,
     status:
@@ -243,8 +241,8 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   Future<Job> forInsert() async => Job.forInsert(
     customerId: June.getState(SelectedCustomer.new).customerId,
     summary: _summaryController.text,
-    description: jsonEncode(_descriptionController.document),
-    assumption: jsonEncode(_assumptionController.document),
+    description: _descriptionController.text,
+    assumption: _assumptionController.text,
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(SelectedContact.new).contactId,
     status:

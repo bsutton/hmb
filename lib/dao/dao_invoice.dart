@@ -127,6 +127,9 @@ class DaoInvoice extends Dao<Invoice> {
       if (Strings.isNotBlank(contact.emailAddress)) {
         emails.add(contact.emailAddress.trim());
       }
+      if (Strings.isNotBlank(contact.alternateEmail)) {
+        emails.add(contact.alternateEmail!.trim());
+      }
     }
 
     return emails.toList();

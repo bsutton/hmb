@@ -481,14 +481,14 @@ where q.id=?
   Future<String?> getBestEmail(Job job) async {
     String? bestEmail;
     if (job.contactId != null) {
-      bestEmail = (await DaoContact().getPrimaryForJob(job.id))?.emailAddress;
+      bestEmail = (await DaoContact().getPrimaryForJob(job.id))?.bestEmail;
     }
 
     if (bestEmail == null) {
       final customer = await DaoCustomer().getByJob(job.id);
       bestEmail = (await DaoContact().getPrimaryForCustomer(
         customer!.id,
-      ))?.emailAddress;
+      ))?.bestEmail;
     }
     return bestEmail;
   }

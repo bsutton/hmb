@@ -24,7 +24,6 @@ import '../../dao/dao_system.dart';
 import '../../entity/quote.dart';
 import '../../entity/system.dart';
 import '../../util/dart/format.dart';
-import '../../util/flutter/rich_text_helper.dart';
 import 'job_quote.dart';
 
 Future<File> generateQuotePdf(
@@ -167,7 +166,7 @@ Future<File> generateQuotePdf(
               'Assumptions:',
               style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
-            pw.Text(RichTextHelper.toPlainText(quote.assumption)),
+            pw.Text(quote.assumption),
             pw.Divider(),
           ]);
         }

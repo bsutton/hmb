@@ -34,6 +34,7 @@ import '../../database/factory/factory.g.dart';
 import '../../database/management/backup_providers/google_drive/background_backup/photo_sync_service.dart';
 import '../../database/management/backup_providers/local/local_backup_provider.dart';
 import '../../database/versions/asset_script_source.dart';
+import '../../database/versions/post_upgrade_134.dart';
 import '../../installer/linux/install.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
 import '../widgets/hmb_start_time_entry.dart';
@@ -101,6 +102,14 @@ class BootStrapper {
       databaseFactory: FlutterDatabaseFactory(),
     );
     print('Database located at: ${await backupProvider.databasePath}');
+
+    /// remove rich text fields.
+    final system = await DaoSystem().get();
+    if (!system.richTextRemoved) {
+      await postv134Upgrade(DatabaseHelper().database);
+
+      await DaoSystem().update(system.copyWith(richTextRemoved: true));
+    }
   }
 
   Future<void> _initScheduler() async {

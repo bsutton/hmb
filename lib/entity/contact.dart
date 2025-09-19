@@ -22,7 +22,8 @@ class Contact extends Entity<Contact> {
   String mobileNumber;
   String landLine;
   String officeNumber;
-  String emailAddress;
+  String emailAddress; // primary (non-null)
+  String? alternateEmail;
   String? xeroContactId;
 
   Contact._({
@@ -35,6 +36,7 @@ class Contact extends Entity<Contact> {
     required this.emailAddress,
     required super.createdDate,
     required super.modifiedDate,
+    this.alternateEmail,
     this.xeroContactId,
   }) : super();
 
@@ -46,6 +48,7 @@ class Contact extends Entity<Contact> {
     required this.officeNumber,
     required this.emailAddress,
     this.xeroContactId,
+    this.alternateEmail,
   }) : super.forInsert();
 
   Contact copyWith({
@@ -56,6 +59,7 @@ class Contact extends Entity<Contact> {
     String? officeNumber,
     String? emailAddress,
     String? xeroContactId,
+    String? alternateEmail,
   }) => Contact._(
     id: id,
     firstName: firstName ?? this.firstName,
@@ -64,6 +68,7 @@ class Contact extends Entity<Contact> {
     landLine: landLine ?? this.landLine,
     officeNumber: officeNumber ?? this.officeNumber,
     emailAddress: emailAddress ?? this.emailAddress,
+    alternateEmail: alternateEmail ?? this.alternateEmail,
     xeroContactId: xeroContactId ?? this.xeroContactId,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
@@ -77,6 +82,7 @@ class Contact extends Entity<Contact> {
     landLine: map['landLine'] as String,
     officeNumber: map['officeNumber'] as String,
     emailAddress: map['emailAddress'] as String,
+    alternateEmail: map['alternateEmail'] as String?, // NEW
     xeroContactId: map['xeroContactId'] as String?,
     createdDate: DateTime.parse(map['createdDate'] as String),
     modifiedDate: DateTime.parse(map['modifiedDate'] as String),
@@ -93,6 +99,7 @@ class Contact extends Entity<Contact> {
     'landLine': landLine,
     'officeNumber': officeNumber,
     'emailAddress': emailAddress,
+    'alternateEmail': alternateEmail, // NEW
     'xeroContactId': xeroContactId,
     'createdDate': createdDate.toIso8601String(),
     'modifiedDate': modifiedDate.toIso8601String(),
@@ -100,8 +107,12 @@ class Contact extends Entity<Contact> {
 
   String abbreviated() => '$firstName $surname';
 
+  // Optional helper: prefer primary, otherwise fall back to alternate
+  String get bestEmail =>
+      Strings.isNotBlank(emailAddress) ? emailAddress : (alternateEmail ?? '');
+
   XeroContact toXeroContact() =>
-      XeroContact(name: fullname, email: emailAddress, phone: bestPhone);
+      XeroContact(name: fullname, email: bestEmail, phone: bestPhone);
 
   String get bestPhone {
     if (Strings.isNotBlank(mobileNumber)) {

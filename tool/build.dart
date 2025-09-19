@@ -139,9 +139,7 @@ void buildApk() {
 }
 
 void buildAppBundle(Version newVersion) {
-  // The rich text editor includes random icons
-  // so tree shaking of icons isn't possible. Can we fix this?
-  'flutter build appbundle --release --no-tree-shake-icons'.start();
+  'flutter build appbundle --release '.start();
 
   final targetPath = join(
     DartProject.self.pathToProjectRoot,

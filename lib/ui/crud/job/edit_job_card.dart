@@ -1,6 +1,5 @@
 // Extracted editor card
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:calendar_view/calendar_view.dart';
 import 'package:deferred_state/deferred_state.dart';
@@ -16,9 +15,9 @@ import '../../../util/dart/format.dart';
 import '../../../util/dart/local_date.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../../util/flutter/platform_ex.dart';
-import '../../../util/flutter/rich_text_helper.dart';
 import '../../scheduling/schedule_page.dart';
 import '../../widgets/circle.dart';
+import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_button.dart';
@@ -27,7 +26,6 @@ import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/media/photo_gallery.dart';
-import '../../widgets/media/rich_editor.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/hmb_select_contact.dart';
 import '../../widgets/select/hmb_select_customer.dart';
@@ -43,8 +41,8 @@ class EditJobCard extends StatefulWidget {
 
   // Controllers
   final TextEditingController summaryController;
-  final RichEditorController descriptionController;
-  final RichEditorController assumptionController;
+  final TextEditingController descriptionController;
+  final TextEditingController assumptionController;
   final TextEditingController hourlyRateController;
   final TextEditingController bookingFeeController;
 
@@ -82,7 +80,7 @@ class EditJobCard extends StatefulWidget {
 }
 
 class _EditJobCardState extends DeferredState<EditJobCard> {
-  // Version counters to force RichEditor text refresh
+  // Version counters to force TextAreaEditors to refresh
   var _descriptionVersion = 0;
   var _assumptionVersion = 0;
 
@@ -489,9 +487,7 @@ You can set a default booking fee from System | Billing screen''');
             Container(
               constraints: const BoxConstraints(minHeight: 200),
               child: HMBExpandingTextBlock(
-                RichTextHelper.parchmentToPlainText(
-                  widget.descriptionController.document,
-                ),
+                widget.descriptionController.text,
                 key: ValueKey(_descriptionVersion),
               ),
             ),
@@ -501,10 +497,13 @@ You can set a default booking fee from System | Billing screen''');
       IconButton(
         icon: const Icon(Icons.edit),
         onPressed: () async {
-          await _showRichEditDialog(
-            widget.descriptionController,
+          final text = await _showTextAreaEditDialog(
+            widget.descriptionController.text,
             'Description',
           );
+          if (text != null) {
+            widget.descriptionController.text = text;
+          }
           setState(() => _descriptionVersion++);
         },
       ),
@@ -526,9 +525,7 @@ You can set a default booking fee from System | Billing screen''');
             Container(
               constraints: const BoxConstraints(minHeight: 200),
               child: HMBExpandingTextBlock(
-                RichEditor.createParchment(
-                  jsonEncode(widget.assumptionController.document),
-                ).toPlainText().replaceAll('\n\n', '\n'),
+                widget.assumptionController.text,
                 key: ValueKey(_assumptionVersion),
               ),
             ),
@@ -538,18 +535,23 @@ You can set a default booking fee from System | Billing screen''');
       IconButton(
         icon: const Icon(Icons.edit),
         onPressed: () async {
-          await _showRichEditDialog(widget.assumptionController, 'Assumptions');
+          final text = await _showTextAreaEditDialog(
+            widget.assumptionController.text,
+            'Assumptions',
+          );
+
+          if (text != null) {
+            widget.assumptionController.text = text;
+          }
           setState(() => _assumptionVersion++);
         },
       ),
     ],
   );
 
-  Future<void> _showRichEditDialog(
-    RichEditorController richController,
-    String title,
-  ) async {
-    await showDialog<void>(
+  Future<String?> _showTextAreaEditDialog(String text, String title) {
+    final localController = TextEditingController(text: text);
+    return showDialog<String?>(
       context: context,
       builder: (context) => Dialog(
         insetPadding: const EdgeInsets.all(16),
@@ -559,12 +561,11 @@ You can set a default booking fee from System | Billing screen''');
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
               SizedBox(
                 height: 300,
-                child: RichEditor(
-                  controller: richController,
+                child: HMBTextArea(
+                  labelText: title,
+                  controller: localController,
                   focusNode: FocusNode(),
                 ),
               ),
@@ -572,13 +573,16 @@ You can set a default booking fee from System | Billing screen''');
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
+                  HMBButton(
+                    label: 'Cancel',
+                    hint: 'Close the dialog without saving any changes',
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
                   ),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Save'),
+                  HMBButton(
+                    label: 'Save',
+                    hint: 'Save any changes',
+                    onPressed: () =>
+                        Navigator.of(context).pop(localController.text),
                   ),
                 ],
               ),
@@ -617,7 +621,6 @@ class SelectedContact extends JuneState {
 }
 
 class SelectJobStatus extends JuneState {
-
   JobStatus? _jobStatus = JobStatus.startingStatus;
   SelectJobStatus();
 

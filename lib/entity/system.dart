@@ -92,6 +92,12 @@ class System extends Entity<System> {
   String? chatgptRefreshToken;
   DateTime? chatgptTokenExpiry;
 
+  // flag to remember if we have removed fleather related rich text fields
+  // We may need to leave this until we are sure all users have upgraded from
+  // whatever version they have been running.
+  // TODO(bsutton): remove after 0.13 released.
+    bool richTextRemoved; 
+
   System._({
     required super.id,
     required this.fromEmail,
@@ -136,6 +142,7 @@ class System extends Entity<System> {
     required this.chatgptTokenExpiry,
     required super.createdDate,
     required super.modifiedDate,
+    required this.richTextRemoved,
     this.operatingHours,
   }) : super();
 
@@ -171,7 +178,9 @@ class System extends Entity<System> {
     required this.billingColour,
     required this.paymentTermsInDays,
     required this.paymentOptions,
+    required this.richTextRemoved,
     this.enableXeroIntegration = true,
+
     this.preferredUnitSystem = PreferredUnitSystem.metric,
     this.logoPath = '',
     this.logoAspectRatio = LogoAspectRatio.square,
@@ -225,6 +234,7 @@ class System extends Entity<System> {
     String? chatgptAccessToken,
     String? chatgptRefreshToken,
     DateTime? chatgptTokenExpiry,
+    bool? richTextRemoved,
   }) => System._(
     id: id,
     fromEmail: fromEmail ?? this.fromEmail,
@@ -268,6 +278,7 @@ class System extends Entity<System> {
     paymentOptions: paymentOptions ?? this.paymentOptions,
     firstname: firstname ?? this.firstname,
     surname: surname ?? this.surname,
+    richTextRemoved: richTextRemoved ?? this.richTextRemoved,
     operatingHours: operatingHours ?? this.operatingHours,
     chatgptAccessToken: chatgptAccessToken ?? this.chatgptAccessToken,
     chatgptRefreshToken: chatgptRefreshToken ?? this.chatgptRefreshToken,
@@ -325,6 +336,7 @@ class System extends Entity<System> {
     paymentOptions: map['payment_options'] as String? ?? '',
     firstname: map['firstname'] as String?,
     surname: map['surname'] as String?,
+    richTextRemoved:  map['rich_text_removed']  == 1 ,
     operatingHours: map['operating_hours'] as String?,
     chatgptAccessToken: map['chatgpt_access_token'] as String?,
     chatgptRefreshToken: map['chatgpt_refresh_token'] as String?,
@@ -399,6 +411,7 @@ class System extends Entity<System> {
     'payment_options': paymentOptions,
     'firstname': firstname,
     'surname': surname,
+    'rich_text_removed': richTextRemoved  ? 1 : 0,
     'operating_hours': operatingHours,
     'chatgpt_access_token': chatgptAccessToken,
     'chatgpt_refresh_token': chatgptRefreshToken,

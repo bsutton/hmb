@@ -32,5 +32,4 @@ export 'google_maps.dart';
 export 'hex_to_color.dart';
 export 'hmb_theme.dart';
 export 'platform_ex.dart';
-export 'rich_text_helper.dart';
 export 'sim_cards.dart';
