@@ -493,6 +493,28 @@ where q.id=?
     return bestEmail;
   }
 
+
+  Future<List<String>> getEmailsByJob(int jobId) async {
+    final job = await DaoJob().getById(jobId);
+    final customer = await DaoCustomer().getById(job!.customerId);
+    final contacts = await DaoContact().getByCustomer(customer!.id);
+
+    /// make sure we have no dups.
+    final emails = <String>{};
+
+    for (final contact in contacts) {
+      if (Strings.isNotBlank(contact.emailAddress)) {
+        emails.add(contact.emailAddress.trim());
+      }
+      if (Strings.isNotBlank(contact.alternateEmail)) {
+        emails.add(contact.alternateEmail!.trim());
+      }
+    }
+
+    return emails.toList();
+  }
+
+
   Future<bool> hasQuoteableItems(Job job) async {
     final estimates = await DaoTask().getEstimatesForJob(job.id);
 

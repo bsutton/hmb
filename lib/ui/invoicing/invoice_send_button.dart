@@ -12,12 +12,12 @@
 */
 
 import 'package:flutter/material.dart';
-import 'package:strings/strings.dart';
 
 import '../../api/external_accounting.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/invoice.dart';
 import '../../util/dart/format.dart';
+import '../dialog/email_dialog_for_job.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
@@ -35,7 +35,6 @@ class BuildSendButton extends StatelessWidget {
     required this.invoice,
     super.key,
   });
-
 
   @override
   Widget build(BuildContext context) => HMBButton(
@@ -105,11 +104,20 @@ Please find the attached invoice for your job.
 
 Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
 ''',
-                emailRecipients: [
-                  ...recipients,
-                  if (Strings.isNotBlank(system.emailAddress))
-                    system.emailAddress!,
-                ],
+
+                sendEmailDialog:
+                    ({
+                      preferredRecipient = '',
+                      subject = '',
+                      body = '',
+                      attachmentPaths = const [],
+                    }) => EmailDialogForJob(
+                      job: job,
+                      preferredRecipient: preferredRecipient,
+                      subject: subject,
+                      body: body,
+                      attachmentPaths: attachmentPaths,
+                    ),
                 onSent: () => DaoInvoice().markSent(invoice),
                 canEmail: () async {
                   if ((await ExternalAccounting().isEnabled()) &&

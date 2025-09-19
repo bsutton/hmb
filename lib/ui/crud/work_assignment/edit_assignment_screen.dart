@@ -100,6 +100,12 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
           return false;
         }
 
+        // for some reason the required flag on the drop list isn't triggering.
+        if (_selectedContact == null) {
+          HMBToast.error('You must select the Supplier Contact');
+          return false;
+        }
+
         return true;
       },
     ),
@@ -125,6 +131,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
                 .toList(),
             onChanged: (supplier) {
               _selectedSupplier = supplier?.id;
+              _selectedContact = null;
               // force the contact drop list to show, now
               // that we have a supplier.
               setState(() {});

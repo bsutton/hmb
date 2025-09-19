@@ -17,12 +17,18 @@ import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:zoom_view/zoom_view.dart';
 
-import '../../../dao/dao_system.dart';
 import '../../../ui/widgets/hmb_toast.dart';
 import '../../../util/dart/types.dart';
-import '../../dialog/email_dialog.dart';
 import '../blocking_ui.dart';
 import '../desktop_back_gesture_suppress.dart';
+
+typedef SendEmailDialog =
+    Widget Function({
+      required String preferredRecipient,
+      required String subject,
+      required String body,
+      required List<String> attachmentPaths,
+    });
 
 class EmailBlocked {
   String reason;
@@ -39,7 +45,7 @@ class PdfPreviewScreen extends StatelessWidget {
   final String emailSubject;
   final String emailBody;
   final String preferredRecipient;
-  final List<String> emailRecipients;
+  final SendEmailDialog sendEmailDialog;
   final AsyncVoidCallback onSent;
   final Future<EmailBlocked> Function() canEmail;
 
@@ -49,15 +55,13 @@ class PdfPreviewScreen extends StatelessWidget {
     required this.emailBody,
     required this.filePath,
     required this.preferredRecipient,
-    required this.emailRecipients,
+    required this.sendEmailDialog,
     required this.canEmail,
     required this.onSent,
     super.key,
   });
 
   Future<void> _showEmailDialog(BuildContext context) async {
-    final system = await DaoSystem().get();
-
     final emailBlocked = await canEmail();
     if (emailBlocked.blocked) {
       HMBToast.error(
@@ -66,19 +70,17 @@ class PdfPreviewScreen extends StatelessWidget {
       return;
     }
 
-    if (emailRecipients.isEmpty) {
-      HMBToast.error('No contacts have an email address');
-      return;
-    }
+    // if (emailRecipients.isEmpty) {
+    //   HMBToast.error('No contacts have an email address');
+    //   return;
+    // }
 
     if (context.mounted) {
       final sent = await showDialog<bool>(
         context: context,
-        builder: (context) => EmailDialog(
+        builder: (context) => sendEmailDialog(
           preferredRecipient: preferredRecipient,
-          emailRecipients: emailRecipients,
-          system: system,
-          filePath: filePath,
+          attachmentPaths: [filePath],
           subject: emailSubject,
           body: emailBody,
         ),

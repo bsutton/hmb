@@ -19,22 +19,24 @@ import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:strings/strings.dart';
 
 import '../../dao/dao_system.dart';
+import '../../entity/job.dart';
 import '../../entity/system.dart';
 import '../../ui/widgets/hmb_toast.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/select/hmb_select_email_multi.dart';
 
-class EmailDialog extends StatefulWidget {
+class EmailDialogForJob extends StatefulWidget {
+  final Job job;
   final String subject;
   final String body;
   final String preferredRecipient;
-  final List<String> emailRecipients;
   final List<String> attachmentPaths;
 
-  const EmailDialog({
+  const EmailDialogForJob({
+    required this.job,
+    required this.preferredRecipient,
     required this.subject,
     required this.body,
-    required this.preferredRecipient,
-    required this.emailRecipients,
     required this.attachmentPaths,
     super.key,
   });
@@ -44,28 +46,15 @@ class EmailDialog extends StatefulWidget {
   _EmailDialogState createState() => _EmailDialogState();
 }
 
-class _EmailDialogState extends DeferredState<EmailDialog> {
+class _EmailDialogState extends DeferredState<EmailDialogForJob> {
   late final System system;
   late TextEditingController _subjectController;
   late TextEditingController _bodyController;
-  String? _selectedRecipient;
-  late final List<String> emailRecipients;
-
-  @override
-  void initState() {
-    super.initState();
-
-    emailRecipients = widget.emailRecipients;
-    _subjectController = TextEditingController(text: widget.subject);
-  }
+  List<String> _selectedRecipients = [];
 
   @override
   Future<void> asyncInitState() async {
     system = await DaoSystem().get();
-
-    if (Strings.isNotBlank(system.emailAddress)) {
-      emailRecipients.add(system.emailAddress!);
-    }
 
     final businessDetails = StringBuffer();
     if (Strings.isNotBlank(system.businessNumber)) {
@@ -89,32 +78,31 @@ Web: ${system.webUrl}
 $businessDetails
 ''',
     );
-    _selectedRecipient = widget.preferredRecipient;
+    _selectedRecipients = [widget.preferredRecipient];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _subjectController = TextEditingController(text: widget.subject);
   }
 
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder: (context) => AlertDialog(
+    builder: (_) => AlertDialog(
       title: const Text('Send Email'),
       content: SingleChildScrollView(
         child: ListBody(
           children: <Widget>[
-            DropdownButton<String>(
-              value: _selectedRecipient,
-              onChanged: (newValue) {
+            HMBSelectEmailMulti(
+              job: widget.job,
+              // value: _selectedRecipient,
+              onChanged: (newRecipients) {
                 setState(() {
-                  _selectedRecipient = newValue;
+                  _selectedRecipients = newRecipients;
                 });
               },
-              items: emailRecipients
-                  .map(
-                    (recipient) => DropdownMenuItem<String>(
-                      value: recipient,
-                      child: Text(recipient),
-                    ),
-                  )
-                  .toList(),
             ),
             TextField(
               controller: _subjectController,
@@ -145,11 +133,11 @@ $businessDetails
               HMBToast.error('This platform does not support sending emails');
               return;
             }
-            if (_selectedRecipient != null) {
+            if (_selectedRecipients.isNotEmpty) {
               final email = Email(
                 body: _bodyController.text,
                 subject: _subjectController.text,
-                recipients: [_selectedRecipient!],
+                recipients: _selectedRecipients,
                 attachmentPaths: widget.attachmentPaths,
               );
 

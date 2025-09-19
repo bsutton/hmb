@@ -19,8 +19,6 @@ import '../api/accounting/accounting_adaptor.dart';
 import '../entity/entity.g.dart';
 import '../util/dart/money_ex.dart';
 import 'dao.dart';
-import 'dao_contact.dart';
-import 'dao_customer.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
 import 'dao_job.dart';
@@ -115,25 +113,8 @@ class DaoInvoice extends Dao<Invoice> {
     await DaoInvoice().update(updatedInvoice);
   }
 
-  Future<List<String>> getEmailsByInvoice(Invoice invoice) async {
-    final job = await DaoJob().getById(invoice.jobId);
-    final customer = await DaoCustomer().getById(job!.customerId);
-    final contacts = await DaoContact().getByCustomer(customer!.id);
-
-    /// make sure we have no dups.
-    final emails = <String>{};
-
-    for (final contact in contacts) {
-      if (Strings.isNotBlank(contact.emailAddress)) {
-        emails.add(contact.emailAddress.trim());
-      }
-      if (Strings.isNotBlank(contact.alternateEmail)) {
-        emails.add(contact.alternateEmail!.trim());
-      }
-    }
-
-    return emails.toList();
-  }
+  Future<List<String>> getEmailsByInvoice(Invoice invoice)  =>
+      DaoJob().getEmailsByJob(invoice.jobId);
 
   Future<void> markSent(Invoice invoice) async {
     invoice.sent = true;

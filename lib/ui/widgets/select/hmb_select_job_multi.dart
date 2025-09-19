@@ -31,7 +31,7 @@ class HMBSelectJobMulti extends StatelessWidget {
       ).help(
         'Filter by Job',
         '''
-Allows you to filter the packing list to items from specific Jobs.
+Allows you to filter the list to items from specific Jobs.
 
 If your Job isn't showing then you need to update its status to an Active one such as 'Scheduled, In Progress...' ''',
       );

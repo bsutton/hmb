@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import '../../../api/external_accounting.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
+import '../../dialog/email_dialog.dart';
 import '../../widgets/media/pdf_preview.dart';
 import '../../widgets/widgets.g.dart';
 import 'generate_work_assignment_pdf.dart';
@@ -64,19 +65,18 @@ class BuildSendAssignmentButton extends StatelessWidget {
           () => generateWorkAssignmentPdf(assignment),
         );
 
-        final systemEmail = (await DaoSystem().get()).emailAddress;
         if (!context.mounted) {
           return;
         }
 
-        final recipients = [primaryContact.emailAddress, ?systemEmail];
+        final recipients = [primaryContact.emailAddress];
 
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => PdfPreviewScreen(
               title: 'Work Assignment #${assignment.id}',
               filePath: file.path,
-              preferredRecipient: recipients.first,
+              preferredRecipient: primaryContact.emailAddress,
               emailSubject: 'Work Assignment #${assignment.id}',
               emailBody:
                   '''
@@ -84,7 +84,20 @@ ${primaryContact.firstName},
 
 Please find attached the Work Assignment for Job ${job.summary}.
 ''',
-              emailRecipients: [...recipients],
+
+              sendEmailDialog:
+                  ({
+                    preferredRecipient = '',
+                    subject = '',
+                    body = '',
+                    attachmentPaths = const [],
+                  }) => EmailDialog(
+                    preferredRecipient: preferredRecipient,
+                    subject: subject,
+                    body: body,
+                    attachmentPaths: attachmentPaths,
+                    emailRecipients: [...recipients],
+                  ),
               onSent: () => DaoWorkAssignment().markSent(assignment),
               canEmail: () async {
                 if (await ExternalAccounting().isEnabled()) {

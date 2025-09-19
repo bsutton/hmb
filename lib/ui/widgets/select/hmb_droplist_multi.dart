@@ -124,19 +124,25 @@ class HMBDroplistMultiSelectState<T>
                   widget.backgroundColor ?? SurfaceElevation.e4.color,
               isError: state.hasError,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _selectedItems.isNotEmpty
-                        ? _selectedItems.map(widget.format).join(', ')
-                        : 'Select ${widget.title}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: state.hasError
-                          ? Theme.of(context).colorScheme.error
-                          : HMBColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      _selectedItems.isNotEmpty
+                          ? _selectedItems.map(widget.format).join('\n')
+                          : 'Select ${widget.title}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: state.hasError
+                            ? Theme.of(context).colorScheme.error
+                            : HMBColors.textPrimary,
+                      ),
+                      softWrap: true, // allow wrapping
+                      // overflow: TextOverflow.clip, // optional (default with softWrap)
+                      // maxLines: null,              // unlimited lines (default)
                     ),
                   ),
+                  const SizedBox(width: 8),
                   const Icon(
                     Icons.arrow_drop_down,
                     color: HMBColors.dropboxArrow,

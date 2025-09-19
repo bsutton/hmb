@@ -22,6 +22,7 @@ import '../../entity/quote_line.dart';
 import '../../entity/quote_line_group.dart';
 import '../../util/dart/format.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
+import '../dialog/email_dialog_for_job.dart';
 import '../widgets/media/pdf_preview.dart';
 import '../widgets/widgets.g.dart' hide StatefulBuilder;
 import 'edit_quote_line_dialog.dart';
@@ -315,10 +316,10 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
     final site = await DaoSite().getById(job.siteId);
     final address = site?.address;
 
-    final emailRecipients = await DaoQuote().getEmailsByQuote(_quote);
+    // final emailRecipients = await DaoQuote().getEmailsByQuote(_quote);
 
     final preferredRecipient =
-        billingContact?.emailAddress ?? emailRecipients.firstOrNull;
+        billingContact?.emailAddress; // ?? emailRecipients.firstOrNull;
 
     if (preferredRecipient == null) {
       HMBToast.error(
@@ -329,9 +330,9 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
     if (!mounted) {
       return;
     }
-    if (!emailRecipients.contains(preferredRecipient)) {
-      emailRecipients.add(preferredRecipient);
-    }
+    // if (!emailRecipients.contains(preferredRecipient)) {
+    //   emailRecipients.add(preferredRecipient);
+    // }
 
     final businessPrefix = Strings.isBlank(system.businessName)
         ? ''
@@ -346,7 +347,19 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
           emailSubject: '${businessPrefix}Your Quote$addressSuffix',
           emailBody: 'Please find the attached quote',
           preferredRecipient: preferredRecipient,
-          emailRecipients: emailRecipients,
+          sendEmailDialog:
+              ({
+                preferredRecipient = '',
+                subject = '',
+                body = '',
+                attachmentPaths = const [],
+              }) => EmailDialogForJob(
+                job: job,
+                preferredRecipient: preferredRecipient,
+                subject: subject,
+                body: body,
+                attachmentPaths: attachmentPaths,
+              ),
           onSent: () async {
             if (_quote.state != QuoteState.approved) {
               await DaoQuote().markQuoteSent(_quote.id);
