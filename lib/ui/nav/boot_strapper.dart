@@ -104,12 +104,8 @@ class BootStrapper {
     print('Database located at: ${await backupProvider.databasePath}');
 
     /// remove rich text fields.
-    final system = await DaoSystem().get();
-    if (!system.richTextRemoved) {
+    
       await postv134Upgrade(DatabaseHelper().database);
-
-      await DaoSystem().update(system.copyWith(richTextRemoved: true));
-    }
   }
 
   Future<void> _initScheduler() async {

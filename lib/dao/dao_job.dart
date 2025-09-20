@@ -68,8 +68,11 @@ class DaoJob extends Dao<Job> {
 
   /// getAll - sort by modified date descending
   @override
-  Future<List<Job>> getAll({String? orderByClause}) async {
-    final db = withoutTransaction();
+  Future<List<Job>> getAll({
+    String? orderByClause,
+    Transaction? transaction,
+  }) async {
+    final db = withinTransaction(transaction);
     return toList(await db.query(tableName, orderBy: 'modified_date desc'));
   }
 
@@ -493,7 +496,6 @@ where q.id=?
     return bestEmail;
   }
 
-
   Future<List<String>> getEmailsByJob(int jobId) async {
     final job = await DaoJob().getById(jobId);
     final customer = await DaoCustomer().getById(job!.customerId);
@@ -513,7 +515,6 @@ where q.id=?
 
     return emails.toList();
   }
-
 
   Future<bool> hasQuoteableItems(Job job) async {
     final estimates = await DaoTask().getEstimatesForJob(job.id);

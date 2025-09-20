@@ -13,19 +13,58 @@
 
 import 'package:sqflite_common/sqlite_api.dart';
 
-import '../../dao/dao_job.dart';
+import '../../dao/dao.g.dart';
+import '../../entity/entity.g.dart';
 import '../../util/flutter/rich_text_helper.dart';
 
 /// Is run after the v134.sql upgrade script is run.
 /// Convert all rich text fields to plain text.
 Future<void> postv134Upgrade(Database db) async {
-  final daoJob = DaoJob();
-  final jobs = await daoJob.getAll();
+  await db.transaction((transaction) async {
+    final system = await DaoSystem().get(transaction);
 
-  for (final job in jobs) {
-    job
-      ..assumption = RichTextHelper.toPlainText(job.assumption)
-      ..description = RichTextHelper.toPlainText(job.description);
-    await daoJob.update(job);
-  }
+    final removed = system.richTextRemoved;
+
+    final daoQuote = DaoQuote();
+    final daoJob = DaoJob();
+
+    switch (removed) {
+      case RichTextRemoved.notYet:
+        {
+          final jobs = await daoJob.getAll(transaction: transaction);
+
+          for (final job in jobs) {
+            job
+              ..assumption = RichTextHelper.toPlainText(job.assumption)
+              ..description = RichTextHelper.toPlainText(job.description);
+            await daoJob.update(job, transaction);
+          }
+          await DaoSystem().update(
+            system.copyWith(richTextRemoved: RichTextRemoved.job),
+            transaction,
+          );
+        }
+        continue job;
+
+      job:
+      case RichTextRemoved.job:
+        {
+          final quotes = await daoQuote.getAll(transaction: transaction);
+          for (final quote in quotes) {
+            quote.assumption = RichTextHelper.toPlainText(quote.assumption);
+            await daoQuote.update(quote, transaction);
+          }
+          await DaoSystem().update(
+            system.copyWith(richTextRemoved: RichTextRemoved.quote),
+            transaction,
+          );
+        }
+        continue quote;
+      quote:
+      case RichTextRemoved.quote:
+        {
+          // no action requried.
+        }
+    }
+  });
 }

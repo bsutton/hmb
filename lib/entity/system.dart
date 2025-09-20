@@ -20,6 +20,27 @@ import '../util/dart/measurement_type.dart';
 import 'entity.dart';
 import 'operating_hours.dart';
 
+enum RichTextRemoved {
+  notYet(0),
+  job(1),
+  quote(2);
+
+  final int ordinal;
+  const RichTextRemoved(this.ordinal);
+
+  static RichTextRemoved fromOrdinal(int? n) {
+    if (n == null) {
+      return RichTextRemoved.notYet;
+    }
+    for (final e in RichTextRemoved.values) {
+      if (e.ordinal == n) {
+        return e;
+      }
+    }
+    return RichTextRemoved.notYet;
+  }
+}
+
 enum LogoAspectRatio {
   square(100, 100),
   portrait(80, 120),
@@ -33,13 +54,21 @@ enum LogoAspectRatio {
   static LogoAspectRatio fromName(String? name) {
     switch (name) {
       case 'square':
-        return LogoAspectRatio.square;
+        {
+          return LogoAspectRatio.square;
+        }
       case 'portrait':
-        return LogoAspectRatio.portrait;
+        {
+          return LogoAspectRatio.portrait;
+        }
       case 'landscape':
-        return LogoAspectRatio.landscape;
+        {
+          return LogoAspectRatio.landscape;
+        }
       default:
-        return LogoAspectRatio.square;
+        {
+          return LogoAspectRatio.square;
+        }
     }
   }
 }
@@ -92,11 +121,8 @@ class System extends Entity<System> {
   String? chatgptRefreshToken;
   DateTime? chatgptTokenExpiry;
 
-  // flag to remember if we have removed fleather related rich text fields
-  // We may need to leave this until we are sure all users have upgraded from
-  // whatever version they have been running.
-  // TODO(bsutton): remove after 0.13 released.
-    bool richTextRemoved; 
+  /// Tracks removal of fleather rich-text fields using an ordinal enum.
+  RichTextRemoved richTextRemoved;
 
   System._({
     required super.id,
@@ -180,7 +206,6 @@ class System extends Entity<System> {
     required this.paymentOptions,
     required this.richTextRemoved,
     this.enableXeroIntegration = true,
-
     this.preferredUnitSystem = PreferredUnitSystem.metric,
     this.logoPath = '',
     this.logoAspectRatio = LogoAspectRatio.square,
@@ -234,7 +259,7 @@ class System extends Entity<System> {
     String? chatgptAccessToken,
     String? chatgptRefreshToken,
     DateTime? chatgptTokenExpiry,
-    bool? richTextRemoved,
+    RichTextRemoved? richTextRemoved,
   }) => System._(
     id: id,
     fromEmail: fromEmail ?? this.fromEmail,
@@ -336,7 +361,17 @@ class System extends Entity<System> {
     paymentOptions: map['payment_options'] as String? ?? '',
     firstname: map['firstname'] as String?,
     surname: map['surname'] as String?,
-    richTextRemoved:  map['rich_text_removed']  == 1 ,
+    richTextRemoved: () {
+      final v = map['rich_text_removed'];
+      if (v is int) {
+        return RichTextRemoved.fromOrdinal(v);
+      }
+      if (v is bool) {
+        return v ? RichTextRemoved.job : RichTextRemoved.notYet;
+      }
+      final parsed = int.tryParse('$v');
+      return RichTextRemoved.fromOrdinal(parsed);
+    }(),
     operatingHours: map['operating_hours'] as String?,
     chatgptAccessToken: map['chatgpt_access_token'] as String?,
     chatgptRefreshToken: map['chatgpt_refresh_token'] as String?,
@@ -357,11 +392,15 @@ class System extends Entity<System> {
 
   OperatingHours getOperatingHours() => OperatingHours.fromJson(operatingHours);
 
-  String? get bestPhone => Strings.isNotBlank(mobileNumber)
-      ? mobileNumber
-      : Strings.isNotBlank(landLine)
-      ? landLine
-      : officeNumber;
+  String? get bestPhone {
+    if (Strings.isNotBlank(mobileNumber)) {
+      return mobileNumber;
+    } else if (Strings.isNotBlank(landLine)) {
+      return landLine;
+    } else {
+      return officeNumber;
+    }
+  }
 
   String get address => Strings.join(
     [addressLine1, addressLine2, suburb, state, postcode],
@@ -411,7 +450,7 @@ class System extends Entity<System> {
     'payment_options': paymentOptions,
     'firstname': firstname,
     'surname': surname,
-    'rich_text_removed': richTextRemoved  ? 1 : 0,
+    'rich_text_removed': richTextRemoved.ordinal,
     'operating_hours': operatingHours,
     'chatgpt_access_token': chatgptAccessToken,
     'chatgpt_refresh_token': chatgptRefreshToken,
