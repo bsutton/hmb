@@ -19,14 +19,12 @@ import 'package:strings/strings.dart';
 import '../../../util/flutter/hmb_theme.dart';
 
 class HMBTextField extends StatelessWidget {
-
   final TextEditingController controller;
   final FocusNode? focusNode;
   final String labelText;
   final String? Function(String? value)? validator;
   final bool autofocus;
   final bool required;
-  final bool leadingSpace;
   final TextInputType keyboardType;
   final void Function(String?)? onChanged;
   final String Function(String?)? onPaste;
@@ -34,7 +32,7 @@ class HMBTextField extends StatelessWidget {
   final bool enabled;
   final Widget? suffixIcon;
   final List<TextInputFormatter> inputFormatters;
-  
+
   /// A customizable text field that supports disabling/enabling input.
   const HMBTextField({
     required this.controller,
@@ -48,7 +46,6 @@ class HMBTextField extends StatelessWidget {
     this.enabled = true,
     super.key,
     this.autofocus = false,
-    this.leadingSpace = true,
     this.textCapitalization = TextCapitalization.none,
     this.suffixIcon,
     this.inputFormatters = const [],
@@ -71,7 +68,6 @@ class HMBTextField extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (leadingSpace) const SizedBox(height: 16),
           TextFormField(
             style: const TextStyle(color: HMBColors.textPrimary),
             enabled: enabled,

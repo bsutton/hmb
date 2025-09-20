@@ -31,7 +31,6 @@ class HMBFixedField extends HMBTextField {
     ValueChanged<String?>? onChanged,
     Key? key,
     bool autofocus = false,
-    bool leadingSpace = true,
   }) => HMBFixedField._(
     controller: controller,
     labelText: labelText,
@@ -42,7 +41,6 @@ class HMBFixedField extends HMBTextField {
     onChanged: onChanged,
     key: key,
     autofocus: autofocus,
-    leadingSpace: leadingSpace,
     validator: (value) => validation(value, nonZero, fieldName),
   );
 
@@ -56,7 +54,6 @@ class HMBFixedField extends HMBTextField {
     super.onChanged,
     super.key,
     super.autofocus = false,
-    super.leadingSpace = true,
     super.validator,
   }) : super(keyboardType: TextInputType.text);
 

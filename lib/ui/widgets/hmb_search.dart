@@ -73,7 +73,6 @@ class HMBSearchState extends State<HMBSearch> {
     children: [
       Expanded(
         child: HMBTextField(
-          leadingSpace: false,
           labelText: widget.label,
           controller: filterController!,
           onChanged: (newValue) async {

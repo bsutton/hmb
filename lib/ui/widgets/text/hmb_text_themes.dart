@@ -237,23 +237,27 @@ class HMBTextHeadline3 extends StatelessWidget {
   static const fontSize = 22.0;
   final String text;
   final Color color;
-  final TextStyle style;
 
-  HMBTextHeadline3(this.text, {super.key, this.color = HMBColors.textPrimary})
-    : style = TextStyle(fontSize: fontSize, color: color);
+  const HMBTextHeadline3(
+    this.text, {
+    super.key,
+    this.color = HMBColors.textPrimary,
+  });
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(8),
-    child: Text(text, style: style),
+    child: Text(
+      text,
+      style: TextStyle(fontSize: fontSize, color: color),
+    ),
   );
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
       ..add(StringProperty('text', text))
-      ..add(ColorProperty('color', color))
-      ..add(DiagnosticsProperty<TextStyle>('style', style));
+      ..add(ColorProperty('color', color));
   }
 }
 
