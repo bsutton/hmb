@@ -147,6 +147,38 @@ Future<File> generateQuotePdf(
                 pw.Text(
                   '${system.businessNumberLabel}: ${system.businessNumber}',
                 ),
+
+                // --- NEW: Summary & Description (first page only) ---
+                if (Strings.isNotBlank(quote.summary)) ...[
+                  pw.SizedBox(height: 10),
+                  pw.Text(
+                    'Summary:',
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.Text(
+                    quote.summary,
+                    style: const pw.TextStyle(fontSize: 12),
+                  ),
+                ],
+                if (Strings.isNotBlank(quote.description)) ...[
+                  pw.SizedBox(height: 8),
+                  pw.Text(
+                    'Description:',
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.Text(
+                    quote.description,
+                    style: const pw.TextStyle(fontSize: 12),
+                  ),
+                ],
+
+                // ----------------------------------------------------
                 pw.Divider(),
               ],
             ),
@@ -154,6 +186,7 @@ Future<File> generateQuotePdf(
         }
         return pw.SizedBox();
       },
+
       build: (context) {
         final content = <pw.Widget>[];
 

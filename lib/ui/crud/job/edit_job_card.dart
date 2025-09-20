@@ -1,3 +1,17 @@
+/*
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
+
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
+   • Permitted for internal use within your own business or organization only.
+   • Any external distribution, resale, or incorporation into products 
+      for third parties is strictly prohibited.
+
+ See the full license on GitHub:
+ https://github.com/bsutton/hmb/blob/main/LICENSE
+*/
+
 // Extracted editor card
 import 'dart:async';
 
@@ -23,6 +37,7 @@ import '../../widgets/help_button.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_chip.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/hmb_column.dart';
 import '../../widgets/layout/hmb_form_section.dart';
 import '../../widgets/layout/hmb_spacer.dart';
 import '../../widgets/media/photo_gallery.dart';
@@ -42,6 +57,7 @@ class EditJobCard extends StatefulWidget {
   // Controllers
   final TextEditingController summaryController;
   final TextEditingController descriptionController;
+  final TextEditingController notesController; // NEW
   final TextEditingController assumptionController;
   final TextEditingController hourlyRateController;
   final TextEditingController bookingFeeController;
@@ -49,6 +65,7 @@ class EditJobCard extends StatefulWidget {
   // Focus nodes
   final FocusNode summaryFocusNode;
   final FocusNode descriptionFocusNode;
+  final FocusNode notesFocusNode; // NEW
   final FocusNode assumptionFocusNode;
   final FocusNode hourlyRateFocusNode;
   final FocusNode bookingFeeFocusNode;
@@ -62,11 +79,13 @@ class EditJobCard extends StatefulWidget {
     required this.customer,
     required this.summaryController,
     required this.descriptionController,
+    required this.notesController, // NEW
     required this.assumptionController,
     required this.hourlyRateController,
     required this.bookingFeeController,
     required this.summaryFocusNode,
     required this.descriptionFocusNode,
+    required this.notesFocusNode, // NEW
     required this.assumptionFocusNode,
     required this.hourlyRateFocusNode,
     required this.bookingFeeFocusNode,
@@ -82,6 +101,7 @@ class EditJobCard extends StatefulWidget {
 class _EditJobCardState extends DeferredState<EditJobCard> {
   // Version counters to force TextAreaEditors to refresh
   var _descriptionVersion = 0;
+  var _notesVersion = 0; // NEW
   var _assumptionVersion = 0;
 
   Job? job;
@@ -102,7 +122,7 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
-    builder: (context) => Column(
+    builder: (context) => HMBColumn(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -117,16 +137,13 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
             _chooseBillingContact(),
             _showHourlyRate(),
             _showBookingFee(),
-            const HMBSpacer(height: true),
             _buildDescription(),
-            const SizedBox(height: 12),
+            _buildNotes(),
             _buildAssumption(),
-            const SizedBox(height: 12),
             _chooseContact(),
             _chooseSite(),
           ],
         ),
-        const HMBSpacer(height: true),
         if (job != null) PhotoGallery.forJob(job: job!),
       ],
     ),
@@ -252,6 +269,7 @@ You can set a default booking fee from System | Billing screen''');
       });
     },
   );
+
   Widget _chooseStatus(Job? job) => Padding(
     padding: const EdgeInsets.only(top: 8, bottom: 8),
     child: Row(
@@ -279,6 +297,7 @@ You can set a default booking fee from System | Billing screen''');
       ],
     ),
   );
+  // Alternative dropdown version kept for reference:
   // Widget _chooseStatus(Job? job) => JuneBuilder(
   //   () => SelectJobStatus()..jobStatus = job?.status,
   //   builder: (jobStatus) => HMBDroplist<JobStatus>(
@@ -342,10 +361,6 @@ You can set a default booking fee from System | Billing screen''');
 
   Future<void> _checkIfScheduled() async {
     // reload the job as it's state may have changed
-    // if the user scheduled a job in the above call
-    // to SchedulePage.
-    // Scheduling a Job may not actually change the status
-    // in which case  we don't want to overwrite the status
     final tempJob = await DaoJob().getById(job?.id);
     if (tempJob!.status == JobStatus.scheduled) {
       June.getState(SelectJobStatus.new)
@@ -474,7 +489,7 @@ You can set a default booking fee from System | Billing screen''');
 
   String _activityDisplay(JobActivity e) => formatDateTimeAM(e.start);
 
-  // --- Description / Assumptions -------------------------------------------
+  // --- Description / Notes / Assumptions -----------------------------------
 
   Widget _buildDescription() => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,6 +520,40 @@ You can set a default booking fee from System | Billing screen''');
             widget.descriptionController.text = text;
           }
           setState(() => _descriptionVersion++);
+        },
+      ),
+    ],
+  );
+
+  Widget _buildNotes() => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const HMBText('Internal Notes:', bold: true),
+            Container(
+              constraints: const BoxConstraints(minHeight: 200),
+              child: HMBExpandingTextBlock(
+                widget.notesController.text,
+                key: ValueKey(_notesVersion),
+              ),
+            ),
+          ],
+        ),
+      ),
+      IconButton(
+        icon: const Icon(Icons.edit),
+        onPressed: () async {
+          final text = await _showTextAreaEditDialog(
+            widget.notesController.text,
+            'Notes',
+          );
+          if (text != null) {
+            widget.notesController.text = text;
+          }
+          setState(() => _notesVersion++);
         },
       ),
     ],

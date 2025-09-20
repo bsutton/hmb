@@ -34,8 +34,16 @@ enum QuoteState {
 
 class Quote extends Entity<Quote> {
   int jobId;
-  Money totalAmount;
+
+  /// Short one-line summary for list views / headers.
+  String summary;
+
+  /// Internal notes/assumptions for the quote.
   String assumption;
+
+  /// Longer free-form description shown on PDFs/UI.
+  String description;
+  Money totalAmount;
   String? quoteNum;
   String? externalQuoteId;
   QuoteState state;
@@ -48,6 +56,8 @@ class Quote extends Entity<Quote> {
     required this.jobId,
     required this.totalAmount,
     required this.assumption,
+    required this.summary,
+    required this.description,
     required super.createdDate,
     required super.modifiedDate,
     required this.quoteNum,
@@ -60,6 +70,8 @@ class Quote extends Entity<Quote> {
 
   Quote.forInsert({
     required this.jobId,
+    required this.summary,
+    required this.description,
     required this.totalAmount,
     this.assumption = '',
     this.quoteNum,
@@ -72,6 +84,8 @@ class Quote extends Entity<Quote> {
 
   Quote copyWith({
     int? jobId,
+    String? summary,
+    String? description,
     String? assumption,
     Money? totalAmount,
     String? quoteNum,
@@ -83,6 +97,8 @@ class Quote extends Entity<Quote> {
   }) => Quote._(
     id: id,
     jobId: jobId ?? this.jobId,
+    summary: summary ?? this.summary,
+    description: description ?? this.description,
     assumption: assumption ?? this.assumption,
     totalAmount: totalAmount ?? this.totalAmount,
     createdDate: createdDate,
@@ -98,8 +114,10 @@ class Quote extends Entity<Quote> {
   factory Quote.fromMap(Map<String, dynamic> map) => Quote._(
     id: map['id'] as int,
     jobId: map['job_id'] as int,
+    summary: map['summary'] as String? ?? '',
+    description: map['description'] as String? ?? '',
+    assumption: map['assumption'] as String? ?? '',
     totalAmount: Money.fromInt(map['total_amount'] as int, isoCode: 'AUD'),
-    assumption: map['assumption'] as String,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
     quoteNum: map['quote_num'] as String?,
@@ -120,8 +138,10 @@ class Quote extends Entity<Quote> {
   Map<String, dynamic> toMap() => {
     'id': id,
     'job_id': jobId,
-    'total_amount': totalAmount.minorUnits.toInt(),
+    'summary': summary,
+    'description': description,
     'assumption': assumption,
+    'total_amount': totalAmount.minorUnits.toInt(),
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
     'quote_num': quoteNum,

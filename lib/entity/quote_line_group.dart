@@ -1,5 +1,8 @@
+// lib/entity/quote_line_group.dart
+
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -11,8 +14,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// lib/entity/quote_line_group.dart
-
 import 'entity.dart';
 
 enum LineApprovalStatus { preApproval, approved, rejected }
@@ -20,7 +21,11 @@ enum LineApprovalStatus { preApproval, approved, rejected }
 class QuoteLineGroup extends Entity<QuoteLineGroup> {
   int quoteId;
   int? taskId;
+  // from the task name.
   String name;
+  // from the task description
+  String description;
+  // from the task assumptions
   String assumption;
   LineApprovalStatus lineApprovalStatus;
 
@@ -29,6 +34,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     required this.quoteId,
     required this.taskId,
     required this.name,
+    required this.description,
     required this.assumption,
     required super.createdDate,
     required super.modifiedDate,
@@ -39,7 +45,8 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     required this.quoteId,
     required this.taskId,
     required this.name,
-    required this.assumption,
+    this.description = '',
+    this.assumption = '',
     this.lineApprovalStatus = LineApprovalStatus.preApproval,
   }) : super.forInsert();
 
@@ -48,6 +55,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     int? taskId,
     String? name,
     String? assumption,
+    String? description,
     LineApprovalStatus? lineApprovalStatus,
   }) => QuoteLineGroup._(
     id: id,
@@ -55,6 +63,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     taskId: taskId ?? this.taskId,
     name: name ?? this.name,
     assumption: assumption ?? this.assumption,
+    description: description ?? this.description,
     lineApprovalStatus: lineApprovalStatus ?? this.lineApprovalStatus,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
@@ -65,7 +74,8 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     quoteId: map['quote_id'] as int,
     taskId: map['task_id'] as int?,
     name: map['name'] as String,
-    assumption: map['assumption'] as String,
+    assumption: map['assumption'] as String? ?? '',
+    description: map['description'] as String? ?? '',
     lineApprovalStatus: LineApprovalStatus.values.byName(
       map['line_approval_status'] as String,
     ),
@@ -80,6 +90,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     'task_id': taskId,
     'name': name,
     'assumption': assumption,
+    'description': description,
     'line_approval_status': lineApprovalStatus.name,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),

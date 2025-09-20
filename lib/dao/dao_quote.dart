@@ -125,6 +125,8 @@ class DaoQuote extends Dao<Quote> {
     // Insert the Quote
     final quote = Quote.forInsert(
       jobId: job.id,
+      summary: job.summary,
+      description: job.description,
       totalAmount: totalAmount,
       assumption: job.assumption,
     );
@@ -138,7 +140,6 @@ class DaoQuote extends Dao<Quote> {
         quoteId: quoteId,
         taskId: null,
         name: 'Booking Fee',
-        assumption: '',
       );
       await DaoQuoteLineGroup().insert(bookingGroup);
 
@@ -227,7 +228,9 @@ class DaoQuote extends Dao<Quote> {
     final quoteLineGroup = QuoteLineGroup.forInsert(
       quoteId: quoteId,
       name: task.name,
+      description: task.description,
       assumption: task.assumption,
+
       taskId: task.id,
     );
 

@@ -1,5 +1,6 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
+ All Rights Reserved.
 
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
@@ -29,6 +30,11 @@ class Job extends Entity<Job> {
   String summary;
   String description;
   String assumption;
+
+  /// Notes about the job/client that are not show on invoices
+  /// nor qutoes.
+  String internal_notes;
+
   int? siteId;
   int? contactId;
   JobStatus status;
@@ -45,6 +51,7 @@ class Job extends Entity<Job> {
     required this.summary,
     required this.description,
     required this.assumption,
+    required this.internal_notes,
     required this.siteId,
     required this.contactId,
     required this.status,
@@ -69,6 +76,7 @@ class Job extends Entity<Job> {
     required this.bookingFee,
     required this.billingContactId,
     this.assumption = '',
+    this.internal_notes = '',
     this.lastActive = false,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,
@@ -79,6 +87,7 @@ class Job extends Entity<Job> {
     String? summary,
     String? description,
     String? assumption,
+    String? notes,
     int? siteId,
     int? contactId,
     JobStatus? status,
@@ -94,6 +103,7 @@ class Job extends Entity<Job> {
     summary: summary ?? this.summary,
     description: description ?? this.description,
     assumption: assumption ?? this.assumption,
+    internal_notes: notes ?? this.internal_notes,
     siteId: siteId ?? this.siteId,
     contactId: contactId ?? this.contactId,
     status: status ?? this.status,
@@ -113,6 +123,7 @@ class Job extends Entity<Job> {
     summary: map['summary'] as String,
     description: map['description'] as String,
     assumption: map['assumption'] as String,
+    internal_notes: map['internal_notes'] as String? ?? '',
     siteId: map['site_id'] as int?,
     contactId: map['contact_id'] as int?,
     status: JobStatus.fromId(map['status_id'] as String),
@@ -136,6 +147,7 @@ class Job extends Entity<Job> {
     'summary': summary,
     'description': description,
     'assumption': assumption,
+    'internal_notes': internal_notes,
     'site_id': siteId,
     'contact_id': contactId,
     'status_id': status.id,

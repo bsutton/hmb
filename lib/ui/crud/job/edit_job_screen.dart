@@ -44,12 +44,14 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     implements EntityState<Job> {
   late TextEditingController _summaryController;
   late TextEditingController _descriptionController;
+  late TextEditingController _notesController;
   late TextEditingController _assumptionController;
   late TextEditingController _hourlyRateController;
   late TextEditingController _bookingFeeController;
 
   late FocusNode _summaryFocusNode;
   late FocusNode _descriptionFocusNode;
+  late FocusNode _notesFocusNode;
   late FocusNode _assumptionFocusNode;
   late FocusNode _hourlyRateFocusNode;
   late FocusNode _bookingFeeFocusNode;
@@ -73,6 +75,9 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     _descriptionController = TextEditingController(
       text: widget.job?.description ?? '',
     );
+    _notesController = TextEditingController(
+      text: widget.job?.internal_notes ?? '',
+    );
     _assumptionController = TextEditingController(
       text: widget.job?.assumption ?? '',
     );
@@ -85,6 +90,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
 
     _summaryFocusNode = FocusNode();
     _descriptionFocusNode = FocusNode();
+    _notesFocusNode = FocusNode();
     _assumptionFocusNode = FocusNode();
     _hourlyRateFocusNode = FocusNode();
     _bookingFeeFocusNode = FocusNode();
@@ -143,11 +149,14 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
             customer: customer,
             summaryController: _summaryController,
             descriptionController: _descriptionController,
+            notesController: _notesController,
             assumptionController: _assumptionController,
             hourlyRateController: _hourlyRateController,
             bookingFeeController: _bookingFeeController,
+
             summaryFocusNode: _summaryFocusNode,
             descriptionFocusNode: _descriptionFocusNode,
+            notesFocusNode: _notesFocusNode,
             assumptionFocusNode: _assumptionFocusNode,
             hourlyRateFocusNode: _hourlyRateFocusNode,
             bookingFeeFocusNode: _bookingFeeFocusNode,
@@ -224,6 +233,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     customerId: June.getState(SelectedCustomer.new).customerId,
     summary: _summaryController.text,
     description: _descriptionController.text,
+    notes: _notesController.text,
     assumption: _assumptionController.text,
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(SelectedContact.new).contactId,
@@ -242,6 +252,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     customerId: June.getState(SelectedCustomer.new).customerId,
     summary: _summaryController.text,
     description: _descriptionController.text,
+    internal_notes: _notesController.text,
     assumption: _assumptionController.text,
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(SelectedContact.new).contactId,
@@ -259,7 +270,9 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     scrollController.dispose();
     _summaryController.dispose();
     _descriptionController.dispose();
+    _notesController.dispose();
     _descriptionFocusNode.dispose();
+    _notesFocusNode.dispose();
     _assumptionController.dispose();
     _hourlyRateController.dispose();
     _bookingFeeController.dispose();
