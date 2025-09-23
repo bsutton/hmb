@@ -74,7 +74,6 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
                 // ignore: discarded_futures
                 onPressed: () async {
                   await createInvoiceFor(job, context);
-                  await _loadJobs();
                 },
               ),
             ],
