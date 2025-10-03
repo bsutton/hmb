@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 
 import '../../util/flutter/hmb_theme.dart';
 import 'layout/hmb_column.dart';
+import 'layout/hmb_row.dart';
 import 'text/hmb_text_themes.dart';
 
 enum SurfaceElevation {
@@ -113,6 +114,47 @@ class SurfaceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [HMBTextHeadline2(title), body],
       ),
+    ),
+  );
+}
+
+class SurfaceCardWitActions extends StatelessWidget {
+  final String title;
+  final List<Widget> actions;
+  final Widget body;
+  final double? height;
+  final void Function()? onPressed;
+  final SurfaceElevation elevation;
+  final EdgeInsetsGeometry? padding;
+
+  const SurfaceCardWitActions({
+    required this.title,
+    required this.body,
+    this.actions = const [],
+    this.height,
+    this.onPressed,
+    this.elevation = SurfaceElevation.e4,
+    this.padding = const EdgeInsets.all(HMBTheme.padding),
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+    height: height,
+    color: elevation.color,
+    padding: padding,
+    child: HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        HMBRow(
+          children: [
+            Expanded(child: HMBTextHeadline2(title)),
+            ...actions,
+          ],
+        ),
+
+        body,
+      ],
     ),
   );
 }
