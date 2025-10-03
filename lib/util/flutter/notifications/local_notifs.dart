@@ -1,3 +1,16 @@
+/*
+ Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
+
+ Note: This software is licensed under the GNU General Public License,
+         with the following exceptions:
+   • Permitted for internal use within your own business or organization only.
+   • Any external distribution, resale, or incorporation into products
+      for third parties is strictly prohibited.
+
+ See the full license on GitHub:
+ https://github.com/bsutton/hmb/blob/main/LICENSE
+*/
+
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -14,28 +27,27 @@ class LocalNotifs {
   // Small drift guard to avoid "fire on save" when times are near-now.
   static const _grace = Duration(seconds: 60);
 
+  // For test reliability: short schedules can race AlarmManager/Doze.
+  static const _minLead = Duration(seconds: 90);
+
   static final _instance = LocalNotifs._();
 
   final _fln = FlutterLocalNotificationsPlugin();
   DesktopNotifScheduler? _desktop;
   var _inited = false;
+  var _iana = 'UTC';
 
   factory LocalNotifs() => _instance;
 
   LocalNotifs._();
+
   Future<void> init() async {
     if (_inited) {
       return;
     }
 
     // ---- timezone (for mobile/mac zonedSchedule) ----
-    tzdata.initializeTimeZones();
-    try {
-      final tzName = await _resolveLocalTimeZoneName();
-      tz.setLocalLocation(tz.getLocation(tzName));
-    } catch (_) {
-      tz.setLocalLocation(tz.getLocation('UTC'));
-    }
+    await _initLocalTimeZone();
 
     // ---- per-platform init ----
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -73,6 +85,8 @@ class LocalNotifs {
             AndroidFlutterLocalNotificationsPlugin
           >();
       await android?.requestNotificationsPermission();
+      // NOTE: If you later require exact alarms, add the manifest permission
+      // and deep-link users to the exact-alarm settings screen.
     } else if (Platform.isIOS) {
       final ios = _fln
           .resolvePlatformSpecificImplementation<
@@ -94,14 +108,15 @@ class LocalNotifs {
     }
 
     _inited = true;
+    debugPrint('LocalNotifs init complete. tz=$_iana');
   }
 
   // Build per-platform details in one place (reused by desktop scheduler).
   NotificationDetails _buildDetails(Notif n) => NotificationDetails(
     android: AndroidNotificationDetails(
-      n.channelId,
-      n.channelName,
-      channelDescription: 'Reminders and alerts',
+      n.channel.id,
+      n.channel.name,
+      channelDescription: n.channel.description,
       importance: Importance.high,
       priority: Priority.high,
       category: AndroidNotificationCategory.reminder,
@@ -116,36 +131,37 @@ class LocalNotifs {
 
   Future<void> schedule(Notif n) async {
     await init();
-    await debugNotifPipeline(_fln);
 
-    // Normalize: treat n.scheduledAtMillis as UTC for cross-platform sanity.
+    // Normalize: treat n.scheduledAtMillis as a local wall-clock instant.
+    // We recreate a TZDateTime in tz.local to preserve wall-clock semantics
+    // across DST boundaries.
+    final now = DateTime.now();
+    final nowMs = now.millisecondsSinceEpoch;
     final ms = n.scheduledAtMillis;
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
 
-    // If slightly in the past (<= grace), nudge forward 1 minute.
-    final isSlightlyPast = ms < nowMs && (nowMs - ms) <= _grace.inMilliseconds;
-    final targetMs = isSlightlyPast
-        ? (nowMs + const Duration(minutes: 1).inMilliseconds)
-        : ms;
+    // Avoid near-now races; enforce a minimum lead time.
+    var target = DateTime.fromMillisecondsSinceEpoch(ms);
+    final minAllowed = now.add(_minLead);
+    if (target.isBefore(minAllowed)) {
+      target = minAllowed;
+    }
 
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
-      // Build a local wall-clock time in the current device timezone.
-      // This avoids UTC round-trips and preserves 9:00am as 9:00am across DST.
-      final local = DateTime.fromMillisecondsSinceEpoch(targetMs);
+      // Rebuild as TZDateTime in current tz.local (DST-safe).
       final whenTz = tz.TZDateTime(
         tz.local,
-        local.year,
-        local.month,
-        local.day,
-        local.hour,
-        local.minute,
-        local.second,
-        local.millisecond,
-        local.microsecond,
+        target.year,
+        target.month,
+        target.day,
+        target.hour,
+        target.minute,
+        target.second,
+        target.millisecond,
+        target.microsecond,
       );
 
-      // If after grace it's still in the past, skip scheduling.
-      if (whenTz.isBefore(tz.TZDateTime.now(tz.local))) {
+      // If after the grace and min-lead it's still in the past, skip.
+      if (whenTz.isBefore(tz.TZDateTime.now(tz.local).add(_grace))) {
         return;
       }
 
@@ -162,20 +178,20 @@ class LocalNotifs {
     } else if (Platform.isWindows || Platform.isLinux) {
       // Enqueue into in-app scheduler (fires while app is open).
       // If way in the past (beyond grace), skip enqueue.
-      if (targetMs + _grace.inMilliseconds < nowMs) {
+      if (ms + _grace.inMilliseconds < nowMs) {
         return;
       }
     }
 
+    // Track in desktop queue for visibility/resync.
     _desktop?.upsert(
       Notif(
         id: n.id,
         title: n.title,
         body: n.body,
-        scheduledAtMillis: targetMs,
+        scheduledAtMillis: target.millisecondsSinceEpoch,
         payload: n.payload,
-        channelId: n.channelId,
-        channelName: n.channelName,
+        channel: Channel.todo(),
       ),
     );
   }
@@ -192,7 +208,7 @@ class LocalNotifs {
     await _fln.cancelAll();
   }
 
-  /// Schedule from ToDo (store UTC → schedule UTC).
+  /// Schedule from ToDo (store LOCAL → schedule in LOCAL tz).
   Future<void> scheduleForToDo(ToDo todo) async {
     final when = todo.remindAt;
     if (when == null) {
@@ -203,10 +219,10 @@ class LocalNotifs {
       id: _idForToDo(todo.id),
       title: 'Reminder',
       body: todo.title,
-      // `when` is LOCAL; keep it local by passing its epoch
-      //ms straight through.
+      // `when` is LOCAL; keep it local by passing its epoch straight through.
       scheduledAtMillis: when.millisecondsSinceEpoch,
       payload: {'type': 'todo', 'id': '${todo.id}'},
+      channel: Channel.todo(),
     );
     await schedule(n);
   }
@@ -230,17 +246,27 @@ class LocalNotifs {
             body: t.title,
             scheduledAtMillis: t.remindAt!.millisecondsSinceEpoch,
             payload: {'type': 'todo', 'id': '${t.id}'},
+            channel: Channel.todo(),
           ),
         );
 
     _desktop?.resync(notifs);
   }
 
+  // ---- Helpers -------------------------------------------------------------
+
   int _idForToDo(int todoId) => 20_000_000 + todoId;
 
-  String? _encodePayload(Map<String, String>? p) => (p == null || p.isEmpty)
-      ? null
-      : p.entries.map((e) => '${e.key}=${e.value}').join(';');
+  String? _encodePayload(Map<String, String>? p) {
+    if (p == null || p.isEmpty) {
+      return null;
+    }
+    final parts = <String>[];
+    for (final e in p.entries) {
+      parts.add('${e.key}=${e.value}');
+    }
+    return parts.join(';');
+  }
 
   Map<String, String> _decodePayload(String? s) {
     if (s == null || s.isEmpty) {
@@ -256,35 +282,58 @@ class LocalNotifs {
     return out;
   }
 
-  // Resolve IANA timezone name with Linux fallbacks
-  Future<String> _resolveLocalTimeZoneName() async {
+  Future<void> _initLocalTimeZone() async {
+    tzdata.initializeTimeZones();
+
+    // Prefer native IANA from plugin. Fall back on platform files/env. Last
+    // resort: UTC.
+    String name;
     try {
       if (Platform.isAndroid ||
           Platform.isIOS ||
           Platform.isMacOS ||
           Platform.isWindows) {
-        return await FlutterNativeTimezone.getLocalTimezone();
+        name = await FlutterNativeTimezone.getLocalTimezone();
       } else if (Platform.isLinux) {
-        final etcTimezone = File('/etc/timezone');
-        if (etcTimezone.existsSync()) {
-          final name = (await etcTimezone.readAsString()).trim();
-          if (name.isNotEmpty) {
-            return name;
-          }
+        name = await _ianaFromLinux();
+      } else {
+        name = 'UTC';
+      }
+    } catch (_) {
+      name = await _ianaFromLinux();
+    }
+
+    // Validate against tz db; fall back to UTC if unknown.
+    try {
+      tz.setLocalLocation(tz.getLocation(name));
+      _iana = name;
+    } catch (_) {
+      tz.setLocalLocation(tz.getLocation('UTC'));
+      _iana = 'UTC';
+    }
+  }
+
+  Future<String> _ianaFromLinux() async {
+    try {
+      final etcTimezone = File('/etc/timezone');
+      if (etcTimezone.existsSync()) {
+        final name = (await etcTimezone.readAsString()).trim();
+        if (name.isNotEmpty) {
+          return name;
         }
-        final localtime = File('/etc/localtime');
-        if (localtime.existsSync()) {
-          final target = await localtime.resolveSymbolicLinks();
-          final m = RegExp(r'zoneinfo/(.+)$').firstMatch(target);
-          final name = m?.group(1);
-          if (name != null && name.isNotEmpty) {
-            return name;
-          }
+      }
+      final localtime = File('/etc/localtime');
+      if (localtime.existsSync()) {
+        final target = await localtime.resolveSymbolicLinks();
+        final m = RegExp(r'zoneinfo/(.+)$').firstMatch(target);
+        final name = m?.group(1);
+        if (name != null && name.isNotEmpty) {
+          return name;
         }
-        final envTz = Platform.environment['TZ'];
-        if (envTz != null && envTz.isNotEmpty) {
-          return envTz;
-        }
+      }
+      final envTz = Platform.environment['TZ'];
+      if (envTz != null && envTz.isNotEmpty) {
+        return envTz;
       }
     } catch (_) {
       /* fall through */
@@ -292,8 +341,9 @@ class LocalNotifs {
     return 'UTC';
   }
 
+  // Quick end-to-end test. Keeps your original debug helper intact,
+  // but with safer timing + interpretation.
   Future<void> debugNotifPipeline(FlutterLocalNotificationsPlugin fln) async {
-    // 1) Permissions
     final androidImpl = fln
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -301,32 +351,32 @@ class LocalNotifs {
     final granted = await androidImpl?.areNotificationsEnabled() ?? true;
     debugPrint('POST_NOTIFICATIONS granted: $granted');
 
-    // 2) Show immediately (channel creation + visuals)
+    final channel = Channel.test();
     await fln.show(
       999001,
       'Test immediate',
       'If you see me, posting works',
-      const NotificationDetails(
+      NotificationDetails(
         android: AndroidNotificationDetails(
-          'hmb_default',
-          'Reminders',
-          channelDescription: 'Reminders and alerts',
+          channel.id,
+          channel.name,
+          channelDescription: channel.description,
           importance: Importance.high,
           priority: Priority.high,
           category: AndroidNotificationCategory.reminder,
         ),
-        iOS: DarwinNotificationDetails(),
-        macOS: DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(),
+        macOS: const DarwinNotificationDetails(),
       ),
       payload: 'ping=now',
     );
 
-    // 3) Schedule +10s (proves scheduling path)
-    final when = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 10));
+    // Use >= 90s lead to avoid scheduling races.
+    final when = tz.TZDateTime.now(tz.local).add(_minLead);
     await fln.zonedSchedule(
       999002,
       'Test scheduled',
-      'Should appear ~10s from now',
+      'Should appear ~${_minLead.inSeconds}s from now',
       when,
       const NotificationDetails(
         android: AndroidNotificationDetails(
@@ -344,7 +394,25 @@ class LocalNotifs {
       payload: 'ping=scheduled',
     );
 
-    // 4) Inspect pending queue
+    final when2 = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 2));
+    await _fln.zonedSchedule(
+      990002,
+      'Schedule test',
+      'Should land in ~2 minutes',
+      when,
+      _buildDetails(
+        Notif(
+          id: 0,
+          title: '',
+          body: '',
+          scheduledAtMillis: when2.millisecondsSinceEpoch,
+          channel: Channel.test(),
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: 'diag=1',
+    );
+
     final pending = await fln.pendingNotificationRequests();
     debugPrint('Pending count: ${pending.length}');
     for (final p in pending) {

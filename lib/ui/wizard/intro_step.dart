@@ -12,6 +12,8 @@
 */
 
 import 'package:flutter/material.dart';
+
+import '../widgets/layout/hmb_column.dart';
 import '../widgets/wizard.dart';
 import '../widgets/wizard_step.dart';
 
@@ -23,14 +25,13 @@ class IntroWizardStep extends WizardStep {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
+      child: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Welcome to Hold My Beer',
             style: theme.textTheme.headlineMedium,
           ),
-          const SizedBox(height: 16),
           Text('''
 We’re almost ready to get started.
 

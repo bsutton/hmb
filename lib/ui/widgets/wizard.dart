@@ -23,6 +23,7 @@ import 'circle.dart';
 import 'grayed_out.dart';
 import 'hmb_button.dart';
 import 'hmb_toast.dart';
+import 'layout/layout.g.dart';
 import 'text/hmb_text_themes.dart';
 import 'wizard_step.dart';
 
@@ -114,7 +115,7 @@ class WizardState extends State<Wizard> {
       }
     },
     child: Material(
-      child: Column(
+      child: HMBColumn(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(child: _buildBody()),
@@ -429,7 +430,7 @@ class WizardState extends State<Wizard> {
       return SizedBox(width: width, child: step.build(context));
     } else {
       // If not current, collapse or show nothing
-      return const SizedBox.shrink();
+      return const HMBEmpty();
     }
   }
 
@@ -763,5 +764,5 @@ class WizardStepTarget {
 class FakeLastStep extends WizardStep {
   FakeLastStep() : super(title: 'FakeLastStep');
   @override
-  Widget build(BuildContext context) => const SizedBox.shrink();
+  Widget build(BuildContext context) => const HMBEmpty();
 }

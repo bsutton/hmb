@@ -17,6 +17,7 @@ import 'package:money2/money2.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_select_contact.dart';
 import '../widgets/widgets.g.dart';
 import 'invoice_options.dart';
@@ -169,7 +170,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
     content: DeferredBuilder(
       this,
       builder: (context) => SingleChildScrollView(
-        child: Column(
+        child: HMBColumn(
           children: [
             if (_contacts.isNotEmpty)
               HMBSelectContact(
@@ -183,7 +184,6 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                   });
                 },
               ),
-            const SizedBox(height: 20),
             DropdownButton<bool>(
               value: _groupByTask,
               isExpanded: true,
@@ -203,7 +203,6 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
             if (canBillBookingFee)
               CheckboxListTile(
                 title: const Text('Bill booking Fee'),

@@ -108,7 +108,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
       entityName: 'Tool',
       dao: DaoTool(),
       entityState: this,
-      editor: (tool, {required isNew}) => Column(
+      editor: (tool, {required isNew}) => HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           HMBTextField(
@@ -237,7 +237,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
     child: FutureBuilderEx(
       // ignore: discarded_futures
       future: _getPhotoMeta(photoId),
-      builder: (context, photoMeta) => Column(
+      builder: (context, photoMeta) => HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -257,7 +257,6 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
               ),
             ],
           ),
-          const SizedBox(height: 8),
           if (photoMeta != null)
             PhotoThumbnail(photoPath: photoMeta.absolutePathTo, title: title),
         ],

@@ -18,6 +18,7 @@ import '../../../dao/join_adaptors/dao_join_adaptor.dart';
 import '../../../entity/contact.dart';
 import '../../../entity/entity.dart';
 import '../../dialog/source_context.dart';
+import '../../widgets/layout/hmb_column.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
 import '../base_nested/list_nested_screen.dart';
@@ -54,7 +55,7 @@ class ContactListScreen<P extends Entity<P>> extends StatelessWidget {
     onDelete: (contact) => daoJoin.deleteFromParent(contact, parent.parent!),
     details: (entity, details) {
       final contact = entity;
-      return Column(
+      return HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HMBPhoneText(

@@ -23,7 +23,7 @@ import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_crud_contact.dart';
 import '../../widgets/hmb_crud_site.dart';
-import '../../widgets/layout/hmb_form_section.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
@@ -78,58 +78,50 @@ class SupplierEditScreenState extends State<SupplierEditScreen>
     entityName: 'Supplier',
     dao: DaoSupplier(),
     entityState: this,
-    editor: (supplier, {required isNew}) => Column(
+    editor: (supplier, {required isNew}) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        HMBFormSection(
           children: [
-            HMBFormSection(
-              children: [
-                const HMBTextHeadline3('Supplier Details'),
-                HMBTextField(
-                  autofocus: isNotMobile,
-                  controller: _nameController,
-                  labelText: 'Name',
-                  keyboardType: TextInputType.name,
-                  textCapitalization: TextCapitalization.words,
-                  required: true,
-                ),
-                HMBTextField(
-                  controller: _serviceController,
-                  labelText: 'Service',
-                ),
-                HMBTextArea(
-                  controller: _descriptionController,
-                  labelText: 'Description',
-                ),
-                HMBTextField(
-                  controller: _businessNumberController,
-                  labelText: 'Business Number',
-                ),
-                HMBTextField(
-                  controller: _bsbController,
-                  labelText: 'BSB',
-                  keyboardType: TextInputType.number,
-                ),
-                HMBTextField(
-                  controller: _accountNumberController,
-                  labelText: 'Account Number',
-                  keyboardType: TextInputType.number,
-                ),
-              ],
+            const HMBTextHeadline3('Supplier Details'),
+            HMBTextField(
+              autofocus: isNotMobile,
+              controller: _nameController,
+              labelText: 'Name',
+              keyboardType: TextInputType.name,
+              textCapitalization: TextCapitalization.words,
+              required: true,
             ),
-            HMBCrudContact(
-              parentTitle: 'Supplier',
-              parent: Parent(supplier),
-              daoJoin: JoinAdaptorSupplierContact(),
+            HMBTextField(controller: _serviceController, labelText: 'Service'),
+            HMBTextArea(
+              controller: _descriptionController,
+              labelText: 'Description',
             ),
-            HBMCrudSite(
-              parentTitle: 'Supplier',
-              daoJoin: JoinAdaptorSupplierSite(),
-              parent: Parent(supplier),
+            HMBTextField(
+              controller: _businessNumberController,
+              labelText: 'Business Number',
+            ),
+            HMBTextField(
+              controller: _bsbController,
+              labelText: 'BSB',
+              keyboardType: TextInputType.number,
+            ),
+            HMBTextField(
+              controller: _accountNumberController,
+              labelText: 'Account Number',
+              keyboardType: TextInputType.number,
             ),
           ],
+        ),
+        HMBCrudContact(
+          parentTitle: 'Supplier',
+          parent: Parent(supplier),
+          daoJoin: JoinAdaptorSupplierContact(),
+        ),
+        HBMCrudSite(
+          parentTitle: 'Supplier',
+          daoJoin: JoinAdaptorSupplierSite(),
+          parent: Parent(supplier),
         ),
       ],
     ),

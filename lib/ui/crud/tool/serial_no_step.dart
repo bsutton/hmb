@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_tool.dart';
 import '../../widgets/hmb_button.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/wizard.dart';
 import '../../widgets/wizard_step.dart';
 import 'capture_photo.dart';
@@ -57,7 +58,7 @@ class SerialNumberStep extends WizardStep {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(16),
-    child: Column(
+    child: HMBColumn(
       children: [
         TextField(
           controller: _serialNumberController,
@@ -70,7 +71,6 @@ class SerialNumberStep extends WizardStep {
               """Scan a tool's serial number bar code to extract the serial number""",
         ),
 
-        const SizedBox(height: 24),
         CapturePhoto(
           tool: toolWizardState.tool!,
           comment: 'Serial Number',

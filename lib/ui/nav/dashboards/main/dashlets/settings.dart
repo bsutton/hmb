@@ -14,6 +14,7 @@
 // lib/src/ui/dashboard/settings_dashlet.dart
 import 'package:flutter/material.dart';
 
+import '../../../../widgets/layout/layout.g.dart';
 import '../../dashlet_card.dart';
 
 /// Dashlet for Settings sub-dashboard
@@ -27,6 +28,6 @@ class SettingsDashlet extends StatelessWidget {
     icon: Icons.settings,
     value: () => Future.value(const DashletValue(null)),
     route: '/home/settings',
-    valueBuilder: (_, _) => const SizedBox.shrink(),
+    valueBuilder: (_, _) =>  const HMBEmpty(),
   );
 }

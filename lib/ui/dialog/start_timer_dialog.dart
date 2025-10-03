@@ -23,6 +23,7 @@ import '../../ui/widgets/hmb_toast.dart';
 import '../../util/dart/format.dart';
 import '../widgets/fields/hmb_text_area.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/text/hmb_text.dart';
 import 'hmb_dialog.dart';
 
@@ -71,7 +72,7 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
 
     return HMBDialog(
       title: const Text('Start Timer'),
-      content: Column(
+      content: HMBColumn(
         mainAxisSize: MainAxisSize.min,
         children: [
           HMBText('Current Time: ${formatDateTime(DateTime.now())}'),
@@ -124,18 +125,19 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
     );
   }
 
-  Widget buildTaskDetails() => Column(
+  Widget buildTaskDetails() => HMBColumn(
     children: [
       FutureBuilderEx(
         // ignore: discarded_futures
         future: DaoJob().getById(widget.task.jobId),
-        builder: (context, job) => Column(
+        builder: (context, job) => HMBColumn(
           children: [
             FutureBuilderEx(
               // ignore: discarded_futures
               future: DaoCustomer().getById(job!.customerId),
-              builder: (context, customer) =>
-                  Column(children: [Text(customer!.name), Text(job.summary)]),
+              builder: (context, customer) => HMBColumn(
+                children: [Text(customer!.name), Text(job.summary)],
+              ),
             ),
           ],
         ),

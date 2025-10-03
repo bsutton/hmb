@@ -30,11 +30,10 @@ import 'package:flutter/material.dart';
 ///     HelpIconButton(
 ///       tooltip: 'Explain this field',
 ///       dialogTitle: 'Field Help',
-///       dialogContent: Column(
+///       dialogContent: HMBColumn(
 ///         crossAxisAlignment: CrossAxisAlignment.start,
 ///         children: [
 ///           Text('This field is used for XYZ.'),
-///           SizedBox(height: 10),
 ///           Text('Further explanation or tips here.'),
 ///         ],
 ///       ),

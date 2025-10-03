@@ -16,6 +16,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../ui/widgets/hmb_button.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
+import '../../../../ui/widgets/layout/hmb_column.dart';
 import '../../../../util/flutter/app_title.dart';
 import '../../../factory/flutter_database_factory.dart';
 import '../../../versions/asset_script_source.dart';
@@ -46,7 +47,7 @@ class _BackupScreenState extends State<BackupScreen> {
       // Center the column vertically and horizontally
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: HMBColumn(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
@@ -58,7 +59,6 @@ class _BackupScreenState extends State<BackupScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 40),
             Align(
               alignment: Alignment.centerRight,
               child: Row(
@@ -77,7 +77,6 @@ class _BackupScreenState extends State<BackupScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
             HMBButton.withIcon(
               label: 'Backup & Email Database',
               hint: 'Backup your database and email it to your self',
@@ -101,7 +100,6 @@ class _BackupScreenState extends State<BackupScreen> {
               },
               icon: const Icon(Icons.backup, size: 24),
             ),
-            const SizedBox(height: 20),
             HMBButton.withIcon(
               label: 'Restore Database',
               hint:

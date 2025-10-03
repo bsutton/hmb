@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../text/hmb_text_themes.dart';
 import '../widgets.g.dart';
+import 'layout.g.dart';
 
 class HMBListPage extends StatefulWidget {
   final String emptyMessage;
@@ -37,7 +38,7 @@ class _HMBListPageState extends State<HMBListPage> {
           );
     return Surface(
       elevation: SurfaceElevation.e0,
-      child: Column(
+      child: HMBColumn(
         children: [
           if (widget.onSearch != null)
             Container(
@@ -81,7 +82,7 @@ class HMBListCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Column(
+            child: HMBColumn(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [HMBTextHeadline2(title), ...children],
             ),

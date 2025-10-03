@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao_manufacturer.dart';
 import '../../../entity/manufacturer.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'edit_manufacturer_screen.dart';
@@ -34,7 +35,7 @@ class ManufacturerListScreen extends StatelessWidget {
         ManufacturerEditScreen(manufacturer: manufacturer),
     listCard: (entity) {
       final manufacturer = entity;
-      return Column(
+      return HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HMBTextBody(manufacturer.description ?? ''),

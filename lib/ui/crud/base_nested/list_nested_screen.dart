@@ -23,7 +23,7 @@ import '../../dialog/hmb_ask_user_to_continue.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_icon_button.dart';
 import '../../widgets/hmb_toggle.dart';
-import '../../widgets/layout/hmb_list_card.dart';
+import '../../widgets/layout/layout.g.dart';
 
 class Parent<P extends Entity<P>> {
   P? parent;
@@ -123,7 +123,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
     },
   );
 
-  Column _buildTitle() => Column(
+  Widget _buildTitle() => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -131,7 +131,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
     ],
   );
 
-  Widget _buildFilter() => Column(
+  Widget _buildFilter() => HMBColumn(
     mainAxisAlignment: MainAxisAlignment.end,
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
@@ -206,7 +206,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
       );
     }
 
-    return Column(mainAxisSize: MainAxisSize.min, children: cards);
+    return HMBColumn(mainAxisSize: MainAxisSize.min, children: cards);
   }
 
   Widget _buildCard(C entity, BuildContext context) => HMBCrudListCard(

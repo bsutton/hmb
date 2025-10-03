@@ -18,6 +18,7 @@ import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
 import '../../../../util/dart/format.dart';
 import '../../../widgets/help_button.dart';
+import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/select/select.g.dart';
 import '../../../widgets/text/text.g.dart';
 import '../../base_full_screen/list_entity_screen.dart';
@@ -133,7 +134,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
   final _entityListKey = GlobalKey<EntityListScreenState>();
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       // Show the job stats up top:
@@ -190,7 +191,7 @@ class TimeEntryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
     contentPadding: EdgeInsets.zero,
-    subtitle: Column(
+    subtitle: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         HMBTextLine(taskName),
@@ -208,8 +209,5 @@ class TimeEntryTile extends StatelessWidget {
         Text('Billed: ${timeEntry.billed ? "Yes" : "No"}'),
       ],
     ),
-    trailing: timeEntry.invoiceLineId != null
-        ? const Icon(Icons.receipt_long, color: Colors.green)
-        : const Icon(Icons.receipt_long_outlined, color: Colors.grey),
   );
 }

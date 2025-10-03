@@ -23,6 +23,7 @@ import '../../entity/quote_line_group.dart';
 import '../../util/dart/format.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../dialog/email_dialog_for_job.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/media/pdf_preview.dart';
 import '../widgets/widgets.g.dart' hide StatefulBuilder;
 import 'edit_quote_line_dialog.dart';
@@ -63,7 +64,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
       builder: (context) => SingleChildScrollView(
         child: Surface(
           margin: const EdgeInsets.all(8),
-          child: Column(
+          child: HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
@@ -80,7 +81,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
 
   Widget _buildHeader() => Padding(
     padding: const EdgeInsets.all(8),
-    child: Column(
+    child: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -89,10 +90,9 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
         ),
         Text('Issued: ${formatDate(_quote.createdDate)}'),
         Text('Job ID: ${_quote.jobId}'),
-        Row(
+        HMBRow(
           children: [
             Text('State: ${_quote.state.name}'),
-            const SizedBox(width: 8),
             if (_quote.state == QuoteState.sent && _quote.dateSent != null)
               Text('Sent: ${formatDate(_quote.dateSent!)}'),
             if (_quote.state == QuoteState.approved &&
@@ -144,13 +144,13 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
         return const ListTile(title: Text('No quote lines found.'));
       }
 
-      return Column(
+      return HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: jobQuote.groups.map((groupWrap) {
           final group = groupWrap.group;
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: Column(
+            child: HMBColumn(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // —— Group header with Reject button ——
@@ -174,11 +174,10 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                       ),
                   ],
                 ),
-                const SizedBox(height: 8),
 
                 // —— Lines list ——
                 Card(
-                  child: Column(
+                  child: HMBColumn(
                     children: groupWrap.lines
                         .map(
                           (line) => ListTile(
@@ -413,11 +412,10 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
         return AlertDialog(
           title: const Text('Reject Quote Group'),
           content: StatefulBuilder(
-            builder: (context, setState) => Column(
+            builder: (context, setState) => HMBColumn(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text('Do you want to reject this group of items?'),
-                const SizedBox(height: 12),
                 CheckboxListTile(
                   title: const Text(
                     'Also mark the associated Task as Cancelled',

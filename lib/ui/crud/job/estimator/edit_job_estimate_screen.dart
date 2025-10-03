@@ -30,9 +30,7 @@ import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_icon_button.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toggle.dart';
-import '../../../widgets/layout/hmb_full_page_child_screen.dart';
-import '../../../widgets/layout/hmb_padding.dart';
-import '../../../widgets/layout/hmb_spacer.dart';
+import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/media/photo_gallery.dart';
 import '../../../widgets/select/hmb_filter_line.dart';
 import '../../../widgets/surface.dart';
@@ -184,10 +182,10 @@ class _JobEstimateBuilderScreenState
       this,
       builder: (context) {
         final tasks = filteredTasks();
-        return Column(
+        return HMBColumn(
           children: [
             SizedBox(
-              height: 160,
+              height: 162,
               width: double.infinity,
               child: _buildTotals(),
             ),
@@ -236,7 +234,7 @@ class _JobEstimateBuilderScreenState
   Widget _buildTotals() => SurfaceCard(
     elevation: SurfaceElevation.e0,
     title: 'Totals',
-    body: Column(
+    body: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Labour: $_totalLabourCost'),
@@ -246,11 +244,11 @@ class _JobEstimateBuilderScreenState
     ),
   );
 
-  Widget _buildTaskCard(Task task) => Column(
+  Widget _buildTaskCard(Task task) => HMBColumn(
     children: [
       Surface(
         elevation: SurfaceElevation.e8,
-        child: Column(
+        child: HMBColumn(
           children: [
             ListTile(
               title: HMBTextHeadline(task.name),
@@ -267,7 +265,6 @@ class _JobEstimateBuilderScreenState
               padding: const EdgeInsets.only(left: 16),
               child: PhotoGallery.forTask(task: task),
             ),
-            const HMBSpacer(height: true),
             _buildTaskItems(task),
             HMBButton(
               label: 'Add Item',
@@ -284,7 +281,7 @@ class _JobEstimateBuilderScreenState
   Widget _buildTaskItems(Task task) => FutureBuilderEx<ItemsAndRate>(
     // ignore: discarded_futures
     future: ItemsAndRate.fromTask(task),
-    builder: (context, itemAndRate) => Column(
+    builder: (context, itemAndRate) => HMBColumn(
       children: itemAndRate!.items
           .map(
             (item) => _buildItemTile(
@@ -303,10 +300,10 @@ class _JobEstimateBuilderScreenState
     Task task,
     Money hourlyRate,
     BillingType billingType,
-  ) => Column(
+  ) => HMBColumn(
     children: [
       Surface(
-        elevation: SurfaceElevation.e16,
+        elevation: SurfaceElevation.e24,
         child: ListTile(
           title: Text(item.description),
           subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
@@ -319,7 +316,6 @@ class _JobEstimateBuilderScreenState
           onTap: () => unawaited(_editItem(item, task)),
         ),
       ),
-      const HMBSpacer(height: true),
     ],
   );
 
@@ -391,7 +387,7 @@ class _JobEstimateBuilderScreenState
     return TaskAndRate.fromTask(task);
   }
 
-  Widget _buildFilter() => Column(
+  Widget _buildFilter() => HMBColumn(
     children: [
       HMBToggle(
         label: 'Show To Be Estimated',

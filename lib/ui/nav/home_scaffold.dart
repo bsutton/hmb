@@ -19,6 +19,7 @@ import 'package:june/june.dart';
 import '../../util/flutter/app_title.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/hmb_status_bar.dart';
+import '../widgets/layout/layout.g.dart';
 
 /// A scaffold that wraps all screens and adds:
 ///  • a Home button in the AppBar
@@ -39,7 +40,7 @@ class HomeScaffold extends StatelessWidget {
       ),
       title: JuneBuilder(HMBTitle.new, builder: (title) => Text(title.title)),
     ),
-    body: Column(
+    body: HMBColumn(
       mainAxisSize: MainAxisSize.min,
       children: [
         // Show active time entry bar when appropriate

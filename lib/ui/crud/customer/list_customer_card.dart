@@ -18,6 +18,7 @@ import '../../../dao/dao_contact.dart';
 import '../../../dao/dao_site.dart';
 import '../../../entity/entity.g.dart';
 import '../../dialog/source_context.dart';
+import '../../widgets/layout/hmb_column.dart';
 import '../../widgets/layout/hmb_full_page_child_screen.dart';
 import '../../widgets/layout/hmb_placeholder.dart';
 import '../../widgets/text/contact_text.dart';
@@ -40,7 +41,7 @@ class ListCustomerCard extends StatelessWidget {
       waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
       // ignore: discarded_futures
       future: DaoContact().getPrimaryForCustomer(customer.id),
-      builder: (context, contact) => Column(
+      builder: (context, contact) => HMBColumn(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -23,6 +23,7 @@ import '../../../entity/time_entry.dart';
 import '../../dialog/long_duration_dialog.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/layout.g.dart' show HMBColumn;
 import '../base_nested/edit_nested_screen.dart';
 
 class TimeEntryEditScreen extends StatefulWidget {
@@ -160,7 +161,7 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
 
       return true;
     },
-    editor: (timeEntry) => Column(
+    editor: (timeEntry) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         GestureDetector(

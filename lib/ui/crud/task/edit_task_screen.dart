@@ -25,6 +25,7 @@ import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_crud_checklist_item.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../base_nested/edit_nested_screen.dart';
@@ -130,7 +131,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
       await _insertTask(task!, transaction);
     },
     entityState: this,
-    editor: (task) => Column(
+    editor: (task) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -146,7 +147,6 @@ class _TaskEditScreenState extends State<TaskEditScreen>
           focusNode: _descriptionFocusNode,
           labelText: 'Description',
         ),
-        const SizedBox(height: 12),
         HMBTextArea(
           controller: _assumptionController,
           focusNode: _assumptionFocusNode,
@@ -168,7 +168,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   Widget _buildItemList(Task? task) => Flexible(
     child: SingleChildScrollView(
-      child: Column(
+      child: HMBColumn(
         mainAxisSize: MainAxisSize.min,
         children: [HMBCrudTaskItem(task: task)],
       ),

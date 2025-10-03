@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../color_ex.dart';
 import '../hmb_button.dart';
+import '../layout/layout.g.dart';
 import '../text/text.g.dart';
 
 class HMBDroplistMultiSelectDialog<T> extends StatefulWidget {
@@ -73,7 +74,7 @@ class _HMBDroplistMultiSelectDialogState<T>
   @override
   Widget build(BuildContext context) => Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    child: Column(
+    child: HMBColumn(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(

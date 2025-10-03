@@ -122,7 +122,7 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
     builder: (context, constraints) {
       final isMobile = constraints.maxWidth < 600;
       return isMobile
-          ? Column(
+          ? HMBColumn(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 HMBJobPhoneText(job: job),

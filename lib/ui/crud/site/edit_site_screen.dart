@@ -23,6 +23,7 @@ import '../../../entity/entity.dart';
 import '../../../entity/site.dart';
 import '../../../util/dart/parse/parse_customer.dart';
 import '../../widgets/fields/fields.g.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../base_nested/edit_nested_screen.dart';
 import '../customer/customer_paste_panel.dart';
 
@@ -87,7 +88,7 @@ class _SiteEditScreenState extends State<SiteEditScreen>
         // ignore: discarded_futures
         (site, transaction) =>
             widget.daoJoin.insertForParent(site!, widget.parent, transaction),
-    editor: (site) => Column(
+    editor: (site) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (site == null) CustomerPastePanel(onExtract: _onExtract),

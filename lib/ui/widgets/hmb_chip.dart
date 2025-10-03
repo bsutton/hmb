@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../util/flutter/flutter_util.g.dart';
 import 'color_ex.dart';
+import 'layout/layout.g.dart';
 
 enum HMBChipTone { neutral, accent, danger, warning }
 
@@ -52,12 +53,11 @@ class HMBChip extends StatelessWidget {
     final bg = _backgroundColor(context);
     final textColor = _textColor(context);
 
-    final chipContent = Row(
+    final chipContent = HMBRow(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (icon != null) ...[
           Icon(icon, size: 16, color: textColor),
-          const SizedBox(width: 4),
         ],
         Text(
           label,

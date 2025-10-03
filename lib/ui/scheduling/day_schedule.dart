@@ -32,6 +32,7 @@ import '../widgets/hmb_link_internal.dart';
 import '../widgets/hmb_mail_to_icon.dart';
 import '../widgets/hmb_map_icon.dart';
 import '../widgets/hmb_phone_icon.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'job_activity_ex.dart';
@@ -336,7 +337,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
       padding: const EdgeInsets.only(left: 8, top: 4, bottom: 4, right: 8),
       child: Align(
         alignment: Alignment.topLeft,
-        child: Column(
+        child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Wrap the first two rows in a Row so we can have
@@ -346,17 +347,16 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
               children: [
                 // Left: Column with job activity and customer name.
                 Expanded(
-                  child: Column(
+                  child: HMBColumn(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      HMBRow(
                         children: [
                           if (jobActivity != null)
                             Circle(
                               color: jobActivity.jobActivity.status.color,
                               child: const Text(''),
                             ),
-                          const SizedBox(width: 5),
                           Expanded(
                             child: Text(
                               displayText,
@@ -377,7 +377,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
                   ),
                 ),
                 // Right: Column spanning two rows with the job link.
-                Column(
+                HMBColumn(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     HMBLinkInternal(

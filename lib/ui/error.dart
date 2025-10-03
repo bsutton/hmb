@@ -13,6 +13,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'widgets/layout/layout.g.dart';
+
 class ErrorScreen extends StatelessWidget {
   final String errorMessage;
 
@@ -25,17 +27,15 @@ class ErrorScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
         child: Center(
-          child: Column(
+          child: HMBColumn(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
-              const SizedBox(height: 16),
               Text(
                 errorMessage,
                 style: const TextStyle(fontSize: 18, color: Colors.red),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
             ],
           ),
         ),

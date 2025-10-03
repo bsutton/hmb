@@ -14,6 +14,7 @@
 // lib/src/ui/dashboard/manufacturers_dashlet.dart
 import 'package:flutter/material.dart';
 
+import '../../../../widgets/layout/layout.g.dart';
 import '../../dashlet_card.dart';
 
 /// Dashlet for Manufacturers shortcut
@@ -27,6 +28,6 @@ class ManufacturersDashlet extends StatelessWidget {
     icon: Icons.factory,
     value: () => Future.value(const DashletValue(null)),
     route: '/home/manufacturers',
-    valueBuilder: (_, _) => const SizedBox.shrink(),
+    valueBuilder: (_, _) =>  const HMBEmpty(),
   );
 }

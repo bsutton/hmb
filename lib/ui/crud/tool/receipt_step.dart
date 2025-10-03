@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_tool.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/wizard_step.dart';
 import 'capture_photo.dart';
 import 'stock_take_wizard.dart';
@@ -27,9 +28,9 @@ class ReceiptStep extends WizardStep {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(16),
-    child: Column(
+    child: HMBColumn(
+      leadingSpace: true,
       children: [
-        const SizedBox(height: 24),
         CapturePhoto(
           tool: wizard.tool!,
           comment: 'Receipt',

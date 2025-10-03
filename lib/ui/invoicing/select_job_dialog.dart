@@ -18,6 +18,7 @@ import '../../dao/dao_customer.dart';
 import '../../dao/dao_job.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/surface.dart';
 
 class SelectJobDialog extends StatefulWidget {
@@ -92,11 +93,11 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
           ),
         ],
       ),
-      body: Column(
+      body: HMBColumn(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
+            child: HMBColumn(
               children: [
                 CheckboxListTile(
                   title: const Text('Show all jobs'),
@@ -155,7 +156,7 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
                     final current = filteredJobs[index];
                     return SurfaceCard(
                       title: current.job.summary,
-                      body: Column(
+                      body: HMBColumn(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Customer: ${current.customer.name}'),

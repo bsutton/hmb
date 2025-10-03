@@ -22,6 +22,8 @@ import 'package:flutter/services.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../layout/layout.g.dart';
+
 class RichEditorController {
   late ParchmentDocument document;
   late final FleatherController controller;
@@ -131,7 +133,7 @@ class _RichEditorState extends State<RichEditor> {
   Widget build(BuildContext context) => Scaffold(
     body: FocusScope(
       node: FocusScopeNode(),
-      child: Column(
+      child: HMBColumn(
         children: [
           FleatherToolbar.basic(controller: widget.controller.controller),
           Divider(height: 1, thickness: 1, color: Colors.grey.shade200),

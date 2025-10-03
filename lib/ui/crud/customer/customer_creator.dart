@@ -7,7 +7,7 @@ import '../../../util/dart/parse/parse_customer.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../dialog/source_context.dart';
 import '../../widgets/fields/fields.g.dart';
-import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 import 'customer_paste_panel.dart';
 
@@ -72,13 +72,13 @@ class _CustomerCreatorState extends State<CustomerCreator> {
     content: SingleChildScrollView(
       child: SizedBox(
         width: double.maxFinite,
-        child: Column(
+        child: HMBColumn(
           children: [
             CustomerPastePanel(onExtract: _onExtract),
             const HMBSpacer(height: true),
             Form(
               key: _formKey,
-              child: Column(
+              child: HMBColumn(
                 children: [
                   HMBTextField(
                     controller: _customerName,
@@ -241,7 +241,7 @@ class _CustomerCreatorState extends State<CustomerCreator> {
         Navigator.of(context).pop(customer2);
       }
     } catch (error) {
-      // Check if the error indicates a duplicate name (unique constraint 
+      // Check if the error indicates a duplicate name (unique constraint
       // violation)
       if (error.toString().contains('UNIQUE constraint failed')) {
         HMBToast.error(

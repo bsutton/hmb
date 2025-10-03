@@ -11,13 +11,13 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../ui/widgets/hmb_button.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
+import '../../../../ui/widgets/layout/layout.g.dart';
 import '../../../../util/flutter/app_title.dart';
 import '../../../factory/flutter_database_factory.dart';
 import '../../../versions/asset_script_source.dart';
@@ -63,7 +63,7 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
     body: Center(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: HMBColumn(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (_isLoading) ...[
@@ -72,9 +72,7 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                 'Progress: $_stageNo / $_stageCount',
                 style: const TextStyle(fontSize: 18),
               ),
-              const SizedBox(height: 8),
               const CircularProgressIndicator(),
-              const SizedBox(height: 16),
               Text(
                 _stageDescription,
                 textAlign: TextAlign.center,
@@ -90,7 +88,6 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 40),
               Align(
                 alignment: Alignment.centerRight,
                 child: Row(
@@ -127,7 +124,6 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                     ],
                   ),
                 ),
-              const SizedBox(height: 20),
               HMBButton.withIcon(
                 label: 'Backup to ${_provider.name}',
                 hint: 'Backup your data - excluding photos',
@@ -164,7 +160,6 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
                 },
                 icon: const Icon(Icons.backup, size: 24),
               ),
-              const SizedBox(height: 20),
               _buildRestoreButton(context),
             ],
           ],

@@ -18,6 +18,7 @@ import '../../dao/dao_job.dart';
 import '../../entity/task.dart';
 import '../../entity/time_entry.dart';
 import 'hmb_start_time_entry.dart';
+import 'layout/layout.g.dart';
 
 class HMBStatusBar extends StatelessWidget {
   final TimeEntry? activeTimeEntry;
@@ -38,10 +39,9 @@ class HMBStatusBar extends StatelessWidget {
     }
     return ColoredBox(
       color: Colors.purpleAccent,
-      child: Row(
+      child: HMBRow(
         children: [
           HMBStartTimeEntry(task: task, onStart: (_, _) => {}),
-          const SizedBox(width: 8),
           Expanded(
             child: FutureBuilderEx(
               // ignore: discarded_futures

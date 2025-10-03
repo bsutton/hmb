@@ -69,11 +69,11 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
 
     return DeferredBuilder(
       this,
-      builder: (context) => Column(
+      builder: (context) => HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // details.
-          Column(
+          HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -96,10 +96,9 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
             ],
           ),
           // Display current state and date info.
-          Row(
+          HMBRow(
             children: [
               Text(quote.state.name.toCapitalised()),
-              const SizedBox(width: 8),
               if (quote.state == QuoteState.sent && quote.dateSent != null)
                 Text('Sent: ${formatDate(quote.dateSent!)}'),
               if (quote.state == QuoteState.approved &&
@@ -107,10 +106,9 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                 Text(formatDate(quote.dateApproved!)),
             ],
           ),
-          const HMBSpacer(height: true),
 
           // --- State Update Buttons ---
-          Row(
+          HMBRow(
             children: [
               HMBButton(
                 label: 'Approved',
@@ -123,7 +121,6 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                   });
                 },
               ),
-              const SizedBox(width: 8),
               HMBButton(
                 label: 'Rejected',
                 hint: 'Mark the quote as rejected',

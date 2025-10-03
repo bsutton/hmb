@@ -27,6 +27,7 @@ import '../../../util/dart/photo_meta.dart';
 import '../../widgets/color_ex.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_icon_button.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/full_screen_photo_view.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_gallery.dart';
@@ -69,7 +70,7 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
           builder: (context) => FutureBuilderEx(
             // ignore: discarded_futures
             future: widget.controller.photos,
-            builder: (context, photoMetas) => Column(
+            builder: (context, photoMetas) => HMBColumn(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildAddButton(widget.controller.parent, photoMetas),
@@ -110,7 +111,7 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
     mainAxisSize: MainAxisSize.min,
     children: photoMetas!
         .map(
-          (photoMeta) => Column(
+          (photoMeta) => HMBColumn(
             mainAxisSize: MainAxisSize.min,
             children: [
               _showPhoto(photoMeta),
@@ -202,7 +203,7 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Delete Photo'),
-          content: Column(
+          content: HMBColumn(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Image.file(
@@ -212,7 +213,6 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
               ), // Thumbnail of the photo
               if (Strings.isNotBlank(photoMeta.comment))
                 Text(photoMeta.photo.comment),
-              const SizedBox(height: 10),
               const Text('Are you sure you want to delete this photo?'),
             ],
           ),

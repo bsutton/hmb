@@ -14,6 +14,7 @@
 // lib/src/ui/dashboard/tools_dashlet.dart
 import 'package:flutter/material.dart';
 
+import '../../../../widgets/layout/layout.g.dart';
 import '../../dashlet_card.dart';
 
 /// Dashlet for Tools shortcut
@@ -27,6 +28,6 @@ class ToolsDashlet extends StatelessWidget {
     icon: Icons.build,
     value: () => Future.value(const DashletValue(null)),
     route: '/home/tools',
-    valueBuilder: (_, _) => const SizedBox.shrink(),
+    valueBuilder: (_, _) =>  const HMBEmpty(),
   );
 }

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'color_ex.dart';
 import 'hmb_chip.dart';
+import 'layout/layout.g.dart';
 
 class HMBMenuChip<T> extends StatelessWidget {
   final String label;
@@ -44,13 +45,10 @@ class HMBMenuChip<T> extends StatelessWidget {
     final bg = _bgColor(context);
     final fg = _fgColor(context);
 
-    final chipChild = Row(
+    final chipChild = HMBRow(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (icon != null) ...[
-          Icon(icon, size: 16, color: fg),
-          const SizedBox(width: 4),
-        ],
+        if (icon != null) ...[Icon(icon, size: 16, color: fg)],
         Text(
           label,
           style: TextStyle(
@@ -59,7 +57,6 @@ class HMBMenuChip<T> extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(width: 4),
         Icon(Icons.arrow_drop_down, size: 18, color: fg),
       ],
     );
@@ -88,12 +85,9 @@ class HMBMenuChip<T> extends StatelessWidget {
           return PopupMenuItem<T>(
             value: v,
             enabled: enabled,
-            child: Row(
+            child: HMBRow(
               children: [
-                if (leading != null) ...[
-                  Icon(leading, size: 18),
-                  const SizedBox(width: 8),
-                ],
+                if (leading != null) ...[Icon(leading, size: 18)],
                 Flexible(child: Text(format(v))),
               ],
             ),

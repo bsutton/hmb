@@ -23,6 +23,7 @@ import '../../entity/system.dart';
 import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
+import '../widgets/layout/layout.g.dart';
 import 'job_activity_ex.dart';
 import 'schedule_helper.dart';
 
@@ -292,7 +293,7 @@ class DefaultEventTile<T> extends StatelessWidget {
         descriptionStyle: event.descriptionStyle,
       );
     } else {
-      return const SizedBox.shrink();
+      return const HMBEmpty();
     }
   }
 }

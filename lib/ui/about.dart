@@ -18,6 +18,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../database/management/database_helper.dart';
 import '../src/version/version.g.dart';
 import '../util/flutter/app_title.dart';
+import 'widgets/layout/hmb_column.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -36,7 +37,7 @@ class _AboutScreenState extends State<AboutScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(automaticallyImplyLeading: false),
     body: Center(
-      child: Column(
+      child: HMBColumn(
         children: [
           const Text('Hold My Beer (HMB) - for solo Trades people'),
           Text('Version: $packageVersion'),

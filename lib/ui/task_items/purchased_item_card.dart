@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 
 import '../../dao/dao.g.dart';
 import '../../util/flutter/flutter_util.g.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/text/text.g.dart';
 import 'list_packing_screen.dart';
 import 'list_shopping_screen.dart';
@@ -61,7 +62,7 @@ class PurchasedItemCard extends ShoppingItemCard {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Return Item'),
-        content: Column(
+        content: HMBColumn(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(itemContext.taskItem.description),

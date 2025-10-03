@@ -17,7 +17,7 @@ import '../../../dao/dao_job.dart';
 import '../../../entity/flutter_extensions/job_status_ex.dart';
 import '../../../entity/job.dart';
 import '../../../entity/job_status_stage.dart';
-import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/select.g.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../../widgets/widgets.g.dart';
@@ -55,7 +55,7 @@ class _JobListScreenState extends State<JobListScreen> {
     final size = MediaQuery.of(context).size;
     return Surface(
       elevation: SurfaceElevation.e0,
-      child: Column(
+      child: HMBColumn(
         mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(
@@ -105,7 +105,7 @@ class _JobListScreenState extends State<JobListScreen> {
     return selected;
   }
 
-  Widget _buildFilterSheet(void Function() onChange) => Column(
+  Widget _buildFilterSheet(void Function() onChange) => HMBColumn(
     children: [
       HMBDroplist<JobOrder>(
         title: 'Sort Order',
@@ -117,7 +117,6 @@ class _JobListScreenState extends State<JobListScreen> {
           onChange();
         },
       ),
-      const HMBSpacer(height: true),
       SwitchListTile(
         title: const Text('Show only Old Jobs'),
         value: _showOldJobs,

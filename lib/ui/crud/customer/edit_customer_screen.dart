@@ -28,7 +28,7 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/hmb_crud_contact.dart';
 import '../../widgets/hmb_crud_site.dart';
 import '../../widgets/hmb_switch.dart';
-import '../../widgets/layout/hmb_form_section.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/hmb_select_contact.dart';
 import '../base_full_screen/edit_entity_screen.dart';
@@ -111,7 +111,7 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
     entityState: this,
     editor: (customer, {required isNew}) => DeferredBuilder(
       this,
-      builder: (context) => Column(
+      builder: (context) => HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           HMBFormSection(

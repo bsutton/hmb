@@ -6,6 +6,7 @@ class HMBColumn extends StatelessWidget {
   final CrossAxisAlignment crossAxisAlignment;
   final MainAxisAlignment mainAxisAlignment;
   final MainAxisSize mainAxisSize;
+  final bool leadingSpace;
 
   final List<Widget> children;
 
@@ -14,6 +15,7 @@ class HMBColumn extends StatelessWidget {
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.crossAxisAlignment = CrossAxisAlignment.center,
     this.mainAxisSize = MainAxisSize.max,
+    this.leadingSpace = false,
     super.key,
   });
 
@@ -27,6 +29,9 @@ class HMBColumn extends StatelessWidget {
 
   List<Widget> _withSpacing(List<Widget> children) {
     final out = <Widget>[];
+    if (leadingSpace) {
+      out.add(const HMBSpacer(height: true));
+    }
     for (var i = 0; i < children.length; i++) {
       if (i > 0) {
         out.add(const HMBSpacer(height: true));

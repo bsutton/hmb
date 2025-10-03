@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao.g.dart';
 import '../../crud/job/full_page_list_job_card.dart' show FullPageListJobCard;
 import '../../dialog/source_context.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/text.g.dart';
 import '../../widgets/widgets.g.dart';
 import 'today_page.dart';
@@ -28,7 +29,7 @@ class JobCard extends StatelessWidget {
         padding: const EdgeInsets.only(left: 8, top: 4, bottom: 4, right: 8),
         child: Align(
           alignment: Alignment.topLeft,
-          child: Column(
+          child: HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Wrap the first two rows in a Row so we can have
@@ -38,7 +39,7 @@ class JobCard extends StatelessWidget {
                 children: [
                   // Left: Column with job activity and customer name.
                   Expanded(
-                    child: Column(
+                    child: HMBColumn(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(

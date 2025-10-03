@@ -3,6 +3,7 @@ import 'package:future_builder_ex/future_builder_ex.dart' show FutureBuilderEx;
 
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
+import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/text/text.g.dart';
 
 /// Shows tasks, effort, earnings and worked‐hours for a Job.
@@ -39,7 +40,7 @@ class JobStatisticsHeader extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: isMobile
-            ? Column(
+            ? HMBColumn(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: children,
               )

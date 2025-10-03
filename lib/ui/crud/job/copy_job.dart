@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/list_ex.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 
 /// Result returned from the move dialog
@@ -184,11 +185,10 @@ class _DialogMoveTasksToNewJobState
         final selectedCount = _selected.entries.where((e) => e.value).length;
 
         return SingleChildScrollView(
-          child: Column(
+          child: HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text('New Summary'),
-              const SizedBox(height: 6),
               TextField(
                 controller: _summaryController,
                 maxLines: 4,
@@ -197,7 +197,6 @@ class _DialogMoveTasksToNewJobState
                   hintText: 'Enter summary for the new job',
                 ),
               ),
-              const SizedBox(height: 16),
               if (movableCount > 0)
                 CheckboxListTile(
                   title: Text('Select All ($selectedCount / $movableCount)'),

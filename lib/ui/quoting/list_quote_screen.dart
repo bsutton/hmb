@@ -156,6 +156,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     onEdit: (q) => QuoteDetailsScreen(quoteId: q!.id),
     background: (_) async => Colors.transparent,
     listCard: _buildQuoteCard,
+    cardHeight: 350,
     filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
     isFilterActive: () =>
         widget.job == null &&
@@ -180,7 +181,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
 
   Widget _buildFilterSheet(void Function() onChange) => Padding(
     padding: const EdgeInsets.all(16),
-    child: Column(
+    child: HMBColumn(
       mainAxisSize: MainAxisSize.min,
       children: [
         // Job dropdown

@@ -50,7 +50,7 @@ class _JobCardState extends State<JobCard> {
       final materialCharges = info.totals.materialsCharges;
       final combinedCharges = labourCharges + materialCharges;
 
-      return Column(
+      return HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(

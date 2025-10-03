@@ -31,8 +31,7 @@ import '../../util/dart/local_time.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
 import '../widgets/hmb_toast.dart';
-import '../widgets/layout/hmb_scroll_for_keyboard.dart';
-import '../widgets/layout/hmb_spacer.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_select_job.dart';
 import 'job_activity_ex.dart';
 
@@ -157,10 +156,9 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
         child: HMBScrollForKeyboard(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
+            child: HMBColumn(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 15),
                 HMBSelectJob(
                   selectedJob: _selectedJob,
                   // ignore: discarded_futures
@@ -168,23 +166,18 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                     _selectedJob.jobId = job?.id;
                   }),
                 ),
-                const HMBSpacer(height: true),
                 // Display event date
                 _buildEventDate(context),
 
-                const HMBSpacer(height: true),
                 ..._buildStartEndDates(isSmallScreen),
                 // Display the duration
                 _buildDuration(duration),
                 // Status dropdown
                 _buildStatus(),
-                const HMBSpacer(height: true),
                 // Notes field
                 _buildNotes(),
-                const HMBSpacer(height: true),
                 if (_noticeSentDate != null)
                   Text('Notice sent on: ${formatDateTime(_noticeSentDate!)}'),
-                const HMBSpacer(height: true),
 
                 // Contact option
                 if (widget.isEditing || _selectedJob.jobId != null)
@@ -194,7 +187,6 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                     hint:
                         '''Send a text message to the user confirming the schedule.''',
                   ),
-                const SizedBox(height: 30),
                 _buildButtons(context),
               ],
             ),
@@ -219,7 +211,7 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
             .map(
               (status) => DropdownMenuItem(
                 value: status,
-                child: Row(
+                child: HMBRow(
                   children: [
                     // Colored circle
                     Container(
@@ -230,7 +222,6 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                         shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 8), // Spacing
                     // Text
                     Text(Strings.toProperCase(status.name)),
                   ],

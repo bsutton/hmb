@@ -38,7 +38,7 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
     children: [
       Row(
         mainAxisAlignment: MainAxisAlignment.end,

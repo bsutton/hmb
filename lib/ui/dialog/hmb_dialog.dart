@@ -13,6 +13,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../widgets/layout/layout.g.dart';
+
 class HMBDialog extends StatelessWidget {
   final Widget title;
   final Widget content;
@@ -39,7 +41,7 @@ class HMBDialog extends StatelessWidget {
     child: Padding(
       padding: EdgeInsets.zero,
       child: SingleChildScrollView(
-        child: Column(
+        child: HMBColumn(
           mainAxisSize: MainAxisSize.min,
           children: [
             AlertDialog(

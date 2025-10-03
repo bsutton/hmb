@@ -13,12 +13,14 @@
 
 import 'package:flutter/material.dart';
 
+import '../layout/layout.g.dart';
+
 class HMBTextArea extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode? focusNode;
   final String labelText;
   final int maxLines;
-  final bool leadingPadding;
+  final bool leadingSpace;
   final void Function(String?)? onChanged;
 
   const HMBTextArea({
@@ -27,14 +29,14 @@ class HMBTextArea extends StatelessWidget {
     this.onChanged,
     this.maxLines = 6,
     this.focusNode,
-    this.leadingPadding = true,
+    this.leadingSpace = true,
     super.key,
   });
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
+    leadingSpace: leadingSpace,
     children: [
-      if (leadingPadding) const SizedBox(height: 16),
       TextFormField(
         maxLines: maxLines,
         keyboardType: TextInputType.multiline,

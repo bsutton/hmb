@@ -20,6 +20,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/photo_meta.dart';
 import '../../widgets/hmb_button.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/captured_photo.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/media/photo_thumbnail.dart';
@@ -59,7 +60,7 @@ class _CapturePhotoState extends State<CapturePhoto> {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(16),
     child: SingleChildScrollView(
-      child: Column(
+      child: HMBColumn(
         children: [
           HMBButton.withIcon(
             label: 'Capture Photo',
@@ -81,9 +82,7 @@ class _CapturePhotoState extends State<CapturePhoto> {
             ),
           ),
           if (photoId != null) ...[
-            const SizedBox(height: 16),
             Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
             FutureBuilderEx(
               // ignore: discarded_futures
               future: _getPhotoMeta(),

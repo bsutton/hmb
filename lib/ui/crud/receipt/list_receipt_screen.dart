@@ -18,6 +18,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/flutter/flutter_util.g.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/text/text.g.dart';
 import '../base_full_screen/base_full_screen.g.dart';
@@ -41,7 +42,7 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
     onEdit: (receipt) => ReceiptEditScreen(receipt: receipt),
     listCardTitle: _getTitle,
     cardHeight: 480,
-    listCard: (r) => Column(
+    listCard: (r) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FutureBuilderEx(

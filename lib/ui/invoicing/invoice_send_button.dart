@@ -21,6 +21,7 @@ import '../dialog/email_dialog_for_job.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/media/pdf_preview.dart';
 import 'pdf/generate_invoice_pdf.dart';
 
@@ -156,7 +157,7 @@ Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
       return StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: const Text('Select Invoice Options'),
-          content: Column(
+          content: HMBColumn(
             mainAxisSize: MainAxisSize.min,
             children: [
               CheckboxListTile(

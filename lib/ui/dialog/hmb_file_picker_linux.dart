@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
 import '../widgets/hmb_button.dart';
+import '../widgets/layout/layout.g.dart';
 
 class HMBFilePickerDialog {
   Future<String?> show(
@@ -141,7 +142,7 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
   Widget build(BuildContext context) {
     final breadcrumbs = _buildBreadcrumbs();
     return AlertDialog(
-      title: Column(
+      title: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Select a File'),
@@ -207,6 +208,6 @@ class __FilePickerDialogState extends State<_FilePickerDialog> {
 class BreadcrumbItem {
   final String name;
   final Directory directory;
-  
+
   BreadcrumbItem(this.name, this.directory);
 }

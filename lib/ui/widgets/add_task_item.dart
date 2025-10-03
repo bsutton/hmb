@@ -21,6 +21,7 @@ import '../../util/dart/money_ex.dart';
 import '../../util/dart/units.dart';
 import 'fields/hmb_text_field.dart';
 import 'hmb_button.dart';
+import 'layout/layout.g.dart';
 import 'select/select.g.dart';
 import 'text/hmb_text_themes.dart';
 
@@ -43,7 +44,7 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
             ? const HMBTextHeadline('Add Shopping Item')
             : const HMBTextHeadline('Add Packing Item'),
         content: SingleChildScrollView(
-          child: Column(
+          child: HMBColumn(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Job Selection Dropdown
@@ -58,7 +59,6 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                   });
                 },
               ),
-              const SizedBox(height: 10),
               // Task Selection Dropdown (dependent on selected job)
               if (selectedJob.jobId != null)
                 HMBDroplist<Task>(
@@ -73,7 +73,6 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                     });
                   },
                 ),
-              const SizedBox(height: 10),
               // Item Type Selection Dropdown
               HMBDroplist<TaskItemType>(
                 title: 'Item Type',
@@ -99,7 +98,6 @@ Future<void> showAddItemDialog(BuildContext context, AddType addType) async {
                   });
                 },
               ),
-              const SizedBox(height: 10),
               // Description Input
               HMBTextField(
                 controller: descriptionController,

@@ -30,6 +30,7 @@ import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
 
 class SystemContactInformationScreen extends StatefulWidget {
@@ -143,7 +144,7 @@ class SystemContactInformationScreenState
   Widget build(BuildContext context) {
     if (widget.showButtons) {
       return Scaffold(
-        body: Column(
+        body: HMBColumn(
           children: [
             SaveAndClose(
               onSave: save,
@@ -151,10 +152,7 @@ class SystemContactInformationScreenState
               onCancel: () async => context.pop(),
             ),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ListView(children: [_buildForm()]),
-              ),
+              child: ListView(children: [_buildForm()]),
             ),
           ],
         ),
@@ -169,7 +167,7 @@ class SystemContactInformationScreenState
     this,
     builder: (context) => Form(
       key: _formKey,
-      child: Column(
+      child: HMBColumn(
         children: [
           HMBTextField(
             controller: _firstNameController!,

@@ -13,6 +13,8 @@
 
 import 'package:flutter/material.dart';
 
+import '../layout/layout.g.dart';
+
 /// Capitalises the first letter of each word in the text field.
 class HMBNameField extends StatelessWidget {
   final TextEditingController controller;
@@ -39,9 +41,9 @@ class HMBNameField extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
+    leadingSpace: leadingSpace,
     children: [
-      if (leadingSpace) const SizedBox(height: 16),
       TextFormField(
         onChanged: onChanged?.call,
         controller: controller,

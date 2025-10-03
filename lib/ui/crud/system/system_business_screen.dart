@@ -28,7 +28,7 @@ import '../../../util/flutter/app_title.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_toast.dart';
-import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import 'operating_hours_ui.dart';
@@ -113,7 +113,7 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
     this,
     builder: (context) => Form(
       key: _formKey,
-      child: Column(
+      child: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Existing fields...
@@ -124,11 +124,10 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
           HelpWrapper(
             tooltip: 'Help for Business Number',
             title: 'What is a Business Number?',
-            helpChild: const Column(
+            helpChild: const HMBColumn(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Your government allocated business registration number.'),
-                HMBSpacer(height: true),
                 Text('Australia: ABN (e.g., 12 345 678 901)'),
                 Text('United States: EIN (e.g., 12-3456789)'),
                 Text('United Kingdom: CRN (e.g., 12345678)'),
@@ -145,11 +144,10 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
           HelpWrapper(
             tooltip: 'Help for Business Number Label',
             title: 'What is a Business Number Label?',
-            helpChild: const Column(
+            helpChild: const HMBColumn(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Your government allocated business number'),
-                HMBSpacer(height: true),
                 Text('Examples of labels:'),
                 Text('Australia - ABN'),
                 Text('United States - EIN'),
@@ -233,7 +231,6 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
           ),
 
           // New Operating Hours Section
-          const SizedBox(height: 16),
           _buildOperatingHours(),
         ],
       ),
@@ -277,19 +274,14 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
   Widget build(BuildContext context) {
     if (widget.showButtons) {
       return Scaffold(
-        body: Column(
+        body: HMBColumn(
           children: [
             SaveAndClose(
               onSave: save,
               showSaveOnly: false,
               onCancel: () async => context.pop(),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ListView(children: [_buildForm()]),
-              ),
-            ),
+            Expanded(child: ListView(children: [_buildForm()])),
           ],
         ),
       );

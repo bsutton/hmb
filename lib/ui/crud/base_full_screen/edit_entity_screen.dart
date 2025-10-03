@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
 
 abstract class EntityState<E extends Entity<E>> {
@@ -81,7 +82,7 @@ class EntityEditScreenState<E extends Entity<E>>
       padding: const EdgeInsets.all(4),
       child: Form(
         key: _formKey,
-        child: Column(
+        child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _commandButtons(context),

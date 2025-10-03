@@ -13,6 +13,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'layout/layout.g.dart';
+
 class HMBSwitch extends StatelessWidget {
   final bool? initialValue;
   final FocusNode? focusNode;
@@ -34,9 +36,9 @@ class HMBSwitch extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
+    leadingSpace: leadingSpace,
     children: [
-      if (leadingSpace) const SizedBox(height: 16),
       SwitchListTile(
         focusNode: focusNode,
         title: Text(labelText),

@@ -15,6 +15,7 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
+import '../../../ui/widgets/layout/hmb_column.dart';
 import '../../../ui/widgets/text/hmb_text.dart';
 import '../../../util/dart/format.dart';
 import 'backup.dart';
@@ -63,7 +64,7 @@ class BackupSelectionScreenState extends DeferredState<BackupSelectionScreen> {
 No backups available in ${backups!.location}'''),
           );
         } else {
-          return Column(
+          return HMBColumn(
             children: [
               HMBText('Location: ${backups.location}'),
               Expanded(

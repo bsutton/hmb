@@ -9,6 +9,7 @@ import 'package:june/june.dart';
 import '../../../entity/entity.g.dart';
 import '../../../fsm/job_status_fsm.dart'
     show Next, buildJobMachine, nextFromFsm;
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 import 'edit_job_card.dart';
 
@@ -19,7 +20,7 @@ Future<void> showJobStatusDialog(BuildContext context, Job job) async {
       insetPadding: const EdgeInsets.all(16),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: HMBColumn(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -27,7 +28,6 @@ Future<void> showJobStatusDialog(BuildContext context, Job job) async {
               'Update Job Status',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 12),
             // The picker runs side-effects and calls back on success.
             FsmStatusPicker(
               job: job,
@@ -35,7 +35,6 @@ Future<void> showJobStatusDialog(BuildContext context, Job job) async {
                 Navigator.of(context).pop(); // close on success
               },
             ),
-            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -148,13 +147,12 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
         // Current status (read-only)
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 8),
-          child: Row(
+          child: HMBRow(
             children: [
               const Text(
                 'Status:',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(width: 8),
               HMBChip(label: widget.job.status.displayName),
             ],
           ),
@@ -166,11 +164,10 @@ class _FsmStatusPickerState extends DeferredState<FsmStatusPicker> {
             if (_next.isEmpty) {
               return const Text('No valid next steps.');
             } else {
-              return Column(
+              return HMBColumn(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Move to:'),
-                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,

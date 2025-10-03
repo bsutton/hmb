@@ -25,6 +25,7 @@ import '../../../util/dart/money_ex.dart';
 import '../../quoting/select_billing_contact_dialog.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_text.dart';
 import 'milestone_tile.dart';
 
@@ -255,7 +256,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: HMBColumn(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),

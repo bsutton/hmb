@@ -20,6 +20,7 @@ import '../../../entity/contact.dart';
 import '../../../entity/customer.dart';
 import '../../../ui/widgets/hmb_add_button.dart';
 import '../../crud/contact/edit_contact_screen.dart';
+import '../layout/layout.g.dart';
 import 'hmb_droplist.dart';
 
 /// Allows the user to select a contact owned by a customer
@@ -99,7 +100,7 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
       if (widget.customer == null) {
         return const Center(child: Text('Contacts: Select a customer first.'));
       } else {
-        return Row(
+        return HMBRow(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
@@ -112,7 +113,6 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
                 required: false,
               ),
             ),
-            const SizedBox(width: 8),
             Padding(
               padding: const EdgeInsets.only(
                 top: 16,

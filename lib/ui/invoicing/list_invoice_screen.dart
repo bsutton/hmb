@@ -22,6 +22,7 @@ import '../../entity/entity.g.dart';
 import '../../util/dart/money_ex.dart';
 import '../../util/flutter/app_title.dart';
 import '../crud/base_full_screen/base_full_screen.g.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/select/hmb_select_job.dart';
 import '../widgets/widgets.g.dart';
@@ -162,7 +163,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
   Widget _buildFilterSheet(void Function() onChange) => Padding(
     padding: const EdgeInsets.all(8),
-    child: Column(
+    child: HMBColumn(
       children: [
         HMBSelectJob(
           title: 'Filter By Job',
@@ -173,7 +174,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
           }),
         ),
 
-        const SizedBox(height: 8),
         HMBDroplist<Customer>(
           // key: ValueKey(selectedCustomer),
           title: 'Filter by Customer',

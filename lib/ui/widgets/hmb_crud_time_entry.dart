@@ -22,6 +22,7 @@ import '../crud/base_nested/list_nested_screen.dart';
 import '../crud/time_entry/list_time_entry_screen.dart';
 import 'hmb_child_crud_card.dart';
 import 'hmb_start_time_entry.dart';
+import 'layout/layout.g.dart';
 
 // class HBMCrudTimeEntry extends StatelessWidget {
 //   const HBMCrudTimeEntry({
@@ -61,7 +62,7 @@ class HMBCrudTimeEntryState extends State<HMBCrudTimeEntry> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
     children: [
       HMBStartTimeEntry(task: widget.parent.parent, onStart: (job, task) {}),
 

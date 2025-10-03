@@ -25,6 +25,7 @@ import '../../dialog/source_context.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_name_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../base_nested/edit_nested_screen.dart';
 
 class ContactEditScreen<P extends Entity<P>> extends StatefulWidget {
@@ -119,7 +120,7 @@ class _ContactEditScreenState extends State<ContactEditScreen>
         // ignore: discarded_futures
         widget.daoJoin.insertForParent(contact!, widget.parent, transaction),
     entityState: this,
-    editor: (contact) => Column(
+    editor: (contact) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         HMBNameField(

@@ -16,22 +16,20 @@ import 'package:flutter/material.dart';
 import '../../../entity/operating_hours.dart';
 import '../../../entity/system.dart';
 import '../../../util/dart/local_time.dart';
-import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../../widgets/widgets.g.dart';
 
 class OperatingHoursController {
   final OperatingHours operatingHours;
-  
-  OperatingHoursController({required this.operatingHours});
 
+  OperatingHoursController({required this.operatingHours});
 }
 
 class OperatingHoursUi extends StatefulWidget {
   final OperatingHoursController controller;
 
   const OperatingHoursUi({required this.controller, super.key});
-
 
   @override
   State<OperatingHoursUi> createState() => _OperatingHoursUiState();
@@ -57,7 +55,7 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
   @override
   Widget build(BuildContext context) {
     {
-      return Column(
+      return HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -68,7 +66,6 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
             'Toggle a day name to indicate on which days you operate. '
                 'Then set your start and end times for each day',
           ),
-          const SizedBox(height: 8),
           ToggleButtons(
             isSelected: widget.controller.operatingHours.openList,
             onPressed: (index) {
@@ -80,14 +77,13 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
             },
             children: _dayOrder.map((d) => Text(d.shortName)).toList(),
           ),
-          const SizedBox(height: 16),
           if (widget.controller.operatingHours.noOpenDays())
             const HMBTextLine(
               'You must set at least one day as Open to use Scheduling!',
               colour: Colors.amber,
             )
           else
-            Column(
+            HMBColumn(
               children: List.generate(_dayOrder.length, (index) {
                 final dayName = DayName.fromIndex(index);
                 if (!widget.controller.operatingHours.day(dayName).open) {
@@ -108,7 +104,7 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                     );
 
                 {
-                  return Column(
+                  return HMBColumn(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       HMBTextLabel(
@@ -140,7 +136,6 @@ class _OperatingHoursUiState extends State<OperatingHoursUi> {
                           ),
                         ],
                       ),
-                      const HMBSpacer(height: true),
                     ],
                   );
                 }

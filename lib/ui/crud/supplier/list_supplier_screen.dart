@@ -19,6 +19,7 @@ import '../../../dao/dao_site.dart';
 import '../../../dao/dao_supplier.dart';
 import '../../../entity/supplier.dart';
 import '../../dialog/source_context.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/contact_text.dart';
 import '../../widgets/text/hmb_email_text.dart';
 import '../../widgets/text/hmb_phone_text.dart';
@@ -47,7 +48,7 @@ class SupplierListScreen extends StatelessWidget {
         builder: (context, site) => FutureBuilderEx(
           // ignore: discarded_futures
           future: DaoContact().getPrimaryForSupplier(supplier),
-          builder: (context, contact) => Column(
+          builder: (context, contact) => HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               HMBTextBody(supplier.service ?? ''),

@@ -17,6 +17,7 @@ import 'package:flutter/services.dart';
 import 'package:strings/strings.dart';
 
 import '../../../util/flutter/hmb_theme.dart';
+import '../layout/layout.g.dart';
 
 class HMBTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -65,7 +66,7 @@ class HMBTextField extends StatelessWidget {
           onInvoke: (intent) => _handlePaste(),
         ),
       },
-      child: Column(
+      child: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextFormField(

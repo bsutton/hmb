@@ -21,6 +21,7 @@ import '../../dao/dao_quote.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/quote.dart';
+import '../widgets/layout/layout.g.dart';
 
 class SelectQuoteDialog extends StatefulWidget {
   const SelectQuoteDialog({super.key});
@@ -97,12 +98,12 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
           ),
         ],
       ),
-      body: Column(
+      body: HMBColumn(
         children: [
           // Filters
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
+            child: HMBColumn(
               children: [
                 CheckboxListTile(
                   title: const Text('Show all quotes'),
@@ -164,7 +165,7 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
                     final current = filteredQuotes[index];
                     return ListTile(
                       title: Text(current.job.summary),
-                      subtitle: Column(
+                      subtitle: HMBColumn(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Customer: ${current.customer.name}'),

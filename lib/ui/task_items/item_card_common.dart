@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../../entity/task_item.dart';
 import '../../util/dart/money_ex.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'list_shopping_screen.dart';
 
@@ -32,7 +33,7 @@ class ItemCardCommon extends StatelessWidget {
 
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       HMBTextLine(customerAndJob.customer.name),

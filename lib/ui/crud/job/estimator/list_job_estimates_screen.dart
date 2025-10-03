@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
 import '../../../../util/flutter/app_title.dart';
+import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/text/text.g.dart';
 import '../../base_full_screen/base_full_screen.g.dart';
 import 'edit_job_estimate_screen.dart';
@@ -97,7 +98,7 @@ class _JobEstimatesListScreenState extends State<JobEstimatesListScreen> {
     onEdit: (job) => JobEstimateBuilderScreen(job: job!),
   );
 
-  Widget _buildFilterSheet(void Function() onChange) => Column(
+  Widget _buildFilterSheet(void Function() onChange) => HMBColumn(
     children: [
       SwitchListTile(
         title: const Text('Only Show Quotable Jobs'),

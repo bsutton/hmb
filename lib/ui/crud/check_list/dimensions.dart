@@ -21,7 +21,7 @@ import '../../../entity/task_item.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/units.dart';
 import '../../widgets/fields/hmb_text_field.dart';
-import '../../widgets/layout/hmb_empty.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/text/hmb_text.dart';
 import 'edit_task_item_screen.dart';
@@ -90,7 +90,7 @@ class _DimensionWidgetState extends State<DimensionWidget> {
 
         final selectedUnit = selectedUnitsState.selectedOrDefault;
 
-        return Column(
+        return HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             HMBDroplist<MeasurementType>(

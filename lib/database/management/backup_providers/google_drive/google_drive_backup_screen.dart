@@ -24,6 +24,7 @@ import '../../../../dao/dao.g.dart';
 import '../../../../ui/widgets/color_ex.dart';
 import '../../../../ui/widgets/hmb_button.dart';
 import '../../../../ui/widgets/hmb_toast.dart';
+import '../../../../ui/widgets/layout/hmb_column.dart';
 import '../../../../util/dart/format.dart';
 import '../../../../util/flutter/app_title.dart';
 import '../../../../util/flutter/hmb_theme.dart';
@@ -137,12 +138,11 @@ class _GoogleDriveBackupScreenState
   Widget _buildBackupUI(BuildContext context) => Center(
     child: Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(
+      child: HMBColumn(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (_isLoading) ...[
             const CircularProgressIndicator(),
-            const SizedBox(height: 16),
             Text(
               _stageDescription,
               textAlign: TextAlign.center,
@@ -158,16 +158,11 @@ class _GoogleDriveBackupScreenState
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 40),
             _buildBackupButton(),
 
-            const SizedBox(height: 16),
             _buildLastBackup(),
-            const SizedBox(height: 40),
             _buildRestoreButton(context),
-            if (!widget.restoreOnly) const SizedBox(height: 40),
             if (!widget.restoreOnly) ..._buildPhotoSyncSection(),
-            const SizedBox(height: 40),
             HMBButton.withIcon(
               label: 'Sign Out',
               hint: 'Signout of Google Drive',
@@ -196,7 +191,7 @@ class _GoogleDriveBackupScreenState
     },
   );
 
-  Widget _buildBackupButton() => Column(
+  Widget _buildBackupButton() => HMBColumn(
     children: [
       HMBButton.withIcon(
         label: 'Backup to ${_provider.name}',
@@ -300,7 +295,6 @@ class _GoogleDriveBackupScreenState
       },
     ),
     if (_photoStageDescription.isNotEmpty) ...[
-      const SizedBox(height: 8),
       Text(_photoStageDescription, style: const TextStyle(fontSize: 16)),
     ],
     if (!_syncRunning)
@@ -330,7 +324,7 @@ class _GoogleDriveBackupScreenState
         ),
       ),
       child: Center(
-        child: Column(
+        child: HMBColumn(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
@@ -341,7 +335,6 @@ class _GoogleDriveBackupScreenState
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 16),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 32),
               child: Text(
@@ -350,7 +343,6 @@ class _GoogleDriveBackupScreenState
                 style: TextStyle(fontSize: 18, color: Colors.white70),
               ),
             ),
-            const SizedBox(height: 32),
             HMBButton.withIcon(
               icon: const Icon(Icons.login, color: Colors.white),
               label: 'Sign in to Google',
@@ -398,7 +390,7 @@ class _GoogleDriveBackupScreenState
       child: const Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
+          child: HMBColumn(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
@@ -409,7 +401,6 @@ class _GoogleDriveBackupScreenState
                   color: Colors.white,
                 ),
               ),
-              SizedBox(height: 16),
               Text(
                 'Google Drive backup is not supported on Linux or Windows.',
                 textAlign: TextAlign.center,

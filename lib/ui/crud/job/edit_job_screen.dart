@@ -27,6 +27,7 @@ import '../../../util/dart/format.dart';
 import '../../../util/dart/local_date.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../widgets/circle.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_select_customer.dart';
 import '../../widgets/select/hmb_select_site.dart';
 import '../base_full_screen/edit_entity_screen.dart';
@@ -76,7 +77,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
       text: widget.job?.description ?? '',
     );
     _notesController = TextEditingController(
-      text: widget.job?.internal_notes ?? '',
+      text: widget.job?.internalNotes ?? '',
     );
     _assumptionController = TextEditingController(
       text: widget.job?.assumption ?? '',
@@ -187,13 +188,12 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
           for (final jobActivity in activities)
             SimpleDialogOption(
               onPressed: () => Navigator.of(context).pop(jobActivity),
-              child: Row(
+              child: HMBRow(
                 children: [
                   Circle(
                     color: jobActivity.status.color,
                     child: const Text(''),
                   ),
-                  const SizedBox(width: 5),
                   Text(
                     _activityDisplay(jobActivity),
                     style: TextStyle(
@@ -252,7 +252,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     customerId: June.getState(SelectedCustomer.new).customerId,
     summary: _summaryController.text,
     description: _descriptionController.text,
-    internal_notes: _notesController.text,
+    internalNotes: _notesController.text,
     assumption: _assumptionController.text,
     siteId: June.getState(SelectedSite.new).siteId,
     contactId: June.getState(SelectedContact.new).contactId,

@@ -6,6 +6,8 @@ class HMBRow extends StatelessWidget {
   final CrossAxisAlignment crossAxisAlignment;
   final MainAxisAlignment mainAxisAlignment;
 
+  final MainAxisSize mainAxisSize;
+
   final List<Widget> children;
 
   const HMBRow({
@@ -13,6 +15,7 @@ class HMBRow extends StatelessWidget {
     this.crossAxisAlignment = CrossAxisAlignment.center,
     super.key,
     this.mainAxisAlignment = MainAxisAlignment.start,
+    this.mainAxisSize = MainAxisSize.max,
   });
 
   List<Widget> withSpacing(List<Widget> children) {

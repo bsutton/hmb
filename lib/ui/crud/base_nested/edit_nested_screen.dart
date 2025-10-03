@@ -17,6 +17,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 import '../../../dao/dao.dart';
 import '../../../entity/entity.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/layout.g.dart' show HMBColumn;
 import '../../widgets/save_and_close.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 
@@ -77,13 +78,13 @@ class NestedEntityEditScreenState<C extends Entity<C>, P extends Entity<P>>
       ),
       automaticallyImplyLeading: false,
     ),
-    body: Column(
+    body: HMBColumn(
       children: [
         _commandButtons(context),
         Flexible(
           child: Form(
             key: _formKey,
-            child: Column(
+            child: HMBColumn(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

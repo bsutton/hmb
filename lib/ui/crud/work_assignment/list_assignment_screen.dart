@@ -19,6 +19,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../dialog/source_context.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'build_send_assignment_button.dart';
@@ -41,7 +42,7 @@ class AssignmentListScreen extends StatelessWidget {
         fetchList: () => DaoWorkAssignment().getByJob(parent.parent!.id),
         details: (assignment, details) => FutureBuilderEx(
           future: SupplierAndTasks.get(assignment),
-          builder: (context, supplierAndTasks) => Column(
+          builder: (context, supplierAndTasks) => HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Supplier : ${supplierAndTasks!.supplier.name}'),
@@ -59,7 +60,6 @@ class AssignmentListScreen extends StatelessWidget {
                   HMBMailToIcon(supplierAndTasks.contact.emailAddress),
                 ],
               ),
-              const SizedBox(height: 8),
               BuildSendAssignmentButton(
                 context: context,
                 mounted: context.mounted,

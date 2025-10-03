@@ -28,6 +28,7 @@ import '../../../entity/task_item_type.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../task_items/task_items.g.dart';
 import '../../widgets/hmb_toggle.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_task_item_screen.dart';
@@ -91,9 +92,10 @@ class _TaskItemListScreenState<P extends Entity<P>>
           billingType: taskAndRate?.billingType ?? BillingType.timeAndMaterial,
           hourlyRate: taskAndRate?.rate ?? MoneyEx.zero,
         ),
+        cardHeight: 220,
         details: (entity, details) {
           final taskItem = entity;
-          return Column(
+          return HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [

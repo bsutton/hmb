@@ -15,7 +15,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../widgets/hmb_button.dart';
 import '../widgets/hmb_toast.dart';
+import '../widgets/layout/layout.g.dart';
 import 'hmb_dialog.dart';
 
 class DatabaseErrorDialog extends StatelessWidget {
@@ -28,7 +30,7 @@ class DatabaseErrorDialog extends StatelessWidget {
     final theme = Theme.of(context);
 
     return HMBDialog(
-      title: Column(
+      title: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -38,26 +40,23 @@ class DatabaseErrorDialog extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
           OverflowBar(
             alignment: MainAxisAlignment.end,
             children: [
-              TextButton(
+              HMBButtonPrimary(
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: error));
                   HMBToast.error('Error copied to clipboard');
                 },
-                child: const Text('Copy Error'),
+                label: 'Copy Error',
+                hint: 'Copy the error to the clipboard',
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.secondary,
-                  foregroundColor: theme.colorScheme.onSecondary,
-                ),
+              HMBButtonSecondary(
                 onPressed: () {
                   context.go('/home/settings/backup/google/restore');
                 },
-                child: const Text('Restore Database'),
+                label: 'Restore Database',
+                hint: 'Restore the datbase from a Google Drive backup',
               ),
             ],
           ),

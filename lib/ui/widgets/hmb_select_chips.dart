@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'color_ex.dart';
 import 'hmb_chip.dart';
+import 'layout/layout.g.dart';
 
 /// Generic chip selector that works for enums or any value type.
 ///
@@ -43,7 +44,7 @@ class HMBSelectChips<T> extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       if (label.isNotEmpty)

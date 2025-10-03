@@ -19,6 +19,7 @@ import 'package:sqflite/sqlite_api.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/hmb_column.dart';
 import '../../widgets/select/select.g.dart';
 import '../base_nested/edit_nested_screen.dart';
 
@@ -112,7 +113,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
   );
 
   Widget _buildEditor() => SingleChildScrollView(
-    child: Column(
+    child: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Supplier selector
@@ -139,7 +140,6 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
           ),
         ),
 
-        const SizedBox(height: 16),
 
         // Supplier-Contact selector
         if (_selectedSupplier != null) ...[
@@ -154,7 +154,6 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
             ),
           ),
 
-          const SizedBox(height: 16),
         ],
 
         // Tasks multi-select

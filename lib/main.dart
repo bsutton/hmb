@@ -27,6 +27,7 @@ import 'package:toastification/toastification.dart';
 import 'ui/nav/nav.g.dart';
 import 'ui/widgets/blocking_ui.dart';
 import 'ui/widgets/desktop_back_gesture.dart';
+import 'ui/widgets/layout/layout.g.dart';
 import 'util/dart/log.dart';
 import 'util/flutter/hmb_theme.dart';
 import 'util/flutter/platform_ex.dart';
@@ -82,7 +83,7 @@ class HmbApp extends StatelessWidget {
       // required by [DevicePreview]
       useInheritedMediaQuery: true,
       theme: theme,
-      routerConfig: createGoRouter(_rootNavKey, _bootstrap), 
+      routerConfig: createGoRouter(_rootNavKey, _bootstrap),
       builder: (context, mainAppWindow) => DevicePreview.appBuilder(
         context,
 
@@ -99,7 +100,7 @@ class HmbApp extends StatelessWidget {
                     color: isMobile ? Colors.black : Colors.white,
                   ),
                 ),
-                child: mainAppWindow ?? const SizedBox.shrink(),
+                child: mainAppWindow ?? const HMBEmpty(),
               ),
 
               //  an overlay for blocking UI during long operations

@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao_message_template.dart';
 import '../../../entity/message_template.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/surface.dart';
 import '../../widgets/text/hmb_text_themes.dart';
 import '../base_full_screen/list_entity_screen.dart';
@@ -51,7 +52,7 @@ class SmsTemplateDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Surface(
     elevation: SurfaceElevation.e6,
-    child: Column(
+    child: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -60,7 +61,6 @@ class SmsTemplateDetails extends StatelessWidget {
             context,
           ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 4),
         Text(smsTemplate.message),
         const Divider(height: 20, thickness: 1),
         Text(

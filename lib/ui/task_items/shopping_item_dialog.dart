@@ -24,6 +24,7 @@ import '../../util/dart/fixed_ex.dart';
 import '../../util/dart/money_ex.dart';
 import '../../util/dart/types.dart';
 import '../widgets/fields/fields.g.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'task_items.g.dart';
 
@@ -79,28 +80,24 @@ Future<void> showShoppingItemDialog(
               maxHeight: MediaQuery.of(dialogCtx).size.height * 0.8,
             ),
             child: SingleChildScrollView(
-              child: Column(
+              child: HMBColumn(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (item.hasDimensions) ...[
-                    const SizedBox(height: 8),
                     Text(
                       'Dimensions: ${item.dimensions}',
                       style: Theme.of(dialogCtx).textTheme.bodyMedium,
                     ),
                   ],
-                  const SizedBox(height: 8),
                   HMBTextField(
                     controller: descriptionController,
                     labelText: 'Description',
                   ),
-                  const SizedBox(height: 8),
                   HMBTextArea(
                     controller: purposeController,
                     labelText: 'Purpose',
                     maxLines: 2,
                   ),
-                  const SizedBox(height: 8),
                   if (Strings.isNotBlank(url)) ...[
                     InkWell(
                       onTap: () async {
@@ -118,7 +115,6 @@ Future<void> showShoppingItemDialog(
                       ),
                     ),
                   ],
-                  const SizedBox(height: 8),
                   HMBDroplist<Supplier>(
                     title: 'Supplier',
                     items: (filter) => DaoSupplier().getByFilter(filter),
@@ -127,13 +123,11 @@ Future<void> showShoppingItemDialog(
                     required: false,
                     onChanged: (sup) => setState(() => selectedSupplier = sup),
                   ),
-                  const SizedBox(height: 8),
                   HMBTextField(
                     controller: costController,
                     labelText: 'Unit Cost',
                     keyboardType: TextInputType.number,
                   ),
-                  const SizedBox(height: 8),
                   HMBTextField(
                     controller: quantityController,
                     labelText: 'Quantity',

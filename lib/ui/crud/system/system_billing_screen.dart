@@ -37,6 +37,7 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/text/hmb_text_themes.dart';
@@ -203,7 +204,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   Widget build(BuildContext context) {
     if (widget.showButtons) {
       return Scaffold(
-        body: Column(
+        body: HMBColumn(
           children: [
             SaveAndClose(
               onSave: save,
@@ -231,7 +232,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
       padding: const EdgeInsets.all(16),
       child: Form(
         key: _formKey,
-        child: Column(
+        child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             HMBMoneyField(
@@ -311,7 +312,6 @@ and what forms of payment you accept.'''),
                 'Payment Link',
                 'A link to details on how the user can pay. Appears on Invoices and Quotes. e.g. https://mysite/payment.html',
               ),
-            const SizedBox(height: 20),
             HMBDroplist<LogoAspectRatio>(
               title: 'Logo Aspect Ratio',
               selectedItem: () async => _logoAspectRatio,
@@ -324,7 +324,6 @@ and what forms of payment you accept.'''),
               },
             ).help('Logo Aspect Ration', '''
 The shape of your Logo. Your logo will appear on Invoices and Quotes.'''),
-            const SizedBox(height: 20),
             HMBButton.withIcon(
               label: 'Upload Logo',
               hint:
@@ -333,14 +332,12 @@ The shape of your Logo. Your logo will appear on Invoices and Quotes.'''),
               onPressed: _pickLogo,
             ),
             if (Strings.isNotBlank(_logoFile) && exists(_logoFile!)) ...[
-              const SizedBox(height: 10),
               Image.file(
                 File(_logoFile!),
                 width: _logoAspectRatio.width.toDouble(),
                 height: _logoAspectRatio.height.toDouble(),
               ),
             ],
-            const SizedBox(height: 20),
             ListTile(
               title: const Text('Billing Colour'),
               trailing: Container(

@@ -14,6 +14,8 @@
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
 
+import '../layout/layout.g.dart';
+
 class HMBFixed extends StatelessWidget {
   final String label;
   final bool verticalPadding;
@@ -27,9 +29,9 @@ class HMBFixed extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
+    leadingSpace: verticalPadding,
     children: [
-      if (verticalPadding) const SizedBox(height: 8),
       Text(
         '$label $amount',
         style: TextStyle(fontSize: 14, color: Colors.grey[700]),

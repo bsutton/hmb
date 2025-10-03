@@ -18,6 +18,7 @@ import 'package:june/june.dart';
 
 import '../../dao/dao_job.dart';
 import '../../entity/job.dart';
+import 'layout/layout.g.dart';
 import 'select/hmb_select_job_multi.dart';
 
 class JobFilterWidget extends StatefulWidget {
@@ -49,7 +50,7 @@ class _JobFilterWidgetState extends State<JobFilterWidget> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       CheckboxListTile(

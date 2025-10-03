@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao_manufacturer.dart';
 import '../../../entity/manufacturer.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 
 class ManufacturerEditScreen extends StatefulWidget {
@@ -61,7 +62,7 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
     entityName: 'Manufacturer',
     dao: DaoManufacturer(),
     entityState: this,
-    editor: (manufacturer, {required isNew}) => Column(
+    editor: (manufacturer, {required isNew}) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         HMBTextField(

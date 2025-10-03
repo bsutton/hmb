@@ -18,6 +18,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../dialog/dialog.g.dart';
 import '../../widgets/hmb_toggle.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_task_screen.dart';
@@ -56,7 +57,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     final showCompleted = June.getState(
       ShowInActiveTasksState.new,
     )._showInActiveTasks;
-    return Column(
+    return HMBColumn(
       mainAxisSize: MainAxisSize.min,
       children: [
         Flexible(

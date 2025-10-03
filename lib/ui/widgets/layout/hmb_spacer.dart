@@ -21,5 +21,5 @@ class HMBSpacer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      SizedBox(width: width ? 16.0 : null, height: height ? 16.0 : null);
+      SizedBox(width: width ? 12.0 : null, height: height ? 12.0 : null);
 }

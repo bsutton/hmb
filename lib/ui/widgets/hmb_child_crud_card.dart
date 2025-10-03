@@ -15,7 +15,7 @@
 
 import 'package:flutter/material.dart';
 
-import 'layout/hmb_spacer.dart';
+import 'layout/layout.g.dart';
 
 class HMBChildCrudCard extends StatelessWidget {
   final Widget crudListScreen;
@@ -28,15 +28,14 @@ class HMBChildCrudCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
     children: [
-      const HMBSpacer(height: true),
       Card(
         margin: const EdgeInsets.only(bottom: 8),
         color: Colors.deepPurpleAccent,
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: Column(
+          child: HMBColumn(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

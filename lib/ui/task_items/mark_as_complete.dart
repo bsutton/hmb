@@ -22,6 +22,7 @@ import '../../entity/task_item_type.dart';
 import '../../util/flutter/flutter_util.g.dart';
 import '../crud/tool/tool.g.dart';
 import '../widgets/fields/fields.g.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/widgets.g.dart';
 import 'task_items.g.dart';
@@ -80,7 +81,7 @@ Future<void> markAsCompleted(
       builder: (context, setStateDialog) => AlertDialog(
         title: const Text('Complete Item'),
         content: SingleChildScrollView(
-          child: Column(
+          child: HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Full, wrapping description
@@ -98,14 +99,12 @@ Future<void> markAsCompleted(
 
               // Optional dimensions line
               if (taskItem.hasDimensions) ...[
-                const SizedBox(height: 8),
                 Text(
                   taskItem.dimensions,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
 
-              const SizedBox(height: 16),
 
               // Supplier droplist
               HMBDroplist<Supplier>(
@@ -121,7 +120,6 @@ Future<void> markAsCompleted(
                 },
               ),
 
-              const SizedBox(height: 16),
 
               // Cost per item field
               HMBTextField(

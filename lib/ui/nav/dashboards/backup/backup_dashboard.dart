@@ -28,6 +28,7 @@ import '../../../../database/management/backup_providers/google_drive/google_dri
 import '../../../../database/versions/versions.g.dart';
 import '../../../../src/appname.dart';
 import '../../../../util/flutter/flutter_util.g.dart';
+import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/widgets.g.dart';
 import '../dashboard.dart';
 import '../dashlet_card.dart';
@@ -161,7 +162,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         icon: Icons.save,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/backup/local/backup',
-        valueBuilder: (_, _) => const SizedBox.shrink(),
+        valueBuilder: (_, _) => const HMBEmpty(),
       ),
 
       DashletCard<void>.onTap(
@@ -285,7 +286,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         ),
       ),
       child: Center(
-        child: Column(
+        child: HMBColumn(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
@@ -296,7 +297,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 16),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 32),
               child: Text(
@@ -305,7 +305,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
                 style: TextStyle(fontSize: 18, color: Colors.white70),
               ),
             ),
-            const SizedBox(height: 32),
             HMBButton.withIcon(
               icon: const Icon(Icons.login, color: Colors.white),
               label: 'Sign in to Google',
@@ -366,7 +365,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       child: const Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
+          child: HMBColumn(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
@@ -377,7 +376,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
                   color: Colors.white,
                 ),
               ),
-              SizedBox(height: 16),
               Text(
                 'Google Drive backup is not supported on Linux or Windows.',
                 textAlign: TextAlign.center,
@@ -397,10 +395,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     setState(() {});
   }
 
-  Widget _syncPhotoBuilder() => Column(
+  Widget _syncPhotoBuilder() => HMBColumn(
     children: [
       if (_photoStageDescription.isNotEmpty) ...[
-        const SizedBox(height: 8),
         Text(_photoStageDescription, style: const TextStyle(fontSize: 16)),
       ],
       if (!_isDbOffline && !_syncRunning)

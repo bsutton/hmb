@@ -21,7 +21,7 @@ import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../../util/dart/format.dart';
 import '../../util/flutter/app_title.dart';
-import '../widgets/layout/hmb_spacer.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/select/select.g.dart';
 import '../widgets/widgets.g.dart';
 import 'list_packing_screen.dart';
@@ -160,11 +160,11 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
   Widget build(BuildContext context) => Scaffold(
     body: Surface(
       elevation: SurfaceElevation.e6,
-      child: Column(
+      child: HMBColumn(
         children: [
           Padding(
             padding: const EdgeInsets.all(8),
-            child: Column(
+            child: HMBColumn(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
@@ -272,9 +272,8 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
     padding: const EdgeInsets.all(16),
     shrinkWrap: true,
     children: [
-      Column(
+      HMBColumn(
         children: [
-          const SizedBox(height: 8),
           HMBSearch(
             key: _searchKey,
             onSearch: (f) async {
@@ -293,7 +292,6 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
           await _loadTaskItems();
         },
       ).help('Filter by Supplier', 'Only show items for the chosen supplier'),
-      const SizedBox(height: 16),
       HMBDroplist<ScheduleFilter>(
         key: _scheduleKey,
         selectedItem: () async => _selectedScheduleFilter,

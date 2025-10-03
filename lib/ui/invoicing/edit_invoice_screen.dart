@@ -33,7 +33,7 @@ import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_icon_button.dart';
 import '../widgets/hmb_toast.dart';
-import '../widgets/layout/hmb_list_page.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/surface.dart';
 import 'edit_invoice_line_dialog.dart';
 import 'invoice_details.dart';
@@ -84,7 +84,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
           padding: const EdgeInsets.all(16),
           child: Surface(
             elevation: SurfaceElevation.e6,
-            child: Column(
+            child: HMBColumn(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -97,8 +97,7 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 Text('Customer: ${customer?.name ?? "N/A"}'),
                 Text('Job: ${job.summary} #${job.id}'),
                 Text('Total: ${invoice.totalAmount}'),
-                const SizedBox(height: 16),
-                Row(
+                HMBRow(
                   children: [
                     HMBButton(
                       label: 'Upload to Xero',
@@ -109,8 +108,6 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                         }, label: 'Uploading Invoice');
                       },
                     ),
-                    const SizedBox(width: 16),
-                    const SizedBox(width: 16),
                     BuildSendButton(
                       context: context,
                       mounted: mounted,
@@ -118,14 +115,12 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
                 // Show all line groups and lines inline
                 for (final group in lineGroups) ...[
                   Text(
                     group.group.name,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
                   for (final line in group.lines) ...[
                     HMBListCard(
                       title: line.description,
@@ -152,7 +147,6 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                       ],
                     ),
                   ],
-                  const SizedBox(height: 16),
                 ],
               ],
             ),

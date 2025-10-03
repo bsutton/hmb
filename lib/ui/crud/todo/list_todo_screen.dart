@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../dao/dao_todo.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/flutter/flutter_util.g.dart';
+import '../../widgets/layout/layout.g.dart' show HMBColumn;
 import '../../widgets/text/text.g.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
@@ -76,7 +77,7 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
   }
 
   Widget _buildFilterSheet(BuildContext context, void Function() onChange) =>
-      Column(
+      HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HMBSelectChips<ToDoStatus>(

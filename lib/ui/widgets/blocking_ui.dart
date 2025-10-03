@@ -26,7 +26,7 @@ import 'package:stacktrace_impl/stacktrace_impl.dart';
 import '../../util/dart/stack_list.dart';
 import '../../util/flutter/hmb_theme.dart';
 import 'color_ex.dart';
-import 'layout/position.dart';
+import 'layout/layout.g.dart';
 import 'text/hmb_text_themes.dart';
 import 'tick_builder.dart';
 
@@ -99,8 +99,7 @@ class BlockingOverlay extends StatelessWidget {
       // ignore: discarded_futures
       future: blockingOverlayState.waitForAllActions,
       waitingBuilder: (context) => _BlockingOverlayWidget(blockingOverlayState),
-      builder: (context, _) =>
-          const SizedBox.shrink(), // widget.builder(context),
+      builder: (context, _) => const HMBEmpty(),
     ),
   );
 }
@@ -155,7 +154,7 @@ class _BlockingOverlayWidgetState extends State<_BlockingOverlayWidget> {
   @override
   Widget build(BuildContext context) {
     if (!widget.blockingOverlayState.blocked) {
-      return const SizedBox.shrink();
+      return const HMBEmpty();
     }
     return Material(
       type: MaterialType.transparency, // ensures no background is painted

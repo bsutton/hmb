@@ -19,6 +19,7 @@ import '../../../util/dart/types.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../color_ex.dart';
 import '../hmb_icon_button.dart';
+import '../layout/layout.g.dart';
 import '../surface.dart';
 
 class HMBDroplistDialog<T> extends StatefulWidget {
@@ -84,7 +85,7 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
   @override
   Widget build(BuildContext context) => Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    child: Column(
+    child: HMBColumn(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
@@ -163,7 +164,6 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
             ),
           ),
         if (widget.showSearch) _buildSearch(),
-        const SizedBox(height: 16),
       ],
     ),
   );

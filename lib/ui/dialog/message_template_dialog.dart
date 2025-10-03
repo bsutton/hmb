@@ -18,6 +18,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../entity/message_template.dart';
 import '../../dao/dao_message_template.dart';
 import '../widgets/hmb_button.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'message_placeholders/noop_source.dart';
 import 'message_placeholders/place_holder.dart';
@@ -172,13 +173,13 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Message Template')),
-    body: Column(
+    body: HMBColumn(
       children: [
         // The top part with template selection and placeholders
         Flexible(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: Column(
+            child: HMBColumn(
               children: [
                 HMBDroplist<MessageTemplate>(
                   title: 'Choose a template',
@@ -198,7 +199,6 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
                     setState(() {});
                   },
                 ),
-                const SizedBox(height: 20),
                 if (_selectedTemplate != null) _buildSourceWidgets(),
               ],
             ),
@@ -291,7 +291,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
     ),
   );
 
-  Column _buildSourceWidgets() {
+  Widget _buildSourceWidgets() {
     final uniqueWidgets = <String, Widget>{};
 
     for (final placeholder in placeholders.values) {
@@ -302,7 +302,7 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
       }
     }
 
-    return Column(children: uniqueWidgets.values.toList());
+    return HMBColumn(children: uniqueWidgets.values.toList());
   }
 
   void _refreshPreview() {

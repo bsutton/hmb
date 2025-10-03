@@ -17,6 +17,7 @@ import '../../../../../dao/dao.g.dart';
 import '../../../../../entity/entity.g.dart';
 import '../../../../../util/flutter/flutter_util.g.dart';
 import '../../../../scheduling/schedule_page.dart';
+import '../../../../widgets/layout/layout.g.dart';
 import '../../dashlet_card.dart';
 
 class NextJobDashlet extends StatelessWidget {
@@ -34,7 +35,7 @@ class NextJobDashlet extends StatelessWidget {
         return Text('—', style: Theme.of(ctx).textTheme.titleSmall);
       }
       final date = formatDate(dv.value!.start.toLocal(), format: 'D h:i');
-      return Column(
+      return HMBColumn(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(date, style: Theme.of(ctx).textTheme.titleSmall),

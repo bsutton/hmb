@@ -20,6 +20,7 @@ import 'package:strings/strings.dart';
 
 import '../desktop_back_gesture_suppress.dart';
 import '../hmb_toast.dart';
+import '../layout/layout.g.dart';
 
 class FullScreenPhotoViewer extends StatelessWidget {
   final String imagePath;
@@ -51,7 +52,7 @@ class FullScreenPhotoViewer extends StatelessWidget {
           top: 40,
           left: 20,
           right: 20,
-          child: Column(
+          child: HMBColumn(
             children: [
               /// title
               Text(

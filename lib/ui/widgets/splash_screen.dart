@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import '../../util/flutter/flutter_types.dart';
 import '../../util/flutter/hmb_theme.dart';
 import '../dialog/database_error_dialog.dart';
+import 'layout/layout.g.dart';
 import 'widgets.g.dart';
 
 // ignore: omit_obvious_property_types
@@ -56,7 +57,7 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
           // Centered app branding
           Center(
-            child: Column(
+            child: HMBColumn(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
@@ -67,7 +68,6 @@ class _SplashScreenState extends State<SplashScreen> {
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 12),
                 Text(
                   'Getting things ready...',
                   style: TextStyle(
@@ -82,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen> {
           BlockingUITransition(
             // key: _blockingUIKey,
             slowAction: () => widget.bootstrap(context),
-            builder: (context, _) => const SizedBox.shrink(),
+            builder: (context, _) => const HMBEmpty(),
             errorBuilder: (context, error) =>
                 DatabaseErrorDialog(error: error.toString()),
           ),

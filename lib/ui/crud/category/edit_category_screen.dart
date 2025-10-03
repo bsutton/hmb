@@ -17,6 +17,7 @@ import '../../../dao/dao_category.dart';
 import '../../../entity/category.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../base_full_screen/edit_entity_screen.dart';
 
 class CategoryEditScreen extends StatefulWidget {
@@ -58,7 +59,7 @@ class _CategoryEditScreenState extends State<CategoryEditScreen>
     entityName: 'Category',
     dao: DaoCategory(),
     entityState: this,
-    editor: (category, {required isNew}) => Column(
+    editor: (category, {required isNew}) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         HMBTextField(

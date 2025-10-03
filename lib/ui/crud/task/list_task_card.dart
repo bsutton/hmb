@@ -19,6 +19,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../widgets/hmb_start_time_entry.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_text.dart';
 import '../job/edit_job_card.dart';
 
@@ -57,7 +58,7 @@ class _ListTaskCardState extends State<ListTaskCard> {
     }
   }
 
-  Column _buildFullTaskDetails() => Column(
+  Widget _buildFullTaskDetails() => HMBColumn(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -89,7 +90,7 @@ class _ListTaskCardState extends State<ListTaskCard> {
     ],
   );
 
-  Column _buildTaskSummary(Task task) => Column(
+  Widget _buildTaskSummary(Task task) => HMBColumn(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [

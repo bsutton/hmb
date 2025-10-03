@@ -147,7 +147,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: HMBColours.background,
     body: Surface(
-      child: Column(
+      child: HMBColumn(
         children: [
           HMBFilterLine(
             lineBuilder: _buildSearchLine,
@@ -220,7 +220,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
     },
   );
 
-  Widget _buildFilter(BuildContext context) => Column(
+  Widget _buildFilter(BuildContext context) => HMBColumn(
     children: [
       Padding(
         padding: const EdgeInsets.all(8),
@@ -301,7 +301,7 @@ Packing items are taken from Task items that are marked as "${TaskItemType.mater
                 future: JobDetail.get(itemContext.task),
                 builder: (context, jobDetail) {
                   final jd = jobDetail!;
-                  return Column(
+                  return HMBColumn(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       HMBTextLine('Customer: ${jd.customer.name}'),

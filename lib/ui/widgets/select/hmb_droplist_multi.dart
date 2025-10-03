@@ -17,8 +17,7 @@ import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 
 import '../../../util/flutter/hmb_theme.dart';
-import '../layout/hmb_placeholder.dart';
-import '../layout/labeled_container.dart';
+import '../layout/layout.g.dart';
 import '../surface.dart';
 import 'hmb_droplist_multi_dialog.dart';
 
@@ -97,7 +96,7 @@ class HMBDroplistMultiSelectState<T>
         }
         return null;
       },
-      builder: (state) => Column(
+      builder: (state) => HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           GestureDetector(
@@ -123,7 +122,7 @@ class HMBDroplistMultiSelectState<T>
               backgroundColor:
                   widget.backgroundColor ?? SurfaceElevation.e4.color,
               isError: state.hasError,
-              child: Row(
+              child: HMBRow(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
@@ -142,7 +141,6 @@ class HMBDroplistMultiSelectState<T>
                       // maxLines: null,              // unlimited lines (default)
                     ),
                   ),
-                  const SizedBox(width: 8),
                   const Icon(
                     Icons.arrow_drop_down,
                     color: HMBColors.dropboxArrow,

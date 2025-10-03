@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../hmb_button.dart';
+import '../layout/layout.g.dart';
 
 /// A bottom sheet wrapper that displays dynamic filter content.
 ///
@@ -36,7 +37,7 @@ class _HMBFilterSheetState extends State<HMBFilterSheet> {
       top: widget.padding.top,
       bottom: MediaQuery.of(context).viewInsets.bottom + widget.padding.bottom,
     ),
-    child: Column(
+    child: HMBColumn(
       mainAxisSize: MainAxisSize.min,
       children: [
         // dynamic filter fields
@@ -44,7 +45,6 @@ class _HMBFilterSheetState extends State<HMBFilterSheet> {
 
         // optional clear-all button
         if (widget.onReset != null) ...[
-          const SizedBox(height: 16),
           // alignment: Alignment.centerRight,
           SizedBox(
             width: double.infinity,

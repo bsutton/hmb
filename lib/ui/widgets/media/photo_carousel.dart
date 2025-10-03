@@ -22,7 +22,7 @@ import 'package:photo_view/photo_view.dart';
 
 import '../../../util/dart/photo_meta.dart';
 import '../desktop_back_gesture_suppress.dart';
-import '../layout/hmb_spacer.dart';
+import '../layout/layout.g.dart';
 import '../text/hmb_text_themes.dart';
 
 class PhotoCarousel extends StatefulWidget {
@@ -109,7 +109,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
               await _handleScroll(event.scrollDelta.dy);
             }
           },
-          child: Column(
+          child: HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildTitle(context),

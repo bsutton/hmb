@@ -23,7 +23,7 @@ import '../../ui/widgets/hmb_toast.dart';
 import '../../util/dart/format.dart';
 import '../widgets/fields/hmb_text_area.dart';
 import '../widgets/hmb_button.dart';
-import '../widgets/layout/hmb_spacer.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/text/hmb_text.dart';
 import 'hmb_dialog.dart';
 import 'long_duration_dialog.dart';
@@ -96,14 +96,13 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
     noteController.text = widget.timeEntry.note ?? '';
 
     return HMBDialog(
-      title: const Row(
+      title: const HMBRow(
         children: [
           Icon(Icons.stop, color: Colors.red),
-          SizedBox(width: 8),
           Text('Stop Timer'),
         ],
       ),
-      content: Column(
+      content: HMBColumn(
         mainAxisSize: MainAxisSize.min,
         children: [
           HMBText('Current Time: ${formatDateTime(DateTime.now())}'),
@@ -181,19 +180,19 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
     );
   }
 
-  Widget buildTaskDetails() => Column(
+  Widget buildTaskDetails() => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       FutureBuilderEx(
         // ignore: discarded_futures
         future: DaoJob().getById(widget.task.jobId),
-        builder: (context, job) => Column(
+        builder: (context, job) => HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FutureBuilderEx(
               // ignore: discarded_futures
               future: DaoCustomer().getById(job!.customerId),
-              builder: (context, customer) => Column(
+              builder: (context, customer) => HMBColumn(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   HMBText('Customer: ${customer!.name}', bold: true),
@@ -204,7 +203,6 @@ class _StopTimerDialogState extends State<StopTimerDialog> {
           ],
         ),
       ),
-      const SizedBox(height: 8),
       HMBText('Task: ${widget.task.name}', bold: true),
       HMBText(widget.task.description),
     ],

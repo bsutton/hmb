@@ -14,6 +14,7 @@
 import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:intl/intl.dart';
 
+import 'layout/layout.g.dart';
 import 'stateful_builder.dart';
 import 'text/hmb_text.dart';
 
@@ -180,19 +181,17 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
 
       if (narrow) {
         // Phone-width: put label on its own line, then the fields.
-        return Column(
+        return HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             HMBText(widget.label, bold: true),
-            const SizedBox(height: 8),
-            Row(
+            HMBRow(
               children: [
                 if (widget.mode != HMBDateTimeFieldMode.timeOnly)
                   Expanded(child: dateField()),
                 if (widget.mode == HMBDateTimeFieldMode.dateAndTime)
-                  const SizedBox(width: 8),
-                if (widget.mode != HMBDateTimeFieldMode.dateOnly)
-                  Expanded(child: timeField()),
+                  if (widget.mode != HMBDateTimeFieldMode.dateOnly)
+                    Expanded(child: timeField()),
               ],
             ),
           ],
@@ -201,15 +200,13 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
 
       // Wide screens: keep your original row, but it will only render when
       // there's enough space so it won't overflow.
-      return Row(
+      return HMBRow(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           HMBText(widget.label, bold: true),
-          const SizedBox(width: 8),
           if (widget.mode != HMBDateTimeFieldMode.timeOnly) dateField(),
           if (widget.mode == HMBDateTimeFieldMode.dateAndTime)
-            const SizedBox(width: 8),
-          if (widget.mode != HMBDateTimeFieldMode.dateOnly) timeField(),
+            if (widget.mode != HMBDateTimeFieldMode.dateOnly) timeField(),
         ],
       );
     },

@@ -26,10 +26,12 @@ import '../../../entity/milestone.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../invoicing/edit_invoice_screen.dart';
 import '../../invoicing/invoice_details.dart';
+import '../../widgets/fields/fields.g.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_icon_button.dart';
 import '../../widgets/hmb_link_internal.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/layout/layout.g.dart';
 
 class MilestoneTile extends StatefulWidget {
   final Milestone milestone;
@@ -185,7 +187,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: ListTile(
           title: Text('Milestone ${widget.milestone.milestoneNumber}'),
-          subtitle: Column(
+          subtitle: HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (widget.milestone.invoiceId != null)
@@ -206,20 +208,19 @@ class _MilestoneTileState extends State<MilestoneTile> {
                           );
                   },
                 ),
-              TextField(
+              HMBTextField(
                 controller: descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
+                labelText: 'Description',
                 enabled: _isEditable && !disabled,
                 onChanged: (_) => _onDescriptionChanged(),
               ),
-              Row(
+              HMBRow(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: HMBTextField(
                       controller: percentageController,
-                      decoration: const InputDecoration(
-                        labelText: 'Percentage',
-                      ),
+                      labelText: 'Percentage',
+
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
@@ -232,11 +233,10 @@ class _MilestoneTileState extends State<MilestoneTile> {
                       onChanged: (_) => _onPercentageChanged(),
                     ),
                   ),
-                  const SizedBox(width: 16),
                   Expanded(
-                    child: TextField(
+                    child: HMBTextField(
                       controller: amountController,
-                      decoration: const InputDecoration(labelText: 'Amount'),
+                      labelText: 'Amount',
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),

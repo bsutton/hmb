@@ -20,14 +20,13 @@ import 'package:strings/strings.dart';
 import '../../../dao/dao_system.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../widgets/fields/hmb_text_field.dart';
-import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 
 class XeroIntegrationScreen extends StatefulWidget {
   final bool showButtons;
-  
-  const XeroIntegrationScreen({super.key, this.showButtons = true});
 
+  const XeroIntegrationScreen({super.key, this.showButtons = true});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -112,19 +111,14 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
     final form = _buildForm();
     if (widget.showButtons) {
       return Scaffold(
-        body: Column(
+        body: HMBColumn(
           children: [
             SaveAndClose(
               onSave: save,
               showSaveOnly: false,
               onCancel: () async => context.pop(),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: ListView(children: [form]),
-              ),
-            ),
+            Expanded(child: ListView(children: [form])),
           ],
         ),
       );
@@ -135,7 +129,7 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
 
   Form _buildForm() => Form(
     key: _formKey,
-    child: Column(
+    child: HMBColumn(
       children: [
         const Text('Enable Xero integration to upload Invoices to Xero'),
         const HMBSpacer(height: true),

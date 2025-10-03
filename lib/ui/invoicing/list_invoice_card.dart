@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../../util/dart/format.dart';
 import '../crud/job/full_page_list_job_card.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
 import 'invoice_details.dart';
 
@@ -30,7 +31,7 @@ class ListInvoiceCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(

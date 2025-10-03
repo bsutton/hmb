@@ -20,6 +20,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../widgets/fields/fields.g.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_controller.dart';
 import '../../widgets/select/hmb_select_job.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
@@ -123,7 +124,7 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
     ),
   );
 
-  Widget _buildEditor() => Column(
+  Widget _buildEditor() => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       // Date
@@ -174,8 +175,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         focusNode: _taxExFocus,
       ),
 
-      const SizedBox(height: 16),
-
       // Photos
       PhotoCrud<Receipt>(
         key: ValueKey(currentEntity?.id),
@@ -183,7 +182,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
         parentType: ParentType.receipt,
         controller: _photoCtrl,
       ),
-      const SizedBox(height: 16),
     ],
   );
 

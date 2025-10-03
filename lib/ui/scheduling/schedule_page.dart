@@ -29,7 +29,7 @@ import '../../util/dart/local_date.dart';
 import '../../util/flutter/app_title.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/hmb_toggle.dart';
-import '../widgets/layout/hmb_spacer.dart';
+import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_droplist.dart';
 import 'day_schedule.dart'; // Our DaySchedule stateful widget
 import 'desktop_swipe.dart';
@@ -208,7 +208,7 @@ class SchedulePageState extends DeferredState<SchedulePage> {
     appBar: widget.dialogMode ? AppBar() : null,
     body: DeferredBuilder(
       this,
-      builder: (context) => Column(
+      builder: (context) => HMBColumn(
         children: [
           _navigationRow(),
           Expanded(

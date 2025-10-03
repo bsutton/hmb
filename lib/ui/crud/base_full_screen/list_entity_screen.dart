@@ -22,7 +22,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../dialog/dialog.g.dart';
-import '../../widgets/layout/hmb_row.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_filter_line.dart';
 import '../../widgets/widgets.g.dart';
 
@@ -277,6 +277,15 @@ class EntityListScreenState<T extends Entity<T>>
     );
   }
 
+  Widget _buildEditButton(T entity, BuildContext context) => HMBIconButton(
+    icon: const Icon(Icons.edit, color: Colors.blue),
+    showBackground: false,
+    onPressed: () async {
+      _edit(entity, context);
+    },
+    hint: 'Edit this ${widget.entityNameSingular}',
+  );
+
   Widget _buildDeleteButton(T entity) => HMBIconButton(
     icon: const Icon(Icons.delete, color: Colors.red),
     showBackground: false,
@@ -292,62 +301,67 @@ class EntityListScreenState<T extends Entity<T>>
         // ignore: discarded_futures
         widget.background?.call(entity) ??
         Future.value(SurfaceElevation.e6.color),
-    builder: (context, cardColor) => GestureDetector(
-      onTap: () async {
-        /// make certain we have the latest version of the entity
-        /// becuase some action from the list card could have
-        /// changed it.
-        final currentEntity = await widget.dao.getById(entity.id);
-        if (context.mounted) {
-          // Navigate to the edit screen
-          final updatedEntity = await Navigator.push<T?>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => widget.onEdit(currentEntity),
-            ),
-          );
-          // If user successfully saved or created a new entity
-          if (updatedEntity != null) {
-            _partialRefresh(updatedEntity);
-          }
-        }
-      },
-      child: Surface(
-        elevation: SurfaceElevation.e6,
-        margin: const EdgeInsets.only(bottom: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: FutureBuilderEx(
-                    future:
-                        ((widget.listCardTitle is Future)
-                                // ignore: discarded_futures
-                                ? widget.listCardTitle(entity)
-                                // ignore: discarded_futures
-                                : Future.value(widget.listCardTitle(entity)))
-                            as Future<Widget>,
-                    builder: (context, title) => title!,
+    builder: (context, cardColor) =>
+        // GestureDetector(
+        //   onTap: () async {
+        //     await _edit(entity, context);
+        //   },
+        //   child:
+        Surface(
+          elevation: SurfaceElevation.e6,
+          margin: const EdgeInsets.only(bottom: 8),
+          child: HMBColumn(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: FutureBuilderEx(
+                      future:
+                          ((widget.listCardTitle is Future)
+                                  // ignore: discarded_futures
+                                  ? widget.listCardTitle(entity)
+                                  // ignore: discarded_futures
+                                  : Future.value(widget.listCardTitle(entity)))
+                              as Future<Widget>,
+                      builder: (context, title) => title!,
+                    ),
                   ),
-                ),
-                _actionMenu(entity),
-              ],
-            ),
-            // Body (details)
-            Expanded(child: widget.listCard(entity)),
-          ],
+                  _actionMenu(entity),
+                ],
+              ),
+              // Body (details)
+              Expanded(child: widget.listCard(entity)),
+            ],
+          ),
+          // ),
         ),
-      ),
-    ),
   );
+
+  Future<void> _edit(T entity, BuildContext context) async {
+    /// make certain we have the latest version of the entity
+    /// becuase some action from the list card could have
+    /// changed it.
+    final currentEntity = await widget.dao.getById(entity.id);
+    if (context.mounted) {
+      // Navigate to the edit screen
+      final updatedEntity = await Navigator.push<T?>(
+        context,
+        MaterialPageRoute(builder: (context) => widget.onEdit(currentEntity)),
+      );
+      // If user successfully saved or created a new entity
+      if (updatedEntity != null) {
+        _partialRefresh(updatedEntity);
+      }
+    }
+  }
 
   Widget _actionMenu(T entity) => HMBRow(
     children: [
       ...widget.buildActionItems?.call(entity) ?? [],
+      _buildEditButton(entity, context),
       _buildDeleteButton(entity),
     ],
   );

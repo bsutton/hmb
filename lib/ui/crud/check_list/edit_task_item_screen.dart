@@ -35,6 +35,7 @@ import '../../../util/dart/money_ex.dart';
 import '../../../util/flutter/platform_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
 import '../base_nested/edit_nested_screen.dart';
@@ -197,7 +198,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       onInsert: (taskItem, transaction) =>
           DaoTaskItem().insert(taskItem!, transaction),
       entityState: this,
-      editor: (taskItem) => Column(
+      editor: (taskItem) => HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           HMBTextField(
@@ -420,7 +421,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     ),
   ];
 
-  Widget _buildMarginAndChargeFields() => Column(
+  Widget _buildMarginAndChargeFields() => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       HMBTextField(

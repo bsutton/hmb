@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../../../util/dart/types.dart';
 import '../hmb_icon_button.dart';
+import 'layout.g.dart';
 
 typedef OnDelete = AsyncVoidCallback;
 typedef OnEdit = Widget Function();
@@ -48,7 +49,7 @@ class HMBCrudListCard extends StatelessWidget {
     child: Card(
       semanticContainer: false,
       elevation: 2,
-      child: Column(
+      child: HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(

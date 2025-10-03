@@ -21,6 +21,7 @@ import '../../../ui/widgets/hmb_toast.dart';
 import '../../../util/dart/types.dart';
 import '../blocking_ui.dart';
 import '../desktop_back_gesture_suppress.dart';
+import '../layout/layout.g.dart';
 
 typedef SendEmailDialog =
     Widget Function({
@@ -103,7 +104,7 @@ class PdfPreviewScreen extends StatelessWidget {
       ],
     ),
     body: Center(
-      child: Column(
+      child: HMBColumn(
         children: [
           Expanded(
             child: BlockingUITransition<Widget>(

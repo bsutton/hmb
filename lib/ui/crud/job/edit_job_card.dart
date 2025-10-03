@@ -37,9 +37,7 @@ import '../../widgets/help_button.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_chip.dart';
 import '../../widgets/hmb_toast.dart';
-import '../../widgets/layout/hmb_column.dart';
-import '../../widgets/layout/hmb_form_section.dart';
-import '../../widgets/layout/hmb_spacer.dart';
+import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_gallery.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import '../../widgets/select/hmb_select_contact.dart';
@@ -126,7 +124,6 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const HMBSpacer(height: true),
         HMBFormSection(
           children: [
             _showSummary(),
@@ -272,10 +269,9 @@ You can set a default booking fee from System | Billing screen''');
 
   Widget _chooseStatus(Job? job) => Padding(
     padding: const EdgeInsets.only(top: 8, bottom: 8),
-    child: Row(
+    child: HMBRow(
       children: [
         const Text('Status:', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(width: 8),
         JuneBuilder(
           SelectJobStatus.new,
           builder: (selectedJobStatus) => HMBChip(
@@ -284,7 +280,6 @@ You can set a default booking fee from System | Billing screen''');
                 JobStatus.startingStatus.displayName,
           ),
         ),
-        const HMBSpacer(width: true),
         HMBButton(
           enabled: job != null,
           label: 'Update',
@@ -414,11 +409,10 @@ You can set a default booking fee from System | Billing screen''');
             June.getState(ActivityJobsState.new).setState();
             await _checkIfScheduled();
           },
-          child: Row(
+          child: HMBRow(
             children: [
               if (nextActivity != null)
                 Circle(color: nextActivity.status.color, child: const Text('')),
-              const SizedBox(width: 5),
               Text(
                 'Next: $nextWhen',
                 style: TextStyle(
@@ -449,10 +443,9 @@ You can set a default booking fee from System | Billing screen''');
           for (final a in activities)
             SimpleDialogOption(
               onPressed: () => Navigator.of(context).pop(a),
-              child: Row(
+              child: HMBRow(
                 children: [
                   Circle(color: a.status.color, child: const Text('')),
-                  const SizedBox(width: 5),
                   Text(
                     _activityDisplay(a),
                     style: TextStyle(
@@ -495,7 +488,7 @@ You can set a default booking fee from System | Billing screen''');
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Expanded(
-        child: Column(
+        child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const HMBText('Description:', bold: true),
@@ -529,7 +522,7 @@ You can set a default booking fee from System | Billing screen''');
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Expanded(
-        child: Column(
+        child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const HMBText('Internal Notes:', bold: true),
@@ -563,7 +556,7 @@ You can set a default booking fee from System | Billing screen''');
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Expanded(
-        child: Column(
+        child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const HMBText('Assumption:', bold: true).help(
@@ -606,7 +599,7 @@ You can set a default booking fee from System | Billing screen''');
         insetPadding: const EdgeInsets.all(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
+          child: HMBColumn(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -618,7 +611,6 @@ You can set a default booking fee from System | Billing screen''');
                   focusNode: FocusNode(),
                 ),
               ),
-              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
