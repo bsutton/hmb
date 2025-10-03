@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../util/dart/types.dart';
+import '../widgets/hmb_edit_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
 import 'item_card_common.dart';
@@ -40,29 +41,29 @@ abstract class ShoppingItemCard extends StatelessWidget {
   Widget buildActions(BuildContext context, CustomerAndJob det);
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: () => showShoppingItemDialog(context, itemContext, onReload),
-    child: SurfaceCard(
+  Widget build(BuildContext context) => FutureBuilderEx<CustomerAndJob>(
+    future: CustomerAndJob.fetch(itemContext),
+    builder: (context, details) => SurfaceCardWitActions(
       title: itemContext.taskItem.description,
-      height: 260,
-      body: FutureBuilderEx<CustomerAndJob>(
-        future: CustomerAndJob.fetch(itemContext),
-        builder: (_, details) {
-          final det = details!;
-          return HMBRow(
-            children: [
-              // <-- Make the text column take all available space
-              Expanded(
-                child: ItemCardCommon(
-                  customerAndJob: det,
-                  taskItem: itemContext.taskItem,
-                ),
-              ),
-              // <-- Action buttons stay at their intrinsic size
-              buildActions(context, det),
-            ],
-          );
-        },
+      actions: [
+        buildActions(context, details!),
+        HMBEditIcon(
+          onPressed: () =>
+              showShoppingItemDialog(context, itemContext, onReload),
+          hint: 'Edit Item',
+        ),
+      ],
+      height: 288,
+      body: HMBRow(
+        children: [
+          // <-- Make the text column take all available space
+          Expanded(
+            child: ItemCardCommon(
+              customerAndJob: details,
+              taskItem: itemContext.taskItem,
+            ),
+          ),
+        ],
       ),
     ),
   );
