@@ -184,99 +184,134 @@ class _MilestoneTileState extends State<MilestoneTile> {
     return Opacity(
       opacity: disabled ? 0.5 : 1.0,
       child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: ListTile(
-          title: Text('Milestone ${widget.milestone.milestoneNumber}'),
-          subtitle: HMBColumn(
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: // ... inside build(), replace the whole HMBRow(children:[ Expanded(...), HMBRow(...actions) ]) with:
+          HMBRow(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (widget.milestone.invoiceId != null)
-                FutureBuilderEx<Invoice?>(
-                  future: DaoInvoice().getById(widget.milestone.invoiceId),
-                  builder: (context, invoice) {
-                    final inv = invoice;
-                    return inv == null
-                        ? const Text('Not Invoiced')
-                        // Make invoice number clickable to open
-                        // InvoiceEditScreen
-                        : HMBLinkInternal(
-                            label: 'Invoice: ${inv.bestNumber}',
-                            navigateTo: () async {
-                              final details = await InvoiceDetails.load(inv.id);
-                              return InvoiceEditScreen(invoiceDetails: details);
-                            },
-                          );
-                  },
-                ),
-              HMBTextField(
-                controller: descriptionController,
-                labelText: 'Description',
-                enabled: _isEditable && !disabled,
-                onChanged: (_) => _onDescriptionChanged(),
-              ),
-              HMBRow(
-                children: [
-                  Expanded(
-                    child: HMBTextField(
-                      controller: percentageController,
-                      labelText: 'Percentage',
+              // LEFT: content fills all available width
+              Expanded(
+                child: HMBColumn(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ===== HEADER: title + actions (on the same row) =====
+                    HMBRow(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Milestone ${widget.milestone.milestoneNumber}',
+                            style: Theme.of(context).textTheme.titleMedium,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // Tight actions cluster
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_isInEditMode)
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.save,
+                                  color: Colors.green,
+                                ),
+                                onPressed: disabled ? null : _onSavePressed,
+                                tooltip: 'Save changes',
+                              )
+                            else ...[
+                              if (_isEditable)
+                                HMBButtonAdd(
+                                  onAdd: disabled ? null : _onInvoicePressed,
+                                  enabled: true,
+                                  small: true,
+                                  hint: 'Invoice this Milestone',
+                                ),
+                              if (_isEditable) const SizedBox(width: 8),
+                              if (_isEditable)
+                                HMBDeleteIcon(
+                                  enabled: !disabled,
+                                  onPressed: () async => _onDeletePressed(),
+                                  hint: 'Delete this Milestone',
+                                ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
 
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
+                    // ===== Optional invoice link below header =====
+                    if (widget.milestone.invoiceId != null)
+                      FutureBuilderEx<Invoice?>(
+                        future: DaoInvoice().getById(
+                          widget.milestone.invoiceId,
+                        ),
+                        builder: (context, invoice) {
+                          final inv = invoice;
+                          return inv == null
+                              ? const Text('Not Invoiced')
+                              : HMBLinkInternal(
+                                  label: 'Invoice: ${inv.bestNumber}',
+                                  navigateTo: () async {
+                                    final details = await InvoiceDetails.load(
+                                      inv.id,
+                                    );
+                                    return InvoiceEditScreen(
+                                      invoiceDetails: details,
+                                    );
+                                  },
+                                );
+                        },
                       ),
+
+                    // ===== Fields take the full width =====
+                    HMBTextField(
+                      controller: descriptionController,
+                      labelText: 'Description',
                       enabled: _isEditable && !disabled,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d*\.?\d*'),
+                      onChanged: (_) => _onDescriptionChanged(),
+                    ),
+                    HMBRow(
+                      children: [
+                        Expanded(
+                          child: HMBTextField(
+                            controller: percentageController,
+                            labelText: 'Percentage',
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            enabled: _isEditable && !disabled,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d*\.?\d*'),
+                              ),
+                            ],
+                            onChanged: (_) => _onPercentageChanged(),
+                          ),
+                        ),
+                        Expanded(
+                          child: HMBTextField(
+                            controller: amountController,
+                            labelText: 'Amount',
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            enabled: _isEditable && !disabled,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d*\.?\d*'),
+                              ),
+                            ],
+                            onChanged: (_) => _onAmountChanged(),
+                          ),
                         ),
                       ],
-                      onChanged: (_) => _onPercentageChanged(),
                     ),
-                  ),
-                  Expanded(
-                    child: HMBTextField(
-                      controller: amountController,
-                      labelText: 'Amount',
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      enabled: _isEditable && !disabled,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d*\.?\d*'),
-                        ),
-                      ],
-                      onChanged: (_) => _onAmountChanged(),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
-          ),
-          trailing: Wrap(
-            spacing: 8,
-            children: [
-              if (_isInEditMode)
-                IconButton(
-                  icon: const Icon(Icons.save, color: Colors.green),
-                  onPressed: disabled ? null : _onSavePressed,
-                  tooltip: 'Save changes',
-                )
-              else ...[
-                if (_isEditable)
-                  HMBButtonAdd(
-                    onAdd: disabled ? null : _onInvoicePressed,
-                    enabled: true,
-                    small: true,
-                    hint: 'Invoice this Milestone',
-                  ),
-                if (_isEditable)
-                  HMBDeleteIcon(
-                    enabled: !disabled,
-                    onPressed: () async => _onDeletePressed(),
-                    hint: 'Delete this Milestone',
-                  ),
-              ],
+              // (No RHS actions anymore)
             ],
           ),
         ),

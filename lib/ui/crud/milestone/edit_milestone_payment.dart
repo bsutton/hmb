@@ -31,7 +31,7 @@ import 'milestone_tile.dart';
 
 class EditMilestonesScreen extends StatefulWidget {
   final int quoteId;
-  
+
   const EditMilestonesScreen({required this.quoteId, super.key});
 
   @override
@@ -272,7 +272,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
             ),
           Expanded(
             child: ReorderableListView(
-              padding: const EdgeInsets.only(right: 28),
+              // padding: const EdgeInsets.only(right: 28),
               onReorder: _onReorder,
               children: List.generate(milestones.length, (index) {
                 final milestone = milestones[index];
@@ -286,7 +286,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
                       // ignore: unnecessary_async
                       (milestone) async =>
                           _onMilestoneInvoice(context, milestone),
-                  // If editingMilestoneId is set and not equal to this 
+                  // If editingMilestoneId is set and not equal to this
                   //milestone's id,
                   // then this tile is grayed out.
                   isOtherTileEditing:
