@@ -36,6 +36,7 @@ import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/help_button.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_chip.dart';
+import '../../widgets/hmb_edit_icon.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_gallery.dart';
@@ -502,8 +503,7 @@ You can set a default booking fee from System | Billing screen''');
           ],
         ),
       ),
-      IconButton(
-        icon: const Icon(Icons.edit),
+      HMBEditIcon(
         onPressed: () async {
           final text = await _showTextAreaEditDialog(
             widget.descriptionController.text,
@@ -514,6 +514,7 @@ You can set a default booking fee from System | Billing screen''');
           }
           setState(() => _descriptionVersion++);
         },
+        hint: 'Edit Description',
       ),
     ],
   );
@@ -536,8 +537,7 @@ You can set a default booking fee from System | Billing screen''');
           ],
         ),
       ),
-      IconButton(
-        icon: const Icon(Icons.edit),
+      HMBEditIcon(
         onPressed: () async {
           final text = await _showTextAreaEditDialog(
             widget.notesController.text,
@@ -548,6 +548,7 @@ You can set a default booking fee from System | Billing screen''');
           }
           setState(() => _notesVersion++);
         },
+        hint: 'Edit Notes',
       ),
     ],
   );
@@ -574,8 +575,7 @@ You can set a default booking fee from System | Billing screen''');
           ],
         ),
       ),
-      IconButton(
-        icon: const Icon(Icons.edit),
+      HMBEditIcon(
         onPressed: () async {
           final text = await _showTextAreaEditDialog(
             widget.assumptionController.text,
@@ -587,6 +587,7 @@ You can set a default booking fee from System | Billing screen''');
           }
           setState(() => _assumptionVersion++);
         },
+        hint: 'Edit Assumptions',
       ),
     ],
   );

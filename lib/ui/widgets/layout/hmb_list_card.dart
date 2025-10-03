@@ -16,7 +16,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../util/dart/types.dart';
-import '../hmb_icon_button.dart';
+import '../hmb_delete_icon.dart';
+import '../hmb_edit_icon.dart';
 import 'layout.g.dart';
 
 typedef OnDelete = AsyncVoidCallback;
@@ -45,37 +46,40 @@ class HMBCrudListCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    child: Card(
-      semanticContainer: false,
-      elevation: 2,
-      child: HMBColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: title),
-                Visibility(
-                  visible: canDelete?.call() ?? true,
-                  child: HMBIconButton(
-                    showBackground: false,
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: onDelete,
-                    hint: 'Delete',
+  Widget build(BuildContext context) =>
+      // GestureDetector(
+      // child:
+      Card(
+        semanticContainer: false,
+        elevation: 2,
+        child: HMBColumn(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(child: title),
+                  HMBEditIcon(
+                    onPressed: () async => canEdit?.call() ?? true
+                        ? unawaited(_pushEdit(context))
+                        : null,
+                    hint: 'Edit',
                   ),
-                ),
-              ],
+                  Visibility(
+                    visible: canDelete?.call() ?? true,
+                    child: HMBDeleteIcon(onPressed: onDelete),
+                  ),
+                ],
+              ),
             ),
-          ),
-          child,
-        ],
-      ),
-    ),
-    onTap: () => canEdit?.call() ?? true ? unawaited(_pushEdit(context)) : null,
-  );
+            child,
+          ],
+        ),
+        // ),
+        // onTap: () => canEdit?.call() ?? true ? unawaited(_pushEdit(context)) : null,
+      );
 
   Future<void> _pushEdit(BuildContext context) async {
     {

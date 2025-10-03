@@ -22,6 +22,8 @@ import '../../../entity/entity.g.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../dialog/dialog.g.dart';
+import '../../widgets/hmb_delete_icon.dart';
+import '../../widgets/hmb_edit_icon.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_filter_line.dart';
 import '../../widgets/widgets.g.dart';
@@ -277,21 +279,13 @@ class EntityListScreenState<T extends Entity<T>>
     );
   }
 
-  Widget _buildEditButton(T entity, BuildContext context) => HMBIconButton(
-    icon: const Icon(Icons.edit, color: Colors.blue),
-    showBackground: false,
-    onPressed: () async {
-      _edit(entity, context);
-    },
+  Widget _buildEditButton(T entity, BuildContext context) => HMBEditIcon(
+    onPressed: () => _edit(entity, context),
     hint: 'Edit this ${widget.entityNameSingular}',
   );
 
-  Widget _buildDeleteButton(T entity) => HMBIconButton(
-    icon: const Icon(Icons.delete, color: Colors.red),
-    showBackground: false,
-    onPressed: () async {
-      await _confirmDelete(entity);
-    },
+  Widget _buildDeleteButton(T entity) => HMBDeleteIcon(
+    onPressed: () => _confirmDelete(entity),
     hint: 'Delete this ${widget.entityNameSingular}',
   );
 

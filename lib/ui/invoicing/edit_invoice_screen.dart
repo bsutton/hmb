@@ -31,7 +31,8 @@ import '../../entity/invoice_line.dart';
 import '../../util/dart/format.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
-import '../widgets/hmb_icon_button.dart';
+import '../widgets/hmb_delete_icon.dart';
+import '../widgets/hmb_edit_icon.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/surface.dart';
@@ -125,16 +126,11 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                     HMBListCard(
                       title: line.description,
                       actions: [
-                        HMBIconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          showBackground: false,
-                          onPressed: () async =>
-                              unawaited(_editInvoiceLine(context, line)),
+                        HMBEditIcon(
+                          onPressed: () => _editInvoiceLine(context, line),
                           hint: 'Edit Invoice Line',
                         ),
-                        HMBIconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          showBackground: false,
+                        HMBDeleteIcon(
                           onPressed: () => _deleteInvoiceLine(line),
                           hint: 'Delete Invoice Line',
                         ),

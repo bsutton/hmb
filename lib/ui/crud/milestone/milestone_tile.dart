@@ -28,7 +28,7 @@ import '../../invoicing/edit_invoice_screen.dart';
 import '../../invoicing/invoice_details.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/hmb_add_button.dart';
-import '../../widgets/hmb_icon_button.dart';
+import '../../widgets/hmb_delete_icon.dart';
 import '../../widgets/hmb_link_internal.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -271,9 +271,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
                     hint: 'Invoice this Milestone',
                   ),
                 if (_isEditable)
-                  HMBIconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    showBackground: false,
+                  HMBDeleteIcon(
                     enabled: !disabled,
                     onPressed: () async => _onDeletePressed(),
                     hint: 'Delete this Milestone',

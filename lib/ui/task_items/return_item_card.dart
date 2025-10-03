@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
+import '../widgets/hmb_delete_icon.dart';
 import '../widgets/widgets.g.dart';
 import 'list_packing_screen.dart';
 import 'list_shopping_screen.dart';
@@ -40,9 +41,7 @@ class ReturnItemCard extends ShoppingItemCard {
             itemType == TaskItemType.consumablesBuy) &&
         !itemContext.wasReturned;
 
-    return HMBIconButton(
-      icon: const Icon(Icons.delete, color: Colors.red),
-      showBackground: false,
+    return HMBDeleteIcon(
       enabled: canReturn,
       onPressed: () async {
         await _delete(itemContext, context);

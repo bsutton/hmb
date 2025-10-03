@@ -27,7 +27,7 @@ import '../../../../entity/task_item_type.dart';
 import '../../../../util/dart/money_ex.dart';
 import '../../../dialog/hmb_ask_user_to_continue.dart';
 import '../../../widgets/hmb_button.dart';
-import '../../../widgets/hmb_icon_button.dart';
+import '../../../widgets/hmb_delete_icon.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toggle.dart';
 import '../../../widgets/layout/layout.g.dart';
@@ -253,10 +253,8 @@ class _JobEstimateBuilderScreenState
             ListTile(
               title: HMBTextHeadline(task.name),
               subtitle: HMBTextBody(task.description),
-              trailing: HMBIconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
+              trailing: HMBDeleteIcon(
                 onPressed: () => _deleteTask(task),
-                showBackground: false,
                 hint: 'Delete Task',
               ),
               onTap: () => unawaited(_editTask(task)),
@@ -307,9 +305,7 @@ class _JobEstimateBuilderScreenState
         child: ListTile(
           title: Text(item.description),
           subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
-          trailing: HMBIconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            showBackground: false,
+          trailing: HMBDeleteIcon(
             onPressed: () => _deleteItem(item),
             hint: 'Delete Estimate',
           ),

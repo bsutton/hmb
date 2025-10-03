@@ -15,6 +15,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../widgets/hmb_icon_button.dart';
 import 'list_shopping_screen.dart';
 import 'mark_as_complete.dart';
 import 'shopping_item_card.dart';
@@ -28,11 +29,14 @@ class ToPurchaseItemCard extends ShoppingItemCard {
   });
 
   @override
-  Widget buildActions(BuildContext context, CustomerAndJob det) => IconButton(
-    icon: const Icon(Icons.check, color: Colors.green),
-    onPressed: () async {
-      await markAsCompleted(itemContext, context);
-      await onReload();
-    },
-  );
+  Widget buildActions(BuildContext context, CustomerAndJob det) =>
+      HMBIconButton(
+        icon: const Icon(Icons.check, color: Colors.green),
+        showBackground: false,
+        onPressed: () async {
+          await markAsCompleted(itemContext, context);
+          await onReload();
+        },
+        hint: 'Mark as Purchased',
+      );
 }

@@ -26,6 +26,7 @@ import '../../../entity/photo.dart';
 import '../../../util/dart/photo_meta.dart';
 import '../../widgets/color_ex.dart';
 import '../../widgets/hmb_button.dart';
+import '../../widgets/hmb_delete_icon.dart';
 import '../../widgets/hmb_icon_button.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/full_screen_photo_view.dart';
@@ -169,9 +170,7 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
     ),
   );
 
-  Widget _buildDeleteButton(PhotoMeta photoMeta) => HMBIconButton(
-    icon: const Icon(Icons.delete),
-    showBackground: false,
+  Widget _buildDeleteButton(PhotoMeta photoMeta) => HMBDeleteIcon(
     onPressed: () async {
       await _showConfirmDeleteDialog(context, photoMeta);
       PhotoGallery.notify();
