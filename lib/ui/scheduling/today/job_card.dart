@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../dao/dao.g.dart';
+import '../../../util/dart/format.dart';
 import '../../crud/job/full_page_list_job_card.dart' show FullPageListJobCard;
 import '../../dialog/source_context.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -77,6 +78,9 @@ class JobCard extends StatelessWidget {
                         navigateTo: () async => FullPageListJobCard(
                           jobAndActivity.jobAndCustomer.job,
                         ),
+                      ),
+                      HMBTextLine(
+                        '''${formatTime(jobAndActivity.jobActivity.start)} ''',
                       ),
                     ],
                   ),
