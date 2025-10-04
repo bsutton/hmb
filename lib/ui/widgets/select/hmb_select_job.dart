@@ -10,6 +10,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../crud/job/edit_job_screen.dart';
 import '../hmb_add_button.dart';
+import '../layout/hmb_row.dart';
 import 'hmb_droplist.dart';
 
 /// Allows the user to select a Job from the database.
@@ -92,7 +93,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
   }
 
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) => HMBRow(
     children: [
       Expanded(
         child: HMBDroplist<JobAndCustomer>(
