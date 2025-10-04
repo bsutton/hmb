@@ -34,9 +34,9 @@ import '../../widgets/fields/hmb_money_editing_controller.dart';
 import '../../widgets/fields/hmb_money_field.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
-import '../../widgets/icons/help_button.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/icons/help_button.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
 import '../../widgets/select/hmb_droplist.dart';
@@ -44,9 +44,8 @@ import '../../widgets/text/hmb_text_themes.dart';
 
 class SystemBillingScreen extends StatefulWidget {
   final bool showButtons;
-  
-  const SystemBillingScreen({super.key, this.showButtons = true});
 
+  const SystemBillingScreen({super.key, this.showButtons = true});
 
   @override
   // ignore: library_private_types_in_public_api

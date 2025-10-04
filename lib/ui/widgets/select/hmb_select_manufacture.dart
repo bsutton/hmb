@@ -16,8 +16,8 @@ import 'package:june/june.dart';
 
 import '../../../dao/dao_manufacturer.dart';
 import '../../../entity/manufacturer.dart';
-import '../icons/hmb_add_button.dart';
 import '../../crud/manufacturer/edit_manufacturer_screen.dart';
+import '../icons/hmb_add_button.dart';
 import 'hmb_droplist.dart';
 
 class HMBSelectManufacturer extends StatefulWidget {

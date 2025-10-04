@@ -17,7 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../color_ex.dart';
 import '../hmb_button.dart';
-import '../icons/h_m_b_clear_icon.dart';
+import '../icons/hmb_clear_icon.dart';
 import '../icons/hmb_close_icon.dart';
 import '../layout/layout.g.dart';
 import '../text/text.g.dart';

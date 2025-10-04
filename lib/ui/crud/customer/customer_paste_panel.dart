@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../util/dart/parse/parse_customer.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../widgets/fields/fields.g.dart';
-import '../../widgets/icons/h_m_b_clear_icon.dart';
+import '../../widgets/icons/hmb_clear_icon.dart';
 import '../../widgets/icons/hmb_paste_icon.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';

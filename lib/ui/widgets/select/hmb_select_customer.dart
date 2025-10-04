@@ -16,8 +16,8 @@ import 'package:june/june.dart';
 
 import '../../../dao/dao_customer.dart';
 import '../../../entity/customer.dart';
-import '../icons/hmb_add_button.dart';
 import '../../crud/customer/edit_customer_screen.dart';
+import '../icons/hmb_add_button.dart';
 import 'hmb_droplist.dart';
 
 class HMBSelectCustomer extends StatefulWidget {
@@ -86,7 +86,7 @@ class HMBSelectCustomerState extends State<HMBSelectCustomer> {
 
 class SelectedCustomer extends JuneState {
   int? _customerId;
-  
+
   SelectedCustomer();
 
   int? get customerId => _customerId;

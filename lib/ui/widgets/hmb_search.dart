@@ -14,8 +14,8 @@
 import 'package:flutter/material.dart';
 
 import 'fields/hmb_text_field.dart';
-import 'icons/h_m_b_clear_icon.dart';
 import 'icons/hmb_add_button.dart';
+import 'icons/hmb_clear_icon.dart';
 
 /// I fyou need to be able to programatically clear the filter
 /// then pass in a [HMBSearchController]

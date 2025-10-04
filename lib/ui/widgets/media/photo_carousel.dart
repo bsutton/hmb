@@ -22,8 +22,8 @@ import 'package:photo_view/photo_view.dart';
 
 import '../../../util/dart/photo_meta.dart';
 import '../desktop_back_gesture_suppress.dart';
-import '../icons/h_m_b_copy_icon.dart';
 import '../icons/hmb_close_icon.dart';
+import '../icons/hmb_copy_icon.dart';
 import '../layout/layout.g.dart';
 import '../text/hmb_text_themes.dart';
 

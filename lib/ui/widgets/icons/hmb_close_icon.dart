@@ -19,7 +19,7 @@ class HMBCloseIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HMBIconButton(
-    icon: const Icon(Icons.close, size: 20, color: Colors.white, size: 30),
+    icon: const Icon(Icons.close, size: 20, color: Colors.white),
     size: small ? HMBIconButtonSize.small : HMBIconButtonSize.standard,
     showBackground: false,
     hint: hint,

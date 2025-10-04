@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../util/dart/types.dart';
 import 'hmb_icon_button.dart';
 
@@ -26,4 +27,3 @@ class HMBEmailIcon extends StatelessWidget {
     onPressed: onPressed,
   );
 }
-

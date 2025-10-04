@@ -17,7 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../../../util/dart/types.dart';
 import '../../../util/flutter/hmb_theme.dart';
-import '../icons/h_m_b_clear_icon.dart';
+import '../icons/hmb_clear_icon.dart';
 import '../icons/hmb_close_icon.dart';
 import '../layout/layout.g.dart';
 import '../widgets.g.dart';
@@ -108,7 +108,8 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
                 ),
               ),
               HMBCloseIcon(
-                onPressed: () => Navigator.of(context).pop(widget.selectedItem),
+                onPressed: () async =>
+                    Navigator.of(context).pop(widget.selectedItem),
               ),
             ],
           ),

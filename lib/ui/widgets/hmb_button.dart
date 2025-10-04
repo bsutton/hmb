@@ -19,8 +19,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../util/flutter/hmb_theme.dart';
 import 'color_ex.dart';
 import 'hmb_tooltip.dart';
-import 'layout/hmb_empty.dart';
 import 'icons/svg.dart';
+import 'layout/hmb_empty.dart';
 
 /// A generic HMB button with optional hint shown on long press.
 class HMBButton extends StatelessWidget {

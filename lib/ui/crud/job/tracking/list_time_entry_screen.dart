@@ -178,7 +178,6 @@ class _Details {
 }
 
 class TimeEntryTile extends StatelessWidget {
-
   final TimeEntry timeEntry;
   final String taskName;
 

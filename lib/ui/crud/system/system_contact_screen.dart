@@ -28,14 +28,14 @@ import '../../dialog/source_context.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
-import '../../widgets/icons/help_button.dart';
 import '../../widgets/hmb_toast.dart';
+import '../../widgets/icons/help_button.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/save_and_close.dart';
 
 class SystemContactInformationScreen extends StatefulWidget {
   final bool showButtons;
-  
+
   const SystemContactInformationScreen({super.key, this.showButtons = true});
 
   @override
@@ -151,9 +151,7 @@ class SystemContactInformationScreenState
               showSaveOnly: false,
               onCancel: () async => context.pop(),
             ),
-            Expanded(
-              child: ListView(children: [_buildForm()]),
-            ),
+            Expanded(child: ListView(children: [_buildForm()])),
           ],
         ),
       );

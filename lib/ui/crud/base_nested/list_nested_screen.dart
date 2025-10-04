@@ -20,8 +20,8 @@ import '../../../dao/dao.dart';
 import '../../../dao/notification/dao_june_builder.dart';
 import '../../../entity/entity.g.dart';
 import '../../dialog/hmb_comfirm_delete_dialog.dart';
-import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/hmb_toggle.dart';
+import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/layout/layout.g.dart';
 
 class Parent<P extends Entity<P>> {
