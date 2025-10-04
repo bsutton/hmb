@@ -44,12 +44,23 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
   late Job job;
   late final JobActivity? nextActivity;
   late final Customer? customer;
+  late final Contact? primaryContact;
 
   @override
   Future<void> asyncInitState() async {
     job = widget.job;
     nextActivity = await DaoJobActivity().getNextActivityByJob(job.id);
     customer = await DaoCustomer().getById(job.customerId);
+    final contact = await DaoContact().getPrimaryForJob(job.id);
+
+    /// we don't want to repeat the name if they are the same.
+    /// We ignore case and spaces when comparing.
+    if (customer?.name.toLowerCase().trim().replaceAll(' ', '') ==
+        contact?.fullname.toLowerCase().trim().replaceAll(' ', '')) {
+      primaryContact = null;
+    } else {
+      primaryContact = contact;
+    }
   }
 
   @override
@@ -66,41 +77,40 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
     builder: (context) => Surface(
       padding: EdgeInsets.zero,
       elevation: SurfaceElevation.e6,
-      child: _buildDetails(customer, job.status),
+      child: _buildDetails(job.status),
     ),
   );
 
-  Widget _buildDetails(Customer? customer, JobStatus? jobStatus) =>
-      DaoJuneBuilder.builder(
-        DaoJob(),
-        builder: (jobRefresher) => HMBColumn(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildDetails(JobStatus? jobStatus) => DaoJuneBuilder.builder(
+    DaoJob(),
+    builder: (jobRefresher) => HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
 
+      children: [
+        HMBCardHeading(customer?.name ?? 'Not Set'),
+        if (primaryContact != null)
+          HMBTextHeadline2(primaryContact?.fullname ?? 'Not Set'),
+        _buildContactPoints(),
+        HMBJobSiteText(
+          label: '',
+          job: job,
+          onMapClicked: () async {
+            await DaoJob().markActive(job.id);
+          },
+        ),
+        HMBRow(
           children: [
-            HMBCardHeading(customer?.name ?? 'Not Set'),
-            _buildContactPoints(),
-            HMBJobSiteText(
-              label: '',
-              job: job,
-              onMapClicked: () async {
-                await DaoJob().markActive(job.id);
-              },
-            ),
-            HMBRow(
-              children: [
-                HMBText('Job #${job.id}', bold: true),
-                HMBText(
-                  'Status: ${jobStatus?.displayName ?? 'Status Unknown'}',
-                ),
-              ],
-            ),
-            _buildNextActivity(),
-            const HMBText('Description:', bold: true),
-            HMBTextBlock(job.description),
-            MiniJobDashboard(job: job),
+            HMBText('Job #${job.id}', bold: true),
+            HMBText('Status: ${jobStatus?.displayName ?? 'Status Unknown'}'),
           ],
         ),
-      );
+        _buildNextActivity(),
+        const HMBText('Description:', bold: true),
+        HMBTextBlock(job.description),
+        MiniJobDashboard(job: job),
+      ],
+    ),
+  );
 
   Widget _buildNextActivity() {
     String activity;
