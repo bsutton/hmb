@@ -187,11 +187,8 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
             HMBText(widget.label, bold: true),
             HMBRow(
               children: [
-                if (widget.mode != HMBDateTimeFieldMode.timeOnly)
-                  Expanded(child: dateField()),
-                if (widget.mode == HMBDateTimeFieldMode.dateAndTime)
-                  if (widget.mode != HMBDateTimeFieldMode.dateOnly)
-                    Expanded(child: timeField()),
+                if (widget.mode != HMBDateTimeFieldMode.timeOnly) dateField(),
+                if (widget.mode != HMBDateTimeFieldMode.dateOnly) timeField(),
               ],
             ),
           ],
@@ -205,8 +202,7 @@ class _HMBDateTimeFieldState extends State<HMBDateTimeField> {
         children: <Widget>[
           HMBText(widget.label, bold: true),
           if (widget.mode != HMBDateTimeFieldMode.timeOnly) dateField(),
-          if (widget.mode == HMBDateTimeFieldMode.dateAndTime)
-            if (widget.mode != HMBDateTimeFieldMode.dateOnly) timeField(),
+          if (widget.mode != HMBDateTimeFieldMode.dateOnly) timeField(),
         ],
       );
     },
