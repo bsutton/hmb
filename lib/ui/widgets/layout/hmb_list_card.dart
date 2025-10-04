@@ -77,8 +77,6 @@ class HMBCrudListCard extends StatelessWidget {
             child,
           ],
         ),
-        // ),
-        // onTap: () => canEdit?.call() ?? true ? unawaited(_pushEdit(context)) : null,
       );
 
   Future<void> _pushEdit(BuildContext context) async {

@@ -118,7 +118,7 @@ class SurfaceCard extends StatelessWidget {
   );
 }
 
-class SurfaceCardWitActions extends StatelessWidget {
+class SurfaceCardWithActions extends StatelessWidget {
   final String title;
   final List<Widget> actions;
   final Widget body;
@@ -127,7 +127,7 @@ class SurfaceCardWitActions extends StatelessWidget {
   final SurfaceElevation elevation;
   final EdgeInsetsGeometry? padding;
 
-  const SurfaceCardWitActions({
+  const SurfaceCardWithActions({
     required this.title,
     required this.body,
     this.actions = const [],

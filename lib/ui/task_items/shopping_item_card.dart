@@ -43,7 +43,7 @@ abstract class ShoppingItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FutureBuilderEx<CustomerAndJob>(
     future: CustomerAndJob.fetch(itemContext),
-    builder: (context, details) => SurfaceCardWitActions(
+    builder: (context, details) => SurfaceCardWithActions(
       title: itemContext.taskItem.description,
       actions: [
         buildActions(context, details!),
