@@ -29,6 +29,7 @@ import '../../dao/dao_task_item.dart';
 import '../../dao/dao_time_entry.dart';
 import '../../entity/invoice_line.dart';
 import '../../util/dart/format.dart';
+import '../dialog/hmb_comfirm_delete_dialog.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_delete_icon.dart';
@@ -211,56 +212,43 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   Future<void> _deleteInvoiceLine(InvoiceLine line) async {
-    final confirmed = await showDialog<bool>(
+    await showConfirmDeleteDialog(
+      nameSingular: 'Invoice line',
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Invoice Line'),
-        content: Text('''
+      child: Text('''
 Are you sure you want to delete this invoice line?
 
 Details:
 Description: ${line.description}
 Quantity: ${line.quantity}
 Total: ${line.lineTotal}'''),
-        actions: <Widget>[
-          HMBButton(
-            label: 'Cancel',
-            hint: "Don't delete the Invoice line",
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          HMBButton(
-            label: 'Delete',
-            hint: 'Delete the Invoice line',
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
+      onConfirmed: () => _doDeleteInvoiceLine(line),
     );
+  }
 
-    if (confirmed ?? false) {
-      try {
-        await DaoTaskItem().markNotBilled(line.id);
-        await DaoTimeEntry().markAsNotbilled(line.id);
+  Future<void> _doDeleteInvoiceLine(InvoiceLine line) async {
+    try {
+      await DaoTaskItem().markNotBilled(line.id);
+      await DaoTimeEntry().markAsNotbilled(line.id);
 
-        await DaoInvoiceLine().delete(line.id);
+      await DaoInvoiceLine().delete(line.id);
 
-        final remainingLines = await DaoInvoiceLine().getByInvoiceLineGroupId(
-          line.invoiceLineGroupId,
-        );
+      final remainingLines = await DaoInvoiceLine().getByInvoiceLineGroupId(
+        line.invoiceLineGroupId,
+      );
 
-        if (remainingLines.isEmpty) {
-          await DaoInvoiceLineGroup().delete(line.invoiceLineGroupId);
-        }
-
-        await DaoInvoice().recalculateTotal(line.invoiceId);
-        await _reloadInvoice();
-        setState(() {});
-      } catch (e) {
-        HMBToast.error(
-          'Failed to delete invoice line: $e',
-          acknowledgmentRequired: true,
-        );
+      if (remainingLines.isEmpty) {
+        await DaoInvoiceLineGroup().delete(line.invoiceLineGroupId);
       }
+
+      await DaoInvoice().recalculateTotal(line.invoiceId);
+      await _reloadInvoice();
+      setState(() {});
+    } catch (e) {
+      HMBToast.error(
+        'Failed to delete invoice line: $e',
+        acknowledgmentRequired: true,
+      );
     }
   }
 }

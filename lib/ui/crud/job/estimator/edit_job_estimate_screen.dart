@@ -25,7 +25,7 @@ import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
 import '../../../../util/dart/money_ex.dart';
-import '../../../dialog/hmb_ask_user_to_continue.dart';
+import '../../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_delete_icon.dart';
 import '../../../widgets/hmb_edit_icon.dart';
@@ -163,10 +163,11 @@ class _JobEstimateBuilderScreenState
   }
 
   Future<void> _deleteTask(Task task) async {
-    await askUserToContinue(
+    await showConfirmDeleteDialog(
       context: context,
-      title: 'Delete Task',
-      message: "Are you sure you want to delete '${task.name}'",
+      nameSingular: 'task',
+      question: 'Are you sure you want to delete ${task.name}?',
+
       onConfirmed: () async {
         await DaoTask().delete(task.id);
         _tasks.removeWhere((t) => t.id == task.id);
@@ -369,11 +370,11 @@ class _JobEstimateBuilderScreenState
   }
 
   Future<void> _deleteItem(TaskItem item) async {
-    await askUserToContinue(
+    await showConfirmDeleteDialog(
       context: context,
-      title: 'Delete Estimate',
-      message:
-          "Are you sure you want to delete Task Item '${item.description}'",
+      nameSingular: 'Task item',
+      question: 'Are you sure you want to delete ${item.description}?',
+
       onConfirmed: () async {
         await DaoTaskItem().delete(item.id);
         await _calculateTotals();

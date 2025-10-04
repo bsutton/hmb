@@ -21,7 +21,7 @@ import '../../../dao/dao.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../../util/flutter/flutter_util.g.dart';
-import '../../dialog/dialog.g.dart';
+import '../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../widgets/hmb_delete_icon.dart';
 import '../../widgets/hmb_edit_icon.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -361,11 +361,11 @@ class EntityListScreenState<T extends Entity<T>>
   );
 
   Future<void> _confirmDelete(T entity) async {
-    await askUserToContinue(
+    await showConfirmDeleteDialog(
       context: context,
-      title: 'Delete Confirmation',
-      message:
+      question:
           'Are you sure you want to delete this ${widget.entityNameSingular}?',
+      nameSingular: widget.entityNameSingular,
       onConfirmed: () => _delete(entity),
     );
   }

@@ -24,8 +24,8 @@ import 'package:strings/strings.dart';
 import '../../../entity/entity.dart';
 import '../../../entity/photo.dart';
 import '../../../util/dart/photo_meta.dart';
+import '../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../widgets/color_ex.dart';
-import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_delete_icon.dart';
 import '../../widgets/hmb_icon_button.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -198,43 +198,24 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
   ) async {
     final pathToPhoto = photoMeta.absolutePathTo;
     if (context.mounted) {
-      return showDialog<void>(
+      await showConfirmDeleteDialog(
+        nameSingular: 'Photo',
+        question: 'Are you sure you want to delete this photo?',
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Delete Photo'),
-          content: HMBColumn(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Image.file(
-                File(pathToPhoto),
-                width: 100,
-                height: 100,
-              ), // Thumbnail of the photo
-              if (Strings.isNotBlank(photoMeta.comment))
-                Text(photoMeta.photo.comment),
-              const Text('Are you sure you want to delete this photo?'),
-            ],
-          ),
-          actions: <Widget>[
-            HMBButton(
-              label: 'Cancel',
-              hint: "Don't delete the photo",
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            HMBButton(
-              label: 'Delete',
-              hint: 'Delete this photo',
-              onPressed: () async {
-                await widget.controller.deletePhoto(photoMeta);
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-            ),
+        child: HMBColumn(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Image.file(
+              File(pathToPhoto),
+              width: 100,
+              height: 100,
+            ), // Thumbnail of the photo
+            if (Strings.isNotBlank(photoMeta.comment))
+              Text(photoMeta.photo.comment),
+            const Text('Are you sure you want to delete this photo?'),
           ],
         ),
+        onConfirmed: () => widget.controller.deletePhoto(photoMeta),
       );
     }
   }

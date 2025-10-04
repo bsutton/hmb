@@ -19,7 +19,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../dao/dao.dart';
 import '../../../dao/notification/dao_june_builder.dart';
 import '../../../entity/entity.g.dart';
-import '../../dialog/hmb_ask_user_to_continue.dart';
+import '../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_icon_button.dart';
 import '../../widgets/hmb_toggle.dart';
@@ -224,10 +224,13 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   );
 
   Future<void> _confirmDelete(C entity) async {
-    await askUserToContinue(
+    await showConfirmDeleteDialog(
       context: context,
-      title: 'Delete Confirmation',
-      message: 'Are you sure you want to delete this item?',
+            question:
+          'Are you sure you want to delete this ${widget.entityNameSingular}?',
+
+      nameSingular: widget.entityNameSingular,
+
       onConfirmed: () => _delete(entity),
     );
   }

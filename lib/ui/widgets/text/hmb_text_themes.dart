@@ -325,6 +325,8 @@ class HMBTextBody extends StatelessWidget {
 }
 
 /// A single-line text widget with ellipsis overflow.
+/// You will often need to wrap this in a Flexible or Expanded widget
+/// for the ellipsis to work correctly.
 class HMBTextLine extends StatelessWidget {
   final String text;
   final Color? colour;

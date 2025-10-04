@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
+import 'package:strings/strings.dart';
 
 import '../../../dao/dao_invoice.dart';
 import '../../../entity/invoice.dart';
@@ -133,8 +134,9 @@ class _MilestoneTileState extends State<MilestoneTile> {
   void _onDeletePressed() {
     showConfirmDeleteDialog(
       context: context,
-      title: 'Delete Milestone',
       nameSingular: 'Milestone',
+      question: '''
+Are you sure you want to delete ${Strings.isNotBlank(widget.milestone.milestoneDescription) ? widget.milestone.milestoneDescription : 'Milestone ${widget.milestone.milestoneNumber}'}? ''',
       onConfirmed: () async => widget.onDelete(widget.milestone),
     );
   }

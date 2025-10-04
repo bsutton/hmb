@@ -26,6 +26,7 @@ import '../dialog/email_dialog_for_job.dart';
 import '../widgets/hmb_edit_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/media/pdf_preview.dart';
+import '../widgets/text/hmb_text_themes.dart';
 import '../widgets/widgets.g.dart' hide StatefulBuilder;
 import 'edit_quote_line_dialog.dart';
 import 'generate_quote_pdf.dart';
@@ -158,11 +159,9 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Task: ${group.name} ${groupWrap.total}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: HMBTextLine(
+                        'Task: ${group.name} ${groupWrap.total}',
                       ),
                     ),
                     if (group.taskId != null &&

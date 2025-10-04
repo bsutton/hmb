@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
+import '../dialog/hmb_comfirm_delete_dialog.dart';
 import '../widgets/hmb_delete_icon.dart';
 import '../widgets/widgets.g.dart';
 import 'list_packing_screen.dart';
@@ -56,12 +57,16 @@ class ReturnItemCard extends ShoppingItemCard {
     BuildContext context,
   ) async {
     final taskItem = itemContext.taskItem;
-
     if (taskItem.billed) {
       HMBToast.error("You can't delete an return that has been invoiced.");
       return;
     }
 
-    await DaoTaskItem().delete(taskItem.id);
+    await showConfirmDeleteDialog(
+      context: context,
+      nameSingular: 'Item',
+      question: 'Are you sure you want to delete ${taskItem.description}?',
+      onConfirmed: () => DaoTaskItem().delete(taskItem.id),
+    );
   }
 }
