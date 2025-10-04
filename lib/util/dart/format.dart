@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:date_time_format/date_time_format.dart';
 import 'package:intl/intl.dart';
 
@@ -47,10 +46,10 @@ String formatDuration(Duration duration, {bool seconds = false}) {
 String formatLocalDate(LocalDate date, [String format = 'yyyy/MM/dd']) =>
     DateFormat(format).format(date.toDateTime());
 
-String formatLocalTime(LocalTime time, [String format = 'h:mm:ss a']) =>
+String formatLocalTime(LocalTime time, [String format = 'h:mm a']) =>
     formatTime(time.toDateTime(), format);
 
-String formatTime(DateTime date, [String format = 'h:mm:ss a']) =>
+String formatTime(DateTime date, [String format = 'h:mm a']) =>
     DateFormat(format).format(date);
 
 // ignore: omit_obvious_property_types
@@ -113,8 +112,6 @@ String formatDue(DateTime due, {DateTime? now, bool includeTime = true}) {
   }
   return base;
 }
-
-
 
 /// Returns a compact age like "5m", "2h", "3d".
 /// Returns null if under 1 minute (too small to show).
