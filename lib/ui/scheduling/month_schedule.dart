@@ -23,9 +23,9 @@ import '../../entity/system.dart';
 import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart'; // For formatTime() or similar
 import '../../util/dart/local_date.dart';
-import '../widgets/circle.dart';
+import '../widgets/icons/circle.dart';
 import '../widgets/layout/layout.g.dart';
-import '../widgets/surface.dart';
+import '../widgets/layout/surface.dart';
 import 'job_activity_ex.dart';
 import 'schedule_helper.dart';
 import 'schedule_page.dart';
@@ -265,7 +265,7 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
             child: const Text(''),
           ),
           Text(
-            '${formatTime(event.startTime!, 'h:mm a').toLowerCase()} ',
+            '${formatTime(event.startTime!).toLowerCase()} ',
             style: TextStyle(
               color: fontColor,
               backgroundColor: backgroundColour,

@@ -21,12 +21,12 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../util/flutter/clip_board.dart';
-import '../../util/flutter/platform_ex.dart';
-import '../dialog/message_template_dialog.dart';
-import '../dialog/source_context.dart';
-import 'hmb_button.dart';
-import 'hmb_toast.dart';
+import '../../../util/flutter/clip_board.dart';
+import '../../../util/flutter/platform_ex.dart';
+import '../../dialog/message_template_dialog.dart';
+import '../../dialog/source_context.dart';
+import '../hmb_button.dart';
+import '../hmb_toast.dart';
 
 class HMBPhoneIcon extends StatelessWidget {
   final String phoneNo;

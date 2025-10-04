@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import '../../../util/dart/types.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../layout/layout.g.dart';
-import '../surface.dart';
+import '../layout/surface.dart';
 import 'hmb_droplist_dialog.dart';
 
 /// A dropdown list field with async loading, built on DeferredState.

@@ -23,7 +23,7 @@ import '../../entity/quote_line_group.dart';
 import '../../util/dart/format.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../dialog/email_dialog_for_job.dart';
-import '../widgets/hmb_edit_icon.dart';
+import '../widgets/icons/hmb_edit_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/media/pdf_preview.dart';
 import '../widgets/text/hmb_text_themes.dart';

@@ -18,7 +18,7 @@ import '../../../dao/dao_site.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_site.dart';
 import '../../../entity/customer.dart';
 import '../../../entity/site.dart';
-import '../../../ui/widgets/hmb_add_button.dart';
+import '../icons/hmb_add_button.dart';
 import '../../crud/site/edit_site_screen.dart';
 import 'hmb_droplist.dart';
 

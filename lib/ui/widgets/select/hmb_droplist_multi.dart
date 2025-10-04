@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 
 import '../../../util/flutter/hmb_theme.dart';
 import '../layout/layout.g.dart';
-import '../surface.dart';
+import '../layout/surface.dart';
 import 'hmb_droplist_multi_dialog.dart';
 
 /// A multi-select dropdown list field with async loading,

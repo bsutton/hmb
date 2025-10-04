@@ -14,7 +14,8 @@
 import 'package:flutter/material.dart';
 
 import 'fields/hmb_text_field.dart';
-import 'hmb_add_button.dart';
+import 'icons/h_m_b_clear_icon.dart';
+import 'icons/hmb_add_button.dart';
 
 /// I fyou need to be able to programatically clear the filter
 /// then pass in a [HMBSearchController]
@@ -81,9 +82,7 @@ class HMBSearchState extends State<HMBSearch> {
           },
         ),
       ),
-      IconButton(
-        padding: EdgeInsets.zero,
-        icon: const Icon(Icons.clear),
+      HMBClearIcon(
         onPressed: () async {
           filterController?.clear();
           filter = null;

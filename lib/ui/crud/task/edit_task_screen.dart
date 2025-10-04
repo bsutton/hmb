@@ -23,7 +23,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/flutter/platform_ex.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
-import '../../widgets/help_button.dart';
+import '../../widgets/icons/help_button.dart';
 import '../../widgets/hmb_crud_checklist_item.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/photo_controller.dart';

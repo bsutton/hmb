@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import '../../util/dart/log.dart';
 import '../../util/flutter/hmb_theme.dart';
 import 'blocking_ui.dart';
-import 'circle.dart';
+import 'icons/circle.dart';
 import 'grayed_out.dart';
 import 'hmb_button.dart';
 import 'hmb_toast.dart';

@@ -5,7 +5,7 @@ import '../../../entity/job.dart';
 import '../../../entity/todo.dart';
 import '../../../util/dart/dart.g.dart';
 import '../../widgets/fields/fields.g.dart';
-import '../../widgets/help_button.dart';
+import '../../widgets/icons/help_button.dart';
 import '../../widgets/hmb_date_time_picker.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/select.g.dart';

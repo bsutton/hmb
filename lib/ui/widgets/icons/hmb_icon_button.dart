@@ -13,8 +13,8 @@
 
 import 'package:flutter/material.dart';
 
-import '../../util/dart/types.dart';
-import 'hmb_tooltip.dart';
+import '../../../util/dart/types.dart';
+import '../hmb_tooltip.dart';
 
 enum HMBIconButtonSize { small, standard, large }
 

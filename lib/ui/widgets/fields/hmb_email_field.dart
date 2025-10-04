@@ -17,7 +17,7 @@ import 'package:strings/strings.dart';
 
 import '../../../util/dart/parse/parse.dart';
 import '../../../util/flutter/platform_ex.dart';
-import '../hmb_mail_to_icon.dart';
+import '../icons/hmb_mail_to_icon.dart';
 import 'fields.g.dart';
 
 class HMBEmailField extends StatelessWidget {

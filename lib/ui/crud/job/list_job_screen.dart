@@ -17,6 +17,8 @@ import '../../../dao/dao_job.dart';
 import '../../../entity/flutter_extensions/job_status_ex.dart';
 import '../../../entity/job.dart';
 import '../../../entity/job_status_stage.dart';
+import '../../widgets/icons/h_m_b_copy_icon.dart';
+import '../../widgets/icons/hmb_paste_icon.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/select.g.dart';
 import '../../widgets/text/hmb_text_themes.dart';
@@ -41,9 +43,8 @@ class _JobListScreenState extends State<JobListScreen> {
   var _order = JobOrder.active;
 
   List<Widget> _buildActionItems(Job job) => [
-    IconButton(
-      tooltip: 'Copy job & move tasks',
-      icon: const Icon(Icons.copy),
+    HMBCopyIcon(
+      hint: 'Copy job & move tasks',
       onPressed: () => _onCopyAndMovePressed(job),
     ),
   ];

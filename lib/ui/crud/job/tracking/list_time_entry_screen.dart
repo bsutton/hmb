@@ -17,7 +17,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
 import '../../../../util/dart/format.dart';
-import '../../../widgets/help_button.dart';
+import '../../../widgets/icons/help_button.dart';
 import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/select/select.g.dart';
 import '../../../widgets/text/text.g.dart';

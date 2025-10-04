@@ -22,6 +22,8 @@ import 'package:photo_view/photo_view.dart';
 
 import '../../../util/dart/photo_meta.dart';
 import '../desktop_back_gesture_suppress.dart';
+import '../icons/h_m_b_copy_icon.dart';
+import '../icons/hmb_close_icon.dart';
 import '../layout/layout.g.dart';
 import '../text/hmb_text_themes.dart';
 
@@ -212,8 +214,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
   Row _buildCopyClose(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      IconButton(
-        icon: const Icon(Icons.content_copy, color: Colors.white, size: 30),
+      HMBCopyIcon(
         onPressed: () async {
           try {
             await Pasteboard.writeFiles([
@@ -239,10 +240,7 @@ class _PhotoCarouselState extends State<PhotoCarousel> {
           }
         },
       ),
-      IconButton(
-        icon: const Icon(Icons.close, color: Colors.white, size: 30),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
+      HMBCloseIcon(onPressed: () async => Navigator.of(context).pop()),
     ],
   );
 }

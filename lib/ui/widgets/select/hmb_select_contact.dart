@@ -18,7 +18,7 @@ import '../../../dao/dao_contact.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
 import '../../../entity/contact.dart';
 import '../../../entity/customer.dart';
-import '../../../ui/widgets/hmb_add_button.dart';
+import '../icons/hmb_add_button.dart';
 import '../../crud/contact/edit_contact_screen.dart';
 import '../layout/layout.g.dart';
 import 'hmb_droplist.dart';

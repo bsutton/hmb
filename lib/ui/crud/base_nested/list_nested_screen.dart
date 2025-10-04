@@ -20,8 +20,7 @@ import '../../../dao/dao.dart';
 import '../../../dao/notification/dao_june_builder.dart';
 import '../../../entity/entity.g.dart';
 import '../../dialog/hmb_comfirm_delete_dialog.dart';
-import '../../widgets/hmb_add_button.dart';
-import '../../widgets/hmb_icon_button.dart';
+import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/layout/layout.g.dart';
 
@@ -177,12 +176,11 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text('Click'),
-                  HMBIconButton(
+                  HMBButtonAdd(
                     enabled: false,
-                    size: HMBIconButtonSize.small,
-                    icon: const Icon(Icons.add),
+                    small: true,
                     hint: 'Not this one',
-                    onPressed: () async {},
+                    onAdd: () async {},
                   ),
 
                   Text('to add a ${widget.entityNameSingular}.'),
@@ -226,7 +224,7 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
   Future<void> _confirmDelete(C entity) async {
     await showConfirmDeleteDialog(
       context: context,
-            question:
+      question:
           'Are you sure you want to delete this ${widget.entityNameSingular}?',
 
       nameSingular: widget.entityNameSingular,

@@ -17,7 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../util/dart/types.dart';
-import '../widgets/hmb_edit_icon.dart';
+import '../widgets/icons/hmb_edit_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
 import 'item_card_common.dart';

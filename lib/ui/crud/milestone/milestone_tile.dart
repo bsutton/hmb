@@ -29,10 +29,10 @@ import '../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../invoicing/edit_invoice_screen.dart';
 import '../../invoicing/invoice_details.dart';
 import '../../widgets/fields/fields.g.dart';
-import '../../widgets/hmb_add_button.dart';
-import '../../widgets/hmb_delete_icon.dart';
+import '../../widgets/icons/hmb_add_button.dart';
+import '../../widgets/icons/hmb_delete_icon.dart';
 import '../../widgets/hmb_link_internal.dart';
-import '../../widgets/hmb_save_icon.dart';
+import '../../widgets/icons/hmb_save_icon.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/layout.g.dart';
 

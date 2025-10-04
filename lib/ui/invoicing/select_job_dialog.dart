@@ -19,7 +19,7 @@ import '../../dao/dao_job.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../widgets/layout/layout.g.dart';
-import '../widgets/surface.dart';
+import '../widgets/layout/surface.dart';
 
 class SelectJobDialog extends StatefulWidget {
   const SelectJobDialog({super.key});

@@ -17,10 +17,10 @@ import 'package:flutter/material.dart';
 
 import '../../../util/dart/types.dart';
 import '../../../util/flutter/hmb_theme.dart';
-import '../color_ex.dart';
-import '../hmb_icon_button.dart';
+import '../icons/h_m_b_clear_icon.dart';
+import '../icons/hmb_close_icon.dart';
 import '../layout/layout.g.dart';
-import '../surface.dart';
+import '../widgets.g.dart';
 
 class HMBDroplistDialog<T> extends StatefulWidget {
   final Future<List<T>> Function(String? filter) getItems;
@@ -107,8 +107,7 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
+              HMBCloseIcon(
                 onPressed: () => Navigator.of(context).pop(widget.selectedItem),
               ),
             ],
@@ -184,12 +183,8 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                suffixIcon: IconButton(
-                  icon: const Icon(
-                    Icons.clear,
-                    color: HMBColors.inputDecoration,
-                  ),
-                  onPressed: () {
+                suffixIcon: HMBClearIcon(
+                  onPressed: () async {
                     setState(() {
                       _searchController.text = '';
                       _filter = '';
@@ -205,9 +200,9 @@ class _HMBDroplistDialogState<T> extends State<HMBDroplistDialog<T>> {
           if (widget.onAdd != null)
             Padding(
               padding: const EdgeInsets.only(left: 8),
-              child: HMBIconButton(
-                onPressed: _handleAdd,
-                icon: const Icon(Icons.add),
+              child: HMBButtonAdd(
+                enabled: true,
+                onAdd: _handleAdd,
                 hint: 'Add ${widget.title}',
               ),
             ),

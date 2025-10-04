@@ -23,7 +23,7 @@ import '../../../entity/quote.dart';
 import '../../../util/dart/list_ex.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../quoting/select_billing_contact_dialog.dart';
-import '../../widgets/hmb_add_button.dart';
+import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_text.dart';

@@ -18,7 +18,7 @@ import 'package:strings/strings.dart';
 import '../../../dao/dao_site.dart';
 import '../../../entity/job.dart';
 import '../../../entity/site.dart';
-import '../../../ui/widgets/hmb_map_icon.dart';
+import '../icons/hmb_map_icon.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../layout/hmb_placeholder.dart';
 

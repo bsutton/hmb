@@ -20,6 +20,8 @@ import 'package:strings/strings.dart';
 
 import '../desktop_back_gesture_suppress.dart';
 import '../hmb_toast.dart';
+import '../icons/h_m_b_copy_icon.dart';
+import '../icons/hmb_close_icon.dart';
 import '../layout/layout.g.dart';
 
 class FullScreenPhotoViewer extends StatelessWidget {
@@ -83,12 +85,7 @@ class FullScreenPhotoViewer extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.content_copy,
-                  color: Colors.white,
-                  size: 30,
-                ),
+              HMBCopyIcon(
                 onPressed: () async {
                   try {
                     await Pasteboard.writeFiles([imagePath]);
@@ -98,11 +95,9 @@ class FullScreenPhotoViewer extends StatelessWidget {
                     HMBToast.error('Failed to copy image to clipboard');
                   }
                 },
+                hint: 'Copy the photo to the clopboard',
               ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
+              HMBCloseIcon(onPressed: () async => Navigator.of(context).pop()),
             ],
           ),
         ),

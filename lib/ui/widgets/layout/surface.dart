@@ -14,10 +14,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../util/flutter/hmb_theme.dart';
-import 'layout/hmb_column.dart';
-import 'layout/hmb_row.dart';
-import 'text/hmb_text_themes.dart';
+import '../../../util/flutter/hmb_theme.dart';
+import 'hmb_column.dart';
+import 'hmb_row.dart';
+import '../text/hmb_text_themes.dart';
 
 enum SurfaceElevation {
   e0(HMBColors.surface0dp),

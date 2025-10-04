@@ -19,11 +19,11 @@ import '../../entity/entity.g.dart';
 import '../../util/dart/measurement_type.dart';
 import '../../util/dart/money_ex.dart';
 import '../../util/dart/units.dart';
-import 'fields/hmb_text_field.dart';
-import 'hmb_button.dart';
-import 'layout/layout.g.dart';
-import 'select/select.g.dart';
-import 'text/hmb_text_themes.dart';
+import '../widgets/fields/hmb_text_field.dart';
+import '../widgets/hmb_button.dart';
+import '../widgets/layout/layout.g.dart';
+import '../widgets/select/select.g.dart';
+import '../widgets/text/hmb_text_themes.dart';
 
 enum AddType { packing, shopping }
 

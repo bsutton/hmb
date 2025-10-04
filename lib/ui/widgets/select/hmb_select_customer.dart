@@ -16,7 +16,7 @@ import 'package:june/june.dart';
 
 import '../../../dao/dao_customer.dart';
 import '../../../entity/customer.dart';
-import '../../../ui/widgets/hmb_add_button.dart';
+import '../icons/hmb_add_button.dart';
 import '../../crud/customer/edit_customer_screen.dart';
 import 'hmb_droplist.dart';
 

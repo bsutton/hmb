@@ -20,7 +20,7 @@ import '../../util/flutter/hmb_theme.dart';
 import 'color_ex.dart';
 import 'hmb_tooltip.dart';
 import 'layout/hmb_empty.dart';
-import 'svg.dart';
+import 'icons/svg.dart';
 
 /// A generic HMB button with optional hint shown on long press.
 class HMBButton extends StatelessWidget {

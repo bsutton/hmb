@@ -21,6 +21,8 @@ import '../../dao/dao_quote.dart';
 import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/quote.dart';
+import '../widgets/icons/hmb_close_icon.dart';
+import '../widgets/icons/hmb_paste_icon.dart';
 import '../widgets/layout/layout.g.dart';
 
 class SelectQuoteDialog extends StatefulWidget {
@@ -90,13 +92,7 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
     child: Scaffold(
       appBar: AppBar(
         title: const Text('Select Quote'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
-            tooltip: 'Close',
-          ),
-        ],
+        actions: [HMBCloseIcon(onPressed: () async => Navigator.pop(context))],
       ),
       body: HMBColumn(
         children: [

@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
 import '../dialog/hmb_comfirm_delete_dialog.dart';
-import '../widgets/hmb_delete_icon.dart';
+import '../widgets/icons/hmb_delete_icon.dart';
 import '../widgets/widgets.g.dart';
 import 'list_packing_screen.dart';
 import 'list_shopping_screen.dart';

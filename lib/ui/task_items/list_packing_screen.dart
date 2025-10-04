@@ -32,22 +32,27 @@ import '../../entity/task_item.dart';
 import '../../entity/task_item_type.dart';
 import '../../util/dart/format.dart';
 import '../../util/flutter/app_title.dart';
-import '../widgets/add_task_item.dart';
-import '../widgets/help_button.dart';
+import '../dialog/add_task_item.dart';
+import '../dialog/hmb_comfirm_delete_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_colours.dart';
 import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/hmb_toggle.dart';
+import '../widgets/icons/help_button.dart';
+import '../widgets/icons/hmb_complete_icon.dart';
+import '../widgets/icons/hmb_delete_icon.dart';
+import '../widgets/icons/hmb_edit_icon.dart';
 import '../widgets/layout/layout.g.dart';
+import '../widgets/layout/surface.dart';
 import '../widgets/select/hmb_droplist.dart';
 import '../widgets/select/hmb_filter_line.dart';
 import '../widgets/select/hmb_select_job_multi.dart';
-import '../widgets/surface.dart';
 import '../widgets/text/hmb_text.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'list_shopping_screen.dart';
 import 'mark_as_complete.dart';
+import 'shopping_item_dialog.dart';
 
 ScheduleFilter _selectedScheduleFilter = ScheduleFilter.all;
 
@@ -286,68 +291,80 @@ Packing items are taken from Task items that are marked as "${TaskItemType.mater
 
 '''),
   );
-
-  Widget _buildListItem(BuildContext context, TaskItemContext itemContext) =>
-      SurfaceCard(
-        height: 250,
-        onPressed: () => unawaited(markAsCompleted(itemContext, context)),
-        title: itemContext.taskItem.description,
-        body: Row(
-          children: [
-            // Constrain details column so buttons are always visible
-            Expanded(
-              child: FutureBuilderEx(
-                // ignore: discarded_futures
-                future: JobDetail.get(itemContext.task),
-                builder: (context, jobDetail) {
-                  final jd = jobDetail!;
-                  return HMBColumn(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HMBTextLine('Customer: ${jd.customer.name}'),
-                      HMBTextLine('Job: ${jd.job.summary}'),
-                      HMBTextLine('Task: ${itemContext.task.name}'),
-                      HMBTextLine('Scheduled: ${jd.dateOfNextActivity()}'),
-                      if (itemContext.taskItem.hasDimensions)
-                        HMBTextLine(
-                          '${itemContext.taskItem.dimension1} '
-                          'x ${itemContext.taskItem.dimension2} '
-                          'x ${itemContext.taskItem.dimension3} '
-                          '${itemContext.taskItem.measurementType}',
-                        ),
-                      if (itemContext.taskItem.completed)
-                        const Text(
-                          'Completed',
-                          style: TextStyle(color: Colors.green),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            // Action buttons
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.shopping_cart, color: Colors.blue),
-                  onPressed: () async {
-                    await _moveToShoppingList(itemContext);
-                    await _loadTaskItems();
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () async {
-                    await markAsCompleted(itemContext, context);
-                    await _loadTaskItems();
-                  },
-                ),
-              ],
-            ),
-          ],
+  Widget _buildListItem(
+    BuildContext context,
+    TaskItemContext itemContext,
+  ) => SurfaceCardWithActions(
+    height: 250,
+    title: itemContext.taskItem.description,
+    // tap no longer auto-completes; actions are explicit like the shopping card
+    body: Row(
+      children: [
+        Expanded(
+          child: FutureBuilderEx(
+            future: JobDetail.get(itemContext.task),
+            builder: (context, jobDetail) {
+              final jd = jobDetail!;
+              return HMBColumn(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  HMBTextLine('Customer: ${jd.customer.name}'),
+                  HMBTextLine('Job: ${jd.job.summary}'),
+                  HMBTextLine('Task: ${itemContext.task.name}'),
+                  HMBTextLine('Scheduled: ${jd.dateOfNextActivity()}'),
+                  if (itemContext.taskItem.hasDimensions)
+                    HMBTextLine(
+                      '${itemContext.taskItem.dimension1} '
+                      'x ${itemContext.taskItem.dimension2} '
+                      'x ${itemContext.taskItem.dimension3} '
+                      '${itemContext.taskItem.measurementType}',
+                    ),
+                  if (itemContext.taskItem.completed)
+                    const Text(
+                      'Completed',
+                      style: TextStyle(color: Colors.green),
+                    ),
+                ],
+              );
+            },
+          ),
         ),
-      );
+      ],
+    ),
+    actions: [
+      // Complete
+      HMBCompleteIcon(
+        onPressed: () async {
+          await markAsCompleted(itemContext, context);
+          await _loadTaskItems();
+        },
+      ),
+      // Edit (reuse the shopping dialog to edit a TaskItem)
+      HMBEditIcon(
+        hint: 'Edit Item',
+        onPressed: () async {
+          await showShoppingItemDialog(context, itemContext, _loadTaskItems);
+        },
+      ),
+      // Delete
+      HMBDeleteIcon(
+        hint: 'Delete Item',
+        onPressed: () async {
+          await showConfirmDeleteDialog(
+            context: context,
+            nameSingular: 'Task Item',
+            question:
+                'Do you want to delete ${itemContext.taskItem.description}',
+            onConfirmed: () async {
+              await DaoTaskItem().delete(itemContext.taskItem.id);
+              await _loadTaskItems();
+              HMBToast.info('Item deleted.');
+            },
+          );
+        },
+      ),
+    ],
+  );
 
   Future<void> _moveToShoppingList(TaskItemContext itemContext) async {
     final itemType = itemContext.taskItem.itemType;

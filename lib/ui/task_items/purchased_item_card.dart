@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 
 import '../../dao/dao.g.dart';
 import '../../util/flutter/flutter_util.g.dart';
+import '../widgets/icons/hmb_undo_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/text/text.g.dart';
 import 'list_packing_screen.dart';
@@ -33,8 +34,7 @@ class PurchasedItemCard extends ShoppingItemCard {
   });
 
   @override
-  Widget buildActions(BuildContext context, CustomerAndJob det) => IconButton(
-    icon: const Icon(Icons.undo, color: Colors.orange),
+  Widget buildActions(BuildContext context, CustomerAndJob det) => HMBUndoIcon(
     onPressed: () async {
       await _markAsReturned(itemContext, context);
       await onReload();

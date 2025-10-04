@@ -17,6 +17,8 @@ import 'package:flutter/material.dart';
 
 import '../color_ex.dart';
 import '../hmb_button.dart';
+import '../icons/h_m_b_clear_icon.dart';
+import '../icons/hmb_close_icon.dart';
 import '../layout/layout.g.dart';
 import '../text/text.g.dart';
 
@@ -96,9 +98,9 @@ class _HMBDroplistMultiSelectDialogState<T>
                   textAlign: TextAlign.center,
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(_selectedItems),
+              HMBCloseIcon(
+                onPressed: () async =>
+                    Navigator.of(context).pop(_selectedItems),
               ),
             ],
           ),
@@ -152,9 +154,8 @@ class _HMBDroplistMultiSelectDialogState<T>
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
+              suffixIcon: HMBClearIcon(
+                onPressed: () async {
                   setState(() {
                     _searchController.text = '';
                     _filter = '';

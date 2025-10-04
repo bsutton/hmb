@@ -16,7 +16,7 @@ import 'package:june/june.dart';
 
 import '../../../dao/dao_category.dart';
 import '../../../entity/category.dart';
-import '../../widgets/hmb_add_button.dart';
+import '../../widgets/icons/hmb_add_button.dart';
 import '../../widgets/select/hmb_droplist.dart';
 import 'edit_category_screen.dart';
 

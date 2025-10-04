@@ -22,7 +22,7 @@ import '../../../entity/job.dart';
 import '../../../util/dart/plus_space.dart';
 import '../../../util/flutter/hmb_theme.dart';
 import '../../dialog/source_context.dart';
-import '../hmb_phone_icon.dart';
+import '../icons/hmb_phone_icon.dart';
 import '../layout/hmb_placeholder.dart';
 
 /// Displays the label and phoneNum.

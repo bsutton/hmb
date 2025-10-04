@@ -22,8 +22,9 @@ import '../../../entity/entity.g.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../dialog/hmb_comfirm_delete_dialog.dart';
-import '../../widgets/hmb_delete_icon.dart';
-import '../../widgets/hmb_edit_icon.dart';
+import '../../widgets/icons/hmb_delete_icon.dart';
+import '../../widgets/icons/hmb_edit_icon.dart';
+import '../../widgets/icons/hmb_filter_icon.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_filter_line.dart';
 import '../../widgets/widgets.g.dart';
@@ -240,12 +241,11 @@ class EntityListScreenState<T extends Entity<T>>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text('Click'),
-              HMBIconButton(
+              HMBButtonAdd(
+                small: true,
                 enabled: false,
-                size: HMBIconButtonSize.small,
-                icon: const Icon(Icons.add),
                 hint: 'Not this one',
-                onPressed: () async {},
+                onAdd: () async {},
               ),
 
               Text('to add ${widget.entityNamePlural}.'),
@@ -258,12 +258,11 @@ class EntityListScreenState<T extends Entity<T>>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('No ${widget.entityNamePlural} found. Check the Filter '),
-              HMBIconButton(
+              HMBFilterIcon(
                 enabled: false,
-                size: HMBIconButtonSize.small,
-                icon: const Icon(Icons.tune),
+                small: true,
                 hint:
-                    '''Click the Filter Icon in the top right hand corner to view active filters''',
+        '''Click the Filter Icon in the top right hand corner to view active filters''',
                 onPressed: () async {},
               ),
             ],

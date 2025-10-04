@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
-
-import '../../util/dart/types.dart';
+import '../../../util/dart/types.dart';
 import 'hmb_icon_button.dart';
 
-class HMBDeleteIcon extends StatelessWidget {
+class HMBEmailIcon extends StatelessWidget {
   final AsyncVoidCallback onPressed;
   final String hint;
   final bool enabled;
+  final bool small;
 
-  const HMBDeleteIcon({
+  const HMBEmailIcon({
     required this.onPressed,
+    this.small = true,
     super.key,
-    this.hint = 'Delete',
+    this.hint = '''Send an Email''',
     this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) => HMBIconButton(
-    icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+    icon: const Icon(Icons.email, size: 20),
+    size: small ? HMBIconButtonSize.small : HMBIconButtonSize.standard,
     showBackground: false,
     hint: hint,
     enabled: enabled,
     onPressed: onPressed,
   );
 }
+

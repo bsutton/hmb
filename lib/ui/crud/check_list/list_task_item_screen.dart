@@ -27,6 +27,8 @@ import '../../../entity/task_item.dart';
 import '../../../entity/task_item_type.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../task_items/task_items.g.dart';
+import '../../widgets/icons/hmb_complete_icon.dart';
+import '../../widgets/icons/hmb_filter_icon.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/hmb_text.dart';
@@ -108,18 +110,15 @@ class _TaskItemListScreenState<P extends Entity<P>>
               if (taskItem.completed)
                 const Text('Completed', style: TextStyle(color: Colors.green))
               else
-                IconButton(
-                  icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () => unawaited(
-                    markAsCompleted(
-                      TaskItemContext(
-                        task: widget.task!,
-                        taskItem: taskItem,
-                        billingType: taskAndRate.billingType,
-                        wasReturned: false,
-                      ),
-                      context,
+                HMBCompleteIcon(
+                  onPressed: () => markAsCompleted(
+                    TaskItemContext(
+                      task: widget.task!,
+                      taskItem: taskItem,
+                      billingType: taskAndRate.billingType,
+                      wasReturned: false,
                     ),
+                    context,
                   ),
                 ),
             ],

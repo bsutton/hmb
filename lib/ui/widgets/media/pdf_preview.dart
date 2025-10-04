@@ -21,6 +21,7 @@ import '../../../ui/widgets/hmb_toast.dart';
 import '../../../util/dart/types.dart';
 import '../blocking_ui.dart';
 import '../desktop_back_gesture_suppress.dart';
+import '../icons/hmb_email_icon.dart';
 import '../layout/layout.g.dart';
 
 typedef SendEmailDialog =
@@ -96,12 +97,7 @@ class PdfPreviewScreen extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: Text(title),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.email),
-          onPressed: () => unawaited(_showEmailDialog(context)),
-        ),
-      ],
+      actions: [HMBEmailIcon(onPressed: () => _showEmailDialog(context))],
     ),
     body: Center(
       child: HMBColumn(
