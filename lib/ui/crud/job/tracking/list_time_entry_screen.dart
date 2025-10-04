@@ -178,7 +178,6 @@ class _Details {
 }
 
 class TimeEntryTile extends StatelessWidget {
-  static const format = 'h:mm a';
 
   final TimeEntry timeEntry;
   final String taskName;
@@ -201,7 +200,7 @@ class TimeEntryTile extends StatelessWidget {
             builder: (context, supplier) => Text('Supplier: ${supplier!.name}'),
           ),
         Text(
-          '''Time: ${formatTime(timeEntry.startTime, format)} - ${timeEntry.endTime != null ? formatTime(timeEntry.endTime!, format) : "Ongoing"}''',
+          '''Time: ${formatTime(timeEntry.startTime)} - ${timeEntry.endTime != null ? formatTime(timeEntry.endTime!) : "Ongoing"}''',
         ),
         Text('Duration: ${formatDuration(timeEntry.duration)}'),
         if (timeEntry.note != null && timeEntry.note!.isNotEmpty)

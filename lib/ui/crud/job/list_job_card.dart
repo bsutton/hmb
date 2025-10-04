@@ -109,7 +109,7 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
       activity = 'Not Scheduled';
       textColor = Colors.red;
     } else if (nextActivity!.start.toLocalDate() == LocalDate.today()) {
-      activity = formatTime(nextActivity!.start, 'h:mm a');
+      activity = formatTime(nextActivity!.start);
       textColor = Colors.orange;
     } else {
       activity = formatDateTime(nextActivity!.start);
