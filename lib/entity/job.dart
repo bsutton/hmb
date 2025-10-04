@@ -23,6 +23,10 @@ enum BillingType {
 
   const BillingType(this.display);
   final String display;
+
+  static BillingType fromName(String? name) => name == null
+      ? BillingType.timeAndMaterial
+      : BillingType.values.byName(name);
 }
 
 class Job extends Entity<Job> {
@@ -132,10 +136,7 @@ class Job extends Entity<Job> {
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
     lastActive: (map['last_active'] as int) == 1,
-    billingType: BillingType.values.firstWhere(
-      (e) => e.name == (map['billing_type'] as String?),
-      orElse: () => BillingType.timeAndMaterial,
-    ),
+    billingType: BillingType.fromName(map['billing_type'] as String?),
     bookingFeeInvoiced: (map['booking_fee_invoiced'] as int) == 1,
     billingContactId: map['billing_contact_id'] as int?,
   );

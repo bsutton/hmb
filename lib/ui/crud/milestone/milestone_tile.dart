@@ -24,12 +24,14 @@ import '../../../dao/dao_invoice.dart';
 import '../../../entity/invoice.dart';
 import '../../../entity/milestone.dart';
 import '../../../util/dart/money_ex.dart';
+import '../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../invoicing/edit_invoice_screen.dart';
 import '../../invoicing/invoice_details.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/hmb_add_button.dart';
 import '../../widgets/hmb_delete_icon.dart';
 import '../../widgets/hmb_link_internal.dart';
+import '../../widgets/hmb_save_icon.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/layout.g.dart';
 
@@ -128,7 +130,14 @@ class _MilestoneTileState extends State<MilestoneTile> {
     }
   }
 
-  void _onDeletePressed() => widget.onDelete(widget.milestone);
+  void _onDeletePressed() {
+    showConfirmDeleteDialog(
+      context: context,
+      title: 'Delete Milestone',
+      nameSingular: 'Milestone',
+      onConfirmed: () async => widget.onDelete(widget.milestone),
+    );
+  }
 
   Future<void> _onInvoicePressed() async {
     // New: ensure description exists
@@ -187,8 +196,7 @@ class _MilestoneTileState extends State<MilestoneTile> {
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: // ... inside build(), replace the whole HMBRow(children:[ Expanded(...), HMBRow(...actions) ]) with:
-          HMBRow(
+          child: HMBRow(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // LEFT: content fills all available width
@@ -211,13 +219,10 @@ class _MilestoneTileState extends State<MilestoneTile> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (_isInEditMode)
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.save,
-                                  color: Colors.green,
-                                ),
-                                onPressed: disabled ? null : _onSavePressed,
-                                tooltip: 'Save changes',
+                              HMBSaveIcon(
+                                enabled: !disabled,
+                                onPressed: () async => _onSavePressed(),
+                                hint: 'Save changes',
                               )
                             else ...[
                               if (_isEditable)
@@ -311,7 +316,6 @@ class _MilestoneTileState extends State<MilestoneTile> {
                   ],
                 ),
               ),
-              // (No RHS actions anymore)
             ],
           ),
         ),

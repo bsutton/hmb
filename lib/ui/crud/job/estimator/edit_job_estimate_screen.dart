@@ -28,6 +28,7 @@ import '../../../../util/dart/money_ex.dart';
 import '../../../dialog/hmb_ask_user_to_continue.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_delete_icon.dart';
+import '../../../widgets/hmb_edit_icon.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toggle.dart';
 import '../../../widgets/layout/layout.g.dart';
@@ -243,30 +244,33 @@ class _JobEstimateBuilderScreenState
       ],
     ),
   );
-
   Widget _buildTaskCard(Task task) => HMBColumn(
     children: [
-      Surface(
-        elevation: SurfaceElevation.e8,
-        child: HMBColumn(
+      SurfaceCardWithActions(
+        title: task.name,
+        actions: [
+          HMBEditIcon(onPressed: () => _editTask(task), hint: 'Edit Task'),
+          HMBDeleteIcon(
+            onPressed: () => _deleteTask(task),
+            hint: 'Delete Task',
+          ),
+        ],
+        body: HMBColumn(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListTile(
-              title: HMBTextHeadline(task.name),
-              subtitle: HMBTextBody(task.description),
-              trailing: HMBDeleteIcon(
-                onPressed: () => _deleteTask(task),
-                hint: 'Delete Task',
-              ),
-              onTap: () => unawaited(_editTask(task)),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: PhotoGallery.forTask(task: task),
-            ),
+            if (Strings.isNotBlank(task.description))
+              HMBTextBody(task.description),
+
+            // Photos
+            PhotoGallery.forTask(task: task),
+
+            // Items
             _buildTaskItems(task),
+
+            // Add Item button
             HMBButton(
               label: 'Add Item',
-              hint: 'Add an Item (to purchase, pack or labor) to an Task',
+              hint: 'Add an Item (to purchase, pack or labor) to a Task',
               onPressed: () => unawaited(_addItemToTask(task)),
             ),
           ],
@@ -300,17 +304,19 @@ class _JobEstimateBuilderScreenState
     BillingType billingType,
   ) => HMBColumn(
     children: [
-      Surface(
-        elevation: SurfaceElevation.e24,
-        child: ListTile(
-          title: Text(item.description),
-          subtitle: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
-          trailing: HMBDeleteIcon(
+      SurfaceCardWithActions(
+        title: item.description,
+        body: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
+        actions: [
+          HMBEditIcon(
+            onPressed: () => _editItem(item, task),
+            hint: 'Edit Estimate',
+          ),
+          HMBDeleteIcon(
             onPressed: () => _deleteItem(item),
             hint: 'Delete Estimate',
           ),
-          onTap: () => unawaited(_editItem(item, task)),
-        ),
+        ],
       ),
     ],
   );

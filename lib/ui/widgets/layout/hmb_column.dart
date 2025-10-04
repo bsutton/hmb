@@ -1,12 +1,11 @@
 import 'package:flutter/widgets.dart';
 
-import 'layout.g.dart';
-
 class HMBColumn extends StatelessWidget {
   final CrossAxisAlignment crossAxisAlignment;
   final MainAxisAlignment mainAxisAlignment;
   final MainAxisSize mainAxisSize;
   final bool leadingSpace;
+  final double spacing;
 
   final List<Widget> children;
 
@@ -17,6 +16,7 @@ class HMBColumn extends StatelessWidget {
     this.mainAxisSize = MainAxisSize.max,
     this.leadingSpace = false,
     super.key,
+    this.spacing = 8,
   });
 
   @override
@@ -30,11 +30,11 @@ class HMBColumn extends StatelessWidget {
   List<Widget> _withSpacing(List<Widget> children) {
     final out = <Widget>[];
     if (leadingSpace) {
-      out.add(const HMBSpacer(height: true));
+      out.add(SizedBox(height: spacing));
     }
     for (var i = 0; i < children.length; i++) {
       if (i > 0) {
-        out.add(const HMBSpacer(height: true));
+        out.add(SizedBox(height: spacing));
       }
       out.add(children[i]);
     }
