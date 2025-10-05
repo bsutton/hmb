@@ -282,8 +282,9 @@ class ShoppingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HMBText(jobAndCustomer!.job.summary),
+          HMBText(jobAndCustomer!.customer.name),
           HMBText(jobAndCustomer.job.summary),
+          HMBText(jobAndCustomer.task.name),
           HMBText(taskItem.description),
         ],
       ),
@@ -304,8 +305,9 @@ class PackingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HMBText(jobAndCustomer!.job.summary),
+          HMBText(jobAndCustomer!.customer.name),
           HMBText(jobAndCustomer.job.summary),
+          HMBText(jobAndCustomer.task.name),
           HMBText(taskItem.description),
         ],
       ),
