@@ -92,7 +92,7 @@ Future<File> generateInvoicePdf(
                 ),
               ),
             ),
-            // Bottom colored band with page number
+            // Bottom colored band with T&C + page number
             pw.Positioned(
               bottom: 0,
               left: 0,
@@ -105,6 +105,35 @@ Future<File> generateInvoicePdf(
                   child: pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
+                      // T&C link (left)
+                      pw.RichText(
+                        text: pw.TextSpan(
+                          text: 'This invoice is subject to our ',
+                          style: const pw.TextStyle(
+                            color: PdfColors.white,
+                            fontSize: 10,
+                          ),
+                          children: [
+                            pw.WidgetSpan(
+                              baseline:
+                                  -2, // 👈 tweak this value until the link lines up
+                              child: pw.UrlLink(
+                                destination: system.termsUrl ?? '',
+                                child: pw.Text(
+                                  'Terms and Conditions',
+                                  style: const pw.TextStyle(
+                                    fontSize: 10,
+                                    color: PdfColors.blue,
+                                    decoration: pw.TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Page numbers (right)
                       pw.Text(
                         '${context.pageNumber} of ${context.pagesCount}',
                         style: const pw.TextStyle(
@@ -346,7 +375,7 @@ Future<File> generateInvoicePdf(
               left: 20,
               right: 20,
               top: 10,
-              bottom: 20,
+              bottom: 60, // was 20 – match quote to clear footer band
             ),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,

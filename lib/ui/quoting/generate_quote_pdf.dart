@@ -70,27 +70,37 @@ Future<File> generateQuotePdf(
                       pw.RichText(
                         text: pw.TextSpan(
                           text: 'This quote is subject to our ',
-                          style: const pw.TextStyle(color: PdfColors.white),
+                          style: const pw.TextStyle(
+                            color: PdfColors.white,
+                            fontSize: 10,
+                          ),
                           children: [
                             pw.WidgetSpan(
+                              // nudge the UrlLink down to align with the text
+                              baseline: -2,
                               child: pw.UrlLink(
+                                destination: system.termsUrl ?? '',
                                 child: pw.Text(
                                   'Terms and Conditions',
                                   style: const pw.TextStyle(
+                                    fontSize: 10,
                                     color: PdfColors.blue,
                                     decoration: pw.TextDecoration.underline,
                                   ),
                                 ),
-                                destination: system.termsUrl ?? '',
                               ),
                             ),
                             const pw.TextSpan(
                               text: ' and is valid for 30 days',
-                              style: pw.TextStyle(color: PdfColors.white),
+                              style: pw.TextStyle(
+                                color: PdfColors.white,
+                                fontSize: 10,
+                              ),
                             ),
                           ],
                         ),
                       ),
+
                       pw.Text(
                         '${context.pageNumber} of ${context.pagesCount}',
                         style: const pw.TextStyle(
