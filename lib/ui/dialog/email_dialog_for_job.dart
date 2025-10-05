@@ -129,10 +129,6 @@ $businessDetails
           hint:
               '''Send the email using your devices email app. You will have another opportunity to cancel the send.''',
           onPressed: () async {
-            if (!(Platform.isAndroid || Platform.isIOS)) {
-              HMBToast.error('This platform does not support sending emails');
-              return;
-            }
             if (_selectedRecipients.isNotEmpty) {
               final email = Email(
                 body: _bodyController.text,
@@ -141,6 +137,10 @@ $businessDetails
                 attachmentPaths: widget.attachmentPaths,
               );
 
+              if (!(Platform.isAndroid || Platform.isIOS)) {
+                HMBToast.error('This platform does not support sending emails');
+                return;
+              }
               await FlutterEmailSender.send(email);
               HMBToast.info('Email sent successfully');
               if (context.mounted) {
