@@ -190,8 +190,16 @@ from contact co
 join job jo
   on co.id = jo.contact_id
 where jo.id =? 
+
+union
+
+select co.* 
+from contact co
+join job jo
+  on co.id = jo.billing_contact_id
+where jo.id = ?
 ''',
-        [jobId],
+        [jobId, jobId],
       ),
     );
   }
