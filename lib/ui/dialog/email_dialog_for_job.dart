@@ -96,11 +96,11 @@ $businessDetails
         child: ListBody(
           children: <Widget>[
             HMBSelectEmailMulti(
+              initialEmails: [widget.preferredRecipient],
               job: widget.job,
-              // value: _selectedRecipient,
-              onChanged: (newRecipients) {
+              onChanged: (selectedRecipients) {
                 setState(() {
-                  _selectedRecipients = newRecipients;
+                  _selectedRecipients = selectedRecipients;
                 });
               },
             ),
