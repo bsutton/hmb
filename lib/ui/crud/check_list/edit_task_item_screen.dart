@@ -23,6 +23,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 import '../../../dao/dao_supplier.dart';
 import '../../../dao/dao_system.dart';
 import '../../../dao/dao_task_item.dart';
+import '../../../entity/helpers/charge_mode.dart';
 import '../../../entity/job.dart';
 import '../../../entity/supplier.dart';
 import '../../../entity/system.dart';
@@ -81,7 +82,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   late TextEditingController _dimension2Controller;
   late TextEditingController _dimension3Controller;
   late TextEditingController _urlController;
-  var _manualCharge = false;
+  late ChargeMode _chargeMode;
 
   late FocusNode _descriptionFocusNode;
 
@@ -138,7 +139,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     _urlController = TextEditingController(text: currentEntity?.url);
     _labourEntryMode = currentEntity?.labourEntryMode ?? LabourEntryMode.hours;
 
-    _manualCharge = currentEntity?.chargeSet ?? false;
+    _chargeMode = currentEntity?.chargeMode ?? ChargeMode.userDefined;
+    
 
     _descriptionFocusNode = FocusNode();
   }
@@ -311,7 +313,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         controller: _estimatedLabourHoursController,
         labelText: 'Estimated Hours',
         keyboardType: TextInputType.number,
-        enabled: !_manualCharge,
+        enabled: _chargeMode != ChargeMode.userDefined,
         onChanged: (value) {
           _calculateEstimatedCostFromHours(value);
           _calculateChargeFromMargin(_marginController.text);
@@ -322,7 +324,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         controller: _estimatedLabourCostController,
         labelText: 'Estimated Cost',
         keyboardType: TextInputType.number,
-        enabled: !_manualCharge,
+        enabled: _chargeMode != ChargeMode.userDefined,
         onChanged: (value) =>
             _calculateChargeFromMargin(_marginController.text),
       ),
@@ -372,7 +374,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       controller: _estimatedMaterialUnitCostController,
       labelText: 'Estimated Unit Cost',
       keyboardType: TextInputType.number,
-      enabled: !_manualCharge,
+      enabled: _chargeMode != ChargeMode.userDefined,
       onChanged: (value) {
         _calculateChargeFromMargin(_marginController.text);
       },
@@ -381,7 +383,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       controller: _estimatedMaterialQuantityController,
       labelText: 'Quantity',
       keyboardType: TextInputType.number,
-      enabled: !_manualCharge,
+      enabled: _chargeMode != ChargeMode.userDefined,
       onChanged: (value) {
         _calculateChargeFromMargin(_marginController.text);
       },
@@ -414,7 +416,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       labelText: 'Charge',
       keyboardType: TextInputType.number,
       onChanged: (value) {
-        if (!_manualCharge) {
+        if (_chargeMode != ChargeMode.userDefined) {
           _calculateChargeFromMargin(_marginController.text);
         }
       },
@@ -428,7 +430,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         controller: _marginController,
         labelText: 'Margin (%)',
         keyboardType: TextInputType.number,
-        enabled: !_manualCharge,
+        enabled: _chargeMode != ChargeMode.userDefined,
         onChanged: _calculateChargeFromMargin,
       ),
       _buildDirectChargeField(),
@@ -436,9 +438,9 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         controller: _chargeController,
         labelText: 'Charge',
         keyboardType: TextInputType.number,
-        enabled: _manualCharge,
+        enabled: _chargeMode == ChargeMode.userDefined,
         onChanged: (value) {
-          if (!_manualCharge) {
+          if (_chargeMode != ChargeMode.userDefined) {
             _calculateChargeFromMargin(_marginController.text);
           }
         },
@@ -449,11 +451,11 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   /// Control how charge is calculated.
   Widget _buildDirectChargeField() => SwitchListTile(
     title: const Text('Enter charge directly'),
-    value: _manualCharge,
+    value: _chargeMode == ChargeMode.userDefined,
     onChanged: (val) => setState(() {
-      _manualCharge = val;
+      _chargeMode =  val ? ChargeMode.userDefined : ChargeMode.calculated;
       // if switching *off* manual, re‑compute from current margin/qty/hours
-      if (!_manualCharge) {
+      if (_chargeMode != ChargeMode.userDefined) {
         _calculateChargeFromMargin(_marginController.text);
       }
     }),
@@ -480,7 +482,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       _estimatedLabourHoursController.text,
     ),
     estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
-    charge: _manualCharge
+    charge: _chargeMode == ChargeMode.userDefined
         ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
         : null,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
@@ -519,7 +521,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       _estimatedLabourHoursController.text,
     ),
     estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
-    charge: _manualCharge
+    charge: _chargeMode == ChargeMode.userDefined
         ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
         : null,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
