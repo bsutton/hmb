@@ -4,7 +4,7 @@
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products 
+   • Any external distribution, resale, or incorporation into products
       for third parties is strictly prohibited.
 
  See the full license on GitHub:
@@ -20,16 +20,16 @@ import '../../entity/quote_line.dart';
 import '../../entity/quote_line_group.dart';
 import '../../util/dart/money_ex.dart';
 
-class JobQuote {
+class QuoteDetails {
   final int quoteId;
   final List<QuoteLineGroupWithLines> groups;
 
-  JobQuote({required this.quoteId, required this.groups});
+  QuoteDetails({required this.quoteId, required this.groups});
 
   Money get total =>
       groups.fold(MoneyEx.zero, (sum, group) => sum + group.total);
 
-  static Future<JobQuote> fromQuoteId(
+  static Future<QuoteDetails> fromQuoteId(
     int quoteId, {
     required bool excludeHidden,
   }) async {
@@ -55,7 +55,7 @@ class JobQuote {
         ? groupsWithLines.where((group) => group.hasVisible)
         : groupsWithLines;
 
-    return JobQuote(quoteId: quoteId, groups: filteredGroups.toList());
+    return QuoteDetails(quoteId: quoteId, groups: filteredGroups.toList());
   }
 }
 
