@@ -162,7 +162,7 @@ class _JobCardState extends State<JobCard> {
 
       for (final item in items) {
         if (item.itemType == TaskItemType.labour) {
-          totalLabour += item.calcLabourCharges(hourlyRate);
+          totalLabour += item.calcLabourCharges(billingType, hourlyRate);
         } else {
           totalMaterials += item.calcMaterialCharges(billingType);
         }

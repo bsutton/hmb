@@ -10,7 +10,7 @@ publish_to: 'none'
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.13.4
+version: 0.13.5
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -58,7 +58,7 @@ dependencies:
   # google_mlkit_barcode_scanning: ^0.14.1
   google_sign_in: ^7.1.0
   # extension_google_sign_in_as_googleapis_auth: 3.0.0
-  googleapis: ^14.0.0
+  googleapis: ^15.0.0
   # googleapis_auth: ^2.0.0
   halfpipe: ^1.0.1
   http: ^1.2.1
@@ -75,7 +75,8 @@ dependencies:
   # mobile_number: ^2.1.1
   meta: ^1.16.0
   
-  money2: ^6.0.5
+  mocktail: ^1.0.4
+  money2: ^6.0.6
   oauth2: ^2.0.3
   package_info_plus: ^9.0.0
   parchment_delta: ^1.0.0
@@ -95,7 +96,7 @@ dependencies:
   #   hosted: https://onepub.dev/api/jbbxpsdavu/
   settings_yaml: ^8.3.0
   sqflite: ^2.3.2
-  sqflite_common: ^2.5.4+5
+  sqflite_common: ^2.5.6
   sqflite_common_ffi: ^2.3.3+1
   sqflite_common_ffi_web: ^1.0.0
   stacktrace_impl: ^2.3.0
@@ -117,7 +118,7 @@ dev_dependencies:
   lint_hard: ^6.2.1
   mockito: ^5.4.4
   pub_release: ^11.0.0
-  pubspec_manager: ^1.0.0
+  pubspec_manager: ^2.0.1
   test: ^1.25.15
 
 flutter:

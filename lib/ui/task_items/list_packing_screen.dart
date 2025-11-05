@@ -43,6 +43,7 @@ import '../widgets/icons/help_button.dart';
 import '../widgets/icons/hmb_complete_icon.dart';
 import '../widgets/icons/hmb_delete_icon.dart';
 import '../widgets/icons/hmb_edit_icon.dart';
+import '../widgets/icons/hmb_shopping_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/layout/surface.dart';
 import '../widgets/select/hmb_droplist.dart';
@@ -332,6 +333,12 @@ Packing items are taken from Task items that are marked as "${TaskItemType.mater
       ],
     ),
     actions: [
+      HMBShoppingIcon(
+        onPressed: () async {
+          await _moveToShoppingList(itemContext);
+          await _loadTaskItems();
+        },
+      ),
       // Complete
       HMBCompleteIcon(
         onPressed: () async {

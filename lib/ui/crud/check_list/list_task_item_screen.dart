@@ -184,7 +184,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
         'Cost: ${checkListItem.estimatedLabourCost} ',
       ),
     HMBText(
-      'Charge: ${checkListItem.getCharge(billingType, hourlyRate)} '
+      'Charge: ${checkListItem.getTotalLineCharge(billingType, hourlyRate)} '
       'Margin (%): ${checkListItem.margin}',
     ),
   ];
@@ -200,7 +200,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
     ),
     HMBText(
       'Margin (%): ${checkListItem.margin} '
-      'Charge: ${checkListItem.getCharge(billingType, hourlyRate)}',
+      'Charge: ${checkListItem.getTotalLineCharge(billingType, hourlyRate)}',
     ),
   ];
 
@@ -215,7 +215,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
     ),
     HMBText(
       'Margin (%): ${checkListItem.margin} '
-      'Charge: ${checkListItem.getCharge(billingType, hourlyRate)}',
+      'Charge: ${checkListItem.getTotalLineCharge(billingType, hourlyRate)}',
     ),
   ];
 }

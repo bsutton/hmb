@@ -22,7 +22,6 @@ import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/quote.dart';
 import '../widgets/icons/hmb_close_icon.dart';
-import '../widgets/icons/hmb_paste_icon.dart';
 import '../widgets/layout/layout.g.dart';
 
 class SelectQuoteDialog extends StatefulWidget {

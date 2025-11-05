@@ -14,6 +14,7 @@
 import 'package:money2/money2.dart';
 
 import '../entity/entity.g.dart';
+import '../entity/helpers/material_calculator.dart';
 import '../util/dart/dart.g.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
@@ -84,22 +85,7 @@ Future<Money> createByTask(
       }
 
       // Determine unit cost and quantity based on billing type
-      Money unitCost;
-      Fixed quantity;
-      switch (job.billingType) {
-        case BillingType.timeAndMaterial:
-          unitCost = taskItem.actualMaterialUnitCost!;
-          quantity = taskItem.actualMaterialQuantity!;
-        case BillingType.fixedPrice:
-          unitCost = taskItem.estimatedMaterialUnitCost!;
-          quantity = taskItem.estimatedMaterialQuantity!;
-      }
-
-      // Calculate the line total, flipping sign for returns
-      var lineTotal = unitCost.multiplyByFixed(quantity);
-      if (taskItem.isReturn) {
-        lineTotal = -lineTotal;
-      }
+      final calculator = MaterialCalculator(job.billingType, taskItem);
 
       final descriptionPrefix = taskItem.isReturn ? 'Returned: ' : 'Material: ';
       final lineDescription = '$descriptionPrefix${taskItem.description}';
@@ -109,16 +95,16 @@ Future<Money> createByTask(
         invoiceId: invoiceId,
         invoiceLineGroupId: invoiceLineGroupId,
         description: lineDescription,
-        quantity: quantity,
-        unitPrice: unitCost,
-        lineTotal: lineTotal,
+        quantity: calculator.quantity,
+        unitPrice: calculator.calculatedUnitCharge,
+        lineTotal: calculator.lineChargeTotal,
       );
       final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
 
       // Mark the task item as billed
       await DaoTaskItem().markAsBilled(taskItem, invoiceLineId);
 
-      totalAmount += lineTotal;
+      totalAmount += invoiceLine.lineTotal;
     }
   }
 

@@ -24,6 +24,8 @@ import '../../../dao/dao_supplier.dart';
 import '../../../dao/dao_system.dart';
 import '../../../dao/dao_task_item.dart';
 import '../../../entity/helpers/charge_mode.dart';
+import '../../../entity/helpers/labour_calculator.dart';
+import '../../../entity/helpers/material_calculator.dart';
 import '../../../entity/job.dart';
 import '../../../entity/supplier.dart';
 import '../../../entity/system.dart';
@@ -45,7 +47,7 @@ import 'dimensions.dart';
 class TaskItemEditScreen extends StatefulWidget {
   final Task? parent;
   final TaskItem? taskItem;
-  final BillingType billingType; // 'Fixed Price' or 'Time and Materials'
+  final BillingType billingType; // Fixed Price | Time and Materials
   final Money hourlyRate;
 
   const TaskItemEditScreen({
@@ -122,7 +124,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     );
     _chargeController = TextEditingController(
       text: currentEntity
-          ?.getCharge(widget.billingType, widget.hourlyRate)
+          ?.getTotalLineCharge(widget.billingType, widget.hourlyRate)
           .toString(),
     );
 
@@ -139,8 +141,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     _urlController = TextEditingController(text: currentEntity?.url);
     _labourEntryMode = currentEntity?.labourEntryMode ?? LabourEntryMode.hours;
 
-    _chargeMode = currentEntity?.chargeMode ?? ChargeMode.userDefined;
-    
+    _chargeMode = currentEntity?.chargeMode ?? ChargeMode.calculated;
 
     _descriptionFocusNode = FocusNode();
   }
@@ -241,10 +242,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   HMBDroplist<TaskItemType> _chooseItemType(TaskItem? taskItem) =>
       HMBDroplist<TaskItemType>(
         title: 'Item Type',
-        selectedItem:
-            // ignore: discarded_futures
-            () async => June.getState(SelectedCheckListItemType.new).selected,
-
+        selectedItem: () async =>
+            June.getState(SelectedCheckListItemType.new).selected,
         // ignore: discarded_futures
         items: (filter) async => TaskItemType.getByFilter(filter),
         format: (checklistItemType) => checklistItemType.label,
@@ -279,15 +278,15 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     final widgets = <Widget>[];
 
     switch (June.getState(SelectedCheckListItemType.new).selected) {
-      case TaskItemType.materialsBuy: // Materials - buy
-      case TaskItemType.toolsBuy: // Tools - buy
+      case TaskItemType.materialsBuy:
+      case TaskItemType.toolsBuy:
       case TaskItemType.consumablesBuy:
         widgets.addAll(_buildBuyFields());
-      case TaskItemType.materialsStock: // Materials - stock
-      case TaskItemType.toolsOwn: // Tools - stock
+      case TaskItemType.materialsStock:
+      case TaskItemType.toolsOwn:
       case TaskItemType.consumablesStock:
         widgets.addAll(_buildStockFields());
-      case TaskItemType.labour: // Labour
+      case TaskItemType.labour:
         widgets.addAll(_buildLabourFields());
       case null:
     }
@@ -328,65 +327,84 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         onChanged: (value) =>
             _calculateChargeFromMargin(_marginController.text),
       ),
-
     _buildMarginAndChargeFields(),
   ];
 
   void _calculateChargeFromMargin(String? marginValue) {
+    final itemType = June.getState(SelectedCheckListItemType.new).selected!;
     final margin =
         Percentage.tryParse(marginValue ?? '0', decimalDigits: 3) ??
-        Percentage(0);
-    final estimatedLabourHours = FixedEx.tryParse(
-      _estimatedLabourHoursController.text,
-    );
+        Percentage.zero;
 
-    final unitCost = MoneyEx.tryParse(
+    // Parse form values
+    final estHours = FixedEx.tryParse(_estimatedLabourHoursController.text);
+    final estLabourCost = MoneyEx.tryParse(_estimatedLabourCostController.text);
+    final estUnitCost = MoneyEx.tryParse(
       _estimatedMaterialUnitCostController.text,
     );
+    final estQty = FixedEx.tryParse(_estimatedMaterialQuantityController.text);
 
-    final estimatedLabourCost = MoneyEx.tryParse(
-      _estimatedLabourCostController.text,
-    );
+    final isUserDefined = _chargeMode == ChargeMode.userDefined;
+    final userCharge = isUserDefined
+        ? Money.tryParse(_chargeController.text, isoCode: 'AUD') ?? MoneyEx.zero
+        : null;
 
-    final estimatedMaterialQuantity = FixedEx.tryParse(
-      _estimatedMaterialQuantityController.text,
-    );
-
-    var charge = MoneyEx.tryParse(_chargeController.text);
-
-    charge = DaoTaskItem().calculateCharge(
-      itemType: June.getState(SelectedCheckListItemType.new).selected!,
+    // Build a transient TaskItem snapshot for calculators.
+    final tmp = TaskItem.forInsert(
+      taskId: widget.parent!.id,
+      description: _descriptionController.text,
+      purpose: _purposeController.text,
+      itemType: itemType,
+      chargeMode: _chargeMode,
       margin: margin,
+      measurementType: June.getState(
+        SelectedMeasurementType.new,
+      ).selectedOrDefault,
+      dimension1: Fixed.zero,
+      dimension2: Fixed.zero,
+      dimension3: Fixed.zero,
+      units: June.getState(SelectedUnits.new).selectedOrDefault,
+      url: _urlController.text,
       labourEntryMode: _labourEntryMode,
-      estimatedLabourHours: estimatedLabourHours,
-      hourlyRate: widget.hourlyRate,
-      estimatedMaterialUnitCost: unitCost,
-      estimatedLabourCost: estimatedLabourCost,
-      estimatedMaterialQuantity: estimatedMaterialQuantity,
-      charge: charge,
+      estimatedMaterialUnitCost: estUnitCost,
+      estimatedMaterialQuantity: estQty,
+      estimatedLabourCost: estLabourCost,
+      estimatedLabourHours: estHours,
+      totalLineCharge: userCharge, // sets chargeMode when non-null
     );
 
-    _chargeController.text = charge.toString();
+    // Compute line total via calculators (line-level margin).
+    Money lineTotal;
+    if (itemType == TaskItemType.labour) {
+      lineTotal = LabourCalculator(
+        widget.billingType,
+        tmp,
+        widget.hourlyRate,
+      ).totalCharge;
+    } else {
+      lineTotal = MaterialCalculator(
+        widget.billingType,
+        tmp,
+      ).calcMaterialCharges(widget.billingType);
+    }
+
+    _chargeController.text = lineTotal.toString();
   }
 
   List<Widget> _buildBuyFields() => [
     HMBTextField(
       controller: _estimatedMaterialUnitCostController,
-      labelText: 'Estimated Unit Cost',
+      labelText: 'Estimated Unit Cost (pre margin)',
       keyboardType: TextInputType.number,
       enabled: _chargeMode != ChargeMode.userDefined,
-      onChanged: (value) {
-        _calculateChargeFromMargin(_marginController.text);
-      },
+      onChanged: (value) => _calculateChargeFromMargin(_marginController.text),
     ),
     HMBTextField(
       controller: _estimatedMaterialQuantityController,
       labelText: 'Quantity',
       keyboardType: TextInputType.number,
       enabled: _chargeMode != ChargeMode.userDefined,
-      onChanged: (value) {
-        _calculateChargeFromMargin(_marginController.text);
-      },
+      onChanged: (value) => _calculateChargeFromMargin(_marginController.text),
     ),
     _buildMarginAndChargeFields(),
   ];
@@ -396,25 +414,24 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   List<Widget> _buildStockFields() => [
     HMBTextField(
       controller: _estimatedMaterialUnitCostController,
-      labelText: 'Unit Cost',
+      labelText: 'Unit Cost (pre margin)',
       keyboardType: TextInputType.number,
-      onChanged: (value) {
-        _calculateChargeFromMargin(_marginController.text);
-      },
+      enabled: _chargeMode != ChargeMode.userDefined,
+      onChanged: (value) => _calculateChargeFromMargin(_marginController.text),
     ),
     HMBTextField(
       controller: _estimatedMaterialQuantityController,
       labelText: 'Quantity',
       keyboardType: TextInputType.number,
-      onChanged: (value) {
-        _calculateChargeFromMargin(_marginController.text);
-      },
+      enabled: _chargeMode != ChargeMode.userDefined,
+      onChanged: (value) => _calculateChargeFromMargin(_marginController.text),
     ),
     _buildDirectChargeField(),
     HMBTextField(
       controller: _chargeController,
-      labelText: 'Charge',
+      labelText: 'Charge (line total)',
       keyboardType: TextInputType.number,
+      enabled: _chargeMode == ChargeMode.userDefined,
       onChanged: (value) {
         if (_chargeMode != ChargeMode.userDefined) {
           _calculateChargeFromMargin(_marginController.text);
@@ -428,7 +445,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     children: [
       HMBTextField(
         controller: _marginController,
-        labelText: 'Margin (%)',
+        labelText: 'Margin (%) – applied to line total',
         keyboardType: TextInputType.number,
         enabled: _chargeMode != ChargeMode.userDefined,
         onChanged: _calculateChargeFromMargin,
@@ -436,7 +453,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       _buildDirectChargeField(),
       HMBTextField(
         controller: _chargeController,
-        labelText: 'Charge',
+        labelText: 'Charge (line total)',
         keyboardType: TextInputType.number,
         enabled: _chargeMode == ChargeMode.userDefined,
         onChanged: (value) {
@@ -453,8 +470,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     title: const Text('Enter charge directly'),
     value: _chargeMode == ChargeMode.userDefined,
     onChanged: (val) => setState(() {
-      _chargeMode =  val ? ChargeMode.userDefined : ChargeMode.calculated;
-      // if switching *off* manual, re‑compute from current margin/qty/hours
+      _chargeMode = val ? ChargeMode.userDefined : ChargeMode.calculated;
+      // if switching off manual, re-compute from margin/qty/hours
       if (_chargeMode != ChargeMode.userDefined) {
         _calculateChargeFromMargin(_marginController.text);
       }
@@ -482,7 +499,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       _estimatedLabourHoursController.text,
     ),
     estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
-    charge: _chargeMode == ChargeMode.userDefined
+    totalLineCharge: _chargeMode == ChargeMode.userDefined
         ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
         : null,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
@@ -521,7 +538,8 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       _estimatedLabourHoursController.text,
     ),
     estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
-    charge: _chargeMode == ChargeMode.userDefined
+    chargeMode: _chargeMode,
+    totalLineCharge: _chargeMode == ChargeMode.userDefined
         ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
         : null,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,

@@ -14,6 +14,7 @@
 
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/entity/helpers/charge_mode.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/units.dart';
 import 'package:money2/money2.dart';
@@ -61,6 +62,7 @@ Future<TaskItem> insertLabourEstimates(
     estimatedLabourHours: hours,
     estimatedLabourCost: labourCost,
     margin: Percentage.ten, // 10% margin
+    chargeMode: ChargeMode.calculated,
     completed: true,
     measurementType: MeasurementType.length,
     dimension1: Fixed.fromNum(1, decimalDigits: 3),
@@ -89,6 +91,7 @@ Future<TaskItem> insertMaterials(
     itemType: checkListItemType,
     estimatedMaterialUnitCost: unitCost,
     estimatedMaterialQuantity: quantity,
+    chargeMode: ChargeMode.calculated,
     margin: margin,
     completed: true,
     measurementType: MeasurementType.length,

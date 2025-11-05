@@ -116,7 +116,10 @@ class _JobEstimateBuilderScreenState
       final hourlyRate = await DaoTask().getHourlyRate(task);
       for (final item in items) {
         if (item.itemType == TaskItemType.labour) {
-          totalLabour += item.calcLabourCharges(hourlyRate);
+          totalLabour += item.calcLabourCharges(
+            task.effectiveBillingType(widget.job.billingType),
+            hourlyRate,
+          );
         } else {
           final billingType = await DaoTask().getBillingType(task);
           totalMaterials += item.calcMaterialCharges(billingType);
@@ -307,7 +310,7 @@ class _JobEstimateBuilderScreenState
     children: [
       SurfaceCardWithActions(
         title: item.description,
-        body: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
+        body: Text('Cost: ${item.getTotalLineCharge(billingType, hourlyRate)}'),
         actions: [
           HMBEditIcon(
             onPressed: () => _editItem(item, task),

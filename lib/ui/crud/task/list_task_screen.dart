@@ -167,7 +167,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Widget _buildFullTasksDetails(Task task) =>
-      ListTaskCard(task: task, summary: false);
+      ListTaskCard(job: widget.parent.parent!, task: task, summary: false);
 }
 
 class ShowInActiveTasksState extends JuneState {

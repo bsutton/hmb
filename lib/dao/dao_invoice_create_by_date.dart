@@ -131,7 +131,7 @@ Future<Money> emitMaterialsByTask(
           !item.completed ||
           itemType == TaskItemType.labour ||
           itemType == TaskItemType.toolsOwn ||
-          item.getCharge(billingType, hourlyRate) == MoneyEx.zero) {
+          item.getTotalLineCharge(billingType, hourlyRate) == MoneyEx.zero) {
         continue;
       }
 

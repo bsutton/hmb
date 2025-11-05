@@ -115,8 +115,7 @@ Future<File> generateInvoicePdf(
                           ),
                           children: [
                             pw.WidgetSpan(
-                              baseline:
-                                  -2, // 👈 tweak this value until the link lines up
+                              baseline: -2,
                               child: pw.UrlLink(
                                 destination: system.termsUrl ?? '',
                                 child: pw.Text(

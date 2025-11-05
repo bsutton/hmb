@@ -124,5 +124,238 @@ Should we need to allow an invoice to be generated directly from a Fixed Price j
 
 We need to allow an invoice to be created directly from an quote without creating milestones.
  - small fixed price jobs may be invoice 100% at start or at the end - particularly if this is for a regular client.
+# Task Items & Pricing
+
+Task Items drive both quoting and invoicing. The following notes capture the current behaviour in code.
+
+## Charge modes and margins
+- `ChargeMode.calculated` adds the item's margin to the total line cost (quantity * unit cost) with the margin applied at the line level so rounding stays consistent.
+- `ChargeMode.userDefined` stores the entered line total and ignores the cost inputs when invoicing.
+- Recording actuals on a T&M material item (marking it completed) recalculates the line total from the captured quantity/unit cost and flips the item to user defined so the invoiced value remains fixed.
+- Manual charge entry is available in the UI via "Enter charge directly", which simply toggles the stored charge mode.
+
+## Billing type behaviour
+- **Fixed Price jobs**: materials always use the estimated quantity and unit cost; actuals are only kept for P&L. Labour Task Items respect their entry mode, either estimated hours * job hourly rate or the estimated labour cost, and margins apply only when the item remains calculated.
+- **Time & Materials jobs**: completed Task Items invoice off actual quantity and unit cost; before completion we fall back to estimates. Labour Task Items are ignored for billing (LabourCalculator returns zero) because labour is billed from time entries, and the UI prevents creating them in this context.
+- **Non-billable work**: charges are forced to zero even though we retain the underlying costs internally.
+- Quote and invoice builders evaluate Task Items using the job-level billing type. The specification calls for mixed billing (task-level overrides), so invoice and quote generation must be updated to honour the task's effective billing type.
+
+## Completion, invoicing and returns
+- Only completed, unbilled Task Items are considered for invoicing. Items of type labour or tools-own, and any item whose calculated charge is zero, are skipped.
+- Returns reuse the same calculators but negate the cost and charge so the invoice gets a credit line.
+- When a Task Item is billed we persist the `invoice_line_id`; undoing billing requires clearing that link (e.g. by voiding the invoice line).
  
- 
+# Handyman Business App — Invoicing & Billing Specification
+
+_Last updated: 2025-02-xx_
+
+## 1. Overview
+
+Invoicing in HMB supports three billing types:
+
+| Billing Type | Usage |
+|--------------|-------|
+| **Fixed Price (FP)** | Quoted jobs with clear scope |
+| **Time & Materials (T&M)** | Jobs billed by hours & actual materials |
+| **Non-Billable** | Internal work or goodwill tasks |
+
+### Key Principles
+- Approved quotes **freeze scope and pricing**
+- FP items use **estimates**
+- T&M items use **actuals**
+- Quotes **cannot be edited** after approval
+- All quote changes require: **Reject Quote → Edit Job → New Quote**
+- **One quote may be accepted per job**
+- Quote variants permitted, but only **one can be accepted**
+- If multiple disjoint scopes exist → **split into multiple jobs**
+- Booking fee billed **once only**
+
+---
+
+## 2. Use Cases
+
+### UC-FP-1 — Fixed Price: Quote → Milestones → Invoice(s)
+1. Create Tasks and estimated TaskItems
+2. Generate quote
+3. Customer approves
+4. Create milestones (or invoice 100% if allowed)
+5. Generate invoices per milestone
+6. FP TaskItems marked billed
+
+**Guard:** Direct invoicing on FP job is blocked once quote approved.
+
+---
+
+### UC-FP-2 — Fixed Price (No Quote)
+- Used for small jobs or urgent agreements
+- User selects FP tasks → creates invoice
+- Acts like a “pseudo-milestone”
+
+**Guard:** If quote approved or milestones exist → disallow.
+
+---
+
+### UC-TM-1 — Time & Materials Invoice
+- User logs hours + materials
+- Invoice may be created at any time
+- System includes **unbilled hours + unbilled actuals**
+- Booking fee applied once (first invoice)
+
+---
+
+### UC-MIX-1 — Mixed Mode
+- Some tasks FP, some T&M
+- FP billed via milestones or pseudo-milestones
+- T&M billed progressively
+
+**Rule:** Quotes contain **FP tasks only**
+
+---
+
+### UC-MIX-2 — Change FP Task → T&M
+After quote approved:
+> FP tasks **cannot** be changed to T&M unless quote is rejected
+
+Flow:
+1. Reject quote (irreversible)
+2. Edit job/task billing type
+3. Create new quote
+
+---
+
+### UC-VAR-1 — Quote Variants
+- User may prepare multiple scenario quotes
+- On approval of one, system auto-rejects others
+
+Shared tasks allowed, but **only one accepted quote total**
+
+---
+
+### UC-SPLIT-1 — Job Split Enforcement
+If user tries to quote disjoint scopes:
+> Require separate jobs
+
+System prompt:
+> _“This quote contains unrelated scopes. Create multiple jobs.”_
+
+---
+
+### UC-JOB-1 — Reject Job
+Effect:
+- All quotes rejected
+- Tasks/items unchanged
+- On reactivation → warn if tasks remained rejected
+
+---
+
+### UC-FEE-1 — Booking Fee Rules
+| Job Type | When billed |
+|---------|-------------|
+| T&M | First T&M invoice |
+| FP | First quote or first FP invoice |
+
+After billing → `booking_fee_invoiced = true`
+
+---
+
+## 3. Task Editing Rules
+
+### After Quote Approval
+| Action | Allowed |
+|--------|--------|
+Add new FP task | ❌ Block — instruct to split job or reject quote & re-quote |
+Edit FP task | ❌ Block |
+Edit labour TaskItems on FP task | ❌ Block |
+Edit material/consumables tools on FP task | ✅ Allowed |
+Edit FP task **internal notes only** | ✅ Allowed |
+Add T&M task to mixed job | ✅ Allowed |
+
+**User messaging:**
+> _“Quote approved. To change fixed-price scope, reject quote and create a new one.”_
+
+---
+
+## 4. Billing Type Inheritance
+
+| Value in DB | Meaning |
+|-------------|--------|
+`NULL` | Inherit job billing type |
+Explicit value | Task override |
+
+Effective billing:
+
+
+UI displays **“Inherited”** when value is `NULL`.
+
+---
+
+## 5. Quote Rules Summary
+
+- No per-line rejection
+- Approved quote ≠ editable
+- Revision = **Reject quote → new quote**
+- Unique quote number always
+- Quote variants allowed; only one selectable
+- Disallow adding FP tasks post-approval
+
+---
+
+## 6. TaskItem Pricing Model
+
+- Line-level margin
+- `total_line_charge` (renamed from `total_charge`)
+- Two modes:
+
+| Mode | Behavior |
+|------|---------|
+`calculated` | cost × qty + margin |
+`userDefined` | user supplied total |
+
+---
+
+## 7. Data Model Key Notes
+
+### Task
+- `billing_type` may be `NULL` (inherited)
+- Only editable FP field after approval: `internal_notes`
+
+### TaskItem
+- Column renamed: `total_charge → total_line_charge`
+
+---
+
+## 8. UI Requirements
+
+- Billing type dropdown displays **Inherited** when null
+- Disallow FP task creation/edit after quote approval
+- Provide CTA:
+  - “Reject quote and revise”
+  - “Create separate job”
+- Warning on job reactivation if tasks rejected
+
+---
+
+## 9. SQL Migration Requirements
+
+- Add `billing_type` to `task` (nullable)
+- Migrate legacy values to explicit
+- Rename task_item column → `total_line_charge`
+- Default `margin` to zero if null during migration
+- After backfill, allow NULL = inherited
+
+---
+
+## 10. Acceptance Tests
+
+| Test | Result |
+|------|--------|
+Approve quote, add FP task | ❌ Disallowed |
+Approve quote, edit FP task | ❌ Except internal notes |
+Approve quote, edit material costs | ✅ Allowed |
+Change FP→T&M after approve | ❌ Must reject first |
+Reject quote → create new | ✅ New quote number |
+Split job workflows | ✅ Separate jobs |
+T&M invoice pulls actuals only | ✅ |
+Booking fee billed twice | ❌ Prevented |
+
+---

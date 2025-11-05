@@ -61,7 +61,7 @@ class BootStrapper {
     // camera & deep link init
     initCamera();
     initAppLinks();
-    initPdfrx();
+    await initPdfrx();
     await initImageCache();
 
     Dao.notifier = DaoJuneBuilder.notify;
@@ -104,8 +104,8 @@ class BootStrapper {
     print('Database located at: ${await backupProvider.databasePath}');
 
     /// remove rich text fields.
-    
-      await postv134Upgrade(DatabaseHelper().database);
+
+    await postv134Upgrade(DatabaseHelper().database);
   }
 
   Future<void> _initScheduler() async {
@@ -149,8 +149,8 @@ class BootStrapper {
     // });
   }
 
-  void initPdfrx() {
-    pdfrxFlutterInitialize();
+  Future<void> initPdfrx() async {
+    await pdfrxFlutterInitialize();
   }
 
   Future<void> initImageCache() async {

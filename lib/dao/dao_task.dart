@@ -114,15 +114,19 @@ WHERE ti.id = ?
   }
 
   Future<List<TaskAccruedValue>> getAccruedValueForJob({
-    required int jobId,
+    required Job job,
     required bool includedBilled,
   }) async {
-    final tasks = await DaoTask().getTasksByJob(jobId);
+    final tasks = await DaoTask().getTasksByJob(job.id);
 
     final value = <TaskAccruedValue>[];
     for (final task in tasks) {
       value.add(
-        await getAccruedValueForTask(task: task, includeBilled: includedBilled),
+        await getAccruedValueForTask(
+          job: job,
+          task: task,
+          includeBilled: includedBilled,
+        ),
       );
     }
 
@@ -133,6 +137,7 @@ WHERE ti.id = ?
   /// the [Job] started. If [includeBilled] is false then we only
   /// include labour/materials that haven't been billed.
   Future<TaskAccruedValue> getAccruedValueForTask({
+    required Job job,
     required Task task,
     required bool includeBilled,
   }) async {
@@ -140,7 +145,11 @@ WHERE ti.id = ?
     final billingType = await DaoTask().getBillingType(task);
 
     // Get task cost and effort using the new getTaskCost method
-    final taskEstimatedCharges = await getEstimateForTask(task, hourlyRate);
+    final taskEstimatedCharges = await getEstimateForTask(
+      job,
+      task,
+      hourlyRate,
+    );
 
     var totalEarnedLabour = MoneyEx.zero;
     var totalMaterialCharges = MoneyEx.zero;
@@ -182,10 +191,10 @@ WHERE ti.id = ?
     );
   }
 
-  /// Returns a estimates for each Task associated with [jobId]
+  /// Returns a estimates for each Task associated with [job]
   /// Tasks with a zero value are excluded.
-  Future<List<TaskEstimatedValue>> getEstimatesForJob(int jobId) async {
-    final tasks = await getTasksByJob(jobId);
+  Future<List<TaskEstimatedValue>> getEstimatesForJob(Job job) async {
+    final tasks = await getTasksByJob(job.id);
 
     final estimates = <TaskEstimatedValue>[];
     for (final task in tasks) {
@@ -193,7 +202,7 @@ WHERE ti.id = ?
       final taskStatus = task.status;
 
       if (!taskStatus.isWithdrawn()) {
-        final estimate = await getEstimateForTask(task, hourlyRate);
+        final estimate = await getEstimateForTask(job, task, hourlyRate);
         if (!estimate.total.isZero) {
           estimates.add(estimate);
         }
@@ -204,6 +213,7 @@ WHERE ti.id = ?
   }
 
   Future<TaskEstimatedValue> getEstimateForTask(
+    Job job,
     Task task,
     Money hourlyRate,
   ) async {
@@ -219,7 +229,10 @@ WHERE ti.id = ?
     for (final item in taskItems) {
       if (item.itemType == TaskItemType.labour) {
         // Labour check list item
-        estimatedLabourCharge += item.calcLabourCharges(hourlyRate);
+        estimatedLabourCharge += item.calcLabourCharges(
+          task.effectiveBillingType(job.billingType),
+          hourlyRate,
+        );
         estimatedLabourHours += item.estimatedLabourHours ?? Fixed.zero;
       } else if (item.itemType == TaskItemType.materialsBuy) {
         // Materials and tools to be purchased
@@ -296,7 +309,7 @@ WHERE ti.id = ?
   Future<BillingType> getBillingType(Task task) async {
     final job = await DaoJob().getById(task.jobId);
 
-    return job?.billingType ?? BillingType.timeAndMaterial;
+    return task.billingType ?? job?.billingType ?? BillingType.timeAndMaterial;
   }
 
   Future<BillingType> getBillingTypeByTaskItem(TaskItem taskItem) async {

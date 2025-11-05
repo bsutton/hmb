@@ -24,7 +24,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/quote.dart';
 import '../../entity/system.dart';
 import '../../util/dart/format.dart';
-import 'job_quote.dart';
+import 'quote_details.dart';
 
 Future<File> generateQuotePdf(
   Quote quote, {
@@ -34,7 +34,10 @@ Future<File> generateQuotePdf(
 }) async {
   final pdf = pw.Document();
   final system = await DaoSystem().get();
-  final jobQuote = await JobQuote.fromQuoteId(quote.id, excludeHidden: true);
+  final jobQuote = await QuoteDetails.fromQuoteId(
+    quote.id,
+    excludeHidden: true,
+  );
 
   final totalAmount = jobQuote.total;
   final phone = await formatPhone(system.bestPhone);

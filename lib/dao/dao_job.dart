@@ -453,7 +453,7 @@ where q.id=?
 
   Future<bool> hasBillableTasks(Job job) async {
     final tasksAccruedValue = await DaoTask().getAccruedValueForJob(
-      jobId: job.id,
+      job: job,
       includedBilled: false,
     );
 
@@ -517,7 +517,7 @@ where q.id=?
   }
 
   Future<bool> hasQuoteableItems(Job job) async {
-    final estimates = await DaoTask().getEstimatesForJob(job.id);
+    final estimates = await DaoTask().getEstimatesForJob(job);
 
     return estimates.fold(false, (a, b) async => await a || b.total.isPositive);
   }
@@ -530,7 +530,7 @@ where q.id=?
 
   /// Calculates the total quoted price for the job.
   Future<Money> getFixedPriceTotal(Job job) async {
-    final estimates = await DaoTask().getEstimatesForJob(job.id);
+    final estimates = await DaoTask().getEstimatesForJob(job);
 
     var total = MoneyEx.zero;
     for (final estimate in estimates) {

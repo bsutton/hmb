@@ -24,10 +24,16 @@ import '../../widgets/text/hmb_text.dart';
 import '../job/edit_job_card.dart';
 
 class ListTaskCard extends StatefulWidget {
+  final Job job;
   final Task task;
   final bool summary;
 
-  const ListTaskCard({required this.task, required this.summary, super.key});
+  const ListTaskCard({
+    required this.job,
+    required this.task,
+    required this.summary,
+    super.key,
+  });
 
   @override
   State<ListTaskCard> createState() => _ListTaskCardState();
@@ -66,7 +72,11 @@ class _ListTaskCardState extends State<ListTaskCard> {
       FutureBuilderEx(
         future: DaoTask()
             // ignore: discarded_futures
-            .getAccruedValueForTask(task: activeTask, includeBilled: true),
+            .getAccruedValueForTask(
+              job: widget.job,
+              task: activeTask,
+              includeBilled: true,
+            ),
         builder: (context, taskAccruedValue) => Row(
           children: [
             HMBText(

@@ -30,7 +30,7 @@ import '../widgets/text/hmb_text_themes.dart';
 import '../widgets/widgets.g.dart' hide StatefulBuilder;
 import 'edit_quote_line_dialog.dart';
 import 'generate_quote_pdf.dart';
-import 'job_quote.dart';
+import 'quote_details.dart';
 import 'select_billing_contact_dialog.dart';
 
 class QuoteDetailsScreen extends StatefulWidget {
@@ -138,9 +138,9 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
     ),
   );
 
-  Widget _buildQuoteLines() => FutureBuilderEx<JobQuote>(
+  Widget _buildQuoteLines() => FutureBuilderEx<QuoteDetails>(
     // ignore: discarded_futures
-    future: JobQuote.fromQuoteId(_quote.id, excludeHidden: false),
+    future: QuoteDetails.fromQuoteId(_quote.id, excludeHidden: false),
     builder: (context, jobQuote) {
       if (jobQuote == null || jobQuote.groups.isEmpty) {
         return const ListTile(title: Text('No quote lines found.'));

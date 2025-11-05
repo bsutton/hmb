@@ -112,7 +112,7 @@ class DaoQuote extends Dao<Quote> {
 
   /// Create a quote for the given job.
   Future<Quote> create(Job job, InvoiceOptions invoiceOptions) async {
-    final estimates = await DaoTask().getEstimatesForJob(job.id);
+    final estimates = await DaoTask().getEstimatesForJob(job);
 
     if (job.hourlyRate == MoneyEx.zero) {
       throw InvoiceException(
