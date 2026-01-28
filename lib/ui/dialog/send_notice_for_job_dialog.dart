@@ -337,7 +337,6 @@ ${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().p
       if (c != null) {
         return c;
       }
-      // ignore: empty_catches
     } catch (_) {}
 
     // 3) Otherwise first contact with a mobile.

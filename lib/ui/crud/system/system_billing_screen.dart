@@ -48,7 +48,6 @@ class SystemBillingScreen extends StatefulWidget {
   const SystemBillingScreen({super.key, this.showButtons = true});
 
   @override
-  // ignore: library_private_types_in_public_api
   SystemBillingScreenState createState() => SystemBillingScreenState();
 }
 

@@ -35,7 +35,6 @@ class ContactSource extends Source<Contact> {
       title: 'Contact',
       selectedItem: () async => customerContact.contact,
       items: (filter) =>
-          // ignore: discarded_futures
           DaoContact().getByFilter(customerContact.customer!, filter),
       format: (contact) => contact.fullname,
       onChanged: (contact) {

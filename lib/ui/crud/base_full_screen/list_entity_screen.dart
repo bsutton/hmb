@@ -99,7 +99,6 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     this.showBackButton = false,
     this.buildActionItems,
   }) {
-    // ignore: discarded_futures
     _fetchList = fetchList ?? (_) => dao.getAll();
   }
 
@@ -291,7 +290,6 @@ class EntityListScreenState<T extends Entity<T>>
   Widget _buildCard(T entity) => FutureBuilderEx<Color>(
     initialData: SurfaceElevation.e6.color,
     future:
-        // ignore: discarded_futures
         widget.background?.call(entity) ??
         Future.value(SurfaceElevation.e6.color),
     builder: (context, cardColor) =>
@@ -314,9 +312,7 @@ class EntityListScreenState<T extends Entity<T>>
                     child: FutureBuilderEx(
                       future:
                           ((widget.listCardTitle is Future)
-                                  // ignore: discarded_futures
                                   ? widget.listCardTitle(entity)
-                                  // ignore: discarded_futures
                                   : Future.value(widget.listCardTitle(entity)))
                               as Future<Widget>,
                       builder: (context, title) => title!,

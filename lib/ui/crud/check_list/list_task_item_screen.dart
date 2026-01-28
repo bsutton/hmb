@@ -73,7 +73,6 @@ class _TaskItemListScreenState<P extends Entity<P>>
     )._showCompletedTasks;
 
     return FutureBuilderEx(
-      // ignore: discarded_futures
       future: getTaskAndRate(widget.task),
       builder: (context, taskAndRate) => NestedEntityListScreen<TaskItem, Task>(
         key: ValueKey(showCompleted),
@@ -82,9 +81,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
         entityNameSingular: 'Task Item',
         entityNamePlural: 'Task Items',
         dao: DaoTaskItem(),
-        // ignore: discarded_futures
         onDelete: (taskItem) => DaoTaskItem().delete(taskItem.id),
-        // ignore: discarded_futures
         fetchList: () => _fetchItems(showCompleted),
         title: (taskItem) => Text(taskItem.description) as Widget,
         onEdit: (taskItem) => TaskItemEditScreen(

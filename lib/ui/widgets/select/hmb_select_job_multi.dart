@@ -19,7 +19,6 @@ class HMBSelectJobMulti extends StatelessWidget {
   Widget build(BuildContext context) =>
       HMBDroplistMultiSelect<CustomerAndJob>(
         initialItems: () => CustomerAndJob.fromList(initialJobs),
-        // ignore: discarded_futures
         items: CustomerAndJob.getByFilter,
         format: (candj) => '${candj.customer.name}\n${candj.job.summary}',
         onChanged: (selectedJobs) {

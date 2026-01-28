@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// ignore_for_file: lines_longer_than_80_chars
 
 import 'package:money2/money2.dart';
 

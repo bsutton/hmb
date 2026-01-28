@@ -34,7 +34,6 @@ class JobActivitySource extends Source<JobActivity> {
     builder: (context, jobAndActivity, _) => HMBDroplist<JobActivity>(
       title: 'Activity',
       selectedItem: () async => jobAndActivity.jobActivity,
-      // ignore: discarded_futures
       items: (filter) => DaoJobActivity().getByJob(jobAndActivity.job?.id),
       format: (jobActivity) => jobAndActivity.jobActivity != null
           ? formatDate(jobAndActivity.jobActivity!.start)

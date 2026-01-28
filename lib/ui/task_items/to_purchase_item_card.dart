@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// ignore_for_file: discarded_futures
 
 import 'package:flutter/material.dart';
 

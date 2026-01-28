@@ -142,7 +142,7 @@ Future<File> generateQuotePdf(
                         pw.Text('Date: ${formatDate(quote.createdDate)}'),
                       ],
                     ),
-                    if (logo != null) logo,
+                    ?logo,
                   ],
                 ),
                 pw.Divider(),

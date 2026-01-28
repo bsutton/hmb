@@ -42,9 +42,7 @@ class SiteListScreen<P extends Entity<P>> extends StatelessWidget {
     entityNameSingular: 'Site',
     parentTitle: parentTitle,
     dao: DaoSite(),
-    // ignore: discarded_futures
     onDelete: (site) => daoJoin.deleteFromParent(site, parent.parent!),
-    // ignore: discarded_futures
     fetchList: () => daoJoin.getByParent(parent.parent),
     // title: (site) => Text('${site.addressLine1} ${site.suburb}') as Widget,
     title: (site) => HMBSiteText(label: '', site: site),

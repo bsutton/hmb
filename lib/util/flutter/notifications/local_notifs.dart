@@ -70,10 +70,10 @@ class LocalNotifs {
     );
 
     await _fln.initialize(
-      init,
+      settings: init,
       onDidReceiveNotificationResponse: (resp) {
         // decode payload and route if needed
-        final data = _decodePayload(resp.payload);
+        _decodePayload(resp.payload);
         // TODO(chat-gpt): route using data['type'], data['id']
       },
     );
@@ -166,11 +166,11 @@ class LocalNotifs {
       }
 
       await _fln.zonedSchedule(
-        n.id,
-        n.title,
-        n.body,
-        whenTz,
-        _buildDetails(n),
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        scheduledDate: whenTz,
+        notificationDetails: _buildDetails(n),
         // Inexact saves battery and avoids exact-alarm permission.
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         payload: _encodePayload(n.payload),
@@ -199,7 +199,7 @@ class LocalNotifs {
   Future<void> cancel(int id) async {
     await init();
     _desktop?.cancel(id); // desktop queue too
-    await _fln.cancel(id);
+    await _fln.cancel(id: id);
   }
 
   Future<void> cancelAll() async {
@@ -353,10 +353,10 @@ class LocalNotifs {
 
     final channel = Channel.test();
     await fln.show(
-      999001,
-      'Test immediate',
-      'If you see me, posting works',
-      NotificationDetails(
+      id: 999001,
+      title: 'Test immediate',
+      body: 'If you see me, posting works',
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           channel.id,
           channel.name,
@@ -374,11 +374,11 @@ class LocalNotifs {
     // Use >= 90s lead to avoid scheduling races.
     final when = tz.TZDateTime.now(tz.local).add(_minLead);
     await fln.zonedSchedule(
-      999002,
-      'Test scheduled',
-      'Should appear ~${_minLead.inSeconds}s from now',
-      when,
-      const NotificationDetails(
+      id: 999002,
+      title: 'Test scheduled',
+      body: 'Should appear ~${_minLead.inSeconds}s from now',
+      scheduledDate: when,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'hmb_default',
           'Reminders',
@@ -396,11 +396,11 @@ class LocalNotifs {
 
     final when2 = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 2));
     await _fln.zonedSchedule(
-      990002,
-      'Schedule test',
-      'Should land in ~2 minutes',
-      when,
-      _buildDetails(
+      id: 990002,
+      title: 'Schedule test',
+      body: 'Should land in ~2 minutes',
+      scheduledDate: when,
+      notificationDetails: _buildDetails(
         Notif(
           id: 0,
           title: '',

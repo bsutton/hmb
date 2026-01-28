@@ -42,7 +42,6 @@ class AccountingDashboardPage extends StatelessWidget {
         label: 'Quotes',
         hint: 'Quote a Job based on an Estimate',
         icon: Icons.format_quote,
-        // ignore: discarded_futures
         value: getQuoteValue,
         route: '/home/accounting/quotes',
       ),
@@ -50,7 +49,6 @@ class AccountingDashboardPage extends StatelessWidget {
         label: 'To Be Invoiced',
         hint: 'List of Jobs that have unbilled hours',
         icon: Icons.attach_money,
-        // ignore: discarded_futures
         value: getYetToBeInvoiced,
         route: '/home/accounting/to_be_invoiced',
       ),

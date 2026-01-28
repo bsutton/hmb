@@ -29,7 +29,6 @@ class XeroIntegrationScreen extends StatefulWidget {
   const XeroIntegrationScreen({super.key, this.showButtons = true});
 
   @override
-  // ignore: library_private_types_in_public_api
   XeroIntegrationScreenState createState() => XeroIntegrationScreenState();
 }
 

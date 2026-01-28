@@ -552,7 +552,7 @@ class HMBTextChip extends StatelessWidget {
 enum Position { start, end }
 
 class HMBTextIcon extends StatelessWidget {
-  static const fontSize = HMBTextListItem.fontSize;
+  static const double fontSize = HMBTextListItem.fontSize;
   final String text;
   final IconData icon;
   final Position position;

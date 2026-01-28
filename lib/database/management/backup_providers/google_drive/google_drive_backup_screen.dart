@@ -299,7 +299,6 @@ class _GoogleDriveBackupScreenState
     ],
     if (!_syncRunning)
       FutureBuilderEx<List<PhotoPayload>>(
-        // ignore: discarded_futures
         future: DaoPhoto().getUnsyncedPhotos(),
         builder: (context, unsynced) {
           final text = unsynced!.isEmpty

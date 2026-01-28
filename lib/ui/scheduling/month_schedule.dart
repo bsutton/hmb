@@ -128,7 +128,6 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
           initialMonth: currentDate.toDateTime(),
           headerStyle: widget.headerStyle(),
           headerStringBuilder: widget.monthDateStringBuilder,
-          // ignore: discarded_futures
           onPageChange: (date, index) => _onePageChange(date),
           cellBuilder: (date, events, isToday, isInMonth, hideDaysNotInMonth) =>
               _cellBuilder(

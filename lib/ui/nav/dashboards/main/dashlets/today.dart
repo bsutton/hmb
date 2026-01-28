@@ -25,7 +25,6 @@ class TodayDashlet extends StatelessWidget {
     label: 'Today',
     hint: 'A summary of Todays activities',
     icon: Icons.assignment,
-    // ignore: discarded_futures
     value: () async => const DashletValue<JobActivity>.empty(),
     valueBuilder: (ctx, dv) => const HMBEmpty(),
     route: '/home/today',

@@ -1,4 +1,3 @@
-// ignore_for_file: depend_on_referenced_packages
 
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
@@ -376,9 +375,9 @@ class _FakePathProvider
     with t.Fake, MockPlatformInterfaceMixin
     implements PathProviderPlatform {
   // Create an isolated temp dir for the cache.
-  final tempPath = c.createTempDir();
+  final String tempPath = c.createTempDir();
 
-  final docPath = c.createTempDir();
+  final String docPath = c.createTempDir();
 
   _FakePathProvider();
 

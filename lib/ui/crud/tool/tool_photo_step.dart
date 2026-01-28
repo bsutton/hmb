@@ -28,7 +28,6 @@ class ToolPhotoStep extends WizardStep {
     tool: wizard.tool!,
     comment: 'Tool Photo',
     title: 'CaptureTool Photo',
-    // ignore: discarded_futures
     onCaptured: (photo) => DaoPhoto().insert(photo),
   );
 }

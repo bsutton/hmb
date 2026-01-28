@@ -75,7 +75,6 @@ Future<void> markAsCompleted(
     return;
   }
   final confirmed = await showDialog<bool>(
-    // ignore: use_build_context_synchronously
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setStateDialog) => AlertDialog(

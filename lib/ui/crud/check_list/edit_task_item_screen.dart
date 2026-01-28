@@ -92,7 +92,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   @override
   TaskItem? currentEntity;
 
-  final globalKey = GlobalKey();
+  final GlobalKey<State<StatefulWidget>> _globalKey = GlobalKey();
 
   @override
   void initState() {
@@ -194,10 +194,9 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   Widget build(BuildContext context) => DeferredBuilder(
     this,
     builder: (context) => NestedEntityEditScreen<TaskItem, Task>(
-      key: globalKey,
+      key: _globalKey,
       entityName: 'Task Item',
       dao: DaoTaskItem(),
-      // ignore: discarded_futures
       onInsert: (taskItem, transaction) =>
           DaoTaskItem().insert(taskItem!, transaction),
       entityState: this,
@@ -244,7 +243,6 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         title: 'Item Type',
         selectedItem: () async =>
             June.getState(SelectedCheckListItemType.new).selected,
-        // ignore: discarded_futures
         items: (filter) async => TaskItemType.getByFilter(filter),
         format: (checklistItemType) => checklistItemType.label,
         onChanged: (itemType) {
@@ -263,7 +261,6 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
                 June.getState(SelectedSupplier.new).selected,
               )
             : null,
-        // ignore: discarded_futures
         items: (filter) => DaoSupplier().getByFilter(filter),
         format: (supplier) => supplier.name,
         onChanged: (supplier) {

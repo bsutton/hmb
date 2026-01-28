@@ -34,7 +34,6 @@ class SiteSource extends Source<Site> {
       key: ValueKey(customer),
       title: 'Site',
       selectedItem: () async => value,
-      // ignore: discarded_futures
       items: (filter) => DaoSite().getByCustomer(customer?.id),
       format: (site) => site.address,
       onChanged: (site) {

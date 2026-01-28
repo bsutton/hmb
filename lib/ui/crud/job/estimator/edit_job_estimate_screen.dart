@@ -285,7 +285,6 @@ class _JobEstimateBuilderScreenState
   );
 
   Widget _buildTaskItems(Task task) => FutureBuilderEx<ItemsAndRate>(
-    // ignore: discarded_futures
     future: ItemsAndRate.fromTask(task),
     builder: (context, itemAndRate) => HMBColumn(
       children: itemAndRate!.items
@@ -331,7 +330,6 @@ class _JobEstimateBuilderScreenState
     newItem = await Navigator.of(context).push<TaskItem>(
       MaterialPageRoute(
         builder: (context) => FutureBuilderEx(
-          // ignore: discarded_futures
           future: getTaskAndRate(task),
           builder: (context, taskAndRate) => TaskItemEditScreen(
             parent: task,
@@ -353,7 +351,6 @@ class _JobEstimateBuilderScreenState
     final updatedItem = await Navigator.of(context).push<TaskItem>(
       MaterialPageRoute(
         builder: (context) => FutureBuilderEx(
-          // ignore: discarded_futures
           future: getTaskAndRate(task),
           builder: (context, taskAndRate) => TaskItemEditScreen(
             parent: task,

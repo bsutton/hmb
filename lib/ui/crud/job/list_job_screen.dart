@@ -39,7 +39,7 @@ class JobListScreen extends StatefulWidget {
 
 class _JobListScreenState extends State<JobListScreen> {
   var _showOldJobs = false;
-  var _order = JobOrder.active;
+  JobOrder _order = JobOrder.active;
 
   List<Widget> _buildActionItems(Job job) => [
     HMBCopyIcon(

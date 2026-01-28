@@ -123,7 +123,6 @@ The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in
                     unawaited(_start(widget.task));
                   }
                 } else {
-                  // ignore: discarded_futures
                   await _stop(widget.task);
                 }
               },

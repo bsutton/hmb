@@ -247,7 +247,7 @@ Future<File> generateInvoicePdf(
                       ),
                     ),
                     // Logo on the right
-                    if (logo != null) logo,
+                    ?logo,
                   ],
                 ),
                 pw.Divider(),

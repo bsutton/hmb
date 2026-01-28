@@ -84,7 +84,6 @@ class _CapturePhotoState extends State<CapturePhoto> {
           if (photoId != null) ...[
             Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
             FutureBuilderEx(
-              // ignore: discarded_futures
               future: _getPhotoMeta(),
               builder: (context, meta) => PhotoThumbnail.fromPhotoMeta(
                 photoMeta: meta!,

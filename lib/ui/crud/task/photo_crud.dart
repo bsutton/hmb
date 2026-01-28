@@ -69,7 +69,6 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
         return JuneBuilder(
           PhotoLoader.new,
           builder: (context) => FutureBuilderEx(
-            // ignore: discarded_futures
             future: widget.controller.photos,
             builder: (context, photoMetas) => HMBColumn(
               mainAxisSize: MainAxisSize.min,
@@ -128,7 +127,6 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
   /// which when tapped will show the full screen photo
   /// with zoom/pan ability.
   Widget _showPhoto(PhotoMeta photoMeta) => FutureBuilderEx(
-    // ignore: discarded_futures
     future: photoMeta.resolve(),
     builder: (context, path) => Stack(
       children: [

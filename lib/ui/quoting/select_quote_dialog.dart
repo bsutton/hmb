@@ -139,7 +139,6 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
 
           Expanded(
             child: FutureBuilderEx<List<CustomerAndQuote>>(
-              // ignore: discarded_futures
               future: _fetchQuotes(),
               builder: (context, quotes) {
                 if (quotes == null || quotes.isEmpty) {

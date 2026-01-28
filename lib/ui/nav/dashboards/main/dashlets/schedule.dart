@@ -28,7 +28,6 @@ class NextJobDashlet extends StatelessWidget {
     label: 'Schedule',
     hint: 'Create and View your Job schedule',
     icon: Icons.schedule,
-    // ignore: discarded_futures
     value: getNextJob,
     valueBuilder: (ctx, dv) {
       if (dv.value == null) {

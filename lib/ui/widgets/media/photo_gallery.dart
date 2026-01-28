@@ -80,7 +80,6 @@ class PhotoGallery extends StatelessWidget {
     PhotoGalleryState.new,
     builder: (context) => FutureBuilderEx<List<PhotoMeta>>(
       waitingBuilder: (context) => const HMBPlaceHolder(height: 100),
-      // ignore: discarded_futures
       future: _fetchPhotos(),
       builder: (context, photos) {
         if (photos!.isEmpty) {
@@ -132,7 +131,6 @@ class PhotoGallery extends StatelessWidget {
                 //   }
                 // },
                 child: FutureBuilderEx<Thumbnail?>(
-                  // ignore: discarded_futures
                   future: _getThumbNail(photoMeta),
                   waitingBuilder: (context) => _showWaitingIcon(),
                   errorBuilder: (context, error) => _showMissingIcon(),

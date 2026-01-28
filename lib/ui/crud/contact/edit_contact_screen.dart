@@ -117,7 +117,6 @@ class _ContactEditScreenState extends State<ContactEditScreen>
     entityName: 'Contact',
     dao: DaoContact(),
     onInsert: (contact, transaction) =>
-        // ignore: discarded_futures
         widget.daoJoin.insertForParent(contact!, widget.parent, transaction),
     entityState: this,
     editor: (contact) => HMBColumn(

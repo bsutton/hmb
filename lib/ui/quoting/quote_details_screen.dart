@@ -139,7 +139,6 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
   );
 
   Widget _buildQuoteLines() => FutureBuilderEx<QuoteDetails>(
-    // ignore: discarded_futures
     future: QuoteDetails.fromQuoteId(_quote.id, excludeHidden: false),
     builder: (context, jobQuote) {
       if (jobQuote == null || jobQuote.groups.isEmpty) {

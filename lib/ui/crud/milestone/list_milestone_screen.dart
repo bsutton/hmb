@@ -133,7 +133,6 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
       },
       onSearch: (filter) {
         this.filter = filter?.toLowerCase();
-        // ignore: discarded_futures
         _summaries = _fetchMilestoneSummaries();
         setState(() {});
       },

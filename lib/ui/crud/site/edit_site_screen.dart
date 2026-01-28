@@ -84,10 +84,8 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     entityName: 'Site',
     dao: DaoSite(),
     entityState: this,
-    onInsert:
-        // ignore: discarded_futures
-        (site, transaction) =>
-            widget.daoJoin.insertForParent(site!, widget.parent, transaction),
+    onInsert: (site, transaction) =>
+        widget.daoJoin.insertForParent(site!, widget.parent, transaction),
     editor: (site) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

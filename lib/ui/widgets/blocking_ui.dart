@@ -11,7 +11,7 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// ignore_for_file: unused_element, unused_element_parameter
+// ignore_for_file: unused_element_parameter
 
 import 'dart:async';
 
@@ -96,7 +96,6 @@ class BlockingOverlay extends StatelessWidget {
     BlockingOverlayState.new,
     builder: (blockingOverlayState) => FutureBuilderEx<void>(
       debugLabel: 'BlockingOverlayState',
-      // ignore: discarded_futures
       future: blockingOverlayState.waitForAllActions,
       waitingBuilder: (context) => _BlockingOverlayWidget(blockingOverlayState),
       builder: (context, _) => const HMBEmpty(),
@@ -342,7 +341,6 @@ class BlockingOverlayState extends JuneState {
     actionRunner.start();
 
     /// Rebuild the future that lets us monitor all runners.
-    // ignore:  discarded_futures
     _waitForAllActions = Future.wait<dynamic>(
       actions.stack.map((runner) => runner.completer.future).toList(),
     );
@@ -366,7 +364,6 @@ class BlockingOverlayState extends JuneState {
       startTime = null;
       _waitForAllActions = Future.value();
     } else {
-      // ignore: discarded_futures
       _waitForAllActions = Future.wait<dynamic>(
         actions.stack.map((runner) => runner.completer.future).toList(),
       );
@@ -450,11 +447,10 @@ class RunningSlowAction<T> {
 
   void start() {
     // Now call the long running function.
-    // ignore: discarded_futures
     final result = slowAction();
     // if this fails you probably need to use return Future.value(null);
     result
-        // ignore: discarded_futures, invalid_return_type_for_catch_error
+        // ignore: invalid_return_type_for_catch_error
         .catchError(completer.completeError)
         // ignore: discarded_futures
         .whenComplete(() {

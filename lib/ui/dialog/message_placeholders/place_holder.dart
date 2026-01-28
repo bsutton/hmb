@@ -41,7 +41,6 @@ abstract class PlaceHolder<S> {
   /// String.
   Future<String> value();
 
-  // ignore: avoid_setters_without_getters
   /// The template dialog calls listen to get change events
   /// from the source of the placeholder
   // ignore: avoid_setters_without_getters
