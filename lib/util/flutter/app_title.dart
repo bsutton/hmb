@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:june/june.dart';
 
 import '../../src/appname.dart';

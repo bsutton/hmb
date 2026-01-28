@@ -11,9 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
-
-
 import 'job.dart';
 import 'job_status_stage.dart';
 
@@ -162,8 +159,6 @@ enum JobStatus {
     (e) => e.id == id,
     orElse: () => JobStatus.startingStatus,
   );
-
- 
 
   static List<JobStatus> byOrdinal() => values.toList()
     ..sort((a, b) => a.ordinal - b.ordinal)

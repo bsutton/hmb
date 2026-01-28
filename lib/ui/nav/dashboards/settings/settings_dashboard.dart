@@ -32,7 +32,7 @@ class SettingsDashboardPage extends StatelessWidget {
         icon: Icons.message,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/settings/sms_templates',
-        valueBuilder: (_, _) =>  const HMBEmpty(),
+        valueBuilder: (_, _) => const HMBEmpty(),
       ),
       DashletCard<void>.route(
         label: 'Business',
@@ -41,7 +41,7 @@ class SettingsDashboardPage extends StatelessWidget {
         icon: Icons.business,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/settings/business',
-        valueBuilder: (_, _) =>  const HMBEmpty(),
+        valueBuilder: (_, _) => const HMBEmpty(),
       ),
       DashletCard<void>.route(
         label: 'Billing',
@@ -50,7 +50,7 @@ class SettingsDashboardPage extends StatelessWidget {
         icon: Icons.account_balance,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/settings/billing',
-        valueBuilder: (_, _) =>  const HMBEmpty(),
+        valueBuilder: (_, _) => const HMBEmpty(),
       ),
       DashletCard<void>.route(
         label: 'Contact',
@@ -59,7 +59,7 @@ class SettingsDashboardPage extends StatelessWidget {
         icon: Icons.contact_phone,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/settings/contact',
-        valueBuilder: (_, _) =>  const HMBEmpty(),
+        valueBuilder: (_, _) => const HMBEmpty(),
       ),
       DashletCard<void>.route(
         label: 'Integrations',
@@ -68,7 +68,7 @@ class SettingsDashboardPage extends StatelessWidget {
         icon: Icons.extension,
         value: () => Future.value(const DashletValue(null)),
         route: '/home/settings/integrations',
-        valueBuilder: (_, _) =>  const HMBEmpty(),
+        valueBuilder: (_, _) => const HMBEmpty(),
       ),
       DashletCard<void>.onTap(
         label: 'Setup Wizard',
@@ -76,7 +76,7 @@ class SettingsDashboardPage extends StatelessWidget {
         icon: Icons.auto_fix_high,
         value: () => Future.value(const DashletValue(null)),
         onTap: (_) => context.push('/home/settings/wizard', extra: true),
-        valueBuilder: (_, _) =>  const HMBEmpty(),
+        valueBuilder: (_, _) => const HMBEmpty(),
       ),
     ],
   );

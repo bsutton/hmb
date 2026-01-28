@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:fixed/fixed.dart';
 
 import '../entity/entity.g.dart';
@@ -91,9 +90,7 @@ Future<Invoice> createTimeAndMaterialsInvoice(
   }
 
   // Update the invoice total amount
-  final updatedInvoice = invoice.copyWith(
-    totalAmount: totalAmount,
-  );
+  final updatedInvoice = invoice.copyWith(totalAmount: totalAmount);
   await DaoInvoice().update(updatedInvoice);
 
   return updatedInvoice;

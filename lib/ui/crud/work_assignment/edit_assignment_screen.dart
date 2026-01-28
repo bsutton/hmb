@@ -140,7 +140,6 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
           ),
         ),
 
-
         // Supplier-Contact selector
         if (_selectedSupplier != null) ...[
           FutureBuilderEx<List<Contact>>(
@@ -153,7 +152,6 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
               onChanged: (contact) => _selectedContact = contact?.id,
             ),
           ),
-
         ],
 
         // Tasks multi-select

@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 // --------------------------------------------------------------
 // lib/src/api/upload_photos_in_backup.dart
 import 'dart:convert';

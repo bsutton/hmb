@@ -262,7 +262,7 @@ class EntityListScreenState<T extends Entity<T>>
                 enabled: false,
                 small: true,
                 hint:
-        '''Click the Filter Icon in the top right hand corner to view active filters''',
+                    '''Click the Filter Icon in the top right hand corner to view active filters''',
                 onPressed: () async {},
               ),
             ],

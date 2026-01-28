@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import '../oauth/redirect_handler.dart';
 
 class XeroRedirectHandlerConfig implements RedirectHandlerConfig {

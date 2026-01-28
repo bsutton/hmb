@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'dart:io';
 
 import 'package:dcli/dcli.dart';
@@ -85,7 +84,6 @@ class DevBackupProvider extends BackupProvider {
   @override
   Future<String> get photosRootPath async =>
       join(DartProject.self.pathToProjectRoot, 'photos');
-
 
   @override
   Future<String> get backupLocation async => _pathToBackups();

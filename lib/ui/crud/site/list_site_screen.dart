@@ -50,7 +50,6 @@ class SiteListScreen<P extends Entity<P>> extends StatelessWidget {
     title: (site) => HMBSiteText(label: '', site: site),
     onEdit: (site) =>
         SiteEditScreen(daoJoin: daoJoin, parent: parent.parent!, site: site),
-    details: (entity, details) =>
-        const HMBEmpty(),
+    details: (entity, details) => const HMBEmpty(),
   );
 }

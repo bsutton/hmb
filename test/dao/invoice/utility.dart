@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/entity/helpers/charge_mode.dart';

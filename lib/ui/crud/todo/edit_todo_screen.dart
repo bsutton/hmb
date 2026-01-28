@@ -29,12 +29,10 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
 
   late ToDo _draft;
 
-
   ToDoParentType? _parentType;
 
   final selectedJob = SelectedJob();
   final selectedCustomer = SelectedCustomer();
-
 
   @override
   Future<void> asyncInitState() async {

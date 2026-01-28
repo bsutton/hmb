@@ -75,8 +75,7 @@ class HMBFixedField extends HMBTextField {
 
 class HMBFixedEditingController extends TextEditingController {
   final Fixed? fixed;
-  
+
   HMBFixedEditingController({required this.fixed})
     : super(text: fixed == null || fixed.isZero ? '' : fixed.toString());
-
 }

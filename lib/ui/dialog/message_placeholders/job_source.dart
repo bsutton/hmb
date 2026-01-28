@@ -66,6 +66,6 @@ class JobSource extends Source<Job> {
 class CustomerJob {
   Customer? customer;
   Job? job;
-  
+
   CustomerJob(this.customer, this.job);
 }

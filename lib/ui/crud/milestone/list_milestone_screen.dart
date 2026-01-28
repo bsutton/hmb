@@ -201,7 +201,6 @@ class QuoteMilestoneSummary {
     required this.invoicedCount,
   });
 
-
   bool matches(String? filter) {
     if (Strings.isBlank(filter)) {
       return true;

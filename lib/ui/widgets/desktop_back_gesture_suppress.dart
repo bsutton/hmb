@@ -16,9 +16,8 @@ import 'package:june/june.dart';
 
 class DesktopBackGestureSuppress extends StatefulWidget {
   final Widget child;
-  
-  const DesktopBackGestureSuppress({required this.child, super.key});
 
+  const DesktopBackGestureSuppress({required this.child, super.key});
 
   @override
   State<DesktopBackGestureSuppress> createState() =>
@@ -40,7 +39,7 @@ class _DesktopBackGestureSuppressState
 
   @override
   void dispose() {
-    // Defer the state update to avoid calling setState when the widget 
+    // Defer the state update to avoid calling setState when the widget
     //tree is locked.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final gestureState = June.getState(IgnoreDesktopGesture.new);

@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 extension UriEx on Uri {
   /// Returns true if [input] is a valid absolute HTTP or HTTPS URL.
   static bool isValid(String? input) {

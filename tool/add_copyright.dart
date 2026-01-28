@@ -1,6 +1,6 @@
 import 'dart:io';
 
-/// A simple Dart script to prepend a copyright and license header 
+/// A simple Dart script to prepend a copyright and license header
 /// to all Dart files
 /// Usage: dart run add_copyright.dart from your root_directory
 

@@ -24,6 +24,7 @@ class Log extends Logger {
   static late Log _self;
   static late String _localPath;
   static final _recentLogs = <String, DateTime>{};
+
   /// The default log level.
   static Level loggingLevel = Level.debug;
 

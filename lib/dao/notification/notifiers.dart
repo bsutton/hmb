@@ -1,4 +1,3 @@
-
 import 'package:june/june.dart';
 
 class CategoryNotifier extends JuneState {

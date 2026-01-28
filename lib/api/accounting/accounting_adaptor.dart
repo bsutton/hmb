@@ -19,7 +19,6 @@ abstract class AccountingAdaptor {
   // ignore: avoid_setters_without_getters
   static set instance(AccountingAdaptor instance) => _instance = instance;
 
-
   static Future<bool> get isEnabled async =>
       (await DaoSystem().get()).isExternalAccountingEnabled();
 

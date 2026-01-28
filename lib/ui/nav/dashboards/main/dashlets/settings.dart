@@ -28,6 +28,6 @@ class SettingsDashlet extends StatelessWidget {
     icon: Icons.settings,
     value: () => Future.value(const DashletValue(null)),
     route: '/home/settings',
-    valueBuilder: (_, _) =>  const HMBEmpty(),
+    valueBuilder: (_, _) => const HMBEmpty(),
   );
 }

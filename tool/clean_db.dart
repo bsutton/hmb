@@ -1,5 +1,4 @@
 #! /usr/bin/env dart
-
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 

@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -92,7 +91,7 @@ should create an invoice for time and materials job with correct rates and mark 
           isTrue,
         );
 
-        // final billedMaterialItem = await 
+        // final billedMaterialItem = await
         // DaoCheckListItem().getById(labour.id);
         // expect(billedMaterialItem?.billed, isTrue);
         // expect(

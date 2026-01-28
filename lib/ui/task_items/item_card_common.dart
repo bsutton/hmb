@@ -31,7 +31,6 @@ class ItemCardCommon extends StatelessWidget {
     super.key,
   });
 
-
   @override
   Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,

@@ -28,6 +28,6 @@ class ToolsDashlet extends StatelessWidget {
     icon: Icons.build,
     value: () => Future.value(const DashletValue(null)),
     route: '/home/tools',
-    valueBuilder: (_, _) =>  const HMBEmpty(),
+    valueBuilder: (_, _) => const HMBEmpty(),
   );
 }

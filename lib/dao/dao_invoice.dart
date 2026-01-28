@@ -113,7 +113,7 @@ class DaoInvoice extends Dao<Invoice> {
     await DaoInvoice().update(updatedInvoice);
   }
 
-  Future<List<String>> getEmailsByInvoice(Invoice invoice)  =>
+  Future<List<String>> getEmailsByInvoice(Invoice invoice) =>
       DaoJob().getEmailsByJob(invoice.jobId);
 
   Future<void> markSent(Invoice invoice) async {

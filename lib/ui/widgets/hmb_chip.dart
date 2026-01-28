@@ -56,9 +56,7 @@ class HMBChip extends StatelessWidget {
     final chipContent = HMBRow(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (icon != null) ...[
-          Icon(icon, size: 16, color: textColor),
-        ],
+        if (icon != null) ...[Icon(icon, size: 16, color: textColor)],
         Text(
           label,
           style: TextStyle(

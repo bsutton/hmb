@@ -60,3 +60,4 @@ android/app/.cxx
 .sentry-native
 database/*
 error.txt
+logs/analyzer.txt

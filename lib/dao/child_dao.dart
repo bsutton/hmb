@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import '../entity/entity.dart';
 
 abstract class ChildDao<C extends Entity<C>, P extends Entity<P>> {

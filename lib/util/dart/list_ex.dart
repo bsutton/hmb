@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 extension ListEx<T> on List<T> {
   T? firstWhereOrNull(bool Function(T) test) {
     for (final element in this) {

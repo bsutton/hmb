@@ -39,8 +39,7 @@ class HMBSelectMobileMulti extends StatefulWidget {
   State<HMBSelectMobileMulti> createState() => _HMBSelectMobileMultiState();
 }
 
-class _HMBSelectMobileMultiState
-    extends DeferredState<HMBSelectMobileMulti> {
+class _HMBSelectMobileMultiState extends DeferredState<HMBSelectMobileMulti> {
   final preSelected = <ContactAndMobile>[];
 
   @override
@@ -51,8 +50,10 @@ class _HMBSelectMobileMultiState
     final all = await ContactAndMobile.fromJob(widget.job, null);
 
     String norm(String s) => s.replaceAll(' ', '').trim();
-    final wanted =
-        widget.initialMobiles.map(norm).where((e) => e.isNotEmpty).toSet();
+    final wanted = widget.initialMobiles
+        .map(norm)
+        .where((e) => e.isNotEmpty)
+        .toSet();
 
     for (final item in all) {
       if (wanted.contains(norm(item.mobile))) {
@@ -63,8 +64,9 @@ class _HMBSelectMobileMultiState
 
   @override
   Widget build(BuildContext context) => DeferredBuilder(
-        this,
-        builder: (_) => HMBDroplistMultiSelect<ContactAndMobile>(
+    this,
+    builder: (_) =>
+        HMBDroplistMultiSelect<ContactAndMobile>(
           initialItems: () async => preSelected,
           items: (filter) => ContactAndMobile.fromJob(widget.job, filter),
           format: (cm) => '${cm.contact.fullname}\n${cm.mobile}',
@@ -76,7 +78,7 @@ class _HMBSelectMobileMultiState
           required: false,
         ).help('Select the mobile numbers.', '''
 The selected mobile numbers will be added to the SMS "To" list.'''),
-      );
+  );
 }
 
 @immutable
@@ -98,10 +100,7 @@ class ContactAndMobile {
 
   /// Collect all mobiles associated with a job (job contacts, plus any
   /// customer-related contacts your DAO returns).
-  static Future<List<ContactAndMobile>> fromJob(
-    Job job,
-    String? filter,
-  ) async {
+  static Future<List<ContactAndMobile>> fromJob(Job job, String? filter) async {
     final out = <ContactAndMobile>[];
     final contacts = await DaoContact().getByJob(job.id);
 
@@ -126,9 +125,11 @@ class ContactAndMobile {
     }
     final q = filter!.trim().toLowerCase();
     return out
-        .where((cm) =>
-            cm.contact.fullname.toLowerCase().contains(q) ||
-            cm.mobile.toLowerCase().contains(q))
+        .where(
+          (cm) =>
+              cm.contact.fullname.toLowerCase().contains(q) ||
+              cm.mobile.toLowerCase().contains(q),
+        )
         .toList();
   }
 }

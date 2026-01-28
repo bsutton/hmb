@@ -20,9 +20,8 @@ import 'stock_take_wizard.dart';
 
 class ToolPhotoStep extends WizardStep {
   ToolWizardState wizard;
-  
-  ToolPhotoStep(this.wizard) : super(title: 'Photo');
 
+  ToolPhotoStep(this.wizard) : super(title: 'Photo');
 
   @override
   Widget build(BuildContext context) => CapturePhoto(
