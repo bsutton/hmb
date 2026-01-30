@@ -21,7 +21,7 @@ import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/management/backup_providers/dev/dev_backup_provider.dart';
 import 'package:hmb/database/management/db_utility.dart';
 import 'package:hmb/database/versions/db_upgrade.dart';
-import 'package:hmb/database/versions/project_script_source.dart';
+import 'package:hmb/database/versions/implementations/project_script_source.dart';
 import 'package:path/path.dart' as path;
 import 'package:path/path.dart';
 import 'package:pub_release/pub_release.dart' hide Settings;
