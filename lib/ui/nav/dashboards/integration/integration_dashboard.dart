@@ -25,6 +25,20 @@ class IntegrationDashboardPage extends StatelessWidget {
     title: 'Integrations',
     dashlets: [
       DashletCard<void>.route(
+        label: 'ihserver',
+        hint: 'Import website booking requests into HMB',
+        icon: Icons.cloud_download,
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/integrations/ihserver',
+      ),
+      DashletCard<void>.route(
+        label: 'ChatGPT',
+        hint: 'Enable AI summaries and task extraction',
+        icon: Icons.smart_toy,
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/integrations/chatgpt',
+      ),
+      DashletCard<void>.route(
         label: 'Xero',
         hint: 'Configure integration with Xero to upload Invoices',
         icon: Icons.extension,

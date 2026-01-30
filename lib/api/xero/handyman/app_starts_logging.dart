@@ -14,6 +14,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import '../../../dao/dao_system.dart';
 import '../../../src/version/version.g.dart';
 
@@ -32,6 +34,10 @@ String obfuscateBusinessName(String name) => name
     .join(' ');
 
 Future<void> logAppStartup() async {
+  if (kIsWeb) {
+    // dart:io networking APIs are not supported on web.
+    return;
+  }
   // Retrieve the system object.
   final daoSystem = DaoSystem();
   final system = await daoSystem.get();

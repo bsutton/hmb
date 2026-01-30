@@ -28,6 +28,10 @@ class ContactCustomerNotifier extends JuneState {
   ContactCustomerNotifier();
 }
 
+class BookingRequestNotifier extends JuneState {
+  BookingRequestNotifier();
+}
+
 class InvoiceNotifier extends JuneState {
   InvoiceNotifier();
 }

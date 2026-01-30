@@ -121,6 +121,14 @@ class System extends Entity<System> {
   String? chatgptRefreshToken;
   DateTime? chatgptTokenExpiry;
 
+  /// OpenAI API key for ChatGPT task/summary extraction.
+  String? openaiApiKey;
+
+  /// ihserver integration settings
+  String? ihserverUrl;
+  String? ihserverToken;
+  bool enableIhserverIntegration;
+
   /// Tracks removal of fleather rich-text fields using an ordinal enum.
   RichTextRemoved richTextRemoved;
 
@@ -166,6 +174,10 @@ class System extends Entity<System> {
     required this.chatgptAccessToken,
     required this.chatgptRefreshToken,
     required this.chatgptTokenExpiry,
+    required this.openaiApiKey,
+    required this.ihserverUrl,
+    required this.ihserverToken,
+    required this.enableIhserverIntegration,
     required super.createdDate,
     required super.modifiedDate,
     required this.richTextRemoved,
@@ -215,6 +227,10 @@ class System extends Entity<System> {
     this.chatgptAccessToken,
     this.chatgptRefreshToken,
     this.chatgptTokenExpiry,
+    this.openaiApiKey,
+    this.ihserverUrl,
+    this.ihserverToken,
+    this.enableIhserverIntegration = false,
   }) : super.forInsert();
 
   System copyWith({
@@ -259,6 +275,10 @@ class System extends Entity<System> {
     String? chatgptAccessToken,
     String? chatgptRefreshToken,
     DateTime? chatgptTokenExpiry,
+    String? openaiApiKey,
+    String? ihserverUrl,
+    String? ihserverToken,
+    bool? enableIhserverIntegration,
     RichTextRemoved? richTextRemoved,
   }) => System._(
     id: id,
@@ -308,6 +328,11 @@ class System extends Entity<System> {
     chatgptAccessToken: chatgptAccessToken ?? this.chatgptAccessToken,
     chatgptRefreshToken: chatgptRefreshToken ?? this.chatgptRefreshToken,
     chatgptTokenExpiry: chatgptTokenExpiry ?? this.chatgptTokenExpiry,
+    openaiApiKey: openaiApiKey ?? this.openaiApiKey,
+    ihserverUrl: ihserverUrl ?? this.ihserverUrl,
+    ihserverToken: ihserverToken ?? this.ihserverToken,
+    enableIhserverIntegration:
+        enableIhserverIntegration ?? this.enableIhserverIntegration,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
   );
@@ -378,6 +403,11 @@ class System extends Entity<System> {
     chatgptTokenExpiry: map['chatgpt_token_expiry'] != null
         ? DateTime.parse(map['chatgpt_token_expiry'] as String)
         : null,
+    openaiApiKey: map['openai_api_key'] as String?,
+    ihserverUrl: map['ihserver_url'] as String?,
+    ihserverToken: map['ihserver_token'] as String?,
+    enableIhserverIntegration:
+        (map['enable_ihserver_integration'] as int? ?? 0) == 1,
     createdDate:
         DateTime.tryParse(map['created_date'] as String? ?? '') ??
         DateTime.now(),
@@ -455,6 +485,10 @@ class System extends Entity<System> {
     'chatgpt_access_token': chatgptAccessToken,
     'chatgpt_refresh_token': chatgptRefreshToken,
     'chatgpt_token_expiry': chatgptTokenExpiry?.toIso8601String(),
+    'openai_api_key': openaiApiKey,
+    'ihserver_url': ihserverUrl,
+    'ihserver_token': ihserverToken,
+    'enable_ihserver_integration': enableIhserverIntegration ? 1 : 0,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

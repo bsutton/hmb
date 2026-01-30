@@ -38,16 +38,8 @@ class DaoBookingRequest extends Dao<BookingRequest> {
     return fromMap(data.first);
   }
 
-  Future<List<BookingRequest>> getPending() async {
-    final db = withoutTransaction();
-    final data = await db.query(
-      tableName,
-      where: 'status = ?',
-      whereArgs: [BookingRequestStatus.pending.ordinal],
-      orderBy: 'createdDate desc',
-    );
-    return toList(data);
-  }
+  Future<List<BookingRequest>> getPending() =>
+      getByStatuses([BookingRequestStatus.pending]);
 
   Future<int> countPending() => count(
     where: 'status = ?',
@@ -56,6 +48,23 @@ class DaoBookingRequest extends Dao<BookingRequest> {
 
   Future<void> markImported(BookingRequest request) async {
     await update(request.copyWith(status: BookingRequestStatus.imported));
+  }
+
+  Future<List<BookingRequest>> getByStatuses(
+    List<BookingRequestStatus> statuses,
+  ) async {
+    final db = withoutTransaction();
+    if (statuses.isEmpty) {
+      return [];
+    }
+    final placeholders = List.filled(statuses.length, '?').join(', ');
+    final data = await db.query(
+      tableName,
+      where: 'status IN ($placeholders)',
+      whereArgs: statuses.map((s) => s.ordinal).toList(),
+      orderBy: 'createdDate desc',
+    );
+    return toList(data);
   }
 
   Future<void> createTable(Database db, int version) async {}

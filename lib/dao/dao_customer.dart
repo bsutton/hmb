@@ -67,6 +67,22 @@ order by c.modifiedDate desc
     );
   }
 
+  Future<List<Customer>> getByName(String name) async {
+    final db = withoutTransaction();
+    if (Strings.isBlank(name)) {
+      return [];
+    }
+    final data = await db.rawQuery(
+      '''
+select *
+from customer
+where lower(name) = lower(?)
+''',
+      [name.trim()],
+    );
+    return toList(data);
+  }
+
   Future<Customer?> getByQuote(int quoteId) async {
     final db = withoutTransaction();
     final data = await db.rawQuery(
@@ -108,7 +124,7 @@ order by c.modifiedDate desc
       '''
       SELECT c.*
       FROM customer c
-      LEFT JOIN customer_contacts cc ON c.id = cc.customer_id
+      LEFT JOIN customer_contact cc ON c.id = cc.customer_id
       WHERE cc.contact_id = ?
       LIMIT 1
     ''',
@@ -130,7 +146,7 @@ order by c.modifiedDate desc
       '''
       SELECT c.*
       FROM customer c
-      LEFT JOIN customer_sites cs ON c.id = cs.customer_id
+      LEFT JOIN customer_site cs ON c.id = cs.customer_id
       WHERE cs.site_id = ?
       LIMIT 1
     ''',

@@ -27,6 +27,7 @@ class MainDashboardPage extends StatelessWidget {
       title: 'Dashboard',
       dashlets: [
         JobsDashlet(),
+        BookingRequestsDashlet(),
         TodayDashlet(),
         HelpDashlet(),
         NextJobDashlet(),

@@ -24,6 +24,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:toastification/toastification.dart';
 
+import 'api/ihserver/booking_request_sync_service.dart';
+import 'ui/nav/dashboards/dashboard.dart';
 import 'ui/nav/nav.g.dart';
 import 'ui/widgets/blocking_ui.dart';
 import 'ui/widgets/desktop_back_gesture.dart';
@@ -42,9 +44,6 @@ final _rootNavKey = GlobalKey<NavigatorState>();
 Future<void> main(List<String> args) async {
   Log.configure('.');
 
-  // ensure Flutter binding before any async work
-  SentryWidgetsFlutterBinding.ensureInitialized();
-
   // grab package info for logging
   final packageInfo = await PackageInfo.fromPlatform();
   Log.i('Package Name: ${packageInfo.packageName}');
@@ -61,6 +60,8 @@ Future<void> main(List<String> args) async {
       options.replay.onErrorSampleRate = 1.0;
     },
     appRunner: () {
+      // ensure Flutter binding in the same zone as runApp
+      SentryWidgetsFlutterBinding.ensureInitialized();
       runApp(
         DevicePreview(
           // ignore: avoid_redundant_argument_values
@@ -74,19 +75,49 @@ Future<void> main(List<String> args) async {
 
 //----------------------------------------------------------------------
 
-class HmbApp extends StatelessWidget {
+class HmbApp extends StatefulWidget {
   const HmbApp({super.key});
+
+  @override
+  State<HmbApp> createState() => _HmbAppState();
+}
+
+class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_syncBookings());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_syncBookings());
+    }
+  }
+
+  Future<void> _syncBookings() async {
+    final newCount = await BookingRequestSyncService().sync();
+    if (newCount > 0) {
+      June.getState<DashboardReloaded>(DashboardReloaded.new).setState();
+    }
+  }
 
   @override
   Widget build(BuildContext context) => ToastificationWrapper(
     child: MaterialApp.router(
       // required by [DevicePreview]
-      useInheritedMediaQuery: true,
       theme: theme,
       routerConfig: createGoRouter(_rootNavKey, _bootstrap),
       builder: (context, mainAppWindow) => DevicePreview.appBuilder(
         context,
-
         DesktopBackGesture(
           navigatorKey: _rootNavKey,
           child: Stack(

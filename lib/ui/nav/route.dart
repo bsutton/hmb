@@ -26,6 +26,8 @@ import '../crud/message_template/list_message_template.dart';
 import '../crud/milestone/list_milestone_screen.dart';
 import '../crud/receipt/list_receipt_screen.dart';
 import '../crud/supplier/list_supplier_screen.dart';
+import '../crud/system/chatgpt_integration_screen.dart';
+import '../crud/system/ihserver_integration_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
 import '../crud/system/system_contact_screen.dart';
@@ -33,6 +35,7 @@ import '../crud/system/xero_integration_screen.dart';
 import '../crud/todo/list_todo_screen.dart';
 import '../crud/tool/list_tool_screen.dart';
 import '../error.dart';
+import '../integrations/booking_request_list_screen.dart';
 import '../invoicing/list_invoice_screen.dart';
 import '../invoicing/yet_to_be_invoice.dart';
 import '../quoting/list_quote_screen.dart';
@@ -128,6 +131,11 @@ List<GoRoute> dashboardRoutes() => [
   GoRoute(
     path: 'today',
     builder: (_, _) => const HomeScaffold(initialScreen: TodayPage()),
+  ),
+  GoRoute(
+    path: 'booking_requests',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: BookingRequestListScreen()),
   ),
 
   GoRoute(
@@ -289,6 +297,16 @@ List<GoRoute> settingRoutes() => [
     builder: (_, _) =>
         const HomeScaffold(initialScreen: IntegrationDashboardPage()),
     routes: [
+      GoRoute(
+        path: 'ihserver',
+        builder: (_, _) =>
+            const HomeScaffold(initialScreen: IhServerIntegrationScreen()),
+      ),
+      GoRoute(
+        path: 'chatgpt',
+        builder: (_, _) =>
+            const HomeScaffold(initialScreen: ChatGptIntegrationScreen()),
+      ),
       GoRoute(
         path: 'xero',
         builder: (_, _) =>
