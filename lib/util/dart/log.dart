@@ -134,13 +134,15 @@ class Log extends Logger {
     _self = Log._internal(currentWorkingDirectory);
 
     final frames = StackTraceImpl();
-
-    for (final frame in frames.frames) {
-      _localPath = frame.sourceFile.path.substring(
-        frame.sourceFile.path.lastIndexOf('/'),
-      );
-      break;
+    if (frames.frames.isEmpty) {
+      _localPath = '';
+      return;
     }
+
+    final frame = frames.frames.first;
+    _localPath = frame.sourceFile.path.substring(
+      frame.sourceFile.path.lastIndexOf('/'),
+    );
   }
 }
 
@@ -163,6 +165,15 @@ class MyLogPrinter extends LogPrinter {
     final formattedDate = formatter.format(now) + now.millisecond.toString();
 
     final frames = StackTraceImpl();
+    if (frames.frames.isEmpty) {
+      print(
+        color(
+          event.level,
+          '$formattedDate ${event.level.name} ::: ${event.message}',
+        ),
+      );
+      return [];
+    }
     var i = 0;
     var depth = 0;
     for (final frame in frames.frames) {
