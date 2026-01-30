@@ -1,3 +1,4 @@
+#!/usr/bin/env dcli
 import 'dart:io';
 
 /// A simple Dart script to prepend a copyright and license header
