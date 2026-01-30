@@ -127,7 +127,8 @@ class _SiteEditScreenState extends State<SiteEditScreen>
     ),
   );
 
-  void _onExtract(ParsedCustomer parsedCustomer) {
+  Future<void> _onExtract(String text) async {
+    final parsedCustomer = await ParsedCustomer.parse(text);
     _addressLine1Controller.text = parsedCustomer.address.street;
     _suburbController.text = parsedCustomer.address.city;
     _stateController.text = parsedCustomer.address.state;

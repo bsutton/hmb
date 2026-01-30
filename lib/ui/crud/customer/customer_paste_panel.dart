@@ -1,7 +1,6 @@
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 
-import '../../../util/dart/parse/parse_customer.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/icons/hmb_clear_icon.dart';
@@ -10,7 +9,7 @@ import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 
 class CustomerPastePanel extends StatefulWidget {
-  final void Function(ParsedCustomer) onExtract;
+  final void Function(String) onExtract;
 
   const CustomerPastePanel({required this.onExtract, super.key});
 
@@ -68,8 +67,7 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
         children: [
           const HMBSpacer(width: true),
           HMBButton(
-            onPressed: () async =>
-                widget.onExtract(await ParsedCustomer.parse(controller.text)),
+            onPressed: () => widget.onExtract(controller.text),
             label: 'Extract',
             hint: 'Extract customer details from the message',
           ),

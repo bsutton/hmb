@@ -6,9 +6,14 @@ import '../../dao/dao_system.dart';
 
 class JobAssistResult {
   final String summary;
+  final String description;
   final List<String> tasks;
 
-  JobAssistResult({required this.summary, required this.tasks});
+  JobAssistResult({
+    required this.summary,
+    required this.description,
+    required this.tasks,
+  });
 }
 
 class JobAssistApiClient {
@@ -32,7 +37,8 @@ class JobAssistApiClient {
             'role': 'system',
             'content':
                 'You help a handyman app. Return JSON only with keys: '
-                'summary (short job title, <= 60 chars) and tasks '
+                'summary (short job title, <= 60 chars), description '
+                '(short clear job description, <= 280 chars), and tasks '
                 '(array of short task titles).',
           },
           {'role': 'user', 'content': description},
@@ -54,10 +60,16 @@ class JobAssistApiClient {
         (choice['message'] as Map<String, dynamic>)['content'] as String;
     final parsed = jsonDecode(content) as Map<String, dynamic>;
     final summary = (parsed['summary'] as String?)?.trim() ?? '';
+    final extractedDescription =
+        (parsed['description'] as String?)?.trim() ?? '';
     final tasks = (parsed['tasks'] as List<dynamic>? ?? const [])
         .map((e) => e.toString().trim())
         .where((t) => t.isNotEmpty)
         .toList();
-    return JobAssistResult(summary: summary, tasks: tasks);
+    return JobAssistResult(
+      summary: summary,
+      description: extractedDescription,
+      tasks: tasks,
+    );
   }
 }

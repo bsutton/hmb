@@ -25,6 +25,7 @@ import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import 'copy_job.dart';
 import 'edit_job_screen.dart';
+import 'job_creator.dart';
 import 'list_job_card.dart';
 
 class JobListScreen extends StatefulWidget {
@@ -67,6 +68,7 @@ class _JobListScreenState extends State<JobListScreen> {
               onEdit: (job) => JobEditScreen(job: job),
               fetchList: _fetchJobs,
               listCardTitle: (job) => HMBCardTitle(job.summary),
+              onAdd: () => JobCreator.show(context),
               cardHeight: size.width < 456 ? 860 : 770,
               filterSheetBuilder: _buildFilterSheet,
               isFilterActive: () => _showOldJobs || _order != JobOrder.active,

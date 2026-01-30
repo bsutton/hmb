@@ -189,6 +189,10 @@ class _BookingRequestReviewDialogState
       if (Strings.isBlank(_jobSummary.text)) {
         _jobSummary.text = result.summary;
       }
+      if (Strings.isBlank(_jobDescription.text) &&
+          Strings.isNotBlank(result.description)) {
+        _jobDescription.text = result.description;
+      }
       if (_taskControllers.isEmpty) {
         for (final task in result.tasks) {
           _taskControllers.add(TextEditingController(text: task));

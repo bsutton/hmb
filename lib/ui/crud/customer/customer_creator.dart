@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
+import '../../../api/chat_gpt/customer_extract_api_client.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/parse/parse_customer.dart';
@@ -149,7 +150,26 @@ class _CustomerCreatorState extends State<CustomerCreator> {
     ],
   );
 
-  void _onExtract(ParsedCustomer parsedCustomer) {
+  Future<void> _onExtract(String text) async {
+    if (Strings.isBlank(text)) {
+      HMBToast.info('Paste a message to extract customer details.');
+      return;
+    }
+
+    ParsedCustomer parsedCustomer;
+    final system = await DaoSystem().get();
+    final apiKey = system.openaiApiKey?.trim() ?? '';
+    if (apiKey.isNotEmpty) {
+      final extracted = await CustomerExtractApiClient().extract(text);
+      if (extracted == null) {
+        HMBToast.error('AI extraction failed. Check ChatGPT settings.');
+        return;
+      }
+      parsedCustomer = extracted;
+    } else {
+      parsedCustomer = await ParsedCustomer.parse(text);
+    }
+
     if (parsedCustomer.isEmpty()) {
       HMBToast.info(
         '''Unable to extract any customer details from the message. You can copy and paste the details manually.''',

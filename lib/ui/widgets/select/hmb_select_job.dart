@@ -8,7 +8,7 @@ import 'package:june/june.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../crud/job/edit_job_screen.dart';
+import '../../crud/job/job_creator.dart';
 import '../icons/hmb_add_button.dart';
 import '../layout/hmb_row.dart';
 import 'hmb_droplist.dart';
@@ -80,10 +80,7 @@ class _HMBSelectJobState extends State<HMBSelectJob> {
   }
 
   Future<void> _addJob() async {
-    final job = await Navigator.push<Job>(
-      context,
-      MaterialPageRoute<Job>(builder: (context) => const JobEditScreen()),
-    );
+    final job = await JobCreator.show(context);
     if (job != null) {
       setState(() {
         widget.selectedJob.jobId = job.id;
