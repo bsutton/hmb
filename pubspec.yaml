@@ -93,14 +93,13 @@ dependencies:
   # sms_advanced: # ^1.1.0
   #   hosted: https://onepub.dev/api/jbbxpsdavu/
   settings_yaml: ^8.3.0
+  sqflite_common: ^2.5.6
     # this must be pined to 2.3.4 otherwise the server will
   # try to pakage sqlite3 as a native resource which 
   # causes issues with debugging.
   sqflite_common_ffi: 2.3.4+4
-  sqlite3: 2.9.4
-
-  sqflite_common: ^2.5.6
   sqflite_common_ffi_web: ^1.0.0
+  sqlite3: 2.9.4
   stacktrace_impl: ^2.3.0
   strings: ^4.0.1
   svg_flutter: ^0.0.1
