@@ -11,17 +11,58 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:fleather/fleather.dart';
-
-import '../../ui/widgets/media/rich_editor.dart';
+import 'dart:convert';
 
 class RichTextHelper {
   static String toPlainText(String richText) =>
-      parchmentToPlainText(RichEditor.createParchment(richText));
+      parchmentJsonToPlainText(richText);
 
-  static String parchmentToPlainText(ParchmentDocument document) {
-    final text = document.toPlainText().replaceAll('\n\n', '\n');
+  static String parchmentJsonToPlainText(String richText) {
+    if (richText.trim().isEmpty) {
+      return '';
+    }
+
+    final ops = _extractOps(richText);
+    if (ops == null) {
+      return _cleanupPlainText(richText);
+    }
+
+    final buffer = StringBuffer();
+    for (final op in ops) {
+      if (op is! Map) {
+        continue;
+      }
+      final insert = op['insert'];
+      if (insert is String) {
+        buffer.write(insert);
+      } else if (insert is Map) {
+        // Preserve line breaks for embeds without pulling in rich-text deps.
+        buffer.write('\n');
+      }
+    }
+
+    return _cleanupPlainText(buffer.toString());
+  }
+
+  static List<dynamic>? _extractOps(String richText) {
+    try {
+      final decoded = jsonDecode(richText);
+      if (decoded is List<dynamic>) {
+        return decoded;
+      }
+      if (decoded is Map && decoded['ops'] is List<dynamic>) {
+        return decoded['ops'] as List<dynamic>;
+      }
+    } on FormatException {
+      return null;
+    }
+    return null;
+  }
+
+  static String _cleanupPlainText(String text) {
+    final normalised = text.replaceAll('\r\n', '\n');
+    final collapsed = normalised.replaceAll(RegExp(r'\n{2,}'), '\n');
     // Remove any trailing newline characters
-    return text.replaceAll(RegExp(r'\n+$'), '');
+    return collapsed.replaceAll(RegExp(r'\n+$'), '');
   }
 }

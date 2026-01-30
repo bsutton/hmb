@@ -21,9 +21,9 @@
 import 'package:dcli_core/dcli_core.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
-import '../../cache/hmb_image_cache.dart';
-import '../../dao/dao_photo.dart';
-import '../../util/dart/photo_meta.dart';
+import '../../../cache/hmb_image_cache.dart';
+import '../../../dao/dao_photo.dart';
+import '../../../util/dart/photo_meta.dart';
 
 /// Post v131: migrate local legacy photos into the unified cache.
 /// - Creates/ensures `general` and `thumb` variants for each photo.

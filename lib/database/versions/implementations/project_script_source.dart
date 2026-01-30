@@ -13,19 +13,25 @@
 
 import 'dart:convert';
 
-import 'package:flutter/services.dart';
+import 'package:dcli/dcli.dart';
+import 'package:path/path.dart';
 
-import 'script_source.dart';
+import '../script_source.dart';
 
-class AssetScriptSource implements ScriptSource {
-  AssetScriptSource();
+class ProjectScriptSource implements ScriptSource {
+  ProjectScriptSource();
+
   @override
-  Future<String> loadSQL(String pathToScript) =>
-      rootBundle.loadString(pathToScript);
+  Future<String> loadSQL(String pathToScript) async =>
+      read(pathToScript).toParagraph();
 
   @override
   Future<List<String>> upgradeScripts() async {
-    final jsonString = await rootBundle.loadString(ScriptSource.pathToIndex);
+    final project = DartProject.self;
+    final jsonString = read(
+      join(project.pathToProjectRoot, ScriptSource.pathToIndex),
+    ).toParagraph();
+
     return List<String>.from(json.decode(jsonString) as List);
   }
 }

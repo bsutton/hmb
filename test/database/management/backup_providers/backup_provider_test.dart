@@ -20,7 +20,7 @@ import 'package:hmb/database/factory/hmb_database_factory.dart';
 import 'package:hmb/database/management/backup_providers/backup.dart';
 import 'package:hmb/database/management/backup_providers/backup_provider.dart';
 import 'package:hmb/database/management/database_helper.dart';
-import 'package:hmb/database/versions/project_script_source.dart';
+import 'package:hmb/database/versions/implementations/project_script_source.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 

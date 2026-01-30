@@ -11,18 +11,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-/// DO NOT import this library directly. Instead
-/// import paths.dart as it has conditional
-/// imports based on whether we are running under
-/// flutter or cli.
-library;
+// import 'package:flutter_native_timezone_2025/flutter_native_timezone_2025.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
-import 'package:dcli_core/dcli_core.dart';
-
-
-typedef Path = String;
-
-/// Device specific to where all photos are stored for HMB.
-Future<Path> getPhotosRootPath() async => throw UnimplementedError();
-
-Future<Path> getTemporaryDirectory() async => createTempDir();
+Future<String> getLocalTimezone() async =>
+    // FlutterNativeTimezone.getLocalTimezone();
+    (await FlutterTimezone.getLocalTimezone()).identifier;

@@ -18,14 +18,13 @@ import 'package:date_time_format/date_time_format.dart';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart';
 import 'package:sentry/sentry.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../../../util/dart/build_mode.dart';
 import '../../../util/dart/exceptions.dart';
 import '../../factory/hmb_database_factory.dart';
 import '../../versions/script_source.dart';
 import '../database_helper.dart';
 import 'backup.dart';
+import 'db_path.dart' if (dart.library.io) 'db_path.io.dart';
 import 'progress_update.dart';
 import 'zip_isolate.dart';
 
@@ -273,19 +272,7 @@ abstract class BackupProvider {
   /// to be in but it was convenient to place it here
   /// as the [BackupProvider]s already understand the
   /// need for different database storage locations.
-  Future<String> get databasePath async {
-    if (isDebugMode &&
-        (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
-      // When running `flutter run` from the project, pwd == project root
-      final dbDir = join(pwd, 'database');
-      if (!exists(dbDir)) {
-        createDir(dbDir, recursive: true);
-      }
-      return join(dbDir, dbFileName);
-    }
-
-    return join(await getDatabasesPath(), 'handyman.db');
-  }
+  Future<String> get databasePath => pathToDatabase(dbFileName);
 }
 
 class BackupResult {

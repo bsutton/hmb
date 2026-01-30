@@ -13,9 +13,9 @@
 
 import 'package:sqflite_common/sqlite_api.dart';
 
-import '../../dao/dao.g.dart';
-import '../../entity/entity.g.dart';
-import '../../util/flutter/rich_text_helper.dart';
+import '../../../dao/dao.g.dart';
+import '../../../entity/entity.g.dart';
+import '../../../util/flutter/rich_text_helper.dart';
 
 /// Is run after the v134.sql upgrade script is run.
 /// Convert all rich text fields to plain text.

@@ -15,7 +15,7 @@ import 'package:dcli/dcli.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/management/database_helper.dart';
-import 'package:hmb/database/versions/project_script_source.dart';
+import 'package:hmb/database/versions/implementations/project_script_source.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common/sqflite.dart';
 

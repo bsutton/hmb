@@ -12,15 +12,14 @@
 */
 
 import 'package:scope/scope.dart';
-import 'package:sqflite/sqlite_api.dart';
+import 'package:sqflite_common/sqflite.dart';
 import 'package:strings/strings.dart';
 
 import '../../entity/version.dart';
 import '../../src/version/version.g.dart' as code;
 import '../management/backup_providers/backup_provider.dart';
 import '../management/db_utility.dart';
-import 'post_upgrade_77.dart';
-import 'script_source.dart';
+import 'source.dart';
 
 const dbForUpgradeKey = ScopeKey<Database>('dbForUpgrade');
 

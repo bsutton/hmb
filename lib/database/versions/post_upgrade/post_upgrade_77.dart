@@ -13,10 +13,10 @@
 
 import 'package:sqflite_common/sqlite_api.dart';
 
-import '../../dao/dao_base.dart';
-import '../../entity/photo.dart';
-import '../../ui/widgets/media/captured_photo.dart';
-import '../../util/dart/photo_meta.dart';
+import '../../../dao/dao_base.dart';
+import '../../../entity/photo.dart';
+import '../../../ui/widgets/media/captured_photo.dart';
+import '../../../util/dart/photo_meta.dart';
 
 /// Is run after the v77.sql upgrade script is run.
 /// Converts all absolute paths in the db to relative paths.

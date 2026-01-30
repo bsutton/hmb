@@ -29,7 +29,7 @@ import '../../../../util/dart/format.dart';
 import '../../../../util/flutter/app_title.dart';
 import '../../../../util/flutter/hmb_theme.dart';
 import '../../../factory/flutter_database_factory.dart';
-import '../../../versions/asset_script_source.dart';
+import '../../../versions/implementations/asset_script_source.dart';
 import '../backup.dart';
 import '../backup_provider.dart';
 import '../backup_selection.dart';

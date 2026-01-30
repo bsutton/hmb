@@ -15,12 +15,12 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_native_timezone_2025/flutter_native_timezone_2025.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../../entity/todo.dart';
 import 'desktop_scheduler.dart';
+import 'native_timezone.dart';
 import 'notif.dart';
 
 class LocalNotifs {
@@ -79,32 +79,34 @@ class LocalNotifs {
     );
 
     // ---- permissions ----
-    if (Platform.isAndroid) {
-      final android = _fln
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
-      await android?.requestNotificationsPermission();
-      // NOTE: If you later require exact alarms, add the manifest permission
-      // and deep-link users to the exact-alarm settings screen.
-    } else if (Platform.isIOS) {
-      final ios = _fln
-          .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin
-          >();
-      await ios?.requestPermissions(alert: true, badge: true, sound: true);
-    } else if (Platform.isMacOS) {
-      final macos = _fln
-          .resolvePlatformSpecificImplementation<
-            MacOSFlutterLocalNotificationsPlugin
-          >();
-      await macos?.requestPermissions(alert: true, badge: true, sound: true);
-    }
+    if (!kIsWeb) {
+      if (Platform.isAndroid) {
+        final android = _fln
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+        await android?.requestNotificationsPermission();
+        // NOTE: If you later require exact alarms, add the manifest permission
+        // and deep-link users to the exact-alarm settings screen.
+      } else if (Platform.isIOS) {
+        final ios = _fln
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >();
+        await ios?.requestPermissions(alert: true, badge: true, sound: true);
+      } else if (Platform.isMacOS) {
+        final macos = _fln
+            .resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin
+            >();
+        await macos?.requestPermissions(alert: true, badge: true, sound: true);
+      }
 
-    // ---- desktop in-app scheduler (Windows/Linux only) ----
-    if (Platform.isWindows || Platform.isLinux) {
-      _desktop = DesktopNotifScheduler(fln: _fln, buildDetails: _buildDetails)
-        ..start();
+      // ---- desktop in-app scheduler (Windows/Linux only) ----
+      if (Platform.isWindows || Platform.isLinux) {
+        _desktop = DesktopNotifScheduler(fln: _fln, buildDetails: _buildDetails)
+          ..start();
+      }
     }
 
     _inited = true;
@@ -289,11 +291,12 @@ class LocalNotifs {
     // resort: UTC.
     String name;
     try {
-      if (Platform.isAndroid ||
+      if (kIsWeb ||
+          Platform.isAndroid ||
           Platform.isIOS ||
           Platform.isMacOS ||
           Platform.isWindows) {
-        name = await FlutterNativeTimezone.getLocalTimezone();
+        name = await getLocalTimezone();
       } else if (Platform.isLinux) {
         name = await _ianaFromLinux();
       } else {

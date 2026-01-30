@@ -61,7 +61,6 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
   }
 
   Future<void> _reloadInvoice() async {
-    // ignore: discarded_futures
     _invoiceDetails = InvoiceDetails.load(invoiceId);
   }
 
