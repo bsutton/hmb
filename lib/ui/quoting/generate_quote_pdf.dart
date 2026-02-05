@@ -47,7 +47,7 @@ Future<File> generateQuotePdf(
   pdf.addPage(
     pw.MultiPage(
       pageTheme: pw.PageTheme(
-        margin: pw.EdgeInsets.zero,
+        margin: const pw.EdgeInsets.fromLTRB(20, 20, 20, 50),
         buildBackground: (context) => pw.Stack(
           children: [
             // Top band
@@ -122,7 +122,7 @@ Future<File> generateQuotePdf(
       header: (context) {
         if (context.pageNumber == 1) {
           return pw.Padding(
-            padding: const pw.EdgeInsets.fromLTRB(20, 30, 20, 10),
+            padding: const pw.EdgeInsets.fromLTRB(0, 10, 0, 10),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
@@ -329,16 +329,7 @@ Future<File> generateQuotePdf(
           }
         }
 
-        return [
-          pw.Padding(
-            // top padding reduced from 80 to 20
-            padding: const pw.EdgeInsets.fromLTRB(20, 20, 20, 60),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: content,
-            ),
-          ),
-        ];
+        return content;
       },
     ),
   );
