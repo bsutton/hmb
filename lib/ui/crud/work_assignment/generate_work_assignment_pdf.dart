@@ -97,7 +97,7 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
         .map(
           (meta) => HMBImageCache().getVariantBytesForMeta(
             meta: meta,
-            variant: ImageVariant.pdf,
+            variant: ImageVariantType.pdf,
           ),
         )
         .toList();

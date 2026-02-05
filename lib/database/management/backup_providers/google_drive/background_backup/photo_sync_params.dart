@@ -52,15 +52,28 @@ class PhotoPayload {
   }
 }
 
+/// A simple payload representing a photo deletion request.
+class PhotoDeletePayload {
+  final int photoDeleteQueueId;
+  final int photoId;
+
+  const PhotoDeletePayload({
+    required this.photoDeleteQueueId,
+    required this.photoId,
+  });
+}
+
 /// Parameters passed into the isolate for photo syncing.
 class PhotoSyncParams {
   final SendPort sendPort;
   final Map<String, String> authHeaders;
   final List<PhotoPayload> photos;
+  final List<PhotoDeletePayload> deletes;
 
   PhotoSyncParams({
     required this.sendPort,
     required this.authHeaders,
     required this.photos,
+    required this.deletes,
   });
 }

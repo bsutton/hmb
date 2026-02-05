@@ -1,4 +1,3 @@
-
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton.
  All Rights Reserved.
@@ -15,41 +14,45 @@ import 'package:dcli_core/dcli_core.dart' as c;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart' as t;
 import 'package:hmb/cache/hmb_image_cache.dart';
-import 'package:hmb/cache/image_cache_config.dart'; // ImageVariant, CompressJob, CompressResult
-import 'package:hmb/entity/photo.dart'; // Photo entity (id, filePath, etc.)
+// ImageVariant, CompressJob, CompressResult
+import 'package:hmb/cache/image_cache_config.dart';
+import 'package:hmb/dao/dao_image_cache_variant.dart';
+import 'package:hmb/entity/image_cache_variant.dart';
+import 'package:hmb/entity/photo.dart'; // Photo entity (id, filename, etc.)
 import 'package:hmb/util/dart/paths.dart'; // getTemporaryDirectory()
 import 'package:hmb/util/dart/photo_meta.dart'; // PhotoMeta
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:test/test.dart';
+
+import '../database/management/db_utility_test_helper.dart';
 // ---------------------------------------------------------------
 
 void main() {
   late HMBImageCache cache;
 
   // Fake downloader: always writes the RAW variant for the requested meta.
-  Future<void> fakeDownloader(Variant v) async {
+  Future<void> fakeDownloader(ImageVariant v, String targetPath) async {
     /// we are run in an isolate
     final cache = HMBImageCache();
     await cache.init(
-      (_) async {},
+      (_, _) async {},
       (_) async => CompressResult('OK', success: true),
     );
-    final raw = Variant(v.meta, ImageVariant.raw);
-    final parent = p.dirname(raw.cacheStoragePath);
+    final parent = p.dirname(targetPath);
     if (!c.exists(parent)) {
       c.createDir(parent, recursive: true);
     }
     await File(
-      raw.cacheStoragePath,
+      targetPath,
     ).writeAsBytes(_bytes('RAW-${v.meta.photo.id}-${v.variant.name}'));
   }
 
   // Fake compressor: copies src to the target variant path with a small marker.
   Future<CompressResult> fakeCompressor(CompressJob job) async {
-    final out = job.variant.cacheStoragePath;
-    c.createDir(out, recursive: true);
+    final out = job.targetPath;
+    // c.createDir(out, recursive: true);
     final srcBytes = await File(job.srcPath).readAsBytes();
     await File(out).writeAsBytes([
       ...srcBytes,
@@ -67,8 +70,13 @@ void main() {
     PathProviderPlatform.instance = _FakePathProvider();
 
     WidgetsFlutterBinding.ensureInitialized();
+    await setupTestDb();
     cache = HMBImageCache();
     await cache.init(fakeDownloader, fakeCompressor);
+  });
+
+  tearDownAll(() async {
+    await tearDownTestDb();
   });
 
   tearDown(() async {
@@ -82,7 +90,7 @@ void main() {
       () async {
         final original = await _makeOriginal(name: 'photo1.jpg');
         final meta = await _metaFrom(id: 101, absolutePath: original.path);
-        final variant = Variant(meta, ImageVariant.general);
+        final variant = ImageVariant(meta, ImageVariantType.general);
 
         final path = await cache.getVariantPath(
           variant: variant,
@@ -90,14 +98,15 @@ void main() {
         );
 
         // Should be the RAW (since compression is background)
-        final raw = Variant(meta, ImageVariant.raw);
-        expect(p.normalize(path), equals(p.normalize(raw.cacheStoragePath)));
+        final raw = ImageVariant(meta, ImageVariantType.raw);
+        expect(
+          p.normalize(path),
+          equals(p.normalize(cache.pathForVariant(raw))),
+        );
         expect(File(path).existsSync(), isTrue);
 
-        // Index should have an entry for RAW
-        final idx = await _readIndex();
-        final items = (idx['items'] as List).cast<Map<String, dynamic>>();
-        expect(items.any((e) => e['key'] == '${meta.photo.id}|raw'), isTrue);
+        final row = await _getRow(meta.photo.id, ImageVariantType.raw);
+        expect(row, isNotNull);
       },
     );
 
@@ -106,7 +115,7 @@ void main() {
       () async {
         final original = await _makeOriginal(name: 'photo2.jpg');
         final meta = await _metaFrom(id: 202, absolutePath: original.path);
-        final general = Variant(meta, ImageVariant.general);
+        final general = ImageVariant(meta, ImageVariantType.general);
 
         // Trigger download/compress chain
         await cache.getVariantPath(variant: general, fetch: fakeDownloader);
@@ -114,7 +123,9 @@ void main() {
         // Eventually the general.webp should exist (written by _
         //fakeCompressor via compute)
         final ok = await _eventually(
-          () => Future.value(File(general.cacheStoragePath).existsSync()),
+          () => Future.value(
+            File(cache.pathForVariant(general)).existsSync(),
+          ),
         );
         expect(ok, isTrue, reason: 'general variant was not produced in time');
       },
@@ -126,14 +137,14 @@ void main() {
         contents: 'BYTES',
       );
       final meta = await _metaFrom(id: 303, absolutePath: original.path);
-      final thumb = Variant(meta, ImageVariant.thumb);
+      final thumb = ImageVariant(meta, ImageVariantType.thumb);
 
       // Ensure raw exists and compression is triggered
       await cache.getVariantPath(variant: thumb, fetch: fakeDownloader);
 
       // Wait for thumb creation
       final ok = await _eventually(
-        () => Future.value(File(thumb.cacheStoragePath).existsSync()),
+        () => Future.value(File(cache.pathForVariant(thumb)).existsSync()),
       );
       expect(ok, isTrue);
 
@@ -155,14 +166,14 @@ void main() {
 
         await cache.store(meta);
 
-        final raw = Variant(meta, ImageVariant.raw);
-        final general = Variant(meta, ImageVariant.general);
-        final thumb = Variant(meta, ImageVariant.thumb);
+        final raw = ImageVariant(meta, ImageVariantType.raw);
+        final general = ImageVariant(meta, ImageVariantType.general);
+        final thumb = ImageVariant(meta, ImageVariantType.thumb);
 
         final produced = await _eventually(() {
-          final gen = File(general.cacheStoragePath).existsSync();
-          final thm = File(thumb.cacheStoragePath).existsSync();
-          final rawGone = !File(raw.cacheStoragePath).existsSync();
+          final gen = File(cache.pathForVariant(general)).existsSync();
+          final thm = File(cache.pathForVariant(thumb)).existsSync();
+          final rawGone = !File(cache.pathForVariant(raw)).existsSync();
           return gen && thm && rawGone;
         }, timeout: const Duration(seconds: 3));
         expect(
@@ -176,32 +187,36 @@ void main() {
     test('evictVariant removes only that variant', () async {
       final original = await _makeOriginal(name: 'photo5.jpg');
       final meta = await _metaFrom(id: 505, absolutePath: original.path);
-      final general = Variant(meta, ImageVariant.general);
-      final thumb = Variant(meta, ImageVariant.thumb);
+      final general = ImageVariant(meta, ImageVariantType.general);
+      final thumb = ImageVariant(meta, ImageVariantType.thumb);
 
       await cache.getVariantPath(variant: general, fetch: fakeDownloader);
       await _eventually(
-        () => Future.value(File(general.cacheStoragePath).existsSync()),
+        () => Future.value(
+          File(cache.pathForVariant(general)).existsSync(),
+        ),
       );
 
       await cache.getVariantPath(variant: thumb, fetch: fakeDownloader);
       await _eventually(
-        () => Future.value(File(thumb.cacheStoragePath).existsSync()),
+        () => Future.value(
+          File(cache.pathForVariant(thumb)).existsSync(),
+        ),
       );
 
       await cache.evictVariant(general);
 
-      expect(File(general.cacheStoragePath).existsSync(), isFalse);
-      expect(File(thumb.cacheStoragePath).existsSync(), isTrue);
+      expect(File(cache.pathForVariant(general)).existsSync(), isFalse);
+      expect(File(cache.pathForVariant(thumb)).existsSync(), isTrue);
     });
 
     test('evictPhoto removes all variants for the photo id', () async {
       final original = await _makeOriginal(name: 'photo6.jpg');
       final meta = await _metaFrom(id: 606, absolutePath: original.path);
       final variants = [
-        Variant(meta, ImageVariant.raw),
-        Variant(meta, ImageVariant.general),
-        Variant(meta, ImageVariant.thumb),
+        ImageVariant(meta, ImageVariantType.raw),
+        ImageVariant(meta, ImageVariantType.general),
+        ImageVariant(meta, ImageVariantType.thumb),
       ];
 
       // Seed files
@@ -209,32 +224,44 @@ void main() {
         // Force a download to create RAW and trigger compress
         await cache.getVariantPath(variant: v, fetch: fakeDownloader);
         await _eventually(
-          () => Future.value(File(v.cacheStoragePath).existsSync()),
+          () => Future.value(File(cache.pathForVariant(v)).existsSync()),
         );
       }
+
+      // Wait for background compression to finish and DB to be updated.
+      final allKeysPresent = await _eventually(() async {
+        final rows = await _getRowsForPhoto(meta.photo.id);
+        final keys = rows.map((e) => '${e.photoId}|${e.variant}').toSet();
+        return keys.contains('${meta.photo.id}|raw') &&
+            keys.contains('${meta.photo.id}|general') &&
+            keys.contains('${meta.photo.id}|thumb');
+      }, timeout: const Duration(seconds: 6));
+      expect(allKeysPresent, isTrue);
 
       await cache.evictPhoto(meta.photo.id.toString());
 
       for (final v in variants) {
-        expect(File(v.cacheStoragePath).existsSync(), isFalse);
+        final ok = await _eventually(
+          () => Future.value(!File(cache.pathForVariant(v)).existsSync()),
+          timeout: const Duration(seconds: 6),
+        );
+        expect(ok, isTrue);
       }
 
-      final idx = await _readIndex();
-      final items = (idx['items'] as List).cast<Map<String, dynamic>>();
-      expect(
-        items.any((e) => (e['key'] as String).startsWith('${meta.photo.id}|')),
-        isFalse,
-      );
+      final rows = await _getRowsForPhoto(meta.photo.id);
+      expect(rows.isEmpty, isTrue);
     });
 
-    test('clear removes all cached files (keeps/rewrites index)', () async {
+    test('clear removes all cached files', () async {
       final original = await _makeOriginal(name: 'photo7.jpg');
       final meta = await _metaFrom(id: 707, absolutePath: original.path);
-      final general = Variant(meta, ImageVariant.general);
+      final general = ImageVariant(meta, ImageVariantType.general);
 
       await cache.getVariantPath(variant: general, fetch: fakeDownloader);
       await _eventually(
-        () => Future.value(File(general.cacheStoragePath).existsSync()),
+        () => Future.value(
+          File(cache.pathForVariant(general)).existsSync(),
+        ),
       );
 
       await cache.clear();
@@ -244,44 +271,30 @@ void main() {
         dir,
       ).listSync().whereType<File>().map((f) => p.basename(f.path)).toList();
 
-      // Only _index.json should remain
-      expect(files, contains('_index.json'));
-      expect(files.length, equals(1));
-
-      final idx = await _readIndex();
-      expect(idx['items'], isEmpty);
-      expect(idx['total'], anyOf(0, isA<num>()));
+      expect(files.isEmpty, isTrue);
     });
 
-    test('setLastAccess seeds the LRU timestamp in index', () async {
+    test('setLastAccess seeds the LRU timestamp in cache table', () async {
       final original = await _makeOriginal(name: 'photo8.jpg');
       final meta = await _metaFrom(id: 808, absolutePath: original.path);
-      final general = Variant(meta, ImageVariant.general);
+      final general = ImageVariant(meta, ImageVariantType.general);
 
       await cache.getVariantPath(variant: general, fetch: fakeDownloader);
       await _eventually(
-        () => Future.value(File(general.cacheStoragePath).existsSync()),
+        () => Future.value(
+          File(cache.pathForVariant(general)).existsSync(),
+        ),
       );
 
       // Read current timestamp
-      var idx = await _readIndex();
-      final before = DateTime.parse(
-        (idx['items'] as List).cast<Map<String, dynamic>>().firstWhere(
-              (e) => e['key'] == '${meta.photo.id}|general',
-            )['accessed']
-            as String,
-      );
+      final before =
+          (await _getRow(meta.photo.id, ImageVariantType.general))!.lastAccess;
 
       final seed = DateTime(2001, 2, 3, 4, 5, 6);
       await cache.setLastAccess(variant: general, when: seed);
 
-      idx = await _readIndex();
-      final after = DateTime.parse(
-        (idx['items'] as List).cast<Map<String, dynamic>>().firstWhere(
-              (e) => e['key'] == '${meta.photo.id}|general',
-            )['accessed']
-            as String,
-      );
+      final after =
+          (await _getRow(meta.photo.id, ImageVariantType.general))!.lastAccess;
 
       expect(
         after.isAtSameMomentAs(seed),
@@ -314,7 +327,8 @@ Future<bool> _eventually(
   return false;
 }
 
-/// Test double: a simple original file under /tmp we’ll “pretend” is the source photo.
+/// Test double: a simple original file under /tmp we’ll “pretend” is the
+/// source photo.
 Future<File> _makeOriginal({
   required String name,
   String contents = 'ORIG',
@@ -327,18 +341,6 @@ Future<File> _makeOriginal({
   final f = File(p.join(dir.path, name));
   await f.writeAsBytes(_bytes(contents));
   return f;
-}
-
-/// Read the cache’s _index.json for assertions.
-Future<Map<String, dynamic>> _readIndex() async {
-  final base = await getTemporaryDirectory();
-  final cacheDir = p.join(base, 'photo_image_cache');
-  final indexPath = p.join(cacheDir, '_index.json');
-  if (!File(indexPath).existsSync()) {
-    return {'items': <dynamic>[], 'total': 0};
-  }
-  final text = await File(indexPath).readAsString();
-  return json.decode(text) as Map<String, dynamic>;
 }
 
 /// Look up the cache dir used by HMBImageCache.
@@ -370,6 +372,15 @@ Future<PhotoMeta> _metaFrom({
   await meta.resolve(); // ensure absolutePath is ready
   return meta;
 }
+
+Future<ImageCacheVariant?> _getRow(
+  int photoId,
+  ImageVariantType variant,
+) =>
+    DaoImageCacheVariant().getByKey(photoId, variant.name);
+
+Future<List<ImageCacheVariant>> _getRowsForPhoto(int photoId) =>
+    DaoImageCacheVariant().getByPhotoId(photoId);
 
 class _FakePathProvider
     with t.Fake, MockPlatformInterfaceMixin

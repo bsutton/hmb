@@ -1,5 +1,6 @@
 export 'post_upgrade/post_upgrade_131.dart';
 export 'post_upgrade/post_upgrade_134.dart';
+export 'post_upgrade/post_upgrade_142.dart';
 export 'post_upgrade/post_upgrade_77.dart';
 export 'script_source.dart';
 // order of the if statements is important.

@@ -6,13 +6,16 @@
 */
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dcli_core/dcli_core.dart';
 import 'package:path/path.dart' as p;
+import 'package:sqflite_common/sqlite_api.dart' show Database;
 
+import '../dao/dao_image_cache_variant.dart';
+import '../database/management/database_helper.dart';
+import '../entity/image_cache_variant.dart';
 import '../util/dart/compute_manager.dart';
 import '../util/dart/future_ex.dart';
 import '../util/dart/paths.dart';
@@ -23,24 +26,25 @@ typedef Key = String;
 
 typedef Compressor = Future<CompressResult> Function(CompressJob job);
 
-class Variant {
+/// Identifies a cached image format variant for a specific photo.
+/// We keep mulitple variants per photo for different use cases.
+class ImageVariant {
   final PhotoMeta meta;
-  final ImageVariant variant;
+  final ImageVariantType variant;
   final Key key;
 
-  Variant(this.meta, this.variant) : key = '${meta.photo.id}|${variant.name}';
+  ImageVariant(this.meta, this.variant)
+    : key = '${meta.photo.id}|${variant.name}';
 
-  Path get cacheStoragePath {
+  /// Cache-relative file name for this variant.
+  String get cacheFileName {
     final ext = switch (variant) {
-      ImageVariant.general => 'webp',
-      ImageVariant.pdf => 'jpg',
-      ImageVariant.thumb => 'jpg',
-      ImageVariant.raw => 'orig',
+      ImageVariantType.general => 'webp',
+      ImageVariantType.pdf => 'jpg',
+      ImageVariantType.thumb => 'jpg',
+      ImageVariantType.raw => 'orig',
     };
-    return p.join(
-      HMBImageCache._instance!._cacheDir,
-      '${_safe(meta.photo.id.toString())}__${variant.name}.$ext',
-    );
+    return '${_safe(meta.photo.id.toString())}__${variant.name}.$ext';
   }
 
   Future<Path> get cloudStoragePath => meta.cloudStoragePath;
@@ -51,7 +55,8 @@ class Variant {
   String toString() => '${meta.photo.id}|${variant.name}';
 }
 
-typedef Downloader = Future<void> Function(Variant variant);
+typedef Downloader =
+    Future<void> Function(ImageVariant variant, String targetPath);
 
 class CompressResult {
   final bool success;
@@ -63,10 +68,15 @@ class CompressResult {
 
 class CompressJob {
   final String srcPath;
+  final String targetPath;
 
-  final Variant variant;
+  final ImageVariant variant;
 
-  CompressJob({required this.srcPath, required this.variant});
+  CompressJob({
+    required this.srcPath,
+    required this.targetPath,
+    required this.variant,
+  });
 }
 
 /// LRU cache of *image variants* keyed by (photoId, variant).
@@ -81,11 +91,8 @@ class HMBImageCache {
   late final Compressor compressor;
   late final ImageCacheConfig _config;
   late String _cacheDir;
-  late String _indexPath;
+  late DaoImageCacheVariant _dao;
 
-  // composite key: "$photoId|$variant" -> entry
-  final _entries = <Key, _Entry>{};
-  var _totalBytes = 0;
   var _initialised = false;
 
   factory HMBImageCache() {
@@ -95,6 +102,49 @@ class HMBImageCache {
 
   HMBImageCache._();
 
+  /// One-time migration used by DB upgrade actions.
+  /// Rebuilds the image cache table from files already on disk.
+  static Future<void> migrateDiskCacheToDatabase(Database db) async {
+    final base = await getTemporaryDirectory();
+    final cacheDir = p.join(base, _cacheDirName);
+    if (!exists(cacheDir)) {
+      return;
+    }
+
+    final legacyBin = p.join(cacheDir, '_index.bin');
+    final legacyJson = p.join(cacheDir, '_index.json');
+    if (exists(legacyBin)) {
+      delete(legacyBin);
+    }
+    if (exists(legacyJson)) {
+      delete(legacyJson);
+    }
+
+    final result = await compute<_CacheScanRequest, _CacheScanResult>(
+      _scanCacheDir,
+      _CacheScanRequest(
+        cacheDir: cacheDir,
+        variants: ImageVariantType.values.map((e) => e.name).toList(),
+      ),
+      debugLabel: 'CacheMigrationScan',
+    );
+
+    for (final stray in result.strayFiles) {
+      if (exists(stray)) {
+        delete(stray);
+      }
+    }
+
+    await db.transaction((txn) async {
+      await txn.delete(DaoImageCacheVariant.tableName);
+      final batch = txn.batch();
+      for (final entry in result.entries) {
+        batch.insert(DaoImageCacheVariant.tableName, entry.toMap());
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
   Future<void> init(Downloader downloader, Compressor compressor) async {
     if (_initialised) {
       return;
@@ -103,28 +153,46 @@ class HMBImageCache {
     this.downloader = downloader;
 
     _config = ImageCacheConfig(downloader: downloader, compressor: compressor);
+    if (!DatabaseHelper.instance.isOpen()) {
+      throw StateError(
+        'Database must be open before initializing HMBImageCache.',
+      );
+    }
     final base = await getTemporaryDirectory();
     _cacheDir = p.join(base, _cacheDirName);
     if (!exists(_cacheDir)) {
       createDir(_cacheDir, recursive: true);
     }
-    _indexPath = p.join(_cacheDir, '_index.json');
-    await _loadIndex();
-    await _reconcileDisk();
+    if (p.basename(_cacheDir) == _cacheDirName) {
+      final legacyBin = p.join(_cacheDir, '_index.bin');
+      final legacyJson = p.join(_cacheDir, '_index.json');
+      if (exists(legacyBin)) {
+        delete(legacyBin);
+      }
+      if (exists(legacyJson)) {
+        delete(legacyJson);
+      }
+    }
+    _dao = DaoImageCacheVariant();
+    unawaited(_trimIfNeeded());
     _initialised = true;
   }
+
+  /// Returns the absolute cache path for a given [variant].
+  Path pathForVariant(ImageVariant variant) =>
+      p.join(_cacheDir, variant.cacheFileName);
 
   /// moves a image stored at [PhotoMeta] into
   /// cache and triggers a background compression
   /// and upload to cloud.
   Future<void> store(PhotoMeta meta) async {
-    final rawVariant = Variant(meta, ImageVariant.raw);
-    final generalVariant = Variant(meta, ImageVariant.general);
-    final thumbnailVariant = Variant(meta, ImageVariant.thumb);
+    final rawVariant = ImageVariant(meta, ImageVariantType.raw);
+    final generalVariant = ImageVariant(meta, ImageVariantType.general);
+    final thumbnailVariant = ImageVariant(meta, ImageVariantType.thumb);
 
     // copy the raw image into cache and let
     // it expire naturally
-    copy(meta.absolutePathTo, rawVariant.cacheStoragePath);
+    copy(meta.absolutePathTo, pathForVariant(rawVariant));
     await _upsertEntry(rawVariant);
 
     await setLastAccess(
@@ -146,12 +214,12 @@ class HMBImageCache {
       FutureEx.chain([
         // compress raw image to create a general image
         () => _compressAsync(
-          src: rawVariant.cacheStoragePath,
+          src: pathForVariant(rawVariant),
           variant: generalVariant,
         ),
         // compress genral image to create a thumbnail image
         () => _compressAsync(
-          src: generalVariant.cacheStoragePath,
+          src: pathForVariant(generalVariant),
           variant: thumbnailVariant,
         ),
         // evict the raw image
@@ -173,7 +241,7 @@ class HMBImageCache {
   // PhotoMeta-first API (primary)
   // ---------------------------------------------------------------------------
 
-  /// Returns a local path for [ImageVariant] of [meta].
+  /// Returns a local path for [ImageVariantType] of [meta].
   ///
   /// - general: returns original immediately, compresses to WebP in background.
   /// - pdf/thumb: generates synchronously on first call, then cached.
@@ -181,24 +249,26 @@ class HMBImageCache {
   ///
   Future<Path> getVariantPathForMeta({
     required PhotoMeta meta,
-    required ImageVariant imageVariant,
-    Future<void> Function(Variant variant)? fetch,
+    required ImageVariantType imageVariant,
+    Future<void> Function(ImageVariant variant, String targetPath)? fetch,
 
     bool cacheRaw = false,
   }) async {
     await meta.resolve();
 
     return getVariantPath(
-      variant: Variant(meta, imageVariant),
-      fetch: (variant) => fetch?.call(variant) ?? _config.downloader(variant),
+      variant: ImageVariant(meta, imageVariant),
+      fetch: (variant, targetPath) =>
+          fetch?.call(variant, targetPath) ??
+          _config.downloader(variant, targetPath),
     );
   }
 
   /// Convenience for bytes (useful for PDF generation).
   Future<Uint8List> getVariantBytesForMeta({
     required PhotoMeta meta,
-    required ImageVariant variant,
-    Future<void> Function(Variant variant)? fetch,
+    required ImageVariantType variant,
+    Future<void> Function(ImageVariant variant, String targetPath)? fetch,
   }) async {
     final path = await getVariantPathForMeta(
       meta: meta,
@@ -213,8 +283,8 @@ class HMBImageCache {
   // ---------------------------------------------------------------------------
 
   Future<String> getVariantPath({
-    required Variant variant,
-    Future<void> Function(Variant variant)? fetch,
+    required ImageVariant variant,
+    Future<void> Function(ImageVariant variant, String targetPath)? fetch,
   }) async {
     final key = variant.key;
     final existing = await _cachedIfExists(key);
@@ -225,32 +295,34 @@ class HMBImageCache {
 
     /// image doesn't exists locally, so lets download it.
 
-    final downloadVariant = Variant(variant.meta, ImageVariant.raw);
-    final parent = p.dirname(downloadVariant.cacheStoragePath);
+    final downloadVariant = ImageVariant(variant.meta, ImageVariantType.raw);
+    final parent = p.dirname(pathForVariant(downloadVariant));
     if (!exists(parent)) {
-      createDir(p.dirname(downloadVariant.cacheStoragePath), recursive: true);
+      createDir(parent, recursive: true);
     }
-    await (fetch?.call(variant) ?? _config.downloader(variant));
+    await (fetch?.call(downloadVariant, pathForVariant(downloadVariant)) ??
+        _config.downloader(downloadVariant, pathForVariant(downloadVariant)));
 
     await _upsertEntry(downloadVariant);
     await _trimIfNeeded();
 
     if (downloadVariant.variant == variant.variant) {
-      return downloadVariant.cacheStoragePath;
+      return pathForVariant(downloadVariant);
     }
 
     // non-blocking background compress
     unawaited(
-      _compressAsync(src: downloadVariant.cacheStoragePath, variant: variant),
+      _compressAsync(src: pathForVariant(downloadVariant), variant: variant),
     );
 
     /// we don't wait for the compression just return the raw image.
-    return downloadVariant.cacheStoragePath;
+    return pathForVariant(downloadVariant);
   }
 
   Future<List<int>> getVariantBytes({
-    required Variant variant,
-    required Future<void> Function(Variant variant) fetch,
+    required ImageVariant variant,
+    required Future<void> Function(ImageVariant variant, String targetPath)
+    fetch,
   }) async {
     final path = await getVariantPath(variant: variant, fetch: fetch);
     return File(path).readAsBytes();
@@ -265,45 +337,48 @@ class HMBImageCache {
     await evictPhoto(meta.photo.id.toString());
   }
 
-  Future<void> evictVariant(Variant variant) async {
-    final e = _entries.remove(variant.key);
-    if (e != null) {
-      final file = p.join(_cacheDir, e.fileName);
-      if (exists(file)) {
-        _totalBytes -= stat(file).size;
-        delete(file);
-        await _saveIndex();
-      }
+  Future<void> evictVariant(ImageVariant variant) async {
+    final parts = _splitKey(variant.key);
+    if (parts == null) {
+      return;
     }
+    final path = pathForVariant(variant);
+    if (exists(path)) {
+      delete(path);
+    }
+    await _dao.removeKey(parts.photoId, parts.variant);
   }
 
   Future<void> evictPhoto(String photoId) async {
-    final keys = _entries.keys.where((k) => k.startsWith('$photoId|')).toList();
-    for (final k in keys) {
-      final e = _entries.remove(k);
-      if (e == null) {
-        continue;
-      }
-      final file = p.join(_cacheDir, e.fileName);
-      if (exists(file)) {
-        _totalBytes -= stat(file).size;
-        delete(file);
+    final id = int.tryParse(photoId);
+    if (id == null) {
+      return;
+    }
+    final rows = await _dao.getByPhotoId(id);
+    for (final row in rows) {
+      final path = p.join(_cacheDir, row.fileName);
+      if (exists(path)) {
+        delete(path);
       }
     }
-    await _saveIndex();
+    await DatabaseHelper.instance.database.delete(
+      DaoImageCacheVariant.tableName,
+      where: 'photo_id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> clear() async {
     if (exists(_cacheDir)) {
       for (final fse in Directory(_cacheDir).listSync()) {
-        if (fse is File && p.basename(fse.path) != '_index.json') {
+        if (fse is File) {
           fse.deleteSync();
         }
       }
     }
-    _entries.clear();
-    _totalBytes = 0;
-    await _saveIndex();
+    await DatabaseHelper.instance.database.delete(
+      DaoImageCacheVariant.tableName,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -313,206 +388,135 @@ class HMBImageCache {
   /// Get the path image associated with [key] if it exists
   /// in the cache.
   Future<Path?> _cachedIfExists(Key key) async {
-    final e = _entries[key];
-    if (e == null) {
+    final parts = _splitKey(key);
+    if (parts == null) {
       return null;
     }
-    // the file exists and is in the cache
-    final path = p.join(_cacheDir, e.fileName);
-    if (exists(path)) {
-      return path;
+    final row = await _dao.getByKey(parts.photoId, parts.variant);
+    if (row != null) {
+      final path = p.join(_cacheDir, row.fileName);
+      if (exists(path)) {
+        return path;
+      }
+      await _dao.removeKey(parts.photoId, parts.variant);
     }
-    // the key is in the cache but the
-    //file doesn't exist so delete it.
-    _entries.remove(key);
-    await _saveIndex();
-    return null;
+
+    final fileName = _cacheFileName(parts.photoId, parts.variant);
+    if (fileName == null) {
+      return null;
+    }
+    final fallback = p.join(_cacheDir, fileName);
+    if (!exists(fallback)) {
+      return null;
+    }
+    final statInfo = stat(fallback);
+    await _dao.upsert(
+      ImageCacheVariant.forInsert(
+        photoId: parts.photoId,
+        variant: parts.variant,
+        fileName: fileName,
+        size: statInfo.size,
+        lastAccess: statInfo.modified,
+      ),
+    );
+    return fallback;
   }
 
   /// Uses an isolate to compress the file.
   Future<void> _compressAsync({
     required Path src,
-    required Variant variant,
+    required ImageVariant variant,
   }) async {
-    if (exists(variant.cacheStoragePath)) {
+    final targetPath = pathForVariant(variant);
+    if (exists(targetPath)) {
       return;
     }
     final res = await compute(
       _config.compressor,
-      CompressJob(srcPath: src, variant: variant),
+      CompressJob(srcPath: src, targetPath: targetPath, variant: variant),
       debugLabel: 'Compress Image:$variant',
     );
-    if (res.success && exists(variant.cacheStoragePath)) {
+    if (res.success && exists(targetPath)) {
       await _upsertEntry(variant);
       await _trimIfNeeded();
     }
   }
 
-  Future<void> _compressSync({
-    required Path src,
-    required Variant variant,
-  }) async {
-    if (exists(variant.cacheStoragePath)) {
-      await _upsertEntry(variant);
+  Future<void> _upsertEntry(ImageVariant variant) async {
+    final parts = _splitKey(variant.key);
+    if (parts == null) {
       return;
     }
-    final res = await _config.compressor(
-      CompressJob(srcPath: src, variant: variant),
-    );
-    if (res.success && exists(variant.cacheStoragePath)) {
-      await _upsertEntry(variant);
-      await _trimIfNeeded();
+    final path = pathForVariant(variant);
+    if (!exists(path)) {
+      return;
     }
-  }
-
-  Future<void> _upsertEntry(Variant variant) async {
-    final path = variant.cacheStoragePath;
     final size = stat(path).size;
-    final now = DateTime.now();
-    final entry = _Entry(
-      key: variant.key,
-      fileName: variant.cacheStoragePath,
-      size: size,
-      lastAccess: now,
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await _dao.upsert(
+      ImageCacheVariant.forInsert(
+        photoId: parts.photoId,
+        variant: parts.variant,
+        fileName: p.basename(path),
+        size: size,
+        lastAccess: DateTime.fromMillisecondsSinceEpoch(now),
+      ),
     );
-    final prev = _entries[variant.key];
-    if (prev != null) {
-      _totalBytes -= prev.size;
-    }
-    _entries[variant.key] = entry;
-    _totalBytes += size;
-    await _touch(variant.key);
   }
 
   Future<void> _touch(Key key) async {
-    final e = _entries[key];
-    if (e == null) {
+    final parts = _splitKey(key);
+    if (parts == null) {
       return;
     }
-    e.lastAccess = DateTime.now();
-    await _saveIndex();
+    await _dao.touch(
+      parts.photoId,
+      parts.variant,
+      DateTime.now().millisecondsSinceEpoch,
+    );
   }
 
   // TODO(bsutton): remove raw images from cache first
 
   Future<void> _trimIfNeeded() async {
-    if (_totalBytes <= _config.maxBytes) {
-      return;
-    }
-    final list = _entries.values.toList()
-      ..sort((a, b) => a.lastAccess.compareTo(b.lastAccess));
-    for (final e in list) {
-      if (_totalBytes <= _config.maxBytes) {
-        break;
+    var total = await _dao.totalBytes();
+    while (total > _config.maxBytes) {
+      final oldest = await _dao.oldest();
+      if (oldest == null) {
+        return;
       }
-      final path = p.join(_cacheDir, e.fileName);
+      final path = p.join(_cacheDir, oldest.fileName);
       if (exists(path)) {
-        final len = stat(path).size;
         delete(path);
-        _totalBytes -= len;
       }
-      _entries.remove(e.key);
-    }
-    await _saveIndex();
-  }
-
-  Future<void> _loadIndex() async {
-    if (!exists(_indexPath)) {
-      _entries.clear();
-      _totalBytes = 0;
-      return;
-    }
-    try {
-      final text = await File(_indexPath).readAsString();
-      final raw = json.decode(text) as Map<String, dynamic>;
-      final items = raw['items'] as List<dynamic>? ?? <dynamic>[];
-      _entries.clear();
-      _totalBytes = 0;
-      for (final it in items) {
-        final e = _Entry.fromJson(it as Map<String, dynamic>);
-        _entries[e.key] = e;
-        _totalBytes += e.size;
-      }
-    } catch (_) {
-      _entries.clear();
-      _totalBytes = 0;
+      await _dao.removeKey(oldest.photoId, oldest.variant);
+      total = await _dao.totalBytes();
     }
   }
 
-  Future<void> _saveIndex() async {
-    final items = _entries.values.map((e) => e.toJson()).toList();
-    final text = const JsonEncoder.withIndent(
-      '  ',
-    ).convert({'items': items, 'total': _totalBytes, 'ver': 1});
-    await File(_indexPath).writeAsString(text, flush: true);
-  }
-
-  Future<void> _reconcileDisk() async {
-    final files = Directory(_cacheDir)
-        .listSync()
-        .whereType<File>()
-        .where((f) => !f.path.endsWith('_index.json'))
-        .toList();
-
-    final seen = <String, File>{};
-    for (final f in files) {
-      seen[p.basename(f.path)] = f;
+  _KeyParts? _splitKey(String key) {
+    final parts = key.split('|');
+    if (parts.length != 2) {
+      return null;
     }
-
-    _totalBytes = 0;
-    final toDrop = <String>[];
-
-    for (final e in _entries.values) {
-      final f = seen[e.fileName];
-      if (f == null) {
-        toDrop.add(e.key);
-      } else {
-        e.size = f.lengthSync();
-        _totalBytes += e.size;
-        seen.remove(e.fileName);
-      }
+    final id = int.tryParse(parts[0]);
+    if (id == null) {
+      return null;
     }
-    for (final k in toDrop) {
-      _entries.remove(k);
-    }
-
-    final now = DateTime.now();
-    for (final stray in seen.values) {
-      final name = p.basename(stray.path);
-      final base = p.basenameWithoutExtension(name);
-      final parts = base.split('__');
-      if (parts.length == 2) {
-        final id = parts[0];
-        final variant = parts[1];
-        final key = '$id|$variant';
-        final len = stray.lengthSync();
-        _entries[key] = _Entry(
-          key: key,
-          fileName: name,
-          size: len,
-          lastAccess: now,
-        );
-        _totalBytes += len;
-      } else {
-        stray.deleteSync();
-      }
-    }
-    await _saveIndex();
-    await _trimIfNeeded();
+    return _KeyParts(id, parts[1]);
   }
 
   /// Seeds/overrides the LRU lastAccess for a cached [variant].
   /// No-op if the variant isn’t cached yet.
   Future<void> setLastAccess({
-    required Variant variant,
+    required ImageVariant variant,
     required DateTime when,
   }) async {
-    final e = _entries[variant.key];
-    if (e == null) {
-      return; // not cached yet; caller may re-run later
+    final parts = _splitKey(variant.key);
+    if (parts == null) {
+      return;
     }
-    e.lastAccess = when;
-    await _saveIndex();
+    await _dao.touch(parts.photoId, parts.variant, when.millisecondsSinceEpoch);
   }
 
   // /// Convenience overload to match callsites shown in the migration.
@@ -523,33 +527,107 @@ class HMBImageCache {
   // }) => setLastAccessForMeta(meta: meta, variant: variant, when: when);
 }
 
-class _Entry {
-  final Key key;
+class _KeyParts {
+  final int photoId;
+  final String variant;
 
+  _KeyParts(this.photoId, this.variant);
+}
+
+class _CacheScanRequest {
+  final String cacheDir;
+  final List<String> variants;
+
+  const _CacheScanRequest({required this.cacheDir, required this.variants});
+}
+
+class _CacheScanEntry {
+  final int photoId;
+  final String variant;
   final String fileName;
+  final int size;
+  final int lastAccess;
 
-  int size;
-
-  DateTime lastAccess;
-
-  _Entry({
-    required this.key,
+  const _CacheScanEntry({
+    required this.photoId,
+    required this.variant,
     required this.fileName,
     required this.size,
     required this.lastAccess,
   });
 
-  factory _Entry.fromJson(Map<String, dynamic> j) => _Entry(
-    key: j['key'] as String,
-    fileName: j['filename'] as String,
-    size: j['size'] as int,
-    lastAccess: DateTime.parse(j['accessed'] as String),
-  );
-
-  Map<String, dynamic> toJson() => {
-    'key': key,
-    'filename': fileName,
+  Map<String, dynamic> toMap() => {
+    'photo_id': photoId,
+    'variant': variant,
+    'file_name': fileName,
     'size': size,
-    'accessed': lastAccess.toIso8601String(),
+    'last_access': lastAccess,
+    'created_date': lastAccess,
+    'modified_date': lastAccess,
   };
+}
+
+class _CacheScanResult {
+  final List<_CacheScanEntry> entries;
+  final List<String> strayFiles;
+
+  const _CacheScanResult({required this.entries, required this.strayFiles});
+}
+
+_CacheScanResult _scanCacheDir(_CacheScanRequest request) {
+  final entries = <_CacheScanEntry>[];
+  final stray = <String>[];
+
+  final dir = Directory(request.cacheDir);
+  if (!dir.existsSync()) {
+    return _CacheScanResult(entries: entries, strayFiles: stray);
+  }
+
+  final variantSet = request.variants.toSet();
+  final files = dir.listSync().whereType<File>();
+  for (final file in files) {
+    final name = p.basename(file.path);
+    if (name == '_index.bin' || name == '_index.json') {
+      continue;
+    }
+    final base = p.basenameWithoutExtension(name);
+    final parts = base.split('__');
+    if (parts.length != 2) {
+      stray.add(file.path);
+      continue;
+    }
+    final id = int.tryParse(parts[0]);
+    final variant = parts[1];
+    if (id == null || !variantSet.contains(variant)) {
+      stray.add(file.path);
+      continue;
+    }
+    final statInfo = file.statSync();
+    entries.add(
+      _CacheScanEntry(
+        photoId: id,
+        variant: variant,
+        fileName: name,
+        size: statInfo.size,
+        lastAccess: statInfo.modified.millisecondsSinceEpoch,
+      ),
+    );
+  }
+
+  return _CacheScanResult(entries: entries, strayFiles: stray);
+}
+
+String? _cacheFileName(int photoId, String variant) {
+  final ext = switch (variant) {
+    'general' => 'webp',
+    'pdf' => 'jpg',
+    'thumb' => 'jpg',
+    'raw' => 'orig',
+    _ => null,
+  };
+  if (ext == null) {
+    return null;
+  }
+  final safeId = photoId.toString().replaceAll(RegExp('[^A-Za-z0-9._-]'), '_');
+  return '${safeId}__$variant.$ext';
 }

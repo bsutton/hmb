@@ -14,6 +14,7 @@
 // ignore_for_file: unused_local_variable
 
 import 'package:dcli/dcli.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/ui/widgets/media/thumbnail.dart';
@@ -22,12 +23,28 @@ import 'package:hmb/util/dart/photo_meta.dart';
 import 'package:path/path.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    const channel = MethodChannel('plugins.flutter.io/path_provider');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (methodCall) async {
+          if (methodCall.method == 'getApplicationDocumentsDirectory') {
+            return '.';
+          }
+          if (methodCall.method == 'getTemporaryDirectory') {
+            return '.';
+          }
+          return null;
+        });
+  });
+
   testWidgets('thumbnail ...', (tester) async {
     final pathToPhoto = join(
       DartProject.self.pathToTestDir,
       'fixture',
-      'photo',
-      'sample_640x426.jpeg',
+      'photos',
+      'sample_640×426.jpeg',
     );
 
     final photo = Photo.forInsert(

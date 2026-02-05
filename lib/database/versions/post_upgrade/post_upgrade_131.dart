@@ -33,7 +33,7 @@ import '../../../util/dart/photo_meta.dart';
 /// Safe to re-run.
 Future<void> postv131Upgrade(Database db) async {
   final cache = HMBImageCache();
-  await cache.init((_) {
+  await cache.init((_, _) {
     throw StateError(
       '''
 This should never be called as each call for a variant provides its own downloader''',

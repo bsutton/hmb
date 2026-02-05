@@ -155,9 +155,9 @@ class BootStrapper {
 
   Future<void> initImageCache() async {
     await HMBImageCache().init(
-      (variant) async => PhotoSyncService().download(
+      (variant, targetPath) async => PhotoSyncService().download(
         variant.meta.photo.id,
-        variant.cacheStoragePath,
+        targetPath,
         await variant.cloudStoragePath,
       ),
       ImageCompressor.run,

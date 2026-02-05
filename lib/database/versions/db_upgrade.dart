@@ -89,6 +89,7 @@ Future<void> upgradeDb({
 
 final upgradeActions = <int, Future<void> Function(Database)>{
   77: postv77Upgrade,
+  142: postv142Upgrade,
 };
 
 /// We can't use the Dao layer as it uses June which assumes

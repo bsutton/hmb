@@ -12,11 +12,15 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:sqflite_common/sqlite_api.dart';
+
+import '../cache/hmb_image_cache.dart';
 import '../database/management/backup_providers/google_drive/background_backup/photo_sync_params.dart';
 import '../entity/photo.dart';
 import '../util/dart/format.dart';
 import '../util/dart/photo_meta.dart';
 import 'dao.g.dart';
+import 'dao_photo_delete_queue.dart';
 
 class DaoPhoto extends Dao<Photo> {
   static const tableName = 'photo';
@@ -70,6 +74,25 @@ class DaoPhoto extends Dao<Photo> {
 
   @override
   Photo fromMap(Map<String, dynamic> map) => Photo.fromMap(map);
+
+  @override
+  Future<int> delete(int id, [Transaction? transaction]) async {
+    final photo = await getById(id);
+    if (photo == null) {
+      return 0;
+    }
+
+    try {
+      final meta = PhotoMeta.fromPhoto(photo: photo);
+      await meta.resolve();
+      await HMBImageCache().evictPhotoByMeta(meta);
+    } catch (_) {
+      // Best-effort cache cleanup; continue with deletion.
+    }
+
+    await DaoPhotoDeleteQueue().enqueue(photo.id);
+    return super.delete(id, transaction);
+  }
 
   static Future<List<PhotoMeta>> getByTask(int taskId) async {
     final task = await DaoTask().getById(taskId);
