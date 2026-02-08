@@ -122,7 +122,8 @@ Tools to help build the app
 }
 
 void _runPubGet() {
-  DartSdk().runPubGet(DartProject.self.pathToProjectRoot);
+  // DartSdk().runPubGet(DartProject.self.pathToProjectRoot);
+  'flutter pub get'.start(workingDirectory: DartProject.self.pathToProjectRoot);
 }
 
 void installApk() {
