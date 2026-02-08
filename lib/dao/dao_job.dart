@@ -594,6 +594,9 @@ where q.id=?
     final activeJobs = await DaoJob().getActiveJobs(filter);
     final ready = <Job>[];
     for (final job in activeJobs) {
+      if (job.billingType == BillingType.nonBillable) {
+        continue;
+      }
       if (await DaoJob().hasBillableTasks(job)) {
         ready.add(job);
       }

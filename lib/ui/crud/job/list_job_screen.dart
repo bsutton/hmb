@@ -11,7 +11,10 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../dao/dao_job.dart';
 import '../../../entity/flutter_extensions/job_status_ex.dart';
@@ -39,8 +42,17 @@ class JobListScreen extends StatefulWidget {
 }
 
 class _JobListScreenState extends State<JobListScreen> {
+  static const _kStorageOrderKey = 'job_list_filter_order';
+  static const _kStorageShowOldKey = 'job_list_filter_show_old';
+  static const _kStorageBillingTypesKey = 'job_list_filter_billing_types';
+
   var _showOldJobs = false;
   JobOrder _order = JobOrder.active;
+  var _selectedBillingTypes = <BillingType>{
+    BillingType.timeAndMaterial,
+    BillingType.fixedPrice,
+  };
+  final _storage = const FlutterSecureStorage();
 
   List<Widget> _buildActionItems(Job job) => [
     HMBCopyIcon(
@@ -50,6 +62,65 @@ class _JobListScreenState extends State<JobListScreen> {
   ];
 
   final _entityListKey = GlobalKey<EntityListScreenState<Job>>();
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_restoreFilters());
+  }
+
+  Future<void> _restoreFilters() async {
+    final savedOrder = await _storage.read(key: _kStorageOrderKey);
+    final savedShowOld = await _storage.read(key: _kStorageShowOldKey);
+    final savedBilling = await _storage.read(key: _kStorageBillingTypesKey);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      if (savedOrder != null) {
+        _order = JobOrder.values.firstWhere(
+          (value) => value.name == savedOrder,
+          orElse: () => JobOrder.active,
+        );
+      }
+      _showOldJobs = savedShowOld == 'true';
+
+      if (savedBilling != null && savedBilling.trim().isNotEmpty) {
+        final names = savedBilling.split(',').toSet();
+        final restored = BillingType.values
+            .where((type) => names.contains(type.name))
+            .toSet();
+        if (restored.isNotEmpty) {
+          _selectedBillingTypes = restored;
+        }
+      }
+    });
+
+    await _entityListKey.currentState?.refresh();
+  }
+
+  Future<void> _persistFilters() async {
+    await _storage.write(key: _kStorageOrderKey, value: _order.name);
+    await _storage.write(
+      key: _kStorageShowOldKey,
+      value: _showOldJobs ? 'true' : 'false',
+    );
+    await _storage.write(
+      key: _kStorageBillingTypesKey,
+      value: _selectedBillingTypes.map((type) => type.name).join(','),
+    );
+  }
+
+  Future<void> _setFiltersAndRefresh(
+    void Function() update,
+    void Function() onChange,
+  ) async {
+    setState(update);
+    await _persistFilters();
+    onChange();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +142,18 @@ class _JobListScreenState extends State<JobListScreen> {
               onAdd: () => JobCreator.show(context),
               cardHeight: size.width < 456 ? 860 : 770,
               filterSheetBuilder: _buildFilterSheet,
-              isFilterActive: () => _showOldJobs || _order != JobOrder.active,
+              isFilterActive: () =>
+                  _showOldJobs ||
+                  _order != JobOrder.active ||
+                  _selectedBillingTypes.length != BillingType.values.length,
               onFilterReset: () {
                 _showOldJobs = false;
                 _order = JobOrder.active;
+                _selectedBillingTypes = {
+                  BillingType.timeAndMaterial,
+                  BillingType.fixedPrice,
+                };
+                unawaited(_persistFilters());
               },
               background: (job) async => job.status.getColour(),
               listCard: (job) =>
@@ -91,6 +170,9 @@ class _JobListScreenState extends State<JobListScreen> {
     final jobs = await DaoJob().getByFilter(filter, order: _order);
     final selected = <Job>[];
     for (final job in jobs) {
+      if (!_selectedBillingTypes.contains(job.billingType)) {
+        continue;
+      }
       final stage = job.status.stage;
       if (_showOldJobs) {
         if (stage == JobStatusStage.onHold ||
@@ -114,23 +196,52 @@ class _JobListScreenState extends State<JobListScreen> {
         selectedItem: () async => _order,
         items: (_) async => JobOrder.values,
         format: (order) => order.description,
-        onChanged: (order) {
-          _order = order!;
-          onChange();
+        onChanged: (order) async {
+          if (order == null) {
+            return;
+          }
+          await _setFiltersAndRefresh(() => _order = order, onChange);
         },
       ),
       SwitchListTile(
         title: const Text('Show only Old Jobs'),
         value: _showOldJobs,
-        onChanged: (val) {
-          setState(() {
-            _showOldJobs = val;
-          });
-          onChange();
+        onChanged: (val) async {
+          await _setFiltersAndRefresh(() => _showOldJobs = val, onChange);
         },
       ).help(
         'Show only Old Jobs',
         'Only show Jobs that are on hold or have been finalised.',
+      ),
+      const HMBSpacer(height: true),
+      const Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'Billing Types',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      ...BillingType.values.map(
+        (type) => CheckboxListTile(
+          value: _selectedBillingTypes.contains(type),
+          title: Text(type.display),
+          onChanged: (selected) async {
+            if (selected == null) {
+              return;
+            }
+            await _setFiltersAndRefresh(() {
+              if (selected) {
+                _selectedBillingTypes.add(type);
+                return;
+              }
+              if (_selectedBillingTypes.length == 1 &&
+                  _selectedBillingTypes.contains(type)) {
+                return;
+              }
+              _selectedBillingTypes.remove(type);
+            }, onChange);
+          },
+        ),
       ),
     ],
   );
