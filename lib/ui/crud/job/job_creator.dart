@@ -52,7 +52,8 @@ class _JobCreatorState extends State<JobCreator> {
   final _jobDescription = TextEditingController();
   final _taskControllers = <TextEditingController>[];
 
-  var _loading = false;
+  var _creating = false;
+  var _extracting = false;
 
   @override
   void dispose() {
@@ -83,7 +84,10 @@ class _JobCreatorState extends State<JobCreator> {
         width: double.maxFinite,
         child: HMBColumn(
           children: [
-            CustomerPastePanel(onExtract: _onExtract),
+            CustomerPastePanel(
+              onExtract: _onExtract,
+              isExtracting: _extracting,
+            ),
             const HMBSpacer(height: true),
             Form(
               key: _formKey,
@@ -174,7 +178,7 @@ class _JobCreatorState extends State<JobCreator> {
       HMBButtonPrimary(
         label: 'Create Job',
         hint: 'Create a job from this booking request',
-        onPressed: _loading ? null : _createEntities,
+        onPressed: _creating ? null : _createEntities,
       ),
     ],
   );
@@ -219,47 +223,61 @@ class _JobCreatorState extends State<JobCreator> {
   );
 
   Future<void> _onExtract(String text) async {
+    if (_extracting) {
+      return;
+    }
     if (Strings.isBlank(text)) {
       HMBToast.info('Paste a message to extract job details.');
       return;
     }
 
-    ParsedCustomer parsedCustomer;
-    final system = await DaoSystem().get();
-    final apiKey = system.openaiApiKey?.trim() ?? '';
-    if (apiKey.isNotEmpty) {
-      final extracted = await CustomerExtractApiClient().extract(text);
-      if (extracted == null) {
-        HMBToast.error('AI extraction failed. Check ChatGPT settings.');
-        return;
+    setState(() => _extracting = true);
+    try {
+      ParsedCustomer parsedCustomer;
+      final system = await DaoSystem().get();
+      final apiKey = system.openaiApiKey?.trim() ?? '';
+      if (apiKey.isNotEmpty) {
+        final extracted = await CustomerExtractApiClient().extract(text);
+        if (extracted == null) {
+          HMBToast.error('AI extraction failed. Check ChatGPT settings.');
+          return;
+        }
+        parsedCustomer = extracted;
+      } else {
+        parsedCustomer = await ParsedCustomer.parse(text);
       }
-      parsedCustomer = extracted;
-    } else {
-      parsedCustomer = await ParsedCustomer.parse(text);
+
+      _email.text = parsedCustomer.email;
+      _mobileNo.text = parsedCustomer.mobile;
+
+      _firstName.text = parsedCustomer.firstname;
+      _surname.text = parsedCustomer.surname;
+      final address = parsedCustomer.address;
+      _addressLine1.text = address.street;
+      _suburb.text = address.city;
+      _state.text = address.state;
+      _postcode.text = address.postalCode;
+
+      _customerName.text = parsedCustomer.customerName.isEmpty
+          ? '${_firstName.text} ${_surname.text}'.trim()
+          : parsedCustomer.customerName;
+
+      if (apiKey.isNotEmpty) {
+        await _generateSummaryAndTasks(text);
+      } else if (Strings.isBlank(_jobDescription.text)) {
+        _jobDescription.text = text;
+      }
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      HMBToast.error('AI extraction failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _extracting = false);
+      }
     }
-
-    _email.text = parsedCustomer.email;
-    _mobileNo.text = parsedCustomer.mobile;
-
-    _firstName.text = parsedCustomer.firstname;
-    _surname.text = parsedCustomer.surname;
-    final address = parsedCustomer.address;
-    _addressLine1.text = address.street;
-    _suburb.text = address.city;
-    _state.text = address.state;
-    _postcode.text = address.postalCode;
-
-    _customerName.text = parsedCustomer.customerName.isEmpty
-        ? '${_firstName.text} ${_surname.text}'.trim()
-        : parsedCustomer.customerName;
-
-    if (apiKey.isNotEmpty) {
-      await _generateSummaryAndTasks(text);
-    } else if (Strings.isBlank(_jobDescription.text)) {
-      _jobDescription.text = text;
-    }
-
-    setState(() {});
   }
 
   Future<void> _generateSummaryAndTasks(String text) async {
@@ -267,32 +285,23 @@ class _JobCreatorState extends State<JobCreator> {
       return;
     }
 
-    setState(() => _loading = true);
-    try {
-      final client = JobAssistApiClient();
-      final result = await client.analyzeDescription(text);
-      if (result == null) {
-        return;
-      }
-      if (Strings.isBlank(_jobSummary.text)) {
-        _jobSummary.text = result.summary;
-      }
-      if (Strings.isBlank(_jobDescription.text) &&
-          Strings.isNotBlank(result.description)) {
-        _jobDescription.text = result.description;
-      } else if (Strings.isBlank(_jobDescription.text)) {
-        _jobDescription.text = text;
-      }
-      if (_taskControllers.isEmpty) {
-        for (final task in result.tasks) {
-          _taskControllers.add(TextEditingController(text: task));
-        }
-      }
-    } catch (e) {
-      HMBToast.error('AI extraction failed: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
+    final client = JobAssistApiClient();
+    final result = await client.analyzeDescription(text);
+    if (result == null) {
+      return;
+    }
+    if (Strings.isBlank(_jobSummary.text)) {
+      _jobSummary.text = result.summary;
+    }
+    if (Strings.isBlank(_jobDescription.text) &&
+        Strings.isNotBlank(result.description)) {
+      _jobDescription.text = result.description;
+    } else if (Strings.isBlank(_jobDescription.text)) {
+      _jobDescription.text = text;
+    }
+    if (_taskControllers.isEmpty) {
+      for (final task in result.tasks) {
+        _taskControllers.add(TextEditingController(text: task));
       }
     }
   }
@@ -302,7 +311,7 @@ class _JobCreatorState extends State<JobCreator> {
       return;
     }
 
-    setState(() => _loading = true);
+    setState(() => _creating = true);
     try {
       final daoCustomer = DaoCustomer();
       final daoContact = DaoContact();
@@ -395,7 +404,7 @@ class _JobCreatorState extends State<JobCreator> {
       HMBToast.error('Failed to create job: $e');
     } finally {
       if (mounted) {
-        setState(() => _loading = false);
+        setState(() => _creating = false);
       }
     }
   }

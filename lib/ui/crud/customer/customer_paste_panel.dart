@@ -10,8 +10,13 @@ import '../../widgets/widgets.g.dart';
 
 class CustomerPastePanel extends StatefulWidget {
   final void Function(String) onExtract;
+  final bool isExtracting;
 
-  const CustomerPastePanel({required this.onExtract, super.key});
+  const CustomerPastePanel({
+    required this.onExtract,
+    super.key,
+    this.isExtracting = false,
+  });
 
   @override
   State<CustomerPastePanel> createState() => _CustomerPastePanelState();
@@ -46,13 +51,23 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
         children: [
           HMBPasteIcon(
             onPressed: () async {
+              if (widget.isExtracting) {
+                return;
+              }
               controller.text = await clipboardGetText();
             },
             hint: 'Paste data from the clipboard',
+            enabled: !widget.isExtracting,
           ),
           HMBClearIcon(
-            onPressed: () async => controller.text = '',
+            onPressed: () async {
+              if (widget.isExtracting) {
+                return;
+              }
+              controller.text = '';
+            },
             hint: 'Clear the message field',
+            enabled: !widget.isExtracting,
           ),
         ],
       ),
@@ -68,11 +83,25 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
           const HMBSpacer(width: true),
           HMBButton(
             onPressed: () => widget.onExtract(controller.text),
-            label: 'Extract',
+            label: widget.isExtracting ? 'Extracting...' : 'Extract',
             hint: 'Extract customer details from the message',
+            enabled: !widget.isExtracting,
           ),
         ],
       ),
+      if (widget.isExtracting) ...[
+        const HMBSpacer(height: true),
+        const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            SizedBox(
+              height: 16,
+              width: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ],
+        ),
+      ],
     ],
   );
 }
