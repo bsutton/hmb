@@ -28,6 +28,19 @@ import 'backup_providers/test_backup_provider.dart';
 Database? testDb;
 late String testDbPath;
 
+String _linuxSafeTempDir() {
+  final tempDir = createTempDir();
+
+  // In some Linux/WSL setups TEMP/TMP can contain a Windows-style path
+  // (e.g. C:\Users\...), which is treated as a relative path on Linux.
+  // Fall back to a real Linux temp dir to avoid creating files in cwd.
+  if (!Platform.isWindows && RegExp(r'^[A-Za-z]:[\\/]').hasMatch(tempDir)) {
+    return Directory.systemTemp.createTempSync('hmb_test_temp').path;
+  }
+
+  return tempDir;
+}
+
 class _TestPathProvider
     with Fake, MockPlatformInterfaceMixin
     implements PathProviderPlatform {
@@ -60,7 +73,7 @@ Future<Database> setupTestDb() async {
   );
 
   // Path where the test database will be copied to and used
-  testDbPath = join(createTempDir(), 'handyman_test_temp.db');
+  testDbPath = join(_linuxSafeTempDir(), 'handyman_test_temp.db');
 
   print('Running against test db at: $testDbPath');
 
