@@ -22,6 +22,7 @@ class CustomerExtractApiClient {
       },
       body: jsonEncode({
         'model': 'gpt-4o-mini',
+        'response_format': {'type': 'json_object'},
         'messages': [
           {
             'role': 'system',
@@ -46,8 +47,9 @@ class CustomerExtractApiClient {
     final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
     final choice =
         (jsonResponse['choices'] as List).first as Map<String, dynamic>;
-    final content =
+    final rawContent =
         (choice['message'] as Map<String, dynamic>)['content'] as String;
+    final content = _normalizeContent(rawContent);
     final parsed = jsonDecode(content) as Map<String, dynamic>;
 
     final firstName = (parsed['firstName'] as String?)?.trim() ?? '';
@@ -71,5 +73,47 @@ class CustomerExtractApiClient {
       surname: surname,
       address: address,
     );
+  }
+
+  String _normalizeContent(String content) {
+    var trimmed = content.trim();
+    if (trimmed.startsWith('```')) {
+      final lines = trimmed.split('\n').toList();
+      if (lines.isNotEmpty && lines.first.startsWith('```')) {
+        lines.removeAt(0);
+      }
+      if (lines.isNotEmpty && lines.last.trim().startsWith('```')) {
+        lines.removeLast();
+      }
+      trimmed = lines.join('\n').trim();
+    }
+    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+      try {
+        trimmed = jsonDecode(trimmed) as String;
+      } catch (_) {
+        // fall through and try to parse as-is
+      }
+    }
+    trimmed = _stripWrappingQuotes(trimmed);
+    return trimmed;
+  }
+
+  String _stripWrappingQuotes(String value) {
+    var trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return trimmed;
+    }
+
+    String stripPair(String input, String quote) {
+      var out = input;
+      while (out.startsWith(quote) && out.endsWith(quote) && out.length >= 2) {
+        out = out.substring(quote.length, out.length - quote.length).trim();
+      }
+      return out;
+    }
+
+    trimmed = stripPair(trimmed, '"');
+    trimmed = stripPair(trimmed, "'");
+    return trimmed;
   }
 }

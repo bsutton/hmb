@@ -44,8 +44,8 @@ void main() {
       // line cost total = 10 * 3 = 30.00
       expect(mc.lineCostTotal, dollars(30));
 
-      // unit charge is raw unit cost when margin is line-only
-      expect(mc.calculatedUnitCharge, dollars(10));
+      // unit charge reflects line total (with margin) / qty
+      expect(mc.calculatedUnitCharge, dollars(12));
 
       // line charge total = 30.00 + 20% = 36.00
       expect(mc.lineChargeTotal, dollars(36));
@@ -91,8 +91,8 @@ void main() {
       // cost = 4.25 * 8 = 34.00
       expect(mc.lineCostTotal, dollars(34));
 
-      // unit charge is raw unit cost when margin is line-only
-      expect(mc.calculatedUnitCharge, dollars(4.25));
+      // unit charge reflects line total (with margin) / qty
+      expect(mc.calculatedUnitCharge, dollars(4.68));
 
       // charge = 34.00 + 10% = 37.40 (line-level margin)
       expect(mc.lineChargeTotal, dollars(37.40));
@@ -117,8 +117,8 @@ void main() {
       // cost = 5.00 * 2.5 = 12.50
       expect(mc.lineCostTotal, dollars(12.50));
 
-      // unit charge is raw unit cost when margin is line-only
-      expect(mc.calculatedUnitCharge, dollars(5.00));
+      // unit charge reflects line total (with margin) / qty
+      expect(mc.calculatedUnitCharge, dollars(7.50));
 
       // charge = 12.50 + 50% = 18.75
       expect(mc.lineChargeTotal, dollars(18.75));
@@ -156,6 +156,7 @@ void main() {
   group('T&M Returns (isReturn=true)', () {
     test('calculated: both cost and charge are negated', () {
       final item = _MockTaskItem();
+      when(() => item.completed).thenReturn(false);
       when(() => item.chargeMode).thenReturn(ChargeMode.calculated);
       when(() => item.estimatedMaterialUnitCost).thenReturn(dollars(12));
       when(() => item.estimatedMaterialQuantity).thenReturn(qty(2));
@@ -175,6 +176,7 @@ void main() {
 
     test('T&M userDefined: user total is negated', () {
       final item = _MockTaskItem();
+      when(() => item.completed).thenReturn(false);
       when(() => item.chargeMode).thenReturn(ChargeMode.userDefined);
       when(() => item.estimatedMaterialUnitCost).thenReturn(dollars(3));
       when(() => item.estimatedMaterialQuantity).thenReturn(qty(4));
@@ -205,13 +207,10 @@ void main() {
       // cost = 2.40 * 3 = 7.20
       expect(mc.lineCostTotal, dollars(7.20));
 
-      // unit charge is raw unit cost when margin is line-only
-      expect(mc.calculatedUnitCharge, dollars(2.40));
-
-      // line charge = 7.20 + 10% = 7.92
-      expect(mc.lineChargeTotal, dollars(7.92));
-
-      expect(mc.calcMaterialCharges(BillingType.nonBillable), dollars(7.92));
+      // non-billable forces charge to zero
+      expect(mc.calculatedUnitCharge, dollars(0));
+      expect(mc.lineChargeTotal, dollars(0));
+      expect(mc.calcMaterialCharges(BillingType.nonBillable), dollars(0));
     });
   });
 }

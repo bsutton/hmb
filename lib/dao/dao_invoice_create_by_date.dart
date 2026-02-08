@@ -117,11 +117,13 @@ Future<Money> emitMaterialsByTask(
 
   final hourlyRate = await DaoJob().getHourlyRate(job.id);
 
+  final daoTask = DaoTask();
+  final daoTaskItem = DaoTaskItem();
   for (final taskId in selectedTaskIds) {
-    final task = await DaoTask().getById(taskId);
-    final billingType = await DaoTask().getBillingType(task!);
+    final task = await daoTask.getById(taskId);
+    final billingType = await daoTask.getBillingType(task!);
     var groupCreated = false;
-    final taskItems = await DaoTaskItem().getByTask(taskId);
+    final taskItems = await daoTaskItem.getByTask(taskId);
     var invoiceLineGroupId = -1;
     for (final item in taskItems) {
       final itemType = item.itemType;
@@ -147,13 +149,8 @@ Future<Money> emitMaterialsByTask(
         groupCreated = true;
       }
 
-      // compute line total; flip sign if this is a return
-      var lineTotal = item.actualMaterialUnitCost!.multiplyByFixed(
-        item.actualMaterialQuantity!,
-      );
-      if (item.isReturn) {
-        lineTotal = -lineTotal;
-      }
+      final materialCalc = item.calcMaterialCost(billingType);
+      final lineTotal = materialCalc.lineChargeTotal;
 
       final description = item.isReturn
           ? 'Returned: ${item.description}'
@@ -163,12 +160,12 @@ Future<Money> emitMaterialsByTask(
         invoiceId: invoiceId,
         invoiceLineGroupId: invoiceLineGroupId,
         description: description,
-        quantity: item.actualMaterialQuantity!,
-        unitPrice: item.actualMaterialUnitCost!,
+        quantity: materialCalc.quantity,
+        unitPrice: materialCalc.calculatedUnitCharge,
         lineTotal: lineTotal,
       );
       final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
-      await DaoTaskItem().markAsBilled(item, invoiceLineId);
+      await daoTaskItem.markAsBilled(item, invoiceLineId);
 
       totalAmount += lineTotal;
     }

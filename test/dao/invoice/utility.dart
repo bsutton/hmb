@@ -36,13 +36,18 @@ Future<TimeEntry> createTimeEntry(
   return timeEntry;
 }
 
-Future<Task> createTask(Job job, String name) async {
+Future<Task> createTask(
+  Job job,
+  String name, {
+  BillingType? billingType,
+}) async {
   // Insert task for the job
   final task = Task.forInsert(
     jobId: job.id,
     name: name,
     description: 'First task for T&M',
     status: TaskStatus.awaitingApproval,
+    billingType: billingType,
   );
   await DaoTask().insert(task);
   return task;
@@ -105,6 +110,46 @@ Future<TaskItem> insertMaterials(
   await DaoTaskItem().insert(completedMaterialItem);
 
   return completedMaterialItem;
+}
+
+Future<TaskItem> insertMaterialItem(
+  Task task, {
+  required TaskItemType itemType,
+  String description = 'Material Item',
+  Fixed? estimatedQuantity,
+  Money? estimatedUnitCost,
+  Fixed? actualQuantity,
+  Money? actualUnitCost,
+  Percentage? margin,
+  ChargeMode chargeMode = ChargeMode.calculated,
+  bool completed = true,
+  bool isReturn = false,
+}) async {
+  final resolvedMargin = margin ?? Percentage.zero;
+  final item = TaskItem.forInsert(
+    taskId: task.id,
+    description: description,
+    purpose: '',
+    itemType: itemType,
+    estimatedMaterialUnitCost: estimatedUnitCost,
+    estimatedMaterialQuantity: estimatedQuantity,
+    actualMaterialUnitCost: actualUnitCost,
+    actualMaterialQuantity: actualQuantity,
+    chargeMode: chargeMode,
+    margin: resolvedMargin,
+    completed: completed,
+    measurementType: MeasurementType.length,
+    dimension1: Fixed.fromNum(1, decimalDigits: 3),
+    dimension2: Fixed.fromNum(1, decimalDigits: 3),
+    dimension3: Fixed.fromNum(1, decimalDigits: 3),
+    units: Units.m,
+    url: 'http://example.com/material',
+    labourEntryMode: LabourEntryMode.hours,
+    isReturn: isReturn,
+  );
+
+  await DaoTaskItem().insert(item);
+  return item;
 }
 
 Future<Job> createJob(

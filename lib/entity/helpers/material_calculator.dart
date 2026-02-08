@@ -5,7 +5,6 @@
 
 import 'package:money2/money2.dart';
 
-import '../../util/dart/fixed_ex.dart';
 import '../../util/dart/money_ex.dart';
 import '../job.dart';
 import '../task_item.dart';
@@ -18,6 +17,61 @@ import 'charge_mode.dart';
 ///   at the line level.
 /// - For [BillingType.nonBillable], charge is always zero.
 class MaterialCalculator {
+  // ---- Factory selection ----------------------------------------------------
+
+  factory MaterialCalculator(BillingType billingType, TaskItem item) {
+    switch (billingType) {
+      case BillingType.nonBillable:
+        {
+          return MaterialCalculator._nonBillable(
+            quantity: _pickQtyFor(billingType, item),
+            unitCost: _pickUnitFor(billingType, item),
+            isReturn: item.isReturn,
+          );
+        }
+      case BillingType.timeAndMaterial:
+        {
+          final qty = _pickQtyFor(billingType, item);
+          final unit = _pickUnitFor(billingType, item);
+          if (item.chargeMode == ChargeMode.userDefined) {
+            return MaterialCalculator._defined(
+              quantity: qty,
+              unitCost: unit,
+              definedLineTotal: item.userDefinedCharge ?? MoneyEx.zero,
+              isReturn: item.isReturn,
+            );
+          } else {
+            return MaterialCalculator._calculated(
+              quantity: qty,
+              unitCost: unit,
+              margin: item.margin,
+              isReturn: item.isReturn,
+            );
+          }
+        }
+      case BillingType.fixedPrice:
+        {
+          // FP uses estimates only; actuals are for P&L.
+          final qty = item.estimatedMaterialQuantity ?? Fixed.one;
+          final unit = item.estimatedMaterialUnitCost ?? MoneyEx.zero;
+          if (item.chargeMode == ChargeMode.userDefined) {
+            return MaterialCalculator._defined(
+              quantity: qty,
+              unitCost: unit,
+              definedLineTotal: item.userDefinedCharge ?? MoneyEx.zero,
+              isReturn: item.isReturn,
+            );
+          } else {
+            return MaterialCalculator._calculated(
+              quantity: qty,
+              unitCost: unit,
+              margin: item.margin,
+              isReturn: item.isReturn,
+            );
+          }
+        }
+    }
+  }
   // ---- Construction ---------------------------------------------------------
 
   MaterialCalculator._calculated({
@@ -25,8 +79,8 @@ class MaterialCalculator {
     required this.unitCost,
     required this.margin,
     required this.isReturn,
-  })  : chargeMode = ChargeMode.calculated,
-        isNonBillable = false {
+  }) : chargeMode = ChargeMode.calculated,
+       isNonBillable = false {
     var cost = unitCost.multiplyByFixed(quantity);
     var charge = cost.plusPercentage(margin);
 
@@ -44,9 +98,9 @@ class MaterialCalculator {
     required this.unitCost,
     required Money definedLineTotal,
     required this.isReturn,
-  })  : chargeMode = ChargeMode.userDefined,
-        margin = Percentage.fromInt(0),
-        isNonBillable = false {
+  }) : chargeMode = ChargeMode.userDefined,
+       margin = Percentage.fromInt(0),
+       isNonBillable = false {
     var cost = unitCost.multiplyByFixed(quantity);
     var charge = definedLineTotal;
 
@@ -63,9 +117,9 @@ class MaterialCalculator {
     required this.quantity,
     required this.unitCost,
     required this.isReturn,
-  })  : chargeMode = ChargeMode.calculated,
-        margin = Percentage.fromInt(0),
-        isNonBillable = true {
+  }) : chargeMode = ChargeMode.calculated,
+       margin = Percentage.fromInt(0),
+       isNonBillable = true {
     var cost = unitCost.multiplyByFixed(quantity);
     if (isReturn) {
       cost = -cost;
@@ -74,75 +128,26 @@ class MaterialCalculator {
     lineChargeTotal = MoneyEx.zero;
   }
 
-  // ---- Factory selection ----------------------------------------------------
-
-  factory MaterialCalculator(BillingType billingType, TaskItem item) {
-    switch (billingType) {
-      case BillingType.nonBillable: {
-        return MaterialCalculator._nonBillable(
-          quantity: _pickQtyFor(billingType, item),
-          unitCost: _pickUnitFor(billingType, item),
-          isReturn: item.isReturn,
-        );
-      }
-      case BillingType.timeAndMaterial: {
-        final qty = _pickQtyFor(billingType, item);
-        final unit = _pickUnitFor(billingType, item);
-        if (item.chargeMode == ChargeMode.userDefined) {
-          return MaterialCalculator._defined(
-            quantity: qty,
-            unitCost: unit,
-            definedLineTotal: item.userDefinedCharge ?? MoneyEx.zero,
-            isReturn: item.isReturn,
-          );
-        } else {
-          return MaterialCalculator._calculated(
-            quantity: qty,
-            unitCost: unit,
-            margin: item.margin,
-            isReturn: item.isReturn,
-          );
-        }
-      }
-      case BillingType.fixedPrice: {
-        // FP uses estimates only; actuals are for P&L.
-        final qty = item.estimatedMaterialQuantity ?? Fixed.one;
-        final unit = item.estimatedMaterialUnitCost ?? MoneyEx.zero;
-        if (item.chargeMode == ChargeMode.userDefined) {
-          return MaterialCalculator._defined(
-            quantity: qty,
-            unitCost: unit,
-            definedLineTotal: item.userDefinedCharge ?? MoneyEx.zero,
-            isReturn: item.isReturn,
-          );
-        } else {
-          return MaterialCalculator._calculated(
-            quantity: qty,
-            unitCost: unit,
-            margin: item.margin,
-            isReturn: item.isReturn,
-          );
-        }
-      }
-    }
-  }
-
   static Fixed _pickQtyFor(BillingType billingType, TaskItem item) {
     if (billingType == BillingType.timeAndMaterial && item.completed) {
-      return item.actualMaterialQuantity ?? item
-          .estimatedMaterialQuantity ?? Fixed.one;
+      return item.actualMaterialQuantity ??
+          item.estimatedMaterialQuantity ??
+          Fixed.one;
     }
-    return item.estimatedMaterialQuantity ?? item
-        .actualMaterialQuantity ?? Fixed.one;
+    return item.estimatedMaterialQuantity ??
+        item.actualMaterialQuantity ??
+        Fixed.one;
   }
 
   static Money _pickUnitFor(BillingType billingType, TaskItem item) {
     if (billingType == BillingType.timeAndMaterial && item.completed) {
-      return item.actualMaterialUnitCost ?? item
-          .estimatedMaterialUnitCost ?? MoneyEx.zero;
+      return item.actualMaterialUnitCost ??
+          item.estimatedMaterialUnitCost ??
+          MoneyEx.zero;
     }
-    return item.estimatedMaterialUnitCost ?? item
-        .actualMaterialUnitCost ?? MoneyEx.zero;
+    return item.estimatedMaterialUnitCost ??
+        item.actualMaterialUnitCost ??
+        MoneyEx.zero;
   }
 
   // ---- Inputs / derived fields ---------------------------------------------

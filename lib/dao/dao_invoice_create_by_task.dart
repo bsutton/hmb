@@ -24,7 +24,15 @@ import 'dao_time_entry.dart';
 
 /// Group by Task then Dates within that task,
 ///  followed by materials and returns.
-Future<Money> createByTask(
+Future<Money> createInvoiceForTasks(
+  int invoiceId,
+  Job job,
+  List<int> selectedTaskIds,
+) => job.billingType == BillingType.fixedPrice
+    ? _createFixedPriceInvoiceForTasks(invoiceId, job, selectedTaskIds)
+    : _createTimeAndMaterialsInvoiceForTasks(invoiceId, job, selectedTaskIds);
+
+Future<Money> _createTimeAndMaterialsInvoiceForTasks(
   int invoiceId,
   Job job,
   List<int> selectedTaskIds,
@@ -32,11 +40,21 @@ Future<Money> createByTask(
   var totalAmount = MoneyEx.zero;
 
   // 1. Fetch all tasks for this job
-  final tasks = await DaoTask().getTasksByJob(job.id);
+  final daoTask = DaoTask();
+  final daoTaskItem = DaoTaskItem();
+  final daoInvoiceLine = DaoInvoiceLine();
+  final daoInvoiceLineGroup = DaoInvoiceLineGroup();
+
+  final tasks = await daoTask.getTasksByJob(job.id);
   for (final task in tasks) {
     /// Only process tasks that the user selected to be on
     /// this invoice.
     if (!selectedTaskIds.contains(task.id)) {
+      continue;
+    }
+
+    final taskBillingType = await daoTask.getBillingType(task);
+    if (taskBillingType == BillingType.nonBillable) {
       continue;
     }
 
@@ -45,24 +63,14 @@ Future<Money> createByTask(
       invoiceId: invoiceId,
       name: task.name,
     );
-    final invoiceLineGroupId = await DaoInvoiceLineGroup().insert(
+    final invoiceLineGroupId = await daoInvoiceLineGroup.insert(
       invoiceLineGroup,
     );
 
-    // 3. Collect labour entries by date for this task
-    final labourForDate = await collectLabourPerDay(task);
-
-    // 4. Emit labour (time entries) lines
-    if (job.billingType == BillingType.timeAndMaterial) {
+    // 3. Emit labour lines
+    if (taskBillingType == BillingType.timeAndMaterial) {
+      final labourForDate = await collectLabourPerDay(task);
       totalAmount += await _timeAndMaterialsLabour(
-        labourForDate,
-        job,
-        invoiceId,
-        invoiceLineGroupId,
-        task,
-      );
-    } else {
-      totalAmount += await _fixedPriceLabour(
         labourForDate,
         job,
         invoiceId,
@@ -72,22 +80,69 @@ Future<Money> createByTask(
     }
 
     // 5. Emit material and return lines
-    final taskItems = await DaoTaskItem().getByTask(task.id);
+    final taskItems = await daoTaskItem.getByTask(task.id);
     for (final taskItem in taskItems) {
       if (taskItem.billed || !taskItem.completed) {
         continue;
       }
 
       final itemType = taskItem.itemType;
-      if (itemType == TaskItemType.labour ||
-          itemType == TaskItemType.toolsOwn) {
+      if (itemType == TaskItemType.toolsOwn &&
+          taskBillingType != BillingType.timeAndMaterial) {
+        // For fixed price tasks we skip tools owned by us.
+        continue;
+      }
+
+      if (itemType == TaskItemType.labour) {
+        if (taskBillingType != BillingType.fixedPrice) {
+          continue;
+        }
+
+        final hourlyRate = job.hourlyRate ?? MoneyEx.zero;
+        final labourTotal = taskItem.getTotalLineCharge(
+          taskBillingType,
+          hourlyRate,
+        );
+        if (labourTotal.isZero) {
+          continue;
+        }
+
+        var quantity = taskItem.estimatedLabourHours ?? Fixed.zero;
+        if (taskItem.labourEntryMode != LabourEntryMode.hours ||
+            quantity.isZero) {
+          quantity = Fixed.one;
+        }
+        final unitPrice = labourTotal.divideByFixed(quantity);
+
+        final labourLine = InvoiceLine.forInsert(
+          invoiceId: invoiceId,
+          invoiceLineGroupId: invoiceLineGroupId,
+          description: 'Labour: ${taskItem.description}',
+          quantity: quantity,
+          unitPrice: unitPrice,
+          lineTotal: labourTotal,
+        );
+        final invoiceLineId = await daoInvoiceLine.insert(labourLine);
+        await daoTaskItem.markAsBilled(taskItem, invoiceLineId);
+        totalAmount += labourTotal;
         continue;
       }
 
       // Determine unit cost and quantity based on billing type
-      final calculator = MaterialCalculator(job.billingType, taskItem);
+      final calculator = MaterialCalculator(taskBillingType, taskItem);
+      if (itemType == TaskItemType.toolsOwn &&
+          taskBillingType == BillingType.timeAndMaterial &&
+          calculator.lineChargeTotal.isZero) {
+        // T&M: tools owned by us can be billed as a hire charge
+        // when a non-zero charge is specified.
+        continue;
+      }
 
-      final descriptionPrefix = taskItem.isReturn ? 'Returned: ' : 'Material: ';
+      final descriptionPrefix = taskItem.isReturn
+          ? 'Returned: '
+          : (itemType == TaskItemType.toolsOwn
+                ? 'Tool hire: '
+                : 'Material: ');
       final lineDescription = '$descriptionPrefix${taskItem.description}';
 
       // Insert the invoice line
@@ -99,10 +154,136 @@ Future<Money> createByTask(
         unitPrice: calculator.calculatedUnitCharge,
         lineTotal: calculator.lineChargeTotal,
       );
-      final invoiceLineId = await DaoInvoiceLine().insert(invoiceLine);
+      final invoiceLineId = await daoInvoiceLine.insert(invoiceLine);
 
       // Mark the task item as billed
-      await DaoTaskItem().markAsBilled(taskItem, invoiceLineId);
+      await daoTaskItem.markAsBilled(taskItem, invoiceLineId);
+
+      totalAmount += invoiceLine.lineTotal;
+    }
+  }
+
+  return totalAmount;
+}
+
+Future<Money> _createFixedPriceInvoiceForTasks(
+  int invoiceId,
+  Job job,
+  List<int> selectedTaskIds,
+) async {
+  var totalAmount = MoneyEx.zero;
+
+  final daoTask = DaoTask();
+  final daoTaskItem = DaoTaskItem();
+  final daoInvoiceLine = DaoInvoiceLine();
+  final daoInvoiceLineGroup = DaoInvoiceLineGroup();
+
+  final tasks = await daoTask.getTasksByJob(job.id);
+  for (final task in tasks) {
+    if (!selectedTaskIds.contains(task.id)) {
+      continue;
+    }
+
+    final taskBillingType = await daoTask.getBillingType(task);
+    if (taskBillingType == BillingType.nonBillable) {
+      continue;
+    }
+
+    final invoiceLineGroup = InvoiceLineGroup.forInsert(
+      invoiceId: invoiceId,
+      name: task.name,
+    );
+    final invoiceLineGroupId = await daoInvoiceLineGroup.insert(
+      invoiceLineGroup,
+    );
+
+    // Labour: time entries only for T&M tasks.
+    if (taskBillingType == BillingType.timeAndMaterial) {
+      final labourForDate = await collectLabourPerDay(task);
+      totalAmount += await _timeAndMaterialsLabour(
+        labourForDate,
+        job,
+        invoiceId,
+        invoiceLineGroupId,
+        task,
+      );
+    }
+
+    final taskItems = await daoTaskItem.getByTask(task.id);
+    for (final taskItem in taskItems) {
+      if (taskItem.billed || !taskItem.completed) {
+        continue;
+      }
+
+      final itemType = taskItem.itemType;
+      if (itemType == TaskItemType.toolsOwn &&
+          taskBillingType != BillingType.timeAndMaterial) {
+        // For fixed price tasks we skip tools owned by us.
+        continue;
+      }
+
+      if (itemType == TaskItemType.labour) {
+        if (taskBillingType != BillingType.fixedPrice) {
+          continue;
+        }
+
+        final hourlyRate = job.hourlyRate ?? MoneyEx.zero;
+        final labourTotal = taskItem.getTotalLineCharge(
+          taskBillingType,
+          hourlyRate,
+        );
+        if (labourTotal.isZero) {
+          continue;
+        }
+
+        var quantity = taskItem.estimatedLabourHours ?? Fixed.zero;
+        if (taskItem.labourEntryMode != LabourEntryMode.hours ||
+            quantity.isZero) {
+          quantity = Fixed.one;
+        }
+        final unitPrice = labourTotal.divideByFixed(quantity);
+
+        final labourLine = InvoiceLine.forInsert(
+          invoiceId: invoiceId,
+          invoiceLineGroupId: invoiceLineGroupId,
+          description: 'Labour: ${taskItem.description}',
+          quantity: quantity,
+          unitPrice: unitPrice,
+          lineTotal: labourTotal,
+        );
+        final invoiceLineId = await daoInvoiceLine.insert(labourLine);
+        await daoTaskItem.markAsBilled(taskItem, invoiceLineId);
+        totalAmount += labourTotal;
+        continue;
+      }
+
+      final calculator = MaterialCalculator(taskBillingType, taskItem);
+      if (itemType == TaskItemType.toolsOwn &&
+          taskBillingType == BillingType.timeAndMaterial &&
+          calculator.lineChargeTotal.isZero) {
+        // T&M: tools owned by us can be billed as a hire charge
+        // when a non-zero charge is specified.
+        continue;
+      }
+
+      final descriptionPrefix = taskItem.isReturn
+          ? 'Returned: '
+          : (itemType == TaskItemType.toolsOwn
+                ? 'Tool hire: '
+                : 'Material: ');
+      final lineDescription = '$descriptionPrefix${taskItem.description}';
+
+      final invoiceLine = InvoiceLine.forInsert(
+        invoiceId: invoiceId,
+        invoiceLineGroupId: invoiceLineGroupId,
+        description: lineDescription,
+        quantity: calculator.quantity,
+        unitPrice: calculator.calculatedUnitCharge,
+        lineTotal: calculator.lineChargeTotal,
+      );
+      final invoiceLineId = await daoInvoiceLine.insert(invoiceLine);
+
+      await daoTaskItem.markAsBilled(taskItem, invoiceLineId);
 
       totalAmount += invoiceLine.lineTotal;
     }
@@ -148,24 +329,6 @@ Future<Money> _timeAndMaterialsLabour(
   }
   return totalLabourAmount;
 }
-
-/// CheckListItems of type [TaskItemType.labour] estimates
-/// are used on an invoice.
-Future<Money> _fixedPriceLabour(
-  List<LabourForTaskOnDate> labourForDates,
-  Job job,
-  int invoiceId,
-  int invoiceLineGroupId,
-  Task task,
-) =>
-    // For fixed price, we treat labour the same as time & materials.
-    _timeAndMaterialsLabour(
-      labourForDates,
-      job,
-      invoiceId,
-      invoiceLineGroupId,
-      task,
-    );
 
 /// Groups all un‐billed time entries for [task] by date.
 Future<List<LabourForTaskOnDate>> collectLabourPerDay(Task task) async {

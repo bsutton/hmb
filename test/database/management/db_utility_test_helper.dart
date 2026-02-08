@@ -11,12 +11,16 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:io';
+
 import 'package:dcli/dcli.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/management/database_helper.dart';
 import 'package:hmb/database/versions/implementations/project_script_source.dart';
 import 'package:path/path.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:sqflite_common/sqflite.dart';
 
 import 'backup_providers/test_backup_provider.dart';
@@ -24,7 +28,27 @@ import 'backup_providers/test_backup_provider.dart';
 Database? testDb;
 late String testDbPath;
 
+class _TestPathProvider
+    with Fake, MockPlatformInterfaceMixin
+    implements PathProviderPlatform {
+  final String tempPath = Directory.systemTemp
+      .createTempSync('hmb_test_temp')
+      .path;
+  final String docPath = Directory.systemTemp
+      .createTempSync('hmb_test_docs')
+      .path;
+
+  @override
+  Future<String?> getTemporaryPath() async => tempPath;
+
+  @override
+  Future<String?> getApplicationDocumentsPath() async => docPath;
+}
+
 Future<Database> setupTestDb() async {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  PathProviderPlatform.instance = _TestPathProvider();
+
   final project = DartProject.self;
   // Path to the clean database in the fixtures directory
   final cleanDbPath = join(
@@ -56,7 +80,7 @@ Future<Database> setupTestDb() async {
     databaseFactory: CliDatabaseFactory(),
     backup: false,
   );
-  testDb = await openDatabase(testDbPath);
+  testDb = DatabaseHelper().database;
 
   return testDb!;
 }
@@ -66,9 +90,11 @@ Future<void> tearDownTestDb() async {
   if (testDb != null) {
     await testDb!.close();
   }
+  if (DatabaseHelper().isOpen()) {
+    await DatabaseHelper().closeDb();
+  }
 
   // Delete the test database
-  final testDbPath = join(await getDatabasesPath(), 'handyman_test_temp.db');
   if (exists(testDbPath)) {
     delete(testDbPath);
   }

@@ -66,9 +66,55 @@ class _JobEstimateBuilderScreenState
 
   @override
   Future<void> asyncInitState() async {
+    final canProceed = await _ensureFixedPrice();
+    if (!canProceed) {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
     final job = await DaoJob().markQuoting(widget.job.id);
     widget.job.status = job.status;
     await _loadTasks();
+  }
+
+  Future<bool> _ensureFixedPrice() async {
+    if (widget.job.billingType != BillingType.timeAndMaterial) {
+      return true;
+    }
+
+    final switchToFixed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Estimates Require Fixed Price'),
+        content: const Text(
+          'You cannot create estimates for Time and Materials jobs. '
+          'Switch this job to Fixed Price to continue?',
+        ),
+        actions: [
+          HMBButton(
+            label: 'Cancel',
+            hint: "Don't switch the job billing type",
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          HMBButton(
+            label: 'Switch to Fixed Price',
+            hint: 'Update the job to Fixed Price billing',
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+    if (switchToFixed != true) {
+      return false;
+    }
+
+    final updated =
+        widget.job.copyWith(billingType: BillingType.fixedPrice);
+    await DaoJob().update(updated);
+    widget.job.billingType = updated.billingType;
+    return true;
   }
 
   Future<void> _loadTasks() async {

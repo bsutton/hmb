@@ -82,7 +82,7 @@ Future<Invoice> createTimeAndMaterialsInvoice(
 
   // Group by task: Create invoice line group for the task
   if (groupByTask) {
-    totalAmount += await createByTask(invoiceId, job, selectedTaskIds);
+    totalAmount += await createInvoiceForTasks(invoiceId, job, selectedTaskIds);
   }
   // Group by date
   else {

@@ -66,6 +66,29 @@ class DaoJob extends Dao<Job> {
   @override
   Job fromMap(Map<String, dynamic> map) => Job.fromMap(map);
 
+  @override
+  Future<int> update(Job entity, [Transaction? transaction]) async {
+    final existing = await getById(entity.id);
+    final isRejectingJob =
+        existing != null &&
+        existing.status != entity.status &&
+        entity.status == JobStatus.rejected;
+
+    if (!isRejectingJob) {
+      return super.update(entity, transaction);
+    }
+
+    if (transaction != null) {
+      await DaoQuote().rejectByJob(entity.id, transaction: transaction);
+      return super.update(entity, transaction);
+    }
+
+    return db.transaction((txn) async {
+      await DaoQuote().rejectByJob(entity.id, transaction: txn);
+      return super.update(entity, txn);
+    });
+  }
+
   /// getAll - sort by modified date descending
   @override
   Future<List<Job>> getAll({

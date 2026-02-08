@@ -352,6 +352,19 @@ WHERE ti.id = ?
     await update(updateTask!);
   }
 
+  Future<void> markUnrejected(int taskId) async {
+    final task = await getById(taskId);
+    if (task == null) {
+      return;
+    }
+
+    final nextStatus = task.status == TaskStatus.cancelled
+        ? TaskStatus.awaitingApproval
+        : task.status;
+
+    await update(task.copyWith(status: nextStatus));
+  }
+
   Future<bool> isTaskBilled({
     required Task task,
     required DaoTaskItem daoTaskItem,
