@@ -54,6 +54,9 @@ class _JobCreatorState extends State<JobCreator> {
 
   var _creating = false;
   var _extracting = false;
+  var _useExistingContact = true;
+  Customer? _selectedCustomer;
+  List<_CustomerMatch> _matches = [];
 
   @override
   void dispose() {
@@ -88,6 +91,10 @@ class _JobCreatorState extends State<JobCreator> {
               onExtract: _onExtract,
               isExtracting: _extracting,
             ),
+            if (_matches.isNotEmpty) ...[
+              const HMBSpacer(height: true),
+              _buildExistingCustomerPicker(),
+            ],
             const HMBSpacer(height: true),
             Form(
               key: _formKey,
@@ -97,13 +104,13 @@ class _JobCreatorState extends State<JobCreator> {
                     controller: _customerName,
                     labelText: 'Customer Name',
                     textCapitalization: TextCapitalization.words,
-                    required: true,
+                    enabled: _selectedCustomer == null,
+                    required: _selectedCustomer == null,
                   ),
                   HMBTextField(
                     controller: _firstName,
                     labelText: 'First Name',
                     textCapitalization: TextCapitalization.words,
-                    required: true,
                   ),
                   HMBTextField(
                     controller: _surname,
@@ -222,6 +229,42 @@ class _JobCreatorState extends State<JobCreator> {
     ],
   );
 
+  Widget _buildExistingCustomerPicker() => RadioGroup<Customer?>(
+    groupValue: _selectedCustomer,
+    onChanged: (value) {
+      setState(() {
+        _selectedCustomer = value;
+        _useExistingContact = value != null;
+        if (value != null) {
+          _customerName.text = value.name;
+        }
+      });
+    },
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Existing customer matches'),
+        ..._matches.map(
+          (match) => RadioListTile<Customer?>(
+            title: Text(match.customer.name),
+            subtitle: Text(match.contact?.emailAddress ?? 'No contact'),
+            value: match.customer,
+          ),
+        ),
+        const RadioListTile<Customer?>(
+          title: Text('Create new customer'),
+          value: null,
+        ),
+        if (_selectedCustomer != null)
+          SwitchListTile(
+            title: const Text('Use existing primary contact'),
+            value: _useExistingContact,
+            onChanged: (value) => setState(() => _useExistingContact = value),
+          ),
+      ],
+    ),
+  );
+
   Future<void> _onExtract(String text) async {
     if (_extracting) {
       return;
@@ -268,6 +311,8 @@ class _JobCreatorState extends State<JobCreator> {
         } else if (Strings.isBlank(_jobDescription.text)) {
           _jobDescription.text = text;
         }
+
+        await _loadMatches(parsedCustomer);
       }, label: 'Extracting job details');
 
       if (mounted) {
@@ -308,6 +353,61 @@ class _JobCreatorState extends State<JobCreator> {
     }
   }
 
+  Future<void> _loadMatches(ParsedCustomer parsedCustomer) async {
+    final matches = <_CustomerMatch>[];
+    final seen = <int>{};
+    final daoContact = DaoContact();
+    final daoCustomer = DaoCustomer();
+
+    if (Strings.isNotBlank(parsedCustomer.email)) {
+      final contacts = await daoContact.getByEmail(parsedCustomer.email);
+      for (final contact in contacts) {
+        final customer = await daoCustomer.getByContact(contact.id);
+        if (customer != null && seen.add(customer.id)) {
+          matches.add(_CustomerMatch(customer: customer, contact: contact));
+        }
+      }
+    }
+
+    if (Strings.isNotBlank(parsedCustomer.mobile)) {
+      final contacts = await daoContact.getByMobile(parsedCustomer.mobile);
+      for (final contact in contacts) {
+        final customer = await daoCustomer.getByContact(contact.id);
+        if (customer != null && seen.add(customer.id)) {
+          matches.add(_CustomerMatch(customer: customer, contact: contact));
+        }
+      }
+    }
+
+    final candidateNames = <String>{
+      if (Strings.isNotBlank(parsedCustomer.customerName))
+        parsedCustomer.customerName.trim(),
+      if (Strings.isNotBlank(parsedCustomer.companyName))
+        parsedCustomer.companyName.trim(),
+    };
+
+    for (final name in candidateNames) {
+      final customers = await daoCustomer.getByName(name);
+      for (final customer in customers) {
+        if (seen.add(customer.id)) {
+          matches.add(_CustomerMatch(customer: customer));
+        }
+      }
+    }
+
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _matches = matches;
+      if (_selectedCustomer != null &&
+          !_matches.any((m) => m.customer.id == _selectedCustomer!.id)) {
+        _selectedCustomer = null;
+        _useExistingContact = true;
+      }
+    });
+  }
+
   Future<void> _createEntities() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -329,26 +429,71 @@ class _JobCreatorState extends State<JobCreator> {
       late Job job;
 
       await daoCustomer.withTransaction((transaction) async {
-        customer = Customer.forInsert(
-          name: _customerName.text,
-          description: '',
-          customerType: CustomerType.residential,
-          disbarred: false,
-          billingContactId: null,
-          hourlyRate: system.defaultHourlyRate ?? MoneyEx.zero,
-        );
-        await daoCustomer.insert(customer, transaction);
+        if (_selectedCustomer != null) {
+          customer = _selectedCustomer!;
+          if (_useExistingContact) {
+            contact = await daoContact.getPrimaryForCustomer(
+              customer.id,
+              transaction,
+            );
+            if (contact == null) {
+              contact = Contact.forInsert(
+                firstName: _firstName.text,
+                surname: _surname.text,
+                mobileNumber: _mobileNo.text,
+                landLine: '',
+                officeNumber: '',
+                emailAddress: _email.text,
+              );
+              await daoContact.insert(contact!, transaction);
+              await DaoContactCustomer().insertJoin(
+                contact!,
+                customer,
+                transaction,
+              );
+            }
+          } else {
+            contact = Contact.forInsert(
+              firstName: _firstName.text,
+              surname: _surname.text,
+              mobileNumber: _mobileNo.text,
+              landLine: '',
+              officeNumber: '',
+              emailAddress: _email.text,
+            );
+            await daoContact.insert(contact!, transaction);
+            await DaoContactCustomer().insertJoin(
+              contact!,
+              customer,
+              transaction,
+            );
+          }
+        } else {
+          customer = Customer.forInsert(
+            name: _customerName.text,
+            description: '',
+            customerType: CustomerType.residential,
+            disbarred: false,
+            billingContactId: null,
+            hourlyRate: system.defaultHourlyRate ?? MoneyEx.zero,
+          );
+          await daoCustomer.insert(customer, transaction);
 
-        contact = Contact.forInsert(
-          firstName: _firstName.text,
-          surname: _surname.text,
-          mobileNumber: _mobileNo.text,
-          landLine: '',
-          officeNumber: '',
-          emailAddress: _email.text,
-        );
-        await daoContact.insert(contact!, transaction);
-        await DaoContactCustomer().insertJoin(contact!, customer, transaction);
+          contact = Contact.forInsert(
+            firstName: _firstName.text,
+            surname: _surname.text,
+            mobileNumber: _mobileNo.text,
+            landLine: '',
+            officeNumber: '',
+            emailAddress: _email.text,
+          );
+          await daoContact.insert(contact!, transaction);
+          await DaoContactCustomer().insertJoin(
+            contact!,
+            customer,
+            transaction,
+          );
+        }
 
         if (!_isAddressEmpty()) {
           site = Site.forInsert(
@@ -363,8 +508,10 @@ class _JobCreatorState extends State<JobCreator> {
           await DaoSiteCustomer().insertJoin(site!, customer, transaction);
         }
 
-        final customer2 = customer.copyWith(billingContactId: contact!.id);
-        await daoCustomer.update(customer2, transaction);
+        if (customer.billingContactId == null && contact != null) {
+          final customer2 = customer.copyWith(billingContactId: contact!.id);
+          await daoCustomer.update(customer2, transaction);
+        }
 
         final summary = Strings.isBlank(_jobSummary.text)
             ? 'New Job'
@@ -417,4 +564,11 @@ class _JobCreatorState extends State<JobCreator> {
       Strings.isBlank(_suburb.text) &&
       Strings.isBlank(_postcode.text) &&
       Strings.isBlank(_state.text);
+}
+
+class _CustomerMatch {
+  final Customer customer;
+  final Contact? contact;
+
+  const _CustomerMatch({required this.customer, this.contact});
 }

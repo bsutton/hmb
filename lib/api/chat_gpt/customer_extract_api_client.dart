@@ -28,8 +28,11 @@ class CustomerExtractApiClient {
             'role': 'system',
             'content':
                 'Extract customer details from the message. Return JSON only '
-                'with keys: customerName, firstName, surname, email, mobile, '
+                'with keys: customerName, companyName, firstName, surname, '
+                'email, mobile, '
                 'addressLine1, addressLine2, suburb, state, postcode. '
+                'If a company is clearly associated with the customer, set '
+                'companyName and prefer customerName to be the company name. '
                 'Use empty strings for unknown fields.',
           },
           {'role': 'user', 'content': text},
@@ -54,9 +57,15 @@ class CustomerExtractApiClient {
 
     final firstName = (parsed['firstName'] as String?)?.trim() ?? '';
     final surname = (parsed['surname'] as String?)?.trim() ?? '';
-    final customerName =
-        (parsed['customerName'] as String?)?.trim() ??
-        [firstName, surname].where((p) => p.isNotEmpty).join(' ');
+    final companyName = (parsed['companyName'] as String?)?.trim() ?? '';
+    final customerNameRaw = (parsed['customerName'] as String?)?.trim() ?? '';
+    final personName = [
+      firstName,
+      surname,
+    ].where((p) => p.isNotEmpty).join(' ');
+    final customerName = companyName.isNotEmpty
+        ? companyName
+        : (customerNameRaw.isNotEmpty ? customerNameRaw : personName);
 
     final address = ParsedAddress(
       street: (parsed['addressLine1'] as String?)?.trim() ?? '',
@@ -67,6 +76,7 @@ class CustomerExtractApiClient {
 
     return ParsedCustomer(
       customerName: customerName,
+      companyName: companyName,
       email: (parsed['email'] as String?)?.trim() ?? '',
       mobile: (parsed['mobile'] as String?)?.trim() ?? '',
       firstname: firstName,
@@ -94,8 +104,7 @@ class CustomerExtractApiClient {
         // fall through and try to parse as-is
       }
     }
-    trimmed = _stripWrappingQuotes(trimmed);
-    return trimmed;
+    return _stripWrappingQuotes(trimmed);
   }
 
   String _stripWrappingQuotes(String value) {

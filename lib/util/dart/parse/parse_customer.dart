@@ -22,6 +22,7 @@ class ParsedCustomer {
 
   // ---------- public fields ----------
   String customerName;
+  String companyName;
   String email;
   String mobile;
   String firstname;
@@ -30,6 +31,7 @@ class ParsedCustomer {
 
   ParsedCustomer({
     required this.customerName,
+    required this.companyName,
     required this.email,
     required this.firstname,
     required this.surname,
@@ -92,6 +94,7 @@ class ParsedCustomer {
 
     return ParsedCustomer(
       customerName: customerName,
+      companyName: '',
       email: email,
       mobile: mobile,
       firstname: firstName,
@@ -106,6 +109,7 @@ class ParsedCustomer {
       Strings.isBlank(email) &&
       Strings.isBlank(mobile) &&
       Strings.isBlank(customerName) &&
+      Strings.isBlank(companyName) &&
       address.isEmpty();
 
   static String _parseEmail(String? text) =>
