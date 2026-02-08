@@ -176,8 +176,14 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
 
       await adaptor.login();
       await adaptor.uploadInvoice(invoice);
+      if (!mounted) {
+        return;
+      }
       HMBToast.info('Invoice uploaded to Xero successfully');
       await _reloadInvoice();
+      if (!mounted) {
+        return;
+      }
       setState(() {});
     } catch (e, st) {
       if (!e.toString().contains('You must provide an email address for')) {
@@ -206,6 +212,9 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
       await DaoInvoiceLine().update(editedLine);
       await DaoInvoice().recalculateTotal(editedLine.invoiceId);
       await _reloadInvoice();
+      if (!mounted) {
+        return;
+      }
       setState(() {});
     }
   }
@@ -242,6 +251,9 @@ Total: ${line.lineTotal}'''),
 
       await DaoInvoice().recalculateTotal(line.invoiceId);
       await _reloadInvoice();
+      if (!mounted) {
+        return;
+      }
       setState(() {});
     } catch (e) {
       HMBToast.error(
