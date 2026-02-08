@@ -219,6 +219,11 @@ class _JobCreatorState extends State<JobCreator> {
     final daoSite = DaoSite();
     final contacts = await daoContact.getByCustomer(customer.id);
     final sites = await daoSite.getByCustomer(customer.id);
+    contacts.sort(
+      (a, b) => _displayName(
+        a,
+      ).toLowerCase().compareTo(_displayName(b).toLowerCase()),
+    );
     if (!mounted || _selectedCustomer?.id != customer.id) {
       return;
     }
@@ -284,6 +289,9 @@ class _JobCreatorState extends State<JobCreator> {
   String _normalize(String value) => value.trim().toLowerCase();
 
   String _normalizedDigits(String value) => value.replaceAll(RegExp(r'\D'), '');
+
+  String _displayName(Contact contact) =>
+      '${contact.firstName} ${contact.surname}'.trim();
 
   Future<bool> _onExtract(String text) async {
     if (_extracting) {
@@ -451,6 +459,11 @@ class _JobCreatorState extends State<JobCreator> {
     if (!mounted) {
       return;
     }
+    matches.sort(
+      (a, b) => a.customer.name.toLowerCase().compareTo(
+        b.customer.name.toLowerCase(),
+      ),
+    );
     setState(() {
       _matches = matches;
       if (_selectedCustomer != null &&
