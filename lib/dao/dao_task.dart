@@ -391,6 +391,21 @@ WHERE ti.id = ?
     return links.isNotEmpty;
   }
 
+  Future<bool> isTaskLinkedToQuote(Task task) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+SELECT 1
+  FROM quote_line_group qlg
+ WHERE qlg.task_id = ?
+   AND qlg.line_approval_status != ?
+ LIMIT 1
+''',
+      [task.id, LineApprovalStatus.rejected.name],
+    );
+    return rows.isNotEmpty;
+  }
+
   /// True when:
   /// - job is Fixed Price AND
   /// - there exists an APPROVED Quote for the job AND

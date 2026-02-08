@@ -17,6 +17,7 @@ import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
+import '../../widgets/select/select.g.dart';
 import '../../widgets/widgets.g.dart';
 
 class JobCreator extends StatefulWidget {
@@ -51,6 +52,7 @@ class _JobCreatorState extends State<JobCreator> {
   final _jobDescription = TextEditingController();
   final _taskControllers = <TextEditingController>[];
   var _pasteMessage = '';
+  BillingType _selectedBillingType = BillingType.timeAndMaterial;
 
   var _creating = false;
   var _extracting = false;
@@ -214,6 +216,28 @@ class _JobCreatorState extends State<JobCreator> {
     ),
   );
 
+  Widget _buildCustomerSearchPicker() => HMBDroplist<Customer>(
+    title: 'Find Existing Customer',
+    required: false,
+    selectedItem: () => Future.value(_selectedCustomer),
+    items: (filter) => DaoCustomer().getByFilter(filter),
+    format: (customer) => customer.name,
+    onChanged: (customer) {
+      setState(() {
+        _selectedCustomer = customer;
+        if (customer != null) {
+          _customerName.text = customer.name;
+          unawaited(_loadExistingCustomerDetails(customer));
+        } else {
+          _existingContacts = [];
+          _existingSites = [];
+          _selectedExistingContact = null;
+          _selectedExistingSite = null;
+        }
+      });
+    },
+  );
+
   Future<void> _loadExistingCustomerDetails(Customer customer) async {
     final daoContact = DaoContact();
     final daoSite = DaoSite();
@@ -298,8 +322,7 @@ class _JobCreatorState extends State<JobCreator> {
       return false;
     }
     if (Strings.isBlank(text)) {
-      HMBToast.info('Paste a message to extract job details.');
-      return false;
+      return true;
     }
 
     var extracted = false;
@@ -575,6 +598,7 @@ class _JobCreatorState extends State<JobCreator> {
           siteId: site?.id,
           contactId: contact?.id,
           status: JobStatus.prospecting,
+          billingType: _selectedBillingType,
           hourlyRate:
               system.defaultHourlyRate ?? Money.fromInt(0, isoCode: 'AUD'),
           bookingFee:
@@ -668,6 +692,8 @@ class _CustomerStep extends WizardStep {
       padding: const EdgeInsets.all(12),
       child: HMBColumn(
         children: [
+          state._buildCustomerSearchPicker(),
+          const HMBSpacer(height: true),
           state._buildExistingCustomerPicker(),
           const HMBSpacer(height: true),
           HMBTextField(
@@ -872,6 +898,17 @@ class _JobStep extends WizardStep {
       padding: const EdgeInsets.all(12),
       child: HMBColumn(
         children: [
+          HMBDroplist<BillingType>(
+            title: 'Billing Type',
+            selectedItem: () => Future.value(state._selectedBillingType),
+            items: (_) => Future.value(BillingType.values),
+            format: (type) => type.display,
+            onChanged: (type) {
+              if (type != null) {
+                state._selectedBillingType = type;
+              }
+            },
+          ),
           HMBTextField(
             controller: state._jobSummary,
             labelText: 'Job Summary',

@@ -19,7 +19,6 @@ import '../entity/customer.dart';
 import '../entity/job.dart';
 import '../entity/job_status.dart';
 import '../entity/job_status_stage.dart';
-import '../entity/quote.dart';
 import '../entity/task.dart';
 import '../entity/task_item.dart';
 import '../entity/task_item_type.dart';
@@ -30,7 +29,6 @@ import 'dao_contact.dart';
 import 'dao_customer.dart';
 import 'dao_invoice.dart';
 import 'dao_quote.dart';
-import 'dao_quote_line_group.dart';
 import 'dao_system.dart';
 import 'dao_task.dart';
 import 'dao_task_item.dart';
@@ -616,8 +614,6 @@ where q.id=?
     final daoTaskItem = DaoTaskItem();
     final daoTimeEntry = DaoTimeEntry();
     final daoWAT = DaoWorkAssignmentTask();
-    final daoQuote = DaoQuote();
-    final daoQuoteLineGroup = DaoQuoteLineGroup();
 
     // Validate [Task]s belong to the [Job]
     for (final task in tasksToMove) {
@@ -629,12 +625,6 @@ where q.id=?
     }
 
     // Preload approved quotes (only if Fixed Price)
-    final approvedQuotes = job.billingType == BillingType.fixedPrice
-        ? (await daoQuote.getByJobId(
-            job.id,
-          )).where((q) => q.state == QuoteState.approved).toList()
-        : const <Quote>[];
-
     // Check business rules
     final nonMovableReasons = <Task, String>{};
     for (final t in tasksToMove) {
@@ -653,14 +643,8 @@ where q.id=?
         continue;
       }
 
-      if (await daoTask.isTaskLockedByApprovedFixedQuote(
-        job: job,
-        task: t,
-        approvedQuotes: approvedQuotes,
-        daoQLG: daoQuoteLineGroup,
-      )) {
-        nonMovableReasons[t] =
-            '''is part of an approved fixed-price quote and the quote line group is not rejected.''';
+      if (await daoTask.isTaskLinkedToQuote(t)) {
+        nonMovableReasons[t] = 'is linked to a quote.';
         continue;
       }
     }
