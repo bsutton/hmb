@@ -233,40 +233,42 @@ class _JobCreatorState extends State<JobCreator> {
 
     setState(() => _extracting = true);
     try {
-      ParsedCustomer parsedCustomer;
-      final system = await DaoSystem().get();
-      final apiKey = system.openaiApiKey?.trim() ?? '';
-      if (apiKey.isNotEmpty) {
-        final extracted = await CustomerExtractApiClient().extract(text);
-        if (extracted == null) {
-          HMBToast.error('AI extraction failed. Check ChatGPT settings.');
-          return;
+      await BlockingUI().runAndWait(() async {
+        ParsedCustomer parsedCustomer;
+        final system = await DaoSystem().get();
+        final apiKey = system.openaiApiKey?.trim() ?? '';
+        if (apiKey.isNotEmpty) {
+          final extracted = await CustomerExtractApiClient().extract(text);
+          if (extracted == null) {
+            HMBToast.error('AI extraction failed. Check ChatGPT settings.');
+            return;
+          }
+          parsedCustomer = extracted;
+        } else {
+          parsedCustomer = await ParsedCustomer.parse(text);
         }
-        parsedCustomer = extracted;
-      } else {
-        parsedCustomer = await ParsedCustomer.parse(text);
-      }
 
-      _email.text = parsedCustomer.email;
-      _mobileNo.text = parsedCustomer.mobile;
+        _email.text = parsedCustomer.email;
+        _mobileNo.text = parsedCustomer.mobile;
 
-      _firstName.text = parsedCustomer.firstname;
-      _surname.text = parsedCustomer.surname;
-      final address = parsedCustomer.address;
-      _addressLine1.text = address.street;
-      _suburb.text = address.city;
-      _state.text = address.state;
-      _postcode.text = address.postalCode;
+        _firstName.text = parsedCustomer.firstname;
+        _surname.text = parsedCustomer.surname;
+        final address = parsedCustomer.address;
+        _addressLine1.text = address.street;
+        _suburb.text = address.city;
+        _state.text = address.state;
+        _postcode.text = address.postalCode;
 
-      _customerName.text = parsedCustomer.customerName.isEmpty
-          ? '${_firstName.text} ${_surname.text}'.trim()
-          : parsedCustomer.customerName;
+        _customerName.text = parsedCustomer.customerName.isEmpty
+            ? '${_firstName.text} ${_surname.text}'.trim()
+            : parsedCustomer.customerName;
 
-      if (apiKey.isNotEmpty) {
-        await _generateSummaryAndTasks(text);
-      } else if (Strings.isBlank(_jobDescription.text)) {
-        _jobDescription.text = text;
-      }
+        if (apiKey.isNotEmpty) {
+          await _generateSummaryAndTasks(text);
+        } else if (Strings.isBlank(_jobDescription.text)) {
+          _jobDescription.text = text;
+        }
+      }, label: 'Extracting job details');
 
       if (mounted) {
         setState(() {});

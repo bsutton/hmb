@@ -89,19 +89,6 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
           ),
         ],
       ),
-      if (widget.isExtracting) ...[
-        const HMBSpacer(height: true),
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            SizedBox(
-              height: 16,
-              width: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ],
-        ),
-      ],
     ],
   );
 }
