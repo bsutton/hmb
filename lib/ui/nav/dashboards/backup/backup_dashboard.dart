@@ -204,7 +204,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     await WakelockPlus.enable();
     try {
       await _provider.performBackup(version: 1, src: AssetScriptSource());
+      final refreshedLastBackup = await _refreshLastBackup();
       if (mounted) {
+        setState(() => _lastBackup = refreshedLastBackup);
         HMBToast.info('Backup completed successfully.');
       }
     } catch (e) {
