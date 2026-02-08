@@ -106,7 +106,7 @@ You must set the Account Code and Item Code in System | Integration before you c
     final chargeableLines = invoiceLines.where(
       (line) => line.status == LineChargeableStatus.normal,
     );
-    final filteredLines = _suppressOffsettingLines(chargeableLines);
+    final filteredLines = await _suppressOffsettingLines(chargeableLines);
 
     final xeroInvoice = XeroInvoice(
       reference: job.summary,
@@ -128,61 +128,60 @@ You must set the Account Code and Item Code in System | Integration before you c
     return xeroInvoice;
   }
 
-  List<InvoiceLine> _suppressOffsettingLines(Iterable<InvoiceLine> lines) {
-    final positives = <String, List<InvoiceLine>>{};
-    final negatives = <String, List<InvoiceLine>>{};
-    final kept = <InvoiceLine>[];
-
-    for (final line in lines) {
-      if (line.lineTotal.isZero) {
-        continue;
-      }
-
-      final key = _offsetKey(line);
-      final isNegative = line.lineTotal.isNegative;
-      final oppositeMap = isNegative ? positives : negatives;
-      final sameMap = isNegative ? negatives : positives;
-      final opposite = oppositeMap[key];
-      if (opposite != null && opposite.isNotEmpty) {
-        opposite.removeLast();
-        continue;
-      }
-      sameMap.putIfAbsent(key, () => []).add(line);
-      kept.add(line);
+  Future<List<InvoiceLine>> _suppressOffsettingLines(
+    Iterable<InvoiceLine> lines,
+  ) async {
+    final lineList = lines.where((line) => !line.lineTotal.isZero).toList();
+    if (lineList.isEmpty) {
+      return lineList;
     }
 
-    return kept.where((line) {
-      final key = _offsetKey(line);
-      final isNegative = line.lineTotal.isNegative;
-      final map = isNegative ? negatives : positives;
-      final bucket = map[key];
-      if (bucket == null || bucket.isEmpty) {
-        return false;
-      }
-      final index = bucket.indexWhere((candidate) => candidate.id == line.id);
-      if (index == -1) {
-        return false;
-      }
-      bucket.removeAt(index);
-      return true;
-    }).toList();
-  }
+    final lineById = {for (final line in lineList) line.id: line};
+    final lineIds = lineById.keys.toList();
+    final billedTaskItems = await DaoTaskItem().getByInvoiceLineIds(lineIds);
+    final returnItems = billedTaskItems
+        .where((item) => item.isReturn && item.sourceTaskItemId != null)
+        .toList();
+    if (returnItems.isEmpty) {
+      return lineList;
+    }
 
-  String _offsetKey(InvoiceLine line) {
-    final absLineTotal = line.lineTotal.isNegative
-        ? (-line.lineTotal).minorUnits.toInt()
-        : line.lineTotal.minorUnits.toInt();
-    final absQty = line.quantity.compareTo(Fixed.zero) < 0
-        ? (-line.quantity).minorUnits.toInt()
-        : line.quantity.minorUnits.toInt();
-    final description = line.description
-        .replaceFirst(
-          RegExp(r'^(material:|returned:|tool hire:)\s*', caseSensitive: false),
-          '',
-        )
-        .trim()
-        .toLowerCase();
-    return '$description|$absLineTotal|$absQty';
+    final sourceIds = returnItems
+        .map((item) => item.sourceTaskItemId)
+        .whereType<int>()
+        .toSet()
+        .toList();
+    final sourceItems = await DaoTaskItem().getByIds(sourceIds);
+    final sourceById = {for (final source in sourceItems) source.id: source};
+    final suppressedLineIds = <int>{};
+
+    for (final returnItem in returnItems) {
+      final returnLineId = returnItem.invoiceLineId;
+      final sourceId = returnItem.sourceTaskItemId;
+      if (returnLineId == null || sourceId == null) {
+        continue;
+      }
+      final sourceItem = sourceById[sourceId];
+      final sourceLineId = sourceItem?.invoiceLineId;
+      if (sourceLineId == null) {
+        continue;
+      }
+      final sourceLine = lineById[sourceLineId];
+      final returnLine = lineById[returnLineId];
+      if (sourceLine == null || returnLine == null) {
+        continue;
+      }
+
+      if ((sourceLine.lineTotal + returnLine.lineTotal).isZero) {
+        suppressedLineIds
+          ..add(sourceLine.id)
+          ..add(returnLine.id);
+      }
+    }
+
+    return lineList
+        .where((line) => !suppressedLineIds.contains(line.id))
+        .toList();
   }
 
   XeroLineItem _toXeroLineItem(

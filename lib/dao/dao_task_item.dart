@@ -100,6 +100,34 @@ where ti.completed = 0
     );
   }
 
+  Future<List<TaskItem>> getByInvoiceLineIds(List<int> invoiceLineIds) async {
+    if (invoiceLineIds.isEmpty) {
+      return [];
+    }
+    final db = withoutTransaction();
+    final placeholders = List.filled(invoiceLineIds.length, '?').join(',');
+    final rows = await db.rawQuery('''
+SELECT ti.*
+  FROM task_item ti
+ WHERE ti.invoice_line_id IN ($placeholders)
+''', invoiceLineIds);
+    return toList(rows);
+  }
+
+  Future<List<TaskItem>> getByIds(List<int> ids) async {
+    if (ids.isEmpty) {
+      return [];
+    }
+    final db = withoutTransaction();
+    final placeholders = List.filled(ids.length, '?').join(',');
+    final rows = await db.rawQuery('''
+SELECT ti.*
+  FROM task_item ti
+ WHERE ti.id IN ($placeholders)
+''', ids);
+    return toList(rows);
+  }
+
   /// Get items that need to be packed.
   Future<List<TaskItem>> getPackingItems({
     required bool showPreScheduledJobs,
@@ -352,10 +380,18 @@ SELECT ti.*
     await insert(returnItem);
   }
 
-  /// True if the passsed [taskItemId] has been returned.
+  /// True if a return TaskItem exists whose source points to [taskItemId].
   Future<bool> wasReturned(int taskItemId) async {
-    final taskItem = await DaoTaskItem().getById(taskItemId);
-
-    return taskItem?.sourceTaskItemId != null;
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+SELECT 1
+  FROM task_item
+ WHERE source_task_item_id = ?
+ LIMIT 1
+''',
+      [taskItemId],
+    );
+    return rows.isNotEmpty;
   }
 }
