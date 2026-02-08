@@ -1,5 +1,5 @@
 import 'package:path/path.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart' show getDatabasesPath;
+import 'package:path_provider/path_provider.dart';
 
 Future<String> pathToDatabase(String dbFilename) async =>
-    join(await getDatabasesPath(), dbFilename);
+    join((await getApplicationDocumentsDirectory()).path, dbFilename);

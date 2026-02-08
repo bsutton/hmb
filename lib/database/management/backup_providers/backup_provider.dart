@@ -24,7 +24,7 @@ import '../../factory/hmb_database_factory.dart';
 import '../../versions/script_source.dart';
 import '../database_helper.dart';
 import 'backup.dart';
-import 'db_path.dart' if (dart.library.io) 'db_path.io.dart';
+import 'db_path.io.dart' if (dart.library.ui) 'db_path.dart';
 import 'progress_update.dart';
 import 'zip_isolate.dart';
 
