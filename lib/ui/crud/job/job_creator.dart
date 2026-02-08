@@ -50,6 +50,7 @@ class _JobCreatorState extends State<JobCreator> {
   final _jobSummary = TextEditingController();
   final _jobDescription = TextEditingController();
   final _taskControllers = <TextEditingController>[];
+  var _pasteMessage = '';
 
   var _creating = false;
   var _extracting = false;
@@ -224,10 +225,65 @@ class _JobCreatorState extends State<JobCreator> {
     setState(() {
       _existingContacts = contacts;
       _existingSites = sites;
-      _selectedExistingContact = contacts.isEmpty ? null : contacts.first;
+      _selectedExistingContact = _pickBestMatchingContact(contacts);
       _selectedExistingSite = sites.isEmpty ? null : sites.first;
     });
   }
+
+  Contact? _pickBestMatchingContact(List<Contact> contacts) {
+    if (contacts.isEmpty) {
+      return null;
+    }
+
+    final normalizedEmail = _normalize(_email.text);
+    if (normalizedEmail.isNotEmpty) {
+      final emailMatch = contacts.firstWhere(
+        (contact) => _normalize(contact.emailAddress) == normalizedEmail,
+        orElse: () => contacts.first,
+      );
+      if (_normalize(emailMatch.emailAddress) == normalizedEmail) {
+        return emailMatch;
+      }
+    }
+
+    final normalizedMobile = _normalizedDigits(_mobileNo.text);
+    if (normalizedMobile.isNotEmpty) {
+      final mobileMatch = contacts.firstWhere(
+        (contact) =>
+            _normalizedDigits(contact.mobileNumber) == normalizedMobile,
+        orElse: () => contacts.first,
+      );
+      if (_normalizedDigits(mobileMatch.mobileNumber) == normalizedMobile) {
+        return mobileMatch;
+      }
+    }
+
+    final normalizedFirst = _normalize(_firstName.text);
+    final normalizedSurname = _normalize(_surname.text);
+    if (normalizedFirst.isNotEmpty || normalizedSurname.isNotEmpty) {
+      final nameMatch = contacts.firstWhere(
+        (contact) =>
+            _normalize(contact.firstName) == normalizedFirst &&
+            _normalize(contact.surname) == normalizedSurname,
+        orElse: () => contacts.first,
+      );
+      final firstMatches =
+          _normalize(nameMatch.firstName) == normalizedFirst &&
+          normalizedFirst.isNotEmpty;
+      final surnameMatches =
+          _normalize(nameMatch.surname) == normalizedSurname &&
+          normalizedSurname.isNotEmpty;
+      if (firstMatches || surnameMatches) {
+        return nameMatch;
+      }
+    }
+
+    return contacts.first;
+  }
+
+  String _normalize(String value) => value.trim().toLowerCase();
+
+  String _normalizedDigits(String value) => value.replaceAll(RegExp(r'\D'), '');
 
   Future<bool> _onExtract(String text) async {
     if (_extracting) {
@@ -569,6 +625,8 @@ class _ExtractAndMatchStep extends WizardStep {
       child: HMBColumn(
         children: [
           CustomerPastePanel(
+            initialMessage: state._pasteMessage,
+            onChanged: (value) => state._pasteMessage = value,
             onExtract: (text) async {
               final ok = await state._onExtract(text);
               if (ok) {

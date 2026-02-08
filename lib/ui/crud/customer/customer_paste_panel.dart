@@ -10,10 +10,14 @@ import '../../widgets/widgets.g.dart';
 
 class CustomerPastePanel extends StatefulWidget {
   final void Function(String) onExtract;
+  final void Function(String)? onChanged;
+  final String? initialMessage;
   final bool isExtracting;
 
   const CustomerPastePanel({
     required this.onExtract,
+    this.onChanged,
+    this.initialMessage,
     super.key,
     this.isExtracting = false,
   });
@@ -27,6 +31,11 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
 
   @override
   Future<void> asyncInitState() async {
+    if (widget.initialMessage != null) {
+      controller.text = widget.initialMessage!;
+      return;
+    }
+
     final String clipboardText;
     if (await clipboardHasText()) {
       clipboardText = await clipboardGetText();
@@ -55,6 +64,7 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
                 return;
               }
               controller.text = await clipboardGetText();
+              widget.onChanged?.call(controller.text);
             },
             hint: 'Paste data from the clipboard',
             enabled: !widget.isExtracting,
@@ -65,6 +75,7 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
                 return;
               }
               controller.text = '';
+              widget.onChanged?.call(controller.text);
             },
             hint: 'Clear the message field',
             enabled: !widget.isExtracting,
@@ -75,6 +86,7 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
         controller: controller,
         maxLines: 8,
         labelText: 'Paste Message (sms or email) here',
+        onChanged: (value) => widget.onChanged?.call(value ?? ''),
       ),
       const HMBSpacer(height: true),
       Row(
