@@ -73,10 +73,9 @@ class LowerCaseTextFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     final lower = newValue.text.toLowerCase();
-    return newValue.copyWith(
-      text: lower,
-      // preserve the cursor position at the end of the new text
-      selection: TextSelection.collapsed(offset: lower.length),
-    );
+    if (lower == newValue.text) {
+      return newValue;
+    }
+    return newValue.copyWith(text: lower);
   }
 }
