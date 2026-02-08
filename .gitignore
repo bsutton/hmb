@@ -61,3 +61,5 @@ android/app/.cxx
 database/*
 error.txt
 logs/analyzer.txt
+build.err
+.env
