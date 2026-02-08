@@ -6,8 +6,8 @@ void main() {
   group('LowerCaseTextFormatter', () {
     test('preserves cursor selection when lower-casing', () {
       final formatter = LowerCaseTextFormatter();
-      final oldValue = const TextEditingValue(text: 'test@example.com');
-      final newValue = const TextEditingValue(
+      const oldValue = TextEditingValue(text: 'test@example.com');
+      const newValue = TextEditingValue(
         text: 'Test@example.com',
         selection: TextSelection.collapsed(offset: 1),
       );
@@ -21,8 +21,8 @@ void main() {
 
     test('returns unchanged value when already lowercase', () {
       final formatter = LowerCaseTextFormatter();
-      final oldValue = const TextEditingValue(text: 'test@example.com');
-      final newValue = const TextEditingValue(
+      const oldValue = TextEditingValue(text: 'test@example.com');
+      const newValue = TextEditingValue(
         text: 'test@example.com',
         selection: TextSelection.collapsed(offset: 2),
       );
