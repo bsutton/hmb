@@ -146,14 +146,21 @@ class SurfaceCardWithActions extends StatelessWidget {
     child: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HMBRow(
-          children: [
-            Expanded(child: HMBTextHeadline2(title)),
-            ...actions,
-          ],
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 8),
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: HMBColors.textPrimary,
+              fontSize: HMBTextHeadline2.fontSize,
+              fontWeight: FontWeight.w500,
+            ),
+            softWrap: true,
+          ),
         ),
-
-        body,
+        Expanded(child: body),
+        if (actions.isNotEmpty)
+          HMBRow(mainAxisAlignment: MainAxisAlignment.end, children: actions),
       ],
     ),
   );
