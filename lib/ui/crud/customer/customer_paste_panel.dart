@@ -73,7 +73,7 @@ class _CustomerPastePanelState extends DeferredState<CustomerPastePanel> {
       ),
       HMBTextArea(
         controller: controller,
-        maxLines: 4,
+        maxLines: 8,
         labelText: 'Paste Message (sms or email) here',
       ),
       const HMBSpacer(height: true),

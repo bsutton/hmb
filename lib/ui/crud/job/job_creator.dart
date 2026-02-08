@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:money2/money2.dart';
@@ -36,8 +37,6 @@ class JobCreator extends StatefulWidget {
 }
 
 class _JobCreatorState extends State<JobCreator> {
-  final _formKey = GlobalKey<FormState>();
-
   final _firstName = TextEditingController();
   final _surname = TextEditingController();
   final _mobileNo = TextEditingController();
@@ -54,9 +53,27 @@ class _JobCreatorState extends State<JobCreator> {
 
   var _creating = false;
   var _extracting = false;
-  var _useExistingContact = true;
   Customer? _selectedCustomer;
   List<_CustomerMatch> _matches = [];
+  List<Contact> _existingContacts = [];
+  List<Site> _existingSites = [];
+  Contact? _selectedExistingContact;
+  Site? _selectedExistingSite;
+  late final List<WizardStep> _steps;
+  late final _CustomerStep _customerStep;
+
+  @override
+  void initState() {
+    super.initState();
+    _customerStep = _CustomerStep(this);
+    _steps = [
+      _ExtractAndMatchStep(this),
+      _customerStep,
+      _ContactStep(this),
+      _AddressStep(this),
+      _JobStep(this),
+    ];
+  }
 
   @override
   void dispose() {
@@ -79,116 +96,44 @@ class _JobCreatorState extends State<JobCreator> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    insetPadding: const EdgeInsets.all(6),
-    title: const Text('Create Job'),
-    content: SingleChildScrollView(
-      child: SizedBox(
-        width: double.maxFinite,
-        child: HMBColumn(
-          children: [
-            CustomerPastePanel(
-              onExtract: _onExtract,
-              isExtracting: _extracting,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface =
+        theme.dialogTheme.backgroundColor ?? theme.colorScheme.surface;
+
+    return AlertDialog(
+      insetPadding: const EdgeInsets.all(10),
+      contentPadding: const EdgeInsets.all(8),
+      title: const Text('Create Job Wizard'),
+      content: Theme(
+        data: theme.copyWith(
+          canvasColor: surface,
+          cardColor: surface,
+          scaffoldBackgroundColor: surface,
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: theme.dividerColor.withValues(alpha: 0.35),
             ),
-            if (_matches.isNotEmpty) ...[
-              const HMBSpacer(height: true),
-              _buildExistingCustomerPicker(),
-            ],
-            const HMBSpacer(height: true),
-            Form(
-              key: _formKey,
-              child: HMBColumn(
-                children: [
-                  HMBTextField(
-                    controller: _customerName,
-                    labelText: 'Customer Name',
-                    textCapitalization: TextCapitalization.words,
-                    enabled: _selectedCustomer == null,
-                    required: _selectedCustomer == null,
-                  ),
-                  HMBTextField(
-                    controller: _firstName,
-                    labelText: 'First Name',
-                    textCapitalization: TextCapitalization.words,
-                  ),
-                  HMBTextField(
-                    controller: _surname,
-                    labelText: 'Surname',
-                    textCapitalization: TextCapitalization.words,
-                  ),
-                  HMBPhoneField(
-                    controller: _mobileNo,
-                    labelText: 'Mobile No.',
-                    sourceContext: SourceContext(),
-                  ),
-                  HMBEmailField(controller: _email, labelText: 'Email Address'),
-                  HMBTextField(
-                    controller: _addressLine1,
-                    labelText: 'Address Line 1',
-                    textCapitalization: TextCapitalization.words,
-                  ),
-                  HMBTextField(
-                    controller: _addressLine2,
-                    labelText: 'Address Line 2',
-                    textCapitalization: TextCapitalization.words,
-                  ),
-                  HMBTextField(
-                    controller: _suburb,
-                    labelText: 'Suburb',
-                    textCapitalization: TextCapitalization.words,
-                  ),
-                  HMBTextField(
-                    controller: _state,
-                    labelText: 'State',
-                    textCapitalization: TextCapitalization.words,
-                  ),
-                  HMBTextField(
-                    controller: _postcode,
-                    labelText: 'Postcode',
-                    textCapitalization: TextCapitalization.characters,
-                  ),
-                  const HMBSpacer(height: true),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: HMBTextField(
-                          controller: _jobSummary,
-                          labelText: 'Job Summary',
-                          required: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                  TextFormField(
-                    controller: _jobDescription,
-                    decoration: const InputDecoration(
-                      labelText: 'Job Description',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 5,
-                  ),
-                  const HMBSpacer(height: true),
-                  _buildTaskList(),
-                ],
+          ),
+          child: SizedBox(
+            width: math.min(MediaQuery.of(context).size.width * 0.92, 980),
+            height: math.min(MediaQuery.of(context).size.height * 0.82, 760),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Wizard(
+                initialSteps: _steps,
+                onFinished: _onWizardFinished,
               ),
             ),
-          ],
+          ),
         ),
       ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
-      ),
-      HMBButtonPrimary(
-        label: 'Create Job',
-        hint: 'Create a job from this booking request',
-        onPressed: _creating ? null : _createEntities,
-      ),
-    ],
-  );
+    );
+  }
 
   Widget _buildTaskList() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,16 +179,25 @@ class _JobCreatorState extends State<JobCreator> {
     onChanged: (value) {
       setState(() {
         _selectedCustomer = value;
-        _useExistingContact = value != null;
         if (value != null) {
           _customerName.text = value.name;
+          unawaited(_loadExistingCustomerDetails(value));
+        } else {
+          _existingContacts = [];
+          _existingSites = [];
+          _selectedExistingContact = null;
+          _selectedExistingSite = null;
         }
       });
     },
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Existing customer matches'),
+        Text(
+          _matches.isEmpty
+              ? 'No existing matches found'
+              : 'Existing customer matches',
+        ),
         ..._matches.map(
           (match) => RadioListTile<Customer?>(
             title: Text(match.customer.name),
@@ -255,25 +209,36 @@ class _JobCreatorState extends State<JobCreator> {
           title: Text('Create new customer'),
           value: null,
         ),
-        if (_selectedCustomer != null)
-          SwitchListTile(
-            title: const Text('Use existing primary contact'),
-            value: _useExistingContact,
-            onChanged: (value) => setState(() => _useExistingContact = value),
-          ),
       ],
     ),
   );
 
-  Future<void> _onExtract(String text) async {
-    if (_extracting) {
+  Future<void> _loadExistingCustomerDetails(Customer customer) async {
+    final daoContact = DaoContact();
+    final daoSite = DaoSite();
+    final contacts = await daoContact.getByCustomer(customer.id);
+    final sites = await daoSite.getByCustomer(customer.id);
+    if (!mounted || _selectedCustomer?.id != customer.id) {
       return;
+    }
+    setState(() {
+      _existingContacts = contacts;
+      _existingSites = sites;
+      _selectedExistingContact = contacts.isEmpty ? null : contacts.first;
+      _selectedExistingSite = sites.isEmpty ? null : sites.first;
+    });
+  }
+
+  Future<bool> _onExtract(String text) async {
+    if (_extracting) {
+      return false;
     }
     if (Strings.isBlank(text)) {
       HMBToast.info('Paste a message to extract job details.');
-      return;
+      return false;
     }
 
+    var extracted = false;
     setState(() => _extracting = true);
     try {
       await BlockingUI().runAndWait(() async {
@@ -313,6 +278,7 @@ class _JobCreatorState extends State<JobCreator> {
         }
 
         await _loadMatches(parsedCustomer);
+        extracted = true;
       }, label: 'Extracting job details');
 
       if (mounted) {
@@ -325,6 +291,7 @@ class _JobCreatorState extends State<JobCreator> {
         setState(() => _extracting = false);
       }
     }
+    return extracted;
   }
 
   Future<void> _generateSummaryAndTasks(String text) async {
@@ -351,6 +318,36 @@ class _JobCreatorState extends State<JobCreator> {
         _taskControllers.add(TextEditingController(text: task));
       }
     }
+  }
+
+  Future<void> _onWizardFinished(WizardCompletionReason reason) async {
+    if (!mounted) {
+      return;
+    }
+    switch (reason) {
+      case WizardCompletionReason.completed:
+        final job = await _createEntities();
+        if (job != null && mounted) {
+          Navigator.of(context).pop(job);
+        }
+        return;
+      case WizardCompletionReason.cancelled:
+      case WizardCompletionReason.backedOut:
+        Navigator.of(context).pop();
+        return;
+    }
+  }
+
+  bool _canCreate() {
+    if (_selectedCustomer == null && Strings.isBlank(_customerName.text)) {
+      HMBToast.error('Please enter a customer name.');
+      return false;
+    }
+    if (Strings.isBlank(_jobSummary.text)) {
+      HMBToast.error('Please enter a job summary.');
+      return false;
+    }
+    return true;
   }
 
   Future<void> _loadMatches(ParsedCustomer parsedCustomer) async {
@@ -403,14 +400,17 @@ class _JobCreatorState extends State<JobCreator> {
       if (_selectedCustomer != null &&
           !_matches.any((m) => m.customer.id == _selectedCustomer!.id)) {
         _selectedCustomer = null;
-        _useExistingContact = true;
+        _existingContacts = [];
+        _existingSites = [];
+        _selectedExistingContact = null;
+        _selectedExistingSite = null;
       }
     });
   }
 
-  Future<void> _createEntities() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  Future<Job?> _createEntities() async {
+    if (_creating || !_canCreate()) {
+      return null;
     }
 
     setState(() => _creating = true);
@@ -431,27 +431,8 @@ class _JobCreatorState extends State<JobCreator> {
       await daoCustomer.withTransaction((transaction) async {
         if (_selectedCustomer != null) {
           customer = _selectedCustomer!;
-          if (_useExistingContact) {
-            contact = await daoContact.getPrimaryForCustomer(
-              customer.id,
-              transaction,
-            );
-            if (contact == null) {
-              contact = Contact.forInsert(
-                firstName: _firstName.text,
-                surname: _surname.text,
-                mobileNumber: _mobileNo.text,
-                landLine: '',
-                officeNumber: '',
-                emailAddress: _email.text,
-              );
-              await daoContact.insert(contact!, transaction);
-              await DaoContactCustomer().insertJoin(
-                contact!,
-                customer,
-                transaction,
-              );
-            }
+          if (_selectedExistingContact != null) {
+            contact = _selectedExistingContact;
           } else {
             contact = Contact.forInsert(
               firstName: _firstName.text,
@@ -495,7 +476,9 @@ class _JobCreatorState extends State<JobCreator> {
           );
         }
 
-        if (!_isAddressEmpty()) {
+        if (_selectedCustomer != null && _selectedExistingSite != null) {
+          site = _selectedExistingSite;
+        } else if (!_isAddressEmpty()) {
           site = Site.forInsert(
             addressLine1: _addressLine1.text,
             addressLine2: _addressLine2.text,
@@ -547,7 +530,7 @@ class _JobCreatorState extends State<JobCreator> {
       });
 
       if (mounted) {
-        Navigator.of(context).pop(job);
+        return job;
       }
     } catch (e) {
       HMBToast.error('Failed to create job: $e');
@@ -556,6 +539,7 @@ class _JobCreatorState extends State<JobCreator> {
         setState(() => _creating = false);
       }
     }
+    return null;
   }
 
   bool _isAddressEmpty() =>
@@ -571,4 +555,269 @@ class _CustomerMatch {
   final Contact? contact;
 
   const _CustomerMatch({required this.customer, this.contact});
+}
+
+class _ExtractAndMatchStep extends WizardStep {
+  final _JobCreatorState state;
+
+  _ExtractAndMatchStep(this.state) : super(title: 'Extract');
+
+  @override
+  Widget build(BuildContext context) => Material(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: HMBColumn(
+        children: [
+          CustomerPastePanel(
+            onExtract: (text) async {
+              final ok = await state._onExtract(text);
+              if (ok) {
+                await wizardState?.jumpToStep(
+                  state._customerStep,
+                  userOriginated: false,
+                );
+              }
+            },
+            isExtracting: state._extracting,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _CustomerStep extends WizardStep {
+  final _JobCreatorState state;
+
+  _CustomerStep(this.state) : super(title: 'Customer');
+
+  @override
+  Widget build(BuildContext context) => Material(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: HMBColumn(
+        children: [
+          state._buildExistingCustomerPicker(),
+          const HMBSpacer(height: true),
+          HMBTextField(
+            controller: state._customerName,
+            labelText: 'Customer Name',
+            textCapitalization: TextCapitalization.words,
+            enabled: state._selectedCustomer == null,
+            required: state._selectedCustomer == null,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _ContactStep extends WizardStep {
+  final _JobCreatorState state;
+
+  _ContactStep(this.state) : super(title: 'Contact');
+
+  @override
+  Widget build(BuildContext context) => Material(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: HMBColumn(
+        children: [
+          if (state._selectedCustomer != null) ...[
+            RadioGroup<Contact?>(
+              groupValue: state._selectedExistingContact,
+              onChanged: (value) => setState(() {
+                state._selectedExistingContact = value;
+                if (value != null) {
+                  state._firstName.text = value.firstName;
+                  state._surname.text = value.surname;
+                  state._mobileNo.text = value.mobileNumber;
+                  state._email.text = value.emailAddress;
+                }
+              }),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    state._existingContacts.isEmpty
+                        ? 'No existing contacts found'
+                        : 'Existing contacts',
+                  ),
+                  ...state._existingContacts.map(
+                    (contact) => RadioListTile<Contact?>(
+                      title: Text(
+                        '${contact.firstName} ${contact.surname}'.trim(),
+                      ),
+                      subtitle: Text(
+                        contact.emailAddress.isEmpty
+                            ? (contact.mobileNumber.isEmpty
+                                  ? 'No details'
+                                  : contact.mobileNumber)
+                            : contact.emailAddress,
+                      ),
+                      value: contact,
+                    ),
+                  ),
+                  const RadioListTile<Contact?>(
+                    title: Text('Create new contact'),
+                    value: null,
+                  ),
+                ],
+              ),
+            ),
+            const HMBSpacer(height: true),
+          ],
+          HMBTextField(
+            controller: state._firstName,
+            labelText: 'First Name',
+            textCapitalization: TextCapitalization.words,
+            enabled: state._selectedExistingContact == null,
+          ),
+          HMBTextField(
+            controller: state._surname,
+            labelText: 'Surname',
+            textCapitalization: TextCapitalization.words,
+            enabled: state._selectedExistingContact == null,
+          ),
+          IgnorePointer(
+            ignoring: state._selectedExistingContact != null,
+            child: HMBPhoneField(
+              controller: state._mobileNo,
+              labelText: 'Mobile No.',
+              sourceContext: SourceContext(),
+            ),
+          ),
+          IgnorePointer(
+            ignoring: state._selectedExistingContact != null,
+            child: HMBEmailField(
+              controller: state._email,
+              labelText: 'Email Address',
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _AddressStep extends WizardStep {
+  final _JobCreatorState state;
+
+  _AddressStep(this.state) : super(title: 'Address');
+
+  @override
+  Widget build(BuildContext context) => Material(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: HMBColumn(
+        children: [
+          if (state._selectedCustomer != null) ...[
+            RadioGroup<Site?>(
+              groupValue: state._selectedExistingSite,
+              onChanged: (value) => setState(() {
+                state._selectedExistingSite = value;
+                if (value != null) {
+                  state._addressLine1.text = value.addressLine1;
+                  state._addressLine2.text = value.addressLine2;
+                  state._suburb.text = value.suburb;
+                  state._state.text = value.state;
+                  state._postcode.text = value.postcode;
+                }
+              }),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    state._existingSites.isEmpty
+                        ? 'No existing sites found'
+                        : 'Existing sites',
+                  ),
+                  ...state._existingSites.map(
+                    (site) => RadioListTile<Site?>(
+                      title: Text(site.addressLine1),
+                      subtitle: Text(
+                        Strings.join(
+                          [site.suburb, site.state, site.postcode],
+                          separator: ' ',
+                          excludeEmpty: true,
+                        ),
+                      ),
+                      value: site,
+                    ),
+                  ),
+                  const RadioListTile<Site?>(
+                    title: Text('Create new site'),
+                    value: null,
+                  ),
+                ],
+              ),
+            ),
+            const HMBSpacer(height: true),
+          ],
+          HMBTextField(
+            controller: state._addressLine1,
+            labelText: 'Address Line 1',
+            textCapitalization: TextCapitalization.words,
+            enabled: state._selectedExistingSite == null,
+          ),
+          HMBTextField(
+            controller: state._addressLine2,
+            labelText: 'Address Line 2',
+            textCapitalization: TextCapitalization.words,
+            enabled: state._selectedExistingSite == null,
+          ),
+          HMBTextField(
+            controller: state._suburb,
+            labelText: 'Suburb',
+            textCapitalization: TextCapitalization.words,
+            enabled: state._selectedExistingSite == null,
+          ),
+          HMBTextField(
+            controller: state._state,
+            labelText: 'State',
+            textCapitalization: TextCapitalization.words,
+            enabled: state._selectedExistingSite == null,
+          ),
+          HMBTextField(
+            controller: state._postcode,
+            labelText: 'Postcode',
+            textCapitalization: TextCapitalization.characters,
+            enabled: state._selectedExistingSite == null,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _JobStep extends WizardStep {
+  final _JobCreatorState state;
+
+  _JobStep(this.state) : super(title: 'Job');
+
+  @override
+  Widget build(BuildContext context) => Material(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: HMBColumn(
+        children: [
+          HMBTextField(
+            controller: state._jobSummary,
+            labelText: 'Job Summary',
+            required: true,
+          ),
+          TextFormField(
+            controller: state._jobDescription,
+            decoration: const InputDecoration(
+              labelText: 'Job Description',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 5,
+          ),
+          const HMBSpacer(height: true),
+          state._buildTaskList(),
+        ],
+      ),
+    ),
+  );
 }
