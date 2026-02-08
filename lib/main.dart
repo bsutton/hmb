@@ -43,11 +43,7 @@ final _rootNavKey = GlobalKey<NavigatorState>();
 
 Future<void> main(List<String> args) async {
   Log.configure('.');
-
-  // grab package info for logging
-  final packageInfo = await PackageInfo.fromPlatform();
-  Log.i('Package Name: ${packageInfo.packageName}');
-
+  WidgetsFlutterBinding.ensureInitialized();
   // initialize Sentry
   await SentryFlutter.init(
     (options) {
@@ -59,9 +55,12 @@ Future<void> main(List<String> args) async {
       options.replay.sessionSampleRate = 1.0;
       options.replay.onErrorSampleRate = 1.0;
     },
-    appRunner: () {
+    appRunner: () async {
       // ensure Flutter binding in the same zone as runApp
       SentryWidgetsFlutterBinding.ensureInitialized();
+      // grab package info for logging
+      final packageInfo = await PackageInfo.fromPlatform();
+      Log.i('Package Name: ${packageInfo.packageName}');
       runApp(
         DevicePreview(
           // ignore: avoid_redundant_argument_values
