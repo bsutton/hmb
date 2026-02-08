@@ -15,6 +15,7 @@ import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../api/xero/models/xero_invoice.dart';
+import '../api/xero/models/xero_line_item.dart';
 import '../dao/dao.g.dart';
 import '../util/dart/exceptions.dart';
 import '../util/dart/local_date.dart';
@@ -102,6 +103,10 @@ You must set the Account Code and Item Code in System | Integration before you c
     final xeroContact = contact.toXeroContact();
 
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
+    final chargeableLines = invoiceLines.where(
+      (line) => line.status == LineChargeableStatus.normal,
+    );
+    final filteredLines = _suppressOffsettingLines(chargeableLines);
 
     final xeroInvoice = XeroInvoice(
       reference: job.summary,
@@ -109,10 +114,10 @@ You must set the Account Code and Item Code in System | Integration before you c
       contact: xeroContact,
       issueDate: LocalDate.fromDateTime(invoice.createdDate),
       dueDate: invoice.dueDate,
-      lineItems: invoiceLines
-          .where((line) => line.status == LineChargeableStatus.normal)
+      lineItems: filteredLines
           .map(
-            (line) => line.toXeroLineItem(
+            (line) => _toXeroLineItem(
+              line,
               accountCode: system.invoiceLineRevenueAccountCode!,
               itemCode: system.invoiceLineInventoryItemCode!,
             ),
@@ -121,6 +126,92 @@ You must set the Account Code and Item Code in System | Integration before you c
       lineAmountTypes: 'Inclusive',
     ); // All amounts are inclusive of tax.
     return xeroInvoice;
+  }
+
+  List<InvoiceLine> _suppressOffsettingLines(Iterable<InvoiceLine> lines) {
+    final positives = <String, List<InvoiceLine>>{};
+    final negatives = <String, List<InvoiceLine>>{};
+    final kept = <InvoiceLine>[];
+
+    for (final line in lines) {
+      if (line.lineTotal.isZero) {
+        continue;
+      }
+
+      final key = _offsetKey(line);
+      final isNegative = line.lineTotal.isNegative;
+      final oppositeMap = isNegative ? positives : negatives;
+      final sameMap = isNegative ? negatives : positives;
+      final opposite = oppositeMap[key];
+      if (opposite != null && opposite.isNotEmpty) {
+        opposite.removeLast();
+        continue;
+      }
+      sameMap.putIfAbsent(key, () => []).add(line);
+      kept.add(line);
+    }
+
+    return kept.where((line) {
+      final key = _offsetKey(line);
+      final isNegative = line.lineTotal.isNegative;
+      final map = isNegative ? negatives : positives;
+      final bucket = map[key];
+      if (bucket == null || bucket.isEmpty) {
+        return false;
+      }
+      final index = bucket.indexWhere((candidate) => candidate.id == line.id);
+      if (index == -1) {
+        return false;
+      }
+      bucket.removeAt(index);
+      return true;
+    }).toList();
+  }
+
+  String _offsetKey(InvoiceLine line) {
+    final absLineTotal = line.lineTotal.isNegative
+        ? (-line.lineTotal).minorUnits.toInt()
+        : line.lineTotal.minorUnits.toInt();
+    final absQty = line.quantity.compareTo(Fixed.zero) < 0
+        ? (-line.quantity).minorUnits.toInt()
+        : line.quantity.minorUnits.toInt();
+    final description = line.description
+        .replaceFirst(
+          RegExp(r'^(material:|returned:|tool hire:)\s*', caseSensitive: false),
+          '',
+        )
+        .trim()
+        .toLowerCase();
+    return '$description|$absLineTotal|$absQty';
+  }
+
+  XeroLineItem _toXeroLineItem(
+    InvoiceLine line, {
+    required String accountCode,
+    required String itemCode,
+  }) {
+    var quantity = line.quantity;
+    if (quantity.compareTo(Fixed.zero) < 0) {
+      quantity = -quantity;
+    }
+
+    var unitAmount = line.unitPrice;
+    if (line.lineTotal.isNegative) {
+      if (!unitAmount.isNegative) {
+        unitAmount = -unitAmount;
+      }
+    } else if (unitAmount.isNegative) {
+      unitAmount = -unitAmount;
+    }
+
+    return XeroLineItem(
+      description: line.description,
+      quantity: quantity,
+      unitAmount: unitAmount,
+      lineTotal: line.lineTotal,
+      accountCode: accountCode,
+      itemCode: itemCode,
+    );
   }
 
   /// true if the invoice has been uploaded to the external
