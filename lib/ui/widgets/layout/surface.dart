@@ -155,6 +155,8 @@ class SurfaceCardWithActions extends StatelessWidget {
               fontSize: HMBTextHeadline2.fontSize,
               fontWeight: FontWeight.w500,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             softWrap: true,
           ),
         ),
