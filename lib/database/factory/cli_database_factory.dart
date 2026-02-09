@@ -19,7 +19,7 @@ import 'hmb_database_factory.dart' as local;
 
 class CliDatabaseFactory implements local.HMBDatabaseFactory {
   static CliDatabaseFactory? instance;
-  
+
   factory CliDatabaseFactory() {
     if (instance == null) {
       instance = CliDatabaseFactory._();

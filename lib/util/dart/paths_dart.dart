@@ -17,7 +17,8 @@
 /// flutter or cli.
 library;
 
-import 'package:dcli/dcli.dart';
+import 'package:dcli_core/dcli_core.dart';
+
 
 typedef Path = String;
 

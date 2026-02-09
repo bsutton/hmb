@@ -1,4 +1,13 @@
 [
+  "assets/sql/upgrade_scripts/v144.sql",
+  "assets/sql/upgrade_scripts/v143.sql",
+  "assets/sql/upgrade_scripts/v142.sql",
+  "assets/sql/upgrade_scripts/v141.sql",
+  "assets/sql/upgrade_scripts/v140.sql",
+  "assets/sql/upgrade_scripts/v139.sql",
+  "assets/sql/upgrade_scripts/v138.sql",
+  "assets/sql/upgrade_scripts/v137.sql",
+  "assets/sql/upgrade_scripts/v136.sql",
   "assets/sql/upgrade_scripts/v135.sql",
   "assets/sql/upgrade_scripts/v134.sql",
   "assets/sql/upgrade_scripts/v133.sql",

@@ -6,6 +6,9 @@ dependency_overrides:
   fsm2:
     path: ../fsm2
 
+  flutter_timezone:
+    path: ../flutter_timezone
+
   # money:
   #   path: ../money2
 

@@ -84,7 +84,6 @@ class HMBJobSiteText extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
     waitingBuilder: (_) => const HMBPlaceHolder(height: 32),
-    // ignore: discarded_futures
     future: DaoSite().getByJob(job),
     builder: (context, site) =>
         HMBSiteText(label: label, site: site, onMapClicked: onMapClicked),

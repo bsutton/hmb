@@ -13,6 +13,7 @@
 
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
+import 'package:strings/strings.dart';
 
 import '../../../dao/dao_contact.dart';
 import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
@@ -58,8 +59,19 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
   }
 
   /// Fetch all contacts for the given customer.
-  Future<List<Contact>> _getContacts(String? filter) =>
-      DaoContact().getByCustomer(widget.customer?.id);
+  Future<List<Contact>> _getContacts(String? filter) async {
+    final contacts = await DaoContact().getByCustomer(widget.customer?.id);
+    if (Strings.isBlank(filter)) {
+      return contacts;
+    }
+    final search = filter!.trim().toLowerCase();
+    return contacts.where((contact) {
+      final fullName = '${contact.firstName} ${contact.surname}'.toLowerCase();
+      return fullName.contains(search) ||
+          contact.emailAddress.toLowerCase().contains(search) ||
+          contact.mobileNumber.toLowerCase().contains(search);
+    }).toList();
+  }
 
   /// Called when a contact is selected from the droplist.
   void _onContactChanged(Contact? newValue) {
@@ -92,7 +104,6 @@ class HMBSelectContactState extends DeferredState<HMBSelectContact> {
     }
   }
 
-  @override
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,

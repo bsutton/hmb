@@ -137,7 +137,6 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
   Widget build(BuildContext context) => NestedEntityEditScreen<TimeEntry, Task>(
     entityName: 'Time Entry',
     dao: DaoTimeEntry(),
-    // ignore: discarded_futures
     onInsert: (timeEntry, transaction) =>
         DaoTimeEntry().insert(timeEntry!, transaction),
     entityState: this,

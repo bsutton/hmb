@@ -137,7 +137,6 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     builder: (context) => JuneBuilder(
       SelectedCustomer.new,
       builder: (selectedCustomer) => FutureBuilderEx<Customer?>(
-        // ignore: discarded_futures
         future: DaoCustomer().getById(selectedCustomer.customerId),
         builder: (context, customer) => EntityEditScreen<Job>(
           entityName: 'Job',

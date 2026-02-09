@@ -82,8 +82,11 @@ and sc.`primary` = 1''',
     return fromMap(data.first);
   }
 
-  Future<List<Site>> getByCustomer(int? customerId) async {
-    final db = withoutTransaction();
+  Future<List<Site>> getByCustomer(
+    int? customerId, [
+    Transaction? transaction,
+  ]) async {
+    final db = withinTransaction(transaction);
 
     if (customerId == null) {
       return [];
@@ -105,14 +108,18 @@ where cu.id =?
   }
 
   /// search for Sites given a user supplied filter string.
-  Future<List<Site>> getByFilter(int? customerId, String? filter) async {
-    final db = withoutTransaction();
+  Future<List<Site>> getByFilter(
+    int? customerId,
+    String? filter, [
+    Transaction? transaction,
+  ]) async {
+    final db = withinTransaction(transaction);
 
     if (customerId == null) {
       return [];
     }
     if (Strings.isBlank(filter)) {
-      return getByCustomer(customerId);
+      return getByCustomer(customerId, transaction);
     }
 
     final likeArg = '''%$filter%''';

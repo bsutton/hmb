@@ -22,7 +22,6 @@ import '../../entity/customer.dart';
 import '../../entity/job.dart';
 import '../../entity/quote.dart';
 import '../widgets/icons/hmb_close_icon.dart';
-import '../widgets/icons/hmb_paste_icon.dart';
 import '../widgets/layout/layout.g.dart';
 
 class SelectQuoteDialog extends StatefulWidget {
@@ -140,7 +139,6 @@ class _SelectQuoteDialogState extends State<SelectQuoteDialog> {
 
           Expanded(
             child: FutureBuilderEx<List<CustomerAndQuote>>(
-              // ignore: discarded_futures
               future: _fetchQuotes(),
               builder: (context, quotes) {
                 if (quotes == null || quotes.isEmpty) {

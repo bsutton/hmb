@@ -131,7 +131,7 @@ Future<String> _initiateResumableUpload(
 }
 
 // --------------------
-// _parseRange: Parses the range header returned by 
+// _parseRange: Parses the range header returned by
 //Drive during chunked uploads.
 // --------------------
 int _parseRange(String? rangeHeader) {

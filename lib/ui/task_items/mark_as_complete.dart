@@ -75,7 +75,6 @@ Future<void> markAsCompleted(
     return;
   }
   final confirmed = await showDialog<bool>(
-    // ignore: use_build_context_synchronously
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setStateDialog) => AlertDialog(
@@ -105,7 +104,6 @@ Future<void> markAsCompleted(
                 ),
               ],
 
-
               // Supplier droplist
               HMBDroplist<Supplier>(
                 title: 'Supplier',
@@ -119,7 +117,6 @@ Future<void> markAsCompleted(
                   });
                 },
               ),
-
 
               // Cost per item field
               HMBTextField(
@@ -160,7 +157,6 @@ Future<void> markAsCompleted(
 
     // Mark as completed (sets actual cost/qty and charge)
     await DaoTaskItem().markAsCompleted(
-      billingType: itemContext.billingType,
       item: taskItem,
       materialUnitCost: unitCost,
       materialQuantity: quantity,

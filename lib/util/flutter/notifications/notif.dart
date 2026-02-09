@@ -6,26 +6,26 @@
 import 'package:meta/meta.dart';
 
 class Channel {
-  const Channel._({
-    required this.id,
-    required this.name,
-    required this.description,
-  });
+  final String id;
 
-  factory Channel.todo() => const Channel._(
-    id: 'HMB_NOTIF_TODO',
-    name: 'TODO_REMINDERS',
-    description: 'Todo Reminders',
-  );
+  final String name;
 
+  final String description;
   factory Channel.test() => const Channel._(
     id: 'HMB_NOTIF_TEST',
     name: 'TEST_REMINDERS',
     description: 'Test Reminders',
   );
-  final String id;
-  final String name;
-  final String description;
+  factory Channel.todo() => const Channel._(
+    id: 'HMB_NOTIF_TODO',
+    name: 'TODO_REMINDERS',
+    description: 'Todo Reminders',
+  );
+  const Channel._({
+    required this.id,
+    required this.name,
+    required this.description,
+  });
 }
 
 /// A lightweight description of a local notification.

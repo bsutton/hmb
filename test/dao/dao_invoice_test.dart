@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -20,7 +19,7 @@ import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 import 'package:money2/money2.dart';
 
-import '../database/management/db_utility_test.dart';
+import '../database/management/db_utility_test_helper.dart';
 import 'invoice/utility.dart';
 
 void main() {
@@ -92,7 +91,7 @@ should create an invoice for time and materials job with correct rates and mark 
           isTrue,
         );
 
-        // final billedMaterialItem = await 
+        // final billedMaterialItem = await
         // DaoCheckListItem().getById(labour.id);
         // expect(billedMaterialItem?.billed, isTrue);
         // expect(
@@ -139,7 +138,7 @@ should create an invoice for time and materials job with correct rates and mark 
       billBookingFee: true,
     );
 
-    // Verify invoice lines
+    // Verify invoice lines (labour TaskItems are ignored for T&M tasks)
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
     expect(invoiceLines.length, equals(3));
 
@@ -182,9 +181,9 @@ should create an invoice for time and materials job with correct rates and mark 
       billBookingFee: true,
     );
 
-    // Verify invoice lines
+    // Verify invoice lines (labour TaskItems are ignored for T&M tasks)
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-    expect(invoiceLines.length, equals(3));
+    expect(invoiceLines.length, equals(2));
 
     final invoiceGroupLines = await DaoInvoiceLineGroup().getByInvoiceId(
       invoice.id,

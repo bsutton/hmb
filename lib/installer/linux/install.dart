@@ -18,6 +18,7 @@ import 'package:flutter/services.dart';
 import 'package:halfpipe/halfpipe.dart';
 import 'package:path/path.dart';
 
+
 Future<void> linuxInstaller() async {
   await _installDeepLinkHander();
 }

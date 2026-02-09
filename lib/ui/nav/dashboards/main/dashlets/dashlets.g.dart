@@ -6,6 +6,7 @@
 //
 export 'accounting.dart';
 export 'backup.dart';
+export 'booking_requests.dart';
 export 'customers.dart';
 export 'help.dart';
 export 'job.dart';

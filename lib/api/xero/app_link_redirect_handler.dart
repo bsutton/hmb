@@ -31,7 +31,6 @@ class AppLinkRedirectHandler extends RedirectHandler {
   Uri get redirectUri =>
       Uri.parse('https://ivanhoehandyman.com.au/${XeroAuth2.redirectPath}');
 
-
   @override
   Future<void> start() async {
     // In a real app, you might set up a deep link plugin or rely on GoRouter

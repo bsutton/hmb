@@ -19,6 +19,7 @@ import '../util/dart/measurement_type.dart';
 import '../util/dart/money_ex.dart';
 import '../util/dart/units.dart';
 import 'entity.dart';
+import 'helpers/charge_mode.dart';
 import 'job.dart';
 import 'task.dart';
 import 'task_item.dart';
@@ -315,6 +316,7 @@ class TaskEstimate extends Entity<TaskEstimate> {
       description: name,
       itemType: itemType,
       margin: margin,
+      chargeMode: ChargeMode.calculated,
       measurementType:
           measurementType ?? MeasurementType.defaultMeasurementType,
       dimension1: dimension1,
@@ -330,7 +332,7 @@ class TaskEstimate extends Entity<TaskEstimate> {
       estimatedLabourHours: estimatedLabourHours,
       supplierId: supplierId,
       // If the template has a suggested "from $X" price, seed it.
-      charge: suggestedCharge,
+      totalLineCharge: suggestedCharge,
     );
 
     return (task, item);

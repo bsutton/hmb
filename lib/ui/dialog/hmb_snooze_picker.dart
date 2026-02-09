@@ -12,7 +12,7 @@ class HMBSnoozePicker {
     required DateTime base,
     DateTime? initial, // prefilled value; defaults to base + 1h
     HMBDateTimeFieldMode mode = HMBDateTimeFieldMode.dateAndTime,
-  })  {
+  }) {
     final now = DateTime.now();
     var selected = initial ?? base.add(const Duration(hours: 1));
 

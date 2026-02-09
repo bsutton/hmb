@@ -13,6 +13,7 @@
 
 import 'dart:io';
 
+import 'package:dcli/dcli.dart' hide delete;
 import 'package:dcli_core/dcli_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/database/factory/flutter_database_factory.dart';
@@ -20,11 +21,11 @@ import 'package:hmb/database/factory/hmb_database_factory.dart';
 import 'package:hmb/database/management/backup_providers/backup.dart';
 import 'package:hmb/database/management/backup_providers/backup_provider.dart';
 import 'package:hmb/database/management/database_helper.dart';
-import 'package:hmb/database/versions/project_script_source.dart';
-import 'package:path/path.dart' as p;
+import 'package:hmb/database/versions/implementations/project_script_source.dart';
+import 'package:path/path.dart' hide equals;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../db_utility_test.dart';
+import '../db_utility_test_helper.dart';
 import 'test_backup_provider.dart';
 
 void main() {
@@ -52,7 +53,7 @@ void main() {
         'id': 1,
         'parentId': 1,
         'parentType': 'task',
-        'filePath': 'test_photo.jpg',
+        'filename': 'test_photo.jpg',
         'comment': 'Test photo comment',
         'created_date': DateTime.now().toIso8601String(),
         'modified_date': DateTime.now().toIso8601String(),
@@ -64,7 +65,7 @@ void main() {
       if (!exists(photoDir)) {
         createDir(photoDir, recursive: true);
       }
-      final photoFile = File(p.join(photoDir, 'test_photo.jpg'));
+      final photoFile = File(join(photoDir, 'test_photo.jpg'));
       await photoFile.writeAsString('This is a test photo');
     });
 
@@ -87,7 +88,7 @@ void main() {
         File(dbPath).deleteSync();
       }
       final photoFile = File(
-        p.join(await backupProvider.photosRootPath, 'test_photo.jpg'),
+        join(await backupProvider.photosRootPath, 'test_photo.jpg'),
       );
       if (photoFile.existsSync()) {
         photoFile.deleteSync();
@@ -123,14 +124,51 @@ void main() {
         whereArgs: [1],
       );
       expect(restoredPhoto.isNotEmpty, isTrue);
-      expect(restoredPhoto.first['filePath'], 'test_photo.jpg');
+      expect(restoredPhoto.first['filename'], 'test_photo.jpg');
 
-      // Verify photo restoration
-      final restoredPhotoFile = File(
-        p.join(await backupProvider.photosRootPath, 'test_photo.jpg'),
+      // Photos are no longer stored in backup zips (synced separately).
+    });
+  });
+
+  group('Backup file naming', () {
+    test('store appends incremental suffixes without stacking', () async {
+      final provider = TestBackupProvider(FlutterDatabaseFactory(), testDbPath);
+      final backupsDir = join(DartProject.self.pathToProjectRoot, 'backups');
+      if (!exists(backupsDir)) {
+        createDir(backupsDir, recursive: true);
+      }
+
+      const baseName = 'hmb-backup-26-01-31.zip';
+      final basePath = join(backupsDir, baseName);
+      final first = join(backupsDir, 'hmb-backup-26-01-31.1.zip');
+      final second = join(backupsDir, 'hmb-backup-26-01-31.2.zip');
+
+      final created = <String>[];
+      for (final path in [basePath, first, second]) {
+        File(path).writeAsStringSync('x');
+        created.add(path);
+      }
+
+      final tmpZip = join(createTempDir(), baseName);
+      File(tmpZip).writeAsStringSync('zip');
+
+      final result = await provider.store(
+        pathToDatabaseCopy: testDbPath,
+        pathToZippedBackup: tmpZip,
+        version: 1,
       );
-      expect(restoredPhotoFile.existsSync(), isTrue);
-      expect(await restoredPhotoFile.readAsString(), 'This is a test photo');
+
+      created.add(result.pathToBackup);
+      expect(
+        basename(result.pathToBackup),
+        equals('hmb-backup-26-01-31.3.zip'),
+      );
+
+      for (final path in created) {
+        if (exists(path)) {
+          delete(path);
+        }
+      }
     });
   });
 }

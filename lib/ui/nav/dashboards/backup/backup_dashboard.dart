@@ -25,7 +25,7 @@ import '../../../../database/management/backup_providers/backup_providers.g.dart
 import '../../../../database/management/backup_providers/google_drive/background_backup/background_backup.g.dart'
     hide ProgressUpdate;
 import '../../../../database/management/backup_providers/google_drive/google_drive.g.dart';
-import '../../../../database/versions/versions.g.dart';
+import '../../../../database/versions/source.dart';
 import '../../../../src/appname.dart';
 import '../../../../util/flutter/flutter_util.g.dart';
 import '../../../widgets/layout/layout.g.dart';
@@ -204,7 +204,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     await WakelockPlus.enable();
     try {
       await _provider.performBackup(version: 1, src: AssetScriptSource());
+      final refreshedLastBackup = await _refreshLastBackup();
       if (mounted) {
+        setState(() => _lastBackup = refreshedLastBackup);
         HMBToast.info('Backup completed successfully.');
       }
     } catch (e) {
@@ -402,7 +404,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       ],
       if (!_isDbOffline && !_syncRunning)
         FutureBuilderEx<List<PhotoPayload>>(
-          // ignore: discarded_futures
           future: DaoPhoto().getUnsyncedPhotos(),
           builder: (context, unsynced) {
             final text = unsynced!.isEmpty

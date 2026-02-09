@@ -43,7 +43,6 @@ class JobCard extends StatefulWidget {
 class _JobCardState extends State<JobCard> {
   @override
   Widget build(BuildContext context) => FutureBuilderEx<CompleteJobInfo>(
-    // ignore: discarded_futures
     future: _loadCompleteJobInfo(widget.job),
     builder: (context, info) {
       final labourCharges = info!.totals.labourCharges;
@@ -162,7 +161,7 @@ class _JobCardState extends State<JobCard> {
 
       for (final item in items) {
         if (item.itemType == TaskItemType.labour) {
-          totalLabour += item.calcLabourCharges(hourlyRate);
+          totalLabour += item.calcLabourCharges(billingType, hourlyRate);
         } else {
           totalMaterials += item.calcMaterialCharges(billingType);
         }

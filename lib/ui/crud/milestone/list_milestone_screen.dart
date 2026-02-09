@@ -80,24 +80,26 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
       }
 
       final quoteMilestones = entry.value;
+      final activeMilestones = quoteMilestones.where((m) => !m.voided).toList();
 
-      // Total value of all milestones
-      final totalValue = quoteMilestones.fold<Money>(
+      // Total value of active milestones
+      final totalValue = activeMilestones.fold<Money>(
         MoneyEx.zero,
         (sum, m) => sum + (m.paymentAmount),
       );
 
-      final count = quoteMilestones.length;
+      final count = activeMilestones.length;
+      final voidedCount = quoteMilestones.length - count;
 
-      // Calculate total invoiced to date
-      final invoicedValue = quoteMilestones.fold<Money>(
+      // Calculate total invoiced to date (active only)
+      final invoicedValue = activeMilestones.fold<Money>(
         MoneyEx.zero,
         (sum, m) =>
             sum + ((m.invoiceId != null) ? m.paymentAmount : MoneyEx.zero),
       );
 
-      // Count how many milestones are invoiced
-      final invoicedCount = quoteMilestones
+      // Count how many milestones are invoiced (active only)
+      final invoicedCount = activeMilestones
           .where((m) => m.invoiceId != null)
           .length;
 
@@ -109,6 +111,7 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
         milestoneCount: count,
         invoicedValue: invoicedValue,
         invoicedCount: invoicedCount,
+        voidedCount: voidedCount,
       );
       if (summary.matches(filter)) {
         summaries.add(summary);
@@ -133,7 +136,6 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
       },
       onSearch: (filter) {
         this.filter = filter?.toLowerCase();
-        // ignore: discarded_futures
         _summaries = _fetchMilestoneSummaries();
         setState(() {});
       },
@@ -150,6 +152,7 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
           Text('Quote #: ${summary.quote.bestNumber}'),
           Text('Milestones: ${summary.milestoneCount}'),
           Text('Invoiced Milestones: ${summary.invoicedCount}'),
+          Text('Voided Milestones: ${summary.voidedCount}'),
           Text('Invoiced to date: ${summary.invoicedValue}'),
           Text('Total Value: ${summary.totalValue}'),
         ],
@@ -190,6 +193,7 @@ class QuoteMilestoneSummary {
   final int milestoneCount;
   final Money invoicedValue;
   final int invoicedCount;
+  final int voidedCount;
 
   QuoteMilestoneSummary({
     required this.quote,
@@ -199,8 +203,8 @@ class QuoteMilestoneSummary {
     required this.milestoneCount,
     required this.invoicedValue,
     required this.invoicedCount,
+    required this.voidedCount,
   });
-
 
   bool matches(String? filter) {
     if (Strings.isBlank(filter)) {

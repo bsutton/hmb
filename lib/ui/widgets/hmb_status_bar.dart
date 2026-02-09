@@ -44,7 +44,6 @@ class HMBStatusBar extends StatelessWidget {
           HMBStartTimeEntry(task: task, onStart: (_, _) => {}),
           Expanded(
             child: FutureBuilderEx(
-              // ignore: discarded_futures
               future: DaoJob().getJobForTask(task?.id),
               builder: (context, job) => Text(
                 '${task!.name} - ${job!.summary}',

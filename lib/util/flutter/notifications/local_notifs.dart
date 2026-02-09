@@ -15,12 +15,12 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_native_timezone_2025/flutter_native_timezone_2025.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../../entity/todo.dart';
 import 'desktop_scheduler.dart';
+import 'native_timezone.dart';
 import 'notif.dart';
 
 class LocalNotifs {
@@ -70,41 +70,43 @@ class LocalNotifs {
     );
 
     await _fln.initialize(
-      init,
+      settings: init,
       onDidReceiveNotificationResponse: (resp) {
         // decode payload and route if needed
-        final data = _decodePayload(resp.payload);
+        _decodePayload(resp.payload);
         // TODO(chat-gpt): route using data['type'], data['id']
       },
     );
 
     // ---- permissions ----
-    if (Platform.isAndroid) {
-      final android = _fln
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
-      await android?.requestNotificationsPermission();
-      // NOTE: If you later require exact alarms, add the manifest permission
-      // and deep-link users to the exact-alarm settings screen.
-    } else if (Platform.isIOS) {
-      final ios = _fln
-          .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin
-          >();
-      await ios?.requestPermissions(alert: true, badge: true, sound: true);
-    } else if (Platform.isMacOS) {
-      final macos = _fln
-          .resolvePlatformSpecificImplementation<
-            MacOSFlutterLocalNotificationsPlugin
-          >();
-      await macos?.requestPermissions(alert: true, badge: true, sound: true);
-    }
+    if (!kIsWeb) {
+      if (Platform.isAndroid) {
+        final android = _fln
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+        await android?.requestNotificationsPermission();
+        // NOTE: If you later require exact alarms, add the manifest permission
+        // and deep-link users to the exact-alarm settings screen.
+      } else if (Platform.isIOS) {
+        final ios = _fln
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >();
+        await ios?.requestPermissions(alert: true, badge: true, sound: true);
+      } else if (Platform.isMacOS) {
+        final macos = _fln
+            .resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin
+            >();
+        await macos?.requestPermissions(alert: true, badge: true, sound: true);
+      }
 
-    // ---- desktop in-app scheduler (Windows/Linux only) ----
-    if (Platform.isWindows || Platform.isLinux) {
-      _desktop = DesktopNotifScheduler(fln: _fln, buildDetails: _buildDetails)
-        ..start();
+      // ---- desktop in-app scheduler (Windows/Linux only) ----
+      if (Platform.isWindows || Platform.isLinux) {
+        _desktop = DesktopNotifScheduler(fln: _fln, buildDetails: _buildDetails)
+          ..start();
+      }
     }
 
     _inited = true;
@@ -166,11 +168,11 @@ class LocalNotifs {
       }
 
       await _fln.zonedSchedule(
-        n.id,
-        n.title,
-        n.body,
-        whenTz,
-        _buildDetails(n),
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        scheduledDate: whenTz,
+        notificationDetails: _buildDetails(n),
         // Inexact saves battery and avoids exact-alarm permission.
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         payload: _encodePayload(n.payload),
@@ -199,7 +201,7 @@ class LocalNotifs {
   Future<void> cancel(int id) async {
     await init();
     _desktop?.cancel(id); // desktop queue too
-    await _fln.cancel(id);
+    await _fln.cancel(id: id);
   }
 
   Future<void> cancelAll() async {
@@ -289,11 +291,12 @@ class LocalNotifs {
     // resort: UTC.
     String name;
     try {
-      if (Platform.isAndroid ||
+      if (kIsWeb ||
+          Platform.isAndroid ||
           Platform.isIOS ||
           Platform.isMacOS ||
           Platform.isWindows) {
-        name = await FlutterNativeTimezone.getLocalTimezone();
+        name = await getLocalTimezone();
       } else if (Platform.isLinux) {
         name = await _ianaFromLinux();
       } else {
@@ -353,10 +356,10 @@ class LocalNotifs {
 
     final channel = Channel.test();
     await fln.show(
-      999001,
-      'Test immediate',
-      'If you see me, posting works',
-      NotificationDetails(
+      id: 999001,
+      title: 'Test immediate',
+      body: 'If you see me, posting works',
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           channel.id,
           channel.name,
@@ -374,11 +377,11 @@ class LocalNotifs {
     // Use >= 90s lead to avoid scheduling races.
     final when = tz.TZDateTime.now(tz.local).add(_minLead);
     await fln.zonedSchedule(
-      999002,
-      'Test scheduled',
-      'Should appear ~${_minLead.inSeconds}s from now',
-      when,
-      const NotificationDetails(
+      id: 999002,
+      title: 'Test scheduled',
+      body: 'Should appear ~${_minLead.inSeconds}s from now',
+      scheduledDate: when,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'hmb_default',
           'Reminders',
@@ -396,11 +399,11 @@ class LocalNotifs {
 
     final when2 = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 2));
     await _fln.zonedSchedule(
-      990002,
-      'Schedule test',
-      'Should land in ~2 minutes',
-      when,
-      _buildDetails(
+      id: 990002,
+      title: 'Schedule test',
+      body: 'Should land in ~2 minutes',
+      scheduledDate: when,
+      notificationDetails: _buildDetails(
         Notif(
           id: 0,
           title: '',

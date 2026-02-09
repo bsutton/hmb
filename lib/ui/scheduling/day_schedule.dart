@@ -195,7 +195,6 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
 
             // ignore: join_return_with_assignment
             dayView = DayView<JobActivityEx>(
-              // ignore: discarded_futures
               onPageChange: (date, _) => _onPageChange(date),
               startHour: _getStartHour(),
               endHour: _getEndHour(),
@@ -308,7 +307,6 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     final jobActivity = event.event;
 
     return FutureBuilderEx<JobAndCustomer>(
-      // ignore: discarded_futures
       future: JobAndCustomer.fetch(job),
       builder: (context, jobAndCustomer) {
         final jobName = jobAndCustomer!.job.summary;

@@ -11,11 +11,15 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../../dao/dao_contact.dart';
+import '../../../dao/join_adaptors/join_adaptor_customer_contact.dart';
 import '../../../entity/contact.dart';
 import '../../../entity/customer.dart';
-import '../widgets/select/select.g.dart';
+import '../crud/contact/edit_contact_screen.dart';
 import '../widgets/widgets.g.dart';
 
 void Function(Contact? contact)? onSelected;
@@ -54,21 +58,124 @@ class SelectBillingContactDialog extends StatefulWidget {
 
 class _SelectBillingContactDialogState
     extends State<SelectBillingContactDialog> {
+  final _daoContact = DaoContact();
+  List<Contact> _contacts = [];
+  var _loading = true;
+
   @override
   void initState() {
     super.initState();
     contact = widget.initialContact;
+    unawaited(_loadContacts());
   }
 
   late Contact? contact;
-  // final selectedContact = June.getState(SelectedContact.new);
+
+  Future<void> _loadContacts({Contact? selected}) async {
+    setState(() {
+      _loading = true;
+    });
+    final contacts = await _daoContact.getByCustomer(widget.customer.id);
+    if (!mounted) {
+      return;
+    }
+
+    var nextSelection = selected ?? contact ?? widget.initialContact;
+    if (nextSelection != null) {
+      final index = contacts.indexWhere((c) => c.id == nextSelection!.id);
+      if (index == -1) {
+        _contacts = [nextSelection, ...contacts];
+      } else {
+        _contacts = contacts;
+        nextSelection = _contacts[index];
+      }
+    } else {
+      _contacts = contacts;
+    }
+
+    setState(() {
+      contact = nextSelection;
+      _loading = false;
+    });
+  }
+
+  void _selectContact(Contact? selected) {
+    if (selected?.id == contact?.id) {
+      return;
+    }
+    setState(() {
+      contact = selected;
+    });
+    widget.onSelected?.call(selected);
+  }
+
+  Future<void> _addContact() async {
+    final newContact = await Navigator.push<Contact>(
+      context,
+      MaterialPageRoute<Contact>(
+        builder: (context) => ContactEditScreen<Customer>(
+          parent: widget.customer,
+          daoJoin: JoinAdaptorCustomerContact(),
+        ),
+      ),
+    );
+
+    if (!mounted || newContact == null) {
+      return;
+    }
+
+    await _loadContacts(selected: newContact);
+    widget.onSelected?.call(newContact);
+  }
+
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: const Text('Select Billing Contact'),
-    content: HMBSelectContact(
-      customer: widget.customer,
-      initialContact: contact?.id,
-      onSelected: widget.onSelected,
+    content: SizedBox(
+      width: 420,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Expanded(child: Text('Contacts')),
+              HMBButtonAdd(enabled: true, onAdd: _addContact),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _contacts.isEmpty
+                ? const Text('No contacts found.')
+                : RadioGroup<Contact?>(
+                    groupValue: contact,
+                    onChanged: _selectContact,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _contacts.length,
+                      itemBuilder: (context, index) {
+                        final current = _contacts[index];
+                        final fullName =
+                            '${current.firstName} ${current.surname}'.trim();
+                        final subtitle = current.emailAddress.isNotEmpty
+                            ? current.emailAddress
+                            : (current.mobileNumber.isNotEmpty
+                                  ? current.mobileNumber
+                                  : null);
+                        return RadioListTile<Contact?>(
+                          value: current,
+                          title: Text(
+                            fullName.isEmpty ? 'Unnamed contact' : fullName,
+                          ),
+                          subtitle: subtitle == null ? null : Text(subtitle),
+                        );
+                      },
+                    ),
+                  ),
+          ),
+        ],
+      ),
     ),
     actions: [
       HMBButton(

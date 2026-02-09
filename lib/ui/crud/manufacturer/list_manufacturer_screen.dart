@@ -29,7 +29,6 @@ class ManufacturerListScreen extends StatelessWidget {
     entityNamePlural: 'Manufacturers',
     dao: DaoManufacturer(),
     listCardTitle: (entity) => HMBTextHeadline2(entity.name),
-    // ignore: discarded_futures
     fetchList: (filter) => DaoManufacturer().getByFilter(filter),
     onEdit: (manufacturer) =>
         ManufacturerEditScreen(manufacturer: manufacturer),

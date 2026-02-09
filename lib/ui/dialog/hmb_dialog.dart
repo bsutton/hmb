@@ -33,7 +33,6 @@ class HMBDialog extends StatelessWidget {
     this.contentPadding = const EdgeInsets.all(8),
   });
 
-
   @override
   Widget build(BuildContext context) => Dialog(
     insetPadding: insetPadding,

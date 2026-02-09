@@ -94,10 +94,10 @@ class DesktopNotifScheduler {
           continue;
         }
         await _fln.show(
-          n.id,
-          n.title,
-          n.body,
-          _buildDetails(n),
+          id: n.id,
+          title: n.title,
+          body: n.body,
+          notificationDetails: _buildDetails(n),
           payload: _encodePayload(n.payload),
         );
       }

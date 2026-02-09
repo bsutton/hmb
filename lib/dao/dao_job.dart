@@ -19,7 +19,6 @@ import '../entity/customer.dart';
 import '../entity/job.dart';
 import '../entity/job_status.dart';
 import '../entity/job_status_stage.dart';
-import '../entity/quote.dart';
 import '../entity/task.dart';
 import '../entity/task_item.dart';
 import '../entity/task_item_type.dart';
@@ -30,7 +29,6 @@ import 'dao_contact.dart';
 import 'dao_customer.dart';
 import 'dao_invoice.dart';
 import 'dao_quote.dart';
-import 'dao_quote_line_group.dart';
 import 'dao_system.dart';
 import 'dao_task.dart';
 import 'dao_task_item.dart';
@@ -65,6 +63,29 @@ class DaoJob extends Dao<Job> {
 
   @override
   Job fromMap(Map<String, dynamic> map) => Job.fromMap(map);
+
+  @override
+  Future<int> update(Job entity, [Transaction? transaction]) async {
+    final existing = await getById(entity.id);
+    final isRejectingJob =
+        existing != null &&
+        existing.status != entity.status &&
+        entity.status == JobStatus.rejected;
+
+    if (!isRejectingJob) {
+      return super.update(entity, transaction);
+    }
+
+    if (transaction != null) {
+      await DaoQuote().rejectByJob(entity.id, transaction: transaction);
+      return super.update(entity, transaction);
+    }
+
+    return db.transaction((txn) async {
+      await DaoQuote().rejectByJob(entity.id, transaction: txn);
+      return super.update(entity, txn);
+    });
+  }
 
   /// getAll - sort by modified date descending
   @override
@@ -453,7 +474,7 @@ where q.id=?
 
   Future<bool> hasBillableTasks(Job job) async {
     final tasksAccruedValue = await DaoTask().getAccruedValueForJob(
-      jobId: job.id,
+      job: job,
       includedBilled: false,
     );
 
@@ -517,7 +538,7 @@ where q.id=?
   }
 
   Future<bool> hasQuoteableItems(Job job) async {
-    final estimates = await DaoTask().getEstimatesForJob(job.id);
+    final estimates = await DaoTask().getEstimatesForJob(job);
 
     return estimates.fold(false, (a, b) async => await a || b.total.isPositive);
   }
@@ -530,7 +551,7 @@ where q.id=?
 
   /// Calculates the total quoted price for the job.
   Future<Money> getFixedPriceTotal(Job job) async {
-    final estimates = await DaoTask().getEstimatesForJob(job.id);
+    final estimates = await DaoTask().getEstimatesForJob(job);
 
     var total = MoneyEx.zero;
     for (final estimate in estimates) {
@@ -571,6 +592,9 @@ where q.id=?
     final activeJobs = await DaoJob().getActiveJobs(filter);
     final ready = <Job>[];
     for (final job in activeJobs) {
+      if (job.billingType == BillingType.nonBillable) {
+        continue;
+      }
       if (await DaoJob().hasBillableTasks(job)) {
         ready.add(job);
       }
@@ -590,8 +614,6 @@ where q.id=?
     final daoTaskItem = DaoTaskItem();
     final daoTimeEntry = DaoTimeEntry();
     final daoWAT = DaoWorkAssignmentTask();
-    final daoQuote = DaoQuote();
-    final daoQuoteLineGroup = DaoQuoteLineGroup();
 
     // Validate [Task]s belong to the [Job]
     for (final task in tasksToMove) {
@@ -603,12 +625,6 @@ where q.id=?
     }
 
     // Preload approved quotes (only if Fixed Price)
-    final approvedQuotes = job.billingType == BillingType.fixedPrice
-        ? (await daoQuote.getByJobId(
-            job.id,
-          )).where((q) => q.state == QuoteState.approved).toList()
-        : const <Quote>[];
-
     // Check business rules
     final nonMovableReasons = <Task, String>{};
     for (final t in tasksToMove) {
@@ -627,14 +643,8 @@ where q.id=?
         continue;
       }
 
-      if (await daoTask.isTaskLockedByApprovedFixedQuote(
-        job: job,
-        task: t,
-        approvedQuotes: approvedQuotes,
-        daoQLG: daoQuoteLineGroup,
-      )) {
-        nonMovableReasons[t] =
-            '''is part of an approved fixed-price quote and the quote line group is not rejected.''';
+      if (await daoTask.isTaskLinkedToQuote(t)) {
+        nonMovableReasons[t] = 'is linked to a quote.';
         continue;
       }
     }

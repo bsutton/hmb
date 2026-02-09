@@ -49,6 +49,23 @@ class DaoInvoice extends Dao<Invoice> {
     );
   }
 
+  Future<List<Invoice>> getUnsent({int? jobId}) async {
+    final db = withoutTransaction();
+    final where = jobId == null ? 'sent = 0' : 'sent = 0 AND job_id = ?';
+    final args = jobId == null ? <Object?>[] : <Object?>[jobId];
+    return toList(
+      await db.query(
+        tableName,
+        where: where,
+        whereArgs: args,
+        orderBy: 'modified_date desc',
+      ),
+    );
+  }
+
+  Future<bool> hasUnsentForJob(int jobId) async =>
+      (await getUnsent(jobId: jobId)).isNotEmpty;
+
   Future<List<Invoice>> getByFilter(String? filter) async {
     final db = withoutTransaction();
 
@@ -113,7 +130,7 @@ class DaoInvoice extends Dao<Invoice> {
     await DaoInvoice().update(updatedInvoice);
   }
 
-  Future<List<String>> getEmailsByInvoice(Invoice invoice)  =>
+  Future<List<String>> getEmailsByInvoice(Invoice invoice) =>
       DaoJob().getEmailsByJob(invoice.jobId);
 
   Future<void> markSent(Invoice invoice) async {

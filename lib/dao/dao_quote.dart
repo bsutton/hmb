@@ -38,8 +38,8 @@ class DaoQuote extends Dao<Quote> {
     return toList(await db.query(tableName, orderBy: 'modified_date desc'));
   }
 
-  Future<List<Quote>> getByJobId(int jobId) async {
-    final db = withoutTransaction();
+  Future<List<Quote>> getByJobId(int jobId, {Transaction? transaction}) async {
+    final db = withinTransaction(transaction);
     return toList(
       await db.query(
         tableName,
@@ -88,7 +88,7 @@ class DaoQuote extends Dao<Quote> {
       await db.rawQuery('''
       SELECT q.*
       FROM quote q
-      LEFT JOIN milestone m ON q.id = m.quote_id
+      LEFT JOIN milestone m ON q.id = m.quote_id AND m.voided = 0
       WHERE m.id IS NULL
     '''),
     );
@@ -112,7 +112,7 @@ class DaoQuote extends Dao<Quote> {
 
   /// Create a quote for the given job.
   Future<Quote> create(Job job, InvoiceOptions invoiceOptions) async {
-    final estimates = await DaoTask().getEstimatesForJob(job.id);
+    final estimates = await DaoTask().getEstimatesForJob(job);
 
     if (job.hourlyRate == MoneyEx.zero) {
       throw InvoiceException(
@@ -161,6 +161,12 @@ class DaoQuote extends Dao<Quote> {
         continue;
       }
 
+      final billingType = estimate.task.effectiveBillingType(job.billingType);
+      if (billingType != BillingType.fixedPrice) {
+        // Quotes should only contain fixed price tasks.
+        continue;
+      }
+
       /// One group for each task.
       QuoteLineGroup? group;
       QuoteLine? line;
@@ -195,7 +201,7 @@ class DaoQuote extends Dao<Quote> {
           continue;
         }
 
-        final matTotal = item.calcMaterialCharges(job.billingType);
+        final matTotal = item.calcMaterialCharges(billingType);
 
         group ??= await _createQuoteLineGroup(estimate.task, quoteId);
 
@@ -287,8 +293,19 @@ class DaoQuote extends Dao<Quote> {
   }
 
   /// Reject quote
-  Future<int> rejectQuote(int quoteId, {Transaction? transaction}) =>
-      updateState(quoteId, QuoteState.rejected, transaction: transaction);
+  Future<int> rejectQuote(int quoteId, {Transaction? transaction}) async {
+    await DaoMilestone().voidByQuoteId(quoteId, transaction: transaction);
+    return updateState(quoteId, QuoteState.rejected, transaction: transaction);
+  }
+
+  Future<void> rejectByJob(int jobId, {Transaction? transaction}) async {
+    final quotes = await getByJobId(jobId, transaction: transaction);
+    for (final quote in quotes) {
+      if (quote.state != QuoteState.rejected) {
+        await rejectQuote(quote.id, transaction: transaction);
+      }
+    }
+  }
 
   /// quote sent
   Future<int> markQuoteSent(int quoteId, {Transaction? transaction}) async {

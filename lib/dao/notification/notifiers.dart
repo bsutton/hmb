@@ -1,4 +1,3 @@
-
 import 'package:june/june.dart';
 
 class CategoryNotifier extends JuneState {
@@ -27,6 +26,10 @@ class CustomerNotifier extends JuneState {
 
 class ContactCustomerNotifier extends JuneState {
   ContactCustomerNotifier();
+}
+
+class BookingRequestNotifier extends JuneState {
+  BookingRequestNotifier();
 }
 
 class InvoiceNotifier extends JuneState {

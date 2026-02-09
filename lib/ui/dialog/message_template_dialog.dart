@@ -104,7 +104,6 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
 
       // Add new placeholders or keep existing ones
       for (final name in newPlaceholders) {
-        // ignore: inference_failure_on_instance_creation
         final placeholder = await PlaceHolderManager().resolvePlaceholder(
           name,
           widget.sourceContext,
@@ -242,7 +241,6 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
                 padding: const EdgeInsets.all(16),
                 child: SingleChildScrollView(
                   child: FutureBuilderEx(
-                    // ignore: discarded_futures
                     future: _buildPreview(),
                     builder: (context, widget) => widget!,
                   ),

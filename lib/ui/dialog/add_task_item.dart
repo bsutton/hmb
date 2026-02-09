@@ -16,6 +16,7 @@ import 'package:money2/money2.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
+import '../../entity/helpers/charge_mode.dart';
 import '../../util/dart/measurement_type.dart';
 import '../../util/dart/money_ex.dart';
 import '../../util/dart/units.dart';
@@ -170,6 +171,7 @@ Future<void> _addTaskItem({
       itemType: selectedItemType,
       estimatedMaterialQuantity: quantity,
       estimatedMaterialUnitCost: unitCost,
+      chargeMode: ChargeMode.calculated,
       dimension1: Fixed.zero,
       dimension2: Fixed.zero,
       dimension3: Fixed.zero,

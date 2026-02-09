@@ -38,8 +38,7 @@ class TaskEditScreen extends StatefulWidget {
   late final BillingType billingType;
 
   TaskEditScreen({required this.job, super.key, this.task}) {
-    // for the moment we don't let tasks override the billing type.
-    billingType = job.billingType;
+    billingType = task?.billingType ?? job.billingType;
   }
 
   @override
@@ -65,12 +64,14 @@ class _TaskEditScreenState extends State<TaskEditScreen>
 
   @override
   Task? currentEntity;
+  BillingType? selectedBillingType;
 
   @override
   void initState() {
     super.initState();
 
     currentEntity ??= widget.task;
+    selectedBillingType = widget.billingType;
 
     _nameController = TextEditingController(text: currentEntity?.name);
     _descriptionController = TextEditingController(
@@ -142,6 +143,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
           required: true,
         ),
         _chooseTaskStatus(task),
+        _chooseBillingType(),
         HMBTextArea(
           controller: _descriptionController,
           focusNode: _descriptionFocusNode,
@@ -175,6 +177,49 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     ),
   );
 
+  final inheritedOption = BillingTypeOption(null, 'Inherited');
+
+  Widget _chooseBillingType() =>
+      HMBDroplist<BillingTypeOption>(
+        title: 'Billing Type',
+
+        // Items include "Inherited" + actual BillingType values
+        items: (filter) async => [
+          inheritedOption,
+          ...BillingType.values.map((bt) => BillingTypeOption(bt, bt.display)),
+        ],
+
+        // Which value is selected?
+        selectedItem: () async => selectedBillingType == null
+            ? inheritedOption
+            : BillingTypeOption(
+                selectedBillingType,
+                selectedBillingType!.display,
+              ),
+
+        // Save back: null means inherited
+        onChanged: (selected) {
+          selectedBillingType = selected?.type; // will be null for inherited
+          setState(() {});
+        },
+
+        // Display text
+        format: (opt) => opt.label,
+      ).help('Billing Type', '''
+Time and Materials (Cost Plus)
+
+Bill the customer based on hours tracked and Task Items purchased.
+You can progressively invoice the customer during the Job.
+
+Navigate to Billing | Invoices
+
+Fixed Price
+Bills the customer a pre-agreed amount.
+
+You can create Milestone Invoices as the Job progresses.
+Navigate to Billing | Milestones.
+''');
+
   Widget _chooseTaskStatus(Task? task) => HMBDroplist<TaskStatus>(
     title: 'Task Status',
     selectedItem: () async => June.getState(SelectedTaskStatus.new).taskStatus,
@@ -198,6 +243,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     return task.copyWith(
       jobId: widget.job.id,
       name: _nameController.text,
+      billingType: selectedBillingType,
       description: _descriptionController.text,
       assumption: _assumptionController.text,
       status: June.getState(SelectedTaskStatus.new).taskStatus,
@@ -208,6 +254,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
   Future<Task> forInsert() async => Task.forInsert(
     jobId: widget.job.id,
     name: _nameController.text,
+    billingType: selectedBillingType,
     description: _descriptionController.text,
     assumption: _assumptionController.text,
     status: June.getState(SelectedTaskStatus.new).taskStatus!,
@@ -231,4 +278,11 @@ class SelectedTaskStatus extends JuneState {
     _taskStatus = value;
     setState();
   }
+}
+
+class BillingTypeOption {
+  final BillingType? type;
+  final String label;
+
+  BillingTypeOption(this.type, this.label);
 }

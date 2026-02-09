@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../../util/dart/list_ex.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 
@@ -70,7 +69,7 @@ class _DialogMoveTasksToNewJobState
   final _summaryController = TextEditingController();
 
   List<MovableTaskInfo> _rows = [];
-  var _selectAll = true;
+  var _selectAll = false;
   var _loading = true;
 
   @override
@@ -80,39 +79,23 @@ class _DialogMoveTasksToNewJobState
     // Load tasks for the job
     final tasks = await DaoTask().getTasksByJob(widget.job.id);
 
-    // Preload bits used by validation
-    final billingType = widget.job.billingType;
-    final quotes = billingType == BillingType.fixedPrice
-        ? await DaoQuote().getByJobId(widget.job.id)
-        : <Quote>[];
-    final approvedQuotes = quotes.where((q) => q.state.isPostApproval).toList();
-
     _rows = [];
     for (final t in tasks) {
-      final reason = await _validateTaskMovable(
-        job: widget.job,
-        task: t,
-        approvedQuotes: approvedQuotes,
-      );
+      final reason = await _validateTaskMovable(task: t);
       final movable = reason == null;
       _rows.add(
         MovableTaskInfo(task: t, movable: movable, reasonIfBlocked: reason),
       );
       if (movable) {
-        _selected[t] = true; // default select movable ones
+        _selected[t] = false; // default to no task selected
       }
     }
-    _selectAll =
-        _selected.values.isNotEmpty && _selected.values.every((v) => v);
+    _selectAll = false;
     _loading = false;
     setState(() {});
   }
 
-  Future<String?> _validateTaskMovable({
-    required Job job,
-    required Task task,
-    required List<Quote> approvedQuotes,
-  }) async {
+  Future<String?> _validateTaskMovable({required Task task}) async {
     // 1) billed?
     final items = await DaoTaskItem().getByTask(task.id);
     if (items.any((i) => i.billed || i.invoiceLineId != null)) {
@@ -129,16 +112,9 @@ class _DialogMoveTasksToNewJobState
       return 'Task is linked to a work assignment.';
     }
 
-    // 3) locked by approved fixed-price quote unless the group is rejected
-    if (job.billingType == BillingType.fixedPrice &&
-        approvedQuotes.isNotEmpty) {
-      for (final q in approvedQuotes) {
-        final groups = await DaoQuoteLineGroup().getByQuoteId(q.id);
-        final g = groups.firstWhereOrNull((g) => g.taskId == task.id);
-        if (g != null && g.lineApprovalStatus != LineApprovalStatus.rejected) {
-          return 'Task is in an approved fixed-price quote.';
-        }
-      }
+    // 3) linked to quote
+    if (await DaoTask().isTaskLinkedToQuote(task)) {
+      return 'Task is linked to a quote.';
     }
 
     return null; // movable

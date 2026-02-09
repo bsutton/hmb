@@ -28,7 +28,6 @@ class CategoryListScreen extends StatelessWidget {
     entityNamePlural: 'Categories',
     dao: DaoCategory(),
     listCardTitle: (entity) => HMBTextHeadline2(entity.name),
-    // ignore: discarded_futures
     fetchList: (filter) => DaoCategory().getByFilter(filter),
     onEdit: (category) => CategoryEditScreen(category: category),
     listCard: (entity) => HMBTextBody(entity.description ?? ''),

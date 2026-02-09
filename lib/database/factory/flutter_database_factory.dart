@@ -14,6 +14,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
@@ -21,6 +22,7 @@ import 'hmb_database_factory.dart' as local;
 
 class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
   static FlutterDatabaseFactory? instance;
+  late DatabaseFactory _databaseFactory;
 
   factory FlutterDatabaseFactory() {
     if (instance == null) {
@@ -35,14 +37,19 @@ class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
 
   void initDatabaseFactory({required bool isWeb}) {
     if (isWeb) {
-      databaseFactory = databaseFactoryFfiWeb;
+      _databaseFactory = databaseFactoryFfiWeb;
     } else {
-      if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+      if (Platform.isAndroid || Platform.isIOS) {
+        _databaseFactory = sqflite.databaseFactory;
+      } else if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
         /// required for non-mobile platforms.
         sqfliteFfiInit();
-        databaseFactory = databaseFactoryFfi;
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        /// uses the default factory.
+        _databaseFactory = databaseFactoryFfi;
+      } else {
+        throw UnsupportedError(
+          'Unsupported platform for database factory: '
+          '${Platform.operatingSystem}',
+        );
       }
     }
   }
@@ -51,5 +58,5 @@ class FlutterDatabaseFactory implements local.HMBDatabaseFactory {
   Future<Database> openDatabase(
     String path, {
     required OpenDatabaseOptions options,
-  }) => databaseFactory.openDatabase(path, options: options);
+  }) => _databaseFactory.openDatabase(path, options: options);
 }

@@ -37,16 +37,13 @@ class SupplierListScreen extends StatelessWidget {
     entityNamePlural: 'Suppliers',
     dao: DaoSupplier(),
     listCardTitle: (entity) => HMBCardHeading(entity.name),
-    // ignore: discarded_futures
     fetchList: (filter) => DaoSupplier().getByFilter(filter),
     onEdit: (supplier) => SupplierEditScreen(supplier: supplier),
     listCard: (entity) {
       final supplier = entity;
       return FutureBuilderEx(
-        // ignore: discarded_futures
         future: DaoSite().getPrimaryForSupplier(supplier),
         builder: (context, site) => FutureBuilderEx(
-          // ignore: discarded_futures
           future: DaoContact().getPrimaryForSupplier(supplier),
           builder: (context, contact) => HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.start,

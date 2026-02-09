@@ -32,7 +32,6 @@ class XeroApi {
 
   XeroApi._internal() : xeroAuth = XeroAuth2();
 
-
   Future<void> login() async {
     await xeroAuth.login();
     await getTenantId();

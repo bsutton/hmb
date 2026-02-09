@@ -75,7 +75,6 @@ class HMBJobPhoneText extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FutureBuilderEx<SourceContext>(
     waitingBuilder: (_) => const HMBPlaceHolder(height: 40),
-    // ignore: discarded_futures
     future: getData(job),
     builder: (context, sourceContext) {
       final phoneNo = sourceContext!.contact?.bestPhone;

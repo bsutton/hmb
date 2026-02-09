@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 //
 // Generated file. Do not modify.
 // Created by `barrel_create`

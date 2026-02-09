@@ -1,5 +1,4 @@
-#! /usr/bin/env dart
-
+#!/usr/bin/env dcli
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
@@ -13,7 +12,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// ignore: unused_import
 import 'package:dcli/dcli.dart';
 // import 'package:hmb/util/local_date.dart';
 import 'package:path/path.dart';

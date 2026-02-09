@@ -26,7 +26,6 @@ class ShoppingDashlet extends StatelessWidget {
     label: 'Shopping',
     hint: 'Maintain a list of items to be purchased for each Job',
     icon: Icons.shopping_cart,
-    // ignore: discarded_futures
     value: getShopping,
     route: '/home/shopping',
   );

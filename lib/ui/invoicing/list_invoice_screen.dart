@@ -61,7 +61,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     entityNameSingular: 'Invoice',
     entityNamePlural: 'Invoices',
     dao: DaoInvoice(),
-    fetchList: (_) => _fetchFilteredInvoices(),
+    fetchList: _fetchFilteredInvoices,
     onAdd: _createInvoice,
     onEdit: (invoice) => FutureBuilderEx(
       future: InvoiceDetails.load(invoice!.id),
@@ -86,7 +86,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     },
   );
 
-  Future<List<Invoice>> _fetchFilteredInvoices() async {
+  Future<List<Invoice>> _fetchFilteredInvoices(String? filter) async {
+    filterText = filter;
     var invoices = await DaoInvoice().getByFilter(filterText);
     if (selectedJob.jobId != null) {
       invoices = invoices.where((i) => i.jobId == selectedJob.jobId).toList();
