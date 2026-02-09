@@ -14,7 +14,7 @@
 
 import 'entity.dart';
 
-enum ToDoStatus { open, done }
+enum ToDoStatus { open, done, closed }
 
 enum ToDoPriority { none, low, medium, high }
 

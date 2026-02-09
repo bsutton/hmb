@@ -231,11 +231,13 @@ class TodayPageState extends DeferredState<TodayPage> {
           children: [
             Checkbox(
               value: todo.status == ToDoStatus.done,
-              onChanged: (_) async {
-                await DaoToDo().toggleDone(todo);
-                await refresh();
-                HMBToast.info('Marked ${todo.title} as done');
-              },
+              onChanged: todo.status == ToDoStatus.closed
+                  ? null
+                  : (_) async {
+                      await DaoToDo().toggleDone(todo);
+                      await refresh();
+                      HMBToast.info('Marked ${todo.title} as done');
+                    },
             ),
             Expanded(child: HMBTextHeadline2(todo.title)),
           ],

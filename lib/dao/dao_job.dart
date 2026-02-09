@@ -33,6 +33,7 @@ import 'dao_system.dart';
 import 'dao_task.dart';
 import 'dao_task_item.dart';
 import 'dao_time_entry.dart';
+import 'dao_todo.dart';
 import 'dao_work_assignment_task.dart';
 
 enum JobOrder {
@@ -71,18 +72,28 @@ class DaoJob extends Dao<Job> {
         existing != null &&
         existing.status != entity.status &&
         entity.status == JobStatus.rejected;
+    final isFinalisingJob =
+        existing != null &&
+        existing.status != entity.status &&
+        entity.status.stage == JobStatusStage.finalised;
 
-    if (!isRejectingJob) {
+    if (!isRejectingJob && !isFinalisingJob) {
       return super.update(entity, transaction);
     }
 
     if (transaction != null) {
-      await DaoQuote().rejectByJob(entity.id, transaction: transaction);
+      if (isRejectingJob) {
+        await DaoQuote().rejectByJob(entity.id, transaction: transaction);
+      }
+      await DaoToDo().closeByJob(entity.id, transaction: transaction);
       return super.update(entity, transaction);
     }
 
     return db.transaction((txn) async {
-      await DaoQuote().rejectByJob(entity.id, transaction: txn);
+      if (isRejectingJob) {
+        await DaoQuote().rejectByJob(entity.id, transaction: txn);
+      }
+      await DaoToDo().closeByJob(entity.id, transaction: txn);
       return super.update(entity, txn);
     });
   }

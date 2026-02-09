@@ -166,5 +166,31 @@ void main() {
       final retrievedJob = await DaoJob().getById(job.id);
       expect(retrievedJob?.lastActive, isFalse);
     });
+
+    test('finalising a job closes linked todos', () async {
+      final now = DateTime.now();
+      final job = await createJob(
+        now,
+        BillingType.timeAndMaterial,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
+
+      await DaoToDo().insert(
+        ToDo.forInsert(
+          title: 'Follow up on materials',
+          parentType: ToDoParentType.job,
+          parentId: job.id,
+        ),
+      );
+      expect((await DaoToDo().getByJob(job.id)).length, 1);
+
+      job.status = JobStatus.completed;
+      await DaoJob().update(job);
+
+      final todos = await DaoToDo().getByJob(job.id);
+      expect(todos.length, 1);
+      expect(todos.first.status, ToDoStatus.closed);
+    });
   });
 }
