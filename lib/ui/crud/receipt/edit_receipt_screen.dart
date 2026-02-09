@@ -139,7 +139,6 @@ class _ReceiptEditScreenState extends DeferredState<ReceiptEditScreen>
       HMBSelectJob(
         selectedJob: _selectedJob,
         required: true,
-        // ignore: discarded_futures
         onSelected: (job) => setState(() {
           _selectedJob.jobId = job?.id;
         }),

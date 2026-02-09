@@ -26,6 +26,8 @@ import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
 import 'job_and_customer.dart';
 
+enum _RejectAction { quoteOnly, quoteAndJob }
+
 class QuoteCard extends StatefulWidget {
   final Quote quote;
   final ValueChanged<Quote> onStateChanged;
@@ -61,6 +63,33 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
       HMBToast.error('Failed to update quote: $e');
     }
   }
+
+  Future<_RejectAction?> _promptRejectAction(BuildContext context) =>
+      showDialog<_RejectAction>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Reject Quote'),
+          content: const Text('Do you want to reject the job as well?'),
+          actions: [
+            HMBButton(
+              label: 'Cancel',
+              hint: 'Keep the quote unchanged',
+              onPressed: () => Navigator.pop(context),
+            ),
+            HMBButton(
+              label: 'Quote Only',
+              hint: 'Reject the quote but keep the job active',
+              onPressed: () => Navigator.pop(context, _RejectAction.quoteOnly),
+            ),
+            HMBButton(
+              label: 'Quote + Job',
+              hint: 'Reject the quote and the job',
+              onPressed: () =>
+                  Navigator.pop(context, _RejectAction.quoteAndJob),
+            ),
+          ],
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -127,8 +156,21 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                 // disable when already rejected
                 enabled: !isRejected,
                 onPressed: () async {
+                  final action = await _promptRejectAction(context);
+                  if (action == null) {
+                    return;
+                  }
+
                   await _updateQuote(() async {
                     await DaoQuote().rejectQuote(quote.id);
+
+                    if (action == _RejectAction.quoteAndJob) {
+                      final job = await DaoJob().getById(quote.jobId);
+                      if (job != null) {
+                        job.status = JobStatus.rejected;
+                        await DaoJob().update(job);
+                      }
+                    }
                   });
                 },
               ),

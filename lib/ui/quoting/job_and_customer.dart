@@ -29,7 +29,7 @@ class JobAndCustomer {
     required this.primaryContact,
     required this.billingContact,
   });
-  
+
   static Future<JobAndCustomer> fromQuote(Quote quote) async {
     final job = await DaoJob().getById(quote.jobId);
     if (job == null) {

@@ -24,7 +24,7 @@ import '../../../../src/appname.dart';
 import '../../../../ui/dialog/hmb_file_picker_linux.dart';
 import '../../../../util/dart/exceptions.dart';
 import '../../../../util/dart/paths.dart';
-import '../../../versions/asset_script_source.dart';
+import '../../../versions/implementations/asset_script_source.dart';
 import '../backup.dart';
 import '../backup_provider.dart';
 
@@ -125,13 +125,13 @@ class EmailBackupProvider extends BackupProvider {
       );
 
       await FlutterEmailSender.send(email);
-      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       throw BackupException('Error sending email: $e');
     }
   }
 
   Future<File?> pickBackupFile(BuildContext context) async {
+    
     String? selectedFilePath;
     try {
       if (Platform.isLinux) {
@@ -144,7 +144,6 @@ class EmailBackupProvider extends BackupProvider {
           selectedFilePath = result.files.single.path;
         }
       }
-      // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       throw BackupException('Error picking file: $e');
     }

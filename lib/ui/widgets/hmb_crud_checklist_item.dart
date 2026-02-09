@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
 
@@ -21,9 +20,8 @@ import 'hmb_child_crud_card.dart';
 
 class HMBCrudTaskItem extends StatelessWidget {
   final Task? task;
-  
-  const HMBCrudTaskItem({required this.task, super.key});
 
+  const HMBCrudTaskItem({required this.task, super.key});
 
   @override
   Widget build(BuildContext context) => HMBChildCrudCard(

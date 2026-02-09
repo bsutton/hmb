@@ -24,10 +24,16 @@ import '../../widgets/text/hmb_text.dart';
 import '../job/edit_job_card.dart';
 
 class ListTaskCard extends StatefulWidget {
+  final Job job;
   final Task task;
   final bool summary;
 
-  const ListTaskCard({required this.task, required this.summary, super.key});
+  const ListTaskCard({
+    required this.job,
+    required this.task,
+    required this.summary,
+    super.key,
+  });
 
   @override
   State<ListTaskCard> createState() => _ListTaskCardState();
@@ -64,9 +70,11 @@ class _ListTaskCardState extends State<ListTaskCard> {
     children: [
       Text(activeTask.status.name),
       FutureBuilderEx(
-        future: DaoTask()
-            // ignore: discarded_futures
-            .getAccruedValueForTask(task: activeTask, includeBilled: true),
+        future: DaoTask().getAccruedValueForTask(
+          job: widget.job,
+          task: activeTask,
+          includeBilled: true,
+        ),
         builder: (context, taskAccruedValue) => Row(
           children: [
             HMBText(
@@ -96,7 +104,6 @@ class _ListTaskCardState extends State<ListTaskCard> {
     children: [
       Text(task.status.name),
       FutureBuilderEx(
-        // ignore: discarded_futures
         future: DaoTimeEntry().getByTask(task.id),
         builder: (context, timeEntries) => Text(
           formatDuration(
@@ -108,7 +115,6 @@ class _ListTaskCardState extends State<ListTaskCard> {
         ),
       ),
       FutureBuilderEx<int>(
-        // ignore: discarded_futures
         future: _getPhotoCount(task.id),
         builder: (context, photoCount) => Text('Photos: ${photoCount ?? 0}'),
       ), // Display photo count

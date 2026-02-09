@@ -235,7 +235,6 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
   }) => GrayedOut(
     grayedOut: !enabled,
     child: FutureBuilderEx(
-      // ignore: discarded_futures
       future: _getPhotoMeta(photoId),
       builder: (context, photoMeta) => HMBColumn(
         crossAxisAlignment: CrossAxisAlignment.start,

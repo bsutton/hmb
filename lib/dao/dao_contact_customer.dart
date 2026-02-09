@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/contact.dart';

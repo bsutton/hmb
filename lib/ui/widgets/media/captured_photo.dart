@@ -18,7 +18,6 @@ import 'package:path/path.dart';
 
 import '../../../util/dart/paths.dart';
 
-
 /// Handles storing a photo into HMB's storage area and
 /// then making a relative path available.
 /// When storing paths to photos into the db we must

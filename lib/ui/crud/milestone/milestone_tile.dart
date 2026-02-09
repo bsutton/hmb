@@ -42,6 +42,7 @@ class MilestoneTile extends StatefulWidget {
   final ValueChanged<Milestone> onDelete;
   final ValueChanged<Milestone> onSave;
   final Future<void> Function(Milestone milestone) onInvoice;
+  final bool canEdit;
   final void Function({required Milestone milestone, required bool isEditing})
   onEditingStatusChanged;
   final bool isOtherTileEditing;
@@ -52,6 +53,7 @@ class MilestoneTile extends StatefulWidget {
     required this.onDelete,
     required this.onSave,
     required this.onInvoice,
+    required this.canEdit,
     required this.onEditingStatusChanged,
     required this.isOtherTileEditing,
     super.key,
@@ -73,7 +75,10 @@ class _MilestoneTileState extends State<MilestoneTile> {
   @override
   void initState() {
     super.initState();
-    _isEditable = widget.milestone.invoiceId == null;
+    _isEditable =
+        widget.canEdit &&
+        widget.milestone.invoiceId == null &&
+        !widget.milestone.voided;
     descriptionController = TextEditingController(
       text: widget.milestone.milestoneDescription,
     );
@@ -83,6 +88,19 @@ class _MilestoneTileState extends State<MilestoneTile> {
     amountController = TextEditingController(
       text: widget.milestone.paymentAmount.toString(),
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant MilestoneTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.canEdit != widget.canEdit ||
+        oldWidget.milestone.invoiceId != widget.milestone.invoiceId ||
+        oldWidget.milestone.voided != widget.milestone.voided) {
+      _isEditable =
+          widget.canEdit &&
+          widget.milestone.invoiceId == null &&
+          !widget.milestone.voided;
+    }
   }
 
   @override
@@ -216,6 +234,14 @@ Are you sure you want to delete ${Strings.isNotBlank(widget.milestone.milestoneD
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (widget.milestone.voided)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 8),
+                            child: Text(
+                              'Voided',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
                         // Tight actions cluster
                         Row(
                           mainAxisSize: MainAxisSize.min,

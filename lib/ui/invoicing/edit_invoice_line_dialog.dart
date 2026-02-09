@@ -20,7 +20,7 @@ import '../widgets/hmb_button.dart';
 
 class EditInvoiceLineDialog extends StatefulWidget {
   final InvoiceLine line;
-  
+
   const EditInvoiceLineDialog({required this.line, super.key});
 
   @override

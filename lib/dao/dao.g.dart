@@ -7,6 +7,7 @@
 export 'child_dao.dart';
 export 'dao.dart';
 export 'dao_base.dart';
+export 'dao_booking_request.dart';
 export 'dao_category.dart';
 export 'dao_check_list_item_check_list.dart';
 export 'dao_check_list_task.dart';

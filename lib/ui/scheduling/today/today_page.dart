@@ -77,7 +77,7 @@ class Today {
   final List<TaskItem> shopping;
   final List<TaskItem> packing;
   final List<Job> toBeQuoted;
-  final List<Job> toBeInvoiced;
+  final List<InvoicingJob> toBeInvoiced;
   final BackupReminderStatus backupReminder;
 
   Today._({
@@ -118,7 +118,20 @@ class Today {
           );
 
     final toBeQuoted = await daoJob.getQuotableJobs(null);
-    final toBeInvoiced = await daoJob.readyToBeInvoiced(null);
+    final readyJobs = await daoJob.readyToBeInvoiced(null);
+    final unsentInvoices = await DaoInvoice().getUnsent();
+    final byId = <int, InvoicingJob>{};
+    for (final job in readyJobs) {
+      byId[job.id] = InvoicingJob(job: job, hasUnsentInvoice: false);
+    }
+    for (final invoice in unsentInvoices) {
+      final job = await daoJob.getById(invoice.jobId);
+      if (job != null) {
+        byId[job.id] = InvoicingJob(job: job, hasUnsentInvoice: true);
+      }
+    }
+    final toBeInvoiced = byId.values.toList()
+      ..sort((a, b) => b.job.modifiedDate.compareTo(a.job.modifiedDate));
     final backupReminder = await BackupReminder.getStatus();
 
     return Today._(
@@ -131,6 +144,13 @@ class Today {
       backupReminder: backupReminder,
     );
   }
+}
+
+class InvoicingJob {
+  final Job job;
+  final bool hasUnsentInvoice;
+
+  const InvoicingJob({required this.job, required this.hasUnsentInvoice});
 }
 
 /// The main schedule page. This is the "shell" that holds a [PageView]
@@ -248,11 +268,13 @@ class TodayPageState extends DeferredState<TodayPage> {
           children: [
             Checkbox(
               value: todo.status == ToDoStatus.done,
-              onChanged: (_) async {
-                await DaoToDo().toggleDone(todo);
-                await refresh();
-                HMBToast.info('Marked ${todo.title} as done');
-              },
+              onChanged: todo.status == ToDoStatus.closed
+                  ? null
+                  : (_) async {
+                      await DaoToDo().toggleDone(todo);
+                      await refresh();
+                      HMBToast.info('Marked ${todo.title} as done');
+                    },
             ),
             Expanded(child: HMBTextHeadline2(todo.title)),
           ],
@@ -283,7 +305,7 @@ class TodayPageState extends DeferredState<TodayPage> {
     cardBuilder: QuotingCard.new,
   );
 
-  Widget invoicingList(Today today) => Listing<Job>(
+  Widget invoicingList(Today today) => Listing<InvoicingJob>(
     title: 'Invoicing',
     list: today.toBeInvoiced,
     emptyMessage: 'No jobs need to be invoiced.',
@@ -379,14 +401,14 @@ class QuotingCard extends StatelessWidget {
 }
 
 class InvoiceCard extends StatelessWidget {
-  final Job job;
+  final InvoicingJob invoicingJob;
 
-  const InvoiceCard(this.job, {super.key});
+  const InvoiceCard(this.invoicingJob, {super.key});
 
   @override
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
-    future: JobAndCustomer.fetch(job),
+    future: JobAndCustomer.fetch(invoicingJob.job),
     builder: (context, jobAndCustomer) => Surface(
       rounded: true,
       child: Row(
@@ -397,14 +419,21 @@ class InvoiceCard extends StatelessWidget {
             children: [
               HMBText(jobAndCustomer!.job.summary),
               HMBText(jobAndCustomer.customer.name),
+              if (invoicingJob.hasUnsentInvoice)
+                const Text(
+                  'Unsent invoice',
+                  style: TextStyle(color: Colors.orange),
+                ),
             ],
           ),
 
           HMBButtonAdd(
-            hint: 'Add Invoice',
+            hint: invoicingJob.hasUnsentInvoice
+                ? 'Open invoice list and send outstanding invoice'
+                : 'Add Invoice',
             small: true,
             enabled: true,
-            onAdd: () => createInvoiceFor(job, context),
+            onAdd: () => createInvoiceFor(invoicingJob.job, context),
           ),
         ],
       ),

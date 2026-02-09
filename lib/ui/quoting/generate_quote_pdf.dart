@@ -24,7 +24,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/quote.dart';
 import '../../entity/system.dart';
 import '../../util/dart/format.dart';
-import 'job_quote.dart';
+import 'quote_details.dart';
 
 Future<File> generateQuotePdf(
   Quote quote, {
@@ -34,7 +34,10 @@ Future<File> generateQuotePdf(
 }) async {
   final pdf = pw.Document();
   final system = await DaoSystem().get();
-  final jobQuote = await JobQuote.fromQuoteId(quote.id, excludeHidden: true);
+  final jobQuote = await QuoteDetails.fromQuoteId(
+    quote.id,
+    excludeHidden: true,
+  );
 
   final totalAmount = jobQuote.total;
   final phone = await formatPhone(system.bestPhone);
@@ -44,7 +47,7 @@ Future<File> generateQuotePdf(
   pdf.addPage(
     pw.MultiPage(
       pageTheme: pw.PageTheme(
-        margin: pw.EdgeInsets.zero,
+        margin: const pw.EdgeInsets.fromLTRB(20, 20, 20, 50),
         buildBackground: (context) => pw.Stack(
           children: [
             // Top band
@@ -119,7 +122,7 @@ Future<File> generateQuotePdf(
       header: (context) {
         if (context.pageNumber == 1) {
           return pw.Padding(
-            padding: const pw.EdgeInsets.fromLTRB(20, 30, 20, 10),
+            padding: const pw.EdgeInsets.fromLTRB(0, 10, 0, 10),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
@@ -139,7 +142,7 @@ Future<File> generateQuotePdf(
                         pw.Text('Date: ${formatDate(quote.createdDate)}'),
                       ],
                     ),
-                    if (logo != null) logo,
+                    ?logo,
                   ],
                 ),
                 pw.Divider(),
@@ -326,16 +329,7 @@ Future<File> generateQuotePdf(
           }
         }
 
-        return [
-          pw.Padding(
-            // top padding reduced from 80 to 20
-            padding: const pw.EdgeInsets.fromLTRB(20, 20, 20, 60),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: content,
-            ),
-          ),
-        ];
+        return content;
       },
     ),
   );

@@ -21,6 +21,7 @@ import '../../dao/dao_job.dart';
 import '../../dao/dao_job_activity.dart';
 import '../../entity/contact.dart';
 import '../../entity/flutter_extensions/job_activity_status_ex.dart';
+import '../../entity/job.dart';
 import '../../entity/job_activity.dart';
 import '../../fsm/job_events.dart';
 import '../../fsm/job_status_fsm.dart';
@@ -28,6 +29,7 @@ import '../../util/dart/date_time_ex.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/local_date.dart';
 import '../../util/dart/local_time.dart';
+import '../dialog/send_notice_for_job_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_date_time_picker.dart';
 import '../widgets/hmb_toast.dart';
@@ -62,10 +64,10 @@ class JobActivityDialog extends StatefulWidget {
   final bool isEditing;
 
   JobActivityDialog.edit({
-    required CalendarEventData<JobActivityEx> this.event,
+    required this.event,
     this.preSelectedJobId,
     super.key,
-  }) : when = event.date,
+  }) : when = event!.date,
        isEditing = true;
 
   const JobActivityDialog.add({
@@ -161,7 +163,6 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
               children: [
                 HMBSelectJob(
                   selectedJob: _selectedJob,
-                  // ignore: discarded_futures
                   onSelected: (job) => setState(() {
                     _selectedJob.jobId = job?.id;
                   }),
@@ -515,9 +516,13 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
                 subtitle: Text(
                   '${contact.contact.firstName} ${contact.contact.surname}',
                 ),
-                onTap: () {
+                onTap: () async {
                   Navigator.of(context).pop();
-                  _sendNotice(contact);
+                  await _sendNotice(
+                    contact,
+                    widget.event!.event!.job,
+                    widget.event!.event!.jobActivity,
+                  );
                 },
               );
             },
@@ -578,7 +583,13 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     return [];
   }
 
-  void _sendNotice(ContactOption contact) {
+  Future<void> _sendNotice(
+    ContactOption contact,
+    Job job,
+    JobActivity jobActivity,
+  ) async {
+    await SendNoticeForJobDialog.show(context, job, jobActivity);
+
     // TODO(bsutton): send customer notice that their job has been scheduled
     // as well as notice if we change the job.
     // Implement your logic to send the notice via email or SMS
@@ -586,7 +597,6 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
     //send the notice
 
     // For demonstration purposes, we just show a snackbar
-    HMBToast.info('Not yet implemented');
     // HMBToast.info(
     //   'Notice sent to ${contact.contact.firstName}
     //via ${contact.method.name}

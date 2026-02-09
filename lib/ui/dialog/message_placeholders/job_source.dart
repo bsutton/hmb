@@ -33,7 +33,6 @@ class JobSource extends Source<Job> {
     builder: (context, customerJob, _) => HMBDroplist<Job>(
       title: 'Job',
       selectedItem: () async => customerJob.job,
-      // ignore: discarded_futures
       items: (filter) => DaoJob().getByCustomer(customerJob.customer),
       format: (job) => customerJob.job?.summary ?? '',
       onChanged: (job) {
@@ -66,6 +65,6 @@ class JobSource extends Source<Job> {
 class CustomerJob {
   Customer? customer;
   Job? job;
-  
+
   CustomerJob(this.customer, this.job);
 }

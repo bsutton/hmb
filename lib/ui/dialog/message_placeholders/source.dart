@@ -33,7 +33,6 @@ abstract class Source<T> {
   // /// that a new value has been picked.
   // void Function(T? data, ResetFields resetFields)? onChanged;
 
-  // ignore: avoid_setters_without_getters
   /// The template dialog calls listen to get change events
   /// from the source of the placeholder
   // ignore: use_setters_to_change_properties

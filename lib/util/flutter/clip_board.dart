@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/services.dart';
 
 import '../../ui/widgets/hmb_toast.dart';
@@ -23,7 +22,7 @@ Future<void> clipboardCopyTo(String data) async {
   HMBToast.info('Copy $data to the clipboard');
 }
 
-Future<bool> clipboardHasText()  => Clipboard.hasStrings();
+Future<bool> clipboardHasText() => Clipboard.hasStrings();
 
 Future<String> clipboardGetText() async =>
     (await Clipboard.getData('text/plain'))?.text ?? '';

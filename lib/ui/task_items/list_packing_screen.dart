@@ -36,13 +36,14 @@ import '../dialog/add_task_item.dart';
 import '../dialog/hmb_comfirm_delete_dialog.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/hmb_colours.dart';
-import '../widgets/hmb_search.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/hmb_toggle.dart';
 import '../widgets/icons/help_button.dart';
+import '../widgets/icons/hmb_add_button.dart';
 import '../widgets/icons/hmb_complete_icon.dart';
 import '../widgets/icons/hmb_delete_icon.dart';
 import '../widgets/icons/hmb_edit_icon.dart';
+import '../widgets/icons/hmb_shopping_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/layout/surface.dart';
 import '../widgets/select/hmb_droplist.dart';
@@ -83,7 +84,6 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
 
   /// Filters
   List<Job> _selectedJobs = [];
-  String? filter;
   var _showPreScheduledJobs = false;
   var _showPreApprovedTasks = false;
 
@@ -110,10 +110,7 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
       final task = await DaoTask().getById(taskItem.taskId);
       final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
       final isReturn = taskItem.isReturn;
-      // Apply text filter if present.
-      var include =
-          Strings.isBlank(filter) ||
-          taskItem.description.toLowerCase().contains(filter!.toLowerCase());
+      var include = true;
 
       // If a schedule filter is selected (other than "All") check the job's
       //next activity.
@@ -152,10 +149,11 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: HMBColours.background,
     body: Surface(
+      elevation: SurfaceElevation.e8,
       child: HMBColumn(
         children: [
           HMBFilterLine(
-            lineBuilder: _buildSearchLine,
+            lineBuilder: _buildTopLine,
             sheetBuilder: _buildFilter,
             onReset: () async {
               _selectedJobs.clear();
@@ -166,7 +164,6 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
               await _loadTaskItems();
             },
             isActive: () =>
-                _selectedJobs.isNotEmpty ||
                 _selectedScheduleFilter != ScheduleFilter.all ||
                 !_showPreScheduledJobs ||
                 !_showPreApprovedTasks,
@@ -187,15 +184,26 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
     ),
   );
 
-  Widget _buildSearchLine(BuildContext context) => HMBSearchWithAdd(
-    onSearch: (filter) async {
-      this.filter = filter;
-      await _loadTaskItems();
-    },
-    onAdd: () async {
-      await showAddItemDialog(context, AddType.packing);
-      await _loadTaskItems();
-    },
+  Widget _buildTopLine(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: HMBSelectJobMulti(
+          initialJobs: _selectedJobs,
+          onChanged: (selectedJobs) async {
+            _selectedJobs = selectedJobs;
+            await _loadTaskItems();
+          },
+        ),
+      ),
+      const HMBSpacer(width: true),
+      HMBButtonAdd(
+        onAdd: () async {
+          await showAddItemDialog(context, AddType.packing);
+          await _loadTaskItems();
+        },
+        enabled: true,
+      ),
+    ],
   );
 
   Widget _buildLayout(BuildContext context) => LayoutBuilder(
@@ -232,13 +240,6 @@ class _PackingScreenState extends DeferredState<PackingScreen> {
         child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            HMBSelectJobMulti(
-              initialJobs: _selectedJobs,
-              onChanged: (selectedJobs) async {
-                _selectedJobs = selectedJobs;
-                await _loadTaskItems();
-              },
-            ),
             HMBDroplist<ScheduleFilter>(
               key: _scheduleFilterKey,
               selectedItem: () async => _selectedScheduleFilter,
@@ -295,7 +296,7 @@ Packing items are taken from Task items that are marked as "${TaskItemType.mater
     BuildContext context,
     TaskItemContext itemContext,
   ) => SurfaceCardWithActions(
-    height: 250,
+    height: 276,
     title: itemContext.taskItem.description,
     // tap no longer auto-completes; actions are explicit like the shopping card
     body: Row(
@@ -332,6 +333,12 @@ Packing items are taken from Task items that are marked as "${TaskItemType.mater
       ],
     ),
     actions: [
+      HMBShoppingIcon(
+        onPressed: () async {
+          await _moveToShoppingList(itemContext);
+          await _loadTaskItems();
+        },
+      ),
       // Complete
       HMBCompleteIcon(
         onPressed: () async {

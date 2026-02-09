@@ -28,6 +28,6 @@ class ManufacturersDashlet extends StatelessWidget {
     icon: Icons.factory,
     value: () => Future.value(const DashletValue(null)),
     route: '/home/manufacturers',
-    valueBuilder: (_, _) =>  const HMBEmpty(),
+    valueBuilder: (_, _) => const HMBEmpty(),
   );
 }

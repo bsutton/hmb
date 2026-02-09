@@ -189,7 +189,6 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
           HMBSelectJob(
             title: 'Filter By Job',
             selectedJob: selectedJob,
-            // ignore: discarded_futures
             // items: (filter) => DaoJob().getSchedulableJobs(filter),
             onSelected: (job) => setState(() {
               selectedJob.jobId = job?.id;

@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'dart:io';
 
 import 'package:dcli/dcli.dart';
@@ -61,17 +60,20 @@ class DevBackupProvider extends BackupProvider {
     required String pathToZippedBackup,
     required int version,
   }) async {
-    var pathToBackupFile = join(
+    final basePath = join(
       DartProject.self.pathToProjectRoot,
       'backups',
-      basename(pathToZippedBackup),
+      basenameWithoutExtension(pathToZippedBackup),
     );
+    final ext = extension(pathToZippedBackup);
 
-    var count = 1;
-    while (exists(pathToBackupFile)) {
+    var count = 0;
+    String pathToBackupFile;
+    do {
       pathToBackupFile =
-          '''${join(dirname(pathToBackupFile), basenameWithoutExtension(pathToBackupFile))}.${count++}${extension(pathToBackupFile)}''';
-    }
+          count == 0 ? '$basePath$ext' : '$basePath.$count$ext';
+      count++;
+    } while (exists(pathToBackupFile));
     print('Saving backup to $pathToBackupFile');
     move(pathToZippedBackup, pathToBackupFile);
 
@@ -85,7 +87,6 @@ class DevBackupProvider extends BackupProvider {
   @override
   Future<String> get photosRootPath async =>
       join(DartProject.self.pathToProjectRoot, 'photos');
-
 
   @override
   Future<String> get backupLocation async => _pathToBackups();

@@ -19,6 +19,7 @@ import '../../../entity/job.dart';
 import '../../invoicing/list_invoice_screen.dart';
 import '../../nav/dashboards/dashlet_card.dart';
 import '../../quoting/list_quote_screen.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/layout/hmb_full_page_child_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import '../task/list_task_screen.dart';
@@ -45,13 +46,13 @@ class MiniJobDashboard extends StatelessWidget {
         runSpacing: 8,
         children: [
           _dashlet(
-            child: DashletCard<String>.builder(
+            child: DashletCard<String>.onTap(
               label: 'Estimate',
               hint: "Build an Estimate of a Job's cost",
               icon: Icons.calculate,
               compact: true,
               value: () async => const DashletValue(''),
-              builder: (_, _) => JobEstimateBuilderScreen(job: job),
+              onTap: _openEstimateBuilder,
             ),
             size: dashletSize,
           ),
@@ -182,4 +183,50 @@ class MiniJobDashboard extends StatelessWidget {
   /// Wraps a dashlet in a fixed-size container
   Widget _dashlet({required Widget child, required double size}) =>
       SizedBox(width: size, height: size, child: child);
+
+  Future<void> _openEstimateBuilder(BuildContext context) async {
+    if (job.billingType == BillingType.timeAndMaterial) {
+      final switchToFixed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Estimates Require Fixed Price'),
+          content: const Text(
+            'You cannot create estimates for Time and Materials jobs. '
+            'Switch this job to Fixed Price to continue?',
+          ),
+          actions: [
+            HMBButton(
+              label: 'Cancel',
+              hint: "Don't switch the job billing type",
+              onPressed: () => Navigator.pop(context, false),
+            ),
+            HMBButton(
+              label: 'Switch to Fixed Price',
+              hint: 'Update the job to Fixed Price billing',
+              onPressed: () => Navigator.pop(context, true),
+            ),
+          ],
+        ),
+      );
+
+      if (switchToFixed != true) {
+        return;
+      }
+
+      final updated = job.copyWith(billingType: BillingType.fixedPrice);
+      await DaoJob().update(updated);
+      job.billingType = updated.billingType;
+    }
+
+    if (!context.mounted) {
+      return;
+    }
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => JobEstimateBuilderScreen(job: job),
+        fullscreenDialog: true,
+      ),
+    );
+  }
 }

@@ -15,6 +15,7 @@ import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../api/xero/models/xero_invoice.dart';
+import '../api/xero/models/xero_line_item.dart';
 import '../dao/dao.g.dart';
 import '../util/dart/exceptions.dart';
 import '../util/dart/local_date.dart';
@@ -102,6 +103,10 @@ You must set the Account Code and Item Code in System | Integration before you c
     final xeroContact = contact.toXeroContact();
 
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
+    final chargeableLines = invoiceLines.where(
+      (line) => line.status == LineChargeableStatus.normal,
+    );
+    final filteredLines = await _suppressOffsettingLines(chargeableLines);
 
     final xeroInvoice = XeroInvoice(
       reference: job.summary,
@@ -109,10 +114,10 @@ You must set the Account Code and Item Code in System | Integration before you c
       contact: xeroContact,
       issueDate: LocalDate.fromDateTime(invoice.createdDate),
       dueDate: invoice.dueDate,
-      lineItems: invoiceLines
-          .where((line) => line.status == LineChargeableStatus.normal)
+      lineItems: filteredLines
           .map(
-            (line) => line.toXeroLineItem(
+            (line) => _toXeroLineItem(
+              line,
               accountCode: system.invoiceLineRevenueAccountCode!,
               itemCode: system.invoiceLineInventoryItemCode!,
             ),
@@ -121,6 +126,91 @@ You must set the Account Code and Item Code in System | Integration before you c
       lineAmountTypes: 'Inclusive',
     ); // All amounts are inclusive of tax.
     return xeroInvoice;
+  }
+
+  Future<List<InvoiceLine>> _suppressOffsettingLines(
+    Iterable<InvoiceLine> lines,
+  ) async {
+    final lineList = lines.where((line) => !line.lineTotal.isZero).toList();
+    if (lineList.isEmpty) {
+      return lineList;
+    }
+
+    final lineById = {for (final line in lineList) line.id: line};
+    final lineIds = lineById.keys.toList();
+    final billedTaskItems = await DaoTaskItem().getByInvoiceLineIds(lineIds);
+    final returnItems = billedTaskItems
+        .where((item) => item.isReturn && item.sourceTaskItemId != null)
+        .toList();
+    if (returnItems.isEmpty) {
+      return lineList;
+    }
+
+    final sourceIds = returnItems
+        .map((item) => item.sourceTaskItemId)
+        .whereType<int>()
+        .toSet()
+        .toList();
+    final sourceItems = await DaoTaskItem().getByIds(sourceIds);
+    final sourceById = {for (final source in sourceItems) source.id: source};
+    final suppressedLineIds = <int>{};
+
+    for (final returnItem in returnItems) {
+      final returnLineId = returnItem.invoiceLineId;
+      final sourceId = returnItem.sourceTaskItemId;
+      if (returnLineId == null || sourceId == null) {
+        continue;
+      }
+      final sourceItem = sourceById[sourceId];
+      final sourceLineId = sourceItem?.invoiceLineId;
+      if (sourceLineId == null) {
+        continue;
+      }
+      final sourceLine = lineById[sourceLineId];
+      final returnLine = lineById[returnLineId];
+      if (sourceLine == null || returnLine == null) {
+        continue;
+      }
+
+      if ((sourceLine.lineTotal + returnLine.lineTotal).isZero) {
+        suppressedLineIds
+          ..add(sourceLine.id)
+          ..add(returnLine.id);
+      }
+    }
+
+    return lineList
+        .where((line) => !suppressedLineIds.contains(line.id))
+        .toList();
+  }
+
+  XeroLineItem _toXeroLineItem(
+    InvoiceLine line, {
+    required String accountCode,
+    required String itemCode,
+  }) {
+    var quantity = line.quantity;
+    if (quantity.compareTo(Fixed.zero) < 0) {
+      quantity = -quantity;
+    }
+
+    var unitAmount = line.unitPrice;
+    if (line.lineTotal.isNegative) {
+      if (!unitAmount.isNegative) {
+        unitAmount = -unitAmount;
+      }
+    } else if (unitAmount.isNegative) {
+      unitAmount = -unitAmount;
+    }
+
+    return XeroLineItem(
+      description: line.description,
+      quantity: quantity,
+      unitAmount: unitAmount,
+      lineTotal: line.lineTotal,
+      accountCode: accountCode,
+      itemCode: itemCode,
+    );
   }
 
   /// true if the invoice has been uploaded to the external

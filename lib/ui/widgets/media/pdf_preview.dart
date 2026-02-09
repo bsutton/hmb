@@ -137,7 +137,8 @@ class PdfPreviewScreen extends StatelessWidget {
         document: doc,
         pageNumber: i + 1, // base 1
 
-        pageSizeCallback: (biggestSize, page) => Size(page.width, page.height),
+        pageSizeCallback: (biggestSize, page, rotationOverride) =>
+            Size(page.width, page.height),
       );
 
       pageWidgets.add(

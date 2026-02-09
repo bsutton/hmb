@@ -35,11 +35,9 @@ class ListCustomerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FutureBuilderEx(
     waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
-    // ignore: discarded_futures
     future: DaoSite().getPrimaryForCustomer(customer.id),
     builder: (context, site) => FutureBuilderEx(
       waitingBuilder: (context) => const HMBPlaceHolder(height: 145),
-      // ignore: discarded_futures
       future: DaoContact().getPrimaryForCustomer(customer.id),
       builder: (context, contact) => HMBColumn(
         mainAxisSize: MainAxisSize.min,

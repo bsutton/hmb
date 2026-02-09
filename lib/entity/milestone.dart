@@ -26,6 +26,7 @@ class Milestone extends Entity<Milestone> {
   String? milestoneDescription;
   LocalDate? dueDate;
   bool edited;
+  bool voided;
 
   Milestone({
     required super.id,
@@ -39,6 +40,7 @@ class Milestone extends Entity<Milestone> {
     this.invoiceId,
     this.milestoneDescription,
     this.dueDate,
+    this.voided = false,
   }) : super();
 
   Milestone.forInsert({
@@ -50,6 +52,7 @@ class Milestone extends Entity<Milestone> {
     this.milestoneDescription,
     this.dueDate,
     this.edited = false,
+    this.voided = false,
   }) : super.forInsert();
 
   Milestone copyWith({
@@ -62,6 +65,7 @@ class Milestone extends Entity<Milestone> {
     String? milestoneDescription,
     LocalDate? dueDate,
     bool? edited,
+    bool? voided,
     DateTime? createdDate,
     DateTime? modifiedDate,
   }) => Milestone(
@@ -75,6 +79,7 @@ class Milestone extends Entity<Milestone> {
     milestoneDescription: milestoneDescription ?? this.milestoneDescription,
     dueDate: dueDate ?? this.dueDate,
     edited: edited ?? this.edited,
+    voided: voided ?? this.voided,
     createdDate: createdDate ?? this.createdDate,
     modifiedDate: modifiedDate ?? this.modifiedDate,
   );
@@ -92,6 +97,7 @@ class Milestone extends Entity<Milestone> {
         : null,
 
     edited: (map['edited'] as int) == 1,
+    voided: (map['voided'] as int?) == 1,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
@@ -110,6 +116,7 @@ class Milestone extends Entity<Milestone> {
     'milestone_description': milestoneDescription,
     'due_date': const LocalDateNullableConverter().toJson(dueDate),
     'edited': edited ? 1 : 0,
+    'voided': voided ? 1 : 0,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };
@@ -126,5 +133,6 @@ class Milestone extends Entity<Milestone> {
     paymentPercentage,
     milestoneDescription,
     dueDate,
+    voided,
   );
 }

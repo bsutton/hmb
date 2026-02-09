@@ -38,6 +38,9 @@ class DaoJuneBuilder {
     DaoContactCustomer.tableName: _reg<ContactCustomerNotifier>(
       ContactCustomerNotifier.new,
     ),
+    DaoBookingRequest.tableName: _reg<BookingRequestNotifier>(
+      BookingRequestNotifier.new,
+    ),
     DaoInvoice.tableName: _reg<InvoiceNotifier>(InvoiceNotifier.new),
     DaoInvoiceLine.tableName: _reg<InvoiceLineNotifier>(
       InvoiceLineNotifier.new,

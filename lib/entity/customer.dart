@@ -79,12 +79,12 @@ class Customer extends Entity<Customer> {
     id: map['id'] as int,
     name: map['name'] as String,
     description: map['description'] as String?,
-    createdDate: DateTime.parse(map['createdDate'] as String),
-    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
     disbarred: map['disbarred'] as int == 1,
     customerType: CustomerType.values[map['customerType'] as int],
     hourlyRate: MoneyEx.fromInt(map['default_hourly_rate'] as int?),
     billingContactId: map['billing_contact_id'] as int?,
+    createdDate: DateTime.parse(map['createdDate'] as String),
+    modifiedDate: DateTime.parse(map['modifiedDate'] as String),
   );
 
   @override

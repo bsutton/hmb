@@ -128,12 +128,10 @@ class _StartTimerDialogState extends State<StartTimerDialog> {
   Widget buildTaskDetails() => HMBColumn(
     children: [
       FutureBuilderEx(
-        // ignore: discarded_futures
         future: DaoJob().getById(widget.task.jobId),
         builder: (context, job) => HMBColumn(
           children: [
             FutureBuilderEx(
-              // ignore: discarded_futures
               future: DaoCustomer().getById(job!.customerId),
               builder: (context, customer) => HMBColumn(
                 children: [Text(customer!.name), Text(job.summary)],

@@ -4,12 +4,14 @@
 // barrel_create is sponsored by OnePub the dart private repository
 // https://onepub.dev
 //
+export 'booking_request.dart';
 export 'category.dart';
 export 'check_list.dart';
 export 'check_list_item.dart';
 export 'contact.dart';
 export 'customer.dart';
 export 'entity.dart';
+export 'image_cache_variant.dart';
 export 'invoice.dart';
 export 'invoice_line.dart';
 export 'invoice_line_group.dart';
@@ -23,6 +25,7 @@ export 'milestone.dart';
 export 'operating_day.dart';
 export 'operating_hours.dart';
 export 'photo.dart';
+export 'photo_delete_queue.dart';
 export 'quote.dart';
 export 'quote_line.dart';
 export 'quote_line_group.dart';

@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 import 'package:money2/money2.dart';
+import 'package:strings/strings.dart';
 
 import '../../../dao/dao_task.dart';
 import '../../../dao/dao_task_item.dart';
@@ -27,6 +28,7 @@ import '../../../entity/task_item.dart';
 import '../../../entity/task_item_type.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../task_items/task_items.g.dart';
+import '../../widgets/hmb_search.dart';
 import '../../widgets/hmb_toggle.dart';
 import '../../widgets/icons/hmb_complete_icon.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -66,6 +68,8 @@ Future<TaskAndRate> getTaskAndRate(Task? task) async {
 
 class _TaskItemListScreenState<P extends Entity<P>>
     extends State<TaskItemListScreen> {
+  String? _filterText;
+
   @override
   Widget build(BuildContext context) {
     final showCompleted = June.getState(
@@ -73,7 +77,6 @@ class _TaskItemListScreenState<P extends Entity<P>>
     )._showCompletedTasks;
 
     return FutureBuilderEx(
-      // ignore: discarded_futures
       future: getTaskAndRate(widget.task),
       builder: (context, taskAndRate) => NestedEntityListScreen<TaskItem, Task>(
         key: ValueKey(showCompleted),
@@ -82,9 +85,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
         entityNameSingular: 'Task Item',
         entityNamePlural: 'Task Items',
         dao: DaoTaskItem(),
-        // ignore: discarded_futures
         onDelete: (taskItem) => DaoTaskItem().delete(taskItem.id),
-        // ignore: discarded_futures
         fetchList: () => _fetchItems(showCompleted),
         title: (taskItem) => Text(taskItem.description) as Widget,
         onEdit: (taskItem) => TaskItemEditScreen(
@@ -123,9 +124,20 @@ class _TaskItemListScreenState<P extends Entity<P>>
             ],
           );
         },
-        filterBar: (entity) => Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+        filterBar: (entity) => HMBColumn(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            SizedBox(
+              width: 320,
+              child: HMBSearch(
+                onSearch: (filter) async {
+                  setState(() {
+                    _filterText = filter?.trim().toLowerCase();
+                  });
+                },
+                label: 'Search Task Items',
+              ),
+            ),
             HMBToggle(
               label: 'Show Completed',
               hint: showCompleted
@@ -148,10 +160,21 @@ class _TaskItemListScreenState<P extends Entity<P>>
 
   Future<List<TaskItem>> _fetchItems(bool showCompleted) async {
     final items = await DaoTaskItem().getByTask(widget.task!.id);
+    final search = _filterText;
 
-    return items
-        .where((item) => showCompleted ? item.completed : !item.completed)
-        .toList();
+    return items.where((item) {
+      final completionMatch = showCompleted ? item.completed : !item.completed;
+      if (!completionMatch) {
+        return false;
+      }
+      if (Strings.isBlank(search)) {
+        return true;
+      }
+      final filter = search!;
+      return item.description.toLowerCase().contains(filter) ||
+          item.dimensions.toLowerCase().contains(filter) ||
+          item.itemType.label.toLowerCase().contains(filter);
+    }).toList();
   }
 
   List<Widget> _buildFieldsBasedOnItemType(
@@ -184,7 +207,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
         'Cost: ${checkListItem.estimatedLabourCost} ',
       ),
     HMBText(
-      'Charge: ${checkListItem.getCharge(billingType, hourlyRate)} '
+      'Charge: ${checkListItem.getTotalLineCharge(billingType, hourlyRate)} '
       'Margin (%): ${checkListItem.margin}',
     ),
   ];
@@ -200,7 +223,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
     ),
     HMBText(
       'Margin (%): ${checkListItem.margin} '
-      'Charge: ${checkListItem.getCharge(billingType, hourlyRate)}',
+      'Charge: ${checkListItem.getTotalLineCharge(billingType, hourlyRate)}',
     ),
   ];
 
@@ -215,7 +238,7 @@ class _TaskItemListScreenState<P extends Entity<P>>
     ),
     HMBText(
       'Margin (%): ${checkListItem.margin} '
-      'Charge: ${checkListItem.getCharge(billingType, hourlyRate)}',
+      'Charge: ${checkListItem.getTotalLineCharge(billingType, hourlyRate)}',
     ),
   ];
 }

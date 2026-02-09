@@ -20,7 +20,6 @@ class OperatingDay {
   LocalTime? end;
   bool open;
 
-  
   OperatingDay({required this.dayName, this.start, this.end, this.open = true});
 
   /// Construct from a JSON map, expecting:

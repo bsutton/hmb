@@ -252,7 +252,7 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
                                   childAspectRatio: 1.5,
-                                  mainAxisExtent: 260,
+                                  mainAxisExtent: 352,
                                 ),
                             itemCount: _taskItems.length,
                             itemBuilder: (c, i) =>

@@ -160,7 +160,6 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
             backgroundColor: Colors.black,
             headerStringBuilder: widget.dateStringBuilder,
             eventTileBuilder: _defaultEventTileBuilder,
-            // ignore: discarded_futures
             onPageChange: (date, index) => _onPageChange(date),
             onDateTap: (date) async {
               await widget.addActivity(context, date, widget.defaultJob);

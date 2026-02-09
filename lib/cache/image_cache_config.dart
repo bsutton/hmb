@@ -20,7 +20,7 @@
 
 import 'hmb_image_cache.dart';
 
-enum ImageVariant { general, pdf, thumb, raw }
+enum ImageVariantType { general, pdf, thumb, raw }
 
 /// Hard-coded, unified quality profiles.
 /// Tune here, not at call sites.
@@ -48,7 +48,7 @@ class ImageCacheConfig {
 
   static const thumbJpegQuality = 70;
 
-  Future<void> Function(Variant variant) downloader;
+  Future<void> Function(ImageVariant variant, String targetPath) downloader;
 
   Compressor compressor;
 

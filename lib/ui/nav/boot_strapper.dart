@@ -25,6 +25,7 @@ import 'package:pdfrx/pdfrx.dart';
 import '../../api/accounting/accounting_adaptor.dart';
 import '../../api/accounting/no_op_accounting_adaptor.dart';
 import '../../api/accounting/xero_accounting_adaptor.dart';
+import '../../api/ihserver/booking_request_sync_service.dart';
 import '../../api/xero/handyman/app_starts_logging.dart';
 import '../../cache/hmb_image_cache.dart';
 import '../../cache/image_compressor.dart';
@@ -33,9 +34,9 @@ import '../../dao/notification/dao_june_builder.dart';
 import '../../database/factory/factory.g.dart';
 import '../../database/management/backup_providers/google_drive/background_backup/photo_sync_service.dart';
 import '../../database/management/backup_providers/local/local_backup_provider.dart';
-import '../../database/versions/asset_script_source.dart';
-import '../../database/versions/post_upgrade_134.dart';
-import '../../installer/linux/install.dart';
+import '../../database/versions/implementations/asset_script_source.dart';
+import '../../database/versions/post_upgrade/post_upgrade_134.dart';
+import '../../installer/install.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/media/desktop_camera_delegate.dart';
@@ -57,11 +58,12 @@ class BootStrapper {
     await _initializeTimeEntryState(refresh: false);
     unawaited(logAppStartup());
     await _initScheduler();
+    unawaited(BookingRequestSyncService().sync());
 
     // camera & deep link init
     initCamera();
     initAppLinks();
-    initPdfrx();
+    await initPdfrx();
     await initImageCache();
 
     Dao.notifier = DaoJuneBuilder.notify;
@@ -85,9 +87,7 @@ class BootStrapper {
 
     final firstRun = !exists(pathToHmbFirstRun);
     if (firstRun) {
-      if (Platform.isLinux) {
-        await linuxInstaller();
-      }
+        await install();
       touch(pathToHmbFirstRun, create: true);
     }
     return firstRun;
@@ -104,8 +104,8 @@ class BootStrapper {
     print('Database located at: ${await backupProvider.databasePath}');
 
     /// remove rich text fields.
-    
-      await postv134Upgrade(DatabaseHelper().database);
+
+    await postv134Upgrade(DatabaseHelper().database);
   }
 
   Future<void> _initScheduler() async {
@@ -149,15 +149,15 @@ class BootStrapper {
     // });
   }
 
-  void initPdfrx() {
-    pdfrxFlutterInitialize();
+  Future<void> initPdfrx() async {
+    await pdfrxFlutterInitialize();
   }
 
   Future<void> initImageCache() async {
     await HMBImageCache().init(
-      (variant) async => PhotoSyncService().download(
+      (variant, targetPath) async => PhotoSyncService().download(
         variant.meta.photo.id,
-        variant.cacheStoragePath,
+        targetPath,
         await variant.cloudStoragePath,
       ),
       ImageCompressor.run,

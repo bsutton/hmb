@@ -14,7 +14,7 @@
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
-import 'package:sqflite/sqlite_api.dart';
+import 'package:sqflite_common/sqflite.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
@@ -140,7 +140,6 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
           ),
         ),
 
-
         // Supplier-Contact selector
         if (_selectedSupplier != null) ...[
           FutureBuilderEx<List<Contact>>(
@@ -153,7 +152,6 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
               onChanged: (contact) => _selectedContact = contact?.id,
             ),
           ),
-
         ],
 
         // Tasks multi-select

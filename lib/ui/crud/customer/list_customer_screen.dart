@@ -31,7 +31,6 @@ class CustomerListScreen extends StatelessWidget {
 
     dao: DaoCustomer(),
     listCardTitle: (entity) => HMBCardHeading(entity.name),
-    // ignore: discarded_futures
     fetchList: (filter) => DaoCustomer().getByFilter(filter),
     onAdd: () => CustomerCreator.show(context),
     onEdit: (customer) => CustomerEditScreen(customer: customer),

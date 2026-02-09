@@ -135,7 +135,6 @@ class _SelectJobDialogState extends State<SelectJobDialog> {
           ),
           Expanded(
             child: FutureBuilderEx<List<CustomerAndJob>>(
-              // ignore: discarded_futures
               future: _fetchJobs(),
               builder: (context, jobs) {
                 if (jobs == null || jobs.isEmpty) {

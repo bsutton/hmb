@@ -153,7 +153,6 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
     widget.dao,
     builder: (context) {
       // return const HMBSpacer(height: true);
-      // ignore: discarded_futures
       entities = _fetchList();
       return FutureBuilderEx<List<C>>(
         future: entities,

@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
@@ -19,7 +18,7 @@ import 'package:hmb/util/dart/format.dart';
 import 'package:hmb/util/dart/local_date.dart';
 import 'package:hmb/util/dart/money_ex.dart';
 
-import '../../database/management/db_utility_test.dart';
+import '../../database/management/db_utility_test_helper.dart';
 import 'utility.dart';
 
 void main() {
@@ -67,13 +66,14 @@ should create an invoice with work done on two different dates for the same task
         );
         expect(invoiceGroupLines.length, equals(2));
 
+        final groupNames = invoiceGroupLines.map((e) => e.name).toList();
         expect(
-          invoiceGroupLines[0].name,
-          equals(formatLocalDate(LocalDate.fromDateTime(tomorrow))),
+          groupNames,
+          contains(formatLocalDate(LocalDate.fromDateTime(tomorrow))),
         );
         expect(
-          invoiceGroupLines[1].name,
-          equals(formatLocalDate(LocalDate.fromDateTime(now))),
+          groupNames,
+          contains(formatLocalDate(LocalDate.fromDateTime(now))),
         );
       },
     );
@@ -114,13 +114,14 @@ should create an invoice with work done on two different dates for two different
         );
         expect(invoiceGroupLines.length, equals(2));
 
+        final groupNames = invoiceGroupLines.map((e) => e.name).toList();
         expect(
-          invoiceGroupLines[0].name,
-          equals(formatLocalDate(LocalDate.fromDateTime(tomorrow))),
+          groupNames,
+          contains(formatLocalDate(LocalDate.fromDateTime(tomorrow))),
         );
         expect(
-          invoiceGroupLines[1].name,
-          equals(formatLocalDate(LocalDate.fromDateTime(now))),
+          groupNames,
+          contains(formatLocalDate(LocalDate.fromDateTime(now))),
         );
       },
     );

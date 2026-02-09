@@ -66,9 +66,55 @@ class _JobEstimateBuilderScreenState
 
   @override
   Future<void> asyncInitState() async {
+    final canProceed = await _ensureFixedPrice();
+    if (!canProceed) {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
     final job = await DaoJob().markQuoting(widget.job.id);
     widget.job.status = job.status;
     await _loadTasks();
+  }
+
+  Future<bool> _ensureFixedPrice() async {
+    if (widget.job.billingType != BillingType.timeAndMaterial) {
+      return true;
+    }
+
+    final switchToFixed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Estimates Require Fixed Price'),
+        content: const Text(
+          'You cannot create estimates for Time and Materials jobs. '
+          'Switch this job to Fixed Price to continue?',
+        ),
+        actions: [
+          HMBButton(
+            label: 'Cancel',
+            hint: "Don't switch the job billing type",
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          HMBButton(
+            label: 'Switch to Fixed Price',
+            hint: 'Update the job to Fixed Price billing',
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+    if (switchToFixed != true) {
+      return false;
+    }
+
+    final updated =
+        widget.job.copyWith(billingType: BillingType.fixedPrice);
+    await DaoJob().update(updated);
+    widget.job.billingType = updated.billingType;
+    return true;
   }
 
   Future<void> _loadTasks() async {
@@ -116,7 +162,10 @@ class _JobEstimateBuilderScreenState
       final hourlyRate = await DaoTask().getHourlyRate(task);
       for (final item in items) {
         if (item.itemType == TaskItemType.labour) {
-          totalLabour += item.calcLabourCharges(hourlyRate);
+          totalLabour += item.calcLabourCharges(
+            task.effectiveBillingType(widget.job.billingType),
+            hourlyRate,
+          );
         } else {
           final billingType = await DaoTask().getBillingType(task);
           totalMaterials += item.calcMaterialCharges(billingType);
@@ -282,7 +331,6 @@ class _JobEstimateBuilderScreenState
   );
 
   Widget _buildTaskItems(Task task) => FutureBuilderEx<ItemsAndRate>(
-    // ignore: discarded_futures
     future: ItemsAndRate.fromTask(task),
     builder: (context, itemAndRate) => HMBColumn(
       children: itemAndRate!.items
@@ -307,7 +355,7 @@ class _JobEstimateBuilderScreenState
     children: [
       SurfaceCardWithActions(
         title: item.description,
-        body: Text('Cost: ${item.getCharge(billingType, hourlyRate)}'),
+        body: Text('Cost: ${item.getTotalLineCharge(billingType, hourlyRate)}'),
         actions: [
           HMBEditIcon(
             onPressed: () => _editItem(item, task),
@@ -328,7 +376,6 @@ class _JobEstimateBuilderScreenState
     newItem = await Navigator.of(context).push<TaskItem>(
       MaterialPageRoute(
         builder: (context) => FutureBuilderEx(
-          // ignore: discarded_futures
           future: getTaskAndRate(task),
           builder: (context, taskAndRate) => TaskItemEditScreen(
             parent: task,
@@ -350,7 +397,6 @@ class _JobEstimateBuilderScreenState
     final updatedItem = await Navigator.of(context).push<TaskItem>(
       MaterialPageRoute(
         builder: (context) => FutureBuilderEx(
-          // ignore: discarded_futures
           future: getTaskAndRate(task),
           builder: (context, taskAndRate) => TaskItemEditScreen(
             parent: task,

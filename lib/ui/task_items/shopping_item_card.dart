@@ -11,8 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-// ignore_for_file: discarded_futures
-
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -53,7 +51,7 @@ abstract class ShoppingItemCard extends StatelessWidget {
           hint: 'Edit Item',
         ),
       ],
-      height: 288,
+      height: 340,
       body: HMBRow(
         children: [
           // <-- Make the text column take all available space

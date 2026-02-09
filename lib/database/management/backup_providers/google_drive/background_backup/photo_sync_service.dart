@@ -21,6 +21,7 @@ import 'package:googleapis/drive/v3.dart' as gdrive;
 import 'package:path/path.dart' as p;
 
 import '../../../../../dao/dao_photo.dart';
+import '../../../../../dao/dao_photo_delete_queue.dart';
 import '../../../../../entity/entity.g.dart' show Photo;
 import '../../../../../util/dart/paths.dart';
 import '../../progress_update.dart';
@@ -37,6 +38,13 @@ class PhotoUploaded {
   final int pathVersion;
 
   PhotoUploaded(this.id, this.pathToStorageLocation, this.pathVersion);
+}
+
+/// Used by the photo sync isolate to indicate a remote deletion completed.
+class PhotoDeleted {
+  final int id;
+
+  PhotoDeleted(this.id);
 }
 
 class PhotoSyncService {
@@ -60,17 +68,26 @@ class PhotoSyncService {
   /// Kick off the sync and listen for both progress and payload messages.
   Future<void> start() async {
     final photos = await DaoPhoto().getUnsyncedPhotos();
-    if (photos.isEmpty) {
+    final deletes = (await DaoPhotoDeleteQueue().getPendingDeleteIds())
+        .map(
+          (photoDeleteQueue) => PhotoDeletePayload(
+            photoDeleteQueueId: photoDeleteQueue.id,
+            photoId: photoDeleteQueue.photoId,
+          ),
+        )
+        .toList();
+    if (photos.isEmpty && deletes.isEmpty) {
       _controller.add(ProgressUpdate('No new Photos to sync', 0, 0));
       return;
     }
 
     final headers = (await GoogleDriveAuth.instance()).authHeaders;
-    await _startSync(photos: photos, authHeaders: headers);
+    await _startSync(photos: photos, deletes: deletes, authHeaders: headers);
   }
 
   Future<void> _startSync({
     required List<PhotoPayload> photos,
+    required List<PhotoDeletePayload> deletes,
     required Map<String, String> authHeaders,
   }) async {
     if (isRunning) {
@@ -88,6 +105,8 @@ class PhotoSyncService {
       } else if (message is PhotoUploaded) {
         // mark that one photo has now been backed up
         await DaoPhoto().updatePhotoSyncStatus(message.id);
+      } else if (message is PhotoDeleted) {
+        await DaoPhotoDeleteQueue().delete(message.id);
       }
     });
 
@@ -99,6 +118,7 @@ class PhotoSyncService {
       sendPort: _receivePort!.sendPort,
       authHeaders: authHeaders,
       photos: photos,
+      deletes: deletes,
     );
 
     _isolate = await Isolate.spawn<PhotoSyncParams>(
@@ -228,6 +248,7 @@ Future<void> _photoSyncEntry(PhotoSyncParams params) async {
     sendPort: params.sendPort,
     authHeaders: params.authHeaders,
     photoPayloads: params.photos,
+    deletePayloads: params.deletes,
   );
   Isolate.exit();
 }

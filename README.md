@@ -6,6 +6,9 @@ HMB is free to use with community based support that can be obtained by raising 
 
 HMB currently runs on android but is designed to also run on iOS (need someone to assist with the apple store release process).
 
+## Contributing
+Start with the [Repository Guidelines](AGENTS.md) for project layout, build commands, and review expectations.
+
 
 Show your support for HMB by sponsoring my work: 
 
@@ -89,6 +92,5 @@ Each Task can have:
 * track hours worked on the Task
 
 To read more on using HMB go to the online documentation at [https://hmb.onepub.dev](https://hmb.onepub.dev)
-
 
 

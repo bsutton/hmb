@@ -47,7 +47,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   @override
   void initState() {
-    // ignore: discarded_futures
     activeTimeEntry = DaoTimeEntry().getActiveEntry();
     super.initState();
   }
@@ -66,7 +65,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
             entityNamePlural: 'Tasks',
             key: ValueKey(showCompleted),
             dao: DaoTask(),
-            // ignore: discarded_futures
             fetchList: _fetchTasks,
             listCardTitle: (entity) => Text(entity.name),
 
@@ -93,10 +91,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
             ),
             onEdit: (task) =>
                 TaskEditScreen(job: widget.parent.parent!, task: task),
-            // ignore: discarded_futures
             onDelete: onDelete,
 
-            // ignore: discarded_futures
             listCard: _buildFullTasksDetails,
             // : _buildTaskSummary(task),
           ),
@@ -167,7 +163,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Widget _buildFullTasksDetails(Task task) =>
-      ListTaskCard(task: task, summary: false);
+      ListTaskCard(job: widget.parent.parent!, task: task, summary: false);
 }
 
 class ShowInActiveTasksState extends JuneState {

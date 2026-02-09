@@ -2,7 +2,7 @@ UPDATE message_template
 SET message = 'Hey {{customer.name}},\n just a reminder about your appointment on {{event.start_date}} at {{event.start_time}}.\n Let me know if anything changes!\n {{signature}}'
 WHERE id = 14;
 UPDATE message_template
-SET message = 'Hi {{customer.name}},\n I’ve wrapped up the job at {{site}}.\n Thanks for choosing me!\n If you have any thoughts or feedback,\n I''d love to here.\n {{signature}}'
+SET message = 'Hi {{customer.name}},\n I’ve wrapped up the job at {{site}}.\n Thanks for choosing me!\n If you have any thoughts or feedback,\n I’d love to here.\n {{signature}}'
 WHERE id = 15;
 UPDATE message_template
 SET message = 'Hey {{customer.name}},\n your estimate for {{job.description}} is ready!\n The total comes to {{job.cost}}.\n Let me know if you’re good to go.\n {{signature}}'
@@ -26,7 +26,7 @@ UPDATE message_template
 SET message = 'Hi {{customer.name}},\n just wanted to say thanks for choosing me for the job!\n I appreciate your business and look forward to working with you again.\n {{signature}}'
 WHERE id = 22;
 UPDATE message_template
-SET message = 'Hey {{customer.name}},\n just a quick note to let you know I''m running about {{delay.period}} behind.\n Sorry for the delay.\n {{signature}}'
+SET message = 'Hey {{customer.name}},\n just a quick note to let you know I’m running about {{delay.period}} behind.\n Sorry for the delay.\n {{signature}}'
 WHERE id = 23;
 UPDATE message_template
 SET message = '{{customer.name}},\n {{signature}}'

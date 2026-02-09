@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao_system.dart';
 import 'package:hmb/util/dart/parse/parse_customer.dart';
 
-import '../../database/management/db_utility_test.dart';
+import '../../database/management/db_utility_test_helper.dart';
 
 void main() {
   setUp(() async {
@@ -135,8 +135,7 @@ Any help appreciated as it is getting much more fun with a broken ankle! Cain
     expect(parsed.mobile, equals(''));
     final address = parsed.address;
     expect(address.street, equals('22a Victor Street'));
-    // should be Ivanhoe
-    expect(address.city, equals('Ivanhoe Any'));
+    expect(address.city, equals('Ivanhoe'));
     expect(address.state, equals(''));
     expect(address.postalCode, equals(''));
   });

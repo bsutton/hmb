@@ -36,7 +36,6 @@ class BackupDashlet extends StatelessWidget {
   );
 
   Widget _buildLastBackup() => FutureBuilderEx<BackupStatus>(
-    // ignore: discarded_futures
     future: _getLastBackup(),
     builder: (context, backupStatus) {
       final text = switch (backupStatus!.driveStatus) {

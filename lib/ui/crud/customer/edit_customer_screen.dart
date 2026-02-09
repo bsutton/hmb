@@ -87,7 +87,6 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
     June.getState(CustomerBillingContact.new).contact = billingContact;
 
     if (widget.customer == null) {
-      // ignore: discarded_futures
       final system = await DaoSystem().get();
       setState(() {
         _hourlyRateController.text =

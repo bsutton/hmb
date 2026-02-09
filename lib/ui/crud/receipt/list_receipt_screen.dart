@@ -37,7 +37,6 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
     entityNameSingular: 'Receipt',
     entityNamePlural: 'Receipts',
     dao: DaoReceipt(),
-    // ignore: discarded_futures
     fetchList: (_) => DaoReceipt().getByFilter(),
     onEdit: (receipt) => ReceiptEditScreen(receipt: receipt),
     listCardTitle: _getTitle,
@@ -46,12 +45,10 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FutureBuilderEx(
-          // ignore: discarded_futures
           future: DaoJob().getById(r.jobId),
           builder: (c, job) => HMBTextBody('Job: ${job?.summary ?? ''}'),
         ),
         FutureBuilderEx(
-          // ignore: discarded_futures
           future: DaoSupplier().getById(r.supplierId),
           builder: (c, sup) => HMBTextBody('Supplier: ${sup?.name ?? ''}'),
         ),

@@ -1,15 +1,16 @@
 /*
- Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
-
- Note: This software is licensed under the GNU General Public License,
-         with the following exceptions:
-   • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products 
-      for third parties is strictly prohibited.
-
- See the full license on GitHub:
- https://github.com/bsutton/hmb/blob/main/LICENSE
-*/
+ * Copyright © OnePub IP Pty Ltd.
+ * S. Brett Sutton. All Rights Reserved.
+ *
+ * Note: This software is licensed under the GNU General Public License,
+ *       with the following exceptions:
+ *   • Permitted for internal use within your own business or organization only.
+ *   • Any external distribution, resale, or incorporation into products
+ *     for third parties is strictly prohibited.
+ *
+ * See the full license on GitHub:
+ * https://github.com/bsutton/hmb/blob/main/LICENSE
+ */
 
 /// lib/entity/task_item.dart
 library;
@@ -21,65 +22,99 @@ import '../util/dart/measurement_type.dart';
 import '../util/dart/money_ex.dart';
 import '../util/dart/units.dart';
 import 'entity.dart';
+import 'helpers/charge_mode.dart';
+import 'helpers/labour_calculator.dart';
+import 'helpers/material_calculator.dart';
 import 'job.dart';
 import 'task_item_type.dart';
 
-/// Specialist enum for labour entry mode
 enum LabourEntryMode {
   hours('Hours'),
   dollars('Dollars');
 
   const LabourEntryMode(this._display);
   final String _display;
+
   static String getDisplay(LabourEntryMode mode) => mode._display;
 
   static LabourEntryMode fromString(String value) {
     switch (value) {
       case 'Hours':
-        return LabourEntryMode.hours;
+        {
+          return LabourEntryMode.hours;
+        }
       case 'Dollars':
-        return LabourEntryMode.dollars;
+        {
+          return LabourEntryMode.dollars;
+        }
       default:
-        throw ArgumentError('Unknown LabourEntryMode: $value');
+        {
+          throw ArgumentError('Unknown LabourEntryMode: $value');
+        }
     }
   }
 
   String toSqlString() => _display;
 }
 
-/// A single task item, including estimates, actuals, billing, URL,
-/// purpose, and return linkage
+/// Represents a single item within a task.
+///
+/// The item may represent labour, materials, consumables or tools.
+/// Calculators:
+/// - [MaterialCalculator] for materials/consumables/tools
+/// - [LabourCalculator] for labour
+///
+/// Margins are applied at the **line level** — meaning they
+/// are calculated on the total cost of the line, not on
+/// individual unit prices. This ensures consistent rounding
+/// and aligns with accounting best practices.
 class TaskItem extends Entity<TaskItem> {
-  // Primary fields
+  // ---- Core fields ----------------------------------------------------------
+
   final int taskId;
   TaskItemType itemType;
   String description;
   String purpose;
 
-  // Estimates
+  // ---- Estimates ------------------------------------------------------------
+
   final Fixed? estimatedLabourHours;
   final Money? estimatedLabourCost;
   final Money? estimatedMaterialUnitCost;
   final Fixed? estimatedMaterialQuantity;
 
-  // Actuals
+  // ---- Actuals --------------------------------------------------------------
+
   Money? actualMaterialUnitCost;
   Fixed? actualMaterialQuantity;
   Money? actualCost;
 
-  // Margin %
+  // ---- Pricing and margin ---------------------------------------------------
+
+  /// Margin applied (as a percentage) to the total **line** cost.
   final Percentage margin;
 
-  // Computed charge
-  Money? _charge;
-  bool chargeSet;
+  /// The total **line** charge for this item including margin.
+  /// If chargeMode is userDefined, this is user-entered.
+  /// If chargeMode is calculated, this is computed by the
+  /// material or labour calculators.
+  Money? _totalLineCharge;
 
-  // Status
+  /// Indicates whether the [_totalLineCharge] is user-defined or calculated.
+  ChargeMode chargeMode;
+
+  // ---- Status and linkage ---------------------------------------------------
+
   bool completed;
+
+  /// True if this item has been billed.
   bool billed;
+
+  /// The invoice this item appears on.
   int? invoiceLineId;
 
-  // Dimensions
+  // ---- Measurement and units ------------------------------------------------
+
   final MeasurementType? measurementType;
   final Fixed dimension1;
   final Fixed dimension2;
@@ -87,15 +122,18 @@ class TaskItem extends Entity<TaskItem> {
   final Units? units;
   final String url;
 
-  // Supplier
+  // ---- Supplier / labour / returns -----------------------------------------
+
   int? supplierId;
-
-  // Labour mode
   final LabourEntryMode labourEntryMode;
-
-  // Return linkage
   final int? sourceTaskItemId;
   final bool isReturn;
+
+  /// Expose as read-only for helpers when chargeMode == userDefined.
+  Money? get userDefinedCharge => _totalLineCharge;
+
+  // ---- Constructors ---------------------------------------------------------
+
   TaskItem._({
     required super.id,
     required super.createdDate,
@@ -107,8 +145,8 @@ class TaskItem extends Entity<TaskItem> {
     required this.estimatedMaterialQuantity,
     required this.estimatedLabourHours,
     required this.estimatedLabourCost,
-    required Money? charge,
-    required this.chargeSet,
+    required Money? totalLineCharge,
+    required this.chargeMode,
     required this.margin,
     required this.completed,
     required this.billed,
@@ -127,10 +165,9 @@ class TaskItem extends Entity<TaskItem> {
     required this.actualCost,
     required this.sourceTaskItemId,
     required this.isReturn,
-  }) : _charge = charge,
+  }) : _totalLineCharge = totalLineCharge,
        super();
 
-  /// Constructor for new items
   factory TaskItem.forInsert({
     required int taskId,
     required String description,
@@ -144,11 +181,12 @@ class TaskItem extends Entity<TaskItem> {
     required String url,
     required String purpose,
     required LabourEntryMode labourEntryMode,
+    required ChargeMode chargeMode,
     Money? estimatedMaterialUnitCost,
     Fixed? estimatedMaterialQuantity,
     Money? estimatedLabourCost,
     Fixed? estimatedLabourHours,
-    Money? charge,
+    Money? totalLineCharge,
     bool completed = false,
     bool billed = false,
     int? invoiceLineId,
@@ -159,6 +197,12 @@ class TaskItem extends Entity<TaskItem> {
     int? sourceTaskItemId,
     bool isReturn = false,
   }) {
+    assert(
+      (chargeMode == ChargeMode.userDefined && totalLineCharge != null) ||
+          (chargeMode == ChargeMode.calculated && totalLineCharge == null),
+      'If chargeMode is userDefined, totalLineCharge must be provided. '
+      'If chargeMode is calculated, totalLineCharge must be null.',
+    );
     final now = DateTime.now();
     return TaskItem._(
       id: -1,
@@ -172,8 +216,8 @@ class TaskItem extends Entity<TaskItem> {
       estimatedLabourHours: estimatedLabourHours,
       estimatedLabourCost: estimatedLabourCost,
       margin: margin,
-      charge: charge,
-      chargeSet: charge != null,
+      totalLineCharge: totalLineCharge,
+      chargeMode: chargeMode,
       completed: completed,
       billed: billed,
       measurementType: measurementType,
@@ -194,7 +238,6 @@ class TaskItem extends Entity<TaskItem> {
     );
   }
 
-  /// Copy method
   TaskItem copyWith({
     int? taskId,
     String? description,
@@ -204,8 +247,8 @@ class TaskItem extends Entity<TaskItem> {
     Fixed? estimatedLabourHours,
     Money? estimatedLabourCost,
     Percentage? margin,
-    Money? charge,
-    bool? chargeSet,
+    Money? totalLineCharge,
+    ChargeMode? chargeMode,
     bool? completed,
     bool? billed,
     int? invoiceLineId,
@@ -223,44 +266,55 @@ class TaskItem extends Entity<TaskItem> {
     Money? actualCost,
     int? sourceTaskItemId,
     bool? isReturn,
-  }) => TaskItem._(
-    id: id,
-    createdDate: createdDate,
-    modifiedDate: DateTime.now(),
-    taskId: taskId ?? this.taskId,
-    description: description ?? this.description,
-    purpose: purpose ?? this.purpose,
-    itemType: itemType ?? this.itemType,
-    estimatedMaterialUnitCost:
-        estimatedMaterialUnitCost ?? this.estimatedMaterialUnitCost,
-    estimatedLabourHours: estimatedLabourHours ?? this.estimatedLabourHours,
-    estimatedMaterialQuantity:
-        estimatedMaterialQuantity ?? this.estimatedMaterialQuantity,
-    estimatedLabourCost: estimatedLabourCost ?? this.estimatedLabourCost,
-    charge: charge ?? _charge,
-    chargeSet: chargeSet ?? this.chargeSet,
-    margin: margin ?? this.margin,
-    completed: completed ?? this.completed,
-    billed: billed ?? this.billed,
-    invoiceLineId: invoiceLineId ?? this.invoiceLineId,
-    measurementType: measurementType ?? this.measurementType,
-    dimension1: dimension1 ?? this.dimension1,
-    dimension2: dimension2 ?? this.dimension2,
-    dimension3: dimension3 ?? this.dimension3,
-    units: units ?? this.units,
-    supplierId: supplierId ?? this.supplierId,
-    labourEntryMode: labourEntryMode ?? this.labourEntryMode,
-    url: url ?? this.url,
-    actualMaterialUnitCost:
-        actualMaterialUnitCost ?? this.actualMaterialUnitCost,
-    actualMaterialQuantity:
-        actualMaterialQuantity ?? this.actualMaterialQuantity,
-    actualCost: actualCost ?? this.actualCost,
-    sourceTaskItemId: sourceTaskItemId ?? this.sourceTaskItemId,
-    isReturn: isReturn ?? this.isReturn,
-  );
+  }) {
+    final taskItem = TaskItem._(
+      id: id,
+      createdDate: createdDate,
+      modifiedDate: DateTime.now(),
+      taskId: taskId ?? this.taskId,
+      description: description ?? this.description,
+      purpose: purpose ?? this.purpose,
+      itemType: itemType ?? this.itemType,
+      estimatedMaterialUnitCost:
+          estimatedMaterialUnitCost ?? this.estimatedMaterialUnitCost,
+      estimatedLabourHours: estimatedLabourHours ?? this.estimatedLabourHours,
+      estimatedMaterialQuantity:
+          estimatedMaterialQuantity ?? this.estimatedMaterialQuantity,
+      estimatedLabourCost: estimatedLabourCost ?? this.estimatedLabourCost,
+      totalLineCharge: totalLineCharge ?? _totalLineCharge,
+      chargeMode: chargeMode ?? this.chargeMode,
+      margin: margin ?? this.margin,
+      completed: completed ?? this.completed,
+      billed: billed ?? this.billed,
+      invoiceLineId: invoiceLineId ?? this.invoiceLineId,
+      measurementType: measurementType ?? this.measurementType,
+      dimension1: dimension1 ?? this.dimension1,
+      dimension2: dimension2 ?? this.dimension2,
+      dimension3: dimension3 ?? this.dimension3,
+      units: units ?? this.units,
+      supplierId: supplierId ?? this.supplierId,
+      labourEntryMode: labourEntryMode ?? this.labourEntryMode,
+      url: url ?? this.url,
+      actualMaterialUnitCost:
+          actualMaterialUnitCost ?? this.actualMaterialUnitCost,
+      actualMaterialQuantity:
+          actualMaterialQuantity ?? this.actualMaterialQuantity,
+      actualCost: actualCost ?? this.actualCost,
+      sourceTaskItemId: sourceTaskItemId ?? this.sourceTaskItemId,
+      isReturn: isReturn ?? this.isReturn,
+    );
 
-  /// Parse from database map
+    assert(
+      (taskItem.chargeMode == ChargeMode.userDefined &&
+              taskItem._totalLineCharge != null) ||
+          (taskItem.chargeMode == ChargeMode.calculated &&
+              taskItem._totalLineCharge == null),
+      'If chargeMode is userDefined, totalLineCharge must be provided. '
+      'If chargeMode is calculated, totalLineCharge must be null.',
+    );
+    return taskItem;
+  }
+
   factory TaskItem.fromMap(Map<String, dynamic> map) => TaskItem._(
     id: map['id'] as int,
     createdDate: DateTime.parse(map['created_date'] as String),
@@ -278,14 +332,11 @@ class TaskItem extends Entity<TaskItem> {
       map['estimated_labour_hours'] as int?,
     ),
     estimatedLabourCost: MoneyEx.moneyOrNull(
-      map['estimated_labour_cost'] as int? ?? 0,
+      map['estimated_labour_cost'] as int?,
     ),
     margin: Percentage.fromInt(map['margin'] as int? ?? 0, decimalDigits: 3),
-    charge: MoneyEx.moneyOrNull(map['charge'] as int?),
-
-    /// We shouldn't need to check charge but we had some
-    /// db entries in an inconsistent state.
-    chargeSet: (map['charge_set'] as int) == 1 && map['charge'] != null,
+    totalLineCharge: MoneyEx.moneyOrNull(map['total_line_charge'] as int?),
+    chargeMode: ChargeMode.fromName(map['charge_mode'] as String?),
     completed: map['completed'] == 1,
     billed: map['billed'] == 1,
     invoiceLineId: map['invoice_line_id'] as int?,
@@ -305,7 +356,7 @@ class TaskItem extends Entity<TaskItem> {
     purpose: map['purpose'] as String? ?? '',
     supplierId: map['supplier_id'] as int?,
     labourEntryMode: LabourEntryMode.fromString(
-      map['labour_entry_mode'] as String,
+      (map['labour_entry_mode'] as String?) ?? 'Hours',
     ),
     actualMaterialUnitCost: MoneyEx.moneyOrNull(
       map['actual_material_unit_cost'] as int?,
@@ -318,11 +369,10 @@ class TaskItem extends Entity<TaskItem> {
     isReturn: (map['is_return'] as int? ?? 0) == 1,
   );
 
-  /// Charge calculation...
-  Money getCharge(BillingType billingType, Money hourlyRate) {
-    if (chargeSet) {
-      return _charge!;
-    }
+  // ---- Calculations via calculators ----------------------------------------
+
+  /// Charge calculation (single source of truth via calculators).
+  Money getTotalLineCharge(BillingType billingType, Money hourlyRate) {
     switch (itemType) {
       case TaskItemType.materialsStock:
       case TaskItemType.materialsBuy:
@@ -330,91 +380,55 @@ class TaskItem extends Entity<TaskItem> {
       case TaskItemType.toolsBuy:
       case TaskItemType.consumablesStock:
       case TaskItemType.consumablesBuy:
-        return calcMaterialCharges(billingType);
+        {
+          final mc = MaterialCalculator(billingType, this);
+          return mc.calcMaterialCharges(billingType);
+        }
       case TaskItemType.labour:
-        return calcLabourCharges(hourlyRate);
+        {
+          return LabourCalculator(billingType, this, hourlyRate).totalCharge;
+        }
     }
   }
 
-  Money calcMaterialCost(BillingType billingType) => switch (billingType) {
-    BillingType.fixedPrice =>
-      (estimatedMaterialUnitCost ?? MoneyEx.zero).multiplyByFixed(
-        estimatedMaterialQuantity ?? Fixed.one,
-      ),
-    BillingType.timeAndMaterial => _timeAndMaterialsCost(),
-  };
+  Money calcMaterialCharges(BillingType billingType) =>
+      MaterialCalculator(billingType, this).calcMaterialCharges(billingType);
 
-  /// What we will charge the customer including our margin.
-  Money calcMaterialCharges(BillingType billingType) {
-    final cost = calcMaterialCost(billingType);
-    if (chargeSet) {
-      /// the users has directly entered the charge field
-      /// so we assume they have include the margin.
-      return cost;
-    } else {
-      return cost.plusPercentage(margin);
-    }
-  }
+  Money calcLabourCharges(BillingType billingType, Money hourlyRate) =>
+      LabourCalculator(billingType, this, hourlyRate).totalCharge;
 
-  /// Calc cost for a Time And Materials job.
-  Money _timeAndMaterialsCost() {
-    var quantity = Fixed.one;
-    var cost = MoneyEx.zero;
+  /// Convenience accessor if you need material cost breakdowns.
+  MaterialCalculator calcMaterialCost(BillingType billingType) =>
+      MaterialCalculator(billingType, this);
 
-    if (completed) {
-      cost = actualMaterialUnitCost ?? MoneyEx.zero;
-      quantity = actualMaterialQuantity ?? Fixed.one;
-    } else {
-      cost = estimatedMaterialUnitCost ?? MoneyEx.zero;
-      quantity = estimatedMaterialQuantity ?? Fixed.one;
-    }
-    return cost.multiplyByFixed(quantity);
-  }
-
-  void setCharge({
-    required BillingType billingType,
+  /// Finalise a user-defined charge based on provided actuals
+  /// (common for time & materials).
+  void setActualCosts({
     required Money actualMaterialUnitCost,
     required Fixed actualMaterialQuantity,
   }) {
     this.actualMaterialUnitCost = actualMaterialUnitCost;
     this.actualMaterialQuantity = actualMaterialQuantity;
 
-    _charge = calcMaterialCharges(billingType);
-    chargeSet = true; // Update chargeSet when charge is set
+    // Recompute via calculator with actuals (T&M uses actuals when completed),
+    // then lock in as user-defined.
+    final mc = MaterialCalculator(
+      BillingType.timeAndMaterial,
+      copyWith(
+        actualMaterialUnitCost: actualMaterialUnitCost,
+        actualMaterialQuantity: actualMaterialQuantity,
+        completed: true,
+      ),
+    );
+    _totalLineCharge = mc.calcMaterialCharges(BillingType.timeAndMaterial);
+    chargeMode = ChargeMode.userDefined;
   }
 
-  /// The charge to the customer which includes our margin
-  Money calcLabourCharges(Money hourlyRate) {
-    final cost = calcLabourCost(hourlyRate);
-    if (chargeSet) {
-      /// the users has directly entered the charge field
-      /// so we assume they have include the margin.
-      return cost;
-    } else {
-      return cost.plusPercentage(margin);
-    }
-  }
-
-  Money calcLabourCost(Money hourlyRate) {
-    switch (labourEntryMode) {
-      case LabourEntryMode.dollars:
-        return (chargeSet ? _charge : estimatedLabourCost) ?? MoneyEx.zero;
-      case LabourEntryMode.hours:
-        if (estimatedLabourHours != null) {
-          return (chargeSet
-                  ? _charge
-                  : hourlyRate.multiplyByFixed(estimatedLabourHours!)) ??
-              MoneyEx.zero;
-        }
-    }
-    return MoneyEx.zero;
-  }
-
+  /// Generates a human-readable dimension string.
   String get dimensions {
     if (!hasDimensions) {
       return '';
     }
-
     return units?.format([dimension1, dimension2, dimension3]) ?? '';
   }
 
@@ -422,6 +436,8 @@ class TaskItem extends Entity<TaskItem> {
       (itemType == TaskItemType.materialsBuy ||
           itemType == TaskItemType.materialsStock) &&
       (dimension1.isPositive || dimension2.isPositive || dimension3.isPositive);
+
+  // ---- Mapping helpers ------------------------------------------------------
 
   @override
   Map<String, dynamic> toMap() => {
@@ -446,8 +462,8 @@ class TaskItem extends Entity<TaskItem> {
         .minorUnits
         .toInt(),
     'margin': margin.threeDigits().minorUnits.toInt(),
-    'charge': _charge?.twoDigits().minorUnits.toInt(),
-    'charge_set': chargeSet ? 1 : 0,
+    'total_line_charge': _totalLineCharge?.twoDigits().minorUnits.toInt(),
+    'charge_mode': chargeMode.name,
     'completed': completed ? 1 : 0,
     'billed': billed ? 1 : 0,
     'invoice_line_id': invoiceLineId,
@@ -475,12 +491,11 @@ class TaskItem extends Entity<TaskItem> {
     'modified_date': modifiedDate.toIso8601String(),
   };
 
-  /// We are returning an purchased item to the store.
-  /// Build a brand-new “return” record linked back to this original.
+  /// Creates a return item (negative line totals).
   TaskItem forReturn(Fixed returnQuantity, Money returnUnitPrice) {
     final now = DateTime.now();
     return TaskItem._(
-      id: -1, // new row
+      id: -1,
       createdDate: now,
       modifiedDate: now,
       taskId: taskId,
@@ -491,8 +506,8 @@ class TaskItem extends Entity<TaskItem> {
       estimatedLabourHours: estimatedLabourHours,
       estimatedLabourCost: estimatedLabourCost,
       margin: margin,
-      charge: _charge,
-      chargeSet: chargeSet,
+      totalLineCharge: _totalLineCharge,
+      chargeMode: chargeMode,
       completed: true,
       billed: false,
       measurementType: measurementType,
@@ -505,11 +520,9 @@ class TaskItem extends Entity<TaskItem> {
       labourEntryMode: labourEntryMode,
       invoiceLineId: null,
       supplierId: supplierId,
-      // these are the “actuals” for the return:
       actualMaterialUnitCost: returnUnitPrice,
       actualMaterialQuantity: returnQuantity,
       actualCost: returnUnitPrice.multiplyByFixed(returnQuantity),
-      // link back to the original task item that we are returning.
       sourceTaskItemId: id,
       isReturn: true,
     );

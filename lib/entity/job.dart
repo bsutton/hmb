@@ -19,7 +19,13 @@ import 'job_status.dart';
 
 enum BillingType {
   timeAndMaterial('Time and Materials'),
-  fixedPrice('Fixed Price');
+  fixedPrice('Fixed Price'),
+
+  /// doesn't show in the count of active jobs,
+  /// doesn't show in the list of 'to be invoiced',
+  /// you can't raise an invoice
+  /// is exclude from the job list by default
+  nonBillable('Non Billable');
 
   const BillingType(this.display);
   final String display;

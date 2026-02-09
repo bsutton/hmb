@@ -1,4 +1,4 @@
-#! /home/bsutton/.dswitch/active/dart
+#!/usr/bin/env dcli
 /*
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 
@@ -21,7 +21,7 @@ import 'package:hmb/database/factory/cli_database_factory.dart';
 import 'package:hmb/database/management/backup_providers/dev/dev_backup_provider.dart';
 import 'package:hmb/database/management/db_utility.dart';
 import 'package:hmb/database/versions/db_upgrade.dart';
-import 'package:hmb/database/versions/project_script_source.dart';
+import 'package:hmb/database/versions/implementations/project_script_source.dart';
 import 'package:path/path.dart' as path;
 import 'package:path/path.dart';
 import 'package:pub_release/pub_release.dart' hide Settings;
@@ -100,7 +100,7 @@ Create a signed release appbundle suitable to upload to Google Play store.''',
     /// remove the pdfx wasm modules as the add 4mb and
     /// they are only useful on web.
     /// https://github.com/espresso3389/pdfrx/tree/master/packages/pdfrx#note-for-building-release-builds
-    'dart run pdfrx:remove_wasm_modules'.run;
+    // 'flutter run pdfrx:remove_wasm_modules'.run;
     if (release) {
       buildAppBundle(newVersion);
     } else {
@@ -122,7 +122,8 @@ Tools to help build the app
 }
 
 void _runPubGet() {
-  DartSdk().runPubGet(DartProject.self.pathToProjectRoot);
+  // DartSdk().runPubGet(DartProject.self.pathToProjectRoot);
+  'flutter pub get'.start(workingDirectory: DartProject.self.pathToProjectRoot);
 }
 
 void installApk() {

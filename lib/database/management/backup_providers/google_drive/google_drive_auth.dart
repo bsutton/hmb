@@ -35,7 +35,7 @@ class GoogleDriveAuth {
   static var _initialised = false;
   static late GoogleDriveAuth _instance;
 
-  final scopes = [drive.DriveApi.driveFileScope];
+  final List<String> scopes = [drive.DriveApi.driveFileScope];
 
   var _signedIn = false;
 

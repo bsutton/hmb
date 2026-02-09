@@ -73,7 +73,6 @@ class _ToolListScreenState extends State<ToolListScreen> {
       entityNamePlural: 'Tools',
       dao: DaoTool(),
       listCardTitle: (entity) => HMBTextHeadline2(entity.name),
-      // ignore: discarded_futures
       fetchList: (filter) => DaoTool().getByFilter(filter),
       onEdit: (tool) => ToolEditScreen(tool: tool),
       cardHeight: 470,
@@ -83,7 +82,6 @@ class _ToolListScreenState extends State<ToolListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FutureBuilderEx(
-              // ignore: discarded_futures
               future: DaoCategory().getById(tool.categoryId),
               builder: (context, category) =>
                   HMBTextBody('Category: ${category?.name ?? 'Not Set'}'),

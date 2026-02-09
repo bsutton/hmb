@@ -20,7 +20,7 @@ import '../../../../ui/widgets/hmb_toast.dart';
 import '../../../../ui/widgets/layout/layout.g.dart';
 import '../../../../util/flutter/app_title.dart';
 import '../../../factory/flutter_database_factory.dart';
-import '../../../versions/asset_script_source.dart';
+import '../../../versions/implementations/asset_script_source.dart';
 import '../backup.dart';
 import '../backup_provider.dart';
 import '../backup_selection.dart';

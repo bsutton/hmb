@@ -30,7 +30,7 @@ Future<InvoiceOptions?> selectTaskToQuote({
   required Job job,
   required String title,
 }) async {
-  final estimates = await DaoTask().getEstimatesForJob(job.id);
+  final estimates = await DaoTask().getEstimatesForJob(job);
 
   final contact = await DaoContact().getBillingContactByJob(job);
 
@@ -71,7 +71,7 @@ Future<InvoiceOptions?> selectTasksToInvoice({
   required String title,
 }) async {
   final values = await DaoTask().getAccruedValueForJob(
-    jobId: job.id,
+    job: job,
     includedBilled: false,
   );
 

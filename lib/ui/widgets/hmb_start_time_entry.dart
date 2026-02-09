@@ -27,6 +27,7 @@ import '../../entity/time_entry.dart';
 import '../../fsm/job_events.dart';
 import '../../fsm/job_status_fsm.dart';
 import '../../util/dart/format.dart';
+import '../dialog/hmb_ask_user_to_continue.dart';
 import '../dialog/start_timer_dialog.dart';
 import '../dialog/stop_timer_dialog.dart';
 import 'hmb_toast.dart';
@@ -115,15 +116,14 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
                   final canBeTimed = widget.task!.status.canBeTimed;
 
                   if (!canBeTimed) {
-                    HMBToast.error(
-                      '''
-The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in order to be timed''',
-                    );
+                    final canProceed = await _confirmStartForUnapprovedTask();
+                    if (canProceed) {
+                      unawaited(_start(widget.task));
+                    }
                   } else {
                     unawaited(_start(widget.task));
                   }
                 } else {
-                  // ignore: discarded_futures
                   await _stop(widget.task);
                 }
               },
@@ -193,6 +193,37 @@ The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in
       await _startDialog(widget.task!, startStopTimes.startTime);
       setState(() {});
     }
+  }
+
+  Future<bool> _confirmStartForUnapprovedTask() async {
+    final task = widget.task;
+    if (task == null) {
+      return false;
+    }
+
+    if (task.status == TaskStatus.awaitingApproval) {
+      var confirmed = false;
+      await askUserToContinue(
+        context: context,
+        title: 'Task Awaiting Approval',
+        message:
+            'This task is not currently approved.\n\nIf you continue, '
+            'it will be automatically marked as approved and moved to '
+            'In Progress, then the timer will start.',
+        noLabel: 'Cancel',
+        yesLabel: 'Start Timer',
+        onConfirmed: () async {
+          confirmed = true;
+        },
+      );
+      return confirmed;
+    }
+
+    HMBToast.error(
+      '''
+The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in order to be timed''',
+    );
+    return false;
   }
 
   /// We are stopping a task, determine the stop time based on its

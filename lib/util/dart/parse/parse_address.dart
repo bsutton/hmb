@@ -98,6 +98,11 @@ class ParsedAddress {
 
   static ParsedAddress _parseAddressEsri(String input) {
     final addr = ParsedAddress();
+    final commaAddress = _parseCommaSeparatedAddress(input);
+    if (!commaAddress.isEmpty()) {
+      return commaAddress;
+    }
+
     final tokens = input.trim().split(RegExp(r'\s+'));
     if (tokens.isEmpty) {
       return addr;
@@ -155,6 +160,9 @@ class ParsedAddress {
         }
 
         cleanCityTokens.add(token);
+        if (RegExp(r'[.!?]+$').hasMatch(token)) {
+          break;
+        }
       }
 
       addr
@@ -172,4 +180,35 @@ class ParsedAddress {
   // util helpers
   static String _stripTrailingPunctuation(String s) =>
       s.trim().replaceAll(RegExp(r'[.,;:!]+$'), '');
+}
+
+ParsedAddress _parseCommaSeparatedAddress(String input) {
+  final match = RegExp(
+    r"\b(\d+[A-Za-z]?(?:/\d+)?)\s+([A-Z][A-Za-z0-9'-]*(?:\s+[A-Z][A-Za-z0-9'-]*){0,4}),\s*([A-Z][A-Za-z'-]*(?:\s+[A-Z][A-Za-z'-]*){0,2})",
+  ).firstMatch(input);
+
+  if (match == null) {
+    return ParsedAddress();
+  }
+
+  final streetNo = (match.group(1) ?? '').trim();
+  final streetName = (match.group(2) ?? '').trim();
+  final city = (match.group(3) ?? '').trim();
+
+  if (streetNo.isEmpty || streetName.isEmpty) {
+    return ParsedAddress();
+  }
+
+  return ParsedAddress(
+    street: '$streetNo $streetName'
+        .split(RegExp(r'\s+'))
+        .map(ParsedAddress._stripTrailingPunctuation)
+        .join(' ')
+        .trim(),
+    city: city
+        .split(RegExp(r'\s+'))
+        .map(ParsedAddress._stripTrailingPunctuation)
+        .join(' ')
+        .trim(),
+  );
 }

@@ -35,8 +35,11 @@ class DaoContact extends Dao<Contact> {
   ///
   /// returns the primary contact for the customer
   ///
-  Future<Contact?> getPrimaryForCustomer(int? customerId) async {
-    final db = withoutTransaction();
+  Future<Contact?> getPrimaryForCustomer(
+    int? customerId, [
+    Transaction? transaction,
+  ]) async {
+    final db = withinTransaction(transaction);
 
     if (customerId == null) {
       return null;
@@ -55,7 +58,7 @@ and cc.`primary` = 1''',
     );
 
     if (data.isEmpty) {
-      return (await DaoContact().getByCustomer(customerId)).firstOrNull;
+      return (await getByCustomer(customerId, transaction)).firstOrNull;
     }
     return fromMap(data.first);
   }
@@ -130,8 +133,11 @@ and sc.`primary` = 1''',
     return fromMap(data.first);
   }
 
-  Future<List<Contact>> getByCustomer(int? customerId) async {
-    final db = withoutTransaction();
+  Future<List<Contact>> getByCustomer(
+    int? customerId, [
+    Transaction? transaction,
+  ]) async {
+    final db = withinTransaction(transaction);
 
     if (customerId == null) {
       return [];
@@ -202,6 +208,38 @@ where jo.id = ?
         [jobId, jobId],
       ),
     );
+  }
+
+  Future<List<Contact>> getByEmail(String email) async {
+    final db = withoutTransaction();
+    if (Strings.isBlank(email)) {
+      return [];
+    }
+    final data = await db.rawQuery(
+      '''
+select *
+from contact
+where lower(emailAddress) = lower(?)
+''',
+      [email.trim()],
+    );
+    return toList(data);
+  }
+
+  Future<List<Contact>> getByMobile(String mobile) async {
+    final db = withoutTransaction();
+    if (Strings.isBlank(mobile)) {
+      return [];
+    }
+    final data = await db.rawQuery(
+      '''
+select *
+from contact
+where mobileNumber = ?
+''',
+      [mobile.trim()],
+    );
+    return toList(data);
   }
 
   Future<void> deleteFromCustomer(Contact contact, Customer customer) async {

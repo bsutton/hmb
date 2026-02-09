@@ -11,7 +11,6 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 // --------------------------------------------------------------
 // lib/src/api/upload_photos_in_backup.dart
 import 'dart:convert';
@@ -31,11 +30,13 @@ Future<void> uploadPhotosInBackup({
   required SendPort sendPort,
   required Map<String, String> authHeaders,
   required List<PhotoPayload> photoPayloads,
+  required List<PhotoDeletePayload> deletePayloads,
 }) async {
   final totalPhotos = photoPayloads.length;
-  final stageCount = totalPhotos + 2;
+  final totalDeletes = deletePayloads.length;
+  final stageCount = totalPhotos + totalDeletes + 2;
   var stageNo = 1;
-  if (totalPhotos == 0) {
+  if (totalPhotos == 0 && totalDeletes == 0) {
     sendPort.send(ProgressUpdate('No photos to sync', stageNo++, stageCount));
     return;
   }
@@ -43,6 +44,27 @@ Future<void> uploadPhotosInBackup({
   // Init Drive API
   final driveApi = await GoogleDriveApi.fromHeaders(authHeaders);
   final photoSyncFolderId = await driveApi.getPhotoSyncFolder();
+
+  for (var i = 0; i < totalDeletes; i++) {
+    final payload = deletePayloads[i];
+    sendPort.send(
+      ProgressUpdate(
+        'Deleting photo (${i + 1}/$totalDeletes)',
+        stageNo++,
+        stageCount,
+      ),
+    );
+    final deleted = await _deleteRemoteByPhotoId(
+      driveApi: driveApi,
+      photoId: payload.photoId,
+    );
+    if (deleted) {
+      sendPort.send(PhotoDeleted(payload.photoDeleteQueueId));
+    } else {
+      // Treat missing as deleted; 
+      sendPort.send(PhotoDeleted(payload.photoDeleteQueueId));
+    }
+  }
 
   for (var i = 0; i < totalPhotos; i++) {
     final photoPayload = photoPayloads[i];
@@ -153,4 +175,29 @@ Future<bool> hasPhotoIdProperty({
   // properties may be null if none were ever set
   final props = file.properties;
   return props != null && props.containsKey('photoId');
+}
+
+Future<bool> _deleteRemoteByPhotoId({
+  required GoogleDriveApi driveApi,
+  required int photoId,
+}) async {
+  final idStr = photoId.toString();
+  final qByProp =
+      "properties has { key='photoId' and value='$idStr' } and trashed=false";
+  final res = await driveApi.files.list(
+    q: qByProp,
+    $fields: 'files(id, name)',
+    pageSize: 100,
+  );
+  final files = res.files ?? const <gdrive.File>[];
+  if (files.isEmpty) {
+    return false;
+  }
+  for (final file in files) {
+    if (file.id == null) {
+      continue;
+    }
+    await driveApi.files.delete(file.id!);
+  }
+  return true;
 }

@@ -73,7 +73,6 @@ You must provide an email address for the Contact ${billingContact.fullname}''',
 
         if (createContactResponse.statusCode == 200) {
           /// its json.
-          // ignore: avoid_dynamic_calls
           xeroContactId =
               /// its json.
               // ignore: avoid_dynamic_calls

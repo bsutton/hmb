@@ -42,7 +42,6 @@ class _AboutScreenState extends State<AboutScreen> {
           const Text('Hold My Beer (HMB) - for solo Trades people'),
           Text('Version: $packageVersion'),
           FutureBuilderEx(
-            // ignore: discarded_futures
             future: DatabaseHelper().getVersion(),
             builder: (context, version) => Text('Database Version: $version'),
           ),
