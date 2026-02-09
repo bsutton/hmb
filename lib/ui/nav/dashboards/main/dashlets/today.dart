@@ -14,6 +14,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../entity/entity.g.dart';
+import '../../../../scheduling/today/backup_reminder.dart';
 import '../../../../widgets/layout/layout.g.dart';
 import '../../dashlet_card.dart';
 
@@ -26,7 +27,23 @@ class TodayDashlet extends StatelessWidget {
     hint: 'A summary of Todays activities',
     icon: Icons.assignment,
     value: () async => const DashletValue<JobActivity>.empty(),
-    valueBuilder: (ctx, dv) => const HMBEmpty(),
+    valueBuilder: (ctx, dv) => FutureBuilder<BackupReminderStatus>(
+      future: BackupReminder.getStatus(),
+      builder: (context, snapshot) {
+        final remind = snapshot.data?.needsReminder ?? false;
+        if (!remind) {
+          return const HMBEmpty();
+        }
+        return const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+            HMBSpacer(width: true),
+            Text('Backup', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        );
+      },
+    ),
     route: '/home/today',
   );
 }

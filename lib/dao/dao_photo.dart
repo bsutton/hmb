@@ -61,6 +61,14 @@ class DaoPhoto extends Dao<Photo> {
     return payloads;
   }
 
+  Future<int> countUnsyncedPhotos() async {
+    final db = withoutTransaction();
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) AS cnt FROM $tableName WHERE last_backup_date IS NULL',
+    );
+    return (result.first['cnt'] as int?) ?? 0;
+  }
+
   /// Updates the photo record to mark it as backed up.
   Future<void> updatePhotoSyncStatus(int photoId) async {
     final db = withoutTransaction();

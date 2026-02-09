@@ -29,6 +29,7 @@ import '../../widgets/widgets.g.dart';
 import '../day_schedule.dart'; // Our DaySchedule stateful widget
 import '../month_schedule.dart'; // Our MonthSchedule stateful widget
 import '../week_schedule.dart';
+import 'backup_reminder.dart';
 import 'job_card.dart'; // Our WeekSchedule stateful widget
 
 class JobAndCustomer {
@@ -77,6 +78,7 @@ class Today {
   final List<TaskItem> packing;
   final List<Job> toBeQuoted;
   final List<InvoicingJob> toBeInvoiced;
+  final BackupReminderStatus backupReminder;
 
   Today._({
     required this.activities,
@@ -85,6 +87,7 @@ class Today {
     required this.packing,
     required this.toBeQuoted,
     required this.toBeInvoiced,
+    required this.backupReminder,
   });
 
   static Future<Today> fetchToday() async {
@@ -129,6 +132,7 @@ class Today {
     }
     final toBeInvoiced = byId.values.toList()
       ..sort((a, b) => b.job.modifiedDate.compareTo(a.job.modifiedDate));
+    final backupReminder = await BackupReminder.getStatus();
 
     return Today._(
       activities: activeJobs,
@@ -137,6 +141,7 @@ class Today {
       packing: packing,
       toBeQuoted: toBeQuoted,
       toBeInvoiced: toBeInvoiced,
+      backupReminder: backupReminder,
     );
   }
 }
@@ -204,6 +209,7 @@ class TodayPageState extends DeferredState<TodayPage> {
   );
 
   List<Widget> _buildCards() => [
+    backupReminder(today),
     jobList(today),
     todoList(today, refresh),
     shoppingList(today),
@@ -211,6 +217,37 @@ class TodayPageState extends DeferredState<TodayPage> {
     quotingList(today),
     invoicingList(today),
   ];
+
+  Widget backupReminder(Today today) => HMBOneOf(
+    condition: !today.backupReminder.needsReminder,
+    onTrue: const HMBEmpty(),
+    onFalse: Surface(
+      rounded: true,
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+          const HMBSpacer(width: true),
+          Expanded(
+            child: Text(
+              _backupReminderMessage(today.backupReminder),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  String _backupReminderMessage(BackupReminderStatus status) {
+    final parts = <String>[];
+    if (status.dbBackupOverdue) {
+      parts.add('Database backup is overdue');
+    }
+    if (status.photoSyncPending) {
+      parts.add('Photo sync is pending');
+    }
+    return '${parts.join(' and ')}. Open Backup to resolve.';
+  }
 
   Widget jobList(Today today) => Listing<JobAndActivity>(
     title: 'Jobs',
