@@ -165,14 +165,12 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: jobQuote.groups.map((groupWrap) {
           final group = groupWrap.group;
-          final isRejected =
-              group.lineApprovalStatus == LineApprovalStatus.rejected;
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: HMBColumn(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // —— Group header with Reject button ——
+                // Group header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -181,77 +179,48 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                         'Task: ${group.name} ${groupWrap.total}',
                       ),
                     ),
-                    if (isRejected)
-                      const Padding(
-                        padding: EdgeInsets.only(right: 8),
-                        child: Text(
-                          'REJECTED',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    if (group.taskId != null && !isRejected)
-                      HMBButton(
-                        label: 'Reject',
-                        hint: 'Mark this Task as rejected',
-                        onPressed: () =>
-                            _rejectQuoteGroup(group, groupWrap.lines),
-                      )
-                    else if (group.taskId != null && isRejected)
-                      HMBButton(
-                        label: 'Unreject',
-                        hint: 'Restore this Task from rejected state',
-                        onPressed: () =>
-                            _unrejectQuoteGroup(group, groupWrap.lines),
-                      ),
                   ],
                 ),
 
-                // —— Lines list ——
-                GrayedOut(
-                  grayedOut: isRejected,
-                  child: Card(
-                    child: HMBColumn(
-                      children: groupWrap.lines
-                          .map(
-                            (line) => ListTile(
-                              title: Text(line.description),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '''Qty: ${line.quantity} × ${line.unitCharge} = '''
-                                    '${line.lineTotal}',
-                                  ),
-                                  Text(
-                                    '''Status: ${line.lineChargeableStatus.description}''',
-                                  ),
-                                ],
-                              ),
-                              trailing: HMBEditIcon(
-                                onPressed: () async {
-                                  final editedLine =
-                                      await showDialog<QuoteLine>(
-                                        context: context,
-                                        builder: (_) =>
-                                            EditQuoteLineDialog(line: line),
-                                      );
-                                  if (editedLine != null) {
-                                    await DaoQuoteLine().update(editedLine);
-                                    await DaoQuote().recalculateTotal(
-                                      editedLine.quoteId,
-                                    );
-                                    await _refresh();
-                                  }
-                                },
-                                hint: 'Edit Quote Line',
-                              ),
+                // Lines list
+                Card(
+                  child: HMBColumn(
+                    children: groupWrap.lines
+                        .map(
+                          (line) => ListTile(
+                            title: Text(line.description),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '''Qty: ${line.quantity} × ${line.unitCharge} = '''
+                                  '${line.lineTotal}',
+                                ),
+                                Text(
+                                  '''Status: ${line.lineChargeableStatus.description}''',
+                                ),
+                              ],
                             ),
-                          )
-                          .toList(),
-                    ),
+                            trailing: HMBEditIcon(
+                              onPressed: () async {
+                                final editedLine = await showDialog<QuoteLine>(
+                                  context: context,
+                                  builder: (_) =>
+                                      EditQuoteLineDialog(line: line),
+                                );
+                                if (editedLine != null) {
+                                  await DaoQuoteLine().update(editedLine);
+                                  await DaoQuote().recalculateTotal(
+                                    editedLine.quoteId,
+                                  );
+                                  await _refresh();
+                                }
+                              },
+                              hint: 'Edit Quote Line',
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
               ],
@@ -445,86 +414,4 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
     }
   }
 
-  Future<void> _rejectQuoteGroup(
-    QuoteLineGroup group,
-    List<QuoteLine> lines,
-  ) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reject Quote Group'),
-        content: const Text('Reject this quote group and its task?'),
-        actions: [
-          HMBButton(
-            label: 'Cancel',
-            hint: "Don't reject this quote group",
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          HMBButton(
-            label: 'Reject',
-            hint: 'Reject this quote group and task',
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) {
-      return;
-    }
-
-    // 1) Mark the group rejected in the DB
-    await DaoQuoteLineGroup().update(
-      group.copyWith(lineApprovalStatus: LineApprovalStatus.rejected),
-    );
-
-    // 2) Mark the task rejected
-    if (group.taskId != null) {
-      await DaoTask().markRejected(group.taskId!);
-    }
-
-    // 3) Recalculate and refresh
-    await DaoQuote().recalculateTotal(group.quoteId);
-    await _refresh();
-  }
-
-  Future<void> _unrejectQuoteGroup(
-    QuoteLineGroup group,
-    List<QuoteLine> lines,
-  ) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unreject Quote Group'),
-        content: const Text('Restore this quote group and its task?'),
-        actions: [
-          HMBButton(
-            label: 'Cancel',
-            hint: "Don't restore this quote group",
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          HMBButton(
-            label: 'Unreject',
-            hint: 'Restore this quote group and task',
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) {
-      return;
-    }
-
-    await DaoQuoteLineGroup().update(
-      group.copyWith(lineApprovalStatus: LineApprovalStatus.preApproval),
-    );
-
-    if (group.taskId != null) {
-      await DaoTask().markUnrejected(group.taskId!);
-    }
-
-    await DaoQuote().recalculateTotal(group.quoteId);
-    await _refresh();
-  }
 }
