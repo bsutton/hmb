@@ -36,17 +36,19 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
     fetchList: _fetchTodos,
     filterSheetBuilder: (onChange) => _buildFilterSheet(context, onChange),
     onFilterReset: () => toDoListStatusFilter = ToDoStatus.open,
-    isFilterActive: () => toDoListStatusFilter == ToDoStatus.done,
+    isFilterActive: () => toDoListStatusFilter != ToDoStatus.open,
     onEdit: (todo) => ToDoEditScreen(toDo: todo, preselectedJob: widget.job),
     listCardTitle: (todo) => Row(
       children: [
         Checkbox(
           value: todo.status == ToDoStatus.done,
-          onChanged: (_) async {
-            await DaoToDo().toggleDone(todo);
-            await entitListKey.currentState!.refresh();
-            HMBToast.info('Marked ${todo.title} as done');
-          },
+          onChanged: todo.status == ToDoStatus.closed
+              ? null
+              : (_) async {
+                  await DaoToDo().toggleDone(todo);
+                  await entitListKey.currentState!.refresh();
+                  HMBToast.info('Marked ${todo.title} as done');
+                },
         ),
         Expanded(child: HMBTextHeadline2(todo.title)),
       ],

@@ -1,3 +1,5 @@
+import 'package:sqflite_common/sqlite_api.dart';
+
 import '../entity/todo.dart';
 import '../util/dart/local_date.dart';
 import 'dao.g.dart';
@@ -126,6 +128,20 @@ class DaoToDo extends Dao<ToDo> {
     );
 
     return maps.map(ToDo.fromMap).toList();
+  }
+
+  Future<void> closeByJob(int jobId, {Transaction? transaction}) async {
+    final db = withinTransaction(transaction);
+    await db.update(
+      tableName,
+      {
+        'status': ToDoStatus.closed.name,
+        'completed_date': DateTime.now().toIso8601String(),
+        'modified_date': DateTime.now().toIso8601String(),
+      },
+      where: 'parent_type = ? AND parent_id = ? AND status = ?',
+      whereArgs: [ToDoParentType.job.name, jobId, ToDoStatus.open.name],
+    );
   }
 
   /// Get open todos due today or overdue.
