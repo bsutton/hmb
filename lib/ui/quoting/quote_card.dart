@@ -95,6 +95,8 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
   Widget build(BuildContext context) {
     final isApproved = quote.state == QuoteState.approved;
     final isRejected = quote.state == QuoteState.rejected;
+    final canMarkSent = quote.state == QuoteState.approved ||
+        quote.state == QuoteState.rejected;
 
     return DeferredBuilder(
       this,
@@ -147,6 +149,16 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                 onPressed: () async {
                   await _updateQuote(() async {
                     await DaoQuote().approveQuote(quote.id);
+                  });
+                },
+              ),
+              HMBButton(
+                label: 'Sent',
+                hint: 'Move quote back to sent',
+                enabled: canMarkSent,
+                onPressed: () async {
+                  await _updateQuote(() async {
+                    await DaoQuote().markQuoteSent(quote.id);
                   });
                 },
               ),
