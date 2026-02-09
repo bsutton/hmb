@@ -27,6 +27,7 @@ import '../../entity/time_entry.dart';
 import '../../fsm/job_events.dart';
 import '../../fsm/job_status_fsm.dart';
 import '../../util/dart/format.dart';
+import '../dialog/hmb_ask_user_to_continue.dart';
 import '../dialog/start_timer_dialog.dart';
 import '../dialog/stop_timer_dialog.dart';
 import 'hmb_toast.dart';
@@ -201,28 +202,21 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
     }
 
     if (task.status == TaskStatus.awaitingApproval) {
-      final confirmed = await showDialog<bool>(
+      var confirmed = false;
+      await askUserToContinue(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Task Awaiting Approval'),
-          content: const Text('''
-This task is not currently approved.
-
-If you continue, it will be automatically marked as approved and moved to In Progress, then the timer will start.
-'''),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Start Timer'),
-            ),
-          ],
-        ),
+        title: 'Task Awaiting Approval',
+        message:
+            'This task is not currently approved.\n\nIf you continue, '
+            'it will be automatically marked as approved and moved to '
+            'In Progress, then the timer will start.',
+        noLabel: 'Cancel',
+        yesLabel: 'Start Timer',
+        onConfirmed: () async {
+          confirmed = true;
+        },
       );
-      return confirmed ?? false;
+      return confirmed;
     }
 
     HMBToast.error(
