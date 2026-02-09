@@ -115,15 +115,14 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
                   final canBeTimed = widget.task!.status.canBeTimed;
 
                   if (!canBeTimed) {
-                    HMBToast.error(
-                      '''
-The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in order to be timed''',
-                    );
+                    final canProceed = await _confirmStartForUnapprovedTask();
+                    if (canProceed) {
+                      unawaited(_start(widget.task));
+                    }
                   } else {
                     unawaited(_start(widget.task));
                   }
                 } else {
-                  // ignore: discarded_futures
                   await _stop(widget.task);
                 }
               },
@@ -193,6 +192,44 @@ The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in
       await _startDialog(widget.task!, startStopTimes.startTime);
       setState(() {});
     }
+  }
+
+  Future<bool> _confirmStartForUnapprovedTask() async {
+    final task = widget.task;
+    if (task == null) {
+      return false;
+    }
+
+    if (task.status == TaskStatus.awaitingApproval) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Task Awaiting Approval'),
+          content: const Text('''
+This task is not currently approved.
+
+If you continue, it will be automatically marked as approved and moved to In Progress, then the timer will start.
+'''),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Start Timer'),
+            ),
+          ],
+        ),
+      );
+      return confirmed ?? false;
+    }
+
+    HMBToast.error(
+      '''
+The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in order to be timed''',
+    );
+    return false;
   }
 
   /// We are stopping a task, determine the stop time based on its
