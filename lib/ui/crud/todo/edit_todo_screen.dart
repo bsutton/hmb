@@ -93,7 +93,7 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
 
   @override
   Future<void> postSave(ToDo entity) async {
-    if (entity.status == ToDoStatus.done || entity.remindAt == null) {
+    if (entity.status != ToDoStatus.open || entity.remindAt == null) {
       await LocalNotifs().cancelForToDo(entity.id);
       return;
     }

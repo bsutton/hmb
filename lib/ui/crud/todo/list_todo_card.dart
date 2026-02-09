@@ -105,7 +105,7 @@ class ListTodoCard extends StatelessWidget {
               }
           }
 
-          if (todo.status == ToDoStatus.done || todo.remindAt == null) {
+          if (todo.status != ToDoStatus.open || todo.remindAt == null) {
             await LocalNotifs().cancelForToDo(todo.id);
           }
 
