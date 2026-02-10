@@ -89,7 +89,7 @@ class HMBImageCache {
 
   late final Downloader downloader;
   late final Compressor compressor;
-  late final ImageCacheConfig _config;
+  late ImageCacheConfig _config;
   late String _cacheDir;
   late DaoImageCacheVariant _dao;
 
@@ -145,14 +145,23 @@ class HMBImageCache {
     });
   }
 
-  Future<void> init(Downloader downloader, Compressor compressor) async {
+  Future<void> init(
+    Downloader downloader,
+    Compressor compressor, {
+    int? maxBytes,
+  }) async {
     if (_initialised) {
       return;
     }
 
     this.downloader = downloader;
+    this.compressor = compressor;
 
-    _config = ImageCacheConfig(downloader: downloader, compressor: compressor);
+    _config = ImageCacheConfig(
+      downloader: downloader,
+      compressor: compressor,
+      maxBytes: maxBytes ?? ImageCacheConfig.defaultMaxBytes,
+    );
     if (!DatabaseHelper.instance.isOpen()) {
       throw StateError(
         'Database must be open before initializing HMBImageCache.',
@@ -176,6 +185,19 @@ class HMBImageCache {
     _dao = DaoImageCacheVariant();
     unawaited(_trimIfNeeded());
     _initialised = true;
+  }
+
+  Future<void> updateMaxBytes(int maxBytes) async {
+    if (!_initialised) {
+      return;
+    }
+
+    _config = ImageCacheConfig(
+      downloader: downloader,
+      compressor: compressor,
+      maxBytes: maxBytes,
+    );
+    await _trimIfNeeded();
   }
 
   /// Returns the absolute cache path for a given [variant].

@@ -27,6 +27,8 @@ enum ImageVariantType { general, pdf, thumb, raw }
 class ImageCacheConfig {
   /// LRU budget across *all* cached variants.
   final int maxBytes;
+  static const defaultMaxMegabytes = 100;
+  static const defaultMaxBytes = defaultMaxMegabytes * 1024 * 1024;
 
   // Display: good zoom detail at small size. WebP.
   static const generalLongEdge = 3500;
@@ -55,6 +57,6 @@ class ImageCacheConfig {
   ImageCacheConfig({
     required this.downloader,
     required this.compressor,
-    this.maxBytes = 500 * 1024 * 1024, // 500MB total across all variants,
+    this.maxBytes = defaultMaxBytes,
   });
 }
