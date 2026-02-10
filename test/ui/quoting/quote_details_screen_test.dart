@@ -45,9 +45,10 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('reject quote group cancels task', (tester) async {
+  testWidgets('does not show per-task reject controls on quote details', (
+    tester,
+  ) async {
     late Job job;
-    late Task task;
     late int quoteId;
     late int groupId;
 
@@ -60,7 +61,7 @@ void main() {
         bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
       );
 
-      task = await createTask(job, 'Task 1');
+      final task = await createTask(job, 'Task 1');
 
       quoteId = await DaoQuote().insert(
         Quote.forInsert(
@@ -100,21 +101,9 @@ void main() {
     );
     expect(tester.takeException(), isNull);
 
-    await waitForText(tester, 'Reject');
-    await tester.tap(find.text('Reject'));
-    expect(tester.takeException(), isNull);
-
-    await waitForText(tester, 'Reject Quote Group');
-    expect(find.text('Reject Quote Group'), findsOneWidget);
-    expect(find.text('Reject this quote group and its task?'), findsOneWidget);
-
-    await tester.tap(find.text('Reject'));
-
-    late Task? updatedTask;
-    await tester.runAsync(() async {
-      updatedTask = await DaoTask().getById(task.id);
-    });
-    expect(updatedTask?.status, TaskStatus.cancelled);
+    expect(find.text('Reject'), findsNothing);
+    expect(find.text('Unreject'), findsNothing);
+    expect(find.text('Reject Quote Group'), findsNothing);
   });
 
   testWidgets('create milestones and invoice actions show', (tester) async {

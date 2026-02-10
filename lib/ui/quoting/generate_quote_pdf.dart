@@ -244,13 +244,26 @@ Future<File> generateQuotePdf(
               ),
             ]);
 
+            // Group-level description
+            if (Strings.isNotBlank(group.group.description)) {
+              content.add(
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(left: 8, top: 2),
+                  child: pw.Text(
+                    group.group.description,
+                    style: const pw.TextStyle(fontSize: 12),
+                  ),
+                ),
+              );
+            }
+
             // Group-level assumption
             if (Strings.isNotBlank(group.group.assumption)) {
               content.add(
                 pw.Padding(
                   padding: const pw.EdgeInsets.only(left: 8, top: 2),
                   child: pw.Text(
-                    group.group.assumption,
+                    'Assumptions: ${group.group.assumption}',
                     style: pw.TextStyle(
                       fontStyle: pw.FontStyle.italic,
                       fontSize: 12,
