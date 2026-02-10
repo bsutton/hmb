@@ -32,8 +32,8 @@ import 'dao_quote.dart';
 import 'dao_system.dart';
 import 'dao_task.dart';
 import 'dao_task_item.dart';
-import 'dao_todo.dart';
 import 'dao_time_entry.dart';
+import 'dao_todo.dart';
 import 'dao_work_assignment_task.dart';
 
 enum JobOrder {
@@ -605,12 +605,17 @@ where q.id=?
 
   Future<List<Job>> readyToBeInvoiced(String? filter) async {
     final activeJobs = await DaoJob().getActiveJobs(filter);
+    final unsentJobIds = (await DaoInvoice().getUnsent())
+        .map((invoice) => invoice.jobId)
+        .toSet();
     final ready = <Job>[];
     for (final job in activeJobs) {
       if (job.billingType == BillingType.nonBillable) {
         continue;
       }
-      if (await DaoJob().hasBillableTasks(job)) {
+      final hasBillableTasks = await DaoJob().hasBillableTasks(job);
+      final hasUnsentInvoice = unsentJobIds.contains(job.id);
+      if (hasBillableTasks || hasUnsentInvoice) {
         ready.add(job);
       }
     }
