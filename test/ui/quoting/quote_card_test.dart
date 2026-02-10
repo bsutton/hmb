@@ -67,7 +67,7 @@ void main() {
     expect(updatedJob?.status, JobStatus.rejected);
   });
 
-  testWidgets('sent button rolls approved quote back to sent', (tester) async {
+  testWidgets('unapprove button rolls approved quote back to sent', (tester) async {
     final job = await createJobWithCustomer(
       billingType: BillingType.fixedPrice,
       hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -98,7 +98,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Sent'));
+    await tester.tap(find.text('Unapprove'));
     await tester.pumpAndSettle();
 
     final updatedQuote = await DaoQuote().getById(quoteId);
