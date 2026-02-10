@@ -37,6 +37,7 @@ import '../../database/management/backup_providers/local/local_backup_provider.d
 import '../../database/versions/implementations/asset_script_source.dart';
 import '../../database/versions/post_upgrade/post_upgrade_134.dart';
 import '../../installer/install.dart';
+import '../../util/dart/app_settings.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/media/desktop_camera_delegate.dart';
@@ -87,7 +88,7 @@ class BootStrapper {
 
     final firstRun = !exists(pathToHmbFirstRun);
     if (firstRun) {
-        await install();
+      await install();
       touch(pathToHmbFirstRun, create: true);
     }
     return firstRun;
@@ -154,6 +155,7 @@ class BootStrapper {
   }
 
   Future<void> initImageCache() async {
+    final maxCacheMb = await AppSettings.getPhotoCacheMaxMb();
     await HMBImageCache().init(
       (variant, targetPath) async => PhotoSyncService().download(
         variant.meta.photo.id,
@@ -161,6 +163,7 @@ class BootStrapper {
         await variant.cloudStoragePath,
       ),
       ImageCompressor.run,
+      maxBytes: maxCacheMb * 1024 * 1024,
     );
   }
 
