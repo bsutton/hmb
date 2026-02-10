@@ -95,6 +95,7 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
   Widget build(BuildContext context) {
     final isApproved = quote.state == QuoteState.approved;
     final isRejected = quote.state == QuoteState.rejected;
+    final showSentRollback = quote.state == QuoteState.approved;
 
     return DeferredBuilder(
       this,
@@ -140,13 +141,18 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
           HMBRow(
             children: [
               HMBButton(
-                label: 'Approved',
-                hint: 'Mark the quote as approved by the customer',
-                // disable when already approved
-                enabled: !isApproved,
+                label: showSentRollback ? 'Unapprove' : 'Approved',
+                hint: showSentRollback
+                    ? 'Move approved quote back to sent'
+                    : 'Mark the quote as approved by the customer',
+                enabled: showSentRollback || !isApproved,
                 onPressed: () async {
                   await _updateQuote(() async {
-                    await DaoQuote().approveQuote(quote.id);
+                    if (showSentRollback) {
+                      await DaoQuote().markQuoteSent(quote.id);
+                    } else {
+                      await DaoQuote().approveQuote(quote.id);
+                    }
                   });
                 },
               ),
