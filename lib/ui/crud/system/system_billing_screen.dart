@@ -24,8 +24,11 @@ import 'package:path/path.dart' hide context;
 import 'package:path_provider/path_provider.dart';
 import 'package:strings/strings.dart';
 
+import '../../../cache/hmb_image_cache.dart';
+import '../../../cache/image_cache_config.dart';
 import '../../../dao/dao_system.dart';
 import '../../../entity/system.dart';
+import '../../../util/dart/app_settings.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/dart/uri_ex.dart';
 import '../../../util/flutter/app_title.dart';
@@ -61,6 +64,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   late final _paymentLinkUrlController = TextEditingController();
   late TextEditingController _paymentTermsInDaysController;
   late TextEditingController _paymentOptionsController;
+  late TextEditingController _photoCacheMaxMbController;
 
   late final _logoPathController = TextEditingController();
   var _showBsbAccountOnInvoice = false;
@@ -86,6 +90,9 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _paymentOptionsController = TextEditingController(
       text: system.paymentOptions,
     );
+    _photoCacheMaxMbController = TextEditingController(
+      text: (await AppSettings.getPhotoCacheMaxMb()).toString(),
+    );
 
     _logoPathController.text = system.logoPath;
     _logoAspectRatio = system.logoAspectRatio;
@@ -104,6 +111,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _paymentLinkUrlController.dispose();
     _paymentTermsInDaysController.dispose();
     _paymentOptionsController.dispose();
+    _photoCacheMaxMbController.dispose();
 
     _logoPathController.dispose();
     super.dispose();
@@ -134,6 +142,10 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         ..billingColour = _billingColour.toColorValue(); // Save billing color
 
       await DaoSystem().update(system);
+
+      final photoCacheMb = int.tryParse(_photoCacheMaxMbController.text) ?? 100;
+      await AppSettings.setPhotoCacheMaxMb(photoCacheMb);
+      await HMBImageCache().updateMaxBytes(photoCacheMb * 1024 * 1024);
 
       if (mounted) {
         HMBToast.info('saved');
@@ -272,6 +284,20 @@ The account no. will appear on invoices'''),
             ).help('Payment Terms', '''
 Used to calculate the due date on invoices.
 The due date will be calculated as Today plus the enter Payment Terms'''),
+            HMBTextField(
+              controller: _photoCacheMaxMbController,
+              labelText: 'Photo Cache Size (MB)',
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                final parsed = int.tryParse(value ?? '');
+                if (parsed == null || parsed <= 0) {
+                  return 'Enter a size in MB greater than 0';
+                }
+                return null;
+              },
+            ).help('Photo Cache Size', '''
+Maximum local photo-cache size in megabytes.
+Default is ${ImageCacheConfig.defaultMaxMegabytes}MB.'''),
             HMBTextArea(
               controller: _paymentOptionsController,
               labelText: 'Payment Options',
