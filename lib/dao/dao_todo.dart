@@ -135,7 +135,7 @@ class DaoToDo extends Dao<ToDo> {
     await db.update(
       tableName,
       {
-        'status': ToDoStatus.closed.name,
+        'status': ToDoStatus.done.name,
         'completed_date': DateTime.now().toIso8601String(),
         'modified_date': DateTime.now().toIso8601String(),
       },
