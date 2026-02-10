@@ -20,7 +20,6 @@ import 'package:strings/strings.dart';
 import '../../dao/dao.g.dart';
 import '../../entity/quote.dart';
 import '../../entity/quote_line.dart';
-import '../../entity/quote_line_group.dart';
 import '../../util/dart/format.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../dialog/email_dialog_for_job.dart';
@@ -124,7 +123,10 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
           label: 'Send...',
           hint: 'Send the quote by email',
           onPressed: () async =>
-              _quote.state == QuoteState.rejected ? null : await _sendQuote(),
+              _quote.state == QuoteState.rejected ||
+                  _quote.state == QuoteState.withdrawn
+              ? null
+              : await _sendQuote(),
         ),
         HMBButton(
           label: 'Create Milestones',
@@ -413,5 +415,4 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
       HMBToast.error('Failed to create invoice: $e');
     }
   }
-
 }

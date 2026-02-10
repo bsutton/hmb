@@ -298,6 +298,12 @@ class DaoQuote extends Dao<Quote> {
     return updateState(quoteId, QuoteState.rejected, transaction: transaction);
   }
 
+  /// Withdraw quote by business
+  Future<int> withdrawQuote(int quoteId, {Transaction? transaction}) async {
+    await DaoMilestone().voidByQuoteId(quoteId, transaction: transaction);
+    return updateState(quoteId, QuoteState.withdrawn, transaction: transaction);
+  }
+
   Future<void> rejectByJob(int jobId, {Transaction? transaction}) async {
     final quotes = await getByJobId(jobId, transaction: transaction);
     for (final quote in quotes) {

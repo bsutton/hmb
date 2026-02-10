@@ -160,7 +160,7 @@ class SurfaceCardWithActions extends StatelessWidget {
             softWrap: true,
           ),
         ),
-        Expanded(child: body),
+        Flexible(child: body),
         if (actions.isNotEmpty)
           HMBRow(mainAxisAlignment: MainAxisAlignment.end, children: actions),
       ],

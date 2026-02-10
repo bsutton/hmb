@@ -76,7 +76,9 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     // Split by state
     final invoiced = quotes.where((q) => q.state == QuoteState.invoiced);
     final approved = quotes.where((q) => q.state == QuoteState.approved);
-    final rejected = quotes.where((q) => q.state == QuoteState.rejected);
+    final rejected = quotes.where(
+      (q) => q.state == QuoteState.rejected || q.state == QuoteState.withdrawn,
+    );
     final awaiting = quotes.where(
       (q) => q.state == QuoteState.reviewing || q.state == QuoteState.sent,
     );

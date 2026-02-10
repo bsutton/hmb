@@ -59,7 +59,7 @@ class _JobEstimateBuilderScreenState
 
   var _showToBeEstimated = true;
   var _showCompleted = false;
-  var _showActive = false;
+  var _showActive = true;
   var _showWithdrawn = false;
 
   var _filter = '';
@@ -235,11 +235,7 @@ class _JobEstimateBuilderScreenState
         final tasks = filteredTasks();
         return HMBColumn(
           children: [
-            SizedBox(
-              height: 162,
-              width: double.infinity,
-              child: _buildTotals(),
-            ),
+            _buildTotals(),
             Surface(
               elevation: SurfaceElevation.e0,
               child: HMBFilterLine(
@@ -254,7 +250,7 @@ class _JobEstimateBuilderScreenState
                 onReset: () {
                   _showToBeEstimated = true;
                   _showCompleted = false;
-                  _showActive = false;
+                  _showActive = true;
                   _showWithdrawn = false;
                   setState(() {});
                 },

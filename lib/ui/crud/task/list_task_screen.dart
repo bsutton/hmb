@@ -13,6 +13,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:june/june.dart';
+import 'package:strings/strings.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
@@ -149,14 +150,22 @@ class _TaskListScreenState extends State<TaskListScreen> {
     final showInactive = June.getState(
       ShowInActiveTasksState.new,
     )._showInActiveTasks;
+    final search = filter?.trim().toLowerCase();
     final tasks = await DaoTask().getTasksByJob(widget.parent.parent!.id);
 
     final included = <Task>[];
     for (final task in tasks) {
       final status = task.status;
       final intActive = status.isInActive();
+      final matchesSearch =
+          Strings.isBlank(search) ||
+          task.name.toLowerCase().contains(search!) ||
+          task.description.toLowerCase().contains(search) ||
+          task.assumption.toLowerCase().contains(search);
       if ((showInactive && intActive) || (!showInactive && !intActive)) {
-        included.add(task);
+        if (matchesSearch) {
+          included.add(task);
+        }
       }
     }
     return included;

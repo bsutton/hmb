@@ -1,45 +1,63 @@
--- Allow closed ToDo items while keeping existing data.
-ALTER TABLE to_do RENAME TO to_do_old;
+-- Add 'withdrawn' as a valid quote state.
+ALTER TABLE quote RENAME TO quote_old;
 
-CREATE TABLE to_do (
-  id              INTEGER PRIMARY KEY AUTOINCREMENT,
-  title           TEXT    NOT NULL,
-  note            TEXT,
-  due_date        TEXT,
-  remind_at       TEXT,
-  priority        TEXT    NOT NULL DEFAULT 'none'
-                    CHECK (priority IN ('none','low','medium','high')),
-  status          TEXT    NOT NULL DEFAULT 'open'
-                    CHECK (status IN ('open','done','closed')),
-  parent_type     TEXT
-                    CHECK (parent_type IN ('job','customer') OR parent_type IS NULL),
-  parent_id       INTEGER,
-  created_date    TEXT    NOT NULL,
-  modified_date   TEXT    NOT NULL,
-  completed_date  TEXT,
-  CHECK (
-    (parent_type IS NULL AND parent_id IS NULL) OR
-    (parent_type IS NOT NULL AND parent_id IS NOT NULL)
-  )
+CREATE TABLE quote (
+    id INTEGER PRIMARY KEY,
+    job_id INTEGER,
+    total_amount INTEGER,
+    created_date TEXT,
+    modified_date TEXT,
+    quote_num TEXT,
+    external_quote_id TEXT,
+    state TEXT NOT NULL DEFAULT 'reviewing' CHECK (
+        state IN (
+            'reviewing',
+            'sent',
+            'rejected',
+            'withdrawn',
+            'approved',
+            'invoiced'
+        )
+    ),
+    date_sent TEXT,
+    date_approved TEXT,
+    assumption TEXT NOT NULL DEFAULT '',
+    billing_contact_id INTEGER,
+    summary TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT ''
 );
 
-INSERT INTO to_do (
-  id, title, note, due_date, remind_at, priority, status,
-  parent_type, parent_id, created_date, modified_date, completed_date
+INSERT INTO quote (
+    id,
+    job_id,
+    total_amount,
+    created_date,
+    modified_date,
+    quote_num,
+    external_quote_id,
+    state,
+    date_sent,
+    date_approved,
+    assumption,
+    billing_contact_id,
+    summary,
+    description
 )
 SELECT
-  id, title, note, due_date, remind_at, priority, status,
-  parent_type, parent_id, created_date, modified_date, completed_date
-FROM to_do_old;
+    id,
+    job_id,
+    total_amount,
+    created_date,
+    modified_date,
+    quote_num,
+    external_quote_id,
+    state,
+    date_sent,
+    date_approved,
+    assumption,
+    billing_contact_id,
+    summary,
+    description
+FROM quote_old;
 
-DROP TABLE to_do_old;
-
-CREATE INDEX IF NOT EXISTS idx_to_do_status_due
-  ON to_do(status, due_date);
-CREATE INDEX IF NOT EXISTS idx_to_do_parent
-  ON to_do(parent_type, parent_id);
-CREATE INDEX IF NOT EXISTS idx_to_do_remind
-  ON to_do(remind_at);
-CREATE INDEX IF NOT EXISTS idx_to_do_open_due_only
-  ON to_do(due_date)
-  WHERE status = 'open' AND due_date IS NOT NULL;
+DROP TABLE quote_old;

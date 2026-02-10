@@ -202,4 +202,19 @@ status = ? AND parent_type = '${ToDoParentType.job.name}' and parent_id = ?''',
 
     return rows.map(ToDo.fromMap).toList();
   }
+
+  Future<void> markDoneByJob(int jobId, {Transaction? transaction}) async {
+    final db = withinTransaction(transaction);
+    await db.update(
+      tableName,
+      {
+        'status': ToDoStatus.done.name,
+        'completed_date': DateTime.now().toIso8601String(),
+        'modified_date': DateTime.now().toIso8601String(),
+      },
+      where: '''
+status = ? AND parent_type = ? and parent_id = ?''',
+      whereArgs: [ToDoStatus.open.name, ToDoParentType.job.name, jobId],
+    );
+  }
 }
