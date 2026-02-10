@@ -91,11 +91,33 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
         ),
       );
 
+  Future<bool?> _promptWithdraw(BuildContext context) => showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Withdraw Quote'),
+      content: const Text('Withdraw this quote?'),
+      actions: [
+        HMBButton(
+          label: 'Cancel',
+          hint: 'Keep the quote unchanged',
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        HMBButton(
+          label: 'Withdraw',
+          hint: 'Mark the quote as withdrawn',
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final isApproved = quote.state == QuoteState.approved;
     final isRejected = quote.state == QuoteState.rejected;
+    final isWithdrawn = quote.state == QuoteState.withdrawn;
     final showSentRollback = quote.state == QuoteState.approved;
+    final showWithdrawn = quote.state == QuoteState.sent;
 
     return DeferredBuilder(
       this,
@@ -145,7 +167,7 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                 hint: showSentRollback
                     ? 'Move approved quote back to sent'
                     : 'Mark the quote as approved by the customer',
-                enabled: showSentRollback || !isApproved,
+                enabled: showSentRollback || (!isApproved && !isWithdrawn),
                 onPressed: () async {
                   await _updateQuote(() async {
                     if (showSentRollback) {
@@ -160,7 +182,7 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                 label: 'Rejected',
                 hint: 'Mark the quote as rejected',
                 // disable when already rejected
-                enabled: !isRejected,
+                enabled: !isRejected && !isWithdrawn,
                 onPressed: () async {
                   final action = await _promptRejectAction(context);
                   if (action == null) {
@@ -180,6 +202,20 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                   });
                 },
               ),
+              if (showWithdrawn)
+                HMBButton(
+                  label: 'Withdrawn',
+                  hint: 'Mark the quote as withdrawn by your business',
+                  onPressed: () async {
+                    final confirm = await _promptWithdraw(context);
+                    if (confirm != true) {
+                      return;
+                    }
+                    await _updateQuote(() async {
+                      await DaoQuote().withdrawQuote(quote.id);
+                    });
+                  },
+                ),
             ],
           ),
           // --- End State Buttons ---

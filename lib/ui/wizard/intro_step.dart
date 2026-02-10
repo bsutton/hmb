@@ -29,11 +29,14 @@ class IntroWizardStep extends WizardStep {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Welcome to Hold My Beer',
+            'Welcome to Hold My Beer (HMB)',
             style: theme.textTheme.headlineMedium,
           ),
           Text('''
 We’re almost ready to get started.
+
+HMB is designed to help run your single person Trades person business
+by managing your jobs, customers and basic accounting in one place.
 
 We’ll ask you for some basic business information such as your name, business name, and contact details.
 

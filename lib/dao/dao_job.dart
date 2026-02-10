@@ -32,8 +32,8 @@ import 'dao_quote.dart';
 import 'dao_system.dart';
 import 'dao_task.dart';
 import 'dao_task_item.dart';
-import 'dao_time_entry.dart';
 import 'dao_todo.dart';
+import 'dao_time_entry.dart';
 import 'dao_work_assignment_task.dart';
 
 enum JobOrder {
@@ -72,12 +72,12 @@ class DaoJob extends Dao<Job> {
         existing != null &&
         existing.status != entity.status &&
         entity.status == JobStatus.rejected;
-    final isFinalisingJob =
+    final isCompletingJob =
         existing != null &&
         existing.status != entity.status &&
-        entity.status.stage == JobStatusStage.finalised;
+        entity.status == JobStatus.completed;
 
-    if (!isRejectingJob && !isFinalisingJob) {
+    if (!isRejectingJob && !isCompletingJob) {
       return super.update(entity, transaction);
     }
 
@@ -85,7 +85,9 @@ class DaoJob extends Dao<Job> {
       if (isRejectingJob) {
         await DaoQuote().rejectByJob(entity.id, transaction: transaction);
       }
-      await DaoToDo().closeByJob(entity.id, transaction: transaction);
+      if (isCompletingJob) {
+        await DaoToDo().markDoneByJob(entity.id, transaction: transaction);
+      }
       return super.update(entity, transaction);
     }
 
@@ -93,7 +95,9 @@ class DaoJob extends Dao<Job> {
       if (isRejectingJob) {
         await DaoQuote().rejectByJob(entity.id, transaction: txn);
       }
-      await DaoToDo().closeByJob(entity.id, transaction: txn);
+      if (isCompletingJob) {
+        await DaoToDo().markDoneByJob(entity.id, transaction: txn);
+      }
       return super.update(entity, txn);
     });
   }

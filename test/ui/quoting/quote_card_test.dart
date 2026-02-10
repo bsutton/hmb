@@ -41,10 +41,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: QuoteCard(
-            quote: quote,
-            onStateChanged: (_) {},
-          ),
+          body: QuoteCard(quote: quote, onStateChanged: (_) {}),
         ),
       ),
     );
@@ -67,7 +64,9 @@ void main() {
     expect(updatedJob?.status, JobStatus.rejected);
   });
 
-  testWidgets('unapprove button rolls approved quote back to sent', (tester) async {
+  testWidgets('unapprove button rolls approved quote back to sent', (
+    tester,
+  ) async {
     final job = await createJobWithCustomer(
       billingType: BillingType.fixedPrice,
       hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
@@ -89,10 +88,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: QuoteCard(
-            quote: quote,
-            onStateChanged: (_) {},
-          ),
+          body: QuoteCard(quote: quote, onStateChanged: (_) {}),
         ),
       ),
     );
@@ -103,5 +99,46 @@ void main() {
 
     final updatedQuote = await DaoQuote().getById(quoteId);
     expect(updatedQuote?.state, QuoteState.sent);
+  });
+
+  testWidgets('withdrawn button marks quote withdrawn', (tester) async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.fixedPrice,
+      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+    );
+
+    final quoteId = await DaoQuote().insert(
+      Quote.forInsert(
+        jobId: job.id,
+        summary: 'Quote',
+        description: 'Quote description',
+        totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+        state: QuoteState.sent,
+      ),
+    );
+
+    final quote = (await DaoQuote().getById(quoteId))!;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: QuoteCard(quote: quote, onStateChanged: (_) {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Withdrawn'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Withdraw Quote'), findsOneWidget);
+    expect(find.text('Withdraw'), findsOneWidget);
+
+    await tester.tap(find.text('Withdraw'));
+    await tester.pumpAndSettle();
+
+    final updatedQuote = await DaoQuote().getById(quoteId);
+    expect(updatedQuote?.state, QuoteState.withdrawn);
   });
 }

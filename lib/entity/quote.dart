@@ -24,6 +24,7 @@ enum QuoteState {
   sent,
   approved,
   rejected,
+  withdrawn,
 
   /// The quote has been approved and we have
   ///  created at least one invoice from the quote.
