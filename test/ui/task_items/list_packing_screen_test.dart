@@ -23,42 +23,44 @@ void main() {
   });
 
   testWidgets('can move packing item to shopping list', (tester) async {
-    final job = await createJobWithCustomer(
-      billingType: BillingType.fixedPrice,
-      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-      summary: 'Packing Move Job',
-    );
-    job.status = JobStatus.scheduled;
-    await DaoJob().update(job);
+    final taskItemId = await tester.runAsync(() async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+        summary: 'Packing Move Job',
+      );
+      job.status = JobStatus.scheduled;
+      await DaoJob().update(job);
 
-    final task = Task.forInsert(
-      jobId: job.id,
-      name: 'Packing Task',
-      description: 'Task with stock item',
-      status: TaskStatus.approved,
-    );
-    final taskId = await DaoTask().insert(task);
+      final task = Task.forInsert(
+        jobId: job.id,
+        name: 'Packing Task',
+        description: 'Task with stock item',
+        status: TaskStatus.approved,
+      );
+      final taskId = await DaoTask().insert(task);
 
-    final taskItemId = await DaoTaskItem().insert(
-      TaskItem.forInsert(
-        taskId: taskId,
-        description: 'Stock material item',
-        purpose: '',
-        itemType: TaskItemType.materialsStock,
-        margin: Percentage.zero,
-        measurementType: MeasurementType.length,
-        dimension1: Fixed.fromNum(1, decimalDigits: 3),
-        dimension2: Fixed.fromNum(1, decimalDigits: 3),
-        dimension3: Fixed.fromNum(1, decimalDigits: 3),
-        units: Units.m,
-        url: '',
-        labourEntryMode: LabourEntryMode.hours,
-        chargeMode: ChargeMode.calculated,
-        estimatedMaterialUnitCost: Money.fromInt(1000, isoCode: 'AUD'),
-        estimatedMaterialQuantity: Fixed.fromNum(1, decimalDigits: 3),
-      ),
-    );
+      return DaoTaskItem().insert(
+        TaskItem.forInsert(
+          taskId: taskId,
+          description: 'Stock material item',
+          purpose: '',
+          itemType: TaskItemType.materialsStock,
+          margin: Percentage.zero,
+          measurementType: MeasurementType.length,
+          dimension1: Fixed.fromNum(1, decimalDigits: 3),
+          dimension2: Fixed.fromNum(1, decimalDigits: 3),
+          dimension3: Fixed.fromNum(1, decimalDigits: 3),
+          units: Units.m,
+          url: '',
+          labourEntryMode: LabourEntryMode.hours,
+          chargeMode: ChargeMode.calculated,
+          estimatedMaterialUnitCost: Money.fromInt(1000, isoCode: 'AUD'),
+          estimatedMaterialQuantity: Fixed.fromNum(1, decimalDigits: 3),
+        ),
+      );
+    });
 
     await tester.pumpWidget(const MaterialApp(home: PackingScreen()));
     await tester.pumpAndSettle();
@@ -72,7 +74,9 @@ void main() {
     await tester.tap(find.text('Confirm'));
     await tester.pumpAndSettle();
 
-    final updated = await DaoTaskItem().getById(taskItemId);
+    final updated = await tester.runAsync(
+      () => DaoTaskItem().getById(taskItemId),
+    );
     expect(updated, isNotNull);
     expect(updated!.itemType, TaskItemType.materialsBuy);
   });

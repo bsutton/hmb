@@ -20,28 +20,30 @@ void main() {
   });
 
   testWidgets('reject dialog can reject quote and job', (tester) async {
-    final job = await createJobWithCustomer(
-      billingType: BillingType.fixedPrice,
-      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-    );
+    final quote = await tester.runAsync(() async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
 
-    final quoteId = await DaoQuote().insert(
-      Quote.forInsert(
-        jobId: job.id,
-        summary: 'Quote',
-        description: 'Quote description',
-        totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
-        state: QuoteState.sent,
-      ),
-    );
+      final quoteId = await DaoQuote().insert(
+        Quote.forInsert(
+          jobId: job.id,
+          summary: 'Quote',
+          description: 'Quote description',
+          totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+          state: QuoteState.sent,
+        ),
+      );
 
-    final quote = (await DaoQuote().getById(quoteId))!;
+      return (await DaoQuote().getById(quoteId))!;
+    });
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: QuoteCard(quote: quote, onStateChanged: (_) {}),
+          body: QuoteCard(quote: quote!, onStateChanged: (_) {}),
         ),
       ),
     );
@@ -57,8 +59,12 @@ void main() {
     await tester.tap(find.text('Quote + Job'));
     await tester.pumpAndSettle();
 
-    final updatedQuote = await DaoQuote().getById(quoteId);
-    final updatedJob = await DaoJob().getById(job.id);
+    final updatedQuote = await tester.runAsync(
+      () => DaoQuote().getById(quote.id),
+    );
+    final updatedJob = await tester.runAsync(
+      () => DaoJob().getById(quote.jobId),
+    );
 
     expect(updatedQuote?.state, QuoteState.rejected);
     expect(updatedJob?.status, JobStatus.rejected);
@@ -67,28 +73,30 @@ void main() {
   testWidgets('unapprove button rolls approved quote back to sent', (
     tester,
   ) async {
-    final job = await createJobWithCustomer(
-      billingType: BillingType.fixedPrice,
-      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-    );
+    final quote = await tester.runAsync(() async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
 
-    final quoteId = await DaoQuote().insert(
-      Quote.forInsert(
-        jobId: job.id,
-        summary: 'Quote',
-        description: 'Quote description',
-        totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
-        state: QuoteState.approved,
-      ),
-    );
+      final quoteId = await DaoQuote().insert(
+        Quote.forInsert(
+          jobId: job.id,
+          summary: 'Quote',
+          description: 'Quote description',
+          totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+          state: QuoteState.approved,
+        ),
+      );
 
-    final quote = (await DaoQuote().getById(quoteId))!;
+      return (await DaoQuote().getById(quoteId))!;
+    });
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: QuoteCard(quote: quote, onStateChanged: (_) {}),
+          body: QuoteCard(quote: quote!, onStateChanged: (_) {}),
         ),
       ),
     );
@@ -97,33 +105,37 @@ void main() {
     await tester.tap(find.text('Unapprove'));
     await tester.pumpAndSettle();
 
-    final updatedQuote = await DaoQuote().getById(quoteId);
+    final updatedQuote = await tester.runAsync(
+      () => DaoQuote().getById(quote.id),
+    );
     expect(updatedQuote?.state, QuoteState.sent);
   });
 
   testWidgets('withdrawn button marks quote withdrawn', (tester) async {
-    final job = await createJobWithCustomer(
-      billingType: BillingType.fixedPrice,
-      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-    );
+    final quote = await tester.runAsync(() async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
 
-    final quoteId = await DaoQuote().insert(
-      Quote.forInsert(
-        jobId: job.id,
-        summary: 'Quote',
-        description: 'Quote description',
-        totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
-        state: QuoteState.sent,
-      ),
-    );
+      final quoteId = await DaoQuote().insert(
+        Quote.forInsert(
+          jobId: job.id,
+          summary: 'Quote',
+          description: 'Quote description',
+          totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+          state: QuoteState.sent,
+        ),
+      );
 
-    final quote = (await DaoQuote().getById(quoteId))!;
+      return (await DaoQuote().getById(quoteId))!;
+    });
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: QuoteCard(quote: quote, onStateChanged: (_) {}),
+          body: QuoteCard(quote: quote!, onStateChanged: (_) {}),
         ),
       ),
     );
@@ -138,7 +150,9 @@ void main() {
     await tester.tap(find.text('Withdraw'));
     await tester.pumpAndSettle();
 
-    final updatedQuote = await DaoQuote().getById(quoteId);
+    final updatedQuote = await tester.runAsync(
+      () => DaoQuote().getById(quote.id),
+    );
     expect(updatedQuote?.state, QuoteState.withdrawn);
   });
 }

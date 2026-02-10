@@ -20,23 +20,25 @@ void main() {
   });
 
   testWidgets('add disabled before quote approval', (tester) async {
-    final job = await createJobWithCustomer(
-      billingType: BillingType.fixedPrice,
-      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-    );
+    final quoteId = await tester.runAsync(() async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
 
-    final quoteId = await DaoQuote().insert(
-      Quote.forInsert(
-        jobId: job.id,
-        summary: 'Quote',
-        description: 'Quote description',
-        totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
-      ),
-    );
-
+      final quoteId = await DaoQuote().insert(
+        Quote.forInsert(
+          jobId: job.id,
+          summary: 'Quote',
+          description: 'Quote description',
+          totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+        ),
+      );
+      return quoteId;
+    });
     await tester.pumpWidget(
-      MaterialApp(home: EditMilestonesScreen(quoteId: quoteId)),
+      MaterialApp(home: EditMilestonesScreen(quoteId: quoteId!)),
     );
     await tester.pumpAndSettle();
 
@@ -52,24 +54,26 @@ void main() {
   });
 
   testWidgets('add milestone when approved', (tester) async {
-    final job = await createJobWithCustomer(
-      billingType: BillingType.fixedPrice,
-      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-    );
+    final quoteId = await tester.runAsync(() async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
 
-    final quoteId = await DaoQuote().insert(
-      Quote.forInsert(
-        jobId: job.id,
-        summary: 'Quote',
-        description: 'Quote description',
-        totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
-        state: QuoteState.approved,
-      ),
-    );
+      return DaoQuote().insert(
+        Quote.forInsert(
+          jobId: job.id,
+          summary: 'Quote',
+          description: 'Quote description',
+          totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+          state: QuoteState.approved,
+        ),
+      );
+    });
 
     await tester.pumpWidget(
-      MaterialApp(home: EditMilestonesScreen(quoteId: quoteId)),
+      MaterialApp(home: EditMilestonesScreen(quoteId: quoteId!)),
     );
     await tester.pumpAndSettle();
 

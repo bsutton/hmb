@@ -19,29 +19,33 @@ void main() {
     await tearDownTestDb();
   });
 
-  Future<Quote> createQuote(QuoteState state) async {
-    final job = await createJobWithCustomer(
-      billingType: BillingType.fixedPrice,
-      hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
-      bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
-    );
+  Future<Quote> createQuote(WidgetTester tester, QuoteState state) async {
+    final quote = await tester.runAsync(() async {
+      final job = await createJobWithCustomer(
+        billingType: BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
 
-    final quoteId = await DaoQuote().insert(
-      Quote.forInsert(
-        jobId: job.id,
-        summary: 'Quote',
-        description: 'Quote description',
-        totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
-        state: state,
-      ),
-    );
-    return (await DaoQuote().getById(quoteId))!;
+      final quoteId = await DaoQuote().insert(
+        Quote.forInsert(
+          jobId: job.id,
+          summary: 'Quote',
+          description: 'Quote description',
+          totalAmount: Money.fromInt(25000, isoCode: 'AUD'),
+          state: state,
+        ),
+      );
+      return DaoQuote().getById(quoteId);
+    });
+
+    return quote!;
   }
 
   testWidgets('unapprove replaces approved when quote is approved', (
     tester,
   ) async {
-    final quote = await createQuote(QuoteState.approved);
+    final quote = await createQuote(tester, QuoteState.approved);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -57,8 +61,11 @@ void main() {
   });
 
   testWidgets('withdrawn appears only after quote is sent', (tester) async {
-    final sentQuote = await createQuote(QuoteState.sent);
-    final reviewingQuote = await createQuote(QuoteState.reviewing);
+    late final Quote sentQuote;
+    late final Quote reviewingQuote;
+
+    sentQuote = await createQuote(tester, QuoteState.sent);
+    reviewingQuote = await createQuote(tester, QuoteState.reviewing);
 
     await tester.pumpWidget(
       MaterialApp(

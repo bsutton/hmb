@@ -7,20 +7,22 @@ import 'package:money2/money2.dart';
 
 void main() {
   testWidgets('voided milestone shows label and hides invoice', (tester) async {
-    final milestone = Milestone.forInsert(
-      quoteId: 1,
-      milestoneNumber: 1,
-      paymentAmount: MoneyEx.dollars(100),
-      paymentPercentage: Percentage.fromInt(50),
-      milestoneDescription: 'Milestone 1',
-      voided: true,
+    final milestone = await tester.runAsync(
+      () async => Milestone.forInsert(
+        quoteId: 1,
+        milestoneNumber: 1,
+        paymentAmount: MoneyEx.dollars(100),
+        paymentPercentage: Percentage.fromInt(50),
+        milestoneDescription: 'Milestone 1',
+        voided: true,
+      ),
     );
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: MilestoneTile(
-            milestone: milestone,
+            milestone: milestone!,
             quoteTotal: MoneyEx.dollars(200),
             onDelete: (_) {},
             onSave: (_) {},
@@ -39,19 +41,21 @@ void main() {
   });
 
   testWidgets('editable milestone shows invoice button', (tester) async {
-    final milestone = Milestone.forInsert(
-      quoteId: 1,
-      milestoneNumber: 1,
-      paymentAmount: MoneyEx.dollars(100),
-      paymentPercentage: Percentage.fromInt(50),
-      milestoneDescription: 'Milestone 1',
+    final milestone = await tester.runAsync<Milestone>(
+      () async => Milestone.forInsert(
+        quoteId: 1,
+        milestoneNumber: 1,
+        paymentAmount: MoneyEx.dollars(100),
+        paymentPercentage: Percentage.fromInt(50),
+        milestoneDescription: 'Milestone 1',
+      ),
     );
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: MilestoneTile(
-            milestone: milestone,
+            milestone: milestone!,
             quoteTotal: MoneyEx.dollars(200),
             onDelete: (_) {},
             onSave: (_) {},
