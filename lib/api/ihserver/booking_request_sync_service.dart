@@ -1,7 +1,3 @@
-import 'dart:convert';
-
-import 'package:booking_request/booking_request.dart' as br;
-
 import '../../dao/dao_booking_request.dart';
 import '../../dao/dao_system.dart';
 import '../../database/management/database_helper.dart';
@@ -55,11 +51,25 @@ class BookingRequestSyncService {
           continue;
         }
 
-        final payload = req.toJsonString();
+        final fullName = '${req.firstName} ${req.surname}'.trim();
+        final derivedName = fullName.isNotEmpty
+            ? fullName
+            : req.businessName.trim();
         final entity = BookingRequest.forInsert(
           remoteId: id,
           status: BookingRequestStatus.pending,
-          payload: payload,
+          name: derivedName,
+          businessName: req.businessName.trim(),
+          firstName: req.firstName.trim(),
+          surname: req.surname.trim(),
+          email: req.email.trim(),
+          phone: req.phone.trim(),
+          description: req.description.trim(),
+          street: req.street.trim(),
+          suburb: req.suburb.trim(),
+          day1: req.day1.trim(),
+          day2: req.day2.trim(),
+          day3: req.day3.trim(),
         );
         await dao.insert(entity);
         added += 1;
@@ -76,8 +86,4 @@ class BookingRequestSyncService {
       _inFlight = false;
     }
   }
-}
-
-extension on br.BookingRequest {
-  String toJsonString() => jsonEncode(toJson());
 }
