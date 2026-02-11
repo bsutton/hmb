@@ -14,6 +14,8 @@
 
 import 'dart:convert';
 
+import 'package:booking_request/booking_request.dart' as br;
+
 import 'entity.dart';
 
 enum BookingRequestStatus {
@@ -74,8 +76,38 @@ class BookingRequest extends Entity<BookingRequest> {
   Map<String, dynamic> get payloadMap =>
       jsonDecode(payload) as Map<String, dynamic>;
 
-  BookingRequestPayload get parsedPayload =>
-      BookingRequestPayload.fromMap(payloadMap);
+  BookingRequestPayload get parsedPayload {
+    try {
+      final parsed = br.BookingRequest.fromJson(payloadMap);
+      return BookingRequestPayload(
+        name: _buildName(parsed),
+        businessName: parsed.businessName.trim(),
+        firstName: parsed.firstName.trim(),
+        surname: parsed.surname.trim(),
+        email: parsed.email.trim(),
+        phone: parsed.phone.trim(),
+        description: parsed.description.trim(),
+        street: parsed.street.trim(),
+        suburb: parsed.suburb.trim(),
+        day1: parsed.day1.trim(),
+        day2: parsed.day2.trim(),
+        day3: parsed.day3.trim(),
+      );
+    } catch (_) {
+      return BookingRequestPayload.fromMap(payloadMap);
+    }
+  }
+
+  static String _buildName(br.BookingRequest parsed) {
+    final fullName = '${parsed.firstName} ${parsed.surname}'.trim();
+    if (fullName.isNotEmpty) {
+      return fullName;
+    }
+    if (parsed.businessName.trim().isNotEmpty) {
+      return parsed.businessName.trim();
+    }
+    return '';
+  }
 
   @override
   Map<String, dynamic> toMap() => {
@@ -118,18 +150,34 @@ class BookingRequestPayload {
   });
 
   factory BookingRequestPayload.fromMap(Map<String, dynamic> map) =>
-      BookingRequestPayload(
-        name: (map['name'] as String?)?.trim() ?? '',
-        businessName: (map['businessName'] as String?)?.trim() ?? '',
-        firstName: (map['firstName'] as String?)?.trim() ?? '',
-        surname: (map['surname'] as String?)?.trim() ?? '',
-        email: (map['email'] as String?)?.trim() ?? '',
-        phone: (map['phone'] as String?)?.trim() ?? '',
-        description: (map['description'] as String?)?.trim() ?? '',
-        street: (map['street'] as String?)?.trim() ?? '',
-        suburb: (map['suburb'] as String?)?.trim() ?? '',
-        day1: (map['day1'] as String?)?.trim() ?? '',
-        day2: (map['day2'] as String?)?.trim() ?? '',
-        day3: (map['day3'] as String?)?.trim() ?? '',
-      );
+      BookingRequestPayload._fromPayloadMap(map);
+
+  factory BookingRequestPayload._fromPayloadMap(Map<String, dynamic> map) {
+    final data = map['data'] is Map
+        ? Map<String, dynamic>.from(map['data'] as Map)
+        : map;
+    final businessName = (data['businessName'] as String?)?.trim() ?? '';
+    final firstName = (data['firstName'] as String?)?.trim() ?? '';
+    final surname = (data['surname'] as String?)?.trim() ?? '';
+    final directName = (data['name'] as String?)?.trim() ?? '';
+    final fullName = '$firstName $surname'.trim();
+    final derivedName = directName.isNotEmpty
+        ? directName
+        : (fullName.isNotEmpty ? fullName : businessName);
+
+    return BookingRequestPayload(
+      name: derivedName,
+      businessName: businessName,
+      firstName: firstName,
+      surname: surname,
+      email: (data['email'] as String?)?.trim() ?? '',
+      phone: (data['phone'] as String?)?.trim() ?? '',
+      description: (data['description'] as String?)?.trim() ?? '',
+      street: (data['street'] as String?)?.trim() ?? '',
+      suburb: (data['suburb'] as String?)?.trim() ?? '',
+      day1: (data['day1'] as String?)?.trim() ?? '',
+      day2: (data['day2'] as String?)?.trim() ?? '',
+      day3: (data['day3'] as String?)?.trim() ?? '',
+    );
+  }
 }
