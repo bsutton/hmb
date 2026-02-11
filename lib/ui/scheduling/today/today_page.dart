@@ -16,6 +16,7 @@ import 'dart:async';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
+import 'package:go_router/go_router.dart';
 
 // -- Example imports. Adapt for your project:
 import '../../../dao/dao.g.dart';
@@ -30,6 +31,7 @@ import '../day_schedule.dart'; // Our DaySchedule stateful widget
 import '../month_schedule.dart'; // Our MonthSchedule stateful widget
 import '../week_schedule.dart';
 import 'backup_reminder.dart';
+import 'cache_reminder.dart';
 import 'job_card.dart'; // Our WeekSchedule stateful widget
 
 class JobAndCustomer {
@@ -79,6 +81,7 @@ class Today {
   final List<Job> toBeQuoted;
   final List<InvoicingJob> toBeInvoiced;
   final BackupReminderStatus backupReminder;
+  final CacheReminderStatus cacheReminder;
 
   Today._({
     required this.activities,
@@ -88,6 +91,7 @@ class Today {
     required this.toBeQuoted,
     required this.toBeInvoiced,
     required this.backupReminder,
+    required this.cacheReminder,
   });
 
   static Future<Today> fetchToday() async {
@@ -133,6 +137,7 @@ class Today {
     final toBeInvoiced = byId.values.toList()
       ..sort((a, b) => b.job.modifiedDate.compareTo(a.job.modifiedDate));
     final backupReminder = await BackupReminder.getStatus();
+    final cacheReminder = await CacheReminder.getStatus();
 
     return Today._(
       activities: activeJobs,
@@ -142,6 +147,7 @@ class Today {
       toBeQuoted: toBeQuoted,
       toBeInvoiced: toBeInvoiced,
       backupReminder: backupReminder,
+      cacheReminder: cacheReminder,
     );
   }
 }
@@ -210,6 +216,7 @@ class TodayPageState extends DeferredState<TodayPage> {
 
   List<Widget> _buildCards() => [
     backupReminder(today),
+    cacheReminder(today),
     jobList(today),
     todoList(today, refresh),
     shoppingList(today),
@@ -247,6 +254,40 @@ class TodayPageState extends DeferredState<TodayPage> {
       parts.add('Photo sync is pending');
     }
     return '${parts.join(' and ')}. Open Backup to resolve.';
+  }
+
+  Widget cacheReminder(Today today) => HMBOneOf(
+    condition: !today.cacheReminder.needsReminder,
+    onTrue: const HMBEmpty(),
+    onFalse: GestureDetector(
+      onTap: () => context.go('/home/settings/storage'),
+      child: Surface(
+        rounded: true,
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+            const HMBSpacer(width: true),
+            Expanded(
+              child: Text(
+                _cacheReminderMessage(today.cacheReminder),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  String _cacheReminderMessage(CacheReminderStatus status) {
+    final parts = <String>[];
+    if (status.cacheLimitExceeded) {
+      parts.add('Photo cache has exceeded its limit');
+    }
+    if (status.photoSyncPending) {
+      parts.add('photo sync is pending');
+    }
+    return '${parts.join(' and ')}. Open Storage to resolve.';
   }
 
   Widget jobList(Today today) => Listing<JobAndActivity>(
