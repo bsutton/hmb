@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:booking_request/booking_request.dart' as br;
 import 'package:http/http.dart' as http;
 
 import '../../dao/dao_system.dart';
@@ -14,10 +15,10 @@ class IhServerApiClient {
     );
   }
 
-  Future<List<Map<String, dynamic>>> fetchBookingRequests() async {
+  Future<List<br.BookingRequest>> fetchBookingRequests() async {
     final cfg = await _config();
     if (!cfg.isValid) {
-      return <Map<String, dynamic>>[];
+      return <br.BookingRequest>[];
     }
 
     final uri = Uri.parse('${cfg.normalizedBaseUrl}/api/hmb/booking/requests');
@@ -30,7 +31,12 @@ class IhServerApiClient {
 
     final payload = jsonDecode(response.body) as Map<String, dynamic>;
     final list = payload['requests'] as List<dynamic>? ?? const [];
-    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return list
+        .map(
+          (e) =>
+              br.BookingRequest.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
+        .toList();
   }
 
   Future<void> ackBookingRequests(List<String> ids) async {
