@@ -31,6 +31,7 @@ import '../crud/system/ihserver_integration_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
 import '../crud/system/system_contact_screen.dart';
+import '../crud/system/system_storage_screen.dart';
 import '../crud/system/xero_integration_screen.dart';
 import '../crud/todo/list_todo_screen.dart';
 import '../crud/tool/list_tool_screen.dart';
@@ -286,6 +287,10 @@ List<GoRoute> settingRoutes() => [
   GoRoute(
     path: 'billing',
     builder: (_, _) => const HomeScaffold(initialScreen: SystemBillingScreen()),
+  ),
+  GoRoute(
+    path: 'storage',
+    builder: (_, _) => const HomeScaffold(initialScreen: SystemStorageScreen()),
   ),
   GoRoute(
     path: 'contact',
