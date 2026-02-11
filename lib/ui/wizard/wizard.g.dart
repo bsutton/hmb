@@ -10,3 +10,4 @@ export 'contact_page.dart';
 export 'integration_page.dart';
 export 'intro_step.dart';
 export 'setup_wizard.dart';
+export 'storage_page.dart';

@@ -87,7 +87,7 @@ class BootStrapper {
 
     final firstRun = !exists(pathToHmbFirstRun);
     if (firstRun) {
-        await install();
+      await install();
       touch(pathToHmbFirstRun, create: true);
     }
     return firstRun;
@@ -154,6 +154,7 @@ class BootStrapper {
   }
 
   Future<void> initImageCache() async {
+    final system = await DaoSystem().get();
     await HMBImageCache().init(
       (variant, targetPath) async => PhotoSyncService().download(
         variant.meta.photo.id,
@@ -161,6 +162,7 @@ class BootStrapper {
         await variant.cloudStoragePath,
       ),
       ImageCompressor.run,
+      maxBytes: system.photoCacheMaxMb * 1024 * 1024,
     );
   }
 

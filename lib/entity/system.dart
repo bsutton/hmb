@@ -110,6 +110,7 @@ class System extends Entity<System> {
   String logoPath;
   LogoAspectRatio logoAspectRatio;
   int billingColour;
+  int photoCacheMaxMb;
   int paymentTermsInDays;
   String paymentOptions;
   String? firstname;
@@ -167,6 +168,7 @@ class System extends Entity<System> {
     required this.logoPath,
     required this.logoAspectRatio,
     required this.billingColour,
+    required this.photoCacheMaxMb,
     required this.paymentTermsInDays,
     required this.paymentOptions,
     required this.firstname,
@@ -217,6 +219,7 @@ class System extends Entity<System> {
     required this.paymentTermsInDays,
     required this.paymentOptions,
     required this.richTextRemoved,
+    this.photoCacheMaxMb = 100,
     this.enableXeroIntegration = true,
     this.preferredUnitSystem = PreferredUnitSystem.metric,
     this.logoPath = '',
@@ -267,6 +270,7 @@ class System extends Entity<System> {
     String? logoPath,
     LogoAspectRatio? logoAspectRatio,
     int? billingColour,
+    int? photoCacheMaxMb,
     int? paymentTermsInDays,
     String? paymentOptions,
     String? firstname,
@@ -319,6 +323,7 @@ class System extends Entity<System> {
     logoPath: logoPath ?? this.logoPath,
     logoAspectRatio: logoAspectRatio ?? this.logoAspectRatio,
     billingColour: billingColour ?? this.billingColour,
+    photoCacheMaxMb: photoCacheMaxMb ?? this.photoCacheMaxMb,
     paymentTermsInDays: paymentTermsInDays ?? this.paymentTermsInDays,
     paymentOptions: paymentOptions ?? this.paymentOptions,
     firstname: firstname ?? this.firstname,
@@ -382,6 +387,7 @@ class System extends Entity<System> {
       map['logo_aspect_ratio'] as String?,
     ),
     billingColour: map['billing_colour'] as int? ?? 0xFF000000,
+    photoCacheMaxMb: map['photo_cache_max_mb'] as int? ?? 100,
     paymentTermsInDays: map['payment_terms_in_days'] as int? ?? 3,
     paymentOptions: map['payment_options'] as String? ?? '',
     firstname: map['firstname'] as String?,
@@ -476,6 +482,7 @@ class System extends Entity<System> {
     'logo_path': logoPath,
     'logo_aspect_ratio': logoAspectRatio.name,
     'billing_colour': billingColour,
+    'photo_cache_max_mb': photoCacheMaxMb,
     'payment_terms_in_days': paymentTermsInDays,
     'payment_options': paymentOptions,
     'firstname': firstname,

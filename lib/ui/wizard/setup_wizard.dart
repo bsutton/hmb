@@ -23,6 +23,7 @@ import 'business_page.dart';
 import 'contact_page.dart';
 import 'integration_page.dart';
 import 'intro_step.dart';
+import 'storage_page.dart';
 
 class SetupWizard extends StatefulWidget {
   /// True if launched from the settings dashboard
@@ -48,6 +49,7 @@ class _SetupWizardState extends State<SetupWizard> {
       IntroWizardStep(),
       BusinessWizardStep(),
       BillingWizardStep(),
+      StorageWizardStep(),
       ContactWizardStep(),
       IntegrationWizardStep(),
     ];

@@ -15,6 +15,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../dao/dao.g.dart';
+import '../../../crud/system/system_storage_screen.dart';
 import '../../../widgets/layout/layout.g.dart';
 import '../dashboard.dart';
 import '../dashlet_card.dart';
@@ -52,6 +54,21 @@ class SettingsDashboardPage extends StatelessWidget {
         route: '/home/settings/billing',
         valueBuilder: (_, _) => const HMBEmpty(),
       ),
+      DashletCard<String>.route(
+        label: 'Storage',
+        hint:
+            'Configure local photo cache size and view local cache utilisation',
+        icon: Icons.storage,
+        value: () async {
+          final system = await DaoSystem().get();
+          final stats = await StorageStats.load();
+          return DashletValue(
+            '${system.photoCacheMaxMb} MB',
+            '${stats.photoCount} photos • ${_formatBytes(stats.totalBytes)}',
+          );
+        },
+        route: '/home/settings/storage',
+      ),
       DashletCard<void>.route(
         label: 'Contact',
         hint:
@@ -80,4 +97,20 @@ class SettingsDashboardPage extends StatelessWidget {
       ),
     ],
   );
+}
+
+String _formatBytes(int bytes) {
+  if (bytes < 1024) {
+    return '$bytes B';
+  }
+  final kb = bytes / 1024;
+  if (kb < 1024) {
+    return '${kb.toStringAsFixed(1)} KB';
+  }
+  final mb = kb / 1024;
+  if (mb < 1024) {
+    return '${mb.toStringAsFixed(1)} MB';
+  }
+  final gb = mb / 1024;
+  return '${gb.toStringAsFixed(2)} GB';
 }

@@ -1,0 +1,2 @@
+ALTER TABLE system
+ADD COLUMN photo_cache_max_mb INTEGER NOT NULL DEFAULT 100;
