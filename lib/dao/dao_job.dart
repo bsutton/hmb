@@ -32,8 +32,8 @@ import 'dao_quote.dart';
 import 'dao_system.dart';
 import 'dao_task.dart';
 import 'dao_task_item.dart';
-import 'dao_todo.dart';
 import 'dao_time_entry.dart';
+import 'dao_todo.dart';
 import 'dao_work_assignment_task.dart';
 
 enum JobOrder {
@@ -67,7 +67,7 @@ class DaoJob extends Dao<Job> {
 
   @override
   Future<int> update(Job entity, [Transaction? transaction]) async {
-    final existing = await getById(entity.id);
+    final existing = await getById(entity.id, transaction);
     final isRejectingJob =
         existing != null &&
         existing.status != entity.status &&

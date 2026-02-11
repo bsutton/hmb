@@ -233,5 +233,33 @@ void main() {
         expect(quote2?.state, QuoteState.rejected);
       },
     );
+
+    test('copy job and move task completes and re-links moved task', () async {
+      final now = DateTime.now();
+      final sourceJob = await createJob(
+        now,
+        BillingType.fixedPrice,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+        summary: 'Source Job',
+      );
+
+      final task = await createTask(sourceJob, 'Move Me');
+
+      final copied = await DaoJob()
+          .copyJobAndMoveTasks(
+            job: sourceJob,
+            tasksToMove: [task],
+            summary: 'Copied Job',
+          )
+          .timeout(const Duration(seconds: 5));
+
+      expect(copied.id, isNot(equals(sourceJob.id)));
+      expect(copied.summary, equals('Copied Job'));
+
+      final movedTask = await DaoTask().getById(task.id);
+      expect(movedTask, isNotNull);
+      expect(movedTask!.jobId, equals(copied.id));
+    });
   });
 }
