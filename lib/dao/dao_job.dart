@@ -67,7 +67,7 @@ class DaoJob extends Dao<Job> {
 
   @override
   Future<int> update(Job entity, [Transaction? transaction]) async {
-    final existing = await getById(entity.id);
+    final existing = await getById(entity.id, transaction);
     final isRejectingJob =
         existing != null &&
         existing.status != entity.status &&
