@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import '../../dao/dao_booking_request.dart';
 import '../../dao/dao_system.dart';
 import '../../database/management/database_helper.dart';
@@ -32,47 +30,58 @@ class BookingRequestSyncService {
     _lastAttempt = now;
     _inFlight = true;
     try {
-    final system = await DaoSystem().get();
-    if (!system.enableIhserverIntegration) {
-      return 0;
-    }
-
-    final requests = await _client.fetchBookingRequests();
-    if (requests.isEmpty) {
-      return 0;
-    }
-
-    final dao = DaoBookingRequest();
-    var added = 0;
-    final ids = <String>[];
-    for (final req in requests) {
-      final id = req['id']?.toString();
-      if (id == null || id.isEmpty) {
-        continue;
-      }
-      ids.add(id);
-      final existing = await dao.getByRemoteId(id);
-      if (existing != null) {
-        continue;
+      final system = await DaoSystem().get();
+      if (!system.enableIhserverIntegration) {
+        return 0;
       }
 
-      final payload = jsonEncode(req['data'] ?? {});
-      final entity = BookingRequest.forInsert(
-        remoteId: id,
-        status: BookingRequestStatus.pending,
-        payload: payload,
-      );
-      await dao.insert(entity);
-      added += 1;
-    }
+      final requests = await _client.fetchBookingRequests();
+      if (requests.isEmpty) {
+        return 0;
+      }
 
-    try {
-      await _client.ackBookingRequests(ids);
-    } catch (e) {
-      Log.e('Failed to ack booking requests: $e');
-    }
+      final dao = DaoBookingRequest();
+      var added = 0;
+      final ids = <String>[];
+      for (final req in requests) {
+        final id = req.id;
+        ids.add(id);
+        final existing = await dao.getByRemoteId(id);
+        if (existing != null) {
+          continue;
+        }
 
-    return added;
+        final fullName = '${req.firstName} ${req.surname}'.trim();
+        final derivedName = fullName.isNotEmpty
+            ? fullName
+            : req.businessName.trim();
+        final entity = BookingRequest.forInsert(
+          remoteId: id,
+          status: BookingRequestStatus.pending,
+          name: derivedName,
+          businessName: req.businessName.trim(),
+          firstName: req.firstName.trim(),
+          surname: req.surname.trim(),
+          email: req.email.trim(),
+          phone: req.phone.trim(),
+          description: req.description.trim(),
+          street: req.street.trim(),
+          suburb: req.suburb.trim(),
+          day1: req.day1.trim(),
+          day2: req.day2.trim(),
+          day3: req.day3.trim(),
+        );
+        await dao.insert(entity);
+        added += 1;
+      }
+
+      try {
+        await _client.ackBookingRequests(ids);
+      } catch (e) {
+        Log.e('Failed to ack booking requests: $e');
+      }
+
+      return added;
     } finally {
       _inFlight = false;
     }

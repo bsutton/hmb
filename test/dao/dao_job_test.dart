@@ -14,6 +14,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/util/dart/local_date.dart';
 import 'package:money2/money2.dart';
 
 import '../database/management/db_utility_test_helper.dart';
@@ -234,6 +235,7 @@ void main() {
       },
     );
 
+
     test('copy job and move task completes and re-links moved task', () async {
       final now = DateTime.now();
       final sourceJob = await createJob(
@@ -260,6 +262,51 @@ void main() {
       final movedTask = await DaoTask().getById(task.id);
       expect(movedTask, isNotNull);
       expect(movedTask!.jobId, equals(copied.id));
+
+    test('readyToBeInvoiced includes job with unsent invoice', () async {
+      final now = DateTime.now();
+      final job = await createJob(
+        now,
+        BillingType.timeAndMaterial,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
+
+      await DaoInvoice().insert(
+        Invoice.forInsert(
+          jobId: job.id,
+          dueDate: LocalDate.today(),
+          totalAmount: Money.fromInt(5000, isoCode: 'AUD'),
+          billingContactId: 1,
+        ),
+      );
+
+      final ready = await DaoJob().readyToBeInvoiced(null);
+      expect(ready.any((j) => j.id == job.id), isTrue);
+    });
+
+    test('readyToBeInvoiced excludes jobs with only sent invoices', () async {
+      final now = DateTime.now();
+      final job = await createJob(
+        now,
+        BillingType.timeAndMaterial,
+        hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
+        bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
+      );
+
+      await DaoInvoice().insert(
+        Invoice.forInsert(
+          jobId: job.id,
+          dueDate: LocalDate.today(),
+          totalAmount: Money.fromInt(5000, isoCode: 'AUD'),
+          billingContactId: 1,
+          sent: true,
+        ),
+      );
+
+      final ready = await DaoJob().readyToBeInvoiced(null);
+      expect(ready.any((j) => j.id == job.id), isFalse);
+
     });
   });
 }
