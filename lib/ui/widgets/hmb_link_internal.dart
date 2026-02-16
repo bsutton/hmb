@@ -16,10 +16,14 @@ import 'package:flutter/material.dart';
 class HMBLinkInternal extends StatelessWidget {
   final String label;
   final Future<Widget> Function() navigateTo;
+  final int? maxLines;
+  final TextOverflow? overflow;
 
   const HMBLinkInternal({
     required this.label,
     required this.navigateTo,
+    this.maxLines,
+    this.overflow,
     super.key,
   });
 
@@ -35,6 +39,8 @@ class HMBLinkInternal extends StatelessWidget {
     },
     child: Text(
       label,
+      maxLines: maxLines,
+      overflow: overflow,
       style: const TextStyle(
         color: Colors.green,
         decoration: TextDecoration.underline,
