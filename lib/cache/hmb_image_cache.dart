@@ -156,6 +156,7 @@ class HMBImageCache {
     }
 
     this.downloader = downloader;
+    this.compressor = compressor;
 
     _config = ImageCacheConfig(
       downloader: downloader,

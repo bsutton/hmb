@@ -18,7 +18,7 @@
 library;
 
 import 'package:dcli_core/dcli_core.dart';
-
+import 'package:path/path.dart' as p;
 
 typedef Path = String;
 
@@ -26,3 +26,6 @@ typedef Path = String;
 Future<Path> getPhotosRootPath() async => throw UnimplementedError();
 
 Future<Path> getTemporaryDirectory() async => createTempDir();
+
+Future<Path> getSettingsPath() async =>
+    p.join(await getTemporaryDirectory(), 'settings');
