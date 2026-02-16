@@ -107,6 +107,14 @@ WHERE last_access <= ?
     return (res.first['total'] as int?) ?? 0;
   }
 
+  Future<int> totalPhotos([Transaction? txn]) async {
+    final db = txn ?? _db;
+    final res = await db.rawQuery(
+      'SELECT COUNT(DISTINCT photo_id) AS total FROM $tableName',
+    );
+    return (res.first['total'] as int?) ?? 0;
+  }
+
   Future<ImageCacheVariant?> oldest([Transaction? txn]) async {
     final db = txn ?? _db;
     final rows = await db.query(
@@ -118,5 +126,44 @@ WHERE last_access <= ?
       return null;
     }
     return ImageCacheVariant.fromMap(rows.first);
+  }
+
+  /// Returns the oldest cache entry whose photo has been backed up.
+  Future<ImageCacheVariant?> oldestBackedUp([Transaction? txn]) async {
+    final db = txn ?? _db;
+    final rows = await db.rawQuery('''
+SELECT icv.*
+  FROM $tableName icv
+  JOIN photo p
+    ON p.id = icv.photo_id
+ WHERE p.last_backup_date IS NOT NULL
+ ORDER BY icv.last_access ASC
+ LIMIT 1
+''');
+    if (rows.isEmpty) {
+      return null;
+    }
+    return ImageCacheVariant.fromMap(rows.first);
+  }
+
+  /// Returns up to [limit] oldest cache entries whose photos are backed up.
+  Future<List<ImageCacheVariant>> oldestBackedUpBatch(
+    int limit, [
+    Transaction? txn,
+  ]) async {
+    final db = txn ?? _db;
+    final rows = await db.rawQuery(
+      '''
+SELECT icv.*
+  FROM $tableName icv
+  JOIN photo p
+    ON p.id = icv.photo_id
+ WHERE p.last_backup_date IS NOT NULL
+ ORDER BY icv.last_access ASC
+ LIMIT ?
+''',
+      [limit],
+    );
+    return rows.map(ImageCacheVariant.fromMap).toList();
   }
 }
