@@ -83,6 +83,7 @@ class CompressJob {
 /// Filenames: `<photoId>__<variant>.<ext>`
 class HMBImageCache {
   static const _cacheDirName = 'photo_image_cache';
+  static const _trimBatchSize = 100;
 
   // singleton
   static HMBImageCache? _instance;
@@ -91,7 +92,7 @@ class HMBImageCache {
   late final Compressor compressor;
   late ImageCacheConfig _config;
   late String _cacheDir;
-  late DaoImageCacheVariant _dao;
+  late DaoImageCacheVariant _daoImageCacheVariant;
 
   var _initialised = false;
 
@@ -182,7 +183,7 @@ class HMBImageCache {
         delete(legacyJson);
       }
     }
-    _dao = DaoImageCacheVariant();
+    _daoImageCacheVariant = DaoImageCacheVariant();
     unawaited(_trimIfNeeded());
     _initialised = true;
   }
@@ -191,7 +192,6 @@ class HMBImageCache {
     if (!_initialised) {
       return;
     }
-
     _config = ImageCacheConfig(
       downloader: downloader,
       compressor: compressor,
@@ -368,7 +368,7 @@ class HMBImageCache {
     if (exists(path)) {
       delete(path);
     }
-    await _dao.removeKey(parts.photoId, parts.variant);
+    await _daoImageCacheVariant.removeKey(parts.photoId, parts.variant);
   }
 
   Future<void> evictPhoto(String photoId) async {
@@ -376,7 +376,7 @@ class HMBImageCache {
     if (id == null) {
       return;
     }
-    final rows = await _dao.getByPhotoId(id);
+    final rows = await _daoImageCacheVariant.getByPhotoId(id);
     for (final row in rows) {
       final path = p.join(_cacheDir, row.fileName);
       if (exists(path)) {
@@ -414,13 +414,16 @@ class HMBImageCache {
     if (parts == null) {
       return null;
     }
-    final row = await _dao.getByKey(parts.photoId, parts.variant);
+    final row = await _daoImageCacheVariant.getByKey(
+      parts.photoId,
+      parts.variant,
+    );
     if (row != null) {
       final path = p.join(_cacheDir, row.fileName);
       if (exists(path)) {
         return path;
       }
-      await _dao.removeKey(parts.photoId, parts.variant);
+      await _daoImageCacheVariant.removeKey(parts.photoId, parts.variant);
     }
 
     final fileName = _cacheFileName(parts.photoId, parts.variant);
@@ -432,7 +435,7 @@ class HMBImageCache {
       return null;
     }
     final statInfo = stat(fallback);
-    await _dao.upsert(
+    await _daoImageCacheVariant.upsert(
       ImageCacheVariant.forInsert(
         photoId: parts.photoId,
         variant: parts.variant,
@@ -475,7 +478,7 @@ class HMBImageCache {
     }
     final size = stat(path).size;
     final now = DateTime.now().millisecondsSinceEpoch;
-    await _dao.upsert(
+    await _daoImageCacheVariant.upsert(
       ImageCacheVariant.forInsert(
         photoId: parts.photoId,
         variant: parts.variant,
@@ -491,7 +494,7 @@ class HMBImageCache {
     if (parts == null) {
       return;
     }
-    await _dao.touch(
+    await _daoImageCacheVariant.touch(
       parts.photoId,
       parts.variant,
       DateTime.now().millisecondsSinceEpoch,
@@ -501,18 +504,30 @@ class HMBImageCache {
   // TODO(bsutton): remove raw images from cache first
 
   Future<void> _trimIfNeeded() async {
-    var total = await _dao.totalBytes();
+    var total = await _daoImageCacheVariant.totalBytes();
     while (total > _config.maxBytes) {
-      final oldest = await _dao.oldest();
-      if (oldest == null) {
+      final batch = await _daoImageCacheVariant.oldestBackedUpBatch(
+        _trimBatchSize,
+      );
+      if (batch.isEmpty) {
+        // Remaining cache entries are for photos that have not been backed up.
+        // Keep them to avoid data loss; UI reminders surface the overflow.
         return;
       }
-      final path = p.join(_cacheDir, oldest.fileName);
-      if (exists(path)) {
-        delete(path);
+      for (final oldest in batch) {
+        if (total <= _config.maxBytes) {
+          break;
+        }
+        final path = p.join(_cacheDir, oldest.fileName);
+        if (exists(path)) {
+          delete(path);
+        }
+        await _daoImageCacheVariant.removeKey(oldest.photoId, oldest.variant);
+        total -= oldest.size;
       }
-      await _dao.removeKey(oldest.photoId, oldest.variant);
-      total = await _dao.totalBytes();
+      if (total < 0) {
+        total = await _daoImageCacheVariant.totalBytes();
+      }
     }
   }
 
@@ -538,7 +553,11 @@ class HMBImageCache {
     if (parts == null) {
       return;
     }
-    await _dao.touch(parts.photoId, parts.variant, when.millisecondsSinceEpoch);
+    await _daoImageCacheVariant.touch(
+      parts.photoId,
+      parts.variant,
+      when.millisecondsSinceEpoch,
+    );
   }
 
   // /// Convenience overload to match callsites shown in the migration.

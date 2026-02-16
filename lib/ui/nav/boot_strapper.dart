@@ -155,7 +155,7 @@ class BootStrapper {
   }
 
   Future<void> initImageCache() async {
-    final maxCacheMb = await AppSettings.getPhotoCacheMaxMb();
+    final system = await DaoSystem().get();
     await HMBImageCache().init(
       (variant, targetPath) async => PhotoSyncService().download(
         variant.meta.photo.id,
@@ -163,7 +163,7 @@ class BootStrapper {
         await variant.cloudStoragePath,
       ),
       ImageCompressor.run,
-      maxBytes: maxCacheMb * 1024 * 1024,
+      maxBytes: system.photoCacheMaxMb * 1024 * 1024,
     );
   }
 

@@ -36,6 +36,7 @@ class LocalNotifs {
   DesktopNotifScheduler? _desktop;
   var _inited = false;
   var _iana = 'UTC';
+  void Function(Map<String, String> payload)? onNotificationPayload;
 
   factory LocalNotifs() => _instance;
 
@@ -72,9 +73,11 @@ class LocalNotifs {
     await _fln.initialize(
       settings: init,
       onDidReceiveNotificationResponse: (resp) {
-        // decode payload and route if needed
-        _decodePayload(resp.payload);
-        // TODO(chat-gpt): route using data['type'], data['id']
+        final data = _decodePayload(resp.payload);
+        if (data.isEmpty) {
+          return;
+        }
+        onNotificationPayload?.call(data);
       },
     );
 
