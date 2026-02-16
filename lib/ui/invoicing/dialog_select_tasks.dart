@@ -131,6 +131,8 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
   @override
   Future<void> asyncInitState() async {
+    _groupByTask = widget.job.billingType == BillingType.fixedPrice;
+
     billBookingFee = canBillBookingFee =
         widget.job.billingType == BillingType.timeAndMaterial &&
         !widget.job.bookingFeeInvoiced;
@@ -187,20 +189,23 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
             DropdownButton<bool>(
               value: _groupByTask,
               isExpanded: true,
-              onChanged: (value) {
-                setState(() {
-                  _groupByTask = value ?? true;
-                });
-              },
-              items: const [
-                DropdownMenuItem(
+              onChanged: widget.job.billingType == BillingType.fixedPrice
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _groupByTask = value ?? true;
+                      });
+                    },
+              items: [
+                const DropdownMenuItem(
                   value: true,
                   child: Text('Group by Task/Date'),
                 ),
-                DropdownMenuItem(
-                  value: false,
-                  child: Text('Group by Date/Task'),
-                ),
+                if (widget.job.billingType != BillingType.fixedPrice)
+                  const DropdownMenuItem(
+                    value: false,
+                    child: Text('Group by Date/Task'),
+                  ),
               ],
             ),
             if (canBillBookingFee)
@@ -249,7 +254,9 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
             InvoiceOptions(
               selectedTaskIds: selectedTaskIds,
               billBookingFee: billBookingFee,
-              groupByTask: _groupByTask,
+              groupByTask:
+                  widget.job.billingType == BillingType.fixedPrice ||
+                  _groupByTask,
               contact: _selectedContact,
             ),
           );

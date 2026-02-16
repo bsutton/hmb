@@ -30,11 +30,10 @@ Future<Invoice> createTimeAndMaterialsInvoice(
     throw InvoiceException("Hourly rate must be set for job '${job.summary}'");
   }
 
-  assert(
-    job.billingType == BillingType.timeAndMaterial ||
-        (job.billingType == BillingType.fixedPrice && groupByTask),
-    'FixedPrice must only use group by Task',
-  );
+  // Fixed price invoicing must be grouped by task so fixed-price labour
+  // task items are emitted correctly.
+  final effectiveGroupByTask =
+      job.billingType == BillingType.fixedPrice || groupByTask;
 
   var totalAmount = MoneyEx.zero;
 
@@ -81,7 +80,7 @@ Future<Invoice> createTimeAndMaterialsInvoice(
   }
 
   // Group by task: Create invoice line group for the task
-  if (groupByTask) {
+  if (effectiveGroupByTask) {
     totalAmount += await createInvoiceForTasks(invoiceId, job, selectedTaskIds);
   }
   // Group by date
