@@ -38,7 +38,7 @@ class YetToBeInvoicedScreen extends StatefulWidget {
 }
 
 class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
-  late List<Job> _jobs;
+  late List<ToBeInvoicedJob> _jobs;
 
   @override
   Future<void> asyncInitState() async {
@@ -50,8 +50,21 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
     setState(() {});
   }
 
-  Future<List<Job>> _fetchReadyJobs([String? filter]) =>
-      DaoJob().readyToBeInvoiced(filter);
+  Future<List<ToBeInvoicedJob>> _fetchReadyJobs([String? filter]) async {
+    final jobs = await DaoJob().readyToBeInvoiced(filter);
+    final unsentJobIds = (await DaoInvoice().getUnsent())
+        .map((invoice) => invoice.jobId)
+        .toSet();
+
+    return jobs
+        .map(
+          (job) => ToBeInvoicedJob(
+            job: job,
+            hasUnsentInvoice: unsentJobIds.contains(job.id),
+          ),
+        )
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) => DeferredBuilder(
@@ -61,7 +74,8 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
 
       itemCount: _jobs.length,
       itemBuilder: (context, index) {
-        final job = _jobs[index];
+        final item = _jobs[index];
+        final job = item.job;
 
         return FutureBuilderEx(
           future: DaoCustomer().getByJob(job.id),
@@ -84,10 +98,22 @@ class _YetToBeInvoicedScreenState extends DeferredState<YetToBeInvoicedScreen> {
               ),
               const HMBSpacer(height: true),
               HMBText('Type: ${job.billingType.display}'),
+              if (item.hasUnsentInvoice)
+                const HMBText(
+                  'Pending invoice exists and has not been sent yet.',
+                  color: Colors.orange,
+                ),
             ],
           ),
         );
       },
     ),
   );
+}
+
+class ToBeInvoicedJob {
+  final Job job;
+  final bool hasUnsentInvoice;
+
+  const ToBeInvoicedJob({required this.job, required this.hasUnsentInvoice});
 }
