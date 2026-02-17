@@ -320,6 +320,19 @@ class TodayPageState extends DeferredState<TodayPage> {
             Expanded(child: HMBTextHeadline2(todo.title)),
           ],
         ),
+        if (todo.parentType == ToDoParentType.job)
+          FutureBuilderEx<Customer?>(
+            future: DaoCustomer().getByJob(todo.parentId!),
+            builder: (context, customer) => HMBOneOf(
+              condition: customer == null,
+              onTrue: const HMBEmpty(),
+              onFalse: HMBPadding(
+                left: 8,
+                right: 8,
+                child: HMBTextLine('Customer: ${customer!.name}'),
+              ),
+            ),
+          ),
         ToDoCard(todo, (todo) => onChange()),
       ],
     ),
