@@ -351,6 +351,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
           onSent: () async {
             if (_quote.state != QuoteState.approved) {
               await DaoQuote().markQuoteSent(_quote.id);
+              await DaoJob().markAwaitingApproval(job);
               await _refresh();
             }
           },
