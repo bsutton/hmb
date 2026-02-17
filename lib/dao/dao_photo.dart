@@ -13,6 +13,7 @@
 */
 
 import 'package:sqflite_common/sqlite_api.dart';
+import 'package:dcli_core/dcli_core.dart' as core;
 
 import '../cache/hmb_image_cache.dart';
 import '../database/management/backup_providers/google_drive/background_backup/photo_sync_params.dart';
@@ -99,6 +100,33 @@ class DaoPhoto extends Dao<Photo> {
     }
 
     await DaoPhotoDeleteQueue().enqueue(photo.id);
+    return super.delete(id, transaction);
+  }
+
+  /// Permanently deletes the local photo and all cache variants,
+  /// without adding a remote delete request.
+  Future<int> deleteLocalOnly(int id, [Transaction? transaction]) async {
+    final photo = await getById(id, transaction);
+    if (photo == null) {
+      return 0;
+    }
+
+    try {
+      final absolutePath = await PhotoMeta.getAbsolutePath(photo);
+      if (core.exists(absolutePath)) {
+        core.delete(absolutePath);
+      }
+    } catch (_) {
+      // Best effort file cleanup.
+    }
+
+    try {
+      await HMBImageCache().evictPhoto(photo.id.toString());
+    } catch (_) {
+      // Best effort cache cleanup.
+    }
+
+    await DaoPhotoDeleteQueue().removeByPhotoId(photo.id);
     return super.delete(id, transaction);
   }
 

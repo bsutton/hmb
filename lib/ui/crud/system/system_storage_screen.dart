@@ -20,9 +20,11 @@ import 'package:go_router/go_router.dart';
 import '../../../cache/hmb_image_cache.dart';
 import '../../../cache/image_cache_config.dart';
 import '../../../dao/dao_image_cache_variant.dart';
+import '../../../dao/dao_photo.dart';
 import '../../../dao/dao_system.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../widgets/fields/hmb_text_field.dart';
+import '../../widgets/hmb_button.dart';
 import '../../widgets/hmb_toast.dart';
 import '../../widgets/icons/help_button.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -31,15 +33,25 @@ import '../../widgets/text/hmb_text_themes.dart';
 
 class StorageStats {
   final int photoCount;
+  final int unsyncedPhotoCount;
   final int totalBytes;
 
-  const StorageStats({required this.photoCount, required this.totalBytes});
+  const StorageStats({
+    required this.photoCount,
+    required this.unsyncedPhotoCount,
+    required this.totalBytes,
+  });
 
   static Future<StorageStats> load() async {
     final dao = DaoImageCacheVariant();
     final photoCount = await dao.totalPhotos();
+    final unsyncedPhotoCount = await DaoPhoto().countUnsyncedPhotos();
     final totalBytes = await dao.totalBytes();
-    return StorageStats(photoCount: photoCount, totalBytes: totalBytes);
+    return StorageStats(
+      photoCount: photoCount,
+      unsyncedPhotoCount: unsyncedPhotoCount,
+      totalBytes: totalBytes,
+    );
   }
 }
 
@@ -55,7 +67,11 @@ class SystemStorageScreen extends StatefulWidget {
 class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _photoCacheMaxMbController;
-  var _stats = const StorageStats(photoCount: 0, totalBytes: 0);
+  var _stats = const StorageStats(
+    photoCount: 0,
+    unsyncedPhotoCount: 0,
+    totalBytes: 0,
+  );
 
   @override
   Future<void> asyncInitState() async {
@@ -84,7 +100,7 @@ class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
     system.photoCacheMaxMb = cacheMb;
     await DaoSystem().update(system);
     await HMBImageCache().updateMaxBytes(cacheMb * 1024 * 1024);
-    _stats = await StorageStats.load();
+    await _reloadStats();
 
     if (mounted) {
       setState(() {});
@@ -94,6 +110,84 @@ class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
       }
     }
     return true;
+  }
+
+  Future<void> _reloadStats() async {
+    _stats = await StorageStats.load();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  bool get _cacheLimitExceeded {
+    final maxMb = int.tryParse(_photoCacheMaxMbController.text) ?? 0;
+    return _stats.totalBytes > (maxMb * 1024 * 1024);
+  }
+
+  Future<void> _trimBackedUpNow() async {
+    final cacheMb = int.tryParse(_photoCacheMaxMbController.text);
+    if (cacheMb == null || cacheMb <= 0) {
+      HMBToast.error('Enter a valid cache size before trimming.');
+      return;
+    }
+    await HMBImageCache().updateMaxBytes(cacheMb * 1024 * 1024);
+    await _reloadStats();
+    HMBToast.info('Cache trim complete.');
+  }
+
+  Future<void> _forceTrimWithDataLoss() async {
+    final cacheMb = int.tryParse(_photoCacheMaxMbController.text);
+    if (cacheMb == null || cacheMb <= 0) {
+      HMBToast.error('Enter a valid cache size before trimming.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Unsynced Photos?'),
+        content: const Text(
+          'This will permanently delete unsynced local photos to reduce cache '
+          'usage. These photos cannot be recovered unless already backed up.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete Photos'),
+          ),
+        ],
+      ),
+    );
+
+    if (!(confirmed ?? false)) {
+      return;
+    }
+
+    final maxBytes = cacheMb * 1024 * 1024;
+    final cacheDao = DaoImageCacheVariant();
+    final photoDao = DaoPhoto();
+    var total = await cacheDao.totalBytes();
+
+    while (total > maxBytes) {
+      final oldest = await cacheDao.oldest();
+      if (oldest == null) {
+        break;
+      }
+      final photo = await photoDao.getById(oldest.photoId);
+      if (photo != null && photo.lastBackupDate == null) {
+        await photoDao.deleteLocalOnly(photo.id);
+      } else {
+        await HMBImageCache().evictPhoto(oldest.photoId.toString());
+      }
+      total = await cacheDao.totalBytes();
+    }
+
+    await _reloadStats();
+    HMBToast.info('Forced cache trim complete.');
   }
 
   @override
@@ -145,7 +239,27 @@ Default is ${ImageCacheConfig.defaultMaxMegabytes}MB.'''),
           const HMBSpacer(height: true),
           const HMBTextHeadline2('Current Cache Usage'),
           HMBTextLine('Photos cached locally: ${_stats.photoCount}'),
+          HMBTextLine('Unsynced photos: ${_stats.unsyncedPhotoCount}'),
           HMBTextLine('Space used: ${_formatBytes(_stats.totalBytes)}'),
+          const HMBSpacer(height: true),
+          HMBButtonPrimary(
+            label: 'Trim Backed-up Cache',
+            hint: 'Trim cache using only photos that were already synced',
+            onPressed: _trimBackedUpNow,
+          ),
+          if (_cacheLimitExceeded && _stats.unsyncedPhotoCount > 0) ...[
+            const HMBSpacer(height: true),
+            const Text(
+              'Cache is still over the limit because unsynced photos are being '
+              'kept to avoid data loss.',
+            ),
+            const HMBSpacer(height: true),
+            HMBButtonSecondary(
+              label: 'Force Trim (Delete Unsynced Photos)',
+              hint: 'Permanently delete unsynced photos to reduce cache usage',
+              onPressed: _forceTrimWithDataLoss,
+            ),
+          ],
         ],
       ),
     ),
