@@ -56,7 +56,7 @@ class _JobListScreenState extends State<JobListScreen> {
 
   List<Widget> _buildActionItems(Job job) => [
     HMBCopyIcon(
-      hint: 'Copy job & move tasks',
+      hint: 'Move tasks',
       onPressed: () => _onCopyAndMovePressed(job),
     ),
   ];
@@ -256,11 +256,41 @@ class _JobListScreenState extends State<JobListScreen> {
     }
 
     try {
+      if (!result.createsNewJob) {
+        final destination = await DaoJob().getById(result.destinationJobId);
+        if (destination == null) {
+          HMBToast.error('Destination job not found.');
+          return;
+        }
+
+        for (final task in result.selectedTasks) {
+          final moved = task.copyWith(
+            jobId: destination.id,
+            name: task.name,
+            description: task.description,
+            assumption: task.assumption,
+            status: task.status,
+          );
+          await DaoTask().update(moved);
+        }
+
+        job.modifiedDate = DateTime.now();
+        destination.modifiedDate = DateTime.now();
+        await DaoJob().update(job);
+        await DaoJob().update(destination);
+
+        HMBToast.info(
+          'Moved ${result.selectedTasks.length} task(s) '
+          'to Job #${destination.id}.',
+        );
+        await _entityListKey.currentState!.refresh();
+        return;
+      }
+
       final newJob = await DaoJob().copyJobAndMoveTasks(
         job: job,
         tasksToMove: result.selectedTasks,
-        summary: result.summary, // <-- pass new description
-        // newJobStatus: JobStatus.prospecting, // optional override
+        summary: result.summary,
       );
 
       HMBToast.info(
@@ -268,9 +298,6 @@ class _JobListScreenState extends State<JobListScreen> {
       );
 
       await _entityListKey.currentState!.refresh();
-      // June.getState(
-      //   JobRefresher.new,
-      // ).setState(); // if your refresher supports it
     } catch (e) {
       HMBToast.error(e.toString());
     }
