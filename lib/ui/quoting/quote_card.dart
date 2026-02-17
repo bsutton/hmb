@@ -25,6 +25,7 @@ import '../crud/job/full_page_list_job_card.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
 import 'job_and_customer.dart';
+import 'quote_details_screen.dart';
 
 enum _RejectAction { quoteOnly, quoteAndJob }
 
@@ -61,6 +62,19 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
       widget.onStateChanged(quote);
     } catch (e) {
       HMBToast.error('Failed to update quote: $e');
+    }
+  }
+
+  Future<void> _openQuoteDetails(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => QuoteDetailsScreen(quoteId: quote.id),
+      ),
+    );
+    quote = (await DaoQuote().getById(quote.id))!;
+    widget.onStateChanged(quote);
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -118,6 +132,7 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
     final isWithdrawn = quote.state == QuoteState.withdrawn;
     final showSentRollback = quote.state == QuoteState.approved;
     final showWithdrawn = quote.state == QuoteState.sent;
+    final canManageMilestonesOrInvoice = quote.state.isPostApproval;
 
     return DeferredBuilder(
       this,
@@ -156,6 +171,29 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
               if (quote.state == QuoteState.approved &&
                   quote.dateApproved != null)
                 Text(formatDate(quote.dateApproved!)),
+            ],
+          ),
+
+          HMBRow(
+            children: [
+              HMBButton(
+                label: 'Send...',
+                hint: 'Open quote details to send this quote',
+                enabled: !isRejected && !isWithdrawn,
+                onPressed: () async => _openQuoteDetails(context),
+              ),
+              HMBButton(
+                label: 'Milestones',
+                hint: 'Open quote details to create milestone payments',
+                enabled: canManageMilestonesOrInvoice,
+                onPressed: () async => _openQuoteDetails(context),
+              ),
+              HMBButton(
+                label: 'Invoice',
+                hint: 'Open quote details to create an invoice',
+                enabled: canManageMilestonesOrInvoice,
+                onPressed: () async => _openQuoteDetails(context),
+              ),
             ],
           ),
 
