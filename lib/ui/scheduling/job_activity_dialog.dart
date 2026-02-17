@@ -108,6 +108,8 @@ class JobActivityDialog extends StatefulWidget {
 }
 
 class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
+  static const _longEventWarningThreshold = Duration(hours: 10);
+
   late LocalDate _eventDate;
   late LocalTime _startTime;
   late LocalTime _endTime;
@@ -378,6 +380,14 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
       duration = _endTime.difference(_startTime);
     }
 
+    final eventDuration = _endTime.difference(_startTime);
+    if (eventDuration >= _longEventWarningThreshold) {
+      final shouldContinue = await _confirmLongEvent(eventDuration);
+      if (!shouldContinue) {
+        return;
+      }
+    }
+
     // Check for overlapping events
     final overlappingEvent = await _checkForOverlappingEvents();
     if (overlappingEvent != null) {
@@ -450,6 +460,37 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
         ).pop(JobActivityAddAction(AddAction.add, jobEventEx));
       }
     }
+  }
+
+  Future<bool> _confirmLongEvent(Duration eventDuration) async {
+    if (!mounted) {
+      return false;
+    }
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Long Event Check'),
+        content: Text(
+          'This event is ${_formatDuration(eventDuration)} long '
+          '(${formatTime(_startTime.atDate(_eventDate))} to '
+          '${formatTime(_endTime.atDate(_eventDate))}).\n\n'
+          'If this was an AM/PM mistake, tap Cancel and adjust the end time.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
   }
 
   Future<JobActivityEx?> _checkForOverlappingEvents() async {
