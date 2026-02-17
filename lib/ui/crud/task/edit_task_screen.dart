@@ -34,11 +34,12 @@ import 'photo_crud.dart';
 class TaskEditScreen extends StatefulWidget {
   final Job job;
   final Task? task;
-
-  late final BillingType billingType;
+  late final BillingType? billingType;
 
   TaskEditScreen({required this.job, super.key, this.task}) {
-    billingType = task?.billingType ?? job.billingType;
+    // Use explicit task override only.
+    // null means "Inherited" from job billing type.
+    billingType = task?.billingType;
   }
 
   @override

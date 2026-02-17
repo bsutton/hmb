@@ -44,6 +44,8 @@ class ListInvoiceCard extends StatelessWidget {
         HMBLinkInternal(
           label:
               '''Job: #${invoiceDetails.job.id} - ${invoiceDetails.job.summary} ''',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           navigateTo: () async => FullPageListJobCard(invoiceDetails.job),
         ),
       Text(

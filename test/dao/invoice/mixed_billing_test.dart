@@ -135,6 +135,42 @@ fixed price job with a time and materials task uses time entries and actual mate
 
     test(
       '''
+fixed price job coerces group-by-date to group-by-task so labour task items are invoiced''',
+      () async {
+        final now = DateTime.now();
+        final job = await createJob(
+          now,
+          BillingType.fixedPrice,
+          hourlyRate: MoneyEx.dollars(88),
+        );
+        final task = await createTask(job, 'Fixed Labour Task');
+
+        await insertLabourEstimates(
+          task,
+          MoneyEx.dollars(88),
+          Fixed.fromNum(1, decimalDigits: 3),
+        );
+
+        // Even if caller passes groupByTask=false, fixed-price path must
+        // still emit labour task-item lines.
+        final invoice = await createTimeAndMaterialsInvoice(
+          job,
+          await createContact('Brett', 'Sutton'),
+          [task.id],
+          groupByTask: false,
+          billBookingFee: false,
+        );
+
+        final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
+        expect(invoiceLines.length, equals(1));
+        expect(invoiceLines.first.description, contains('Labour:'));
+        expect(invoiceLines.first.lineTotal, isNot(MoneyEx.zero));
+        expect(invoice.totalAmount, invoiceLines.first.lineTotal);
+      },
+    );
+
+    test(
+      '''
 time and materials tools owned items bill only when a charge is specified''',
       () async {
         final now = DateTime.now();

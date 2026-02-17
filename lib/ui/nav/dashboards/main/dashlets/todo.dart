@@ -26,11 +26,12 @@ class ToDoDashlet extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DashletCard<int>.route(
     label: 'Todo',
-    hint: 'Create actionable items',
+    hint: 'Create actionable items and track open/completed',
     icon: Icons.work,
     value: () async {
-      final todos = await DaoToDo().getFiltered(status: ToDoStatus.open);
-      return DashletValue(todos.length);
+      final open = await DaoToDo().getFiltered(status: ToDoStatus.open);
+      final completed = await DaoToDo().getFiltered(status: ToDoStatus.done);
+      return DashletValue(open.length, '${completed.length} completed');
     },
     route: '/home/todo',
   );

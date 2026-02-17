@@ -67,7 +67,7 @@ class DaoJob extends Dao<Job> {
 
   @override
   Future<int> update(Job entity, [Transaction? transaction]) async {
-    final existing = await getById(entity.id);
+    final existing = await getById(entity.id, transaction);
     final isRejectingJob =
         existing != null &&
         existing.status != entity.status &&
@@ -605,12 +605,17 @@ where q.id=?
 
   Future<List<Job>> readyToBeInvoiced(String? filter) async {
     final activeJobs = await DaoJob().getActiveJobs(filter);
+    final unsentJobIds = (await DaoInvoice().getUnsent())
+        .map((invoice) => invoice.jobId)
+        .toSet();
     final ready = <Job>[];
     for (final job in activeJobs) {
       if (job.billingType == BillingType.nonBillable) {
         continue;
       }
-      if (await DaoJob().hasBillableTasks(job)) {
+      final hasBillableTasks = await DaoJob().hasBillableTasks(job);
+      final hasUnsentInvoice = unsentJobIds.contains(job.id);
+      if (hasBillableTasks || hasUnsentInvoice) {
         ready.add(job);
       }
     }

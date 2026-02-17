@@ -19,16 +19,13 @@ import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/quote.dart';
-import '../../entity/quote_line.dart';
 import '../../util/dart/format.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../dialog/email_dialog_for_job.dart';
-import '../widgets/icons/hmb_edit_icon.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/media/pdf_preview.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import '../widgets/widgets.g.dart' hide StatefulBuilder;
-import 'edit_quote_line_dialog.dart';
 import 'generate_quote_pdf.dart';
 import 'quote_details.dart';
 import 'select_billing_contact_dialog.dart';
@@ -203,23 +200,6 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
                                 ),
                               ],
                             ),
-                            trailing: HMBEditIcon(
-                              onPressed: () async {
-                                final editedLine = await showDialog<QuoteLine>(
-                                  context: context,
-                                  builder: (_) =>
-                                      EditQuoteLineDialog(line: line),
-                                );
-                                if (editedLine != null) {
-                                  await DaoQuoteLine().update(editedLine);
-                                  await DaoQuote().recalculateTotal(
-                                    editedLine.quoteId,
-                                  );
-                                  await _refresh();
-                                }
-                              },
-                              hint: 'Edit Quote Line',
-                            ),
                           ),
                         )
                         .toList(),
@@ -371,6 +351,7 @@ class _QuoteDetailsScreenState extends DeferredState<QuoteDetailsScreen> {
           onSent: () async {
             if (_quote.state != QuoteState.approved) {
               await DaoQuote().markQuoteSent(_quote.id);
+              await DaoJob().markAwaitingApproval(job);
               await _refresh();
             }
           },

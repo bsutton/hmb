@@ -32,6 +32,7 @@ import 'ui/widgets/desktop_back_gesture.dart';
 import 'ui/widgets/layout/layout.g.dart';
 import 'util/dart/log.dart';
 import 'util/flutter/hmb_theme.dart';
+import 'util/flutter/notifications/local_notifs.dart';
 import 'util/flutter/platform_ex.dart';
 
 //----------------------------------------------------------------------
@@ -85,14 +86,27 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    LocalNotifs().onNotificationPayload = _onNotificationPayload;
     WidgetsBinding.instance.addObserver(this);
     unawaited(_syncBookings());
   }
 
   @override
   void dispose() {
+    LocalNotifs().onNotificationPayload = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _onNotificationPayload(Map<String, String> payload) {
+    final type = payload['type'];
+    if (type == 'todo') {
+      final context = _rootNavKey.currentContext;
+      if (context == null) {
+        return;
+      }
+      GoRouter.of(context).go('/home/todo');
+    }
   }
 
   @override
