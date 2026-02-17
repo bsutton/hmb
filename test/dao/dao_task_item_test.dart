@@ -31,9 +31,66 @@ void main() {
 
     expect(await DaoTaskItem().wasReturned(item.id), isTrue);
   });
+
+  test('shopping excludes items from completed jobs', () async {
+    final active = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: false,
+    );
+    await _insertTaskItemForJob(
+      jobStatus: JobStatus.completed,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: false,
+    );
+
+    final shopping = await DaoTaskItem().getShoppingItems();
+
+    expect(shopping.map((i) => i.id), contains(active.id));
+    expect(shopping.length, 1);
+  });
+
+  test('packing excludes items from completed jobs', () async {
+    final active = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsStock,
+      completed: false,
+    );
+    await _insertTaskItemForJob(
+      jobStatus: JobStatus.completed,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsStock,
+      completed: false,
+    );
+
+    final packing = await DaoTaskItem().getPackingItems(
+      showPreScheduledJobs: false,
+      showPreApprovedTask: true,
+    );
+
+    expect(packing.map((i) => i.id), contains(active.id));
+    expect(packing.length, 1);
+  });
 }
 
 Future<TaskItem> _insertMaterialTaskItem() async {
+  return _insertTaskItemForJob(
+    jobStatus: JobStatus.startingStatus,
+    taskStatus: TaskStatus.awaitingApproval,
+    itemType: TaskItemType.materialsBuy,
+    completed: true,
+  );
+}
+
+Future<TaskItem> _insertTaskItemForJob({
+  required JobStatus jobStatus,
+  required TaskStatus taskStatus,
+  required TaskItemType itemType,
+  required bool completed,
+}) async {
   final customer = Customer.forInsert(
     name: 'Cust',
     description: '',
@@ -51,7 +108,7 @@ Future<TaskItem> _insertMaterialTaskItem() async {
     siteId: null,
     contactId: null,
     billingContactId: null,
-    status: JobStatus.startingStatus,
+    status: jobStatus,
     hourlyRate: MoneyEx.zero,
     bookingFee: MoneyEx.zero,
   );
@@ -61,7 +118,7 @@ Future<TaskItem> _insertMaterialTaskItem() async {
     jobId: job.id,
     name: 'Task',
     description: '',
-    status: TaskStatus.awaitingApproval,
+    status: taskStatus,
   );
   await DaoTask().insert(task);
 
@@ -69,14 +126,14 @@ Future<TaskItem> _insertMaterialTaskItem() async {
     taskId: task.id,
     description: 'Paint',
     purpose: '',
-    itemType: TaskItemType.materialsBuy,
+    itemType: itemType,
     estimatedMaterialUnitCost: MoneyEx.fromInt(500),
     estimatedMaterialQuantity: Fixed.one,
     actualMaterialUnitCost: MoneyEx.fromInt(500),
     actualMaterialQuantity: Fixed.one,
     chargeMode: ChargeMode.calculated,
     margin: Percentage.zero,
-    completed: true,
+    completed: completed,
     measurementType: MeasurementType.length,
     dimension1: Fixed.zero,
     dimension2: Fixed.zero,
