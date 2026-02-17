@@ -35,8 +35,21 @@ enum BillingType {
       : BillingType.values.byName(name);
 }
 
+enum BillingParty {
+  customer('Customer'),
+  referrer('Referrer');
+
+  const BillingParty(this.display);
+  final String display;
+
+  static BillingParty fromName(String? name) => name == null
+      ? BillingParty.customer
+      : BillingParty.values.byName(name);
+}
+
 class Job extends Entity<Job> {
   int? customerId;
+  int? referrerCustomerId;
   String summary;
   String description;
   String assumption;
@@ -54,10 +67,13 @@ class Job extends Entity<Job> {
   BillingType billingType;
   bool bookingFeeInvoiced;
   int? billingContactId;
+  int? referrerContactId;
+  BillingParty billingParty;
 
   Job._({
     required super.id,
     required this.customerId,
+    required this.referrerCustomerId,
     required this.summary,
     required this.description,
     required this.assumption,
@@ -68,6 +84,8 @@ class Job extends Entity<Job> {
     required this.hourlyRate,
     required this.bookingFee,
     required this.billingContactId,
+    required this.referrerContactId,
+    required this.billingParty,
     required this.lastActive,
     required super.createdDate,
     required super.modifiedDate,
@@ -85,6 +103,9 @@ class Job extends Entity<Job> {
     required this.hourlyRate,
     required this.bookingFee,
     required this.billingContactId,
+    this.referrerCustomerId,
+    this.referrerContactId,
+    this.billingParty = BillingParty.customer,
     this.assumption = '',
     this.internalNotes = '',
     this.lastActive = false,
@@ -94,6 +115,7 @@ class Job extends Entity<Job> {
 
   Job copyWith({
     int? customerId,
+    int? referrerCustomerId,
     String? summary,
     String? description,
     String? assumption,
@@ -107,9 +129,12 @@ class Job extends Entity<Job> {
     BillingType? billingType,
     bool? bookingFeeInvoiced,
     int? billingContactId,
+    int? referrerContactId,
+    BillingParty? billingParty,
   }) => Job._(
     id: id,
     customerId: customerId ?? this.customerId,
+    referrerCustomerId: referrerCustomerId ?? this.referrerCustomerId,
     summary: summary ?? this.summary,
     description: description ?? this.description,
     assumption: assumption ?? this.assumption,
@@ -120,6 +145,8 @@ class Job extends Entity<Job> {
     hourlyRate: hourlyRate ?? this.hourlyRate,
     bookingFee: bookingFee ?? this.bookingFee,
     billingContactId: billingContactId ?? this.billingContactId,
+    referrerContactId: referrerContactId ?? this.referrerContactId,
+    billingParty: billingParty ?? this.billingParty,
     lastActive: lastActive ?? this.lastActive,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
@@ -130,6 +157,7 @@ class Job extends Entity<Job> {
   factory Job.fromMap(Map<String, dynamic> map) => Job._(
     id: map['id'] as int,
     customerId: map['customer_id'] as int?,
+    referrerCustomerId: map['referrer_customer_id'] as int?,
     summary: map['summary'] as String,
     description: map['description'] as String,
     assumption: map['assumption'] as String,
@@ -145,12 +173,15 @@ class Job extends Entity<Job> {
     billingType: BillingType.fromName(map['billing_type'] as String?),
     bookingFeeInvoiced: (map['booking_fee_invoiced'] as int) == 1,
     billingContactId: map['billing_contact_id'] as int?,
+    referrerContactId: map['referrer_contact_id'] as int?,
+    billingParty: BillingParty.fromName(map['billing_party'] as String?),
   );
 
   @override
   Map<String, dynamic> toMap() => {
     'id': id,
     'customer_id': customerId,
+    'referrer_customer_id': referrerCustomerId,
     'summary': summary,
     'description': description,
     'assumption': assumption,
@@ -164,6 +195,8 @@ class Job extends Entity<Job> {
     'billing_type': billingType.name,
     'booking_fee_invoiced': bookingFeeInvoiced ? 1 : 0,
     'billing_contact_id': billingContactId,
+    'referrer_contact_id': referrerContactId,
+    'billing_party': billingParty.name,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

@@ -129,6 +129,9 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
           children: [
             _showSummary(),
             _chooseCustomer(),
+            _chooseReferrerCustomer(),
+            _chooseReferrerContact(),
+            _chooseBillingParty(),
             _chooseStatus(job),
             if (job != null) _buildScheduleButtons(),
             _chooseContact(),
@@ -210,15 +213,25 @@ You can set a default booking fee from System | Billing screen''');
   // --- Selectors ------------------------------------------------------------
 
   Widget _chooseBillingContact() => JuneBuilder(
-    JobBillingContact.new,
-    builder: (state) => HMBSelectContact(
-      key: ValueKey(state.contactId),
-      title: 'Billing Contact',
-      initialContact: state.contactId,
-      customer: widget.customer,
-      onSelected: (contact) {
-        June.getState(JobBillingContact.new).contactId = contact?.id;
-      },
+    SelectedBillingParty.new,
+    builder: (billingPartyState) => FutureBuilderEx<Customer?>(
+      future: billingPartyState.billingParty == BillingParty.referrer
+          ? DaoCustomer().getById(
+              June.getState(SelectedReferrerCustomer.new).customerId,
+            )
+          : Future.value(widget.customer),
+      builder: (context, billingCustomer) => JuneBuilder(
+        JobBillingContact.new,
+        builder: (state) => HMBSelectContact(
+          key: ValueKey('${state.contactId}-${billingCustomer?.id}'),
+          title: 'Billing Contact',
+          initialContact: state.contactId,
+          customer: billingCustomer,
+          onSelected: (contact) {
+            June.getState(JobBillingContact.new).contactId = contact?.id;
+          },
+        ),
+      ),
     ),
   );
 
@@ -258,14 +271,76 @@ You can set a default booking fee from System | Billing screen''');
       June.getState(SelectedContact.new).contactId = null;
 
       // Reset billing contact to the customer's default
-      June.getState(JobBillingContact.new).contactId =
-          customer?.billingContactId;
+      if (June.getState(SelectedBillingParty.new).billingParty ==
+          BillingParty.customer) {
+        June.getState(JobBillingContact.new).contactId =
+            customer?.billingContactId;
+      }
 
       // Pull the customer's rate into the text field
       setState(() {
         widget.hourlyRateController.text =
             customer?.hourlyRate.amount.toString() ?? '';
       });
+    },
+  );
+
+  Widget _chooseReferrerCustomer() => HMBDroplist<Customer>(
+    title: 'Referrer Customer',
+    selectedItem: () => DaoCustomer().getById(
+      June.getState(SelectedReferrerCustomer.new).customerId,
+    ),
+    items: (filter) => DaoCustomer().getByFilter(filter),
+    format: (customer) => customer.name,
+    required: false,
+    onChanged: (customer) {
+      June.getState(SelectedReferrerCustomer.new).customerId = customer?.id;
+      June.getState(SelectedReferrerContact.new).contactId = null;
+      if (June.getState(SelectedBillingParty.new).billingParty ==
+          BillingParty.referrer) {
+        June.getState(JobBillingContact.new).contactId =
+            customer?.billingContactId;
+      }
+      setState(() {});
+    },
+  );
+
+  Widget _chooseReferrerContact() => FutureBuilderEx<Customer?>(
+    future: DaoCustomer().getById(
+      June.getState(SelectedReferrerCustomer.new).customerId,
+    ),
+    builder: (context, referrerCustomer) => HMBSelectContact(
+      title: 'Referrer Contact',
+      key: ValueKey(
+        '${June.getState(SelectedReferrerContact.new).contactId}'
+        '-${referrerCustomer?.id}',
+      ),
+      initialContact: June.getState(SelectedReferrerContact.new).contactId,
+      customer: referrerCustomer,
+      onSelected: (contact) {
+        June.getState(SelectedReferrerContact.new).contactId = contact?.id;
+      },
+    ),
+  );
+
+  Widget _chooseBillingParty() => HMBDroplist<BillingParty>(
+    title: 'Bill To',
+    selectedItem: () async =>
+        June.getState(SelectedBillingParty.new).billingParty,
+    items: (filter) async => BillingParty.values,
+    format: (party) => party.display,
+    onChanged: (value) async {
+      final billingParty = value ?? BillingParty.customer;
+      June.getState(SelectedBillingParty.new).billingParty = billingParty;
+
+      final billingCustomer = billingParty == BillingParty.referrer
+          ? await DaoCustomer().getById(
+              June.getState(SelectedReferrerCustomer.new).customerId,
+            )
+          : widget.customer;
+      June.getState(JobBillingContact.new).contactId =
+          billingCustomer?.billingContactId;
+      setState(() {});
     },
   );
 
@@ -564,7 +639,7 @@ You can set a default booking fee from System | Billing screen''');
             const HMBText('Assumption:', bold: true).help(
               'Assumptions',
               'Detail the assumptions your pricing is based on. '
-                  'Assumptions are shown on the Quote. ',
+              'Assumptions are shown on the Quote. ',
             ),
             Container(
               constraints: const BoxConstraints(minHeight: 200),
@@ -659,6 +734,39 @@ class SelectedContact extends JuneState {
 
   set contactId(int? value) {
     _contactId = value;
+    setState();
+  }
+}
+
+class SelectedReferrerCustomer extends JuneState {
+  int? _customerId;
+
+  int? get customerId => _customerId;
+
+  set customerId(int? value) {
+    _customerId = value;
+    setState();
+  }
+}
+
+class SelectedReferrerContact extends JuneState {
+  int? _contactId;
+
+  int? get contactId => _contactId;
+
+  set contactId(int? value) {
+    _contactId = value;
+    setState();
+  }
+}
+
+class SelectedBillingParty extends JuneState {
+  BillingParty _billingParty = BillingParty.customer;
+
+  BillingParty get billingParty => _billingParty;
+
+  set billingParty(BillingParty value) {
+    _billingParty = value;
     setState();
   }
 }

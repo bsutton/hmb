@@ -101,9 +101,15 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   Future<void> asyncInitState() async {
     // existing selections
     June.getState(SelectedCustomer.new).customerId = widget.job?.customerId;
+    June.getState(SelectedReferrerCustomer.new).customerId =
+        widget.job?.referrerCustomerId;
     June.getState(SelectJobStatus.new).jobStatus = widget.job?.status;
     June.getState(SelectedSite.new).siteId = widget.job?.siteId;
     June.getState(SelectedContact.new).contactId = widget.job?.contactId;
+    June.getState(SelectedReferrerContact.new).contactId =
+        widget.job?.referrerContactId;
+    June.getState(SelectedBillingParty.new).billingParty =
+        widget.job?.billingParty ?? BillingParty.customer;
     _selectedBillingType =
         widget.job?.billingType ?? BillingType.timeAndMaterial;
 
@@ -128,6 +134,8 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
             system.defaultBookingFee?.amount.toString() ?? '0.00';
       });
       June.getState(SelectJobStatus.new).jobStatus = JobStatus.startingStatus;
+      June.getState(SelectedBillingParty.new).billingParty =
+          BillingParty.customer;
     }
   }
 
@@ -230,6 +238,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
   @override
   Future<Job> forUpdate(Job job) async => job.copyWith(
     customerId: June.getState(SelectedCustomer.new).customerId,
+    referrerCustomerId: June.getState(SelectedReferrerCustomer.new).customerId,
     summary: _summaryController.text,
     description: _descriptionController.text,
     notes: _notesController.text,
@@ -244,11 +253,14 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     bookingFeeInvoiced: job.bookingFeeInvoiced,
     billingType: _selectedBillingType,
     billingContactId: June.getState(JobBillingContact.new).contactId,
+    referrerContactId: June.getState(SelectedReferrerContact.new).contactId,
+    billingParty: June.getState(SelectedBillingParty.new).billingParty,
   );
 
   @override
   Future<Job> forInsert() async => Job.forInsert(
     customerId: June.getState(SelectedCustomer.new).customerId,
+    referrerCustomerId: June.getState(SelectedReferrerCustomer.new).customerId,
     summary: _summaryController.text,
     description: _descriptionController.text,
     internalNotes: _notesController.text,
@@ -262,6 +274,8 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     bookingFee: MoneyEx.tryParse(_bookingFeeController.text),
     billingType: _selectedBillingType,
     billingContactId: June.getState(JobBillingContact.new).contactId,
+    referrerContactId: June.getState(SelectedReferrerContact.new).contactId,
+    billingParty: June.getState(SelectedBillingParty.new).billingParty,
   );
 
   @override
