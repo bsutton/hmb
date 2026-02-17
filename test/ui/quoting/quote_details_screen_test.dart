@@ -91,10 +91,12 @@ void main() {
       MaterialApp(home: QuoteDetailsScreen(quoteId: quoteId)),
     );
     expect(tester.takeException(), isNull);
+    await waitForText(tester, 'Line 1');
 
     expect(find.text('Reject'), findsNothing);
     expect(find.text('Unreject'), findsNothing);
     expect(find.text('Reject Quote Group'), findsNothing);
+    expect(find.byIcon(Icons.edit), findsNothing);
   });
 
   testWidgets('create milestones and invoice actions show', (tester) async {
