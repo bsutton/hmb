@@ -47,6 +47,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   final selectedJob = SelectedJob();
   Customer? selectedCustomer;
   String? filterText;
+  var showOldJobs = false;
 
   @override
   void initState() {
@@ -78,11 +79,13 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     isFilterActive: () =>
         selectedJob.jobId != null ||
         selectedCustomer != null ||
+        showOldJobs ||
         Strings.isNotBlank(filterText),
     onFilterReset: () {
       selectedJob.jobId = null;
       selectedCustomer = null;
       filterText = null;
+      showOldJobs = false;
     },
   );
 
@@ -169,10 +172,22 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         HMBSelectJob(
           title: 'Filter By Job',
           selectedJob: selectedJob,
+          items: (filter) => showOldJobs
+              ? DaoJob().getByFilter(filter)
+              : DaoJob().getActiveJobs(filter),
           onSelected: (job) => setState(() {
             selectedJob.jobId = job?.id;
             onChange();
           }),
+        ),
+        CheckboxListTile(
+          title: const Text('Show old jobs'),
+          value: showOldJobs,
+          onChanged: (value) => setState(() {
+            showOldJobs = value ?? false;
+            onChange();
+          }),
+          controlAffinity: ListTileControlAffinity.leading,
         ),
 
         HMBDroplist<Customer>(
