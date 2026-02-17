@@ -243,8 +243,12 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                         ? ListView.builder(
                             padding: const EdgeInsets.all(8),
                             itemCount: _taskItems.length,
-                            itemBuilder: (c, i) =>
-                                _buildShoppingItem(c, _taskItems[i]),
+                            itemBuilder: (c, i) => KeyedSubtree(
+                              key: ValueKey(
+                                '${_selectedMode.name}-${_taskItems[i].taskItem.id}',
+                              ),
+                              child: _buildShoppingItem(c, _taskItems[i]),
+                            ),
                           )
                         : GridView.builder(
                             padding: const EdgeInsets.all(8),
@@ -255,8 +259,12 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                                   mainAxisExtent: 352,
                                 ),
                             itemCount: _taskItems.length,
-                            itemBuilder: (c, i) =>
-                                _buildShoppingItem(c, _taskItems[i]),
+                            itemBuilder: (c, i) => KeyedSubtree(
+                              key: ValueKey(
+                                '${_selectedMode.name}-${_taskItems[i].taskItem.id}',
+                              ),
+                              child: _buildShoppingItem(c, _taskItems[i]),
+                            ),
                           );
                   },
                 );
