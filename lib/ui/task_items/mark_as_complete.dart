@@ -33,6 +33,7 @@ Future<void> markAsCompleted(
 ) async {
   final costController = TextEditingController();
   final quantityController = TextEditingController();
+  final packetSizeController = TextEditingController(text: '1');
   final taskItem = itemContext.taskItem;
   final itemType = taskItem.itemType;
 
@@ -121,14 +122,20 @@ Future<void> markAsCompleted(
               // Cost per item field
               HMBTextField(
                 controller: costController,
-                labelText: 'Cost per item (optional)',
+                labelText: 'Cost per packet',
+                keyboardType: TextInputType.number,
+              ),
+
+              HMBTextField(
+                controller: packetSizeController,
+                labelText: 'Items per packet',
                 keyboardType: TextInputType.number,
               ),
 
               // Quantity field
               HMBTextField(
                 controller: quantityController,
-                labelText: 'Quantity (optional)',
+                labelText: 'Packets purchased',
                 keyboardType: TextInputType.number,
               ),
             ],
@@ -152,8 +159,16 @@ Future<void> markAsCompleted(
   );
 
   if (confirmed ?? false) {
-    final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
-    final unitCost = MoneyEx.tryParse(costController.text);
+    final packetsPurchased =
+        Fixed.tryParse(quantityController.text) ?? Fixed.one;
+    final packetSize = FixedEx.tryParseOrElse(
+      packetSizeController.text,
+      Fixed.one,
+    );
+    final safePacketSize = packetSize.isZero ? Fixed.one : packetSize;
+    final packetCost = MoneyEx.tryParse(costController.text);
+    final quantity = packetsPurchased * safePacketSize;
+    final unitCost = packetCost.divideByFixed(safePacketSize);
 
     // Mark as completed (sets actual cost/qty and charge)
     await DaoTaskItem().markAsCompleted(
