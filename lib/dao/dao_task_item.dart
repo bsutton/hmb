@@ -19,6 +19,13 @@ import '../util/dart/money_ex.dart';
 import 'dao.dart';
 
 class DaoTaskItem extends Dao<TaskItem> {
+  static const _closedShoppingJobStatusIds = [
+    JobStatus.rejected.id,
+    JobStatus.onHold.id,
+    JobStatus.awaitingPayment.id,
+    JobStatus.completed.id,
+    JobStatus.toBeBilled.id,
+  ];
   static const tableName = 'task_item';
   DaoTaskItem() : super(tableName);
 
@@ -211,6 +218,9 @@ SELECT ti.*
         : '';
 
     final supplierClause = supplierId != null ? 'AND ti.supplier_id = ?' : '';
+    final closedStatusClause = _closedShoppingJobStatusIds
+        .map((id) => "'$id'")
+        .join(', ');
 
     final sql =
         '''
@@ -221,10 +231,10 @@ SELECT ti.*
  WHERE (ti.item_type_id = ${TaskItemType.materialsBuy.id}
  OR ti.item_type_id = ${TaskItemType.consumablesBuy.id}
   OR ti.item_type_id = ${TaskItemType.toolsBuy.id}
-  )
+   )
    AND ti.completed = 0
    AND ti.is_return = 0
-   AND j.status_id NOT IN ( '${JobStatus.rejected.id}', '${JobStatus.onHold.id}')
+   AND j.status_id NOT IN ($closedStatusClause)
    $jobClause
    $supplierClause
 ''';
@@ -298,6 +308,13 @@ SELECT ti.*
  )
    AND ti.completed = 1
    AND ti.is_return = 0
+   AND j.status_id NOT IN (
+      '${JobStatus.rejected.id}',
+      '${JobStatus.onHold.id}',
+      '${JobStatus.awaitingPayment.id}',
+      '${JobStatus.completed.id}',
+      '${JobStatus.toBeBilled.id}'
+    )
    AND ti.modified_date >= ?
    -- exclude any purchase that has been returned
    AND NOT EXISTS (
@@ -333,10 +350,17 @@ SELECT ti.*
 
     final sql = StringBuffer('''
 SELECT ti.*
-  FROM task_item ti
+ FROM task_item ti
   JOIN task t               ON ti.task_id       = t.id
   JOIN job j                ON t.job_id         = j.id
  WHERE ti.is_return = 1
+   AND j.status_id NOT IN (
+      '${JobStatus.rejected.id}',
+      '${JobStatus.onHold.id}',
+      '${JobStatus.awaitingPayment.id}',
+      '${JobStatus.completed.id}',
+      '${JobStatus.toBeBilled.id}'
+    )
 ''');
 
     final params = <dynamic>[];
