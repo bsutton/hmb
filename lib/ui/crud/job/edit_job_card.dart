@@ -114,7 +114,7 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
   @override
   Future<void> asyncInitState() async {
     if (widget.job != null) {
-      await DaoJob().markActive(widget.job!.id);
+      await DaoJob().markLastActive(widget.job!.id);
     }
   }
 
@@ -326,7 +326,7 @@ You can set a default booking fee from System | Billing screen''');
       if ((await DaoSystem().get()).getOperatingHours().noOpenDays()) {
         HMBToast.error(
           'Before you Schedule a job, you must first set your '
-          "opening hours from the 'System | Business' page.",
+              "opening hours from the 'System | Business' page.",
         );
         return;
       }

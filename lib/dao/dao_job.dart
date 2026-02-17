@@ -128,6 +128,19 @@ class DaoJob extends Dao<Job> {
   /// in a pre-start state.
   /// Also marks the job as the last active job.
   Future<Job> markActive(int jobId) async {
+    await markLastActive(jobId);
+    final job = await getById(jobId);
+
+    if (job!.status.stage == JobStatusStage.preStart) {
+      job.status = JobStatus.inProgress;
+      await update(job);
+    }
+
+    return job;
+  }
+
+  /// Marks the job as the most recently accessed job without changing status.
+  Future<void> markLastActive(int jobId) async {
     final lastActive = await getLastActiveJob();
     if (lastActive != null) {
       if (lastActive.id != jobId) {
@@ -141,13 +154,7 @@ class DaoJob extends Dao<Job> {
     /// modified date so it comes up first in the job list.
     job!.lastActive = true;
     job.modifiedDate = DateTime.now();
-
-    if (job.status.stage == JobStatusStage.preStart) {
-      job.status = JobStatus.inProgress;
-    }
     await update(job);
-
-    return job;
   }
 
   /// Marks the job as 'in quoting' if it is
