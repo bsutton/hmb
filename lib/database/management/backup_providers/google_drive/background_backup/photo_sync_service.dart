@@ -49,11 +49,16 @@ class PhotoDeleted {
 
 class PhotoSyncService {
   static final _instance = PhotoSyncService._();
+  static const _maxAutoRetries = 3;
+  static const _retryDelay = Duration(seconds: 3);
 
   Isolate? _isolate;
   ReceivePort? _receivePort;
   ReceivePort? _errorPort;
   ReceivePort? _exitPort;
+  Timer? _retryTimer;
+  var _autoRetryAttempts = 0;
+  var _syncHadError = false;
 
   final StreamController<ProgressUpdate> _controller =
       StreamController.broadcast();
@@ -77,6 +82,7 @@ class PhotoSyncService {
         )
         .toList();
     if (photos.isEmpty && deletes.isEmpty) {
+      _autoRetryAttempts = 0;
       _controller.add(ProgressUpdate('No new Photos to sync', 0, 0));
       return;
     }
@@ -93,6 +99,7 @@ class PhotoSyncService {
     if (isRunning) {
       return;
     }
+    _syncHadError = false;
 
     _receivePort = ReceivePort();
     _errorPort = ReceivePort();
@@ -110,9 +117,7 @@ class PhotoSyncService {
       }
     });
 
-    _errorPort!.listen((error) {
-      _controller.add(ProgressUpdate('Sync error: $error', 0, 0));
-    });
+    _errorPort!.listen(_onSyncError);
 
     final params = PhotoSyncParams(
       sendPort: _receivePort!.sendPort,
@@ -131,6 +136,11 @@ class PhotoSyncService {
 
     await _exitPort!.first;
     _cleanup();
+    if (_syncHadError) {
+      _scheduleRetry();
+    } else {
+      _autoRetryAttempts = 0;
+    }
   }
 
   void cancelSync() {
@@ -146,6 +156,56 @@ class PhotoSyncService {
     _receivePort = null;
     _errorPort = null;
     _exitPort = null;
+  }
+
+  void _onSyncError(dynamic error) {
+    _syncHadError = true;
+    _controller.add(
+      ProgressUpdate(
+        'Photo sync interrupted due to communication error.',
+        0,
+        0,
+      ),
+    );
+  }
+
+  void _scheduleRetry() {
+    if (_autoRetryAttempts >= _maxAutoRetries) {
+      _controller.add(
+        ProgressUpdate(
+          'Photo sync paused. It will resume when the app is reopened.',
+          0,
+          0,
+        ),
+      );
+      return;
+    }
+
+    _autoRetryAttempts++;
+    _controller.add(
+      ProgressUpdate(
+        'Retrying photo sync ($_autoRetryAttempts/$_maxAutoRetries)...',
+        0,
+        0,
+      ),
+    );
+    _retryTimer?.cancel();
+    _retryTimer = Timer(_retryDelay, () {
+      unawaited(start());
+    });
+  }
+
+  Future<void> resumeIfNeeded() async {
+    if (isRunning) {
+      return;
+    }
+    final photos = await DaoPhoto().getUnsyncedPhotos();
+    final deletes = await DaoPhotoDeleteQueue().getPendingDeleteIds();
+    if (photos.isEmpty && deletes.isEmpty) {
+      return;
+    }
+    _controller.add(ProgressUpdate('Resuming photo sync...', 0, 0));
+    await start();
   }
 
   /// Downloads the original image for the [Photo] with [photoId] from

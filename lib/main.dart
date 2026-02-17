@@ -25,6 +25,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:toastification/toastification.dart';
 
 import 'api/ihserver/booking_request_sync_service.dart';
+import 'database/management/backup_providers/google_drive/background_backup/photo_sync_service.dart';
 import 'ui/nav/dashboards/dashboard.dart';
 import 'ui/nav/nav.g.dart';
 import 'ui/widgets/blocking_ui.dart';
@@ -113,6 +114,7 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_syncBookings());
+      unawaited(PhotoSyncService().resumeIfNeeded());
     }
   }
 
