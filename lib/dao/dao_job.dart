@@ -32,8 +32,8 @@ import 'dao_quote.dart';
 import 'dao_system.dart';
 import 'dao_task.dart';
 import 'dao_task_item.dart';
-import 'dao_todo.dart';
 import 'dao_time_entry.dart';
+import 'dao_todo.dart';
 import 'dao_work_assignment_task.dart';
 
 enum JobOrder {
