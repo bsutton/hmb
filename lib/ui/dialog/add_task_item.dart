@@ -19,6 +19,7 @@ import '../../entity/entity.g.dart';
 import '../../entity/helpers/charge_mode.dart';
 import '../../util/dart/measurement_type.dart';
 import '../../util/dart/money_ex.dart';
+import '../../util/dart/app_settings.dart';
 import '../../util/dart/units.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/hmb_button.dart';
@@ -162,6 +163,9 @@ Future<void> _addTaskItem({
       selectedItemType != null) {
     final quantity = Fixed.tryParse(quantityController.text) ?? Fixed.one;
     final unitCost = MoneyEx.tryParse(unitCostController.text);
+    final defaultMargin =
+        Percentage.tryParse(await AppSettings.getDefaultProfitMarginText()) ??
+        Percentage.zero;
 
     // Create and insert the new TaskItem
     final newItem = TaskItem.forInsert(
@@ -176,7 +180,7 @@ Future<void> _addTaskItem({
       dimension2: Fixed.zero,
       dimension3: Fixed.zero,
       labourEntryMode: LabourEntryMode.hours,
-      margin: Percentage.zero,
+      margin: defaultMargin,
       measurementType: MeasurementType.length,
       units: Units.defaultUnits,
       url: '',

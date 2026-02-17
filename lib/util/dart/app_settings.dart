@@ -18,6 +18,8 @@ import 'paths.dart';
 class AppSettings {
   static const photoCacheMaxMbDefault = 100;
   static const _photoCacheMaxMbKey = 'photoCacheMaxMb';
+  static const defaultProfitMarginTextDefault = '0';
+  static const _defaultProfitMarginTextKey = 'defaultProfitMarginText';
 
   static Future<int> getPhotoCacheMaxMb() async {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
@@ -41,6 +43,29 @@ class AppSettings {
     final safeValue = megabytes <= 0 ? photoCacheMaxMbDefault : megabytes;
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings[_photoCacheMaxMbKey] = safeValue;
+    await settings.save();
+  }
+
+  static Future<String> getDefaultProfitMarginText() async {
+    final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
+    final value = settings[_defaultProfitMarginTextKey];
+
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+    if (value is num) {
+      return value.toString();
+    }
+
+    return defaultProfitMarginTextDefault;
+  }
+
+  static Future<void> setDefaultProfitMarginText(String value) async {
+    final sanitized = value.trim().isEmpty
+        ? defaultProfitMarginTextDefault
+        : value.trim();
+    final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
+    settings[_defaultProfitMarginTextKey] = sanitized;
     await settings.save();
   }
 }
