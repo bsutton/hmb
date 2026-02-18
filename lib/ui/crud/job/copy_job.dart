@@ -17,13 +17,19 @@ import '../../widgets/widgets.g.dart';
 /// Result returned from the move dialog
 class MoveTasksResult {
   final List<Task> selectedTasks;
-
   final String summary;
+  final int? destinationJobId;
 
-  MoveTasksResult({required this.selectedTasks, required this.summary});
+  MoveTasksResult({
+    required this.selectedTasks,
+    required this.summary,
+    this.destinationJobId,
+  });
+
+  bool get createsNewJob => destinationJobId == null;
 }
 
-/// Launch the “Copy Job & Move Tasks” dialog
+/// Launch the task move dialog.
 Future<MoveTasksResult?> selectTasksToMoveAndDescribeJob({
   required BuildContext context,
   required Job job,
@@ -34,16 +40,14 @@ Future<MoveTasksResult?> selectTasksToMoveAndDescribeJob({
 
   return showDialog<MoveTasksResult>(
     context: context,
-    builder: (_) => DialogMoveTasksToNewJob(job: job),
+    builder: (_) => DialogMoveTasks(job: job),
   );
 }
 
-/// Internal model for rendering each task’s movability
+/// Internal model for rendering each task's movability
 class MovableTaskInfo {
   final Task task;
-
   final bool movable;
-
   final String? reasonIfBlocked;
 
   MovableTaskInfo({
@@ -53,24 +57,28 @@ class MovableTaskInfo {
   });
 }
 
-class DialogMoveTasksToNewJob extends StatefulWidget {
+enum MoveDestination { newJob, existingJob }
+
+class DialogMoveTasks extends StatefulWidget {
   final Job job;
 
-  const DialogMoveTasksToNewJob({required this.job, super.key});
+  const DialogMoveTasks({required this.job, super.key});
 
   @override
-  State<DialogMoveTasksToNewJob> createState() =>
-      _DialogMoveTasksToNewJobState();
+  State<DialogMoveTasks> createState() => _DialogMoveTasksState();
 }
 
-class _DialogMoveTasksToNewJobState
-    extends DeferredState<DialogMoveTasksToNewJob> {
+class _DialogMoveTasksState extends DeferredState<DialogMoveTasks> {
   final Map<Task, bool> _selected = {};
   final _summaryController = TextEditingController();
 
   List<MovableTaskInfo> _rows = [];
+  List<Job> _candidateJobs = [];
   var _selectAll = false;
   var _loading = true;
+  var _showAllCustomers = false;
+  MoveDestination _destination = MoveDestination.newJob;
+  Job? _selectedTargetJob;
 
   @override
   Future<void> asyncInitState() async {
@@ -87,12 +95,32 @@ class _DialogMoveTasksToNewJobState
         MovableTaskInfo(task: t, movable: movable, reasonIfBlocked: reason),
       );
       if (movable) {
-        _selected[t] = false; // default to no task selected
+        _selected[t] = false;
       }
     }
+
+    await _loadCandidateJobs();
     _selectAll = false;
     _loading = false;
     setState(() {});
+  }
+
+  Future<void> _loadCandidateJobs() async {
+    final jobs = await DaoJob().getActiveJobs(null);
+    _candidateJobs = jobs.where((candidate) {
+      if (candidate.id == widget.job.id) {
+        return false;
+      }
+      if (_showAllCustomers) {
+        return true;
+      }
+      return candidate.customerId == widget.job.customerId;
+    }).toList()..sort((a, b) => b.modifiedDate.compareTo(a.modifiedDate));
+
+    if (_selectedTargetJob != null &&
+        !_candidateJobs.any((j) => j.id == _selectedTargetJob!.id)) {
+      _selectedTargetJob = null;
+    }
   }
 
   Future<String?> _validateTaskMovable({required Task task}) async {
@@ -117,7 +145,7 @@ class _DialogMoveTasksToNewJobState
       return 'Task is linked to a quote.';
     }
 
-    return null; // movable
+    return null;
   }
 
   void _toggleSelectAll(bool? v) {
@@ -144,9 +172,33 @@ class _DialogMoveTasksToNewJobState
     });
   }
 
+  Future<bool> _confirmCrossCustomerMove() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Different Customer'),
+        content: const Text(
+          'The destination job belongs to a different customer. '
+          'Do you still want to move these tasks?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text('''Copy Job & Move Tasks: ${widget.job.summary}'''),
+    title: Text('''Move Tasks: ${widget.job.summary}'''),
     content: DeferredBuilder(
       this,
       builder: (_) {
@@ -164,15 +216,80 @@ class _DialogMoveTasksToNewJobState
           child: HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('New Summary'),
-              TextField(
-                controller: _summaryController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Enter summary for the new job',
-                ),
+              RadioListTile<MoveDestination>(
+                title: const Text('Create new job and move tasks'),
+                value: MoveDestination.newJob,
+                groupValue: _destination,
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() {
+                    _destination = value;
+                  });
+                },
               ),
+              RadioListTile<MoveDestination>(
+                title: const Text('Move tasks to existing job'),
+                value: MoveDestination.existingJob,
+                groupValue: _destination,
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() {
+                    _destination = value;
+                  });
+                },
+              ),
+              if (_destination == MoveDestination.newJob) ...[
+                const Text('New Summary'),
+                TextField(
+                  controller: _summaryController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Enter summary for the new job',
+                  ),
+                ),
+              ],
+              if (_destination == MoveDestination.existingJob) ...[
+                SwitchListTile(
+                  title: const Text('Show jobs for all customers'),
+                  value: _showAllCustomers,
+                  onChanged: (value) async {
+                    _showAllCustomers = value;
+                    await _loadCandidateJobs();
+                    setState(() {});
+                  },
+                ),
+                DropdownButtonFormField<Job>(
+                  value: _selectedTargetJob,
+                  decoration: const InputDecoration(
+                    labelText: 'Destination Job',
+                  ),
+                  items: _candidateJobs
+                      .map(
+                        (job) => DropdownMenuItem<Job>(
+                          value: job,
+                          child: Text('Job #${job.id} ${job.summary}'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (job) {
+                    setState(() {
+                      _selectedTargetJob = job;
+                    });
+                  },
+                ),
+                if (_candidateJobs.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text(
+                      'No destination jobs available for this selection.',
+                    ),
+                  ),
+              ],
               if (movableCount > 0)
                 CheckboxListTile(
                   title: Text('Select All ($selectedCount / $movableCount)'),
@@ -187,16 +304,15 @@ class _DialogMoveTasksToNewJobState
                     value: _selected[row.task] ?? false,
                     onChanged: (v) => _toggleOne(row.task, v),
                   );
-                } else {
-                  return ListTile(
-                    title: Text(row.task.name),
-                    subtitle: Text(
-                      row.reasonIfBlocked ?? 'Not movable',
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
-                    trailing: const Icon(Icons.block, color: Colors.redAccent),
-                  );
                 }
+                return ListTile(
+                  title: Text(row.task.name),
+                  subtitle: Text(
+                    row.reasonIfBlocked ?? 'Not movable',
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                  trailing: const Icon(Icons.block, color: Colors.redAccent),
+                );
               }),
             ],
           ),
@@ -207,12 +323,16 @@ class _DialogMoveTasksToNewJobState
       HMBButton(
         label: 'Cancel',
         onPressed: () => Navigator.of(context).pop(),
-        hint: "Don't copy the Job",
+        hint: "Don't move any tasks",
       ),
       HMBButton(
-        label: 'Create & Move',
-        hint: 'Create new job and move selected tasks',
-        onPressed: () {
+        label: _destination == MoveDestination.newJob
+            ? 'Create & Move'
+            : 'Move',
+        hint: _destination == MoveDestination.newJob
+            ? 'Create new job and move selected tasks'
+            : 'Move selected tasks to destination job',
+        onPressed: () async {
           final selected = _selected.entries
               .where((e) => e.value)
               .map((e) => e.key)
@@ -221,10 +341,39 @@ class _DialogMoveTasksToNewJobState
             HMBToast.error('Please select at least one task to move.');
             return;
           }
+
+          if (_destination == MoveDestination.existingJob) {
+            if (_selectedTargetJob == null) {
+              HMBToast.error('Please select a destination job.');
+              return;
+            }
+
+            if (_selectedTargetJob!.customerId != widget.job.customerId) {
+              final proceed = await _confirmCrossCustomerMove();
+              if (!proceed) {
+                return;
+              }
+            }
+
+            if (!context.mounted) {
+              return;
+            }
+
+            Navigator.of(context).pop(
+              MoveTasksResult(
+                selectedTasks: selected,
+                summary: '',
+                destinationJobId: _selectedTargetJob!.id,
+              ),
+            );
+            return;
+          }
+
+          final summary = _summaryController.text.trim();
           Navigator.of(context).pop(
             MoveTasksResult(
               selectedTasks: selected,
-              summary: _summaryController.text.trim(),
+              summary: summary.isEmpty ? widget.job.summary : summary,
             ),
           );
         },

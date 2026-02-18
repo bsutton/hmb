@@ -401,7 +401,7 @@ You can set a default booking fee from System | Billing screen''');
       if ((await DaoSystem().get()).getOperatingHours().noOpenDays()) {
         HMBToast.error(
           'Before you Schedule a job, you must first set your '
-          "opening hours from the 'System | Business' page.",
+              "opening hours from the 'System | Business' page.",
         );
         return;
       }
@@ -639,7 +639,7 @@ You can set a default booking fee from System | Billing screen''');
             const HMBText('Assumption:', bold: true).help(
               'Assumptions',
               'Detail the assumptions your pricing is based on. '
-                  'Assumptions are shown on the Quote. ',
+              'Assumptions are shown on the Quote. ',
             ),
             Container(
               constraints: const BoxConstraints(minHeight: 200),
