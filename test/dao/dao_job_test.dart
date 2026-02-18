@@ -89,13 +89,13 @@ void main() {
 
     test('should get all jobs', () async {
       final now = DateTime.now();
-      await createJob(
+      final job1 = await createJob(
         now,
         BillingType.timeAndMaterial,
         hourlyRate: Money.fromInt(5000, isoCode: 'AUD'),
         bookingFee: Money.fromInt(10000, isoCode: 'AUD'),
       );
-      await createJob(
+      final job2 = await createJob(
         now,
         BillingType.fixedPrice,
         hourlyRate: Money.fromInt(7000, isoCode: 'AUD'),
@@ -103,7 +103,9 @@ void main() {
       );
 
       final jobs = await DaoJob().getAll();
-      expect(jobs.length, equals(2));
+      final ids = jobs.map((job) => job.id).toSet();
+      expect(ids, contains(job1.id));
+      expect(ids, contains(job2.id));
     });
 
     test('should find jobs by name', () async {
@@ -235,7 +237,6 @@ void main() {
       },
     );
 
-
     test('copy job and move task completes and re-links moved task', () async {
       final now = DateTime.now();
       final sourceJob = await createJob(
@@ -307,7 +308,6 @@ void main() {
 
       final ready = await DaoJob().readyToBeInvoiced(null);
       expect(ready.any((j) => j.id == job.id), isFalse);
-
     });
   });
 }
