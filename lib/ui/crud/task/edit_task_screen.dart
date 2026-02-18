@@ -178,7 +178,7 @@ class _TaskEditScreenState extends State<TaskEditScreen>
     ),
   );
 
-  final inheritedOption = BillingTypeOption(null, 'Inherited');
+  final inheritedOption = BillingTypeOption(null, "Same as job's");
 
   Widget _chooseBillingType() =>
       HMBDroplist<BillingTypeOption>(
