@@ -24,6 +24,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../crud/todo/list_todo_card.dart';
 import '../../invoicing/create_invoice_ui.dart';
+import '../../task_items/task_items.g.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/text.g.dart';
 import '../../widgets/widgets.g.dart';
@@ -326,9 +327,8 @@ class TodayPageState extends DeferredState<TodayPage> {
             builder: (context, customer) => HMBOneOf(
               condition: customer == null,
               onTrue: const HMBEmpty(),
-              onFalse: HMBPadding(
-                left: 8,
-                right: 8,
+              onFalse: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: HMBTextLine('Customer: ${customer!.name}'),
               ),
             ),
@@ -343,6 +343,7 @@ class TodayPageState extends DeferredState<TodayPage> {
     list: today.shopping,
     emptyMessage: 'No shopping for today.',
     cardBuilder: ShoppingCard.new,
+    onTap: _openShoppingItem,
   );
 
   Widget packingList(Today today) => Listing<TaskItem>(
@@ -365,6 +366,29 @@ class TodayPageState extends DeferredState<TodayPage> {
     emptyMessage: 'No jobs need to be invoiced.',
     cardBuilder: InvoiceCard.new,
   );
+
+  Future<void> _openShoppingItem(TaskItem taskItem) async {
+    final task = await DaoTask().getById(taskItem.taskId);
+    if (task == null || !mounted) {
+      return;
+    }
+
+    final billingType = await DaoTask().getBillingTypeByTaskItem(taskItem);
+    final wasReturned = await DaoTaskItem().wasReturned(taskItem.id);
+    final itemContext = TaskItemContext(
+      task: task,
+      taskItem: taskItem,
+      billingType: billingType,
+      wasReturned: wasReturned,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    await markAsCompleted(itemContext, context);
+    await refresh();
+  }
 }
 
 // to do
@@ -499,6 +523,7 @@ class Listing<T> extends StatelessWidget {
   final String title;
   final List<T> list;
   final Widget Function(T) cardBuilder;
+  final Future<void> Function(T)? onTap;
   final void Function()? onChange;
   final String emptyMessage;
 
@@ -507,6 +532,7 @@ class Listing<T> extends StatelessWidget {
     required this.list,
     required this.cardBuilder,
     required this.emptyMessage,
+    this.onTap,
     this.onChange,
     super.key,
   });
@@ -532,7 +558,12 @@ class Listing<T> extends StatelessWidget {
                 (entity) => Surface(
                   rounded: true,
                   padding: EdgeInsets.zero,
-                  child: cardBuilder(entity),
+                  child: onTap == null
+                      ? cardBuilder(entity)
+                      : GestureDetector(
+                          onTap: () => unawaited(onTap!(entity)),
+                          child: cardBuilder(entity),
+                        ),
                 ),
               )
               .toList(),
