@@ -19,7 +19,7 @@ import '../util/dart/money_ex.dart';
 import 'dao.dart';
 
 class DaoTaskItem extends Dao<TaskItem> {
-  static const _closedShoppingJobStatusIds = [
+  static final _closedShoppingJobStatusIds = [
     JobStatus.rejected.id,
     JobStatus.onHold.id,
     JobStatus.awaitingPayment.id,
