@@ -30,7 +30,31 @@ Future<InvoiceOptions?> selectTaskToQuote({
   required Job job,
   required String title,
 }) async {
+  final tasks = await DaoTask().getTasksByJob(job.id);
   final estimates = await DaoTask().getEstimatesForJob(job);
+  final quoteEligible = estimates
+      .where(
+        (estimate) =>
+            estimate.task.effectiveBillingType(job.billingType) ==
+            BillingType.fixedPrice,
+      )
+      .toList();
+
+  if (quoteEligible.isEmpty) {
+    if (tasks.isEmpty) {
+      HMBToast.error(
+        'This job has no tasks. Add at least one task before creating a quote.',
+        acknowledgmentRequired: true,
+      );
+    } else {
+      HMBToast.error(
+        'No tasks are eligible for a quote. Tasks must be Fixed Price, active, '
+        'and have a non-zero estimate.',
+        acknowledgmentRequired: true,
+      );
+    }
+    return null;
+  }
 
   final contact = await DaoContact().getBillingContactByJob(job);
 
@@ -47,7 +71,7 @@ Future<InvoiceOptions?> selectTaskToQuote({
         job: job,
         contact: contact,
         title: title,
-        taskSelectors: estimates
+        taskSelectors: quoteEligible
             .map(
               (estimate) => TaskSelector(
                 estimate.task,
