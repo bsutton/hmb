@@ -33,6 +33,7 @@ import '../../../entity/task.dart';
 import '../../../entity/task_item.dart';
 import '../../../entity/task_item_type.dart';
 import '../../../util/dart/fixed_ex.dart';
+import '../../../util/dart/app_settings.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/flutter/platform_ex.dart';
@@ -149,6 +150,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   @override
   Future<System> asyncInitState() async {
     final system = await DaoSystem().get();
+    final defaultMarginText = await AppSettings.getDefaultProfitMarginText();
     var selectedUnits = June.getState(SelectedUnits.new).selected;
 
     June.getState(SelectedSupplier.new).selected = currentEntity?.supplierId;
@@ -169,6 +171,11 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
         currentEntity?.measurementType;
     June.getState(SelectedCheckListItemType.new).selected =
         currentEntity?.itemType;
+
+    if (currentEntity == null && _marginController.text.trim().isEmpty) {
+      _marginController.text = defaultMarginText;
+      _calculateChargeFromMargin(defaultMarginText);
+    }
     return system;
   }
 

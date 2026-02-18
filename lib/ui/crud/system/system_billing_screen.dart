@@ -23,6 +23,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' hide context;
 import 'package:path_provider/path_provider.dart';
 import 'package:strings/strings.dart';
+import 'package:money2/money2.dart';
 
 import '../../../cache/hmb_image_cache.dart';
 import '../../../cache/image_cache_config.dart';
@@ -59,6 +60,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
 
   late final _defaultHourlyRateController = HMBMoneyEditingController();
   late final _defaultBookingFeeController = HMBMoneyEditingController();
+  late final _defaultProfitMarginController = TextEditingController();
   late final _bsbController = TextEditingController();
   late final _accountNoController = TextEditingController();
   late final _paymentLinkUrlController = TextEditingController();
@@ -90,6 +92,8 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _paymentOptionsController = TextEditingController(
       text: system.paymentOptions,
     );
+    _defaultProfitMarginController.text =
+        await AppSettings.getDefaultProfitMarginText();
     _photoCacheMaxMbController = TextEditingController(
       text: (await AppSettings.getPhotoCacheMaxMb()).toString(),
     );
@@ -105,6 +109,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   void dispose() {
     _defaultHourlyRateController.dispose();
     _defaultBookingFeeController.dispose();
+    _defaultProfitMarginController.dispose();
     _bsbController.dispose();
     _accountNoController.dispose();
 
@@ -142,6 +147,16 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
         ..billingColour = _billingColour.toColorValue(); // Save billing color
 
       await DaoSystem().update(system);
+      final marginValid = Percentage.tryParse(
+        _defaultProfitMarginController.text,
+      );
+      if (marginValid == null) {
+        HMBToast.error('Default Profit Margin is invalid.');
+        return false;
+      }
+      await AppSettings.setDefaultProfitMarginText(
+        _defaultProfitMarginController.text,
+      );
 
       final photoCacheMb = int.tryParse(_photoCacheMaxMbController.text) ?? 100;
       await AppSettings.setPhotoCacheMaxMb(photoCacheMb);
@@ -262,6 +277,16 @@ Sometime this is referred to as a Surcharge, Callout Fee or Admin Fee''',
                 fieldName: 'default Booking Fee',
               ),
             ),
+            HMBTextField(
+              controller: _defaultProfitMarginController,
+              labelText: 'Default Profit Margin (%)',
+              keyboardType: TextInputType.number,
+              validator: (value) => Percentage.tryParse(value ?? '') == null
+                  ? 'Enter a valid percentage'
+                  : null,
+            ).help('Default Profit Margin', '''
+Used as the default margin when creating new Task Items.
+You can still override the margin per Task Item.'''),
             HMBTextField(
               controller: _bsbController,
               labelText: 'BSB',
