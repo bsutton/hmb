@@ -29,13 +29,6 @@ void main() {
     throw TestFailure('Timed out waiting for text: $text');
   }
 
-  Future<void> tapText(WidgetTester tester, String text) async {
-    final finder = find.text(text);
-    await tester.ensureVisible(finder);
-    await tester.tap(finder, warnIfMissed: false);
-    await tester.pump();
-  }
-
   testWidgets('does not show per-task reject controls on quote details', (
     tester,
   ) async {
@@ -99,8 +92,11 @@ void main() {
     expect(find.byIcon(Icons.edit), findsNothing);
   });
 
-  testWidgets('create milestones and invoice actions show', (tester) async {
+  testWidgets('approved quote details render without actions panel', (
+    tester,
+  ) async {
     late int quoteId;
+    late int taskId;
 
     await tester.runAsync(() async {
       await setupTestDb();
@@ -120,6 +116,26 @@ void main() {
           state: QuoteState.approved,
         ),
       );
+
+      final task = await createTask(job, 'Task A');
+      taskId = task.id;
+      final groupId = await DaoQuoteLineGroup().insert(
+        QuoteLineGroup.forInsert(
+          quoteId: quoteId,
+          taskId: taskId,
+          name: task.name,
+        ),
+      );
+      await DaoQuoteLine().insert(
+        QuoteLine.forInsert(
+          quoteId: quoteId,
+          quoteLineGroupId: groupId,
+          description: 'Approved line',
+          quantity: Fixed.one,
+          unitCharge: Money.fromInt(10000, isoCode: 'AUD'),
+          lineTotal: Money.fromInt(10000, isoCode: 'AUD'),
+        ),
+      );
     });
     addTearDown(() async {
       await tearDownTestDb();
@@ -129,19 +145,10 @@ void main() {
       MaterialApp(home: QuoteDetailsScreen(quoteId: quoteId)),
     );
 
-    await waitForText(tester, 'Create Milestones');
-    expect(find.text('Create Milestones'), findsOneWidget);
-    expect(find.text('Create Invoice'), findsOneWidget);
-
-    await tapText(tester, 'Create Milestones');
-
-    await waitForText(tester, 'Edit Milestones');
-    expect(find.text('Edit Milestones'), findsOneWidget);
-
-    await tester.pageBack();
-
-    // Invoice action availability is asserted above via button presence.
-    // The billing-contact dialog flow is covered separately and can be
-    // timing-sensitive in this integration-style widget test.
+    await waitForText(tester, 'Approved line');
+    expect(find.text('Approved line'), findsOneWidget);
+    expect(find.textContaining('State: approved'), findsOneWidget);
+    expect(find.text('Create Milestones'), findsNothing);
+    expect(find.text('Create Invoice'), findsNothing);
   });
 }

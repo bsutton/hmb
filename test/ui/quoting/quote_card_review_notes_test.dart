@@ -11,6 +11,23 @@ import '../ui_test_helpers.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  Future<void> waitForText(
+    WidgetTester tester,
+    String text, {
+    int attempts = 30,
+  }) async {
+    for (var i = 0; i < attempts; i++) {
+      if (find.text(text).evaluate().isNotEmpty) {
+        return;
+      }
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+    }
+    throw TestFailure('Timed out waiting for text: $text');
+  }
+
   setUp(() async {
     await setupTestDb();
   });
@@ -55,9 +72,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await waitForText(tester, 'Unapprove');
 
-    expect(find.text('Unapprove'), findsOneWidget);
-    expect(find.text('Approved'), findsNothing);
+    expect(find.widgetWithText(ElevatedButton, 'Unapprove'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Approved'), findsNothing);
   });
 
   testWidgets('withdrawn appears only after quote is sent', (tester) async {
@@ -80,8 +98,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await waitForText(tester, 'Withdrawn');
 
     // Only the sent quote should show the Withdrawn action.
-    expect(find.text('Withdrawn'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Withdrawn'), findsOneWidget);
   });
 }

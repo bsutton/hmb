@@ -11,6 +11,23 @@ import '../../ui_test_helpers.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  Future<void> waitForText(
+    WidgetTester tester,
+    String text, {
+    int attempts = 30,
+  }) async {
+    for (var i = 0; i < attempts; i++) {
+      if (find.text(text).evaluate().isNotEmpty) {
+        return;
+      }
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+    }
+    throw TestFailure('Timed out waiting for text: $text');
+  }
+
   setUp(() async {
     await setupTestDb();
   });
@@ -56,8 +73,11 @@ void main() {
         ),
       );
     });
-    await tester.pumpWidget(const MaterialApp(home: ListMilestoneScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: ListMilestoneScreen())),
+    );
     await tester.pumpAndSettle();
+    await waitForText(tester, 'Milestones: 1');
 
     expect(find.text('Milestones: 1'), findsOneWidget);
     expect(find.text('Voided Milestones: 1'), findsOneWidget);

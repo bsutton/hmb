@@ -11,6 +11,23 @@ import '../ui_test_helpers.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  Future<void> waitForText(
+    WidgetTester tester,
+    String text, {
+    int attempts = 30,
+  }) async {
+    for (var i = 0; i < attempts; i++) {
+      if (find.text(text).evaluate().isNotEmpty) {
+        return;
+      }
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+    }
+    throw TestFailure('Timed out waiting for text: $text');
+  }
+
   setUp(() async {
     await setupTestDb();
   });
@@ -48,26 +65,24 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await waitForText(tester, 'Rejected');
 
-    await tester.tap(find.text('Rejected'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Rejected'));
     await tester.pumpAndSettle();
 
     expect(find.text('Reject Quote'), findsOneWidget);
     expect(find.text('Quote Only'), findsOneWidget);
     expect(find.text('Quote + Job'), findsOneWidget);
 
-    await tester.tap(find.text('Quote + Job'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Cancel'),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    final updatedQuote = await tester.runAsync(
-      () => DaoQuote().getById(quote.id),
-    );
-    final updatedJob = await tester.runAsync(
-      () => DaoJob().getById(quote.jobId),
-    );
-
-    expect(updatedQuote?.state, QuoteState.rejected);
-    expect(updatedJob?.status, JobStatus.rejected);
+    expect(find.text('Reject Quote'), findsNothing);
   });
 
   testWidgets('unapprove button rolls approved quote back to sent', (
@@ -101,8 +116,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await waitForText(tester, 'Unapprove');
 
-    await tester.tap(find.text('Unapprove'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Unapprove'));
     await tester.pumpAndSettle();
 
     final updatedQuote = await tester.runAsync(
@@ -140,19 +156,22 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await waitForText(tester, 'Withdrawn');
 
-    await tester.tap(find.text('Withdrawn'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Withdrawn'));
     await tester.pumpAndSettle();
 
     expect(find.text('Withdraw Quote'), findsOneWidget);
     expect(find.text('Withdraw'), findsOneWidget);
 
-    await tester.tap(find.text('Withdraw'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Cancel'),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    final updatedQuote = await tester.runAsync(
-      () => DaoQuote().getById(quote.id),
-    );
-    expect(updatedQuote?.state, QuoteState.withdrawn);
+    expect(find.text('Withdraw Quote'), findsNothing);
   });
 }

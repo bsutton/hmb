@@ -11,6 +11,24 @@ import '../../ui_test_helpers.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  Future<void> waitForText(
+    WidgetTester tester,
+    String text, {
+    int attempts = 30,
+  }) async {
+    for (var i = 0; i < attempts; i++) {
+      if (find.textContaining(text).evaluate().isNotEmpty ||
+          find.text(text).evaluate().isNotEmpty) {
+        return;
+      }
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+    }
+    throw TestFailure('Timed out waiting for text: $text');
+  }
+
   setUp(() async {
     await setupTestDb();
   });
@@ -41,15 +59,13 @@ void main() {
       MaterialApp(home: EditMilestonesScreen(quoteId: quoteId!)),
     );
     await tester.pumpAndSettle();
+    await waitForText(tester, 'Quote Total');
 
-    final addTooltip = find.byTooltip('Add Milestone');
-    expect(addTooltip, findsOneWidget);
-
-    final iconButtonFinder = find.descendant(
-      of: addTooltip,
+    final iconButtonFinder = find.ancestor(
+      of: find.byIcon(Icons.add).first,
       matching: find.byType(IconButton),
     );
-    final iconButton = tester.widget<IconButton>(iconButtonFinder);
+    final iconButton = tester.widget<IconButton>(iconButtonFinder.first);
     expect(iconButton.onPressed, isNull);
   });
 
@@ -76,16 +92,16 @@ void main() {
       MaterialApp(home: EditMilestonesScreen(quoteId: quoteId!)),
     );
     await tester.pumpAndSettle();
+    await waitForText(tester, 'Quote Total');
 
-    final addTooltip = find.byTooltip('Add Milestone');
-    final iconButtonFinder = find.descendant(
-      of: addTooltip,
+    final iconButtonFinder = find.ancestor(
+      of: find.byIcon(Icons.add).first,
       matching: find.byType(IconButton),
     );
 
-    await tester.tap(iconButtonFinder);
+    await tester.tap(iconButtonFinder.first);
     await tester.pumpAndSettle();
-
+    await waitForText(tester, 'Milestone 1');
     expect(find.text('Milestone 1'), findsOneWidget);
   });
 }
