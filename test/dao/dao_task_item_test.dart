@@ -89,8 +89,9 @@ Future<TaskItem> _insertTaskItemForJob({
   required TaskItemType itemType,
   required bool completed,
 }) async {
+  final unique = DateTime.now().microsecondsSinceEpoch;
   final customer = Customer.forInsert(
-    name: 'Cust',
+    name: 'Cust-$unique',
     description: '',
     disbarred: false,
     customerType: CustomerType.residential,

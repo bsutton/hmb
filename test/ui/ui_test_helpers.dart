@@ -8,6 +8,7 @@ Future<Job> createJobWithCustomer({
   Money? bookingFee,
   String summary = 'Test Job',
 }) async {
+  final unique = DateTime.now().microsecondsSinceEpoch;
   final contactId = await DaoContact().insert(
     Contact.forInsert(
       firstName: 'Pat',
@@ -15,12 +16,12 @@ Future<Job> createJobWithCustomer({
       mobileNumber: '0400000000',
       landLine: '',
       officeNumber: '',
-      emailAddress: 'pat@example.com',
+      emailAddress: 'pat+$unique@example.com',
     ),
   );
   final customerId = await DaoCustomer().insert(
     Customer.forInsert(
-      name: 'Test Customer',
+      name: 'Test Customer $unique',
       description: 'Customer for widget tests',
       disbarred: false,
       customerType: CustomerType.residential,
