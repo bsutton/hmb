@@ -42,13 +42,13 @@ enum BillingParty {
   const BillingParty(this.display);
   final String display;
 
-  static BillingParty fromName(String? name) => name == null
-      ? BillingParty.customer
-      : BillingParty.values.byName(name);
+  static BillingParty fromName(String? name) =>
+      name == null ? BillingParty.customer : BillingParty.values.byName(name);
 }
 
 class Job extends Entity<Job> {
   int? customerId;
+  bool isStock;
   int? referrerCustomerId;
   String summary;
   String description;
@@ -89,6 +89,7 @@ class Job extends Entity<Job> {
     required this.lastActive,
     required super.createdDate,
     required super.modifiedDate,
+    this.isStock = false,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,
   }) : super();
@@ -106,6 +107,7 @@ class Job extends Entity<Job> {
     this.referrerCustomerId,
     this.referrerContactId,
     this.billingParty = BillingParty.customer,
+    this.isStock = false,
     this.assumption = '',
     this.internalNotes = '',
     this.lastActive = false,
@@ -115,6 +117,7 @@ class Job extends Entity<Job> {
 
   Job copyWith({
     int? customerId,
+    bool? isStock,
     int? referrerCustomerId,
     String? summary,
     String? description,
@@ -134,6 +137,7 @@ class Job extends Entity<Job> {
   }) => Job._(
     id: id,
     customerId: customerId ?? this.customerId,
+    isStock: isStock ?? this.isStock,
     referrerCustomerId: referrerCustomerId ?? this.referrerCustomerId,
     summary: summary ?? this.summary,
     description: description ?? this.description,
@@ -157,6 +161,7 @@ class Job extends Entity<Job> {
   factory Job.fromMap(Map<String, dynamic> map) => Job._(
     id: map['id'] as int,
     customerId: map['customer_id'] as int?,
+    isStock: (map['is_stock'] as int? ?? 0) == 1,
     referrerCustomerId: map['referrer_customer_id'] as int?,
     summary: map['summary'] as String,
     description: map['description'] as String,
@@ -181,6 +186,7 @@ class Job extends Entity<Job> {
   Map<String, dynamic> toMap() => {
     'id': id,
     'customer_id': customerId,
+    'is_stock': isStock ? 1 : 0,
     'referrer_customer_id': referrerCustomerId,
     'summary': summary,
     'description': description,
