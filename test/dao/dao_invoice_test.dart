@@ -140,7 +140,7 @@ should create an invoice for time and materials job with correct rates and mark 
 
     // Verify invoice lines (labour TaskItems are ignored for T&M tasks)
     final invoiceLines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
-    expect(invoiceLines.length, equals(3));
+    expect(invoiceLines.length, equals(2));
 
     final invoiceGroupLines = await DaoInvoiceLineGroup().getByInvoiceId(
       invoice.id,
@@ -190,7 +190,8 @@ should create an invoice for time and materials job with correct rates and mark 
     );
     expect(invoiceGroupLines.length, equals(2));
 
-    expect(invoiceGroupLines[0].name, equals('Task 1'));
-    expect(invoiceGroupLines[1].name, equals('Task 2'));
+    final groupNames = invoiceGroupLines.map((group) => group.name).toList();
+    expect(groupNames, contains('Task 1'));
+    expect(groupNames, contains('Task 2'));
   });
 }

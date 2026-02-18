@@ -144,6 +144,7 @@ class DialogTaskSelection extends StatefulWidget {
 
 class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   final Map<int, bool> _selectedTasks = {};
+  final Map<int, BillingType> _taskBillingTypes = {};
   var _selectAll = true;
   late bool billBookingFee;
   late bool canBillBookingFee;
@@ -155,7 +156,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
   @override
   Future<void> asyncInitState() async {
-    _groupByTask = widget.job.billingType == BillingType.fixedPrice;
+    _groupByTask = true;
 
     billBookingFee = canBillBookingFee =
         widget.job.billingType == BillingType.timeAndMaterial &&
@@ -163,12 +164,20 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
     for (final accuredValue in widget.taskSelectors) {
       _selectedTasks[accuredValue.task.id] = true;
+      _taskBillingTypes[accuredValue.task.id] = accuredValue.task
+          .effectiveBillingType(widget.job.billingType);
     }
 
     _customer = (await DaoCustomer().getById(widget.job.customerId))!;
     _contacts = await DaoContact().getByCustomer(widget.job.customerId);
     _selectedContact = widget.contact;
   }
+
+  bool get _hasSelectedTimeAndMaterialsTasks => _selectedTasks.entries.any(
+    (entry) =>
+        entry.value &&
+        _taskBillingTypes[entry.key] == BillingType.timeAndMaterial,
+  );
 
   void _toggleSelectAll(bool? value) {
     setState(() {
@@ -210,28 +219,26 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                   });
                 },
               ),
-            DropdownButton<bool>(
-              value: _groupByTask,
-              isExpanded: true,
-              onChanged: widget.job.billingType == BillingType.fixedPrice
-                  ? null
-                  : (value) {
-                      setState(() {
-                        _groupByTask = value ?? true;
-                      });
-                    },
-              items: [
-                const DropdownMenuItem(
-                  value: true,
-                  child: Text('Group by Task/Date'),
-                ),
-                if (widget.job.billingType != BillingType.fixedPrice)
-                  const DropdownMenuItem(
-                    value: false,
-                    child: Text('Group by Date/Task'),
+            if (_hasSelectedTimeAndMaterialsTasks)
+              DropdownButton<bool>(
+                value: _groupByTask,
+                isExpanded: true,
+                onChanged: (value) {
+                  setState(() {
+                    _groupByTask = value ?? true;
+                  });
+                },
+                items: const [
+                  DropdownMenuItem(
+                    value: true,
+                    child: Text('Group T&M labour by task'),
                   ),
-              ],
-            ),
+                  DropdownMenuItem(
+                    value: false,
+                    child: Text('Group T&M labour by day'),
+                  ),
+                ],
+              ),
             if (canBillBookingFee)
               CheckboxListTile(
                 title: const Text('Bill booking Fee'),
@@ -278,9 +285,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
             InvoiceOptions(
               selectedTaskIds: selectedTaskIds,
               billBookingFee: billBookingFee,
-              groupByTask:
-                  widget.job.billingType == BillingType.fixedPrice ||
-                  _groupByTask,
+              groupByTask: !_hasSelectedTimeAndMaterialsTasks || _groupByTask,
               contact: _selectedContact,
             ),
           );
