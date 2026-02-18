@@ -204,8 +204,16 @@ from contact co
 join job jo
   on co.id = jo.billing_contact_id
 where jo.id = ?
+
+union
+
+select co.*
+from contact co
+join job jo
+  on co.id = jo.referrer_contact_id
+where jo.id = ?
 ''',
-        [jobId, jobId],
+        [jobId, jobId, jobId],
       ),
     );
   }
@@ -332,9 +340,10 @@ order by c.modifiedDate desc
 
   /// Returns a contact according to this priority:
   ///  1. The job’s specific billing contact (job.billingContactId)
-  ///  2. The customer’s billing contact (customer.billingContactId)
-  ///  3. The job’s general contact (job.contactId)
-  ///  4. The contact with the lowest ID among that customer’s contacts
+  ///  2. The selected billing party's contact preference
+  ///  3. The selected billing party's customer billing contact
+  ///  4. The selected billing party's lowest-ID contact
+  ///  5. The job’s general contact (job.contactId)
   Future<Contact?> getBillingContactByJob(Job job) async {
     final db = withoutTransaction();
 
@@ -350,15 +359,30 @@ order by c.modifiedDate desc
       }
     }
 
-    // Load the customer (to check their billingContactId and their contacts)
-    final customer = await DaoCustomer().getById(job.customerId);
-    if (customer != null) {
-      // 2) Customer’s billing contact
-      if (customer.billingContactId != null) {
+    final billingCustomerId = job.billingParty == BillingParty.referrer
+        ? job.referrerCustomerId
+        : job.customerId;
+    final billingCustomer = await DaoCustomer().getById(billingCustomerId);
+
+    if (job.billingParty == BillingParty.referrer &&
+        job.referrerContactId != null) {
+      final rows = await db.query(
+        'contact',
+        where: 'id = ?',
+        whereArgs: [job.referrerContactId],
+      );
+      if (rows.isNotEmpty) {
+        return Contact.fromMap(rows.first);
+      }
+    }
+
+    if (billingCustomer != null) {
+      // 3) Billing customer's billing contact
+      if (billingCustomer.billingContactId != null) {
         final rows = await db.query(
           'contact',
           where: 'id = ?',
-          whereArgs: [customer.billingContactId],
+          whereArgs: [billingCustomer.billingContactId],
         );
         if (rows.isNotEmpty) {
           return Contact.fromMap(rows.first);
@@ -377,7 +401,7 @@ order by c.modifiedDate desc
         }
       }
 
-      // 4) Lowest-ID contact for that customer
+      // 4) Lowest-ID contact for the selected billing customer.
       final fallback = await db.rawQuery(
         '''
         SELECT c.*
@@ -388,14 +412,25 @@ order by c.modifiedDate desc
          ORDER BY c.id ASC
          LIMIT 1
         ''',
-        [customer.id],
+        [billingCustomer.id],
       );
       if (fallback.isNotEmpty) {
         return Contact.fromMap(fallback.first);
       }
     }
 
-    // No contact found
+    // 5) Job’s general contact.
+    if (job.contactId != null) {
+      final rows = await db.query(
+        'contact',
+        where: 'id = ?',
+        whereArgs: [job.contactId],
+      );
+      if (rows.isNotEmpty) {
+        return Contact.fromMap(rows.first);
+      }
+    }
+
     return null;
   }
 }
