@@ -49,6 +49,8 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   final BuildActionItems<T>? buildActionItems;
 
   final bool canAdd;
+  final bool Function(T entity)? canEdit;
+  final bool Function(T entity)? canDelete;
 
   late final Future<List<T>> Function(String? filter) _fetchList;
   final Dao<T> dao;
@@ -77,6 +79,8 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     /// and then [onEdit] is called.
     this.onAdd,
     this.canAdd = true,
+    this.canEdit,
+    this.canDelete,
 
     /// Only implement onDelete if you need to override the default
     /// behavour (such as showing your own UI)
@@ -350,8 +354,9 @@ class EntityListScreenState<T extends Entity<T>>
   Widget _actionMenu(T entity) => HMBRow(
     children: [
       ...widget.buildActionItems?.call(entity) ?? [],
-      _buildEditButton(entity, context),
-      _buildDeleteButton(entity),
+      if (widget.canEdit?.call(entity) ?? true)
+        _buildEditButton(entity, context),
+      if (widget.canDelete?.call(entity) ?? true) _buildDeleteButton(entity),
     ],
   );
 

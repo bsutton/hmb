@@ -159,6 +159,8 @@ class _JobListScreenState extends State<JobListScreen> {
               listCard: (job) =>
                   ListJobCard(job: job, key: ValueKey(job.hashCode)),
               buildActionItems: _buildActionItems,
+              canEdit: (job) => !job.isStock,
+              canDelete: (job) => !job.isStock,
             ),
           ),
         ],

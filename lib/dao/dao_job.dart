@@ -52,6 +52,10 @@ class DaoJob extends Dao<Job> {
 
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
+    if (await isStockJobId(id, transaction: transaction)) {
+      throw HMBException('The Stock job cannot be deleted.');
+    }
+
     final db = withinTransaction(transaction);
 
     await DaoTask().deleteByJob(id, transaction: transaction);
@@ -109,7 +113,32 @@ class DaoJob extends Dao<Job> {
     Transaction? transaction,
   }) async {
     final db = withinTransaction(transaction);
-    return toList(await db.query(tableName, orderBy: 'modified_date desc'));
+    return toList(
+      await db.query(tableName, orderBy: 'is_stock DESC, modified_date DESC'),
+    );
+  }
+
+  Future<Job?> getStockJob({Transaction? transaction}) async {
+    final db = withinTransaction(transaction);
+    final rows = await db.query(
+      tableName,
+      where: 'is_stock = 1',
+      limit: 1,
+      orderBy: 'id ASC',
+    );
+    return getFirstOrNull(rows);
+  }
+
+  Future<bool> isStockJobId(int jobId, {Transaction? transaction}) async {
+    final db = withinTransaction(transaction);
+    final rows = await db.query(
+      tableName,
+      columns: ['id'],
+      where: 'id = ? AND is_stock = 1',
+      whereArgs: [jobId],
+      limit: 1,
+    );
+    return rows.isNotEmpty;
   }
 
   Future<Job?> getLastActiveJob() async {
@@ -128,6 +157,19 @@ class DaoJob extends Dao<Job> {
   /// in a pre-start state.
   /// Also marks the job as the last active job.
   Future<Job> markActive(int jobId) async {
+    await markLastActive(jobId);
+    final job = await getById(jobId);
+
+    if (job!.status.stage == JobStatusStage.preStart) {
+      job.status = JobStatus.inProgress;
+      await update(job);
+    }
+
+    return job;
+  }
+
+  /// Marks the job as the most recently accessed job without changing status.
+  Future<void> markLastActive(int jobId) async {
     final lastActive = await getLastActiveJob();
     if (lastActive != null) {
       if (lastActive.id != jobId) {
@@ -141,13 +183,7 @@ class DaoJob extends Dao<Job> {
     /// modified date so it comes up first in the job list.
     job!.lastActive = true;
     job.modifiedDate = DateTime.now();
-
-    if (job.status.stage == JobStatusStage.preStart) {
-      job.status = JobStatus.inProgress;
-    }
     await update(job);
-
-    return job;
   }
 
   /// Marks the job as 'in quoting' if it is
@@ -208,7 +244,7 @@ from job j
 left join customer c
   on c.id = j.customer_id
 $whereClause
-order by $orderByColumn $sort
+order by j.is_stock desc, $orderByColumn $sort
 ''', args),
     );
   }
@@ -259,7 +295,7 @@ where t.id =?
         OR j.description LIKE ? COLLATE NOCASE
         OR COALESCE(c.name, '') LIKE ? COLLATE NOCASE
       )
-      ORDER BY j.modified_date DESC
+      ORDER BY j.is_stock DESC, j.modified_date DESC
       ''',
         [likeArg, likeArg, likeArg],
       ),

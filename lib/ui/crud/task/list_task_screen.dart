@@ -18,8 +18,8 @@ import 'package:strings/strings.dart';
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../dialog/dialog.g.dart';
-import '../../widgets/hmb_toggle.dart';
 import '../../widgets/layout/layout.g.dart';
+import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import 'edit_task_screen.dart';
@@ -93,6 +93,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
             onEdit: (task) =>
                 TaskEditScreen(job: widget.parent.parent!, task: task),
             onDelete: onDelete,
+            canEdit: (_) => !widget.parent.parent!.isStock,
+            canDelete: (_) => !widget.parent.parent!.isStock,
 
             listCard: _buildFullTasksDetails,
             // : _buildTaskSummary(task),
@@ -103,6 +105,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<bool> onDelete(Task task) async {
+    if (widget.parent.parent!.isStock) {
+      HMBToast.error('The Stock task cannot be deleted.');
+      return false;
+    }
+
     // if there is are any work assignment for this task then warn the user.
     final taskAssignments = await DaoWorkAssignmentTask().getByTask(task);
     if (taskAssignments.isEmpty) {

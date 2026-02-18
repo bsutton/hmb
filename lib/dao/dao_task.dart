@@ -16,6 +16,7 @@ import 'package:money2/money2.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../entity/entity.g.dart';
+import '../util/dart/exceptions.dart';
 import '../util/dart/money_ex.dart';
 import '../util/dart/photo_meta.dart';
 import 'dao.g.dart';
@@ -29,10 +30,21 @@ class DaoTask extends Dao<Task> {
   Future<List<Task>> getTasksByJob(int jobId) async {
     final db = withoutTransaction();
 
-    final results = await db.query(
-      tableName,
-      where: 'job_id = ?',
-      whereArgs: [jobId],
+    final results = await db.rawQuery(
+      '''
+SELECT t.*
+FROM task t
+JOIN job j
+  ON j.id = t.job_id
+WHERE t.job_id = ?
+ORDER BY
+  CASE
+    WHEN j.is_stock = 1 AND lower(t.name) = 'stock' THEN 0
+    ELSE 1
+  END ASC,
+  t.modifiedDate DESC
+''',
+      [jobId],
     );
 
     final tasks = <Task>[];
@@ -296,6 +308,22 @@ WHERE ti.id = ?
 
   @override
   Future<int> delete(int id, [Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
+    final rows = await db.rawQuery(
+      '''
+SELECT j.is_stock AS is_stock
+FROM task t
+JOIN job j
+  ON j.id = t.job_id
+WHERE t.id = ?
+LIMIT 1
+''',
+      [id],
+    );
+    if (rows.isNotEmpty && (rows.first['is_stock'] as int? ?? 0) == 1) {
+      throw HMBException('The Stock task cannot be deleted.');
+    }
+
     await DaoTimeEntry().deleteByTask(id, transaction);
     await DaoTaskItem().deleteByTask(id, transaction);
     await deleteTaskPhotos(id, transaction: transaction);
