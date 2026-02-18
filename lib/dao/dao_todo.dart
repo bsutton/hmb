@@ -1,5 +1,6 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
+import '../entity/job_status.dart';
 import '../entity/todo.dart';
 import '../util/dart/local_date.dart';
 import 'dao.g.dart';
@@ -151,20 +152,29 @@ class DaoToDo extends Dao<ToDo> {
     final endOfDate = dueBy.endOfDay();
     final endIso = endOfDate.toIso8601String();
 
-    final rows = await db.query(
-      tableName,
-      where: '''
-      status = ?
-      AND due_date IS NOT NULL
-      AND (
-        due_date <= ?              
-      )
-    ''',
-      whereArgs: [
+    final rows = await db.rawQuery(
+      '''
+SELECT td.*
+  FROM $tableName td
+  LEFT JOIN job j
+    ON td.parent_type = ? AND td.parent_id = j.id
+ WHERE td.status = ?
+   AND td.due_date IS NOT NULL
+   AND td.due_date <= ?
+   AND (
+        td.parent_type != ?
+        OR j.status_id NOT IN (?, ?)
+   )
+ ORDER BY td.due_date ASC, td.created_date ASC
+''',
+      [
+        ToDoParentType.job.name,
         ToDoStatus.open.name,
         endIso, // today upper bound
+        ToDoParentType.job.name,
+        JobStatus.rejected.id,
+        JobStatus.completed.id,
       ],
-      orderBy: 'due_date ASC, created_date ASC',
     );
 
     return rows.map(ToDo.fromMap).toList();

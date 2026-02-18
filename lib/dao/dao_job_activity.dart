@@ -12,6 +12,7 @@
 */
 
 import '../entity/job_activity.dart';
+import '../entity/job_status.dart';
 import '../util/dart/local_date.dart';
 import 'dao.dart';
 
@@ -44,17 +45,26 @@ class DaoJobActivity extends Dao<JobActivity> {
 
     final start = date.startOfDay();
     final end = date.endOfDay();
-    final results = await db.query(
-      tableName,
-      where:
-          '''(start_date >= ? AND start_date < ?) OR (end_date > ? AND end_date <= ?)''',
-      whereArgs: <Object>[
+    final results = await db.rawQuery(
+      '''
+SELECT ja.*
+  FROM $tableName ja
+  JOIN job j ON ja.job_id = j.id
+ WHERE (
+        (ja.start_date >= ? AND ja.start_date < ?)
+        OR (ja.end_date > ? AND ja.end_date <= ?)
+       )
+   AND j.status_id NOT IN (?, ?)
+ ORDER BY ja.start_date ASC
+''',
+      [
         start.toIso8601String(),
         end.toIso8601String(),
         start.toIso8601String(),
         end.toIso8601String(),
+        JobStatus.rejected.id,
+        JobStatus.completed.id,
       ],
-      orderBy: 'start_date ASC', // ← next activity first
     );
 
     // Convert each row into a JobActivity
@@ -71,17 +81,26 @@ class DaoJobActivity extends Dao<JobActivity> {
   ) async {
     final db = withoutTransaction();
 
-    final results = await db.query(
-      tableName,
-      where:
-          '''(start_date >= ? AND start_date < ?) OR (end_date > ? AND end_date <= ?)''',
-      whereArgs: <Object>[
+    final results = await db.rawQuery(
+      '''
+SELECT ja.*
+  FROM $tableName ja
+  JOIN job j ON ja.job_id = j.id
+ WHERE (
+        (ja.start_date >= ? AND ja.start_date < ?)
+        OR (ja.end_date > ? AND ja.end_date <= ?)
+       )
+   AND j.status_id NOT IN (?, ?)
+ ORDER BY ja.start_date ASC
+''',
+      <Object>[
         start.toIso8601String(),
         end.toIso8601String(),
         start.toIso8601String(),
         end.toIso8601String(),
+        JobStatus.rejected.id,
+        JobStatus.completed.id,
       ],
-      orderBy: 'start_date ASC', // ← next activity first
     );
 
     // Convert each row into a JobActivity
