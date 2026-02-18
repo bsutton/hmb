@@ -262,6 +262,7 @@ void main() {
       final movedTask = await DaoTask().getById(task.id);
       expect(movedTask, isNotNull);
       expect(movedTask!.jobId, equals(copied.id));
+    });
 
     test('readyToBeInvoiced includes job with unsent invoice', () async {
       final now = DateTime.now();
