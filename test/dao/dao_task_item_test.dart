@@ -76,14 +76,12 @@ void main() {
   });
 }
 
-Future<TaskItem> _insertMaterialTaskItem() async {
-  return _insertTaskItemForJob(
-    jobStatus: JobStatus.startingStatus,
-    taskStatus: TaskStatus.awaitingApproval,
-    itemType: TaskItemType.materialsBuy,
-    completed: true,
-  );
-}
+Future<TaskItem> _insertMaterialTaskItem() => _insertTaskItemForJob(
+  jobStatus: JobStatus.startingStatus,
+  taskStatus: TaskStatus.awaitingApproval,
+  itemType: TaskItemType.materialsBuy,
+  completed: true,
+);
 
 Future<TaskItem> _insertTaskItemForJob({
   required JobStatus jobStatus,

@@ -37,7 +37,6 @@ import '../../database/management/backup_providers/local/local_backup_provider.d
 import '../../database/versions/implementations/asset_script_source.dart';
 import '../../database/versions/post_upgrade/post_upgrade_134.dart';
 import '../../installer/install.dart';
-import '../../util/dart/app_settings.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/media/desktop_camera_delegate.dart';

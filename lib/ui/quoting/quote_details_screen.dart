@@ -20,6 +20,7 @@ import '../../dao/dao.g.dart';
 import '../../entity/quote.dart';
 import '../../util/dart/format.dart';
 import '../widgets/layout/layout.g.dart';
+import '../widgets/layout/surface.dart';
 import '../widgets/text/hmb_text_themes.dart';
 import 'quote_details.dart';
 

@@ -6,6 +6,7 @@ analyzer:
     document_ignores: ignore
     library_private_types_in_public_api: ignore
     sort_constructors_first: ignore
+    type_annotate_public_apis: ignore
     unsafe_variance: ignore
     
 include: package:lint_hard/all.yaml

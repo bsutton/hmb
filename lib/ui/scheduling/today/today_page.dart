@@ -323,7 +323,7 @@ class TodayPageState extends DeferredState<TodayPage> {
         ),
         if (todo.parentType == ToDoParentType.job)
           FutureBuilderEx<Customer?>(
-            future: DaoCustomer().getByJob(todo.parentId!),
+            future: DaoCustomer().getByJob(todo.parentId),
             builder: (context, customer) => HMBOneOf(
               condition: customer == null,
               onTrue: const HMBEmpty(),

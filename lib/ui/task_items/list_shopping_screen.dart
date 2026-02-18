@@ -244,9 +244,8 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                             padding: const EdgeInsets.all(8),
                             itemCount: _taskItems.length,
                             itemBuilder: (c, i) => KeyedSubtree(
-                              key: ValueKey(
-                                '${_selectedMode.name}-${_taskItems[i].taskItem.id}',
-                              ),
+                              key: ValueKey('''
+${_selectedMode.name}-${_taskItems[i].taskItem.id}'''),
                               child: _buildShoppingItem(c, _taskItems[i]),
                             ),
                           )
@@ -261,7 +260,8 @@ class ShoppingScreenState extends DeferredState<ShoppingScreen> {
                             itemCount: _taskItems.length,
                             itemBuilder: (c, i) => KeyedSubtree(
                               key: ValueKey(
-                                '${_selectedMode.name}-${_taskItems[i].taskItem.id}',
+                                '''
+${_selectedMode.name}-${_taskItems[i].taskItem.id}''',
                               ),
                               child: _buildShoppingItem(c, _taskItems[i]),
                             ),
