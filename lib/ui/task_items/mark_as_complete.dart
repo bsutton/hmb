@@ -171,21 +171,12 @@ Future<void> markAsCompleted(
 
     // For fixed-price tasks, actuals are captured for P&L but should not
     // force user-defined billing charges.
-    if (itemType == TaskItemType.labour) {
-      final updated = taskItem.copyWith(completed: true);
-      await DaoTaskItem().update(updated);
-      taskItem.completed = true;
-    } else if (itemContext.billingType == BillingType.fixedPrice) {
-      final updated = taskItem.copyWith(
-        completed: true,
-        actualMaterialUnitCost: unitCost,
-        actualMaterialQuantity: quantity,
-      );
-      await DaoTaskItem().update(updated);
+    if (itemContext.billingType == BillingType.fixedPrice) {
       taskItem
         ..completed = true
         ..actualMaterialUnitCost = unitCost
         ..actualMaterialQuantity = quantity;
+      await DaoTaskItem().update(taskItem);
     } else {
       await DaoTaskItem().markAsCompleted(
         item: taskItem,
