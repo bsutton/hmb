@@ -16,6 +16,7 @@ import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
+import '../../entity/job.dart';
 import '../../entity/supplier.dart';
 import '../../entity/task_item.dart';
 import '../../entity/task_item_type.dart';
@@ -37,8 +38,6 @@ Future<void> markAsCompleted(
   final taskItem = itemContext.taskItem;
   final itemType = taskItem.itemType;
 
-  // TODO(bsutton): need to rework this as part of allowing  a T&M job
-  // to invoice a Fixed priced task.
   switch (itemType) {
     case TaskItemType.materialsBuy:
     case TaskItemType.materialsStock:
@@ -170,12 +169,30 @@ Future<void> markAsCompleted(
     final quantity = packetsPurchased * safePacketSize;
     final unitCost = packetCost.divideByFixed(safePacketSize);
 
-    // Mark as completed (sets actual cost/qty and charge)
-    await DaoTaskItem().markAsCompleted(
-      item: taskItem,
-      materialUnitCost: unitCost,
-      materialQuantity: quantity,
-    );
+    // For fixed-price tasks, actuals are captured for P&L but should not
+    // force user-defined billing charges.
+    if (itemType == TaskItemType.labour) {
+      final updated = taskItem.copyWith(completed: true);
+      await DaoTaskItem().update(updated);
+      taskItem.completed = true;
+    } else if (itemContext.billingType == BillingType.fixedPrice) {
+      final updated = taskItem.copyWith(
+        completed: true,
+        actualMaterialUnitCost: unitCost,
+        actualMaterialQuantity: quantity,
+      );
+      await DaoTaskItem().update(updated);
+      taskItem
+        ..completed = true
+        ..actualMaterialUnitCost = unitCost
+        ..actualMaterialQuantity = quantity;
+    } else {
+      await DaoTaskItem().markAsCompleted(
+        item: taskItem,
+        materialUnitCost: unitCost,
+        materialQuantity: quantity,
+      );
+    }
 
     // Persist supplier change if any
     if (selectedSupplier?.id != null) {
