@@ -90,6 +90,26 @@ The database isn't open, if this code is running in an isolate $isolate you will
 
   bool isOpen() => _database != null;
 
+  /// Waits until the shared database is open, or returns false on timeout.
+  Future<bool> waitUntilOpen({
+    Duration timeout = const Duration(seconds: 30),
+    Duration pollInterval = const Duration(milliseconds: 100),
+  }) async {
+    if (isOpen()) {
+      return true;
+    }
+
+    final stopwatch = Stopwatch()..start();
+    while (!isOpen()) {
+      if (stopwatch.elapsed >= timeout) {
+        return false;
+      }
+      await Future<void>.delayed(pollInterval);
+    }
+
+    return true;
+  }
+
   Future<int> getVersion() => database.getVersion();
 
   Future<void> withOpenDatabase(

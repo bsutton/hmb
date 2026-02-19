@@ -16,7 +16,6 @@
 import 'dart:async';
 
 import 'package:device_preview_plus/device_preview_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
@@ -26,6 +25,7 @@ import 'package:toastification/toastification.dart';
 
 import 'api/ihserver/booking_request_sync_service.dart';
 import 'database/management/backup_providers/google_drive/background_backup/photo_sync_service.dart';
+import 'database/management/database_helper.dart';
 import 'ui/nav/dashboards/dashboard.dart';
 import 'ui/nav/nav.g.dart';
 import 'ui/widgets/blocking_ui.dart';
@@ -63,11 +63,12 @@ Future<void> main(List<String> args) async {
       final packageInfo = await PackageInfo.fromPlatform();
       Log.i('Package Name: ${packageInfo.packageName}');
       runApp(
-        DevicePreview(
-          // ignore: avoid_redundant_argument_values
-          enabled: !kReleaseMode,
-          builder: (_) => const HmbApp(),
-        ),
+        const HmbApp(),
+        // DevicePreview(
+        //   // ignore: avoid_redundant_argument_values
+        //   enabled: !kReleaseMode,
+        //   builder: (_) => const HmbApp(),
+        // ),
       );
     },
   );
@@ -83,12 +84,14 @@ class HmbApp extends StatefulWidget {
 }
 
 class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
+  var _resumeSyncInFlight = false;
+
   @override
   void initState() {
     super.initState();
     LocalNotifs().onNotificationPayload = _onNotificationPayload;
     WidgetsBinding.instance.addObserver(this);
-    unawaited(_syncBookings());
+    unawaited(_runResumeSyncTasks());
   }
 
   @override
@@ -112,8 +115,26 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_syncBookings());
-      unawaited(PhotoSyncService().resumeIfNeeded());
+      unawaited(_runResumeSyncTasks());
+    }
+  }
+
+  Future<void> _runResumeSyncTasks() async {
+    if (_resumeSyncInFlight) {
+      return;
+    }
+    _resumeSyncInFlight = true;
+    try {
+      final dbOpen = await DatabaseHelper().waitUntilOpen();
+      if (!dbOpen) {
+        Log.w('Skipping resume sync because the database is not open.');
+        return;
+      }
+
+      await _syncBookings();
+      await PhotoSyncService().resumeIfNeeded();
+    } finally {
+      _resumeSyncInFlight = false;
     }
   }
 
