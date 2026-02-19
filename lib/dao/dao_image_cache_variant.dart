@@ -7,20 +7,20 @@
 
 import 'package:sqflite_common/sqlite_api.dart';
 
-import '../database/management/database_helper.dart';
 import '../entity/image_cache_variant.dart';
+import 'dao.dart';
 
-class DaoImageCacheVariant {
+class DaoImageCacheVariant extends Dao<ImageCacheVariant> {
   static const tableName = 'image_cache_variant';
 
-  Database get _db => DatabaseHelper.instance.database;
+  DaoImageCacheVariant() : super(tableName);
 
   Future<ImageCacheVariant?> getByKey(
     int photoId,
     String variant, [
-    Transaction? txn,
+    Transaction? transaction,
   ]) async {
-    final db = txn ?? _db;
+    final db = withinTransaction(transaction);
     final rows = await db.query(
       tableName,
       where: 'photo_id = ? AND variant = ?',
@@ -35,9 +35,9 @@ class DaoImageCacheVariant {
 
   Future<List<ImageCacheVariant>> getByPhotoId(
     int photoId, [
-    Transaction? txn,
+    Transaction? transaction,
   ]) async {
-    final db = txn ?? _db;
+    final db = withinTransaction(transaction);
     final rows = await db.query(
       tableName,
       where: 'photo_id = ?',
@@ -46,8 +46,8 @@ class DaoImageCacheVariant {
     return rows.map(ImageCacheVariant.fromMap).toList();
   }
 
-  Future<void> upsert(ImageCacheVariant row, [Transaction? txn]) async {
-    final db = txn ?? _db;
+  Future<void> upsert(ImageCacheVariant row, [Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
     await db.insert(
       tableName,
       row.toMap(),
@@ -55,13 +55,17 @@ class DaoImageCacheVariant {
     );
   }
 
+  @override
+  ImageCacheVariant fromMap(Map<String, dynamic> map) =>
+      ImageCacheVariant.fromMap(map);
+
   Future<void> touch(
     int photoId,
     String variant,
     int when, [
-    Transaction? txn,
+    Transaction? transaction,
   ]) async {
-    final db = txn ?? _db;
+    final db = withinTransaction(transaction);
     await db.update(
       tableName,
       {'last_access': when},
@@ -73,9 +77,9 @@ class DaoImageCacheVariant {
   Future<void> removeKey(
     int photoId,
     String variant, [
-    Transaction? txn,
+    Transaction? transaction,
   ]) async {
-    final db = txn ?? _db;
+    final db = withinTransaction(transaction);
     await db.delete(
       tableName,
       where: 'photo_id = ? AND variant = ?',
@@ -83,8 +87,11 @@ class DaoImageCacheVariant {
     );
   }
 
-  Future<void> removeMissingSince(int resyncStartMs, Transaction txn) async {
-    await txn.execute(
+  Future<void> removeMissingSince(
+    int resyncStartMs,
+    Transaction transaction,
+  ) async {
+    await transaction.execute(
       '''
 DELETE FROM $tableName
 WHERE last_access <= ?
@@ -99,24 +106,24 @@ WHERE last_access <= ?
     );
   }
 
-  Future<int> totalBytes([Transaction? txn]) async {
-    final db = txn ?? _db;
+  Future<int> totalBytes([Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
     final res = await db.rawQuery(
       'SELECT COALESCE(SUM(size), 0) AS total FROM $tableName',
     );
     return (res.first['total'] as int?) ?? 0;
   }
 
-  Future<int> totalPhotos([Transaction? txn]) async {
-    final db = txn ?? _db;
+  Future<int> totalPhotos([Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
     final res = await db.rawQuery(
       'SELECT COUNT(DISTINCT photo_id) AS total FROM $tableName',
     );
     return (res.first['total'] as int?) ?? 0;
   }
 
-  Future<ImageCacheVariant?> oldest([Transaction? txn]) async {
-    final db = txn ?? _db;
+  Future<ImageCacheVariant?> oldest([Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
     final rows = await db.query(
       tableName,
       orderBy: 'last_access ASC',
@@ -129,8 +136,8 @@ WHERE last_access <= ?
   }
 
   /// Returns the oldest cache entry whose photo has been backed up.
-  Future<ImageCacheVariant?> oldestBackedUp([Transaction? txn]) async {
-    final db = txn ?? _db;
+  Future<ImageCacheVariant?> oldestBackedUp([Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
     final rows = await db.rawQuery('''
 SELECT icv.*
   FROM $tableName icv
@@ -149,9 +156,9 @@ SELECT icv.*
   /// Returns up to [limit] oldest cache entries whose photos are backed up.
   Future<List<ImageCacheVariant>> oldestBackedUpBatch(
     int limit, [
-    Transaction? txn,
+    Transaction? transaction,
   ]) async {
-    final db = txn ?? _db;
+    final db = withinTransaction(transaction);
     final rows = await db.rawQuery(
       '''
 SELECT icv.*
