@@ -52,8 +52,7 @@ Future<void> main(List<String> args) async {
       options
         ..dsn =
             'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
-        ..tracesSampleRate = 1.0
-        ..profilesSampleRate = 1.0;
+        ..tracesSampleRate = 1.0;
       options.replay.sessionSampleRate = 1.0;
       options.replay.onErrorSampleRate = 1.0;
     },

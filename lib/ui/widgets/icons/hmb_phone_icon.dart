@@ -22,7 +22,6 @@ import 'package:strings/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../util/flutter/clip_board.dart';
-import '../../../util/flutter/platform_ex.dart';
 import '../../dialog/message_template_dialog.dart';
 import '../../dialog/source_context.dart';
 import '../hmb_button.dart';
@@ -80,7 +79,7 @@ class HMBPhoneIcon extends StatelessWidget {
             label: 'Text',
             hint: 'Send a Text/SMS message',
             onPressed: () async {
-              // await _showTextInputDialog(context, phoneNo);
+              // await _promptTextThenSend(context, phoneNo);
               final template = await showMessageTemplateDialog(
                 context,
                 sourceContext: sourceContext,
@@ -181,51 +180,4 @@ class HMBPhoneIcon extends StatelessWidget {
   //     }
   //   }
   // }
-
-  Future<void> _showTextInputDialog(
-    BuildContext context,
-    String phoneNo,
-  ) async {
-    final messageText = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        var text = '';
-        return AlertDialog(
-          title: const Text('Send Text Message'),
-          content: TextField(
-            autofocus: isNotMobile,
-            textCapitalization: TextCapitalization.sentences,
-            onChanged: (value) {
-              text = value;
-            },
-            decoration: const InputDecoration(
-              hintText: 'Enter your message here',
-            ),
-          ),
-          actions: <Widget>[
-            HMBButton(
-              label: 'Cancel',
-              hint: "Don't send the message",
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            HMBButton(
-              label: 'Send...',
-              hint: 'Send the message using your devices Text/SMS app',
-              onPressed: () {
-                Navigator.of(context).pop(text);
-              },
-            ),
-          ],
-        );
-      },
-    );
-
-    if (messageText != null && messageText.isNotEmpty) {
-      if (context.mounted) {
-        await _sendText(context, phoneNo, messageText);
-      }
-    }
-  }
 }

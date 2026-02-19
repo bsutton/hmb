@@ -216,23 +216,19 @@ class _DialogMoveTasksState extends DeferredState<DialogMoveTasks> {
           child: HMBColumn(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              RadioListTile<MoveDestination>(
-                title: const Text('Create new job and move tasks'),
-                value: MoveDestination.newJob,
-                groupValue: _destination,
-                onChanged: (value) {
-                  if (value == null) {
-                    return;
-                  }
-                  setState(() {
-                    _destination = value;
-                  });
-                },
-              ),
-              RadioListTile<MoveDestination>(
-                title: const Text('Move tasks to existing job'),
-                value: MoveDestination.existingJob,
-                groupValue: _destination,
+              DropdownButtonFormField<MoveDestination>(
+                initialValue: _destination,
+                decoration: const InputDecoration(labelText: 'Destination'),
+                items: const [
+                  DropdownMenuItem(
+                    value: MoveDestination.newJob,
+                    child: Text('Create new job and move tasks'),
+                  ),
+                  DropdownMenuItem(
+                    value: MoveDestination.existingJob,
+                    child: Text('Move tasks to existing job'),
+                  ),
+                ],
                 onChanged: (value) {
                   if (value == null) {
                     return;
@@ -264,7 +260,8 @@ class _DialogMoveTasksState extends DeferredState<DialogMoveTasks> {
                   },
                 ),
                 DropdownButtonFormField<Job>(
-                  value: _selectedTargetJob,
+                  key: ValueKey(_selectedTargetJob?.id ?? -1),
+                  initialValue: _selectedTargetJob,
                   decoration: const InputDecoration(
                     labelText: 'Destination Job',
                   ),

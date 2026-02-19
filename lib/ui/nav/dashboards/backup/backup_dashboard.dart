@@ -42,7 +42,6 @@ class BackupDashboardPage extends StatefulWidget {
 
 class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   var _isDbOffline = false;
-  var _stageDescription = '';
   var _photoStageDescription = '';
   var _syncRunning = false;
 
@@ -50,16 +49,11 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
 
   late final BackupProvider _provider;
   DateTime? _lastBackup;
-  late final StreamSubscription<ProgressUpdate> _backupSub;
   late final StreamSubscription<ProgressUpdate> _photoSub;
 
   @override
   void initState() {
     super.initState();
-    // Listen for DB backup progress (provider set in asyncInitState)
-    _backupSub = _provider.progressStream.listen((update) {
-      setState(() => _stageDescription = update.stageDescription);
-    });
     // Listen for photo sync progress
     _photoSub = PhotoSyncService().progressStream.listen((update) {
       setState(() => _photoStageDescription = update.stageDescription);
@@ -84,7 +78,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
 
   @override
   void dispose() {
-    unawaited(_backupSub.cancel());
     unawaited(_photoSub.cancel());
     super.dispose();
   }
@@ -198,7 +191,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   Future<void> _performBackup() async {
     setState(() {
       _isDbOffline = true;
-      _stageDescription = 'Starting backup...';
     });
 
     await WakelockPlus.enable();
@@ -236,7 +228,6 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     if (selected != null) {
       setState(() {
         _isDbOffline = true;
-        _stageDescription = 'Starting restore...';
       });
       await WakelockPlus.enable();
       try {

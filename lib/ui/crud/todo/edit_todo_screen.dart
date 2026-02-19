@@ -48,22 +48,6 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
         );
   }
 
-  Future<void> _getParent(ToDoParentType? parentType, int? parentId) async {
-    switch (parentType) {
-      case ToDoParentType.job:
-        {
-          final job = await DaoJob().getById(parentId);
-          selectedJob.jobId = job?.id;
-        }
-      case ToDoParentType.customer:
-        {
-          final customer = await DaoCustomer().getById(parentId);
-          selectedCustomer.customerId = customer?.id;
-        }
-      case null:
-    }
-  }
-
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
