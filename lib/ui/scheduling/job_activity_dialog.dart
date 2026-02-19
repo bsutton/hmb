@@ -631,19 +631,6 @@ class _JobActivityDialogState extends DeferredState<JobActivityDialog> {
   ) async {
     await SendNoticeForJobDialog.show(context, job, jobActivity);
 
-    // TODO(bsutton): send customer notice that their job has been scheduled
-    // as well as notice if we change the job.
-    // Implement your logic to send the notice via email or SMS
-    // You can use the contact.method and contact.detail to determine how to
-    //send the notice
-
-    // For demonstration purposes, we just show a snackbar
-    // HMBToast.info(
-    //   'Notice sent to ${contact.contact.firstName}
-    //via ${contact.method.name}
-    // (${contact.detail})',
-    // );
-
     // Record the date the notice was sent
     setState(() {
       _noticeSentDate = DateTime.now();
