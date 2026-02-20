@@ -306,6 +306,7 @@ class EntityListScreenState<T extends Entity<T>>
           elevation: SurfaceElevation.e6,
           margin: const EdgeInsets.only(bottom: 8),
           child: HMBColumn(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Title row
@@ -326,7 +327,7 @@ class EntityListScreenState<T extends Entity<T>>
                 ],
               ),
               // Body (details)
-              Expanded(child: widget.listCard(entity)),
+              widget.listCard(entity),
             ],
           ),
           // ),
