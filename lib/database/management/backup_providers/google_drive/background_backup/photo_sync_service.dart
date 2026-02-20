@@ -87,7 +87,14 @@ class PhotoSyncService {
       return;
     }
 
-    final headers = (await GoogleDriveAuth.instance()).authHeaders;
+    final headers = await (await GoogleDriveAuth.instance())
+        .authHeadersOrNull();
+    if (headers == null) {
+      _controller.add(
+        ProgressUpdate('Photo sync waiting for Google sign-in.', 0, 0),
+      );
+      return;
+    }
     await _startSync(photos: photos, deletes: deletes, authHeaders: headers);
   }
 
@@ -230,7 +237,11 @@ class PhotoSyncService {
       createDir(outDir, recursive: true);
     }
 
-    final headers = (await GoogleDriveAuth.instance()).authHeaders;
+    final headers = await (await GoogleDriveAuth.instance())
+        .authHeadersOrNull();
+    if (headers == null) {
+      throw StateError('Google Drive auth is not available for download.');
+    }
     final driveApi = await GoogleDriveApi.fromHeaders(headers);
 
     try {

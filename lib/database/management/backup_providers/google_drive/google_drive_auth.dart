@@ -39,7 +39,7 @@ class GoogleDriveAuth {
 
   var _signedIn = false;
 
-  late Map<String, String> _authHeaders;
+  Map<String, String>? _authHeaders;
 
   var _awaitingAuth = Completer<GoogleAuthResult>();
 
@@ -47,7 +47,24 @@ class GoogleDriveAuth {
   /// You must call init to get the single instance.
   GoogleDriveAuth._();
 
-  Map<String, String> get authHeaders => _authHeaders;
+  Map<String, String> get authHeaders {
+    final headers = _authHeaders;
+    if (!_signedIn || headers == null) {
+      throw StateError(
+        'Google Drive auth headers are not available. '
+        'Ensure sign-in completed first.',
+      );
+    }
+    return headers;
+  }
+
+  Future<Map<String, String>?> authHeadersOrNull() async {
+    await signInIfAutomatic();
+    if (!_signedIn) {
+      return null;
+    }
+    return _authHeaders;
+  }
 
   static Future<GoogleDriveAuth> instance() async {
     if (_initialised) {
@@ -205,6 +222,7 @@ class GoogleDriveAuth {
 
   Future<void> _markSignedOut() async {
     _signedIn = false;
+    _authHeaders = null;
 
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings['GoogleSignedIn'] = false;
