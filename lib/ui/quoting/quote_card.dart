@@ -14,7 +14,7 @@
 // quote_list_screen.dart
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide StatefulBuilder;
 import 'package:strings/strings.dart';
 
 import '../../dao/dao.g.dart';
@@ -22,10 +22,13 @@ import '../../entity/entity.g.dart';
 import '../../util/dart/format.dart';
 import '../../util/dart/types.dart';
 import '../crud/job/full_page_list_job_card.dart';
+import '../crud/milestone/edit_milestone_payment.dart';
+import '../dialog/email_dialog_for_job.dart';
 import '../widgets/layout/layout.g.dart';
+import '../widgets/media/pdf_preview.dart';
 import '../widgets/widgets.g.dart';
+import 'generate_quote_pdf.dart';
 import 'job_and_customer.dart';
-import 'quote_details_screen.dart';
 
 enum _RejectAction { quoteOnly, quoteAndJob }
 
@@ -65,10 +68,10 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
     }
   }
 
-  Future<void> _openQuoteDetails(BuildContext context) async {
+  Future<void> _openMilestones() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => QuoteDetailsScreen(quoteId: quote.id),
+        builder: (_) => EditMilestonesScreen(quoteId: quote.id),
       ),
     );
     quote = (await DaoQuote().getById(quote.id))!;
@@ -77,6 +80,174 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
       setState(() {});
     }
   }
+
+  Future<void> _openInvoiceAction() async {
+    if (!quote.state.isPostApproval) {
+      HMBToast.info(
+        'Approve the quote first, then create invoices via Milestones.',
+      );
+      return;
+    }
+    await _openMilestones();
+  }
+
+  Future<void> _viewSendQuote() async {
+    final job = await DaoJob().getById(quote.jobId);
+    if (job == null) {
+      HMBToast.error('Unable to load the quote job.');
+      return;
+    }
+
+    final primaryContact = await DaoContact().getPrimaryForQuote(quote.id);
+    if (primaryContact == null) {
+      HMBToast.error('You must first set a Contact on the Job');
+      return;
+    }
+
+    var displayCosts = true;
+    var displayGroupHeaders = true;
+    var displayItems = true;
+
+    if (!mounted) {
+      return;
+    }
+    final result = await _showQuoteOptionsDialog(
+      context: context,
+      displayCosts: displayCosts,
+      displayGroupHeaders: displayGroupHeaders,
+      displayItems: displayItems,
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    displayCosts = result['displayCosts'] ?? true;
+    displayGroupHeaders = result['displayGroupHeaders'] ?? true;
+    displayItems = result['displayItems'] ?? true;
+
+    final quoteFile = await BlockingUI().runAndWait(
+      label: 'Generating Quote',
+      () => generateQuotePdf(
+        quote,
+        displayCosts: displayCosts,
+        displayGroupHeaders: displayGroupHeaders,
+        displayItems: displayItems,
+      ),
+    );
+
+    final system = await DaoSystem().get();
+    final billingContact = await DaoContact().getBillingContactByJob(job);
+    if (!mounted) {
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => PdfPreviewScreen(
+          title: 'Quote #${quote.bestNumber} ${job.summary}',
+          filePath: quoteFile.path,
+          preferredRecipient:
+              billingContact?.emailAddress ?? primaryContact.emailAddress,
+          emailSubject: '${system.businessName ?? 'Your'} Quote #'
+              '${quote.bestNumber}',
+          emailBody: '''
+${primaryContact.firstName.trim()},
+Please find the attached quote for your job.
+''',
+          sendEmailDialog:
+              ({
+                preferredRecipient = '',
+                subject = '',
+                body = '',
+                attachmentPaths = const [],
+              }) => EmailDialogForJob(
+                job: job,
+                preferredRecipient: preferredRecipient,
+                subject: subject,
+                body: body,
+                attachmentPaths: attachmentPaths,
+              ),
+          onSent: () => DaoQuote().markQuoteSent(quote.id),
+          canEmail: () async => EmailBlocked(blocked: false, reason: ''),
+        ),
+      ),
+    );
+
+    quote = (await DaoQuote().getById(quote.id))!;
+    widget.onStateChanged(quote);
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<Map<String, bool>?> _showQuoteOptionsDialog({
+    required BuildContext context,
+    required bool displayCosts,
+    required bool displayGroupHeaders,
+    required bool displayItems,
+  }) => showDialog<Map<String, bool>>(
+    context: context,
+    builder: (context) {
+      var tempDisplayCosts = displayCosts;
+      var tempDisplayGroupHeaders = displayGroupHeaders;
+      var tempDisplayItems = displayItems;
+
+      return StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Select Quote Options'),
+          content: HMBColumn(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CheckboxListTile(
+                title: const Text('Display Costs'),
+                value: tempDisplayCosts,
+                onChanged: (value) {
+                  setState(() {
+                    tempDisplayCosts = value ?? true;
+                  });
+                },
+              ),
+              CheckboxListTile(
+                title: const Text('Display Group Headers'),
+                value: tempDisplayGroupHeaders,
+                onChanged: (value) {
+                  setState(() {
+                    tempDisplayGroupHeaders = value ?? true;
+                  });
+                },
+              ),
+              CheckboxListTile(
+                title: const Text('Display Items'),
+                value: tempDisplayItems,
+                onChanged: (value) {
+                  setState(() {
+                    tempDisplayItems = value ?? true;
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            HMBButton(
+              label: 'Cancel',
+              hint: "Don't view/send this quote",
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            HMBButton(
+              label: 'OK',
+              hint: 'View and optionally send the quote',
+              onPressed: () {
+                Navigator.of(context).pop({
+                  'displayCosts': tempDisplayCosts,
+                  'displayGroupHeaders': tempDisplayGroupHeaders,
+                  'displayItems': tempDisplayItems,
+                });
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
 
   Future<_RejectAction?> _promptRejectAction(BuildContext context) =>
       showDialog<_RejectAction>(
@@ -132,7 +303,6 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
     final isWithdrawn = quote.state == QuoteState.withdrawn;
     final showSentRollback = quote.state == QuoteState.approved;
     final showWithdrawn = quote.state == QuoteState.sent;
-    final canManageMilestonesOrInvoice = quote.state.isPostApproval;
 
     return DeferredBuilder(
       this,
@@ -178,21 +348,21 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
             children: [
               HMBButton(
                 label: 'Send...',
-                hint: 'Open quote details to send this quote',
+                hint: 'View and optionally send this quote',
                 enabled: !isRejected && !isWithdrawn,
-                onPressed: () => _openQuoteDetails(context),
+                onPressed: _viewSendQuote,
               ),
               HMBButton(
                 label: 'Milestones',
-                hint: 'Open quote details to create milestone payments',
-                enabled: canManageMilestonesOrInvoice,
-                onPressed: () => _openQuoteDetails(context),
+                hint: 'Open milestones for this quote',
+                enabled: !isRejected && !isWithdrawn,
+                onPressed: _openMilestones,
               ),
               HMBButton(
                 label: 'Invoice',
-                hint: 'Open quote details to create an invoice',
-                enabled: canManageMilestonesOrInvoice,
-                onPressed: () => _openQuoteDetails(context),
+                hint: 'Create invoice(s) from quote milestones',
+                enabled: !isRejected && !isWithdrawn,
+                onPressed: _openInvoiceAction,
               ),
             ],
           ),
@@ -201,7 +371,7 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
           HMBRow(
             children: [
               HMBButton(
-                label: showSentRollback ? 'Unapprove' : 'Approved',
+                label: showSentRollback ? 'Unapprove' : 'Approve',
                 hint: showSentRollback
                     ? 'Move approved quote back to sent'
                     : 'Mark the quote as approved by the customer',
@@ -217,8 +387,8 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
                 },
               ),
               HMBButton(
-                label: 'Rejected',
-                hint: 'Mark the quote as rejected',
+                label: 'Reject',
+                hint: 'Mark the quote as rejected by the Customer',
                 // disable when already rejected
                 enabled: !isRejected && !isWithdrawn,
                 onPressed: () async {
@@ -242,7 +412,7 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
               ),
               if (showWithdrawn)
                 HMBButton(
-                  label: 'Withdrawn',
+                  label: 'Withdraw',
                   hint: 'Mark the quote as withdrawn by your business',
                   onPressed: () async {
                     final confirm = await _promptWithdraw(context);
