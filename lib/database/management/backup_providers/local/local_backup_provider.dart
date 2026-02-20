@@ -52,18 +52,26 @@ class LocalBackupProvider extends BackupProvider {
       },
     );
 
-    return backups
-        .map(
-          (filePath) => Backup(
-            id: 'not used',
-            when: stat(filePath).modified,
-            size: '${stat(filePath).size}',
-            status: 'good',
-            pathTo: filePath,
-            error: 'none',
-          ),
-        )
-        .toList();
+    final entries =
+        backups
+            .map(
+              (filePath) => Backup(
+                id: 'not used',
+                when: stat(filePath).modified,
+                size: '${stat(filePath).size}',
+                status: 'good',
+                pathTo: filePath,
+                error: 'none',
+              ),
+            )
+            .toList()
+          ..sort((a, b) {
+            final whenCompare = b.when.compareTo(a.when);
+            return whenCompare != 0
+                ? whenCompare
+                : b.pathTo.compareTo(a.pathTo);
+          });
+    return entries;
   }
 
   @override

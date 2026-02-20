@@ -41,8 +41,16 @@ class BackupSelectionScreenState extends DeferredState<BackupSelectionScreen> {
   Future<Backups> _loadBackups() async {
     try {
       final backups = await widget.backupProvider.getBackups();
-      backups.sort((a, b) => b.when.compareTo(a.when));
-      return Backups(backups, await widget.backupProvider.backupLocation);
+      final sorted = [...backups]
+        ..sort(
+          (a, b) {
+            final whenCompare = b.when.compareTo(a.when);
+            return whenCompare != 0
+                ? whenCompare
+                : b.pathTo.compareTo(a.pathTo);
+          },
+        );
+      return Backups(sorted, await widget.backupProvider.backupLocation);
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
       // Handle error if necessary

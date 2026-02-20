@@ -98,21 +98,30 @@ class GoogleDriveBackupProvider extends BackupProvider {
       final q = "'$folderId' in parents and trashed=false";
       final filesList = await driveApi.files.list(
         q: q,
+        orderBy: 'createdTime desc,name',
         $fields: 'files(id, name, size, createdTime)',
       );
       final backupFiles = filesList.files ?? [];
-      return backupFiles
-          .map(
-            (file) => Backup(
-              id: file.id ?? '',
-              when: file.createdTime?.toLocal() ?? DateTime.now(),
-              size: file.size ?? 'unknown',
-              status: 'good',
-              pathTo: file.name ?? 'Unknown',
-              error: 'none',
-            ),
-          )
-          .toList();
+      final entries =
+          backupFiles
+              .map(
+                (file) => Backup(
+                  id: file.id ?? '',
+                  when: file.createdTime?.toLocal() ?? DateTime.now(),
+                  size: file.size ?? 'unknown',
+                  status: 'good',
+                  pathTo: file.name ?? 'Unknown',
+                  error: 'none',
+                ),
+              )
+              .toList()
+            ..sort((a, b) {
+              final whenCompare = b.when.compareTo(a.when);
+              return whenCompare != 0
+                  ? whenCompare
+                  : b.pathTo.compareTo(a.pathTo);
+            });
+      return entries;
     } catch (e) {
       throw BackupException('Error listing backups from Google Drive: $e');
     }

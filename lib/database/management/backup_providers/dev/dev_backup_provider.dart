@@ -37,18 +37,26 @@ class DevBackupProvider extends BackupProvider {
   Future<List<Backup>> getBackups() async {
     final paths = find('*.zip', workingDirectory: _pathToBackups()).toList();
 
-    return paths
-        .map(
-          (filePath) => Backup(
-            id: 'not used',
-            when: stat(filePath).modified,
-            size: '${stat(filePath).size}',
-            status: 'good',
-            pathTo: filePath,
-            error: 'none',
-          ),
-        )
-        .toList();
+    final entries =
+        paths
+            .map(
+              (filePath) => Backup(
+                id: 'not used',
+                when: stat(filePath).modified,
+                size: '${stat(filePath).size}',
+                status: 'good',
+                pathTo: filePath,
+                error: 'none',
+              ),
+            )
+            .toList()
+          ..sort((a, b) {
+            final whenCompare = b.when.compareTo(a.when);
+            return whenCompare != 0
+                ? whenCompare
+                : b.pathTo.compareTo(a.pathTo);
+          });
+    return entries;
   }
 
   String _pathToBackups() =>
@@ -70,8 +78,7 @@ class DevBackupProvider extends BackupProvider {
     var count = 0;
     String pathToBackupFile;
     do {
-      pathToBackupFile =
-          count == 0 ? '$basePath$ext' : '$basePath.$count$ext';
+      pathToBackupFile = count == 0 ? '$basePath$ext' : '$basePath.$count$ext';
       count++;
     } while (exists(pathToBackupFile));
     print('Saving backup to $pathToBackupFile');
