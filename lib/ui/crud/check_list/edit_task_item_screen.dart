@@ -335,7 +335,10 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   ];
 
   void _calculateChargeFromMargin(String? marginValue) {
-    final itemType = June.getState(SelectedCheckListItemType.new).selected!;
+    final itemType = June.getState(SelectedCheckListItemType.new).selected;
+    if (itemType == null) {
+      return;
+    }
     final margin =
         Percentage.tryParse(marginValue ?? '0', decimalDigits: 3) ??
         Percentage.zero;
