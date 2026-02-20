@@ -22,6 +22,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/format.dart';
 import '../../../util/dart/money_ex.dart';
+import '../../../util/dart/tax_display_text.dart';
 
 Future<File> generateInvoicePdf(
   Invoice invoice, {
@@ -31,6 +32,7 @@ Future<File> generateInvoicePdf(
 }) async {
   final pdf = pw.Document();
   final system = await DaoSystem().get();
+  final taxDisplayText = await buildPdfTaxDisplayText();
   final lines = await DaoInvoiceLine().getByInvoiceId(invoice.id);
 
   // Calculate the total amount from lines, excluding noChargeHidden lines
@@ -243,6 +245,8 @@ Future<File> generateInvoicePdf(
                             pw.Text(
                               '''${system.businessNumberLabel}: ${system.businessNumber}''',
                             ),
+                          if (taxDisplayText != null)
+                            pw.Text(taxDisplayText),
                         ],
                       ),
                     ),

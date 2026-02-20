@@ -24,6 +24,7 @@ import '../../dao/dao_system.dart';
 import '../../entity/quote.dart';
 import '../../entity/system.dart';
 import '../../util/dart/format.dart';
+import '../../util/dart/tax_display_text.dart';
 import 'quote_details.dart';
 
 Future<File> generateQuotePdf(
@@ -38,6 +39,7 @@ Future<File> generateQuotePdf(
     quote.id,
     excludeHidden: true,
   );
+  final taxDisplayText = await buildPdfTaxDisplayText();
 
   final totalAmount = jobQuote.total;
   final phone = await formatPhone(system.bestPhone);
@@ -160,6 +162,7 @@ Future<File> generateQuotePdf(
                 pw.Text(
                   '${system.businessNumberLabel}: ${system.businessNumber}',
                 ),
+                if (taxDisplayText != null) pw.Text(taxDisplayText),
 
                 // --- NEW: Summary & Description (first page only) ---
                 if (Strings.isNotBlank(quote.summary)) ...[

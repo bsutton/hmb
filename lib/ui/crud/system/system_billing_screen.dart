@@ -61,6 +61,8 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   late final _defaultHourlyRateController = HMBMoneyEditingController();
   late final _defaultBookingFeeController = HMBMoneyEditingController();
   late final _defaultProfitMarginController = TextEditingController();
+  late final _taxLabelController = TextEditingController();
+  late final _taxRateController = TextEditingController();
   late final _bsbController = TextEditingController();
   late final _accountNoController = TextEditingController();
   late final _paymentLinkUrlController = TextEditingController();
@@ -72,6 +74,7 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
   var _showBsbAccountOnInvoice = false;
   var _showPaymentLinkOnInvoice = false;
   LogoAspectRatio _logoAspectRatio = LogoAspectRatio.square;
+  TaxDisplayMode _taxDisplayMode = TaxDisplayMode.none;
   String? _logoFile;
   Color _billingColour = Colors.deepPurpleAccent; // Default billing color
 
@@ -94,6 +97,9 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     );
     _defaultProfitMarginController.text =
         await AppSettings.getDefaultProfitMarginText();
+    _taxDisplayMode = await AppSettings.getTaxDisplayMode();
+    _taxLabelController.text = await AppSettings.getTaxLabel();
+    _taxRateController.text = await AppSettings.getTaxRatePercentText();
     _photoCacheMaxMbController = TextEditingController(
       text: (await AppSettings.getPhotoCacheMaxMb()).toString(),
     );
@@ -110,6 +116,8 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
     _defaultHourlyRateController.dispose();
     _defaultBookingFeeController.dispose();
     _defaultProfitMarginController.dispose();
+    _taxLabelController.dispose();
+    _taxRateController.dispose();
     _bsbController.dispose();
     _accountNoController.dispose();
 
@@ -157,6 +165,9 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
       await AppSettings.setDefaultProfitMarginText(
         _defaultProfitMarginController.text,
       );
+      await AppSettings.setTaxDisplayMode(_taxDisplayMode);
+      await AppSettings.setTaxLabel(_taxLabelController.text);
+      await AppSettings.setTaxRatePercentText(_taxRateController.text);
 
       final photoCacheMb = int.tryParse(_photoCacheMaxMbController.text) ?? 100;
       await AppSettings.setPhotoCacheMaxMb(photoCacheMb);
@@ -361,6 +372,50 @@ and what forms of payment you accept.'''),
                 'Payment Link',
                 'A link to details on how the user can pay. Appears on Invoices and Quotes. e.g. https://mysite/payment.html',
               ),
+            HMBDroplist<TaxDisplayMode>(
+              title: 'PDF Tax Display',
+              selectedItem: () async => _taxDisplayMode,
+              items: (filter) async => TaxDisplayMode.values,
+              format: _formatTaxDisplayMode,
+              onChanged: (value) {
+                setState(() {
+                  _taxDisplayMode = value ?? TaxDisplayMode.none;
+                });
+              },
+            ).help('PDF Tax Display', '''
+Controls if quote/invoice PDFs show an inclusive/exclusive tax notice.'''),
+            if (_taxDisplayMode != TaxDisplayMode.none) ...[
+              HMBTextField(
+                controller: _taxLabelController,
+                labelText: 'Tax Label',
+                validator: (value) {
+                  if (_taxDisplayMode != TaxDisplayMode.none &&
+                      Strings.isBlank(value)) {
+                    return 'Enter a tax label, e.g. GST or VAT';
+                  }
+                  return null;
+                },
+              ).help('Tax Label', '''
+Displayed on PDFs as the jurisdiction label, e.g. GST, VAT, Sales Tax.'''),
+              HMBTextField(
+                controller: _taxRateController,
+                labelText: 'Tax Rate (%) (optional)',
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (value) {
+                  if (Strings.isBlank(value)) {
+                    return null;
+                  }
+                  final parsed = num.tryParse(value!.trim());
+                  if (parsed == null || parsed < 0) {
+                    return 'Enter a valid positive percentage';
+                  }
+                  return null;
+                },
+              ).help('Tax Rate', '''
+Optional rate shown in brackets on PDFs, e.g. GST (10%).'''),
+            ],
             HMBDroplist<LogoAspectRatio>(
               title: 'Logo Aspect Ratio',
               selectedItem: () async => _logoAspectRatio,
@@ -406,4 +461,10 @@ The colour theme that will be used on you Invoices and Quotes.'''),
       ),
     ),
   );
+
+  String _formatTaxDisplayMode(TaxDisplayMode mode) => switch (mode) {
+    TaxDisplayMode.none => 'Hide',
+    TaxDisplayMode.inclusive => 'Inclusive',
+    TaxDisplayMode.exclusive => 'Exclusive',
+  };
 }
