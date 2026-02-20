@@ -158,7 +158,7 @@ class _QuoteListScreenState extends State<QuoteListScreen> {
     onEdit: (q) => QuoteDetailsScreen(quoteId: q!.id),
     background: (_) async => Colors.transparent,
     listCard: _buildQuoteCard,
-    cardHeight: 350,
+    cardHeight: 400,
     filterSheetBuilder: widget.job == null ? _buildFilterSheet : null,
     isFilterActive: () =>
         widget.job == null &&
