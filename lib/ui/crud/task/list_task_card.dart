@@ -20,7 +20,6 @@ import '../../../entity/entity.g.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../widgets/hmb_start_time_entry.dart';
 import '../../widgets/layout/layout.g.dart';
-import '../../widgets/text/hmb_text.dart';
 import '../job/edit_job_card.dart';
 
 class ListTaskCard extends StatefulWidget {
@@ -75,20 +74,23 @@ class _ListTaskCardState extends State<ListTaskCard> {
           task: activeTask,
           includeBilled: true,
         ),
-        builder: (context, taskAccruedValue) => Row(
-          children: [
-            HMBText(
-              'Effort(hrs): ${taskAccruedValue!.earnedLabourHours.format('0.00')}/${taskAccruedValue.taskEstimatedValue.estimatedLabourHours.format('0.00')}',
+        builder: (context, taskAccruedValue) {
+          final accrued = taskAccruedValue!;
+          return Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Earned (Hrs|\$): ${accrued.earnedLabourHours.format('0.00')}h'
+              ' | ${accrued.earnedMaterialCharges}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            HMBText(
-              ' Earnings: ${taskAccruedValue.earnedMaterialCharges}/${taskAccruedValue.taskEstimatedValue.estimatedMaterialsCharge}',
-            ),
-          ],
-        ),
+          );
+        },
       ),
       HMBStartTimeEntry(
         key: ValueKey(activeTask),
         task: activeTask,
+        onTimerChanged: () => setState(() {}),
         onStart: (job, task) {
           June.getState(SelectJobStatus.new).jobStatus = job.status;
           activeTask = task;
