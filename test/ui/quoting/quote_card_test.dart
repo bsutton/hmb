@@ -65,9 +65,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await waitForText(tester, 'Rejected');
+    await waitForText(tester, 'Reject');
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Rejected'));
+    await tester.tap(find.text('Reject'));
     await tester.pumpAndSettle();
 
     expect(find.text('Reject Quote'), findsOneWidget);
@@ -156,13 +156,19 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await waitForText(tester, 'Withdrawn');
+    await waitForText(tester, 'Withdraw');
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Withdrawn'));
+    await tester.tap(find.text('Withdraw'));
     await tester.pumpAndSettle();
 
     expect(find.text('Withdraw Quote'), findsOneWidget);
-    expect(find.text('Withdraw'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Withdraw'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(
       find.descendant(

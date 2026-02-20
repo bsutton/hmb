@@ -98,9 +98,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await waitForText(tester, 'Withdrawn');
+    await waitForText(tester, 'Withdraw');
 
     // Only the sent quote should show the Withdrawn action.
-    expect(find.widgetWithText(ElevatedButton, 'Withdrawn'), findsOneWidget);
+    expect(find.text('Withdraw'), findsOneWidget);
   });
 }

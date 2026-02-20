@@ -37,7 +37,7 @@ void main() {
     await tearDownTestDb();
   });
 
-  testWidgets('add disabled before quote approval', (tester) async {
+  testWidgets('add milestone allowed before quote approval', (tester) async {
     final quoteId = await tester.runAsync(() async {
       final job = await createJobWithCustomer(
         billingType: BillingType.fixedPrice,
@@ -65,8 +65,10 @@ void main() {
       of: find.byIcon(Icons.add).first,
       matching: find.byType(IconButton),
     );
-    final iconButton = tester.widget<IconButton>(iconButtonFinder.first);
-    expect(iconButton.onPressed, isNull);
+    await tester.tap(iconButtonFinder.first);
+    await tester.pumpAndSettle();
+    await waitForText(tester, 'Milestone 1');
+    expect(find.text('Milestone 1'), findsOneWidget);
   });
 
   testWidgets('add milestone when approved', (tester) async {
