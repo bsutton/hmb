@@ -45,7 +45,6 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   Money totalAllocated = MoneyEx.zero;
   var _errorMessage = '';
   int? editingMilestoneId; // Track which milestone is currently being edited
-  var _canEditMilestones = false;
 
   @override
   Future<void> asyncInitState() async {
@@ -54,7 +53,6 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
 
   Future<void> _loadData() async {
     quote = (await DaoQuote().getById(widget.quoteId))!;
-    _canEditMilestones = quote.state.isPostApproval;
     milestones = await daoMilestonePayment.getByQuoteId(widget.quoteId);
     _calculateTotals();
   }
@@ -88,10 +86,6 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   }
 
   Future<void> _addMilestone() async {
-    if (!_canEditMilestones) {
-      _showMessage('Milestones can only be added after quote approval.');
-      return;
-    }
     final newMilestone = Milestone.forInsert(
       quoteId: quote.id,
       milestoneNumber: milestones.length + 1,
@@ -187,10 +181,6 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   }
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
-    if (!_canEditMilestones) {
-      HMBToast.info("You can't reorder milestones before quote approval");
-      return;
-    }
     final invoicedMilestones =
         milestones.where((m) => m.invoiceId != null).length - 1;
     if (oldIndex < invoicedMilestones || newIndex <= invoicedMilestones) {
@@ -230,10 +220,6 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
   }
 
   Future<void> _onMilestoneDeleted(Milestone milestone) async {
-    if (!_canEditMilestones) {
-      _showMessage('Milestones can only be edited after quote approval.');
-      return;
-    }
     if (milestone.invoiceId != null) {
       _showMessage('Cannot delete an invoiced milestone.');
       return;
@@ -264,7 +250,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
         title: const Text('Edit Milestones'),
         actions: [
           HMBButtonAdd(
-            enabled: _canEditMilestones,
+            enabled: true,
             hint: 'Add Milestone',
             onAdd: _addMilestone,
           ),
@@ -287,7 +273,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
           Expanded(
             child: ReorderableListView(
               // padding: const EdgeInsets.only(right: 28),
-              onReorder: _onReorder,
+              onReorderItem: _onReorder,
               children: List.generate(milestones.length, (index) {
                 final milestone = milestones[index];
                 return MilestoneTile(
@@ -296,7 +282,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
                   quoteTotal: quote.totalAmount,
                   onDelete: _onMilestoneDeleted,
                   onSave: _onMilestoneSave,
-                  canEdit: _canEditMilestones,
+                  canEdit: true,
                   onInvoice:
                       // ignore: unnecessary_async
                       (milestone) async =>
@@ -322,14 +308,17 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
     BuildContext context,
     Milestone milestone,
   ) async {
-    if (!_canEditMilestones) {
-      HMBToast.info('Milestones can only be invoiced after quote approval.');
+    if (!quote.state.isPostApproval) {
+      HMBToast.info(
+        'You can draft milestones before approval, but invoices can only be '
+        'created after the quote is approved.',
+      );
       return;
     }
     final customer = await DaoCustomer().getByQuote(milestone.quoteId);
 
-    final quote = await DaoQuote().getById(milestone.quoteId);
-    final job = await DaoJob().getById(quote!.jobId);
+    final quoteForMilestone = await DaoQuote().getById(milestone.quoteId);
+    final job = await DaoJob().getById(quoteForMilestone!.jobId);
     final initialContact = await DaoContact().getBillingContactByJob(job!);
 
     if (context.mounted) {
@@ -353,8 +342,8 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
       milestone.invoiceId = invoice.id;
       await DaoMilestone().update(milestone);
 
-      quote.state = QuoteState.invoiced;
-      await DaoQuote().update(quote);
+      quoteForMilestone.state = QuoteState.invoiced;
+      await DaoQuote().update(quoteForMilestone);
 
       // Refresh data
       await _loadData();
