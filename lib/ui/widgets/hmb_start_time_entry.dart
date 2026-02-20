@@ -35,10 +35,12 @@ import 'hmb_toast.dart';
 class HMBStartTimeEntry extends StatefulWidget {
   final Task? task;
   final void Function(Job job, Task task) onStart;
+  final VoidCallback? onTimerChanged;
 
   const HMBStartTimeEntry({
     required this.task,
     required this.onStart,
+    this.onTimerChanged,
     super.key,
   });
 
@@ -130,7 +132,7 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
             );
           },
         ),
-        _buildElapsedTime(timeEntry),
+        Flexible(child: _buildElapsedTime(timeEntry)),
       ],
     ),
   );
@@ -138,7 +140,13 @@ class HMBStartTimeEntryState extends DeferredState<HMBStartTimeEntry> {
   Future<void> _stop(Task? task) async {
     final runningTimer = await DaoTimeEntry().getActiveEntry();
     assert(runningTimer != null, 'there should be a running timer');
-    await _stopDialog(runningTimer!, _roundUpToQuaterHour(DateTime.now()));
+    final stopped = await _stopDialog(
+      runningTimer!,
+      _roundUpToQuaterHour(DateTime.now()),
+    );
+    if (stopped != null) {
+      widget.onTimerChanged?.call();
+    }
   }
 
   Future<void> _start(Task? task) async {
@@ -414,6 +422,7 @@ The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in
       ).setActiveTimeEntry(newTimeEntry, widget.task);
 
       widget.onStart(job, widget.task!);
+      widget.onTimerChanged?.call();
     }
   }
 
@@ -440,9 +449,17 @@ The Task must be ${TaskStatus.approved.name} or ${TaskStatus.inProgress.name} in
     final running = timeEntry != null && timeEntry.endTime == null;
     if (running) {
       final elapsedTime = DateTime.now().difference(timeEntry.startTime);
-      return Text(formatDuration(elapsedTime, seconds: true));
+      return Text(
+        formatDuration(elapsedTime, seconds: true),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
     } else {
-      return const Text('Tap to start tracking time');
+      return const Text(
+        'Tap to start tracking time',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
     }
   }
 }

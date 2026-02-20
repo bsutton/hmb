@@ -144,6 +144,7 @@ class SurfaceCardWithActions extends StatelessWidget {
     color: elevation.color,
     padding: padding,
     child: HMBColumn(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
@@ -160,7 +161,7 @@ class SurfaceCardWithActions extends StatelessWidget {
             softWrap: true,
           ),
         ),
-        Flexible(child: body),
+        body,
         if (actions.isNotEmpty)
           HMBRow(mainAxisAlignment: MainAxisAlignment.end, children: actions),
       ],
