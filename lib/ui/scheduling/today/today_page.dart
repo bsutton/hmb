@@ -229,19 +229,22 @@ class TodayPageState extends DeferredState<TodayPage> {
   Widget backupReminder(Today today) => HMBOneOf(
     condition: !today.backupReminder.needsReminder,
     onTrue: const HMBEmpty(),
-    onFalse: Surface(
-      rounded: true,
-      child: Row(
-        children: [
-          const Icon(Icons.warning_amber_rounded, color: Colors.amber),
-          const HMBSpacer(width: true),
-          Expanded(
-            child: Text(
-              _backupReminderMessage(today.backupReminder),
-              style: const TextStyle(fontWeight: FontWeight.w600),
+    onFalse: GestureDetector(
+      onTap: () => context.go('/home/backup'),
+      child: Surface(
+        rounded: true,
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.amber),
+            const HMBSpacer(width: true),
+            Expanded(
+              child: Text(
+                _backupReminderMessage(today.backupReminder),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );
