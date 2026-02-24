@@ -19,12 +19,16 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
+import '../../../../api/chat_gpt/job_assist_api_client.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/job.dart';
 import '../../../../entity/task.dart';
 import '../../../../entity/task_item.dart';
 import '../../../../entity/task_item_type.dart';
+import '../../../../entity/helpers/charge_mode.dart';
+import '../../../../util/dart/measurement_type.dart';
 import '../../../../util/dart/money_ex.dart';
+import '../../../../util/dart/units.dart';
 import '../../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_search.dart';
@@ -305,6 +309,11 @@ class _JobEstimateBuilderScreenState
       SurfaceCardWithActions(
         title: task.name,
         actions: [
+          IconButton(
+            tooltip: 'Expand with AI',
+            onPressed: () => unawaited(_expandTaskWithAi(task)),
+            icon: const Icon(Icons.auto_awesome),
+          ),
           HMBEditIcon(onPressed: () => _editTask(task), hint: 'Edit Task'),
           HMBDeleteIcon(
             onPressed: () => _deleteTask(task),
@@ -443,6 +452,104 @@ class _JobEstimateBuilderScreenState
         setState(() {});
       },
     );
+  }
+
+  Future<void> _expandTaskWithAi(Task task) async {
+    try {
+      final suggestions = await JobAssistApiClient().expandTaskToItems(
+        jobSummary: widget.job.summary,
+        jobDescription: widget.job.description,
+        taskName: task.name,
+        taskDescription: task.description,
+      );
+      if (suggestions == null) {
+        HMBToast.error('ChatGPT is not configured.');
+        return;
+      }
+      if (suggestions.isEmpty) {
+        HMBToast.info('No items were suggested for this task.');
+        return;
+      }
+
+      var inserted = 0;
+      for (final suggestion in suggestions) {
+        final item = await _buildTaskItemFromSuggestion(task, suggestion);
+        await DaoTaskItem().insert(item);
+        inserted++;
+      }
+
+      await _calculateTotals();
+      setState(() {});
+      HMBToast.info('Added $inserted estimate item(s) from AI.');
+    } catch (e) {
+      HMBToast.error('AI task expansion failed: $e');
+    }
+  }
+
+  Future<TaskItem> _buildTaskItemFromSuggestion(
+    Task task,
+    TaskItemAssistSuggestion suggestion,
+  ) async {
+    final category = suggestion.category.toLowerCase();
+    final isLabour = category == 'labour';
+    final isTool = category == 'tool';
+    final isConsumable = category == 'consumable';
+
+    final qty = suggestion.quantity <= 0 ? 1 : suggestion.quantity;
+    final unitCost = suggestion.unitCost < 0 ? 0 : suggestion.unitCost;
+    final supplierId = await _findSupplierIdByName(suggestion.supplier);
+
+    return TaskItem.forInsert(
+      taskId: task.id,
+      description: suggestion.description,
+      itemType: isLabour
+          ? TaskItemType.labour
+          : (isTool
+                ? TaskItemType.toolsBuy
+                : (isConsumable
+                      ? TaskItemType.consumablesBuy
+                      : TaskItemType.materialsBuy)),
+      margin: Percentage.zero,
+      chargeMode: ChargeMode.calculated,
+      measurementType: MeasurementType.defaultMeasurementType,
+      dimension1: Fixed.zero,
+      dimension2: Fixed.zero,
+      dimension3: Fixed.zero,
+      units: Units.defaultUnits,
+      url: '',
+      purpose: suggestion.notes,
+      labourEntryMode: LabourEntryMode.hours,
+      estimatedLabourHours: isLabour
+          ? Fixed.fromNum(qty, decimalDigits: 3)
+          : null,
+      estimatedLabourCost: isLabour && unitCost > 0
+          ? Money.fromNum(unitCost * qty, isoCode: 'AUD')
+          : null,
+      estimatedMaterialUnitCost: isLabour || unitCost <= 0
+          ? null
+          : Money.fromNum(unitCost, isoCode: 'AUD'),
+      estimatedMaterialQuantity: isLabour
+          ? null
+          : Fixed.fromNum(qty, decimalDigits: 3),
+      supplierId: supplierId,
+    );
+  }
+
+  Future<int?> _findSupplierIdByName(String supplierName) async {
+    final name = supplierName.trim();
+    if (name.isEmpty) {
+      return null;
+    }
+    final matches = await DaoSupplier().getByFilter(name);
+    if (matches.isEmpty) {
+      return null;
+    }
+    for (final supplier in matches) {
+      if (supplier.name.trim().toLowerCase() == name.toLowerCase()) {
+        return supplier.id;
+      }
+    }
+    return matches.first.id;
   }
 
   Future<void> _setTaskCompletion(Task task, bool isCompleted) async {
