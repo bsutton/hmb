@@ -51,6 +51,8 @@ class _JobCreatorState extends State<JobCreator> {
   final _postcode = TextEditingController();
   final _jobSummary = TextEditingController();
   final _jobDescription = TextEditingController();
+  final _existingContactFilter = TextEditingController();
+  final _existingSiteFilter = TextEditingController();
   final _taskControllers = <TextEditingController>[];
   var _pasteMessage = '';
   BillingType _selectedBillingType = BillingType.timeAndMaterial;
@@ -98,6 +100,8 @@ class _JobCreatorState extends State<JobCreator> {
     _postcode.dispose();
     _jobSummary.dispose();
     _jobDescription.dispose();
+    _existingContactFilter.dispose();
+    _existingSiteFilter.dispose();
     for (final controller in _taskControllers) {
       controller.dispose();
     }
@@ -370,6 +374,40 @@ class _JobCreatorState extends State<JobCreator> {
 
   String _displayName(Contact contact) =>
       '${contact.firstName} ${contact.surname}'.trim();
+
+  List<Contact> _filteredExistingContacts() {
+    final filter = _normalize(_existingContactFilter.text);
+    if (filter.isEmpty) {
+      return _existingContacts;
+    }
+    return _existingContacts.where((contact) {
+      final name = _displayName(contact).toLowerCase();
+      final email = contact.emailAddress.toLowerCase();
+      final mobile = contact.mobileNumber.toLowerCase();
+      return name.contains(filter) ||
+          email.contains(filter) ||
+          mobile.contains(filter);
+    }).toList();
+  }
+
+  List<Site> _filteredExistingSites() {
+    final filter = _normalize(_existingSiteFilter.text);
+    if (filter.isEmpty) {
+      return _existingSites;
+    }
+    return _existingSites.where((site) {
+      final line1 = site.addressLine1.toLowerCase();
+      final line2 = site.addressLine2.toLowerCase();
+      final suburb = site.suburb.toLowerCase();
+      final state = site.state.toLowerCase();
+      final postcode = site.postcode.toLowerCase();
+      return line1.contains(filter) ||
+          line2.contains(filter) ||
+          suburb.contains(filter) ||
+          state.contains(filter) ||
+          postcode.contains(filter);
+    }).toList();
+  }
 
   Future<bool> _onExtract(String text) async {
     if (_extracting) {
@@ -842,6 +880,20 @@ class _ContactStep extends WizardStep {
       child: HMBColumn(
         children: [
           if (state._selectedCustomer != null) ...[
+            if (state._existingContacts.length > 8)
+              HMBTextField(
+                controller: state._existingContactFilter,
+                labelText: 'Filter Existing Contacts',
+                textCapitalization: TextCapitalization.none,
+                onChanged: (_) => setState(() {}),
+              ),
+            Text(
+              state._existingContacts.length > 8
+                  ? 'Existing contacts '
+                        '(${state._filteredExistingContacts().length}/'
+                        '${state._existingContacts.length})'
+                  : 'Existing contacts',
+            ),
             RadioGroup<Contact?>(
               groupValue: state._selectedExistingContact,
               onChanged: (value) => setState(() {
@@ -858,26 +910,33 @@ class _ContactStep extends WizardStep {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    state._existingContacts.isEmpty
-                        ? 'No existing contacts found'
-                        : 'Existing contacts',
-                  ),
-                  ...state._existingContacts.map(
-                    (contact) => RadioListTile<Contact?>(
-                      title: Text(
-                        '${contact.firstName} ${contact.surname}'.trim(),
+                  if (state._existingContacts.isEmpty)
+                    const Text('No existing contacts found')
+                  else
+                    SizedBox(
+                      height: 220,
+                      child: ListView(
+                        children: state
+                            ._filteredExistingContacts()
+                            .map(
+                              (contact) => RadioListTile<Contact?>(
+                                title: Text(
+                                  '${contact.firstName} ${contact.surname}'
+                                      .trim(),
+                                ),
+                                subtitle: Text(
+                                  contact.emailAddress.isEmpty
+                                      ? (contact.mobileNumber.isEmpty
+                                            ? 'No details'
+                                            : contact.mobileNumber)
+                                      : contact.emailAddress,
+                                ),
+                                value: contact,
+                              ),
+                            )
+                            .toList(),
                       ),
-                      subtitle: Text(
-                        contact.emailAddress.isEmpty
-                            ? (contact.mobileNumber.isEmpty
-                                  ? 'No details'
-                                  : contact.mobileNumber)
-                            : contact.emailAddress,
-                      ),
-                      value: contact,
                     ),
-                  ),
                   const RadioListTile<Contact?>(
                     title: Text('Create new contact'),
                     value: null,
@@ -1022,6 +1081,20 @@ class _AddressStep extends WizardStep {
       child: HMBColumn(
         children: [
           if (state._selectedCustomer != null) ...[
+            if (state._existingSites.length > 8)
+              HMBTextField(
+                controller: state._existingSiteFilter,
+                labelText: 'Filter Existing Sites',
+                textCapitalization: TextCapitalization.none,
+                onChanged: (_) => setState(() {}),
+              ),
+            Text(
+              state._existingSites.length > 8
+                  ? 'Existing sites '
+                        '(${state._filteredExistingSites().length}/'
+                        '${state._existingSites.length})'
+                  : 'Existing sites',
+            ),
             RadioGroup<Site?>(
               groupValue: state._selectedExistingSite,
               onChanged: (value) => setState(() {
@@ -1037,24 +1110,30 @@ class _AddressStep extends WizardStep {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    state._existingSites.isEmpty
-                        ? 'No existing sites found'
-                        : 'Existing sites',
-                  ),
-                  ...state._existingSites.map(
-                    (site) => RadioListTile<Site?>(
-                      title: Text(site.addressLine1),
-                      subtitle: Text(
-                        Strings.join(
-                          [site.suburb, site.state, site.postcode],
-                          separator: ' ',
-                          excludeEmpty: true,
-                        ),
+                  if (state._existingSites.isEmpty)
+                    const Text('No existing sites found')
+                  else
+                    SizedBox(
+                      height: 220,
+                      child: ListView(
+                        children: state
+                            ._filteredExistingSites()
+                            .map(
+                              (site) => RadioListTile<Site?>(
+                                title: Text(site.addressLine1),
+                                subtitle: Text(
+                                  Strings.join(
+                                    [site.suburb, site.state, site.postcode],
+                                    separator: ' ',
+                                    excludeEmpty: true,
+                                  ),
+                                ),
+                                value: site,
+                              ),
+                            )
+                            .toList(),
                       ),
-                      value: site,
                     ),
-                  ),
                   const RadioListTile<Site?>(
                     title: Text('Create new site'),
                     value: null,
