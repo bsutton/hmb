@@ -115,10 +115,6 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
     _endDateFocusNode = FocusNode();
     _endTimeFocusNode = FocusNode();
     _noteFocusNode = FocusNode();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(_startDateFocusNode);
-    });
   }
 
   @override
