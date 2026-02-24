@@ -14,6 +14,7 @@
 
 import 'package:money2/money2.dart';
 
+import '../util/dart/fixed_ex.dart';
 import 'entity.dart';
 import 'job_status.dart';
 
@@ -70,6 +71,7 @@ class Job extends Entity<Job> {
   int? referrerContactId;
   int? tenantContactId;
   BillingParty billingParty;
+  Percentage estimateMargin;
 
   Job._({
     required super.id,
@@ -88,6 +90,7 @@ class Job extends Entity<Job> {
     required this.referrerContactId,
     required this.tenantContactId,
     required this.billingParty,
+    required this.estimateMargin,
     required this.lastActive,
     required super.createdDate,
     required super.modifiedDate,
@@ -110,13 +113,15 @@ class Job extends Entity<Job> {
     this.referrerContactId,
     this.tenantContactId,
     this.billingParty = BillingParty.customer,
+    Percentage? estimateMargin,
     this.isStock = false,
     this.assumption = '',
     this.internalNotes = '',
     this.lastActive = false,
     this.billingType = BillingType.timeAndMaterial,
     this.bookingFeeInvoiced = false,
-  }) : super.forInsert();
+  }) : estimateMargin = estimateMargin ?? Percentage.zero,
+       super.forInsert();
 
   Job copyWith({
     int? customerId,
@@ -138,6 +143,7 @@ class Job extends Entity<Job> {
     int? referrerContactId,
     int? tenantContactId,
     BillingParty? billingParty,
+    Percentage? estimateMargin,
   }) => Job._(
     id: id,
     customerId: customerId ?? this.customerId,
@@ -156,6 +162,7 @@ class Job extends Entity<Job> {
     referrerContactId: referrerContactId ?? this.referrerContactId,
     tenantContactId: tenantContactId ?? this.tenantContactId,
     billingParty: billingParty ?? this.billingParty,
+    estimateMargin: estimateMargin ?? this.estimateMargin,
     lastActive: lastActive ?? this.lastActive,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
@@ -186,6 +193,10 @@ class Job extends Entity<Job> {
     referrerContactId: map['referrer_contact_id'] as int?,
     tenantContactId: map['tenant_contact_id'] as int?,
     billingParty: BillingParty.fromName(map['billing_party'] as String?),
+    estimateMargin: Percentage.fromInt(
+      map['estimate_margin'] as int? ?? 0,
+      decimalDigits: 3,
+    ),
   );
 
   @override
@@ -210,6 +221,7 @@ class Job extends Entity<Job> {
     'referrer_contact_id': referrerContactId,
     'tenant_contact_id': tenantContactId,
     'billing_party': billingParty.name,
+    'estimate_margin': estimateMargin.threeDigits().minorUnits.toInt(),
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

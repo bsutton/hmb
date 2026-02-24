@@ -129,6 +129,7 @@ class DaoQuote extends Dao<Quote> {
       description: job.description,
       totalAmount: totalAmount,
       assumption: job.assumption,
+      quoteMargin: invoiceOptions.quoteMargin,
     );
     final quoteId = await insert(quote);
 
@@ -195,7 +196,11 @@ class DaoQuote extends Dao<Quote> {
 
       // Group + insert labour line
       if (line != null) {
-        group ??= await _createQuoteLineGroup(estimate.task, quoteId);
+        group ??= await _createQuoteLineGroup(
+          estimate.task,
+          quoteId,
+          taskMargin,
+        );
         await DaoQuoteLine().insert(line.copyWith(quoteLineGroupId: group.id));
       }
 
@@ -210,7 +215,11 @@ class DaoQuote extends Dao<Quote> {
             .calcMaterialCharges(billingType)
             .plusPercentage(taskMargin);
 
-        group ??= await _createQuoteLineGroup(estimate.task, quoteId);
+        group ??= await _createQuoteLineGroup(
+          estimate.task,
+          quoteId,
+          taskMargin,
+        );
 
         final matLine = QuoteLine.forInsert(
           quoteId: quoteId,
@@ -237,6 +246,7 @@ class DaoQuote extends Dao<Quote> {
         taskId: null,
         name: 'Adjustments',
         description: 'Whole quote adjustments',
+        taskMargin: Percentage.zero,
       );
       await DaoQuoteLineGroup().insert(adjustmentGroup);
       final marginLine = QuoteLine.forInsert(
@@ -260,14 +270,18 @@ class DaoQuote extends Dao<Quote> {
   Future<List<String>> getEmailsByQuote(Quote quote) =>
       DaoJob().getEmailsByJob(quote.jobId);
 
-  Future<QuoteLineGroup> _createQuoteLineGroup(Task task, int quoteId) async {
+  Future<QuoteLineGroup> _createQuoteLineGroup(
+    Task task,
+    int quoteId,
+    Percentage taskMargin,
+  ) async {
     // Create quote line group for the task
     final quoteLineGroup = QuoteLineGroup.forInsert(
       quoteId: quoteId,
       name: task.name,
       description: task.description,
       assumption: task.assumption,
-
+      taskMargin: taskMargin,
       taskId: task.id,
     );
 

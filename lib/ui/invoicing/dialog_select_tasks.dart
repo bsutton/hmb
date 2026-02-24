@@ -155,7 +155,6 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   late bool billBookingFee;
   late bool canBillBookingFee;
   var _groupByTask = false;
-  late final TextEditingController _quoteMarginController;
 
   late Customer _customer;
   late Contact _selectedContact;
@@ -177,7 +176,6 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
         text: '0',
       );
     }
-    _quoteMarginController = TextEditingController(text: '0');
 
     _customer = (await DaoCustomer().getById(widget.job.customerId))!;
     _contacts = await DaoContact().getByCustomer(widget.job.customerId);
@@ -186,7 +184,6 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
 
   @override
   void dispose() {
-    _quoteMarginController.dispose();
     for (final controller in _taskMarginControllers.values) {
       controller.dispose();
     }
@@ -275,12 +272,6 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                 value: _selectAll,
                 onChanged: _toggleSelectAll,
               ),
-            if (widget.forQuote)
-              HMBTextField(
-                controller: _quoteMarginController,
-                labelText: 'Total Quote Margin (%)',
-                keyboardType: TextInputType.number,
-              ),
             for (final taskSelector in widget.taskSelectors)
               HMBColumn(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -337,12 +328,7 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
               billBookingFee: billBookingFee,
               groupByTask: !_hasSelectedTimeAndMaterialsTasks || _groupByTask,
               contact: _selectedContact,
-              quoteMargin:
-                  Percentage.tryParse(
-                    _quoteMarginController.text,
-                    decimalDigits: 3,
-                  ) ??
-                  Percentage.zero,
+              quoteMargin: widget.job.estimateMargin,
               taskMargins: taskMargins,
             ),
           );

@@ -180,5 +180,10 @@ void main() {
     expect(materialLine.lineTotal, expectedMaterial);
     expect(adjustmentLine.lineTotal, expectedAdjustment);
     expect(quote.totalAmount, expectedMaterial + expectedAdjustment);
+    expect(quote.quoteMargin, quoteMargin);
+
+    final groups = await DaoQuoteLineGroup().getByQuoteId(quote.id);
+    final taskGroup = groups.firstWhere((group) => group.taskId == task.id);
+    expect(taskGroup.taskMargin, taskMargin);
   });
 }

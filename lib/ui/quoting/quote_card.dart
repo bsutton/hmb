@@ -147,9 +147,11 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
           filePath: quoteFile.path,
           preferredRecipient:
               billingContact?.emailAddress ?? primaryContact.emailAddress,
-          emailSubject: '${system.businessName ?? 'Your'} Quote #'
+          emailSubject:
+              '${system.businessName ?? 'Your'} Quote #'
               '${quote.bestNumber}',
-          emailBody: '''
+          emailBody:
+              '''
 ${primaryContact.firstName.trim()},
 Please find the attached quote for your job.
 ''',
@@ -329,6 +331,7 @@ Please find the attached quote for your job.
               Text('Customer: ${jc.customer.name}'),
               Text('Primary Contact: ${jc.primaryContact?.fullname ?? 'N/A'}'),
               Text('Billing Contact: ${jc.billingContact?.fullname ?? 'N/A'}'),
+              Text('Quote Margin: ${quote.quoteMargin}'),
               Text('Total: ${quote.totalAmount}'),
             ],
           ),

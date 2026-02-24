@@ -37,6 +37,7 @@ import '../../../widgets/hmb_toast.dart';
 import '../../../widgets/hmb_toggle.dart';
 import '../../../widgets/icons/hmb_delete_icon.dart';
 import '../../../widgets/icons/hmb_edit_icon.dart';
+import '../../../widgets/icons/hmb_save_icon.dart';
 import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/layout/surface.dart';
 import '../../../widgets/media/photo_gallery.dart';
@@ -62,6 +63,8 @@ class _JobEstimateBuilderScreenState
   Money _totalLabourCost = MoneyEx.zero;
   Money _totalMaterialsCost = MoneyEx.zero;
   Money _totalCombinedCost = MoneyEx.zero;
+  Percentage _estimateMargin = Percentage.zero;
+  late final TextEditingController _estimateMarginController;
   var _estimateComplete = false;
 
   var _showToBeEstimated = true;
@@ -73,6 +76,7 @@ class _JobEstimateBuilderScreenState
 
   @override
   Future<void> asyncInitState() async {
+    _estimateMarginController = TextEditingController(text: '0');
     final canProceed = await _ensureFixedPrice();
     if (!canProceed) {
       if (mounted) {
@@ -82,7 +86,19 @@ class _JobEstimateBuilderScreenState
     }
     final job = await DaoJob().markQuoting(widget.job.id);
     widget.job.status = job.status;
+    final refreshedJob = await DaoJob().getById(widget.job.id);
+    if (refreshedJob != null) {
+      widget.job.estimateMargin = refreshedJob.estimateMargin;
+    }
+    _estimateMargin = widget.job.estimateMargin;
+    _estimateMarginController.text = _estimateMargin.toString();
     await _loadTasks();
+  }
+
+  @override
+  void dispose() {
+    _estimateMarginController.dispose();
+    super.dispose();
   }
 
   Future<bool> _ensureFixedPrice() async {
@@ -302,9 +318,51 @@ class _JobEstimateBuilderScreenState
         Text('Labour: $_totalLabourCost'),
         Text('Materials: $_totalMaterialsCost'),
         Text('Combined: $_totalCombinedCost'),
+        const HMBSpacer(height: true),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: HMBTextField(
+                controller: _estimateMarginController,
+                labelText: 'Quote Margin (%)',
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  _estimateMargin =
+                      Percentage.tryParse(value, decimalDigits: 3) ??
+                      Percentage.zero;
+                  setState(() {});
+                },
+              ),
+            ),
+            HMBSaveIcon(
+              hint: 'Save quote margin for this estimate',
+              onPressed: _saveEstimateMargin,
+            ),
+          ],
+        ),
+        Text(
+          'Combined with Margin: ${_totalCombinedCost.plusPercentage(_estimateMargin)}',
+        ),
       ],
     ),
   );
+
+  Future<void> _saveEstimateMargin() async {
+    final parsed =
+        Percentage.tryParse(_estimateMarginController.text, decimalDigits: 3) ??
+        Percentage.zero;
+    final updated = widget.job.copyWith(estimateMargin: parsed);
+    await DaoJob().update(updated);
+    widget.job.estimateMargin = parsed;
+    _estimateMargin = parsed;
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
+    HMBToast.info('Estimate margin saved.');
+  }
+
   Widget _buildTaskCard(Task task) => HMBColumn(
     children: [
       SurfaceCardWithActions(

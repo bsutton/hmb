@@ -14,6 +14,7 @@
 
 import 'package:money2/money2.dart';
 
+import '../util/dart/fixed_ex.dart';
 import 'entity.dart';
 
 enum QuoteState {
@@ -51,6 +52,7 @@ class Quote extends Entity<Quote> {
   DateTime? dateSent;
   DateTime? dateApproved;
   int? billingContactId;
+  Percentage quoteMargin;
 
   Quote._({
     required super.id,
@@ -67,6 +69,7 @@ class Quote extends Entity<Quote> {
     this.dateSent,
     this.dateApproved,
     this.billingContactId,
+    required this.quoteMargin,
   }) : super();
 
   Quote.forInsert({
@@ -81,7 +84,9 @@ class Quote extends Entity<Quote> {
     this.dateSent,
     this.dateApproved,
     this.billingContactId,
-  }) : super.forInsert();
+    Percentage? quoteMargin,
+  }) : quoteMargin = quoteMargin ?? Percentage.zero,
+       super.forInsert();
 
   Quote copyWith({
     int? jobId,
@@ -95,6 +100,7 @@ class Quote extends Entity<Quote> {
     DateTime? dateSent,
     DateTime? dateApproved,
     int? billingContactId,
+    Percentage? quoteMargin,
   }) => Quote._(
     id: id,
     jobId: jobId ?? this.jobId,
@@ -110,6 +116,7 @@ class Quote extends Entity<Quote> {
     dateSent: dateSent ?? this.dateSent,
     dateApproved: dateApproved ?? this.dateApproved,
     billingContactId: billingContactId ?? this.billingContactId,
+    quoteMargin: quoteMargin ?? this.quoteMargin,
   );
 
   factory Quote.fromMap(Map<String, dynamic> map) => Quote._(
@@ -131,6 +138,10 @@ class Quote extends Entity<Quote> {
         ? DateTime.parse(map['date_approved'] as String)
         : null,
     billingContactId: map['billing_contact_id'] as int?,
+    quoteMargin: Percentage.fromInt(
+      map['quote_margin'] as int? ?? 0,
+      decimalDigits: 3,
+    ),
   );
 
   String get bestNumber => externalQuoteId ?? quoteNum ?? '$id';
@@ -151,5 +162,6 @@ class Quote extends Entity<Quote> {
     'date_sent': dateSent?.toIso8601String(),
     'date_approved': dateApproved?.toIso8601String(),
     'billing_contact_id': billingContactId,
+    'quote_margin': quoteMargin.threeDigits().minorUnits.toInt(),
   };
 }

@@ -14,6 +14,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'package:money2/money2.dart';
+
+import '../util/dart/fixed_ex.dart';
 import 'entity.dart';
 
 enum LineApprovalStatus { preApproval, approved, rejected }
@@ -27,6 +30,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
   String description;
   // from the task assumptions
   String assumption;
+  Percentage taskMargin;
   LineApprovalStatus lineApprovalStatus;
 
   QuoteLineGroup._({
@@ -36,6 +40,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     required this.name,
     required this.description,
     required this.assumption,
+    required this.taskMargin,
     required super.createdDate,
     required super.modifiedDate,
     this.lineApprovalStatus = LineApprovalStatus.preApproval,
@@ -47,8 +52,10 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     required this.name,
     this.description = '',
     this.assumption = '',
+    Percentage? taskMargin,
     this.lineApprovalStatus = LineApprovalStatus.preApproval,
-  }) : super.forInsert();
+  }) : taskMargin = taskMargin ?? Percentage.zero,
+       super.forInsert();
 
   QuoteLineGroup copyWith({
     int? quoteId,
@@ -56,6 +63,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     String? name,
     String? assumption,
     String? description,
+    Percentage? taskMargin,
     LineApprovalStatus? lineApprovalStatus,
   }) => QuoteLineGroup._(
     id: id,
@@ -64,6 +72,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     name: name ?? this.name,
     assumption: assumption ?? this.assumption,
     description: description ?? this.description,
+    taskMargin: taskMargin ?? this.taskMargin,
     lineApprovalStatus: lineApprovalStatus ?? this.lineApprovalStatus,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
@@ -76,6 +85,10 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     name: map['name'] as String,
     assumption: map['assumption'] as String? ?? '',
     description: map['description'] as String? ?? '',
+    taskMargin: Percentage.fromInt(
+      map['task_margin'] as int? ?? 0,
+      decimalDigits: 3,
+    ),
     lineApprovalStatus: LineApprovalStatus.values.byName(
       map['line_approval_status'] as String,
     ),
@@ -91,6 +104,7 @@ class QuoteLineGroup extends Entity<QuoteLineGroup> {
     'name': name,
     'assumption': assumption,
     'description': description,
+    'task_margin': taskMargin.threeDigits().minorUnits.toInt(),
     'line_approval_status': lineApprovalStatus.name,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
