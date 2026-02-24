@@ -50,6 +50,9 @@ Future<bool> openMilestonesForFixedPriceJob({
   required BuildContext context,
 }) async {
   final quotes = await DaoQuote().getByJobId(job.id);
+  if (!context.mounted) {
+    return false;
+  }
   if (quotes.isEmpty) {
     HMBToast.error(
       'This fixed price job has no quote. Create a quote before invoicing.',

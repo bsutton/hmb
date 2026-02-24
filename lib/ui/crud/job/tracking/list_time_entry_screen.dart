@@ -17,9 +17,9 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../../dao/dao.g.dart';
 import '../../../../entity/entity.g.dart';
 import '../../../../util/dart/format.dart';
+import '../../../widgets/hmb_start_time_entry.dart';
 import '../../../widgets/icons/help_button.dart';
 import '../../../widgets/layout/layout.g.dart';
-import '../../../widgets/hmb_start_time_entry.dart';
 import '../../../widgets/select/select.g.dart';
 import '../../../widgets/text/text.g.dart';
 import '../../base_full_screen/list_entity_screen.dart';
@@ -153,7 +153,7 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
       if (_taskForTimer != null)
         HMBStartTimeEntry(
           task: _taskForTimer,
-          onStart: (_, __) {},
+          onStart: (_, _) {},
           onTimerChanged: () async =>
               await _entityListKey.currentState?.refresh(),
         ),

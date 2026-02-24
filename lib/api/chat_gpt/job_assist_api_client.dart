@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:collection';
 
 import 'package:http/http.dart' as http;
 
@@ -36,8 +35,6 @@ class TaskItemAssistSuggestion {
 }
 
 class JobAssistApiClient {
-  static const _maxTasks = 6;
-
   Future<JobAssistResult?> analyzeDescription(String description) async {
     final system = await DaoSystem().get();
     final apiKey = system.openaiApiKey?.trim();
@@ -92,7 +89,7 @@ class JobAssistApiClient {
     return JobAssistResult(
       summary: summary,
       description: extractedDescription,
-      tasks: normalizeJobAssistTasks(tasks, maxTasks: _maxTasks),
+      tasks: normalizeJobAssistTasks(tasks),
     );
   }
 
@@ -200,7 +197,7 @@ List<String> normalizeJobAssistTasks(
   List<String> rawTasks, {
   int maxTasks = 6,
 }) {
-  final unique = LinkedHashSet<String>();
+  final unique = <String>{};
   for (final raw in rawTasks) {
     final task = raw.trim();
     if (task.isEmpty) {

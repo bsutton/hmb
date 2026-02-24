@@ -13,13 +13,13 @@ import '../../../util/dart/money_ex.dart';
 import '../../../util/dart/parse/parse_customer.dart';
 import '../../crud/customer/customer_paste_panel.dart';
 import '../../dialog/source_context.dart';
-import 'post_job_todo_prompt.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/select.g.dart';
 import '../../widgets/widgets.g.dart';
+import 'post_job_todo_prompt.dart';
 
 class JobCreator extends StatefulWidget {
   const JobCreator({super.key});

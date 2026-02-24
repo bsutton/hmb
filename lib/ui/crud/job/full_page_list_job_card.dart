@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../dao/dao_job.dart';
@@ -19,7 +21,7 @@ class _FullPageListJobCardState extends State<FullPageListJobCard> {
   void initState() {
     super.initState();
     // Opening a job details card should make that job the active job.
-    Future<void>(() => DaoJob().markActive(widget.job.id));
+    unawaited(DaoJob().markActive(widget.job.id));
   }
 
   @override

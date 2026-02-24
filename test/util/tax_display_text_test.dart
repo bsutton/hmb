@@ -24,8 +24,8 @@ void main() {
 
   Future<void> resetSettings() async {
     final file = File(settingsPath);
-    if (await file.exists()) {
-      await file.delete();
+    if (file.existsSync()) {
+      file.deleteSync();
     }
   }
 

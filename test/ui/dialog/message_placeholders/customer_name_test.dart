@@ -37,8 +37,8 @@ void main() {
     });
 
     test('falls back to customer name when contact is missing', () async {
-      final customerSource = CustomerSource();
-      customerSource.customer = Customer.forInsert(
+      final customerSource = CustomerSource()
+      ..customer = Customer.forInsert(
         name: 'Acme Pty Ltd',
         description: '',
         disbarred: false,
