@@ -87,15 +87,26 @@ class PhotoSyncService {
       return;
     }
 
-    final headers = await (await GoogleDriveAuth.instance())
-        .authHeadersOrNull();
-    if (headers == null) {
+    try {
+      final headers = await (await GoogleDriveAuth.instance())
+          .authHeadersOrNull();
+      if (headers == null) {
+        _controller.add(
+          ProgressUpdate('Photo sync waiting for Google sign-in.', 0, 0),
+        );
+        return;
+      }
+      await _startSync(photos: photos, deletes: deletes, authHeaders: headers);
+    } catch (_) {
       _controller.add(
-        ProgressUpdate('Photo sync waiting for Google sign-in.', 0, 0),
+        ProgressUpdate(
+          'Photo sync paused while the app was backgrounded. '
+          'It will retry when resumed.',
+          0,
+          0,
+        ),
       );
-      return;
     }
-    await _startSync(photos: photos, deletes: deletes, authHeaders: headers);
   }
 
   Future<void> _startSync({
@@ -212,7 +223,17 @@ class PhotoSyncService {
       return;
     }
     _controller.add(ProgressUpdate('Resuming photo sync...', 0, 0));
-    await start();
+    try {
+      await start();
+    } catch (_) {
+      _controller.add(
+        ProgressUpdate(
+          'Photo sync could not resume yet. It will retry shortly.',
+          0,
+          0,
+        ),
+      );
+    }
   }
 
   /// Downloads the original image for the [Photo] with [photoId] from

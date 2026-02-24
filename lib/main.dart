@@ -132,8 +132,16 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
         return;
       }
 
-      await _syncBookings();
-      await PhotoSyncService().resumeIfNeeded();
+      try {
+        await _syncBookings();
+      } catch (e, st) {
+        Log.e('Failed to resume booking sync: $e\n$st');
+      }
+      try {
+        await PhotoSyncService().resumeIfNeeded();
+      } catch (e, st) {
+        Log.e('Failed to resume photo sync: $e\n$st');
+      }
     } finally {
       _resumeSyncInFlight = false;
     }

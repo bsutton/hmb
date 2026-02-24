@@ -59,7 +59,12 @@ class GoogleDriveAuth {
   }
 
   Future<Map<String, String>?> authHeadersOrNull() async {
-    await signInIfAutomatic();
+    try {
+      await signInIfAutomatic();
+    } catch (_) {
+      await _markSignedOut();
+      return null;
+    }
     if (!_signedIn) {
       return null;
     }
@@ -151,8 +156,19 @@ class GoogleDriveAuth {
     if (authorization != null) {
       await _markSignedIn();
       await _buildAuthHeaders(account);
+      if (!_awaitingAuth.isCompleted) {
+        _awaitingAuth.complete(GoogleAuthResult.success());
+      }
+      return;
     }
-    _awaitingAuth.complete(GoogleAuthResult.success());
+    await _markSignedOut();
+    if (!_awaitingAuth.isCompleted) {
+      _awaitingAuth.completeError(
+        GoogleAuthResult.failure(
+          'Google sign-in completed without Drive authorization.',
+        ),
+      );
+    }
   }
 
   Future<void> _buildAuthHeaders(GoogleSignInAccount user) async {
@@ -168,7 +184,9 @@ class GoogleDriveAuth {
         ? _errorMessageFromSignInException(e)
         : GoogleAuthResult.failure('Unknown error: $e');
 
-    _awaitingAuth.completeError(errorMessage);
+    if (!_awaitingAuth.isCompleted) {
+      _awaitingAuth.completeError(errorMessage);
+    }
   }
 
   GoogleAuthResult _errorMessageFromSignInException(
