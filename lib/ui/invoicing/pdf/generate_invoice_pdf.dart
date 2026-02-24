@@ -50,6 +50,7 @@ Future<File> generateInvoicePdf(
 
   // Retrieve the Job using the jobId from the Invoice.
   final job = (await DaoJob().getById(invoice.jobId))!;
+  final site = job.siteId == null ? null : await DaoSite().getById(job.siteId);
 
   // Retrieve the customer for the job and the primary contact for the job.
   final customer = await DaoCustomer().getByJob(invoice.jobId);
@@ -245,8 +246,7 @@ Future<File> generateInvoicePdf(
                             pw.Text(
                               '''${system.businessNumberLabel}: ${system.businessNumber}''',
                             ),
-                          if (taxDisplayText != null)
-                            pw.Text(taxDisplayText),
+                          if (taxDisplayText != null) pw.Text(taxDisplayText),
                         ],
                       ),
                     ),
@@ -264,6 +264,11 @@ Future<File> generateInvoicePdf(
                   ),
                 ),
                 pw.Text(job.summary, style: const pw.TextStyle(fontSize: 12)),
+                if (site != null && site.address.isNotEmpty)
+                  pw.Text(
+                    'Site: ${site.address}',
+                    style: const pw.TextStyle(fontSize: 12),
+                  ),
                 pw.Divider(),
               ],
             ),

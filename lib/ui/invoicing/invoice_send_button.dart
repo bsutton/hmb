@@ -49,6 +49,9 @@ class BuildSendButton extends StatelessWidget {
       var groupByTask = true; // Default to group by task
 
       final job = await DaoJob().getById(invoice.jobId);
+      final site = job?.siteId == null
+          ? null
+          : await DaoSite().getById(job!.siteId);
       final primaryContact = await DaoContact().getPrimaryForJob(job!.id);
       if (primaryContact == null) {
         HMBToast.error('You must first set a Contact on the Job');
@@ -102,6 +105,7 @@ class BuildSendButton extends StatelessWidget {
                     '''
 ${primaryContact.firstName.trim()},
 Please find the attached invoice for your job.
+${site != null && site.address.isNotEmpty ? '\nSite Address: ${site.address}' : ''}
 
 Due Date: ${formatLocalDate(invoice.dueDate, 'yyyy MMM dd')}
 ''',
