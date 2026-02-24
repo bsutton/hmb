@@ -74,21 +74,29 @@ class SourceContext {
     do {
       currentHash = newHash;
 
-      /// Try by job
-      customer ??= await DaoCustomer().getByJob(job!.id);
-      contact ??= await DaoContact().getById(job!.contactId);
-      site ??= await DaoSite().getById(job!.siteId);
-      jobActivity ??= await DaoJobActivity().getMostRecentByJob(job!.id);
+      /// Try by contact.
+      if (contact != null) {
+        customer ??= await DaoCustomer().getByContact(contact!.id);
+      }
 
-      // try by customer
-      contact ??= (await DaoContact().getByCustomer(customer!.id)).lastOrNull;
-      site ??= (await DaoSite().getByCustomer(customer!.id)).firstOrNull;
-      jobActivity ??= (await DaoJobActivity().getByJob(job!.id)).lastOrNull;
+      /// Try by site.
+      if (site != null) {
+        customer ??= await DaoCustomer().getBySite(site!.id);
+      }
 
-      // try by contact
-      customer ??= await DaoCustomer().getByContact(contact!.id);
-      // try by site
-      customer ??= await DaoCustomer().getBySite(site!.id);
+      /// Try by job.
+      if (job != null) {
+        customer ??= await DaoCustomer().getByJob(job!.id);
+        contact ??= await DaoContact().getPrimaryForJob(job!.id);
+        site ??= await DaoSite().getById(job!.siteId);
+        jobActivity ??= await DaoJobActivity().getMostRecentByJob(job!.id);
+      }
+
+      /// Try by customer.
+      if (customer != null) {
+        contact ??= await DaoContact().getPrimaryForCustomer(customer!.id);
+        site ??= (await DaoSite().getByCustomer(customer!.id)).firstOrNull;
+      }
     } while (currentHash != (newHash = _buildHash()));
   }
 

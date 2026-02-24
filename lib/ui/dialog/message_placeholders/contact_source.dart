@@ -34,8 +34,14 @@ class ContactSource extends Source<Contact> {
     builder: (context, customerContact, _) => HMBDroplist<Contact>(
       title: 'Contact',
       selectedItem: () async => customerContact.contact,
-      items: (filter) =>
-          DaoContact().getByFilter(customerContact.customer!, filter),
+      items: (filter) async {
+        if (customerContact.customer == null) {
+          return customerContact.contact == null
+              ? <Contact>[]
+              : [customerContact.contact!];
+        }
+        return DaoContact().getByFilter(customerContact.customer!, filter);
+      },
       format: (contact) => contact.fullname,
       onChanged: (contact) {
         this.contact = contact;
@@ -57,7 +63,7 @@ class ContactSource extends Source<Contact> {
       sourceContext.customer,
       sourceContext.contact,
     );
-    contact = null;
+    contact = sourceContext.contact;
   }
 
   @override

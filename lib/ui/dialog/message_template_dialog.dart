@@ -63,38 +63,74 @@ class _MessageTemplateDialogState extends DeferredState<MessageTemplateDialog>
 
   Future<void> _loadTemplates() async {
     final templates = await DaoMessageTemplate().getByFilter(null);
+    final filtered = await _filterTemplates(templates);
     setState(() {
-      _templates = _filterTemplates(templates);
+      _templates = filtered;
     });
   }
 
-  List<MessageTemplate> _filterTemplates(List<MessageTemplate> templates) {
-    // Filter based on the screen type
-    if (widget.sourceContext.job != null) {
-      return templates;
-    } else if (widget.sourceContext.customer != null) {
-      return templates
-          .where((t) => t.message.contains('{{customer.}}'))
-          .toList();
-    } else if (widget.sourceContext.supplier != null) {
-      return templates
-          .where((t) => t.message.contains('{{supplier.}}'))
-          .toList();
-    } else if (widget.sourceContext.contact != null) {
-      return templates
-          .where((t) => t.message.contains('{{contact.}}'))
-          .toList();
+  Future<List<MessageTemplate>> _filterTemplates(
+    List<MessageTemplate> templates,
+  ) async {
+    final filtered = <MessageTemplate>[];
+    for (final template in templates) {
+      final names = _extractPlaceholderNames(template.message);
+      var canUse = true;
+      for (final name in names) {
+        final placeholder = await PlaceHolderManager().resolvePlaceholder(
+          name,
+          widget.sourceContext,
+        );
+        if (placeholder == null) {
+          canUse = false;
+          break;
+        }
+        if (!_isBaseAvailable(placeholder.base)) {
+          canUse = false;
+          break;
+        }
+      }
+      if (canUse) {
+        filtered.add(template);
+      }
     }
-    return templates;
+    return filtered;
+  }
+
+  Set<String> _extractPlaceholderNames(String message) {
+    final regExp = RegExp(r'\{\{(\w+(?:\.\w+)?)\}\}');
+    return regExp.allMatches(message).map((m) => m.group(1)!).toSet();
+  }
+
+  bool _isBaseAvailable(String base) {
+    switch (base) {
+      case 'signature':
+      case 'delay_period':
+      case 'invoice.due_date':
+      case 'date.service':
+      case 'job_activity.original_date':
+        return true;
+      case 'job_activity':
+        return widget.sourceContext.jobActivity != null ||
+            widget.sourceContext.job != null;
+      case 'job':
+        return widget.sourceContext.job != null;
+      case 'site':
+        return widget.sourceContext.site != null;
+      case 'customer':
+        return widget.sourceContext.customer != null;
+      case 'contact':
+        return widget.sourceContext.contact != null;
+      default:
+        return false;
+    }
   }
 
   Future<void> _initializePlaceholders() async {
     if (_selectedTemplate != null) {
-      final regExp = RegExp(r'\{\{(\w+(?:\.\w+)?)\}\}');
-      final matches = regExp.allMatches(_selectedTemplate!.message);
-
-      // Get the list of placeholders in the new template
-      final newPlaceholders = matches.map((m) => m.group(1)!).toSet();
+      final newPlaceholders = _extractPlaceholderNames(
+        _selectedTemplate!.message,
+      );
 
       // Remove placeholders that are no longer in the new template
       placeholders.entries
