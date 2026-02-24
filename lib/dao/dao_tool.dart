@@ -15,8 +15,12 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/entity.g.dart';
+import '../util/dart/exceptions.dart';
+import '../util/dart/money_ex.dart';
 import 'dao.dart';
+import 'dao_job.dart';
 import 'dao_photo.dart';
+import 'dao_receipt.dart';
 
 class DaoTool extends Dao<Tool> {
   static const tableName = 'tool';
@@ -83,5 +87,64 @@ order by t.name
     }
 
     await db.delete(tableName, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> countByReceiptId(int receiptId) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      'SELECT COUNT(*) AS count FROM $tableName WHERE receiptId = ?',
+      [receiptId],
+    );
+    return rows.first['count'] as int? ?? 0;
+  }
+
+  Future<Tool> ensureReceiptLink(Tool tool, {Transaction? transaction}) async {
+    if (tool.receiptPhotoId == null) {
+      return tool;
+    }
+
+    var linkedTool = tool;
+    var receiptId = tool.receiptId;
+    if (receiptId == null) {
+      final supplierId = tool.supplierId;
+      if (supplierId == null) {
+        throw HMBException('Select a supplier before attaching a receipt.');
+      }
+
+      final stockJob = await DaoJob().getStockJob(transaction: transaction);
+      if (stockJob == null) {
+        throw HMBException(
+          'Unable to link receipt because the Stock job is missing.',
+        );
+      }
+
+      final total = tool.cost ?? MoneyEx.zero;
+      final receipt = Receipt.forInsert(
+        receiptDate: tool.datePurchased ?? DateTime.now(),
+        jobId: stockJob.id,
+        supplierId: supplierId,
+        totalExcludingTax: total,
+        tax: MoneyEx.zero,
+        totalIncludingTax: total,
+      );
+      await DaoReceipt().insert(receipt, transaction);
+      receiptId = receipt.id;
+
+      linkedTool = tool.copyWith(receiptId: receiptId);
+      await update(linkedTool, transaction);
+    }
+
+    final photo = await DaoPhoto().getById(tool.receiptPhotoId, transaction);
+    if (photo != null &&
+        (photo.parentType != ParentType.receipt ||
+            photo.parentId != receiptId)) {
+      final reparented = photo.copyWith(
+        parentType: ParentType.receipt,
+        parentId: receiptId,
+      );
+      await DaoPhoto().update(reparented, transaction);
+    }
+
+    return linkedTool;
   }
 }

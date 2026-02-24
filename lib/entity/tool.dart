@@ -25,6 +25,7 @@ class Tool extends Entity<Tool> {
   final DateTime? datePurchased;
   final String? serialNumber;
   final int? receiptPhotoId;
+  final int? receiptId;
   final int? serialNumberPhotoId;
   final int? warrantyPeriod;
   final Money? cost;
@@ -41,6 +42,7 @@ class Tool extends Entity<Tool> {
     this.datePurchased,
     this.serialNumber,
     this.receiptPhotoId,
+    this.receiptId,
     this.serialNumberPhotoId,
     this.warrantyPeriod,
     this.cost,
@@ -55,6 +57,7 @@ class Tool extends Entity<Tool> {
     this.datePurchased,
     this.serialNumber,
     this.receiptPhotoId,
+    this.receiptId,
     this.serialNumberPhotoId,
     this.warrantyPeriod,
     this.cost,
@@ -69,6 +72,7 @@ class Tool extends Entity<Tool> {
     DateTime? datePurchased,
     String? serialNumber,
     int? receiptPhotoId,
+    int? receiptId,
     int? serialNumberPhotoId,
     int? warrantyPeriod,
     Money? cost,
@@ -84,6 +88,7 @@ class Tool extends Entity<Tool> {
     datePurchased: datePurchased ?? this.datePurchased,
     serialNumber: serialNumber ?? this.serialNumber,
     receiptPhotoId: receiptPhotoId ?? this.receiptPhotoId,
+    receiptId: receiptId ?? this.receiptId,
     serialNumberPhotoId: serialNumberPhotoId ?? this.serialNumberPhotoId,
     warrantyPeriod: warrantyPeriod ?? this.warrantyPeriod,
     cost: cost ?? this.cost,
@@ -101,6 +106,7 @@ class Tool extends Entity<Tool> {
         : null,
     serialNumber: map['serialNumber'] as String?,
     receiptPhotoId: map['receiptPhotoId'] as int?,
+    receiptId: map['receiptId'] as int?,
     serialNumberPhotoId: map['serialNumberPhotoId'] as int?,
     warrantyPeriod: map['warrantyPeriod'] as int?,
     cost: MoneyEx.moneyOrNull(map['cost'] as int?),
@@ -119,6 +125,7 @@ class Tool extends Entity<Tool> {
     'datePurchased': datePurchased?.toIso8601String(),
     'serialNumber': serialNumber,
     'receiptPhotoId': receiptPhotoId,
+    'receiptId': receiptId,
     'serialNumberPhotoId': serialNumberPhotoId,
     'warrantyPeriod': warrantyPeriod,
     'cost': cost?.copyWith(decimalDigits: 2).minorUnits.toInt(),

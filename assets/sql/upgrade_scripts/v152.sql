@@ -1,0 +1,2 @@
+ALTER TABLE tool
+ADD COLUMN receiptId INTEGER REFERENCES receipt(id);

@@ -12,7 +12,11 @@
 */
 
 import '../entity/receipt.dart';
+import '../entity/photo.dart';
+import '../util/dart/exceptions.dart';
 import 'dao.dart';
+import 'dao_photo.dart';
+import 'dao_tool.dart';
 
 class DaoReceipt extends Dao<Receipt> {
   static const tableName = 'receipt';
@@ -20,6 +24,23 @@ class DaoReceipt extends Dao<Receipt> {
 
   @override
   Receipt fromMap(Map<String, dynamic> map) => Receipt.fromMap(map);
+
+  @override
+  Future<int> delete(int id, [transaction]) async {
+    final linkedCount = await DaoTool().countByReceiptId(id);
+    if (linkedCount > 0) {
+      throw HMBException(
+        'Cannot delete this receipt while it is linked to a tool.',
+      );
+    }
+
+    final photos = await DaoPhoto().getByParent(id, ParentType.receipt);
+    for (final photo in photos) {
+      await DaoPhoto().delete(photo.id, transaction);
+    }
+
+    return super.delete(id, transaction);
+  }
 
   /// Filter receipts by optional criteria
   Future<List<Receipt>> getByFilter({

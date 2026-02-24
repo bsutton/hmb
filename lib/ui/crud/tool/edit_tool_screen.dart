@@ -26,6 +26,7 @@ import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/grayed_out.dart';
 import '../../widgets/hmb_button.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/hmb_date_time_picker.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/captured_photo.dart';
@@ -56,6 +57,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
   late PhotoController<Tool> _photoController;
 
   int? _receiptPhotoId;
+  int? _receiptId;
   int? _serialNumberPhotoId;
 
   @override
@@ -92,6 +94,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
     );
 
     _receiptPhotoId = currentEntity?.receiptPhotoId;
+    _receiptId = currentEntity?.receiptId;
     _serialNumberPhotoId = currentEntity?.serialNumberPhotoId;
 
     if (currentEntity != null) {
@@ -288,6 +291,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
       warrantyPeriod: int.tryParse(_warrantyPeriodController.text),
       cost: MoneyEx.tryParse(_costController.text),
       receiptPhotoId: _receiptPhotoId,
+      receiptId: _receiptId,
       serialNumberPhotoId: _serialNumberPhotoId,
       datePurchased: _selectedDatePurchased,
     );
@@ -305,6 +309,7 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
       warrantyPeriod: int.tryParse(_warrantyPeriodController.text),
       cost: MoneyEx.tryParse(_costController.text),
       receiptPhotoId: _receiptPhotoId,
+      receiptId: _receiptId,
       serialNumberPhotoId: _serialNumberPhotoId,
       datePurchased: _selectedDatePurchased,
     );
@@ -314,6 +319,15 @@ class _ToolEditScreenState extends DeferredState<ToolEditScreen>
 
   @override
   Future<void> postSave(_) async {
+    if (currentEntity != null) {
+      try {
+        final updated = await DaoTool().ensureReceiptLink(currentEntity!);
+        currentEntity = updated;
+        _receiptId = updated.receiptId;
+      } catch (e) {
+        HMBToast.error(e.toString());
+      }
+    }
     setState(() {});
   }
 }

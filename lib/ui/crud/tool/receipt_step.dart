@@ -39,6 +39,7 @@ class ReceiptStep extends WizardStep {
             final photoId = await DaoPhoto().insert(photo);
             wizard.tool = wizard.tool!.copyWith(receiptPhotoId: photoId);
             await DaoTool().update(wizard.tool!);
+            wizard.tool = await DaoTool().ensureReceiptLink(wizard.tool!);
             return photoId;
           },
         ),
