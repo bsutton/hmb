@@ -51,12 +51,30 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
   late FocusNode _endTimeFocusNode;
   late FocusNode _noteFocusNode;
   final _dateTimeFormat = DateFormat('yyyy-MM-dd hh:mm a');
+  var _hasUserEditedEndDate = false;
 
   String _formatDateTime(DateTime dateTime) =>
       _dateTimeFormat.format(dateTime.toLocal());
 
   DateTime? _parseDateTime(String? dateTime) =>
       _dateTimeFormat.tryParse(dateTime ?? '');
+
+  void _syncEndDateToStartDateIfNeeded(DateTime startDateTime) {
+    if (currentEntity != null || _hasUserEditedEndDate) {
+      return;
+    }
+    final existingEnd = _parseDateTime(_endTimeController.text);
+    final synced = existingEnd == null
+        ? startDateTime
+        : DateTime(
+            startDateTime.year,
+            startDateTime.month,
+            startDateTime.day,
+            existingEnd.hour,
+            existingEnd.minute,
+          );
+    _endTimeController.text = _formatDateTime(synced);
+  }
 
   @override
   TimeEntry? currentEntity;
@@ -171,6 +189,7 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
             );
             if (selectedDateTime != null) {
               _startTimeController.text = _formatDateTime(selectedDateTime);
+              _syncEndDateToStartDateIfNeeded(selectedDateTime);
             }
           },
           child: AbsorbPointer(
@@ -193,6 +212,7 @@ class _TimeEntryEditScreenState extends State<TimeEntryEditScreen>
               _parseDateTime(_endTimeController.text),
             );
             if (selectedDateTime != null) {
+              _hasUserEditedEndDate = true;
               _endTimeController.text = _formatDateTime(selectedDateTime);
             }
           },

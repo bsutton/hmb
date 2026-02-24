@@ -57,6 +57,7 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
 
   final _dateFormat = DateFormat('yyyy-MM-dd');
   final _timeFormat = DateFormat('hh:mm a');
+  var _hasUserEditedEndDate = false;
 
   @override
   TimeEntry? currentEntity;
@@ -162,6 +163,17 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
     return DateTime(d.year, d.month, d.day, tdt.hour, tdt.minute);
   }
 
+  void _syncEndDateToStartDateIfNeeded() {
+    if (currentEntity != null || _hasUserEditedEndDate) {
+      return;
+    }
+    final start = _dateFormat.tryParse(_startDateController.text);
+    if (start == null) {
+      return;
+    }
+    _endDateController.text = _dateFormat.format(start);
+  }
+
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
@@ -211,6 +223,7 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
               );
               if (picked != null) {
                 _startDateController.text = _dateFormat.format(picked);
+                _syncEndDateToStartDateIfNeeded();
               }
             },
             child: AbsorbPointer(
@@ -262,6 +275,7 @@ class _TimeEntryEditScreenState extends DeferredState<TimeEntryEditScreen>
                 _dateFormat.tryParse(_endDateController.text),
               );
               if (picked != null) {
+                _hasUserEditedEndDate = true;
                 _endDateController.text = _dateFormat.format(picked);
               }
             },
