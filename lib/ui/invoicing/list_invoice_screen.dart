@@ -27,6 +27,7 @@ import '../widgets/select/hmb_droplist.dart';
 import '../widgets/select/hmb_select_job.dart';
 import '../widgets/widgets.g.dart';
 import 'dialog_select_tasks.dart';
+import 'create_invoice_ui.dart';
 import 'edit_invoice_screen.dart';
 import 'invoice_details.dart';
 import 'list_invoice_card.dart';
@@ -132,6 +133,12 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     if (!mounted) {
       return null;
     }
+
+    if (job.billingType == BillingType.fixedPrice) {
+      await openMilestonesForFixedPriceJob(job: job, context: context);
+      return null;
+    }
+
     try {
       final invoiceOptions = await selectTasksToInvoice(
         context: context,
