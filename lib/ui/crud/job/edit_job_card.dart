@@ -33,6 +33,7 @@ import '../../../util/dart/format.dart';
 import '../../../util/dart/local_date.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../../util/flutter/platform_ex.dart';
+import '../../dialog/hmb_file_picker_linux.dart';
 import '../../scheduling/schedule_page.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -50,7 +51,6 @@ import '../../widgets/select/hmb_select_customer.dart';
 import '../../widgets/select/hmb_select_site.dart';
 import '../../widgets/text/hmb_expanding_text_block.dart';
 import '../../widgets/text/hmb_text.dart';
-import '../../dialog/hmb_file_picker_linux.dart';
 import 'fsm_status_picker.dart';
 import 'list_job_screen.dart';
 
@@ -305,7 +305,7 @@ You can set a default booking fee from System | Billing screen''');
             return name.contains(value) || email.contains(value);
           }).toList();
         },
-        format: (contact) => _displayContact(contact),
+        format: _displayContact,
         required: false,
         onChanged: (contact) {
           June.getState(SelectedContact.new).contactId = contact?.id;
