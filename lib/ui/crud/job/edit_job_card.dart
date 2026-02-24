@@ -221,6 +221,7 @@ You can set a default booking fee from System | Billing screen''');
       childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
       children: [
         _chooseCustomer(),
+        _chooseTenantContact(),
         _chooseContact(),
         _chooseBillingParty(),
         if (June.getState(SelectedBillingParty.new).billingParty ==
@@ -242,7 +243,7 @@ You can set a default booking fee from System | Billing screen''');
       June.getState(SelectedReferrerCustomer.new).customerId,
     );
     final tenant = await DaoContact().getById(
-      June.getState(SelectedContact.new).contactId,
+      June.getState(SelectedTenantContact.new).contactId,
     );
 
     final selected = <String>[];
@@ -250,7 +251,7 @@ You can set a default booking fee from System | Billing screen''');
       selected.add('Owner: ${owner.name}');
     }
     if (referrer != null) {
-      selected.add('Referrer: ${referrer.name}');
+      selected.add('Referred By: ${referrer.name}');
     }
     if (tenant != null) {
       selected.add('Tenant: ${tenant.fullname}');
@@ -285,18 +286,66 @@ You can set a default booking fee from System | Billing screen''');
     ),
   );
 
-  Widget _chooseContact() => JuneBuilder(
-    SelectedContact.new,
-    builder: (selectedContact) => HMBSelectContact(
-      title: 'Primary Contact',
-      key: ValueKey(selectedContact.contactId),
-      initialContact: selectedContact.contactId,
-      customer: widget.customer,
-      onSelected: (contact) {
-        June.getState(SelectedContact.new).contactId = contact?.id;
-      },
+  Widget _chooseContact() => FutureBuilderEx<List<Contact>>(
+    future: _primaryContactChoices(),
+    builder: (context, contacts) => JuneBuilder(
+      SelectedContact.new,
+      builder: (selectedContact) => HMBDroplist<Contact>(
+        title: 'Primary Contact',
+        selectedItem: () => DaoContact().getById(selectedContact.contactId),
+        items: (filter) async {
+          final value = filter?.trim().toLowerCase() ?? '';
+          if (value.isEmpty) {
+            return contacts ?? [];
+          }
+          return (contacts ?? []).where((contact) {
+            final name = '${contact.firstName} ${contact.surname}'
+                .toLowerCase();
+            final email = contact.emailAddress.toLowerCase();
+            return name.contains(value) || email.contains(value);
+          }).toList();
+        },
+        format: (contact) => _displayContact(contact),
+        required: false,
+        onChanged: (contact) {
+          June.getState(SelectedContact.new).contactId = contact?.id;
+        },
+      ),
     ),
   );
+
+  Future<List<Contact>> _primaryContactChoices() async {
+    final ids = <int>{};
+    final contacts = <Contact>[];
+
+    Future<void> addCustomerContacts(int? customerId) async {
+      if (customerId == null) {
+        return;
+      }
+      final list = await DaoContact().getByCustomer(customerId);
+      for (final contact in list) {
+        if (ids.add(contact.id)) {
+          contacts.add(contact);
+        }
+      }
+    }
+
+    final selectedCustomerId = June.getState(SelectedCustomer.new).customerId;
+    final customerId = selectedCustomerId ?? widget.customer?.id;
+    await addCustomerContacts(customerId);
+    await addCustomerContacts(
+      June.getState(SelectedReferrerCustomer.new).customerId,
+    );
+    return contacts;
+  }
+
+  String _displayContact(Contact contact) {
+    final fullName = '${contact.firstName} ${contact.surname}'.trim();
+    if (contact.emailAddress.isEmpty) {
+      return fullName;
+    }
+    return '$fullName (${contact.emailAddress})';
+  }
 
   JuneBuilder<SelectedSite> _chooseSite() => JuneBuilder(
     () => SelectedSite()..siteId = job?.siteId,
@@ -319,6 +368,7 @@ You can set a default booking fee from System | Billing screen''');
       // Clear dependent selections
       June.getState(SelectedSite.new).siteId = null;
       June.getState(SelectedContact.new).contactId = null;
+      June.getState(SelectedTenantContact.new).contactId = null;
 
       // Reset billing contact to the customer's default
       if (June.getState(SelectedBillingParty.new).billingParty ==
@@ -336,7 +386,7 @@ You can set a default booking fee from System | Billing screen''');
   );
 
   Widget _chooseReferrerCustomer() => HMBDroplist<Customer>(
-    title: 'Referrer Customer',
+    title: 'Referred By',
     selectedItem: () => DaoCustomer().getById(
       June.getState(SelectedReferrerCustomer.new).customerId,
     ),
@@ -370,6 +420,24 @@ You can set a default booking fee from System | Billing screen''');
       onSelected: (contact) {
         June.getState(SelectedReferrerContact.new).contactId = contact?.id;
       },
+    ),
+  );
+
+  Widget _chooseTenantContact() => FutureBuilderEx<Customer?>(
+    future: DaoCustomer().getById(
+      June.getState(SelectedCustomer.new).customerId ?? widget.customer?.id,
+    ),
+    builder: (context, customer) => JuneBuilder(
+      SelectedTenantContact.new,
+      builder: (tenantState) => HMBSelectContact(
+        title: 'Tenant',
+        key: ValueKey('${tenantState.contactId}-${customer?.id}'),
+        initialContact: tenantState.contactId,
+        customer: customer,
+        onSelected: (contact) {
+          tenantState.contactId = contact?.id;
+        },
+      ),
     ),
   );
 
@@ -890,6 +958,17 @@ class SelectedReferrerCustomer extends JuneState {
 }
 
 class SelectedReferrerContact extends JuneState {
+  int? _contactId;
+
+  int? get contactId => _contactId;
+
+  set contactId(int? value) {
+    _contactId = value;
+    setState();
+  }
+}
+
+class SelectedTenantContact extends JuneState {
   int? _contactId;
 
   int? get contactId => _contactId;

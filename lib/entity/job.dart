@@ -68,6 +68,7 @@ class Job extends Entity<Job> {
   bool bookingFeeInvoiced;
   int? billingContactId;
   int? referrerContactId;
+  int? tenantContactId;
   BillingParty billingParty;
 
   Job._({
@@ -85,6 +86,7 @@ class Job extends Entity<Job> {
     required this.bookingFee,
     required this.billingContactId,
     required this.referrerContactId,
+    required this.tenantContactId,
     required this.billingParty,
     required this.lastActive,
     required super.createdDate,
@@ -106,6 +108,7 @@ class Job extends Entity<Job> {
     required this.billingContactId,
     this.referrerCustomerId,
     this.referrerContactId,
+    this.tenantContactId,
     this.billingParty = BillingParty.customer,
     this.isStock = false,
     this.assumption = '',
@@ -133,6 +136,7 @@ class Job extends Entity<Job> {
     bool? bookingFeeInvoiced,
     int? billingContactId,
     int? referrerContactId,
+    int? tenantContactId,
     BillingParty? billingParty,
   }) => Job._(
     id: id,
@@ -150,6 +154,7 @@ class Job extends Entity<Job> {
     bookingFee: bookingFee ?? this.bookingFee,
     billingContactId: billingContactId ?? this.billingContactId,
     referrerContactId: referrerContactId ?? this.referrerContactId,
+    tenantContactId: tenantContactId ?? this.tenantContactId,
     billingParty: billingParty ?? this.billingParty,
     lastActive: lastActive ?? this.lastActive,
     createdDate: createdDate,
@@ -179,6 +184,7 @@ class Job extends Entity<Job> {
     bookingFeeInvoiced: (map['booking_fee_invoiced'] as int) == 1,
     billingContactId: map['billing_contact_id'] as int?,
     referrerContactId: map['referrer_contact_id'] as int?,
+    tenantContactId: map['tenant_contact_id'] as int?,
     billingParty: BillingParty.fromName(map['billing_party'] as String?),
   );
 
@@ -202,6 +208,7 @@ class Job extends Entity<Job> {
     'booking_fee_invoiced': bookingFeeInvoiced ? 1 : 0,
     'billing_contact_id': billingContactId,
     'referrer_contact_id': referrerContactId,
+    'tenant_contact_id': tenantContactId,
     'billing_party': billingParty.name,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),

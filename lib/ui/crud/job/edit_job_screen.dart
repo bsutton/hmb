@@ -106,6 +106,8 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     June.getState(SelectJobStatus.new).jobStatus = widget.job?.status;
     June.getState(SelectedSite.new).siteId = widget.job?.siteId;
     June.getState(SelectedContact.new).contactId = widget.job?.contactId;
+    June.getState(SelectedTenantContact.new).contactId =
+        widget.job?.tenantContactId;
     June.getState(SelectedReferrerContact.new).contactId =
         widget.job?.referrerContactId;
     June.getState(SelectedBillingParty.new).billingParty =
@@ -254,6 +256,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     billingType: _selectedBillingType,
     billingContactId: June.getState(JobBillingContact.new).contactId,
     referrerContactId: June.getState(SelectedReferrerContact.new).contactId,
+    tenantContactId: June.getState(SelectedTenantContact.new).contactId,
     billingParty: June.getState(SelectedBillingParty.new).billingParty,
   );
 
@@ -275,6 +278,7 @@ class _JobEditScreenState extends DeferredState<JobEditScreen>
     billingType: _selectedBillingType,
     billingContactId: June.getState(JobBillingContact.new).contactId,
     referrerContactId: June.getState(SelectedReferrerContact.new).contactId,
+    tenantContactId: June.getState(SelectedTenantContact.new).contactId,
     billingParty: June.getState(SelectedBillingParty.new).billingParty,
   );
 
