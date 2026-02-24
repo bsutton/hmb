@@ -137,7 +137,19 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
                             ],
                             if (site != null)
                               pw.Text('Address: ${site.address}'),
-                            if (job != null) pw.Text('Job: ${job.summary}'),
+                            if (job != null) ...[
+                              pw.Text('Job #: ${job.id}'),
+                              if (job.summary.trim().isNotEmpty)
+                                pw.Text('Summary: ${job.summary}'),
+                              if (job.description.trim().isNotEmpty)
+                                pw.Text(
+                                  'Description: ${job.description.replaceAll('\n', ' ')}',
+                                ),
+                              if (job.assumption.trim().isNotEmpty)
+                                pw.Text(
+                                  'Assumptions: ${job.assumption.replaceAll('\n', ' ')}',
+                                ),
+                            ],
                             pw.Text('Sent: ${DateTime.now()}'),
                           ],
                         ),
