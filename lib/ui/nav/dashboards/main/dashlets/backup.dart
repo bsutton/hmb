@@ -17,6 +17,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import '../../../../../database/factory/flutter_database_factory.dart';
 import '../../../../../database/management/backup_providers/google_drive/background_backup/background_backup.g.dart';
 import '../../../../../database/management/backup_providers/local/local_backup_provider.dart';
+import '../../../../../database/management/backup_providers/google_drive/google_drive_backup_provider.dart';
 import '../../../../../database/management/backup_providers/google_drive/google_drive.g.dart';
 import '../../../../../src/appname.dart';
 import '../../../../../util/dart/format.dart';
@@ -75,6 +76,14 @@ class BackupDashlet extends StatelessWidget {
         if (backups.isNotEmpty) {
           backups.sort((a, b) => b.when.compareTo(a.when));
           last = backups.first.when;
+        } else if (status == GoogleDriveStatus.signedIn) {
+          final remoteBackups = await GoogleDriveBackupProvider(
+            FlutterDatabaseFactory(),
+          ).getBackups();
+          if (remoteBackups.isNotEmpty) {
+            remoteBackups.sort((a, b) => b.when.compareTo(a.when));
+            last = remoteBackups.first.when;
+          }
         }
       }
     } catch (_) {}

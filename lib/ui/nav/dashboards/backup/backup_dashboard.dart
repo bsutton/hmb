@@ -70,7 +70,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       auth = await GoogleDriveAuth.instance();
       // Do not auto-sign-in when opening dashboard.
       // Sign-in is now only requested when user taps backup/restore/sync.
-      _lastBackup = null;
+      _lastBackup = auth.isSignedIn ? await _refreshLastBackup() : null;
     }
   }
 
@@ -199,7 +199,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       await _provider.performBackup(version: 1, src: AssetScriptSource());
       final refreshedLastBackup = await _refreshLastBackup();
       if (mounted) {
-        setState(() => _lastBackup = refreshedLastBackup);
+        setState(() => _lastBackup = refreshedLastBackup ?? DateTime.now());
         HMBToast.info('Backup completed successfully.');
       }
     } catch (e) {
