@@ -72,7 +72,7 @@ class GoogleDriveFolderStore {
       final settings = SettingsYaml.load(
         pathToSettings: await getSettingsPath(),
       );
-      settings.remove(key);
+      settings[key] = '';
       await settings.save();
     } catch (_) {
       // Ignore persistence failures in contexts like worker isolates.

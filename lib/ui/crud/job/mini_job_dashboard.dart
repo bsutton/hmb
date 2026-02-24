@@ -297,6 +297,9 @@ class MiniJobDashboard extends StatelessWidget {
 
   Future<void> _openMilestones(BuildContext context) async {
     final quotes = await DaoQuote().getByJobId(job.id);
+    if (!context.mounted) {
+      return;
+    }
     if (quotes.isEmpty) {
       HMBToast.info('Create a quote for this job before adding milestones.');
       return;

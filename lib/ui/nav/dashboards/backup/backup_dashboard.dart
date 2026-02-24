@@ -77,9 +77,8 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     super.dispose();
   }
 
-  Future<DateTime?> _refreshLastBackup() async {
-    return BackupHistoryStore.latestSuccessfulBackup();
-  }
+  Future<DateTime?> _refreshLastBackup() =>
+      BackupHistoryStore.latestSuccessfulBackup();
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -201,6 +200,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
 
   Future<void> _performRestore(BuildContext context) async {
     if (!await _ensureSignedInForAction()) {
+      return;
+    }
+    if (!context.mounted) {
       return;
     }
     _provider.useDebugPath = !false;
