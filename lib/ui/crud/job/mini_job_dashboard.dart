@@ -12,16 +12,20 @@
 */
 
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../dao/notification/dao_june_builder.dart';
 import '../../../entity/job.dart';
+import '../../../entity/quote.dart';
 import '../../invoicing/list_invoice_screen.dart';
 import '../../nav/dashboards/dashlet_card.dart';
 import '../../quoting/list_quote_screen.dart';
 import '../../widgets/hmb_button.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/layout/hmb_full_page_child_screen.dart';
 import '../base_nested/list_nested_screen.dart';
+import '../milestone/edit_milestone_payment.dart';
 import '../task/list_task_screen.dart';
 import '../todo/list_todo_screen.dart';
 import '../work_assignment/list_assignment_screen.dart';
@@ -75,6 +79,25 @@ class MiniJobDashboard extends StatelessWidget {
               // route: '/home/jobs/quotes/${job.id}',
             ),
             size: dashletSize,
+          ),
+          FutureBuilderEx<bool>(
+            future: _shouldShowMilestones(),
+            builder: (_, show) {
+              if (show != true) {
+                return const SizedBox.shrink();
+              }
+              return _dashlet(
+                child: DashletCard<int>.onTap(
+                  label: 'Milestones',
+                  hint: 'Create and manage milestone payments for this Job',
+                  icon: Icons.flag,
+                  compact: true,
+                  value: _milestoneDashletValue,
+                  onTap: _openMilestones,
+                ),
+                size: dashletSize,
+              );
+            },
           ),
           _dashlet(
             child: DashletCard<int>.builder(
@@ -184,6 +207,30 @@ class MiniJobDashboard extends StatelessWidget {
   Widget _dashlet({required Widget child, required double size}) =>
       SizedBox(width: size, height: size, child: child);
 
+  Future<bool> _shouldShowMilestones() async {
+    if (job.billingType == BillingType.fixedPrice) {
+      return true;
+    }
+
+    final tasks = await DaoTask().getTasksByJob(job.id);
+    return tasks.any(
+      (task) =>
+          task.effectiveBillingType(job.billingType) == BillingType.fixedPrice,
+    );
+  }
+
+  Future<DashletValue<int>> _milestoneDashletValue() async {
+    final quotes = await DaoQuote().getByJobId(job.id);
+    var outstandingMilestones = 0;
+    for (final quote in quotes) {
+      final milestones = await DaoMilestone().getByQuoteId(quote.id);
+      outstandingMilestones += milestones
+          .where((m) => m.invoiceId == null)
+          .length;
+    }
+    return DashletValue<int>(outstandingMilestones);
+  }
+
   Future<void> _openEstimateBuilder(BuildContext context) async {
     if (job.billingType == BillingType.timeAndMaterial) {
       final switchToFixed = await showDialog<bool>(
@@ -225,6 +272,59 @@ class MiniJobDashboard extends StatelessWidget {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => JobEstimateBuilderScreen(job: job),
+        fullscreenDialog: true,
+      ),
+    );
+  }
+
+  Future<void> _openMilestones(BuildContext context) async {
+    final quotes = await DaoQuote().getByJobId(job.id);
+    if (quotes.isEmpty) {
+      HMBToast.info('Create a quote for this job before adding milestones.');
+      return;
+    }
+
+    Quote? selected;
+    if (quotes.length == 1) {
+      selected = quotes.first;
+    } else {
+      selected = await showDialog<Quote>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Select Quote'),
+          content: SizedBox(
+            width: 360,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: quotes.length,
+              itemBuilder: (context, index) {
+                final quote = quotes[index];
+                return ListTile(
+                  title: Text('Quote ${quote.bestNumber}'),
+                  subtitle: Text(quote.summary),
+                  onTap: () => Navigator.of(context).pop(quote),
+                );
+              },
+            ),
+          ),
+          actions: [
+            HMBButton(
+              label: 'Cancel',
+              hint: "Don't open milestone editor",
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!context.mounted || selected == null) {
+      return;
+    }
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => EditMilestonesScreen(quoteId: selected!.id),
         fullscreenDialog: true,
       ),
     );
