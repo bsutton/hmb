@@ -16,12 +16,14 @@ import 'package:flutter/material.dart';
 class HMBLinkInternal extends StatelessWidget {
   final String label;
   final Future<Widget> Function() navigateTo;
+  final Future<void> Function()? onReturned;
   final int? maxLines;
   final TextOverflow? overflow;
 
   const HMBLinkInternal({
     required this.label,
     required this.navigateTo,
+    this.onReturned,
     this.maxLines,
     this.overflow,
     super.key,
@@ -35,6 +37,9 @@ class HMBLinkInternal extends StatelessWidget {
         await Navigator.of(
           context,
         ).push(MaterialPageRoute<void>(builder: (context) => widget));
+        if (onReturned != null) {
+          await onReturned!();
+        }
       }
     },
     child: Text(

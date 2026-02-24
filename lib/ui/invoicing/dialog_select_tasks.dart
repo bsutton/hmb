@@ -17,6 +17,7 @@ import 'package:money2/money2.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
+import '../widgets/fields/fields.g.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_select_contact.dart';
 import '../widgets/widgets.g.dart';

@@ -22,6 +22,7 @@ import 'package:money2/money2.dart';
 import 'package:strings/strings.dart';
 
 import '../../../dao/dao_invoice.dart';
+import '../../../dao/dao_milestone.dart';
 import '../../../entity/invoice.dart';
 import '../../../entity/milestone.dart';
 import '../../../util/dart/money_ex.dart';
@@ -305,6 +306,21 @@ Are you sure you want to delete ${Strings.isNotBlank(widget.milestone.milestoneD
                                     return InvoiceEditScreen(
                                       invoiceDetails: details,
                                     );
+                                  },
+                                  onReturned: () async {
+                                    final latest = await DaoMilestone().getById(
+                                      widget.milestone.id,
+                                    );
+                                    if (!context.mounted || latest == null) {
+                                      return;
+                                    }
+                                    setState(() {
+                                      widget.milestone.invoiceId =
+                                          latest.invoiceId;
+                                      _isEditable =
+                                          widget.milestone.invoiceId == null &&
+                                          !widget.milestone.voided;
+                                    });
                                   },
                                 );
                         },
