@@ -14,16 +14,20 @@
 // lib/src/services/quote_pdf_generator.dart
 
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:strings/strings.dart';
 
+import '../../dao/dao_photo.dart';
+import '../../dao/dao_quote_task_photo.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/quote.dart';
 import '../../entity/system.dart';
 import '../../util/dart/format.dart';
+import '../../util/dart/photo_meta.dart';
 import '../../util/dart/tax_display_text.dart';
 import 'quote_details.dart';
 
@@ -40,6 +44,7 @@ Future<File> generateQuotePdf(
     excludeHidden: true,
   );
   final taxDisplayText = await buildPdfTaxDisplayText();
+  final appendix = await _loadQuotePhotoAppendix(jobQuote);
 
   final totalAmount = jobQuote.total;
   final phone = await formatPhone(system.bestPhone);
@@ -345,6 +350,63 @@ Future<File> generateQuotePdf(
           }
         }
 
+        if (appendix.isNotEmpty) {
+          content
+            ..add(pw.NewPage())
+            ..add(
+              pw.Text(
+                'Appendix: Task Photos',
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            )
+            ..add(pw.SizedBox(height: 8));
+
+          for (final section in appendix) {
+            content
+              ..add(
+                pw.Text(
+                  section.taskName,
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              )
+              ..add(pw.SizedBox(height: 4));
+
+            if (Strings.isNotBlank(section.taskDescription)) {
+              content
+                ..add(pw.Text(section.taskDescription))
+                ..add(pw.SizedBox(height: 6));
+            }
+
+            for (final photo in section.photos) {
+              content.add(
+                pw.Container(
+                  margin: const pw.EdgeInsets.only(bottom: 10),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Image(pw.MemoryImage(photo.bytes)),
+                      if (Strings.isNotBlank(photo.comment))
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.only(top: 4),
+                          child: pw.Text('Comment: ${photo.comment}'),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            content.add(pw.SizedBox(height: 6));
+            content.add(pw.Divider());
+            content.add(pw.SizedBox(height: 8));
+          }
+        }
+
         return content;
       },
     ),
@@ -354,6 +416,117 @@ Future<File> generateQuotePdf(
   final file = File('${output.path}/quote_${quote.quoteNum ?? quote.id}.pdf');
   await file.writeAsBytes(await pdf.save());
   return file;
+}
+
+Future<List<_QuotePhotoAppendixSection>> _loadQuotePhotoAppendix(
+  QuoteDetails quoteDetails,
+) async {
+  if (quoteDetails.quoteId == 0) {
+    return [];
+  }
+
+  final selected = await DaoQuoteTaskPhoto().getByQuote(quoteDetails.quoteId);
+  if (selected.isEmpty) {
+    return [];
+  }
+
+  final metasByTask = <int, Map<int, String>>{};
+  final taskIds = selected.map((s) => s.taskId).toSet();
+  for (final taskId in taskIds) {
+    final metas = await DaoPhoto.getByTask(taskId);
+    await PhotoMeta.resolveAll(metas);
+    final byPhoto = <int, String>{};
+    for (final meta in metas) {
+      byPhoto[meta.photo.id] = meta.absolutePathTo;
+    }
+    metasByTask[taskId] = byPhoto;
+  }
+
+  final photoById = <int, _ResolvedQuotePhoto>{};
+  for (final selection in selected) {
+    final path = metasByTask[selection.taskId]?[selection.photoId];
+    if (Strings.isBlank(path)) {
+      continue;
+    }
+    final file = File(path!);
+    if (!file.existsSync()) {
+      continue;
+    }
+    photoById[selection.photoId] = _ResolvedQuotePhoto(
+      bytes: await file.readAsBytes(),
+      comment: selection.comment,
+    );
+  }
+
+  final byTask = <int, List<_QuotePhotoRow>>{};
+  for (final selection in selected) {
+    final resolved = photoById[selection.photoId];
+    if (resolved == null) {
+      continue;
+    }
+    byTask
+        .putIfAbsent(selection.taskId, () => [])
+        .add(
+          _QuotePhotoRow(
+            order: selection.displayOrder,
+            comment: resolved.comment,
+            bytes: resolved.bytes,
+          ),
+        );
+  }
+
+  final sections = <_QuotePhotoAppendixSection>[];
+  for (final wrapped in quoteDetails.groups) {
+    final group = wrapped.group;
+    final taskId = group.taskId;
+    if (taskId == null) {
+      continue;
+    }
+    final rows = byTask[taskId];
+    if (rows == null || rows.isEmpty) {
+      continue;
+    }
+    rows.sort((a, b) => a.order.compareTo(b.order));
+    sections.add(
+      _QuotePhotoAppendixSection(
+        taskName: group.name,
+        taskDescription: group.description,
+        photos: rows,
+      ),
+    );
+  }
+  return sections;
+}
+
+class _ResolvedQuotePhoto {
+  final Uint8List bytes;
+  final String comment;
+
+  _ResolvedQuotePhoto({required this.bytes, required this.comment});
+}
+
+class _QuotePhotoAppendixSection {
+  final String taskName;
+  final String taskDescription;
+  final List<_QuotePhotoRow> photos;
+
+  _QuotePhotoAppendixSection({
+    required this.taskName,
+    required this.taskDescription,
+    required this.photos,
+  });
+}
+
+class _QuotePhotoRow {
+  final int order;
+  final String comment;
+  final Uint8List bytes;
+
+  _QuotePhotoRow({
+    required this.order,
+    required this.comment,
+    required this.bytes,
+  });
 }
 
 /// Helper to load and size the business logo

@@ -29,6 +29,7 @@ import '../widgets/media/pdf_preview.dart';
 import '../widgets/widgets.g.dart';
 import 'generate_quote_pdf.dart';
 import 'job_and_customer.dart';
+import 'select_quote_task_photos_dialog.dart';
 
 enum _RejectAction { quoteOnly, quoteAndJob }
 
@@ -111,18 +112,32 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
     if (!mounted) {
       return;
     }
-    final result = await _showQuoteOptionsDialog(
-      context: context,
-      displayCosts: displayCosts,
-      displayGroupHeaders: displayGroupHeaders,
-      displayItems: displayItems,
-    );
-    if (result == null || !mounted) {
-      return;
+    while (true) {
+      final result = await _showQuoteOptionsDialog(
+        context: context,
+        displayCosts: displayCosts,
+        displayGroupHeaders: displayGroupHeaders,
+        displayItems: displayItems,
+      );
+      if (result == null || !mounted) {
+        return;
+      }
+      displayCosts = result['displayCosts'] ?? true;
+      displayGroupHeaders = result['displayGroupHeaders'] ?? true;
+      displayItems = result['displayItems'] ?? true;
+      final editTaskPhotos = result['manageTaskPhotos'] ?? false;
+      if (editTaskPhotos) {
+        await SelectQuoteTaskPhotosDialog.show(
+          context: context,
+          quoteId: quote.id,
+        );
+        if (!mounted) {
+          return;
+        }
+        continue;
+      }
+      break;
     }
-    displayCosts = result['displayCosts'] ?? true;
-    displayGroupHeaders = result['displayGroupHeaders'] ?? true;
-    displayItems = result['displayItems'] ?? true;
 
     final quoteFile = await BlockingUI().runAndWait(
       label: 'Generating Quote',
@@ -223,6 +238,21 @@ Please find the attached quote for your job.
                 onChanged: (value) {
                   setState(() {
                     tempDisplayItems = value ?? true;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              HMBButtonSecondary(
+                label: 'Select Task Photos',
+                hint:
+                    'Select, comment, and order task photos for the '
+                    'quote appendix',
+                onPressed: () {
+                  Navigator.of(context).pop({
+                    'displayCosts': tempDisplayCosts,
+                    'displayGroupHeaders': tempDisplayGroupHeaders,
+                    'displayItems': tempDisplayItems,
+                    'manageTaskPhotos': true,
                   });
                 },
               ),
