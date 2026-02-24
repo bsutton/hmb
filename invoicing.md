@@ -82,14 +82,14 @@ authortive document.
 If during a job the scope of a quoted FP Task is changed (or cancelled), then 
 we allow the user to create a 'quote amendement'. 
 A quote amendment is a quote which is linked to the original quote and shares the
-samw quote number but also has a part number.
+same quote number but also has a part number.
 An amendment may contain a list of rejected or new tasks.
 As we don't allow a user to modify a task associated with an active quote, then
 if the user needs to modify an existing task then they must copy the existing task,
 update the new tasks estimates and then add it to the quote amendment.
 In some cases the user may reject a tasks and create the new task as a T&M task.
 
-The quote amendments will go through the same lifecycle as the quote (send,approve/reject).
+The quote amendments will go through the same lifecycle as the quote (send,approve/reject/withdrawn).
 The chain of quote amendments will share the same set of milestones as the original 
 quote. This will require the milestone screen to calculate its totals from the agregate
 set of quotes/amendments.
@@ -101,7 +101,7 @@ out each of the amendments to show the quote as it stands now.
 When a user goes to generate an invoice for a milestone and a quoted FP task has been
 cancelled then we need to warn the user that they need to recreate the milestones.
 We will still allow the user to generate the invoice, but will continue to warn them
-each time the create an invoice from a milestone, until the milestones are equal to
+each time they create an invoice from a milestone, until the milestones are equal to
 or less than the revised quote.
 
 A quote amendment may only include FP Tasks and may not include Tasks that 
