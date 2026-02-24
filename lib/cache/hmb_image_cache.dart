@@ -280,9 +280,19 @@ class HMBImageCache {
 
     return getVariantPath(
       variant: ImageVariant(meta, imageVariant),
-      fetch: (variant, targetPath) =>
-          fetch?.call(variant, targetPath) ??
-          _config.downloader(variant, targetPath),
+      fetch: (variant, targetPath) async {
+        // Prefer the local photo file when available so preview/generation
+        // flows do not trigger cloud auth just to render a document.
+        final localPath = variant.meta.absolutePathTo;
+        if (exists(localPath)) {
+          if (localPath != targetPath) {
+            copy(localPath, targetPath);
+          }
+          return;
+        }
+        await (fetch?.call(variant, targetPath) ??
+            _config.downloader(variant, targetPath));
+      },
     );
   }
 
