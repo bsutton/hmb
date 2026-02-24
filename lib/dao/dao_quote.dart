@@ -12,6 +12,7 @@
 */
 
 import 'package:fixed/fixed.dart';
+import 'package:money2/money2.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
@@ -177,11 +178,12 @@ class DaoQuote extends Dao<Quote> {
         final labourTotal = estimate.estimatedLabourCharge;
 
         if (!labourTotal.isZero) {
+          final labourQuantity = estimate.estimatedLabourHours;
           line = QuoteLine.forInsert(
             quoteId: quoteId,
             description: 'Labour',
-            quantity: estimate.estimatedLabourHours,
-            unitCharge: job.hourlyRate!,
+            quantity: labourQuantity,
+            unitCharge: _unitChargeForLine(labourTotal, labourQuantity),
             lineTotal: labourTotal,
           );
           totalAmount += labourTotal;
@@ -210,8 +212,9 @@ class DaoQuote extends Dao<Quote> {
           quoteLineGroupId: group.id,
           description: 'Material: ${item.description}',
           quantity: item.estimatedMaterialQuantity!,
-          unitCharge: item.estimatedMaterialUnitCost!.plusPercentage(
-            item.margin,
+          unitCharge: _unitChargeForLine(
+            matTotal,
+            item.estimatedMaterialQuantity!,
           ),
           lineTotal: matTotal,
         );
@@ -243,6 +246,13 @@ class DaoQuote extends Dao<Quote> {
     await DaoQuoteLineGroup().insert(quoteLineGroup);
 
     return quoteLineGroup;
+  }
+
+  Money _unitChargeForLine(Money lineTotal, Fixed quantity) {
+    if (quantity.isZero) {
+      return MoneyEx.zero;
+    }
+    return lineTotal.divideByFixed(quantity);
   }
 
   Future<void> recalculateTotal(int quoteId) async {
