@@ -66,6 +66,7 @@ class PlaceHolderManager {
     // Customer
     placeholders[CustomerName.tagName] = CustomerName(
       customerSource: customerSource,
+      contactSource: contactSource,
     );
 
     // Contact

@@ -12,6 +12,7 @@
 */
 
 import '../../../entity/customer.dart';
+import 'contact_source.dart';
 import 'customer_source.dart';
 import 'place_holder.dart';
 
@@ -21,10 +22,17 @@ class CustomerName extends PlaceHolder<Customer> {
   static const _tagBase = 'customer';
 
   final CustomerSource customerSource;
+  final ContactSource? contactSource;
 
-  CustomerName({required this.customerSource})
+  CustomerName({required this.customerSource, this.contactSource})
     : super(name: tagName, base: _tagBase, source: customerSource);
 
   @override
-  Future<String> value() async => customerSource.value?.name ?? '';
+  Future<String> value() async {
+    final contactName = contactSource?.value?.firstName.trim() ?? '';
+    if (contactName.isNotEmpty) {
+      return contactName;
+    }
+    return customerSource.value?.name ?? '';
+  }
 }
