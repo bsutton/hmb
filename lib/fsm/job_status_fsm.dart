@@ -107,6 +107,8 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<ToBeScheduled>(
         (b) => b
           ..onEnter((_, _) async {
+            await _updateJobStatus(job, JobStatus.toBeScheduled);
+            await _ensureScheduleTodo(job);
             await _approveTasks(job);
           })
           ..on<ScheduleJob, Scheduled>()
@@ -182,6 +184,25 @@ Future<void> _updateJobStatus(Job job, JobStatus status) async {
   job.status = status;
 
   await DaoJob().update(job);
+}
+
+Future<void> _ensureScheduleTodo(Job job) async {
+  final openTodos = await DaoToDo().getOpenByJob(job.id);
+  final alreadyExists = openTodos.any(
+    (todo) => todo.title.trim().toLowerCase() == 'schedule job',
+  );
+  if (alreadyExists) {
+    return;
+  }
+
+  await DaoToDo().insert(
+    ToDo.forInsert(
+      title: 'Schedule job',
+      parentType: ToDoParentType.job,
+      parentId: job.id,
+      priority: ToDoPriority.high,
+    ),
+  );
 }
 
 /// Return *guarded* next steps as JobStatus values + a way to trigger them.

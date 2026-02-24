@@ -1,6 +1,7 @@
 // test/job_status_fsm_test.dart
 import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
+import 'package:hmb/fsm/job_events.dart';
 import 'package:hmb/fsm/job_states.dart';
 import 'package:hmb/fsm/job_status_fsm.dart';
 import 'package:hmb/util/dart/money_ex.dart';
@@ -61,6 +62,24 @@ void main() {
           reason: 'Reject must be available from $s',
         );
       }
+    });
+
+    test('marking job to be scheduled creates a schedule todo', () async {
+      final job = await _insertJob(JobStatus.awaitingPayment);
+      final machine = await buildJobMachine(job);
+      machine.applyEvent(PaymentReceived(job));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      final updatedJob = await DaoJob().getById(job.id);
+      expect(updatedJob?.status, JobStatus.toBeScheduled);
+
+      final openTodos = await DaoToDo().getOpenByJob(job.id);
+      expect(
+        openTodos.any(
+          (todo) => todo.title.trim().toLowerCase() == 'schedule job',
+        ),
+        isTrue,
+      );
     });
   });
 }
