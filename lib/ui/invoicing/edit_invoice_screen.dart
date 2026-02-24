@@ -313,7 +313,7 @@ Total: ${line.lineTotal}'''),
     }
 
     final amount = MoneyEx.tryParse(amountController.text);
-    if (amount == null || !amount.isPositive) {
+    if (!amount.isPositive) {
       HMBToast.error('Discount amount must be greater than zero.');
       return;
     }

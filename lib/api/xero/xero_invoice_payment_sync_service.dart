@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import '../../api/external_accounting.dart';
 import '../../dao/dao.g.dart';
-import '../../database/management/database_helper.dart';
 import '../../entity/invoice.dart';
 import '../../util/dart/log.dart';
 import 'xero_api.dart';

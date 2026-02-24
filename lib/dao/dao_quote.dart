@@ -176,7 +176,7 @@ class DaoQuote extends Dao<Quote> {
       // Labour
       if (!MoneyEx.isZeroOrNull(estimate.estimatedLabourCharge)) {
         /// Labour based billing using estimated effort
-        final labourTotal = estimate.estimatedLabourCharge!.plusPercentage(
+        final labourTotal = estimate.estimatedLabourCharge.plusPercentage(
           taskMargin,
         );
 
@@ -242,7 +242,7 @@ class DaoQuote extends Dao<Quote> {
       final marginLine = QuoteLine.forInsert(
         quoteId: quoteId,
         quoteLineGroupId: adjustmentGroup.id,
-        description: 'Quote margin (${quoteMargin.toString()})',
+        description: 'Quote margin ($quoteMargin)',
         quantity: Fixed.fromInt(1),
         unitCharge: marginAmount,
         lineTotal: marginAmount,

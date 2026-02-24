@@ -17,8 +17,8 @@ import 'package:strings/strings.dart';
 
 import '../api/accounting/accounting_adaptor.dart';
 import '../entity/entity.g.dart';
-import '../util/dart/money_ex.dart';
 import '../util/dart/exceptions.dart';
+import '../util/dart/money_ex.dart';
 import 'dao.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
@@ -220,7 +220,6 @@ ORDER BY modified_date DESC
       quantity: Fixed.one,
       unitPrice: -amount,
       lineTotal: -amount,
-      status: LineChargeableStatus.normal,
     );
     await DaoInvoiceLine().insert(line);
     await recalculateTotal(invoice.id);

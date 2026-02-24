@@ -11,8 +11,9 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import '../../entity/entity.g.dart';
 import 'package:money2/money2.dart';
+
+import '../../entity/entity.g.dart';
 
 class InvoiceOptions {
   List<int> selectedTaskIds = [];
