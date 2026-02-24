@@ -12,6 +12,7 @@
 */
 
 import '../../entity/entity.g.dart';
+import 'package:money2/money2.dart';
 
 class InvoiceOptions {
   List<int> selectedTaskIds = [];
@@ -19,11 +20,16 @@ class InvoiceOptions {
   bool billBookingFee = true;
   bool groupByTask;
   Contact contact;
+  Percentage quoteMargin;
+  Map<int, Percentage> taskMargins;
 
   InvoiceOptions({
     required this.selectedTaskIds,
     required this.billBookingFee,
     required this.groupByTask,
     required this.contact,
-  });
+    Percentage? quoteMargin,
+    Map<int, Percentage>? taskMargins,
+  }) : quoteMargin = quoteMargin ?? Percentage.zero,
+       taskMargins = taskMargins ?? {};
 }

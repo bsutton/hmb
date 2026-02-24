@@ -166,6 +166,8 @@ class DaoQuote extends Dao<Quote> {
         // Quotes should only contain fixed price tasks.
         continue;
       }
+      final taskMargin =
+          invoiceOptions.taskMargins[estimate.task.id] ?? Percentage.zero;
 
       /// One group for each task.
       QuoteLineGroup? group;
@@ -174,7 +176,9 @@ class DaoQuote extends Dao<Quote> {
       // Labour
       if (!MoneyEx.isZeroOrNull(estimate.estimatedLabourCharge)) {
         /// Labour based billing using estimated effort
-        final labourTotal = estimate.estimatedLabourCharge;
+        final labourTotal = estimate.estimatedLabourCharge!.plusPercentage(
+          taskMargin,
+        );
 
         if (!labourTotal.isZero) {
           final labourQuantity = estimate.estimatedLabourHours;
@@ -202,7 +206,9 @@ class DaoQuote extends Dao<Quote> {
           continue;
         }
 
-        final matTotal = item.calcMaterialCharges(billingType);
+        final matTotal = item
+            .calcMaterialCharges(billingType)
+            .plusPercentage(taskMargin);
 
         group ??= await _createQuoteLineGroup(estimate.task, quoteId);
 
@@ -220,6 +226,29 @@ class DaoQuote extends Dao<Quote> {
         await DaoQuoteLine().insert(matLine);
         totalAmount += matTotal;
       }
+    }
+
+    final quoteMargin = invoiceOptions.quoteMargin;
+    if (!quoteMargin.isZero && !totalAmount.isZero) {
+      final marginAmount =
+          totalAmount.plusPercentage(quoteMargin) - totalAmount;
+      final adjustmentGroup = QuoteLineGroup.forInsert(
+        quoteId: quoteId,
+        taskId: null,
+        name: 'Adjustments',
+        description: 'Whole quote adjustments',
+      );
+      await DaoQuoteLineGroup().insert(adjustmentGroup);
+      final marginLine = QuoteLine.forInsert(
+        quoteId: quoteId,
+        quoteLineGroupId: adjustmentGroup.id,
+        description: 'Quote margin (${quoteMargin.toString()})',
+        quantity: Fixed.fromInt(1),
+        unitCharge: marginAmount,
+        lineTotal: marginAmount,
+      );
+      await DaoQuoteLine().insert(marginLine);
+      totalAmount += marginAmount;
     }
 
     // Finalize
