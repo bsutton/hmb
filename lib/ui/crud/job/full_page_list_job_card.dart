@@ -25,6 +25,9 @@ class _FullPageListJobCardState extends State<FullPageListJobCard> {
   @override
   Widget build(BuildContext context) => HMBFullPageChildScreen(
     title: 'Job',
-    child: ListJobCard(job: widget.job),
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(8),
+      child: ListJobCard(job: widget.job),
+    ),
   );
 }
