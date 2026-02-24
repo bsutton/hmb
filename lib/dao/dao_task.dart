@@ -324,6 +324,34 @@ LIMIT 1
       throw HMBException('The Stock task cannot be deleted.');
     }
 
+    final invoicedRows = await db.rawQuery(
+      '''
+SELECT
+  EXISTS(
+    SELECT 1
+    FROM task_item ti
+    WHERE ti.task_id = ?
+      AND (ti.billed = 1 OR ti.invoice_line_id IS NOT NULL)
+  ) AS has_invoiced_items,
+  EXISTS(
+    SELECT 1
+    FROM time_entry te
+    WHERE te.task_id = ?
+      AND (te.billed = 1 OR te.invoice_line_id IS NOT NULL)
+  ) AS has_invoiced_time
+''',
+      [id, id],
+    );
+    final hasInvoicedItems =
+        (invoicedRows.first['has_invoiced_items'] as int? ?? 0) == 1;
+    final hasInvoicedTime =
+        (invoicedRows.first['has_invoiced_time'] as int? ?? 0) == 1;
+    if (hasInvoicedItems || hasInvoicedTime) {
+      throw HMBException(
+        'Task cannot be deleted because it has invoiced items or time.',
+      );
+    }
+
     final assignmentLinks = await db.query(
       DaoWorkAssignmentTask.tableName,
       columns: ['id'],

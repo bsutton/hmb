@@ -57,9 +57,17 @@ class DaoJob extends Dao<Job> {
     }
 
     final db = withinTransaction(transaction);
+    final invoiceCount = await DaoInvoice().count(
+      where: 'job_id = ?',
+      whereArgs: [id],
+    );
+    if (invoiceCount > 0) {
+      throw HMBException(
+        'Job cannot be deleted because it has related invoices.',
+      );
+    }
 
     await DaoTask().deleteByJob(id, transaction: transaction);
-    await DaoInvoice().deleteByJob(id, transaction: transaction);
     await DaoQuote().deleteByJob(id, transaction: transaction);
 
     // Delete the job itself
