@@ -137,6 +137,7 @@ Future<StateMachine> buildJobMachine(Job job) async {
       ..state<OnHold>(
         (b) => b
           ..on<ResumeJob, InProgress>()
+          ..on<ScheduleJob, ToBeScheduled>()
           ..on<MaterialsArrived, InProgress>()
           ..on<RejectJob, Rejected>(),
       )
@@ -234,6 +235,7 @@ Future<List<Next>> nextFromFsm({
   }
 
   final out = <Next>[];
+  final seenStatuses = <JobStatus>{};
 
   // All static (i.e., declared) transitions, including those
   //inherited from parents.
@@ -266,6 +268,10 @@ Future<List<Next>> nextFromFsm({
       continue;
     }
     final toStatus = statusFromType(toType);
+    if (seenStatuses.contains(toStatus)) {
+      continue;
+    }
+    seenStatuses.add(toStatus);
 
     out.add(
       Next(

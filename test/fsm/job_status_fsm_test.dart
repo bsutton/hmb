@@ -81,6 +81,22 @@ void main() {
         isTrue,
       );
     });
+
+    test(
+      'on hold offers to be scheduled and de-duplicates in progress',
+      () async {
+        final job = await _insertJob(JobStatus.onHold);
+        final machine = await buildJobMachine(job);
+
+        final next = await nextStatusesOnly(machine: machine, job: job);
+
+        expect(next, contains(JobStatus.toBeScheduled));
+        expect(
+          next.where((status) => status == JobStatus.inProgress).length,
+          1,
+        );
+      },
+    );
   });
 }
 
