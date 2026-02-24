@@ -212,6 +212,19 @@ class XeroApi {
     return response;
   }
 
+  Future<http.Response> getInvoice(String externalInvoiceId) async {
+    await _checkIntegration();
+    final tenantId = await getTenantId();
+    return http.get(
+      Uri.parse('${_baseUrl}Invoices/$externalInvoiceId'),
+      headers: {
+        'Authorization': 'Bearer ${xeroAuth.accessToken}',
+        'Content-Type': 'application/json',
+        'Xero-tenant-id': tenantId,
+      },
+    );
+  }
+
   Future<String> getTenantId() async {
     await _checkIntegration();
     if (_tenantId != null) {

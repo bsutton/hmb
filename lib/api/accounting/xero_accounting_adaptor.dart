@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:strings/strings.dart';
 
@@ -10,6 +11,7 @@ import '../../util/dart/exceptions.dart';
 import '../xero/models/xero_contact.dart';
 import '../xero/xero_api.dart';
 import '../xero/xero_extract_error_message.dart';
+import '../xero/xero_invoice_payment_sync_service.dart';
 import 'accounting_adaptor.dart';
 
 class XeroAccountingAdaptor extends AccountingAdaptor {
@@ -117,5 +119,6 @@ You must provide an email address for the Contact ${billingContact.fullname}''',
     );
 
     await DaoInvoice().update(completedInvoice);
+    unawaited(XeroInvoicePaymentSyncService().sync(force: true));
   }
 }

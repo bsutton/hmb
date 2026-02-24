@@ -49,6 +49,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   Customer? selectedCustomer;
   String? filterText;
   var showOldJobs = false;
+  var showPaidInvoices = false;
 
   @override
   void initState() {
@@ -81,18 +82,23 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         selectedJob.jobId != null ||
         selectedCustomer != null ||
         showOldJobs ||
+        showPaidInvoices ||
         Strings.isNotBlank(filterText),
     onFilterReset: () {
       selectedJob.jobId = null;
       selectedCustomer = null;
       filterText = null;
       showOldJobs = false;
+      showPaidInvoices = false;
     },
   );
 
   Future<List<Invoice>> _fetchFilteredInvoices(String? filter) async {
     filterText = filter;
-    var invoices = await DaoInvoice().getByFilter(filterText);
+    var invoices = await DaoInvoice().getByFilter(
+      filterText,
+      includePaid: showPaidInvoices,
+    );
     if (selectedJob.jobId != null) {
       invoices = invoices.where((i) => i.jobId == selectedJob.jobId).toList();
     }
@@ -192,6 +198,15 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
           value: showOldJobs,
           onChanged: (value) => setState(() {
             showOldJobs = value ?? false;
+            onChange();
+          }),
+          controlAffinity: ListTileControlAffinity.leading,
+        ),
+        CheckboxListTile(
+          title: const Text('Show paid invoices'),
+          value: showPaidInvoices,
+          onChanged: (value) => setState(() {
+            showPaidInvoices = value ?? false;
             onChange();
           }),
           controlAffinity: ListTileControlAffinity.leading,

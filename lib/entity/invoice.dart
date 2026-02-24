@@ -32,6 +32,8 @@ class Invoice extends Entity<Invoice> {
   /// The invoice has been marked as sent on the remote accounting system
   /// sent invoices must be voided rather than deleted.
   bool sent;
+  bool paid;
+  DateTime? paidDate;
   int? billingContactId;
 
   Invoice._({
@@ -45,6 +47,8 @@ class Invoice extends Entity<Invoice> {
     this.externalInvoiceId,
     LocalDate? dueDate,
     this.sent = false,
+    this.paid = false,
+    this.paidDate,
   }) : super() {
     this.dueDate =
         dueDate ??
@@ -57,6 +61,8 @@ class Invoice extends Entity<Invoice> {
     required this.totalAmount,
     required this.billingContactId,
     this.sent = false,
+    this.paid = false,
+    this.paidDate,
   }) : super.forInsert();
 
   Invoice copyWith({
@@ -66,6 +72,8 @@ class Invoice extends Entity<Invoice> {
     String? externalInvoiceId,
     LocalDate? dueDate,
     bool? sent,
+    bool? paid,
+    DateTime? paidDate,
     int? billingContactId,
   }) => Invoice._(
     id: id,
@@ -75,6 +83,8 @@ class Invoice extends Entity<Invoice> {
     externalInvoiceId: externalInvoiceId ?? this.externalInvoiceId,
     dueDate: dueDate ?? this.dueDate,
     sent: sent ?? this.sent,
+    paid: paid ?? this.paid,
+    paidDate: paidDate ?? this.paidDate,
     billingContactId: billingContactId ?? this.billingContactId,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
@@ -228,6 +238,10 @@ You must set the Account Code and Item Code in System | Integration before you c
         ? const LocalDateConverter().fromJson(map['due_date'] as String)
         : null,
     sent: (map['sent'] as int) == 1,
+    paid: (map['paid'] as int? ?? 0) == 1,
+    paidDate: map['paid_date'] == null
+        ? null
+        : DateTime.parse(map['paid_date'] as String),
     billingContactId: map['billing_contact_id'] as int?,
   );
 
@@ -242,6 +256,8 @@ You must set the Account Code and Item Code in System | Integration before you c
     'external_invoice_id': externalInvoiceId,
     'due_date': const LocalDateConverter().toJson(dueDate),
     'sent': sent ? 1 : 0,
+    'paid': paid ? 1 : 0,
+    'paid_date': paidDate?.toIso8601String(),
     'billing_contact_id': billingContactId,
   };
 }

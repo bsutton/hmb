@@ -68,11 +68,24 @@ class DaoInvoice extends Dao<Invoice> {
   Future<bool> hasUnsentForJob(int jobId) async =>
       (await getUnsent(jobId: jobId)).isNotEmpty;
 
-  Future<List<Invoice>> getByFilter(String? filter) async {
+  Future<List<Invoice>> getByFilter(
+    String? filter, {
+    bool includePaid = true,
+  }) async {
     final db = withoutTransaction();
+    final paidWhere = includePaid ? '' : ' AND IFNULL(i.paid, 0) = 0';
 
     if (Strings.isBlank(filter)) {
-      return getAll(orderByClause: 'modified_date desc');
+      return toList(
+        await db.rawQuery('''
+    SELECT i.*
+    FROM invoice i
+    LEFT JOIN job j ON i.job_id = j.id
+    LEFT JOIN customer c ON j.customer_id = c.id
+    WHERE 1 = 1$paidWhere
+    ORDER BY i.modified_date DESC
+  '''),
+      );
     }
 
     return toList(
@@ -82,10 +95,12 @@ class DaoInvoice extends Dao<Invoice> {
     FROM invoice i
     LEFT JOIN job j ON i.job_id = j.id
     LEFT JOIN customer c ON j.customer_id = c.id
-    WHERE i.invoice_num LIKE ? 
+    WHERE (
+          i.invoice_num LIKE ? 
        OR i.external_invoice_id LIKE ?
        OR j.summary LIKE ?
        OR c.name LIKE ?
+    )$paidWhere
     ORDER BY i.modified_date DESC
   ''',
         [
@@ -95,6 +110,30 @@ class DaoInvoice extends Dao<Invoice> {
           '%$filter%', // Filter for customer name
         ],
       ),
+    );
+  }
+
+  Future<List<Invoice>> getUploadedUnpaid() async {
+    final db = withoutTransaction();
+    return toList(
+      await db.rawQuery('''
+SELECT *
+FROM invoice
+WHERE external_invoice_id IS NOT NULL
+  AND external_invoice_id != ''
+  AND IFNULL(paid, 0) = 0
+ORDER BY modified_date DESC
+'''),
+    );
+  }
+
+  Future<void> markPaid(int invoiceId, {DateTime? paidDate}) async {
+    final invoice = await getById(invoiceId);
+    if (invoice == null) {
+      return;
+    }
+    await update(
+      invoice.copyWith(paid: true, paidDate: paidDate ?? DateTime.now()),
     );
   }
 

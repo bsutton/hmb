@@ -27,6 +27,7 @@ import '../../api/accounting/no_op_accounting_adaptor.dart';
 import '../../api/accounting/xero_accounting_adaptor.dart';
 import '../../api/ihserver/booking_request_sync_service.dart';
 import '../../api/xero/handyman/app_starts_logging.dart';
+import '../../api/xero/xero_invoice_payment_sync_service.dart';
 import '../../cache/hmb_image_cache.dart';
 import '../../cache/image_compressor.dart';
 import '../../dao/dao.g.dart';
@@ -71,6 +72,7 @@ class BootStrapper {
     /// initialise whatever accounting package the
     /// user is using.
     await initAccounting();
+    unawaited(XeroInvoicePaymentSyncService().sync());
 
     _isInitialized = true;
   }
