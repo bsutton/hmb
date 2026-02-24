@@ -106,10 +106,10 @@ class GoogleDriveApi {
   }
 
   Future<String> _hmbFolder() async {
-    String? id = await _folderStore.getHmbFolderId(debug: kDebugMode);
+    var id = await _folderStore.getHmbFolderId(debug: kDebugMode);
     if (id != null && await _folderExists(id)) {
       if (kDebugMode) {
-        String? debugId = await _folderStore.getHmbFolderId(debug: true);
+        final debugId = await _folderStore.getHmbFolderId(debug: true);
         if (debugId != null && await _folderExists(debugId)) {
           return debugId;
         }

@@ -181,7 +181,8 @@ class GoogleDriveBackupProvider extends BackupProvider {
       exitPort.close();
       if (backupFailed) {
         throw BackupException(
-          'Google Drive backup failed${failureMessage == null ? '' : ': $failureMessage'}',
+          '''
+Google Drive backup failed${failureMessage == null ? '' : ': $failureMessage'}''',
         );
       }
       emitProgress('Backup completed', 3, 3);

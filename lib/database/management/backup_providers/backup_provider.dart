@@ -135,7 +135,7 @@ abstract class BackupProvider {
     Backup backup,
     ScriptSource src,
     HMBDatabaseFactory databaseFactory,
-  ) async => withTempDirAsync((tmpDir) async {
+  ) => withTempDirAsync((tmpDir) async {
     emitProgress('Initializing restore', 1, _restoreStageCount);
 
     final wasOpen = DatabaseHelper().isOpen();
