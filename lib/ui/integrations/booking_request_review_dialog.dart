@@ -38,6 +38,7 @@ import '../../entity/site.dart';
 import '../../entity/task.dart';
 import '../../entity/task_status.dart';
 import '../../util/dart/money_ex.dart';
+import '../crud/job/post_job_todo_prompt.dart';
 import '../widgets/fields/hmb_text_field.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/widgets.g.dart';
@@ -464,6 +465,7 @@ class _BookingRequestReviewDialogState
       Customer customer;
       Contact? contact;
       Site? site;
+      Job? createdJob;
 
       await daoCustomer.withTransaction((transaction) async {
         if (_selectedCustomer != null) {
@@ -579,6 +581,7 @@ class _BookingRequestReviewDialogState
           billingContactId: contact?.id,
         );
         await daoJob.insert(job, transaction);
+        createdJob = job;
 
         for (final controller in _taskControllers) {
           final title = controller.text.trim();
@@ -596,6 +599,9 @@ class _BookingRequestReviewDialogState
       });
 
       await DaoBookingRequest().markImported(widget.request);
+      if (mounted && createdJob != null) {
+        await promptForPostJobTodo(context: context, job: createdJob!);
+      }
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -612,24 +618,23 @@ class _BookingRequestReviewDialogState
     final customerName = _resolvedCustomerName();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Delete enquiry?'),
-            content: Text(
-              'Delete enquiry for "$customerName"?\n'
-              'This will remove it from the pending list.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Delete enquiry?'),
+        content: Text(
+          'Delete enquiry for "$customerName"?\n'
+          'This will remove it from the pending list.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
           ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
 
     if (confirmed != true) {
@@ -687,35 +692,34 @@ class _BookingRequestReviewDialogState
     final controller = TextEditingController();
     final result = await showDialog<String>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Reject enquiry'),
-            content: TextField(
-              controller: controller,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Reason (required)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  final text = controller.text.trim();
-                  if (text.isEmpty) {
-                    HMBToast.error('Please enter a rejection reason.');
-                    return;
-                  }
-                  Navigator.of(context).pop(text);
-                },
-                child: const Text('Send rejection'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Reject enquiry'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            labelText: 'Reason (required)',
+            border: OutlineInputBorder(),
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final text = controller.text.trim();
+              if (text.isEmpty) {
+                HMBToast.error('Please enter a rejection reason.');
+                return;
+              }
+              Navigator.of(context).pop(text);
+            },
+            child: const Text('Send rejection'),
+          ),
+        ],
+      ),
     );
     controller.dispose();
     return result;

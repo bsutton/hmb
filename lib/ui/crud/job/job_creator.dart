@@ -13,6 +13,7 @@ import '../../../util/dart/money_ex.dart';
 import '../../../util/dart/parse/parse_customer.dart';
 import '../../crud/customer/customer_paste_panel.dart';
 import '../../dialog/source_context.dart';
+import 'post_job_todo_prompt.dart';
 import '../../widgets/fields/hmb_email_field.dart';
 import '../../widgets/fields/hmb_phone_field.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -414,6 +415,9 @@ class _JobCreatorState extends State<JobCreator> {
     switch (reason) {
       case WizardCompletionReason.completed:
         final job = await _createEntities();
+        if (job != null && mounted) {
+          await promptForPostJobTodo(context: context, job: job);
+        }
         if (job != null && mounted) {
           Navigator.of(context).pop(job);
         }
