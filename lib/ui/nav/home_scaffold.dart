@@ -13,9 +13,11 @@
 
 // lib/src/ui/nav/home_scaffold.dart
 import 'package:flutter/material.dart';
+import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
 
+import '../../dao/dao_job.dart';
 import '../../util/flutter/app_title.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/hmb_status_bar.dart';
@@ -38,7 +40,14 @@ class HomeScaffold extends StatelessWidget {
         icon: const Icon(Icons.home),
         onPressed: () => GoRouter.of(context).go('/home'),
       ),
-      title: JuneBuilder(HMBTitle.new, builder: (title) => Text(title.title)),
+      title: JuneBuilder(
+        HMBTitle.new,
+        builder: (title) => FutureBuilderEx(
+          future: DaoJob().getLastActiveJob(),
+          builder: (context, activeJob) =>
+              Text(formatAppTitle(title.title, activeJob: activeJob)),
+        ),
+      ),
     ),
     body: HMBColumn(
       mainAxisSize: MainAxisSize.min,
