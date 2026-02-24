@@ -28,7 +28,7 @@ void main() {
       throwsA(isA<HMBException>()),
     );
 
-    final reloaded = await DaoCustomer().getById(job.customerId!);
+    final reloaded = await DaoCustomer().getById(job.customerId);
     expect(reloaded, isNotNull);
   });
 
