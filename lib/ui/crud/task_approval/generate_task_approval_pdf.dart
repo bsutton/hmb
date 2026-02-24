@@ -236,7 +236,7 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
           }
 
           if (data.photos.isEmpty) {
-            content.add(const pw.Text('No photos attached.'));
+            content.add(pw.Text('No photos attached.'));
           } else {
             content.add(pw.SizedBox(height: 8));
             for (final meta in data.photos) {
