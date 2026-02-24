@@ -222,9 +222,12 @@ You can set a default booking fee from System | Billing screen''');
       children: [
         _chooseCustomer(),
         _chooseContact(),
-        _chooseReferrerCustomer(),
-        _chooseReferrerContact(),
         _chooseBillingParty(),
+        if (June.getState(SelectedBillingParty.new).billingParty ==
+            BillingParty.referrer) ...[
+          _chooseReferrerCustomer(),
+          _chooseReferrerContact(),
+        ],
         _chooseBillingContact(),
       ],
     ),
