@@ -113,6 +113,9 @@ class _ListMilestoneScreenState extends DeferredState<ListMilestoneScreen> {
         invoicedCount: invoicedCount,
         voidedCount: voidedCount,
       );
+      if (summary.allActiveMilestonesInvoiced) {
+        continue;
+      }
       if (summary.matches(filter)) {
         summaries.add(summary);
       }
@@ -221,4 +224,7 @@ class QuoteMilestoneSummary {
 
     return false;
   }
+
+  bool get allActiveMilestonesInvoiced =>
+      milestoneCount > 0 && invoicedCount >= milestoneCount;
 }
