@@ -31,6 +31,7 @@ import '../../../../util/dart/measurement_type.dart';
 import '../../../../util/dart/money_ex.dart';
 import '../../../../util/dart/units.dart';
 import '../../../dialog/hmb_comfirm_delete_dialog.dart';
+import '../../../widgets/fields/hmb_text_field.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toast.dart';
@@ -329,7 +330,7 @@ class _JobEstimateBuilderScreenState
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
                   _estimateMargin =
-                      Percentage.tryParse(value, decimalDigits: 3) ??
+                      Percentage.tryParse(value ?? '', decimalDigits: 3) ??
                       Percentage.zero;
                   setState(() {});
                 },
@@ -341,9 +342,8 @@ class _JobEstimateBuilderScreenState
             ),
           ],
         ),
-        Text(
-          'Combined with Margin: ${_totalCombinedCost.plusPercentage(_estimateMargin)}',
-        ),
+        const Text('Combined with Margin:'),
+        Text('${_totalCombinedCost.plusPercentage(_estimateMargin)}'),
       ],
     ),
   );

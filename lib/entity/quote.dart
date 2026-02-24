@@ -65,11 +65,11 @@ class Quote extends Entity<Quote> {
     required super.modifiedDate,
     required this.quoteNum,
     required this.state,
+    required this.quoteMargin,
     this.externalQuoteId,
     this.dateSent,
     this.dateApproved,
     this.billingContactId,
-    required this.quoteMargin,
   }) : super();
 
   Quote.forInsert({
