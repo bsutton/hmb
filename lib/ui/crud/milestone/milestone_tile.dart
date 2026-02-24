@@ -175,9 +175,13 @@ Are you sure you want to delete ${Strings.isNotBlank(widget.milestone.milestoneD
     // Apply the latest description
     widget.milestone.milestoneDescription = desc;
 
+    final existingInvoiceId = widget.milestone.invoiceId;
     await widget.onInvoice(widget.milestone);
-    HMBToast.info('Invoice created: #${widget.milestone.invoiceId}');
-    setState(() => _isEditable = false);
+    final createdInvoiceId = widget.milestone.invoiceId;
+    if (createdInvoiceId != null && createdInvoiceId != existingInvoiceId) {
+      HMBToast.info('Invoice created: #$createdInvoiceId');
+      setState(() => _isEditable = false);
+    }
   }
 
   void _onSavePressed() {
