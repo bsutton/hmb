@@ -11,8 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import '../entity/receipt.dart';
 import '../entity/photo.dart';
+import '../entity/receipt.dart';
 import '../util/dart/exceptions.dart';
 import 'dao.dart';
 import 'dao_photo.dart';
