@@ -26,6 +26,11 @@ class DaoTaskItem extends Dao<TaskItem> {
     JobStatus.completed.id,
     JobStatus.toBeBilled.id,
   ];
+  static final _inactiveTaskStatusIds = [
+    TaskStatus.onHold.id,
+    TaskStatus.completed.id,
+    TaskStatus.cancelled.id,
+  ];
   static const tableName = 'task_item';
   DaoTaskItem() : super(tableName);
 
@@ -190,6 +195,13 @@ SELECT ti.*
       parameters.addAll(excludeIds);
     }
 
+    final inactiveTaskPlaceholders = List.filled(
+      _inactiveTaskStatusIds.length,
+      '?',
+    ).join(', ');
+    conditions.add('t.task_status_id NOT IN ($inactiveTaskPlaceholders)');
+    parameters.addAll(_inactiveTaskStatusIds);
+
     // ————— Optional job ID filtering —————
     if (jobs != null && jobs.isNotEmpty) {
       final jobIds = jobs.map((job) => job.id).toList();
@@ -222,7 +234,7 @@ SELECT ti.*
         .map((id) => "'$id'")
         .join(', ');
 
-    final sql =
+  final sql =
         '''
 SELECT ti.*
   FROM task_item ti
@@ -234,6 +246,7 @@ SELECT ti.*
    )
    AND ti.completed = 0
    AND ti.is_return = 0
+   AND t.task_status_id NOT IN (${TaskStatus.onHold.id}, ${TaskStatus.completed.id}, ${TaskStatus.cancelled.id})
    AND j.status_id NOT IN ($closedStatusClause)
    $jobClause
    $supplierClause

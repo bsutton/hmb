@@ -75,6 +75,73 @@ void main() {
     expect(packing.length, 1);
   });
 
+  test('shopping excludes items for inactive task statuses', () async {
+    final active = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: false,
+    );
+    await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.completed,
+      itemType: TaskItemType.materialsBuy,
+      completed: false,
+    );
+    await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.onHold,
+      itemType: TaskItemType.materialsBuy,
+      completed: false,
+    );
+    await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.cancelled,
+      itemType: TaskItemType.materialsBuy,
+      completed: false,
+    );
+
+    final shopping = await DaoTaskItem().getShoppingItems();
+
+    expect(shopping.map((i) => i.id), contains(active.id));
+    expect(shopping.length, 1);
+  });
+
+  test('packing excludes items for inactive task statuses', () async {
+    final active = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsStock,
+      completed: false,
+    );
+    await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.completed,
+      itemType: TaskItemType.materialsStock,
+      completed: false,
+    );
+    await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.onHold,
+      itemType: TaskItemType.materialsStock,
+      completed: false,
+    );
+    await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.cancelled,
+      itemType: TaskItemType.materialsStock,
+      completed: false,
+    );
+
+    final packing = await DaoTaskItem().getPackingItems(
+      showPreScheduledJobs: false,
+      showPreApprovedTask: true,
+    );
+
+    expect(packing.map((i) => i.id), contains(active.id));
+    expect(packing.length, 1);
+  });
+
   test('update persists direct charge mode and completion flag', () async {
     final item = await _insertTaskItemForJob(
       jobStatus: JobStatus.inProgress,
