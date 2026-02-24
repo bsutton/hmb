@@ -39,14 +39,14 @@ class BuildSendAssignmentButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final sent = assignment.status;
     final buttonLabel = switch (sent) {
-      WorkAssignmentStatus.unsent => 'View/Send...',
-      WorkAssignmentStatus.sent => 'View/Send... (Sent)',
-      WorkAssignmentStatus.modified => 'View/Send... (Modified)',
+      WorkAssignmentStatus.unsent => 'Send Task Approval',
+      WorkAssignmentStatus.sent => 'Send Task Approval (Sent)',
+      WorkAssignmentStatus.modified => 'Send Task Approval (Modified)',
     };
 
     return HMBButtonSecondary(
       label: buttonLabel,
-      hint: 'View and optionally Send the Work Assignment to the supplier',
+      hint: 'View and optionally send Task Approval to the customer',
       onPressed: () async {
         final job = await DaoJob().getById(assignment.jobId);
         if (job == null) {
@@ -56,12 +56,12 @@ class BuildSendAssignmentButton extends StatelessWidget {
 
         final primaryContact = await DaoContact().getById(assignment.contactId);
         if (primaryContact == null) {
-          HMBToast.error('You must select a Supplier Contact');
+          HMBToast.error('You must select a Contact');
           return;
         }
 
         final file = await BlockingUI().runAndWait(
-          label: 'Generating Assignment',
+          label: 'Generating Task Approval',
           () => generateWorkAssignmentPdf(assignment),
         );
 
@@ -74,15 +74,15 @@ class BuildSendAssignmentButton extends StatelessWidget {
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => PdfPreviewScreen(
-              title: 'Work Assignment #${assignment.id}',
+              title: 'Task Approval #${assignment.id}',
               filePath: file.path,
               preferredRecipient: primaryContact.emailAddress,
-              emailSubject: 'Work Assignment #${assignment.id}',
+              emailSubject: 'Task Approval #${assignment.id}',
               emailBody:
                   '''
 ${primaryContact.firstName},
 
-Please find attached the Work Assignment for Job ${job.summary}.
+Please find attached the Task Approval for Job ${job.summary}.
 ''',
 
               sendEmailDialog:

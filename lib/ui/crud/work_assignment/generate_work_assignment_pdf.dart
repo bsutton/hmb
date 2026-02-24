@@ -41,7 +41,7 @@ class _TaskData {
   });
 }
 
-/// Generates a PDF for a WorkAssignment,
+/// Generates a PDF for a Task Approval,
 /// including task photos under each task.
 Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
   final pdf = pw.Document();
@@ -124,7 +124,7 @@ Future<File> generateWorkAssignmentPdf(WorkAssignment assignment) async {
             padding: const pw.EdgeInsets.symmetric(horizontal: 10),
             alignment: pw.Alignment.centerLeft,
             child: pw.Text(
-              'Work Assignment',
+              'Task Approval',
               style: pw.TextStyle(
                 fontSize: 14,
                 fontWeight: pw.FontWeight.bold,
