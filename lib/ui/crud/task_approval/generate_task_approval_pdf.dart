@@ -48,6 +48,7 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
   final customer = job?.customerId != null
       ? await DaoCustomer().getById(job!.customerId)
       : null;
+  final businessNumberLabel = system.businessNumberLabel ?? 'Business Number';
 
   final joins = await joinDao.getByApproval(approval.id);
   final taskDataList = <_TaskData>[];
@@ -119,21 +120,67 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
             pw.Padding(
               padding: const pw.EdgeInsets.only(top: 8, bottom: 12),
               child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  if (customer != null) pw.Text('Customer: ${customer.name}'),
-                  if (contact != null) ...[
-                    pw.Text('Contact: ${contact.fullname}'),
-                    pw.Text('Email: ${contact.emailAddress}'),
-                    pw.Text('Phone: ${contact.bestPhone}'),
-                  ],
-                  if (site != null) pw.Text('Address: ${site.address}'),
-                  if (job != null) pw.Text('Job: ${job.summary}'),
-                  pw.Text('Sent: ${DateTime.now()}'),
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Expanded(
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            if (customer != null)
+                              pw.Text('Customer: ${customer.name}'),
+                            if (contact != null) ...[
+                              pw.Text('Contact: ${contact.fullname}'),
+                              pw.Text('Email: ${contact.emailAddress}'),
+                              pw.Text('Phone: ${contact.bestPhone}'),
+                            ],
+                            if (site != null)
+                              pw.Text('Address: ${site.address}'),
+                            if (job != null) pw.Text('Job: ${job.summary}'),
+                            pw.Text('Sent: ${DateTime.now()}'),
+                          ],
+                        ),
+                      ),
+                      pw.SizedBox(width: 24),
+                      pw.Expanded(
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            if ((system.businessName ?? '').trim().isNotEmpty)
+                              pw.Text('Business: ${system.businessName}'),
+                            if ((system.businessNumber ?? '').trim().isNotEmpty)
+                              pw.Text(
+                                '$businessNumberLabel: ${system.businessNumber}',
+                              ),
+                            if ((system.addressLine1 ?? '').trim().isNotEmpty)
+                              pw.Text('${system.addressLine1}'),
+                            if ((system.addressLine2 ?? '').trim().isNotEmpty)
+                              pw.Text('${system.addressLine2}'),
+                            if ((system.suburb ?? '').trim().isNotEmpty ||
+                                (system.state ?? '').trim().isNotEmpty ||
+                                (system.postcode ?? '').trim().isNotEmpty)
+                              pw.Text(
+                                '${system.suburb ?? ''} ${system.state ?? ''} '
+                                        '${system.postcode ?? ''}'
+                                    .trim(),
+                              ),
+                            if ((system.mobileNumber ?? '').trim().isNotEmpty)
+                              pw.Text('Mobile: ${system.mobileNumber}'),
+                            if ((system.emailAddress ?? '').trim().isNotEmpty)
+                              pw.Text('Email: ${system.emailAddress}'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                   pw.Divider(thickness: 1.5),
-                  pw.Text(
-                    'Please mark each task as approved or rejected and '
-                    'return this list.',
+                  pw.Align(
+                    alignment: pw.Alignment.centerLeft,
+                    child: pw.Text(
+                      'Please tick approved tasks and add initials for each '
+                      'approved task.',
+                    ),
                   ),
                 ],
               ),
@@ -194,22 +241,25 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
                       child: pw.Text('Assumptions: ${data.task.assumption}'),
                     ),
                   pw.SizedBox(height: 8),
-                  pw.Text('[ ] Approved    [ ] Rejected'),
-                  pw.SizedBox(height: 10),
                   pw.Row(
                     children: [
-                      pw.Expanded(child: pw.Text('Name: ___________________')),
-                      pw.SizedBox(width: 8),
-                      pw.Expanded(child: pw.Text('Date: ___________________')),
+                      pw.Text('[ ] Approved'),
+                      pw.SizedBox(width: 16),
+                      pw.Text('Initials: _______'),
                     ],
                   ),
-                  pw.SizedBox(height: 10),
-                  pw.Text('Signature: _________________________________'),
                 ],
               ),
             ),
           );
         }
+
+        content.addAll([
+          pw.SizedBox(height: 8),
+          pw.Text('Customer Signature: _____________________________'),
+          pw.SizedBox(height: 8),
+          pw.Text('Date: _____________________________'),
+        ]);
 
         content.addAll([
           pw.NewPage(),
