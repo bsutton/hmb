@@ -87,6 +87,19 @@ class _ListTaskCardState extends State<ListTaskCard> {
           );
         },
       ),
+      FutureBuilderEx<String?>(
+        future: _getAssignmentSummary(activeTask.id),
+        builder: (context, assignmentSummary) => assignmentSummary == null
+            ? const SizedBox.shrink()
+            : Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  assignmentSummary,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+      ),
       HMBStartTimeEntry(
         key: ValueKey(activeTask),
         task: activeTask,
@@ -120,6 +133,16 @@ class _ListTaskCardState extends State<ListTaskCard> {
         future: _getPhotoCount(task.id),
         builder: (context, photoCount) => Text('Photos: ${photoCount ?? 0}'),
       ), // Display photo count
+      FutureBuilderEx<String?>(
+        future: _getAssignmentSummary(task.id),
+        builder: (context, assignmentSummary) => assignmentSummary == null
+            ? const SizedBox.shrink()
+            : Text(
+                assignmentSummary,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+      ),
       HMBStartTimeEntry(
         task: task,
         onStart: (job, task) {
@@ -133,4 +156,13 @@ class _ListTaskCardState extends State<ListTaskCard> {
 
   Future<int> _getPhotoCount(int taskId) async =>
       (await DaoPhoto().getByParent(taskId, ParentType.task)).length;
+
+  Future<String?> _getAssignmentSummary(int taskId) async {
+    final supplierNames = await DaoWorkAssignmentTask()
+        .getSupplierNamesByTaskId(taskId);
+    if (supplierNames.isEmpty) {
+      return null;
+    }
+    return 'Assigned to: ${supplierNames.join(', ')}';
+  }
 }

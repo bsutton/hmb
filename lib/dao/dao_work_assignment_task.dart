@@ -91,4 +91,26 @@ class DaoWorkAssignmentTask extends Dao<WorkAssignmentTask> {
     );
     return toList(rows);
   }
+
+  Future<List<String>> getSupplierNamesByTaskId(int taskId) async {
+    final db = withoutTransaction();
+    final rows = await db.rawQuery(
+      '''
+SELECT DISTINCT s.name AS supplier_name
+FROM work_assignment_task wat
+JOIN work_assignment wa
+  ON wa.id = wat.assignment_id
+JOIN supplier s
+  ON s.id = wa.supplier_id
+WHERE wat.task_id = ?
+ORDER BY s.name COLLATE NOCASE
+''',
+      [taskId],
+    );
+
+    return rows
+        .map((row) => row['supplier_name'] as String?)
+        .whereType<String>()
+        .toList();
+  }
 }
