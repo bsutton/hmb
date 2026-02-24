@@ -83,7 +83,6 @@ class PhotoSyncService {
         .toList();
     if (photos.isEmpty && deletes.isEmpty) {
       _autoRetryAttempts = 0;
-      _controller.add(ProgressUpdate('No new Photos to sync', 0, 0));
       return;
     }
 
