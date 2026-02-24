@@ -128,15 +128,10 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
         HMBFormSection(
           children: [
             _showSummary(),
-            _chooseCustomer(),
-            _chooseReferrerCustomer(),
-            _chooseReferrerContact(),
-            _chooseBillingParty(),
+            _buildPartiesSection(),
             _chooseStatus(job),
             if (job != null) _buildScheduleButtons(),
-            _chooseContact(),
             _chooseSite(),
-            _chooseBillingContact(),
             _chooseBillingType(),
             _showHourlyRate(),
             _showBookingFee(),
@@ -211,6 +206,41 @@ A once off fee applied to this Job.
 You can set a default booking fee from System | Billing screen''');
 
   // --- Selectors ------------------------------------------------------------
+
+  Widget _buildPartiesSection() => FutureBuilderEx<String>(
+    future: _buildPartiesSummary(),
+    builder: (context, summary) => ExpansionTile(
+      title: const Text('Parties'),
+      subtitle: Text(summary ?? ''),
+      childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
+      children: [
+        _chooseCustomer(),
+        _chooseContact(),
+        _chooseReferrerCustomer(),
+        _chooseReferrerContact(),
+        _chooseBillingParty(),
+        _chooseBillingContact(),
+      ],
+    ),
+  );
+
+  Future<String> _buildPartiesSummary() async {
+    final selectedCustomerId = June.getState(SelectedCustomer.new).customerId;
+    final owner = await DaoCustomer().getById(
+      selectedCustomerId ?? widget.customer?.id,
+    );
+    final referrer = await DaoCustomer().getById(
+      June.getState(SelectedReferrerCustomer.new).customerId,
+    );
+    final tenant = await DaoContact().getById(
+      June.getState(SelectedContact.new).contactId,
+    );
+
+    final ownerName = owner?.name ?? 'Not set';
+    final referrerName = referrer?.name ?? 'Not set';
+    final tenantName = tenant?.fullname ?? 'Not set';
+    return 'Owner: $ownerName | Referrer: $referrerName | Tenant: $tenantName';
+  }
 
   Widget _chooseBillingContact() => JuneBuilder(
     SelectedBillingParty.new,
@@ -401,7 +431,7 @@ You can set a default booking fee from System | Billing screen''');
       if ((await DaoSystem().get()).getOperatingHours().noOpenDays()) {
         HMBToast.error(
           'Before you Schedule a job, you must first set your '
-              "opening hours from the 'System | Business' page.",
+          "opening hours from the 'System | Business' page.",
         );
         return;
       }
@@ -639,7 +669,7 @@ You can set a default booking fee from System | Billing screen''');
             const HMBText('Assumption:', bold: true).help(
               'Assumptions',
               'Detail the assumptions your pricing is based on. '
-              'Assumptions are shown on the Quote. ',
+                  'Assumptions are shown on the Quote. ',
             ),
             Container(
               constraints: const BoxConstraints(minHeight: 200),
