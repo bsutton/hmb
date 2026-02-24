@@ -155,14 +155,13 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
         ),
       ),
       build: (context) {
-        final content = <pw.Widget>[];
-        content.add(
+        final content = <pw.Widget>[
           pw.Text(
             'Task Summary',
             style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
           ),
-        );
-        content.add(pw.SizedBox(height: 8));
+          pw.SizedBox(height: 8),
+        ];
 
         for (var i = 0; i < taskDataList.length; i++) {
           final data = taskDataList[i];
@@ -212,14 +211,14 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
           );
         }
 
-        content.add(pw.NewPage());
-        content.add(
+        content.addAll([
+          pw.NewPage(),
           pw.Text(
             'Appendix - Task Photos',
             style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
           ),
-        );
-        content.add(pw.SizedBox(height: 8));
+          pw.SizedBox(height: 8),
+        ]);
 
         for (final data in taskDataList) {
           content.add(
