@@ -120,8 +120,8 @@ void main() {
 
     expect(xeroB.lineItems.length, equals(1));
     expect(xeroB.lineItems.single.lineTotal, equals(-MoneyEx.fromInt(1125)));
-    expect(xeroB.lineItems.single.unitAmount, equals(-MoneyEx.fromInt(1125)));
-    expect(xeroB.lineItems.single.quantity, equals(Fixed.one));
+    expect(xeroB.lineItems.single.unitAmount, equals(MoneyEx.fromInt(1125)));
+    expect(xeroB.lineItems.single.quantity, equals(-Fixed.one));
   });
 }
 

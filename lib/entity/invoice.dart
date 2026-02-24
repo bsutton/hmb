@@ -190,17 +190,16 @@ You must set the Account Code and Item Code in System | Integration before you c
     required String itemCode,
   }) {
     var quantity = line.quantity;
-    if (quantity.compareTo(Fixed.zero) < 0) {
-      quantity = -quantity;
+    var unitAmount = line.unitPrice;
+    if (unitAmount.isNegative) {
+      unitAmount = -unitAmount;
     }
 
-    var unitAmount = line.unitPrice;
-    if (line.lineTotal.isNegative) {
-      if (!unitAmount.isNegative) {
-        unitAmount = -unitAmount;
-      }
-    } else if (unitAmount.isNegative) {
-      unitAmount = -unitAmount;
+    if (line.lineTotal.isNegative && quantity.compareTo(Fixed.zero) > 0) {
+      quantity = -quantity;
+    } else if (line.lineTotal.isPositive &&
+        quantity.compareTo(Fixed.zero) < 0) {
+      quantity = -quantity;
     }
 
     return XeroLineItem(
