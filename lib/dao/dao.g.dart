@@ -23,6 +23,7 @@ export 'dao_invoice_line.dart';
 export 'dao_invoice_line_group.dart';
 export 'dao_invoice_time_and_materials.dart';
 export 'dao_job.dart';
+export 'dao_job_attachment.dart';
 export 'dao_job_activity.dart';
 export 'dao_manufacturer.dart';
 export 'dao_message_template.dart';

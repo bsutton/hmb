@@ -14,12 +14,16 @@
 
 // Extracted editor card
 import 'dart:async';
+import 'dart:io';
 
 import 'package:calendar_view/calendar_view.dart';
 import 'package:deferred_state/deferred_state.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
+import 'package:path/path.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
@@ -46,6 +50,7 @@ import '../../widgets/select/hmb_select_customer.dart';
 import '../../widgets/select/hmb_select_site.dart';
 import '../../widgets/text/hmb_expanding_text_block.dart';
 import '../../widgets/text/hmb_text.dart';
+import '../../dialog/hmb_file_picker_linux.dart';
 import 'fsm_status_picker.dart';
 import 'list_job_screen.dart';
 
@@ -138,6 +143,7 @@ class _EditJobCardState extends DeferredState<EditJobCard> {
             _buildDescription(),
             _buildNotes(),
             _buildAssumption(),
+            if (job != null) _buildAttachments(),
           ],
         ),
         if (job != null) PhotoGallery.forJob(job: job!),
@@ -708,6 +714,96 @@ You can set a default booking fee from System | Billing screen''');
       ),
     ],
   );
+
+  Widget _buildAttachments() => FutureBuilderEx<List<JobAttachment>>(
+    future: DaoJobAttachment().getByJob(job!.id),
+    builder: (context, attachments) => HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const HMBText('Attachments:', bold: true),
+            HMBButton.small(
+              label: 'Add File',
+              hint: 'Attach an existing file to this job.',
+              onPressed: () async {
+                await _pickAndAttachFile();
+              },
+            ),
+          ],
+        ),
+        if (attachments == null || attachments.isEmpty)
+          const Text('No attachments')
+        else
+          ...attachments.map(
+            (attachment) => Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    attachment.displayName,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                HMBButton.small(
+                  label: 'Open',
+                  hint: 'Open this attachment in an external app.',
+                  onPressed: () async {
+                    await _openAttachment(attachment);
+                  },
+                ),
+                HMBButton.small(
+                  label: 'Remove',
+                  hint: 'Remove this attachment from the job.',
+                  onPressed: () async {
+                    await DaoJobAttachment().delete(attachment.id);
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+      ],
+    ),
+  );
+
+  Future<void> _pickAndAttachFile() async {
+    if (job == null) {
+      return;
+    }
+
+    String? selectedFilePath;
+    if (Platform.isLinux) {
+      selectedFilePath = await HMBFilePickerDialog().show(context);
+    } else {
+      final result = await FilePicker.platform.pickFiles();
+      selectedFilePath = result?.files.single.path;
+    }
+
+    if (selectedFilePath == null) {
+      return;
+    }
+
+    final attachment = JobAttachment.forInsert(
+      jobId: job!.id,
+      filePath: selectedFilePath,
+      displayName: p.basename(selectedFilePath),
+    );
+
+    await DaoJobAttachment().insert(attachment);
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _openAttachment(JobAttachment attachment) async {
+    final uri = Uri.file(attachment.filePath);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      HMBToast.error('Unable to open attachment.');
+    }
+  }
 
   Future<String?> _showTextAreaEditDialog(String text, String title) {
     final localController = TextEditingController(text: text);
