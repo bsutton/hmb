@@ -38,11 +38,11 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
   @override
   Widget build(BuildContext context) =>
       NestedEntityListScreen<WorkAssignment, Job>(
-        title: (assignment) => Text('Task Approval #${assignment.id}'),
+        title: (assignment) => Text('Assignment #${assignment.id}'),
         parent: widget.parent,
         parentTitle: 'Job',
-        entityNamePlural: 'Task Approvals',
-        entityNameSingular: 'Task Approval',
+        entityNamePlural: 'Supplier Assignments',
+        entityNameSingular: 'Supplier Assignment',
         dao: DaoWorkAssignment(),
         fetchList: () => DaoWorkAssignment().getByJob(widget.parent.parent!.id),
         details: (assignment, details) => FutureBuilderEx(
@@ -71,7 +71,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                 assignment: assignment,
               ),
               const SizedBox(height: 8),
-              const Text('Tasks for approval:'),
+              const Text('Assigned Tasks:'),
               ...supplierAndTasks.tasks.map(
                 (task) => Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

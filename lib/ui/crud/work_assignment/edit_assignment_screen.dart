@@ -89,7 +89,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
   Widget build(BuildContext ctx) => DeferredBuilder(
     this,
     builder: (_) => NestedEntityEditScreen<WorkAssignment, Job>(
-      entityName: 'Task Approval',
+      entityName: 'Assignment',
       dao: DaoWorkAssignment(),
       onInsert: (workAssignment, transaction) =>
           DaoWorkAssignment().insert(workAssignment!, transaction),
@@ -163,7 +163,7 @@ class _AssignmentEditScreenState extends DeferredState<AssignmentEditScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Tasks to include',
+                  'Tasks to assign',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 ...tasks

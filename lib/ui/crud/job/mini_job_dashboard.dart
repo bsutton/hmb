@@ -120,8 +120,8 @@ class MiniJobDashboard extends StatelessWidget {
           ),
           _dashlet(
             child: DashletCard<int>.builder(
-              label: 'Approve',
-              hint: 'Generate and send Task Approval to customer',
+              label: 'Assign',
+              hint: 'Assign tasks to sub-contractors (Suppliers)',
               icon: Icons.task,
               compact: true,
               value: () async {
@@ -129,7 +129,7 @@ class MiniJobDashboard extends StatelessWidget {
                 return DashletValue<int>(all.length);
               },
               builder: (_, _) => HMBFullPageChildScreen(
-                title: 'Task Approvals',
+                title: 'Assignments',
                 child: AssignmentListScreen(parent: Parent(job)),
               ),
 
