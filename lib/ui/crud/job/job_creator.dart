@@ -58,10 +58,15 @@ class _JobCreatorState extends State<JobCreator> {
   var _creating = false;
   var _extracting = false;
   Customer? _selectedCustomer;
+  Customer? _selectedReferrerCustomer;
   List<_CustomerMatch> _matches = [];
   List<Contact> _existingContacts = [];
+  List<Contact> _referrerContacts = [];
   List<Site> _existingSites = [];
   Contact? _selectedExistingContact;
+  Contact? _selectedReferrerContact;
+  Contact? _selectedTenantContact;
+  Contact? _selectedPrimaryContact;
   Site? _selectedExistingSite;
   late final List<WizardStep> _steps;
   late final _CustomerStep _customerStep;
@@ -190,6 +195,8 @@ class _JobCreatorState extends State<JobCreator> {
           _existingContacts = [];
           _existingSites = [];
           _selectedExistingContact = null;
+          _selectedTenantContact = null;
+          _selectedPrimaryContact = null;
           _selectedExistingSite = null;
         }
       });
@@ -233,6 +240,8 @@ class _JobCreatorState extends State<JobCreator> {
           _existingContacts = [];
           _existingSites = [];
           _selectedExistingContact = null;
+          _selectedTenantContact = null;
+          _selectedPrimaryContact = null;
           _selectedExistingSite = null;
         }
       });
@@ -256,8 +265,52 @@ class _JobCreatorState extends State<JobCreator> {
       _existingContacts = contacts;
       _existingSites = sites;
       _selectedExistingContact = _pickBestMatchingContact(contacts);
+      _selectedPrimaryContact ??= _selectedExistingContact;
+      _selectedTenantContact ??= _selectedExistingContact;
       _selectedExistingSite = sites.isEmpty ? null : sites.first;
     });
+  }
+
+  Future<void> _loadReferrerContacts(Customer? customer) async {
+    if (customer == null) {
+      setState(() {
+        _referrerContacts = [];
+        _selectedReferrerContact = null;
+      });
+      return;
+    }
+
+    final contacts = await DaoContact().getByCustomer(customer.id);
+    if (!mounted || _selectedReferrerCustomer?.id != customer.id) {
+      return;
+    }
+    setState(() {
+      _referrerContacts = contacts;
+      _selectedReferrerContact = contacts.isEmpty ? null : contacts.first;
+    });
+  }
+
+  List<Contact> _partyContacts() {
+    final all = <Contact>[];
+    final ids = <int>{};
+    void add(Contact? contact) {
+      if (contact == null) {
+        return;
+      }
+      if (ids.add(contact.id)) {
+        all.add(contact);
+      }
+    }
+
+    for (final contact in _existingContacts) {
+      add(contact);
+    }
+    for (final contact in _referrerContacts) {
+      add(contact);
+    }
+    add(_selectedExistingContact);
+    add(_selectedReferrerContact);
+    return all;
   }
 
   Contact? _pickBestMatchingContact(List<Contact> contacts) {
@@ -497,8 +550,12 @@ class _JobCreatorState extends State<JobCreator> {
           !_matches.any((m) => m.customer.id == _selectedCustomer!.id)) {
         _selectedCustomer = null;
         _existingContacts = [];
+        _referrerContacts = [];
         _existingSites = [];
         _selectedExistingContact = null;
+        _selectedReferrerContact = null;
+        _selectedTenantContact = null;
+        _selectedPrimaryContact = null;
         _selectedExistingSite = null;
       }
     });
@@ -595,12 +652,15 @@ class _JobCreatorState extends State<JobCreator> {
         final summary = Strings.isBlank(_jobSummary.text)
             ? 'New Job'
             : _jobSummary.text;
+        final primaryContact = _selectedPrimaryContact ?? contact;
+        final tenantContact = _selectedTenantContact ?? contact;
         job = Job.forInsert(
           customerId: customer.id,
+          referrerCustomerId: _selectedReferrerCustomer?.id,
           summary: summary,
           description: _jobDescription.text,
           siteId: site?.id,
-          contactId: contact?.id,
+          contactId: primaryContact?.id,
           status: JobStatus.prospecting,
           billingType: _selectedBillingType,
           hourlyRate:
@@ -608,6 +668,8 @@ class _JobCreatorState extends State<JobCreator> {
           bookingFee:
               system.defaultBookingFee ?? Money.fromInt(0, isoCode: 'AUD'),
           billingContactId: contact?.id,
+          referrerContactId: _selectedReferrerContact?.id,
+          tenantContactId: tenantContact?.id,
         );
         await daoJob.insert(job, transaction);
 
@@ -734,6 +796,8 @@ class _ContactStep extends WizardStep {
                   state._surname.text = value.surname;
                   state._mobileNo.text = value.mobileNumber;
                   state._email.text = value.emailAddress;
+                  state._selectedPrimaryContact = value;
+                  state._selectedTenantContact = value;
                 }
               }),
               child: Column(
@@ -768,6 +832,96 @@ class _ContactStep extends WizardStep {
             ),
             const HMBSpacer(height: true),
           ],
+          HMBDroplist<Customer>(
+            title: 'Referred By',
+            required: false,
+            selectedItem: () => Future.value(state._selectedReferrerCustomer),
+            items: (filter) => DaoCustomer().getByFilter(filter),
+            format: (customer) => customer.name,
+            onChanged: (customer) {
+              setState(() {
+                state._selectedReferrerCustomer = customer;
+              });
+              unawaited(state._loadReferrerContacts(customer));
+            },
+          ),
+          if (state._selectedReferrerCustomer != null) ...[
+            HMBDroplist<Contact>(
+              title: 'Referred By Contact',
+              required: false,
+              selectedItem: () => Future.value(state._selectedReferrerContact),
+              items: (filter) async {
+                final value = filter?.trim().toLowerCase() ?? '';
+                if (value.isEmpty) {
+                  return state._referrerContacts;
+                }
+                return state._referrerContacts.where((contact) {
+                  final name = '${contact.firstName} ${contact.surname}'
+                      .toLowerCase();
+                  final email = contact.emailAddress.toLowerCase();
+                  return name.contains(value) || email.contains(value);
+                }).toList();
+              },
+              format: (contact) =>
+                  '${contact.firstName} ${contact.surname}'.trim(),
+              onChanged: (contact) {
+                setState(() {
+                  state._selectedReferrerContact = contact;
+                });
+              },
+            ),
+          ],
+          if (state._selectedCustomer != null) ...[
+            HMBDroplist<Contact>(
+              title: 'Tenant',
+              required: false,
+              selectedItem: () => Future.value(state._selectedTenantContact),
+              items: (filter) async {
+                final value = filter?.trim().toLowerCase() ?? '';
+                if (value.isEmpty) {
+                  return state._existingContacts;
+                }
+                return state._existingContacts.where((contact) {
+                  final name = '${contact.firstName} ${contact.surname}'
+                      .toLowerCase();
+                  final email = contact.emailAddress.toLowerCase();
+                  return name.contains(value) || email.contains(value);
+                }).toList();
+              },
+              format: (contact) =>
+                  '${contact.firstName} ${contact.surname}'.trim(),
+              onChanged: (contact) {
+                setState(() {
+                  state._selectedTenantContact = contact;
+                });
+              },
+            ),
+          ],
+          HMBDroplist<Contact>(
+            title: 'Primary Contact',
+            required: false,
+            selectedItem: () => Future.value(state._selectedPrimaryContact),
+            items: (filter) async {
+              final contacts = state._partyContacts();
+              final value = filter?.trim().toLowerCase() ?? '';
+              if (value.isEmpty) {
+                return contacts;
+              }
+              return contacts.where((contact) {
+                final name = '${contact.firstName} ${contact.surname}'
+                    .toLowerCase();
+                final email = contact.emailAddress.toLowerCase();
+                return name.contains(value) || email.contains(value);
+              }).toList();
+            },
+            format: (contact) =>
+                '${contact.firstName} ${contact.surname}'.trim(),
+            onChanged: (contact) {
+              setState(() {
+                state._selectedPrimaryContact = contact;
+              });
+            },
+          ),
           HMBTextField(
             controller: state._firstName,
             labelText: 'First Name',
