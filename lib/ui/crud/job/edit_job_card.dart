@@ -236,10 +236,21 @@ You can set a default booking fee from System | Billing screen''');
       June.getState(SelectedContact.new).contactId,
     );
 
-    final ownerName = owner?.name ?? 'Not set';
-    final referrerName = referrer?.name ?? 'Not set';
-    final tenantName = tenant?.fullname ?? 'Not set';
-    return 'Owner: $ownerName | Referrer: $referrerName | Tenant: $tenantName';
+    final selected = <String>[];
+    if (owner != null) {
+      selected.add('Owner: ${owner.name}');
+    }
+    if (referrer != null) {
+      selected.add('Referrer: ${referrer.name}');
+    }
+    if (tenant != null) {
+      selected.add('Tenant: ${tenant.fullname}');
+    }
+
+    if (selected.isEmpty) {
+      return 'No parties selected';
+    }
+    return selected.join(' | ');
   }
 
   Widget _chooseBillingContact() => JuneBuilder(
