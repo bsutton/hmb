@@ -45,7 +45,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   var _photoStageDescription = '';
   var _syncRunning = false;
 
-  late final GoogleDriveAuth auth;
+  GoogleDriveAuth? _auth;
 
   late final BackupProvider _provider;
   DateTime? _lastBackup;
@@ -67,10 +67,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     authIsSupported = GoogleDriveAuth.isAuthSupported();
 
     if (authIsSupported) {
-      auth = await GoogleDriveAuth.instance();
-      // Do not auto-sign-in when opening dashboard.
-      // Sign-in is now only requested when user taps backup/restore/sync.
-      _lastBackup = auth.isSignedIn ? await _refreshLastBackup() : null;
+      _lastBackup = await _refreshLastBackup();
     }
   }
 
@@ -81,17 +78,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   }
 
   Future<DateTime?> _refreshLastBackup() async {
-    DateTime? last;
-    try {
-      final backups = await _provider.getBackups();
-      if (backups.isNotEmpty) {
-        backups.sort((a, b) => b.when.compareTo(a.when));
-        last = backups.first.when;
-      }
-    } catch (_) {
-      last = null;
-    }
-    return last;
+    return BackupHistoryStore.latestSuccessfulBackup();
   }
 
   @override
@@ -102,11 +89,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
         if (!authIsSupported) {
           return _buildUnsupportedPlatformMessage(context);
         }
-        if (auth.isSignedIn) {
-          return _buildDashboard();
-        } else {
-          return _buildSignInPrompt(context);
-        }
+        return _buildDashboard();
       },
     ),
   );
@@ -123,9 +106,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
             BlockingUI().run(_performBackup, label: 'Performing Backup'),
         value: () async => const DashletValue(null),
         valueBuilder: (_, _) {
-          final text = !auth.isSignedIn
-              ? 'Not Signed In'
-              : _lastBackup == null
+          final text = _lastBackup == null
               ? 'No backups yet'
               : 'Last: ${formatDateTime(_lastBackup!)}';
           return Center(
@@ -266,87 +247,25 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     try {
       _syncRunning = true;
       await _provider.syncPhotos();
+      await BackupHistoryStore.record(
+        provider: _provider.name,
+        operation: BackupHistoryStore.operationPhotoSync,
+        success: true,
+      );
+    } catch (e) {
+      await BackupHistoryStore.record(
+        provider: _provider.name,
+        operation: BackupHistoryStore.operationPhotoSync,
+        success: false,
+        error: '$e',
+      );
+      if (mounted) {
+        HMBToast.error('Error during photo sync: $e');
+      }
     } finally {
       _syncRunning = false;
       await WakelockPlus.disable();
     }
-  }
-
-  Widget _buildSignInPrompt(BuildContext context) {
-    final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withSafeOpacity(0.8),
-            HMBColors.accent.withSafeOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: HMBColumn(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '🔐 Google Drive Backup',
-              style: TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                '''To enable cloud backups, please sign in to your Google account.''',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Colors.white70),
-              ),
-            ),
-            HMBButton.withIcon(
-              icon: const Icon(Icons.login, color: Colors.white),
-              label: 'Sign in to Google',
-              hint:
-                  '''Sign into Google Drive so you can back up your data and Sync your photos''',
-              onPressed: () async {
-                GoogleDriveAuth? auth;
-                try {
-                  auth = await GoogleDriveAuth.instance();
-                  await auth.signIn();
-                  if (auth.isSignedIn && mounted) {
-                    /// kick off a refresh but we need to rebuild the ui
-                    /// now to remove the 'google login' screen.
-                    setState(() {});
-                    Future.delayed(Duration.zero, () async {
-                      _lastBackup = await _refreshLastBackup();
-                      if (mounted) {
-                        setState(() {});
-                      }
-                    });
-                  }
-                } on GoogleAuthResult catch (e) {
-                  await auth?.signOut();
-                  if (mounted) {
-                    if (!e.wasCancelled) {
-                      HMBToast.error('Sign-in failed: $e');
-                    }
-                  }
-                } catch (e) {
-                  /// ensure we are not left in a 'half signed-in'
-                  /// state.
-                  await auth?.signOut();
-                  if (mounted) {
-                    HMBToast.error('Sign-in failed: $e');
-                  }
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildUnsupportedPlatformMessage(BuildContext context) {
@@ -389,13 +308,15 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   }
 
   Future<void> signout() async {
-    GoogleDriveAuth? auth;
-    auth = await GoogleDriveAuth.instance();
+    final auth = _auth ??= await GoogleDriveAuth.instance();
     await auth.signOut();
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<bool> _ensureSignedInForAction() async {
+    final auth = _auth ??= await GoogleDriveAuth.instance();
     if (auth.isSignedIn) {
       return true;
     }

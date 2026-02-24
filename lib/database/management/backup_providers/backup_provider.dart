@@ -24,6 +24,7 @@ import '../../factory/hmb_database_factory.dart';
 import '../../versions/script_source.dart';
 import '../database_helper.dart';
 import 'backup.dart';
+import 'backup_history_store.dart';
 import 'db_path.io.dart' if (dart.library.ui) 'db_path.dart';
 import 'progress_update.dart';
 import 'zip_isolate.dart';
@@ -107,11 +108,22 @@ abstract class BackupProvider {
         pathToDatabaseCopy: pathToBackupFile,
         version: version,
       );
+      await BackupHistoryStore.record(
+        provider: name,
+        operation: BackupHistoryStore.operationBackup,
+        success: true,
+      );
 
       emitProgress('Backup completed', 6, 6);
       return result;
     } catch (e, st) {
       await Sentry.captureException(e, stackTrace: st);
+      await BackupHistoryStore.record(
+        provider: name,
+        operation: BackupHistoryStore.operationBackup,
+        success: false,
+        error: '$e',
+      );
       emitProgress('Error during backup', 6, 6);
       rethrow;
     }
@@ -123,70 +135,75 @@ abstract class BackupProvider {
     Backup backup,
     ScriptSource src,
     HMBDatabaseFactory databaseFactory,
-  ) async {
-    await withTempDirAsync((tmpDir) async {
-      emitProgress('Initializing restore', 1, _restoreStageCount);
+  ) async => withTempDirAsync((tmpDir) async {
+    emitProgress('Initializing restore', 1, _restoreStageCount);
 
-      final wasOpen = DatabaseHelper().isOpen();
+    final wasOpen = DatabaseHelper().isOpen();
 
-      try {
-        // Close the database if it is currently open
-        if (wasOpen) {
-          emitProgress('Closing database', 2, _restoreStageCount);
-          await DatabaseHelper().closeDb();
-        }
-
-        final photosDir = await photosRootPath;
-        if (!exists(photosDir)) {
-          emitProgress('Creating photos directory', 3, _restoreStageCount);
-          createDir(photosDir, recursive: true);
-        }
-
-        emitProgress('Fetching backup file', 4, _restoreStageCount);
-        final backupFile = await fetchBackup(backup);
-
-        emitProgress('Extracting files from backup', 5, _restoreStageCount);
-        final dbPath = await extractFiles(
-          this,
-          backupFile,
-          tmpDir,
-          5,
-          _restoreStageCount,
-        );
-
-        if (dbPath == null) {
-          emitProgress(
-            'No database found in backup file',
-            6,
-            _restoreStageCount,
-          );
-          throw BackupException('No database found in the zip file');
-        }
-
-        // Restore the database file
-        emitProgress('Restoring database file', 7, _restoreStageCount);
-        final appDbPath = await databasePath;
-        if (exists(appDbPath)) {
-          delete(appDbPath);
-        }
-        copy(dbPath, appDbPath);
-
-        emitProgress('Reopening database', 8, _restoreStageCount);
-        // Reopen the database after restoring
-        await DatabaseHelper().openDb(
-          src: src,
-          backupProvider: this,
-          databaseFactory: databaseFactory,
-          backup: false,
-        );
-
-        emitProgress('Restore completed', 9, _restoreStageCount);
-      } catch (e) {
-        emitProgress('Error during restore', 9, _restoreStageCount);
-        throw BackupException('Error restoring database and photos: $e');
+    try {
+      // Close the database if it is currently open
+      if (wasOpen) {
+        emitProgress('Closing database', 2, _restoreStageCount);
+        await DatabaseHelper().closeDb();
       }
-    });
-  }
+
+      final photosDir = await photosRootPath;
+      if (!exists(photosDir)) {
+        emitProgress('Creating photos directory', 3, _restoreStageCount);
+        createDir(photosDir, recursive: true);
+      }
+
+      emitProgress('Fetching backup file', 4, _restoreStageCount);
+      final backupFile = await fetchBackup(backup);
+
+      emitProgress('Extracting files from backup', 5, _restoreStageCount);
+      final dbPath = await extractFiles(
+        this,
+        backupFile,
+        tmpDir,
+        5,
+        _restoreStageCount,
+      );
+
+      if (dbPath == null) {
+        emitProgress('No database found in backup file', 6, _restoreStageCount);
+        throw BackupException('No database found in the zip file');
+      }
+
+      // Restore the database file
+      emitProgress('Restoring database file', 7, _restoreStageCount);
+      final appDbPath = await databasePath;
+      if (exists(appDbPath)) {
+        delete(appDbPath);
+      }
+      copy(dbPath, appDbPath);
+
+      emitProgress('Reopening database', 8, _restoreStageCount);
+      // Reopen the database after restoring
+      await DatabaseHelper().openDb(
+        src: src,
+        backupProvider: this,
+        databaseFactory: databaseFactory,
+        backup: false,
+      );
+
+      emitProgress('Restore completed', 9, _restoreStageCount);
+      await BackupHistoryStore.record(
+        provider: name,
+        operation: BackupHistoryStore.operationRestore,
+        success: true,
+      );
+    } catch (e) {
+      await BackupHistoryStore.record(
+        provider: name,
+        operation: BackupHistoryStore.operationRestore,
+        success: false,
+        error: '$e',
+      );
+      emitProgress('Error during restore', 9, _restoreStageCount);
+      throw BackupException('Error restoring database and photos: $e');
+    }
+  });
 
   /// Fetchs the backup from storage and makes
   /// it available on the local file system

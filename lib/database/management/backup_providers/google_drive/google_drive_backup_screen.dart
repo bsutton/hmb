@@ -32,6 +32,7 @@ import '../../../factory/flutter_database_factory.dart';
 import '../../../versions/implementations/asset_script_source.dart';
 import '../backup.dart';
 import '../backup_provider.dart';
+import '../backup_history_store.dart';
 import '../backup_selection.dart';
 import '../progress_update.dart';
 import 'background_backup/google_drive_backup_provider.dart';
@@ -87,35 +88,15 @@ class _GoogleDriveBackupScreenState
   Future<void> asyncInitState() async {
     setAppTitle('Backup & Restore');
     _provider = _getProvider();
+    _lastBackupFuture = _refreshLastBackup();
 
-    if (GoogleDriveApi.isSupported()) {
-      final gdriveAuth = await GoogleDriveAuth.instance();
-      await gdriveAuth.signInIfAutomatic();
-
-      if (gdriveAuth.isSignedIn) {
-        // Load last backup date
-        _lastBackupFuture = _refreshLastBackup();
-        _isGoogleSignedIn = true;
-      }
-    } else {
+    if (!GoogleDriveApi.isSupported()) {
       _isGoogleSignedIn = false;
-      _lastBackupFuture = Future.value();
     }
   }
 
-  Future<DateTime?> _refreshLastBackup() async {
-    DateTime? last;
-    try {
-      final backups = await _provider.getBackups();
-      if (backups.isNotEmpty) {
-        backups.sort((a, b) => b.when.compareTo(a.when));
-        last = backups.first.when;
-      }
-    } catch (_) {
-      last = null;
-    }
-    return last;
-  }
+  Future<DateTime?> _refreshLastBackup() =>
+      BackupHistoryStore.latestSuccessfulBackup();
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -288,6 +269,21 @@ class _GoogleDriveBackupScreenState
         try {
           _syncRunning = true;
           await _provider.syncPhotos();
+          await BackupHistoryStore.record(
+            provider: _provider.name,
+            operation: BackupHistoryStore.operationPhotoSync,
+            success: true,
+          );
+        } catch (e) {
+          await BackupHistoryStore.record(
+            provider: _provider.name,
+            operation: BackupHistoryStore.operationPhotoSync,
+            success: false,
+            error: '$e',
+          );
+          if (mounted) {
+            HMBToast.error('Error during photo sync: $e');
+          }
         } finally {
           _syncRunning = false;
           await WakelockPlus.disable();
@@ -351,7 +347,7 @@ class _GoogleDriveBackupScreenState
                 GoogleDriveAuth? auth;
                 try {
                   auth = await GoogleDriveAuth.instance();
-                  await auth.signInIfAutomatic();
+                  await auth.signIn();
                   if (auth.isSignedIn && mounted) {
                     _lastBackupFuture = _refreshLastBackup();
                     _isGoogleSignedIn = true;

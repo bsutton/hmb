@@ -5,6 +5,7 @@
 // https://onepub.dev
 //
 export 'backup.dart';
+export 'backup_history_store.dart';
 export 'backup_provider.dart';
 export 'backup_selection.dart';
 export 'progress_update.dart';

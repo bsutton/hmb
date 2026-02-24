@@ -14,11 +14,7 @@
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
-import '../../../../../database/factory/flutter_database_factory.dart';
-import '../../../../../database/management/backup_providers/google_drive/background_backup/background_backup.g.dart';
-import '../../../../../database/management/backup_providers/local/local_backup_provider.dart';
-import '../../../../../database/management/backup_providers/google_drive/google_drive_backup_provider.dart';
-import '../../../../../database/management/backup_providers/google_drive/google_drive.g.dart';
+import '../../../../../database/management/backup_providers/backup_history_store.dart';
 import '../../../../../src/appname.dart';
 import '../../../../../util/dart/format.dart';
 import '../../dashlet_card.dart';
@@ -40,14 +36,9 @@ class BackupDashlet extends StatelessWidget {
   Widget _buildLastBackup() => FutureBuilderEx<BackupStatus>(
     future: _getLastBackup(),
     builder: (context, backupStatus) {
-      final text = switch (backupStatus!.driveStatus) {
-        GoogleDriveStatus.signedIn =>
-          backupStatus.lastBackup == null
-              ? 'No backups yet'
-              : 'Last: ${formatDateTime(backupStatus.lastBackup!)}',
-        GoogleDriveStatus.signedOut => 'Not Signed In',
-        GoogleDriveStatus.notSupported => 'Not Supported',
-      };
+      final text = backupStatus!.lastBackup == null
+          ? 'No backups yet'
+          : 'Last: ${formatDateTime(backupStatus.lastBackup!)}';
       return Center(
         child: Text(
           text,
@@ -59,41 +50,13 @@ class BackupDashlet extends StatelessWidget {
   );
 
   Future<BackupStatus> _getLastBackup() async {
-    DateTime? last;
-    var status = GoogleDriveStatus.notSupported;
-    try {
-      if (GoogleDriveApi.isSupported()) {
-        final auth = await GoogleDriveAuth.instance();
-        status = await auth.hasSignedIn()
-            ? GoogleDriveStatus.signedIn
-            : GoogleDriveStatus.signedOut;
-
-        // Show backup recency from local backup records/files so the dashlet
-        // never forces a Google sign-in prompt.
-        final backups = await LocalBackupProvider(
-          FlutterDatabaseFactory(),
-        ).getBackups();
-        if (backups.isNotEmpty) {
-          backups.sort((a, b) => b.when.compareTo(a.when));
-          last = backups.first.when;
-        } else if (status == GoogleDriveStatus.signedIn) {
-          final remoteBackups = await GoogleDriveBackupProvider(
-            FlutterDatabaseFactory(),
-          ).getBackups();
-          if (remoteBackups.isNotEmpty) {
-            remoteBackups.sort((a, b) => b.when.compareTo(a.when));
-            last = remoteBackups.first.when;
-          }
-        }
-      }
-    } catch (_) {}
-    return BackupStatus(driveStatus: status, lastBackup: last);
+    final last = await BackupHistoryStore.latestSuccessfulBackup();
+    return BackupStatus(lastBackup: last);
   }
 }
 
 class BackupStatus {
-  final GoogleDriveStatus driveStatus;
   final DateTime? lastBackup;
 
-  BackupStatus({required this.driveStatus, required this.lastBackup});
+  BackupStatus({required this.lastBackup});
 }

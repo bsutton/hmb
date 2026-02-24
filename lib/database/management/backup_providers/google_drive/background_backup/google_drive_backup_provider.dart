@@ -158,18 +158,33 @@ class GoogleDriveBackupProvider extends BackupProvider {
         debugName: 'google drive backup',
       );
 
-      errorPort.listen((e) => emitProgress(r'Error: $e', 3, 3));
+      var backupFailed = false;
+      String? failureMessage;
+      errorPort.listen((e) {
+        backupFailed = true;
+        failureMessage = '$e';
+        emitProgress(r'Error: $e', 3, 3);
+      });
       receivePort.listen((msg) {
         if (msg is ProgressUpdate) {
+          if (msg.stageDescription.toLowerCase().startsWith('error')) {
+            backupFailed = true;
+            failureMessage = msg.stageDescription;
+          }
           emitProgress(msg.stageDescription, msg.stageNo, msg.stageCount);
         }
       });
 
       await exitPort.first;
-      emitProgress('Backup completed', 3, 3);
       receivePort.close();
       errorPort.close();
       exitPort.close();
+      if (backupFailed) {
+        throw BackupException(
+          'Google Drive backup failed${failureMessage == null ? '' : ': $failureMessage'}',
+        );
+      }
+      emitProgress('Backup completed', 3, 3);
 
       return BackupResult(
         pathToSource: pathToDatabaseCopy,
