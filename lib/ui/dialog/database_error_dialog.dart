@@ -16,7 +16,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../widgets/hmb_button.dart';
-import '../widgets/hmb_toast.dart';
 import '../widgets/layout/layout.g.dart';
 import 'hmb_dialog.dart';
 
@@ -46,7 +45,13 @@ class DatabaseErrorDialog extends StatelessWidget {
               HMBButtonPrimary(
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: error));
-                  HMBToast.error('Error copied to clipboard');
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Error copied to clipboard'),
+                      ),
+                    );
+                  }
                 },
                 label: 'Copy Error',
                 hint: 'Copy the error to the clipboard',
