@@ -16,6 +16,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 
 import '../../../../../database/factory/flutter_database_factory.dart';
 import '../../../../../database/management/backup_providers/google_drive/background_backup/background_backup.g.dart';
+import '../../../../../database/management/backup_providers/local/local_backup_provider.dart';
 import '../../../../../database/management/backup_providers/google_drive/google_drive.g.dart';
 import '../../../../../src/appname.dart';
 import '../../../../../util/dart/format.dart';
@@ -61,20 +62,19 @@ class BackupDashlet extends StatelessWidget {
     var status = GoogleDriveStatus.notSupported;
     try {
       if (GoogleDriveApi.isSupported()) {
-        status = GoogleDriveStatus.signedOut;
         final auth = await GoogleDriveAuth.instance();
+        status = await auth.hasSignedIn()
+            ? GoogleDriveStatus.signedIn
+            : GoogleDriveStatus.signedOut;
 
-        await auth.signInIfAutomatic();
-
-        if (auth.isSignedIn) {
-          status = GoogleDriveStatus.signedIn;
-          final backups = await GoogleDriveBackupProvider(
-            FlutterDatabaseFactory(),
-          ).getBackups();
-          if (backups.isNotEmpty) {
-            backups.sort((a, b) => b.when.compareTo(a.when));
-            last = backups.first.when;
-          }
+        // Show backup recency from local backup records/files so the dashlet
+        // never forces a Google sign-in prompt.
+        final backups = await LocalBackupProvider(
+          FlutterDatabaseFactory(),
+        ).getBackups();
+        if (backups.isNotEmpty) {
+          backups.sort((a, b) => b.when.compareTo(a.when));
+          last = backups.first.when;
         }
       }
     } catch (_) {}

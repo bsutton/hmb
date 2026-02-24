@@ -68,11 +68,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
 
     if (authIsSupported) {
       auth = await GoogleDriveAuth.instance();
-      await auth.signInIfAutomatic();
-      if (auth.isSignedIn) {
-        // Load last backup date
-        _lastBackup = await _refreshLastBackup();
-      }
+      // Do not auto-sign-in when opening dashboard.
+      // Sign-in is now only requested when user taps backup/restore/sync.
+      _lastBackup = null;
     }
   }
 
@@ -189,6 +187,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   // );
 
   Future<void> _performBackup() async {
+    if (!await _ensureSignedInForAction()) {
+      return;
+    }
     setState(() {
       _isDbOffline = true;
     });
@@ -218,6 +219,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
       GoogleDriveBackupProvider(FlutterDatabaseFactory());
 
   Future<void> _performRestore(BuildContext context) async {
+    if (!await _ensureSignedInForAction()) {
+      return;
+    }
     _provider.useDebugPath = !false;
     final selected = await Navigator.push<Backup>(
       context,
@@ -254,6 +258,9 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   }
 
   Future<void> _syncPhotos() async {
+    if (!await _ensureSignedInForAction()) {
+      return;
+    }
     // Sync Photos Button
     await WakelockPlus.enable();
     try {
@@ -386,6 +393,33 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     auth = await GoogleDriveAuth.instance();
     await auth.signOut();
     setState(() {});
+  }
+
+  Future<bool> _ensureSignedInForAction() async {
+    if (auth.isSignedIn) {
+      return true;
+    }
+    try {
+      await auth.signIn();
+      if (!auth.isSignedIn) {
+        return false;
+      }
+      _lastBackup = await _refreshLastBackup();
+      if (mounted) {
+        setState(() {});
+      }
+      return true;
+    } on GoogleAuthResult catch (e) {
+      if (mounted && !e.wasCancelled) {
+        HMBToast.error('Sign-in failed: $e');
+      }
+      return false;
+    } catch (e) {
+      if (mounted) {
+        HMBToast.error('Sign-in failed: $e');
+      }
+      return false;
+    }
   }
 
   Widget _syncPhotoBuilder() => HMBColumn(
