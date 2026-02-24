@@ -56,8 +56,14 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
     if (task == null) {
       continue;
     }
-    final photos = await DaoPhoto.getByTask(task.id);
-    final metas = await PhotoMeta.resolveAll(photos);
+    final photos = await DaoPhoto().getByParent(task.id, ParentType.task);
+    final photoMetas = photos
+        .map(
+          (photo) =>
+              PhotoMeta(photo: photo, title: task.name, comment: photo.comment),
+        )
+        .toList();
+    final metas = await PhotoMeta.resolveAll(photoMetas);
     taskDataList.add(
       _TaskData(task: task, photos: metas, decision: join.status),
     );
@@ -150,16 +156,78 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
       ),
       build: (context) {
         final content = <pw.Widget>[];
+        content.add(
+          pw.Text(
+            'Task Summary',
+            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+          ),
+        );
+        content.add(pw.SizedBox(height: 8));
+
+        for (var i = 0; i < taskDataList.length; i++) {
+          final data = taskDataList[i];
+          content.add(
+            pw.Container(
+              margin: const pw.EdgeInsets.only(bottom: 10),
+              padding: const pw.EdgeInsets.all(8),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey500),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    '${i + 1}. ${data.task.name}',
+                    style: pw.TextStyle(
+                      fontSize: 13,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.Text('Current status: ${data.decision.name}'),
+                  if (data.task.description.isNotEmpty)
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.only(top: 3),
+                      child: pw.Text('Description: ${data.task.description}'),
+                    ),
+                  if (data.task.assumption.isNotEmpty)
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.only(top: 3),
+                      child: pw.Text('Assumptions: ${data.task.assumption}'),
+                    ),
+                  pw.SizedBox(height: 8),
+                  pw.Text('[ ] Approved    [ ] Rejected'),
+                  pw.SizedBox(height: 10),
+                  pw.Row(
+                    children: [
+                      pw.Expanded(child: pw.Text('Name: ___________________')),
+                      pw.SizedBox(width: 8),
+                      pw.Expanded(child: pw.Text('Date: ___________________')),
+                    ],
+                  ),
+                  pw.SizedBox(height: 10),
+                  pw.Text('Signature: _________________________________'),
+                ],
+              ),
+            ),
+          );
+        }
+
+        content.add(pw.NewPage());
+        content.add(
+          pw.Text(
+            'Appendix - Task Photos',
+            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+          ),
+        );
+        content.add(pw.SizedBox(height: 8));
+
         for (final data in taskDataList) {
-          content.addAll([
+          content.add(
             pw.Text(
               'Task: ${data.task.name}',
               style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
             ),
-            pw.Text('Decision: ${data.decision.name}'),
-            pw.SizedBox(height: 4),
-          ]);
-
+          );
           if (data.task.description.isNotEmpty) {
             content.add(pw.Text('Description: ${data.task.description}'));
           }
@@ -167,7 +235,9 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
             content.add(pw.Text('Assumptions: ${data.task.assumption}'));
           }
 
-          if (data.photos.isNotEmpty) {
+          if (data.photos.isEmpty) {
+            content.add(const pw.Text('No photos attached.'));
+          } else {
             content.add(pw.SizedBox(height: 8));
             for (final meta in data.photos) {
               final bytes = compressedBytes[meta.absolutePathTo];
@@ -180,6 +250,15 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
                   child: pw.Image(pw.MemoryImage(bytes)),
                 ),
               );
+              final comment = meta.comment?.trim() ?? '';
+              if (comment.isNotEmpty) {
+                content.add(
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 8),
+                    child: pw.Text('Comment: $comment'),
+                  ),
+                );
+              }
             }
           }
 
