@@ -104,6 +104,14 @@ class SystemNotifier extends JuneState {
   SystemNotifier();
 }
 
+class TaskApprovalNotifier extends JuneState {
+  TaskApprovalNotifier();
+}
+
+class TaskApprovalTaskNotifier extends JuneState {
+  TaskApprovalTaskNotifier();
+}
+
 class TaskNotifier extends JuneState {
   TaskNotifier();
 }

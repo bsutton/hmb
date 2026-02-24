@@ -27,6 +27,7 @@ import '../../widgets/layout/hmb_full_page_child_screen.dart';
 import '../base_nested/list_nested_screen.dart';
 import '../milestone/edit_milestone_payment.dart';
 import '../task/list_task_screen.dart';
+import '../task_approval/list_task_approval_screen.dart';
 import '../todo/list_todo_screen.dart';
 import '../work_assignment/list_assignment_screen.dart';
 import 'estimator/edit_job_estimate_screen.dart';
@@ -115,6 +116,23 @@ class MiniJobDashboard extends StatelessWidget {
               ),
 
               // route: '/home/jobs/quotes/${job.id}',
+            ),
+            size: dashletSize,
+          ),
+          _dashlet(
+            child: DashletCard<int>.builder(
+              label: 'Approve',
+              hint: 'Send tasks to the customer for approval',
+              icon: Icons.approval,
+              compact: true,
+              value: () async {
+                final all = await DaoTaskApproval().getByJob(job.id);
+                return DashletValue<int>(all.length);
+              },
+              builder: (_, _) => HMBFullPageChildScreen(
+                title: 'Task Approvals',
+                child: TaskApprovalListScreen(parent: Parent(job)),
+              ),
             ),
             size: dashletSize,
           ),

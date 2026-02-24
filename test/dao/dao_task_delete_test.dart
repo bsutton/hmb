@@ -3,7 +3,6 @@ import 'package:hmb/dao/dao.g.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/exceptions.dart';
 import 'package:hmb/util/dart/money_ex.dart';
-import 'package:money2/money2.dart';
 
 import '../database/management/db_utility_test_helper.dart';
 import '../ui/ui_test_helpers.dart';
@@ -68,6 +67,33 @@ void main() {
 
     final reloadedTask = await DaoTask().getById(task.id);
     expect(reloadedTask, isNull);
+  });
+
+  test('cannot delete task when linked to a task approval', () async {
+    final task = await _insertTask();
+    final job = await DaoJob().getById(task.jobId);
+
+    final customerContact = await DaoContact().getById(job!.contactId);
+    expect(customerContact, isNotNull);
+
+    final approval = TaskApproval.forInsert(
+      jobId: job.id,
+      contactId: customerContact!.id,
+    );
+    await DaoTaskApproval().insert(approval);
+
+    final link = TaskApprovalTask.forInsert(
+      approvalId: approval.id,
+      taskId: task.id,
+    );
+    await DaoTaskApprovalTask().insert(link);
+
+    expect(() => DaoTask().delete(task.id), throwsA(isA<HMBException>()));
+
+    final reloadedTask = await DaoTask().getById(task.id);
+    expect(reloadedTask, isNotNull);
+    final links = await DaoTaskApprovalTask().getByTask(task);
+    expect(links, hasLength(1));
   });
 }
 

@@ -75,6 +75,12 @@ class DaoJuneBuilder {
     DaoSiteSupplier.tableName: _reg<SiteSupplierNotifier>(
       SiteSupplierNotifier.new,
     ),
+    DaoTaskApproval.tableName: _reg<TaskApprovalNotifier>(
+      TaskApprovalNotifier.new,
+    ),
+    DaoTaskApprovalTask.tableName: _reg<TaskApprovalTaskNotifier>(
+      TaskApprovalTaskNotifier.new,
+    ),
     DaoTask.tableName: _reg<TaskNotifier>(TaskNotifier.new),
     DaoTaskItem.tableName: _reg<TaskItemNotifier>(TaskItemNotifier.new),
     DaoTimeEntry.tableName: _reg<TimeEntryNotifier>(TimeEntryNotifier.new),

@@ -140,7 +140,13 @@ class _DialogMoveTasksState extends DeferredState<DialogMoveTasks> {
       return 'Task is linked to a work assignment.';
     }
 
-    // 3) linked to quote
+    // 3) has task approval?
+    final approvals = await DaoTaskApprovalTask().getByTask(task);
+    if (approvals.isNotEmpty) {
+      return 'Task is linked to a task approval.';
+    }
+
+    // 4) linked to quote
     if (await DaoTask().isTaskLinkedToQuote(task)) {
       return 'Task is linked to a quote.';
     }

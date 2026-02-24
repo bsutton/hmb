@@ -365,6 +365,19 @@ SELECT
       );
     }
 
+    final approvalLinks = await db.query(
+      DaoTaskApprovalTask.tableName,
+      columns: ['id'],
+      where: 'task_id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (approvalLinks.isNotEmpty) {
+      throw HMBException(
+        'Task cannot be deleted while it is linked to a Task Approval.',
+      );
+    }
+
     await DaoTimeEntry().deleteByTask(id, transaction);
     await DaoTaskItem().deleteByTask(id, transaction);
     await deleteTaskPhotos(id, transaction: transaction);
@@ -456,6 +469,14 @@ WHERE ti.id = ?
     required DaoWorkAssignmentTask daoWAT,
   }) async {
     final links = await daoWAT.getByTask(task);
+    return links.isNotEmpty;
+  }
+
+  Future<bool> hasTaskApproval({
+    required Task task,
+    required DaoTaskApprovalTask daoTAT,
+  }) async {
+    final links = await daoTAT.getByTask(task);
     return links.isNotEmpty;
   }
 

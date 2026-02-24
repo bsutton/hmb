@@ -35,6 +35,8 @@ export 'site.dart';
 export 'supplier.dart';
 export 'system.dart';
 export 'task.dart';
+export 'task_approval.dart';
+export 'task_approval_task.dart';
 export 'task_check_list.dart';
 export 'task_item.dart';
 export 'task_item_type.dart';

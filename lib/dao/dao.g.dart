@@ -39,6 +39,8 @@ export 'dao_site_supplier.dart';
 export 'dao_supplier.dart';
 export 'dao_system.dart';
 export 'dao_task.dart';
+export 'dao_task_approval.dart';
+export 'dao_task_approval_task.dart';
 export 'dao_task_item.dart';
 export 'dao_time_entry.dart';
 export 'dao_todo.dart';
