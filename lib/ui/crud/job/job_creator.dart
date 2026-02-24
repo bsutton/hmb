@@ -419,6 +419,7 @@ class _JobCreatorState extends State<JobCreator> {
         }
 
         await _loadMatches(parsedCustomer);
+        await _applyPartyHintsFromText(text);
         extracted = true;
       }, label: 'Extracting job details');
 
@@ -559,6 +560,60 @@ class _JobCreatorState extends State<JobCreator> {
         _selectedExistingSite = null;
       }
     });
+  }
+
+  Future<void> _applyPartyHintsFromText(String text) async {
+    final referredBy = _extractPartyHint(text, ['referred by', 'referrer']);
+    if (referredBy != null) {
+      final customers = await DaoCustomer().getByFilter(referredBy);
+      Customer? best;
+      for (final customer in customers) {
+        if (_normalize(customer.name) == _normalize(referredBy)) {
+          best = customer;
+          break;
+        }
+      }
+      if (best == null && customers.isNotEmpty) {
+        best = customers.first;
+      }
+      if (best != null) {
+        _selectedReferrerCustomer = best;
+        await _loadReferrerContacts(best);
+      }
+    }
+
+    final tenantName = _extractPartyHint(text, ['tenant']);
+    if (tenantName != null && _selectedCustomer != null) {
+      if (_existingContacts.isEmpty) {
+        await _loadExistingCustomerDetails(_selectedCustomer!);
+      }
+      final normalizedTenant = _normalize(tenantName);
+      for (final contact in _existingContacts) {
+        final fullName = _normalize('${contact.firstName} ${contact.surname}');
+        if (fullName.contains(normalizedTenant) ||
+            normalizedTenant.contains(fullName)) {
+          _selectedTenantContact = contact;
+          _selectedPrimaryContact ??= contact;
+          break;
+        }
+      }
+    }
+  }
+
+  String? _extractPartyHint(String text, List<String> prefixes) {
+    for (final prefix in prefixes) {
+      final match = RegExp(
+        "$prefix\\s*[:\\-]?\\s*([A-Za-z][A-Za-z' .,&-]{1,60})",
+        caseSensitive: false,
+      ).firstMatch(text);
+      if (match != null) {
+        final value = (match.group(1) ?? '').trim();
+        if (value.isNotEmpty) {
+          return value;
+        }
+      }
+    }
+    return null;
   }
 
   Future<Job?> _createEntities() async {
