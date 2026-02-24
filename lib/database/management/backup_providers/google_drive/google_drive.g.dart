@@ -8,3 +8,4 @@ export 'backup.dart';
 export 'google_drive_api.dart';
 export 'google_drive_auth.dart';
 export 'google_drive_backup_screen.dart';
+export 'google_drive_folder_store.dart';

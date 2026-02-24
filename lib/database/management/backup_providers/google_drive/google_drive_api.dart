@@ -20,6 +20,7 @@ import 'package:http/http.dart';
 
 import 'backup.dart';
 import 'google_drive_auth.dart';
+import 'google_drive_folder_store.dart';
 
 enum GoogleDriveStatus { signedIn, signedOut, notSupported }
 
@@ -28,6 +29,7 @@ class GoogleDriveApi {
   late final drive.DriveApi _driveApi;
   late AuthenticatedClient? _authClient;
   Map<String, String> authHeaders;
+  final _folderStore = GoogleDriveFolderStore();
 
   GoogleDriveStatus status;
 
@@ -104,16 +106,69 @@ class GoogleDriveApi {
   }
 
   Future<String> _hmbFolder() async {
-    var id = await getOrCreateFolderId('hmb');
+    String? id = await _folderStore.getHmbFolderId(debug: kDebugMode);
+    if (id != null && await _folderExists(id)) {
+      if (kDebugMode) {
+        String? debugId = await _folderStore.getHmbFolderId(debug: true);
+        if (debugId != null && await _folderExists(debugId)) {
+          return debugId;
+        }
+      } else {
+        return id;
+      }
+    }
+
+    id = await getOrCreateFolderId('hmb');
+    await _folderStore.setHmbFolderId(id, debug: false);
     if (kDebugMode) {
-      id = await getOrCreateFolderId('debug', parentId: id);
+      final storedDebug = await _folderStore.getHmbFolderId(debug: true);
+      if (storedDebug != null && await _folderExists(storedDebug)) {
+        return storedDebug;
+      }
+
+      final debugId = await getOrCreateFolderId('debug', parentId: id);
+      await _folderStore.setHmbFolderId(debugId, debug: true);
+      return debugId;
     }
     return id;
   }
 
-  Future<String> getBackupFolder() async =>
-      getOrCreateFolderId('backups', parentId: await _hmbFolder());
+  Future<String> getBackupFolder() async {
+    final stored = await _folderStore.getBackupFolderId(debug: kDebugMode);
+    if (stored != null && await _folderExists(stored)) {
+      return stored;
+    }
+    final id = await getOrCreateFolderId(
+      'backups',
+      parentId: await _hmbFolder(),
+    );
+    await _folderStore.setBackupFolderId(id, debug: kDebugMode);
+    return id;
+  }
 
-  Future<String> getPhotoSyncFolder() async =>
-      getOrCreateFolderId('photos', parentId: await _hmbFolder());
+  Future<String> getPhotoSyncFolder() async {
+    final stored = await _folderStore.getPhotoFolderId(debug: kDebugMode);
+    if (stored != null && await _folderExists(stored)) {
+      return stored;
+    }
+    final id = await getOrCreateFolderId(
+      'photos',
+      parentId: await _hmbFolder(),
+    );
+    await _folderStore.setPhotoFolderId(id, debug: kDebugMode);
+    return id;
+  }
+
+  Future<bool> _folderExists(String folderId) async {
+    try {
+      final file =
+          await _driveApi.files.get(folderId, $fields: 'id,trashed,mimeType')
+              as drive.File;
+      return file.id == folderId &&
+          file.trashed != true &&
+          file.mimeType == 'application/vnd.google-apps.folder';
+    } catch (_) {
+      return false;
+    }
+  }
 }

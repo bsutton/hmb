@@ -21,6 +21,7 @@ import 'package:http/http.dart' as http;
 import 'package:settings_yaml/settings_yaml.dart';
 
 import '../../../../util/flutter/paths_flutter.dart';
+import 'google_drive_folder_store.dart';
 
 class GoogleDriveAuth {
   /// OAuth Client in Google Play Console: HMB-Production-Signed-By-Google
@@ -241,6 +242,7 @@ class GoogleDriveAuth {
   Future<void> _markSignedOut() async {
     _signedIn = false;
     _authHeaders = null;
+    await GoogleDriveFolderStore().clearAll();
 
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings['GoogleSignedIn'] = false;
