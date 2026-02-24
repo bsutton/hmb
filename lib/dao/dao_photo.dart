@@ -71,13 +71,24 @@ class DaoPhoto extends Dao<Photo> {
   }
 
   /// Updates the photo record to mark it as backed up.
-  Future<void> updatePhotoSyncStatus(int photoId) async {
+  Future<void> updatePhotoSyncStatus(
+    int photoId, {
+    String? cloudFileId,
+    String? cloudMd5,
+    DateTime? cloudModifiedDate,
+  }) async {
     final db = withoutTransaction();
     await db.rawUpdate(
-      'UPDATE photo '
-      "SET last_backup_date = datetime('now') "
-      'WHERE id = ?',
-      [photoId],
+      '''
+UPDATE photo
+SET
+  last_backup_date = datetime('now'),
+  cloud_file_id = COALESCE(?, cloud_file_id),
+  cloud_md5 = COALESCE(?, cloud_md5),
+  cloud_modified_date = COALESCE(?, cloud_modified_date)
+WHERE id = ?
+''',
+      [cloudFileId, cloudMd5, cloudModifiedDate?.toIso8601String(), photoId],
     );
   }
 

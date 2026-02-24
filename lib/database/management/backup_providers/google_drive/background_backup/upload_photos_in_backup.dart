@@ -61,7 +61,7 @@ Future<void> uploadPhotosInBackup({
     if (deleted) {
       sendPort.send(PhotoDeleted(payload.photoDeleteQueueId));
     } else {
-      // Treat missing as deleted; 
+      // Treat missing as deleted;
       sendPort.send(PhotoDeleted(payload.photoDeleteQueueId));
     }
   }
@@ -142,9 +142,22 @@ Future<void> uploadPhotosInBackup({
     final uploadResp = await http.Response.fromStream(uploadStreamResponse);
 
     if (uploadResp.statusCode == 200 || uploadResp.statusCode == 201) {
+      final fileJson = jsonDecode(uploadResp.body) as Map<String, dynamic>;
+      final cloudFileId = fileJson['id'] as String?;
+      final cloudMd5 = fileJson['md5Checksum'] as String?;
+      final cloudModifiedDate = DateTime.tryParse(
+        fileJson['modifiedTime'] as String? ?? '',
+      );
       sendPort
         ..send(
-          PhotoUploaded(photoPayload.id, photoPayload.pathToCloudStorage, 3),
+          PhotoUploaded(
+            photoPayload.id,
+            photoPayload.pathToCloudStorage,
+            3,
+            cloudFileId: cloudFileId,
+            cloudMd5: cloudMd5,
+            cloudModifiedDate: cloudModifiedDate,
+          ),
         )
         ..send(
           ProgressUpdate(
@@ -153,10 +166,8 @@ Future<void> uploadPhotosInBackup({
             stageCount,
           ),
         );
-      // final fileJson = jsonDecode(uploadResp.body) as Map<String, dynamic>;
-      // final fileId = fileJson['id'] as String;
       // Used to test that meta data uploads work.
-      // await hasPhotoIdProperty(fileId: fileId, driveApi: driveApi);
+      // await hasPhotoIdProperty(fileId: cloudFileId!, driveApi: driveApi);
     }
   }
 

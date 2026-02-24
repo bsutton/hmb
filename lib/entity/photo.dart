@@ -36,6 +36,9 @@ class Photo extends Entity<Photo> {
   /// The last time the photo was backed up.
   /// Normally we would only ever backup a photo once.
   DateTime? lastBackupDate;
+  String? cloudFileId;
+  String? cloudMd5;
+  DateTime? cloudModifiedDate;
 
   Photo({
     required super.id,
@@ -48,6 +51,9 @@ class Photo extends Entity<Photo> {
     required super.modifiedDate,
     this.pathToCloudStorage,
     this.pathVersion,
+    this.cloudFileId,
+    this.cloudMd5,
+    this.cloudModifiedDate,
   }) : super();
 
   Photo.forInsert({
@@ -58,6 +64,9 @@ class Photo extends Entity<Photo> {
     this.pathToCloudStorage,
     this.pathVersion = 1,
     this.lastBackupDate,
+    this.cloudFileId,
+    this.cloudMd5,
+    this.cloudModifiedDate,
   }) : super.forInsert();
 
   Photo copyWith({
@@ -68,6 +77,9 @@ class Photo extends Entity<Photo> {
     String? pathToCloudStorage,
     int? pathVersion,
     DateTime? lastBackupDate,
+    String? cloudFileId,
+    String? cloudMd5,
+    DateTime? cloudModifiedDate,
   }) => Photo(
     id: id,
     parentId: parentId ?? this.parentId,
@@ -75,6 +87,9 @@ class Photo extends Entity<Photo> {
     filename: filename ?? this.filename,
     comment: comment ?? this.comment,
     lastBackupDate: lastBackupDate ?? this.lastBackupDate,
+    cloudFileId: cloudFileId ?? this.cloudFileId,
+    cloudMd5: cloudMd5 ?? this.cloudMd5,
+    cloudModifiedDate: cloudModifiedDate ?? this.cloudModifiedDate,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
     pathToCloudStorage: pathToCloudStorage ?? this.pathToCloudStorage,
@@ -92,6 +107,11 @@ class Photo extends Entity<Photo> {
         : DateTime.parse(map['last_backup_date'] as String),
     pathToCloudStorage: map['path_to_cloud_storage'] as String?,
     pathVersion: map['path_version'] as int?,
+    cloudFileId: map['cloud_file_id'] as String?,
+    cloudMd5: map['cloud_md5'] as String?,
+    cloudModifiedDate: map['cloud_modified_date'] == null
+        ? null
+        : DateTime.parse(map['cloud_modified_date'] as String),
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
@@ -106,6 +126,9 @@ class Photo extends Entity<Photo> {
     'last_backup_date': lastBackupDate?.toIso8601String(),
     'path_to_cloud_storage': pathToCloudStorage,
     'path_version': pathVersion,
+    'cloud_file_id': cloudFileId,
+    'cloud_md5': cloudMd5,
+    'cloud_modified_date': cloudModifiedDate?.toIso8601String(),
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

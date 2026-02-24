@@ -36,8 +36,18 @@ class PhotoUploaded {
   final int id;
   final String pathToStorageLocation;
   final int pathVersion;
+  final String? cloudFileId;
+  final String? cloudMd5;
+  final DateTime? cloudModifiedDate;
 
-  PhotoUploaded(this.id, this.pathToStorageLocation, this.pathVersion);
+  PhotoUploaded(
+    this.id,
+    this.pathToStorageLocation,
+    this.pathVersion, {
+    this.cloudFileId,
+    this.cloudMd5,
+    this.cloudModifiedDate,
+  });
 }
 
 /// Used by the photo sync isolate to indicate a remote deletion completed.
@@ -128,7 +138,12 @@ class PhotoSyncService {
         _controller.add(message);
       } else if (message is PhotoUploaded) {
         // mark that one photo has now been backed up
-        await DaoPhoto().updatePhotoSyncStatus(message.id);
+        await DaoPhoto().updatePhotoSyncStatus(
+          message.id,
+          cloudFileId: message.cloudFileId,
+          cloudMd5: message.cloudMd5,
+          cloudModifiedDate: message.cloudModifiedDate,
+        );
       } else if (message is PhotoDeleted) {
         await DaoPhotoDeleteQueue().delete(message.id);
       }
@@ -267,6 +282,30 @@ class PhotoSyncService {
     try {
       // -------- 1) Try by custom property (most reliable) --------
       final idStr = photoId.toString();
+      final localPhoto = await DaoPhoto().getById(photoId);
+
+      if (localPhoto?.cloudFileId case final fileId?) {
+        try {
+          final media =
+              await driveApi.files.get(
+                    fileId,
+                    downloadOptions: gdrive.DownloadOptions.fullMedia,
+                  )
+                  as gdrive.Media;
+
+          final file = File(pathToCacheStorage);
+          final sink = file.openWrite();
+          try {
+            await media.stream.pipe(sink);
+            return;
+          } finally {
+            await sink.close();
+          }
+        } catch (_) {
+          // fallback to property/name lookup when stored file ID is stale.
+        }
+      }
+
       // Drive v3 query: "properties has { key='photoId' and value='123' }"
       // also ensure it's not in trash.
       final qByProp = '''
