@@ -174,7 +174,9 @@ class SystemBillingScreenState extends DeferredState<SystemBillingScreen> {
       await HMBImageCache().updateMaxBytes(photoCacheMb * 1024 * 1024);
 
       if (mounted) {
-        HMBToast.info('saved');
+        if (widget.showButtons) {
+          HMBToast.info('saved');
+        }
         if (close) {
           context.go('/home/settings');
         }

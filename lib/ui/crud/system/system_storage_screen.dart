@@ -104,7 +104,9 @@ class SystemStorageScreenState extends DeferredState<SystemStorageScreen> {
 
     if (mounted) {
       setState(() {});
-      HMBToast.info('saved');
+      if (widget.showButtons) {
+        HMBToast.info('saved');
+      }
       if (close) {
         context.go('/home/settings');
       }

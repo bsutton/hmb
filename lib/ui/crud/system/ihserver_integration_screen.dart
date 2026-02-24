@@ -89,7 +89,9 @@ class IhServerIntegrationScreenState extends State<IhServerIntegrationScreen> {
     await DaoSystem().update(system);
 
     if (mounted) {
-      HMBToast.info('saved');
+      if (widget.showButtons) {
+        HMBToast.info('saved');
+      }
       if (close) {
         context.go('/home/settings/integrations');
       }

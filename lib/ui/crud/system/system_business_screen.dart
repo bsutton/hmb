@@ -262,7 +262,9 @@ class SystemBusinessScreenState extends DeferredState<SystemBusinessScreen> {
     await DaoSystem().update(localSystem);
 
     if (mounted) {
-      HMBToast.info('saved');
+      if (widget.showButtons) {
+        HMBToast.info('saved');
+      }
       if (close) {
         context.go('/home/settings');
       }

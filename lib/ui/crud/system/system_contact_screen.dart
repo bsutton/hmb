@@ -127,7 +127,9 @@ class SystemContactInformationScreenState
 
       await DaoSystem().update(system);
       if (mounted) {
-        HMBToast.info('saved');
+        if (widget.showButtons) {
+          HMBToast.info('saved');
+        }
         if (close) {
           context.go('/home/settings');
         }
