@@ -324,10 +324,22 @@ LIMIT 1
       throw HMBException('The Stock task cannot be deleted.');
     }
 
+    final assignmentLinks = await db.query(
+      DaoWorkAssignmentTask.tableName,
+      columns: ['id'],
+      where: 'task_id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (assignmentLinks.isNotEmpty) {
+      throw HMBException(
+        'Task cannot be deleted while it is assigned to a Work Assignment.',
+      );
+    }
+
     await DaoTimeEntry().deleteByTask(id, transaction);
     await DaoTaskItem().deleteByTask(id, transaction);
     await deleteTaskPhotos(id, transaction: transaction);
-    await DaoWorkAssignmentTask().deleteByTask(id, transaction: transaction);
     await super.delete(id);
     return id;
   }

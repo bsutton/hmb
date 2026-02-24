@@ -17,7 +17,6 @@ import 'package:strings/strings.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
-import '../../dialog/dialog.g.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/widgets.g.dart';
 import '../base_full_screen/list_entity_screen.dart';
@@ -110,47 +109,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
       return false;
     }
 
-    // if there is are any work assignment for this task then warn the user.
+    // assigned tasks cannot be deleted.
     final taskAssignments = await DaoWorkAssignmentTask().getByTask(task);
-    if (taskAssignments.isEmpty) {
-      await DaoTask().delete(task.id);
-      return true;
-    } else {
-      final message = StringBuffer()
-        ..writeln(
-          'Deleting this Task will affect the following Work Assignments',
-        );
-      final assignedTo = <String>[];
-      for (final assignment in taskAssignments) {
-        final workAssignment = await DaoWorkAssignment().getById(
-          assignment.assignmentId,
-        );
-        if (workAssignment != null) {
-          final supplier = await DaoSupplier().getById(
-            workAssignment.supplierId,
-          );
-          if (supplier != null) {
-            assignedTo.add(supplier.name);
-            message.writeln('${supplier.name} #${workAssignment.id}');
-          }
-        }
-      }
-      var deleted = false;
-      if (mounted) {
-        await askUserToContinue(
-          context: context,
-          title: 'Task is assigned to Work Assignment',
-          message: message.toString(),
-          yesLabel: 'Continue?',
-          noLabel: 'Cancel',
-          onConfirmed: () async {
-            await DaoTask().delete(task.id);
-            deleted = true;
-          },
-        );
-      }
-      return deleted;
+    if (taskAssignments.isNotEmpty) {
+      HMBToast.error(
+        'Task cannot be deleted while it is assigned to a Work Assignment.',
+      );
+      return false;
     }
+
+    await DaoTask().delete(task.id);
+    return true;
   }
 
   Future<List<Task>> _fetchTasks(String? filter) async {
