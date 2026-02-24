@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hmb/dao/dao_site.dart';
 import 'package:hmb/dao/dao_system.dart';
+import 'package:hmb/entity/site.dart';
 import 'package:hmb/util/dart/parse/parse_customer.dart';
 
 import '../../database/management/db_utility_test_helper.dart';
@@ -166,5 +168,58 @@ My address is
     expect(address.city, equals('Balwyn North'));
     expect(address.state, equals(''));
     expect(address.postalCode, equals(''));
+  });
+
+  test(
+    'uses known site suburb and street name when regex misses address',
+    () async {
+      await DaoSite().insert(
+        Site.forInsert(
+          addressLine1: '20 Nailston Lane',
+          addressLine2: '',
+          suburb: 'Ivanhoe',
+          state: 'VIC',
+          postcode: '3079',
+          accessDetails: null,
+        ),
+      );
+
+      const message = '''
+Hi Brett, this is John Smith.
+Can you come to Nailston Lane in Ivanhoe tomorrow morning?
+''';
+
+      final parsed = await ParsedCustomer.parse(message);
+      final address = parsed.address;
+
+      expect(address.street, equals('20 Nailston Lane'));
+      expect(address.city, equals('Ivanhoe'));
+      expect(address.state, equals('VIC'));
+      expect(address.postalCode, equals('3079'));
+    },
+  );
+
+  test('does not infer address from suburb only', () async {
+    await DaoSite().insert(
+      Site.forInsert(
+        addressLine1: '12 Smith Street',
+        addressLine2: '',
+        suburb: 'Ivanhoe',
+        state: 'VIC',
+        postcode: '3079',
+        accessDetails: null,
+      ),
+    );
+
+    const message = '''
+Hi Brett, this is John Smith from Ivanhoe.
+Can you help with a plaster repair?
+''';
+
+    final parsed = await ParsedCustomer.parse(message);
+    final address = parsed.address;
+
+    expect(address.street, equals(''));
+    expect(address.city, equals(''));
   });
 }
