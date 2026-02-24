@@ -12,6 +12,7 @@ import '../../dialog/hmb_snooze_picker.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/select/hmb_entity_chip.dart';
 import '../../widgets/text/text.g.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/widgets.g.dart';
 import '../customer/list_customer_card.dart';
 import '../job/full_page_list_job_card.dart';
@@ -117,16 +118,18 @@ class ListTodoCard extends StatelessWidget {
               }
           }
 
-          if (todo.status != ToDoStatus.open || todo.remindAt == null) {
-            await LocalNotifs().cancelForToDo(todo.id);
-          }
-
-          if (todo.status == ToDoStatus.open && todo.remindAt != null) {
-            await LocalNotifs().scheduleForToDo(todo);
-          }
-
           if (newDue != null) {
             await DaoToDo().snooze(todo, newDue);
+            final updated = await DaoToDo().getById(todo.id);
+            if (updated != null) {
+              final synced = await LocalNotifs().syncForToDo(updated);
+              if (!synced) {
+                HMBToast.info(
+                  'To-Do updated, but reminder scheduling is unavailable on '
+                  'this device.',
+                );
+              }
+            }
             onChange?.call(todo);
           }
         },

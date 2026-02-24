@@ -234,6 +234,23 @@ class LocalNotifs {
 
   Future<void> cancelForToDo(int todoId) => cancel(_idForToDo(todoId));
 
+  /// Sync reminder state for a To-Do.
+  /// Returns `false` when scheduling/canceling fails so callers can degrade
+  /// gracefully without blocking save flows.
+  Future<bool> syncForToDo(ToDo todo) async {
+    try {
+      if (todo.status != ToDoStatus.open || todo.remindAt == null) {
+        await cancelForToDo(todo.id);
+      } else {
+        await scheduleForToDo(todo);
+      }
+      return true;
+    } catch (e, st) {
+      debugPrint('Failed to sync reminder for todo ${todo.id}: $e\n$st');
+      return false;
+    }
+  }
+
   /// Optional: resync desktop scheduler from current open To-Dos.
   /// Call this on app start or after a big data refresh.
   Future<void> resyncFromToDos(Iterable<ToDo> todos) async {

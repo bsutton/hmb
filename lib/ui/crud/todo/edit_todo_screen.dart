@@ -5,6 +5,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/job.dart';
 import '../../../entity/todo.dart';
 import '../../../util/flutter/notifications/local_notifs.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/select/select.g.dart';
 import '../base_full_screen/base_full_screen.g.dart';
 import 'edit_todo_card.dart';
@@ -77,13 +78,11 @@ class _ToDoEditScreenState extends DeferredState<ToDoEditScreen>
 
   @override
   Future<void> postSave(ToDo entity) async {
-    if (entity.status != ToDoStatus.open || entity.remindAt == null) {
-      await LocalNotifs().cancelForToDo(entity.id);
-      return;
-    }
-
-    if (entity.remindAt != null) {
-      await LocalNotifs().scheduleForToDo(entity);
+    final synced = await LocalNotifs().syncForToDo(entity);
+    if (!synced) {
+      HMBToast.info(
+        'To-Do saved, but reminder scheduling is unavailable on this device.',
+      );
     }
   }
 
