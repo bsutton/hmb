@@ -19,6 +19,7 @@ import '../../../../entity/entity.g.dart';
 import '../../../../util/dart/format.dart';
 import '../../../widgets/icons/help_button.dart';
 import '../../../widgets/layout/layout.g.dart';
+import '../../../widgets/hmb_start_time_entry.dart';
 import '../../../widgets/select/select.g.dart';
 import '../../../widgets/text/text.g.dart';
 import '../../base_full_screen/list_entity_screen.dart';
@@ -37,7 +38,9 @@ class TimeEntryListScreen extends StatefulWidget {
 class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
   final _supplierFilter = SelectedSupplier();
   final _taskFilter = SelectedTask();
+  final _startTask = SelectedTask();
   DateTime? _selectedDate;
+  Task? _taskForTimer;
 
   Future<List<TimeEntry>> _fetchFiltered(String? search) async {
     var list = await DaoTimeEntry().getByJob(widget.job.id);
@@ -137,6 +140,23 @@ class _TimeEntryListScreenState extends State<TimeEntryListScreen> {
   Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      // Quick start timer controls for this job.
+      HMBSelectTask(
+        selectedTask: _startTask,
+        job: widget.job,
+        onSelected: (task) {
+          setState(() {
+            _taskForTimer = task;
+          });
+        },
+      ),
+      if (_taskForTimer != null)
+        HMBStartTimeEntry(
+          task: _taskForTimer,
+          onStart: (_, __) {},
+          onTimerChanged: () async =>
+              await _entityListKey.currentState?.refresh(),
+        ),
       // Show the job stats up top:
       JobStatisticsHeader(job: widget.job),
       // Then the filterable list itself:
