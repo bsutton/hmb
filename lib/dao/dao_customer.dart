@@ -16,6 +16,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/customer.dart';
+import '../util/dart/exceptions.dart';
 import 'dao.dart';
 import 'dao_system.dart';
 
@@ -26,6 +27,52 @@ class DaoCustomer extends Dao<Customer> {
 
   @override
   Customer fromMap(Map<String, dynamic> map) => Customer.fromMap(map);
+
+  @override
+  Future<int> delete(int id, [Transaction? transaction]) async {
+    final db = withinTransaction(transaction);
+
+    final dependencyRows = await db.rawQuery(
+      '''
+SELECT
+  (SELECT COUNT(*) FROM job j WHERE j.customer_id = ?) AS job_count,
+  (
+    SELECT COUNT(*)
+    FROM quote q
+    JOIN job j ON j.id = q.job_id
+    WHERE j.customer_id = ?
+  ) AS quote_count,
+  (
+    SELECT COUNT(*)
+    FROM invoice i
+    JOIN job j ON j.id = i.job_id
+    WHERE j.customer_id = ?
+  ) AS invoice_count
+''',
+      [id, id, id],
+    );
+
+    final counts = dependencyRows.first;
+    final jobCount = counts['job_count'] as int? ?? 0;
+    final quoteCount = counts['quote_count'] as int? ?? 0;
+    final invoiceCount = counts['invoice_count'] as int? ?? 0;
+
+    if (jobCount > 0 || quoteCount > 0 || invoiceCount > 0) {
+      throw HMBException(
+        'Customer cannot be deleted while related records exist '
+        '(jobs: $jobCount, quotes: $quoteCount, invoices: $invoiceCount).',
+      );
+    }
+
+    await db.delete(
+      'customer_contact',
+      where: 'customer_id = ?',
+      whereArgs: [id],
+    );
+    await db.delete('customer_site', where: 'customer_id = ?', whereArgs: [id]);
+
+    return super.delete(id, transaction);
+  }
 
   /// Get the customer passed on the passed job.
   Future<Customer?> getByJob(int? jobId) async {
