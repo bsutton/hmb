@@ -26,8 +26,10 @@ import '../../../entity/photo.dart';
 import '../../../util/dart/photo_meta.dart';
 import '../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../widgets/color_ex.dart';
+import '../../widgets/hmb_toast.dart';
 import '../../widgets/icons/hmb_delete_icon.dart';
 import '../../widgets/icons/hmb_icon_button.dart';
+import '../../widgets/icons/hmb_save_icon.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/media/full_screen_photo_view.dart';
 import '../../widgets/media/photo_controller.dart';
@@ -178,14 +180,31 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
 
   Widget _buildCommentField(PhotoMeta photoMeta) {
     final commentControlller = widget.controller.commentController(photoMeta);
-    return TextField(
-      controller: commentControlller,
-      decoration: const InputDecoration(labelText: 'Comment'),
-      maxLines: null, // Allows the field to grow as needed
-      onChanged: (value) {
-        // Update comment immediately when text changes
-        photoMeta.comment = value;
-      },
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: TextField(
+            controller: commentControlller,
+            decoration: const InputDecoration(labelText: 'Comment'),
+            maxLines: null, // Allows the field to grow as needed
+            onChanged: (value) {
+              photoMeta.comment = value;
+              photoMeta.photo.comment = value;
+            },
+          ),
+        ),
+        HMBSaveIcon(
+          hint: 'Save photo comment',
+          onPressed: () async {
+            await widget.controller.saveComment(photoMeta);
+            if (!mounted) {
+              return;
+            }
+            HMBToast.info('Photo comment saved.');
+          },
+        ),
+      ],
     );
   }
 

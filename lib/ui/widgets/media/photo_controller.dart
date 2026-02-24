@@ -81,6 +81,18 @@ class PhotoController<E extends Entity<E>> {
     PhotoGallery.notify();
   }
 
+  Future<void> saveComment(PhotoMeta photoMeta) async {
+    final index = _photos.indexOf(photoMeta);
+    if (index == -1) {
+      return;
+    }
+    final updatedComment = _commentControllers[index].text;
+    photoMeta.comment = updatedComment;
+    photoMeta.photo.comment = updatedComment;
+    await DaoPhoto().update(photoMeta.photo);
+    PhotoGallery.notify();
+  }
+
   void dispose() {
     for (final controller in _commentControllers) {
       controller.dispose();
