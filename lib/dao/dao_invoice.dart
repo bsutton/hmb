@@ -18,6 +18,7 @@ import 'package:strings/strings.dart';
 import '../api/accounting/accounting_adaptor.dart';
 import '../entity/entity.g.dart';
 import '../util/dart/money_ex.dart';
+import '../util/dart/exceptions.dart';
 import 'dao.dart';
 import 'dao_invoice_line.dart';
 import 'dao_invoice_line_group.dart';
@@ -26,6 +27,7 @@ import 'dao_milestone.dart';
 
 class DaoInvoice extends Dao<Invoice> {
   static const tableName = 'invoice ';
+  static const discountGroupName = 'Discounts';
   DaoInvoice() : super(tableName);
 
   @override
@@ -143,5 +145,46 @@ class DaoInvoice extends Dao<Invoice> {
 
     await accounting.markApproved(invoice);
     await accounting.markSent(invoice);
+  }
+
+  Future<InvoiceLine> addDiscountLine({
+    required Invoice invoice,
+    required Money amount,
+    String description = 'Discount',
+  }) async {
+    if (!amount.isPositive) {
+      throw HMBException('Discount amount must be greater than zero.');
+    }
+
+    final existingGroups = await DaoInvoiceLineGroup().getByInvoiceId(
+      invoice.id,
+    );
+    InvoiceLineGroup? discountGroup;
+    for (final group in existingGroups) {
+      if (group.name == discountGroupName) {
+        discountGroup = group;
+        break;
+      }
+    }
+    discountGroup ??= InvoiceLineGroup.forInsert(
+      invoiceId: invoice.id,
+      name: discountGroupName,
+    );
+    if (discountGroup.id == 0) {
+      await DaoInvoiceLineGroup().insert(discountGroup);
+    }
+
+    final line = InvoiceLine.forInsert(
+      invoiceId: invoice.id,
+      invoiceLineGroupId: discountGroup.id,
+      description: description,
+      quantity: Fixed.one,
+      unitPrice: -amount,
+      lineTotal: -amount,
+      status: LineChargeableStatus.normal,
+    );
+    await DaoInvoiceLine().insert(line);
+    await recalculateTotal(invoice.id);
+    return line;
   }
 }

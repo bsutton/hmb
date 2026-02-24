@@ -29,6 +29,7 @@ import '../../dao/dao_task_item.dart';
 import '../../dao/dao_time_entry.dart';
 import '../../entity/invoice_line.dart';
 import '../../util/dart/format.dart';
+import '../../util/dart/money_ex.dart';
 import '../dialog/hmb_comfirm_delete_dialog.dart';
 import '../widgets/blocking_ui.dart';
 import '../widgets/hmb_button.dart';
@@ -107,6 +108,13 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                         BlockingUI().run(() async {
                           await _uploadInvoiceToXero();
                         }, label: 'Uploading Invoice');
+                      },
+                    ),
+                    HMBButton(
+                      label: 'Add Discount',
+                      hint: 'Add a discount line to this invoice.',
+                      onPressed: () async {
+                        await _promptAddDiscount();
                       },
                     ),
                     BuildSendButton(
@@ -258,6 +266,75 @@ Total: ${line.lineTotal}'''),
     } catch (e) {
       HMBToast.error(
         'Failed to delete invoice line: $e',
+        acknowledgmentRequired: true,
+      );
+    }
+  }
+
+  Future<void> _promptAddDiscount() async {
+    final descriptionController = TextEditingController(text: 'Discount');
+    final amountController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Discount'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: descriptionController,
+              decoration: const InputDecoration(labelText: 'Description'),
+            ),
+            TextField(
+              controller: amountController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(labelText: 'Amount'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    final amount = MoneyEx.tryParse(amountController.text);
+    if (amount == null || !amount.isPositive) {
+      HMBToast.error('Discount amount must be greater than zero.');
+      return;
+    }
+
+    try {
+      final details = await _invoiceDetails;
+      await DaoInvoice().addDiscountLine(
+        invoice: details.invoice,
+        amount: amount,
+        description: descriptionController.text.trim().isEmpty
+            ? 'Discount'
+            : descriptionController.text.trim(),
+      );
+      await _reloadInvoice();
+      if (!mounted) {
+        return;
+      }
+      setState(() {});
+    } catch (e) {
+      HMBToast.error(
+        'Failed to add discount: $e',
         acknowledgmentRequired: true,
       );
     }
