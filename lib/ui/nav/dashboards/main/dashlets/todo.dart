@@ -26,12 +26,15 @@ class ToDoDashlet extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DashletCard<int>.route(
     label: 'Todo',
-    hint: 'Create actionable items and track open/completed',
+    hint: 'Create actionable items and track open/overdue',
     icon: Icons.work,
     value: () async {
+      final now = DateTime.now();
       final open = await DaoToDo().getFiltered(status: ToDoStatus.open);
-      final completed = await DaoToDo().getFiltered(status: ToDoStatus.done);
-      return DashletValue(open.length, '${completed.length} completed');
+      final overdueCount = open
+          .where((todo) => todo.dueDate != null && todo.dueDate!.isBefore(now))
+          .length;
+      return DashletValue(open.length, '$overdueCount overdue');
     },
     route: '/home/todo',
   );
