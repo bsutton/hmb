@@ -185,6 +185,11 @@ Are you sure you want to delete ${Strings.isNotBlank(widget.milestone.milestoneD
   }
 
   void _onSavePressed() {
+    final originalDescription =
+        widget.milestone.milestoneDescription?.trim() ?? '';
+    final originalAmount = widget.milestone.paymentAmount;
+    final originalPercentage = widget.milestone.paymentPercentage;
+
     widget.milestone.milestoneDescription = descriptionController.text.trim();
     final amt = Money.tryParse(amountController.text, isoCode: 'AUD');
     if (amt == null) {
@@ -202,7 +207,10 @@ Are you sure you want to delete ${Strings.isNotBlank(widget.milestone.milestoneD
     percentageController.text = pct.toString();
     widget.milestone.paymentPercentage = pct;
 
-    widget.milestone.edited = true;
+    widget.milestone.edited =
+        originalDescription != widget.milestone.milestoneDescription ||
+        originalAmount != widget.milestone.paymentAmount ||
+        originalPercentage != widget.milestone.paymentPercentage;
     setState(() => _isInEditMode = false);
     widget.onEditingStatusChanged(
       milestone: widget.milestone,
