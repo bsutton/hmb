@@ -22,6 +22,7 @@ import '../../../dao/join_adaptors/join_adaptor_customer_site.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/money_ex.dart';
 import '../../../util/flutter/platform_ex.dart';
+import '../../dialog/duplicate_name_warning_dialog.dart';
 import '../../widgets/fields/hmb_name_field.dart';
 import '../../widgets/fields/hmb_text_area.dart';
 import '../../widgets/fields/hmb_text_field.dart';
@@ -108,6 +109,7 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
     entityName: 'Customer',
     dao: DaoCustomer(),
     entityState: this,
+    crossValidator: _validateDuplicateName,
     editor: (customer, {required isNew}) => DeferredBuilder(
       this,
       builder: (context) => HMBColumn(
@@ -209,6 +211,30 @@ class _CustomerEditScreenState extends DeferredState<CustomerEditScreen>
   @override
   Future<void> postSave(_) async {
     setState(() {});
+  }
+
+  Future<bool> _validateDuplicateName() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      return true;
+    }
+
+    final matches = await DaoCustomer().getByFilter(name);
+    final duplicate = matches.any(
+      (customer) =>
+          customer.id != currentEntity?.id &&
+          customer.name.trim().toLowerCase() == name.toLowerCase(),
+    );
+
+    if (!duplicate || !mounted) {
+      return true;
+    }
+
+    return showDuplicateNameWarningDialog(
+      context: context,
+      entityName: 'customer',
+      name: name,
+    );
   }
 }
 

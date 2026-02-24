@@ -6,6 +6,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/parse/parse_customer.dart';
 import '../../../util/flutter/flutter_util.g.dart';
+import '../../dialog/duplicate_name_warning_dialog.dart';
 import '../../dialog/source_context.dart';
 import '../../widgets/fields/fields.g.dart';
 import '../../widgets/layout/layout.g.dart';
@@ -208,6 +209,22 @@ class _CustomerCreatorState extends State<CustomerCreator> {
     }
 
     try {
+      final name = _customerName.text.trim();
+      final duplicates = await DaoCustomer().getByFilter(name);
+      final hasDuplicate = duplicates.any(
+        (customer) => customer.name.trim().toLowerCase() == name.toLowerCase(),
+      );
+      if (hasDuplicate && mounted) {
+        final continueSave = await showDuplicateNameWarningDialog(
+          context: context,
+          entityName: 'customer',
+          name: name,
+        );
+        if (!continueSave) {
+          return;
+        }
+      }
+
       // Build and persist Customer, Contact, and Site objects here
       final system = await DaoSystem().get();
 

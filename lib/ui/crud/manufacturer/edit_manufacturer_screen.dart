@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao_manufacturer.dart';
 import '../../../entity/manufacturer.dart';
+import '../../dialog/duplicate_name_warning_dialog.dart';
 import '../../widgets/fields/hmb_text_field.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../base_full_screen/edit_entity_screen.dart';
@@ -62,6 +63,7 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
     entityName: 'Manufacturer',
     dao: DaoManufacturer(),
     entityState: this,
+    crossValidator: _validateDuplicateName,
     editor: (manufacturer, {required isNew}) => HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -105,5 +107,29 @@ class ManufacturerEditScreenState extends State<ManufacturerEditScreen>
   @override
   Future<void> postSave(_) async {
     setState(() {});
+  }
+
+  Future<bool> _validateDuplicateName() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      return true;
+    }
+
+    final matches = await DaoManufacturer().getByFilter(name);
+    final duplicate = matches.any(
+      (manufacturer) =>
+          manufacturer.id != currentEntity?.id &&
+          manufacturer.name.trim().toLowerCase() == name.toLowerCase(),
+    );
+
+    if (!duplicate || !mounted) {
+      return true;
+    }
+
+    return showDuplicateNameWarningDialog(
+      context: context,
+      entityName: 'manufacturer',
+      name: name,
+    );
   }
 }
