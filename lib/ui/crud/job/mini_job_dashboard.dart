@@ -51,6 +51,60 @@ class MiniJobDashboard extends StatelessWidget {
         runSpacing: 8,
         children: [
           _dashlet(
+            child: DaoJuneBuilder.builder(
+              DaoToDo(),
+              builder: (context) => DashletCard<int>.builder(
+                label: 'Todo',
+                hint: 'Add action items to the job',
+                icon: Icons.task,
+                compact: true,
+                value: () async {
+                  final open = await DaoToDo().getOpenByJob(job.id);
+                  return DashletValue<int>(open.length);
+                },
+                builder: (_, _) => HMBFullPageChildScreen(
+                  title: 'Todo',
+                  child: ToDoListScreen(job: job),
+                ),
+              ),
+            ),
+            size: dashletSize,
+          ),
+          _dashlet(
+            child: DashletCard<int>.builder(
+              label: 'Tasks',
+              hint: 'Task to be completed for this Job',
+              icon: Icons.task,
+              compact: true,
+              value: () async {
+                final all = await DaoTask().getTasksByJob(job.id);
+                return DashletValue<int>(all.length);
+              },
+              builder: (_, _) => HMBFullPageChildScreen(
+                title: 'Tasks',
+                child: TaskListScreen(parent: Parent(job), extended: true),
+              ),
+            ),
+            size: dashletSize,
+          ),
+          _dashlet(
+            child: DashletCard<int>.builder(
+              label: 'Track',
+              hint: 'Track and View time recorded against Job Tasks',
+              icon: Icons.access_time,
+              compact: true,
+              value: () async {
+                final list = await DaoTimeEntry().getByJob(job.id);
+                return DashletValue<int>(list.length);
+              },
+              builder: (_, _) => HMBFullPageChildScreen(
+                title: 'Time Entries',
+                child: TimeEntryListScreen(job: job),
+              ),
+            ),
+            size: dashletSize,
+          ),
+          _dashlet(
             child: DashletCard<String>.onTap(
               label: 'Estimate',
               hint: "Build an Estimate of a Job's cost",
@@ -76,46 +130,6 @@ class MiniJobDashboard extends StatelessWidget {
                 title: 'Quotes',
                 child: QuoteListScreen(job: job),
               ),
-
-              // route: '/home/jobs/quotes/${job.id}',
-            ),
-            size: dashletSize,
-          ),
-          FutureBuilderEx<bool>(
-            future: _shouldShowMilestones(),
-            builder: (_, show) {
-              if (show != true) {
-                return const SizedBox.shrink();
-              }
-              return _dashlet(
-                child: DashletCard<int>.onTap(
-                  label: 'Milestones',
-                  hint: 'Create and manage milestone payments for this Job',
-                  icon: Icons.flag,
-                  compact: true,
-                  value: _milestoneDashletValue,
-                  onTap: _openMilestones,
-                ),
-                size: dashletSize,
-              );
-            },
-          ),
-          _dashlet(
-            child: DashletCard<int>.builder(
-              label: 'Tasks',
-              hint: 'Task to be completed for this Job',
-              icon: Icons.task,
-              compact: true,
-              value: () async {
-                final all = await DaoTask().getTasksByJob(job.id);
-                return DashletValue<int>(all.length);
-              },
-              builder: (_, _) => HMBFullPageChildScreen(
-                title: 'Tasks',
-                child: TaskListScreen(parent: Parent(job), extended: true),
-              ),
-
-              // route: '/home/jobs/quotes/${job.id}',
             ),
             size: dashletSize,
           ),
@@ -150,51 +164,27 @@ class MiniJobDashboard extends StatelessWidget {
                 title: 'Assignments',
                 child: AssignmentListScreen(parent: Parent(job)),
               ),
-
-              // route: '/home/jobs/quotes/${job.id}',
             ),
             size: dashletSize,
           ),
-          _dashlet(
-            child: DaoJuneBuilder.builder(
-              DaoToDo(),
-              builder: (context) => DashletCard<int>.builder(
-                label: 'Todo',
-                hint: 'Add action items to the job',
-                icon: Icons.task,
-                compact: true,
-                value: () async {
-                  final open = await DaoToDo().getOpenByJob(job.id);
-                  return DashletValue<int>(open.length);
-                },
-                builder: (_, _) => HMBFullPageChildScreen(
-                  title: 'Todo',
-                  child: ToDoListScreen(job: job),
+          FutureBuilderEx<bool>(
+            future: _shouldShowMilestones(),
+            builder: (_, show) {
+              if (show != true) {
+                return const SizedBox.shrink();
+              }
+              return _dashlet(
+                child: DashletCard<int>.onTap(
+                  label: 'Milestones',
+                  hint: 'Create and manage milestone payments for this Job',
+                  icon: Icons.flag,
+                  compact: true,
+                  value: _milestoneDashletValue,
+                  onTap: _openMilestones,
                 ),
-              ),
-
-              // route: '/home/jobs/quotes/${job.id}',
-            ),
-            size: dashletSize,
-          ),
-          _dashlet(
-            child: DashletCard<int>.builder(
-              label: 'Track',
-              hint: 'Track and View time recorded against Job Tasks',
-              icon: Icons.access_time,
-              compact: true,
-              value: () async {
-                final list = await DaoTimeEntry().getByJob(job.id);
-                return DashletValue<int>(list.length);
-              },
-
-              builder: (_, _) => HMBFullPageChildScreen(
-                title: 'Time Entries',
-                child: TimeEntryListScreen(job: job),
-              ),
-              // route: '/home/jobs/track/${job.id}',
-            ),
-            size: dashletSize,
+                size: dashletSize,
+              );
+            },
           ),
           _dashlet(
             child: DashletCard<int>.builder(
@@ -211,8 +201,6 @@ class MiniJobDashboard extends StatelessWidget {
                 title: 'Invoices',
                 child: InvoiceListScreen(jobRestriction: job),
               ),
-
-              // route: '/home/jobs/invoices/${job.id}',
             ),
             size: dashletSize,
           ),
