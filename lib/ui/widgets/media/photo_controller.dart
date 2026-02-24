@@ -68,7 +68,7 @@ class PhotoController<E extends Entity<E>> {
     );
 
     for (final photo in _photos) {
-      final comment = photo.comment ?? '';
+      final comment = photo.comment ?? photo.photo.comment;
       _commentControllers.add(TextEditingController(text: comment));
       _originalComments.add(comment);
     }

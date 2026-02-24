@@ -147,7 +147,8 @@ WHERE id = ?
     final taskPhotos = await DaoPhoto().getByParent(task!.id, ParentType.task);
     photos.addAll(
       taskPhotos.map(
-        (photo) => PhotoMeta(photo: photo, title: task.name, comment: null),
+        (photo) =>
+            PhotoMeta(photo: photo, title: task.name, comment: photo.comment),
       ),
     );
     return photos;
