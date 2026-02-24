@@ -74,6 +74,27 @@ void main() {
     expect(packing.map((i) => i.id), contains(active.id));
     expect(packing.length, 1);
   });
+
+  test('update persists direct charge mode and completion flag', () async {
+    final item = await _insertTaskItemForJob(
+      jobStatus: JobStatus.inProgress,
+      taskStatus: TaskStatus.inProgress,
+      itemType: TaskItemType.materialsBuy,
+      completed: false,
+    );
+
+    final updated = item.copyWith(
+      chargeMode: ChargeMode.userDefined,
+      totalLineCharge: Money.fromInt(12345, isoCode: 'AUD'),
+      completed: true,
+    );
+    await DaoTaskItem().update(updated);
+
+    final reloaded = (await DaoTaskItem().getById(item.id))!;
+    expect(reloaded.chargeMode, ChargeMode.userDefined);
+    expect(reloaded.userDefinedCharge, Money.fromInt(12345, isoCode: 'AUD'));
+    expect(reloaded.completed, isTrue);
+  });
 }
 
 Future<TaskItem> _insertMaterialTaskItem() => _insertTaskItemForJob(

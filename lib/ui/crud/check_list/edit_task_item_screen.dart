@@ -86,6 +86,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
   late TextEditingController _dimension3Controller;
   late TextEditingController _urlController;
   late ChargeMode _chargeMode;
+  late bool _completed;
 
   late FocusNode _descriptionFocusNode;
 
@@ -143,6 +144,7 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     _labourEntryMode = currentEntity?.labourEntryMode ?? LabourEntryMode.hours;
 
     _chargeMode = currentEntity?.chargeMode ?? ChargeMode.calculated;
+    _completed = currentEntity?.completed ?? false;
 
     _descriptionFocusNode = FocusNode();
   }
@@ -221,6 +223,13 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
               }
               return null;
             },
+          ),
+          SwitchListTile(
+            title: const Text('Completed'),
+            value: _completed,
+            onChanged: (value) => setState(() {
+              _completed = value;
+            }),
           ),
           _chooseItemType(taskItem),
           HMBTextArea(controller: _purposeController, labelText: 'Purpose'),
@@ -506,11 +515,13 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
       _estimatedLabourHoursController.text,
     ),
     estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
+    chargeMode: _chargeMode,
     totalLineCharge: _chargeMode == ChargeMode.userDefined
-        ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
+        ? (Money.tryParse(_chargeController.text, isoCode: 'AUD') ??
+              MoneyEx.zero)
         : null,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
-    billed: false,
+    completed: _completed,
     labourEntryMode: _labourEntryMode,
     measurementType: June.getState(
       SelectedMeasurementType.new,
@@ -547,8 +558,10 @@ class _TaskItemEditScreenState extends DeferredState<TaskItemEditScreen>
     estimatedLabourCost: MoneyEx.tryParse(_estimatedLabourCostController.text),
     chargeMode: _chargeMode,
     totalLineCharge: _chargeMode == ChargeMode.userDefined
-        ? Money.tryParse(_chargeController.text, isoCode: 'AUD')
+        ? (Money.tryParse(_chargeController.text, isoCode: 'AUD') ??
+              MoneyEx.zero)
         : null,
+    completed: _completed,
     margin: Percentage.tryParse(_marginController.text) ?? Percentage.zero,
     labourEntryMode: _labourEntryMode,
     measurementType: June.getState(
