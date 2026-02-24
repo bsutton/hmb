@@ -29,6 +29,7 @@ import '../../../dialog/hmb_comfirm_delete_dialog.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toggle.dart';
+import '../../../widgets/hmb_toast.dart';
 import '../../../widgets/icons/hmb_delete_icon.dart';
 import '../../../widgets/icons/hmb_edit_icon.dart';
 import '../../../widgets/layout/layout.g.dart';
@@ -56,6 +57,7 @@ class _JobEstimateBuilderScreenState
   Money _totalLabourCost = MoneyEx.zero;
   Money _totalMaterialsCost = MoneyEx.zero;
   Money _totalCombinedCost = MoneyEx.zero;
+  var _estimateComplete = false;
 
   var _showToBeEstimated = true;
   var _showCompleted = false;
@@ -110,8 +112,7 @@ class _JobEstimateBuilderScreenState
       return false;
     }
 
-    final updated =
-        widget.job.copyWith(billingType: BillingType.fixedPrice);
+    final updated = widget.job.copyWith(billingType: BillingType.fixedPrice);
     await DaoJob().update(updated);
     widget.job.billingType = updated.billingType;
     return true;
@@ -121,6 +122,7 @@ class _JobEstimateBuilderScreenState
     _tasks = await DaoTask().getTasksByJob(widget.job.id);
 
     await _calculateTotals();
+    _recomputeEstimateCompletion();
     setState(() {});
   }
 
@@ -178,6 +180,13 @@ class _JobEstimateBuilderScreenState
       _totalMaterialsCost = totalMaterials;
       _totalCombinedCost = totalLabour + totalMaterials;
     });
+  }
+
+  void _recomputeEstimateCompletion() {
+    final estimateTasks = _tasks.where((t) => !t.status.isWithdrawn()).toList();
+    _estimateComplete =
+        estimateTasks.isNotEmpty &&
+        estimateTasks.every((t) => t.status.isComplete());
   }
 
   Future<void> _addNewTask() async {
@@ -284,6 +293,7 @@ class _JobEstimateBuilderScreenState
     body: HMBColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text('Estimate Complete: ${_estimateComplete ? 'Yes' : 'No'}'),
         Text('Labour: $_totalLabourCost'),
         Text('Materials: $_totalMaterialsCost'),
         Text('Combined: $_totalCombinedCost'),
@@ -304,6 +314,16 @@ class _JobEstimateBuilderScreenState
         body: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Completed'),
+              value: task.status.isComplete(),
+              onChanged: task.status.isWithdrawn()
+                  ? null
+                  : (checked) async {
+                      await _setTaskCompletion(task, checked ?? false);
+                    },
+            ),
             if (Strings.isNotBlank(task.description))
               HMBTextBody(task.description),
 
@@ -423,6 +443,26 @@ class _JobEstimateBuilderScreenState
         setState(() {});
       },
     );
+  }
+
+  Future<void> _setTaskCompletion(Task task, bool isCompleted) async {
+    final previousCompleteState = _estimateComplete;
+    final status = isCompleted
+        ? TaskStatus.completed
+        : TaskStatus.awaitingApproval;
+    final updated = task.copyWith(status: status);
+    await DaoTask().update(updated);
+
+    final index = _tasks.indexWhere((t) => t.id == task.id);
+    if (index != -1) {
+      _tasks[index] = updated;
+    }
+
+    _recomputeEstimateCompletion();
+    if (!previousCompleteState && _estimateComplete && mounted) {
+      HMBToast.info('Estimate marked as complete.');
+    }
+    setState(() {});
   }
 
   Future<TaskAndRate> getTaskAndRate(Task? task) async {
