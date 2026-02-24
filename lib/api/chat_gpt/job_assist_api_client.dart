@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:collection';
 
 import 'package:http/http.dart' as http;
 
@@ -17,6 +18,8 @@ class JobAssistResult {
 }
 
 class JobAssistApiClient {
+  static const _maxTasks = 6;
+
   Future<JobAssistResult?> analyzeDescription(String description) async {
     final system = await DaoSystem().get();
     final apiKey = system.openaiApiKey?.trim();
@@ -39,7 +42,9 @@ class JobAssistApiClient {
                 'You help a handyman app. Return JSON only with keys: '
                 'summary (short job title, <= 60 chars), description '
                 '(short clear job description, <= 280 chars), and tasks '
-                '(array of short task titles).',
+                '(array of short task titles). Use high-level, billable '
+                'task outcomes only. Do not break a single activity into '
+                'step-by-step subtasks. Prefer 3-6 tasks total.',
           },
           {'role': 'user', 'content': description},
         ],
@@ -63,13 +68,34 @@ class JobAssistApiClient {
     final extractedDescription =
         (parsed['description'] as String?)?.trim() ?? '';
     final tasks = (parsed['tasks'] as List<dynamic>? ?? const [])
-        .map((e) => e.toString().trim())
-        .where((t) => t.isNotEmpty)
+        .map((e) => e.toString())
         .toList();
     return JobAssistResult(
       summary: summary,
       description: extractedDescription,
-      tasks: tasks,
+      tasks: normalizeJobAssistTasks(tasks, maxTasks: _maxTasks),
     );
   }
+}
+
+List<String> normalizeJobAssistTasks(
+  List<String> rawTasks, {
+  int maxTasks = 6,
+}) {
+  final unique = LinkedHashSet<String>();
+  for (final raw in rawTasks) {
+    final task = raw.trim();
+    if (task.isEmpty) {
+      continue;
+    }
+    final normalizedKey = task.toLowerCase();
+    if (unique.any((e) => e.toLowerCase() == normalizedKey)) {
+      continue;
+    }
+    unique.add(task);
+    if (unique.length >= maxTasks) {
+      break;
+    }
+  }
+  return unique.toList();
 }
