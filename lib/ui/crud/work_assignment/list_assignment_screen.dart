@@ -25,21 +25,26 @@ import '../base_nested/list_nested_screen.dart';
 import 'build_send_assignment_button.dart';
 import 'edit_assignment_screen.dart';
 
-class AssignmentListScreen extends StatelessWidget {
+class AssignmentListScreen extends StatefulWidget {
   final Parent<Job> parent;
 
   const AssignmentListScreen({required this.parent, super.key});
 
   @override
+  State<AssignmentListScreen> createState() => _AssignmentListScreenState();
+}
+
+class _AssignmentListScreenState extends State<AssignmentListScreen> {
+  @override
   Widget build(BuildContext context) =>
       NestedEntityListScreen<WorkAssignment, Job>(
         title: (assignment) => Text('Assignment #${assignment.id}'),
-        parent: parent,
+        parent: widget.parent,
         parentTitle: 'Job',
         entityNamePlural: 'Supplier Assignments',
         entityNameSingular: 'Supplier Assignment',
         dao: DaoWorkAssignment(),
-        fetchList: () => DaoWorkAssignment().getByJob(parent.parent!.id),
+        fetchList: () => DaoWorkAssignment().getByJob(widget.parent.parent!.id),
         details: (assignment, details) => FutureBuilderEx(
           future: SupplierAndTasks.get(assignment),
           builder: (context, supplierAndTasks) => HMBColumn(
@@ -65,14 +70,51 @@ class AssignmentListScreen extends StatelessWidget {
                 mounted: context.mounted,
                 assignment: assignment,
               ),
+              const SizedBox(height: 8),
+              const Text('Assigned Tasks:'),
+              ...supplierAndTasks.tasks.map(
+                (task) => Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${task.name} (${task.status.name})',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _toggleTaskRejected(task),
+                      child: Text(
+                        task.status == TaskStatus.cancelled
+                            ? 'Unreject'
+                            : 'Reject',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-        onEdit: (assignment) =>
-            AssignmentEditScreen(job: parent.parent!, assignment: assignment),
+        onEdit: (assignment) => AssignmentEditScreen(
+          job: widget.parent.parent!,
+          assignment: assignment,
+        ),
         onDelete: (assignment) => DaoWorkAssignment().delete(assignment.id),
-        cardHeight: 200,
+        cardHeight: 300,
       );
+
+  Future<void> _toggleTaskRejected(Task task) async {
+    if (task.status == TaskStatus.cancelled) {
+      await DaoTask().markUnrejected(task.id);
+    } else {
+      await DaoTask().markRejected(task.id);
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
 }
 
 class SupplierAndTasks {
