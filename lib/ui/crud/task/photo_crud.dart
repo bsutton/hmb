@@ -189,13 +189,13 @@ class _PhotoCrudState<E extends Entity<E>> extends DeferredState<PhotoCrud<E>> {
             decoration: const InputDecoration(labelText: 'Comment'),
             maxLines: null, // Allows the field to grow as needed
             onChanged: (value) {
-              photoMeta.comment = value;
-              photoMeta.photo.comment = value;
+              widget.controller.onCommentChanged(photoMeta, value);
             },
           ),
         ),
         HMBSaveIcon(
           hint: 'Save photo comment',
+          enabled: widget.controller.isCommentDirty(photoMeta),
           onPressed: () async {
             await widget.controller.saveComment(photoMeta);
             if (!mounted) {

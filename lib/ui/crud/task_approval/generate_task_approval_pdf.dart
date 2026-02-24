@@ -145,18 +145,29 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
                       pw.SizedBox(width: 24),
                       pw.Expanded(
                         child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          crossAxisAlignment: pw.CrossAxisAlignment.end,
                           children: [
                             if ((system.businessName ?? '').trim().isNotEmpty)
-                              pw.Text('Business: ${system.businessName}'),
+                              pw.Text(
+                                'Business: ${system.businessName}',
+                                textAlign: pw.TextAlign.right,
+                              ),
                             if ((system.businessNumber ?? '').trim().isNotEmpty)
                               pw.Text(
-                                '$businessNumberLabel: ${system.businessNumber}',
+                                '$businessNumberLabel: '
+                                '${system.businessNumber}',
+                                textAlign: pw.TextAlign.right,
                               ),
                             if ((system.addressLine1 ?? '').trim().isNotEmpty)
-                              pw.Text('${system.addressLine1}'),
+                              pw.Text(
+                                '${system.addressLine1}',
+                                textAlign: pw.TextAlign.right,
+                              ),
                             if ((system.addressLine2 ?? '').trim().isNotEmpty)
-                              pw.Text('${system.addressLine2}'),
+                              pw.Text(
+                                '${system.addressLine2}',
+                                textAlign: pw.TextAlign.right,
+                              ),
                             if ((system.suburb ?? '').trim().isNotEmpty ||
                                 (system.state ?? '').trim().isNotEmpty ||
                                 (system.postcode ?? '').trim().isNotEmpty)
@@ -164,11 +175,18 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
                                 '${system.suburb ?? ''} ${system.state ?? ''} '
                                         '${system.postcode ?? ''}'
                                     .trim(),
+                                textAlign: pw.TextAlign.right,
                               ),
                             if ((system.mobileNumber ?? '').trim().isNotEmpty)
-                              pw.Text('Mobile: ${system.mobileNumber}'),
+                              pw.Text(
+                                'Mobile: ${system.mobileNumber}',
+                                textAlign: pw.TextAlign.right,
+                              ),
                             if ((system.emailAddress ?? '').trim().isNotEmpty)
-                              pw.Text('Email: ${system.emailAddress}'),
+                              pw.Text(
+                                'Email: ${system.emailAddress}',
+                                textAlign: pw.TextAlign.right,
+                              ),
                           ],
                         ),
                       ),

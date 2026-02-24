@@ -32,6 +32,7 @@ class PhotoController<E extends Entity<E>> {
   final List<PhotoMeta> _photos = [];
   // List to hold comment controllers for each photo
   final List<TextEditingController> _commentControllers = [];
+  final List<String> _originalComments = [];
 
   PhotoController({required E? parent, required this.parentType, this.filter})
     : _entity = parent;
@@ -53,19 +54,23 @@ class PhotoController<E extends Entity<E>> {
     if (_entity == null) {
       return;
     }
+    _photos.clear();
+    for (final controller in _commentControllers) {
+      controller.dispose();
+    }
+    _commentControllers.clear();
+    _originalComments.clear();
+
     final meta = await DaoPhoto.getMetaByParent(_entity!.id, parentType);
 
     _photos.addAll(
       meta.where((photo) => filter?.call(_entity!, photo.photo) ?? true),
     );
 
-    // Initialize comment controllers if not already initialized
-    if (_commentControllers.isEmpty) {
-      for (final photo in _photos) {
-        final controller = TextEditingController(text: photo.comment);
-
-        _commentControllers.add(controller);
-      }
+    for (final photo in _photos) {
+      final comment = photo.comment ?? '';
+      _commentControllers.add(TextEditingController(text: comment));
+      _originalComments.add(comment);
     }
   }
 
@@ -73,23 +78,25 @@ class PhotoController<E extends Entity<E>> {
   Future<void> save() async {
     for (var i = 0; i < _commentControllers.length; i++) {
       final photoMeta = _photos[i];
-      final updatedComment = _commentControllers[i].text;
+      final updatedComment = _commentControllers[i].text.trim();
       photoMeta.comment = updatedComment;
       photoMeta.photo.comment = updatedComment;
       await DaoPhoto().update(photoMeta.photo);
+      _originalComments[i] = updatedComment;
     }
     PhotoGallery.notify();
   }
 
   Future<void> saveComment(PhotoMeta photoMeta) async {
-    final index = _photos.indexOf(photoMeta);
+    final index = _indexForPhotoId(photoMeta.photo.id);
     if (index == -1) {
       return;
     }
-    final updatedComment = _commentControllers[index].text;
+    final updatedComment = _commentControllers[index].text.trim();
     photoMeta.comment = updatedComment;
     photoMeta.photo.comment = updatedComment;
     await DaoPhoto().update(photoMeta.photo);
+    _originalComments[index] = updatedComment;
     PhotoGallery.notify();
   }
 
@@ -100,13 +107,33 @@ class PhotoController<E extends Entity<E>> {
   }
 
   TextEditingController commentController(PhotoMeta photoMeta) =>
-      _commentControllers[_photos.indexOf(photoMeta)];
+      _commentControllers[_indexForPhotoId(photoMeta.photo.id)];
+
+  bool isCommentDirty(PhotoMeta photoMeta) {
+    final index = _indexForPhotoId(photoMeta.photo.id);
+    if (index == -1) {
+      return false;
+    }
+    return _commentControllers[index].text.trim() != _originalComments[index];
+  }
+
+  void onCommentChanged(PhotoMeta photoMeta, String value) {
+    final index = _indexForPhotoId(photoMeta.photo.id);
+    if (index == -1) {
+      return;
+    }
+    photoMeta.comment = value;
+    photoMeta.photo.comment = value;
+    June.getState(PhotoLoader.new).setState();
+  }
 
   Future<void> addPhoto(PhotoMeta newPhotoMeta) async {
     await DaoPhoto().insert(newPhotoMeta.photo);
 
     _photos.add(newPhotoMeta);
-    _commentControllers.add(TextEditingController());
+    final comment = newPhotoMeta.comment ?? '';
+    _commentControllers.add(TextEditingController(text: comment));
+    _originalComments.add(comment);
     _refresh();
   }
 
@@ -117,8 +144,12 @@ class PhotoController<E extends Entity<E>> {
     // Delete the photo from the database and the disk
     await DaoPhoto().delete(photoMeta.photo.id);
     await File(photoMeta.absolutePathTo).delete();
-    _commentControllers.removeAt(_photos.indexOf(photoMeta)).dispose();
-    _photos.remove(photoMeta);
+    final index = _indexForPhotoId(photoMeta.photo.id);
+    if (index != -1) {
+      _commentControllers.removeAt(index).dispose();
+      _originalComments.removeAt(index);
+      _photos.removeAt(index);
+    }
 
     _refresh();
   }
@@ -137,4 +168,7 @@ class PhotoController<E extends Entity<E>> {
     June.getState(PhotoLoader.new).setState();
     PhotoGallery.notify();
   }
+
+  int _indexForPhotoId(int photoId) =>
+      _photos.indexWhere((photoMeta) => photoMeta.photo.id == photoId);
 }
