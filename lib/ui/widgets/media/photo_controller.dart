@@ -72,7 +72,10 @@ class PhotoController<E extends Entity<E>> {
   /// Save comments explicitly when saving the task
   Future<void> save() async {
     for (var i = 0; i < _commentControllers.length; i++) {
-      final photoMeta = _photos[i]..comment = _commentControllers[i].text;
+      final photoMeta = _photos[i];
+      final updatedComment = _commentControllers[i].text;
+      photoMeta.comment = updatedComment;
+      photoMeta.photo.comment = updatedComment;
       await DaoPhoto().update(photoMeta.photo);
     }
     PhotoGallery.notify();
