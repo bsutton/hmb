@@ -29,6 +29,18 @@ class ListTodoCard extends StatelessWidget {
     children: [
       if (todo.parentType == ToDoParentType.job)
         HMBEntityChip.job(id: todo.parentId!, format: (job) => job.summary),
+      if (todo.parentType == ToDoParentType.job)
+        FutureBuilderEx(
+          future: DaoJob().getById(todo.parentId),
+          builder: (context, job) => job == null
+              ? const HMBTextBlock('Customer: N/A')
+              : (job.customerId == null
+                    ? const HMBTextBlock('Customer: N/A')
+                    : HMBEntityChip.customer(
+                        id: job.customerId!,
+                        format: (customer) => customer.name,
+                      )),
+        ),
       HMBRow(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
