@@ -45,50 +45,61 @@ class _TaskApprovalListScreenState extends State<TaskApprovalListScreen> {
         fetchList: () => DaoTaskApproval().getByJob(widget.parent.parent!.id),
         details: (approval, details) => FutureBuilderEx(
           future: _TaskApprovalDetails.get(approval),
-          builder: (context, info) => HMBColumn(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Customer : ${info!.customer.name}'),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Contact : ${info.contact.fullname}'),
-                  HMBPhoneIcon(
-                    info.contact.fullname,
-                    sourceContext: SourceContext(
-                      customer: info.customer,
-                      contact: info.contact,
-                    ),
-                  ),
-                  HMBMailToIcon(info.contact.emailAddress),
-                ],
-              ),
-              BuildSendTaskApprovalButton(
-                context: context,
-                mounted: context.mounted,
-                approval: approval,
-              ),
-              const SizedBox(height: 8),
-              const Text('Tasks:'),
-              ...info.tasks.map(
-                (view) => Row(
+          builder: (context, info) {
+            final details = info!;
+            final visibleTasks = details.tasks.take(2).toList();
+            final remaining = details.tasks.length - visibleTasks.length;
+            return HMBColumn(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Customer : ${details.customer.name}'),
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
-                        '${view.task.name} (${view.link.status.name})',
+                        'Contact : ${details.contact.fullname}',
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () => _cycleDecision(view.link),
-                      child: const Text('Change'),
+                    HMBPhoneIcon(
+                      details.contact.fullname,
+                      sourceContext: SourceContext(
+                        customer: details.customer,
+                        contact: details.contact,
+                      ),
                     ),
+                    HMBMailToIcon(details.contact.emailAddress),
                   ],
                 ),
-              ),
-            ],
-          ),
+                BuildSendTaskApprovalButton(
+                  context: context,
+                  mounted: context.mounted,
+                  approval: approval,
+                ),
+                const SizedBox(height: 8),
+                const Text('Tasks:'),
+                ...visibleTasks.map(
+                  (view) => Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${view.task.name} (${view.link.status.name})',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => _cycleDecision(view.link),
+                        child: const Text('Change'),
+                      ),
+                    ],
+                  ),
+                ),
+                if (remaining > 0) Text('+ $remaining more task(s)'),
+              ],
+            );
+          },
         ),
         onEdit: (approval) => TaskApprovalEditScreen(
           job: widget.parent.parent!,
