@@ -11,8 +11,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-
 import 'package:flutter/material.dart';
+import 'package:strings/strings.dart';
 
 import '../../entity/task_item.dart';
 import '../../util/dart/money_ex.dart';
@@ -34,16 +34,29 @@ class ItemCardCommon extends StatelessWidget {
   Widget build(BuildContext context) => HMBColumn(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      HMBTextLine(customerAndJob.customer.name),
-      HMBTextLine('Job: ${customerAndJob.job.summary}'),
-      HMBTextLine('Task: ${customerAndJob.task.name}'),
-      HMBTextLine('Supplier: ${customerAndJob.supplier?.name ?? ''}'),
-      HMBTextLine(
+      _line(customerAndJob.customer.name),
+      _line('Job: ${customerAndJob.job.summary}'),
+      _line('Task: ${customerAndJob.task.name}'),
+      if (Strings.isNotBlank(customerAndJob.supplier?.name))
+        _line('Supplier: ${customerAndJob.supplier!.name}'),
+      if (Strings.isNotBlank(taskItem.purpose))
+        _line('Note: ${taskItem.purpose}'),
+      _line(
         '''Qty: ${taskItem.actualMaterialQuantity ?? taskItem.estimatedMaterialQuantity ?? MoneyEx.zero}''',
       ),
-      HMBTextLine(
+      _line(
         '''Unit Cost: ${taskItem.actualMaterialUnitCost ?? taskItem.estimatedMaterialUnitCost ?? MoneyEx.zero}''',
       ),
     ],
+  );
+
+  Widget _line(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 2),
+    child: Text(
+      text,
+      softWrap: true,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    ),
   );
 }
