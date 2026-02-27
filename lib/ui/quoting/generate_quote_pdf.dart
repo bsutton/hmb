@@ -21,8 +21,10 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:strings/strings.dart';
 
+import '../../dao/dao_job.dart';
 import '../../dao/dao_photo.dart';
 import '../../dao/dao_quote_task_photo.dart';
+import '../../dao/dao_site.dart';
 import '../../dao/dao_system.dart';
 import '../../entity/quote.dart';
 import '../../entity/system.dart';
@@ -39,6 +41,10 @@ Future<File> generateQuotePdf(
 }) async {
   final pdf = pw.Document();
   final system = await DaoSystem().get();
+  final job = await DaoJob().getById(quote.jobId);
+  final site = job?.siteId == null
+      ? null
+      : await DaoSite().getById(job!.siteId);
   final jobQuote = await QuoteDetails.fromQuoteId(
     quote.id,
     excludeHidden: true,
@@ -147,6 +153,9 @@ Future<File> generateQuotePdf(
                           ),
                         ),
                         pw.Text('Date: ${formatDate(quote.createdDate)}'),
+                        if (job != null) pw.Text('Job: #${job.id}'),
+                        if (site != null && site.address.trim().isNotEmpty)
+                          pw.Text('Site: ${site.address}'),
                       ],
                     ),
                     ?logo,
