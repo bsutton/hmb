@@ -70,6 +70,20 @@ class DaoPhoto extends Dao<Photo> {
     return (result.first['cnt'] as int?) ?? 0;
   }
 
+  Future<int> countUnsyncedPhotosBefore(DateTime cutoff) async {
+    final db = withoutTransaction();
+    final result = await db.rawQuery(
+      '''
+SELECT COUNT(*) AS cnt
+FROM $tableName
+WHERE last_backup_date IS NULL
+  AND datetime(created_date) < datetime(?)
+''',
+      [cutoff.toIso8601String()],
+    );
+    return (result.first['cnt'] as int?) ?? 0;
+  }
+
   /// Updates the photo record to mark it as backed up.
   Future<void> updatePhotoSyncStatus(
     int photoId, {

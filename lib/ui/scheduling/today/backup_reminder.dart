@@ -18,7 +18,8 @@ class BackupReminder {
     final cutoff = DateTime.now().subtract(const Duration(days: 7));
     final lastBackup = await BackupHistoryStore.latestSuccessfulBackup();
     final dbBackupOverdue = lastBackup == null || lastBackup.isBefore(cutoff);
-    final photoSyncPending = (await DaoPhoto().countUnsyncedPhotos()) > 0;
+    final photoSyncPending =
+        await DaoPhoto().countUnsyncedPhotosBefore(cutoff) > 0;
 
     return BackupReminderStatus(
       needsReminder: dbBackupOverdue || photoSyncPending,
