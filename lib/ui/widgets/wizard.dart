@@ -126,27 +126,28 @@ class WizardState extends State<Wizard> {
   );
 
   Future<void> _onNext() async {
+    if (isLastVisible(_currentStepIndex)) {
+      final fakeLast = FakeLastStep();
+      final target = WizardStepTarget(this, fakeLast);
+
+      await _safeOnNext(
+        context,
+        _currentStep,
+        target,
+        userOriginated: true,
+      ); // might redirect
+
+      final result = await target.future;
+      if (result == fakeLast) {
+        await _triggerOnFinished(WizardCompletionReason.completed);
+      }
+      return;
+    }
+
     BlockingUI().run(() async {
-      if (isLastVisible(_currentStepIndex)) {
-        final fakeLast = FakeLastStep();
-        final target = WizardStepTarget(this, fakeLast);
-
-        await _safeOnNext(
-          context,
-          _currentStep,
-          target,
-          userOriginated: true,
-        ); // might redirect
-
-        final result = await target.future;
-        if (result == fakeLast) {
-          await _triggerOnFinished(WizardCompletionReason.completed);
-        }
-      } else {
-        final next = _nextStep(_currentStepIndex);
-        if (next != null) {
-          await _transitionForward(next, userOriginated: true);
-        }
+      final next = _nextStep(_currentStepIndex);
+      if (next != null) {
+        await _transitionForward(next, userOriginated: true);
       }
     });
   }
