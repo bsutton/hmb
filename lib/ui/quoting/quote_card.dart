@@ -168,7 +168,10 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
           emailBody:
               '''
 ${primaryContact.firstName.trim()},
-Please find the attached quote for your job.
+
+Please review the attached quote for your job.
+To approve it, reply to this email with:
+"I approve Quote #${quote.bestNumber} for Job ${job.summary}".
 ''',
           sendEmailDialog:
               ({

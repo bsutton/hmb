@@ -80,7 +80,9 @@ class BuildSendTaskApprovalButton extends StatelessWidget {
                   '''
 ${contact.firstName},
 
-Please find attached the task list for your approval for Job ${job.summary}.
+Please find attached the task list for approval for Job ${job.summary}.
+To approve tasks, reply to this email with the approved task names
+or return the signed approval PDF.
 ''',
               sendEmailDialog:
                   ({
