@@ -83,6 +83,16 @@ class HMBDroplistMultiSelectState<T>
     setState(() {});
   }
 
+  String _selectionSummary() {
+    if (_selectedItems.isEmpty) {
+      return 'Select ${widget.title}';
+    }
+    if (_selectedItems.length == 1) {
+      return widget.format(_selectedItems.first).replaceAll('\n', ' - ').trim();
+    }
+    return '${_selectedItems.length} selected';
+  }
+
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
@@ -127,18 +137,15 @@ class HMBDroplistMultiSelectState<T>
                 children: [
                   Expanded(
                     child: Text(
-                      _selectedItems.isNotEmpty
-                          ? _selectedItems.map(widget.format).join('\n')
-                          : 'Select ${widget.title}',
+                      _selectionSummary(),
                       style: TextStyle(
                         fontSize: 13,
                         color: state.hasError
                             ? Theme.of(context).colorScheme.error
                             : HMBColors.textPrimary,
                       ),
-                      softWrap: true, // allow wrapping
-                      // overflow: TextOverflow.clip, // optional (default with softWrap)
-                      // maxLines: null,              // unlimited lines (default)
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const Icon(
