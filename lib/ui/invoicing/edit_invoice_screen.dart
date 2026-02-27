@@ -99,7 +99,9 @@ class _InvoiceEditScreenState extends DeferredState<InvoiceEditScreen> {
                 Text('Customer: ${customer?.name ?? "N/A"}'),
                 Text('Job: ${job.summary} #${job.id}'),
                 Text('Total: ${invoice.totalAmount}'),
-                HMBRow(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     HMBButton(
                       label: 'Upload to Xero',
