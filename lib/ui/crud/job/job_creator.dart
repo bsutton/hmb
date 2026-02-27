@@ -946,45 +946,6 @@ class _ContactStep extends WizardStep {
             ),
             const HMBSpacer(height: true),
           ],
-          HMBDroplist<Customer>(
-            title: 'Referred By',
-            required: false,
-            selectedItem: () => Future.value(state._selectedReferrerCustomer),
-            items: (filter) => DaoCustomer().getByFilter(filter),
-            format: (customer) => customer.name,
-            onChanged: (customer) {
-              setState(() {
-                state._selectedReferrerCustomer = customer;
-              });
-              unawaited(state._loadReferrerContacts(customer));
-            },
-          ),
-          if (state._selectedReferrerCustomer != null) ...[
-            HMBDroplist<Contact>(
-              title: 'Referred By Contact',
-              required: false,
-              selectedItem: () => Future.value(state._selectedReferrerContact),
-              items: (filter) async {
-                final value = filter?.trim().toLowerCase() ?? '';
-                if (value.isEmpty) {
-                  return state._referrerContacts;
-                }
-                return state._referrerContacts.where((contact) {
-                  final name = '${contact.firstName} ${contact.surname}'
-                      .toLowerCase();
-                  final email = contact.emailAddress.toLowerCase();
-                  return name.contains(value) || email.contains(value);
-                }).toList();
-              },
-              format: (contact) =>
-                  '${contact.firstName} ${contact.surname}'.trim(),
-              onChanged: (contact) {
-                setState(() {
-                  state._selectedReferrerContact = contact;
-                });
-              },
-            ),
-          ],
           if (state._selectedCustomer != null) ...[
             HMBDroplist<Contact>(
               title: 'Tenant',
@@ -1011,31 +972,6 @@ class _ContactStep extends WizardStep {
               },
             ),
           ],
-          HMBDroplist<Contact>(
-            title: 'Primary Contact',
-            required: false,
-            selectedItem: () => Future.value(state._selectedPrimaryContact),
-            items: (filter) async {
-              final contacts = state._partyContacts();
-              final value = filter?.trim().toLowerCase() ?? '';
-              if (value.isEmpty) {
-                return contacts;
-              }
-              return contacts.where((contact) {
-                final name = '${contact.firstName} ${contact.surname}'
-                    .toLowerCase();
-                final email = contact.emailAddress.toLowerCase();
-                return name.contains(value) || email.contains(value);
-              }).toList();
-            },
-            format: (contact) =>
-                '${contact.firstName} ${contact.surname}'.trim(),
-            onChanged: (contact) {
-              setState(() {
-                state._selectedPrimaryContact = contact;
-              });
-            },
-          ),
           HMBTextField(
             controller: state._firstName,
             labelText: 'First Name',
@@ -1190,6 +1126,72 @@ class _JobStep extends WizardStep {
       padding: const EdgeInsets.all(12),
       child: HMBColumn(
         children: [
+          HMBDroplist<Customer>(
+            title: 'Referred By',
+            required: false,
+            selectedItem: () => Future.value(state._selectedReferrerCustomer),
+            items: (filter) => DaoCustomer().getByFilter(filter),
+            format: (customer) => customer.name,
+            onChanged: (customer) {
+              setState(() {
+                state._selectedReferrerCustomer = customer;
+              });
+              unawaited(state._loadReferrerContacts(customer));
+            },
+          ),
+          if (state._selectedReferrerCustomer != null) ...[
+            HMBDroplist<Contact>(
+              title: 'Referred By Contact',
+              required: false,
+              selectedItem: () => Future.value(state._selectedReferrerContact),
+              items: (filter) async {
+                final value = filter?.trim().toLowerCase() ?? '';
+                if (value.isEmpty) {
+                  return state._referrerContacts;
+                }
+                return state._referrerContacts.where((contact) {
+                  final name = '${contact.firstName} ${contact.surname}'
+                      .toLowerCase();
+                  final email = contact.emailAddress.toLowerCase();
+                  return name.contains(value) || email.contains(value);
+                }).toList();
+              },
+              format: (contact) =>
+                  '${contact.firstName} ${contact.surname}'.trim(),
+              onChanged: (contact) {
+                setState(() {
+                  state._selectedReferrerContact = contact;
+                });
+              },
+            ),
+          ],
+          HMBDroplist<Contact>(
+            title: 'Primary Contact',
+            required: false,
+            selectedItem: () => Future.value(
+              state._selectedPrimaryContact ?? state._selectedExistingContact,
+            ),
+            items: (filter) async {
+              final contacts = state._partyContacts();
+              final value = filter?.trim().toLowerCase() ?? '';
+              if (value.isEmpty) {
+                return contacts;
+              }
+              return contacts.where((contact) {
+                final name = '${contact.firstName} ${contact.surname}'
+                    .toLowerCase();
+                final email = contact.emailAddress.toLowerCase();
+                return name.contains(value) || email.contains(value);
+              }).toList();
+            },
+            format: (contact) =>
+                '${contact.firstName} ${contact.surname}'.trim(),
+            onChanged: (contact) {
+              setState(() {
+                state._selectedPrimaryContact = contact;
+              });
+            },
+          ),
           HMBDroplist<BillingType>(
             title: 'Billing Type',
             selectedItem: () => Future.value(state._selectedBillingType),
