@@ -17,7 +17,6 @@ import 'package:money2/money2.dart';
 
 import '../../dao/dao.g.dart';
 import '../../entity/entity.g.dart';
-import '../widgets/fields/fields.g.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/select/hmb_select_contact.dart';
 import '../widgets/widgets.g.dart';
@@ -150,7 +149,6 @@ class DialogTaskSelection extends StatefulWidget {
 class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
   final Map<int, bool> _selectedTasks = {};
   final Map<int, BillingType> _taskBillingTypes = {};
-  final Map<int, TextEditingController> _taskMarginControllers = {};
   var _selectAll = true;
   late bool billBookingFee;
   late bool canBillBookingFee;
@@ -172,22 +170,11 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
       _selectedTasks[accuredValue.task.id] = true;
       _taskBillingTypes[accuredValue.task.id] = accuredValue.task
           .effectiveBillingType(widget.job.billingType);
-      _taskMarginControllers[accuredValue.task.id] = TextEditingController(
-        text: '0',
-      );
     }
 
     _customer = (await DaoCustomer().getById(widget.job.customerId))!;
     _contacts = await DaoContact().getByCustomer(widget.job.customerId);
     _selectedContact = widget.contact;
-  }
-
-  @override
-  void dispose() {
-    for (final controller in _taskMarginControllers.values) {
-      controller.dispose();
-    }
-    super.dispose();
   }
 
   bool get _hasSelectedTimeAndMaterialsTasks => _selectedTasks.entries.any(
@@ -283,18 +270,6 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
                     onChanged: (value) =>
                         _toggleIndividualTask(taskSelector.task.id, value),
                   ),
-                  if (widget.forQuote &&
-                      (_selectedTasks[taskSelector.task.id] ?? false))
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 16),
-                      child: HMBTextField(
-                        controller:
-                            _taskMarginControllers[taskSelector.task.id]!,
-                        labelText:
-                            'Task Margin (%) for ${taskSelector.description}',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
                 ],
               ),
           ],
@@ -315,13 +290,6 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
               .where((entry) => entry.value)
               .map((entry) => entry.key)
               .toList();
-          final taskMargins = <int, Percentage>{};
-          for (final taskId in selectedTaskIds) {
-            final marginText = _taskMarginControllers[taskId]?.text ?? '0';
-            taskMargins[taskId] =
-                Percentage.tryParse(marginText, decimalDigits: 3) ??
-                Percentage.zero;
-          }
           Navigator.of(context).pop(
             InvoiceOptions(
               selectedTaskIds: selectedTaskIds,
@@ -329,7 +297,6 @@ class _DialogTaskSelectionState extends DeferredState<DialogTaskSelection> {
               groupByTask: !_hasSelectedTimeAndMaterialsTasks || _groupByTask,
               contact: _selectedContact,
               quoteMargin: widget.job.estimateMargin,
-              taskMargins: taskMargins,
             ),
           );
         },
