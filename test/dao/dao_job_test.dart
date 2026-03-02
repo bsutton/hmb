@@ -265,7 +265,7 @@ void main() {
       expect(movedTask!.jobId, equals(copied.id));
     });
 
-    test('readyToBeInvoiced includes job with unsent invoice', () async {
+    test('readyToBeInvoiced excludes jobs with only unsent invoice', () async {
       final now = DateTime.now();
       final job = await createJob(
         now,
@@ -284,7 +284,7 @@ void main() {
       );
 
       final ready = await DaoJob().readyToBeInvoiced(null);
-      expect(ready.any((j) => j.id == job.id), isTrue);
+      expect(ready.any((j) => j.id == job.id), isFalse);
     });
 
     test('readyToBeInvoiced excludes jobs with only sent invoices', () async {

@@ -24,6 +24,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../crud/todo/list_todo_card.dart';
 import '../../invoicing/create_invoice_ui.dart';
+import '../../invoicing/list_invoice_screen.dart';
 import '../../task_items/task_items.g.dart';
 import '../../widgets/layout/layout.g.dart';
 import '../../widgets/text/text.g.dart';
@@ -126,15 +127,28 @@ class Today {
     final readyJobs = await daoJob.readyToBeInvoiced(null);
     final unsentInvoices = await DaoInvoice().getUnsent();
     final byId = <int, InvoicingJob>{};
+
     for (final job in readyJobs) {
-      byId[job.id] = InvoicingJob(job: job, hasUnsentInvoice: false);
+      byId[job.id] = InvoicingJob(
+        job: job,
+        needsInvoiceCreation: true,
+        hasUnsentInvoice: false,
+      );
     }
+
     for (final invoice in unsentInvoices) {
       final job = await daoJob.getById(invoice.jobId);
-      if (job != null) {
-        byId[job.id] = InvoicingJob(job: job, hasUnsentInvoice: true);
+      if (job == null) {
+        continue;
       }
+      final existing = byId[job.id];
+      byId[job.id] = InvoicingJob(
+        job: job,
+        needsInvoiceCreation: existing?.needsInvoiceCreation ?? false,
+        hasUnsentInvoice: true,
+      );
     }
+
     final toBeInvoiced = byId.values.toList()
       ..sort((a, b) => b.job.modifiedDate.compareTo(a.job.modifiedDate));
     final backupReminder = await BackupReminder.getStatus();
@@ -155,9 +169,14 @@ class Today {
 
 class InvoicingJob {
   final Job job;
+  final bool needsInvoiceCreation;
   final bool hasUnsentInvoice;
 
-  const InvoicingJob({required this.job, required this.hasUnsentInvoice});
+  const InvoicingJob({
+    required this.job,
+    required this.needsInvoiceCreation,
+    required this.hasUnsentInvoice,
+  });
 }
 
 /// The main schedule page. This is the "shell" that holds a [PageView]
@@ -487,7 +506,6 @@ class InvoiceCard extends StatelessWidget {
   const InvoiceCard(this.invoicingJob, {super.key});
 
   @override
-  @override
   Widget build(BuildContext context) => FutureBuilderEx(
     future: JobAndCustomer.fetch(invoicingJob.job),
     builder: (context, jobAndCustomer) => Surface(
@@ -500,6 +518,11 @@ class InvoiceCard extends StatelessWidget {
             children: [
               HMBText(jobAndCustomer!.job.summary),
               HMBText(jobAndCustomer.customer.name),
+              if (invoicingJob.needsInvoiceCreation)
+                const Text(
+                  'Needs invoice creation',
+                  style: TextStyle(color: Colors.orange),
+                ),
               if (invoicingJob.hasUnsentInvoice)
                 const Text(
                   'Unsent invoice',
@@ -507,14 +530,33 @@ class InvoiceCard extends StatelessWidget {
                 ),
             ],
           ),
-
-          HMBButtonAdd(
-            hint: invoicingJob.hasUnsentInvoice
-                ? 'Open invoice list and send outstanding invoice'
-                : 'Add Invoice',
-            small: true,
-            enabled: true,
-            onAdd: () => createInvoiceFor(invoicingJob.job, context),
+          Row(
+            children: [
+              if (invoicingJob.hasUnsentInvoice)
+                HMBButton.small(
+                  label: 'Open',
+                  hint: 'Open invoices and send the outstanding invoice',
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            InvoiceListScreen(jobRestriction: invoicingJob.job),
+                      ),
+                    );
+                  },
+                ),
+              if (invoicingJob.hasUnsentInvoice &&
+                  invoicingJob.needsInvoiceCreation)
+                const HMBSpacer(width: true),
+              if (invoicingJob.needsInvoiceCreation)
+                HMBButton.small(
+                  label: 'Add',
+                  hint: 'Create a new invoice',
+                  onPressed: () async {
+                    await createInvoiceFor(invoicingJob.job, context);
+                  },
+                ),
+            ],
           ),
         ],
       ),

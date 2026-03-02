@@ -649,17 +649,13 @@ where q.id=?
 
   Future<List<Job>> readyToBeInvoiced(String? filter) async {
     final activeJobs = await DaoJob().getActiveJobs(filter);
-    final unsentJobIds = (await DaoInvoice().getUnsent())
-        .map((invoice) => invoice.jobId)
-        .toSet();
     final ready = <Job>[];
     for (final job in activeJobs) {
       if (job.billingType == BillingType.nonBillable) {
         continue;
       }
       final hasBillableTasks = await DaoJob().hasBillableTasks(job);
-      final hasUnsentInvoice = unsentJobIds.contains(job.id);
-      if (hasBillableTasks || hasUnsentInvoice) {
+      if (hasBillableTasks) {
         ready.add(job);
       }
     }
