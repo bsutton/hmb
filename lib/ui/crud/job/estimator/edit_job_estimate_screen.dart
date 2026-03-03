@@ -31,14 +31,13 @@ import '../../../../util/dart/measurement_type.dart';
 import '../../../../util/dart/money_ex.dart';
 import '../../../../util/dart/units.dart';
 import '../../../dialog/hmb_comfirm_delete_dialog.dart';
-import '../../../widgets/fields/hmb_text_field.dart';
+import '../../../dialog/hmb_dialog.dart';
 import '../../../widgets/hmb_button.dart';
 import '../../../widgets/hmb_search.dart';
 import '../../../widgets/hmb_toast.dart';
 import '../../../widgets/hmb_toggle.dart';
 import '../../../widgets/icons/hmb_delete_icon.dart';
 import '../../../widgets/icons/hmb_edit_icon.dart';
-import '../../../widgets/icons/hmb_save_icon.dart';
 import '../../../widgets/layout/layout.g.dart';
 import '../../../widgets/layout/surface.dart';
 import '../../../widgets/media/photo_gallery.dart';
@@ -47,6 +46,8 @@ import '../../../widgets/text/hmb_text_themes.dart';
 import '../../check_list/edit_task_item_screen.dart';
 import '../../check_list/list_task_item_screen.dart';
 import '../../task/edit_task_screen.dart';
+
+enum MarginMode { percent, amount }
 
 class JobEstimateBuilderScreen extends StatefulWidget {
   final Job job;
@@ -65,7 +66,6 @@ class _JobEstimateBuilderScreenState
   Money _totalMaterialsCost = MoneyEx.zero;
   Money _totalCombinedCost = MoneyEx.zero;
   Percentage _estimateMargin = Percentage.zero;
-  late final TextEditingController _estimateMarginController;
   var _estimateComplete = false;
 
   var _showToBeEstimated = true;
@@ -77,7 +77,6 @@ class _JobEstimateBuilderScreenState
 
   @override
   Future<void> asyncInitState() async {
-    _estimateMarginController = TextEditingController(text: '0');
     final canProceed = await _ensureFixedPrice();
     if (!canProceed) {
       if (mounted) {
@@ -92,14 +91,7 @@ class _JobEstimateBuilderScreenState
       widget.job.estimateMargin = refreshedJob.estimateMargin;
     }
     _estimateMargin = widget.job.estimateMargin;
-    _estimateMarginController.text = _estimateMargin.toString();
     await _loadTasks();
-  }
-
-  @override
-  void dispose() {
-    _estimateMarginController.dispose();
-    super.dispose();
   }
 
   Future<bool> _ensureFixedPrice() async {
@@ -149,9 +141,7 @@ class _JobEstimateBuilderScreenState
   }
 
   List<Task> filteredTasks() {
-    var filtered = <Task>[];
-
-    filtered = _tasks
+    final filtered = _tasks
         .where(
           (task) =>
               _showActive && task.status.isActive() ||
@@ -164,13 +154,14 @@ class _JobEstimateBuilderScreenState
     if (Strings.isBlank(_filter)) {
       return filtered;
     }
-    for (final task in filtered) {
-      if (task.name.toLowerCase().contains(_filter) ||
-          task.description.toLowerCase().contains(_filter)) {
-        filtered.add(task);
-      }
-    }
-    return filtered;
+    final normalizedFilter = _filter.toLowerCase();
+    return filtered
+        .where(
+          (task) =>
+              task.name.toLowerCase().contains(normalizedFilter) ||
+              task.description.toLowerCase().contains(normalizedFilter),
+        )
+        .toList();
   }
 
   Future<void> _calculateTotals() async {
@@ -249,10 +240,14 @@ class _JobEstimateBuilderScreenState
       question: 'Are you sure you want to delete ${task.name}?',
 
       onConfirmed: () async {
-        await DaoTask().delete(task.id);
-        _tasks.removeWhere((t) => t.id == task.id);
-        await _calculateTotals();
-        setState(() {});
+        try {
+          await DaoTask().delete(task.id);
+          _tasks.removeWhere((t) => t.id == task.id);
+          await _calculateTotals();
+          setState(() {});
+        } catch (e) {
+          HMBToast.error('Unable to delete task: $e');
+        }
       },
     );
   }
@@ -309,49 +304,36 @@ class _JobEstimateBuilderScreenState
     ),
   );
 
-  Widget _buildTotals() => SurfaceCard(
-    elevation: SurfaceElevation.e0,
-    title: 'Totals',
-    body: HMBColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Estimate Complete: ${_estimateComplete ? 'Yes' : 'No'}'),
-        Text('Labour: $_totalLabourCost'),
-        Text('Materials: $_totalMaterialsCost'),
-        Text('Combined: $_totalCombinedCost'),
-        const HMBSpacer(height: true),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: HMBTextField(
-                controller: _estimateMarginController,
-                labelText: 'Quote Margin (%)',
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  _estimateMargin =
-                      Percentage.tryParse(value ?? '', decimalDigits: 3) ??
-                      Percentage.zero;
-                  setState(() {});
-                },
-              ),
-            ),
-            HMBSaveIcon(
-              hint: 'Save quote margin for this estimate',
-              onPressed: _saveEstimateMargin,
-            ),
-          ],
-        ),
-        const Text('Combined with Margin:'),
-        Text('${_totalCombinedCost.plusPercentage(_estimateMargin)}'),
-      ],
-    ),
-  );
+  Widget _buildTotals() {
+    final marginAmount =
+        _totalCombinedCost.plusPercentage(_estimateMargin) - _totalCombinedCost;
+    final total = _totalCombinedCost.plusPercentage(_estimateMargin);
 
-  Future<void> _saveEstimateMargin() async {
-    final parsed =
-        Percentage.tryParse(_estimateMarginController.text, decimalDigits: 3) ??
-        Percentage.zero;
+    return Surface(
+      elevation: SurfaceElevation.e0,
+      child: HMBColumn(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Estimate Complete: ${_estimateComplete ? 'Yes' : 'No'}'),
+          Text('Labour: $_totalLabourCost'),
+          Text('Materials: $_totalMaterialsCost'),
+          Row(
+            children: [
+              Expanded(child: Text('Margin: $marginAmount ($_estimateMargin)')),
+              IconButton(
+                tooltip: 'Edit estimate margin',
+                onPressed: _showEditMarginDialog,
+                icon: const Icon(Icons.edit),
+              ),
+            ],
+          ),
+          Text('Total: $total'),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveEstimateMargin(Percentage parsed) async {
     final updated = widget.job.copyWith(estimateMargin: parsed);
     await DaoJob().update(updated);
     widget.job.estimateMargin = parsed;
@@ -360,48 +342,85 @@ class _JobEstimateBuilderScreenState
       return;
     }
     setState(() {});
-    HMBToast.info('Estimate margin saved.');
+  }
+
+  Future<void> _showEditMarginDialog() async {
+    final selected = await showDialog<Percentage>(
+      context: context,
+      builder: (context) => _EstimateMarginDialog(
+        initialMargin: _estimateMargin,
+        combinedCost: _totalCombinedCost,
+      ),
+    );
+
+    if (selected == null) {
+      return;
+    }
+    await _saveEstimateMargin(selected);
   }
 
   Widget _buildTaskCard(Task task) => HMBColumn(
     children: [
-      SurfaceCardWithActions(
-        title: task.name,
-        actions: [
-          IconButton(
-            tooltip: 'Expand with AI',
-            onPressed: () => unawaited(_expandTaskWithAi(task)),
-            icon: const Icon(Icons.auto_awesome),
-          ),
-          HMBEditIcon(onPressed: () => _editTask(task), hint: 'Edit Task'),
-          HMBDeleteIcon(
-            onPressed: () => _deleteTask(task),
-            hint: 'Delete Task',
-          ),
-        ],
-        body: HMBColumn(
+      Surface(
+        rounded: true,
+        elevation: SurfaceElevation.e2,
+        child: HMBColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Completed'),
-              value: task.status.isComplete(),
-              onChanged: task.status.isWithdrawn()
-                  ? null
-                  : (checked) async {
-                      await _setTaskCompletion(task, checked ?? false);
-                    },
+            Row(
+              children: [
+                Expanded(child: HMBTextHeadline2(task.name)),
+                Wrap(
+                  spacing: 4,
+                  children: [
+                    IconButton(
+                      tooltip: 'Expand with AI',
+                      onPressed: () => unawaited(_expandTaskWithAi(task)),
+                      icon: const Icon(Icons.auto_awesome),
+                    ),
+                    HMBEditIcon(
+                      onPressed: () => _editTask(task),
+                      hint: 'Edit Task',
+                    ),
+                    HMBDeleteIcon(
+                      onPressed: () => _deleteTask(task),
+                      hint: 'Delete Task',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const Divider(height: 1),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Checkbox(
+                  value: task.status.isComplete(),
+                  onChanged: task.status.isWithdrawn()
+                      ? null
+                      : (checked) async {
+                          await _setTaskCompletion(task, checked ?? false);
+                        },
+                ),
+                const Expanded(
+                  child: HMBColumn(
+                    spacing: 2,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Estimate complete for this task'),
+                      Text(
+                        'Tick when scope and pricing are finalized.',
+                        style: TextStyle(fontSize: 12, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             if (Strings.isNotBlank(task.description))
               HMBTextBody(task.description),
-
-            // Photos
             PhotoGallery.forTask(task: task),
-
-            // Items
             _buildTaskItems(task),
-
-            // Add Item button
             HMBButton(
               label: 'Add Item',
               hint: 'Add an Item (to purchase, pack or labor) to a Task',
@@ -435,23 +454,30 @@ class _JobEstimateBuilderScreenState
     Task task,
     Money hourlyRate,
     BillingType billingType,
-  ) => HMBColumn(
-    children: [
-      SurfaceCardWithActions(
-        title: item.description,
-        body: Text('Cost: ${item.getTotalLineCharge(billingType, hourlyRate)}'),
-        actions: [
-          HMBEditIcon(
-            onPressed: () => _editItem(item, task),
-            hint: 'Edit Estimate',
-          ),
-          HMBDeleteIcon(
-            onPressed: () => _deleteItem(item),
-            hint: 'Delete Estimate',
-          ),
-        ],
-      ),
-    ],
+  ) => Surface(
+    rounded: true,
+    elevation: SurfaceElevation.e1,
+    margin: const EdgeInsets.only(bottom: 8),
+    child: HMBColumn(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: Text(item.description)),
+            HMBEditIcon(
+              onPressed: () => _editItem(item, task),
+              hint: 'Edit Estimate',
+            ),
+            HMBDeleteIcon(
+              onPressed: () => _deleteItem(item),
+              hint: 'Delete Estimate',
+            ),
+          ],
+        ),
+        const Divider(height: 1),
+        Text('Cost: ${item.getTotalLineCharge(billingType, hourlyRate)}'),
+      ],
+    ),
   );
 
   Future<void> _addItemToTask(Task task) async {
@@ -506,9 +532,13 @@ class _JobEstimateBuilderScreenState
       question: 'Are you sure you want to delete ${item.description}?',
 
       onConfirmed: () async {
-        await DaoTaskItem().delete(item.id);
-        await _calculateTotals();
-        setState(() {});
+        try {
+          await DaoTaskItem().delete(item.id);
+          await _calculateTotals();
+          setState(() {});
+        } catch (e) {
+          HMBToast.error('Unable to delete item: $e');
+        }
       },
     );
   }
@@ -638,45 +668,275 @@ class _JobEstimateBuilderScreenState
     return TaskAndRate.fromTask(task);
   }
 
+  Future<void> _showFilterHelp({
+    required String title,
+    required String details,
+  }) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => HMBDialog(
+        title: Text(title),
+        content: Text(details),
+        actions: [
+          HMBButton(
+            label: 'Close',
+            hint: 'Close filter details',
+            onPressed: () => Navigator.of(dialogContext).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterToggle({
+    required String label,
+    required String hint,
+    required bool initialValue,
+    required OnToggled onToggled,
+    required String helpTitle,
+    required String helpDetails,
+  }) => InkWell(
+    onLongPress: () => unawaited(
+      _showFilterHelp(title: helpTitle, details: helpDetails),
+    ),
+    child: HMBToggle(
+      label: label,
+      hint: hint,
+      initialValue: initialValue,
+      onToggled: onToggled,
+    ),
+  );
+
   Widget _buildFilter() => HMBColumn(
     children: [
-      HMBToggle(
+      _buildFilterToggle(
         label: 'Show To Be Estimated',
         hint:
             '''Show tasks that can be estimated as they have not started no been cancelled''',
+        helpTitle: 'To Be Estimated',
+        helpDetails:
+            'Shows tasks that still need estimate work. These are tasks '
+            'that are not completed and not withdrawn.',
         initialValue: _showToBeEstimated,
         onToggled: (value) {
           _showToBeEstimated = value;
           setState(() {});
         },
       ),
-      HMBToggle(
+      _buildFilterToggle(
         label: 'Show Complete',
         hint: 'Show tasks that have been completed or cancelled',
+        helpTitle: 'Complete',
+        helpDetails:
+            'Shows tasks marked complete. Use this to review tasks where '
+            'estimate scope and pricing are finalized.',
         initialValue: _showCompleted,
         onToggled: (value) {
           _showCompleted = value;
           setState(() {});
         },
       ),
-      HMBToggle(
+      _buildFilterToggle(
         label: 'Show Active',
         hint: 'Show tasks that currently active',
+        helpTitle: 'Active',
+        helpDetails:
+            'Shows tasks currently in progress. These tasks are active and '
+            'not completed or withdrawn.',
         initialValue: _showActive,
         onToggled: (value) {
           _showActive = value;
           setState(() {});
         },
       ),
-      HMBToggle(
+      _buildFilterToggle(
         label: 'Show Withdrawn',
         hint: 'Show tasks have been cancelled or placed on hold',
+        helpTitle: 'Withdrawn',
+        helpDetails:
+            'Shows tasks removed from estimate workflow, such as cancelled '
+            'or on-hold tasks.',
         initialValue: _showWithdrawn,
         onToggled: (value) {
           _showWithdrawn = value;
           setState(() {});
         },
       ),
+    ],
+  );
+}
+
+class _EstimateMarginDialog extends StatefulWidget {
+  final Percentage initialMargin;
+  final Money combinedCost;
+
+  const _EstimateMarginDialog({
+    required this.initialMargin,
+    required this.combinedCost,
+  });
+
+  @override
+  State<_EstimateMarginDialog> createState() => _EstimateMarginDialogState();
+}
+
+class _EstimateMarginDialogState extends State<_EstimateMarginDialog> {
+  late final TextEditingController _percentController;
+  late final TextEditingController _amountController;
+  MarginMode _mode = MarginMode.percent;
+  String? _validationError;
+
+  @override
+  void initState() {
+    super.initState();
+    _percentController = TextEditingController(
+      text: widget.initialMargin.toString().replaceAll('%', '').trim(),
+    );
+    final marginAmount =
+        widget.combinedCost.plusPercentage(widget.initialMargin) -
+        widget.combinedCost;
+    _amountController = TextEditingController(text: marginAmount.toString());
+  }
+
+  @override
+  void dispose() {
+    _percentController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Percentage get _percentValue =>
+      Percentage.tryParse(_percentController.text) ??
+      Percentage.zero;
+
+  Money get _calculatedAmount =>
+      widget.combinedCost.plusPercentage(_percentValue) - widget.combinedCost;
+
+  Percentage get _calculatedPercentFromAmount {
+    final normalized = _amountController.text
+        .replaceAll(r'$', '')
+        .replaceAll(',', '')
+        .trim();
+    final amountNum = double.tryParse(normalized);
+    if (amountNum == null || amountNum < 0 || widget.combinedCost.isZero) {
+      return Percentage.zero;
+    }
+    final amount = Money.fromNum(amountNum, isoCode: 'AUD');
+    return Percentage.fromInt(
+      ((amount.minorUnits / widget.combinedCost.minorUnits) * 10000).round(),
+    );
+  }
+
+  void _save() {
+    setState(() {
+      _validationError = null;
+    });
+
+    if (_mode == MarginMode.percent) {
+      Navigator.of(context).pop(_percentValue);
+      return;
+    }
+
+    final normalized = _amountController.text
+        .replaceAll(r'$', '')
+        .replaceAll(',', '')
+        .trim();
+    final amountNum = double.tryParse(normalized);
+    if (amountNum == null || amountNum < 0) {
+      setState(() {
+        _validationError = 'Enter a valid non-negative margin amount.';
+      });
+      return;
+    }
+
+    final amount = Money.fromNum(amountNum, isoCode: 'AUD');
+    if (widget.combinedCost.isZero && amount.isPositive) {
+      setState(() {
+        _validationError =
+            'Cannot set a dollar margin when total cost is zero.';
+      });
+      return;
+    }
+
+    final percent = widget.combinedCost.isZero
+        ? Percentage.zero
+        : Percentage.fromInt(
+            ((amount.minorUnits / widget.combinedCost.minorUnits) * 10000)
+                .round(),
+          );
+    Navigator.of(context).pop(percent);
+  }
+
+  @override
+  Widget build(BuildContext context) => HMBDialog(
+    title: const Text('Set Estimate Margin'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ToggleButtons(
+          isSelected: [
+            _mode == MarginMode.percent,
+            _mode == MarginMode.amount,
+          ],
+          color: Theme.of(context).colorScheme.onSurface,
+          selectedColor: Theme.of(context).colorScheme.onPrimary,
+          fillColor: Theme.of(context).colorScheme.primary,
+          borderColor: Theme.of(context).colorScheme.outline,
+          selectedBorderColor: Theme.of(context).colorScheme.primary,
+          onPressed: (index) {
+            setState(() {
+              _mode = index == 0 ? MarginMode.percent : MarginMode.amount;
+              _validationError = null;
+            });
+          },
+          children: const [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text('Enter as %'),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text(r'Enter as $ amount'),
+            ),
+          ],
+        ),
+        const HMBSpacer(height: true),
+        if (_mode == MarginMode.percent) ...[
+          TextField(
+            key: const ValueKey('margin_percent_field'),
+            controller: _percentController,
+            keyboardType: TextInputType.number,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              labelText: 'Margin (%)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          Text('Resulting Margin: $_calculatedAmount'),
+        ] else ...[
+          TextField(
+            key: const ValueKey('margin_amount_field'),
+            controller: _amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              labelText: r'Margin ($)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          Text('Resulting Margin %: $_calculatedPercentFromAmount'),
+        ],
+        if (_validationError != null)
+          Text(_validationError!, style: const TextStyle(color: Colors.red)),
+      ],
+    ),
+    actions: [
+      HMBButton(
+        label: 'Cancel',
+        hint: 'Cancel margin changes',
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      HMBButton(label: 'Save', hint: 'Save estimate margin', onPressed: _save),
     ],
   );
 }
