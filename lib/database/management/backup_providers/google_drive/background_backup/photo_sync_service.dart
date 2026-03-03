@@ -98,7 +98,7 @@ class PhotoSyncService {
 
     try {
       final headers = await (await GoogleDriveAuth.instance())
-          .authHeadersOrNull();
+          .authHeadersOrNull(allowAutomaticSignIn: false);
       if (headers == null) {
         _controller.add(
           ProgressUpdate('Photo sync waiting for Google sign-in.', 0, 0),
@@ -273,7 +273,7 @@ class PhotoSyncService {
     }
 
     final headers = await (await GoogleDriveAuth.instance())
-        .authHeadersOrNull();
+        .authHeadersOrNull(allowAutomaticSignIn: false);
     if (headers == null) {
       throw StateError('Google Drive auth is not available for download.');
     }

@@ -59,12 +59,16 @@ class GoogleDriveAuth {
     return headers;
   }
 
-  Future<Map<String, String>?> authHeadersOrNull() async {
-    try {
-      await signInIfAutomatic();
-    } catch (_) {
-      await _markSignedOut();
-      return null;
+  Future<Map<String, String>?> authHeadersOrNull({
+    bool allowAutomaticSignIn = true,
+  }) async {
+    if (allowAutomaticSignIn) {
+      try {
+        await signInIfAutomatic();
+      } catch (_) {
+        await _markSignedOut();
+        return null;
+      }
     }
     if (!_signedIn) {
       return null;
