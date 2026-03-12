@@ -17,48 +17,42 @@ void main() {
     await tearDownTestDb();
   });
 
-  test(
-    'getByFilter excludes paid invoices when includePaid is false',
-    () async {
-      final job = await createJobWithCustomer(
-        billingType: BillingType.timeAndMaterial,
-        hourlyRate: MoneyEx.zero,
-        summary: 'Invoice paid filter job',
-      );
+  test('getByFilter excludes paid invoices by default', () async {
+    final job = await createJobWithCustomer(
+      billingType: BillingType.timeAndMaterial,
+      hourlyRate: MoneyEx.zero,
+      summary: 'Invoice paid filter job',
+    );
 
-      final unpaid = Invoice.forInsert(
-        jobId: job.id,
-        dueDate: LocalDate.today(),
-        totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
-        billingContactId: job.billingContactId,
-      );
-      await DaoInvoice().insert(unpaid);
-      await DaoInvoice().update(unpaid.copyWith(invoiceNum: 'INV-UNPAID'));
+    final unpaid = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: Money.fromInt(1000, isoCode: 'AUD'),
+      billingContactId: job.billingContactId,
+    );
+    await DaoInvoice().insert(unpaid);
+    await DaoInvoice().update(unpaid.copyWith(invoiceNum: 'INV-UNPAID'));
 
-      final paid = Invoice.forInsert(
-        jobId: job.id,
-        dueDate: LocalDate.today(),
-        totalAmount: Money.fromInt(2000, isoCode: 'AUD'),
-        billingContactId: job.billingContactId,
-        sent: true,
-        paid: true,
-        paidDate: DateTime.now(),
-      );
-      await DaoInvoice().insert(paid);
-      await DaoInvoice().update(paid.copyWith(invoiceNum: 'INV-PAID'));
+    final paid = Invoice.forInsert(
+      jobId: job.id,
+      dueDate: LocalDate.today(),
+      totalAmount: Money.fromInt(2000, isoCode: 'AUD'),
+      billingContactId: job.billingContactId,
+      sent: true,
+      paid: true,
+      paidDate: DateTime.now(),
+    );
+    await DaoInvoice().insert(paid);
+    await DaoInvoice().update(paid.copyWith(invoiceNum: 'INV-PAID'));
 
-      final hiddenPaid = await DaoInvoice().getByFilter(
-        null,
-        includePaid: false,
-      );
-      final all = await DaoInvoice().getByFilter(null);
+    final hiddenPaid = await DaoInvoice().getByFilter(null);
+    final all = await DaoInvoice().getByFilter(null, includePaid: true);
 
-      expect(hiddenPaid.map((i) => i.invoiceNum), isNot(contains('INV-PAID')));
-      expect(hiddenPaid.map((i) => i.invoiceNum), contains('INV-UNPAID'));
-      expect(
-        all.map((i) => i.invoiceNum),
-        containsAll(['INV-UNPAID', 'INV-PAID']),
-      );
-    },
-  );
+    expect(hiddenPaid.map((i) => i.invoiceNum), isNot(contains('INV-PAID')));
+    expect(hiddenPaid.map((i) => i.invoiceNum), contains('INV-UNPAID'));
+    expect(
+      all.map((i) => i.invoiceNum),
+      containsAll(['INV-UNPAID', 'INV-PAID']),
+    );
+  });
 }

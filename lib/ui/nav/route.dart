@@ -65,15 +65,19 @@ GoRouter createGoRouter(
   // we pop back to it.
   debugLogDiagnostics: true,
   onException: (context, state, router) {
+    if (state.uri.path == '/xero/auth_complete') {
+      return;
+    }
     HMBToast.error('Route Error: ${state.error}');
   },
   redirect: (context, state) {
     // If the deep link is the Xero OAuth callback, do not change
     // the current route.
-    if (state.matchedLocation == '/xero/auth_complete') {
-      // Return the current location so that no navigation occurs
-      // as we are directly handling the intent in the xero auth code.
-      return state.uri.toString();
+    if (state.uri.path == '/xero/auth_complete') {
+      // GoRouter may receive the app link before the auth handler consumes it.
+      // Send the app back to the normal entry route and let XeroAuth finish
+      // the code exchange from the deep-link stream.
+      return '/';
     }
 
     // No other redirection.
