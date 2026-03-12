@@ -18,6 +18,8 @@ import '../entity/entity.g.dart';
 import '../util/dart/date_time_ex.dart';
 import '../util/dart/local_date.dart';
 import 'dao.dart';
+import 'dao_activity.dart';
+import 'dao_task.dart';
 
 class DaoTimeEntry extends Dao<TimeEntry> {
   static const tableName = 'time_entry';
@@ -25,8 +27,28 @@ class DaoTimeEntry extends Dao<TimeEntry> {
   @override
   TimeEntry fromMap(Map<String, dynamic> map) => TimeEntry.fromMap(map);
 
-  Future<List<TimeEntry>> getByTask(int? taskId) async {
-    final db = withoutTransaction();
+  @override
+  Future<int> insert(
+    covariant TimeEntry entity, [
+    Transaction? transaction,
+  ]) async {
+    final id = await super.insert(entity, transaction);
+    final task = await DaoTask().getById(entity.taskId, transaction);
+    if (task != null) {
+      await DaoActivity().recordWorkedTodayForJob(
+        jobId: task.jobId,
+        day: entity.startTime,
+        transaction: transaction,
+      );
+    }
+    return id;
+  }
+
+  Future<List<TimeEntry>> getByTask(
+    int? taskId, {
+    Transaction? transaction,
+  }) async {
+    final db = withinTransaction(transaction);
     if (taskId == null) {
       return [];
     }
