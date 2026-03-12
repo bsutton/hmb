@@ -13,6 +13,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../database/management/backup_providers/google_drive/google_drive_backup_screen.dart';
 import '../../util/flutter/flutter_types.dart';
 import '../../util/flutter/hmb_theme.dart';
 import '../dialog/database_error_dialog.dart';
@@ -83,8 +84,12 @@ class _SplashScreenState extends State<SplashScreen> {
             // key: _blockingUIKey,
             slowAction: () => widget.bootstrap(context),
             builder: (context, _) => const HMBEmpty(),
-            errorBuilder: (context, error) =>
-                DatabaseErrorDialog(error: error.toString()),
+            errorBuilder: (context, error) => Stack(
+              children: [
+                const GoogleDriveBackupScreen(restoreOnly: true),
+                Center(child: DatabaseErrorDialog(error: error.toString())),
+              ],
+            ),
           ),
         ],
       ),

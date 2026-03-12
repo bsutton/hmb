@@ -1,4 +1,4 @@
-CREATE TABLE backup_history (
+CREATE TABLE IF NOT EXISTS backup_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   provider TEXT NOT NULL,
   operation TEXT NOT NULL,
@@ -9,5 +9,5 @@ CREATE TABLE backup_history (
   modified_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX backup_history_op_success_when_idx
+CREATE INDEX IF NOT EXISTS backup_history_op_success_when_idx
 ON backup_history(operation, success, occurred_at DESC);

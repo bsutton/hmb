@@ -446,19 +446,19 @@ class RunningSlowAction<T> {
       stackTrace = StackTraceImpl(skipFrames: 2);
 
   void start() {
-    // Now call the long running function.
-    final result = slowAction();
-    // if this fails you probably need to use return Future.value(null);
-    result
-        // ignore: invalid_return_type_for_catch_error
-        .catchError(completer.completeError)
-        // ignore: discarded_futures
-        .whenComplete(() {
-          /// If an error occurs we will aready be complete.
+    Future.sync(slowAction)
+        .then((value) {
           if (!completer.isCompleted) {
-            completer.complete(result);
+            completer.complete(value);
           }
-          end();
-        });
+        })
+        // ignore: invalid_return_type_for_catch_error
+        .catchError((Object error, StackTrace stackTrace) {
+          if (!completer.isCompleted) {
+            completer.completeError(error, stackTrace);
+          }
+        })
+        // ignore: discarded_futures
+        .whenComplete(end);
   }
 }

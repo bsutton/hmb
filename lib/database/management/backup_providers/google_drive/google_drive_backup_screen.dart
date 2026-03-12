@@ -65,6 +65,7 @@ class _GoogleDriveBackupScreenState
   @override
   void initState() {
     super.initState();
+    _provider = _getProvider();
     // Listen for DB backup progress (provider set in asyncInitState)
     _backupSub = _provider.progressStream.listen((update) {
       setState(() => _stageDescription = update.stageDescription);
@@ -87,7 +88,6 @@ class _GoogleDriveBackupScreenState
   @override
   Future<void> asyncInitState() async {
     setAppTitle('Backup & Restore');
-    _provider = _getProvider();
     _lastBackupFuture = _refreshLastBackup();
 
     if (!GoogleDriveApi.isSupported()) {

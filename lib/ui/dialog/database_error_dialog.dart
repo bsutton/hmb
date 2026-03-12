@@ -13,8 +13,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../database/management/backup_providers/google_drive/google_drive_backup_screen.dart';
 import '../widgets/hmb_button.dart';
 import '../widgets/layout/layout.g.dart';
 import 'hmb_dialog.dart';
@@ -57,8 +57,13 @@ class DatabaseErrorDialog extends StatelessWidget {
                 hint: 'Copy the error to the clipboard',
               ),
               HMBButtonSecondary(
-                onPressed: () {
-                  context.go('/home/settings/backup/google/restore');
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          const GoogleDriveBackupScreen(restoreOnly: true),
+                    ),
+                  );
                 },
                 label: 'Restore Database',
                 hint: 'Restore the datbase from a Google Drive backup',
