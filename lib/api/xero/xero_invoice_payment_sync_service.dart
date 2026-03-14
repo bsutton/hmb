@@ -38,7 +38,13 @@ class XeroInvoicePaymentSyncService {
         return 0;
       }
 
-      await _xeroApi.login();
+      final loggedIn = await _xeroApi.login(allowInteractive: false);
+      if (!loggedIn) {
+        Log.i(
+          'Skipping Xero payment sync because silent login was unavailable.',
+        );
+        return 0;
+      }
       final pending = await _daoInvoice.getUploadedUnpaid();
       var updated = 0;
       for (final invoice in pending) {

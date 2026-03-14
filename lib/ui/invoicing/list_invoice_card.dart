@@ -38,25 +38,56 @@ class ListInvoiceCard extends StatelessWidget {
         'Issued: ${formatDate(invoiceDetails.invoice.createdDate)}',
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
-      Text('Customer: ${invoiceDetails.customer?.name ?? 'N/A'}'),
+      Text(
+        'Customer: ${invoiceDetails.customer?.name ?? 'N/A'}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
 
       if (showJobDetails)
         HMBLinkInternal(
           label:
-              '''Job: #${invoiceDetails.job.id} - ${invoiceDetails.job.summary} ''',
+              'Job: #${invoiceDetails.job.id} - ${invoiceDetails.job.summary}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           navigateTo: () async => FullPageListJobCard(invoiceDetails.job),
         ),
-      Text(
-        '''Xero: ${invoiceDetails.invoice.invoiceNum == null ? 'Not uploaded' : '#${invoiceDetails.invoice.invoiceNum}'}''',
-      ),
       Text('Total: ${invoiceDetails.invoice.totalAmount}'),
-      if (invoiceDetails.invoice.sent)
-        const Text(
-          'Sent',
-          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-        ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          _buildXeroChip(),
+          if (invoiceDetails.invoice.sent)
+            const HMBChip(
+              label: 'Sent',
+              tone: HMBChipTone.accent,
+              icon: Icons.send,
+            ),
+          if (invoiceDetails.invoice.paid)
+            HMBChip(
+              label: invoiceDetails.invoice.paidDate == null
+                  ? 'Paid'
+                  : 'Paid ${formatDate(invoiceDetails.invoice.paidDate!)}',
+              tone: HMBChipTone.accent,
+              icon: Icons.check_circle,
+            ),
+        ],
+      ),
     ],
   );
+
+  Widget _buildXeroChip() {
+    final invoiceNum = invoiceDetails.invoice.invoiceNum;
+    if (invoiceNum == null || invoiceNum.isEmpty) {
+      return const HMBChip(
+        label: 'Not uploaded',
+        tone: HMBChipTone.warning,
+        icon: Icons.cloud_off,
+      );
+    }
+
+    return HMBChip(label: 'Xero #$invoiceNum', icon: Icons.cloud_done);
+  }
 }

@@ -62,6 +62,9 @@ class XeroAuth2 {
   /// The authorization code grant flow reference.
   oauth2.AuthorizationCodeGrant? grant;
 
+  Completer<void>? _loginCompleter;
+  var _authorizationResponseHandled = false;
+
   factory XeroAuth2() {
     _instance ??= XeroAuth2._();
     return _instance!;
@@ -82,13 +85,24 @@ class XeroAuth2 {
   /// 2) Otherwise, tries to refresh if expired.
   /// 3) Otherwise, does a full OAuth flow (desktop=local
   /// server, mobile=app link).
-  Future<void> login() async {
+  Future<bool> login({bool allowInteractive = true}) async {
     if (await isLoggedIn()) {
-      return;
+      return true;
+    }
+    if (!allowInteractive) {
+      log('Silent login requested, but no valid Xero credentials are ready.');
+      return false;
+    }
+    if (_loginCompleter != null) {
+      log('Login already in progress, waiting for existing flow.');
+      await _loginCompleter!.future;
+      return client != null && !client!.credentials.isExpired;
     }
     log('No valid saved credentials, starting full OAuth flow.');
 
     final loginComplete = Completer<void>();
+    _loginCompleter = loginComplete;
+    _authorizationResponseHandled = false;
 
     final credentials = await _fetchSecretIdentity();
 
@@ -124,7 +138,11 @@ class XeroAuth2 {
 
     late StreamSubscription<Uri> sub;
     sub = redirectHandler.stream.listen((uri) {
+      if (_authorizationResponseHandled) {
+        return;
+      }
       if (uri.toString().startsWith(redirectUri.toString())) {
+        _authorizationResponseHandled = true;
         unawaited(sub.cancel());
         unawaited(redirectHandler.stop());
         log('Received callback -> calling completeLogin');
@@ -141,7 +159,13 @@ class XeroAuth2 {
       loginComplete.completeError('Could not launch $authorizationUrl');
     }
 
-    await loginComplete.future;
+    try {
+      await loginComplete.future;
+      return true;
+    } finally {
+      _loginCompleter = null;
+      _authorizationResponseHandled = false;
+    }
   }
 
   /// Completes the authorization, exchanging the code for a token.
@@ -150,6 +174,10 @@ class XeroAuth2 {
     Uri responseUri,
   ) async {
     log('completeLogin with: $responseUri');
+    if (loginComplete.isCompleted) {
+      log('Ignoring duplicate Xero callback.');
+      return;
+    }
     if (grant == null) {
       log('Grant not initialized');
       loginComplete.completeError('Grant not initialized');
@@ -159,13 +187,17 @@ class XeroAuth2 {
       client = await grant!.handleAuthorizationResponse(
         responseUri.queryParameters,
       );
+      grant = null;
       await _saveCredentials(client!.credentials); // Save the credentials
       log('Login completed successfully');
       loginComplete.complete();
     } catch (e) {
       log('Failed to complete login: $e');
       HMBToast.error('Failed to complete login: $e');
-      loginComplete.completeError(e);
+      grant = null;
+      if (!loginComplete.isCompleted) {
+        loginComplete.completeError(e);
+      }
     }
   }
 

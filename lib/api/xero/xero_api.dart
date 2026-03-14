@@ -32,9 +32,13 @@ class XeroApi {
 
   XeroApi._internal() : xeroAuth = XeroAuth2();
 
-  Future<void> login() async {
-    await xeroAuth.login();
+  Future<bool> login({bool allowInteractive = true}) async {
+    final loggedIn = await xeroAuth.login(allowInteractive: allowInteractive);
+    if (!loggedIn) {
+      return false;
+    }
     await getTenantId();
+    return true;
   }
 
   Future<http.Response> uploadInvoice(XeroInvoice xeroInvoice) async {

@@ -70,7 +70,7 @@ class DaoInvoice extends Dao<Invoice> {
 
   Future<List<Invoice>> getByFilter(
     String? filter, {
-    bool includePaid = true,
+    bool includePaid = false,
   }) async {
     final db = withoutTransaction();
     final paidWhere = includePaid ? '' : ' AND IFNULL(i.paid, 0) = 0';
