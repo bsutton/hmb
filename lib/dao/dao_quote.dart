@@ -111,8 +111,15 @@ class DaoQuote extends Dao<Quote> {
   }
 
   /// Create a quote for the given job.
-  Future<Quote> create(Job job, InvoiceOptions invoiceOptions) async {
-    final estimates = await DaoTask().getEstimatesForJob(job);
+  Future<Quote> create(
+    Job job,
+    InvoiceOptions invoiceOptions, {
+    Transaction? transaction,
+  }) async {
+    final estimates = await DaoTask().getEstimatesForJob(
+      job,
+      transaction: transaction,
+    );
 
     if (job.hourlyRate == MoneyEx.zero) {
       throw InvoiceException(
@@ -131,7 +138,7 @@ class DaoQuote extends Dao<Quote> {
       assumption: job.assumption,
       quoteMargin: invoiceOptions.quoteMargin,
     );
-    final quoteId = await insert(quote);
+    final quoteId = await insert(quote, transaction);
 
     // Add Booking Fee as a quote line
     if (invoiceOptions.billBookingFee &&
@@ -142,7 +149,7 @@ class DaoQuote extends Dao<Quote> {
         taskId: null,
         name: 'Booking Fee',
       );
-      await DaoQuoteLineGroup().insert(bookingGroup);
+      await DaoQuoteLineGroup().insert(bookingGroup, transaction);
 
       final bookingLine = QuoteLine.forInsert(
         quoteId: quoteId,
@@ -152,7 +159,7 @@ class DaoQuote extends Dao<Quote> {
         unitCharge: job.bookingFee!,
         lineTotal: job.bookingFee!,
       );
-      await DaoQuoteLine().insert(bookingLine);
+      await DaoQuoteLine().insert(bookingLine, transaction);
       totalAmount += job.bookingFee!;
     }
 
@@ -200,12 +207,19 @@ class DaoQuote extends Dao<Quote> {
           estimate.task,
           quoteId,
           taskMargin,
+          transaction: transaction,
         );
-        await DaoQuoteLine().insert(line.copyWith(quoteLineGroupId: group.id));
+        await DaoQuoteLine().insert(
+          line.copyWith(quoteLineGroupId: group.id),
+          transaction,
+        );
       }
 
       // Materials & Tools
-      final items = await DaoTaskItem().getByTask(estimate.task.id);
+      final items = await DaoTaskItem().getByTask(
+        estimate.task.id,
+        transaction: transaction,
+      );
       for (final item in items.where((i) => !i.billed)) {
         if (item.itemType == TaskItemType.labour) {
           continue;
@@ -219,6 +233,7 @@ class DaoQuote extends Dao<Quote> {
           estimate.task,
           quoteId,
           taskMargin,
+          transaction: transaction,
         );
 
         final matLine = QuoteLine.forInsert(
@@ -232,7 +247,7 @@ class DaoQuote extends Dao<Quote> {
           ),
           lineTotal: matTotal,
         );
-        await DaoQuoteLine().insert(matLine);
+        await DaoQuoteLine().insert(matLine, transaction);
         totalAmount += matTotal;
       }
     }
@@ -248,7 +263,7 @@ class DaoQuote extends Dao<Quote> {
         description: 'Whole quote adjustments',
         taskMargin: Percentage.zero,
       );
-      await DaoQuoteLineGroup().insert(adjustmentGroup);
+      await DaoQuoteLineGroup().insert(adjustmentGroup, transaction);
       final marginLine = QuoteLine.forInsert(
         quoteId: quoteId,
         quoteLineGroupId: adjustmentGroup.id,
@@ -257,15 +272,50 @@ class DaoQuote extends Dao<Quote> {
         unitCharge: marginAmount,
         lineTotal: marginAmount,
       );
-      await DaoQuoteLine().insert(marginLine);
+      await DaoQuoteLine().insert(marginLine, transaction);
       totalAmount += marginAmount;
     }
 
     // Finalize
     final updated = quote.copyWith(totalAmount: totalAmount);
-    await update(updated);
+    await update(updated, transaction);
     return updated;
   }
+
+  /// Creates a replacement quote and rejects the existing quote.
+  /// Used for quote amendments where scope has changed.
+  Future<Quote> amendQuote({
+    required int quoteId,
+    required InvoiceOptions invoiceOptions,
+  }) => withTransaction((transaction) async {
+    final currentQuote = await getById(quoteId, transaction);
+    if (currentQuote == null) {
+      throw InvoiceException('Unable to find quote #$quoteId');
+    }
+
+    if (currentQuote.state == QuoteState.rejected ||
+        currentQuote.state == QuoteState.withdrawn ||
+        currentQuote.state == QuoteState.invoiced) {
+      throw InvoiceException(
+        'Quote #$quoteId cannot be amended from state '
+        '${currentQuote.state.name}.',
+      );
+    }
+
+    final job = await DaoJob().getById(currentQuote.jobId, transaction);
+    if (job == null) {
+      throw InvoiceException('Unable to find job #${currentQuote.jobId}');
+    }
+
+    final amendedQuote = await create(
+      job,
+      invoiceOptions,
+      transaction: transaction,
+    );
+    await rejectQuote(currentQuote.id, transaction: transaction);
+
+    return amendedQuote;
+  });
 
   Future<List<String>> getEmailsByQuote(Quote quote) =>
       DaoJob().getEmailsByJob(quote.jobId);
@@ -273,8 +323,9 @@ class DaoQuote extends Dao<Quote> {
   Future<QuoteLineGroup> _createQuoteLineGroup(
     Task task,
     int quoteId,
-    Percentage taskMargin,
-  ) async {
+    Percentage taskMargin, {
+    Transaction? transaction,
+  }) async {
     // Create quote line group for the task
     final quoteLineGroup = QuoteLineGroup.forInsert(
       quoteId: quoteId,
@@ -285,7 +336,7 @@ class DaoQuote extends Dao<Quote> {
       taskId: task.id,
     );
 
-    await DaoQuoteLineGroup().insert(quoteLineGroup);
+    await DaoQuoteLineGroup().insert(quoteLineGroup, transaction);
 
     return quoteLineGroup;
   }

@@ -18,15 +18,17 @@ import '../entity/entity.g.dart';
 import '../util/dart/date_time_ex.dart';
 import '../util/dart/local_date.dart';
 import 'dao.dart';
-
 class DaoTimeEntry extends Dao<TimeEntry> {
   static const tableName = 'time_entry';
   DaoTimeEntry() : super(tableName);
   @override
   TimeEntry fromMap(Map<String, dynamic> map) => TimeEntry.fromMap(map);
 
-  Future<List<TimeEntry>> getByTask(int? taskId) async {
-    final db = withoutTransaction();
+  Future<List<TimeEntry>> getByTask(
+    int? taskId, {
+    Transaction? transaction,
+  }) async {
+    final db = withinTransaction(transaction);
     if (taskId == null) {
       return [];
     }
