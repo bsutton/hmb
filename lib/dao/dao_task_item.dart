@@ -37,8 +37,11 @@ class DaoTaskItem extends Dao<TaskItem> {
   @override
   TaskItem fromMap(Map<String, dynamic> map) => TaskItem.fromMap(map);
 
-  Future<List<TaskItem>> getByTask(int? taskId) async {
-    final db = withoutTransaction();
+  Future<List<TaskItem>> getByTask(
+    int? taskId, {
+    Transaction? transaction,
+  }) async {
+    final db = withinTransaction(transaction);
 
     if (taskId == null) {
       return [];
@@ -234,7 +237,7 @@ SELECT ti.*
         .map((id) => "'$id'")
         .join(', ');
 
-  final sql =
+    final sql =
         '''
 SELECT ti.*
   FROM task_item ti

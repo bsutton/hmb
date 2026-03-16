@@ -24,6 +24,7 @@ import '../../util/dart/types.dart';
 import '../crud/job/full_page_list_job_card.dart';
 import '../crud/milestone/edit_milestone_payment.dart';
 import '../dialog/email_dialog_for_job.dart';
+import '../invoicing/dialog_select_tasks.dart';
 import '../widgets/layout/layout.g.dart';
 import '../widgets/media/pdf_preview.dart';
 import '../widgets/widgets.g.dart';
@@ -89,6 +90,52 @@ class _QuoteCardState extends DeferredState<QuoteCard> {
       return;
     }
     await _openMilestones();
+  }
+
+  Future<void> _amendQuote() async {
+    final job = await DaoJob().getById(quote.jobId);
+    if (job == null) {
+      HMBToast.error('Unable to load the quote job.');
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    final opts = await selectTaskToQuote(
+      context: context,
+      job: job,
+      title: 'Amend Quote',
+    );
+    if (opts == null) {
+      return;
+    }
+    if (!opts.billBookingFee && opts.selectedTaskIds.isEmpty) {
+      HMBToast.error(
+        'You must select a task or the booking fee',
+        acknowledgmentRequired: true,
+      );
+      return;
+    }
+
+    try {
+      final oldQuoteId = quote.id;
+      final amended = await DaoQuote().amendQuote(
+        quoteId: oldQuoteId,
+        invoiceOptions: opts,
+      );
+      quote = (await DaoQuote().getById(oldQuoteId))!;
+      HMBToast.info(
+        'Created Quote #${amended.id} and rejected Quote #$oldQuoteId.',
+      );
+      widget.onStateChanged(quote);
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      HMBToast.error('Failed to amend quote: $e', acknowledgmentRequired: true);
+    }
   }
 
   Future<void> _viewSendQuote() async {
@@ -303,6 +350,8 @@ Please find the attached quote for your job.
     final isApproved = quote.state == QuoteState.approved;
     final isRejected = quote.state == QuoteState.rejected;
     final isWithdrawn = quote.state == QuoteState.withdrawn;
+    final canAmend =
+        !isRejected && !isWithdrawn && quote.state != QuoteState.invoiced;
     final showSentRollback = quote.state == QuoteState.approved;
     final showWithdrawn = quote.state == QuoteState.sent;
 
@@ -347,7 +396,9 @@ Please find the attached quote for your job.
             ],
           ),
 
-          HMBRow(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               HMBButton(
                 label: 'Send...',
@@ -371,7 +422,9 @@ Please find the attached quote for your job.
           ),
 
           // --- State Update Buttons ---
-          HMBRow(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               HMBButton(
                 label: showSentRollback ? 'Unapprove' : 'Approve',
@@ -412,6 +465,12 @@ Please find the attached quote for your job.
                     }
                   });
                 },
+              ),
+              HMBButton(
+                label: 'Amend',
+                hint: 'Create a new quote and reject this quote',
+                enabled: canAmend,
+                onPressed: _amendQuote,
               ),
               if (showWithdrawn)
                 HMBButton(

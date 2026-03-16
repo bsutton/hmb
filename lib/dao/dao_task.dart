@@ -27,8 +27,11 @@ class DaoTask extends Dao<Task> {
   @override
   Task fromMap(Map<String, dynamic> map) => Task.fromMap(map);
 
-  Future<List<Task>> getTasksByJob(int jobId) async {
-    final db = withoutTransaction();
+  Future<List<Task>> getTasksByJob(
+    int jobId, {
+    Transaction? transaction,
+  }) async {
+    final db = withinTransaction(transaction);
 
     final results = await db.rawQuery(
       '''
@@ -205,16 +208,27 @@ WHERE ti.id = ?
 
   /// Returns a estimates for each Task associated with [job]
   /// Tasks with a zero value are excluded.
-  Future<List<TaskEstimatedValue>> getEstimatesForJob(Job job) async {
-    final tasks = await getTasksByJob(job.id);
+  Future<List<TaskEstimatedValue>> getEstimatesForJob(
+    Job job, {
+    Transaction? transaction,
+  }) async {
+    final tasks = await getTasksByJob(job.id, transaction: transaction);
 
     final estimates = <TaskEstimatedValue>[];
     for (final task in tasks) {
-      final hourlyRate = await DaoTask().getHourlyRate(task);
+      final hourlyRate = await DaoTask().getHourlyRate(
+        task,
+        transaction: transaction,
+      );
       final taskStatus = task.status;
 
       if (!taskStatus.isWithdrawn()) {
-        final estimate = await getEstimateForTask(job, task, hourlyRate);
+        final estimate = await getEstimateForTask(
+          job,
+          task,
+          hourlyRate,
+          transaction: transaction,
+        );
         if (!estimate.total.isZero) {
           estimates.add(estimate);
         }
@@ -227,16 +241,23 @@ WHERE ti.id = ?
   Future<TaskEstimatedValue> getEstimateForTask(
     Job job,
     Task task,
-    Money hourlyRate,
-  ) async {
+    Money hourlyRate, {
+    Transaction? transaction,
+  }) async {
     var estimatedMaterialsCharge = MoneyEx.zero;
     var estimatedLabourCharge = MoneyEx.zero;
     var estimatedLabourHours = Fixed.zero;
 
     // Get checklist items for the task
-    final taskItems = await DaoTaskItem().getByTask(task.id);
+    final taskItems = await DaoTaskItem().getByTask(
+      task.id,
+      transaction: transaction,
+    );
 
-    final billingType = await DaoTask().getBillingType(task);
+    final billingType = await DaoTask().getBillingType(
+      task,
+      transaction: transaction,
+    );
 
     for (final item in taskItems) {
       if (item.itemType == TaskItemType.labour) {
@@ -254,7 +275,10 @@ WHERE ti.id = ?
 
     if (billingType == BillingType.timeAndMaterial) {
       // Calculate time entries cost
-      final timeEntries = await DaoTimeEntry().getByTask(task.id);
+      final timeEntries = await DaoTimeEntry().getByTask(
+        task.id,
+        transaction: transaction,
+      );
       for (final entry in timeEntries.where((entry) => !entry.billed)) {
         estimatedLabourCharge += entry.calcLabourCharge(hourlyRate);
         estimatedLabourHours += entry.calcHours();
@@ -385,10 +409,14 @@ SELECT
     return id;
   }
 
-  Future<Money> getHourlyRate(Task task) => DaoJob().getHourlyRate(task.jobId);
+  Future<Money> getHourlyRate(Task task, {Transaction? transaction}) =>
+      DaoJob().getHourlyRate(task.jobId, transaction: transaction);
 
-  Future<BillingType> getBillingType(Task task) async {
-    final job = await DaoJob().getById(task.jobId);
+  Future<BillingType> getBillingType(
+    Task task, {
+    Transaction? transaction,
+  }) async {
+    final job = await DaoJob().getById(task.jobId, transaction);
 
     return task.billingType ?? job?.billingType ?? BillingType.timeAndMaterial;
   }

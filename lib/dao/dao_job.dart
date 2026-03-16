@@ -602,8 +602,8 @@ where q.id=?
     return estimates.fold(false, (a, b) async => await a || b.total.isPositive);
   }
 
-  Future<Money> getHourlyRate(int jobId) async {
-    final job = await getById(jobId);
+  Future<Money> getHourlyRate(int jobId, {Transaction? transaction}) async {
+    final job = await getById(jobId, transaction);
 
     return job?.hourlyRate ?? DaoSystem().getHourlyRate();
   }
