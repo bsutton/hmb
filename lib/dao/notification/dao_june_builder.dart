@@ -23,6 +23,7 @@ typedef NotifierFactory<T extends JuneState> = T Function();
 ///
 class DaoJuneBuilder {
   static final Map<String, _TypedEntry> _registry = {
+    DaoActivity.tableName: _reg<ActivityNotifier>(ActivityNotifier.new),
     DaoCategory.tableName: _reg<CategoryNotifier>(CategoryNotifier.new),
     DaoCheckListItemCheckList.tableName: _reg<CheckListItemCheckListNotifier>(
       CheckListItemCheckListNotifier.new,

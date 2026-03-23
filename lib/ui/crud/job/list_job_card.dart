@@ -96,6 +96,7 @@ class _ListJobCardState extends DeferredState<ListJobCard> {
           job: job,
           onMapClicked: () async {
             await DaoJob().markActive(job.id);
+            await DaoActivity().recordNavigatedToJob(jobId: job.id);
           },
         ),
         HMBRow(

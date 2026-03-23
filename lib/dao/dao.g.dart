@@ -6,6 +6,7 @@
 //
 export 'child_dao.dart';
 export 'dao.dart';
+export 'dao_activity.dart';
 export 'dao_base.dart';
 export 'dao_booking_request.dart';
 export 'dao_category.dart';

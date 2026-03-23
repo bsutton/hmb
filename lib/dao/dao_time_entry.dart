@@ -17,13 +17,33 @@ import 'package:sqflite_common/sqlite_api.dart';
 import '../entity/entity.g.dart';
 import '../util/dart/date_time_ex.dart';
 import '../util/dart/local_date.dart';
+import 'dao_activity.dart';
 import 'dao.dart';
+import 'dao_task.dart';
 
 class DaoTimeEntry extends Dao<TimeEntry> {
   static const tableName = 'time_entry';
   DaoTimeEntry() : super(tableName);
   @override
   TimeEntry fromMap(Map<String, dynamic> map) => TimeEntry.fromMap(map);
+
+  @override
+  Future<int> insert(
+    covariant TimeEntry entity, [
+    Transaction? transaction,
+  ]) async {
+    final id = await super.insert(entity, transaction);
+    final task = await DaoTask().getById(entity.taskId, transaction);
+    final jobId = task?.jobId;
+    if (jobId != null) {
+      await DaoActivity().recordWorkedTodayForJob(
+        jobId: jobId,
+        day: entity.startTime,
+        transaction: transaction,
+      );
+    }
+    return id;
+  }
 
   Future<List<TimeEntry>> getByTask(int? taskId) async {
     final db = withoutTransaction();

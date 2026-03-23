@@ -227,4 +227,19 @@ status = ? AND parent_type = ? and parent_id = ?''',
       whereArgs: [ToDoStatus.open.name, ToDoParentType.job.name, jobId],
     );
   }
+
+  Future<List<ToDo>> getByIds(List<int> ids) async {
+    if (ids.isEmpty) {
+      return [];
+    }
+
+    final db = withoutTransaction();
+    final placeholders = List.filled(ids.length, '?').join(',');
+    final rows = await db.rawQuery('''
+SELECT *
+FROM $tableName
+WHERE id IN ($placeholders)
+''', ids);
+    return rows.map(ToDo.fromMap).toList();
+  }
 }

@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao_job.dart';
 import '../../../entity/job.dart';
-import '../../widgets/layout/hmb_full_page_child_screen.dart';
+import '../../widgets/layout/layout.g.dart';
+import 'job_activity_timeline_section.dart';
 import 'list_job_card.dart';
 
 class FullPageListJobCard extends StatefulWidget {
@@ -29,7 +30,14 @@ class _FullPageListJobCardState extends State<FullPageListJobCard> {
     title: 'Job',
     child: SingleChildScrollView(
       padding: const EdgeInsets.all(8),
-      child: ListJobCard(job: widget.job),
+      child: HMBColumn(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListJobCard(job: widget.job),
+          const HMBSpacer(height: true),
+          JobActivityTimelineSection(job: widget.job),
+        ],
+      ),
     ),
   );
 }

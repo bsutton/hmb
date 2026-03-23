@@ -4,6 +4,7 @@
 // barrel_create is sponsored by OnePub the dart private repository
 // https://onepub.dev
 //
+export 'activity.dart';
 export 'booking_request.dart';
 export 'category.dart';
 export 'check_list.dart';

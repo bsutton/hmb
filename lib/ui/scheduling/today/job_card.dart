@@ -92,9 +92,9 @@ class JobCard extends StatelessWidget {
                   HMBMapIcon(
                     jobAndActivity.jobAndCustomer.site,
                     onMapClicked: () async {
-                      await DaoJob().markActive(
-                        jobAndActivity.jobAndCustomer.job.id,
-                      );
+                      final job = jobAndActivity.jobAndCustomer.job;
+                      await DaoJob().markActive(job.id);
+                      await DaoActivity().recordNavigatedToJob(jobId: job.id);
                     },
                   ),
                   HMBPhoneIcon(

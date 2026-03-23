@@ -1,5 +1,9 @@
 import 'package:june/june.dart';
 
+class ActivityNotifier extends JuneState {
+  ActivityNotifier();
+}
+
 class CategoryNotifier extends JuneState {
   CategoryNotifier();
 }
