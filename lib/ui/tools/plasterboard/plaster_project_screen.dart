@@ -762,7 +762,8 @@ Toggle between editing geometry and selecting plaster surfaces''',
                 decoration: InputDecoration(
                   labelText:
                       'Ceiling Height '
-                      '(${PlasterGeometry.unitLabel(_currentRoom.room.unitSystem)})',
+                      '''
+(${PlasterGeometry.unitLabel(_currentRoom.room.unitSystem)})''',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -993,6 +994,22 @@ class _RoomCanvasState extends State<_RoomCanvas> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final size = Size(constraints.maxWidth, 360);
+      if (widget.bundle.lines.isEmpty) {
+        return Container(
+          height: size.height,
+          width: size.width,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).dividerColor),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            'This room has no wall geometry yet. Add or recreate the room '
+            'to start drawing.',
+            textAlign: TextAlign.center,
+          ),
+        );
+      }
       final transform = _CanvasTransform(widget.bundle.lines, size);
       return InteractiveViewer(
         minScale: 0.5,
