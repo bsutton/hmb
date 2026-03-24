@@ -56,10 +56,10 @@ class PlasterLayoutResult {
 }
 
 class PlasterGeometry {
-  static const int metricUnitsPerMm = 10;
-  static const int imperialUnitsPerInch = 1000;
-  static const int metricGrid = 5000;
-  static const int imperialGrid = 6000;
+  static const metricUnitsPerMm = 10;
+  static const imperialUnitsPerInch = 1000;
+  static const metricGrid = 5000;
+  static const imperialGrid = 6000;
 
   static int defaultRoomSize(PreferredUnitSystem unitSystem) =>
       unitSystem == PreferredUnitSystem.metric ? 30000 : 120000;
@@ -199,36 +199,37 @@ class PlasterGeometry {
     for (var i = 0; i < lines.length; i++) {
       updated.add(lines[i]);
       if (i == lineIndex) {
-        updated.add(
-          PlasterRoomLine.forInsert(
-            roomId: line.roomId,
-            seqNo: 0,
-            startX: p1.x,
-            startY: p1.y,
-            length: step,
-            plasterSelected: line.plasterSelected,
-          ),
-        );
-        updated.add(
-          PlasterRoomLine.forInsert(
-            roomId: line.roomId,
-            seqNo: 0,
-            startX: p2.x,
-            startY: p2.y,
-            length: step,
-            plasterSelected: line.plasterSelected,
-          ),
-        );
-        updated.add(
-          PlasterRoomLine.forInsert(
-            roomId: line.roomId,
-            seqNo: 0,
-            startX: p3.x,
-            startY: p3.y,
-            length: step,
-            plasterSelected: line.plasterSelected,
-          ),
-        );
+        updated
+          ..add(
+            PlasterRoomLine.forInsert(
+              roomId: line.roomId,
+              seqNo: 0,
+              startX: p1.x,
+              startY: p1.y,
+              length: step,
+              plasterSelected: line.plasterSelected,
+            ),
+          )
+          ..add(
+            PlasterRoomLine.forInsert(
+              roomId: line.roomId,
+              seqNo: 0,
+              startX: p2.x,
+              startY: p2.y,
+              length: step,
+              plasterSelected: line.plasterSelected,
+            ),
+          )
+          ..add(
+            PlasterRoomLine.forInsert(
+              roomId: line.roomId,
+              seqNo: 0,
+              startX: p3.x,
+              startY: p3.y,
+              length: step,
+              plasterSelected: line.plasterSelected,
+            ),
+          );
       }
     }
     return normalizeSeq(updated);
@@ -368,6 +369,9 @@ class PlasterGeometry {
   ) {
     final layouts = <PlasterSurfaceLayout>[];
     for (final shape in roomShapes) {
+      if (shape.lines.isEmpty) {
+        continue;
+      }
       for (var i = 0; i < shape.lines.length; i++) {
         final line = shape.lines[i];
         if (!line.plasterSelected) {

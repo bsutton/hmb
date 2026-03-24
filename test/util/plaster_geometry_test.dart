@@ -110,5 +110,31 @@ void main() {
       expect(layouts.length, 3);
       expect(layouts.every((layout) => layout.label.contains('wall')), isTrue);
     });
+
+    test('calculate layout skips rooms with no lines', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Empty Room',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+      );
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '1200 x 2400',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 12000,
+          height: 24000,
+        ),
+      ];
+
+      final layouts = PlasterGeometry.calculateLayout(
+        [PlasterRoomShape(room: room, lines: const [], openings: const [])],
+        materials,
+        15,
+      );
+
+      expect(layouts, isEmpty);
+    });
   });
 }
