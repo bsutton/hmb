@@ -93,7 +93,7 @@ void main() {
       lines[1] = lines[1].copyWith(plasterSelected: false);
       final materials = [
         PlasterMaterialSize.forInsert(
-          projectId: 1,
+          supplierId: 1,
           name: '1200 x 2400',
           unitSystem: PreferredUnitSystem.metric,
           width: 12000,
