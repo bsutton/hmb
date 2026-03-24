@@ -410,9 +410,9 @@ Future<File> generateQuotePdf(
                 ),
               );
             }
-            content.add(pw.SizedBox(height: 6));
-            content.add(pw.Divider());
-            content.add(pw.SizedBox(height: 8));
+            content..add(pw.SizedBox(height: 6))
+            ..add(pw.Divider())
+            ..add(pw.SizedBox(height: 8));
           }
         }
 

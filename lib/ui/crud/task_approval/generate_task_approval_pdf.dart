@@ -143,12 +143,13 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
                                 pw.Text('Summary: ${job.summary}'),
                               if (job.description.trim().isNotEmpty)
                                 pw.Text(
-                                  'Description: ${job.description.replaceAll('\n', ' ')}',
+                                  // ignore: lines_longer_than_80_chars
+                                  '''
+Description: ${job.description.replaceAll('\n', ' ')}''',
                                 ),
                               if (job.assumption.trim().isNotEmpty)
-                                pw.Text(
-                                  'Assumptions: ${job.assumption.replaceAll('\n', ' ')}',
-                                ),
+                                pw.Text('''
+Assumptions: ${job.assumption.replaceAll('\n', ' ')}'''),
                             ],
                             pw.Text('Sent: ${DateTime.now()}'),
                           ],
@@ -284,21 +285,21 @@ Future<File> generateTaskApprovalPdf(TaskApproval approval) async {
           );
         }
 
-        content.addAll([
-          pw.SizedBox(height: 8),
-          pw.Text('Customer Signature: _____________________________'),
-          pw.SizedBox(height: 8),
-          pw.Text('Date: _____________________________'),
-        ]);
-
-        content.addAll([
-          pw.NewPage(),
-          pw.Text(
-            'Appendix - Task Photos',
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-          ),
-          pw.SizedBox(height: 8),
-        ]);
+        content
+          ..addAll([
+            pw.SizedBox(height: 8),
+            pw.Text('Customer Signature: _____________________________'),
+            pw.SizedBox(height: 8),
+            pw.Text('Date: _____________________________'),
+          ])
+          ..addAll([
+            pw.NewPage(),
+            pw.Text(
+              'Appendix - Task Photos',
+              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 8),
+          ]);
 
         for (final data in taskDataList) {
           content.add(
