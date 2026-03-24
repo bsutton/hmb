@@ -637,7 +637,7 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
             ),
             TextField(
               controller: _wasteController,
-              decoration: const InputDecoration(labelText: 'Waste %'),
+              decoration: const InputDecoration(labelText: 'Waste Allowance %'),
               keyboardType: TextInputType.number,
               onSubmitted: (_) => _saveProject(),
             ),

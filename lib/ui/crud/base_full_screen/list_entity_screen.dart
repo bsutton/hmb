@@ -139,8 +139,8 @@ class EntityListScreenState<T extends Entity<T>>
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
     if (route != null) {
-      routeObserver.unsubscribe(this);
-      routeObserver.subscribe(this, route);
+      routeObserver..unsubscribe(this)
+      ..subscribe(this, route);
     }
   }
 

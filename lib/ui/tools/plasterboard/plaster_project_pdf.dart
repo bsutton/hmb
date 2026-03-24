@@ -18,8 +18,8 @@ Future<File> generatePlasterProjectPdf({
   required List<PlasterRoomShape> roomShapes,
   required List<PlasterSurfaceLayout> layouts,
 }) async {
-  final pdf = pw.Document();
-  pdf.addPage(
+  final pdf = pw.Document()
+  ..addPage(
     pw.MultiPage(
       pageTheme: const pw.PageTheme(margin: pw.EdgeInsets.all(24)),
       build: (_) => [
@@ -31,7 +31,7 @@ Future<File> generatePlasterProjectPdf({
         if (job != null) pw.Text('Job: ${job.summary}'),
         if (task != null) pw.Text('Task: ${task.name}'),
         if (supplier != null) pw.Text('Supplier: ${supplier.name}'),
-        pw.Text('Waste: ${project.wastePercent}%'),
+        pw.Text('Waste Allowance: ${project.wastePercent}%'),
         pw.SizedBox(height: 16),
         for (final shape in roomShapes) ...[
           pw.Text(

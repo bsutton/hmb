@@ -44,7 +44,7 @@ class _PlasterProjectListScreenState extends State<PlasterProjectListScreen> {
           Text('Task: ${summary.task?.name ?? 'Not set'}'),
           Text('Supplier: ${summary.supplier?.name ?? 'Not set'}'),
           Text('Rooms: ${summary.rooms.length}'),
-          Text('Waste: ${project.wastePercent}%'),
+          Text('Waste Allowance: ${project.wastePercent}%'),
         ],
       ),
     ),
