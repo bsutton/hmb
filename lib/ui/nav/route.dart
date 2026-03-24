@@ -44,6 +44,7 @@ import '../scheduling/schedule_page.dart';
 import '../scheduling/today/today_page.dart';
 import '../task_items/list_packing_screen.dart';
 import '../task_items/list_shopping_screen.dart';
+import '../tools/plasterboard/plaster_project_list_screen.dart';
 import '../widgets/hmb_toast.dart';
 import '../widgets/media/full_screen_photo_view.dart';
 import '../widgets/splash_screen.dart';
@@ -54,6 +55,7 @@ import 'dashboards/help/help_dashboard.dart';
 import 'dashboards/integration/integration_dashboard.dart';
 import 'dashboards/main/home_dashboard.dart';
 import 'dashboards/settings/settings_dashboard.dart';
+import 'dashboards/tools/tools_dashboard.dart';
 import 'nav.g.dart';
 
 GoRouter createGoRouter(
@@ -178,7 +180,16 @@ List<GoRoute> dashboardRoutes() => [
   ),
   GoRoute(
     path: 'tools',
+    builder: (_, _) => const HomeScaffold(initialScreen: ToolsDashboardPage()),
+  ),
+  GoRoute(
+    path: 'tools/inventory',
     builder: (_, _) => const HomeScaffold(initialScreen: ToolListScreen()),
+  ),
+  GoRoute(
+    path: 'tools/plasterboard',
+    builder: (_, _) =>
+        const HomeScaffold(initialScreen: PlasterProjectListScreen()),
   ),
   GoRoute(
     path: 'manufacturers',
