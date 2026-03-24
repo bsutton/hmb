@@ -61,6 +61,21 @@ class DaoJuneBuilder {
       MessageTemplateNotifier.new,
     ),
     DaoPhoto.tableName: _reg<PhotoNotifier>(PhotoNotifier.new),
+    DaoPlasterMaterialSize.tableName: _reg<PlasterMaterialSizeNotifier>(
+      PlasterMaterialSizeNotifier.new,
+    ),
+    DaoPlasterProject.tableName: _reg<PlasterProjectNotifier>(
+      PlasterProjectNotifier.new,
+    ),
+    DaoPlasterRoom.tableName: _reg<PlasterRoomNotifier>(
+      PlasterRoomNotifier.new,
+    ),
+    DaoPlasterRoomLine.tableName: _reg<PlasterRoomLineNotifier>(
+      PlasterRoomLineNotifier.new,
+    ),
+    DaoPlasterRoomOpening.tableName: _reg<PlasterRoomOpeningNotifier>(
+      PlasterRoomOpeningNotifier.new,
+    ),
     DaoQuote.tableName: _reg<QuoteNotifier>(QuoteNotifier.new),
     DaoQuoteLine.tableName: _reg<QuoteLineNotifier>(QuoteLineNotifier.new),
     DaoQuoteLineGroup.tableName: _reg<QuoteLineGroupNotifier>(
@@ -99,7 +114,7 @@ class DaoJuneBuilder {
   static void notify(DaoBase dao, [int? entityId]) {
     final entry = _registry[dao.tablename];
     if (entry == null) {
-      throw StateError('Missing registry entry for table: ${dao.tablename}');
+      return;
     }
     entry.notify(entityId);
   }

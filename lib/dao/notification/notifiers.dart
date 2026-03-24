@@ -72,6 +72,26 @@ class PhotoNotifier extends JuneState {
   PhotoNotifier();
 }
 
+class PlasterMaterialSizeNotifier extends JuneState {
+  PlasterMaterialSizeNotifier();
+}
+
+class PlasterProjectNotifier extends JuneState {
+  PlasterProjectNotifier();
+}
+
+class PlasterRoomNotifier extends JuneState {
+  PlasterRoomNotifier();
+}
+
+class PlasterRoomLineNotifier extends JuneState {
+  PlasterRoomLineNotifier();
+}
+
+class PlasterRoomOpeningNotifier extends JuneState {
+  PlasterRoomOpeningNotifier();
+}
+
 class QuoteNotifier extends JuneState {
   QuoteNotifier();
 }
