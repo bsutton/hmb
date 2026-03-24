@@ -66,7 +66,7 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
     final rooms = await DaoPlasterRoom().getByProject(project.id);
     final bundles = <_RoomBundle>[];
     for (final room in rooms) {
-      final lines = await DaoPlasterRoomLine().getByRoom(room.id);
+      final lines = await _ensureRoomLines(room);
       final openings = await DaoPlasterRoomOpening().getByLineIds(
         lines.map((line) => line.id).toList(),
       );
@@ -91,6 +91,24 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
       _loading = false;
     });
     _syncRoomControllers();
+  }
+
+  Future<List<PlasterRoomLine>> _ensureRoomLines(PlasterRoom room) async {
+    final dao = DaoPlasterRoomLine();
+    final existing = await dao.getByRoom(room.id);
+    if (existing.isNotEmpty) {
+      return existing;
+    }
+
+    final defaults = PlasterGeometry.defaultLines(
+      roomId: room.id,
+      unitSystem: room.unitSystem,
+    );
+    for (final line in defaults) {
+      final id = await dao.insert(line);
+      line.id = id;
+    }
+    return dao.getByRoom(room.id);
   }
 
   @override
@@ -303,10 +321,14 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
   }
 
   Future<void> _addRoom() async {
+    final roomName = await _promptForRoomName();
+    if (roomName == null) {
+      return;
+    }
     final system = await DaoSystem().get();
     final room = PlasterRoom.forInsert(
       projectId: _project.id,
-      name: 'Room ${_rooms.length + 1}',
+      name: roomName,
       unitSystem: system.preferredUnitSystem,
       ceilingHeight: PlasterGeometry.defaultCeilingHeight(
         system.preferredUnitSystem,
@@ -327,6 +349,53 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
     setState(() {
       _rooms.add(_RoomBundle(room: savedRoom, lines: persisted, openings: []));
       _selectedRoomIndex = _rooms.length - 1;
+    });
+    _syncRoomControllers();
+  }
+
+  Future<String?> _promptForRoomName() async => showDialog<String>(
+    context: context,
+    builder: (_) => _RoomNameDialog(
+      initialName: 'Room ${_rooms.length + 1}',
+      title: 'Add Room',
+      confirmLabel: 'Add',
+    ),
+  );
+
+  Future<void> _deleteCurrentRoom() async {
+    if (_rooms.isEmpty) {
+      return;
+    }
+    final room = _currentRoom.room;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Room'),
+        content: Text('Delete "${room.name}" from this project?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return;
+    }
+
+    await DaoPlasterRoom().delete(room.id);
+    setState(() {
+      _rooms.removeAt(_selectedRoomIndex);
+      if (_selectedRoomIndex >= _rooms.length) {
+        _selectedRoomIndex = _rooms.isEmpty ? 0 : _rooms.length - 1;
+      }
+      _undo.clear();
+      _redo.clear();
     });
     _syncRoomControllers();
   }
@@ -651,6 +720,14 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
                   hint: 'Add another room',
                   onPressed: _addRoom,
                 ),
+                if (_rooms.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  HMBButton.small(
+                    label: 'Delete Room',
+                    hint: 'Delete the selected room',
+                    onPressed: _deleteCurrentRoom,
+                  ),
+                ],
                 const Spacer(),
                 HMBButton.small(
                   label: _selectionMode ? 'Edit Mode' : 'Selection Mode',
@@ -1404,6 +1481,78 @@ class _MaterialSizeDialog extends StatefulWidget {
 
   @override
   State<_MaterialSizeDialog> createState() => _MaterialSizeDialogState();
+}
+
+class _RoomNameDialog extends StatefulWidget {
+  final String initialName;
+  final String title;
+  final String confirmLabel;
+
+  const _RoomNameDialog({
+    required this.initialName,
+    required this.title,
+    required this.confirmLabel,
+  });
+
+  @override
+  State<_RoomNameDialog> createState() => _RoomNameDialogState();
+}
+
+class _RoomNameDialogState extends State<_RoomNameDialog> {
+  late final TextEditingController _controller;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final value = _controller.text.trim();
+    if (value.isEmpty) {
+      setState(() => _error = 'Enter a room name.');
+      return;
+    }
+    Navigator.of(context).pop(value);
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(widget.title),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextField(
+          controller: _controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Room Name'),
+          onSubmitted: (_) => _submit(),
+        ),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              _error!,
+              style: const TextStyle(color: Colors.redAccent),
+            ),
+          ),
+      ],
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Cancel'),
+      ),
+      TextButton(onPressed: _submit, child: Text(widget.confirmLabel)),
+    ],
+  );
 }
 
 class _MaterialSizeDialogState extends State<_MaterialSizeDialog> {
