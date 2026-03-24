@@ -17,8 +17,8 @@ import 'package:sqflite_common/sqlite_api.dart';
 import '../entity/entity.g.dart';
 import '../util/dart/date_time_ex.dart';
 import '../util/dart/local_date.dart';
-import 'dao_activity.dart';
 import 'dao.dart';
+import 'dao_activity.dart';
 import 'dao_task.dart';
 
 class DaoTimeEntry extends Dao<TimeEntry> {
