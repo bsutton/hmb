@@ -19,6 +19,7 @@ import '../../entity/version.dart';
 import '../../src/version/version.g.dart' as code;
 import '../management/backup_providers/backup_provider.dart';
 import '../management/db_utility.dart';
+import 'pre_upgrade/pre_upgrade_154.dart';
 import 'source.dart';
 
 const dbForUpgradeKey = ScopeKey<Database>('dbForUpgrade');
@@ -64,6 +65,9 @@ Future<void> upgradeDb({
     final scriptVersion = extractVerionForSQLUpgradeScript(pathToScript);
     if (scriptVersion >= firstUpgrade) {
       print('Upgrading to $scriptVersion via $pathToScript');
+      if (preUpgradeActions.containsKey(scriptVersion)) {
+        await preUpgradeActions[scriptVersion]!.call(db);
+      }
       await _executeScript(db, src, pathToScript);
 
       /// As the db singleton hasn't been fully initialised at this point
@@ -86,6 +90,10 @@ Future<void> upgradeDb({
     }
   }
 }
+
+final preUpgradeActions = <int, Future<void> Function(Database)>{
+  154: prev154Upgrade,
+};
 
 final upgradeActions = <int, Future<void> Function(Database)>{
   77: postv77Upgrade,
