@@ -80,7 +80,7 @@ void main() {
     await DaoPlasterRoomOpening().insert(opening);
 
     final material = PlasterMaterialSize.forInsert(
-      projectId: savedProject.id,
+      supplierId: supplier.id,
       name: '1200 x 2400',
       unitSystem: PreferredUnitSystem.metric,
       width: 12000,
@@ -94,8 +94,8 @@ void main() {
     final reloadedOpenings = await DaoPlasterRoomOpening().getByLineIds(
       reloadedLines.map((line) => line.id).toList(),
     );
-    final reloadedMaterials = await DaoPlasterMaterialSize().getByProject(
-      savedProject.id,
+    final reloadedMaterials = await DaoPlasterMaterialSize().getBySupplier(
+      supplier.id,
     );
 
     expect(reloadedProjects, hasLength(1));
@@ -110,5 +110,6 @@ void main() {
     expect(reloadedOpenings.single.type, PlasterOpeningType.door);
     expect(reloadedMaterials, hasLength(1));
     expect(reloadedMaterials.single.name, '1200 x 2400');
+    expect(reloadedMaterials.single.supplierId, supplier.id);
   });
 }

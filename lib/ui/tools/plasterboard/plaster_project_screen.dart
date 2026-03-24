@@ -72,7 +72,7 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
       );
       bundles.add(_RoomBundle(room: room, lines: lines, openings: openings));
     }
-    final materials = await DaoPlasterMaterialSize().getByProject(project.id);
+    final materials = await _loadMaterialsForSupplier(project.supplierId);
     if (!mounted) {
       return;
     }
@@ -114,6 +114,7 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
   }
 
   Future<void> _saveProject() async {
+    final previousSupplierId = _project.supplierId;
     final updated = _project.copyWith(
       name: _nameController.text.trim().isEmpty
           ? _project.name
@@ -133,9 +134,89 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
     _supplier = updated.supplierId == null
         ? null
         : await DaoSupplier().getById(updated.supplierId);
+    if (previousSupplierId != updated.supplierId) {
+      _materials = await _loadMaterialsForSupplier(updated.supplierId);
+    }
     if (mounted) {
       setState(() {});
     }
+  }
+
+  Future<List<PlasterMaterialSize>> _loadMaterialsForSupplier(
+    int? supplierId,
+  ) async {
+    if (supplierId == null) {
+      return [];
+    }
+    final dao = DaoPlasterMaterialSize();
+    final existing = await dao.getBySupplier(supplierId);
+    if (existing.isNotEmpty) {
+      return existing;
+    }
+
+    final unitSystem = _rooms.isNotEmpty
+        ? _rooms.first.room.unitSystem
+        : (await DaoSystem().get()).preferredUnitSystem;
+    final defaults = _defaultMaterialSizes(supplierId, unitSystem);
+    for (final size in defaults) {
+      final id = await dao.insert(size);
+      size.id = id;
+    }
+    return dao.getBySupplier(supplierId);
+  }
+
+  List<PlasterMaterialSize> _defaultMaterialSizes(
+    int supplierId,
+    PreferredUnitSystem unitSystem,
+  ) {
+    if (unitSystem == PreferredUnitSystem.metric) {
+      return [
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 2400',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 24000,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 2700',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 27000,
+        ),
+        PlasterMaterialSize.forInsert(
+          supplierId: supplierId,
+          name: '1200 x 3000',
+          unitSystem: unitSystem,
+          width: 12000,
+          height: 30000,
+        ),
+      ];
+    }
+    return [
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 8',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 96000,
+      ),
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 9',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 108000,
+      ),
+      PlasterMaterialSize.forInsert(
+        supplierId: supplierId,
+        name: '4 x 10',
+        unitSystem: unitSystem,
+        width: 48000,
+        height: 120000,
+      ),
+    ];
   }
 
   Future<void> _saveRoomBundle(_RoomBundle bundle) async {
@@ -196,7 +277,12 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
   }
 
   Future<void> _saveMaterials() async {
-    final existing = await DaoPlasterMaterialSize().getByProject(_project.id);
+    final supplierId = _project.supplierId;
+    if (supplierId == null) {
+      _materials = [];
+      return;
+    }
+    final existing = await DaoPlasterMaterialSize().getBySupplier(supplierId);
     final keptIds = <int>{};
     for (var i = 0; i < _materials.length; i++) {
       final material = _materials[i];
@@ -333,9 +419,20 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
   }
 
   Future<void> _addMaterialSize() async {
+    final supplierId = _project.supplierId;
+    if (supplierId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Select a supplier before adding material sizes.'),
+          ),
+        );
+      }
+      return;
+    }
     final result = await showDialog<PlasterMaterialSize>(
       context: context,
-      builder: (_) => _MaterialSizeDialog(projectId: _project.id),
+      builder: (_) => _MaterialSizeDialog(supplierId: supplierId),
     );
     if (result == null) {
       return;
@@ -788,8 +885,19 @@ Toggle between editing geometry and selecting plaster surfaces''',
                   hint: 'Add another available plasterboard size',
                   onPressed: _addMaterialSize,
                 ),
+                if (_supplier != null) ...[
+                  const SizedBox(width: 8),
+                  Text('Supplier: ${_supplier!.name}'),
+                ],
               ],
             ),
+            if (_supplier == null)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  'Select a supplier to manage reusable plasterboard sizes.',
+                ),
+              ),
             for (final material in _materials)
               ListTile(
                 title: Text(material.name),
@@ -1273,9 +1381,9 @@ Sill Height (${PlasterGeometry.unitLabel(widget.unitSystem)})''',
 }
 
 class _MaterialSizeDialog extends StatefulWidget {
-  final int projectId;
+  final int supplierId;
 
-  const _MaterialSizeDialog({required this.projectId});
+  const _MaterialSizeDialog({required this.supplierId});
 
   @override
   State<_MaterialSizeDialog> createState() => _MaterialSizeDialogState();
@@ -1344,7 +1452,7 @@ class _MaterialSizeDialogState extends State<_MaterialSizeDialog> {
           }
           Navigator.of(context).pop(
             PlasterMaterialSize.forInsert(
-              projectId: widget.projectId,
+              supplierId: widget.supplierId,
               name: _name.text.trim().isEmpty
                   ? '${width.toStringAsFixed(2)} x ${height.toStringAsFixed(2)}'
                   : _name.text.trim(),

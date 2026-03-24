@@ -14,11 +14,11 @@ class DaoPlasterMaterialSize extends Dao<PlasterMaterialSize> {
   PlasterMaterialSize fromMap(Map<String, dynamic> map) =>
       PlasterMaterialSize.fromMap(map);
 
-  Future<List<PlasterMaterialSize>> getByProject(int projectId) async {
+  Future<List<PlasterMaterialSize>> getBySupplier(int supplierId) async {
     final rows = await withoutTransaction().query(
       tableName,
-      where: 'project_id = ?',
-      whereArgs: [projectId],
+      where: 'supplier_id = ?',
+      whereArgs: [supplierId],
       orderBy: 'id ASC',
     );
     return toList(rows);

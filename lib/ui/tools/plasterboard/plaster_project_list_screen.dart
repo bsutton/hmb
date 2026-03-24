@@ -93,8 +93,18 @@ class _PlasterProjectListScreenState extends State<PlasterProjectListScreen> {
     for (final line in defaultLines) {
       await DaoPlasterRoomLine().insert(line);
     }
-    for (final size in defaultMaterialSizes(projectId, draft.unitSystem)) {
-      await DaoPlasterMaterialSize().insert(size);
+    if (draft.supplier != null) {
+      final existing = await DaoPlasterMaterialSize().getBySupplier(
+        draft.supplier!.id,
+      );
+      if (existing.isEmpty) {
+        for (final size in defaultMaterialSizes(
+          draft.supplier!.id,
+          draft.unitSystem,
+        )) {
+          await DaoPlasterMaterialSize().insert(size);
+        }
+      }
     }
     return saved;
   }
@@ -293,27 +303,27 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
 }
 
 List<PlasterMaterialSize> defaultMaterialSizes(
-  int projectId,
+  int supplierId,
   PreferredUnitSystem unitSystem,
 ) {
   if (unitSystem == PreferredUnitSystem.metric) {
     return [
       PlasterMaterialSize.forInsert(
-        projectId: projectId,
+        supplierId: supplierId,
         name: '1200 x 2400',
         unitSystem: unitSystem,
         width: 12000,
         height: 24000,
       ),
       PlasterMaterialSize.forInsert(
-        projectId: projectId,
+        supplierId: supplierId,
         name: '1200 x 2700',
         unitSystem: unitSystem,
         width: 12000,
         height: 27000,
       ),
       PlasterMaterialSize.forInsert(
-        projectId: projectId,
+        supplierId: supplierId,
         name: '1200 x 3000',
         unitSystem: unitSystem,
         width: 12000,
@@ -323,21 +333,21 @@ List<PlasterMaterialSize> defaultMaterialSizes(
   }
   return [
     PlasterMaterialSize.forInsert(
-      projectId: projectId,
+      supplierId: supplierId,
       name: '4 x 8',
       unitSystem: unitSystem,
       width: 48000,
       height: 96000,
     ),
     PlasterMaterialSize.forInsert(
-      projectId: projectId,
+      supplierId: supplierId,
       name: '4 x 9',
       unitSystem: unitSystem,
       width: 48000,
       height: 108000,
     ),
     PlasterMaterialSize.forInsert(
-      projectId: projectId,
+      supplierId: supplierId,
       name: '4 x 10',
       unitSystem: unitSystem,
       width: 48000,

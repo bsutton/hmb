@@ -7,7 +7,7 @@ import '../util/dart/measurement_type.dart';
 import 'entity.dart';
 
 class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
-  final int projectId;
+  final int supplierId;
   final String name;
   final PreferredUnitSystem unitSystem;
   final int width;
@@ -15,7 +15,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
 
   PlasterMaterialSize._({
     required super.id,
-    required this.projectId,
+    required this.supplierId,
     required this.name,
     required this.unitSystem,
     required this.width,
@@ -25,7 +25,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
   });
 
   PlasterMaterialSize.forInsert({
-    required this.projectId,
+    required this.supplierId,
     required this.name,
     required this.unitSystem,
     required this.width,
@@ -33,14 +33,14 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
   }) : super.forInsert();
 
   PlasterMaterialSize copyWith({
-    int? projectId,
+    int? supplierId,
     String? name,
     PreferredUnitSystem? unitSystem,
     int? width,
     int? height,
   }) => PlasterMaterialSize._(
     id: id,
-    projectId: projectId ?? this.projectId,
+    supplierId: supplierId ?? this.supplierId,
     name: name ?? this.name,
     unitSystem: unitSystem ?? this.unitSystem,
     width: width ?? this.width,
@@ -52,7 +52,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
   factory PlasterMaterialSize.fromMap(Map<String, dynamic> map) =>
       PlasterMaterialSize._(
         id: map['id'] as int,
-        projectId: map['project_id'] as int,
+        supplierId: map['supplier_id'] as int,
         name: map['name'] as String? ?? '',
         unitSystem: (map['unit_system'] as String?) == 'imperial'
             ? PreferredUnitSystem.imperial
@@ -66,7 +66,7 @@ class PlasterMaterialSize extends Entity<PlasterMaterialSize> {
   @override
   Map<String, dynamic> toMap() => {
     'id': id,
-    'project_id': projectId,
+    'supplier_id': supplierId,
     'name': name,
     'unit_system': unitSystem.name,
     'width': width,
