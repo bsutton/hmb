@@ -10,6 +10,7 @@ import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../dialog/email_dialog.dart';
 import '../../widgets/blocking_ui.dart';
+import '../../widgets/color_ex.dart';
 import '../../widgets/hmb_button.dart';
 import '../../widgets/media/pdf_preview.dart';
 import '../../widgets/select/hmb_select_job.dart';
@@ -20,7 +21,7 @@ import 'plaster_project_pdf.dart';
 class PlasterProjectScreen extends StatefulWidget {
   final PlasterProject? project;
 
-  const PlasterProjectScreen({super.key, required this.project});
+  const PlasterProjectScreen({required this.project, super.key});
 
   @override
   State<PlasterProjectScreen> createState() => _PlasterProjectScreenState();
@@ -169,7 +170,7 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
     );
     final keptOpeningIds = <int>{};
     for (var i = 0; i < bundle.openings.length; i++) {
-      var opening = bundle.openings[i];
+      final opening = bundle.openings[i];
       if (!bundle.lines.any((line) => line.id == opening.lineId)) {
         continue;
       }
@@ -198,7 +199,7 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
     final existing = await DaoPlasterMaterialSize().getByProject(_project.id);
     final keptIds = <int>{};
     for (var i = 0; i < _materials.length; i++) {
-      var material = _materials[i];
+      final material = _materials[i];
       if (material.id < 0) {
         final id = await DaoPlasterMaterialSize().insert(material);
         material.id = id;
@@ -540,9 +541,7 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
             TextField(
               controller: _wasteController,
               decoration: const InputDecoration(labelText: 'Waste %'),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: false,
-              ),
+              keyboardType: TextInputType.number,
               onSubmitted: (_) => _saveProject(),
             ),
             const SizedBox(height: 12),
@@ -558,8 +557,8 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
                 const Spacer(),
                 HMBButton.small(
                   label: _selectionMode ? 'Edit Mode' : 'Selection Mode',
-                  hint:
-                      'Toggle between editing geometry and selecting plaster surfaces',
+                  hint: '''
+Toggle between editing geometry and selecting plaster surfaces''',
                   onPressed: () =>
                       setState(() => _selectionMode = !_selectionMode),
                 ),
@@ -571,195 +570,214 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
                 ),
               ],
             ),
-            Wrap(
-              spacing: 8,
-              children: [
-                for (var i = 0; i < _rooms.length; i++)
-                  ChoiceChip(
-                    label: Text(_rooms[i].room.name),
-                    selected: _selectedRoomIndex == i,
-                    onSelected: (_) => setState(() {
-                      _selectedRoomIndex = i;
-                      _syncRoomControllers();
-                    }),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    key: ValueKey('room-name-${_currentRoom.room.id}'),
-                    initialValue: _currentRoom.room.name,
-                    decoration: const InputDecoration(labelText: 'Room Name'),
-                    onFieldSubmitted: (String value) async {
-                      await _updateCurrentRoom(
-                        _currentRoom.copyWith(
-                          room: _currentRoom.room.copyWith(name: value.trim()),
-                        ),
-                        trackUndo: false,
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButtonFormField<PreferredUnitSystem>(
-                    key: ValueKey(
-                      'room-unit-${_currentRoom.room.id}-${_currentRoom.room.unitSystem.name}',
+            if (_rooms.isEmpty) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'This project does not have any rooms yet. Add a room to start '
+                'drawing walls, openings, and sheet layouts.',
+              ),
+            ] else ...[
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (var i = 0; i < _rooms.length; i++)
+                    ChoiceChip(
+                      label: Text(_rooms[i].room.name),
+                      selected: _selectedRoomIndex == i,
+                      onSelected: (_) => setState(() {
+                        _selectedRoomIndex = i;
+                        _syncRoomControllers();
+                      }),
                     ),
-                    initialValue: _currentRoom.room.unitSystem,
-                    decoration: const InputDecoration(labelText: 'Units'),
-                    items: const [
-                      DropdownMenuItem(
-                        value: PreferredUnitSystem.metric,
-                        child: Text('Metric'),
-                      ),
-                      DropdownMenuItem(
-                        value: PreferredUnitSystem.imperial,
-                        child: Text('Imperial'),
-                      ),
-                    ],
-                    onChanged: (value) async {
-                      if (value == null) {
-                        return;
-                      }
-                      final converted = PlasterGeometry.convertRoomBundle(
-                        room: _currentRoom.room,
-                        lines: _currentRoom.lines,
-                        openings: _currentRoom.openings,
-                        target: value,
-                      );
-                      await _updateCurrentRoom(
-                        _currentRoom.copyWith(
-                          room: converted.$1,
-                          lines: converted.$2,
-                          openings: converted.$3,
-                        ),
-                        trackUndo: false,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              key: ValueKey(
-                'ceiling-height-${_currentRoom.room.id}-${_currentRoom.room.unitSystem.name}',
+                ],
               ),
-              controller: _ceilingHeightController,
-              decoration: InputDecoration(
-                labelText:
-                    'Ceiling Height (${PlasterGeometry.unitLabel(_currentRoom.room.unitSystem)})',
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              onSubmitted: (value) async {
-                final parsed = double.tryParse(value.trim());
-                if (parsed == null) {
-                  _syncRoomControllers();
-                  setState(() {});
-                  return;
-                }
-                await _updateCurrentRoom(
-                  _currentRoom.copyWith(
-                    room: _currentRoom.room.copyWith(
-                      ceilingHeight: PlasterGeometry.fromDisplay(
-                        parsed,
-                        _currentRoom.room.unitSystem,
-                      ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      key: ValueKey('room-name-${_currentRoom.room.id}'),
+                      initialValue: _currentRoom.room.name,
+                      decoration: const InputDecoration(labelText: 'Room Name'),
+                      onFieldSubmitted: (value) async {
+                        await _updateCurrentRoom(
+                          _currentRoom.copyWith(
+                            room: _currentRoom.room.copyWith(
+                              name: value.trim(),
+                            ),
+                          ),
+                          trackUndo: false,
+                        );
+                      },
                     ),
                   ),
-                  trackUndo: false,
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            _RoomCanvas(
-              bundle: _currentRoom,
-              selectionMode: _selectionMode,
-              snapToGrid: _snapToGrid,
-              onMoveIntersection: (index, point) async {
-                final target = _snapToGrid
-                    ? PlasterGeometry.snapPoint(
-                        point,
-                        _currentRoom.room.unitSystem,
-                      )
-                    : point;
-                final lines = PlasterGeometry.moveIntersection(
-                  _currentRoom.lines,
-                  index,
-                  target,
-                );
-                await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
-              },
-              onTapIntersection: _deleteIntersection,
-              onTapLine: (index) async {
-                if (_selectionMode) {
-                  final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
-                  final line = lines[index];
-                  lines[index] = line.copyWith(
-                    plasterSelected: !line.plasterSelected,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: DropdownButtonFormField<PreferredUnitSystem>(
+                      key: ValueKey(
+                        'room-unit-'
+                        '${_currentRoom.room.id}-'
+                        '${_currentRoom.room.unitSystem.name}',
+                      ),
+                      initialValue: _currentRoom.room.unitSystem,
+                      decoration: const InputDecoration(labelText: 'Units'),
+                      items: const [
+                        DropdownMenuItem(
+                          value: PreferredUnitSystem.metric,
+                          child: Text('Metric'),
+                        ),
+                        DropdownMenuItem(
+                          value: PreferredUnitSystem.imperial,
+                          child: Text('Imperial'),
+                        ),
+                      ],
+                      onChanged: (value) async {
+                        if (value == null) {
+                          return;
+                        }
+                        final converted = PlasterGeometry.convertRoomBundle(
+                          room: _currentRoom.room,
+                          lines: _currentRoom.lines,
+                          openings: _currentRoom.openings,
+                          target: value,
+                        );
+                        await _updateCurrentRoom(
+                          _currentRoom.copyWith(
+                            room: converted.$1,
+                            lines: converted.$2,
+                            openings: converted.$3,
+                          ),
+                          trackUndo: false,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                key: ValueKey(
+                  'ceiling-height-'
+                  '${_currentRoom.room.id}-'
+                  '${_currentRoom.room.unitSystem.name}',
+                ),
+                controller: _ceilingHeightController,
+                decoration: InputDecoration(
+                  labelText:
+                      'Ceiling Height '
+                      '(${PlasterGeometry.unitLabel(_currentRoom.room.unitSystem)})',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                onSubmitted: (value) async {
+                  final parsed = double.tryParse(value.trim());
+                  if (parsed == null) {
+                    _syncRoomControllers();
+                    setState(() {});
+                    return;
+                  }
+                  await _updateCurrentRoom(
+                    _currentRoom.copyWith(
+                      room: _currentRoom.room.copyWith(
+                        ceilingHeight: PlasterGeometry.fromDisplay(
+                          parsed,
+                          _currentRoom.room.unitSystem,
+                        ),
+                      ),
+                    ),
+                    trackUndo: false,
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              _RoomCanvas(
+                bundle: _currentRoom,
+                selectionMode: _selectionMode,
+                snapToGrid: _snapToGrid,
+                onMoveIntersection: (index, point) async {
+                  final target = _snapToGrid
+                      ? PlasterGeometry.snapPoint(
+                          point,
+                          _currentRoom.room.unitSystem,
+                        )
+                      : point;
+                  final lines = PlasterGeometry.moveIntersection(
+                    _currentRoom.lines,
+                    index,
+                    target,
                   );
                   await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
-                } else {
-                  await _lineAction(index);
-                }
-              },
-              onTapCeiling: () async {
-                if (!_selectionMode) {
-                  return;
-                }
-                await _updateCurrentRoom(
-                  _currentRoom.copyWith(
-                    room: _currentRoom.room.copyWith(
-                      plasterCeiling: !_currentRoom.room.plasterCeiling,
+                },
+                onTapIntersection: _deleteIntersection,
+                onTapLine: (index) async {
+                  if (_selectionMode) {
+                    final lines = List<PlasterRoomLine>.from(
+                      _currentRoom.lines,
+                    );
+                    final line = lines[index];
+                    lines[index] = line.copyWith(
+                      plasterSelected: !line.plasterSelected,
+                    );
+                    await _updateCurrentRoom(
+                      _currentRoom.copyWith(lines: lines),
+                    );
+                  } else {
+                    await _lineAction(index);
+                  }
+                },
+                onTapCeiling: () async {
+                  if (!_selectionMode) {
+                    return;
+                  }
+                  await _updateCurrentRoom(
+                    _currentRoom.copyWith(
+                      room: _currentRoom.room.copyWith(
+                        plasterCeiling: !_currentRoom.room.plasterCeiling,
+                      ),
                     ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  HMBButton.small(
+                    label: 'Undo',
+                    hint: 'Undo the last room edit',
+                    enabled: _undo.isNotEmpty,
+                    onPressed: () async {
+                      if (_undo.isEmpty) {
+                        return;
+                      }
+                      _redo.add(_currentRoom.deepCopy());
+                      final previous = _undo.removeLast();
+                      _rooms[_selectedRoomIndex] = previous;
+                      await _saveRoomBundle(previous);
+                      _syncRoomControllers();
+                      setState(() {});
+                    },
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                HMBButton.small(
-                  label: 'Undo',
-                  hint: 'Undo the last room edit',
-                  enabled: _undo.isNotEmpty,
-                  onPressed: () async {
-                    if (_undo.isEmpty) {
-                      return;
-                    }
-                    _redo.add(_currentRoom.deepCopy());
-                    final previous = _undo.removeLast();
-                    _rooms[_selectedRoomIndex] = previous;
-                    await _saveRoomBundle(previous);
-                    _syncRoomControllers();
-                    setState(() {});
-                  },
-                ),
-                const SizedBox(width: 8),
-                HMBButton.small(
-                  label: 'Redo',
-                  hint: 'Redo the last undone room edit',
-                  enabled: _redo.isNotEmpty,
-                  onPressed: () async {
-                    if (_redo.isEmpty) {
-                      return;
-                    }
-                    _undo.add(_currentRoom.deepCopy());
-                    final next = _redo.removeLast();
-                    _rooms[_selectedRoomIndex] = next;
-                    await _saveRoomBundle(next);
-                    _syncRoomControllers();
-                    setState(() {});
-                  },
-                ),
-              ],
-            ),
+                  const SizedBox(width: 8),
+                  HMBButton.small(
+                    label: 'Redo',
+                    hint: 'Redo the last undone room edit',
+                    enabled: _redo.isNotEmpty,
+                    onPressed: () async {
+                      if (_redo.isEmpty) {
+                        return;
+                      }
+                      _undo.add(_currentRoom.deepCopy());
+                      final next = _redo.removeLast();
+                      _rooms[_selectedRoomIndex] = next;
+                      await _saveRoomBundle(next);
+                      _syncRoomControllers();
+                      setState(() {});
+                    },
+                  ),
+                ],
+              ),
+            ],
             const Divider(),
             Row(
               children: [
@@ -775,12 +793,11 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
             for (final material in _materials)
               ListTile(
                 title: Text(material.name),
-                subtitle: Text(
-                  '${PlasterGeometry.toDisplay(material.width, material.unitSystem).toStringAsFixed(2)} '
-                  '${PlasterGeometry.unitLabel(material.unitSystem)} x '
-                  '${PlasterGeometry.toDisplay(material.height, material.unitSystem).toStringAsFixed(2)} '
-                  '${PlasterGeometry.unitLabel(material.unitSystem)}',
-                ),
+                subtitle: Text('''
+${PlasterGeometry.toDisplay(material.width, material.unitSystem).toStringAsFixed(2)} 
+${PlasterGeometry.unitLabel(material.unitSystem)} x 
+${PlasterGeometry.toDisplay(material.height, material.unitSystem).toStringAsFixed(2)} 
+${PlasterGeometry.unitLabel(material.unitSystem)}'''),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete),
                   onPressed: () async {
@@ -952,9 +969,9 @@ class _RoomPainter extends CustomPainter {
     final fill = Paint()
       ..color =
           (bundle.room.plasterCeiling
-                  ? Colors.blue.withOpacity(0.08)
-                  : Colors.grey.withOpacity(0.05))
-              .withOpacity(selectionMode ? 0.2 : 0.08)
+                  ? Colors.blue.withSafeOpacity(0.08)
+                  : Colors.grey.withSafeOpacity(0.05))
+              .withSafeOpacity(selectionMode ? 0.2 : 0.08)
       ..style = PaintingStyle.fill;
     canvas.drawPath(polygon, fill);
 
@@ -967,15 +984,17 @@ class _RoomPainter extends CustomPainter {
       final paint = Paint()
         ..color = line.plasterSelected ? Colors.blue : Colors.grey
         ..strokeWidth = 3;
-      canvas.drawLine(start, end, paint);
-      canvas.drawCircle(start, 6, Paint()..color = Colors.orange);
+      canvas
+        ..drawLine(start, end, paint)
+        ..drawCircle(start, 6, Paint()..color = Colors.orange);
       final mid = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
-      textPainter.text = TextSpan(
-        text: 'W${i + 1}',
-        style: const TextStyle(color: Colors.black, fontSize: 12),
-      );
-      textPainter.layout();
-      textPainter.paint(canvas, mid + const Offset(4, -12));
+      textPainter
+        ..text = TextSpan(
+          text: 'W${i + 1}',
+          style: const TextStyle(color: Colors.black, fontSize: 12),
+        )
+        ..layout()
+        ..paint(canvas, mid + const Offset(4, -12));
     }
   }
 
@@ -985,7 +1004,7 @@ class _RoomPainter extends CustomPainter {
     }
     final spacing = transform.gridSpacing(bundle.room.unitSystem);
     final gridPaint = Paint()
-      ..color = Colors.grey.withOpacity(0.16)
+      ..color = Colors.grey.withSafeOpacity(0.16)
       ..strokeWidth = 1;
     for (double x = 0; x <= size.width; x += spacing) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
@@ -1217,8 +1236,8 @@ class _OpeningDialogState extends State<_OpeningDialog> {
             controller: _sill,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              labelText:
-                  'Sill Height (${PlasterGeometry.unitLabel(widget.unitSystem)})',
+              labelText: '''
+Sill Height (${PlasterGeometry.unitLabel(widget.unitSystem)})''',
             ),
           ),
       ],

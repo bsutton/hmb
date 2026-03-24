@@ -22,6 +22,7 @@ import '../../../entity/entity.g.dart';
 import '../../../util/flutter/app_title.dart';
 import '../../../util/flutter/flutter_util.g.dart';
 import '../../dialog/hmb_comfirm_delete_dialog.dart';
+import '../../nav/route.dart';
 import '../../widgets/icons/hmb_delete_icon.dart';
 import '../../widgets/icons/hmb_edit_icon.dart';
 import '../../widgets/icons/hmb_filter_icon.dart';
@@ -63,6 +64,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
   /// Used when the EntityList is shown from mini-dashboard
   /// to make back navigation clear.
   final bool showBackButton;
+  final Widget? emptyBody;
 
   EntityListScreen({
     required this.entityNamePlural,
@@ -102,6 +104,7 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
     this.isFilterActive,
     this.showBackButton = false,
     this.buildActionItems,
+    this.emptyBody,
   }) {
     _fetchList = fetchList ?? (_) => dao.getAll();
   }
@@ -111,7 +114,8 @@ class EntityListScreen<T extends Entity<T>> extends StatefulWidget {
 }
 
 class EntityListScreenState<T extends Entity<T>>
-    extends DeferredState<EntityListScreen<T>> {
+    extends DeferredState<EntityListScreen<T>>
+    with RouteAware {
   BuildActionItems<T>? buildActionItems;
   List<T> entityList = [];
   String? filterOption;
@@ -128,6 +132,16 @@ class EntityListScreenState<T extends Entity<T>>
     buildActionItems = widget.buildActionItems ?? _noItems;
 
     setAppTitle(widget.entityNamePlural);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver.unsubscribe(this);
+      routeObserver.subscribe(this, route);
+    }
   }
 
   @override
@@ -238,6 +252,9 @@ class EntityListScreenState<T extends Entity<T>>
 
   Widget _buildList() {
     if (entityList.isEmpty) {
+      if (widget.emptyBody != null) {
+        return widget.emptyBody!;
+      }
       if (widget.canAdd) {
         return Center(
           child: Row(
@@ -373,9 +390,15 @@ class EntityListScreenState<T extends Entity<T>>
 
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     filterController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    unawaited(refresh());
   }
 
   Future<void> _delete(T entity) async {

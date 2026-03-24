@@ -33,6 +33,7 @@ class _PlasterProjectListScreenState extends State<PlasterProjectListScreen> {
     listCardTitle: (project) => Text(project.name),
     onAdd: _addProject,
     onEdit: (project) => PlasterProjectScreen(project: project),
+    emptyBody: const _EmptyPlasterProjectBody(),
     cardHeight: 220,
     listCard: (project) => FutureBuilderEx(
       future: _loadSummary(project),
@@ -97,6 +98,49 @@ class _PlasterProjectListScreenState extends State<PlasterProjectListScreen> {
     }
     return saved;
   }
+}
+
+class _EmptyPlasterProjectBody extends StatelessWidget {
+  const _EmptyPlasterProjectBody();
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Create a plasterboard project to plan one or more rooms '
+              'for a job.',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Each project can be linked to a job and optional task. '
+              'Start with a default room, then tap walls to set lengths, '
+              'add doors or windows, and insert left or right angles.',
+            ),
+            SizedBox(height: 12),
+            Text(
+              'You can choose which walls and the ceiling are plastered, '
+              'set a waste margin, define available sheet sizes, and print '
+              'a labeled layout once the room is complete.',
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Tap the add button above to create your first '
+              'plasterboard project.',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _ProjectSummary {
