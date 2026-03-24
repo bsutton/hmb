@@ -67,7 +67,6 @@ class _JobCreatorState extends State<JobCreator> {
   List<Site> _existingSites = [];
   Contact? _selectedExistingContact;
   Contact? _selectedReferrerContact;
-  Contact? _selectedTenantContact;
   Contact? _selectedPrimaryContact;
   Site? _selectedExistingSite;
   late final List<WizardStep> _steps;
@@ -199,7 +198,6 @@ class _JobCreatorState extends State<JobCreator> {
           _existingContacts = [];
           _existingSites = [];
           _selectedExistingContact = null;
-          _selectedTenantContact = null;
           _selectedPrimaryContact = null;
           _selectedExistingSite = null;
         }
@@ -244,7 +242,6 @@ class _JobCreatorState extends State<JobCreator> {
           _existingContacts = [];
           _existingSites = [];
           _selectedExistingContact = null;
-          _selectedTenantContact = null;
           _selectedPrimaryContact = null;
           _selectedExistingSite = null;
         }
@@ -270,7 +267,6 @@ class _JobCreatorState extends State<JobCreator> {
       _existingSites = sites;
       _selectedExistingContact = _pickBestMatchingContact(contacts);
       _selectedPrimaryContact ??= _selectedExistingContact;
-      _selectedTenantContact ??= _selectedExistingContact;
       _selectedExistingSite = sites.isEmpty ? null : sites.first;
     });
   }
@@ -593,7 +589,6 @@ class _JobCreatorState extends State<JobCreator> {
         _existingSites = [];
         _selectedExistingContact = null;
         _selectedReferrerContact = null;
-        _selectedTenantContact = null;
         _selectedPrimaryContact = null;
         _selectedExistingSite = null;
       }
@@ -621,20 +616,10 @@ class _JobCreatorState extends State<JobCreator> {
     }
 
     final tenantName = _extractPartyHint(text, ['tenant']);
-    if (tenantName != null && _selectedCustomer != null) {
-      if (_existingContacts.isEmpty) {
-        await _loadExistingCustomerDetails(_selectedCustomer!);
-      }
-      final normalizedTenant = _normalize(tenantName);
-      for (final contact in _existingContacts) {
-        final fullName = _normalize('${contact.firstName} ${contact.surname}');
-        if (fullName.contains(normalizedTenant) ||
-            normalizedTenant.contains(fullName)) {
-          _selectedTenantContact = contact;
-          _selectedPrimaryContact ??= contact;
-          break;
-        }
-      }
+    if (tenantName != null &&
+        _selectedCustomer == null &&
+        _customerName.text.trim().isEmpty) {
+      _customerName.text = tenantName;
     }
   }
 
@@ -746,7 +731,6 @@ class _JobCreatorState extends State<JobCreator> {
             ? 'New Job'
             : _jobSummary.text;
         final primaryContact = _selectedPrimaryContact ?? contact;
-        final tenantContact = _selectedTenantContact ?? contact;
         job = Job.forInsert(
           customerId: customer.id,
           referrerCustomerId: _selectedReferrerCustomer?.id,
@@ -762,7 +746,6 @@ class _JobCreatorState extends State<JobCreator> {
               system.defaultBookingFee ?? Money.fromInt(0, isoCode: 'AUD'),
           billingContactId: contact?.id,
           referrerContactId: _selectedReferrerContact?.id,
-          tenantContactId: tenantContact?.id,
         );
         await daoJob.insert(job, transaction);
 
@@ -884,7 +867,6 @@ class _ContactStep extends WizardStep {
               HMBTextField(
                 controller: state._existingContactFilter,
                 labelText: 'Filter Existing Contacts',
-                textCapitalization: TextCapitalization.none,
                 onChanged: (_) => setState(() {}),
               ),
             Text(
@@ -904,7 +886,6 @@ class _ContactStep extends WizardStep {
                   state._mobileNo.text = value.mobileNumber;
                   state._email.text = value.emailAddress;
                   state._selectedPrimaryContact = value;
-                  state._selectedTenantContact = value;
                 }
               }),
               child: Column(
@@ -945,32 +926,6 @@ class _ContactStep extends WizardStep {
               ),
             ),
             const HMBSpacer(height: true),
-          ],
-          if (state._selectedCustomer != null) ...[
-            HMBDroplist<Contact>(
-              title: 'Tenant',
-              required: false,
-              selectedItem: () => Future.value(state._selectedTenantContact),
-              items: (filter) async {
-                final value = filter?.trim().toLowerCase() ?? '';
-                if (value.isEmpty) {
-                  return state._existingContacts;
-                }
-                return state._existingContacts.where((contact) {
-                  final name = '${contact.firstName} ${contact.surname}'
-                      .toLowerCase();
-                  final email = contact.emailAddress.toLowerCase();
-                  return name.contains(value) || email.contains(value);
-                }).toList();
-              },
-              format: (contact) =>
-                  '${contact.firstName} ${contact.surname}'.trim(),
-              onChanged: (contact) {
-                setState(() {
-                  state._selectedTenantContact = contact;
-                });
-              },
-            ),
           ],
           HMBTextField(
             controller: state._firstName,
@@ -1021,7 +976,6 @@ class _AddressStep extends WizardStep {
               HMBTextField(
                 controller: state._existingSiteFilter,
                 labelText: 'Filter Existing Sites',
-                textCapitalization: TextCapitalization.none,
                 onChanged: (_) => setState(() {}),
               ),
             Text(
