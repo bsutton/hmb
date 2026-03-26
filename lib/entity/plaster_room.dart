@@ -13,6 +13,7 @@
 */
 
 import '../util/dart/measurement_type.dart';
+import '../util/dart/plaster_sheet_direction.dart';
 import 'entity.dart';
 
 class PlasterRoom extends Entity<PlasterRoom> {
@@ -21,6 +22,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
   final PreferredUnitSystem unitSystem;
   final int ceilingHeight;
   final bool plasterCeiling;
+  final PlasterSheetDirection ceilingSheetDirection;
 
   PlasterRoom._({
     required super.id,
@@ -29,6 +31,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     required this.unitSystem,
     required this.ceilingHeight,
     required this.plasterCeiling,
+    required this.ceilingSheetDirection,
     required super.createdDate,
     required super.modifiedDate,
   });
@@ -39,6 +42,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     required this.unitSystem,
     required this.ceilingHeight,
     this.plasterCeiling = true,
+    this.ceilingSheetDirection = PlasterSheetDirection.auto,
   }) : super.forInsert();
 
   PlasterRoom copyWith({
@@ -47,6 +51,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     PreferredUnitSystem? unitSystem,
     int? ceilingHeight,
     bool? plasterCeiling,
+    PlasterSheetDirection? ceilingSheetDirection,
   }) => PlasterRoom._(
     id: id,
     projectId: projectId ?? this.projectId,
@@ -54,6 +59,8 @@ class PlasterRoom extends Entity<PlasterRoom> {
     unitSystem: unitSystem ?? this.unitSystem,
     ceilingHeight: ceilingHeight ?? this.ceilingHeight,
     plasterCeiling: plasterCeiling ?? this.plasterCeiling,
+    ceilingSheetDirection:
+        ceilingSheetDirection ?? this.ceilingSheetDirection,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
   );
@@ -67,6 +74,9 @@ class PlasterRoom extends Entity<PlasterRoom> {
         : PreferredUnitSystem.metric,
     ceilingHeight: map['ceiling_height'] as int? ?? 24000,
     plasterCeiling: (map['plaster_ceiling'] as int? ?? 1) == 1,
+    ceilingSheetDirection: PlasterSheetDirectionX.fromStorage(
+      map['ceiling_sheet_direction'] as String?,
+    ),
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
@@ -79,6 +89,7 @@ class PlasterRoom extends Entity<PlasterRoom> {
     'unit_system': unitSystem.name,
     'ceiling_height': ceilingHeight,
     'plaster_ceiling': plasterCeiling ? 1 : 0,
+    'ceiling_sheet_direction': ceilingSheetDirection.storageValue,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

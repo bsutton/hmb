@@ -198,9 +198,16 @@ class NestedEntityListScreenState<C extends Entity<C>, P extends Entity<P>>
     final cards = <Widget>[];
 
     for (final entity in list) {
-      cards.add(
-        SizedBox(height: widget.cardHeight, child: _buildCard(entity, context)),
-      );
+      if (widget.extended) {
+        cards.add(_buildCard(entity, context));
+      } else {
+        cards.add(
+          SizedBox(
+            height: widget.cardHeight,
+            child: _buildCard(entity, context),
+          ),
+        );
+      }
     }
 
     return HMBColumn(mainAxisSize: MainAxisSize.min, children: cards);

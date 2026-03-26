@@ -84,6 +84,10 @@ class PlasterRoomNotifier extends JuneState {
   PlasterRoomNotifier();
 }
 
+class PlasterRoomConstraintNotifier extends JuneState {
+  PlasterRoomConstraintNotifier();
+}
+
 class PlasterRoomLineNotifier extends JuneState {
   PlasterRoomLineNotifier();
 }

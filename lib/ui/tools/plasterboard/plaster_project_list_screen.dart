@@ -2,6 +2,8 @@
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 */
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:future_builder_ex/future_builder_ex.dart';
 
@@ -199,13 +201,15 @@ class _CreateProjectDialogState extends State<_CreateProjectDialog> {
   @override
   void initState() {
     super.initState();
-    DaoSystem().get().then((system) {
-      if (mounted) {
-        setState(() {
-          _unitSystem = system.preferredUnitSystem;
-        });
-      }
-    });
+    unawaited(
+      DaoSystem().get().then((system) {
+        if (mounted) {
+          setState(() {
+            _unitSystem = system.preferredUnitSystem;
+          });
+        }
+      }),
+    );
   }
 
   @override

@@ -33,6 +33,7 @@ export 'dao_photo.dart';
 export 'dao_plaster_material_size.dart';
 export 'dao_plaster_project.dart';
 export 'dao_plaster_room.dart';
+export 'dao_plaster_room_constraint.dart';
 export 'dao_plaster_room_line.dart';
 export 'dao_plaster_room_opening.dart';
 export 'dao_quote.dart';

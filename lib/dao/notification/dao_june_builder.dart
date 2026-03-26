@@ -70,6 +70,9 @@ class DaoJuneBuilder {
     DaoPlasterRoom.tableName: _reg<PlasterRoomNotifier>(
       PlasterRoomNotifier.new,
     ),
+    DaoPlasterRoomConstraint.tableName: _reg<PlasterRoomConstraintNotifier>(
+      PlasterRoomConstraintNotifier.new,
+    ),
     DaoPlasterRoomLine.tableName: _reg<PlasterRoomLineNotifier>(
       PlasterRoomLineNotifier.new,
     ),

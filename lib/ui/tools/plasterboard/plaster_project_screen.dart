@@ -2,33 +2,51 @@
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 */
 
+import 'dart:async';
+import 'dart:math';
+
+import 'package:deferred_state/deferred_state.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/measurement_type.dart';
+import '../../../util/dart/plaster_constraint_solver.dart';
 import '../../../util/dart/plaster_geometry.dart';
+import '../../../util/dart/plaster_sheet_direction.dart';
+import '../../crud/base_nested/list_nested_screen.dart';
 import '../../dialog/email_dialog.dart';
+import '../../nav/nav.g.dart';
 import '../../widgets/blocking_ui.dart';
 import '../../widgets/color_ex.dart';
-import '../../widgets/hmb_button.dart';
+import '../../widgets/hmb_child_crud_card.dart';
 import '../../widgets/media/pdf_preview.dart';
 import '../../widgets/select/hmb_select_job.dart';
 import '../../widgets/select/hmb_select_supplier.dart';
 import '../../widgets/select/hmb_select_task.dart';
+import 'plaster_material_size_list_screen.dart';
 import 'plaster_project_pdf.dart';
+import 'plaster_room_list_screen.dart';
 
 class PlasterProjectScreen extends StatefulWidget {
   final PlasterProject? project;
+  final int? editorOnlyRoomId;
 
-  const PlasterProjectScreen({required this.project, super.key});
+  const PlasterProjectScreen({
+    required this.project,
+    this.editorOnlyRoomId,
+    super.key,
+  });
 
   @override
   State<PlasterProjectScreen> createState() => _PlasterProjectScreenState();
 }
 
-class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
+class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
+    with RouteAware {
   final _nameController = TextEditingController();
+  final _roomNameController = TextEditingController();
   final _wasteController = TextEditingController();
   final _ceilingHeightController = TextEditingController();
   final _selectedJob = SelectedJob();
@@ -41,18 +59,22 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
   Job? _job;
   Task? _task;
   Supplier? _supplier;
-  var _loading = true;
   var _selectionMode = false;
   var _snapToGrid = true;
+  var _showGrid = true;
   var _selectedRoomIndex = 0;
+  int? _selectedLineIndex;
+  int? _selectedIntersectionIndex;
+  int? _selectedOpeningIndex;
+  var _hasPendingRoomGesture = false;
+  _RoomBundle? _gestureBaseRoom;
   List<_RoomBundle> _rooms = [];
   List<PlasterMaterialSize> _materials = [];
 
+  bool get _isRoomEditorOnly => widget.editorOnlyRoomId != null;
+
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  Future<void> asyncInitState() => _load();
 
   Future<void> _load() async {
     final project = widget.project ?? (throw StateError('Project required'));
@@ -70,12 +92,25 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
       final openings = await DaoPlasterRoomOpening().getByLineIds(
         lines.map((line) => line.id).toList(),
       );
-      bundles.add(_RoomBundle(room: room, lines: lines, openings: openings));
+      final constraints = await DaoPlasterRoomConstraint().getByRoom(room.id);
+      bundles.add(
+        _RoomBundle(
+          room: room,
+          lines: lines,
+          openings: openings,
+          constraints: constraints,
+        ),
+      );
     }
     final materials = await _loadMaterialsForSupplier(project.supplierId);
     if (!mounted) {
       return;
     }
+    final roomIndex = widget.editorOnlyRoomId == null
+        ? 0
+        : bundles.indexWhere(
+            (bundle) => bundle.room.id == widget.editorOnlyRoomId,
+          );
     setState(() {
       _project = project;
       _job = job;
@@ -83,12 +118,12 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
       _supplier = supplier;
       _rooms = bundles;
       _materials = materials;
+      _selectedRoomIndex = bundles.isEmpty ? 0 : max(0, roomIndex);
       _nameController.text = project.name;
       _wasteController.text = project.wastePercent.toString();
       _selectedJob.jobId = project.jobId;
       _selectedTask.taskId = project.taskId;
       _selectedSupplier.selected = project.supplierId;
-      _loading = false;
     });
     _syncRoomControllers();
   }
@@ -113,10 +148,28 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
 
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _nameController.dispose();
+    _roomNameController.dispose();
     _wasteController.dispose();
     _ceilingHeightController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver
+        ..unsubscribe(this)
+        ..subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    unawaited(_load());
   }
 
   _RoomBundle get _currentRoom => _rooms[_selectedRoomIndex];
@@ -125,13 +178,71 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
     if (_rooms.isEmpty) {
       return;
     }
-    _ceilingHeightController.text = PlasterGeometry.toDisplay(
+    _roomNameController.text = _currentRoom.room.name;
+    _ceilingHeightController.text = PlasterGeometry.formatDisplayLength(
       _currentRoom.room.ceilingHeight,
       _currentRoom.room.unitSystem,
-    ).toStringAsFixed(2);
+    ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+  }
+
+  Future<void> _commitRoomName() async {
+    final name = _roomNameController.text.trim();
+    if (name.isEmpty || name == _currentRoom.room.name) {
+      if (name.isEmpty) {
+        _syncRoomControllers();
+        if (mounted) {
+          setState(() {});
+        }
+      }
+      return;
+    }
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(
+        room: _currentRoom.room.copyWith(name: name),
+      ),
+      trackUndo: false,
+    );
+  }
+
+  Future<void> _commitCeilingHeight() async {
+    final parsed = PlasterGeometry.parseDisplayLength(
+      _ceilingHeightController.text,
+      _currentRoom.room.unitSystem,
+    );
+    if (parsed == null) {
+      _syncRoomControllers();
+      if (mounted) {
+        setState(() {});
+      }
+      return;
+    }
+    if (parsed == _currentRoom.room.ceilingHeight) {
+      return;
+    }
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(
+        room: _currentRoom.room.copyWith(ceilingHeight: parsed),
+      ),
+      trackUndo: false,
+    );
+  }
+
+  Future<void> _commitPendingRoomEdits() async {
+    if (_rooms.isEmpty) {
+      return;
+    }
+    await _commitRoomName();
+    await _commitCeilingHeight();
+  }
+
+  void _clearSelection() {
+    _selectedLineIndex = null;
+    _selectedIntersectionIndex = null;
+    _selectedOpeningIndex = null;
   }
 
   Future<void> _saveProject() async {
+    await _commitPendingRoomEdits();
     final previousSupplierId = _project.supplierId;
     final updated = _project.copyWith(
       name: _nameController.text.trim().isEmpty
@@ -238,185 +349,300 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
   }
 
   Future<void> _saveRoomBundle(_RoomBundle bundle) async {
-    await DaoPlasterRoom().update(bundle.room);
-    bundle.openings = [
-      for (final opening in bundle.openings)
-        if (bundle.lines.any((line) => line.id == opening.lineId)) opening,
-    ];
-    final existingLines = await DaoPlasterRoomLine().getByRoom(bundle.room.id);
-    final existingLineIds = existingLines.map((line) => line.id).toSet();
-    final keptLineIds = <int>{};
-    for (var i = 0; i < bundle.lines.length; i++) {
-      final line = bundle.lines[i].copyWith(seqNo: i);
-      if (line.id < 0) {
-        final id = await DaoPlasterRoomLine().insert(line);
-        line.id = id;
-        bundle.lines[i] = line;
-      } else {
-        await DaoPlasterRoomLine().update(line);
-        bundle.lines[i] = line;
-        keptLineIds.add(line.id);
-      }
-      keptLineIds.add(bundle.lines[i].id);
-    }
-    for (final line in existingLines.where(
-      (line) => !keptLineIds.contains(line.id),
-    )) {
-      await DaoPlasterRoomLine().delete(line.id);
-    }
-    final existingOpenings = await DaoPlasterRoomOpening().getByLineIds(
-      bundle.lines.map((line) => line.id).toList(),
-    );
-    final keptOpeningIds = <int>{};
-    for (var i = 0; i < bundle.openings.length; i++) {
-      final opening = bundle.openings[i];
-      if (!bundle.lines.any((line) => line.id == opening.lineId)) {
-        continue;
-      }
-      if (opening.id < 0) {
-        final id = await DaoPlasterRoomOpening().insert(opening);
-        opening.id = id;
-      } else {
-        await DaoPlasterRoomOpening().update(opening);
-      }
-      keptOpeningIds.add(opening.id);
-      bundle.openings[i] = opening;
-    }
-    for (final opening in existingOpenings.where(
-      (opening) => !keptOpeningIds.contains(opening.id),
-    )) {
-      await DaoPlasterRoomOpening().delete(opening.id);
-    }
-    if (existingLineIds.difference(keptLineIds).isNotEmpty) {
-      bundle.openings = await DaoPlasterRoomOpening().getByLineIds(
-        bundle.lines.map((line) => line.id).toList(),
+    final roomDao = DaoPlasterRoom();
+    final lineDao = DaoPlasterRoomLine();
+    final openingDao = DaoPlasterRoomOpening();
+    final constraintDao = DaoPlasterRoomConstraint();
+
+    await roomDao.withTransaction((transaction) async {
+      await roomDao.update(bundle.room, transaction);
+      bundle.openings = [
+        for (final opening in bundle.openings)
+          if (bundle.lines.any((line) => line.id == opening.lineId)) opening,
+      ];
+
+      final existingLineRows = await lineDao.withinTransaction(
+        transaction,
+      ).query(
+        DaoPlasterRoomLine.tableName,
+        where: 'room_id = ?',
+        whereArgs: [bundle.room.id],
+        orderBy: 'seq_no ASC',
       );
-    }
-  }
+      final existingLines = lineDao.toList(existingLineRows);
+      final existingLineIds = existingLines.map((line) => line.id).toSet();
+      final lineIdMap = <int, int>{};
+      final keptLineIds = <int>{};
 
-  Future<void> _saveMaterials() async {
-    final supplierId = _project.supplierId;
-    if (supplierId == null) {
-      _materials = [];
-      return;
-    }
-    final existing = await DaoPlasterMaterialSize().getBySupplier(supplierId);
-    final keptIds = <int>{};
-    for (var i = 0; i < _materials.length; i++) {
-      final material = _materials[i];
-      if (material.id < 0) {
-        final id = await DaoPlasterMaterialSize().insert(material);
-        material.id = id;
-      } else {
-        await DaoPlasterMaterialSize().update(material);
+      // Move existing lines out of the way first so new seq_no values do not
+      // trip the unique(room_id, seq_no) index during resequencing.
+      final seqOffset = bundle.lines.length + existingLines.length + 100;
+      for (final line in existingLines) {
+        await lineDao.withinTransaction(transaction).update(
+          DaoPlasterRoomLine.tableName,
+          {'seq_no': line.seqNo + seqOffset},
+          where: 'id = ?',
+          whereArgs: [line.id],
+        );
       }
-      keptIds.add(material.id);
-      _materials[i] = material;
-    }
-    for (final material in existing.where(
-      (value) => !keptIds.contains(value.id),
-    )) {
-      await DaoPlasterMaterialSize().delete(material.id);
-    }
+
+      for (var i = 0; i < bundle.lines.length; i++) {
+        final previousId = bundle.lines[i].id;
+        final line = bundle.lines[i].copyWith(seqNo: i);
+        if (line.id < 0) {
+          final id = await lineDao.insert(line, transaction);
+          line.id = id;
+          bundle.lines[i] = line;
+          lineIdMap[previousId] = id;
+        } else {
+          await lineDao.update(line, transaction);
+          bundle.lines[i] = line;
+          keptLineIds.add(line.id);
+        }
+        keptLineIds.add(bundle.lines[i].id);
+      }
+
+      for (final line in existingLines.where(
+        (line) => !keptLineIds.contains(line.id),
+      )) {
+        await lineDao.delete(line.id, transaction);
+      }
+
+      final existingOpeningRows = bundle.lines.isEmpty
+          ? <Map<String, Object?>>[]
+          : await openingDao.withinTransaction(transaction).query(
+              DaoPlasterRoomOpening.tableName,
+              where: 'line_id IN ('
+                  "${List.filled(bundle.lines.length, '?').join(',')})",
+              whereArgs: bundle.lines.map((line) => line.id).toList(),
+            );
+      final existingOpenings = openingDao.toList(existingOpeningRows);
+      final keptOpeningIds = <int>{};
+      for (var i = 0; i < bundle.openings.length; i++) {
+        final opening = bundle.openings[i];
+        if (!bundle.lines.any((line) => line.id == opening.lineId)) {
+          continue;
+        }
+        if (opening.id < 0) {
+          final id = await openingDao.insert(opening, transaction);
+          opening.id = id;
+        } else {
+          await openingDao.update(opening, transaction);
+        }
+        keptOpeningIds.add(opening.id);
+        bundle.openings[i] = opening;
+      }
+      for (final opening in existingOpenings.where(
+        (opening) => !keptOpeningIds.contains(opening.id),
+      )) {
+        await openingDao.delete(opening.id, transaction);
+      }
+
+      if (existingLineIds.difference(keptLineIds).isNotEmpty) {
+        final refreshedOpeningRows = bundle.lines.isEmpty
+            ? <Map<String, Object?>>[]
+            : await openingDao.withinTransaction(transaction).query(
+                DaoPlasterRoomOpening.tableName,
+                where: 'line_id IN ('
+                    "${List.filled(bundle.lines.length, '?').join(',')})",
+                whereArgs: bundle.lines.map((line) => line.id).toList(),
+              );
+        bundle.openings = openingDao.toList(refreshedOpeningRows);
+      }
+
+      final existingConstraintRows = await constraintDao.withinTransaction(
+        transaction,
+      ).query(
+        DaoPlasterRoomConstraint.tableName,
+        where: 'room_id = ?',
+        whereArgs: [bundle.room.id],
+      );
+      final existingConstraints = constraintDao.toList(existingConstraintRows);
+      final keptConstraintIds = <int>{};
+      bundle.constraints = [
+        for (final constraint in bundle.constraints)
+          if (keptLineIds.contains(
+            lineIdMap[constraint.lineId] ?? constraint.lineId,
+          ))
+            constraint.copyWith(
+              lineId: lineIdMap[constraint.lineId] ?? constraint.lineId,
+            ),
+      ];
+      for (var i = 0; i < bundle.constraints.length; i++) {
+        final constraint = bundle.constraints[i];
+        if (constraint.id < 0) {
+          final id = await constraintDao.insert(constraint, transaction);
+          constraint.id = id;
+        } else {
+          await constraintDao.update(constraint, transaction);
+        }
+        keptConstraintIds.add(constraint.id);
+        bundle.constraints[i] = constraint;
+      }
+      for (final constraint in existingConstraints.where(
+        (value) => !keptConstraintIds.contains(value.id),
+      )) {
+        await constraintDao.delete(constraint.id, transaction);
+      }
+    });
   }
 
-  Future<void> _addRoom() async {
-    final roomName = await _promptForRoomName();
-    if (roomName == null) {
+  PlasterRoomConstraint? _constraintForLine(
+    int lineId,
+    PlasterConstraintType type,
+  ) {
+    for (final constraint in _currentRoom.constraints) {
+      if (constraint.lineId == lineId && constraint.type == type) {
+        return constraint;
+      }
+    }
+    return null;
+  }
+
+  List<PlasterRoomConstraint> _constraintsWithoutLineType(
+    List<PlasterRoomConstraint> constraints,
+    int lineId,
+    PlasterConstraintType type,
+  ) => [
+    for (final constraint in constraints)
+      if (!(constraint.lineId == lineId && constraint.type == type)) constraint,
+  ];
+
+  List<PlasterRoomConstraint> _upsertConstraint(
+    List<PlasterRoomConstraint> constraints,
+    PlasterRoomConstraint nextConstraint,
+  ) {
+    final updated = _constraintsWithoutLineType(
+      constraints,
+      nextConstraint.lineId,
+      nextConstraint.type,
+    )..add(nextConstraint);
+    return updated;
+  }
+
+  Future<void> _showSolveError(PlasterSolveResult result) async {
+    if (!mounted) {
       return;
     }
-    final system = await DaoSystem().get();
-    final room = PlasterRoom.forInsert(
-      projectId: _project.id,
-      name: roomName,
-      unitSystem: system.preferredUnitSystem,
-      ceilingHeight: PlasterGeometry.defaultCeilingHeight(
-        system.preferredUnitSystem,
+    final violation = result.violations.isEmpty
+        ? null
+        : result.violations.first;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          violation == null
+              ? 'Unable to satisfy all constraints.'
+              : _formatSolveViolation(violation),
+        ),
       ),
     );
-    final roomId = await DaoPlasterRoom().insert(room);
-    final savedRoom = (await DaoPlasterRoom().getById(roomId))!;
-    final lines = PlasterGeometry.defaultLines(
-      roomId: roomId,
-      unitSystem: savedRoom.unitSystem,
-    );
-    final persisted = <PlasterRoomLine>[];
-    for (final line in lines) {
-      final id = await DaoPlasterRoomLine().insert(line);
-      line.id = id;
-      persisted.add(line);
-    }
-    setState(() {
-      _rooms.add(_RoomBundle(room: savedRoom, lines: persisted, openings: []));
-      _selectedRoomIndex = _rooms.length - 1;
-    });
-    _syncRoomControllers();
   }
 
-  Future<String?> _promptForRoomName() async => showDialog<String>(
-    context: context,
-    builder: (_) => _RoomNameDialog(
-      initialName: 'Room ${_rooms.length + 1}',
-      title: 'Add Room',
-      confirmLabel: 'Add',
-    ),
-  );
+  String _formatSolveViolation(PlasterConstraintViolation violation) {
+    final unitSystem = _currentRoom.room.unitSystem;
+    return switch (violation.constraint.type) {
+      PlasterConstraintType.lineLength =>
+        'The requested line length conflicts with existing constraints. '
+            'Requested length: ${PlasterGeometry.formatDisplayLength(
+              violation.constraint.targetValue ?? 0,
+              unitSystem,
+            )}.',
+      PlasterConstraintType.horizontal =>
+        'This line cannot remain horizontal '
+            'with the current constraints.',
+      PlasterConstraintType.vertical =>
+        'This line cannot remain vertical '
+            'with the current constraints.',
+      PlasterConstraintType.jointAngle =>
+        'This joint cannot keep its current angle constraint.',
+    };
+  }
 
-  Future<void> _deleteCurrentRoom() async {
-    if (_rooms.isEmpty) {
-      return;
-    }
-    final room = _currentRoom.room;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete Room'),
-        content: Text('Delete "${room.name}" from this project?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+  Future<void> _solveAndUpdateRoom(
+    _RoomBundle bundle, {
+    int? pinnedVertexIndex,
+    IntPoint? pinnedVertexTarget,
+    bool persist = true,
+    bool trackUndo = true,
+    bool showError = true,
+  }) async {
+    final result = PlasterConstraintSolver.solve(
+      lines: bundle.lines,
+      constraints: bundle.constraints,
+      pinnedVertexIndex: pinnedVertexIndex,
+      pinnedVertexTarget: pinnedVertexTarget,
     );
-    if (confirmed != true) {
+    if (!result.converged) {
+      if (showError) {
+        await _showSolveError(result);
+      }
       return;
     }
-
-    await DaoPlasterRoom().delete(room.id);
-    setState(() {
-      _rooms.removeAt(_selectedRoomIndex);
-      if (_selectedRoomIndex >= _rooms.length) {
-        _selectedRoomIndex = _rooms.isEmpty ? 0 : _rooms.length - 1;
-      }
-      _undo.clear();
-      _redo.clear();
-    });
-    _syncRoomControllers();
+    final solvedBundle = bundle.copyWith(lines: result.lines);
+    if (persist) {
+      await _updateCurrentRoom(solvedBundle, trackUndo: trackUndo);
+    } else {
+      _replaceCurrentRoomLocally(solvedBundle, trackUndo: trackUndo);
+    }
   }
 
   Future<void> _updateCurrentRoom(
     _RoomBundle bundle, {
     bool trackUndo = true,
   }) async {
+    _replaceCurrentRoomLocally(bundle, trackUndo: trackUndo);
+    await _persistCurrentRoom(bundle);
+  }
+
+  void _replaceCurrentRoomLocally(_RoomBundle bundle, {bool trackUndo = true}) {
     if (trackUndo) {
       _undo.add(_currentRoom.deepCopy());
       _redo.clear();
     }
-    _rooms[_selectedRoomIndex] = bundle;
-    await _saveRoomBundle(bundle);
+    final visibleBundle = bundle.deepCopy();
     if (mounted) {
+      _rooms[_selectedRoomIndex] = visibleBundle;
       _syncRoomControllers();
       setState(() {});
     }
   }
 
+  void _beginRoomGestureEdit() {
+    if (_hasPendingRoomGesture) {
+      return;
+    }
+    _undo.add(_currentRoom.deepCopy());
+    _redo.clear();
+    _hasPendingRoomGesture = true;
+    _gestureBaseRoom = _currentRoom.deepCopy();
+  }
+
+  Future<void> _persistCurrentRoom(_RoomBundle bundle) async {
+    await _persistRoomBundle(_selectedRoomIndex, bundle);
+  }
+
+  Future<void> _persistRoomBundle(int roomIndex, _RoomBundle bundle) async {
+    await _saveRoomBundle(bundle);
+    if (mounted) {
+      _rooms[roomIndex] = bundle.deepCopy();
+      if (roomIndex == _selectedRoomIndex) {
+        _syncRoomControllers();
+      }
+      setState(() {});
+    }
+  }
+
+  Future<void> _commitRoomGestureEdit() async {
+    if (!_hasPendingRoomGesture || _rooms.isEmpty) {
+      return;
+    }
+    _hasPendingRoomGesture = false;
+    _gestureBaseRoom = null;
+    await _persistCurrentRoom(_currentRoom.deepCopy());
+  }
+
   Future<void> _previewPdf() async {
+    await _commitPendingRoomEdits();
     final shapes = _rooms
         .map(
           (bundle) => PlasterRoomShape(
@@ -429,6 +655,10 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
     final layouts = PlasterGeometry.calculateLayout(
       shapes,
       _materials,
+    );
+    final takeoff = PlasterGeometry.calculateTakeoff(
+      shapes,
+      layouts,
       int.tryParse(_wasteController.text) ?? _project.wastePercent,
     );
     final file = await BlockingUI().runAndWait(
@@ -440,6 +670,7 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
         supplier: _supplier,
         roomShapes: shapes,
         layouts: layouts,
+        takeoff: takeoff,
       ),
     );
     if (!mounted) {
@@ -487,166 +718,1196 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
     );
   }
 
-  Future<void> _addMaterialSize() async {
-    final supplierId = _project.supplierId;
-    if (supplierId == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Select a supplier before adding material sizes.'),
-          ),
-        );
-      }
-      return;
+  Future<void> _reanalyzeLayout() async {
+    await _commitPendingRoomEdits();
+    if (mounted) {
+      setState(() {});
     }
-    final result = await showDialog<PlasterMaterialSize>(
-      context: context,
-      builder: (_) => _MaterialSizeDialog(supplierId: supplierId),
-    );
-    if (result == null) {
-      return;
-    }
-    setState(() => _materials.add(result));
-    await _saveMaterials();
   }
 
-  Future<void> _lineAction(int index) async {
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Add door'),
-              onTap: () => Navigator.of(context).pop('door'),
-            ),
-            ListTile(
-              title: const Text('Add window'),
-              onTap: () => Navigator.of(context).pop('window'),
-            ),
-            ListTile(
-              title: const Text('Add left angle'),
-              onTap: () => Navigator.of(context).pop('left'),
-            ),
-            ListTile(
-              title: const Text('Add right angle'),
-              onTap: () => Navigator.of(context).pop('right'),
-            ),
-            ListTile(
-              title: const Text('Set length'),
-              onTap: () => Navigator.of(context).pop('length'),
-            ),
-            ListTile(
-              title: Text(
-                _currentRoom.lines[index].plasterSelected
-                    ? 'Exclude from plaster'
-                    : 'Include in plaster',
-              ),
-              onTap: () => Navigator.of(context).pop('toggle'),
-            ),
-          ],
+  Future<void> _splitLine(int index) async {
+    final line = _currentRoom.lines[index];
+    final horizontalConstraint = _constraintForLine(
+      line.id,
+      PlasterConstraintType.horizontal,
+    );
+    final verticalConstraint = _constraintForLine(
+      line.id,
+      PlasterConstraintType.vertical,
+    );
+    final lines = PlasterGeometry.splitLine(_currentRoom.lines, index);
+    final insertedLine = lines[index + 1];
+    var constraints = _currentRoom.constraints.where((constraint) {
+      if (constraint.lineId != line.id) {
+        return true;
+      }
+      return constraint.type == PlasterConstraintType.horizontal ||
+          constraint.type == PlasterConstraintType.vertical;
+    }).toList();
+    if (horizontalConstraint != null) {
+      constraints = _upsertConstraint(
+        constraints,
+        PlasterRoomConstraint.forInsert(
+          roomId: _currentRoom.room.id,
+          lineId: insertedLine.id,
+          type: PlasterConstraintType.horizontal,
         ),
+      );
+    }
+    if (verticalConstraint != null) {
+      constraints = _upsertConstraint(
+        constraints,
+        PlasterRoomConstraint.forInsert(
+          roomId: _currentRoom.room.id,
+          lineId: insertedLine.id,
+          type: PlasterConstraintType.vertical,
+        ),
+      );
+    }
+    await _solveAndUpdateRoom(
+      _currentRoom.copyWith(lines: lines, constraints: constraints),
+    );
+  }
+
+  Future<void> _editLineLengthConstraint(int index) async {
+    final line = _currentRoom.lines[index];
+    final lengthConstraint = _constraintForLine(
+      line.id,
+      PlasterConstraintType.lineLength,
+    );
+    final length = await showDialog<int>(
+      context: context,
+      builder: (_) => _LengthDialog(
+        unitSystem: _currentRoom.room.unitSystem,
+        initialValue: _currentRoom.lines[index].length,
       ),
     );
-    if (selected == null) {
+    if (length == null) {
       return;
     }
-    if (selected == 'left' || selected == 'right') {
-      final lines = PlasterGeometry.insertAngle(
-        _currentRoom.lines,
-        index,
-        leftTurn: selected == 'left',
-      );
-      await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
-      return;
-    }
-    if (selected == 'toggle') {
-      final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
-      final line = lines[index];
-      lines[index] = line.copyWith(plasterSelected: !line.plasterSelected);
-      await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
-      return;
-    }
-    if (selected == 'length') {
-      final length = await showDialog<int>(
-        context: context,
-        builder: (_) => _LengthDialog(
-          unitSystem: _currentRoom.room.unitSystem,
-          initialValue: _currentRoom.lines[index].length,
-        ),
-      );
-      if (length == null) {
-        return;
-      }
-      final lines = PlasterGeometry.setLength(
-        _currentRoom.lines,
-        index,
-        length,
-      );
-      await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
-      return;
-    }
+    final adjustedLines = PlasterGeometry.setLength(
+      _currentRoom.lines,
+      index,
+      length,
+    );
+    final constraints = _upsertConstraint(
+      _constraintsWithoutLineType(
+        _currentRoom.constraints,
+        line.id,
+        PlasterConstraintType.lineLength,
+      ),
+      (lengthConstraint ??
+              PlasterRoomConstraint.forInsert(
+                roomId: _currentRoom.room.id,
+                lineId: line.id,
+                type: PlasterConstraintType.lineLength,
+              ))
+          .copyWith(targetValue: length),
+    );
+    await _solveAndUpdateRoom(
+      _currentRoom.copyWith(lines: adjustedLines, constraints: constraints),
+    );
+  }
+
+  Future<void> _removeLineLengthConstraint(int index) async {
+    final line = _currentRoom.lines[index];
+    final constraints = _constraintsWithoutLineType(
+      _currentRoom.constraints,
+      line.id,
+      PlasterConstraintType.lineLength,
+    );
+    await _solveAndUpdateRoom(_currentRoom.copyWith(constraints: constraints));
+  }
+
+  Future<void> _toggleLinePlasterSelected(int index) async {
+    final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
+    final line = lines[index];
+    lines[index] = line.copyWith(plasterSelected: !line.plasterSelected);
+    await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
+  }
+
+  Future<void> _addOpeningToLine(int index, PlasterOpeningType type) async {
+    final line = _currentRoom.lines[index];
+    final lengthConstraint = _constraintForLine(
+      line.id,
+      PlasterConstraintType.lineLength,
+    );
 
     final opening = await showDialog<PlasterRoomOpening>(
       context: context,
       builder: (_) => _OpeningDialog(
         lineId: _currentRoom.lines[index].id,
         unitSystem: _currentRoom.room.unitSystem,
-        type: selected == 'door'
-            ? PlasterOpeningType.door
-            : PlasterOpeningType.window,
+        type: type,
       ),
     );
     if (opening == null) {
       return;
     }
+    final centeredOpening = opening.copyWith(
+      offsetFromStart: max(0, (line.length - opening.width) ~/ 2),
+    );
     final lines = PlasterGeometry.ensureLineLength(
       _currentRoom.lines,
       index,
-      opening.width,
+      centeredOpening.width,
+    );
+    final constraints = _upsertConstraint(
+      _constraintsWithoutLineType(
+        _currentRoom.constraints,
+        line.id,
+        PlasterConstraintType.lineLength,
+      ),
+      (lengthConstraint ??
+              PlasterRoomConstraint.forInsert(
+                roomId: _currentRoom.room.id,
+                lineId: line.id,
+                type: PlasterConstraintType.lineLength,
+              ))
+          .copyWith(targetValue: max(line.length, opening.width)),
     );
     final bundle = _currentRoom.copyWith(
       lines: lines,
-      openings: [..._currentRoom.openings, opening],
+      openings: [..._currentRoom.openings, centeredOpening],
+      constraints: constraints,
     );
-    await _updateCurrentRoom(bundle);
+    await _solveAndUpdateRoom(bundle);
+  }
+
+  int _lineIndexForOpening(PlasterRoomOpening opening) =>
+      _currentRoom.lines.indexWhere((line) => line.id == opening.lineId);
+
+  Future<void> _editOpening(int index) async {
+    final opening = _currentRoom.openings[index];
+    final lineIndex = _lineIndexForOpening(opening);
+    if (lineIndex < 0) {
+      return;
+    }
+    final updated = await showDialog<PlasterRoomOpening>(
+      context: context,
+      builder: (_) => _OpeningDialog(
+        lineId: opening.lineId,
+        unitSystem: _currentRoom.room.unitSystem,
+        type: opening.type,
+        initialOpening: opening,
+        title:
+            opening.type == PlasterOpeningType.door
+                ? 'Edit Door'
+                : 'Edit Window',
+        confirmLabel: 'Save',
+      ),
+    );
+    if (updated == null) {
+      return;
+    }
+
+    final lines = PlasterGeometry.ensureLineLength(
+      _currentRoom.lines,
+      lineIndex,
+      updated.width,
+    );
+    final line = _currentRoom.lines[lineIndex];
+    final lengthConstraint = _constraintForLine(
+      line.id,
+      PlasterConstraintType.lineLength,
+    );
+    final maxOffset = max(0, lines[lineIndex].length - updated.width);
+    final openings = List<PlasterRoomOpening>.from(_currentRoom.openings);
+    openings[index] = updated.copyWith(
+      offsetFromStart: updated.offsetFromStart.clamp(0, maxOffset),
+    );
+    final constraints = lengthConstraint == null
+        ? _currentRoom.constraints
+        : _upsertConstraint(
+            _constraintsWithoutLineType(
+              _currentRoom.constraints,
+              line.id,
+              PlasterConstraintType.lineLength,
+            ),
+            lengthConstraint.copyWith(
+              targetValue: max(
+                lengthConstraint.targetValue ?? 0,
+                updated.width,
+              ),
+            ),
+          );
+    await _solveAndUpdateRoom(
+      _currentRoom.copyWith(
+        lines: lines,
+        openings: openings,
+        constraints: constraints,
+      ),
+    );
+  }
+
+  Future<void> _deleteOpening(int index) async {
+    final openings = List<PlasterRoomOpening>.from(_currentRoom.openings)
+      ..removeAt(index);
+    await _updateCurrentRoom(_currentRoom.copyWith(openings: openings));
+    if (!mounted) {
+      return;
+    }
+    setState(() => _selectedOpeningIndex = null);
+  }
+
+  PreferredUnitSystem _unitSystemForLayout(PlasterSurfaceLayout layout) =>
+      _rooms
+          .firstWhere((bundle) => bundle.room.id == layout.roomId)
+          .room
+          .unitSystem;
+
+  _RoomBundle _bundleForLayout(PlasterSurfaceLayout layout) =>
+      _rooms.firstWhere((bundle) => bundle.room.id == layout.roomId);
+
+  PlasterSheetDirection _storedDirectionForLayout(PlasterSurfaceLayout layout) {
+    final bundle = _bundleForLayout(layout);
+    if (layout.isCeiling) {
+      return bundle.room.ceilingSheetDirection;
+    }
+    final line = bundle.lines.firstWhere(
+      (line) => line.id == layout.lineId,
+    );
+    return line.sheetDirection;
+  }
+
+  Future<void> _setSurfaceDirection(
+    PlasterSurfaceLayout layout,
+    PlasterSheetDirection direction,
+  ) async {
+    final bundle = _bundleForLayout(layout);
+    final roomIndex = _rooms.indexWhere(
+      (room) => room.room.id == layout.roomId,
+    );
+    if (roomIndex < 0) {
+      return;
+    }
+
+    if (layout.isCeiling) {
+      final updated = bundle.copyWith(
+        room: bundle.room.copyWith(ceilingSheetDirection: direction),
+      );
+      await _persistRoomBundle(roomIndex, updated);
+      return;
+    }
+
+    final lineIndex = bundle.lines.indexWhere(
+      (line) => line.id == layout.lineId,
+    );
+    if (lineIndex < 0) {
+      return;
+    }
+    final lines = List<PlasterRoomLine>.from(bundle.lines);
+    lines[lineIndex] = lines[lineIndex].copyWith(sheetDirection: direction);
+    final updated = bundle.copyWith(lines: lines);
+    await _persistRoomBundle(roomIndex, updated);
+  }
+
+  Future<void> _flipSurfaceDirection(PlasterSurfaceLayout layout) async {
+    final next = switch (layout.direction) {
+      PlasterSheetDirection.horizontal => PlasterSheetDirection.vertical,
+      PlasterSheetDirection.vertical => PlasterSheetDirection.horizontal,
+      PlasterSheetDirection.auto => PlasterSheetDirection.horizontal,
+    };
+    await _setSurfaceDirection(layout, next);
+  }
+
+  String _formatKg(double value) => value.toStringAsFixed(value < 10 ? 1 : 0);
+
+  void _moveOpeningLocally(int index, IntPoint point, int anchorOffset) {
+    final opening = _currentRoom.openings[index];
+    final lineIndex = _lineIndexForOpening(opening);
+    if (lineIndex < 0) {
+      return;
+    }
+    final line = _currentRoom.lines[lineIndex];
+    final end = PlasterGeometry.lineEnd(_currentRoom.lines, lineIndex);
+    final dx = end.x - line.startX;
+    final dy = end.y - line.startY;
+    final lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared == 0) {
+      return;
+    }
+    final projected =
+        ((point.x - line.startX) * dx + (point.y - line.startY) * dy) /
+        lengthSquared;
+    final offset = (projected * line.length).round() - anchorOffset;
+    final maxOffset = max(0, line.length - opening.width);
+    final openings = List<PlasterRoomOpening>.from(_currentRoom.openings);
+    openings[index] = opening.copyWith(
+      offsetFromStart: offset.clamp(0, maxOffset),
+    );
+    _replaceCurrentRoomLocally(
+      _currentRoom.copyWith(openings: openings),
+      trackUndo: false,
+    );
+  }
+
+  Future<void> _toggleHorizontalConstraint(int index) async {
+    final line = _currentRoom.lines[index];
+    final horizontalConstraint = _constraintForLine(
+      line.id,
+      PlasterConstraintType.horizontal,
+    );
+    final constraints = horizontalConstraint == null
+        ? _upsertConstraint(
+            _constraintsWithoutLineType(
+              _constraintsWithoutLineType(
+                _currentRoom.constraints,
+                line.id,
+                PlasterConstraintType.vertical,
+              ),
+              line.id,
+              PlasterConstraintType.horizontal,
+            ),
+            PlasterRoomConstraint.forInsert(
+              roomId: _currentRoom.room.id,
+              lineId: line.id,
+              type: PlasterConstraintType.horizontal,
+            ),
+          )
+        : _constraintsWithoutLineType(
+            _currentRoom.constraints,
+            line.id,
+            PlasterConstraintType.horizontal,
+          );
+    await _solveAndUpdateRoom(_currentRoom.copyWith(constraints: constraints));
+  }
+
+  Future<void> _toggleVerticalConstraint(int index) async {
+    final line = _currentRoom.lines[index];
+    final verticalConstraint = _constraintForLine(
+      line.id,
+      PlasterConstraintType.vertical,
+    );
+    final constraints = verticalConstraint == null
+        ? _upsertConstraint(
+            _constraintsWithoutLineType(
+              _constraintsWithoutLineType(
+                _currentRoom.constraints,
+                line.id,
+                PlasterConstraintType.horizontal,
+              ),
+              line.id,
+              PlasterConstraintType.vertical,
+            ),
+            PlasterRoomConstraint.forInsert(
+              roomId: _currentRoom.room.id,
+              lineId: line.id,
+              type: PlasterConstraintType.vertical,
+            ),
+          )
+        : _constraintsWithoutLineType(
+            _currentRoom.constraints,
+            line.id,
+            PlasterConstraintType.vertical,
+          );
+    await _solveAndUpdateRoom(_currentRoom.copyWith(constraints: constraints));
   }
 
   Future<void> _deleteIntersection(int index) async {
-    final confirmed = await showDialog<bool>(
+    final angleConstraint = _constraintForLine(
+      _currentRoom.lines[index].id,
+      PlasterConstraintType.jointAngle,
+    );
+    final action = await showModalBottomSheet<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete angle'),
-        content: const Text(
-          'Delete this intersection and reconnect the lines?',
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Join line'),
+              onTap: () => Navigator.of(context).pop('join'),
+            ),
+            ListTile(
+              title: Text(
+                angleConstraint == null
+                    ? 'Set angle constraint'
+                    : 'Change angle constraint',
+              ),
+              onTap: () => Navigator.of(context).pop('angle'),
+            ),
+            if (angleConstraint != null)
+              ListTile(
+                title: const Text('Remove angle constraint'),
+                onTap: () => Navigator.of(context).pop('remove-angle'),
+              ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
-          ),
+      ),
+    );
+    if (action == null) {
+      return;
+    }
+    if (action == 'angle') {
+      if (!mounted) {
+        return;
+      }
+      final angleValue = await showDialog<int>(
+        context: context,
+        builder: (_) => _AngleDialog(
+          initialValue:
+              angleConstraint?.targetValue ??
+              PlasterConstraintSolver.currentAngleValue(
+                _currentRoom.lines,
+                index,
+              ),
+        ),
+      );
+      if (angleValue == null) {
+        return;
+      }
+      final constraints = _upsertConstraint(
+        _currentRoom.constraints,
+        (angleConstraint ??
+                PlasterRoomConstraint.forInsert(
+                  roomId: _currentRoom.room.id,
+                  lineId: _currentRoom.lines[index].id,
+                  type: PlasterConstraintType.jointAngle,
+                ))
+            .copyWith(targetValue: angleValue),
+      );
+      await _solveAndUpdateRoom(
+        _currentRoom.copyWith(constraints: constraints),
+      );
+      return;
+    }
+    if (action == 'remove-angle') {
+      final constraints = _constraintsWithoutLineType(
+        _currentRoom.constraints,
+        _currentRoom.lines[index].id,
+        PlasterConstraintType.jointAngle,
+      );
+      await _solveAndUpdateRoom(
+        _currentRoom.copyWith(constraints: constraints),
+      );
+      return;
+    }
+    final removedLineId = _currentRoom.lines[index].id;
+    final lines = PlasterGeometry.deleteIntersection(_currentRoom.lines, index);
+    final constraints = [
+      for (final constraint in _currentRoom.constraints)
+        if (constraint.lineId != removedLineId) constraint,
+    ];
+    await _solveAndUpdateRoom(
+      _currentRoom.copyWith(lines: lines, constraints: constraints),
+    );
+  }
+
+  Future<void> _editAngleConstraint(int index) async {
+    final angleConstraint = _constraintForLine(
+      _currentRoom.lines[index].id,
+      PlasterConstraintType.jointAngle,
+    );
+    final angleValue = await showDialog<int>(
+      context: context,
+      builder: (_) => _AngleDialog(
+        initialValue:
+            angleConstraint?.targetValue ??
+            PlasterConstraintSolver.currentAngleValue(
+              _currentRoom.lines,
+              index,
+            ),
+      ),
+    );
+    if (angleValue == null) {
+      return;
+    }
+    final constraints = _upsertConstraint(
+      _currentRoom.constraints,
+      (angleConstraint ??
+              PlasterRoomConstraint.forInsert(
+                roomId: _currentRoom.room.id,
+                lineId: _currentRoom.lines[index].id,
+                type: PlasterConstraintType.jointAngle,
+              ))
+          .copyWith(targetValue: angleValue),
+    );
+    await _solveAndUpdateRoom(
+      _currentRoom.copyWith(constraints: constraints),
+    );
+  }
+
+  Future<void> _removeAngleConstraint(int index) async {
+    final constraints = _constraintsWithoutLineType(
+      _currentRoom.constraints,
+      _currentRoom.lines[index].id,
+      PlasterConstraintType.jointAngle,
+    );
+    await _solveAndUpdateRoom(
+      _currentRoom.copyWith(constraints: constraints),
+    );
+  }
+
+  Widget _buildEditorToolbar({bool vertical = false, bool wrap = false}) {
+    final hasLine = _selectedLineIndex != null;
+    final hasIntersection = _selectedIntersectionIndex != null;
+    final hasOpening = _selectedOpeningIndex != null;
+    final selectedLine = hasLine
+        ? _currentRoom.lines[_selectedLineIndex!]
+        : null;
+    final selectedOpening = hasOpening
+        ? _currentRoom.openings[_selectedOpeningIndex!]
+        : null;
+    final hasLineLengthConstraint = selectedLine != null &&
+        _constraintForLine(
+              selectedLine.id,
+              PlasterConstraintType.lineLength,
+            ) !=
+            null;
+    final hasHorizontalConstraint = selectedLine != null &&
+        _constraintForLine(
+              selectedLine.id,
+              PlasterConstraintType.horizontal,
+            ) !=
+            null;
+    final hasVerticalConstraint = selectedLine != null &&
+        _constraintForLine(
+              selectedLine.id,
+              PlasterConstraintType.vertical,
+            ) !=
+            null;
+    final selectedIntersectionLine = hasIntersection
+        ? _currentRoom.lines[_selectedIntersectionIndex!]
+        : null;
+    final hasAngleConstraint = selectedIntersectionLine != null &&
+        _constraintForLine(
+              selectedIntersectionLine.id,
+              PlasterConstraintType.jointAngle,
+            ) !=
+            null;
+    final isSelectedLinePlaster = selectedLine?.plasterSelected ?? false;
+    final toolbarButtons = <Widget>[
+      _ToolbarButton(
+        icon: _selectionMode ? Icons.touch_app : Icons.ads_click,
+        label: _selectionMode ? 'Select Mode' : 'Edit Mode',
+        selected: _selectionMode,
+        onPressed: () => setState(() => _selectionMode = !_selectionMode),
+      ),
+      _ToolbarButton(
+        icon: Icons.undo,
+        label: 'Undo',
+        enabled: _undo.isNotEmpty,
+        onPressed: () async {
+          if (_undo.isEmpty) {
+            return;
+          }
+          _redo.add(_currentRoom.deepCopy());
+          final previous = _undo.removeLast();
+          _rooms[_selectedRoomIndex] = previous;
+          await _saveRoomBundle(previous);
+          _syncRoomControllers();
+          setState(() {});
+        },
+      ),
+      _ToolbarButton(
+        icon: Icons.redo,
+        label: 'Redo',
+        enabled: _redo.isNotEmpty,
+        onPressed: () async {
+          if (_redo.isEmpty) {
+            return;
+          }
+          _undo.add(_currentRoom.deepCopy());
+          final next = _redo.removeLast();
+          _rooms[_selectedRoomIndex] = next;
+          await _saveRoomBundle(next);
+          _syncRoomControllers();
+          setState(() {});
+        },
+      ),
+      _ToolbarButton(
+        icon: _snapToGrid ? Icons.grid_on : Icons.grid_off,
+        label: _snapToGrid ? 'Snap On' : 'Snap Off',
+        selected: _snapToGrid,
+        onPressed: () => setState(() => _snapToGrid = !_snapToGrid),
+      ),
+      _ToolbarButton(
+        icon: _showGrid ? Icons.border_all : Icons.border_clear,
+        label: _showGrid ? 'Grid On' : 'Grid Off',
+        selected: _showGrid,
+        onPressed: () => setState(() => _showGrid = !_showGrid),
+      ),
+      _ToolbarButton(
+        icon: Icons.deselect,
+        label: 'Deselect',
+        enabled: hasLine || hasIntersection || hasOpening,
+        onPressed: () => setState(_clearSelection),
+      ),
+      _ToolbarButton(
+        icon: Icons.content_cut,
+        label: 'Split',
+        enabled: hasLine,
+        onPressed:
+            hasLine ? () => _splitLine(_selectedLineIndex!) : null,
+      ),
+      _ToolbarButton(
+        icon: Icons.straighten,
+        label: hasLineLengthConstraint ? 'Remove Length' : 'Length',
+        enabled: hasLine,
+        selected: hasLineLengthConstraint,
+        onPressed: hasLine
+            ? () {
+                if (hasLineLengthConstraint) {
+                  unawaited(
+                    _removeLineLengthConstraint(_selectedLineIndex!),
+                  );
+                } else {
+                  unawaited(
+                    _editLineLengthConstraint(_selectedLineIndex!),
+                  );
+                }
+              }
+            : null,
+      ),
+      _ToolbarButton(
+        icon: Icons.door_front_door_outlined,
+        label: 'Door',
+        enabled: hasLine,
+        onPressed: hasLine
+            ? () => _addOpeningToLine(
+                _selectedLineIndex!,
+                PlasterOpeningType.door,
+              )
+            : null,
+      ),
+      _ToolbarButton(
+        icon: Icons.window_outlined,
+        label: 'Window',
+        enabled: hasLine,
+        onPressed: hasLine
+            ? () => _addOpeningToLine(
+                _selectedLineIndex!,
+                PlasterOpeningType.window,
+              )
+            : null,
+      ),
+      _ToolbarButton(
+        icon: selectedOpening?.type == PlasterOpeningType.door
+            ? Icons.door_front_door_outlined
+            : Icons.window_outlined,
+        label: hasOpening ? 'Edit Opening' : 'Opening',
+        enabled: hasOpening,
+        selected: hasOpening,
+        onPressed: hasOpening
+            ? () => _editOpening(_selectedOpeningIndex!)
+            : null,
+      ),
+      _ToolbarButton(
+        icon: Icons.delete_outline,
+        label: 'Delete Opening',
+        enabled: hasOpening,
+        onPressed: hasOpening
+            ? () => _deleteOpening(_selectedOpeningIndex!)
+            : null,
+      ),
+      _ToolbarButton(
+        icon: Icons.horizontal_rule,
+        label: hasHorizontalConstraint ? 'Remove Horizontal' : 'Horizontal',
+        enabled: hasLine,
+        selected: hasHorizontalConstraint,
+        onPressed: hasLine
+            ? () => _toggleHorizontalConstraint(_selectedLineIndex!)
+            : null,
+      ),
+      _ToolbarButton(
+        iconWidget: const RotatedBox(
+          quarterTurns: 1,
+          child: Icon(Icons.horizontal_rule),
+        ),
+        label: hasVerticalConstraint ? 'Remove Vertical' : 'Vertical',
+        enabled: hasLine,
+        selected: hasVerticalConstraint,
+        onPressed: hasLine
+            ? () => _toggleVerticalConstraint(_selectedLineIndex!)
+            : null,
+      ),
+      _ToolbarButton(
+        icon: isSelectedLinePlaster
+            ? Icons.layers_clear_outlined
+            : Icons.layers_outlined,
+        label: isSelectedLinePlaster ? 'Exclude' : 'Include',
+        enabled: hasLine,
+        onPressed: hasLine
+            ? () => _toggleLinePlasterSelected(_selectedLineIndex!)
+            : null,
+      ),
+      _ToolbarButton(
+        icon: Icons.polyline,
+        label: 'Joint',
+        enabled: hasIntersection,
+        onPressed: hasIntersection
+            ? () => _deleteIntersection(_selectedIntersectionIndex!)
+            : null,
+      ),
+      _ToolbarButton(
+        icon: Icons.architecture,
+        label: hasAngleConstraint ? 'Remove Angle' : 'Angle',
+        enabled: hasIntersection,
+        selected: hasAngleConstraint,
+        onPressed: hasIntersection
+            ? () {
+                if (hasAngleConstraint) {
+                  unawaited(
+                    _removeAngleConstraint(_selectedIntersectionIndex!),
+                  );
+                } else {
+                  unawaited(
+                    _editAngleConstraint(_selectedIntersectionIndex!),
+                  );
+                }
+              }
+            : null,
+      ),
+    ];
+
+    if (vertical) {
+      return SizedBox(
+        width: 116,
+        child: GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          children: toolbarButtons,
+        ),
+      );
+    }
+
+    if (wrap) {
+      return Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: toolbarButtons,
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final button in toolbarButtons) ...[
+            button,
+            const SizedBox(width: 6),
+          ],
         ],
       ),
     );
-    if (confirmed != true) {
-      return;
-    }
-    final lines = PlasterGeometry.deleteIntersection(_currentRoom.lines, index);
-    await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  Widget _buildRoomCanvas() => _RoomCanvas(
+    bundle: _currentRoom,
+    selectionMode: _selectionMode,
+    snapToGrid: _snapToGrid,
+    showGrid: _showGrid,
+    selectedLineIndex: _selectedLineIndex,
+    selectedIntersectionIndex: _selectedIntersectionIndex,
+    selectedOpeningIndex: _selectedOpeningIndex,
+    onStartMoveIntersection: _beginRoomGestureEdit,
+    onMoveIntersection: (index, point) {
+      final baseRoom = _gestureBaseRoom ?? _currentRoom;
+      final target = _snapToGrid
+          ? PlasterGeometry.snapPoint(point, baseRoom.room.unitSystem)
+          : point;
+      final lines = PlasterGeometry.moveIntersection(
+        baseRoom.lines,
+        index,
+        target,
+      );
+      unawaited(
+        _solveAndUpdateRoom(
+          baseRoom.copyWith(lines: lines),
+          pinnedVertexIndex: index,
+          pinnedVertexTarget: target,
+          persist: false,
+          trackUndo: false,
+          showError: false,
+        ),
+      );
+    },
+    onEndMoveIntersection: () async {
+      await _commitRoomGestureEdit();
+    },
+    onStartMoveOpening: _beginRoomGestureEdit,
+    onMoveOpening: _moveOpeningLocally,
+    onEndMoveOpening: () async {
+      await _commitRoomGestureEdit();
+    },
+    onTapIntersection: (index) async {
+      setState(() {
+        _selectedIntersectionIndex = index;
+        _selectedLineIndex = null;
+        _selectedOpeningIndex = null;
+      });
+    },
+    onTapOpening: (index) async {
+      setState(() {
+        _selectedOpeningIndex = index;
+        _selectedLineIndex = null;
+        _selectedIntersectionIndex = null;
+      });
+    },
+    onTapLine: (index) async {
+      setState(() {
+        _selectedLineIndex = index;
+        _selectedIntersectionIndex = null;
+        _selectedOpeningIndex = null;
+      });
+      if (_selectionMode) {
+        final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
+        final line = lines[index];
+        lines[index] = line.copyWith(
+          plasterSelected: !line.plasterSelected,
+        );
+        await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
+      }
+    },
+    onTapCeiling: () async {
+      if (!_selectionMode) {
+        return;
+      }
+      await _updateCurrentRoom(
+        _currentRoom.copyWith(
+          room: _currentRoom.room.copyWith(
+            plasterCeiling: !_currentRoom.room.plasterCeiling,
+          ),
+        ),
+      );
+    },
+  );
+
+  Widget _buildRoomEditorSection(bool isMobileLandscape) {
+    if (_rooms.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 12),
+        child: Text('This project does not have any rooms yet.'),
+      );
     }
-    final layouts = PlasterGeometry.calculateLayout(
-      _rooms
+
+    final roomFields = Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                key: ValueKey('room-name-${_currentRoom.room.id}'),
+                controller: _roomNameController,
+                decoration: const InputDecoration(labelText: 'Room Name'),
+                onSubmitted: (_) => unawaited(_commitRoomName()),
+                onEditingComplete: () => unawaited(_commitRoomName()),
+                onTapOutside: (_) => unawaited(_commitRoomName()),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: DropdownButtonFormField<PreferredUnitSystem>(
+                key: ValueKey(
+                  'room-unit-'
+                  '${_currentRoom.room.id}-'
+                  '${_currentRoom.room.unitSystem.name}',
+                ),
+                initialValue: _currentRoom.room.unitSystem,
+                decoration: const InputDecoration(labelText: 'Units'),
+                items: const [
+                  DropdownMenuItem(
+                    value: PreferredUnitSystem.metric,
+                    child: Text('Metric'),
+                  ),
+                  DropdownMenuItem(
+                    value: PreferredUnitSystem.imperial,
+                    child: Text('Imperial'),
+                  ),
+                ],
+                onChanged: (value) async {
+                  if (value == null) {
+                    return;
+                  }
+                  final converted = PlasterGeometry.convertRoomBundle(
+                    room: _currentRoom.room,
+                    lines: _currentRoom.lines,
+                    openings: _currentRoom.openings,
+                    target: value,
+                  );
+                  await _updateCurrentRoom(
+                    _currentRoom.copyWith(
+                      room: converted.$1,
+                      lines: converted.$2,
+                      openings: converted.$3,
+                    ),
+                    trackUndo: false,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          key: ValueKey(
+            'ceiling-height-'
+            '${_currentRoom.room.id}-'
+            '${_currentRoom.room.unitSystem.name}',
+          ),
+          controller: _ceilingHeightController,
+          decoration: InputDecoration(
+            labelText:
+                'Ceiling Height '
+                '(${PlasterGeometry.unitLabel(_currentRoom.room.unitSystem)})',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onSubmitted: (_) => unawaited(_commitCeilingHeight()),
+          onEditingComplete: () => unawaited(_commitCeilingHeight()),
+          onTapOutside: (_) => unawaited(_commitCeilingHeight()),
+        ),
+        const SizedBox(height: 8),
+        _buildRoomCanvas(),
+      ],
+    );
+
+    if (isMobileLandscape) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildEditorToolbar(vertical: true),
+          const SizedBox(width: 12),
+          Expanded(child: roomFields),
+        ],
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) => Column(
+        children: [
+          _buildEditorToolbar(wrap: constraints.maxWidth < 520),
+          const SizedBox(height: 8),
+          roomFields,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSheetLayoutsSection(List<PlasterSurfaceLayout> layouts) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Sheet Layout',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          for (final layout in layouts)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final narrow = constraints.maxWidth < 500;
+                    final details = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(layout.label),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${layout.material.name}  '
+                          '${layout.sheetsAcross} across x '
+                          '${layout.sheetsDown} high',
+                        ),
+                        Text(layout.direction.layoutLabel),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _DirectionChip(
+                              label: 'Auto',
+                              selected:
+                                  _storedDirectionForLayout(layout) ==
+                                  PlasterSheetDirection.auto,
+                              onSelected: () => _setSurfaceDirection(
+                                layout,
+                                PlasterSheetDirection.auto,
+                              ),
+                            ),
+                            _DirectionChip(
+                              label: 'Landscape',
+                              selected:
+                                  _storedDirectionForLayout(layout) ==
+                                  PlasterSheetDirection.horizontal,
+                              onSelected: () => _setSurfaceDirection(
+                                layout,
+                                PlasterSheetDirection.horizontal,
+                              ),
+                            ),
+                            _DirectionChip(
+                              label: 'Portrait',
+                              selected:
+                                  _storedDirectionForLayout(layout) ==
+                                  PlasterSheetDirection.vertical,
+                              onSelected: () => _setSurfaceDirection(
+                                layout,
+                                PlasterSheetDirection.vertical,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                    final metrics = Column(
+                      crossAxisAlignment: narrow
+                          ? CrossAxisAlignment.start
+                          : CrossAxisAlignment.end,
+                      children: [
+                        Text('${layout.sheetCount} sheets'),
+                        Text(
+                          '${PlasterGeometry.formatDisplayLength(
+                            layout.estimatedJointTapeLength,
+                            _unitSystemForLayout(layout),
+                          )} tape',
+                        ),
+                        IconButton(
+                          tooltip: 'Flip orientation',
+                          onPressed: () => _flipSurfaceDirection(layout),
+                          icon: const Icon(Icons.flip),
+                        ),
+                      ],
+                    );
+
+                    if (narrow) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _SurfaceLayoutDiagram(
+                                layout: layout,
+                                unitSystem: _unitSystemForLayout(layout),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(child: metrics),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          details,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SurfaceLayoutDiagram(
+                          layout: layout,
+                          unitSystem: _unitSystemForLayout(layout),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: details),
+                        const SizedBox(width: 12),
+                        metrics,
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+        ],
+      );
+
+  Widget _buildTakeoffSection(
+    PlasterTakeoffSummary takeoff,
+    PreferredUnitSystem unitSystem,
+  ) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 12),
+      Text(
+        'Takeoff Summary',
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      ListTile(
+        title: const Text('Sheets'),
+        trailing: Text('${takeoff.totalSheetCount}'),
+      ),
+      ListTile(
+        title: const Text('Sheets incl. waste'),
+        trailing: Text(
+          '${takeoff.totalSheetCountWithWaste} '
+          '(${takeoff.contingencySheetCount} extra)',
+        ),
+      ),
+      ListTile(
+        title: const Text('Estimated wastage'),
+        trailing: Text(
+          '${PlasterGeometry.formatDisplayArea(
+            takeoff.estimatedWasteArea,
+            unitSystem,
+          )} (${takeoff.estimatedWastePercent.toStringAsFixed(1)}%)',
+        ),
+      ),
+      ListTile(
+        title: const Text('Cornice'),
+        trailing: Text(
+          PlasterGeometry.formatDisplayLength(
+            takeoff.corniceLength,
+            unitSystem,
+          ),
+        ),
+      ),
+      ListTile(
+        title: const Text('Inside corners'),
+        trailing: Text(
+          PlasterGeometry.formatDisplayLength(
+            takeoff.insideCornerLength,
+            unitSystem,
+          ),
+        ),
+      ),
+      ListTile(
+        title: const Text('Outside corners'),
+        trailing: Text(
+          PlasterGeometry.formatDisplayLength(
+            takeoff.outsideCornerLength,
+            unitSystem,
+          ),
+        ),
+      ),
+      ListTile(
+        title: const Text('Tape'),
+        trailing: Text(
+          PlasterGeometry.formatDisplayLength(
+            takeoff.tapeLength,
+            unitSystem,
+          ),
+        ),
+      ),
+      ListTile(
+        title: const Text('Screws'),
+        trailing: Text('${takeoff.screwCount}'),
+      ),
+      ListTile(
+        title: const Text('Stud adhesive'),
+        trailing: Text('${_formatKg(takeoff.glueKg)} kg'),
+      ),
+      ListTile(
+        title: const Text('Joint compound'),
+        trailing: Text('${_formatKg(takeoff.plasterKg)} kg'),
+      ),
+      ListTile(
+        title: const Text('Cornice cement'),
+        trailing: Text('${_formatKg(takeoff.corniceCementKg)} kg'),
+      ),
+    ],
+  );
+
+  @override
+  Widget build(BuildContext context) => DeferredBuilder(
+    this,
+    builder: (context) {
+      final media = MediaQuery.of(context);
+      final isMobileLandscape =
+          media.orientation == Orientation.landscape &&
+          media.size.shortestSide < 700;
+      final shapes = _rooms
           .map(
             (bundle) => PlasterRoomShape(
               room: bundle.room,
@@ -654,399 +1915,298 @@ class _PlasterProjectScreenState extends State<PlasterProjectScreen> {
               openings: bundle.openings,
             ),
           )
-          .toList(),
-      _materials,
-      int.tryParse(_wasteController.text) ?? _project.wastePercent,
-    );
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_project.name),
-        actions: [
-          IconButton(onPressed: _saveProject, icon: const Icon(Icons.save)),
-          IconButton(
-            onPressed: _previewPdf,
-            icon: const Icon(Icons.picture_as_pdf),
+          .toList();
+      final layouts = PlasterGeometry.calculateLayout(
+        shapes,
+        _materials,
+      );
+      final takeoff = PlasterGeometry.calculateTakeoff(
+        shapes,
+        layouts,
+        int.tryParse(_wasteController.text) ?? _project.wastePercent,
+      );
+      final displayUnit = _rooms.isNotEmpty
+          ? _currentRoom.room.unitSystem
+          : PreferredUnitSystem.metric;
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            _isRoomEditorOnly && _rooms.isNotEmpty
+                ? _currentRoom.room.name
+                : _project.name,
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Project Name'),
-              onSubmitted: (_) => _saveProject(),
+          actions: [
+            IconButton(
+              tooltip: 'Reanalyze Layout',
+              onPressed: () => unawaited(_reanalyzeLayout()),
+              icon: const Icon(Icons.refresh),
             ),
-            HMBSelectJob(
-              selectedJob: _selectedJob,
-              required: true,
-              onSelected: (job) async {
-                _job = job;
-                _selectedTask.taskId = null;
-                await _saveProject();
-                setState(() {});
-              },
-            ),
-            HMBSelectTask(
-              selectedTask: _selectedTask,
-              job: _job,
-              onSelected: (task) async {
-                _task = task;
-                await _saveProject();
-              },
-            ),
-            HMBSelectSupplier(
-              selectedSupplier: _selectedSupplier,
-              onSelected: (supplier) async {
-                _supplier = supplier;
-                await _saveProject();
-              },
-            ),
-            TextField(
-              controller: _wasteController,
-              decoration: const InputDecoration(labelText: 'Waste Allowance %'),
-              keyboardType: TextInputType.number,
-              onSubmitted: (_) => _saveProject(),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Text('Rooms'),
-                const SizedBox(width: 8),
-                HMBButton.small(
-                  label: 'Add Room',
-                  hint: 'Add another room',
-                  onPressed: _addRoom,
-                ),
-                if (_rooms.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  HMBButton.small(
-                    label: 'Delete Room',
-                    hint: 'Delete the selected room',
-                    onPressed: _deleteCurrentRoom,
-                  ),
-                ],
-                const Spacer(),
-                HMBButton.small(
-                  label: _selectionMode ? 'Edit Mode' : 'Selection Mode',
-                  hint: '''
-Toggle between editing geometry and selecting plaster surfaces''',
-                  onPressed: () =>
-                      setState(() => _selectionMode = !_selectionMode),
-                ),
-                const SizedBox(width: 8),
-                HMBButton.small(
-                  label: _snapToGrid ? 'Snap On' : 'Snap Off',
-                  hint: 'Toggle snapping intersections to the room grid',
-                  onPressed: () => setState(() => _snapToGrid = !_snapToGrid),
-                ),
-              ],
-            ),
-            if (_rooms.isEmpty) ...[
-              const SizedBox(height: 12),
-              const Text(
-                'This project does not have any rooms yet. Add a room to start '
-                'drawing walls, openings, and sheet layouts.',
+            if (!_isRoomEditorOnly) ...[
+              IconButton(
+                onPressed: () => unawaited(_saveProject()),
+                icon: const Icon(Icons.save),
               ),
-            ] else ...[
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (var i = 0; i < _rooms.length; i++)
-                    ChoiceChip(
-                      label: Text(_rooms[i].room.name),
-                      selected: _selectedRoomIndex == i,
-                      onSelected: (_) => setState(() {
-                        _selectedRoomIndex = i;
-                        _syncRoomControllers();
-                      }),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      key: ValueKey('room-name-${_currentRoom.room.id}'),
-                      initialValue: _currentRoom.room.name,
-                      decoration: const InputDecoration(labelText: 'Room Name'),
-                      onFieldSubmitted: (value) async {
-                        await _updateCurrentRoom(
-                          _currentRoom.copyWith(
-                            room: _currentRoom.room.copyWith(
-                              name: value.trim(),
-                            ),
-                          ),
-                          trackUndo: false,
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: DropdownButtonFormField<PreferredUnitSystem>(
-                      key: ValueKey(
-                        'room-unit-'
-                        '${_currentRoom.room.id}-'
-                        '${_currentRoom.room.unitSystem.name}',
-                      ),
-                      initialValue: _currentRoom.room.unitSystem,
-                      decoration: const InputDecoration(labelText: 'Units'),
-                      items: const [
-                        DropdownMenuItem(
-                          value: PreferredUnitSystem.metric,
-                          child: Text('Metric'),
-                        ),
-                        DropdownMenuItem(
-                          value: PreferredUnitSystem.imperial,
-                          child: Text('Imperial'),
-                        ),
-                      ],
-                      onChanged: (value) async {
-                        if (value == null) {
-                          return;
-                        }
-                        final converted = PlasterGeometry.convertRoomBundle(
-                          room: _currentRoom.room,
-                          lines: _currentRoom.lines,
-                          openings: _currentRoom.openings,
-                          target: value,
-                        );
-                        await _updateCurrentRoom(
-                          _currentRoom.copyWith(
-                            room: converted.$1,
-                            lines: converted.$2,
-                            openings: converted.$3,
-                          ),
-                          trackUndo: false,
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                key: ValueKey(
-                  'ceiling-height-'
-                  '${_currentRoom.room.id}-'
-                  '${_currentRoom.room.unitSystem.name}',
-                ),
-                controller: _ceilingHeightController,
-                decoration: InputDecoration(
-                  labelText:
-                      'Ceiling Height '
-                      '''
-(${PlasterGeometry.unitLabel(_currentRoom.room.unitSystem)})''',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                onSubmitted: (value) async {
-                  final parsed = double.tryParse(value.trim());
-                  if (parsed == null) {
-                    _syncRoomControllers();
-                    setState(() {});
-                    return;
-                  }
-                  await _updateCurrentRoom(
-                    _currentRoom.copyWith(
-                      room: _currentRoom.room.copyWith(
-                        ceilingHeight: PlasterGeometry.fromDisplay(
-                          parsed,
-                          _currentRoom.room.unitSystem,
-                        ),
-                      ),
-                    ),
-                    trackUndo: false,
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              _RoomCanvas(
-                bundle: _currentRoom,
-                selectionMode: _selectionMode,
-                snapToGrid: _snapToGrid,
-                onMoveIntersection: (index, point) async {
-                  final target = _snapToGrid
-                      ? PlasterGeometry.snapPoint(
-                          point,
-                          _currentRoom.room.unitSystem,
-                        )
-                      : point;
-                  final lines = PlasterGeometry.moveIntersection(
-                    _currentRoom.lines,
-                    index,
-                    target,
-                  );
-                  await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
-                },
-                onTapIntersection: _deleteIntersection,
-                onTapLine: (index) async {
-                  if (_selectionMode) {
-                    final lines = List<PlasterRoomLine>.from(
-                      _currentRoom.lines,
-                    );
-                    final line = lines[index];
-                    lines[index] = line.copyWith(
-                      plasterSelected: !line.plasterSelected,
-                    );
-                    await _updateCurrentRoom(
-                      _currentRoom.copyWith(lines: lines),
-                    );
-                  } else {
-                    await _lineAction(index);
-                  }
-                },
-                onTapCeiling: () async {
-                  if (!_selectionMode) {
-                    return;
-                  }
-                  await _updateCurrentRoom(
-                    _currentRoom.copyWith(
-                      room: _currentRoom.room.copyWith(
-                        plasterCeiling: !_currentRoom.room.plasterCeiling,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  HMBButton.small(
-                    label: 'Undo',
-                    hint: 'Undo the last room edit',
-                    enabled: _undo.isNotEmpty,
-                    onPressed: () async {
-                      if (_undo.isEmpty) {
-                        return;
-                      }
-                      _redo.add(_currentRoom.deepCopy());
-                      final previous = _undo.removeLast();
-                      _rooms[_selectedRoomIndex] = previous;
-                      await _saveRoomBundle(previous);
-                      _syncRoomControllers();
-                      setState(() {});
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  HMBButton.small(
-                    label: 'Redo',
-                    hint: 'Redo the last undone room edit',
-                    enabled: _redo.isNotEmpty,
-                    onPressed: () async {
-                      if (_redo.isEmpty) {
-                        return;
-                      }
-                      _undo.add(_currentRoom.deepCopy());
-                      final next = _redo.removeLast();
-                      _rooms[_selectedRoomIndex] = next;
-                      await _saveRoomBundle(next);
-                      _syncRoomControllers();
-                      setState(() {});
-                    },
-                  ),
-                ],
+              IconButton(
+                onPressed: () => unawaited(_previewPdf()),
+                icon: const Icon(Icons.picture_as_pdf),
               ),
             ],
-            const Divider(),
-            Row(
-              children: [
-                const Text('Material Sizes'),
-                const SizedBox(width: 8),
-                HMBButton.small(
-                  label: 'Add Size',
-                  hint: 'Add another available plasterboard size',
-                  onPressed: _addMaterialSize,
-                ),
-                if (_supplier != null) ...[
-                  const SizedBox(width: 8),
-                  Text('Supplier: ${_supplier!.name}'),
-                ],
-              ],
-            ),
-            if (_supplier == null)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text(
-                  'Select a supplier to manage reusable plasterboard sizes.',
-                ),
-              ),
-            for (final material in _materials)
-              ListTile(
-                title: Text(material.name),
-                subtitle: Text('''
-${PlasterGeometry.toDisplay(material.width, material.unitSystem).toStringAsFixed(2)} 
-${PlasterGeometry.unitLabel(material.unitSystem)} x 
-${PlasterGeometry.toDisplay(material.height, material.unitSystem).toStringAsFixed(2)} 
-${PlasterGeometry.unitLabel(material.unitSystem)}'''),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () async {
-                    setState(() => _materials.remove(material));
-                    await _saveMaterials();
-                  },
-                ),
-              ),
-            const Divider(),
-            Text(
-              'Sheet Layout',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            for (final layout in layouts)
-              ListTile(
-                title: Text(layout.label),
-                subtitle: Text(
-                  '${layout.material.name}  '
-                  '${layout.sheetsAcross} x ${layout.sheetsDown}',
-                ),
-                trailing: Text('${layout.sheetCountWithWaste} sheets'),
-              ),
           ],
         ),
-      ),
-    );
-  }
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(12),
+          child: _isRoomEditorOnly
+              ? _buildRoomEditorSection(isMobileLandscape)
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Project Name',
+                      ),
+                      onSubmitted: (_) => unawaited(_saveProject()),
+                    ),
+                    HMBSelectJob(
+                      selectedJob: _selectedJob,
+                      required: true,
+                      onSelected: (job) async {
+                        _job = job;
+                        _selectedTask.taskId = null;
+                        await _saveProject();
+                        setState(() {});
+                      },
+                    ),
+                    HMBSelectTask(
+                      selectedTask: _selectedTask,
+                      job: _job,
+                      onSelected: (task) async {
+                        _task = task;
+                        await _saveProject();
+                      },
+                    ),
+                    HMBSelectSupplier(
+                      selectedSupplier: _selectedSupplier,
+                      onSelected: (supplier) async {
+                        _supplier = supplier;
+                        await _saveProject();
+                      },
+                    ),
+                    TextField(
+                      controller: _wasteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Waste Allowance %',
+                      ),
+                      keyboardType: TextInputType.number,
+                      onSubmitted: (_) => unawaited(_saveProject()),
+                    ),
+                    const SizedBox(height: 12),
+                    HMBChildCrudCard(
+                      headline: 'Rooms',
+                      crudListScreen: PlasterRoomListScreen(
+                        parent: Parent(_project),
+                      ),
+                    ),
+                    HMBChildCrudCard(
+                      headline: 'Material Sizes',
+                      
+                      crudListScreen: PlasterMaterialSizeListScreen(
+                        parent: Parent(_project),
+                      ),
+                    ),
+                    const Divider(),
+                    _buildSheetLayoutsSection(layouts),
+                    _buildTakeoffSection(takeoff, displayUnit),
+                  ],
+                ),
+        ),
+      );
+    },
+  );
 }
 
 class _RoomBundle {
   PlasterRoom room;
   List<PlasterRoomLine> lines;
   List<PlasterRoomOpening> openings;
+  List<PlasterRoomConstraint> constraints;
 
   _RoomBundle({
     required this.room,
     required this.lines,
     required this.openings,
+    required this.constraints,
   });
 
   _RoomBundle copyWith({
     PlasterRoom? room,
     List<PlasterRoomLine>? lines,
     List<PlasterRoomOpening>? openings,
+    List<PlasterRoomConstraint>? constraints,
   }) => _RoomBundle(
     room: room ?? this.room,
     lines: lines ?? this.lines,
     openings: openings ?? this.openings,
+    constraints: constraints ?? this.constraints,
   );
 
   _RoomBundle deepCopy() => _RoomBundle(
     room: room.copyWith(),
     lines: [for (final line in lines) line.copyWith()],
     openings: [for (final opening in openings) opening.copyWith()],
+    constraints: [for (final constraint in constraints) constraint.copyWith()],
   );
+}
+
+class _ToolbarButton extends StatelessWidget {
+  final IconData? icon;
+  final Widget? iconWidget;
+  final String label;
+  final bool enabled;
+  final bool selected;
+  final VoidCallback? onPressed;
+
+  const _ToolbarButton({
+    required this.label,
+    this.icon,
+    this.iconWidget,
+    this.enabled = true,
+    this.selected = false,
+    this.onPressed,
+  }) : assert(
+         icon != null || iconWidget != null,
+         'Provide either icon or iconWidget.',
+       );
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: label,
+    child: IconButton.filledTonal(
+      isSelected: selected,
+      onPressed: enabled ? onPressed : null,
+      icon: iconWidget ?? Icon(icon),
+    ),
+  );
+}
+
+class _DirectionChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  const _DirectionChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) => ChoiceChip(
+    label: Text(label),
+    selected: selected,
+    onSelected: (_) => onSelected(),
+  );
+}
+
+class _SurfaceLayoutDiagram extends StatelessWidget {
+  final PlasterSurfaceLayout layout;
+  final PreferredUnitSystem unitSystem;
+
+  const _SurfaceLayoutDiagram({
+    required this.layout,
+    required this.unitSystem,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 132,
+    height: 84,
+    padding: const EdgeInsets.all(6),
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.white24),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: CustomPaint(
+      painter: _SurfaceLayoutDiagramPainter(layout),
+      child: Center(
+        child: Text(
+          '${PlasterGeometry.formatDisplayLength(layout.width, unitSystem)} x\n'
+          '${PlasterGeometry.formatDisplayLength(layout.height, unitSystem)}',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 10),
+        ),
+      ),
+    ),
+  );
+}
+
+class _SurfaceLayoutDiagramPainter extends CustomPainter {
+  final PlasterSurfaceLayout layout;
+
+  const _SurfaceLayoutDiagramPainter(this.layout);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final border = Paint()
+      ..color = const Color(0xFF2D8CFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    final fill = Paint()
+      ..color = const Color(0x221DC8FF)
+      ..style = PaintingStyle.fill;
+    final sheet = Paint()
+      ..color = const Color(0x4439FFB5)
+      ..style = PaintingStyle.fill;
+    final sheetBorder = Paint()
+      ..color = const Color(0xFF39FFB5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    final scale = min(size.width / layout.width, size.height / layout.height);
+    final scaledWidth = layout.width * scale;
+    final scaledHeight = layout.height * scale;
+    final offset = Offset(
+      (size.width - scaledWidth) / 2,
+      (size.height - scaledHeight) / 2,
+    );
+    final rect = offset & Size(scaledWidth, scaledHeight);
+    canvas.drawRect(rect, fill);
+    for (final placement in layout.placements) {
+      final sheetRect = Rect.fromLTWH(
+        offset.dx + placement.x * scale,
+        offset.dy + placement.y * scale,
+        placement.width * scale,
+        placement.height * scale,
+      );
+      canvas
+        ..drawRect(sheetRect, sheet)
+        ..drawRect(sheetRect, sheetBorder);
+    }
+    canvas.drawRect(rect, border);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SurfaceLayoutDiagramPainter oldDelegate) =>
+      oldDelegate.layout != layout;
 }
 
 class _RoomCanvas extends StatefulWidget {
   final _RoomBundle bundle;
   final bool selectionMode;
   final bool snapToGrid;
-  final Future<void> Function(int index, IntPoint point) onMoveIntersection;
+  final bool showGrid;
+  final int? selectedLineIndex;
+  final int? selectedIntersectionIndex;
+  final int? selectedOpeningIndex;
+  final VoidCallback onStartMoveIntersection;
+  final void Function(int index, IntPoint point) onMoveIntersection;
+  final Future<void> Function() onEndMoveIntersection;
+  final VoidCallback onStartMoveOpening;
+  final void Function(int index, IntPoint point, int anchorOffset)
+  onMoveOpening;
+  final Future<void> Function() onEndMoveOpening;
   final Future<void> Function(int index) onTapIntersection;
+  final Future<void> Function(int index) onTapOpening;
   final Future<void> Function(int index) onTapLine;
   final Future<void> Function() onTapCeiling;
 
@@ -1054,8 +2214,18 @@ class _RoomCanvas extends StatefulWidget {
     required this.bundle,
     required this.selectionMode,
     required this.snapToGrid,
+    required this.showGrid,
+    required this.selectedLineIndex,
+    required this.selectedIntersectionIndex,
+    required this.selectedOpeningIndex,
+    required this.onStartMoveIntersection,
     required this.onMoveIntersection,
+    required this.onEndMoveIntersection,
+    required this.onStartMoveOpening,
+    required this.onMoveOpening,
+    required this.onEndMoveOpening,
     required this.onTapIntersection,
+    required this.onTapOpening,
     required this.onTapLine,
     required this.onTapCeiling,
   });
@@ -1066,6 +2236,54 @@ class _RoomCanvas extends StatefulWidget {
 
 class _RoomCanvasState extends State<_RoomCanvas> {
   int? _dragIndex;
+  int? _dragOpeningIndex;
+  var _dragOpeningAnchorOffset = 0;
+  int? _pendingDragIndex;
+  int? _pendingDragOpeningIndex;
+  var _pendingDragOpeningAnchorOffset = 0;
+  _CanvasTransform? _dragTransform;
+  final _transformationController = TransformationController();
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  void _handlePointerSignal(PointerSignalEvent event, Size size) {
+    if (event is! PointerScrollEvent) {
+      return;
+    }
+
+    GestureBinding.instance.pointerSignalResolver.register(event, (
+      resolvedEvent,
+    ) {
+      final scrollEvent = resolvedEvent as PointerScrollEvent;
+      final localPosition = scrollEvent.localPosition;
+      if (localPosition.dx < 0 ||
+          localPosition.dy < 0 ||
+          localPosition.dx > size.width ||
+          localPosition.dy > size.height) {
+        return;
+      }
+
+      final currentScale = _transformationController.value.getMaxScaleOnAxis();
+      final scaleDelta = exp(-scrollEvent.scrollDelta.dy / 240);
+      final nextScale = (currentScale * scaleDelta).clamp(0.5, 4.0);
+      final appliedDelta = nextScale / currentScale;
+      if (appliedDelta == 1) {
+        return;
+      }
+
+      final zoomMatrix = Matrix4.identity()
+        ..translateByDouble(localPosition.dx, localPosition.dy, 0, 1)
+        ..scaleByDouble(appliedDelta, appliedDelta, 1, 1)
+        ..translateByDouble(-localPosition.dx, -localPosition.dy, 0, 1);
+      _transformationController.value = zoomMatrix.multiplied(
+        _transformationController.value,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -1088,46 +2306,122 @@ class _RoomCanvasState extends State<_RoomCanvas> {
         );
       }
       final transform = _CanvasTransform(widget.bundle.lines, size);
-      return InteractiveViewer(
-        minScale: 0.5,
-        maxScale: 4,
-        child: GestureDetector(
-          onPanStart: (details) {
-            final index = transform.hitIntersection(details.localPosition);
-            if (index != null) {
-              _dragIndex = index;
-            }
-          },
-          onPanUpdate: (details) async {
-            if (_dragIndex == null) {
-              return;
-            }
-            final point = transform.toWorld(details.localPosition);
-            await widget.onMoveIntersection(_dragIndex!, point);
-          },
-          onPanEnd: (_) => _dragIndex = null,
-          onTapUp: (details) async {
-            final pointIndex = transform.hitIntersection(details.localPosition);
-            if (pointIndex != null) {
-              await widget.onTapIntersection(pointIndex);
-              return;
-            }
-            final lineIndex = transform.hitLine(details.localPosition);
-            if (lineIndex != null) {
-              await widget.onTapLine(lineIndex);
-              return;
-            }
-            if (transform.hitPolygon(details.localPosition)) {
-              await widget.onTapCeiling();
-            }
-          },
-          child: CustomPaint(
-            size: size,
-            painter: _RoomPainter(
-              bundle: widget.bundle,
-              transform: transform,
-              selectionMode: widget.selectionMode,
-              snapToGrid: widget.snapToGrid,
+      return Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerSignal: (event) => _handlePointerSignal(event, size),
+        child: InteractiveViewer(
+          transformationController: _transformationController,
+          minScale: 0.5,
+          maxScale: 4,
+          child: GestureDetector(
+            onPanDown: (details) {
+              _pendingDragOpeningIndex = transform.hitOpening(
+                widget.bundle.openings,
+                details.localPosition,
+              );
+              if (_pendingDragOpeningIndex != null) {
+                _dragTransform = transform;
+                _pendingDragOpeningAnchorOffset =
+                    transform.openingDragAnchorOffset(
+                      widget.bundle.openings,
+                      details.localPosition,
+                      _pendingDragOpeningIndex!,
+                    );
+                _pendingDragIndex = null;
+                return;
+              }
+              _pendingDragIndex = transform.hitIntersection(
+                details.localPosition,
+              );
+              if (_pendingDragIndex != null) {
+                _dragTransform = transform;
+              }
+              _pendingDragOpeningAnchorOffset = 0;
+            },
+            onPanStart: (details) {
+              if (_pendingDragOpeningIndex != null) {
+                _dragOpeningIndex = _pendingDragOpeningIndex;
+                _dragOpeningAnchorOffset = _pendingDragOpeningAnchorOffset;
+                widget.onStartMoveOpening();
+                return;
+              }
+              if (_pendingDragIndex != null) {
+                _dragIndex = _pendingDragIndex;
+                widget.onStartMoveIntersection();
+              }
+            },
+            onPanUpdate: (details) {
+              if (_dragOpeningIndex != null) {
+                final point = (_dragTransform ?? transform).toWorld(
+                  details.localPosition,
+                );
+                widget.onMoveOpening(
+                  _dragOpeningIndex!,
+                  point,
+                  _dragOpeningAnchorOffset,
+                );
+                return;
+              }
+              if (_dragIndex == null) {
+                return;
+              }
+              final point = (_dragTransform ?? transform).toWorld(
+                details.localPosition,
+              );
+              widget.onMoveIntersection(_dragIndex!, point);
+            },
+            onPanEnd: (_) async {
+              _pendingDragIndex = null;
+              _pendingDragOpeningIndex = null;
+              _pendingDragOpeningAnchorOffset = 0;
+              if (_dragOpeningIndex != null) {
+                _dragOpeningIndex = null;
+                _dragOpeningAnchorOffset = 0;
+                _dragTransform = null;
+                await widget.onEndMoveOpening();
+                return;
+              }
+              _dragIndex = null;
+              _dragTransform = null;
+              await widget.onEndMoveIntersection();
+            },
+            onTapUp: (details) async {
+              final openingIndex = transform.hitOpening(
+                widget.bundle.openings,
+                details.localPosition,
+              );
+              if (openingIndex != null) {
+                await widget.onTapOpening(openingIndex);
+                return;
+              }
+              final pointIndex = transform.hitIntersection(
+                details.localPosition,
+              );
+              if (pointIndex != null) {
+                await widget.onTapIntersection(pointIndex);
+                return;
+              }
+              final lineIndex = transform.hitLine(details.localPosition);
+              if (lineIndex != null) {
+                await widget.onTapLine(lineIndex);
+                return;
+              }
+              if (transform.hitPolygon(details.localPosition)) {
+                await widget.onTapCeiling();
+              }
+            },
+            child: CustomPaint(
+              size: size,
+              painter: _RoomPainter(
+                bundle: widget.bundle,
+                transform: transform,
+                selectionMode: widget.selectionMode,
+                snapToGrid: widget.snapToGrid,
+                showGrid: widget.showGrid,
+                selectedLineIndex: widget.selectedLineIndex,
+                selectedIntersectionIndex: widget.selectedIntersectionIndex,
+                selectedOpeningIndex: widget.selectedOpeningIndex,
+              ),
             ),
           ),
         ),
@@ -1141,12 +2435,20 @@ class _RoomPainter extends CustomPainter {
   final _CanvasTransform transform;
   final bool selectionMode;
   final bool snapToGrid;
+  final bool showGrid;
+  final int? selectedLineIndex;
+  final int? selectedIntersectionIndex;
+  final int? selectedOpeningIndex;
 
   const _RoomPainter({
     required this.bundle,
     required this.transform,
     required this.selectionMode,
     required this.snapToGrid,
+    required this.showGrid,
+    required this.selectedLineIndex,
+    required this.selectedIntersectionIndex,
+    required this.selectedOpeningIndex,
   });
 
   @override
@@ -1167,6 +2469,7 @@ class _RoomPainter extends CustomPainter {
       polygon.lineTo(point.dx, point.dy);
     }
     polygon.close();
+    final polygonDirection = _polygonDirection(lines);
 
     final fill = Paint()
       ..color =
@@ -1177,42 +2480,234 @@ class _RoomPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawPath(polygon, fill);
 
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i];
       final start = transform.toCanvasPoint(line.startX, line.startY);
       final endPoint = PlasterGeometry.lineEnd(lines, i);
       final end = transform.toCanvasPoint(endPoint.x, endPoint.y);
+      final isSelected = selectedLineIndex == i;
+      final isSelectedIntersection = selectedIntersectionIndex == i;
       final paint = Paint()
-        ..color = line.plasterSelected ? Colors.blue : Colors.grey
-        ..strokeWidth = 3;
+        ..color = isSelected
+            ? Colors.orange
+            : (line.plasterSelected ? Colors.blue : Colors.grey)
+        ..strokeWidth = isSelected ? 5 : 3;
+      final vertexColor = isSelectedIntersection
+          ? Colors.redAccent
+          : (isSelected
+                ? Colors.orange
+                : (line.plasterSelected ? Colors.blue : Colors.grey));
       canvas
         ..drawLine(start, end, paint)
-        ..drawCircle(start, 6, Paint()..color = Colors.orange);
+        ..drawCircle(
+          start,
+          isSelected || isSelectedIntersection ? 7 : 6,
+          Paint()..color = vertexColor,
+        );
       final mid = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
-      textPainter
-        ..text = TextSpan(
+      final dx = end.dx - start.dx;
+      final dy = end.dy - start.dy;
+      final segmentLength = sqrt(dx * dx + dy * dy);
+      final normal = segmentLength == 0
+          ? const Offset(0, -1)
+          : Offset(-dy / segmentLength, dx / segmentLength);
+      final outsideNormal = polygonDirection >= 0 ? -normal : normal;
+      final labelText = PlasterGeometry.formatDisplayLength(
+        line.length,
+        bundle.room.unitSystem,
+      );
+      final labelPainter = TextPainter(
+        text: TextSpan(
+          text: labelText,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final labelOffset =
+          mid +
+          outsideNormal * 40 -
+          Offset(labelPainter.width / 2, labelPainter.height / 2);
+      final wallLabelPainter = TextPainter(
+        text: TextSpan(
           text: 'W${i + 1}',
-          style: const TextStyle(color: Colors.black, fontSize: 12),
-        )
-        ..layout()
-        ..paint(canvas, mid + const Offset(4, -12));
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final wallLabelOffset =
+          mid +
+          outsideNormal * 20 -
+          Offset(
+            wallLabelPainter.width / 2,
+            wallLabelPainter.height / 2,
+          );
+      final wallLabelBounds = RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          wallLabelOffset.dx - 5,
+          wallLabelOffset.dy - 2,
+          wallLabelPainter.width + 10,
+          wallLabelPainter.height + 4,
+        ),
+        const Radius.circular(8),
+      );
+      canvas.drawRRect(
+        wallLabelBounds,
+        Paint()..color = Colors.black.withSafeOpacity(0.8),
+      );
+      wallLabelPainter.paint(canvas, wallLabelOffset);
+      final labelBounds = RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          labelOffset.dx - 4,
+          labelOffset.dy - 2,
+          labelPainter.width + 8,
+          labelPainter.height + 4,
+        ),
+        const Radius.circular(6),
+      );
+      canvas.drawRRect(
+        labelBounds,
+        Paint()..color = Colors.white.withSafeOpacity(0.92),
+      );
+      labelPainter.paint(canvas, labelOffset);
+      _paintOpeningsForLine(
+        canvas: canvas,
+        line: line,
+        start: start,
+        end: end,
+        normal: normal,
+        selectedOpeningId: selectedOpeningIndex == null
+            ? null
+            : bundle.openings[selectedOpeningIndex!].id,
+      );
+    }
+  }
+
+  double _polygonDirection(List<PlasterRoomLine> lines) {
+    var area = 0.0;
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final end = PlasterGeometry.lineEnd(lines, i);
+      area += (line.startX * end.y) - (end.x * line.startY);
+    }
+    return area;
+  }
+
+  void _paintOpeningsForLine({
+    required Canvas canvas,
+    required PlasterRoomLine line,
+    required Offset start,
+    required Offset end,
+    required Offset normal,
+    required int? selectedOpeningId,
+  }) {
+    final openings = bundle.openings
+        .where((opening) => opening.lineId == line.id)
+        .toList();
+    if (openings.isEmpty) {
+      return;
+    }
+
+    final dx = end.dx - start.dx;
+    final dy = end.dy - start.dy;
+    final canvasLength = sqrt(dx * dx + dy * dy);
+    if (canvasLength == 0 || line.length <= 0) {
+      return;
+    }
+
+    final direction = Offset(dx / canvasLength, dy / canvasLength);
+    final markerOffset = normal * 10;
+
+    for (final opening in openings) {
+      final openingStartRatio = opening.offsetFromStart / line.length;
+      final openingEndRatio =
+          (opening.offsetFromStart + opening.width) / line.length;
+      final openingStart =
+          start + direction * (canvasLength * openingStartRatio) + markerOffset;
+      final openingEnd =
+          start + direction * (canvasLength * openingEndRatio) + markerOffset;
+      final paint = Paint()
+        ..color = opening.id == selectedOpeningId
+            ? Colors.orangeAccent
+            : opening.type == PlasterOpeningType.door
+            ? Colors.brown.shade300
+            : Colors.lightBlueAccent
+        ..strokeWidth = opening.id == selectedOpeningId ? 8 : 6
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(openingStart, openingEnd, paint);
+
+      final markerMid = Offset(
+        (openingStart.dx + openingEnd.dx) / 2,
+        (openingStart.dy + openingEnd.dy) / 2,
+      );
+      final markerLabel = opening.type == PlasterOpeningType.door ? 'D' : 'W';
+      final labelPainter = TextPainter(
+        text: TextSpan(
+          text: markerLabel,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final markerRect = RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: markerMid + normal * 14,
+          width: labelPainter.width + 10,
+          height: labelPainter.height + 6,
+        ),
+        const Radius.circular(8),
+      );
+      canvas.drawRRect(
+        markerRect,
+        Paint()..color = Colors.black.withSafeOpacity(0.75),
+      );
+      labelPainter.paint(
+        canvas,
+        Offset(
+          markerRect.left + (markerRect.width - labelPainter.width) / 2,
+          markerRect.top + (markerRect.height - labelPainter.height) / 2,
+        ),
+      );
     }
   }
 
   void _paintGrid(Canvas canvas, Size size) {
-    if (!snapToGrid || bundle.lines.isEmpty) {
+    if (!showGrid || bundle.lines.isEmpty) {
       return;
     }
-    final spacing = transform.gridSpacing(bundle.room.unitSystem);
+    final gridSize = PlasterGeometry.defaultGridSize(bundle.room.unitSystem);
     final gridPaint = Paint()
       ..color = Colors.grey.withSafeOpacity(0.16)
       ..strokeWidth = 1;
-    for (double x = 0; x <= size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    final startGridX = transform.gridStartX(bundle.room.unitSystem);
+    final startGridY = transform.gridStartY(bundle.room.unitSystem);
+    final endGridX = transform.gridEndX(bundle.room.unitSystem);
+    final endGridY = transform.gridEndY(bundle.room.unitSystem);
+    for (var x = startGridX; x <= endGridX; x += gridSize) {
+      final canvasX = transform.canvasXForWorldX(x);
+      canvas.drawLine(
+        Offset(canvasX, 0),
+        Offset(canvasX, size.height),
+        gridPaint,
+      );
     }
-    for (double y = 0; y <= size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    for (var y = startGridY; y <= endGridY; y += gridSize) {
+      final canvasY = transform.canvasYForWorldY(y);
+      canvas.drawLine(
+        Offset(0, canvasY),
+        Offset(size.width, canvasY),
+        gridPaint,
+      );
     }
   }
 
@@ -1220,7 +2715,11 @@ class _RoomPainter extends CustomPainter {
   bool shouldRepaint(covariant _RoomPainter oldDelegate) =>
       oldDelegate.bundle != bundle ||
       oldDelegate.selectionMode != selectionMode ||
-      oldDelegate.snapToGrid != snapToGrid;
+      oldDelegate.snapToGrid != snapToGrid ||
+      oldDelegate.showGrid != showGrid ||
+      oldDelegate.selectedLineIndex != selectedLineIndex ||
+      oldDelegate.selectedIntersectionIndex != selectedIntersectionIndex ||
+      oldDelegate.selectedOpeningIndex != selectedOpeningIndex;
 }
 
 class _CanvasTransform {
@@ -1231,20 +2730,18 @@ class _CanvasTransform {
   late final double _offsetY;
   late final int _minX;
   late final int _minY;
+  late final int _maxX;
+  late final int _maxY;
 
   _CanvasTransform(this.lines, this.size) {
     final xs = lines.map((line) => line.startX).toList()..sort();
     final ys = lines.map((line) => line.startY).toList()..sort();
     _minX = xs.first;
     _minY = ys.first;
-    final width = (xs.last - xs.first).abs().toDouble().clamp(
-      1,
-      double.infinity,
-    );
-    final height = (ys.last - ys.first).abs().toDouble().clamp(
-      1,
-      double.infinity,
-    );
+    _maxX = xs.last;
+    _maxY = ys.last;
+    final width = (_maxX - _minX).abs().toDouble().clamp(1, double.infinity);
+    final height = (_maxY - _minY).abs().toDouble().clamp(1, double.infinity);
     _scale = (size.width - 40) / width < (size.height - 40) / height
         ? (size.width - 40) / width
         : (size.height - 40) / height;
@@ -1255,6 +2752,10 @@ class _CanvasTransform {
   Offset toCanvasPoint(int x, int y) =>
       Offset(_offsetX + (x - _minX) * _scale, _offsetY + (y - _minY) * _scale);
 
+  double canvasXForWorldX(int x) => _offsetX + (x - _minX) * _scale;
+
+  double canvasYForWorldY(int y) => _offsetY + (y - _minY) * _scale;
+
   IntPoint toWorld(Offset offset) => IntPoint(
     _minX + ((offset.dx - _offsetX) / _scale).round(),
     _minY + ((offset.dy - _offsetY) / _scale).round(),
@@ -1262,6 +2763,26 @@ class _CanvasTransform {
 
   double gridSpacing(PreferredUnitSystem unitSystem) =>
       PlasterGeometry.defaultGridSize(unitSystem) * _scale;
+
+  int gridStartX(PreferredUnitSystem unitSystem) {
+    final grid = PlasterGeometry.defaultGridSize(unitSystem);
+    return (_minX / grid).floor() * grid;
+  }
+
+  int gridStartY(PreferredUnitSystem unitSystem) {
+    final grid = PlasterGeometry.defaultGridSize(unitSystem);
+    return (_minY / grid).floor() * grid;
+  }
+
+  int gridEndX(PreferredUnitSystem unitSystem) {
+    final grid = PlasterGeometry.defaultGridSize(unitSystem);
+    return (_maxX / grid).ceil() * grid;
+  }
+
+  int gridEndY(PreferredUnitSystem unitSystem) {
+    final grid = PlasterGeometry.defaultGridSize(unitSystem);
+    return (_maxY / grid).ceil() * grid;
+  }
 
   int? hitIntersection(Offset offset) {
     for (var i = 0; i < lines.length; i++) {
@@ -1284,6 +2805,92 @@ class _CanvasTransform {
       }
     }
     return null;
+  }
+
+  int? hitOpening(List<PlasterRoomOpening> openings, Offset offset) {
+    for (var i = 0; i < openings.length; i++) {
+      final opening = openings[i];
+      final lineIndex = lines.indexWhere((line) => line.id == opening.lineId);
+      if (lineIndex < 0) {
+        continue;
+      }
+      final marker = _openingMarker(lines[lineIndex], opening);
+      if (marker == null) {
+        continue;
+      }
+      if (marker.contains(offset)) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  int openingDragAnchorOffset(
+    List<PlasterRoomOpening> openings,
+    Offset offset,
+    int openingIndex,
+  ) {
+    if (openingIndex < 0 || openingIndex >= openings.length) {
+      return 0;
+    }
+    final opening = openings[openingIndex];
+    final lineIndex = lines.indexWhere((line) => line.id == opening.lineId);
+    if (lineIndex < 0) {
+      return 0;
+    }
+    final line = lines[lineIndex];
+    final end = PlasterGeometry.lineEnd(lines, lineIndex);
+    final dx = end.x - line.startX;
+    final dy = end.y - line.startY;
+    final lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared == 0 || line.length <= 0) {
+      return 0;
+    }
+    final world = toWorld(offset);
+    final projected =
+        ((world.x - line.startX) * dx + (world.y - line.startY) * dy) /
+        lengthSquared;
+    final positionOnLine = (projected * line.length).round();
+    return (positionOnLine - opening.offsetFromStart).clamp(0, opening.width);
+  }
+
+  _OpeningMarker? _openingMarker(
+    PlasterRoomLine line,
+    PlasterRoomOpening opening,
+  ) {
+    final lineIndex = lines.indexOf(line);
+    if (lineIndex < 0 || line.length <= 0) {
+      return null;
+    }
+    final start = toCanvasPoint(line.startX, line.startY);
+    final endPoint = PlasterGeometry.lineEnd(lines, lineIndex);
+    final end = toCanvasPoint(endPoint.x, endPoint.y);
+    final dx = end.dx - start.dx;
+    final dy = end.dy - start.dy;
+    final canvasLength = sqrt(dx * dx + dy * dy);
+    if (canvasLength == 0) {
+      return null;
+    }
+    final direction = Offset(dx / canvasLength, dy / canvasLength);
+    final normal = Offset(-dy / canvasLength, dx / canvasLength);
+    final markerOffset = normal * 10;
+    final openingStartRatio = opening.offsetFromStart / line.length;
+    final openingEndRatio =
+        (opening.offsetFromStart + opening.width) / line.length;
+    final openingStart =
+        start + direction * (canvasLength * openingStartRatio) + markerOffset;
+    final openingEnd =
+        start + direction * (canvasLength * openingEndRatio) + markerOffset;
+    final markerMid = Offset(
+      (openingStart.dx + openingEnd.dx) / 2,
+      (openingStart.dy + openingEnd.dy) / 2,
+    );
+    final badgeCenter = markerMid + normal * 14;
+    return _OpeningMarker(
+      start: openingStart,
+      end: openingEnd,
+      badgeHitBox: Rect.fromCircle(center: badgeCenter, radius: 12),
+    );
   }
 
   bool hitPolygon(Offset offset) {
@@ -1312,6 +2919,38 @@ class _CanvasTransform {
   }
 }
 
+class _OpeningMarker {
+  final Offset start;
+  final Offset end;
+  final Rect badgeHitBox;
+
+  const _OpeningMarker({
+    required this.start,
+    required this.end,
+    required this.badgeHitBox,
+  });
+
+  bool contains(Offset point) {
+    if (badgeHitBox.contains(point)) {
+      return true;
+    }
+    return _distanceToSegment(point, start, end) <= 6;
+  }
+
+  double _distanceToSegment(Offset p, Offset a, Offset b) {
+    final dx = b.dx - a.dx;
+    final dy = b.dy - a.dy;
+    if (dx == 0 && dy == 0) {
+      return (p - a).distance;
+    }
+    final t =
+        (((p.dx - a.dx) * dx) + ((p.dy - a.dy) * dy)) / (dx * dx + dy * dy);
+    final clamped = t.clamp(0.0, 1.0);
+    final projection = Offset(a.dx + dx * clamped, a.dy + dy * clamped);
+    return (p - projection).distance;
+  }
+}
+
 class _LengthDialog extends StatefulWidget {
   final PreferredUnitSystem unitSystem;
   final int initialValue;
@@ -1324,20 +2963,33 @@ class _LengthDialog extends StatefulWidget {
 
 class _LengthDialogState extends State<_LengthDialog> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: PlasterGeometry.toDisplay(
+      text: PlasterGeometry.formatDisplayLength(
         widget.initialValue,
         widget.unitSystem,
-      ).toStringAsFixed(2),
+      ).replaceFirst(RegExp(r'\s+mm$'), ''),
     );
+    _focusNode = FocusNode();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _focusNode.requestFocus();
+      _controller.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _controller.text.length,
+      );
+    });
   }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -1347,7 +2999,9 @@ class _LengthDialogState extends State<_LengthDialog> {
     title: const Text('Set Length'),
     content: TextField(
       controller: _controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      focusNode: _focusNode,
+      autofocus: true,
+      keyboardType: TextInputType.text,
       decoration: InputDecoration(
         labelText: 'Length (${PlasterGeometry.unitLabel(widget.unitSystem)})',
       ),
@@ -1359,13 +3013,86 @@ class _LengthDialogState extends State<_LengthDialog> {
       ),
       TextButton(
         onPressed: () {
-          final value = double.tryParse(_controller.text.trim());
+          final value = PlasterGeometry.parseDisplayLength(
+            _controller.text,
+            widget.unitSystem,
+          );
           if (value == null) {
+            return;
+          }
+          Navigator.of(context).pop(value);
+        },
+        child: const Text('Save'),
+      ),
+    ],
+  );
+}
+
+class _AngleDialog extends StatefulWidget {
+  final int initialValue;
+
+  const _AngleDialog({required this.initialValue});
+
+  @override
+  State<_AngleDialog> createState() => _AngleDialogState();
+}
+
+class _AngleDialogState extends State<_AngleDialog> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: PlasterConstraintSolver.angleValueToDegrees(
+        widget.initialValue,
+      ).toStringAsFixed(1),
+    );
+    _focusNode = FocusNode();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _focusNode.requestFocus();
+      _controller.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _controller.text.length,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Set Angle'),
+    content: TextField(
+      controller: _controller,
+      focusNode: _focusNode,
+      autofocus: true,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: const InputDecoration(labelText: 'Angle (degrees)'),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Cancel'),
+      ),
+      TextButton(
+        onPressed: () {
+          final value = double.tryParse(_controller.text.trim());
+          if (value == null || value <= 0 || value >= 180) {
             return;
           }
           Navigator.of(
             context,
-          ).pop(PlasterGeometry.fromDisplay(value, widget.unitSystem));
+          ).pop(PlasterConstraintSolver.degreesToAngleValue(value));
         },
         child: const Text('Save'),
       ),
@@ -1377,12 +3104,21 @@ class _OpeningDialog extends StatefulWidget {
   final int lineId;
   final PreferredUnitSystem unitSystem;
   final PlasterOpeningType type;
+  final PlasterRoomOpening? initialOpening;
+  final String title;
+  final String confirmLabel;
 
   const _OpeningDialog({
     required this.lineId,
     required this.unitSystem,
     required this.type,
-  });
+    this.initialOpening,
+    String? title,
+    String? confirmLabel,
+  }) : title =
+           title ??
+           (type == PlasterOpeningType.door ? 'Add Door' : 'Add Window'),
+       confirmLabel = confirmLabel ?? 'Add';
 
   @override
   State<_OpeningDialog> createState() => _OpeningDialogState();
@@ -1396,9 +3132,35 @@ class _OpeningDialogState extends State<_OpeningDialog> {
   @override
   void initState() {
     super.initState();
-    _width.text = widget.type == PlasterOpeningType.door ? '0.82' : '1.20';
-    _height.text = widget.type == PlasterOpeningType.door ? '2.04' : '1.20';
-    _sill.text = widget.type == PlasterOpeningType.window ? '0.90' : '0.00';
+    final initialOpening = widget.initialOpening;
+    if (initialOpening != null) {
+      _width.text = PlasterGeometry.formatDisplayLength(
+        initialOpening.width,
+        widget.unitSystem,
+      ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+      _height.text = PlasterGeometry.formatDisplayLength(
+        initialOpening.height,
+        widget.unitSystem,
+      ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+      _sill.text = PlasterGeometry.formatDisplayLength(
+        initialOpening.sillHeight,
+        widget.unitSystem,
+      ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+    } else if (widget.unitSystem == PreferredUnitSystem.metric) {
+      _width.text = widget.type == PlasterOpeningType.door ? '820' : '1200';
+      _height.text = widget.type == PlasterOpeningType.door ? '2040' : '1200';
+      _sill.text = widget.type == PlasterOpeningType.window ? '900' : '0';
+    } else {
+      _width.text = widget.type == PlasterOpeningType.door
+          ? '2\' 8"'
+          : '4\' 0"';
+      _height.text = widget.type == PlasterOpeningType.door
+          ? '6\' 8"'
+          : '4\' 0"';
+      _sill.text = widget.type == PlasterOpeningType.window
+          ? '3\' 0"'
+          : '0\' 0"';
+    }
   }
 
   @override
@@ -1411,15 +3173,13 @@ class _OpeningDialogState extends State<_OpeningDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(
-      widget.type == PlasterOpeningType.door ? 'Add Door' : 'Add Window',
-    ),
+    title: Text(widget.title),
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         TextField(
           controller: _width,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: TextInputType.text,
           decoration: InputDecoration(
             labelText:
                 'Width (${PlasterGeometry.unitLabel(widget.unitSystem)})',
@@ -1427,7 +3187,7 @@ class _OpeningDialogState extends State<_OpeningDialog> {
         ),
         TextField(
           controller: _height,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: TextInputType.text,
           decoration: InputDecoration(
             labelText:
                 'Height (${PlasterGeometry.unitLabel(widget.unitSystem)})',
@@ -1436,7 +3196,7 @@ class _OpeningDialogState extends State<_OpeningDialog> {
         if (widget.type == PlasterOpeningType.window)
           TextField(
             controller: _sill,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: TextInputType.text,
             decoration: InputDecoration(
               labelText: '''
 Sill Height (${PlasterGeometry.unitLabel(widget.unitSystem)})''',
@@ -1451,184 +3211,40 @@ Sill Height (${PlasterGeometry.unitLabel(widget.unitSystem)})''',
       ),
       TextButton(
         onPressed: () {
-          final width = double.tryParse(_width.text.trim());
-          final height = double.tryParse(_height.text.trim());
-          final sill = double.tryParse(_sill.text.trim()) ?? 0;
+          final width = PlasterGeometry.parseDisplayLength(
+            _width.text,
+            widget.unitSystem,
+          );
+          final height = PlasterGeometry.parseDisplayLength(
+            _height.text,
+            widget.unitSystem,
+          );
+          final sill =
+              PlasterGeometry.parseDisplayLength(
+                _sill.text,
+                widget.unitSystem,
+              ) ??
+              0;
           if (width == null || height == null) {
             return;
           }
           Navigator.of(context).pop(
-            PlasterRoomOpening.forInsert(
-              lineId: widget.lineId,
-              type: widget.type,
-              offsetFromStart: 0,
-              width: PlasterGeometry.fromDisplay(width, widget.unitSystem),
-              height: PlasterGeometry.fromDisplay(height, widget.unitSystem),
-              sillHeight: PlasterGeometry.fromDisplay(sill, widget.unitSystem),
-            ),
+            widget.initialOpening?.copyWith(
+                  width: width,
+                  height: height,
+                  sillHeight: sill,
+                ) ??
+                PlasterRoomOpening.forInsert(
+                  lineId: widget.lineId,
+                  type: widget.type,
+                  offsetFromStart: 0,
+                  width: width,
+                  height: height,
+                  sillHeight: sill,
+                ),
           );
         },
-        child: const Text('Add'),
-      ),
-    ],
-  );
-}
-
-class _MaterialSizeDialog extends StatefulWidget {
-  final int supplierId;
-
-  const _MaterialSizeDialog({required this.supplierId});
-
-  @override
-  State<_MaterialSizeDialog> createState() => _MaterialSizeDialogState();
-}
-
-class _RoomNameDialog extends StatefulWidget {
-  final String initialName;
-  final String title;
-  final String confirmLabel;
-
-  const _RoomNameDialog({
-    required this.initialName,
-    required this.title,
-    required this.confirmLabel,
-  });
-
-  @override
-  State<_RoomNameDialog> createState() => _RoomNameDialogState();
-}
-
-class _RoomNameDialogState extends State<_RoomNameDialog> {
-  late final TextEditingController _controller;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialName);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final value = _controller.text.trim();
-    if (value.isEmpty) {
-      setState(() => _error = 'Enter a room name.');
-      return;
-    }
-    Navigator.of(context).pop(value);
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.title),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextField(
-          controller: _controller,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Room Name'),
-          onSubmitted: (_) => _submit(),
-        ),
-        if (_error != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              _error!,
-              style: const TextStyle(color: Colors.redAccent),
-            ),
-          ),
-      ],
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
-      ),
-      TextButton(onPressed: _submit, child: Text(widget.confirmLabel)),
-    ],
-  );
-}
-
-class _MaterialSizeDialogState extends State<_MaterialSizeDialog> {
-  final _name = TextEditingController();
-  final _width = TextEditingController();
-  final _height = TextEditingController();
-  PreferredUnitSystem _unitSystem = PreferredUnitSystem.metric;
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Add Material Size'),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextField(
-          controller: _name,
-          decoration: const InputDecoration(labelText: 'Label'),
-        ),
-        DropdownButtonFormField<PreferredUnitSystem>(
-          initialValue: _unitSystem,
-          decoration: const InputDecoration(labelText: 'Units'),
-          items: const [
-            DropdownMenuItem(
-              value: PreferredUnitSystem.metric,
-              child: Text('Metric'),
-            ),
-            DropdownMenuItem(
-              value: PreferredUnitSystem.imperial,
-              child: Text('Imperial'),
-            ),
-          ],
-          onChanged: (value) => setState(() {
-            _unitSystem = value ?? PreferredUnitSystem.metric;
-          }),
-        ),
-        TextField(
-          controller: _width,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            labelText: 'Width (${PlasterGeometry.unitLabel(_unitSystem)})',
-          ),
-        ),
-        TextField(
-          controller: _height,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            labelText: 'Height (${PlasterGeometry.unitLabel(_unitSystem)})',
-          ),
-        ),
-      ],
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
-      ),
-      TextButton(
-        onPressed: () {
-          final width = double.tryParse(_width.text.trim());
-          final height = double.tryParse(_height.text.trim());
-          if (width == null || height == null) {
-            return;
-          }
-          Navigator.of(context).pop(
-            PlasterMaterialSize.forInsert(
-              supplierId: widget.supplierId,
-              name: _name.text.trim().isEmpty
-                  ? '${width.toStringAsFixed(2)} x ${height.toStringAsFixed(2)}'
-                  : _name.text.trim(),
-              unitSystem: _unitSystem,
-              width: PlasterGeometry.fromDisplay(width, _unitSystem),
-              height: PlasterGeometry.fromDisplay(height, _unitSystem),
-            ),
-          );
-        },
-        child: const Text('Add'),
+        child: Text(widget.confirmLabel),
       ),
     ],
   );

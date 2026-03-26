@@ -15,6 +15,12 @@ Follow Dart's 2-space indentation and keep lines under 80 characters. Use `dart 
 ## Testing Guidelines
 Add unit and widget tests beside the code under `test/feature/...`, naming files `*_test.dart`. Use `flutter test` for the full suite or target directories, e.g., `flutter test test/dao`. Database migrations should include a fixture in `test/sql/` and an assertion that the DAO reads it correctly. Aim to cover new branches and side effects, especially around job status and invoicing flows.
 
+## Plasterboard Layout
+Before changing the plasterboard layout generator, plasterboard layout UI, or
+plasterboard PDF output, read
+`doc/plasterboard_layout_requirements.md` and treat it as the canonical layout
+intent for sheet direction, edge-piece minimums, and related layout rules.
+
 ## Commit & Pull Request Guidelines
 Use short, imperative commit subjects (for example, `Add invoice margin calculator`) and include context in the body when touching multiple layers. Group unrelated changes into separate commits to keep reviews focused. Pull requests should describe the change, reference GitHub issues, and include before/after screenshots for UI updates. Confirm that `flutter test` and `flutter analyze` pass before requesting review and call out any follow-up tasks in the description.
 

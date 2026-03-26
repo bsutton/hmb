@@ -31,6 +31,7 @@ export 'photo_delete_queue.dart';
 export 'plaster_material_size.dart';
 export 'plaster_project.dart';
 export 'plaster_room.dart';
+export 'plaster_room_constraint.dart';
 export 'plaster_room_line.dart';
 export 'plaster_room_opening.dart';
 export 'quote.dart';
