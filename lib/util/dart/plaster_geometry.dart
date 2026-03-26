@@ -10,6 +10,7 @@ import '../../entity/plaster_room.dart';
 import '../../entity/plaster_room_line.dart';
 import '../../entity/plaster_room_opening.dart';
 import 'measurement_type.dart';
+import 'plaster_layout_scoring.dart';
 import 'plaster_sheet_direction.dart';
 
 class IntPoint {
@@ -153,6 +154,7 @@ class PlasterAnalysisRequest {
   final List<PlasterRoomShape> roomShapes;
   final List<PlasterMaterialSize> materials;
   final int wastePercent;
+  final PlasterLayoutScoring scoring;
   final int maxDurationMs;
   final int progressIntervalMs;
 
@@ -160,6 +162,7 @@ class PlasterAnalysisRequest {
     required this.roomShapes,
     required this.materials,
     required this.wastePercent,
+    this.scoring = const PlasterLayoutScoring.defaults(),
     this.maxDurationMs = 300000,
     this.progressIntervalMs = 300,
   });
@@ -241,12 +244,20 @@ class _ProjectLayoutScore {
   final int wasteArea;
   final int fragmentationPenalty;
   final int reusableArea;
+  final int jointTapeLength;
+  final int cutPieceCount;
+  final int highJointLength;
+  final int smallPieceCount;
 
   const _ProjectLayoutScore({
     required this.sheetCount,
     required this.wasteArea,
     required this.fragmentationPenalty,
     required this.reusableArea,
+    required this.jointTapeLength,
+    required this.cutPieceCount,
+    required this.highJointLength,
+    required this.smallPieceCount,
   });
 }
 
@@ -331,6 +342,7 @@ class _PlasterSearchBudget {
   final int maxDurationMs;
   final int progressIntervalMs;
   final int wastePercent;
+  final PlasterLayoutScoring scoring;
   final List<PlasterRoomShape> roomShapes;
   final void Function(Object message)? onProgress;
 
@@ -344,6 +356,7 @@ class _PlasterSearchBudget {
     required this.maxDurationMs,
     required this.progressIntervalMs,
     required this.wastePercent,
+    required this.scoring,
     required this.roomShapes,
     required this.onProgress,
   });
@@ -398,7 +411,7 @@ class _PlasterSearchBudget {
     }
     final shouldReplaceBest =
         _bestScore == null ||
-        PlasterGeometry._isBetterProjectScore(score, _bestScore!);
+        PlasterGeometry._isBetterProjectScore(score, _bestScore!, scoring);
     final shouldReport = force || shouldReplaceBest;
     if (!shouldReport) {
       return;
@@ -849,6 +862,7 @@ class PlasterGeometry {
       maxDurationMs: request.maxDurationMs,
       progressIntervalMs: request.progressIntervalMs,
       wastePercent: request.wastePercent,
+      scoring: request.scoring,
       roomShapes: request.roomShapes,
       onProgress: onProgress,
     );
@@ -898,6 +912,10 @@ class PlasterGeometry {
         wasteArea: 0,
         fragmentationPenalty: 0,
         reusableArea: 0,
+        jointTapeLength: 0,
+        cutPieceCount: 0,
+        highJointLength: 0,
+        smallPieceCount: 0,
       ),
     );
 
@@ -919,7 +937,11 @@ class PlasterGeometry {
         budget: budget,
       );
       if (best.layouts.isEmpty ||
-          _isBetterProjectScore(candidate.score, best.score)) {
+          _isBetterProjectScore(
+            candidate.score,
+            best.score,
+            budget?.scoring,
+          )) {
         best = candidate;
       }
     }
@@ -1020,6 +1042,11 @@ class PlasterGeometry {
         sheetWidth: sheetWidth,
         sheetHeight: sheetHeight,
       )) {
+        if (!isCeiling &&
+            candidate.$1 == PlasterSheetDirection.vertical &&
+            candidate.$3 < height) {
+          continue;
+        }
         final plans = _buildPlacementPlans(
           width: width,
           height: height,
@@ -1107,6 +1134,10 @@ class PlasterGeometry {
           wasteArea: 0,
           fragmentationPenalty: 0,
           reusableArea: 0,
+          jointTapeLength: 0,
+          cutPieceCount: 0,
+          highJointLength: 0,
+          smallPieceCount: 0,
         ),
       );
     }
@@ -1119,6 +1150,10 @@ class PlasterGeometry {
           wasteArea: 0,
           fragmentationPenalty: 0,
           reusableArea: 0,
+          jointTapeLength: 0,
+          cutPieceCount: 0,
+          highJointLength: 0,
+          smallPieceCount: 0,
         ),
       ),
     ];
@@ -1151,10 +1186,10 @@ class PlasterGeometry {
       }
       final beamSource = nextBeam.isEmpty ? beam : nextBeam
         ..sort((left, right) {
-          if (_isBetterProjectScore(left.score, right.score)) {
+          if (_isBetterProjectScore(left.score, right.score, budget?.scoring)) {
             return -1;
           }
-          if (_isBetterProjectScore(right.score, left.score)) {
+          if (_isBetterProjectScore(right.score, left.score, budget?.scoring)) {
             return 1;
           }
           return 0;
@@ -1201,9 +1236,17 @@ class PlasterGeometry {
     var wasteArea = 0;
     var fragmentationPenalty = 0;
     var reusableArea = 0;
+    var jointTapeLength = 0;
+    var cutPieceCount = 0;
+    var highJointLength = 0;
+    var smallPieceCount = 0;
 
     for (final layout in layouts) {
       final roomUnitSystem = _unitSystemForArea(layout, roomShapes);
+      jointTapeLength += layout.estimatedJointTapeLength;
+      cutPieceCount += _countCutPieces(layout, roomUnitSystem);
+      highJointLength += _highJointLength(layout, roomUnitSystem);
+      smallPieceCount += _smallPieceCount(layout);
       final key =
           '${layout.material.id}:${layout.material.unitSystem.name}:'
           '${layout.material.width}:${layout.material.height}';
@@ -1256,23 +1299,40 @@ class PlasterGeometry {
       wasteArea: wasteArea,
       fragmentationPenalty: fragmentationPenalty,
       reusableArea: reusableArea,
+      jointTapeLength: jointTapeLength,
+      cutPieceCount: cutPieceCount,
+      highJointLength: highJointLength,
+      smallPieceCount: smallPieceCount,
     );
   }
 
   static bool _isBetterProjectScore(
     _ProjectLayoutScore left,
     _ProjectLayoutScore right,
+    PlasterLayoutScoring? scoring,
   ) {
+    final weights = scoring ?? const PlasterLayoutScoring.defaults();
+    final leftTotal = left.sheetCount * weights.extraSheetWeight +
+        left.jointTapeLength * weights.jointLengthWeight +
+        left.cutPieceCount * weights.cutPieceWeight +
+        left.highJointLength * weights.highJointWeight +
+        left.smallPieceCount * weights.smallPieceWeight +
+        left.fragmentationPenalty * weights.fragmentationWeight -
+        left.reusableArea;
+    final rightTotal = right.sheetCount * weights.extraSheetWeight +
+        right.jointTapeLength * weights.jointLengthWeight +
+        right.cutPieceCount * weights.cutPieceWeight +
+        right.highJointLength * weights.highJointWeight +
+        right.smallPieceCount * weights.smallPieceWeight +
+        right.fragmentationPenalty * weights.fragmentationWeight -
+        right.reusableArea;
+    if (leftTotal != rightTotal) {
+      return leftTotal < rightTotal;
+    }
     if (left.sheetCount != right.sheetCount) {
       return left.sheetCount < right.sheetCount;
     }
-    if (left.fragmentationPenalty != right.fragmentationPenalty) {
-      return left.fragmentationPenalty < right.fragmentationPenalty;
-    }
-    if (left.wasteArea != right.wasteArea) {
-      return left.wasteArea < right.wasteArea;
-    }
-    return left.reusableArea > right.reusableArea;
+    return left.wasteArea < right.wasteArea;
   }
 
   static List<(PlasterSheetDirection, int, int)> _directionCandidates({
@@ -1304,6 +1364,7 @@ class PlasterGeometry {
       height,
       sheetHeight,
       minEdge,
+      starter: horizontalWallStarter,
     );
     if (rowHeightVariants.isEmpty) {
       return const [];
@@ -1319,7 +1380,6 @@ class PlasterGeometry {
           width,
           sheetWidth,
           minEdge,
-          starter: horizontalWallStarter,
         );
         if (variants.isEmpty) {
           valid = false;
@@ -1568,6 +1628,10 @@ class PlasterGeometry {
           wasteArea: 0,
           fragmentationPenalty: 0,
           reusableArea: 0,
+          jointTapeLength: 0,
+          cutPieceCount: 0,
+          highJointLength: 0,
+          smallPieceCount: 0,
         ),
       ),
     ];
@@ -1619,10 +1683,10 @@ class PlasterGeometry {
         );
       }
       nextBeam.sort((left, right) {
-        if (_isBetterProjectScore(left.score, right.score)) {
+        if (_isBetterProjectScore(left.score, right.score, budget?.scoring)) {
           return -1;
         }
-        if (_isBetterProjectScore(right.score, left.score)) {
+        if (_isBetterProjectScore(right.score, left.score, budget?.scoring)) {
           return 1;
         }
         return 0;
@@ -1793,6 +1857,10 @@ class PlasterGeometry {
         wasteArea: max(0, sheets.length * sheetArea - usedArea),
         fragmentationPenalty: fragmentationPenalty,
         reusableArea: reusableArea,
+        jointTapeLength: 0,
+        cutPieceCount: 0,
+        highJointLength: 0,
+        smallPieceCount: 0,
       ),
     );
   }
@@ -1885,6 +1953,74 @@ class PlasterGeometry {
     final overlapStart = max(startA, startB);
     final overlapEnd = min(startA + lengthA, startB + lengthB);
     return max(0, overlapEnd - overlapStart);
+  }
+
+  static int _countCutPieces(
+    PlasterSurfaceLayout layout,
+    PreferredUnitSystem roomUnitSystem,
+  ) {
+    final sheetWidth = layout.direction == PlasterSheetDirection.vertical
+        ? min(layout.material.width, layout.material.height)
+        : max(layout.material.width, layout.material.height);
+    final sheetHeight = layout.direction == PlasterSheetDirection.vertical
+        ? max(layout.material.width, layout.material.height)
+        : min(layout.material.width, layout.material.height);
+    final naturalWidth = convertLength(
+      sheetWidth,
+      layout.material.unitSystem,
+      roomUnitSystem,
+    );
+    final naturalHeight = convertLength(
+      sheetHeight,
+      layout.material.unitSystem,
+      roomUnitSystem,
+    );
+    var cutPieces = 0;
+    for (final placement in layout.placements) {
+      if (placement.width != naturalWidth ||
+          placement.height != naturalHeight) {
+        cutPieces++;
+      }
+    }
+    return cutPieces;
+  }
+
+  static int _highJointLength(
+    PlasterSurfaceLayout layout,
+    PreferredUnitSystem roomUnitSystem,
+  ) {
+    if (layout.isCeiling) {
+      return 0;
+    }
+    final threshold = roomUnitSystem == PreferredUnitSystem.metric
+        ? 15000
+        : 59055;
+    var total = 0;
+    for (var i = 0; i < layout.placements.length; i++) {
+      final left = layout.placements[i];
+      for (var j = i + 1; j < layout.placements.length; j++) {
+        final right = layout.placements[j];
+        if (left.y + left.height == right.y ||
+            right.y + right.height == left.y) {
+          final jointY = left.y + left.height == right.y
+              ? right.y
+              : left.y;
+          if (jointY > threshold) {
+            total += _overlapLength(left.x, left.width, right.x, right.width);
+          }
+        }
+      }
+    }
+    return total;
+  }
+
+  static int _smallPieceCount(PlasterSurfaceLayout layout) {
+    final unitSystem = layout.material.unitSystem;
+    final warningEdge = unitSystem == PreferredUnitSystem.metric ? 6000 : 23622;
+    return layout.placements.fold<int>(0, (sum, piece) {
+      final small = piece.width < warningEdge || piece.height < warningEdge;
+      return sum + (small ? 1 : 0);
+    });
   }
 
   static int _estimateScrews({

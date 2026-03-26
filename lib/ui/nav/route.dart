@@ -28,6 +28,7 @@ import '../crud/receipt/list_receipt_screen.dart';
 import '../crud/supplier/list_supplier_screen.dart';
 import '../crud/system/chatgpt_integration_screen.dart';
 import '../crud/system/ihserver_integration_screen.dart';
+import '../crud/system/plasterboard_layout_settings_screen.dart';
 import '../crud/system/system_billing_screen.dart';
 import '../crud/system/system_business_screen.dart';
 import '../crud/system/system_contact_screen.dart';
@@ -333,6 +334,12 @@ List<GoRoute> settingRoutes() => [
             const HomeScaffold(initialScreen: XeroIntegrationScreen()),
       ),
     ],
+  ),
+  GoRoute(
+    path: 'plasterboard',
+    builder: (_, _) => const HomeScaffold(
+      initialScreen: PlasterboardLayoutSettingsScreen(),
+    ),
   ),
   GoRoute(
     path: 'wizard',

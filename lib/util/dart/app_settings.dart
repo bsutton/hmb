@@ -14,6 +14,7 @@
 import 'package:settings_yaml/settings_yaml.dart';
 
 import 'paths.dart';
+import 'plaster_layout_scoring.dart';
 
 enum TaxDisplayMode {
   none,
@@ -38,6 +39,13 @@ class AppSettings {
   static const _taxDisplayModeKey = 'taxDisplayMode';
   static const _taxLabelKey = 'taxLabel';
   static const _taxRateKey = 'taxRatePercent';
+  static const _plasterExtraSheetWeightKey = 'plasterExtraSheetWeight';
+  static const _plasterJointLengthWeightKey = 'plasterJointLengthWeight';
+  static const _plasterCutPieceWeightKey = 'plasterCutPieceWeight';
+  static const _plasterHighJointWeightKey = 'plasterHighJointWeight';
+  static const _plasterSmallPieceWeightKey = 'plasterSmallPieceWeight';
+  static const _plasterFragmentationWeightKey =
+      'plasterFragmentationWeight';
 
   static Future<int> getPhotoCacheMaxMb() async {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
@@ -124,6 +132,62 @@ class AppSettings {
   static Future<void> setTaxRatePercentText(String value) async {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings[_taxRateKey] = value.trim();
+    await settings.save();
+  }
+
+  static Future<PlasterLayoutScoring> getPlasterLayoutScoring() async {
+    final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
+    const defaults = PlasterLayoutScoring.defaults();
+
+    int readInt(String key, int fallback) {
+      final value = settings[key];
+      if (value is int) {
+        return value;
+      }
+      if (value is String) {
+        return int.tryParse(value.trim()) ?? fallback;
+      }
+      return fallback;
+    }
+
+    return PlasterLayoutScoring(
+      extraSheetWeight: readInt(
+        _plasterExtraSheetWeightKey,
+        defaults.extraSheetWeight,
+      ),
+      jointLengthWeight: readInt(
+        _plasterJointLengthWeightKey,
+        defaults.jointLengthWeight,
+      ),
+      cutPieceWeight: readInt(
+        _plasterCutPieceWeightKey,
+        defaults.cutPieceWeight,
+      ),
+      highJointWeight: readInt(
+        _plasterHighJointWeightKey,
+        defaults.highJointWeight,
+      ),
+      smallPieceWeight: readInt(
+        _plasterSmallPieceWeightKey,
+        defaults.smallPieceWeight,
+      ),
+      fragmentationWeight: readInt(
+        _plasterFragmentationWeightKey,
+        defaults.fragmentationWeight,
+      ),
+    );
+  }
+
+  static Future<void> setPlasterLayoutScoring(
+    PlasterLayoutScoring scoring,
+  ) async {
+    final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
+    settings[_plasterExtraSheetWeightKey] = scoring.extraSheetWeight;
+    settings[_plasterJointLengthWeightKey] = scoring.jointLengthWeight;
+    settings[_plasterCutPieceWeightKey] = scoring.cutPieceWeight;
+    settings[_plasterHighJointWeightKey] = scoring.highJointWeight;
+    settings[_plasterSmallPieceWeightKey] = scoring.smallPieceWeight;
+    settings[_plasterFragmentationWeightKey] = scoring.fragmentationWeight;
     await settings.save();
   }
 }

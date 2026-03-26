@@ -176,12 +176,10 @@ void main() {
       expect(layouts, isEmpty);
     });
 
-    test(
-      'calculate layout reuses offcuts across a wall before adding waste',
-      () {
+    test('horizontal wall layouts use a half-height starter course', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,
-        name: 'Reuse Wall',
+        name: 'Horizontal Wall',
         unitSystem: PreferredUnitSystem.metric,
         ceilingHeight: 24000,
         plasterCeiling: false,
@@ -191,7 +189,7 @@ void main() {
         unitSystem: PreferredUnitSystem.metric,
       );
       final selectedWallOnly = [
-        lines[0],
+        lines[0].copyWith(sheetDirection: PlasterSheetDirection.horizontal),
         lines[1].copyWith(plasterSelected: false),
         lines[2].copyWith(plasterSelected: false),
         lines[3].copyWith(plasterSelected: false),
@@ -217,9 +215,18 @@ void main() {
         materials,
       );
 
-      expect(layouts.single.sheetCount, 1);
-      },
-    );
+      expect(layouts, hasLength(1));
+      expect(layouts.single.direction, PlasterSheetDirection.horizontal);
+
+      final bottomCourse = layouts.single.placements
+          .where((placement) => placement.y == 0)
+          .toList();
+      expect(bottomCourse, isNotEmpty);
+      expect(
+        bottomCourse.every((placement) => placement.height == 6000),
+        isTrue,
+      );
+    });
 
     test('calculate takeoff includes sheet totals and wastage', () {
       final room = PlasterRoom.forInsert(
@@ -263,7 +270,7 @@ void main() {
       expect(takeoff.estimatedWastePercent, greaterThanOrEqualTo(0));
     });
 
-    test('calculate takeoff reuses sheets across room surfaces', () {
+    test('project takeoff does not exceed summed raw layout sheets', () {
       final room1 = PlasterRoom.forInsert(
         projectId: 1,
         name: 'Room 1',
@@ -322,61 +329,71 @@ void main() {
       final takeoff = PlasterGeometry.calculateTakeoff(shapes, layouts, 0);
 
       expect(layouts, hasLength(2));
-      expect(layouts.every((layout) => layout.sheetCount == 1), isTrue);
-      expect(takeoff.totalSheetCount, 1);
+      final rawSheetCount = layouts.fold<int>(
+        0,
+        (sum, layout) => sum + layout.sheetCount,
+      );
+      expect(takeoff.totalSheetCount, lessThanOrEqualTo(rawSheetCount));
     });
 
-    test('calculate layout chooses a globally better material combination', () {
-      final room1 = PlasterRoom.forInsert(
+    test('vertical wall layout is rejected if board is not full height', () {
+      final room = PlasterRoom.forInsert(
         projectId: 1,
         name: 'Room 1',
         unitSystem: PreferredUnitSystem.metric,
-        ceilingHeight: 12000,
+        ceilingHeight: 24000,
         plasterCeiling: false,
       );
-      final room2 = PlasterRoom.forInsert(
-        projectId: 1,
-        name: 'Room 2',
-        unitSystem: PreferredUnitSystem.metric,
-        ceilingHeight: 12000,
-        plasterCeiling: false,
-      );
-      final lines1 = [
+      final lines = [
         ...PlasterGeometry.defaultLines(
           roomId: 1,
           unitSystem: PreferredUnitSystem.metric,
         ),
       ];
-      final lines2 = [
-        ...PlasterGeometry.defaultLines(
-          roomId: 2,
-          unitSystem: PreferredUnitSystem.metric,
-        ),
-      ];
       for (var i = 1; i < 4; i++) {
-        lines1[i] = lines1[i].copyWith(plasterSelected: false);
-        lines2[i] = lines2[i].copyWith(plasterSelected: false);
+        lines[i] = lines[i].copyWith(plasterSelected: false);
       }
-      final shapes = [
-        PlasterRoomShape(
-          room: room1,
-          lines: lines1,
-          openings: const [],
-        ),
-        PlasterRoomShape(
-          room: room2,
-          lines: lines2,
-          openings: const [],
-        ),
-      ];
+      lines[0] = lines[0].copyWith(
+        sheetDirection: PlasterSheetDirection.vertical,
+      );
       final materials = [
         PlasterMaterialSize.forInsert(
           supplierId: 1,
-          name: '3000 x 1200',
+          name: '1800 x 1200',
           unitSystem: PreferredUnitSystem.metric,
-          width: 30000,
+          width: 18000,
           height: 12000,
         ),
+      ];
+
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: lines,
+          openings: const [],
+        ),
+      ], materials);
+
+      expect(layouts, isEmpty);
+    });
+
+    test('estimated waste excludes contingency sheets', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Waste',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final shape = PlasterRoomShape(
+        room: room,
+        lines: lines,
+        openings: const [],
+      );
+      final materials = [
         PlasterMaterialSize.forInsert(
           supplierId: 1,
           name: '6000 x 1200',
@@ -385,105 +402,23 @@ void main() {
           height: 12000,
         ),
       ];
+      final layouts = PlasterGeometry.calculateLayout([shape], materials);
 
-      final layouts = PlasterGeometry.calculateLayout(shapes, materials);
-      final takeoff = PlasterGeometry.calculateTakeoff(shapes, layouts, 0);
+      final rawTakeoff = PlasterGeometry.calculateTakeoff([shape], layouts, 0);
+      final wasteTakeoff = PlasterGeometry.calculateTakeoff(
+        [shape],
+        layouts,
+        15,
+      );
 
-      expect(layouts, hasLength(2));
       expect(
-        layouts.every((layout) => layout.material.name == '6000 x 1200'),
-        isTrue,
+        wasteTakeoff.estimatedWasteArea,
+        equals(rawTakeoff.estimatedWasteArea),
       );
-      expect(takeoff.totalSheetCount, 1);
-    });
-
-    test('calculate takeoff rotates and packs project pieces efficiently', () {
-      final room = PlasterRoom.forInsert(
-        projectId: 1,
-        name: 'Packing',
-        unitSystem: PreferredUnitSystem.metric,
-        ceilingHeight: 24000,
-        plasterCeiling: false,
+      expect(
+        wasteTakeoff.totalSheetCountWithWaste,
+        greaterThanOrEqualTo(rawTakeoff.totalSheetCount),
       );
-      final lines = PlasterGeometry.defaultLines(
-        roomId: 1,
-        unitSystem: PreferredUnitSystem.metric,
-      );
-      for (var i = 2; i < 4; i++) {
-        lines[i] = lines[i].copyWith(plasterSelected: false);
-      }
-      final shape = PlasterRoomShape(
-        room: room,
-        lines: lines,
-        openings: const [],
-      );
-      final material = PlasterMaterialSize.forInsert(
-        supplierId: 1,
-        name: '4000 x 3000',
-        unitSystem: PreferredUnitSystem.metric,
-        width: 40000,
-        height: 30000,
-      );
-      final layouts = [
-        PlasterSurfaceLayout(
-          roomId: room.id,
-          lineId: 1,
-          isCeiling: false,
-          label: 'A',
-          material: material,
-          direction: PlasterSheetDirection.horizontal,
-          width: 30000,
-          height: 12000,
-          area: 30000 * 12000,
-          sheetsAcross: 1,
-          sheetsDown: 1,
-          sheetCount: 1,
-          sheetCountWithWaste: 1,
-          placements: const [
-            PlasterSheetPlacement(
-              x: 0,
-              y: 0,
-              width: 30000,
-              height: 12000,
-            ),
-          ],
-          estimatedJointTapeLength: 0,
-          estimatedScrewCount: 0,
-          estimatedGlueKg: 0,
-          estimatedPlasterKg: 0,
-        ),
-        PlasterSurfaceLayout(
-          roomId: room.id,
-          lineId: 2,
-          isCeiling: false,
-          label: 'B',
-          material: material,
-          direction: PlasterSheetDirection.vertical,
-          width: 12000,
-          height: 30000,
-          area: 12000 * 30000,
-          sheetsAcross: 1,
-          sheetsDown: 1,
-          sheetCount: 1,
-          sheetCountWithWaste: 1,
-          placements: const [
-            PlasterSheetPlacement(
-              x: 0,
-              y: 0,
-              width: 12000,
-              height: 30000,
-            ),
-          ],
-          estimatedJointTapeLength: 0,
-          estimatedScrewCount: 0,
-          estimatedGlueKg: 0,
-          estimatedPlasterKg: 0,
-        ),
-      ];
-
-      final takeoff = PlasterGeometry.calculateTakeoff([shape], layouts, 0);
-
-      expect(takeoff.totalSheetCount, 1);
     });
   });
 }

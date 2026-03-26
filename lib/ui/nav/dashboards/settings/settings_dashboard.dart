@@ -87,6 +87,14 @@ class SettingsDashboardPage extends StatelessWidget {
         route: '/home/settings/integrations',
         valueBuilder: (_, _) => const HMBEmpty(),
       ),
+      DashletCard<void>.route(
+        label: 'Plasterboard',
+        hint: 'Configure plasterboard layout scoring weightings',
+        icon: Icons.grid_view,
+        value: () => Future.value(const DashletValue(null)),
+        route: '/home/settings/plasterboard',
+        valueBuilder: (_, _) => const HMBEmpty(),
+      ),
       DashletCard<void>.onTap(
         label: 'Setup Wizard',
         hint: 'Run the setup wizard',

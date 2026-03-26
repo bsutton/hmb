@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
+import '../../../util/dart/app_settings.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_constraint_solver.dart';
 import '../../../util/dart/plaster_geometry.dart';
@@ -307,6 +308,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     final request = PlasterAnalysisRequest(
       roomShapes: shapes,
       materials: _materials,
+      scoring: await AppSettings.getPlasterLayoutScoring(),
       wastePercent:
           int.tryParse(_wasteController.text.trim()) ?? _project.wastePercent,
     );
