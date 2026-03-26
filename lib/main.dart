@@ -16,6 +16,7 @@
 import 'dart:async';
 
 import 'package:device_preview_plus/device_preview_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:june/june.dart';
@@ -64,12 +65,12 @@ Future<void> main(List<String> args) async {
       final packageInfo = await PackageInfo.fromPlatform();
       Log.i('Package Name: ${packageInfo.packageName}');
       runApp(
-        const HmbApp(),
-        // DevicePreview(
-        //   // ignore: avoid_redundant_argument_values
-        //   enabled: !kReleaseMode,
-        //   builder: (_) => const HmbApp(),
-        // ),
+        // const HmbApp(),
+        DevicePreview(
+          // ignore: avoid_redundant_argument_values
+          enabled: !kReleaseMode,
+          builder: (_) => const HmbApp(),
+        ),
       );
     },
   );
