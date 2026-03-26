@@ -2,6 +2,7 @@
  Copyright © OnePub IP Pty Ltd. S. Brett Sutton. All Rights Reserved.
 */
 
+import 'dart:isolate';
 import 'dart:math';
 
 import '../../entity/plaster_material_size.dart';
@@ -89,6 +90,11 @@ class PlasterSurfaceLayout {
 class PlasterTakeoffSummary {
   final int totalSheetCount;
   final int totalSheetCountWithWaste;
+  final int surfaceArea;
+  final int purchasedBoardArea;
+  final int cutWasteArea;
+  final int contingencyWasteArea;
+  final int reusableOffcutArea;
   final int estimatedWasteArea;
   final double estimatedWastePercent;
   final int contingencySheetCount;
@@ -104,6 +110,11 @@ class PlasterTakeoffSummary {
   const PlasterTakeoffSummary({
     required this.totalSheetCount,
     required this.totalSheetCountWithWaste,
+    required this.surfaceArea,
+    required this.purchasedBoardArea,
+    required this.cutWasteArea,
+    required this.contingencyWasteArea,
+    required this.reusableOffcutArea,
     required this.estimatedWasteArea,
     required this.estimatedWastePercent,
     required this.contingencySheetCount,
@@ -120,6 +131,11 @@ class PlasterTakeoffSummary {
   const PlasterTakeoffSummary.zero()
     : totalSheetCount = 0,
       totalSheetCountWithWaste = 0,
+      surfaceArea = 0,
+      purchasedBoardArea = 0,
+      cutWasteArea = 0,
+      contingencyWasteArea = 0,
+      reusableOffcutArea = 0,
       estimatedWasteArea = 0,
       estimatedWastePercent = 0,
       contingencySheetCount = 0,
@@ -131,6 +147,76 @@ class PlasterTakeoffSummary {
       glueKg = 0,
       plasterKg = 0,
       corniceCementKg = 0;
+}
+
+class PlasterAnalysisRequest {
+  final List<PlasterRoomShape> roomShapes;
+  final List<PlasterMaterialSize> materials;
+  final int wastePercent;
+  final int maxDurationMs;
+  final int progressIntervalMs;
+
+  const PlasterAnalysisRequest({
+    required this.roomShapes,
+    required this.materials,
+    required this.wastePercent,
+    this.maxDurationMs = 300000,
+    this.progressIntervalMs = 300,
+  });
+}
+
+class PlasterAnalysisResult {
+  final List<PlasterSurfaceLayout> layouts;
+  final PlasterTakeoffSummary takeoff;
+  final int exploredStates;
+  final int elapsedMs;
+  final bool complete;
+  final bool timedOut;
+  final bool reachedTargetWaste;
+
+  const PlasterAnalysisResult({
+    required this.layouts,
+    required this.takeoff,
+    required this.exploredStates,
+    required this.elapsedMs,
+    required this.complete,
+    required this.timedOut,
+    required this.reachedTargetWaste,
+  });
+}
+
+class PlasterAnalysisProgress {
+  final int exploredStates;
+  final int elapsedMs;
+  final bool timedOut;
+  final bool reachedTargetWaste;
+
+  const PlasterAnalysisProgress({
+    required this.exploredStates,
+    required this.elapsedMs,
+    required this.timedOut,
+    required this.reachedTargetWaste,
+  });
+}
+
+class PlasterAnalysisFailure {
+  final String error;
+  final String stackTrace;
+
+  const PlasterAnalysisFailure({
+    required this.error,
+    required this.stackTrace,
+  });
+}
+
+class PlasterAnalysisIsolateRequest {
+  final SendPort sendPort;
+  final PlasterAnalysisRequest request;
+
+  const PlasterAnalysisIsolateRequest({
+    required this.sendPort,
+    required this.request,
+  });
 }
 
 class _FreeRect {
@@ -146,15 +232,21 @@ class _FreeRect {
       y >= other.y &&
       x + width <= other.x + other.width &&
       y + height <= other.y + other.height;
+
+  int get area => width * height;
 }
 
 class _ProjectLayoutScore {
   final int sheetCount;
   final int wasteArea;
+  final int fragmentationPenalty;
+  final int reusableArea;
 
   const _ProjectLayoutScore({
     required this.sheetCount,
     required this.wasteArea,
+    required this.fragmentationPenalty,
+    required this.reusableArea,
   });
 }
 
@@ -166,6 +258,190 @@ class _ProjectLayoutState {
     required this.layouts,
     required this.score,
   });
+}
+
+class _PackedSheet {
+  final List<_FreeRect> freeRects;
+  final int usedArea;
+
+  const _PackedSheet({
+    required this.freeRects,
+    required this.usedArea,
+  });
+
+  _PackedSheet copy() => _PackedSheet(
+    freeRects: [
+      for (final rect in freeRects)
+        _FreeRect(rect.x, rect.y, rect.width, rect.height),
+    ],
+    usedArea: usedArea,
+  );
+}
+
+class _PackingState {
+  final List<_PackedSheet> sheets;
+  final int usedArea;
+  final _ProjectLayoutScore score;
+
+  const _PackingState({
+    required this.sheets,
+    required this.usedArea,
+    required this.score,
+  });
+}
+
+class _PackingResult {
+  final int sheetCount;
+  final int wasteArea;
+  final int usedArea;
+  final int fragmentationPenalty;
+  final int reusableArea;
+
+  const _PackingResult({
+    required this.sheetCount,
+    required this.wasteArea,
+    required this.usedArea,
+    required this.fragmentationPenalty,
+    required this.reusableArea,
+  });
+}
+
+class _PlacementChoice {
+  final int sheetIndex;
+  final int rectIndex;
+  final int pieceWidth;
+  final int pieceHeight;
+  final int leftoverArea;
+  final int fragmentationPenalty;
+  final int reusableArea;
+
+  const _PlacementChoice({
+    required this.sheetIndex,
+    required this.rectIndex,
+    required this.pieceWidth,
+    required this.pieceHeight,
+    required this.leftoverArea,
+    required this.fragmentationPenalty,
+    required this.reusableArea,
+  });
+}
+
+class _PlasterSearchBudget {
+  final stopwatch = Stopwatch()..start();
+  final int maxDurationMs;
+  final int progressIntervalMs;
+  final int wastePercent;
+  final List<PlasterRoomShape> roomShapes;
+  final void Function(Object message)? onProgress;
+
+  var exploredStates = 0;
+  var _lastProgressMs = -1;
+  var timedOut = false;
+  var reachedTargetWaste = false;
+  _ProjectLayoutScore? _bestScore;
+
+  _PlasterSearchBudget({
+    required this.maxDurationMs,
+    required this.progressIntervalMs,
+    required this.wastePercent,
+    required this.roomShapes,
+    required this.onProgress,
+  });
+
+  int get elapsedMs => stopwatch.elapsedMilliseconds;
+
+  bool get isExpired => elapsedMs >= maxDurationMs;
+
+  bool tick() {
+    if (reachedTargetWaste) {
+      return true;
+    }
+    exploredStates++;
+    if (isExpired) {
+      timedOut = true;
+      return true;
+    }
+    return false;
+  }
+
+  void maybeReportProgress({bool force = false}) {
+    if (onProgress == null) {
+      return;
+    }
+    final shouldReport =
+        force ||
+        _lastProgressMs < 0 ||
+        elapsedMs - _lastProgressMs >= progressIntervalMs;
+    if (!shouldReport) {
+      return;
+    }
+    _lastProgressMs = elapsedMs;
+    onProgress!(
+      PlasterAnalysisProgress(
+        exploredStates: exploredStates,
+        elapsedMs: elapsedMs,
+        timedOut: timedOut,
+        reachedTargetWaste: reachedTargetWaste,
+      ),
+    );
+  }
+
+  void maybeReport(
+    List<PlasterSurfaceLayout> layouts,
+    _ProjectLayoutScore score, {
+    bool force = false,
+    bool complete = false,
+    PlasterTakeoffSummary? takeoff,
+  }) {
+    if (onProgress == null || layouts.isEmpty) {
+      return;
+    }
+    final shouldReplaceBest =
+        _bestScore == null ||
+        PlasterGeometry._isBetterProjectScore(score, _bestScore!);
+    final shouldReport = force || shouldReplaceBest;
+    if (!shouldReport) {
+      return;
+    }
+    if (shouldReplaceBest) {
+      _bestScore = score;
+    }
+    _lastProgressMs = elapsedMs;
+    final resolvedTakeoff =
+        takeoff ??
+        PlasterGeometry.calculateTakeoff(roomShapes, layouts, wastePercent);
+    if (resolvedTakeoff.estimatedWastePercent <= wastePercent + 1) {
+      reachedTargetWaste = true;
+    }
+    onProgress!(
+      PlasterAnalysisResult(
+        layouts: layouts,
+        takeoff: resolvedTakeoff,
+        exploredStates: exploredStates,
+        elapsedMs: elapsedMs,
+        complete: complete,
+        timedOut: timedOut,
+        reachedTargetWaste: reachedTargetWaste,
+      ),
+    );
+  }
+}
+
+void plasterAnalyzeProjectInIsolate(PlasterAnalysisIsolateRequest message) {
+  try {
+    final result = PlasterGeometry.analyzeProject(
+      message.request,
+      onProgress: (progress) => message.sendPort.send(progress),
+    );
+    message.sendPort.send(result);
+  } catch (error, stackTrace) {
+    message.sendPort.send(
+      PlasterAnalysisFailure(
+        error: error.toString(),
+        stackTrace: stackTrace.toString(),
+      ),
+    );
+  }
 }
 
 class PlasterGeometry {
@@ -565,10 +841,97 @@ class PlasterGeometry {
       ? metricMinEdgePiece
       : imperialMinEdgePiece;
 
+  static PlasterAnalysisResult analyzeProject(
+    PlasterAnalysisRequest request, {
+    void Function(Object message)? onProgress,
+  }) {
+    final budget = _PlasterSearchBudget(
+      maxDurationMs: request.maxDurationMs,
+      progressIntervalMs: request.progressIntervalMs,
+      wastePercent: request.wastePercent,
+      roomShapes: request.roomShapes,
+      onProgress: onProgress,
+    );
+    final bestState = _calculateLayoutState(
+      request.roomShapes,
+      request.materials,
+      budget: budget,
+    );
+    final takeoff = calculateTakeoff(
+      request.roomShapes,
+      bestState.layouts,
+      request.wastePercent,
+    );
+    budget.maybeReport(
+      bestState.layouts,
+      bestState.score,
+      force: true,
+      complete: true,
+      takeoff: takeoff,
+    );
+    return PlasterAnalysisResult(
+      layouts: bestState.layouts,
+      takeoff: takeoff,
+      exploredStates: budget.exploredStates,
+      elapsedMs: budget.elapsedMs,
+      complete: true,
+      timedOut: budget.timedOut,
+      reachedTargetWaste: budget.reachedTargetWaste,
+    );
+  }
+
   static List<PlasterSurfaceLayout> calculateLayout(
     List<PlasterRoomShape> roomShapes,
     List<PlasterMaterialSize> materials,
-  ) {
+  ) => _calculateLayoutState(roomShapes, materials).layouts;
+
+  static _ProjectLayoutState _calculateLayoutState(
+    List<PlasterRoomShape> roomShapes,
+    List<PlasterMaterialSize> materials, {
+    _PlasterSearchBudget? budget,
+  }) {
+    const planWaves = <int>[18, 36, 72, 144, 288];
+    var best = const _ProjectLayoutState(
+      layouts: [],
+      score: _ProjectLayoutScore(
+        sheetCount: 0,
+        wasteArea: 0,
+        fragmentationPenalty: 0,
+        reusableArea: 0,
+      ),
+    );
+
+    for (final planLimit in planWaves) {
+      if (budget?.isExpired ?? false) {
+        break;
+      }
+      if (budget?.reachedTargetWaste ?? false) {
+        break;
+      }
+      final candidateGroups = _candidateGroupsForPlanLimit(
+        roomShapes,
+        materials,
+        planLimit: planLimit,
+      );
+      final candidate = _optimizeProjectLayouts(
+        candidateGroups,
+        roomShapes,
+        budget: budget,
+      );
+      if (best.layouts.isEmpty ||
+          _isBetterProjectScore(candidate.score, best.score)) {
+        best = candidate;
+      }
+    }
+
+    return best;
+  }
+
+  static List<List<PlasterSurfaceLayout>> _candidateGroupsForPlanLimit(
+    List<PlasterRoomShape> roomShapes,
+    List<PlasterMaterialSize> materials, {
+    required int planLimit,
+  }) {
     final candidateGroups = <List<PlasterSurfaceLayout>>[];
     for (final shape in roomShapes) {
       if (shape.lines.isEmpty) {
@@ -594,6 +957,7 @@ class PlasterGeometry {
             height: shape.room.ceilingHeight,
             unitSystem: shape.room.unitSystem,
           ),
+          planLimit: planLimit,
         );
         if (candidates.isNotEmpty) {
           candidateGroups.add(candidates);
@@ -616,13 +980,14 @@ class PlasterGeometry {
             height: bounds.$4 - bounds.$2,
             unitSystem: shape.room.unitSystem,
           ),
+          planLimit: planLimit,
         );
         if (candidates.isNotEmpty) {
           candidateGroups.add(candidates);
         }
       }
     }
-    return _optimizeProjectLayouts(candidateGroups, roomShapes);
+    return candidateGroups;
   }
 
   static List<PlasterSurfaceLayout> _surfaceCandidates({
@@ -635,8 +1000,10 @@ class PlasterGeometry {
     required int area,
     required List<PlasterMaterialSize> materials,
     required String label,
+    required int planLimit,
   }) {
     final candidates = <PlasterSurfaceLayout>[];
+    final seen = <String>{};
     for (final material in materials) {
       final sheetWidth = convertLength(
         material.width,
@@ -653,49 +1020,60 @@ class PlasterGeometry {
         sheetWidth: sheetWidth,
         sheetHeight: sheetHeight,
       )) {
-        final plan = _buildPlacements(
+        final plans = _buildPlacementPlans(
           width: width,
           height: height,
           sheetWidth: candidate.$2,
           sheetHeight: candidate.$3,
           minEdge: minEdgePiece(room.unitSystem),
-          staggerHorizontalStarter:
+          horizontalWallStarter:
               !isCeiling &&
               candidate.$1 == PlasterSheetDirection.horizontal,
+          maxPlans: planLimit,
         );
-        if (plan == null) {
-          continue;
-        }
-        final count = _countSheetsForPieces(
-          pieces: plan.$1,
-          sheetWidth: candidate.$2,
-          sheetHeight: candidate.$3,
-        );
-        final surface = PlasterSurfaceLayout(
-          roomId: room.id,
-          lineId: lineId,
-          isCeiling: isCeiling,
-          label: label,
-          material: material,
-          direction: candidate.$1,
-          width: width,
-          height: height,
-          area: area,
-          sheetsAcross: plan.$2,
-          sheetsDown: plan.$3,
-          sheetCount: count,
-          sheetCountWithWaste: count,
-          placements: plan.$1,
-          estimatedJointTapeLength: _estimateJointTapeLength(plan.$1),
-          estimatedScrewCount: _estimateScrews(
-            area: area,
-            direction: candidate.$1,
+        for (final plan in plans) {
+          final packed = _packPieces(
+            pieces: plan.$1,
+            sheetWidth: candidate.$2,
+            sheetHeight: candidate.$3,
+            minReusableEdge: minEdgePiece(room.unitSystem),
+          );
+          final signature = [
+            material.id,
+            candidate.$1.name,
+            packed.sheetCount,
+            for (final piece in plan.$1)
+              '${piece.x},${piece.y},${piece.width},${piece.height}',
+          ].join('|');
+          if (!seen.add(signature)) {
+            continue;
+          }
+          final surface = PlasterSurfaceLayout(
+            roomId: room.id,
+            lineId: lineId,
             isCeiling: isCeiling,
-          ),
-          estimatedGlueKg: _estimateGlueKg(area, isCeiling),
-          estimatedPlasterKg: _estimatePlasterKg(area, candidate.$1),
-        );
-        candidates.add(surface);
+            label: label,
+            material: material,
+            direction: candidate.$1,
+            width: width,
+            height: height,
+            area: area,
+            sheetsAcross: plan.$2,
+            sheetsDown: plan.$3,
+            sheetCount: packed.sheetCount,
+            sheetCountWithWaste: packed.sheetCount,
+            placements: plan.$1,
+            estimatedJointTapeLength: _estimateJointTapeLength(plan.$1),
+            estimatedScrewCount: _estimateScrews(
+              area: area,
+              direction: candidate.$1,
+              isCeiling: isCeiling,
+            ),
+            estimatedGlueKg: _estimateGlueKg(area, isCeiling),
+            estimatedPlasterKg: _estimatePlasterKg(area, candidate.$1),
+          );
+          candidates.add(surface);
+        }
       }
     }
     candidates.sort((left, right) {
@@ -705,51 +1083,94 @@ class PlasterGeometry {
       if (sheetCountCompare != 0) {
         return sheetCountCompare;
       }
-      return leftCoverage.compareTo(rightCoverage);
+      final coverageCompare = leftCoverage.compareTo(rightCoverage);
+      if (coverageCompare != 0) {
+        return coverageCompare;
+      }
+      return left.estimatedJointTapeLength.compareTo(
+        right.estimatedJointTapeLength,
+      );
     });
     return candidates;
   }
 
-  static List<PlasterSurfaceLayout> _optimizeProjectLayouts(
+  static _ProjectLayoutState _optimizeProjectLayouts(
     List<List<PlasterSurfaceLayout>> candidateGroups,
     List<PlasterRoomShape> roomShapes,
+    {_PlasterSearchBudget? budget}
   ) {
     if (candidateGroups.isEmpty) {
-      return const [];
+      return const _ProjectLayoutState(
+        layouts: [],
+        score: _ProjectLayoutScore(
+          sheetCount: 0,
+          wasteArea: 0,
+          fragmentationPenalty: 0,
+          reusableArea: 0,
+        ),
+      );
     }
-    const beamWidth = 24;
+    const beamWidth = 12;
     var beam = <_ProjectLayoutState>[
       const _ProjectLayoutState(
         layouts: [],
-        score: _ProjectLayoutScore(sheetCount: 0, wasteArea: 0),
+        score: _ProjectLayoutScore(
+          sheetCount: 0,
+          wasteArea: 0,
+          fragmentationPenalty: 0,
+          reusableArea: 0,
+        ),
       ),
     ];
 
     for (final group in candidateGroups) {
       final nextBeam = <_ProjectLayoutState>[];
+      var stopRequested = false;
       for (final state in beam) {
         for (final candidate in group) {
+          if (budget?.tick() ?? false) {
+            stopRequested = true;
+            break;
+          }
+          budget?.maybeReportProgress();
           final layouts = [...state.layouts, candidate];
           nextBeam.add(
             _ProjectLayoutState(
               layouts: layouts,
-              score: _evaluateProjectLayouts(layouts, roomShapes),
+              score: _evaluateProjectLayouts(
+                layouts,
+                roomShapes,
+                budget: budget,
+              ),
             ),
           );
         }
+        if (stopRequested) {
+          break;
+        }
       }
-      nextBeam.sort((left, right) {
-        if (_isBetterProjectScore(left.score, right.score)) {
-          return -1;
-        }
-        if (_isBetterProjectScore(right.score, left.score)) {
-          return 1;
-        }
-        return 0;
-      });
-      beam = nextBeam.take(beamWidth).toList();
+      final beamSource = nextBeam.isEmpty ? beam : nextBeam
+        ..sort((left, right) {
+          if (_isBetterProjectScore(left.score, right.score)) {
+            return -1;
+          }
+          if (_isBetterProjectScore(right.score, left.score)) {
+            return 1;
+          }
+          return 0;
+        });
+      beam = beamSource.take(beamWidth).toList();
+      if (beam.first.layouts.length == candidateGroups.length) {
+        budget?.maybeReport(beam.first.layouts, beam.first.score);
+      }
+      if (stopRequested) {
+        break;
+      }
     }
-    return beam.first.layouts;
+    final best = beam.first;
+    budget?.maybeReportProgress(force: true);
+    budget?.maybeReport(best.layouts, best.score, force: true);
+    return best;
   }
 
   static int _layoutCoverage(
@@ -772,11 +1193,14 @@ class PlasterGeometry {
   static _ProjectLayoutScore _evaluateProjectLayouts(
     List<PlasterSurfaceLayout> layouts,
     List<PlasterRoomShape> roomShapes,
+    {_PlasterSearchBudget? budget}
   ) {
     final groupedPieces = <String, List<PlasterSheetPlacement>>{};
     final groupedSheetSizes = <String, (int, int)>{};
     var sheetCount = 0;
     var wasteArea = 0;
+    var fragmentationPenalty = 0;
+    var reusableArea = 0;
 
     for (final layout in layouts) {
       final roomUnitSystem = _unitSystemForArea(layout, roomShapes);
@@ -810,21 +1234,29 @@ class PlasterGeometry {
 
     for (final entry in groupedPieces.entries) {
       final sheetSize = groupedSheetSizes[entry.key]!;
-      final count = _countSheetsForPieces(
+      final packed = _packPieces(
         pieces: entry.value,
         sheetWidth: sheetSize.$1,
         sheetHeight: sheetSize.$2,
+        minReusableEdge: minEdgePiece(
+          entry.value.isEmpty
+              ? PreferredUnitSystem.metric
+              : _unitSystemForMaterialKey(entry.key),
+        ),
+        budget: budget,
       );
-      final sheetArea = sheetSize.$1 * sheetSize.$2;
-      final pieceArea = entry.value.fold<int>(
-        0,
-        (sum, piece) => sum + piece.width * piece.height,
-      );
-      sheetCount += count;
-      wasteArea += max(0, count * sheetArea - pieceArea);
+      sheetCount += packed.sheetCount;
+      wasteArea += packed.wasteArea;
+      fragmentationPenalty += packed.fragmentationPenalty;
+      reusableArea += packed.reusableArea;
     }
 
-    return _ProjectLayoutScore(sheetCount: sheetCount, wasteArea: wasteArea);
+    return _ProjectLayoutScore(
+      sheetCount: sheetCount,
+      wasteArea: wasteArea,
+      fragmentationPenalty: fragmentationPenalty,
+      reusableArea: reusableArea,
+    );
   }
 
   static bool _isBetterProjectScore(
@@ -834,7 +1266,13 @@ class PlasterGeometry {
     if (left.sheetCount != right.sheetCount) {
       return left.sheetCount < right.sheetCount;
     }
-    return left.wasteArea < right.wasteArea;
+    if (left.fragmentationPenalty != right.fragmentationPenalty) {
+      return left.fragmentationPenalty < right.fragmentationPenalty;
+    }
+    if (left.wasteArea != right.wasteArea) {
+      return left.wasteArea < right.wasteArea;
+    }
+    return left.reusableArea > right.reusableArea;
   }
 
   static List<(PlasterSheetDirection, int, int)> _directionCandidates({
@@ -853,72 +1291,184 @@ class PlasterGeometry {
     };
   }
 
-  static (
-    List<PlasterSheetPlacement>,
-    int,
-    int
-  )? _buildPlacements({
+  static List<(List<PlasterSheetPlacement>, int, int)> _buildPlacementPlans({
     required int width,
     required int height,
     required int sheetWidth,
     required int sheetHeight,
     required int minEdge,
-    required bool staggerHorizontalStarter,
+    required bool horizontalWallStarter,
+    required int maxPlans,
   }) {
-    final rowHeights = _axisPieces(height, sheetHeight, minEdge);
-    if (rowHeights == null) {
-      return null;
-    }
-    final placements = <PlasterSheetPlacement>[];
-    var maxAcross = 0;
-    var y = 0;
-    for (var row = 0; row < rowHeights.length; row++) {
-      final rowWidths =
-          staggerHorizontalStarter && row.isEven
-          ? _starterAxisPieces(width, sheetWidth, minEdge)
-          : _axisPieces(width, sheetWidth, minEdge);
-      if (rowWidths == null) {
-        return null;
-      }
-      maxAcross = max(maxAcross, rowWidths.length);
-      var x = 0;
-      for (final pieceWidth in rowWidths) {
-        placements.add(
-          PlasterSheetPlacement(
-            x: x,
-            y: y,
-            width: pieceWidth,
-            height: rowHeights[row],
-          ),
-        );
-        x += pieceWidth;
-      }
-      y += rowHeights[row];
-    }
-    return (
-      placements,
-      maxAcross,
-      rowHeights.length,
+    final rowHeightVariants = _axisPieceVariants(
+      height,
+      sheetHeight,
+      minEdge,
     );
+    if (rowHeightVariants.isEmpty) {
+      return const [];
+    }
+
+    final plans = <(List<PlasterSheetPlacement>, int, int)>[];
+    final seen = <String>{};
+    for (final rowHeights in rowHeightVariants) {
+      final rowWidthOptions = <List<List<int>>>[];
+      var valid = true;
+      for (var row = 0; row < rowHeights.length; row++) {
+        final variants = _axisPieceVariants(
+          width,
+          sheetWidth,
+          minEdge,
+          starter: horizontalWallStarter,
+        );
+        if (variants.isEmpty) {
+          valid = false;
+          break;
+        }
+        rowWidthOptions.add(variants);
+      }
+      if (!valid) {
+        continue;
+      }
+
+      void buildRowPlans(
+        int row,
+        List<List<int>> chosen,
+      ) {
+        if (plans.length >= maxPlans) {
+          return;
+        }
+        if (row == rowHeights.length) {
+          final placements = <PlasterSheetPlacement>[];
+          var maxAcross = 0;
+          var y = 0;
+          for (var i = 0; i < rowHeights.length; i++) {
+            final widths = chosen[i];
+            maxAcross = max(maxAcross, widths.length);
+            var x = 0;
+            for (final pieceWidth in widths) {
+              placements.add(
+                PlasterSheetPlacement(
+                  x: x,
+                  y: y,
+                  width: pieceWidth,
+                  height: rowHeights[i],
+                ),
+              );
+              x += pieceWidth;
+            }
+            y += rowHeights[i];
+          }
+          final signature = placements
+              .map(
+                (piece) =>
+                    '${piece.x},${piece.y},${piece.width},${piece.height}',
+              )
+              .join('|');
+          if (seen.add(signature)) {
+            plans.add((placements, maxAcross, rowHeights.length));
+          }
+          return;
+        }
+
+        for (final widths in rowWidthOptions[row]) {
+          buildRowPlans(row + 1, [...chosen, widths]);
+          if (plans.length >= maxPlans) {
+            return;
+          }
+        }
+      }
+
+      buildRowPlans(0, const []);
+    }
+
+    return plans;
   }
 
-  static List<int>? _starterAxisPieces(
+  static List<List<int>> _axisPieceVariants(
     int surfaceLength,
     int sheetLength,
     int minEdge,
+    {bool starter = false}
   ) {
-    final starter = sheetLength ~/ 2;
-    if (starter < minEdge || surfaceLength < starter) {
-      return null;
+    final variants = <List<int>>[];
+    final seen = <String>{};
+
+    void addVariant(List<int>? pieces) {
+      if (pieces == null || pieces.isEmpty) {
+        return;
+      }
+      final key = pieces.join(',');
+      if (seen.add(key)) {
+        variants.add(pieces);
+      }
     }
-    if (surfaceLength == starter) {
-      return [starter];
+
+    if (starter) {
+      final starterLength = sheetLength ~/ 2;
+      if (starterLength < minEdge || surfaceLength < starterLength) {
+        return const [];
+      }
+      if (surfaceLength == starterLength) {
+        return [
+          [starterLength],
+        ];
+      }
+      final trailing = _axisPieceVariants(
+        surfaceLength - starterLength,
+        sheetLength,
+        minEdge,
+      );
+      for (final variant in trailing) {
+        addVariant([starterLength, ...variant]);
+      }
+      return variants;
     }
-    final trailing = _axisPieces(surfaceLength - starter, sheetLength, minEdge);
-    if (trailing == null) {
-      return null;
+
+    final base = _axisPieces(surfaceLength, sheetLength, minEdge);
+    addVariant(base);
+    if (base == null) {
+      return const [];
     }
-    return [starter, ...trailing];
+    if (base.length > 1) {
+      addVariant([...base.reversed]);
+    }
+    final cutIndexes = <int>[
+      for (var i = 0; i < base.length; i++)
+        if (base[i] < sheetLength) i,
+    ];
+    for (final cutIndex in cutIndexes) {
+      if (cutIndex > 0) {
+        addVariant([
+          base[cutIndex],
+          ...[
+            for (var i = 0; i < base.length; i++)
+              if (i != cutIndex) base[i],
+          ],
+        ]);
+      }
+      if (cutIndex < base.length - 1) {
+        addVariant([
+          ...[
+            for (var i = 0; i < base.length; i++)
+              if (i != cutIndex) base[i],
+          ],
+          base[cutIndex],
+        ]);
+      }
+      if (base.length > 2 && cutIndex != 1) {
+        final moved = [
+          base.first,
+          base[cutIndex],
+          ...[
+            for (var i = 1; i < base.length; i++)
+              if (i != cutIndex) base[i],
+          ],
+        ];
+        addVariant(moved);
+      }
+    }
+    return variants;
   }
 
   static List<int>? _axisPieces(
@@ -973,16 +1523,29 @@ class PlasterGeometry {
     return total;
   }
 
-  static int _countSheetsForPieces({
+  static _PackingResult _packPieces({
     required List<PlasterSheetPlacement> pieces,
     required int sheetWidth,
     required int sheetHeight,
+    required int minReusableEdge,
+    _PlasterSearchBudget? budget,
   }) {
     if (pieces.isEmpty) {
-      return 0;
+      return const _PackingResult(
+        sheetCount: 0,
+        wasteArea: 0,
+        usedArea: 0,
+        fragmentationPenalty: 0,
+        reusableArea: 0,
+      );
     }
 
     final sorted = [...pieces]..sort((left, right) {
+      final areaCompare =
+          (right.width * right.height).compareTo(left.width * left.height);
+      if (areaCompare != 0) {
+        return areaCompare;
+      }
       final heightCompare = right.height.compareTo(left.height);
       if (heightCompare != 0) {
         return heightCompare;
@@ -991,90 +1554,315 @@ class PlasterGeometry {
       if (widthCompare != 0) {
         return widthCompare;
       }
-      return (right.width * right.height).compareTo(left.width * left.height);
+      return 0;
     });
 
-    final sheets = <List<_FreeRect>>[];
+    const beamWidth = 24;
+    const maxChoicesPerPiece = 4;
+    var beam = <_PackingState>[
+      const _PackingState(
+        sheets: [],
+        usedArea: 0,
+        score: _ProjectLayoutScore(
+          sheetCount: 0,
+          wasteArea: 0,
+          fragmentationPenalty: 0,
+          reusableArea: 0,
+        ),
+      ),
+    ];
+
     for (final piece in sorted) {
-      var placed = false;
-      for (final freeRects in sheets) {
-        if (_placePieceInSheet(
-          freeRects: freeRects,
+      if (budget?.isExpired ?? false) {
+        budget?.timedOut = true;
+        break;
+      }
+      final nextBeam = <_PackingState>[];
+      for (final state in beam) {
+        final choices = _placementChoices(
+          state: state,
           pieceWidth: piece.width,
           pieceHeight: piece.height,
-        )) {
-          placed = true;
-          break;
+          sheetWidth: sheetWidth,
+          sheetHeight: sheetHeight,
+          minReusableEdge: minReusableEdge,
+        );
+        for (final choice in choices.take(maxChoicesPerPiece)) {
+          final nextState = _applyPlacementChoice(
+            state: state,
+            choice: choice,
+            sheetWidth: sheetWidth,
+            sheetHeight: sheetHeight,
+            minReusableEdge: minReusableEdge,
+          );
+          if (nextState != null) {
+            nextBeam.add(nextState);
+          }
         }
       }
-      if (placed) {
-        continue;
+      if (nextBeam.isEmpty) {
+        final sheetArea = sheetWidth * sheetHeight;
+        final usedArea = sorted.fold<int>(
+          0,
+          (sum, value) => sum + value.width * value.height,
+        );
+        final fallbackSheets = max(
+          1,
+          sorted.fold<int>(0, (sum, value) => sum + 1),
+        );
+        return _PackingResult(
+          sheetCount: fallbackSheets,
+          wasteArea: max(0, fallbackSheets * sheetArea - usedArea),
+          usedArea: usedArea,
+          fragmentationPenalty: 0,
+          reusableArea: 0,
+        );
       }
-
-      final freeRects = [const _FreeRect(0, 0, 0, 0)];
-      freeRects[0] = _FreeRect(0, 0, sheetWidth, sheetHeight);
-      final inserted = _placePieceInSheet(
-        freeRects: freeRects,
-        pieceWidth: piece.width,
-        pieceHeight: piece.height,
-      );
-      if (!inserted) {
-        return max(1, pieces.length);
-      }
-      sheets.add(freeRects);
+      nextBeam.sort((left, right) {
+        if (_isBetterProjectScore(left.score, right.score)) {
+          return -1;
+        }
+        if (_isBetterProjectScore(right.score, left.score)) {
+          return 1;
+        }
+        return 0;
+      });
+      beam = nextBeam.take(beamWidth).toList();
     }
 
-    return sheets.length;
+    final best = beam.first;
+    return _PackingResult(
+      sheetCount: best.score.sheetCount,
+      wasteArea: best.score.wasteArea,
+      usedArea: best.usedArea,
+      fragmentationPenalty: best.score.fragmentationPenalty,
+      reusableArea: best.score.reusableArea,
+    );
   }
 
-  static bool _placePieceInSheet({
-    required List<_FreeRect> freeRects,
+  static List<_PlacementChoice> _placementChoices({
+    required _PackingState state,
+    required int pieceWidth,
+    required int pieceHeight,
+    required int sheetWidth,
+    required int sheetHeight,
+    required int minReusableEdge,
+  }) {
+    final choices = <_PlacementChoice>[];
+    final orientations = <(int, int)>[
+      (pieceWidth, pieceHeight),
+      if (pieceWidth != pieceHeight) (pieceHeight, pieceWidth),
+    ];
+
+    for (var sheetIndex = 0; sheetIndex < state.sheets.length; sheetIndex++) {
+      final sheet = state.sheets[sheetIndex];
+      for (var rectIndex = 0; rectIndex < sheet.freeRects.length; rectIndex++) {
+        final rect = sheet.freeRects[rectIndex];
+        for (final orientation in orientations) {
+          if (orientation.$1 > rect.width || orientation.$2 > rect.height) {
+            continue;
+          }
+          final splitRects = _splitFreeRect(
+            rect: rect,
+            pieceWidth: orientation.$1,
+            pieceHeight: orientation.$2,
+          );
+          final pruned = [...splitRects];
+          _pruneFreeRects(pruned);
+          choices.add(
+            _PlacementChoice(
+              sheetIndex: sheetIndex,
+              rectIndex: rectIndex,
+              pieceWidth: orientation.$1,
+              pieceHeight: orientation.$2,
+              leftoverArea: rect.area - orientation.$1 * orientation.$2,
+              fragmentationPenalty: _fragmentationPenalty(
+                pruned,
+                minReusableEdge,
+              ),
+              reusableArea: _reusableArea(pruned, minReusableEdge),
+            ),
+          );
+        }
+      }
+    }
+
+    for (final orientation in orientations) {
+      if (orientation.$1 > sheetWidth || orientation.$2 > sheetHeight) {
+        continue;
+      }
+      final splitRects = _splitFreeRect(
+        rect: _FreeRect(0, 0, sheetWidth, sheetHeight),
+        pieceWidth: orientation.$1,
+        pieceHeight: orientation.$2,
+      );
+      final pruned = [...splitRects];
+      _pruneFreeRects(pruned);
+      choices.add(
+        _PlacementChoice(
+          sheetIndex: state.sheets.length,
+          rectIndex: -1,
+          pieceWidth: orientation.$1,
+          pieceHeight: orientation.$2,
+          leftoverArea:
+              sheetWidth * sheetHeight - orientation.$1 * orientation.$2,
+          fragmentationPenalty: _fragmentationPenalty(pruned, minReusableEdge),
+          reusableArea: _reusableArea(pruned, minReusableEdge),
+        ),
+      );
+    }
+
+    choices.sort((left, right) {
+      final newSheetCompare = left.sheetIndex.compareTo(right.sheetIndex);
+      if (newSheetCompare != 0) {
+        return newSheetCompare;
+      }
+      final leftoverCompare = left.leftoverArea.compareTo(right.leftoverArea);
+      if (leftoverCompare != 0) {
+        return leftoverCompare;
+      }
+      final fragmentationCompare = left.fragmentationPenalty.compareTo(
+        right.fragmentationPenalty,
+      );
+      if (fragmentationCompare != 0) {
+        return fragmentationCompare;
+      }
+      return right.reusableArea.compareTo(left.reusableArea);
+    });
+    return choices;
+  }
+
+  static _PackingState? _applyPlacementChoice({
+    required _PackingState state,
+    required _PlacementChoice choice,
+    required int sheetWidth,
+    required int sheetHeight,
+    required int minReusableEdge,
+  }) {
+    final sheets = [for (final sheet in state.sheets) sheet.copy()];
+    if (choice.sheetIndex > sheets.length) {
+      return null;
+    }
+    if (choice.sheetIndex == sheets.length) {
+      sheets.add(
+        const _PackedSheet(
+          freeRects: [],
+          usedArea: 0,
+        ),
+      );
+    }
+
+    final targetSheet = sheets[choice.sheetIndex];
+    final freeRects = [for (final rect in targetSheet.freeRects) rect];
+    if (choice.rectIndex >= freeRects.length) {
+      return null;
+    }
+    final consumedRect = choice.rectIndex >= 0
+        ? freeRects.removeAt(choice.rectIndex)
+        : _FreeRect(0, 0, sheetWidth, sheetHeight);
+    freeRects.addAll(
+      _splitFreeRect(
+        rect: consumedRect,
+        pieceWidth: choice.pieceWidth,
+        pieceHeight: choice.pieceHeight,
+      ),
+    );
+    _pruneFreeRects(freeRects);
+    sheets[choice.sheetIndex] = _PackedSheet(
+      freeRects: freeRects,
+      usedArea:
+          targetSheet.usedArea + choice.pieceWidth * choice.pieceHeight,
+    );
+
+    final usedArea = state.usedArea + choice.pieceWidth * choice.pieceHeight;
+    final sheetArea = sheetWidth * sheetHeight;
+    final fragmentationPenalty = sheets.fold<int>(
+      0,
+      (sum, sheet) =>
+          sum + _fragmentationPenalty(sheet.freeRects, minReusableEdge),
+    );
+    final reusableArea = sheets.fold<int>(
+      0,
+      (sum, sheet) => sum + _reusableArea(sheet.freeRects, minReusableEdge),
+    );
+    return _PackingState(
+      sheets: sheets,
+      usedArea: usedArea,
+      score: _ProjectLayoutScore(
+        sheetCount: sheets.length,
+        wasteArea: max(0, sheets.length * sheetArea - usedArea),
+        fragmentationPenalty: fragmentationPenalty,
+        reusableArea: reusableArea,
+      ),
+    );
+  }
+
+  static List<_FreeRect> _splitFreeRect({
+    required _FreeRect rect,
     required int pieceWidth,
     required int pieceHeight,
   }) {
-    for (var i = 0; i < freeRects.length; i++) {
-      final rect = freeRects[i];
-      if (pieceWidth > rect.width || pieceHeight > rect.height) {
-        continue;
-      }
-      freeRects.removeAt(i);
-      final rightWidth = rect.width - pieceWidth;
-      final bottomHeight = rect.height - pieceHeight;
-      if (rightWidth > 0) {
-        freeRects.add(
-          _FreeRect(
-            rect.x + pieceWidth,
-            rect.y,
-            rightWidth,
-            pieceHeight,
-          ),
-        );
-      }
-      if (bottomHeight > 0) {
-        freeRects.add(
-          _FreeRect(
-            rect.x,
-            rect.y + pieceHeight,
-            rect.width,
-            bottomHeight,
-          ),
-        );
-      }
-      if (rightWidth > 0 && bottomHeight > 0) {
-        freeRects.add(
-          _FreeRect(
-            rect.x + pieceWidth,
-            rect.y + pieceHeight,
-            rightWidth,
-            bottomHeight,
-          ),
-        );
-      }
-      _pruneFreeRects(freeRects);
-      return true;
+    final freeRects = <_FreeRect>[];
+    final rightWidth = rect.width - pieceWidth;
+    final bottomHeight = rect.height - pieceHeight;
+    if (rightWidth > 0) {
+      freeRects.add(
+        _FreeRect(
+          rect.x + pieceWidth,
+          rect.y,
+          rightWidth,
+          pieceHeight,
+        ),
+      );
     }
-    return false;
+    if (bottomHeight > 0) {
+      freeRects.add(
+        _FreeRect(
+          rect.x,
+          rect.y + pieceHeight,
+          rect.width,
+          bottomHeight,
+        ),
+      );
+    }
+    if (rightWidth > 0 && bottomHeight > 0) {
+      freeRects.add(
+        _FreeRect(
+          rect.x + pieceWidth,
+          rect.y + pieceHeight,
+          rightWidth,
+          bottomHeight,
+        ),
+      );
+    }
+    return freeRects;
   }
+
+  static int _fragmentationPenalty(
+    List<_FreeRect> freeRects,
+    int minReusableEdge,
+  ) => freeRects.fold<int>(0, (sum, rect) {
+    final reusable =
+        rect.width >= minReusableEdge && rect.height >= minReusableEdge;
+    if (!reusable) {
+      return sum + rect.area;
+    }
+    return sum + max(0, minReusableEdge * minReusableEdge - rect.area);
+  });
+
+  static int _reusableArea(
+    List<_FreeRect> freeRects,
+    int minReusableEdge,
+  ) => freeRects.fold<int>(0, (sum, rect) {
+    final reusable =
+        rect.width >= minReusableEdge && rect.height >= minReusableEdge;
+    return sum + (reusable ? rect.area : 0);
+  });
+
+  static PreferredUnitSystem _unitSystemForMaterialKey(String key) =>
+      key.split(':')[1] == PreferredUnitSystem.imperial.name
+          ? PreferredUnitSystem.imperial
+          : PreferredUnitSystem.metric;
 
   static void _pruneFreeRects(List<_FreeRect> freeRects) {
     freeRects.removeWhere((rect) => rect.width <= 0 || rect.height <= 0);
@@ -1151,6 +1939,7 @@ class PlasterGeometry {
     final groupedSheetSizes = <String, (int, int)>{};
     var rawPurchasedArea = 0;
     var totalSheetCount = 0;
+    var reusableOffcutArea = 0;
     for (final layout in layouts) {
       final roomUnitSystem = _unitSystemForArea(layout, roomShapes);
       final key =
@@ -1182,13 +1971,15 @@ class PlasterGeometry {
     }
     for (final entry in groupedPieces.entries) {
       final sheetSize = groupedSheetSizes[entry.key]!;
-      final sheetCount = _countSheetsForPieces(
+      final packed = _packPieces(
         pieces: entry.value,
         sheetWidth: sheetSize.$1,
         sheetHeight: sheetSize.$2,
+        minReusableEdge: minEdgePiece(_unitSystemForMaterialKey(entry.key)),
       );
-      totalSheetCount += sheetCount;
-      rawPurchasedArea += sheetCount * sheetSize.$1 * sheetSize.$2;
+      totalSheetCount += packed.sheetCount;
+      rawPurchasedArea += packed.sheetCount * sheetSize.$1 * sheetSize.$2;
+      reusableOffcutArea += packed.reusableArea;
     }
     totalArea = layouts.fold<int>(0, (sum, layout) => sum + layout.area);
     final orderedSheetCount = max(
@@ -1199,17 +1990,23 @@ class PlasterGeometry {
     final averageSheetArea = totalSheetCount == 0
         ? 0.0
         : rawPurchasedArea / totalSheetCount;
-    final estimatedWasteArea = max(
+    final cutWasteArea = max(0, rawPurchasedArea - totalArea);
+    final contingencyWasteArea = max(
       0,
-      (rawPurchasedArea - totalArea) +
-          (averageSheetArea * contingencySheetCount).round(),
+      (averageSheetArea * contingencySheetCount).round(),
     );
+    final estimatedWasteArea = cutWasteArea;
     final estimatedWastePercent = totalArea == 0
         ? 0.0
         : (estimatedWasteArea / totalArea) * 100;
     return PlasterTakeoffSummary(
       totalSheetCount: totalSheetCount,
       totalSheetCountWithWaste: orderedSheetCount,
+      surfaceArea: totalArea,
+      purchasedBoardArea: rawPurchasedArea,
+      cutWasteArea: cutWasteArea,
+      contingencyWasteArea: contingencyWasteArea,
+      reusableOffcutArea: reusableOffcutArea,
       estimatedWasteArea: estimatedWasteArea,
       estimatedWastePercent: estimatedWastePercent,
       contingencySheetCount: contingencySheetCount,

@@ -3,6 +3,7 @@
 */
 
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:math';
 
 import 'package:deferred_state/deferred_state.dart';
@@ -70,6 +71,21 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   _RoomBundle? _gestureBaseRoom;
   List<_RoomBundle> _rooms = [];
   List<PlasterMaterialSize> _materials = [];
+  List<PlasterSurfaceLayout> _layouts = const [];
+  var _takeoff = const PlasterTakeoffSummary.zero();
+  Isolate? _analysisIsolate;
+  ReceivePort? _analysisPort;
+  StreamSubscription<dynamic>? _analysisSubscription;
+  Completer<void>? _analysisCompleter;
+  var _analysisGeneration = 0;
+  var _isAnalyzing = false;
+  var _analysisTimedOut = false;
+  var _analysisReachedTargetWaste = false;
+  var _analysisExploredStates = 0;
+  var _analysisElapsedMs = 0;
+  double? _bestWastePercentSeen;
+  Stopwatch? _analysisStopwatch;
+  Timer? _analysisTimer;
 
   bool get _isRoomEditorOnly => widget.editorOnlyRoomId != null;
 
@@ -126,6 +142,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _selectedSupplier.selected = project.supplierId;
     });
     _syncRoomControllers();
+    unawaited(_startAnalysis());
   }
 
   Future<List<PlasterRoomLine>> _ensureRoomLines(PlasterRoom room) async {
@@ -149,6 +166,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
+    unawaited(_stopAnalysis());
+    _analysisTimer?.cancel();
     _nameController.dispose();
     _roomNameController.dispose();
     _wasteController.dispose();
@@ -173,6 +192,190 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   }
 
   _RoomBundle get _currentRoom => _rooms[_selectedRoomIndex];
+
+  List<PlasterRoomShape> _buildShapes() => [
+    for (final bundle in _rooms)
+      PlasterRoomShape(
+        room: bundle.room,
+        lines: bundle.lines,
+        openings: bundle.openings,
+      ),
+  ];
+
+  bool _isBetterTakeoff(
+    PlasterTakeoffSummary candidate,
+    PlasterTakeoffSummary baseline,
+  ) {
+    if (baseline.totalSheetCount == 0 &&
+        baseline.totalSheetCountWithWaste == 0) {
+      return true;
+    }
+    if (candidate.totalSheetCountWithWaste !=
+        baseline.totalSheetCountWithWaste) {
+      return candidate.totalSheetCountWithWaste <
+          baseline.totalSheetCountWithWaste;
+    }
+    if (candidate.totalSheetCount != baseline.totalSheetCount) {
+      return candidate.totalSheetCount < baseline.totalSheetCount;
+    }
+    if (candidate.estimatedWasteArea != baseline.estimatedWasteArea) {
+      return candidate.estimatedWasteArea < baseline.estimatedWasteArea;
+    }
+    if (candidate.estimatedWastePercent != baseline.estimatedWastePercent) {
+      return candidate.estimatedWastePercent < baseline.estimatedWastePercent;
+    }
+    if (candidate.tapeLength != baseline.tapeLength) {
+      return candidate.tapeLength < baseline.tapeLength;
+    }
+    return false;
+  }
+
+  Future<void> _stopAnalysis({bool markStopped = true}) async {
+    _analysisGeneration++;
+    _analysisIsolate?.kill(priority: Isolate.immediate);
+    _analysisIsolate = null;
+    _analysisTimer?.cancel();
+    _analysisTimer = null;
+    _analysisStopwatch?.stop();
+    _analysisElapsedMs = _analysisStopwatch?.elapsedMilliseconds ?? 0;
+    await _analysisSubscription?.cancel();
+    _analysisSubscription = null;
+    _analysisPort?.close();
+    _analysisPort = null;
+    if (_analysisCompleter != null && !_analysisCompleter!.isCompleted) {
+      _analysisCompleter!.complete();
+    }
+    _analysisCompleter = null;
+    if (markStopped && mounted && _isAnalyzing) {
+      setState(() {
+        _isAnalyzing = false;
+      });
+    } else {
+      _isAnalyzing = false;
+    }
+  }
+
+  Future<void> _startAnalysis({bool awaitCompletion = false}) async {
+    if (!mounted) {
+      return;
+    }
+    await _stopAnalysis(markStopped: false);
+    final shapes = _buildShapes();
+    final generation = ++_analysisGeneration;
+    if (shapes.isEmpty || _materials.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _layouts = const [];
+          _takeoff = const PlasterTakeoffSummary.zero();
+          _isAnalyzing = false;
+          _analysisTimedOut = false;
+          _analysisReachedTargetWaste = false;
+          _analysisExploredStates = 0;
+          _analysisElapsedMs = 0;
+          _bestWastePercentSeen = null;
+        });
+      }
+      return;
+    }
+
+    final port = ReceivePort();
+    final completer = Completer<void>();
+    _analysisStopwatch = Stopwatch()..start();
+    _analysisTimer?.cancel();
+    _analysisTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (!mounted || !_isAnalyzing) {
+        return;
+      }
+      final elapsedMs = _analysisStopwatch?.elapsedMilliseconds ?? 0;
+      if (elapsedMs == _analysisElapsedMs) {
+        return;
+      }
+      setState(() {
+        _analysisElapsedMs = elapsedMs;
+      });
+    });
+    setState(() {
+      _analysisPort = port;
+      _analysisCompleter = completer;
+      _isAnalyzing = true;
+      _analysisTimedOut = false;
+      _analysisReachedTargetWaste = false;
+      _analysisExploredStates = 0;
+      _analysisElapsedMs = 0;
+      _bestWastePercentSeen = null;
+    });
+    final request = PlasterAnalysisRequest(
+      roomShapes: shapes,
+      materials: _materials,
+      wastePercent:
+          int.tryParse(_wasteController.text.trim()) ?? _project.wastePercent,
+    );
+    _analysisIsolate = await Isolate.spawn<PlasterAnalysisIsolateRequest>(
+      plasterAnalyzeProjectInIsolate,
+      PlasterAnalysisIsolateRequest(
+        sendPort: port.sendPort,
+        request: request,
+      ),
+      debugName: 'plasterboard-layout-analysis',
+    );
+    _analysisSubscription = port.listen((message) {
+      if (!mounted || generation != _analysisGeneration) {
+        return;
+      }
+      if (message is PlasterAnalysisProgress) {
+        setState(() {
+          _analysisExploredStates = message.exploredStates;
+          _analysisTimedOut = message.timedOut;
+          _analysisReachedTargetWaste = message.reachedTargetWaste;
+        });
+        return;
+      }
+      if (message is PlasterAnalysisResult) {
+        setState(() {
+          _analysisExploredStates = message.exploredStates;
+          _analysisTimedOut = message.timedOut;
+          _analysisReachedTargetWaste = message.reachedTargetWaste;
+          _bestWastePercentSeen = _bestWastePercentSeen == null
+              ? message.takeoff.estimatedWastePercent
+              : min(
+                  _bestWastePercentSeen!,
+                  message.takeoff.estimatedWastePercent,
+                );
+          if (_isBetterTakeoff(message.takeoff, _takeoff)) {
+            _layouts = message.layouts;
+            _takeoff = message.takeoff;
+          }
+          if (message.complete) {
+            _isAnalyzing = false;
+            _analysisElapsedMs =
+                _analysisStopwatch?.elapsedMilliseconds ?? message.elapsedMs;
+          }
+        });
+        if (message.complete) {
+          unawaited(_stopAnalysis(markStopped: false));
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        }
+        return;
+      }
+      if (message is PlasterAnalysisFailure) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Layout analysis failed: ${message.error}')),
+        );
+        unawaited(_stopAnalysis(markStopped: false));
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      }
+    });
+    if (awaitCompletion) {
+      await completer.future;
+    }
+  }
 
   void _syncRoomControllers() {
     if (_rooms.isEmpty) {
@@ -269,6 +472,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     if (mounted) {
       setState(() {});
     }
+    await _startAnalysis();
   }
 
   Future<List<PlasterMaterialSize>> _loadMaterialsForSupplier(
@@ -630,6 +834,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       }
       setState(() {});
     }
+    await _startAnalysis();
   }
 
   Future<void> _commitRoomGestureEdit() async {
@@ -643,24 +848,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
   Future<void> _previewPdf() async {
     await _commitPendingRoomEdits();
-    final shapes = _rooms
-        .map(
-          (bundle) => PlasterRoomShape(
-            room: bundle.room,
-            lines: bundle.lines,
-            openings: bundle.openings,
-          ),
-        )
-        .toList();
-    final layouts = PlasterGeometry.calculateLayout(
-      shapes,
-      _materials,
-    );
-    final takeoff = PlasterGeometry.calculateTakeoff(
-      shapes,
-      layouts,
-      int.tryParse(_wasteController.text) ?? _project.wastePercent,
-    );
+    await _startAnalysis(awaitCompletion: true);
+    final shapes = _buildShapes();
     final file = await BlockingUI().runAndWait(
       label: 'Generating Plasterboard PDF',
       () => generatePlasterProjectPdf(
@@ -669,8 +858,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         task: _task,
         supplier: _supplier,
         roomShapes: shapes,
-        layouts: layouts,
-        takeoff: takeoff,
+        layouts: _layouts,
+        takeoff: _takeoff,
       ),
     );
     if (!mounted) {
@@ -720,9 +909,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
   Future<void> _reanalyzeLayout() async {
     await _commitPendingRoomEdits();
-    if (mounted) {
-      setState(() {});
-    }
+    await _startAnalysis();
   }
 
   Future<void> _splitLine(int index) async {
@@ -1836,12 +2023,57 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         ),
       ),
       ListTile(
+        title: const Text('Net surface area'),
+        trailing: Text(
+          PlasterGeometry.formatDisplayArea(
+            takeoff.surfaceArea,
+            unitSystem,
+          ),
+        ),
+      ),
+      ListTile(
+        title: const Text('Purchased board area'),
+        trailing: Text(
+          PlasterGeometry.formatDisplayArea(
+            takeoff.purchasedBoardArea,
+            unitSystem,
+          ),
+        ),
+      ),
+      ListTile(
         title: const Text('Estimated wastage'),
         trailing: Text(
           '${PlasterGeometry.formatDisplayArea(
             takeoff.estimatedWasteArea,
             unitSystem,
           )} (${takeoff.estimatedWastePercent.toStringAsFixed(1)}%)',
+        ),
+      ),
+      ListTile(
+        title: const Text('Cut/layout waste'),
+        trailing: Text(
+          PlasterGeometry.formatDisplayArea(
+            takeoff.cutWasteArea,
+            unitSystem,
+          ),
+        ),
+      ),
+      ListTile(
+        title: const Text('Contingency waste'),
+        trailing: Text(
+          PlasterGeometry.formatDisplayArea(
+            takeoff.contingencyWasteArea,
+            unitSystem,
+          ),
+        ),
+      ),
+      ListTile(
+        title: const Text('Reusable offcuts'),
+        trailing: Text(
+          PlasterGeometry.formatDisplayArea(
+            takeoff.reusableOffcutArea,
+            unitSystem,
+          ),
         ),
       ),
       ListTile(
@@ -1899,6 +2131,51 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     ],
   );
 
+  Widget _buildAnalysisStatus() {
+    if (!_isAnalyzing && _analysisElapsedMs == 0) {
+      return const SizedBox.shrink();
+    }
+    final status = _isAnalyzing
+        ? 'Analyzing layout'
+        : _analysisTimedOut
+        ? 'Best layout from timed analysis'
+        : _analysisReachedTargetWaste
+        ? 'Target waste reached'
+        : 'Layout search exhausted';
+    final wasteText = _bestWastePercentSeen == null
+        ? 'Best waste: n/a'
+        : 'Best waste: ${_bestWastePercentSeen!.toStringAsFixed(1)}%';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        child: ListTile(
+          dense: true,
+          leading: _isAnalyzing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.analytics_outlined),
+          title: Text(status),
+          subtitle: Text(
+            '$wasteText'
+            '  •  Elapsed ${(_analysisElapsedMs / 1000).toStringAsFixed(1)}s'
+            '  •  Explored $_analysisExploredStates layouts',
+          ),
+          trailing: _isAnalyzing
+              ? TextButton(
+                  onPressed: () => unawaited(_stopAnalysis()),
+                  child: const Text('Stop'),
+                )
+              : null,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => DeferredBuilder(
     this,
@@ -1907,24 +2184,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       final isMobileLandscape =
           media.orientation == Orientation.landscape &&
           media.size.shortestSide < 700;
-      final shapes = _rooms
-          .map(
-            (bundle) => PlasterRoomShape(
-              room: bundle.room,
-              lines: bundle.lines,
-              openings: bundle.openings,
-            ),
-          )
-          .toList();
-      final layouts = PlasterGeometry.calculateLayout(
-        shapes,
-        _materials,
-      );
-      final takeoff = PlasterGeometry.calculateTakeoff(
-        shapes,
-        layouts,
-        int.tryParse(_wasteController.text) ?? _project.wastePercent,
-      );
       final displayUnit = _rooms.isNotEmpty
           ? _currentRoom.room.unitSystem
           : PreferredUnitSystem.metric;
@@ -1941,6 +2200,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               onPressed: () => unawaited(_reanalyzeLayout()),
               icon: const Icon(Icons.refresh),
             ),
+            if (_isAnalyzing)
+              IconButton(
+                tooltip: 'Stop Analysis',
+                onPressed: () => unawaited(_stopAnalysis()),
+                icon: const Icon(Icons.stop_circle_outlined),
+              ),
             if (!_isRoomEditorOnly) ...[
               IconButton(
                 onPressed: () => unawaited(_saveProject()),
@@ -1960,6 +2225,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildAnalysisStatus(),
                     TextField(
                       controller: _nameController,
                       decoration: const InputDecoration(
@@ -2015,8 +2281,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                       ),
                     ),
                     const Divider(),
-                    _buildSheetLayoutsSection(layouts),
-                    _buildTakeoffSection(takeoff, displayUnit),
+                    _buildSheetLayoutsSection(_layouts),
+                    _buildTakeoffSection(_takeoff, displayUnit),
                   ],
                 ),
         ),

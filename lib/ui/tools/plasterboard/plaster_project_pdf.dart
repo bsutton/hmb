@@ -107,7 +107,12 @@ Future<File> generatePlasterProjectPdf({
           data: [
             ['Sheets', '${takeoff.totalSheetCount}'],
             ['Sheets incl. waste', orderedSheetSummary],
+            ['Net surface area', _pdfArea(takeoff.surfaceArea)],
+            ['Purchased board area', _pdfArea(takeoff.purchasedBoardArea)],
             ['Estimated wastage', wasteSummary],
+            ['Cut/layout waste', _pdfArea(takeoff.cutWasteArea)],
+            ['Contingency waste', _pdfArea(takeoff.contingencyWasteArea)],
+            ['Reusable offcuts', _pdfArea(takeoff.reusableOffcutArea)],
             ['Cornice', _pdfLength(takeoff.corniceLength)],
             ['Inside corners', _pdfLength(takeoff.insideCornerLength)],
             ['Outside corners', _pdfLength(takeoff.outsideCornerLength)],

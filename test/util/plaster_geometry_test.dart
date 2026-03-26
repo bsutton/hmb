@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/plaster_geometry.dart';
+import 'package:hmb/util/dart/plaster_sheet_direction.dart';
 
 void main() {
   group('PlasterGeometry', () {
@@ -393,6 +394,95 @@ void main() {
         layouts.every((layout) => layout.material.name == '6000 x 1200'),
         isTrue,
       );
+      expect(takeoff.totalSheetCount, 1);
+    });
+
+    test('calculate takeoff rotates and packs project pieces efficiently', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Packing',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      for (var i = 2; i < 4; i++) {
+        lines[i] = lines[i].copyWith(plasterSelected: false);
+      }
+      final shape = PlasterRoomShape(
+        room: room,
+        lines: lines,
+        openings: const [],
+      );
+      final material = PlasterMaterialSize.forInsert(
+        supplierId: 1,
+        name: '4000 x 3000',
+        unitSystem: PreferredUnitSystem.metric,
+        width: 40000,
+        height: 30000,
+      );
+      final layouts = [
+        PlasterSurfaceLayout(
+          roomId: room.id,
+          lineId: 1,
+          isCeiling: false,
+          label: 'A',
+          material: material,
+          direction: PlasterSheetDirection.horizontal,
+          width: 30000,
+          height: 12000,
+          area: 30000 * 12000,
+          sheetsAcross: 1,
+          sheetsDown: 1,
+          sheetCount: 1,
+          sheetCountWithWaste: 1,
+          placements: const [
+            PlasterSheetPlacement(
+              x: 0,
+              y: 0,
+              width: 30000,
+              height: 12000,
+            ),
+          ],
+          estimatedJointTapeLength: 0,
+          estimatedScrewCount: 0,
+          estimatedGlueKg: 0,
+          estimatedPlasterKg: 0,
+        ),
+        PlasterSurfaceLayout(
+          roomId: room.id,
+          lineId: 2,
+          isCeiling: false,
+          label: 'B',
+          material: material,
+          direction: PlasterSheetDirection.vertical,
+          width: 12000,
+          height: 30000,
+          area: 12000 * 30000,
+          sheetsAcross: 1,
+          sheetsDown: 1,
+          sheetCount: 1,
+          sheetCountWithWaste: 1,
+          placements: const [
+            PlasterSheetPlacement(
+              x: 0,
+              y: 0,
+              width: 12000,
+              height: 30000,
+            ),
+          ],
+          estimatedJointTapeLength: 0,
+          estimatedScrewCount: 0,
+          estimatedGlueKg: 0,
+          estimatedPlasterKg: 0,
+        ),
+      ];
+
+      final takeoff = PlasterGeometry.calculateTakeoff([shape], layouts, 0);
+
       expect(takeoff.totalSheetCount, 1);
     });
   });
