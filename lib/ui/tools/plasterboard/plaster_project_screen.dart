@@ -473,6 +473,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     await _startAnalysis();
   }
 
+  Future<void> _updateSelectedSupplier(Supplier? supplier) async {
+    _selectedSupplier.selected = supplier?.id;
+    _supplier = supplier;
+    await _saveProject();
+  }
+
   Future<List<PlasterMaterialSize>> _loadMaterialsForSupplier(
     int? supplierId,
   ) async {
@@ -2064,8 +2070,13 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     PlasterTakeoffSummary takeoff,
     PreferredUnitSystem unitSystem,
   ) {
+    final estimatedWasteArea = PlasterGeometry.formatDisplayArea(
+      takeoff.estimatedWasteArea,
+      unitSystem,
+    );
     final estimatedWastage =
-        '${PlasterGeometry.formatDisplayArea(takeoff.estimatedWasteArea, unitSystem)} (${takeoff.estimatedWastePercent.toStringAsFixed(1)}%)';
+        '$estimatedWasteArea '
+        '(${takeoff.estimatedWastePercent.toStringAsFixed(1)}%)';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2296,8 +2307,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                       HMBSelectSupplier(
                         selectedSupplier: _selectedSupplier,
                         onSelected: (supplier) async {
-                          _supplier = supplier;
-                          await _saveProject();
+                          await _updateSelectedSupplier(supplier);
                         },
                       ),
                       TextField(
@@ -2590,6 +2600,8 @@ class _SurfaceLayoutViewerScreen extends StatelessWidget {
       layout.height,
       unitSystem,
     );
+    final materialDirectionLabel =
+        '${layout.material.name}  ${layout.direction.layoutLabel}';
     return Scaffold(
       appBar: AppBar(title: Text(layout.label)),
       body: OrientationBuilder(
@@ -2608,7 +2620,7 @@ class _SurfaceLayoutViewerScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${layout.material.name}  ${layout.direction.layoutLabel}',
+                      materialDirectionLabel,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
