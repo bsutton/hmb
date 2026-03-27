@@ -448,28 +448,33 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   Future<void> _saveProject() async {
     await _commitPendingRoomEdits();
     final previousSupplierId = _project.supplierId;
+    final selectedSupplierId = _selectedSupplier.selected;
     final updated = _project.copyWith(
       name: _nameController.text.trim().isEmpty
           ? _project.name
           : _nameController.text.trim(),
       jobId: _selectedJob.jobId ?? _project.jobId,
       taskId: _selectedTask.taskId,
-      supplierId: _selectedSupplier.selected,
+      supplierId: selectedSupplierId,
       wastePercent:
           int.tryParse(_wasteController.text.trim()) ?? _project.wastePercent,
     );
     await DaoPlasterProject().update(updated);
     _project = updated;
-    _selectedSupplier.selected = updated.supplierId;
     _job = await DaoJob().getById(updated.jobId);
     _task = updated.taskId == null
         ? null
         : await DaoTask().getById(updated.taskId);
-    _supplier = updated.supplierId == null
-        ? null
-        : await DaoSupplier().getById(updated.supplierId);
-    if (previousSupplierId != updated.supplierId) {
-      _materials = await _loadMaterialsForSupplier(updated.supplierId);
+    final supplierSelectionStillCurrent =
+        _selectedSupplier.selected == updated.supplierId;
+    if (supplierSelectionStillCurrent) {
+      _selectedSupplier.selected = updated.supplierId;
+      _supplier = updated.supplierId == null
+          ? null
+          : await DaoSupplier().getById(updated.supplierId);
+      if (previousSupplierId != updated.supplierId) {
+        _materials = await _loadMaterialsForSupplier(updated.supplierId);
+      }
     }
     if (mounted) {
       setState(() {});
