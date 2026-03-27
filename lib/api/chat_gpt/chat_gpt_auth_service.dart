@@ -13,6 +13,8 @@
 
 // lib/src/services/chatgpt_auth.dart
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 
 import 'package:oauth2/oauth2.dart' as oauth2;
 import 'package:url_launcher/url_launcher.dart';
@@ -77,6 +79,7 @@ class ChatGptAuth {
       _clientId,
       _authorizationEndpoint,
       _tokenEndpoint,
+      codeVerifier: _generateCodeVerifier(),
     );
     final authUrl = _grant!.getAuthorizationUrl(
       handler.redirectUri,
@@ -109,6 +112,13 @@ class ChatGptAuth {
       await login();
     }
     return _client!.credentials.accessToken;
+  }
+
+  /// Generates a cryptographically random PKCE code verifier (43-128 chars).
+  static String _generateCodeVerifier() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(32, (_) => random.nextInt(256));
+    return base64Url.encode(bytes).replaceAll('=', '');
   }
 
   /// Stores refreshed credentials back to the system table.

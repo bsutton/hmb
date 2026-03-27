@@ -12,6 +12,8 @@
 */
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:oauth2/oauth2.dart' as oauth2;
@@ -120,6 +122,7 @@ class XeroAuth2 {
       authorizationEndpoint,
       tokenEndpoint,
       secret: credentials.clientSecret,
+      codeVerifier: _generateCodeVerifier(),
     );
 
     final authorizationUrl = grant!.getAuthorizationUrl(
@@ -218,11 +221,14 @@ class XeroAuth2 {
     await _clearSavedCredentials();
   }
 
-  // TODO(bsutton): change to the PKCE grant type so
+  /// Generates a cryptographically random PKCE code verifier (43-128 chars).
+  static String _generateCodeVerifier() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(32, (_) => random.nextInt(256));
+    return base64Url.encode(bytes).replaceAll('=', '');
+  }
+
   /// Loads the Xero client credentials from your database/system settings.
-  /// that we don't need to store a secret key
-  /// and so that uses don't need to interact with xero
-  /// developer account.
   Future<XeroSecretIdentity> _fetchSecretIdentity() async {
     final system = await DaoSystem().get();
 
