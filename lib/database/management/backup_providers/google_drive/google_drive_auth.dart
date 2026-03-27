@@ -20,18 +20,16 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:settings_yaml/settings_yaml.dart';
 
+import '../../../../util/config/app_config.dart';
 import '../../../../util/flutter/paths_flutter.dart';
 import 'google_drive_folder_store.dart';
 
 class GoogleDriveAuth {
-  /// OAuth Client in Google Play Console: HMB-Production-Signed-By-Google
-  static const _clientId =
-      '''704526923643-ot7i0jpo27urkkibm1gsqpji7f2nigt3.apps.googleusercontent.com''';
+  /// OAuth Client ID — set via --dart-define=GOOGLE_CLIENT_ID=...
+  static String get _clientId => AppConfig.googleClientId;
 
-  /// OAuth Client in Google Play Console: HMB for Google
-  ///  Sign-in - this is the serverClientId
-  static const _serverClientId =
-      '''704526923643-vdu784t5s102g2uanosrd72rnv1cd795.apps.googleusercontent.com''';
+  /// Server Client ID — set via --dart-define=GOOGLE_SERVER_CLIENT_ID=...
+  static String get _serverClientId => AppConfig.googleServerClientId;
 
   static var _initialised = false;
   static late GoogleDriveAuth _instance;

@@ -87,8 +87,7 @@ Future<void> zipBackup({
 Future<void> _zipFiles(_ZipParams params) async {
   await Sentry.init((options) {
     options
-      ..dsn =
-          'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
+      ..dsn = const String.fromEnvironment('SENTRY_DSN', defaultValue: '')
       ..tracesSampleRate = 1.0;
   });
 
