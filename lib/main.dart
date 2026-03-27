@@ -32,6 +32,7 @@ import 'ui/nav/nav.g.dart';
 import 'ui/widgets/blocking_ui.dart';
 import 'ui/widgets/desktop_back_gesture.dart';
 import 'ui/widgets/layout/layout.g.dart';
+import 'util/config/app_config.dart';
 import 'util/dart/log.dart';
 import 'util/flutter/hmb_theme.dart';
 import 'util/flutter/notifications/local_notifs.dart';
@@ -51,8 +52,7 @@ Future<void> main(List<String> args) async {
   await SentryFlutter.init(
     (options) {
       options
-        ..dsn =
-            'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
+        ..dsn = AppConfig.sentryDsn
         ..tracesSampleRate = 1.0;
       options.replay.sessionSampleRate = 1.0;
       options.replay.onErrorSampleRate = 1.0;
