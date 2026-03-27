@@ -105,7 +105,7 @@ class _MonthScheduleState extends DeferredState<MonthSchedule> {
 
     setState(() {
       _monthController
-        ..clear()
+        ..removeWhere((_) => true)
         ..addAll(eventData);
     });
   }

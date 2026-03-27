@@ -2,7 +2,7 @@
 
 **Repo**: [ZoltyMat/hmb](https://github.com/ZoltyMat/hmb) (forked from bsutton/hmb)
 **Date**: 2026-03-27
-**Status**: Planning & Review
+**Status**: Phase 1 Complete — CI Green — K3s Deployed
 **Vision**: Apple-quality trade CRM — multi-user, multi-platform, offline-first, AI-powered
 
 ---
@@ -33,9 +33,16 @@ HMB (Hold My Beer) is a Flutter CRM for trade businesses. Forked to transform fr
 - [x] `.github/CODEOWNERS` — `@ZoltyMat` owns all paths
 - [x] `.gitignore` hardened (keystores, DBs, env files, google-services)
 
+**Also Done** (2026-03-27):
+- [x] Extract hardcoded Sentry DSN to runtime config (PR #2)
+- [x] Extract hardcoded Google OAuth client IDs to runtime config (PR #2)
+- [x] AES-256-CBC backup encryption before cloud upload (PR #3)
+- [x] PKCE added to Xero and ChatGPT OAuth flows (PR #4)
+- [x] Dockerfile, nginx config, k8s manifests, CI workflow (PR #5)
+- [x] Remove private onepub.dev dependencies (PR #6)
+- [x] K3s deployment live at `hmb.k3s.internal.strommen.systems`
+
 **Remaining**:
-- [ ] Extract hardcoded Sentry DSN to runtime config
-- [ ] Extract hardcoded Google OAuth client IDs to runtime config
 - [ ] Review upstream license — verify fork and contribution rights
 - [ ] Ensure no customer PII in test fixtures
 

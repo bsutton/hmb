@@ -1,30 +1,6 @@
 dependency_overrides:
-  # calendar_view:
-  #   path: ../flutter_calendar_view
-  # mailto:
-  #   path: ../../mailto
-  fsm2:
-    path: ../fsm2
-
-  flutter_timezone:
-    path: ../flutter_timezone
-
-  # money:
-  #   path: ../money2
-
-  # permission_handler: 
-  #   path: ../../flutter-permission-handler/permission_handler
-  # permission_handler_platform_interface: 
-  #   path: ../../flutter-permission-handler/permission_handler_platform_interface
   meta: ^1.12.0
-  # runtime_named_locks:
-  #   version: ^1.0.0-beta.7
-  #   hosted: https://onepub.dev/api/jbbxpsdavu/
-  # runtime_native_semaphores: 
-  #   version: ^1.0.0-beta.7
-  #   hosted: https://onepub.dev/api/jbbxpsdavu/
 
-  
   #https://github.com/juliansteenbakker/flutter_secure_storage/issues/920
   flutter_secure_storage_linux:
     git:

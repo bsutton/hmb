@@ -178,7 +178,7 @@ class _DayScheduleState extends DeferredState<DaySchedule> {
     print('Extended hours: $_hasActivitiesInExtendedHours');
     if (mounted) {
       _dayController
-        ..clear()
+        ..removeWhere((_) => true)
         ..addAll(activityData);
       setState(() {});
     }

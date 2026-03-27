@@ -120,7 +120,7 @@ class _WeekScheduleState extends DeferredState<WeekSchedule> {
     if (mounted) {
       setState(() {
         _weekController
-          ..clear()
+          ..removeWhere((_) => true)
           ..addAll(eventData);
       });
     }
