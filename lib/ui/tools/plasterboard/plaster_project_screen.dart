@@ -750,10 +750,14 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
   String _formatSolveViolation(PlasterConstraintViolation violation) {
     final unitSystem = _currentRoom.room.unitSystem;
+    final requestedLength = PlasterGeometry.formatDisplayLength(
+      violation.constraint.targetValue ?? 0,
+      unitSystem,
+    );
     return switch (violation.constraint.type) {
       PlasterConstraintType.lineLength =>
         'The requested line length conflicts with existing constraints. '
-            'Requested length: ${PlasterGeometry.formatDisplayLength(violation.constraint.targetValue ?? 0, unitSystem)}.',
+            'Requested length: $requestedLength.',
       PlasterConstraintType.horizontal =>
         'This line cannot remain horizontal '
             'with the current constraints.',
@@ -1926,6 +1930,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final narrow = constraints.maxWidth < 500;
+                  final estimatedTape = PlasterGeometry.formatDisplayLength(
+                    layout.estimatedJointTapeLength,
+                    _unitSystemForLayout(layout),
+                  );
                   final details = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1982,9 +1990,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                         : CrossAxisAlignment.end,
                     children: [
                       Text('${layout.sheetCount} sheets'),
-                      Text(
-                        '${PlasterGeometry.formatDisplayLength(layout.estimatedJointTapeLength, _unitSystemForLayout(layout))} tape',
-                      ),
+                      Text('$estimatedTape tape'),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -2057,121 +2063,124 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   Widget _buildTakeoffSection(
     PlasterTakeoffSummary takeoff,
     PreferredUnitSystem unitSystem,
-  ) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const SizedBox(height: 12),
-      Text('Takeoff Summary', style: Theme.of(context).textTheme.titleMedium),
-      ListTile(
-        title: const Text('Sheets'),
-        trailing: Text('${takeoff.totalSheetCount}'),
-      ),
-      ListTile(
-        title: const Text('Sheets incl. waste'),
-        trailing: Text(
-          '${takeoff.totalSheetCountWithWaste} '
-          '(${takeoff.contingencySheetCount} extra)',
+  ) {
+    final estimatedWastage =
+        '${PlasterGeometry.formatDisplayArea(takeoff.estimatedWasteArea, unitSystem)} (${takeoff.estimatedWastePercent.toStringAsFixed(1)}%)';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        Text('Takeoff Summary', style: Theme.of(context).textTheme.titleMedium),
+        ListTile(
+          title: const Text('Sheets'),
+          trailing: Text('${takeoff.totalSheetCount}'),
         ),
-      ),
-      ListTile(
-        title: const Text('Net surface area'),
-        trailing: Text(
-          PlasterGeometry.formatDisplayArea(takeoff.surfaceArea, unitSystem),
-        ),
-      ),
-      ListTile(
-        title: const Text('Purchased board area'),
-        trailing: Text(
-          PlasterGeometry.formatDisplayArea(
-            takeoff.purchasedBoardArea,
-            unitSystem,
+        ListTile(
+          title: const Text('Sheets incl. waste'),
+          trailing: Text(
+            '${takeoff.totalSheetCountWithWaste} '
+            '(${takeoff.contingencySheetCount} extra)',
           ),
         ),
-      ),
-      ListTile(
-        title: const Text('Estimated wastage'),
-        trailing: Text(
-          '${PlasterGeometry.formatDisplayArea(takeoff.estimatedWasteArea, unitSystem)} (${takeoff.estimatedWastePercent.toStringAsFixed(1)}%)',
-        ),
-      ),
-      ListTile(
-        title: const Text('Cut/layout waste'),
-        trailing: Text(
-          PlasterGeometry.formatDisplayArea(takeoff.cutWasteArea, unitSystem),
-        ),
-      ),
-      ListTile(
-        title: const Text('Contingency waste'),
-        trailing: Text(
-          PlasterGeometry.formatDisplayArea(
-            takeoff.contingencyWasteArea,
-            unitSystem,
+        ListTile(
+          title: const Text('Net surface area'),
+          trailing: Text(
+            PlasterGeometry.formatDisplayArea(takeoff.surfaceArea, unitSystem),
           ),
         ),
-      ),
-      ListTile(
-        title: const Text('Reusable offcuts'),
-        trailing: Text(
-          PlasterGeometry.formatDisplayArea(
-            takeoff.reusableOffcutArea,
-            unitSystem,
+        ListTile(
+          title: const Text('Purchased board area'),
+          trailing: Text(
+            PlasterGeometry.formatDisplayArea(
+              takeoff.purchasedBoardArea,
+              unitSystem,
+            ),
           ),
         ),
-      ),
-      ListTile(
-        title: const Text('Cornice'),
-        trailing: Text(
-          PlasterGeometry.formatLinearTakeoffLength(
-            takeoff.corniceLength,
-            unitSystem,
+        ListTile(
+          title: const Text('Estimated wastage'),
+          trailing: Text(estimatedWastage),
+        ),
+        ListTile(
+          title: const Text('Cut/layout waste'),
+          trailing: Text(
+            PlasterGeometry.formatDisplayArea(takeoff.cutWasteArea, unitSystem),
           ),
         ),
-      ),
-      ListTile(
-        title: const Text('Inside corners'),
-        trailing: Text(
-          PlasterGeometry.formatLinearTakeoffLength(
-            takeoff.insideCornerLength,
-            unitSystem,
+        ListTile(
+          title: const Text('Contingency waste'),
+          trailing: Text(
+            PlasterGeometry.formatDisplayArea(
+              takeoff.contingencyWasteArea,
+              unitSystem,
+            ),
           ),
         ),
-      ),
-      ListTile(
-        title: const Text('Outside corners'),
-        trailing: Text(
-          PlasterGeometry.formatLinearTakeoffLength(
-            takeoff.outsideCornerLength,
-            unitSystem,
+        ListTile(
+          title: const Text('Reusable offcuts'),
+          trailing: Text(
+            PlasterGeometry.formatDisplayArea(
+              takeoff.reusableOffcutArea,
+              unitSystem,
+            ),
           ),
         ),
-      ),
-      ListTile(
-        title: const Text('Tape'),
-        trailing: Text(
-          PlasterGeometry.formatLinearTakeoffLength(
-            takeoff.tapeLength,
-            unitSystem,
+        ListTile(
+          title: const Text('Cornice'),
+          trailing: Text(
+            PlasterGeometry.formatLinearTakeoffLength(
+              takeoff.corniceLength,
+              unitSystem,
+            ),
           ),
         ),
-      ),
-      ListTile(
-        title: const Text('Screws'),
-        trailing: Text('${takeoff.screwCount}'),
-      ),
-      ListTile(
-        title: const Text('Stud adhesive'),
-        trailing: Text('${_formatKg(takeoff.glueKg)} kg'),
-      ),
-      ListTile(
-        title: const Text('Joint compound'),
-        trailing: Text('${_formatKg(takeoff.plasterKg)} kg'),
-      ),
-      ListTile(
-        title: const Text('Cornice cement'),
-        trailing: Text('${_formatKg(takeoff.corniceCementKg)} kg'),
-      ),
-    ],
-  );
+        ListTile(
+          title: const Text('Inside corners'),
+          trailing: Text(
+            PlasterGeometry.formatLinearTakeoffLength(
+              takeoff.insideCornerLength,
+              unitSystem,
+            ),
+          ),
+        ),
+        ListTile(
+          title: const Text('Outside corners'),
+          trailing: Text(
+            PlasterGeometry.formatLinearTakeoffLength(
+              takeoff.outsideCornerLength,
+              unitSystem,
+            ),
+          ),
+        ),
+        ListTile(
+          title: const Text('Tape'),
+          trailing: Text(
+            PlasterGeometry.formatLinearTakeoffLength(
+              takeoff.tapeLength,
+              unitSystem,
+            ),
+          ),
+        ),
+        ListTile(
+          title: const Text('Screws'),
+          trailing: Text('${takeoff.screwCount}'),
+        ),
+        ListTile(
+          title: const Text('Stud adhesive'),
+          trailing: Text('${_formatKg(takeoff.glueKg)} kg'),
+        ),
+        ListTile(
+          title: const Text('Joint compound'),
+          trailing: Text('${_formatKg(takeoff.plasterKg)} kg'),
+        ),
+        ListTile(
+          title: const Text('Cornice cement'),
+          trailing: Text('${_formatKg(takeoff.corniceCementKg)} kg'),
+        ),
+      ],
+    );
+  }
 
   Widget _buildAnalysisStatus() {
     final status = _isAnalyzing
@@ -2423,30 +2432,39 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: width,
-    height: height,
-    padding: const EdgeInsets.all(6),
-    decoration: BoxDecoration(
-      border: Border.all(color: Colors.white24),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: CustomPaint(
-      painter: _SurfaceLayoutDiagramPainter(
-        layout: layout,
-        unitSystem: unitSystem,
-        showSheetMeasurements: showSheetMeasurements,
+  Widget build(BuildContext context) {
+    final widthLabel = PlasterGeometry.formatDisplayLength(
+      layout.width,
+      unitSystem,
+    );
+    final heightLabel = PlasterGeometry.formatDisplayLength(
+      layout.height,
+      unitSystem,
+    );
+    return Container(
+      width: width,
+      height: height,
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.white24),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Center(
-        child: Text(
-          'w: ${PlasterGeometry.formatDisplayLength(layout.width, unitSystem)}\n'
-          'h: ${PlasterGeometry.formatDisplayLength(layout.height, unitSystem)}',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 10),
+      child: CustomPaint(
+        painter: _SurfaceLayoutDiagramPainter(
+          layout: layout,
+          unitSystem: unitSystem,
+          showSheetMeasurements: showSheetMeasurements,
+        ),
+        child: Center(
+          child: Text(
+            'w: $widthLabel\nh: $heightLabel',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 10),
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _SurfaceLayoutDiagramPainter extends CustomPainter {
@@ -2497,12 +2515,15 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
         ..drawRect(sheetRect, sheet)
         ..drawRect(sheetRect, sheetBorder);
       if (showSheetMeasurements) {
-        _paintSheetLabel(
-          canvas,
-          sheetRect,
-          '${PlasterGeometry.formatDisplayLength(placement.width, unitSystem)}\n'
-          '${PlasterGeometry.formatDisplayLength(placement.height, unitSystem)}',
+        final pieceWidth = PlasterGeometry.formatDisplayLength(
+          placement.width,
+          unitSystem,
         );
+        final pieceHeight = PlasterGeometry.formatDisplayLength(
+          placement.height,
+          unitSystem,
+        );
+        _paintSheetLabel(canvas, sheetRect, '$pieceWidth\n$pieceHeight');
       }
     }
     canvas.drawRect(rect, border);
@@ -2560,74 +2581,84 @@ class _SurfaceLayoutViewerScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(layout.label)),
-    body: OrientationBuilder(
-      builder: (context, orientation) {
-        final rotateQuarterTurns =
-            orientation == Orientation.landscape && layout.height > layout.width
-            ? 1
-            : 0;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${layout.material.name}  ${layout.direction.layoutLabel}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'w: ${PlasterGeometry.formatDisplayLength(layout.width, unitSystem)} x '
-                    'h: ${PlasterGeometry.formatDisplayLength(layout.height, unitSystem)}'
-                    '  •  ${layout.sheetCount} sheets',
-                  ),
-                  const Text('Tap-drag to pan, pinch to zoom.'),
-                ],
+  Widget build(BuildContext context) {
+    final widthLabel = PlasterGeometry.formatDisplayLength(
+      layout.width,
+      unitSystem,
+    );
+    final heightLabel = PlasterGeometry.formatDisplayLength(
+      layout.height,
+      unitSystem,
+    );
+    return Scaffold(
+      appBar: AppBar(title: Text(layout.label)),
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          final rotateQuarterTurns =
+              orientation == Orientation.landscape &&
+                  layout.height > layout.width
+              ? 1
+              : 0;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${layout.material.name}  ${layout.direction.layoutLabel}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'w: $widthLabel x h: $heightLabel'
+                      '  •  ${layout.sheetCount} sheets',
+                    ),
+                    const Text('Tap-drag to pan, pinch to zoom.'),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final diagramWidth = rotateQuarterTurns == 0
-                      ? constraints.maxWidth - 32
-                      : constraints.maxHeight - 32;
-                  final diagramHeight = rotateQuarterTurns == 0
-                      ? constraints.maxHeight - 32
-                      : constraints.maxWidth - 32;
-                  final diagram = Center(
-                    child: RotatedBox(
-                      quarterTurns: rotateQuarterTurns,
-                      child: _SurfaceLayoutDiagram(
-                        layout: layout,
-                        unitSystem: unitSystem,
-                        width: max(240, diagramWidth),
-                        height: max(240, diagramHeight),
-                        showSheetMeasurements: true,
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final diagramWidth = rotateQuarterTurns == 0
+                        ? constraints.maxWidth - 32
+                        : constraints.maxHeight - 32;
+                    final diagramHeight = rotateQuarterTurns == 0
+                        ? constraints.maxHeight - 32
+                        : constraints.maxWidth - 32;
+                    final diagram = Center(
+                      child: RotatedBox(
+                        quarterTurns: rotateQuarterTurns,
+                        child: _SurfaceLayoutDiagram(
+                          layout: layout,
+                          unitSystem: unitSystem,
+                          width: max(240, diagramWidth),
+                          height: max(240, diagramHeight),
+                          showSheetMeasurements: true,
+                        ),
                       ),
-                    ),
-                  );
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: InteractiveViewer(
-                      minScale: 0.5,
-                      maxScale: 6,
-                      boundaryMargin: const EdgeInsets.all(64),
-                      child: diagram,
-                    ),
-                  );
-                },
+                    );
+                    return Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: InteractiveViewer(
+                        minScale: 0.5,
+                        maxScale: 6,
+                        boundaryMargin: const EdgeInsets.all(64),
+                        child: diagram,
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        );
-      },
-    ),
-  );
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _RoomCanvas extends StatefulWidget {

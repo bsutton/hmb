@@ -8,6 +8,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../../entity/entity.g.dart';
+import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../../util/dart/plaster_sheet_direction.dart';
 
@@ -50,9 +51,7 @@ Future<File> generatePlasterProjectPdf({
               style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 4),
-            pw.Text(
-              'Ceiling height: ${PlasterGeometry.formatDisplayLength(shape.room.ceilingHeight, shape.room.unitSystem)}',
-            ),
+            pw.Text('Ceiling height: ${_pdfCeilingHeight(shape)}'),
             pw.SizedBox(height: 8),
             pw.SvgImage(svg: buildRoomSvg(shape), height: 220),
             pw.SizedBox(height: 12),
@@ -178,8 +177,8 @@ String buildRoomSvg(PlasterRoomShape shape) {
   const horizontalPadding = 20.0;
   const topPadding = 20.0;
   const bottomPadding = 44.0;
-  final availableWidth = canvasWidth - horizontalPadding * 2;
-  final availableHeight = canvasHeight - topPadding - bottomPadding;
+  const availableWidth = canvasWidth - horizontalPadding * 2;
+  const availableHeight = canvasHeight - topPadding - bottomPadding;
   final scale = width == 0 || height == 0
       ? 1.0
       : [
@@ -219,6 +218,12 @@ String buildRoomSvg(PlasterRoomShape shape) {
 </svg>
 ''';
 }
+
+String _pdfCeilingHeight(PlasterRoomShape shape) =>
+    PlasterGeometry.formatDisplayLength(
+      shape.room.ceilingHeight,
+      shape.room.unitSystem,
+    );
 
 String buildSurfaceLayoutSvg(PlasterSurfaceLayout layout) {
   const width = 120.0;

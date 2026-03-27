@@ -13,6 +13,7 @@
 
 import 'dart:io';
 
+import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/material.dart';
 import 'package:strings/strings.dart';
 
@@ -46,7 +47,7 @@ class SelectQuoteTaskPhotosDialog extends StatefulWidget {
 }
 
 class _SelectQuoteTaskPhotosDialogState
-    extends State<SelectQuoteTaskPhotosDialog> {
+    extends DeferredState<SelectQuoteTaskPhotosDialog> {
   final _groups = <_TaskPhotoGroupData>[];
   final _selectedByTask = <int, List<int>>{};
   final _commentControllers = <String, TextEditingController>{};
@@ -55,10 +56,7 @@ class _SelectQuoteTaskPhotosDialogState
   String? _error;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  Future<void> asyncInitState() => _load();
 
   @override
   void dispose() {
@@ -219,7 +217,11 @@ class _SelectQuoteTaskPhotosDialogState
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: const Text('Quote Task Photos'),
-    content: SizedBox(width: 900, height: 600, child: _buildBody()),
+    content: SizedBox(
+      width: 900,
+      height: 600,
+      child: DeferredBuilder(this, builder: (_) => _buildBody()),
+    ),
     actions: [
       HMBButton(
         label: 'Cancel',
