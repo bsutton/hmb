@@ -88,6 +88,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   double? _bestWastePercentSeen;
   Stopwatch? _analysisStopwatch;
   Timer? _analysisTimer;
+  var _hasLoadedProjectState = false;
 
   bool get _isRoomEditorOnly => widget.editorOnlyRoomId != null;
 
@@ -97,8 +98,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   Future<void> _load() async {
     final initialProject =
         widget.project ?? (throw StateError('Project required'));
-    final project =
-        await DaoPlasterProject().getById(initialProject.id) ?? initialProject;
+    final project = _hasLoadedProjectState
+        ? await DaoPlasterProject().getById(initialProject.id) ?? initialProject
+        : initialProject;
     final job = await DaoJob().getById(project.jobId);
     final task = project.taskId == null
         ? null
@@ -145,6 +147,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _selectedJob.jobId = project.jobId;
       _selectedTask.taskId = project.taskId;
       _selectedSupplier.selected = project.supplierId;
+      _hasLoadedProjectState = true;
     });
     _syncRoomControllers();
     unawaited(_startAnalysis());
