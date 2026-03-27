@@ -95,7 +95,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   Future<void> asyncInitState() => _load();
 
   Future<void> _load() async {
-    final project = widget.project ?? (throw StateError('Project required'));
+    final initialProject =
+        widget.project ?? (throw StateError('Project required'));
+    final project =
+        await DaoPlasterProject().getById(initialProject.id) ?? initialProject;
     final job = await DaoJob().getById(project.jobId);
     final task = project.taskId == null
         ? null
