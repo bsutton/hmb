@@ -1,0 +1,8 @@
+# Global — all changes require owner review
+* @ZoltyMat
+
+# Security-sensitive paths — explicit callout
+lib/api/ @ZoltyMat
+lib/database/ @ZoltyMat
+.github/ @ZoltyMat
+.gitignore @ZoltyMat
