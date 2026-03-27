@@ -1426,7 +1426,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     await _solveAndUpdateRoom(_currentRoom.copyWith(constraints: constraints));
   }
 
-  Widget _buildEditorToolbar({bool vertical = false, bool wrap = false}) {
+  Widget _buildEditorToolbar({
+    bool vertical = false,
+    bool wrap = false,
+    bool constraintsOnly = false,
+    bool excludeConstraints = false,
+  }) {
     final hasLine = _selectedLineIndex != null;
     final hasIntersection = _selectedIntersectionIndex != null;
     final hasOpening = _selectedOpeningIndex != null;
@@ -1459,7 +1464,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ) !=
             null;
     final isSelectedLinePlaster = selectedLine?.plasterSelected ?? false;
-    final toolbarButtons = <Widget>[
+    final primaryButtons = <Widget>[
       _ToolbarButton(
         icon: _selectionMode ? Icons.touch_app : Icons.ads_click,
         label: _selectionMode ? 'Select Mode' : 'Edit Mode',
@@ -1584,6 +1589,19 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             : null,
       ),
       _ToolbarButton(
+        icon: isSelectedLinePlaster
+            ? Icons.layers_clear_outlined
+            : Icons.layers_outlined,
+        label: isSelectedLinePlaster ? 'Exclude' : 'Include',
+        enabled: hasLine,
+        onPressed: hasLine
+            ? () => _toggleLinePlasterSelected(_selectedLineIndex!)
+            : null,
+      ),
+    ];
+
+    final constraintButtons = <Widget>[
+      _ToolbarButton(
         icon: Icons.horizontal_rule,
         label: hasHorizontalConstraint ? 'Remove Horizontal' : 'Horizontal',
         enabled: hasLine,
@@ -1602,16 +1620,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         selected: hasVerticalConstraint,
         onPressed: hasLine
             ? () => _toggleVerticalConstraint(_selectedLineIndex!)
-            : null,
-      ),
-      _ToolbarButton(
-        icon: isSelectedLinePlaster
-            ? Icons.layers_clear_outlined
-            : Icons.layers_outlined,
-        label: isSelectedLinePlaster ? 'Exclude' : 'Include',
-        enabled: hasLine,
-        onPressed: hasLine
-            ? () => _toggleLinePlasterSelected(_selectedLineIndex!)
             : null,
       ),
       _ToolbarButton(
@@ -1640,6 +1648,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             : null,
       ),
     ];
+
+    final toolbarButtons = constraintsOnly
+        ? constraintButtons
+        : excludeConstraints
+        ? primaryButtons
+        : [...primaryButtons, ...constraintButtons];
 
     if (vertical) {
       return SizedBox(
@@ -1844,9 +1858,11 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildEditorToolbar(vertical: true),
+          _buildEditorToolbar(vertical: true, excludeConstraints: true),
           const SizedBox(width: 12),
-          Expanded(child: roomFields),
+          Expanded(child: _buildRoomCanvas()),
+          const SizedBox(width: 12),
+          _buildEditorToolbar(vertical: true, constraintsOnly: true),
         ],
       );
     }
@@ -2664,6 +2680,9 @@ class _RoomCanvasState extends State<_RoomCanvas> {
   int? _pendingDragIndex;
   int? _pendingDragOpeningIndex;
   var _pendingDragOpeningAnchorOffset = 0;
+  int? _gesturePointer;
+  Offset? _gestureStartPosition;
+  var _activePointerCount = 0;
   _CanvasTransform? _dragTransform;
   final _transformationController = TransformationController();
 
@@ -2716,6 +2735,125 @@ class _RoomCanvasState extends State<_RoomCanvas> {
     });
   }
 
+  bool get _isDraggingGeometry =>
+      _dragIndex != null || _dragOpeningIndex != null;
+
+  void _clearPendingGesture() {
+    _pendingDragIndex = null;
+    _pendingDragOpeningIndex = null;
+    _pendingDragOpeningAnchorOffset = 0;
+    _gesturePointer = null;
+    _gestureStartPosition = null;
+    _dragTransform = null;
+  }
+
+  void _handlePointerDown(PointerDownEvent event, _CanvasTransform transform) {
+    _activePointerCount++;
+    if (_activePointerCount != 1 || _isDraggingGeometry) {
+      _clearPendingGesture();
+      return;
+    }
+
+    _gesturePointer = event.pointer;
+    _gestureStartPosition = event.localPosition;
+    _pendingDragOpeningIndex = transform.hitOpening(
+      widget.bundle.openings,
+      event.localPosition,
+    );
+    if (_pendingDragOpeningIndex != null) {
+      _dragTransform = transform;
+      _pendingDragOpeningAnchorOffset = transform.openingDragAnchorOffset(
+        widget.bundle.openings,
+        event.localPosition,
+        _pendingDragOpeningIndex!,
+      );
+      _pendingDragIndex = null;
+      return;
+    }
+
+    _pendingDragIndex = transform.hitIntersection(event.localPosition);
+    if (_pendingDragIndex != null) {
+      _dragTransform = transform;
+    }
+  }
+
+  void _handlePointerMove(PointerMoveEvent event, _CanvasTransform transform) {
+    if (_gesturePointer != event.pointer || _activePointerCount != 1) {
+      return;
+    }
+
+    final dragTransform = _dragTransform ?? transform;
+    if (_dragOpeningIndex != null) {
+      widget.onMoveOpening(
+        _dragOpeningIndex!,
+        dragTransform.toWorld(event.localPosition),
+        _dragOpeningAnchorOffset,
+      );
+      return;
+    }
+    if (_dragIndex != null) {
+      widget.onMoveIntersection(
+        _dragIndex!,
+        dragTransform.toWorld(event.localPosition),
+      );
+      return;
+    }
+
+    final start = _gestureStartPosition;
+    if (start == null || (event.localPosition - start).distance <= 6) {
+      return;
+    }
+
+    if (_pendingDragOpeningIndex != null) {
+      _dragOpeningIndex = _pendingDragOpeningIndex;
+      _dragOpeningAnchorOffset = _pendingDragOpeningAnchorOffset;
+      widget.onStartMoveOpening();
+      setState(() {});
+      widget.onMoveOpening(
+        _dragOpeningIndex!,
+        dragTransform.toWorld(event.localPosition),
+        _dragOpeningAnchorOffset,
+      );
+      return;
+    }
+
+    if (_pendingDragIndex != null) {
+      _dragIndex = _pendingDragIndex;
+      widget.onStartMoveIntersection();
+      setState(() {});
+      widget.onMoveIntersection(
+        _dragIndex!,
+        dragTransform.toWorld(event.localPosition),
+      );
+    }
+  }
+
+  void _handlePointerEnd(int pointer) {
+    if (_activePointerCount > 0) {
+      _activePointerCount--;
+    }
+    if (_gesturePointer != pointer) {
+      return;
+    }
+
+    final draggingOpening = _dragOpeningIndex != null;
+    final draggingIntersection = _dragIndex != null;
+
+    _dragOpeningIndex = null;
+    _dragOpeningAnchorOffset = 0;
+    _dragIndex = null;
+    _clearPendingGesture();
+
+    if (draggingOpening || draggingIntersection) {
+      setState(() {});
+      if (draggingOpening) {
+        unawaited(widget.onEndMoveOpening());
+      } else {
+        unawaited(widget.onEndMoveIntersection());
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
@@ -2739,83 +2877,18 @@ class _RoomCanvasState extends State<_RoomCanvas> {
       final transform = _CanvasTransform(widget.bundle.lines, size);
       return Listener(
         behavior: HitTestBehavior.opaque,
+        onPointerDown: (event) => _handlePointerDown(event, transform),
+        onPointerMove: (event) => _handlePointerMove(event, transform),
+        onPointerUp: (event) => _handlePointerEnd(event.pointer),
+        onPointerCancel: (event) => _handlePointerEnd(event.pointer),
         onPointerSignal: (event) => _handlePointerSignal(event, size),
         child: InteractiveViewer(
           transformationController: _transformationController,
           minScale: 0.5,
           maxScale: 4,
+          panEnabled: !_isDraggingGeometry,
+          scaleEnabled: !_isDraggingGeometry,
           child: GestureDetector(
-            onPanDown: (details) {
-              _pendingDragOpeningIndex = transform.hitOpening(
-                widget.bundle.openings,
-                details.localPosition,
-              );
-              if (_pendingDragOpeningIndex != null) {
-                _dragTransform = transform;
-                _pendingDragOpeningAnchorOffset = transform
-                    .openingDragAnchorOffset(
-                      widget.bundle.openings,
-                      details.localPosition,
-                      _pendingDragOpeningIndex!,
-                    );
-                _pendingDragIndex = null;
-                return;
-              }
-              _pendingDragIndex = transform.hitIntersection(
-                details.localPosition,
-              );
-              if (_pendingDragIndex != null) {
-                _dragTransform = transform;
-              }
-              _pendingDragOpeningAnchorOffset = 0;
-            },
-            onPanStart: (details) {
-              if (_pendingDragOpeningIndex != null) {
-                _dragOpeningIndex = _pendingDragOpeningIndex;
-                _dragOpeningAnchorOffset = _pendingDragOpeningAnchorOffset;
-                widget.onStartMoveOpening();
-                return;
-              }
-              if (_pendingDragIndex != null) {
-                _dragIndex = _pendingDragIndex;
-                widget.onStartMoveIntersection();
-              }
-            },
-            onPanUpdate: (details) {
-              if (_dragOpeningIndex != null) {
-                final point = (_dragTransform ?? transform).toWorld(
-                  details.localPosition,
-                );
-                widget.onMoveOpening(
-                  _dragOpeningIndex!,
-                  point,
-                  _dragOpeningAnchorOffset,
-                );
-                return;
-              }
-              if (_dragIndex == null) {
-                return;
-              }
-              final point = (_dragTransform ?? transform).toWorld(
-                details.localPosition,
-              );
-              widget.onMoveIntersection(_dragIndex!, point);
-            },
-            onPanEnd: (_) async {
-              _pendingDragIndex = null;
-              _pendingDragOpeningIndex = null;
-              _pendingDragOpeningAnchorOffset = 0;
-              if (_dragOpeningIndex != null) {
-                _dragOpeningIndex = null;
-                _dragOpeningAnchorOffset = 0;
-                _dragTransform = null;
-                await widget.onEndMoveOpening();
-                return;
-              }
-              _dragIndex = null;
-              _dragTransform = null;
-              await widget.onEndMoveIntersection();
-            },
             onTapUp: (details) async {
               final openingIndex = transform.hitOpening(
                 widget.bundle.openings,
