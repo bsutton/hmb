@@ -133,14 +133,16 @@ class _EmptyPlasterProjectBody extends StatelessWidget {
             SizedBox(height: 12),
             Text(
               'Each project can be linked to a job and optional task. '
-              'Start with a default room, then tap walls to set lengths, '
-              'add doors or windows, and insert left or right angles.',
+              'Start with a default room, then edit the room name, ceiling '
+              'height, and wall lengths or open the full screen diagram '
+              'editor to add doors and windows.',
             ),
             SizedBox(height: 12),
             Text(
               'You can choose which walls and the ceiling are plastered, '
-              'set a waste margin, define available sheet sizes, and print '
-              'a labeled layout once the room is complete.',
+              'set a waste margin, define available sheet sizes, review the '
+              'calculated sheet layouts, and print a labeled PDF once the '
+              'room is complete.',
             ),
             SizedBox(height: 16),
             Text(
