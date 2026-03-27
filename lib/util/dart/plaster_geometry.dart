@@ -687,6 +687,19 @@ class PlasterGeometry {
     return _formatFeetAndInches(feet, wholeInches, sixteenths);
   }
 
+  static String formatLinearTakeoffLength(
+    int value,
+    PreferredUnitSystem unitSystem,
+  ) {
+    if (unitSystem == PreferredUnitSystem.metric) {
+      final meters = value / metricUnitsPerMm / 1000;
+      return '${meters.toStringAsFixed(2)} m';
+    }
+
+    final feet = value / imperialUnitsPerInch / inchesPerFoot;
+    return '${feet.toStringAsFixed(2)} ft';
+  }
+
   static int? parseDisplayLength(String raw, PreferredUnitSystem unitSystem) {
     final value = raw.trim();
     if (value.isEmpty) {

@@ -2121,7 +2121,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       ListTile(
         title: const Text('Cornice'),
         trailing: Text(
-          PlasterGeometry.formatDisplayLength(
+          PlasterGeometry.formatLinearTakeoffLength(
             takeoff.corniceLength,
             unitSystem,
           ),
@@ -2130,7 +2130,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       ListTile(
         title: const Text('Inside corners'),
         trailing: Text(
-          PlasterGeometry.formatDisplayLength(
+          PlasterGeometry.formatLinearTakeoffLength(
             takeoff.insideCornerLength,
             unitSystem,
           ),
@@ -2139,7 +2139,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       ListTile(
         title: const Text('Outside corners'),
         trailing: Text(
-          PlasterGeometry.formatDisplayLength(
+          PlasterGeometry.formatLinearTakeoffLength(
             takeoff.outsideCornerLength,
             unitSystem,
           ),
@@ -2148,7 +2148,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       ListTile(
         title: const Text('Tape'),
         trailing: Text(
-          PlasterGeometry.formatDisplayLength(takeoff.tapeLength, unitSystem),
+          PlasterGeometry.formatLinearTakeoffLength(
+            takeoff.tapeLength,
+            unitSystem,
+          ),
         ),
       ),
       ListTile(
