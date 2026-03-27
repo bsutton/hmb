@@ -65,15 +65,22 @@ class HMBSelectSupplierState extends State<HMBSelectSupplier> {
   }
 
   @override
-  Widget build(BuildContext context) => HMBDroplist<Supplier>(
-    key: ValueKey(widget.selectedSupplier.selected),
-    title: widget.required ? 'Supplier *' : 'Supplier',
-    selectedItem: _getInitialSupplier,
-    onChanged: _onSupplierChanged,
-    onAdd: _addSupplier,
-    items: _getSuppliers,
-    format: (supplier) => supplier.name,
-    required: widget.required,
+  Widget build(BuildContext context) => JuneBuilder(
+    () => widget.selectedSupplier,
+    id: widget.selectedSupplier,
+    builder: (context) {
+      final hmbDroplist = HMBDroplist<Supplier>(
+        key: ValueKey(widget.selectedSupplier._selected),
+        title: widget.required ? 'Supplier *' : 'Supplier',
+        selectedItem: _getInitialSupplier,
+        onChanged: _onSupplierChanged,
+        onAdd: _addSupplier,
+        items: _getSuppliers,
+        format: (supplier) => supplier.name,
+        required: widget.required,
+      );
+      return hmbDroplist;
+    },
   );
 
   // void clear() {

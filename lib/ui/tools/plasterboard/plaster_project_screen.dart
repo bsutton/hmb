@@ -476,19 +476,14 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
   Future<void> _updateSelectedSupplier(Supplier? supplier) async {
     final supplierId = supplier?.id;
-    final materials = await _loadMaterialsForSupplier(supplierId);
     if (mounted) {
       setState(() {
         _selectedSupplier.selected = supplierId;
         _supplier = supplier;
-        _project = _project.copyWith(supplierId: supplierId);
-        _materials = materials;
       });
     } else {
       _selectedSupplier.selected = supplierId;
       _supplier = supplier;
-      _project = _project.copyWith(supplierId: supplierId);
-      _materials = materials;
     }
     await _saveProject();
   }
