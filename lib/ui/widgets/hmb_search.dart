@@ -4,12 +4,14 @@
  Note: This software is licensed under the GNU General Public License,
          with the following exceptions:
    • Permitted for internal use within your own business or organization only.
-   • Any external distribution, resale, or incorporation into products 
+   • Any external distribution, resale, or incorporation into products
       for third parties is strictly prohibited.
 
  See the full license on GitHub:
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -40,6 +42,7 @@ class HMBSearch extends StatefulWidget {
 class HMBSearchState extends State<HMBSearch> {
   late final bool controllerOwned;
   late final HMBSearchController? filterController;
+  Timer? _debounceTimer;
 
   String? filter;
 
@@ -63,6 +66,7 @@ class HMBSearchState extends State<HMBSearch> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     if (controllerOwned) {
       filterController?.dispose();
     }
@@ -76,14 +80,18 @@ class HMBSearchState extends State<HMBSearch> {
         child: HMBTextField(
           labelText: widget.label,
           controller: filterController!,
-          onChanged: (newValue) async {
+          onChanged: (newValue) {
             filter = newValue;
-            await widget.onSearch(filter);
+            _debounceTimer?.cancel();
+            _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+              widget.onSearch(filter);
+            });
           },
         ),
       ),
       HMBClearIcon(
         onPressed: () async {
+          _debounceTimer?.cancel();
           filterController?.clear();
           filter = null;
           await widget.onSearch(filter);
