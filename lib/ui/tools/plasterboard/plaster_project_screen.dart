@@ -1868,6 +1868,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text('Sheet Layout', style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 8),
+      _buildAnalysisStatus(),
       for (final layout in layouts)
         Card(
           child: InkWell(
@@ -2109,11 +2111,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   );
 
   Widget _buildAnalysisStatus() {
-    if (!_isAnalyzing && _analysisElapsedMs == 0) {
-      return const SizedBox.shrink();
-    }
     final status = _isAnalyzing
         ? 'Analyzing layout'
+        : _analysisElapsedMs == 0
+        ? 'Ready to analyze layout'
         : _analysisTimedOut
         ? 'Best layout from timed analysis'
         : _analysisReachedTargetWaste
@@ -2147,7 +2148,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                   onPressed: () => unawaited(_stopAnalysis()),
                   child: const Text('Stop'),
                 )
-              : null,
+              : TextButton(
+                  onPressed: () => unawaited(_reanalyzeLayout()),
+                  child: const Text('Redo Analysis'),
+                ),
         ),
       ),
     );
@@ -2172,17 +2176,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                 : _project.name,
           ),
           actions: [
-            IconButton(
-              tooltip: 'Reanalyze Layout',
-              onPressed: () => unawaited(_reanalyzeLayout()),
-              icon: const Icon(Icons.refresh),
-            ),
-            if (_isAnalyzing)
-              IconButton(
-                tooltip: 'Stop Analysis',
-                onPressed: () => unawaited(_stopAnalysis()),
-                icon: const Icon(Icons.stop_circle_outlined),
-              ),
             if (!_isRoomEditorOnly) ...[
               IconButton(
                 onPressed: () => unawaited(_saveProject()),
@@ -2203,7 +2196,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildAnalysisStatus(),
                       TextField(
                         controller: _nameController,
                         decoration: const InputDecoration(
