@@ -1862,15 +1862,45 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
   }
 
-  Widget _buildSheetLayoutsSection(
-    List<PlasterSurfaceLayout> layouts,
-  ) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('Sheet Layout', style: Theme.of(context).textTheme.titleMedium),
-      const SizedBox(height: 8),
-      _buildAnalysisStatus(),
-      for (final layout in layouts)
+  String _roomNameForLayout(PlasterSurfaceLayout layout) {
+    for (final bundle in _rooms) {
+      if (bundle.room.id == layout.roomId) {
+        return bundle.room.name;
+      }
+    }
+    return 'Room ${layout.roomId}';
+  }
+
+  String _surfaceTitleForLayout(PlasterSurfaceLayout layout) {
+    final roomName = _roomNameForLayout(layout);
+    final prefix = '$roomName ';
+    return layout.label.startsWith(prefix)
+        ? layout.label.substring(prefix.length)
+        : layout.label;
+  }
+
+  List<Widget> _buildSheetLayoutCards(List<PlasterSurfaceLayout> layouts) {
+    final widgets = <Widget>[];
+    int? currentRoomId;
+
+    for (final layout in layouts) {
+      if (currentRoomId != layout.roomId) {
+        currentRoomId = layout.roomId;
+        if (widgets.isNotEmpty) {
+          widgets.add(const SizedBox(height: 8));
+        }
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: Text(
+              _roomNameForLayout(layout),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+        );
+      }
+
+      widgets.add(
         Card(
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
@@ -1883,7 +1913,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                   final details = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(layout.label),
+                      Text(_surfaceTitleForLayout(layout)),
                       const SizedBox(height: 4),
                       Text(
                         '${layout.material.name}  '
@@ -1991,8 +2021,22 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ),
           ),
         ),
-    ],
-  );
+      );
+    }
+
+    return widgets;
+  }
+
+  Widget _buildSheetLayoutsSection(List<PlasterSurfaceLayout> layouts) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Sheet Layout', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          _buildAnalysisStatus(),
+          ..._buildSheetLayoutCards(layouts),
+        ],
+      );
 
   Widget _buildTakeoffSection(
     PlasterTakeoffSummary takeoff,
