@@ -63,3 +63,16 @@ error.txt
 logs/analyzer.txt
 build.err
 .env
+.env.*
+
+# Secrets & credentials (public repo protection)
+*.keystore
+*.jks
+credentials.json
+google-services.json
+GoogleService-Info.plist
+*.sqlite
+*.db
+secrets/
+*.pem
+*.key
