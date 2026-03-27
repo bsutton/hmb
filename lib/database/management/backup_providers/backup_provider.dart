@@ -24,6 +24,7 @@ import '../../factory/hmb_database_factory.dart';
 import '../../versions/script_source.dart';
 import '../database_helper.dart';
 import 'backup.dart';
+import 'backup_encryption.dart';
 import 'backup_history_store.dart';
 import 'db_path.io.dart' if (dart.library.ui) 'db_path.dart';
 import 'progress_update.dart';
@@ -32,7 +33,7 @@ import 'zip_isolate.dart';
 const dbFileName = 'handyman.db';
 
 abstract class BackupProvider {
-  static const _restoreStageCount = 9;
+  static const _restoreStageCount = 10;
   final _progressController = StreamController<ProgressUpdate>.broadcast();
   final HMBDatabaseFactory databaseFactory;
 
@@ -76,7 +77,7 @@ abstract class BackupProvider {
     required int version,
     required ScriptSource src,
   }) => withTempDirAsync((tmpDir) async {
-    emitProgress('Initializing backup', 1, 6);
+    emitProgress('Initializing backup', 1, 7);
 
     final datePart = formatDate(DateTime.now(), format: 'y-m-d');
     final pathToZip = join(tmpDir, 'hmb-backup-$datePart.zip');
@@ -86,14 +87,14 @@ abstract class BackupProvider {
       final pathToDatabase = await databasePath;
 
       if (!exists(pathToDatabase)) {
-        emitProgress('Database file not found', 6, 6);
+        emitProgress('Database file not found', 7, 7);
         throw Exception('Database file not found: $pathToDatabase');
       }
 
-      emitProgress('Copying database', 2, 6);
+      emitProgress('Copying database', 2, 7);
       await copyDatabaseTo(pathToBackupFile, src, this);
 
-      emitProgress('Preparing to zip files', 3, 6);
+      emitProgress('Preparing to zip files', 3, 7);
 
       // Set up communication channels
       await zipBackup(
@@ -102,9 +103,17 @@ abstract class BackupProvider {
         pathToBackupFile: pathToBackupFile,
       );
 
-      emitProgress('Storing backup', 5, 6);
+      // Encrypt the zip before uploading to cloud storage
+      emitProgress('Encrypting backup', 5, 7);
+      final pathToEncrypted = '$pathToZip.enc';
+      await BackupEncryption.encryptFile(
+        File(pathToZip),
+        File(pathToEncrypted),
+      );
+
+      emitProgress('Storing backup', 6, 7);
       final result = await store(
-        pathToZippedBackup: pathToZip,
+        pathToZippedBackup: pathToEncrypted,
         pathToDatabaseCopy: pathToBackupFile,
         version: version,
       );
@@ -114,7 +123,7 @@ abstract class BackupProvider {
         success: true,
       );
 
-      emitProgress('Backup completed', 6, 6);
+      emitProgress('Backup completed', 7, 7);
       return result;
     } catch (e, st) {
       await Sentry.captureException(e, stackTrace: st);
@@ -124,7 +133,7 @@ abstract class BackupProvider {
         success: false,
         error: '$e',
       );
-      emitProgress('Error during backup', 6, 6);
+      emitProgress('Error during backup', 7, 7);
       rethrow;
     }
   });
@@ -154,9 +163,24 @@ abstract class BackupProvider {
       }
 
       emitProgress('Fetching backup file', 4, _restoreStageCount);
-      final backupFile = await fetchBackup(backup);
+      var backupFile = await fetchBackup(backup);
 
-      emitProgress('Extracting files from backup', 5, _restoreStageCount);
+      // Decrypt if the backup is encrypted (has .enc extension or key exists)
+      if (backupFile.path.endsWith('.enc') || await BackupEncryption.hasKey()) {
+        emitProgress('Decrypting backup', 5, _restoreStageCount);
+        final decryptedPath = join(tmpDir, 'decrypted-backup.zip');
+        try {
+          await BackupEncryption.decryptFile(
+            backupFile,
+            File(decryptedPath),
+          );
+          backupFile = File(decryptedPath);
+        } on FormatException {
+          // File may be a legacy unencrypted backup — proceed as-is
+        }
+      }
+
+      emitProgress('Extracting files from backup', 6, _restoreStageCount);
       final dbPath = await extractFiles(
         this,
         backupFile,
