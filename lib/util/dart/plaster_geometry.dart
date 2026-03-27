@@ -206,10 +206,7 @@ class PlasterAnalysisFailure {
   final String error;
   final String stackTrace;
 
-  const PlasterAnalysisFailure({
-    required this.error,
-    required this.stackTrace,
-  });
+  const PlasterAnalysisFailure({required this.error, required this.stackTrace});
 }
 
 class PlasterAnalysisIsolateRequest {
@@ -245,9 +242,11 @@ class _ProjectLayoutScore {
   final int fragmentationPenalty;
   final int reusableArea;
   final int jointTapeLength;
+  final int buttJointLength;
   final int cutPieceCount;
   final int highJointLength;
   final int smallPieceCount;
+  final int verticalWallCount;
 
   const _ProjectLayoutScore({
     required this.sheetCount,
@@ -255,9 +254,11 @@ class _ProjectLayoutScore {
     required this.fragmentationPenalty,
     required this.reusableArea,
     required this.jointTapeLength,
+    required this.buttJointLength,
     required this.cutPieceCount,
     required this.highJointLength,
     required this.smallPieceCount,
+    required this.verticalWallCount,
   });
 }
 
@@ -265,20 +266,14 @@ class _ProjectLayoutState {
   final List<PlasterSurfaceLayout> layouts;
   final _ProjectLayoutScore score;
 
-  const _ProjectLayoutState({
-    required this.layouts,
-    required this.score,
-  });
+  const _ProjectLayoutState({required this.layouts, required this.score});
 }
 
 class _PackedSheet {
   final List<_FreeRect> freeRects;
   final int usedArea;
 
-  const _PackedSheet({
-    required this.freeRects,
-    required this.usedArea,
-  });
+  const _PackedSheet({required this.freeRects, required this.usedArea});
 
   _PackedSheet copy() => _PackedSheet(
     freeRects: [
@@ -913,9 +908,11 @@ class PlasterGeometry {
         fragmentationPenalty: 0,
         reusableArea: 0,
         jointTapeLength: 0,
+        buttJointLength: 0,
         cutPieceCount: 0,
         highJointLength: 0,
         smallPieceCount: 0,
+        verticalWallCount: 0,
       ),
     );
 
@@ -937,11 +934,7 @@ class PlasterGeometry {
         budget: budget,
       );
       if (best.layouts.isEmpty ||
-          _isBetterProjectScore(
-            candidate.score,
-            best.score,
-            budget?.scoring,
-          )) {
+          _isBetterProjectScore(candidate.score, best.score, budget?.scoring)) {
         best = candidate;
       }
     }
@@ -1054,8 +1047,7 @@ class PlasterGeometry {
           sheetHeight: candidate.$3,
           minEdge: minEdgePiece(room.unitSystem),
           horizontalWallStarter:
-              !isCeiling &&
-              candidate.$1 == PlasterSheetDirection.horizontal,
+              !isCeiling && candidate.$1 == PlasterSheetDirection.horizontal,
           maxPlans: planLimit,
         );
         for (final plan in plans) {
@@ -1103,29 +1095,68 @@ class PlasterGeometry {
         }
       }
     }
-    candidates.sort((left, right) {
-      final leftCoverage = _layoutCoverage(left, room.unitSystem);
-      final rightCoverage = _layoutCoverage(right, room.unitSystem);
-      final sheetCountCompare = left.sheetCount.compareTo(right.sheetCount);
-      if (sheetCountCompare != 0) {
-        return sheetCountCompare;
+    final filtered = isCeiling ? candidates : _pruneWallCandidates(candidates);
+    final sorted = [...filtered]
+      ..sort((left, right) {
+        final leftCoverage = _layoutCoverage(left, room.unitSystem);
+        final rightCoverage = _layoutCoverage(right, room.unitSystem);
+        final sheetCountCompare = left.sheetCount.compareTo(right.sheetCount);
+        if (sheetCountCompare != 0) {
+          return sheetCountCompare;
+        }
+        final coverageCompare = leftCoverage.compareTo(rightCoverage);
+        if (coverageCompare != 0) {
+          return coverageCompare;
+        }
+        return left.estimatedJointTapeLength.compareTo(
+          right.estimatedJointTapeLength,
+        );
+      });
+    return sorted;
+  }
+
+  static List<PlasterSurfaceLayout> _pruneWallCandidates(
+    List<PlasterSurfaceLayout> candidates,
+  ) {
+    final filtered = <PlasterSurfaceLayout>[];
+    for (final candidate in candidates) {
+      final candidateButtJoints = _buttJointLength(candidate);
+      final dominated = candidates.any((other) {
+        if (identical(candidate, other)) {
+          return false;
+        }
+        final otherButtJoints = _buttJointLength(other);
+        final noWorse =
+            other.sheetCount <= candidate.sheetCount &&
+            other.estimatedJointTapeLength <=
+                candidate.estimatedJointTapeLength &&
+            otherButtJoints <= candidateButtJoints;
+        final strictlyBetter =
+            other.sheetCount < candidate.sheetCount ||
+            other.estimatedJointTapeLength <
+                candidate.estimatedJointTapeLength ||
+            otherButtJoints < candidateButtJoints;
+        if (!noWorse || !strictlyBetter) {
+          return false;
+        }
+        if (candidate.direction == PlasterSheetDirection.vertical &&
+            other.direction == PlasterSheetDirection.horizontal) {
+          return true;
+        }
+        return other.direction == candidate.direction;
+      });
+      if (!dominated) {
+        filtered.add(candidate);
       }
-      final coverageCompare = leftCoverage.compareTo(rightCoverage);
-      if (coverageCompare != 0) {
-        return coverageCompare;
-      }
-      return left.estimatedJointTapeLength.compareTo(
-        right.estimatedJointTapeLength,
-      );
-    });
-    return candidates;
+    }
+    return filtered;
   }
 
   static _ProjectLayoutState _optimizeProjectLayouts(
     List<List<PlasterSurfaceLayout>> candidateGroups,
-    List<PlasterRoomShape> roomShapes,
-    {_PlasterSearchBudget? budget}
-  ) {
+    List<PlasterRoomShape> roomShapes, {
+    _PlasterSearchBudget? budget,
+  }) {
     if (candidateGroups.isEmpty) {
       return const _ProjectLayoutState(
         layouts: [],
@@ -1135,9 +1166,11 @@ class PlasterGeometry {
           fragmentationPenalty: 0,
           reusableArea: 0,
           jointTapeLength: 0,
+          buttJointLength: 0,
           cutPieceCount: 0,
           highJointLength: 0,
           smallPieceCount: 0,
+          verticalWallCount: 0,
         ),
       );
     }
@@ -1151,9 +1184,11 @@ class PlasterGeometry {
           fragmentationPenalty: 0,
           reusableArea: 0,
           jointTapeLength: 0,
+          buttJointLength: 0,
           cutPieceCount: 0,
           highJointLength: 0,
           smallPieceCount: 0,
+          verticalWallCount: 0,
         ),
       ),
     ];
@@ -1227,9 +1262,9 @@ class PlasterGeometry {
 
   static _ProjectLayoutScore _evaluateProjectLayouts(
     List<PlasterSurfaceLayout> layouts,
-    List<PlasterRoomShape> roomShapes,
-    {_PlasterSearchBudget? budget}
-  ) {
+    List<PlasterRoomShape> roomShapes, {
+    _PlasterSearchBudget? budget,
+  }) {
     final groupedPieces = <String, List<PlasterSheetPlacement>>{};
     final groupedSheetSizes = <String, (int, int)>{};
     var sheetCount = 0;
@@ -1237,16 +1272,23 @@ class PlasterGeometry {
     var fragmentationPenalty = 0;
     var reusableArea = 0;
     var jointTapeLength = 0;
+    var buttJointLength = 0;
     var cutPieceCount = 0;
     var highJointLength = 0;
     var smallPieceCount = 0;
+    var verticalWallCount = 0;
 
     for (final layout in layouts) {
       final roomUnitSystem = _unitSystemForArea(layout, roomShapes);
       jointTapeLength += layout.estimatedJointTapeLength;
+      buttJointLength += _buttJointLength(layout);
       cutPieceCount += _countCutPieces(layout, roomUnitSystem);
       highJointLength += _highJointLength(layout, roomUnitSystem);
       smallPieceCount += _smallPieceCount(layout);
+      if (!layout.isCeiling &&
+          layout.direction == PlasterSheetDirection.vertical) {
+        verticalWallCount++;
+      }
       final key =
           '${layout.material.id}:${layout.material.unitSystem.name}:'
           '${layout.material.width}:${layout.material.height}';
@@ -1300,9 +1342,11 @@ class PlasterGeometry {
       fragmentationPenalty: fragmentationPenalty,
       reusableArea: reusableArea,
       jointTapeLength: jointTapeLength,
+      buttJointLength: buttJointLength,
       cutPieceCount: cutPieceCount,
       highJointLength: highJointLength,
       smallPieceCount: smallPieceCount,
+      verticalWallCount: verticalWallCount,
     );
   }
 
@@ -1312,19 +1356,25 @@ class PlasterGeometry {
     PlasterLayoutScoring? scoring,
   ) {
     final weights = scoring ?? const PlasterLayoutScoring.defaults();
-    final leftTotal = left.sheetCount * weights.extraSheetWeight +
+    final leftTotal =
+        left.sheetCount * weights.extraSheetWeight +
         left.jointTapeLength * weights.jointLengthWeight +
+        left.buttJointLength * weights.buttJointWeight +
         left.cutPieceCount * weights.cutPieceWeight +
         left.highJointLength * weights.highJointWeight +
         left.smallPieceCount * weights.smallPieceWeight +
-        left.fragmentationPenalty * weights.fragmentationWeight -
+        left.fragmentationPenalty * weights.fragmentationWeight +
+        left.verticalWallCount * weights.verticalWallPenaltyWeight -
         left.reusableArea;
-    final rightTotal = right.sheetCount * weights.extraSheetWeight +
+    final rightTotal =
+        right.sheetCount * weights.extraSheetWeight +
         right.jointTapeLength * weights.jointLengthWeight +
+        right.buttJointLength * weights.buttJointWeight +
         right.cutPieceCount * weights.cutPieceWeight +
         right.highJointLength * weights.highJointWeight +
         right.smallPieceCount * weights.smallPieceWeight +
-        right.fragmentationPenalty * weights.fragmentationWeight -
+        right.fragmentationPenalty * weights.fragmentationWeight +
+        right.verticalWallCount * weights.verticalWallPenaltyWeight -
         right.reusableArea;
     if (leftTotal != rightTotal) {
       return leftTotal < rightTotal;
@@ -1360,6 +1410,7 @@ class PlasterGeometry {
     required bool horizontalWallStarter,
     required int maxPlans,
   }) {
+    final staggerOffset = minEdge;
     final rowHeightVariants = _axisPieceVariants(
       height,
       sheetHeight,
@@ -1376,11 +1427,7 @@ class PlasterGeometry {
       final rowWidthOptions = <List<List<int>>>[];
       var valid = true;
       for (var row = 0; row < rowHeights.length; row++) {
-        final variants = _axisPieceVariants(
-          width,
-          sheetWidth,
-          minEdge,
-        );
+        final variants = _axisPieceVariants(width, sheetWidth, minEdge);
         if (variants.isEmpty) {
           valid = false;
           break;
@@ -1391,14 +1438,14 @@ class PlasterGeometry {
         continue;
       }
 
-      void buildRowPlans(
-        int row,
-        List<List<int>> chosen,
-      ) {
+      void buildRowPlans(int row, List<List<int>> chosen) {
         if (plans.length >= maxPlans) {
           return;
         }
         if (row == rowHeights.length) {
+          if (_hasStaggerViolation(chosen, staggerOffset)) {
+            return;
+          }
           final placements = <PlasterSheetPlacement>[];
           var maxAcross = 0;
           var y = 0;
@@ -1448,9 +1495,9 @@ class PlasterGeometry {
   static List<List<int>> _axisPieceVariants(
     int surfaceLength,
     int sheetLength,
-    int minEdge,
-    {bool starter = false}
-  ) {
+    int minEdge, {
+    bool starter = false,
+  }) {
     final variants = <List<int>>[];
     final seen = <String>{};
 
@@ -1493,42 +1540,32 @@ class PlasterGeometry {
     if (base.length > 1) {
       addVariant([...base.reversed]);
     }
-    final cutIndexes = <int>[
-      for (var i = 0; i < base.length; i++)
-        if (base[i] < sheetLength) i,
-    ];
-    for (final cutIndex in cutIndexes) {
-      if (cutIndex > 0) {
-        addVariant([
-          base[cutIndex],
-          ...[
-            for (var i = 0; i < base.length; i++)
-              if (i != cutIndex) base[i],
-          ],
-        ]);
-      }
-      if (cutIndex < base.length - 1) {
-        addVariant([
-          ...[
-            for (var i = 0; i < base.length; i++)
-              if (i != cutIndex) base[i],
-          ],
-          base[cutIndex],
-        ]);
-      }
-      if (base.length > 2 && cutIndex != 1) {
-        final moved = [
-          base.first,
-          base[cutIndex],
-          ...[
-            for (var i = 1; i < base.length; i++)
-              if (i != cutIndex) base[i],
-          ],
-        ];
-        addVariant(moved);
+    return variants;
+  }
+
+  static bool _hasStaggerViolation(List<List<int>> rows, int minimumOffset) {
+    for (var i = 1; i < rows.length; i++) {
+      final previousJoints = _internalJointPositions(rows[i - 1]);
+      final currentJoints = _internalJointPositions(rows[i]);
+      for (final previous in previousJoints) {
+        for (final current in currentJoints) {
+          if ((previous - current).abs() < minimumOffset) {
+            return true;
+          }
+        }
       }
     }
-    return variants;
+    return false;
+  }
+
+  static List<int> _internalJointPositions(List<int> pieces) {
+    final joints = <int>[];
+    var position = 0;
+    for (var i = 0; i < pieces.length - 1; i++) {
+      position += pieces[i];
+      joints.add(position);
+    }
+    return joints;
   }
 
   static List<int>? _axisPieces(
@@ -1583,6 +1620,29 @@ class PlasterGeometry {
     return total;
   }
 
+  static int _buttJointLength(PlasterSurfaceLayout layout) {
+    var total = 0;
+    for (var i = 0; i < layout.placements.length; i++) {
+      final left = layout.placements[i];
+      for (var j = i + 1; j < layout.placements.length; j++) {
+        final right = layout.placements[j];
+        final sharesVerticalEdge =
+            left.x + left.width == right.x || right.x + right.width == left.x;
+        final sharesHorizontalEdge =
+            left.y + left.height == right.y || right.y + right.height == left.y;
+        if (layout.direction == PlasterSheetDirection.horizontal &&
+            sharesVerticalEdge) {
+          total += _overlapLength(left.y, left.height, right.y, right.height);
+        }
+        if (layout.direction == PlasterSheetDirection.vertical &&
+            sharesHorizontalEdge) {
+          total += _overlapLength(left.x, left.width, right.x, right.width);
+        }
+      }
+    }
+    return total;
+  }
+
   static _PackingResult _packPieces({
     required List<PlasterSheetPlacement> pieces,
     required int sheetWidth,
@@ -1600,22 +1660,24 @@ class PlasterGeometry {
       );
     }
 
-    final sorted = [...pieces]..sort((left, right) {
-      final areaCompare =
-          (right.width * right.height).compareTo(left.width * left.height);
-      if (areaCompare != 0) {
-        return areaCompare;
-      }
-      final heightCompare = right.height.compareTo(left.height);
-      if (heightCompare != 0) {
-        return heightCompare;
-      }
-      final widthCompare = right.width.compareTo(left.width);
-      if (widthCompare != 0) {
-        return widthCompare;
-      }
-      return 0;
-    });
+    final sorted = [...pieces]
+      ..sort((left, right) {
+        final areaCompare = (right.width * right.height).compareTo(
+          left.width * left.height,
+        );
+        if (areaCompare != 0) {
+          return areaCompare;
+        }
+        final heightCompare = right.height.compareTo(left.height);
+        if (heightCompare != 0) {
+          return heightCompare;
+        }
+        final widthCompare = right.width.compareTo(left.width);
+        if (widthCompare != 0) {
+          return widthCompare;
+        }
+        return 0;
+      });
 
     const beamWidth = 24;
     const maxChoicesPerPiece = 4;
@@ -1629,9 +1691,11 @@ class PlasterGeometry {
           fragmentationPenalty: 0,
           reusableArea: 0,
           jointTapeLength: 0,
+          buttJointLength: 0,
           cutPieceCount: 0,
           highJointLength: 0,
           smallPieceCount: 0,
+          verticalWallCount: 0,
         ),
       ),
     ];
@@ -1808,12 +1872,7 @@ class PlasterGeometry {
       return null;
     }
     if (choice.sheetIndex == sheets.length) {
-      sheets.add(
-        const _PackedSheet(
-          freeRects: [],
-          usedArea: 0,
-        ),
-      );
+      sheets.add(const _PackedSheet(freeRects: [], usedArea: 0));
     }
 
     final targetSheet = sheets[choice.sheetIndex];
@@ -1834,8 +1893,7 @@ class PlasterGeometry {
     _pruneFreeRects(freeRects);
     sheets[choice.sheetIndex] = _PackedSheet(
       freeRects: freeRects,
-      usedArea:
-          targetSheet.usedArea + choice.pieceWidth * choice.pieceHeight,
+      usedArea: targetSheet.usedArea + choice.pieceWidth * choice.pieceHeight,
     );
 
     final usedArea = state.usedArea + choice.pieceWidth * choice.pieceHeight;
@@ -1858,9 +1916,11 @@ class PlasterGeometry {
         fragmentationPenalty: fragmentationPenalty,
         reusableArea: reusableArea,
         jointTapeLength: 0,
+        buttJointLength: 0,
         cutPieceCount: 0,
         highJointLength: 0,
         smallPieceCount: 0,
+        verticalWallCount: 0,
       ),
     );
   }
@@ -1875,22 +1935,12 @@ class PlasterGeometry {
     final bottomHeight = rect.height - pieceHeight;
     if (rightWidth > 0) {
       freeRects.add(
-        _FreeRect(
-          rect.x + pieceWidth,
-          rect.y,
-          rightWidth,
-          pieceHeight,
-        ),
+        _FreeRect(rect.x + pieceWidth, rect.y, rightWidth, pieceHeight),
       );
     }
     if (bottomHeight > 0) {
       freeRects.add(
-        _FreeRect(
-          rect.x,
-          rect.y + pieceHeight,
-          rect.width,
-          bottomHeight,
-        ),
+        _FreeRect(rect.x, rect.y + pieceHeight, rect.width, bottomHeight),
       );
     }
     if (rightWidth > 0 && bottomHeight > 0) {
@@ -1918,19 +1968,17 @@ class PlasterGeometry {
     return sum + max(0, minReusableEdge * minReusableEdge - rect.area);
   });
 
-  static int _reusableArea(
-    List<_FreeRect> freeRects,
-    int minReusableEdge,
-  ) => freeRects.fold<int>(0, (sum, rect) {
-    final reusable =
-        rect.width >= minReusableEdge && rect.height >= minReusableEdge;
-    return sum + (reusable ? rect.area : 0);
-  });
+  static int _reusableArea(List<_FreeRect> freeRects, int minReusableEdge) =>
+      freeRects.fold<int>(0, (sum, rect) {
+        final reusable =
+            rect.width >= minReusableEdge && rect.height >= minReusableEdge;
+        return sum + (reusable ? rect.area : 0);
+      });
 
   static PreferredUnitSystem _unitSystemForMaterialKey(String key) =>
       key.split(':')[1] == PreferredUnitSystem.imperial.name
-          ? PreferredUnitSystem.imperial
-          : PreferredUnitSystem.metric;
+      ? PreferredUnitSystem.imperial
+      : PreferredUnitSystem.metric;
 
   static void _pruneFreeRects(List<_FreeRect> freeRects) {
     freeRects.removeWhere((rect) => rect.width <= 0 || rect.height <= 0);
@@ -2002,9 +2050,7 @@ class PlasterGeometry {
         final right = layout.placements[j];
         if (left.y + left.height == right.y ||
             right.y + right.height == left.y) {
-          final jointY = left.y + left.height == right.y
-              ? right.y
-              : left.y;
+          final jointY = left.y + left.height == right.y ? right.y : left.y;
           if (jointY > threshold) {
             total += _overlapLength(left.x, left.width, right.x, right.width);
           }
@@ -2045,10 +2091,7 @@ class PlasterGeometry {
     return areaSqM * 3.5 / 100;
   }
 
-  static double _estimatePlasterKg(
-    int area,
-    PlasterSheetDirection direction,
-  ) {
+  static double _estimatePlasterKg(int area, PlasterSheetDirection direction) {
     final areaSqM = area / (metricUnitsPerMm * metricUnitsPerMm) / 1000000;
     final multiplier = direction == PlasterSheetDirection.vertical ? 1.2 : 1.0;
     return areaSqM * (24 + 8) * multiplier / 100;
@@ -2185,8 +2228,8 @@ class PlasterGeometry {
     var inside = 0;
     var outside = 0;
     for (var i = 0; i < shape.lines.length; i++) {
-      final previous = shape.lines[
-          (i - 1 + shape.lines.length) % shape.lines.length];
+      final previous =
+          shape.lines[(i - 1 + shape.lines.length) % shape.lines.length];
       final current = shape.lines[i];
       final next = lineEnd(shape.lines, i);
       final ax = current.startX - previous.startX;
@@ -2220,8 +2263,8 @@ class PlasterGeometry {
     required int height,
     required PreferredUnitSystem unitSystem,
   }) =>
-      '$name (${formatDisplayLength(width, unitSystem)} x '
-      '${formatDisplayLength(height, unitSystem)})';
+      '$name (w: ${formatDisplayLength(width, unitSystem)} x '
+      'h: ${formatDisplayLength(height, unitSystem)})';
 
   static (int, int, int, int) _bounds(List<PlasterRoomLine> lines) {
     final xs = lines.map((line) => line.startX).toList()..sort();

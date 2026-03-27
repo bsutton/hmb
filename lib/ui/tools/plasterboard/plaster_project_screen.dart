@@ -314,10 +314,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
     _analysisIsolate = await Isolate.spawn<PlasterAnalysisIsolateRequest>(
       plasterAnalyzeProjectInIsolate,
-      PlasterAnalysisIsolateRequest(
-        sendPort: port.sendPort,
-        request: request,
-      ),
+      PlasterAnalysisIsolateRequest(sendPort: port.sendPort, request: request),
       debugName: 'plasterboard-layout-analysis',
     );
     _analysisSubscription = port.listen((message) {
@@ -402,9 +399,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       return;
     }
     await _updateCurrentRoom(
-      _currentRoom.copyWith(
-        room: _currentRoom.room.copyWith(name: name),
-      ),
+      _currentRoom.copyWith(room: _currentRoom.room.copyWith(name: name)),
       trackUndo: false,
     );
   }
@@ -567,14 +562,14 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           if (bundle.lines.any((line) => line.id == opening.lineId)) opening,
       ];
 
-      final existingLineRows = await lineDao.withinTransaction(
-        transaction,
-      ).query(
-        DaoPlasterRoomLine.tableName,
-        where: 'room_id = ?',
-        whereArgs: [bundle.room.id],
-        orderBy: 'seq_no ASC',
-      );
+      final existingLineRows = await lineDao
+          .withinTransaction(transaction)
+          .query(
+            DaoPlasterRoomLine.tableName,
+            where: 'room_id = ?',
+            whereArgs: [bundle.room.id],
+            orderBy: 'seq_no ASC',
+          );
       final existingLines = lineDao.toList(existingLineRows);
       final existingLineIds = existingLines.map((line) => line.id).toSet();
       final lineIdMap = <int, int>{};
@@ -584,12 +579,14 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       // trip the unique(room_id, seq_no) index during resequencing.
       final seqOffset = bundle.lines.length + existingLines.length + 100;
       for (final line in existingLines) {
-        await lineDao.withinTransaction(transaction).update(
-          DaoPlasterRoomLine.tableName,
-          {'seq_no': line.seqNo + seqOffset},
-          where: 'id = ?',
-          whereArgs: [line.id],
-        );
+        await lineDao
+            .withinTransaction(transaction)
+            .update(
+              DaoPlasterRoomLine.tableName,
+              {'seq_no': line.seqNo + seqOffset},
+              where: 'id = ?',
+              whereArgs: [line.id],
+            );
       }
 
       for (var i = 0; i < bundle.lines.length; i++) {
@@ -616,12 +613,15 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
       final existingOpeningRows = bundle.lines.isEmpty
           ? <Map<String, Object?>>[]
-          : await openingDao.withinTransaction(transaction).query(
-              DaoPlasterRoomOpening.tableName,
-              where: 'line_id IN ('
-                  "${List.filled(bundle.lines.length, '?').join(',')})",
-              whereArgs: bundle.lines.map((line) => line.id).toList(),
-            );
+          : await openingDao
+                .withinTransaction(transaction)
+                .query(
+                  DaoPlasterRoomOpening.tableName,
+                  where:
+                      'line_id IN ('
+                      "${List.filled(bundle.lines.length, '?').join(',')})",
+                  whereArgs: bundle.lines.map((line) => line.id).toList(),
+                );
       final existingOpenings = openingDao.toList(existingOpeningRows);
       final keptOpeningIds = <int>{};
       for (var i = 0; i < bundle.openings.length; i++) {
@@ -647,22 +647,25 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       if (existingLineIds.difference(keptLineIds).isNotEmpty) {
         final refreshedOpeningRows = bundle.lines.isEmpty
             ? <Map<String, Object?>>[]
-            : await openingDao.withinTransaction(transaction).query(
-                DaoPlasterRoomOpening.tableName,
-                where: 'line_id IN ('
-                    "${List.filled(bundle.lines.length, '?').join(',')})",
-                whereArgs: bundle.lines.map((line) => line.id).toList(),
-              );
+            : await openingDao
+                  .withinTransaction(transaction)
+                  .query(
+                    DaoPlasterRoomOpening.tableName,
+                    where:
+                        'line_id IN ('
+                        "${List.filled(bundle.lines.length, '?').join(',')})",
+                    whereArgs: bundle.lines.map((line) => line.id).toList(),
+                  );
         bundle.openings = openingDao.toList(refreshedOpeningRows);
       }
 
-      final existingConstraintRows = await constraintDao.withinTransaction(
-        transaction,
-      ).query(
-        DaoPlasterRoomConstraint.tableName,
-        where: 'room_id = ?',
-        whereArgs: [bundle.room.id],
-      );
+      final existingConstraintRows = await constraintDao
+          .withinTransaction(transaction)
+          .query(
+            DaoPlasterRoomConstraint.tableName,
+            where: 'room_id = ?',
+            whereArgs: [bundle.room.id],
+          );
       final existingConstraints = constraintDao.toList(existingConstraintRows);
       final keptConstraintIds = <int>{};
       bundle.constraints = [
@@ -749,10 +752,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     return switch (violation.constraint.type) {
       PlasterConstraintType.lineLength =>
         'The requested line length conflicts with existing constraints. '
-            'Requested length: ${PlasterGeometry.formatDisplayLength(
-              violation.constraint.targetValue ?? 0,
-              unitSystem,
-            )}.',
+            'Requested length: ${PlasterGeometry.formatDisplayLength(violation.constraint.targetValue ?? 0, unitSystem)}.',
       PlasterConstraintType.horizontal =>
         'This line cannot remain horizontal '
             'with the current constraints.',
@@ -1079,10 +1079,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         unitSystem: _currentRoom.room.unitSystem,
         type: opening.type,
         initialOpening: opening,
-        title:
-            opening.type == PlasterOpeningType.door
-                ? 'Edit Door'
-                : 'Edit Window',
+        title: opening.type == PlasterOpeningType.door
+            ? 'Edit Door'
+            : 'Edit Window',
         confirmLabel: 'Save',
       ),
     );
@@ -1153,9 +1152,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     if (layout.isCeiling) {
       return bundle.room.ceilingSheetDirection;
     }
-    final line = bundle.lines.firstWhere(
-      (line) => line.id == layout.lineId,
-    );
+    final line = bundle.lines.firstWhere((line) => line.id == layout.lineId);
     return line.sheetDirection;
   }
 
@@ -1191,13 +1188,17 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     await _persistRoomBundle(roomIndex, updated);
   }
 
-  Future<void> _flipSurfaceDirection(PlasterSurfaceLayout layout) async {
-    final next = switch (layout.direction) {
-      PlasterSheetDirection.horizontal => PlasterSheetDirection.vertical,
-      PlasterSheetDirection.vertical => PlasterSheetDirection.horizontal,
-      PlasterSheetDirection.auto => PlasterSheetDirection.horizontal,
-    };
-    await _setSurfaceDirection(layout, next);
+  void _openLayoutViewer(PlasterSurfaceLayout layout) {
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => _SurfaceLayoutViewerScreen(
+            layout: layout,
+            unitSystem: _unitSystemForLayout(layout),
+          ),
+        ),
+      ),
+    );
   }
 
   String _formatKg(double value) => value.toStringAsFixed(value < 10 ? 1 : 0);
@@ -1412,9 +1413,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               ))
           .copyWith(targetValue: angleValue),
     );
-    await _solveAndUpdateRoom(
-      _currentRoom.copyWith(constraints: constraints),
-    );
+    await _solveAndUpdateRoom(_currentRoom.copyWith(constraints: constraints));
   }
 
   Future<void> _removeAngleConstraint(int index) async {
@@ -1423,9 +1422,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _currentRoom.lines[index].id,
       PlasterConstraintType.jointAngle,
     );
-    await _solveAndUpdateRoom(
-      _currentRoom.copyWith(constraints: constraints),
-    );
+    await _solveAndUpdateRoom(_currentRoom.copyWith(constraints: constraints));
   }
 
   Widget _buildEditorToolbar({bool vertical = false, bool wrap = false}) {
@@ -1438,28 +1435,23 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     final selectedOpening = hasOpening
         ? _currentRoom.openings[_selectedOpeningIndex!]
         : null;
-    final hasLineLengthConstraint = selectedLine != null &&
-        _constraintForLine(
-              selectedLine.id,
-              PlasterConstraintType.lineLength,
-            ) !=
+    final hasLineLengthConstraint =
+        selectedLine != null &&
+        _constraintForLine(selectedLine.id, PlasterConstraintType.lineLength) !=
             null;
-    final hasHorizontalConstraint = selectedLine != null &&
-        _constraintForLine(
-              selectedLine.id,
-              PlasterConstraintType.horizontal,
-            ) !=
+    final hasHorizontalConstraint =
+        selectedLine != null &&
+        _constraintForLine(selectedLine.id, PlasterConstraintType.horizontal) !=
             null;
-    final hasVerticalConstraint = selectedLine != null &&
-        _constraintForLine(
-              selectedLine.id,
-              PlasterConstraintType.vertical,
-            ) !=
+    final hasVerticalConstraint =
+        selectedLine != null &&
+        _constraintForLine(selectedLine.id, PlasterConstraintType.vertical) !=
             null;
     final selectedIntersectionLine = hasIntersection
         ? _currentRoom.lines[_selectedIntersectionIndex!]
         : null;
-    final hasAngleConstraint = selectedIntersectionLine != null &&
+    final hasAngleConstraint =
+        selectedIntersectionLine != null &&
         _constraintForLine(
               selectedIntersectionLine.id,
               PlasterConstraintType.jointAngle,
@@ -1527,8 +1519,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         icon: Icons.content_cut,
         label: 'Split',
         enabled: hasLine,
-        onPressed:
-            hasLine ? () => _splitLine(_selectedLineIndex!) : null,
+        onPressed: hasLine ? () => _splitLine(_selectedLineIndex!) : null,
       ),
       _ToolbarButton(
         icon: Icons.straighten,
@@ -1538,13 +1529,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         onPressed: hasLine
             ? () {
                 if (hasLineLengthConstraint) {
-                  unawaited(
-                    _removeLineLengthConstraint(_selectedLineIndex!),
-                  );
+                  unawaited(_removeLineLengthConstraint(_selectedLineIndex!));
                 } else {
-                  unawaited(
-                    _editLineLengthConstraint(_selectedLineIndex!),
-                  );
+                  unawaited(_editLineLengthConstraint(_selectedLineIndex!));
                 }
               }
             : null,
@@ -1561,7 +1548,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             : null,
       ),
       _ToolbarButton(
-        icon: Icons.window_outlined,
+        icon: Icons.web_asset_outlined,
         label: 'Window',
         enabled: hasLine,
         onPressed: hasLine
@@ -1574,7 +1561,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _ToolbarButton(
         icon: selectedOpening?.type == PlasterOpeningType.door
             ? Icons.door_front_door_outlined
-            : Icons.window_outlined,
+            : Icons.web_asset_outlined,
         label: hasOpening ? 'Edit Opening' : 'Opening',
         enabled: hasOpening,
         selected: hasOpening,
@@ -1641,9 +1628,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                     _removeAngleConstraint(_selectedIntersectionIndex!),
                   );
                 } else {
-                  unawaited(
-                    _editAngleConstraint(_selectedIntersectionIndex!),
-                  );
+                  unawaited(_editAngleConstraint(_selectedIntersectionIndex!));
                 }
               }
             : null,
@@ -1665,11 +1650,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     }
 
     if (wrap) {
-      return Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children: toolbarButtons,
-      );
+      return Wrap(spacing: 6, runSpacing: 6, children: toolbarButtons);
     }
 
     return SingleChildScrollView(
@@ -1746,9 +1727,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       if (_selectionMode) {
         final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
         final line = lines[index];
-        lines[index] = line.copyWith(
-          plasterSelected: !line.plasterSelected,
-        );
+        lines[index] = line.copyWith(plasterSelected: !line.plasterSelected);
         await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
       }
     },
@@ -1876,131 +1855,135 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
   }
 
-  Widget _buildSheetLayoutsSection(List<PlasterSurfaceLayout> layouts) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Sheet Layout',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          for (final layout in layouts)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final narrow = constraints.maxWidth < 500;
-                    final details = Column(
+  Widget _buildSheetLayoutsSection(
+    List<PlasterSurfaceLayout> layouts,
+  ) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Sheet Layout', style: Theme.of(context).textTheme.titleMedium),
+      for (final layout in layouts)
+        Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openLayoutViewer(layout),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final narrow = constraints.maxWidth < 500;
+                  final details = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(layout.label),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${layout.material.name}  '
+                        '${layout.sheetsAcross} across x '
+                        '${layout.sheetsDown} high',
+                      ),
+                      Text(layout.direction.layoutLabel),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _DirectionChip(
+                            label: 'Auto',
+                            selected:
+                                _storedDirectionForLayout(layout) ==
+                                PlasterSheetDirection.auto,
+                            onSelected: () => _setSurfaceDirection(
+                              layout,
+                              PlasterSheetDirection.auto,
+                            ),
+                          ),
+                          _DirectionChip(
+                            label: 'Landscape',
+                            selected:
+                                _storedDirectionForLayout(layout) ==
+                                PlasterSheetDirection.horizontal,
+                            onSelected: () => _setSurfaceDirection(
+                              layout,
+                              PlasterSheetDirection.horizontal,
+                            ),
+                          ),
+                          _DirectionChip(
+                            label: 'Portrait',
+                            selected:
+                                _storedDirectionForLayout(layout) ==
+                                PlasterSheetDirection.vertical,
+                            onSelected: () => _setSurfaceDirection(
+                              layout,
+                              PlasterSheetDirection.vertical,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                  final metrics = Column(
+                    crossAxisAlignment: narrow
+                        ? CrossAxisAlignment.start
+                        : CrossAxisAlignment.end,
+                    children: [
+                      Text('${layout.sheetCount} sheets'),
+                      Text(
+                        '${PlasterGeometry.formatDisplayLength(layout.estimatedJointTapeLength, _unitSystemForLayout(layout))} tape',
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Open Full Screen Layout',
+                            onPressed: () => _openLayoutViewer(layout),
+                            icon: const Icon(Icons.open_in_full),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+
+                  if (narrow) {
+                    return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(layout.label),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${layout.material.name}  '
-                          '${layout.sheetsAcross} across x '
-                          '${layout.sheetsDown} high',
-                        ),
-                        Text(layout.direction.layoutLabel),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _DirectionChip(
-                              label: 'Auto',
-                              selected:
-                                  _storedDirectionForLayout(layout) ==
-                                  PlasterSheetDirection.auto,
-                              onSelected: () => _setSurfaceDirection(
-                                layout,
-                                PlasterSheetDirection.auto,
-                              ),
+                            _SurfaceLayoutDiagram(
+                              layout: layout,
+                              unitSystem: _unitSystemForLayout(layout),
                             ),
-                            _DirectionChip(
-                              label: 'Landscape',
-                              selected:
-                                  _storedDirectionForLayout(layout) ==
-                                  PlasterSheetDirection.horizontal,
-                              onSelected: () => _setSurfaceDirection(
-                                layout,
-                                PlasterSheetDirection.horizontal,
-                              ),
-                            ),
-                            _DirectionChip(
-                              label: 'Portrait',
-                              selected:
-                                  _storedDirectionForLayout(layout) ==
-                                  PlasterSheetDirection.vertical,
-                              onSelected: () => _setSurfaceDirection(
-                                layout,
-                                PlasterSheetDirection.vertical,
-                              ),
-                            ),
+                            const SizedBox(width: 12),
+                            Expanded(child: metrics),
                           ],
                         ),
+                        const SizedBox(height: 12),
+                        details,
                       ],
                     );
-                    final metrics = Column(
-                      crossAxisAlignment: narrow
-                          ? CrossAxisAlignment.start
-                          : CrossAxisAlignment.end,
-                      children: [
-                        Text('${layout.sheetCount} sheets'),
-                        Text(
-                          '${PlasterGeometry.formatDisplayLength(
-                            layout.estimatedJointTapeLength,
-                            _unitSystemForLayout(layout),
-                          )} tape',
-                        ),
-                        IconButton(
-                          tooltip: 'Flip orientation',
-                          onPressed: () => _flipSurfaceDirection(layout),
-                          icon: const Icon(Icons.flip),
-                        ),
-                      ],
-                    );
+                  }
 
-                    if (narrow) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _SurfaceLayoutDiagram(
-                                layout: layout,
-                                unitSystem: _unitSystemForLayout(layout),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(child: metrics),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          details,
-                        ],
-                      );
-                    }
-
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _SurfaceLayoutDiagram(
-                          layout: layout,
-                          unitSystem: _unitSystemForLayout(layout),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(child: details),
-                        const SizedBox(width: 12),
-                        metrics,
-                      ],
-                    );
-                  },
-                ),
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SurfaceLayoutDiagram(
+                        layout: layout,
+                        unitSystem: _unitSystemForLayout(layout),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: details),
+                      const SizedBox(width: 12),
+                      metrics,
+                    ],
+                  );
+                },
               ),
             ),
-        ],
-      );
+          ),
+        ),
+    ],
+  );
 
   Widget _buildTakeoffSection(
     PlasterTakeoffSummary takeoff,
@@ -2009,10 +1992,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       const SizedBox(height: 12),
-      Text(
-        'Takeoff Summary',
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
+      Text('Takeoff Summary', style: Theme.of(context).textTheme.titleMedium),
       ListTile(
         title: const Text('Sheets'),
         trailing: Text('${takeoff.totalSheetCount}'),
@@ -2027,10 +2007,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       ListTile(
         title: const Text('Net surface area'),
         trailing: Text(
-          PlasterGeometry.formatDisplayArea(
-            takeoff.surfaceArea,
-            unitSystem,
-          ),
+          PlasterGeometry.formatDisplayArea(takeoff.surfaceArea, unitSystem),
         ),
       ),
       ListTile(
@@ -2045,19 +2022,13 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       ListTile(
         title: const Text('Estimated wastage'),
         trailing: Text(
-          '${PlasterGeometry.formatDisplayArea(
-            takeoff.estimatedWasteArea,
-            unitSystem,
-          )} (${takeoff.estimatedWastePercent.toStringAsFixed(1)}%)',
+          '${PlasterGeometry.formatDisplayArea(takeoff.estimatedWasteArea, unitSystem)} (${takeoff.estimatedWastePercent.toStringAsFixed(1)}%)',
         ),
       ),
       ListTile(
         title: const Text('Cut/layout waste'),
         trailing: Text(
-          PlasterGeometry.formatDisplayArea(
-            takeoff.cutWasteArea,
-            unitSystem,
-          ),
+          PlasterGeometry.formatDisplayArea(takeoff.cutWasteArea, unitSystem),
         ),
       ),
       ListTile(
@@ -2108,10 +2079,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       ListTile(
         title: const Text('Tape'),
         trailing: Text(
-          PlasterGeometry.formatDisplayLength(
-            takeoff.tapeLength,
-            unitSystem,
-          ),
+          PlasterGeometry.formatDisplayLength(takeoff.tapeLength, unitSystem),
         ),
       ),
       ListTile(
@@ -2220,73 +2188,74 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ],
           ],
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(12),
-          child: _isRoomEditorOnly
-              ? _buildRoomEditorSection(isMobileLandscape)
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildAnalysisStatus(),
-                    TextField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Project Name',
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(12),
+            child: _isRoomEditorOnly
+                ? _buildRoomEditorSection(isMobileLandscape)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildAnalysisStatus(),
+                      TextField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Project Name',
+                        ),
+                        onSubmitted: (_) => unawaited(_saveProject()),
                       ),
-                      onSubmitted: (_) => unawaited(_saveProject()),
-                    ),
-                    HMBSelectJob(
-                      selectedJob: _selectedJob,
-                      required: true,
-                      onSelected: (job) async {
-                        _job = job;
-                        _selectedTask.taskId = null;
-                        await _saveProject();
-                        setState(() {});
-                      },
-                    ),
-                    HMBSelectTask(
-                      selectedTask: _selectedTask,
-                      job: _job,
-                      onSelected: (task) async {
-                        _task = task;
-                        await _saveProject();
-                      },
-                    ),
-                    HMBSelectSupplier(
-                      selectedSupplier: _selectedSupplier,
-                      onSelected: (supplier) async {
-                        _supplier = supplier;
-                        await _saveProject();
-                      },
-                    ),
-                    TextField(
-                      controller: _wasteController,
-                      decoration: const InputDecoration(
-                        labelText: 'Waste Allowance %',
+                      HMBSelectJob(
+                        selectedJob: _selectedJob,
+                        required: true,
+                        onSelected: (job) async {
+                          _job = job;
+                          _selectedTask.taskId = null;
+                          await _saveProject();
+                          setState(() {});
+                        },
                       ),
-                      keyboardType: TextInputType.number,
-                      onSubmitted: (_) => unawaited(_saveProject()),
-                    ),
-                    const SizedBox(height: 12),
-                    HMBChildCrudCard(
-                      headline: 'Rooms',
-                      crudListScreen: PlasterRoomListScreen(
-                        parent: Parent(_project),
+                      HMBSelectTask(
+                        selectedTask: _selectedTask,
+                        job: _job,
+                        onSelected: (task) async {
+                          _task = task;
+                          await _saveProject();
+                        },
                       ),
-                    ),
-                    HMBChildCrudCard(
-                      headline: 'Material Sizes',
-                      
-                      crudListScreen: PlasterMaterialSizeListScreen(
-                        parent: Parent(_project),
+                      HMBSelectSupplier(
+                        selectedSupplier: _selectedSupplier,
+                        onSelected: (supplier) async {
+                          _supplier = supplier;
+                          await _saveProject();
+                        },
                       ),
-                    ),
-                    const Divider(),
-                    _buildSheetLayoutsSection(_layouts),
-                    _buildTakeoffSection(_takeoff, displayUnit),
-                  ],
-                ),
+                      TextField(
+                        controller: _wasteController,
+                        decoration: const InputDecoration(
+                          labelText: 'Waste Allowance %',
+                        ),
+                        keyboardType: TextInputType.number,
+                        onSubmitted: (_) => unawaited(_saveProject()),
+                      ),
+                      const SizedBox(height: 12),
+                      HMBChildCrudCard(
+                        headline: 'Rooms',
+                        crudListScreen: PlasterRoomListScreen(
+                          parent: Parent(_project),
+                        ),
+                      ),
+                      HMBChildCrudCard(
+                        headline: 'Material Sizes',
+                        crudListScreen: PlasterMaterialSizeListScreen(
+                          parent: Parent(_project),
+                        ),
+                      ),
+                      const Divider(),
+                      _buildSheetLayoutsSection(_layouts),
+                      _buildTakeoffSection(_takeoff, displayUnit),
+                    ],
+                  ),
+          ),
         ),
       );
     },
@@ -2379,27 +2348,37 @@ class _DirectionChip extends StatelessWidget {
 class _SurfaceLayoutDiagram extends StatelessWidget {
   final PlasterSurfaceLayout layout;
   final PreferredUnitSystem unitSystem;
+  final double width;
+  final double height;
+  final bool showSheetMeasurements;
 
   const _SurfaceLayoutDiagram({
     required this.layout,
     required this.unitSystem,
+    this.width = 132,
+    this.height = 84,
+    this.showSheetMeasurements = false,
   });
 
   @override
   Widget build(BuildContext context) => Container(
-    width: 132,
-    height: 84,
+    width: width,
+    height: height,
     padding: const EdgeInsets.all(6),
     decoration: BoxDecoration(
       border: Border.all(color: Colors.white24),
       borderRadius: BorderRadius.circular(8),
     ),
     child: CustomPaint(
-      painter: _SurfaceLayoutDiagramPainter(layout),
+      painter: _SurfaceLayoutDiagramPainter(
+        layout: layout,
+        unitSystem: unitSystem,
+        showSheetMeasurements: showSheetMeasurements,
+      ),
       child: Center(
         child: Text(
-          '${PlasterGeometry.formatDisplayLength(layout.width, unitSystem)} x\n'
-          '${PlasterGeometry.formatDisplayLength(layout.height, unitSystem)}',
+          'w: ${PlasterGeometry.formatDisplayLength(layout.width, unitSystem)}\n'
+          'h: ${PlasterGeometry.formatDisplayLength(layout.height, unitSystem)}',
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 10),
         ),
@@ -2410,8 +2389,14 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
 
 class _SurfaceLayoutDiagramPainter extends CustomPainter {
   final PlasterSurfaceLayout layout;
+  final PreferredUnitSystem unitSystem;
+  final bool showSheetMeasurements;
 
-  const _SurfaceLayoutDiagramPainter(this.layout);
+  const _SurfaceLayoutDiagramPainter({
+    required this.layout,
+    required this.unitSystem,
+    required this.showSheetMeasurements,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -2449,13 +2434,138 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
       canvas
         ..drawRect(sheetRect, sheet)
         ..drawRect(sheetRect, sheetBorder);
+      if (showSheetMeasurements) {
+        _paintSheetLabel(
+          canvas,
+          sheetRect,
+          '${PlasterGeometry.formatDisplayLength(placement.width, unitSystem)}\n'
+          '${PlasterGeometry.formatDisplayLength(placement.height, unitSystem)}',
+        );
+      }
     }
     canvas.drawRect(rect, border);
   }
 
+  void _paintSheetLabel(Canvas canvas, Rect rect, String text) {
+    if (rect.width < 54 || rect.height < 26) {
+      return;
+    }
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+      maxLines: 2,
+    )..layout(maxWidth: rect.width - 8);
+    final background = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: rect.center,
+        width: textPainter.width + 8,
+        height: textPainter.height + 6,
+      ),
+      const Radius.circular(6),
+    );
+    canvas.drawRRect(background, Paint()..color = const Color(0xBB111827));
+    textPainter.paint(
+      canvas,
+      Offset(
+        rect.center.dx - textPainter.width / 2,
+        rect.center.dy - textPainter.height / 2,
+      ),
+    );
+  }
+
   @override
   bool shouldRepaint(covariant _SurfaceLayoutDiagramPainter oldDelegate) =>
-      oldDelegate.layout != layout;
+      oldDelegate.layout != layout ||
+      oldDelegate.unitSystem != unitSystem ||
+      oldDelegate.showSheetMeasurements != showSheetMeasurements;
+}
+
+class _SurfaceLayoutViewerScreen extends StatelessWidget {
+  final PlasterSurfaceLayout layout;
+  final PreferredUnitSystem unitSystem;
+
+  const _SurfaceLayoutViewerScreen({
+    required this.layout,
+    required this.unitSystem,
+  });
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(layout.label)),
+    body: OrientationBuilder(
+      builder: (context, orientation) {
+        final rotateQuarterTurns =
+            orientation == Orientation.landscape && layout.height > layout.width
+            ? 1
+            : 0;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${layout.material.name}  ${layout.direction.layoutLabel}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'w: ${PlasterGeometry.formatDisplayLength(layout.width, unitSystem)} x '
+                    'h: ${PlasterGeometry.formatDisplayLength(layout.height, unitSystem)}'
+                    '  •  ${layout.sheetCount} sheets',
+                  ),
+                  const Text('Tap-drag to pan, pinch to zoom.'),
+                ],
+              ),
+            ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final diagramWidth = rotateQuarterTurns == 0
+                      ? constraints.maxWidth - 32
+                      : constraints.maxHeight - 32;
+                  final diagramHeight = rotateQuarterTurns == 0
+                      ? constraints.maxHeight - 32
+                      : constraints.maxWidth - 32;
+                  final diagram = Center(
+                    child: RotatedBox(
+                      quarterTurns: rotateQuarterTurns,
+                      child: _SurfaceLayoutDiagram(
+                        layout: layout,
+                        unitSystem: unitSystem,
+                        width: max(240, diagramWidth),
+                        height: max(240, diagramHeight),
+                        showSheetMeasurements: true,
+                      ),
+                    ),
+                  );
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 6,
+                      boundaryMargin: const EdgeInsets.all(64),
+                      child: diagram,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
 }
 
 class _RoomCanvas extends StatefulWidget {
@@ -2589,8 +2699,8 @@ class _RoomCanvasState extends State<_RoomCanvas> {
               );
               if (_pendingDragOpeningIndex != null) {
                 _dragTransform = transform;
-                _pendingDragOpeningAnchorOffset =
-                    transform.openingDragAnchorOffset(
+                _pendingDragOpeningAnchorOffset = transform
+                    .openingDragAnchorOffset(
                       widget.bundle.openings,
                       details.localPosition,
                       _pendingDragOpeningIndex!,
@@ -2813,10 +2923,7 @@ class _RoomPainter extends CustomPainter {
       final wallLabelOffset =
           mid +
           outsideNormal * 20 -
-          Offset(
-            wallLabelPainter.width / 2,
-            wallLabelPainter.height / 2,
-          );
+          Offset(wallLabelPainter.width / 2, wallLabelPainter.height / 2);
       final wallLabelBounds = RRect.fromRectAndRadius(
         Rect.fromLTWH(
           wallLabelOffset.dx - 5,
