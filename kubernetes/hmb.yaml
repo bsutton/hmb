@@ -1,0 +1,99 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hmb
+  labels:
+    app.kubernetes.io/name: hmb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hmb
+  namespace: hmb
+  labels:
+    app.kubernetes.io/name: hmb
+    app.kubernetes.io/component: web
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hmb
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hmb
+        app.kubernetes.io/component: web
+    spec:
+      imagePullSecrets:
+        - name: harbor-pull-secret
+      containers:
+        - name: hmb
+          image: harbor.k3s.internal.strommen.systems/production/hmb:latest
+          ports:
+            - containerPort: 80
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hmb
+  namespace: hmb
+  labels:
+    app.kubernetes.io/name: hmb
+    app.kubernetes.io/component: web
+spec:
+  selector:
+    app.kubernetes.io/name: hmb
+    app.kubernetes.io/component: web
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hmb
+  namespace: hmb
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+    - hosts:
+        - hmb.k3s.internal.strommen.systems
+      secretName: hmb-tls
+  rules:
+    - host: hmb.k3s.internal.strommen.systems
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hmb
+                port:
+                  name: http
