@@ -37,6 +37,7 @@ dependencies:
   direct_caller_sim_choice: ^1.0.5
   dlibphonenumber: ^1.1.18
   email_validator: ^3.0.0
+  encrypt: ^5.0.3
   equatable: ^2.0.0
   ffi: ^2.1.2
   file_picker: ^10.1.2
