@@ -457,6 +457,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
     await DaoPlasterProject().update(updated);
     _project = updated;
+    _selectedSupplier.selected = updated.supplierId;
     _job = await DaoJob().getById(updated.jobId);
     _task = updated.taskId == null
         ? null
@@ -474,8 +475,21 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   }
 
   Future<void> _updateSelectedSupplier(Supplier? supplier) async {
-    _selectedSupplier.selected = supplier?.id;
-    _supplier = supplier;
+    final supplierId = supplier?.id;
+    final materials = await _loadMaterialsForSupplier(supplierId);
+    if (mounted) {
+      setState(() {
+        _selectedSupplier.selected = supplierId;
+        _supplier = supplier;
+        _project = _project.copyWith(supplierId: supplierId);
+        _materials = materials;
+      });
+    } else {
+      _selectedSupplier.selected = supplierId;
+      _supplier = supplier;
+      _project = _project.copyWith(supplierId: supplierId);
+      _materials = materials;
+    }
     await _saveProject();
   }
 
