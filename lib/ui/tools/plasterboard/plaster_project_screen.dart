@@ -64,6 +64,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   var _selectionMode = false;
   var _snapToGrid = true;
   var _showGrid = true;
+  var _fitCanvasRequest = 0;
   var _selectedRoomIndex = 0;
   int? _selectedLineIndex;
   int? _selectedIntersectionIndex;
@@ -1498,6 +1499,11 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         },
       ),
       _ToolbarButton(
+        icon: Icons.fit_screen,
+        label: 'Fit',
+        onPressed: () => setState(() => _fitCanvasRequest++),
+      ),
+      _ToolbarButton(
         icon: _snapToGrid ? Icons.grid_on : Icons.grid_off,
         label: _snapToGrid ? 'Snap On' : 'Snap Off',
         selected: _snapToGrid,
@@ -1671,6 +1677,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     selectionMode: _selectionMode,
     snapToGrid: _snapToGrid,
     showGrid: _showGrid,
+    fitRequestId: _fitCanvasRequest,
     selectedLineIndex: _selectedLineIndex,
     selectedIntersectionIndex: _selectedIntersectionIndex,
     selectedOpeningIndex: _selectedOpeningIndex,
@@ -2573,6 +2580,7 @@ class _RoomCanvas extends StatefulWidget {
   final bool selectionMode;
   final bool snapToGrid;
   final bool showGrid;
+  final int fitRequestId;
   final int? selectedLineIndex;
   final int? selectedIntersectionIndex;
   final int? selectedOpeningIndex;
@@ -2593,6 +2601,7 @@ class _RoomCanvas extends StatefulWidget {
     required this.selectionMode,
     required this.snapToGrid,
     required this.showGrid,
+    required this.fitRequestId,
     required this.selectedLineIndex,
     required this.selectedIntersectionIndex,
     required this.selectedOpeningIndex,
@@ -2626,6 +2635,14 @@ class _RoomCanvasState extends State<_RoomCanvas> {
   void dispose() {
     _transformationController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _RoomCanvas oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.fitRequestId != widget.fitRequestId) {
+      _transformationController.value = Matrix4.identity();
+    }
   }
 
   void _handlePointerSignal(PointerSignalEvent event, Size size) {
