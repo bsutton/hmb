@@ -3046,6 +3046,8 @@ class _RoomCanvasState extends State<_RoomCanvas> {
   var _pendingDragOpeningAnchorOffset = 0;
   int? _gesturePointer;
   Offset? _gestureStartPosition;
+  int? _secondaryPanPointer;
+  Offset? _secondaryPanPosition;
   var _activePointerCount = 0;
   _CanvasTransform? _dragTransform;
   final _transformationController = TransformationController();
@@ -3130,8 +3132,29 @@ class _RoomCanvasState extends State<_RoomCanvas> {
     _dragTransform = null;
   }
 
+  bool _isSecondaryMousePanEvent(PointerEvent event) =>
+      event.kind == PointerDeviceKind.mouse &&
+      (event.buttons & kSecondaryMouseButton) != 0;
+
+  void _panCanvas(Offset delta) {
+    if (delta == Offset.zero) {
+      return;
+    }
+    final panMatrix = Matrix4.identity()
+      ..translateByDouble(delta.dx, delta.dy, 0, 1);
+    _transformationController.value = panMatrix.multiplied(
+      _transformationController.value,
+    );
+  }
+
   void _handlePointerDown(PointerDownEvent event, _CanvasTransform transform) {
     _activePointerCount++;
+    if (_isSecondaryMousePanEvent(event)) {
+      _cancelGeometryDrag();
+      _secondaryPanPointer = event.pointer;
+      _secondaryPanPosition = event.localPosition;
+      return;
+    }
     if (_activePointerCount > 1) {
       _cancelGeometryDrag();
       return;
@@ -3165,6 +3188,16 @@ class _RoomCanvasState extends State<_RoomCanvas> {
   }
 
   void _handlePointerMove(PointerMoveEvent event, _CanvasTransform transform) {
+    if (_secondaryPanPointer == event.pointer &&
+        _isSecondaryMousePanEvent(event)) {
+      final previous = _secondaryPanPosition;
+      if (previous != null) {
+        _panCanvas(event.localPosition - previous);
+      }
+      _secondaryPanPosition = event.localPosition;
+      return;
+    }
+
     if (_gesturePointer != event.pointer || _activePointerCount != 1) {
       return;
     }
@@ -3218,6 +3251,10 @@ class _RoomCanvasState extends State<_RoomCanvas> {
   void _handlePointerEnd(int pointer) {
     if (_activePointerCount > 0) {
       _activePointerCount--;
+    }
+    if (_secondaryPanPointer == pointer) {
+      _secondaryPanPointer = null;
+      _secondaryPanPosition = null;
     }
     if (_gesturePointer != pointer) {
       return;
