@@ -1641,12 +1641,19 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _ToolbarButton(
         icon: _selectionMode ? Icons.touch_app : Icons.ads_click,
         label: _selectionMode ? 'Select Mode' : 'Edit Mode',
+        helpText:
+            'Toggle between selection mode and direct geometry editing. '
+            'Selection mode lets you pick walls, joints, and openings so you '
+            'can apply tools to them.',
         selected: _selectionMode,
         onPressed: () => setState(() => _selectionMode = !_selectionMode),
       ),
       _ToolbarButton(
         icon: Icons.undo,
         label: 'Undo',
+        helpText:
+            'Restore the previous room-editing step, including geometry and '
+            'openings.',
         enabled: _undo.isNotEmpty,
         onPressed: () async {
           if (_undo.isEmpty) {
@@ -1663,6 +1670,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _ToolbarButton(
         icon: Icons.redo,
         label: 'Redo',
+        helpText: 'Reapply the most recently undone room-editing step.',
         enabled: _redo.isNotEmpty,
         onPressed: () async {
           if (_redo.isEmpty) {
@@ -1679,50 +1687,46 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _ToolbarButton(
         icon: Icons.fit_screen,
         label: 'Fit',
+        helpText:
+            'Reset the drawing zoom and pan so the current room fits back into '
+            'view.',
         onPressed: () => setState(() => _fitCanvasRequest++),
       ),
       _ToolbarButton(
         icon: _snapToGrid ? Icons.grid_on : Icons.grid_off,
         label: _snapToGrid ? 'Snap On' : 'Snap Off',
+        helpText:
+            'Turn grid snapping on or off when moving points and openings.',
         selected: _snapToGrid,
         onPressed: () => setState(() => _snapToGrid = !_snapToGrid),
       ),
       _ToolbarButton(
         icon: _showGrid ? Icons.border_all : Icons.border_clear,
         label: _showGrid ? 'Grid On' : 'Grid Off',
+        helpText: 'Show or hide the background drawing grid.',
         selected: _showGrid,
         onPressed: () => setState(() => _showGrid = !_showGrid),
       ),
       _ToolbarButton(
         icon: Icons.deselect,
         label: 'Deselect',
+        helpText: 'Clear the current wall, joint, or opening selection.',
         enabled: hasLine || hasIntersection || hasOpening,
         onPressed: () => setState(_clearSelection),
       ),
       _ToolbarButton(
         icon: Icons.content_cut,
         label: 'Split',
+        helpText:
+            'Split the selected wall into two connected wall segments at its '
+            'midpoint.',
         enabled: hasLine,
         onPressed: hasLine ? () => _splitLine(_selectedLineIndex!) : null,
       ),
       _ToolbarButton(
-        icon: Icons.straighten,
-        label: hasLineLengthConstraint ? 'Remove Length' : 'Length',
-        enabled: hasLine,
-        selected: hasLineLengthConstraint,
-        onPressed: hasLine
-            ? () {
-                if (hasLineLengthConstraint) {
-                  unawaited(_removeLineLengthConstraint(_selectedLineIndex!));
-                } else {
-                  unawaited(_editLineLengthConstraint(_selectedLineIndex!));
-                }
-              }
-            : null,
-      ),
-      _ToolbarButton(
         icon: Icons.door_front_door_outlined,
         label: 'Door',
+        helpText: 'Add a door opening to the selected wall.',
         enabled: hasLine,
         onPressed: hasLine
             ? () => _addOpeningToLine(
@@ -1734,6 +1738,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _ToolbarButton(
         icon: Icons.web_asset_outlined,
         label: 'Window',
+        helpText: 'Add a window opening to the selected wall.',
         enabled: hasLine,
         onPressed: hasLine
             ? () => _addOpeningToLine(
@@ -1747,6 +1752,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ? Icons.door_front_door_outlined
             : Icons.web_asset_outlined,
         label: hasOpening ? 'Edit Opening' : 'Opening',
+        helpText: 'Edit the currently selected door or window opening.',
         enabled: hasOpening,
         selected: hasOpening,
         onPressed: hasOpening
@@ -1756,6 +1762,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _ToolbarButton(
         icon: Icons.delete_outline,
         label: 'Delete Opening',
+        helpText: 'Remove the currently selected door or window opening.',
         enabled: hasOpening,
         onPressed: hasOpening
             ? () => _deleteOpening(_selectedOpeningIndex!)
@@ -1766,6 +1773,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ? Icons.layers_clear_outlined
             : Icons.layers_outlined,
         label: isSelectedLinePlaster ? 'Exclude' : 'Include',
+        helpText:
+            'Include or exclude the selected wall from plasterboard layout '
+            'calculation.',
         enabled: hasLine,
         onPressed: hasLine
             ? () => _toggleLinePlasterSelected(_selectedLineIndex!)
@@ -1775,8 +1785,27 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
     final constraintButtons = <Widget>[
       _ToolbarButton(
+        icon: Icons.straighten,
+        label: hasLineLengthConstraint ? 'Remove Length' : 'Length',
+        helpText:
+            'Set or remove a fixed length constraint on the selected wall. '
+            'This is a wall constraint tool.',
+        enabled: hasLine,
+        selected: hasLineLengthConstraint,
+        onPressed: hasLine
+            ? () {
+                if (hasLineLengthConstraint) {
+                  unawaited(_removeLineLengthConstraint(_selectedLineIndex!));
+                } else {
+                  unawaited(_editLineLengthConstraint(_selectedLineIndex!));
+                }
+              }
+            : null,
+      ),
+      _ToolbarButton(
         icon: Icons.horizontal_rule,
         label: hasHorizontalConstraint ? 'Remove Horizontal' : 'Horizontal',
+        helpText: 'Set or remove a horizontal constraint on the selected wall.',
         enabled: hasLine,
         selected: hasHorizontalConstraint,
         onPressed: hasLine
@@ -1789,6 +1818,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           child: Icon(Icons.horizontal_rule),
         ),
         label: hasVerticalConstraint ? 'Remove Vertical' : 'Vertical',
+        helpText: 'Set or remove a vertical constraint on the selected wall.',
         enabled: hasLine,
         selected: hasVerticalConstraint,
         onPressed: hasLine
@@ -1798,6 +1828,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _ToolbarButton(
         icon: Icons.polyline,
         label: 'Joint',
+        helpText:
+            'Open joint actions for the selected corner, including joining '
+            'lines and managing joint-angle constraints.',
         enabled: hasIntersection,
         onPressed: hasIntersection
             ? () => _deleteIntersection(_selectedIntersectionIndex!)
@@ -1806,6 +1839,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _ToolbarButton(
         icon: Icons.architecture,
         label: hasAngleConstraint ? 'Remove Angle' : 'Angle',
+        helpText:
+            'Set or remove a fixed angle constraint on the selected joint.',
         enabled: hasIntersection,
         selected: hasAngleConstraint,
         onPressed: hasIntersection
@@ -2644,12 +2679,14 @@ class _ToolbarButton extends StatelessWidget {
   final IconData? icon;
   final Widget? iconWidget;
   final String label;
+  final String helpText;
   final bool enabled;
   final bool selected;
   final VoidCallback? onPressed;
 
   const _ToolbarButton({
     required this.label,
+    required this.helpText,
     this.icon,
     this.iconWidget,
     this.enabled = true,
@@ -2660,9 +2697,25 @@ class _ToolbarButton extends StatelessWidget {
          'Provide either icon or iconWidget.',
        );
 
+  Future<void> _showHelp(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(label),
+        content: Text(helpText),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => Tooltip(
-    message: label,
+  Widget build(BuildContext context) => GestureDetector(
+    onLongPress: () => unawaited(_showHelp(context)),
     child: IconButton.filledTonal(
       isSelected: selected,
       onPressed: enabled ? onPressed : null,
