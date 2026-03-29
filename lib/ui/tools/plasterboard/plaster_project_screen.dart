@@ -9,6 +9,7 @@ import 'dart:math';
 import 'package:deferred_state/deferred_state.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
@@ -3101,6 +3102,25 @@ class _RoomCanvasState extends State<_RoomCanvas> {
   bool get _isDraggingGeometry =>
       _dragIndex != null || _dragOpeningIndex != null;
 
+  void _cancelGeometryDrag() {
+    final draggingOpening = _dragOpeningIndex != null;
+    final draggingIntersection = _dragIndex != null;
+
+    _dragOpeningIndex = null;
+    _dragOpeningAnchorOffset = 0;
+    _dragIndex = null;
+    _clearPendingGesture();
+
+    if (draggingOpening || draggingIntersection) {
+      setState(() {});
+      if (draggingOpening) {
+        unawaited(widget.onEndMoveOpening());
+      } else {
+        unawaited(widget.onEndMoveIntersection());
+      }
+    }
+  }
+
   void _clearPendingGesture() {
     _pendingDragIndex = null;
     _pendingDragOpeningIndex = null;
@@ -3112,7 +3132,11 @@ class _RoomCanvasState extends State<_RoomCanvas> {
 
   void _handlePointerDown(PointerDownEvent event, _CanvasTransform transform) {
     _activePointerCount++;
-    if (_activePointerCount != 1 || _isDraggingGeometry) {
+    if (_activePointerCount > 1) {
+      _cancelGeometryDrag();
+      return;
+    }
+    if (_isDraggingGeometry) {
       _clearPendingGesture();
       return;
     }
@@ -3826,17 +3850,35 @@ class _LengthDialog extends StatefulWidget {
 }
 
 class _LengthDialogState extends State<_LengthDialog> {
-  late final TextEditingController _controller;
+  late final TextEditingController _metricController;
+  late final TextEditingController _feetController;
+  late final TextEditingController _inchesController;
   late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(
-      text: PlasterGeometry.formatDisplayLength(
-        widget.initialValue,
-        widget.unitSystem,
-      ).replaceFirst(RegExp(r'\s+mm$'), ''),
+    _metricController = TextEditingController(
+      text: widget.unitSystem == PreferredUnitSystem.metric
+          ? PlasterGeometry.formatDisplayLength(
+              widget.initialValue,
+              widget.unitSystem,
+            ).replaceFirst(RegExp(r'\s+mm$'), '')
+          : '',
+    );
+    final totalInches =
+        widget.initialValue / PlasterGeometry.imperialUnitsPerInch;
+    final feet = totalInches ~/ PlasterGeometry.inchesPerFoot;
+    final inches = totalInches - feet * PlasterGeometry.inchesPerFoot;
+    _feetController = TextEditingController(
+      text: widget.unitSystem == PreferredUnitSystem.imperial
+          ? feet.toString()
+          : '',
+    );
+    _inchesController = TextEditingController(
+      text: widget.unitSystem == PreferredUnitSystem.imperial
+          ? _formatInches(inches)
+          : '',
     );
     _focusNode = FocusNode();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3844,9 +3886,12 @@ class _LengthDialogState extends State<_LengthDialog> {
         return;
       }
       _focusNode.requestFocus();
-      _controller.selection = TextSelection(
+      final controller = widget.unitSystem == PreferredUnitSystem.metric
+          ? _metricController
+          : _feetController;
+      controller.selection = TextSelection(
         baseOffset: 0,
-        extentOffset: _controller.text.length,
+        extentOffset: controller.text.length,
       );
     });
   }
@@ -3854,22 +3899,88 @@ class _LengthDialogState extends State<_LengthDialog> {
   @override
   void dispose() {
     _focusNode.dispose();
-    _controller.dispose();
+    _metricController.dispose();
+    _feetController.dispose();
+    _inchesController.dispose();
     super.dispose();
   }
+
+  int? _parseValue() {
+    if (widget.unitSystem == PreferredUnitSystem.metric) {
+      return PlasterGeometry.parseDisplayLength(
+        _metricController.text,
+        widget.unitSystem,
+      );
+    }
+
+    final feet = int.tryParse(_feetController.text.trim()) ?? 0;
+    final inches = double.tryParse(_inchesController.text.trim()) ?? 0;
+    if (feet == 0 && inches == 0) {
+      return null;
+    }
+
+    final totalInches = feet * PlasterGeometry.inchesPerFoot + inches;
+    return (totalInches * PlasterGeometry.imperialUnitsPerInch).round();
+  }
+
+  String _formatInches(double value) {
+    final rounded = value.toStringAsFixed(3);
+    return rounded.replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+
+  Widget _buildMetricField() => TextField(
+    controller: _metricController,
+    focusNode: _focusNode,
+    autofocus: true,
+    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+    decoration: const InputDecoration(labelText: 'Length (mm)'),
+  );
+
+  Widget _buildImperialFields(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _feetController,
+              focusNode: _focusNode,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(labelText: 'Feet'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: _inchesController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+              ],
+              decoration: const InputDecoration(labelText: 'Inches'),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      Text(
+        'Enter feet and inches separately. Decimal inches are supported.',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+    ],
+  );
 
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: const Text('Set Length'),
-    content: TextField(
-      controller: _controller,
-      focusNode: _focusNode,
-      autofocus: true,
-      keyboardType: TextInputType.text,
-      decoration: InputDecoration(
-        labelText: 'Length (${PlasterGeometry.unitLabel(widget.unitSystem)})',
-      ),
-    ),
+    content: widget.unitSystem == PreferredUnitSystem.metric
+        ? _buildMetricField()
+        : _buildImperialFields(context),
     actions: [
       TextButton(
         onPressed: () => Navigator.of(context).pop(),
@@ -3877,10 +3988,7 @@ class _LengthDialogState extends State<_LengthDialog> {
       ),
       TextButton(
         onPressed: () {
-          final value = PlasterGeometry.parseDisplayLength(
-            _controller.text,
-            widget.unitSystem,
-          );
+          final value = _parseValue();
           if (value == null) {
             return;
           }
