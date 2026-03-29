@@ -11,6 +11,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
+import '../../widgets/blocking_ui.dart';
 import '../../widgets/hmb_button.dart';
 import 'plaster_project_screen.dart';
 import 'plaster_room_preview.dart';
@@ -130,9 +131,13 @@ class _PlasterRoomEditScreenState extends DeferredState<PlasterRoomEditScreen> {
     final navigator = Navigator.of(context);
     await navigator.push(
       MaterialPageRoute<void>(
-        builder: (_) => PlasterProjectScreen(
-          project: widget.project,
-          editorOnlyRoomId: savedRoom.id,
+        builder: (_) => BlockingUITransition<Widget>(
+          label: 'Opening drawing editor',
+          slowAction: () async => PlasterProjectScreen(
+            project: widget.project,
+            editorOnlyRoomId: savedRoom.id,
+          ),
+          builder: (context, screen) => screen ?? const SizedBox.shrink(),
         ),
       ),
     );
@@ -216,18 +221,14 @@ class _PlasterRoomEditScreenState extends DeferredState<PlasterRoomEditScreen> {
           TextField(
             controller: _ceilingHeightController,
             decoration: InputDecoration(
-              labelText: 'Ceiling Height '
+              labelText:
+                  'Ceiling Height '
                   '(${PlasterGeometry.unitLabel(_room.unitSystem)})',
             ),
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
           const SizedBox(height: 16),
-          Text(
-            'Room Diagram',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('Room Diagram', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Center(
             child: PlasterRoomPreview(room: _room, lines: _lines),
