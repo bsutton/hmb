@@ -6,6 +6,7 @@ import 'dart:isolate';
 import 'dart:math';
 
 import '../../entity/plaster_material_size.dart';
+import '../../entity/plaster_project.dart';
 import '../../entity/plaster_room.dart';
 import '../../entity/plaster_room_line.dart';
 import '../../entity/plaster_room_opening.dart';
@@ -21,6 +22,7 @@ class IntPoint {
 }
 
 class PlasterRoomShape {
+  final PlasterProject? project;
   final PlasterRoom room;
   final List<PlasterRoomLine> lines;
   final List<PlasterRoomOpening> openings;
@@ -29,6 +31,7 @@ class PlasterRoomShape {
     required this.room,
     required this.lines,
     required this.openings,
+    this.project,
   });
 }
 
@@ -971,6 +974,8 @@ class PlasterGeometry {
           continue;
         }
         final candidates = _surfaceCandidates(
+          shape: shape,
+          line: line,
           room: shape.room,
           lineId: line.id,
           isCeiling: false,
@@ -985,7 +990,6 @@ class PlasterGeometry {
             height: shape.room.ceilingHeight,
             unitSystem: shape.room.unitSystem,
           ),
-          planLimit: planLimit,
         );
         if (candidates.isNotEmpty) {
           candidateGroups.add(candidates);
@@ -994,6 +998,8 @@ class PlasterGeometry {
       if (shape.room.plasterCeiling) {
         final bounds = _bounds(shape.lines);
         final candidates = _surfaceCandidates(
+          shape: shape,
+          line: null,
           room: shape.room,
           lineId: null,
           isCeiling: true,
@@ -1008,7 +1014,6 @@ class PlasterGeometry {
             height: bounds.$4 - bounds.$2,
             unitSystem: shape.room.unitSystem,
           ),
-          planLimit: planLimit,
         );
         if (candidates.isNotEmpty) {
           candidateGroups.add(candidates);
@@ -1019,6 +1024,8 @@ class PlasterGeometry {
   }
 
   static List<PlasterSurfaceLayout> _surfaceCandidates({
+    required PlasterRoomShape shape,
+    required PlasterRoomLine? line,
     required PlasterRoom room,
     required int? lineId,
     required bool isCeiling,
@@ -1028,7 +1035,6 @@ class PlasterGeometry {
     required int area,
     required List<PlasterMaterialSize> materials,
     required String label,
-    required int planLimit,
   }) {
     final candidates = <PlasterSurfaceLayout>[];
     final seen = <String>{};
@@ -1053,15 +1059,16 @@ class PlasterGeometry {
             candidate.$3 < height) {
           continue;
         }
-        final plans = _buildPlacementPlans(
+        final plans = _buildDeterministicPlacementPlans(
+          shape: shape,
+          line: line,
           width: width,
           height: height,
           sheetWidth: candidate.$2,
           sheetHeight: candidate.$3,
           minEdge: minEdgePiece(room.unitSystem),
-          horizontalWallStarter:
-              !isCeiling && candidate.$1 == PlasterSheetDirection.horizontal,
-          maxPlans: planLimit,
+          direction: candidate.$1,
+          isCeiling: isCeiling,
         );
         for (final plan in plans) {
           final packed = _packPieces(
@@ -1126,6 +1133,317 @@ class PlasterGeometry {
         );
       });
     return sorted;
+  }
+
+  static List<(List<PlasterSheetPlacement>, int, int)>
+  _buildDeterministicPlacementPlans({
+    required PlasterRoomShape shape,
+    required PlasterRoomLine? line,
+    required int width,
+    required int height,
+    required int sheetWidth,
+    required int sheetHeight,
+    required int minEdge,
+    required PlasterSheetDirection direction,
+    required bool isCeiling,
+  }) {
+    if (!isCeiling && direction == PlasterSheetDirection.vertical) {
+      final row = _buildStudAlignedRow(
+        surfaceWidth: width,
+        sheetWidth: sheetWidth,
+        minEdge: minEdge,
+        framingSpacing: _wallStudSpacing(shape, line),
+        framingOffset: _wallStudOffset(shape, line),
+      );
+      if (row == null) {
+        return const [];
+      }
+      return [
+        (
+          [
+            for (final piece in row.$1)
+              PlasterSheetPlacement(
+                x: piece.$1,
+                y: 0,
+                width: piece.$2,
+                height: height,
+              ),
+          ],
+          row.$1.length,
+          1,
+        ),
+      ];
+    }
+
+    final rowHeights = _buildCourseHeights(
+      surfaceHeight: height,
+      sheetHeight: sheetHeight,
+      minEdge: minEdge,
+      horizontalWallStarter:
+          !isCeiling && direction == PlasterSheetDirection.horizontal,
+    );
+    if (rowHeights == null || rowHeights.isEmpty) {
+      return const [];
+    }
+
+    final framingSpacing = isCeiling
+        ? _ceilingFramingSpacing(shape)
+        : _wallStudSpacing(shape, line);
+    final framingOffset = isCeiling
+        ? _ceilingFramingOffset(shape)
+        : _wallStudOffset(shape, line);
+    final rowPatterns = _buildRowPatternOptions(
+      surfaceWidth: width,
+      sheetWidth: sheetWidth,
+      minEdge: minEdge,
+      framingSpacing: framingSpacing,
+      framingOffset: framingOffset,
+    );
+    if (rowPatterns.isEmpty) {
+      return const [];
+    }
+
+    final chosenRows = _selectRowPatterns(
+      rowCount: rowHeights.length,
+      rowPatterns: rowPatterns,
+      staggerOffset: minEdge,
+    );
+    if (chosenRows == null) {
+      return const [];
+    }
+
+    final placements = <PlasterSheetPlacement>[];
+    var maxAcross = 0;
+    var y = 0;
+    for (var rowIndex = 0; rowIndex < rowHeights.length; rowIndex++) {
+      final row = chosenRows[rowIndex];
+      maxAcross = max(maxAcross, row.length);
+      for (final piece in row) {
+        placements.add(
+          PlasterSheetPlacement(
+            x: piece.$1,
+            y: y,
+            width: piece.$2,
+            height: rowHeights[rowIndex],
+          ),
+        );
+      }
+      y += rowHeights[rowIndex];
+    }
+    return [(placements, maxAcross, rowHeights.length)];
+  }
+
+  static int _wallStudSpacing(PlasterRoomShape shape, PlasterRoomLine? line) =>
+      line?.studSpacingOverride ?? shape.project?.wallStudSpacing ?? 6000;
+
+  static int _wallStudOffset(PlasterRoomShape shape, PlasterRoomLine? line) =>
+      line?.studOffsetOverride ?? shape.project?.wallStudOffset ?? 0;
+
+  static int _ceilingFramingSpacing(PlasterRoomShape shape) =>
+      shape.project?.ceilingFramingSpacing ?? 4500;
+
+  static int _ceilingFramingOffset(PlasterRoomShape shape) =>
+      shape.project?.ceilingFramingOffset ?? 0;
+
+  static List<int>? _buildCourseHeights({
+    required int surfaceHeight,
+    required int sheetHeight,
+    required int minEdge,
+    required bool horizontalWallStarter,
+  }) {
+    if (surfaceHeight <= 0 || sheetHeight <= 0) {
+      return null;
+    }
+    if (!horizontalWallStarter) {
+      return _axisPieces(surfaceHeight, sheetHeight, minEdge);
+    }
+    final starterHeight = sheetHeight ~/ 2;
+    if (starterHeight < minEdge || surfaceHeight < starterHeight) {
+      return null;
+    }
+    if (surfaceHeight == starterHeight) {
+      return [starterHeight];
+    }
+    final remainder = _axisPieces(
+      surfaceHeight - starterHeight,
+      sheetHeight,
+      minEdge,
+    );
+    if (remainder == null) {
+      return null;
+    }
+    return [starterHeight, ...remainder];
+  }
+
+  static List<List<(int, int)>> _buildRowPatternOptions({
+    required int surfaceWidth,
+    required int sheetWidth,
+    required int minEdge,
+    required int framingSpacing,
+    required int framingOffset,
+  }) {
+    final patterns = <List<(int, int)>>[];
+    final seen = <String>{};
+    final studPositions = <int>{0, surfaceWidth};
+    if (framingSpacing > 0) {
+      var stud = framingOffset;
+      while (stud < 0) {
+        stud += framingSpacing;
+      }
+      for (; stud < surfaceWidth; stud += framingSpacing) {
+        if (stud > 0) {
+          studPositions.add(stud);
+        }
+      }
+    }
+
+    final orderedStuds = studPositions.toList()..sort();
+    for (final startCut in orderedStuds) {
+      if (startCut != 0 && (startCut < minEdge || startCut >= sheetWidth)) {
+        continue;
+      }
+      final available = surfaceWidth - startCut;
+      if (available <= 0) {
+        continue;
+      }
+      final fullCount = available ~/ sheetWidth;
+      final endPiece = available % sheetWidth;
+      if (fullCount == 0 && startCut == 0 && surfaceWidth <= sheetWidth) {
+        if (surfaceWidth >= minEdge) {
+          patterns.add([(0, surfaceWidth)]);
+        }
+        continue;
+      }
+      if (endPiece != 0 && endPiece < minEdge) {
+        continue;
+      }
+
+      final row = <(int, int)>[];
+      var x = 0;
+      if (startCut > 0) {
+        row.add((x, startCut));
+        x += startCut;
+      }
+      for (var i = 0; i < fullCount; i++) {
+        row.add((x, sheetWidth));
+        x += sheetWidth;
+      }
+      if (endPiece > 0) {
+        row.add((x, endPiece));
+        x += endPiece;
+      }
+      if (x != surfaceWidth) {
+        continue;
+      }
+      final joints = _jointPositionsForPattern(row);
+      final validJoints = joints.every(studPositions.contains);
+      if (!validJoints) {
+        continue;
+      }
+      final signature = row.map((piece) => '${piece.$1}:${piece.$2}').join(',');
+      if (seen.add(signature)) {
+        patterns.add(row);
+      }
+    }
+
+    patterns.sort((left, right) {
+      final leftCutCount = left.where((piece) => piece.$2 != sheetWidth).length;
+      final rightCutCount = right
+          .where((piece) => piece.$2 != sheetWidth)
+          .length;
+      if (leftCutCount != rightCutCount) {
+        return leftCutCount.compareTo(rightCutCount);
+      }
+      final leftJoints = _jointPositionsForPattern(left).length;
+      final rightJoints = _jointPositionsForPattern(right).length;
+      if (leftJoints != rightJoints) {
+        return leftJoints.compareTo(rightJoints);
+      }
+      final leftWaste = left.fold<int>(
+        0,
+        (sum, piece) =>
+            sum + (piece.$2 == sheetWidth ? 0 : sheetWidth - piece.$2),
+      );
+      final rightWaste = right.fold<int>(
+        0,
+        (sum, piece) =>
+            sum + (piece.$2 == sheetWidth ? 0 : sheetWidth - piece.$2),
+      );
+      return leftWaste.compareTo(rightWaste);
+    });
+    return patterns;
+  }
+
+  static List<List<(int, int)>>? _selectRowPatterns({
+    required int rowCount,
+    required List<List<(int, int)>> rowPatterns,
+    required int staggerOffset,
+  }) {
+    List<List<(int, int)>>? best;
+
+    void search(int index, List<List<(int, int)>> chosen) {
+      if (best != null) {
+        return;
+      }
+      if (index == rowCount) {
+        best = [...chosen];
+        return;
+      }
+      for (final pattern in rowPatterns) {
+        if (chosen.isNotEmpty &&
+            _rowPatternStaggerViolation(chosen.last, pattern, staggerOffset)) {
+          continue;
+        }
+        search(index + 1, [...chosen, pattern]);
+        if (best != null) {
+          return;
+        }
+      }
+    }
+
+    search(0, const []);
+    return best;
+  }
+
+  static bool _rowPatternStaggerViolation(
+    List<(int, int)> left,
+    List<(int, int)> right,
+    int staggerOffset,
+  ) {
+    final leftJoints = _jointPositionsForPattern(left);
+    final rightJoints = _jointPositionsForPattern(right);
+    for (final a in leftJoints) {
+      for (final b in rightJoints) {
+        if ((a - b).abs() < staggerOffset) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  static List<int> _jointPositionsForPattern(List<(int, int)> row) => [
+    for (var i = 0; i < row.length - 1; i++) row[i].$1 + row[i].$2,
+  ];
+
+  static (List<(int, int)>, int)? _buildStudAlignedRow({
+    required int surfaceWidth,
+    required int sheetWidth,
+    required int minEdge,
+    required int framingSpacing,
+    required int framingOffset,
+  }) {
+    final rows = _buildRowPatternOptions(
+      surfaceWidth: surfaceWidth,
+      sheetWidth: sheetWidth,
+      minEdge: minEdge,
+      framingSpacing: framingSpacing,
+      framingOffset: framingOffset,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    return (rows.first, rows.first.length);
   }
 
   static List<PlasterSurfaceLayout> _pruneWallCandidates(
@@ -1412,173 +1730,6 @@ class PlasterGeometry {
       PlasterSheetDirection.vertical => [vertical],
       PlasterSheetDirection.auto => [horizontal, vertical],
     };
-  }
-
-  static List<(List<PlasterSheetPlacement>, int, int)> _buildPlacementPlans({
-    required int width,
-    required int height,
-    required int sheetWidth,
-    required int sheetHeight,
-    required int minEdge,
-    required bool horizontalWallStarter,
-    required int maxPlans,
-  }) {
-    final staggerOffset = minEdge;
-    final rowHeightVariants = _axisPieceVariants(
-      height,
-      sheetHeight,
-      minEdge,
-      starter: horizontalWallStarter,
-    );
-    if (rowHeightVariants.isEmpty) {
-      return const [];
-    }
-
-    final plans = <(List<PlasterSheetPlacement>, int, int)>[];
-    final seen = <String>{};
-    for (final rowHeights in rowHeightVariants) {
-      final rowWidthOptions = <List<List<int>>>[];
-      var valid = true;
-      for (var row = 0; row < rowHeights.length; row++) {
-        final variants = _axisPieceVariants(width, sheetWidth, minEdge);
-        if (variants.isEmpty) {
-          valid = false;
-          break;
-        }
-        rowWidthOptions.add(variants);
-      }
-      if (!valid) {
-        continue;
-      }
-
-      void buildRowPlans(int row, List<List<int>> chosen) {
-        if (plans.length >= maxPlans) {
-          return;
-        }
-        if (row == rowHeights.length) {
-          if (_hasStaggerViolation(chosen, staggerOffset)) {
-            return;
-          }
-          final placements = <PlasterSheetPlacement>[];
-          var maxAcross = 0;
-          var y = 0;
-          for (var i = 0; i < rowHeights.length; i++) {
-            final widths = chosen[i];
-            maxAcross = max(maxAcross, widths.length);
-            var x = 0;
-            for (final pieceWidth in widths) {
-              placements.add(
-                PlasterSheetPlacement(
-                  x: x,
-                  y: y,
-                  width: pieceWidth,
-                  height: rowHeights[i],
-                ),
-              );
-              x += pieceWidth;
-            }
-            y += rowHeights[i];
-          }
-          final signature = placements
-              .map(
-                (piece) =>
-                    '${piece.x},${piece.y},${piece.width},${piece.height}',
-              )
-              .join('|');
-          if (seen.add(signature)) {
-            plans.add((placements, maxAcross, rowHeights.length));
-          }
-          return;
-        }
-
-        for (final widths in rowWidthOptions[row]) {
-          buildRowPlans(row + 1, [...chosen, widths]);
-          if (plans.length >= maxPlans) {
-            return;
-          }
-        }
-      }
-
-      buildRowPlans(0, const []);
-    }
-
-    return plans;
-  }
-
-  static List<List<int>> _axisPieceVariants(
-    int surfaceLength,
-    int sheetLength,
-    int minEdge, {
-    bool starter = false,
-  }) {
-    final variants = <List<int>>[];
-    final seen = <String>{};
-
-    void addVariant(List<int>? pieces) {
-      if (pieces == null || pieces.isEmpty) {
-        return;
-      }
-      final key = pieces.join(',');
-      if (seen.add(key)) {
-        variants.add(pieces);
-      }
-    }
-
-    if (starter) {
-      final starterLength = sheetLength ~/ 2;
-      if (starterLength < minEdge || surfaceLength < starterLength) {
-        return const [];
-      }
-      if (surfaceLength == starterLength) {
-        return [
-          [starterLength],
-        ];
-      }
-      final trailing = _axisPieceVariants(
-        surfaceLength - starterLength,
-        sheetLength,
-        minEdge,
-      );
-      for (final variant in trailing) {
-        addVariant([starterLength, ...variant]);
-      }
-      return variants;
-    }
-
-    final base = _axisPieces(surfaceLength, sheetLength, minEdge);
-    addVariant(base);
-    if (base == null) {
-      return const [];
-    }
-    if (base.length > 1) {
-      addVariant([...base.reversed]);
-    }
-    return variants;
-  }
-
-  static bool _hasStaggerViolation(List<List<int>> rows, int minimumOffset) {
-    for (var i = 1; i < rows.length; i++) {
-      final previousJoints = _internalJointPositions(rows[i - 1]);
-      final currentJoints = _internalJointPositions(rows[i]);
-      for (final previous in previousJoints) {
-        for (final current in currentJoints) {
-          if ((previous - current).abs() < minimumOffset) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  static List<int> _internalJointPositions(List<int> pieces) {
-    final joints = <int>[];
-    var position = 0;
-    for (var i = 0; i < pieces.length - 1; i++) {
-      position += pieces[i];
-      joints.add(position);
-    }
-    return joints;
   }
 
   static List<int>? _axisPieces(

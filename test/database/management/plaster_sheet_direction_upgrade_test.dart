@@ -45,4 +45,50 @@ void main() {
       delete(dbPath);
     }
   });
+
+  test('v167 adds framing defaults and per-wall overrides', () async {
+    final dbPath = join(createTempDir(), 'plaster_framing_v167.db');
+    final db = await CliDatabaseFactory().openDatabase(
+      dbPath,
+      options: OpenDatabaseOptions(),
+    );
+
+    try {
+      final source = ProjectScriptSource();
+      for (final script in [
+        'assets/sql/upgrade_scripts/v163.sql',
+        'assets/sql/upgrade_scripts/v166.sql',
+        'assets/sql/upgrade_scripts/v167.sql',
+      ]) {
+        final sql = await source.loadSQL(script);
+        final statements = await parseSqlFile(sql);
+        for (final statement in statements) {
+          await db.execute(statement);
+        }
+      }
+
+      final projectColumns = await db.rawQuery(
+        'PRAGMA table_info(plaster_project)',
+      );
+      final lineColumns = await db.rawQuery(
+        'PRAGMA table_info(plaster_room_line)',
+      );
+      final projectNames = {
+        for (final row in projectColumns) row['name'] as String? ?? '': true,
+      };
+      final lineNames = {
+        for (final row in lineColumns) row['name'] as String? ?? '': true,
+      };
+
+      expect(projectNames.containsKey('wall_stud_spacing'), isTrue);
+      expect(projectNames.containsKey('wall_stud_offset'), isTrue);
+      expect(projectNames.containsKey('ceiling_framing_spacing'), isTrue);
+      expect(projectNames.containsKey('ceiling_framing_offset'), isTrue);
+      expect(lineNames.containsKey('stud_spacing_override'), isTrue);
+      expect(lineNames.containsKey('stud_offset_override'), isTrue);
+    } finally {
+      await db.close();
+      delete(dbPath);
+    }
+  });
 }

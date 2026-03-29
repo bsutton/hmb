@@ -142,10 +142,9 @@ void main() {
         ),
       ];
 
-      final layouts = PlasterGeometry.calculateLayout(
-        [PlasterRoomShape(room: room, lines: lines, openings: const [])],
-        materials,
-      );
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(room: room, lines: lines, openings: const []),
+      ], materials);
 
       expect(layouts.length, 3);
       expect(layouts.every((layout) => layout.label.contains('wall')), isTrue);
@@ -168,10 +167,9 @@ void main() {
         ),
       ];
 
-      final layouts = PlasterGeometry.calculateLayout(
-        [PlasterRoomShape(room: room, lines: const [], openings: const [])],
-        materials,
-      );
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(room: room, lines: const [], openings: const []),
+      ], materials);
 
       expect(layouts, isEmpty);
     });
@@ -204,16 +202,13 @@ void main() {
         ),
       ];
 
-      final layouts = PlasterGeometry.calculateLayout(
-        [
-          PlasterRoomShape(
-            room: room,
-            lines: selectedWallOnly,
-            openings: const [],
-          ),
-        ],
-        materials,
-      );
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials);
 
       expect(layouts, hasLength(1));
       expect(layouts.single.direction, PlasterSheetDirection.horizontal);
@@ -225,6 +220,302 @@ void main() {
       expect(
         bottomCourse.every((placement) => placement.height == 6000),
         isTrue,
+      );
+    });
+
+    test('auto wall layouts prefer landscape over portrait when valid', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Auto Wall',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0],
+        lines[1].copyWith(plasterSelected: false),
+        lines[2].copyWith(plasterSelected: false),
+        lines[3].copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '2400 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 24000,
+          height: 12000,
+        ),
+      ];
+
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials);
+
+      expect(layouts, hasLength(1));
+      expect(layouts.single.direction, PlasterSheetDirection.horizontal);
+    });
+
+    test('horizontal layouts keep partial pieces at row ends', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Row Ends',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0].copyWith(
+          length: 15000,
+          sheetDirection: PlasterSheetDirection.horizontal,
+        ),
+        lines[1].copyWith(plasterSelected: false),
+        lines[2].copyWith(plasterSelected: false),
+        lines[3].copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '6000 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 60000,
+          height: 12000,
+        ),
+      ];
+
+      final layout = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials).single;
+
+      final rows = <int, List<PlasterSheetPlacement>>{};
+      for (final placement in layout.placements) {
+        rows.putIfAbsent(placement.y, () => []).add(placement);
+      }
+
+      for (final row in rows.values) {
+        row.sort((left, right) => left.x.compareTo(right.x));
+        final partialIndexes = <int>[
+          for (var i = 0; i < row.length; i++)
+            if (row[i].width != 60000) i,
+        ];
+        expect(partialIndexes.length, lessThanOrEqualTo(2));
+        expect(
+          partialIndexes.every(
+            (index) => index == 0 || index == row.length - 1,
+          ),
+          isTrue,
+        );
+      }
+    });
+
+    test('adjacent rows stagger joints by at least 300mm', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Stagger',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0].copyWith(
+          length: 15000,
+          sheetDirection: PlasterSheetDirection.horizontal,
+        ),
+        lines[1].copyWith(plasterSelected: false),
+        lines[2].copyWith(plasterSelected: false),
+        lines[3].copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '6000 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 60000,
+          height: 12000,
+        ),
+      ];
+
+      final layout = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials).single;
+
+      final rows = <int, List<PlasterSheetPlacement>>{};
+      for (final placement in layout.placements) {
+        rows.putIfAbsent(placement.y, () => []).add(placement);
+      }
+      final sortedRows = rows.entries.toList()
+        ..sort((left, right) => left.key.compareTo(right.key));
+
+      List<int> jointsFor(List<PlasterSheetPlacement> row) {
+        row.sort((left, right) => left.x.compareTo(right.x));
+        final joints = <int>[];
+        var position = 0;
+        for (var i = 0; i < row.length - 1; i++) {
+          position += row[i].width;
+          joints.add(position);
+        }
+        return joints;
+      }
+
+      for (var i = 1; i < sortedRows.length; i++) {
+        final previousJoints = jointsFor(sortedRows[i - 1].value);
+        final currentJoints = jointsFor(sortedRows[i].value);
+        for (final previous in previousJoints) {
+          for (final current in currentJoints) {
+            expect((previous - current).abs(), greaterThanOrEqualTo(3000));
+          }
+        }
+      }
+    });
+
+    test('horizontal wall joints align to studs from project defaults', () {
+      final project = PlasterProject.forInsert(
+        name: 'Studs',
+        jobId: 1,
+        wastePercent: 15,
+        wallStudSpacing: 3000,
+      );
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Stud Wall',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0].copyWith(
+          length: 210000,
+          sheetDirection: PlasterSheetDirection.horizontal,
+        ),
+        lines[1].copyWith(plasterSelected: false),
+        lines[2].copyWith(plasterSelected: false),
+        lines[3].copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '6000 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 60000,
+          height: 12000,
+        ),
+      ];
+
+      final layout = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          project: project,
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials).single;
+
+      final rows = <int, List<PlasterSheetPlacement>>{};
+      for (final placement in layout.placements) {
+        rows.putIfAbsent(placement.y, () => []).add(placement);
+      }
+      final studPositions = {for (var x = 0; x <= 210000; x += 3000) x};
+
+      for (final row in rows.values) {
+        row.sort((left, right) => left.x.compareTo(right.x));
+        for (var i = 0; i < row.length - 1; i++) {
+          expect(studPositions.contains(row[i].x + row[i].width), isTrue);
+        }
+      }
+    });
+
+    test('per-wall stud override avoids repeated butt joints', () {
+      final project = PlasterProject.forInsert(
+        name: 'Stud Override',
+        jobId: 1,
+        wastePercent: 15,
+        wallStudSpacing: 4500,
+      );
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Override Wall',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = PlasterGeometry.defaultLines(
+        roomId: 1,
+        unitSystem: PreferredUnitSystem.metric,
+      );
+      final selectedWallOnly = [
+        lines[0].copyWith(
+          length: 210000,
+          sheetDirection: PlasterSheetDirection.horizontal,
+          studSpacingOverride: 3000,
+        ),
+        lines[1].copyWith(plasterSelected: false),
+        lines[2].copyWith(plasterSelected: false),
+        lines[3].copyWith(plasterSelected: false),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '6000 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 60000,
+          height: 12000,
+        ),
+      ];
+
+      final layout = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(
+          project: project,
+          room: room,
+          lines: selectedWallOnly,
+          openings: const [],
+        ),
+      ], materials).single;
+
+      final rows = <int, List<PlasterSheetPlacement>>{};
+      for (final placement in layout.placements) {
+        rows.putIfAbsent(placement.y, () => []).add(placement);
+      }
+      final sortedRows = rows.entries.toList()
+        ..sort((left, right) => left.key.compareTo(right.key));
+
+      List<int> jointsFor(List<PlasterSheetPlacement> row) {
+        row.sort((left, right) => left.x.compareTo(right.x));
+        return [
+          for (var i = 0; i < row.length - 1; i++) row[i].x + row[i].width,
+        ];
+      }
+
+      expect(sortedRows.length, greaterThan(1));
+      expect(
+        jointsFor(sortedRows.first.value),
+        isNot(equals(jointsFor(sortedRows[1].value))),
       );
     });
 
@@ -313,16 +604,8 @@ void main() {
         ),
       ];
       final shapes = [
-        PlasterRoomShape(
-          room: room1,
-          lines: lines1,
-          openings: const [],
-        ),
-        PlasterRoomShape(
-          room: room2,
-          lines: lines2,
-          openings: const [],
-        ),
+        PlasterRoomShape(room: room1, lines: lines1, openings: const []),
+        PlasterRoomShape(room: room2, lines: lines2, openings: const []),
       ];
 
       final layouts = PlasterGeometry.calculateLayout(shapes, materials);
@@ -367,11 +650,7 @@ void main() {
       ];
 
       final layouts = PlasterGeometry.calculateLayout([
-        PlasterRoomShape(
-          room: room,
-          lines: lines,
-          openings: const [],
-        ),
+        PlasterRoomShape(room: room, lines: lines, openings: const []),
       ], materials);
 
       expect(layouts, isEmpty);

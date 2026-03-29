@@ -6,6 +6,8 @@
 import '../util/dart/plaster_sheet_direction.dart';
 import 'entity.dart';
 
+const _unsetPlasterRoomLineField = Object();
+
 class PlasterRoomLine extends Entity<PlasterRoomLine> {
   final int roomId;
   final int seqNo;
@@ -14,6 +16,8 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
   final int length;
   final bool plasterSelected;
   final PlasterSheetDirection sheetDirection;
+  final int? studSpacingOverride;
+  final int? studOffsetOverride;
 
   PlasterRoomLine._({
     required super.id,
@@ -24,6 +28,8 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     required this.length,
     required this.plasterSelected,
     required this.sheetDirection,
+    required this.studSpacingOverride,
+    required this.studOffsetOverride,
     required super.createdDate,
     required super.modifiedDate,
   });
@@ -36,6 +42,8 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     required this.length,
     this.plasterSelected = true,
     this.sheetDirection = PlasterSheetDirection.auto,
+    this.studSpacingOverride,
+    this.studOffsetOverride,
   }) : super.forInsert();
 
   PlasterRoomLine copyWith({
@@ -46,6 +54,8 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     int? length,
     bool? plasterSelected,
     PlasterSheetDirection? sheetDirection,
+    Object? studSpacingOverride = _unsetPlasterRoomLineField,
+    Object? studOffsetOverride = _unsetPlasterRoomLineField,
   }) => PlasterRoomLine._(
     id: id,
     roomId: roomId ?? this.roomId,
@@ -55,6 +65,14 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     length: length ?? this.length,
     plasterSelected: plasterSelected ?? this.plasterSelected,
     sheetDirection: sheetDirection ?? this.sheetDirection,
+    studSpacingOverride:
+        identical(studSpacingOverride, _unsetPlasterRoomLineField)
+        ? this.studSpacingOverride
+        : studSpacingOverride as int?,
+    studOffsetOverride:
+        identical(studOffsetOverride, _unsetPlasterRoomLineField)
+        ? this.studOffsetOverride
+        : studOffsetOverride as int?,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
   );
@@ -71,6 +89,8 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
         sheetDirection: PlasterSheetDirectionX.fromStorage(
           map['sheet_direction'] as String?,
         ),
+        studSpacingOverride: map['stud_spacing_override'] as int?,
+        studOffsetOverride: map['stud_offset_override'] as int?,
         createdDate: DateTime.parse(map['created_date'] as String),
         modifiedDate: DateTime.parse(map['modified_date'] as String),
       );
@@ -85,6 +105,8 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     'length': length,
     'plaster_selected': plasterSelected ? 1 : 0,
     'sheet_direction': sheetDirection.storageValue,
+    'stud_spacing_override': studSpacingOverride,
+    'stud_offset_override': studOffsetOverride,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

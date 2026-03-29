@@ -22,6 +22,10 @@ class PlasterProject extends Entity<PlasterProject> {
   final int? taskId;
   final int? supplierId;
   final int wastePercent;
+  final int wallStudSpacing;
+  final int wallStudOffset;
+  final int ceilingFramingSpacing;
+  final int ceilingFramingOffset;
 
   PlasterProject._({
     required super.id,
@@ -30,6 +34,10 @@ class PlasterProject extends Entity<PlasterProject> {
     required this.taskId,
     required this.supplierId,
     required this.wastePercent,
+    required this.wallStudSpacing,
+    required this.wallStudOffset,
+    required this.ceilingFramingSpacing,
+    required this.ceilingFramingOffset,
     required super.createdDate,
     required super.modifiedDate,
   });
@@ -40,6 +48,10 @@ class PlasterProject extends Entity<PlasterProject> {
     required this.wastePercent,
     this.taskId,
     this.supplierId,
+    this.wallStudSpacing = 6000,
+    this.wallStudOffset = 0,
+    this.ceilingFramingSpacing = 4500,
+    this.ceilingFramingOffset = 0,
   }) : super.forInsert();
 
   PlasterProject copyWith({
@@ -48,6 +60,10 @@ class PlasterProject extends Entity<PlasterProject> {
     Object? taskId = _unsetPlasterProjectField,
     Object? supplierId = _unsetPlasterProjectField,
     int? wastePercent,
+    int? wallStudSpacing,
+    int? wallStudOffset,
+    int? ceilingFramingSpacing,
+    int? ceilingFramingOffset,
   }) => PlasterProject._(
     id: id,
     name: name ?? this.name,
@@ -59,6 +75,10 @@ class PlasterProject extends Entity<PlasterProject> {
         ? this.supplierId
         : supplierId as int?,
     wastePercent: wastePercent ?? this.wastePercent,
+    wallStudSpacing: wallStudSpacing ?? this.wallStudSpacing,
+    wallStudOffset: wallStudOffset ?? this.wallStudOffset,
+    ceilingFramingSpacing: ceilingFramingSpacing ?? this.ceilingFramingSpacing,
+    ceilingFramingOffset: ceilingFramingOffset ?? this.ceilingFramingOffset,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
   );
@@ -70,6 +90,10 @@ class PlasterProject extends Entity<PlasterProject> {
     taskId: map['task_id'] as int?,
     supplierId: map['supplier_id'] as int?,
     wastePercent: map['waste_percent'] as int? ?? 15,
+    wallStudSpacing: map['wall_stud_spacing'] as int? ?? 6000,
+    wallStudOffset: map['wall_stud_offset'] as int? ?? 0,
+    ceilingFramingSpacing: map['ceiling_framing_spacing'] as int? ?? 4500,
+    ceilingFramingOffset: map['ceiling_framing_offset'] as int? ?? 0,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
@@ -82,6 +106,10 @@ class PlasterProject extends Entity<PlasterProject> {
     'task_id': taskId,
     'supplier_id': supplierId,
     'waste_percent': wastePercent,
+    'wall_stud_spacing': wallStudSpacing,
+    'wall_stud_offset': wallStudOffset,
+    'ceiling_framing_spacing': ceilingFramingSpacing,
+    'ceiling_framing_offset': ceilingFramingOffset,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

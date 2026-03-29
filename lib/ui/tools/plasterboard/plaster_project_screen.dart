@@ -51,6 +51,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   final _roomNameController = TextEditingController();
   final _wasteController = TextEditingController();
   final _ceilingHeightController = TextEditingController();
+  final _wallStudSpacingController = TextEditingController();
+  final _wallStudOffsetController = TextEditingController();
+  final _ceilingFramingSpacingController = TextEditingController();
+  final _ceilingFramingOffsetController = TextEditingController();
+  final _lineStudSpacingController = TextEditingController();
+  final _lineStudOffsetController = TextEditingController();
   final _selectedJob = SelectedJob();
   final _selectedTask = SelectedTask();
   final _selectedSupplier = SelectedSupplier();
@@ -144,6 +150,30 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _selectedRoomIndex = bundles.isEmpty ? 0 : max(0, roomIndex);
       _nameController.text = project.name;
       _wasteController.text = project.wastePercent.toString();
+      _wallStudSpacingController.text = _formatLengthEntry(
+        project.wallStudSpacing,
+        roomUnitSystem: bundles.isEmpty
+            ? PreferredUnitSystem.metric
+            : bundles.first.room.unitSystem,
+      );
+      _wallStudOffsetController.text = _formatLengthEntry(
+        project.wallStudOffset,
+        roomUnitSystem: bundles.isEmpty
+            ? PreferredUnitSystem.metric
+            : bundles.first.room.unitSystem,
+      );
+      _ceilingFramingSpacingController.text = _formatLengthEntry(
+        project.ceilingFramingSpacing,
+        roomUnitSystem: bundles.isEmpty
+            ? PreferredUnitSystem.metric
+            : bundles.first.room.unitSystem,
+      );
+      _ceilingFramingOffsetController.text = _formatLengthEntry(
+        project.ceilingFramingOffset,
+        roomUnitSystem: bundles.isEmpty
+            ? PreferredUnitSystem.metric
+            : bundles.first.room.unitSystem,
+      );
       _selectedJob.jobId = project.jobId;
       _selectedTask.taskId = project.taskId;
       _selectedSupplier.selected = project.supplierId;
@@ -180,6 +210,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     _roomNameController.dispose();
     _wasteController.dispose();
     _ceilingHeightController.dispose();
+    _wallStudSpacingController.dispose();
+    _wallStudOffsetController.dispose();
+    _ceilingFramingSpacingController.dispose();
+    _ceilingFramingOffsetController.dispose();
+    _lineStudSpacingController.dispose();
+    _lineStudOffsetController.dispose();
     super.dispose();
   }
 
@@ -201,9 +237,23 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
   _RoomBundle get _currentRoom => _rooms[_selectedRoomIndex];
 
+  String _formatLengthEntry(
+    int value, {
+    required PreferredUnitSystem roomUnitSystem,
+  }) => PlasterGeometry.formatDisplayLength(
+    value,
+    roomUnitSystem,
+  ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+
+  int? _parseLengthEntry(
+    String value, {
+    required PreferredUnitSystem roomUnitSystem,
+  }) => PlasterGeometry.parseDisplayLength(value, roomUnitSystem);
+
   List<PlasterRoomShape> _buildShapes() => [
     for (final bundle in _rooms)
       PlasterRoomShape(
+        project: _project,
         room: bundle.room,
         lines: bundle.lines,
         openings: bundle.openings,
@@ -392,6 +442,21 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _currentRoom.room.ceilingHeight,
       _currentRoom.room.unitSystem,
     ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+    final selectedLine = _selectedLineIndex == null
+        ? null
+        : _currentRoom.lines[_selectedLineIndex!];
+    _lineStudSpacingController.text = selectedLine?.studSpacingOverride == null
+        ? ''
+        : _formatLengthEntry(
+            selectedLine!.studSpacingOverride!,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
+    _lineStudOffsetController.text = selectedLine?.studOffsetOverride == null
+        ? ''
+        : _formatLengthEntry(
+            selectedLine!.studOffsetOverride!,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
   }
 
   Future<void> _commitRoomName() async {
@@ -440,12 +505,16 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     }
     await _commitRoomName();
     await _commitCeilingHeight();
+    await _commitSelectedLineFramingOverrides();
   }
 
   void _clearSelection() {
     _selectedLineIndex = null;
     _selectedIntersectionIndex = null;
     _selectedOpeningIndex = null;
+    if (_rooms.isNotEmpty) {
+      _syncRoomControllers();
+    }
   }
 
   Future<void> _saveProject() async {
@@ -461,6 +530,38 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       supplierId: selectedSupplierId,
       wastePercent:
           int.tryParse(_wasteController.text.trim()) ?? _project.wastePercent,
+      wallStudSpacing:
+          _parseLengthEntry(
+            _wallStudSpacingController.text,
+            roomUnitSystem: _rooms.isEmpty
+                ? PreferredUnitSystem.metric
+                : _currentRoom.room.unitSystem,
+          ) ??
+          _project.wallStudSpacing,
+      wallStudOffset:
+          _parseLengthEntry(
+            _wallStudOffsetController.text,
+            roomUnitSystem: _rooms.isEmpty
+                ? PreferredUnitSystem.metric
+                : _currentRoom.room.unitSystem,
+          ) ??
+          _project.wallStudOffset,
+      ceilingFramingSpacing:
+          _parseLengthEntry(
+            _ceilingFramingSpacingController.text,
+            roomUnitSystem: _rooms.isEmpty
+                ? PreferredUnitSystem.metric
+                : _currentRoom.room.unitSystem,
+          ) ??
+          _project.ceilingFramingSpacing,
+      ceilingFramingOffset:
+          _parseLengthEntry(
+            _ceilingFramingOffsetController.text,
+            roomUnitSystem: _rooms.isEmpty
+                ? PreferredUnitSystem.metric
+                : _currentRoom.room.unitSystem,
+          ) ??
+          _project.ceilingFramingOffset,
     );
     await DaoPlasterProject().update(updated);
     _project = updated;
@@ -497,6 +598,48 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _supplier = supplier;
     }
     await _saveProject();
+  }
+
+  Future<void> _commitSelectedLineFramingOverrides() async {
+    if (_selectedLineIndex == null || _rooms.isEmpty) {
+      return;
+    }
+    final currentLine = _currentRoom.lines[_selectedLineIndex!];
+    final spacingText = _lineStudSpacingController.text.trim();
+    final offsetText = _lineStudOffsetController.text.trim();
+    final spacing = spacingText.isEmpty
+        ? null
+        : _parseLengthEntry(
+            spacingText,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
+    final offset = offsetText.isEmpty
+        ? null
+        : _parseLengthEntry(
+            offsetText,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
+    if ((spacingText.isNotEmpty && spacing == null) ||
+        (offsetText.isNotEmpty && offset == null)) {
+      _syncRoomControllers();
+      if (mounted) {
+        setState(() {});
+      }
+      return;
+    }
+    if (currentLine.studSpacingOverride == spacing &&
+        currentLine.studOffsetOverride == offset) {
+      return;
+    }
+    final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
+    lines[_selectedLineIndex!] = currentLine.copyWith(
+      studSpacingOverride: spacing,
+      studOffsetOverride: offset,
+    );
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(lines: lines),
+      trackUndo: false,
+    );
   }
 
   Future<List<PlasterMaterialSize>> _loadMaterialsForSupplier(
@@ -1761,6 +1904,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         _selectedLineIndex = null;
         _selectedOpeningIndex = null;
       });
+      _syncRoomControllers();
     },
     onTapOpening: (index) async {
       setState(() {
@@ -1768,6 +1912,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         _selectedLineIndex = null;
         _selectedIntersectionIndex = null;
       });
+      _syncRoomControllers();
     },
     onTapLine: (index) async {
       setState(() {
@@ -1775,6 +1920,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         _selectedIntersectionIndex = null;
         _selectedOpeningIndex = null;
       });
+      _syncRoomControllers();
       if (_selectionMode) {
         final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
         final line = lines[index];
@@ -1804,6 +1950,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       );
     }
 
+    final roomUnitLabel = PlasterGeometry.unitLabel(
+      _currentRoom.room.unitSystem,
+    );
     final roomFields = Column(
       children: [
         Row(
@@ -1872,13 +2021,59 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           decoration: InputDecoration(
             labelText:
                 'Ceiling Height '
-                '(${PlasterGeometry.unitLabel(_currentRoom.room.unitSystem)})',
+                '($roomUnitLabel)',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           onSubmitted: (_) => unawaited(_commitCeilingHeight()),
           onEditingComplete: () => unawaited(_commitCeilingHeight()),
           onTapOutside: (_) => unawaited(_commitCeilingHeight()),
         ),
+        if (_selectedLineIndex != null) ...[
+          const SizedBox(height: 8),
+          TextField(
+            key: ValueKey(
+              'line-stud-spacing-'
+              '${_currentRoom.lines[_selectedLineIndex!].id}-'
+              '${_currentRoom.room.unitSystem.name}',
+            ),
+            controller: _lineStudSpacingController,
+            decoration: InputDecoration(
+              labelText:
+                  'Wall Stud Spacing Override '
+                  '($roomUnitLabel)',
+              helperText: 'Leave blank to use project default.',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onSubmitted: (_) =>
+                unawaited(_commitSelectedLineFramingOverrides()),
+            onEditingComplete: () =>
+                unawaited(_commitSelectedLineFramingOverrides()),
+            onTapOutside: (_) =>
+                unawaited(_commitSelectedLineFramingOverrides()),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            key: ValueKey(
+              'line-stud-offset-'
+              '${_currentRoom.lines[_selectedLineIndex!].id}-'
+              '${_currentRoom.room.unitSystem.name}',
+            ),
+            controller: _lineStudOffsetController,
+            decoration: InputDecoration(
+              labelText:
+                  'Wall Stud Offset Override '
+                  '($roomUnitLabel)',
+              helperText: 'Leave blank to use project default.',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onSubmitted: (_) =>
+                unawaited(_commitSelectedLineFramingOverrides()),
+            onEditingComplete: () =>
+                unawaited(_commitSelectedLineFramingOverrides()),
+            onTapOutside: (_) =>
+                unawaited(_commitSelectedLineFramingOverrides()),
+          ),
+        ],
         const SizedBox(height: 8),
         _buildRoomCanvas(),
       ],
@@ -2336,6 +2531,55 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           labelText: 'Waste Allowance %',
                         ),
                         keyboardType: TextInputType.number,
+                        onSubmitted: (_) => unawaited(_saveProject()),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _wallStudSpacingController,
+                        decoration: InputDecoration(
+                          labelText:
+                              'Default Wall Stud Spacing '
+                              '(${PlasterGeometry.unitLabel(displayUnit)})',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onSubmitted: (_) => unawaited(_saveProject()),
+                      ),
+                      TextField(
+                        controller: _wallStudOffsetController,
+                        decoration: InputDecoration(
+                          labelText:
+                              'Default Wall Stud Offset '
+                              '(${PlasterGeometry.unitLabel(displayUnit)})',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onSubmitted: (_) => unawaited(_saveProject()),
+                      ),
+                      TextField(
+                        controller: _ceilingFramingSpacingController,
+                        decoration: InputDecoration(
+                          labelText:
+                              'Default Ceiling Framing Spacing '
+                              '(${PlasterGeometry.unitLabel(displayUnit)})',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onSubmitted: (_) => unawaited(_saveProject()),
+                      ),
+                      TextField(
+                        controller: _ceilingFramingOffsetController,
+                        decoration: InputDecoration(
+                          labelText:
+                              'Default Ceiling Framing Offset '
+                              '(${PlasterGeometry.unitLabel(displayUnit)})',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         onSubmitted: (_) => unawaited(_saveProject()),
                       ),
                       const SizedBox(height: 12),
