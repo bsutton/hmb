@@ -31,6 +31,7 @@ class HMBTextField extends StatelessWidget {
   final String Function(String?)? onPaste;
   final TextCapitalization textCapitalization;
   final bool enabled;
+  final bool obscureText;
   final Widget? suffixIcon;
   final List<TextInputFormatter> inputFormatters;
 
@@ -45,6 +46,7 @@ class HMBTextField extends StatelessWidget {
     this.onChanged,
     this.onPaste,
     this.enabled = true,
+    this.obscureText = false,
     super.key,
     this.autofocus = false,
     this.textCapitalization = TextCapitalization.none,
@@ -77,6 +79,7 @@ class HMBTextField extends StatelessWidget {
             focusNode: focusNode,
             autofocus: autofocus,
             keyboardType: keyboardType,
+            obscureText: obscureText,
             textCapitalization: textCapitalization,
             inputFormatters: inputFormatters,
             onChanged: onChanged?.call,

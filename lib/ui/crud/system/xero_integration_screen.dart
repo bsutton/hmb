@@ -152,6 +152,7 @@ class XeroIntegrationScreenState extends State<XeroIntegrationScreen> {
           controller: _xeroClientSecretController,
           labelText: 'Xero Client Secret',
           keyboardType: TextInputType.number,
+          obscureText: true,
         ),
         HMBTextField(
           controller: _invoiceLineAccountCodeController,

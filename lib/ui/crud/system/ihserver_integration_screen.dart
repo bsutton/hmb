@@ -81,10 +81,22 @@ class IhServerIntegrationScreenState extends State<IhServerIntegrationScreen> {
       return false;
     }
 
+    if (_enabled) {
+      final baseUrl = _urlController.text.trim();
+      final parsed = Uri.tryParse(baseUrl);
+      if (parsed == null ||
+          !parsed.hasScheme ||
+          parsed.scheme.toLowerCase() != 'https' ||
+          Strings.isBlank(parsed.host)) {
+        HMBToast.error('ihserver URL must be a valid https:// URL');
+        return false;
+      }
+    }
+
     final system = await DaoSystem().get();
     system
-      ..ihserverUrl = _urlController.text
-      ..ihserverToken = _tokenController.text
+      ..ihserverUrl = _urlController.text.trim()
+      ..ihserverToken = _tokenController.text.trim()
       ..enableIhserverIntegration = _enabled;
     await DaoSystem().update(system);
 
@@ -144,6 +156,7 @@ class IhServerIntegrationScreenState extends State<IhServerIntegrationScreen> {
           labelText: 'Access Token',
           keyboardType: TextInputType.visiblePassword,
           required: _enabled,
+          obscureText: true,
           suffixIcon: IconButton(
             tooltip: 'Generate token',
             icon: const Icon(Icons.auto_fix_high),
