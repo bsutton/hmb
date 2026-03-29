@@ -1953,130 +1953,138 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     final roomUnitLabel = PlasterGeometry.unitLabel(
       _currentRoom.room.unitSystem,
     );
-    final roomFields = Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                key: ValueKey('room-name-${_currentRoom.room.id}'),
-                controller: _roomNameController,
-                decoration: const InputDecoration(labelText: 'Room Name'),
-                onSubmitted: (_) => unawaited(_commitRoomName()),
-                onEditingComplete: () => unawaited(_commitRoomName()),
-                onTapOutside: (_) => unawaited(_commitRoomName()),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: DropdownButtonFormField<PreferredUnitSystem>(
-                key: ValueKey(
-                  'room-unit-'
-                  '${_currentRoom.room.id}-'
-                  '${_currentRoom.room.unitSystem.name}',
+    final roomFields = LayoutBuilder(
+      builder: (context, constraints) => Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: ValueKey('room-name-${_currentRoom.room.id}'),
+                  controller: _roomNameController,
+                  decoration: const InputDecoration(labelText: 'Room Name'),
+                  onSubmitted: (_) => unawaited(_commitRoomName()),
+                  onEditingComplete: () => unawaited(_commitRoomName()),
+                  onTapOutside: (_) => unawaited(_commitRoomName()),
                 ),
-                initialValue: _currentRoom.room.unitSystem,
-                decoration: const InputDecoration(labelText: 'Units'),
-                items: const [
-                  DropdownMenuItem(
-                    value: PreferredUnitSystem.metric,
-                    child: Text('Metric'),
-                  ),
-                  DropdownMenuItem(
-                    value: PreferredUnitSystem.imperial,
-                    child: Text('Imperial'),
-                  ),
-                ],
-                onChanged: (value) async {
-                  if (value == null) {
-                    return;
-                  }
-                  final converted = PlasterGeometry.convertRoomBundle(
-                    room: _currentRoom.room,
-                    lines: _currentRoom.lines,
-                    openings: _currentRoom.openings,
-                    target: value,
-                  );
-                  await _updateCurrentRoom(
-                    _currentRoom.copyWith(
-                      room: converted.$1,
-                      lines: converted.$2,
-                      openings: converted.$3,
-                    ),
-                    trackUndo: false,
-                  );
-                },
               ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButtonFormField<PreferredUnitSystem>(
+                  key: ValueKey(
+                    'room-unit-'
+                    '${_currentRoom.room.id}-'
+                    '${_currentRoom.room.unitSystem.name}',
+                  ),
+                  initialValue: _currentRoom.room.unitSystem,
+                  decoration: const InputDecoration(labelText: 'Units'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: PreferredUnitSystem.metric,
+                      child: Text('Metric'),
+                    ),
+                    DropdownMenuItem(
+                      value: PreferredUnitSystem.imperial,
+                      child: Text('Imperial'),
+                    ),
+                  ],
+                  onChanged: (value) async {
+                    if (value == null) {
+                      return;
+                    }
+                    final converted = PlasterGeometry.convertRoomBundle(
+                      room: _currentRoom.room,
+                      lines: _currentRoom.lines,
+                      openings: _currentRoom.openings,
+                      target: value,
+                    );
+                    await _updateCurrentRoom(
+                      _currentRoom.copyWith(
+                        room: converted.$1,
+                        lines: converted.$2,
+                        openings: converted.$3,
+                      ),
+                      trackUndo: false,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            key: ValueKey(
+              'ceiling-height-'
+              '${_currentRoom.room.id}-'
+              '${_currentRoom.room.unitSystem.name}',
+            ),
+            controller: _ceilingHeightController,
+            decoration: InputDecoration(
+              labelText:
+                  'Ceiling Height '
+                  '($roomUnitLabel)',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onSubmitted: (_) => unawaited(_commitCeilingHeight()),
+            onEditingComplete: () => unawaited(_commitCeilingHeight()),
+            onTapOutside: (_) => unawaited(_commitCeilingHeight()),
+          ),
+          if (_selectedLineIndex != null) ...[
+            const SizedBox(height: 8),
+            TextField(
+              key: ValueKey(
+                'line-stud-spacing-'
+                '${_currentRoom.lines[_selectedLineIndex!].id}-'
+                '${_currentRoom.room.unitSystem.name}',
+              ),
+              controller: _lineStudSpacingController,
+              decoration: InputDecoration(
+                labelText:
+                    'Wall Stud Spacing Override '
+                    '($roomUnitLabel)',
+                helperText: 'Leave blank to use project default.',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              onSubmitted: (_) =>
+                  unawaited(_commitSelectedLineFramingOverrides()),
+              onEditingComplete: () =>
+                  unawaited(_commitSelectedLineFramingOverrides()),
+              onTapOutside: (_) =>
+                  unawaited(_commitSelectedLineFramingOverrides()),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              key: ValueKey(
+                'line-stud-offset-'
+                '${_currentRoom.lines[_selectedLineIndex!].id}-'
+                '${_currentRoom.room.unitSystem.name}',
+              ),
+              controller: _lineStudOffsetController,
+              decoration: InputDecoration(
+                labelText:
+                    'Wall Stud Offset Override '
+                    '($roomUnitLabel)',
+                helperText: 'Leave blank to use project default.',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              onSubmitted: (_) =>
+                  unawaited(_commitSelectedLineFramingOverrides()),
+              onEditingComplete: () =>
+                  unawaited(_commitSelectedLineFramingOverrides()),
+              onTapOutside: (_) =>
+                  unawaited(_commitSelectedLineFramingOverrides()),
             ),
           ],
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          key: ValueKey(
-            'ceiling-height-'
-            '${_currentRoom.room.id}-'
-            '${_currentRoom.room.unitSystem.name}',
-          ),
-          controller: _ceilingHeightController,
-          decoration: InputDecoration(
-            labelText:
-                'Ceiling Height '
-                '($roomUnitLabel)',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onSubmitted: (_) => unawaited(_commitCeilingHeight()),
-          onEditingComplete: () => unawaited(_commitCeilingHeight()),
-          onTapOutside: (_) => unawaited(_commitCeilingHeight()),
-        ),
-        if (_selectedLineIndex != null) ...[
           const SizedBox(height: 8),
-          TextField(
-            key: ValueKey(
-              'line-stud-spacing-'
-              '${_currentRoom.lines[_selectedLineIndex!].id}-'
-              '${_currentRoom.room.unitSystem.name}',
-            ),
-            controller: _lineStudSpacingController,
-            decoration: InputDecoration(
-              labelText:
-                  'Wall Stud Spacing Override '
-                  '($roomUnitLabel)',
-              helperText: 'Leave blank to use project default.',
-            ),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onSubmitted: (_) =>
-                unawaited(_commitSelectedLineFramingOverrides()),
-            onEditingComplete: () =>
-                unawaited(_commitSelectedLineFramingOverrides()),
-            onTapOutside: (_) =>
-                unawaited(_commitSelectedLineFramingOverrides()),
-          ),
+          _buildEditorToolbar(wrap: constraints.maxWidth < 520),
           const SizedBox(height: 8),
-          TextField(
-            key: ValueKey(
-              'line-stud-offset-'
-              '${_currentRoom.lines[_selectedLineIndex!].id}-'
-              '${_currentRoom.room.unitSystem.name}',
-            ),
-            controller: _lineStudOffsetController,
-            decoration: InputDecoration(
-              labelText:
-                  'Wall Stud Offset Override '
-                  '($roomUnitLabel)',
-              helperText: 'Leave blank to use project default.',
-            ),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onSubmitted: (_) =>
-                unawaited(_commitSelectedLineFramingOverrides()),
-            onEditingComplete: () =>
-                unawaited(_commitSelectedLineFramingOverrides()),
-            onTapOutside: (_) =>
-                unawaited(_commitSelectedLineFramingOverrides()),
-          ),
+          _buildRoomCanvas(),
         ],
-        const SizedBox(height: 8),
-        _buildRoomCanvas(),
-      ],
+      ),
     );
 
     if (isMobileLandscape) {
@@ -2092,15 +2100,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) => Column(
-        children: [
-          _buildEditorToolbar(wrap: constraints.maxWidth < 520),
-          const SizedBox(height: 8),
-          roomFields,
-        ],
-      ),
-    );
+    return roomFields;
   }
 
   String _roomNameForLayout(PlasterSurfaceLayout layout) {
