@@ -16,6 +16,7 @@
 import 'dart:async';
 
 import 'package:device_preview_plus/device_preview_plus.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -47,30 +48,33 @@ final _rootNavKey = GlobalKey<NavigatorState>();
 
 Future<void> main(List<String> args) async {
   Log.configure('.');
-  WidgetsFlutterBinding.ensureInitialized();
+  SentryWidgetsFlutterBinding.ensureInitialized();
   // initialize Sentry
   await SentryFlutter.init(
     (options) {
+      final enableDesktopNativeSdk =
+          !kIsWeb &&
+          defaultTargetPlatform != TargetPlatform.linux &&
+          defaultTargetPlatform != TargetPlatform.windows;
       options
         ..dsn =
             'https://17bb41df4a5343530bfcb92553f4c5a7@o4507706035994624.ingest.us.sentry.io/4507706038157312'
-        ..tracesSampleRate = 1.0;
+        ..tracesSampleRate = 1.0
+        ..autoInitializeNativeSdk = enableDesktopNativeSdk;
       options.replay.sessionSampleRate = 1.0;
       options.replay.onErrorSampleRate = 1.0;
     },
     appRunner: () async {
-      // ensure Flutter binding in the same zone as runApp
-      SentryWidgetsFlutterBinding.ensureInitialized();
       // grab package info for logging
       final packageInfo = await PackageInfo.fromPlatform();
       Log.i('Package Name: ${packageInfo.packageName}');
       runApp(
-        // const HmbApp(),
-        DevicePreview(
-          // ignore: avoid_redundant_argument_values
-          enabled: !kReleaseMode,
-          builder: (_) => const HmbApp(),
-        ),
+        const HmbApp(),
+        // DevicePreview(
+        //   // ignore: avoid_redundant_argument_values
+        //   enabled: !kReleaseMode,
+        //   builder: (_) => const HmbApp(),
+        // ),
       );
     },
   );

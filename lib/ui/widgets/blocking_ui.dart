@@ -23,6 +23,7 @@ import 'package:future_builder_ex/future_builder_ex.dart';
 import 'package:june/june.dart';
 import 'package:stacktrace_impl/stacktrace_impl.dart';
 
+import '../../util/dart/log.dart';
 import '../../util/dart/stack_list.dart';
 import '../../util/flutter/hmb_theme.dart';
 import 'color_ex.dart';
@@ -431,6 +432,9 @@ class BlockingUI {
 /// so that we can dump call site stack traces for debugging
 /// purposes.
 class RunningSlowAction<T> {
+  static const _initialBlockReportDelay = Duration(seconds: 2);
+  static const _blockReportInterval = Duration(seconds: 5);
+
   final String? label;
 
   final Future<T> Function() slowAction;
@@ -440,10 +444,14 @@ class RunningSlowAction<T> {
 
   /// The stack trace of where the [BlockingUI.run] method was called from.
   StackTraceImpl stackTrace;
+  final DateTime _createdAt;
 
   RunningSlowAction(this.label, this.slowAction, this.end)
     : completer = CompleterEx<T>(debugName: label),
-      stackTrace = StackTraceImpl(skipFrames: 2);
+      stackTrace = StackTraceImpl(skipFrames: 2),
+      _createdAt = DateTime.now() {
+    Future<void>.delayed(_initialBlockReportDelay, _reportIfStillBlocked);
+  }
 
   void start() {
     Future.sync(slowAction)
@@ -460,5 +468,24 @@ class RunningSlowAction<T> {
         })
         // ignore: discarded_futures
         .whenComplete(end);
+  }
+
+  void _reportIfStillBlocked() {
+    if (completer.isCompleted) {
+      return;
+    }
+
+    final labelText = label == null || label!.trim().isEmpty
+        ? 'unnamed blocking action'
+        : '"$label"';
+    final elapsed = DateTime.now().difference(_createdAt);
+
+    Log.w(
+      'BlockingUI action $labelText is still waiting after $elapsed. '
+      'Created at $_createdAt.',
+      stackTrace: stackTrace,
+    );
+
+    Future<void>.delayed(_blockReportInterval, _reportIfStillBlocked);
   }
 }
