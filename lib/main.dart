@@ -16,7 +16,6 @@
 import 'dart:async';
 
 import 'package:device_preview_plus/device_preview_plus.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -199,13 +198,6 @@ class _HmbAppState extends State<HmbApp> with WidgetsBindingObserver {
 }
 
 ThemeData get theme => ThemeData(
-  // swipe to go back on iOS
-  pageTransitionsTheme: const PageTransitionsTheme(
-    builders: {
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-    },
-  ),
   primaryColor: Colors.deepPurple,
   brightness: Brightness.dark, // This sets the overall theme brightness to dark
   scaffoldBackgroundColor: HMBColors.defaultBackground,
