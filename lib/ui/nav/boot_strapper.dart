@@ -38,6 +38,7 @@ import '../../database/management/backup_providers/local/local_backup_provider.d
 import '../../database/versions/implementations/asset_script_source.dart';
 import '../../database/versions/post_upgrade/post_upgrade_134.dart';
 import '../../installer/install.dart';
+import '../../util/dart/log.dart';
 import '../../util/flutter/notifications/local_notifs.dart';
 import '../widgets/hmb_start_time_entry.dart';
 import '../widgets/media/desktop_camera_delegate.dart';
@@ -54,27 +55,51 @@ class BootStrapper {
       return;
     }
 
-    isFirstRun = await _checkInstall();
-    await _initDb();
-    await _initializeTimeEntryState(refresh: false);
+    isFirstRun = await _runStartupPhase('check install', _checkInstall);
+    await _runStartupPhase('init database', _initDb);
+    await _runStartupPhase(
+      'restore active time entry',
+      () => _initializeTimeEntryState(refresh: false),
+    );
     unawaited(logAppStartup());
-    await _initScheduler();
+    await _runStartupPhase('init scheduler', _initScheduler);
     unawaited(BookingRequestSyncService().sync());
 
     // camera & deep link init
-    initCamera();
+    _runSynchronousStartupPhase('init camera', initCamera);
     initAppLinks();
-    await initPdfrx();
-    await initImageCache();
+    await _runStartupPhase('init pdf renderer', initPdfrx);
+    await _runStartupPhase('init image cache', initImageCache);
 
     Dao.notifier = DaoJuneBuilder.notify;
 
     /// initialise whatever accounting package the
     /// user is using.
-    await initAccounting();
+    await _runStartupPhase('init accounting', initAccounting);
     unawaited(XeroInvoicePaymentSyncService().sync());
 
     _isInitialized = true;
+    Log.i('Startup initialization complete.');
+  }
+
+  Future<T> _runStartupPhase<T>(
+    String label,
+    Future<T> Function() action,
+  ) async {
+    final stopwatch = Stopwatch()..start();
+    Log.i('Startup phase started: $label');
+    final result = await action();
+    stopwatch.stop();
+    Log.i('Startup phase completed: $label in ${stopwatch.elapsed}.');
+    return result;
+  }
+
+  void _runSynchronousStartupPhase(String label, void Function() action) {
+    final stopwatch = Stopwatch()..start();
+    Log.i('Startup phase started: $label');
+    action();
+    stopwatch.stop();
+    Log.i('Startup phase completed: $label in ${stopwatch.elapsed}.');
   }
 
   Future<bool> _checkInstall() async {

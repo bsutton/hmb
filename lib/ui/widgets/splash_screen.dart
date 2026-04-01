@@ -83,6 +83,7 @@ class _SplashScreenState extends State<SplashScreen> {
           BlockingUITransition(
             // key: _blockingUIKey,
             slowAction: () => widget.bootstrap(context),
+            label: 'Starting app',
             builder: (context, _) => const HMBEmpty(),
             errorBuilder: (context, error) => Stack(
               children: [
