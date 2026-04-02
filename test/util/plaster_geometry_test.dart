@@ -723,6 +723,46 @@ void main() {
       expect(layouts, isEmpty);
     });
 
+    test('vertical layout is allowed when one sheet covers the full wall', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Single Sheet Vertical',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+        plasterCeiling: false,
+      );
+      final lines = [
+        ...PlasterGeometry.defaultLines(
+          roomId: 1,
+          unitSystem: PreferredUnitSystem.metric,
+        ),
+      ];
+      for (var i = 1; i < 4; i++) {
+        lines[i] = lines[i].copyWith(plasterSelected: false);
+      }
+      lines[0] = lines[0].copyWith(
+        length: 24000,
+        sheetDirection: PlasterSheetDirection.vertical,
+      );
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '3600 x 2400',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 36000,
+          height: 24000,
+        ),
+      ];
+
+      final layouts = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(room: room, lines: lines, openings: const []),
+      ], materials);
+
+      expect(layouts, hasLength(1));
+      expect(layouts.single.direction, PlasterSheetDirection.vertical);
+      expect(layouts.single.sheetCount, 1);
+    });
+
     test('estimated waste excludes contingency sheets', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,

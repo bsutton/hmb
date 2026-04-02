@@ -1053,6 +1053,8 @@ class PlasterGeometry {
         direction: direction,
         sheetWidth: sheetWidth,
         sheetHeight: sheetHeight,
+        surfaceWidth: width,
+        surfaceHeight: height,
       )) {
         if (!isCeiling &&
             candidate.$1 == PlasterSheetDirection.vertical &&
@@ -1720,14 +1722,21 @@ class PlasterGeometry {
     required PlasterSheetDirection direction,
     required int sheetWidth,
     required int sheetHeight,
+    required int surfaceWidth,
+    required int surfaceHeight,
   }) {
     final shortSide = min(sheetWidth, sheetHeight);
     final longSide = max(sheetWidth, sheetHeight);
     final horizontal = (PlasterSheetDirection.horizontal, longSide, shortSide);
+    final vertical = (PlasterSheetDirection.vertical, shortSide, longSide);
+    final verticalSingleSheetAllowed =
+        shortSide >= surfaceWidth && longSide >= surfaceHeight;
     return switch (direction) {
       PlasterSheetDirection.horizontal => [horizontal],
-      PlasterSheetDirection.vertical => const [],
-      PlasterSheetDirection.auto => [horizontal],
+      PlasterSheetDirection.vertical =>
+        verticalSingleSheetAllowed ? [vertical] : const [],
+      PlasterSheetDirection.auto =>
+        verticalSingleSheetAllowed ? [horizontal, vertical] : [horizontal],
     };
   }
 
