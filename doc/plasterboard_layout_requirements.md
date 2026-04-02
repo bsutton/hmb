@@ -83,6 +83,17 @@ board can run from floor to ceiling without a horizontal join.
 If the board height is less than the wall height, portrait/vertical laying is
 invalid for that wall and must be rejected.
 
+The current generator is stricter than this for normal layout search:
+
+- vertical is rejected for any multi-sheet wall or ceiling layout
+- vertical is only allowed when a single vertically oriented sheet can cover
+  the full target surface
+
+This single-sheet exception is valid for:
+
+- walls
+- ceilings
+
 ### 4. Direction must affect the actual layout
 
 The chosen direction is not decorative metadata. It must alter:
@@ -109,6 +120,23 @@ same location.
 This is especially important for horizontal wall laying, where the starter
 pattern should help avoid stacked joints.
 
+Layouts must reject adjacent rows or columns that place sheet joints within
+`300 mm` of each other.
+
+This stagger requirement is a hard pruning rule for generated candidates, not
+just a soft scoring preference.
+
+### 6a. Partial pieces belong at the ends of a row
+
+When generating a row or course of sheets:
+
+- any partial sheet must be at the start or the end of the row
+- partial sheets must not appear in the middle of the row
+- at most two partial sheets are allowed in a row, one at each end
+
+This keeps the field of the wall or ceiling made from full sheets and avoids
+obviously poor layouts entering the search space.
+
 ### 7. Minimize joins
 
 When multiple valid wall layouts satisfy the rules, prefer the one with fewer
@@ -119,6 +147,7 @@ This means the generator should prefer:
 - fewer horizontal joints
 - fewer vertical joints
 - larger continuous sheets
+- fewer butt joints
 
 even if multiple layouts use the same number of boards.
 
@@ -135,11 +164,46 @@ When multiple valid layouts satisfy the rules, prefer the one that:
 - avoids narrow edge strips
 - keeps larger continuous sheets in the field of the wall or ceiling
 
+### 9a. Standard cuts must be guillotine cuts
+
+For ordinary wall and ceiling layout trimming, waste and offcuts must be
+derived from end-to-end cuts only.
+
+This means:
+
+- a standard trim cut runs all the way across the current sheet or offcut
+- the solver should model normal sheet reduction as one or two guillotine cuts
+- the resulting offcuts must be rectangles produced by those cuts
+- the tool must not model ordinary trimming as an internal cut-out or
+  detached island
+
+Examples:
+
+- cutting a full sheet in half is valid
+- trimming that half sheet down to final size is valid
+- leaving an L-shaped offcut from ordinary rectangular trimming is not valid
+
+Cut-outs that require detaching a piece by more than one cut are reserved for:
+
+- odd shapes
+- opening cut-outs
+- other non-rectangular real-world cases
+
+They must not be the default waste model for simple row/course trimming.
+
 ### 10. Keep the rules visible in the output
 
 If the tool shows sheet direction, coverage, or wall references, the diagram
 and the sheet layout output should stay aligned so the user can identify which
 surface is being described.
+
+The sheet-usage output should also make waste understandable by showing:
+
+- each full parent sheet used
+- the cut pieces taken from it
+- reusable offcuts
+- waste pieces
+- dimensions for those offcuts and waste pieces where practical
 
 ## Estimating Rules
 
@@ -255,10 +319,12 @@ When comparing valid layouts, the search should score:
 
 - extra sheets used
 - total joint length
+- butt-joint length
 - cut-piece count
 - high joints on walls, where taping/install effort increases
 - small or fragile pieces
 - fragmentation of the remaining offcuts
+- walls laid vertically instead of landscape where landscape is valid
 
 These weights should be configurable from the application settings so they can
 be tuned against real installation experience.

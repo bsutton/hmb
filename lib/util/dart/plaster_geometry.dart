@@ -390,6 +390,7 @@ class _PlacementChoice {
   final int rectIndex;
   final int pieceWidth;
   final int pieceHeight;
+  final List<_FreeRect> freeRects;
   final int leftoverArea;
   final int fragmentationPenalty;
   final int reusableArea;
@@ -399,6 +400,7 @@ class _PlacementChoice {
     required this.rectIndex,
     required this.pieceWidth,
     required this.pieceHeight,
+    required this.freeRects,
     required this.leftoverArea,
     required this.fragmentationPenalty,
     required this.reusableArea,
@@ -2098,27 +2100,29 @@ class PlasterGeometry {
           if (orientation.$1 > rect.width || orientation.$2 > rect.height) {
             continue;
           }
-          final splitRects = _splitFreeRect(
+          for (final splitRects in _guillotineSplitVariants(
             rect: rect,
             pieceWidth: orientation.$1,
             pieceHeight: orientation.$2,
-          );
-          final pruned = [...splitRects];
-          _pruneFreeRects(pruned);
-          choices.add(
-            _PlacementChoice(
-              sheetIndex: sheetIndex,
-              rectIndex: rectIndex,
-              pieceWidth: orientation.$1,
-              pieceHeight: orientation.$2,
-              leftoverArea: rect.area - orientation.$1 * orientation.$2,
-              fragmentationPenalty: _fragmentationPenalty(
-                pruned,
-                minReusableEdge,
+          )) {
+            final pruned = [...splitRects];
+            _pruneFreeRects(pruned);
+            choices.add(
+              _PlacementChoice(
+                sheetIndex: sheetIndex,
+                rectIndex: rectIndex,
+                pieceWidth: orientation.$1,
+                pieceHeight: orientation.$2,
+                freeRects: pruned,
+                leftoverArea: rect.area - orientation.$1 * orientation.$2,
+                fragmentationPenalty: _fragmentationPenalty(
+                  pruned,
+                  minReusableEdge,
+                ),
+                reusableArea: _reusableArea(pruned, minReusableEdge),
               ),
-              reusableArea: _reusableArea(pruned, minReusableEdge),
-            ),
-          );
+            );
+          }
         }
       }
     }
@@ -2127,25 +2131,30 @@ class PlasterGeometry {
       if (orientation.$1 > sheetWidth || orientation.$2 > sheetHeight) {
         continue;
       }
-      final splitRects = _splitFreeRect(
+      for (final splitRects in _guillotineSplitVariants(
         rect: _FreeRect(0, 0, sheetWidth, sheetHeight),
         pieceWidth: orientation.$1,
         pieceHeight: orientation.$2,
-      );
-      final pruned = [...splitRects];
-      _pruneFreeRects(pruned);
-      choices.add(
-        _PlacementChoice(
-          sheetIndex: state.sheets.length,
-          rectIndex: -1,
-          pieceWidth: orientation.$1,
-          pieceHeight: orientation.$2,
-          leftoverArea:
-              sheetWidth * sheetHeight - orientation.$1 * orientation.$2,
-          fragmentationPenalty: _fragmentationPenalty(pruned, minReusableEdge),
-          reusableArea: _reusableArea(pruned, minReusableEdge),
-        ),
-      );
+      )) {
+        final pruned = [...splitRects];
+        _pruneFreeRects(pruned);
+        choices.add(
+          _PlacementChoice(
+            sheetIndex: state.sheets.length,
+            rectIndex: -1,
+            pieceWidth: orientation.$1,
+            pieceHeight: orientation.$2,
+            freeRects: pruned,
+            leftoverArea:
+                sheetWidth * sheetHeight - orientation.$1 * orientation.$2,
+            fragmentationPenalty: _fragmentationPenalty(
+              pruned,
+              minReusableEdge,
+            ),
+            reusableArea: _reusableArea(pruned, minReusableEdge),
+          ),
+        );
+      }
     }
 
     choices.sort((left, right) {
@@ -2193,14 +2202,7 @@ class PlasterGeometry {
     final consumedRect = choice.rectIndex >= 0
         ? freeRects.removeAt(choice.rectIndex)
         : _FreeRect(0, 0, sheetWidth, sheetHeight);
-    freeRects.addAll(
-      _splitFreeRect(
-        rect: consumedRect,
-        pieceWidth: choice.pieceWidth,
-        pieceHeight: choice.pieceHeight,
-      ),
-    );
-    _pruneFreeRects(freeRects);
+    freeRects.addAll(choice.freeRects);
     sheets[choice.sheetIndex] = _PackedSheet(
       freeRects: freeRects,
       usedPieces: [
@@ -2244,35 +2246,39 @@ class PlasterGeometry {
     );
   }
 
-  static List<_FreeRect> _splitFreeRect({
+  static List<List<_FreeRect>> _guillotineSplitVariants({
     required _FreeRect rect,
     required int pieceWidth,
     required int pieceHeight,
   }) {
-    final freeRects = <_FreeRect>[];
+    final variants = <List<_FreeRect>>[];
     final rightWidth = rect.width - pieceWidth;
     final bottomHeight = rect.height - pieceHeight;
-    if (rightWidth > 0) {
-      freeRects.add(
+
+    final cutVerticalFirst = <_FreeRect>[
+      if (rightWidth > 0)
+        _FreeRect(rect.x + pieceWidth, rect.y, rightWidth, rect.height),
+      if (bottomHeight > 0)
+        _FreeRect(rect.x, rect.y + pieceHeight, pieceWidth, bottomHeight),
+    ];
+    final cutHorizontalFirst = <_FreeRect>[
+      if (rightWidth > 0)
         _FreeRect(rect.x + pieceWidth, rect.y, rightWidth, pieceHeight),
-      );
-    }
-    if (bottomHeight > 0) {
-      freeRects.add(
+      if (bottomHeight > 0)
         _FreeRect(rect.x, rect.y + pieceHeight, rect.width, bottomHeight),
-      );
+    ];
+
+    variants.add(cutVerticalFirst);
+    final horizontalSignature = cutHorizontalFirst
+        .map((rect) => '${rect.x},${rect.y},${rect.width},${rect.height}')
+        .join('|');
+    final verticalSignature = cutVerticalFirst
+        .map((rect) => '${rect.x},${rect.y},${rect.width},${rect.height}')
+        .join('|');
+    if (horizontalSignature != verticalSignature) {
+      variants.add(cutHorizontalFirst);
     }
-    if (rightWidth > 0 && bottomHeight > 0) {
-      freeRects.add(
-        _FreeRect(
-          rect.x + pieceWidth,
-          rect.y + pieceHeight,
-          rightWidth,
-          bottomHeight,
-        ),
-      );
-    }
-    return freeRects;
+    return variants;
   }
 
   static int _fragmentationPenalty(

@@ -586,6 +586,75 @@ void main() {
       expect(rowHeights.every((height) => height >= 6000), isTrue);
     });
 
+    test('sheet usage reports guillotine-cut offcuts for trimmed sheets', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Guillotine',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+      );
+      final lines = [
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 0,
+          startX: 0,
+          startY: 0,
+          length: 18000,
+          plasterSelected: false,
+        ),
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 1,
+          startX: 18000,
+          startY: 0,
+          length: 9000,
+          plasterSelected: false,
+        ),
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 2,
+          startX: 18000,
+          startY: 9000,
+          length: 18000,
+          plasterSelected: false,
+        ),
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 3,
+          startX: 0,
+          startY: 9000,
+          length: 9000,
+          plasterSelected: false,
+        ),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '3000 x 1200',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 30000,
+          height: 12000,
+        ),
+      ];
+
+      final layout = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(room: room, lines: lines, openings: const []),
+      ], materials).single;
+
+      expect(layout.sheetUsage, hasLength(1));
+      final usage = layout.sheetUsage.single;
+      expect(usage.offcuts, hasLength(2));
+      final totalOffcutArea = usage.offcuts.fold<int>(
+        0,
+        (sum, offcut) => sum + offcut.area,
+      );
+      expect(totalOffcutArea, equals(198000000));
+      expect(
+        usage.offcuts.every((offcut) => offcut.width > 0 && offcut.height > 0),
+        isTrue,
+      );
+    });
+
     test('calculate takeoff includes sheet totals and wastage', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,
