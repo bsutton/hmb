@@ -49,6 +49,58 @@ class PlasterSheetPlacement {
   });
 }
 
+class PlasterSheetUsagePiece {
+  final int x;
+  final int y;
+  final int width;
+  final int height;
+
+  const PlasterSheetUsagePiece({
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+  });
+
+  int get area => width * height;
+}
+
+class PlasterSheetOffcut extends PlasterSheetUsagePiece {
+  final bool reusable;
+
+  const PlasterSheetOffcut({
+    required super.x,
+    required super.y,
+    required super.width,
+    required super.height,
+    required this.reusable,
+  });
+}
+
+class PlasterSheetUsage {
+  final List<PlasterSheetUsagePiece> usedPieces;
+  final List<PlasterSheetOffcut> offcuts;
+  final int sheetWidth;
+  final int sheetHeight;
+
+  const PlasterSheetUsage({
+    required this.usedPieces,
+    required this.offcuts,
+    required this.sheetWidth,
+    required this.sheetHeight,
+  });
+
+  int get usedArea => usedPieces.fold<int>(0, (sum, piece) => sum + piece.area);
+  int get reusableOffcutArea => offcuts.fold<int>(
+    0,
+    (sum, offcut) => sum + (offcut.reusable ? offcut.area : 0),
+  );
+  int get wasteArea => offcuts.fold<int>(
+    0,
+    (sum, offcut) => sum + (offcut.reusable ? 0 : offcut.area),
+  );
+}
+
 class PlasterSurfaceLayout {
   final int roomId;
   final int? lineId;
@@ -64,6 +116,7 @@ class PlasterSurfaceLayout {
   final int sheetCount;
   final int sheetCountWithWaste;
   final List<PlasterSheetPlacement> placements;
+  final List<PlasterSheetUsage> sheetUsage;
   final int estimatedJointTapeLength;
   final int estimatedScrewCount;
   final double estimatedGlueKg;
@@ -84,6 +137,7 @@ class PlasterSurfaceLayout {
     required this.sheetCount,
     required this.sheetCountWithWaste,
     required this.placements,
+    required this.sheetUsage,
     required this.estimatedJointTapeLength,
     required this.estimatedScrewCount,
     required this.estimatedGlueKg,
@@ -274,14 +328,28 @@ class _ProjectLayoutState {
 
 class _PackedSheet {
   final List<_FreeRect> freeRects;
+  final List<PlasterSheetUsagePiece> usedPieces;
   final int usedArea;
 
-  const _PackedSheet({required this.freeRects, required this.usedArea});
+  const _PackedSheet({
+    required this.freeRects,
+    required this.usedPieces,
+    required this.usedArea,
+  });
 
   _PackedSheet copy() => _PackedSheet(
     freeRects: [
       for (final rect in freeRects)
         _FreeRect(rect.x, rect.y, rect.width, rect.height),
+    ],
+    usedPieces: [
+      for (final piece in usedPieces)
+        PlasterSheetUsagePiece(
+          x: piece.x,
+          y: piece.y,
+          width: piece.width,
+          height: piece.height,
+        ),
     ],
     usedArea: usedArea,
   );
@@ -305,6 +373,7 @@ class _PackingResult {
   final int usedArea;
   final int fragmentationPenalty;
   final int reusableArea;
+  final List<PlasterSheetUsage> sheetUsage;
 
   const _PackingResult({
     required this.sheetCount,
@@ -312,6 +381,7 @@ class _PackingResult {
     required this.usedArea,
     required this.fragmentationPenalty,
     required this.reusableArea,
+    required this.sheetUsage,
   });
 }
 
@@ -1104,6 +1174,7 @@ class PlasterGeometry {
             sheetCount: packed.sheetCount,
             sheetCountWithWaste: packed.sheetCount,
             placements: plan.$1,
+            sheetUsage: packed.sheetUsage,
             estimatedJointTapeLength: _estimateJointTapeLength(plan.$1),
             estimatedScrewCount: _estimateScrews(
               area: area,
@@ -1872,6 +1943,7 @@ class PlasterGeometry {
         usedArea: 0,
         fragmentationPenalty: 0,
         reusableArea: 0,
+        sheetUsage: [],
       );
     }
 
@@ -1959,6 +2031,7 @@ class PlasterGeometry {
           usedArea: usedArea,
           fragmentationPenalty: 0,
           reusableArea: 0,
+          sheetUsage: [],
         );
       }
       nextBeam.sort((left, right) {
@@ -1980,6 +2053,26 @@ class PlasterGeometry {
       usedArea: best.usedArea,
       fragmentationPenalty: best.score.fragmentationPenalty,
       reusableArea: best.score.reusableArea,
+      sheetUsage: [
+        for (final sheet in best.sheets)
+          PlasterSheetUsage(
+            usedPieces: sheet.usedPieces,
+            offcuts: [
+              for (final rect in sheet.freeRects)
+                PlasterSheetOffcut(
+                  x: rect.x,
+                  y: rect.y,
+                  width: rect.width,
+                  height: rect.height,
+                  reusable:
+                      rect.width >= minReusableEdge &&
+                      rect.height >= minReusableEdge,
+                ),
+            ],
+            sheetWidth: sheetWidth,
+            sheetHeight: sheetHeight,
+          ),
+      ],
     );
   }
 
@@ -2087,7 +2180,9 @@ class PlasterGeometry {
       return null;
     }
     if (choice.sheetIndex == sheets.length) {
-      sheets.add(const _PackedSheet(freeRects: [], usedArea: 0));
+      sheets.add(
+        const _PackedSheet(freeRects: [], usedPieces: [], usedArea: 0),
+      );
     }
 
     final targetSheet = sheets[choice.sheetIndex];
@@ -2108,6 +2203,15 @@ class PlasterGeometry {
     _pruneFreeRects(freeRects);
     sheets[choice.sheetIndex] = _PackedSheet(
       freeRects: freeRects,
+      usedPieces: [
+        ...targetSheet.usedPieces,
+        PlasterSheetUsagePiece(
+          x: consumedRect.x,
+          y: consumedRect.y,
+          width: choice.pieceWidth,
+          height: choice.pieceHeight,
+        ),
+      ],
       usedArea: targetSheet.usedArea + choice.pieceWidth * choice.pieceHeight,
     );
 

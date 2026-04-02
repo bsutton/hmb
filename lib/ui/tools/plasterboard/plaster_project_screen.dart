@@ -2239,6 +2239,13 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                           ),
                         ],
                       ),
+                      if (layout.sheetUsage.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _SheetUsageSection(
+                          sheetUsage: layout.sheetUsage,
+                          unitSystem: _unitSystemForLayout(layout),
+                        ),
+                      ],
                     ],
                   );
                   final metrics = Column(
@@ -2897,6 +2904,175 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
       oldDelegate.layout != layout ||
       oldDelegate.unitSystem != unitSystem ||
       oldDelegate.showSheetMeasurements != showSheetMeasurements;
+}
+
+class _SheetUsageSection extends StatelessWidget {
+  final List<PlasterSheetUsage> sheetUsage;
+  final PreferredUnitSystem unitSystem;
+
+  const _SheetUsageSection({
+    required this.sheetUsage,
+    required this.unitSystem,
+  });
+
+  String _formatArea(int area) =>
+      PlasterGeometry.formatDisplayArea(area, unitSystem);
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Sheet Usage', style: Theme.of(context).textTheme.titleSmall),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (var i = 0; i < sheetUsage.length; i++)
+            _SheetUsageCard(
+              index: i + 1,
+              usage: sheetUsage[i],
+              unitSystem: unitSystem,
+              formatArea: _formatArea,
+            ),
+        ],
+      ),
+    ],
+  );
+}
+
+class _SheetUsageCard extends StatelessWidget {
+  final int index;
+  final PlasterSheetUsage usage;
+  final PreferredUnitSystem unitSystem;
+  final String Function(int area) formatArea;
+
+  const _SheetUsageCard({
+    required this.index,
+    required this.usage,
+    required this.unitSystem,
+    required this.formatArea,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sheetWidth = PlasterGeometry.formatDisplayLength(
+      usage.sheetWidth,
+      unitSystem,
+    );
+    final sheetHeight = PlasterGeometry.formatDisplayLength(
+      usage.sheetHeight,
+      unitSystem,
+    );
+    final reusableCount = usage.offcuts
+        .where((offcut) => offcut.reusable)
+        .length;
+    final wasteCount = usage.offcuts.length - reusableCount;
+
+    return Container(
+      width: 210,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.white24),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Sheet $index', style: Theme.of(context).textTheme.labelLarge),
+          Text(
+            '$sheetWidth x $sheetHeight',
+            style: const TextStyle(fontSize: 11),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: 194,
+            height: 120,
+            child: CustomPaint(
+              painter: _SheetUsageDiagramPainter(usage: usage),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Reusable offcuts: '
+            '$reusableCount (${formatArea(usage.reusableOffcutArea)})',
+          ),
+          Text('Waste pieces: $wasteCount (${formatArea(usage.wasteArea)})'),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetUsageDiagramPainter extends CustomPainter {
+  final PlasterSheetUsage usage;
+
+  const _SheetUsageDiagramPainter({required this.usage});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final border = Paint()
+      ..color = Colors.white70
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    final background = Paint()
+      ..color = Colors.white.withSafeOpacity(0.04)
+      ..style = PaintingStyle.fill;
+    final usedPaint = Paint()
+      ..color = const Color(0xFF4DD8B0)
+      ..style = PaintingStyle.fill;
+    final usedBorder = Paint()
+      ..color = const Color(0xFF0E8F72)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    final reusablePaint = Paint()
+      ..color = const Color(0xFF4A90E2)
+      ..style = PaintingStyle.fill;
+    final wastePaint = Paint()
+      ..color = const Color(0xFFE67E22)
+      ..style = PaintingStyle.fill;
+
+    final scale = min(
+      size.width / usage.sheetWidth,
+      size.height / usage.sheetHeight,
+    );
+    final scaledWidth = usage.sheetWidth * scale;
+    final scaledHeight = usage.sheetHeight * scale;
+    final offset = Offset(
+      (size.width - scaledWidth) / 2,
+      (size.height - scaledHeight) / 2,
+    );
+    final rect = offset & Size(scaledWidth, scaledHeight);
+    canvas.drawRect(rect, background);
+
+    for (final piece in usage.usedPieces) {
+      final pieceRect = Rect.fromLTWH(
+        offset.dx + piece.x * scale,
+        offset.dy + piece.y * scale,
+        piece.width * scale,
+        piece.height * scale,
+      );
+      canvas
+        ..drawRect(pieceRect, usedPaint)
+        ..drawRect(pieceRect, usedBorder);
+    }
+
+    for (final offcut in usage.offcuts) {
+      final offcutRect = Rect.fromLTWH(
+        offset.dx + offcut.x * scale,
+        offset.dy + offcut.y * scale,
+        offcut.width * scale,
+        offcut.height * scale,
+      );
+      canvas.drawRect(offcutRect, offcut.reusable ? reusablePaint : wastePaint);
+    }
+
+    canvas.drawRect(rect, border);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SheetUsageDiagramPainter oldDelegate) =>
+      oldDelegate.usage != usage;
 }
 
 class _SurfaceLayoutViewerScreen extends StatelessWidget {
