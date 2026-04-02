@@ -3037,12 +3037,15 @@ class _SheetUsageCard extends StatelessWidget {
 
 class _SheetUsageDiagramPainter extends CustomPainter {
   final PlasterSheetUsage usage;
-  final PreferredUnitSystem unitSystem;
+  final PreferredUnitSystem? unitSystem;
 
   const _SheetUsageDiagramPainter({
     required this.usage,
     required this.unitSystem,
   });
+
+  PreferredUnitSystem get _effectiveUnitSystem =>
+      unitSystem ?? PreferredUnitSystem.metric;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -3099,13 +3102,17 @@ class _SheetUsageDiagramPainter extends CustomPainter {
         offcut.width * scale,
         offcut.height * scale,
       );
-      canvas.drawRect(offcutRect, offcut.reusable ? reusablePaint : wastePaint);
-      _paintLabel(
-        canvas,
-        offcutRect,
-        '${PlasterGeometry.formatDisplayLength(offcut.width, unitSystem)}\n'
-        '${PlasterGeometry.formatDisplayLength(offcut.height, unitSystem)}',
+      final offcutWidthLabel = PlasterGeometry.formatDisplayLength(
+        offcut.width,
+        _effectiveUnitSystem,
       );
+      final offcutHeightLabel = PlasterGeometry.formatDisplayLength(
+        offcut.height,
+        _effectiveUnitSystem,
+      );
+      final offcutLabel = '$offcutWidthLabel\n$offcutHeightLabel';
+      canvas.drawRect(offcutRect, offcut.reusable ? reusablePaint : wastePaint);
+      _paintLabel(canvas, offcutRect, offcutLabel);
     }
 
     canvas.drawRect(rect, border);
