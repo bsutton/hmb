@@ -2954,6 +2954,12 @@ class _SheetUsageCard extends StatelessWidget {
     required this.formatArea,
   });
 
+  String _formatLength(int value) =>
+      PlasterGeometry.formatDisplayLength(value, unitSystem);
+
+  String _formatOffcut(PlasterSheetOffcut offcut) =>
+      '${_formatLength(offcut.width)} x ${_formatLength(offcut.height)}';
+
   @override
   Widget build(BuildContext context) {
     final sheetWidth = PlasterGeometry.formatDisplayLength(
@@ -2968,6 +2974,14 @@ class _SheetUsageCard extends StatelessWidget {
         .where((offcut) => offcut.reusable)
         .length;
     final wasteCount = usage.offcuts.length - reusableCount;
+    final reusableSizes = usage.offcuts
+        .where((offcut) => offcut.reusable)
+        .map(_formatOffcut)
+        .join(', ');
+    final wasteSizes = usage.offcuts
+        .where((offcut) => !offcut.reusable)
+        .map(_formatOffcut)
+        .join(', ');
 
     return Container(
       width: 210,
@@ -2989,7 +3003,10 @@ class _SheetUsageCard extends StatelessWidget {
             width: 194,
             height: 120,
             child: CustomPaint(
-              painter: _SheetUsageDiagramPainter(usage: usage),
+              painter: _SheetUsageDiagramPainter(
+                usage: usage,
+                unitSystem: unitSystem,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -2998,6 +3015,20 @@ class _SheetUsageCard extends StatelessWidget {
             '$reusableCount (${formatArea(usage.reusableOffcutArea)})',
           ),
           Text('Waste pieces: $wasteCount (${formatArea(usage.wasteArea)})'),
+          if (reusableCount > 0) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Reusable sizes: $reusableSizes',
+              style: const TextStyle(fontSize: 11),
+            ),
+          ],
+          if (wasteCount > 0) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Waste sizes: $wasteSizes',
+              style: const TextStyle(fontSize: 11),
+            ),
+          ],
         ],
       ),
     );
@@ -3006,8 +3037,12 @@ class _SheetUsageCard extends StatelessWidget {
 
 class _SheetUsageDiagramPainter extends CustomPainter {
   final PlasterSheetUsage usage;
+  final PreferredUnitSystem unitSystem;
 
-  const _SheetUsageDiagramPainter({required this.usage});
+  const _SheetUsageDiagramPainter({
+    required this.usage,
+    required this.unitSystem,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -3065,14 +3100,55 @@ class _SheetUsageDiagramPainter extends CustomPainter {
         offcut.height * scale,
       );
       canvas.drawRect(offcutRect, offcut.reusable ? reusablePaint : wastePaint);
+      _paintLabel(
+        canvas,
+        offcutRect,
+        '${PlasterGeometry.formatDisplayLength(offcut.width, unitSystem)}\n'
+        '${PlasterGeometry.formatDisplayLength(offcut.height, unitSystem)}',
+      );
     }
 
     canvas.drawRect(rect, border);
   }
 
+  void _paintLabel(Canvas canvas, Rect rect, String text) {
+    if (rect.width < 58 || rect.height < 30) {
+      return;
+    }
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+      maxLines: 2,
+    )..layout(maxWidth: rect.width - 8);
+    final background = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: rect.center,
+        width: textPainter.width + 8,
+        height: textPainter.height + 6,
+      ),
+      const Radius.circular(6),
+    );
+    canvas.drawRRect(background, Paint()..color = const Color(0xBB111827));
+    textPainter.paint(
+      canvas,
+      Offset(
+        rect.center.dx - textPainter.width / 2,
+        rect.center.dy - textPainter.height / 2,
+      ),
+    );
+  }
+
   @override
   bool shouldRepaint(covariant _SheetUsageDiagramPainter oldDelegate) =>
-      oldDelegate.usage != usage;
+      oldDelegate.usage != usage || oldDelegate.unitSystem != unitSystem;
 }
 
 class _SurfaceLayoutViewerScreen extends StatelessWidget {
