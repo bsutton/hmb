@@ -1724,11 +1724,10 @@ class PlasterGeometry {
     final shortSide = min(sheetWidth, sheetHeight);
     final longSide = max(sheetWidth, sheetHeight);
     final horizontal = (PlasterSheetDirection.horizontal, longSide, shortSide);
-    final vertical = (PlasterSheetDirection.vertical, shortSide, longSide);
     return switch (direction) {
       PlasterSheetDirection.horizontal => [horizontal],
-      PlasterSheetDirection.vertical => [vertical],
-      PlasterSheetDirection.auto => [horizontal, vertical],
+      PlasterSheetDirection.vertical => const [],
+      PlasterSheetDirection.auto => [horizontal],
     };
   }
 

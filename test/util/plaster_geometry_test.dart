@@ -619,7 +619,7 @@ void main() {
       expect(takeoff.totalSheetCount, lessThanOrEqualTo(rawSheetCount));
     });
 
-    test('vertical wall layout is rejected if board is not full height', () {
+    test('vertical wall layout is rejected by the generator', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,
         name: 'Room 1',
