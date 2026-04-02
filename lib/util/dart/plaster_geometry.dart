@@ -1742,27 +1742,70 @@ class PlasterGeometry {
     if (surfaceLength <= sheetLength) {
       return surfaceLength < minEdge ? null : [surfaceLength];
     }
-    final fullCount = surfaceLength ~/ sheetLength;
-    final remainder = surfaceLength % sheetLength;
-    if (remainder == 0) {
-      return List<int>.filled(fullCount, sheetLength);
+    final preferredEdge = max(minEdge, sheetLength ~/ 2);
+    List<int>? best;
+    (int, int, int, int)? bestScore;
+
+    void consider(List<int> candidate) {
+      if (candidate.any((piece) => piece < minEdge || piece > sheetLength)) {
+        return;
+      }
+      final preferredViolations = candidate
+          .where((piece) => piece != sheetLength && piece < preferredEdge)
+          .length;
+      final cutPieceCount = candidate
+          .where((piece) => piece != sheetLength)
+          .length;
+      final fullPieceCount = candidate
+          .where((piece) => piece == sheetLength)
+          .length;
+      final minPiece = candidate.reduce(min);
+      final score = (
+        preferredViolations,
+        candidate.length,
+        cutPieceCount,
+        -fullPieceCount,
+      );
+      if (best == null ||
+          score.$1 < bestScore!.$1 ||
+          (score.$1 == bestScore!.$1 && score.$2 < bestScore!.$2) ||
+          (score.$1 == bestScore!.$1 &&
+              score.$2 == bestScore!.$2 &&
+              score.$3 < bestScore!.$3) ||
+          (score.$1 == bestScore!.$1 &&
+              score.$2 == bestScore!.$2 &&
+              score.$3 == bestScore!.$3 &&
+              score.$4 < bestScore!.$4) ||
+          (score == bestScore && minPiece > best!.reduce(min))) {
+        best = candidate;
+        bestScore = score;
+      }
     }
-    if (remainder >= minEdge) {
-      return [...List<int>.filled(fullCount, sheetLength), remainder];
+
+    for (
+      var fullCount = surfaceLength ~/ sheetLength;
+      fullCount >= 0;
+      fullCount--
+    ) {
+      final remainder = surfaceLength - fullCount * sheetLength;
+      if (remainder == 0) {
+        consider(List<int>.filled(fullCount, sheetLength));
+        continue;
+      }
+      if (remainder >= minEdge && remainder <= sheetLength) {
+        consider([...List<int>.filled(fullCount, sheetLength), remainder]);
+      }
+      if (remainder >= minEdge * 2 && remainder <= sheetLength * 2) {
+        final firstPiece = remainder ~/ 2;
+        final secondPiece = remainder - firstPiece;
+        consider([
+          firstPiece,
+          ...List<int>.filled(fullCount, sheetLength),
+          secondPiece,
+        ]);
+      }
     }
-    if (fullCount == 0) {
-      return null;
-    }
-    final delta = minEdge - remainder;
-    final firstPiece = sheetLength - delta;
-    if (firstPiece < minEdge) {
-      return null;
-    }
-    return [
-      firstPiece,
-      ...List<int>.filled(max(0, fullCount - 1), sheetLength),
-      minEdge,
-    ];
+    return best;
   }
 
   static int _estimateJointTapeLength(List<PlasterSheetPlacement> placements) {

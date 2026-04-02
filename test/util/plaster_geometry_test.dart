@@ -519,6 +519,73 @@ void main() {
       );
     });
 
+    test('ceiling layout rebalances remainder to avoid thin edge strips', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Ceiling Rebalance',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+      );
+      final lines = [
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 0,
+          startX: 0,
+          startY: 0,
+          length: 46620,
+          plasterSelected: false,
+        ),
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 1,
+          startX: 46620,
+          startY: 0,
+          length: 25000,
+          plasterSelected: false,
+        ),
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 2,
+          startX: 46620,
+          startY: 25000,
+          length: 46620,
+          plasterSelected: false,
+        ),
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 3,
+          startX: 0,
+          startY: 25000,
+          length: 25000,
+          plasterSelected: false,
+        ),
+      ];
+      final materials = [
+        PlasterMaterialSize.forInsert(
+          supplierId: 1,
+          name: '1200 x 3000',
+          unitSystem: PreferredUnitSystem.metric,
+          width: 12000,
+          height: 30000,
+        ),
+      ];
+
+      final layout = PlasterGeometry.calculateLayout([
+        PlasterRoomShape(room: room, lines: lines, openings: const []),
+      ], materials).single;
+
+      final rowHeights =
+          layout.placements
+              .map((placement) => placement.height)
+              .toSet()
+              .toList()
+            ..sort();
+
+      expect(rowHeights, containsAll([6500, 12000]));
+      expect(rowHeights, isNot(contains(3000)));
+      expect(rowHeights.every((height) => height >= 6000), isTrue);
+    });
+
     test('calculate takeoff includes sheet totals and wastage', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,
