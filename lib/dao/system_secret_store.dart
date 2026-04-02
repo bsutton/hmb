@@ -11,14 +11,19 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:strings/strings.dart';
 
 import '../entity/system.dart';
+import 'system_secret_backend.dart';
+import 'system_secret_backend_stub.dart'
+    if (dart.library.ui) 'system_secret_backend_flutter.dart';
 
 class SystemSecretStore {
-  static const _storage = FlutterSecureStorage();
+  final SystemSecretBackend _backend;
+
+  SystemSecretStore({SystemSecretBackend? backend})
+    : _backend = backend ?? createSystemSecretBackend();
 
   static const _xeroClientSecretKey = 'system.xero_client_secret';
   static const _chatGptAccessTokenKey = 'system.chatgpt_access_token';
@@ -48,33 +53,40 @@ class SystemSecretStore {
   }
 
   Future<bool> migrateFromDb(System system) async {
-    var migrated = false;
-    migrated |= await _migrate(
-      _xeroClientSecretKey,
-      legacyValue: system.xeroClientSecret,
-    );
-    migrated |= await _migrate(
-      _chatGptAccessTokenKey,
-      legacyValue: system.chatgptAccessToken,
-    );
-    migrated |= await _migrate(
-      _chatGptRefreshTokenKey,
-      legacyValue: system.chatgptRefreshToken,
-    );
-    migrated |= await _migrate(_openAiApiKey, legacyValue: system.openaiApiKey);
-    migrated |= await _migrate(
-      _ihserverTokenKey,
-      legacyValue: system.ihserverToken,
-    );
-    return migrated;
+    final secrets = <String, String?>{
+      _xeroClientSecretKey: system.xeroClientSecret,
+      _chatGptAccessTokenKey: system.chatgptAccessToken,
+      _chatGptRefreshTokenKey: system.chatgptRefreshToken,
+      _openAiApiKey: system.openaiApiKey,
+      _ihserverTokenKey: system.ihserverToken,
+    };
+
+    var hadLegacySecrets = false;
+
+    for (final entry in secrets.entries) {
+      final legacyValue = entry.value;
+      if (Strings.isBlank(legacyValue)) {
+        continue;
+      }
+      hadLegacySecrets = true;
+      final migrated = await _migrate(
+        entry.key,
+        legacyValue: legacyValue!.trim(),
+      );
+      if (!migrated) {
+        return false;
+      }
+    }
+
+    return hadLegacySecrets;
   }
 
   Future<bool> persist(System system) async =>
       await _write(_xeroClientSecretKey, system.xeroClientSecret) &&
-        await _write(_chatGptAccessTokenKey, system.chatgptAccessToken) &&
-        await _write(_chatGptRefreshTokenKey, system.chatgptRefreshToken) &&
-        await _write(_openAiApiKey, system.openaiApiKey) &&
-        await _write(_ihserverTokenKey, system.ihserverToken);
+      await _write(_chatGptAccessTokenKey, system.chatgptAccessToken) &&
+      await _write(_chatGptRefreshTokenKey, system.chatgptRefreshToken) &&
+      await _write(_openAiApiKey, system.openaiApiKey) &&
+      await _write(_ihserverTokenKey, system.ihserverToken);
 
   Future<void> clearLegacyDbCopies({
     required DatabaseExecutor executor,
@@ -96,7 +108,7 @@ class SystemSecretStore {
 
   Future<String?> _read(String key, {String? fallback}) async {
     try {
-      final value = await _storage.read(key: key);
+      final value = await _backend.read(key);
       if (Strings.isBlank(value)) {
         return fallback;
       }
@@ -106,14 +118,11 @@ class SystemSecretStore {
     }
   }
 
-  Future<bool> _migrate(String key, {String? legacyValue}) async {
-    if (Strings.isBlank(legacyValue)) {
-      return false;
-    }
+  Future<bool> _migrate(String key, {required String legacyValue}) async {
     try {
-      final existing = await _storage.read(key: key);
+      final existing = await _backend.read(key);
       if (Strings.isBlank(existing)) {
-        await _storage.write(key: key, value: legacyValue!.trim());
+        await _backend.write(key, legacyValue);
       }
       return true;
     } catch (_) {
@@ -124,9 +133,9 @@ class SystemSecretStore {
   Future<bool> _write(String key, String? value) async {
     try {
       if (Strings.isBlank(value)) {
-        await _storage.delete(key: key);
+        await _backend.delete(key);
       } else {
-        await _storage.write(key: key, value: value!.trim());
+        await _backend.write(key, value!.trim());
       }
       return true;
     } catch (_) {

@@ -12,6 +12,8 @@
  https://github.com/bsutton/hmb/blob/main/LICENSE
 */
 
+import 'dart:io';
+
 import 'package:dcli/dcli.dart';
 import 'package:path/path.dart';
 
@@ -34,8 +36,83 @@ void main() {
           'libsqlite3-dev '
       .start(privileged: true);
 
+  _verifySecureStoragePrerequisites();
+
   _createReleaseKeyStore();
   _createDebugKeyStore();
+}
+
+void _verifySecureStoragePrerequisites() {
+  _requireCommand('secret-tool');
+  _requireCommand('gnome-keyring-daemon');
+
+  if ((Platform.environment['DBUS_SESSION_BUS_ADDRESS'] ?? '').isEmpty) {
+    throw StateError('''
+DBUS_SESSION_BUS_ADDRESS is not set.
+The Linux keyring is not available in this shell, so secure storage will fail.
+Start a desktop session or launch the shell under dbus-run-session.
+''');
+  }
+
+  final user = Platform.environment['USER'] ?? 'hmb';
+  const service = 'hmb-linux-setup';
+  final account = '$user-secure-storage-check';
+  const secret = 'hmb-linux-setup-secret';
+
+  final store = Process.runSync('bash', [
+    '-lc',
+    '''
+set -e
+printf '%s' '$secret' | secret-tool store
+  --label='HMB Linux Setup'
+  service '$service'
+  account '$account' >/dev/null
+''',
+  ]);
+  if (store.exitCode != 0) {
+    throw StateError('''
+Failed to write to the Linux keyring.
+stderr:
+${store.stderr}
+Ensure gnome-keyring is running and the login keyring is unlocked.
+''');
+  }
+
+  final lookup = Process.runSync('secret-tool', [
+    'lookup',
+    'service',
+    service,
+    'account',
+    account,
+  ]);
+  final retrieved = (lookup.stdout as String).trim();
+
+  final clear = Process.runSync('secret-tool', [
+    'clear',
+    'service',
+    service,
+    'account',
+    account,
+  ]);
+
+  if (lookup.exitCode != 0 || clear.exitCode != 0 || retrieved != secret) {
+    throw StateError('''
+The Linux keyring round-trip check failed.
+lookup exit: ${lookup.exitCode}
+clear exit: ${clear.exitCode}
+retrieved: $retrieved
+Ensure gnome-keyring is running and accessible from this shell.
+''');
+  }
+
+  print(green('Linux secure storage is available.'));
+}
+
+void _requireCommand(String command) {
+  final result = Process.runSync('bash', ['-lc', 'command -v $command']);
+  if (result.exitCode != 0) {
+    throw StateError('$command is not installed or is not available on PATH.');
+  }
 }
 
 /// Keystore used to generate the sha fingerprint required to

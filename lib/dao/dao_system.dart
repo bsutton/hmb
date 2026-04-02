@@ -33,16 +33,7 @@ class DaoSystem extends Dao<System> {
 
   Future<System> get([Transaction? transaction]) async {
     final system = (await getById(1, transaction))!;
-    final migrated = await _secretStore.migrateFromDb(system);
     await _secretStore.hydrate(system);
-
-    if (migrated) {
-      await _secretStore.clearLegacyDbCopies(
-        executor: withinTransaction(transaction),
-        systemId: system.id,
-      );
-    }
-
     return system;
   }
 

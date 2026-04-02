@@ -61,6 +61,7 @@ class _GoogleDriveBackupScreenState
   late Future<DateTime?> _lastBackupFuture;
   late final StreamSubscription<ProgressUpdate> _backupSub;
   late final StreamSubscription<ProgressUpdate> _photoSub;
+  late final StreamSubscription<String> _photoErrorSub;
 
   @override
   void initState() {
@@ -74,12 +75,18 @@ class _GoogleDriveBackupScreenState
     _photoSub = PhotoSyncService().progressStream.listen((update) {
       setState(() => _photoStageDescription = update.stageDescription);
     });
+    _photoErrorSub = PhotoSyncService().errorStream.listen((message) {
+      if (mounted) {
+        HMBToast.error('Photo sync failed: $message');
+      }
+    });
   }
 
   @override
   void dispose() {
     unawaited(_backupSub.cancel());
     unawaited(_photoSub.cancel());
+    unawaited(_photoErrorSub.cancel());
     super.dispose();
   }
 
