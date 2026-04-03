@@ -2843,13 +2843,13 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
   final PlasterSurfaceLayout layout;
   final PreferredUnitSystem unitSystem;
   final bool showSheetMeasurements;
-  final List<int> sheetNumbers;
+  final List<int>? sheetNumbers;
 
   const _SurfaceLayoutDiagramPainter({
     required this.layout,
     required this.unitSystem,
     required this.showSheetMeasurements,
-    required this.sheetNumbers,
+    this.sheetNumbers,
   });
 
   @override
@@ -2899,8 +2899,8 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
           unitSystem,
         );
         _paintSheetLabel(canvas, sheetRect, '$pieceWidth\n$pieceHeight');
-      } else if (i < sheetNumbers.length) {
-        _paintSheetLabel(canvas, sheetRect, '#${sheetNumbers[i]}');
+      } else if (sheetNumbers != null && i < sheetNumbers!.length) {
+        _paintSheetLabel(canvas, sheetRect, '#${sheetNumbers![i]}');
       }
     }
     canvas.drawRect(rect, border);
