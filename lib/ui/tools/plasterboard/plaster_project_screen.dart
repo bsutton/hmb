@@ -997,6 +997,34 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     return true;
   }
 
+  _RoomBundle _bundleWithAxisProjectedLine(
+    _RoomBundle bundle,
+    int lineIndex,
+    PlasterConstraintType axisType, {
+    required bool pinStart,
+  }) {
+    final lines = List<PlasterRoomLine>.from(bundle.lines);
+    final nextIndex = (lineIndex + 1) % lines.length;
+    final start = lines[lineIndex];
+    final end = PlasterGeometry.lineEnd(lines, lineIndex);
+
+    if (axisType == PlasterConstraintType.horizontal) {
+      if (pinStart) {
+        lines[nextIndex] = lines[nextIndex].copyWith(startY: start.startY);
+      } else {
+        lines[lineIndex] = lines[lineIndex].copyWith(startY: end.y);
+      }
+    } else if (axisType == PlasterConstraintType.vertical) {
+      if (pinStart) {
+        lines[nextIndex] = lines[nextIndex].copyWith(startX: start.startX);
+      } else {
+        lines[lineIndex] = lines[lineIndex].copyWith(startX: end.x);
+      }
+    }
+
+    return bundle.copyWith(lines: lines);
+  }
+
   Future<void> _updateCurrentRoom(
     _RoomBundle bundle, {
     bool trackUndo = true,
@@ -1496,14 +1524,26 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
     final lineEnd = PlasterGeometry.lineEnd(_currentRoom.lines, index);
     final nextIndex = (index + 1) % _currentRoom.lines.length;
+    final startPinnedBundle = _bundleWithAxisProjectedLine(
+      bundle,
+      index,
+      PlasterConstraintType.horizontal,
+      pinStart: true,
+    );
+    final endPinnedBundle = _bundleWithAxisProjectedLine(
+      bundle,
+      index,
+      PlasterConstraintType.horizontal,
+      pinStart: false,
+    );
     final solved =
         await _trySolveAndUpdateRoom(
-          bundle,
+          startPinnedBundle,
           pinnedVertexIndex: index,
           pinnedVertexTarget: IntPoint(line.startX, line.startY),
         ) ||
         await _trySolveAndUpdateRoom(
-          bundle,
+          endPinnedBundle,
           pinnedVertexIndex: nextIndex,
           pinnedVertexTarget: lineEnd,
         ) ||
@@ -1552,14 +1592,26 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
     final lineEnd = PlasterGeometry.lineEnd(_currentRoom.lines, index);
     final nextIndex = (index + 1) % _currentRoom.lines.length;
+    final startPinnedBundle = _bundleWithAxisProjectedLine(
+      bundle,
+      index,
+      PlasterConstraintType.vertical,
+      pinStart: true,
+    );
+    final endPinnedBundle = _bundleWithAxisProjectedLine(
+      bundle,
+      index,
+      PlasterConstraintType.vertical,
+      pinStart: false,
+    );
     final solved =
         await _trySolveAndUpdateRoom(
-          bundle,
+          startPinnedBundle,
           pinnedVertexIndex: index,
           pinnedVertexTarget: IntPoint(line.startX, line.startY),
         ) ||
         await _trySolveAndUpdateRoom(
-          bundle,
+          endPinnedBundle,
           pinnedVertexIndex: nextIndex,
           pinnedVertexTarget: lineEnd,
         ) ||
