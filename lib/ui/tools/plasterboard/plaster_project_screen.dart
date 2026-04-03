@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
+import '../../../main.dart';
 import '../../../util/dart/app_settings.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_constraint_solver.dart';
@@ -96,7 +97,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   Stopwatch? _analysisStopwatch;
   Timer? _analysisTimer;
   var _hasLoadedProjectState = false;
-  ScaffoldMessengerState? _scaffoldMessenger;
 
   bool get _isRoomEditorOnly => widget.editorOnlyRoomId != null;
 
@@ -224,7 +224,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
     final route = ModalRoute.of(context);
     if (route != null) {
       routeObserver
@@ -422,7 +421,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         setState(() {
           _isAnalyzing = false;
         });
-        _scaffoldMessenger?.showSnackBar(
+        hmbScaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(content: Text('Layout analysis failed: ${message.error}')),
         );
         unawaited(_stopAnalysis(markStopped: false));
@@ -909,7 +908,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     final violation = result.violations.isEmpty
         ? null
         : result.violations.first;
-    final messenger = _scaffoldMessenger;
+    final messenger = hmbScaffoldMessengerKey.currentState;
     if (messenger == null) {
       return;
     }
