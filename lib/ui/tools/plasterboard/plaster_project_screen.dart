@@ -972,6 +972,31 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     }
   }
 
+  Future<bool> _trySolveAndUpdateRoom(
+    _RoomBundle bundle, {
+    int? pinnedVertexIndex,
+    IntPoint? pinnedVertexTarget,
+    bool persist = true,
+    bool trackUndo = true,
+  }) async {
+    final result = PlasterConstraintSolver.solve(
+      lines: bundle.lines,
+      constraints: bundle.constraints,
+      pinnedVertexIndex: pinnedVertexIndex,
+      pinnedVertexTarget: pinnedVertexTarget,
+    );
+    if (!result.converged) {
+      return false;
+    }
+    final solvedBundle = bundle.copyWith(lines: result.lines);
+    if (persist) {
+      await _updateCurrentRoom(solvedBundle, trackUndo: trackUndo);
+    } else {
+      _replaceCurrentRoomLocally(solvedBundle, trackUndo: trackUndo);
+    }
+    return true;
+  }
+
   Future<void> _updateCurrentRoom(
     _RoomBundle bundle, {
     bool trackUndo = true,
@@ -1439,11 +1464,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
   Future<void> _toggleHorizontalConstraint(int index) async {
     final line = _currentRoom.lines[index];
-    final horizontalConstraint = _constraintForLine(
-      line.id,
-      PlasterConstraintType.horizontal,
-    );
-    final constraints = horizontalConstraint == null
+    final hasHorizontalConstraint =
+        _constraintForLine(line.id, PlasterConstraintType.horizontal) != null;
+    final constraints = !hasHorizontalConstraint
         ? _upsertConstraint(
             _constraintsWithoutLineType(
               _constraintsWithoutLineType(
@@ -1465,16 +1488,41 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             line.id,
             PlasterConstraintType.horizontal,
           );
-    await _solveAndUpdateRoom(_currentRoom.copyWith(constraints: constraints));
+    final bundle = _currentRoom.copyWith(constraints: constraints);
+    if (hasHorizontalConstraint) {
+      await _solveAndUpdateRoom(bundle);
+      return;
+    }
+
+    final lineEnd = PlasterGeometry.lineEnd(_currentRoom.lines, index);
+    final nextIndex = (index + 1) % _currentRoom.lines.length;
+    final solved =
+        await _trySolveAndUpdateRoom(
+          bundle,
+          pinnedVertexIndex: index,
+          pinnedVertexTarget: IntPoint(line.startX, line.startY),
+        ) ||
+        await _trySolveAndUpdateRoom(
+          bundle,
+          pinnedVertexIndex: nextIndex,
+          pinnedVertexTarget: lineEnd,
+        ) ||
+        await _trySolveAndUpdateRoom(bundle);
+    if (!solved) {
+      _showSolveError(
+        PlasterConstraintSolver.solve(
+          lines: bundle.lines,
+          constraints: bundle.constraints,
+        ),
+      );
+    }
   }
 
   Future<void> _toggleVerticalConstraint(int index) async {
     final line = _currentRoom.lines[index];
-    final verticalConstraint = _constraintForLine(
-      line.id,
-      PlasterConstraintType.vertical,
-    );
-    final constraints = verticalConstraint == null
+    final hasVerticalConstraint =
+        _constraintForLine(line.id, PlasterConstraintType.vertical) != null;
+    final constraints = !hasVerticalConstraint
         ? _upsertConstraint(
             _constraintsWithoutLineType(
               _constraintsWithoutLineType(
@@ -1496,7 +1544,34 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             line.id,
             PlasterConstraintType.vertical,
           );
-    await _solveAndUpdateRoom(_currentRoom.copyWith(constraints: constraints));
+    final bundle = _currentRoom.copyWith(constraints: constraints);
+    if (hasVerticalConstraint) {
+      await _solveAndUpdateRoom(bundle);
+      return;
+    }
+
+    final lineEnd = PlasterGeometry.lineEnd(_currentRoom.lines, index);
+    final nextIndex = (index + 1) % _currentRoom.lines.length;
+    final solved =
+        await _trySolveAndUpdateRoom(
+          bundle,
+          pinnedVertexIndex: index,
+          pinnedVertexTarget: IntPoint(line.startX, line.startY),
+        ) ||
+        await _trySolveAndUpdateRoom(
+          bundle,
+          pinnedVertexIndex: nextIndex,
+          pinnedVertexTarget: lineEnd,
+        ) ||
+        await _trySolveAndUpdateRoom(bundle);
+    if (!solved) {
+      _showSolveError(
+        PlasterConstraintSolver.solve(
+          lines: bundle.lines,
+          constraints: bundle.constraints,
+        ),
+      );
+    }
   }
 
   Future<void> _deleteIntersection(int index) async {
