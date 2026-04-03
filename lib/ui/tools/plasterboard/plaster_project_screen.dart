@@ -3072,6 +3072,19 @@ class _SurfaceSheetExplorerSection extends StatelessWidget {
     required this.sheetNumbers,
   });
 
+  void _openZoom(BuildContext context) {
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => _SurfaceLayoutViewerScreen(
+            layout: layout,
+            unitSystem: layout.material.unitSystem,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Card(
     child: Padding(
@@ -3108,6 +3121,15 @@ class _SurfaceSheetExplorerSection extends StatelessWidget {
                   sheetNumbers.isEmpty
                       ? 'Sheets: none'
                       : 'Sheets: ${sheetNumbers.join(', ')}',
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openZoom(context),
+                    icon: const Icon(Icons.zoom_out_map),
+                    label: const Text('Zoom'),
+                  ),
                 ),
               ],
             ),
