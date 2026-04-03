@@ -15,6 +15,7 @@ import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
 import '../../../main.dart';
 import '../../../util/dart/app_settings.dart';
+import '../../../util/dart/log.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_constraint_solver.dart';
 import '../../../util/dart/plaster_geometry.dart';
@@ -182,7 +183,65 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _hasLoadedProjectState = true;
     });
     _syncRoomControllers();
+    if (_isRoomEditorOnly && bundles.isNotEmpty) {
+      _logRoomEditorDebugDump(bundles[_selectedRoomIndex]);
+    }
     unawaited(_startAnalysis());
+  }
+
+  void _logRoomEditorDebugDump(_RoomBundle bundle) {
+    final room = bundle.room;
+    final buffer = StringBuffer()
+      ..writeln('PLASTER_EDITOR_DEBUG_DUMP_START')
+      ..writeln(
+        'room: id=${room.id}, name="${room.name}", '
+        'unitSystem=${room.unitSystem.name}, '
+        'ceilingHeight=${room.ceilingHeight}',
+      )
+      ..writeln('lines:');
+
+    for (var i = 0; i < bundle.lines.length; i++) {
+      final line = bundle.lines[i];
+      final end = PlasterGeometry.lineEnd(bundle.lines, i);
+      buffer.writeln(
+        '  [$i] id=${line.id}, seq=${line.seqNo}, '
+        'start=(${line.startX},${line.startY}), '
+        'end=(${end.x},${end.y}), '
+        'length=${line.length}, '
+        'plasterSelected=${line.plasterSelected}, '
+        'sheetDirection=${line.sheetDirection.name}',
+      );
+    }
+
+    buffer.writeln('openings:');
+    if (bundle.openings.isEmpty) {
+      buffer.writeln('  <none>');
+    } else {
+      for (final opening in bundle.openings) {
+        buffer.writeln(
+          '  id=${opening.id}, lineId=${opening.lineId}, '
+          'type=${opening.type.name}, '
+          'offset=${opening.offsetFromStart}, '
+          'width=${opening.width}, height=${opening.height}, '
+          'sillHeight=${opening.sillHeight}',
+        );
+      }
+    }
+
+    buffer.writeln('constraints:');
+    if (bundle.constraints.isEmpty) {
+      buffer.writeln('  <none>');
+    } else {
+      for (final constraint in bundle.constraints) {
+        buffer.writeln(
+          '  id=${constraint.id}, lineId=${constraint.lineId}, '
+          'type=${constraint.type.name}, '
+          'target=${constraint.targetValue}',
+        );
+      }
+    }
+    buffer.writeln('PLASTER_EDITOR_DEBUG_DUMP_END');
+    Log.i(buffer.toString());
   }
 
   Future<List<PlasterRoomLine>> _ensureRoomLines(PlasterRoom room) async {
