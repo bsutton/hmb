@@ -3290,6 +3290,33 @@ class _ProjectSheetDiagram extends StatelessWidget {
     );
   }
 
+  Future<void> _showOffcutDetails(
+    BuildContext context,
+    PlasterSheetOffcut offcut,
+  ) async {
+    final type = offcut.reusable
+        ? (offcut.reusedLater
+              ? 'Reusable offcut reused later'
+              : 'Reusable offcut not reused')
+        : 'Scrap';
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Sheet ${sheet.sheetNumber} Offcut'),
+        content: Text(
+          '${formatLength(offcut.width)} x ${formatLength(offcut.height)}\n'
+          '$type',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _handleTap(BuildContext context, TapUpDetails details) {
     final relevantPieces = [
       for (final piece in sheet.usedPieces)
@@ -3310,6 +3337,15 @@ class _ProjectSheetDiagram extends StatelessWidget {
           .sheetRectToCanvas(piece.x, piece.y, piece.width, piece.height)
           .contains(details.localPosition)) {
         unawaited(_showPieceDetails(context, piece));
+        return;
+      }
+    }
+
+    for (final offcut in sheet.offcuts.reversed) {
+      if (metrics
+          .sheetRectToCanvas(offcut.x, offcut.y, offcut.width, offcut.height)
+          .contains(details.localPosition)) {
+        unawaited(_showOffcutDetails(context, offcut));
         return;
       }
     }
