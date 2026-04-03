@@ -191,19 +191,18 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
   void _logRoomEditorDebugDump(_RoomBundle bundle) {
     final room = bundle.room;
-    final buffer = StringBuffer()
-      ..writeln('PLASTER_EDITOR_DEBUG_DUMP_START')
-      ..writeln(
-        'room: id=${room.id}, name="${room.name}", '
-        'unitSystem=${room.unitSystem.name}, '
-        'ceilingHeight=${room.ceilingHeight}',
-      )
-      ..writeln('lines:');
+    Log.i('PLASTER_EDITOR_DEBUG_DUMP_START');
+    Log.i(
+      'room: id=${room.id}, name="${room.name}", '
+      'unitSystem=${room.unitSystem.name}, '
+      'ceilingHeight=${room.ceilingHeight}',
+    );
+    Log.i('lines:');
 
     for (var i = 0; i < bundle.lines.length; i++) {
       final line = bundle.lines[i];
       final end = PlasterGeometry.lineEnd(bundle.lines, i);
-      buffer.writeln(
+      Log.i(
         '  [$i] id=${line.id}, seq=${line.seqNo}, '
         'start=(${line.startX},${line.startY}), '
         'end=(${end.x},${end.y}), '
@@ -213,12 +212,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       );
     }
 
-    buffer.writeln('openings:');
+    Log.i('openings:');
     if (bundle.openings.isEmpty) {
-      buffer.writeln('  <none>');
+      Log.i('  <none>');
     } else {
       for (final opening in bundle.openings) {
-        buffer.writeln(
+        Log.i(
           '  id=${opening.id}, lineId=${opening.lineId}, '
           'type=${opening.type.name}, '
           'offset=${opening.offsetFromStart}, '
@@ -228,20 +227,19 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       }
     }
 
-    buffer.writeln('constraints:');
+    Log.i('constraints:');
     if (bundle.constraints.isEmpty) {
-      buffer.writeln('  <none>');
+      Log.i('  <none>');
     } else {
       for (final constraint in bundle.constraints) {
-        buffer.writeln(
+        Log.i(
           '  id=${constraint.id}, lineId=${constraint.lineId}, '
           'type=${constraint.type.name}, '
           'target=${constraint.targetValue}',
         );
       }
     }
-    buffer.writeln('PLASTER_EDITOR_DEBUG_DUMP_END');
-    Log.i(buffer.toString());
+    Log.i('PLASTER_EDITOR_DEBUG_DUMP_END');
   }
 
   Future<List<PlasterRoomLine>> _ensureRoomLines(PlasterRoom room) async {
