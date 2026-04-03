@@ -2791,6 +2791,7 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
   final double width;
   final double height;
   final bool showSheetMeasurements;
+  final List<int> sheetNumbers;
 
   const _SurfaceLayoutDiagram({
     required this.layout,
@@ -2798,6 +2799,7 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
     this.width = 132,
     this.height = 84,
     this.showSheetMeasurements = false,
+    this.sheetNumbers = const [],
   });
 
   @override
@@ -2823,6 +2825,7 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
           layout: layout,
           unitSystem: unitSystem,
           showSheetMeasurements: showSheetMeasurements,
+          sheetNumbers: sheetNumbers,
         ),
         child: Center(
           child: Text(
@@ -2840,11 +2843,13 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
   final PlasterSurfaceLayout layout;
   final PreferredUnitSystem unitSystem;
   final bool showSheetMeasurements;
+  final List<int> sheetNumbers;
 
   const _SurfaceLayoutDiagramPainter({
     required this.layout,
     required this.unitSystem,
     required this.showSheetMeasurements,
+    required this.sheetNumbers,
   });
 
   @override
@@ -2873,7 +2878,8 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
     );
     final rect = offset & Size(scaledWidth, scaledHeight);
     canvas.drawRect(rect, fill);
-    for (final placement in layout.placements) {
+    for (var i = 0; i < layout.placements.length; i++) {
+      final placement = layout.placements[i];
       final sheetRect = Rect.fromLTWH(
         offset.dx + placement.x * scale,
         offset.dy + placement.y * scale,
@@ -2893,6 +2899,8 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
           unitSystem,
         );
         _paintSheetLabel(canvas, sheetRect, '$pieceWidth\n$pieceHeight');
+      } else if (i < sheetNumbers.length) {
+        _paintSheetLabel(canvas, sheetRect, '#${sheetNumbers[i]}');
       }
     }
     canvas.drawRect(rect, border);
@@ -2937,7 +2945,8 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
   bool shouldRepaint(covariant _SurfaceLayoutDiagramPainter oldDelegate) =>
       oldDelegate.layout != layout ||
       oldDelegate.unitSystem != unitSystem ||
-      oldDelegate.showSheetMeasurements != showSheetMeasurements;
+      oldDelegate.showSheetMeasurements != showSheetMeasurements ||
+      oldDelegate.sheetNumbers != sheetNumbers;
 }
 
 class _ProjectSheetExplorerScreen extends StatelessWidget {
@@ -3066,6 +3075,7 @@ class _SurfaceSheetExplorerSection extends StatelessWidget {
             unitSystem: layout.material.unitSystem,
             width: 112,
             height: 72,
+            sheetNumbers: sheetNumbers,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -3138,6 +3148,10 @@ class _ProjectSheetCard extends StatelessWidget {
   String _formatArea(int area) =>
       PlasterGeometry.formatDisplayArea(area, sheet.material.unitSystem);
 
+  String _formatPiece(PlasterProjectSheetPiece piece) =>
+      '${_formatLength(piece.width)} x ${_formatLength(piece.height)}'
+      '${piece.reusedOffcut ? ' reused offcut' : ' fresh'}';
+
   bool get _rotateForLayout {
     final stockLandscape = sheet.sheetWidth >= sheet.sheetHeight;
     final targetLandscape = switch (layout.direction) {
@@ -3176,13 +3190,17 @@ class _ProjectSheetCard extends StatelessWidget {
     );
     final neverReusedCount = reusableOffcuts.length - reusedLaterCount;
     final neverReusedArea = reusableArea - reusedLaterArea;
-    final reusedCount = sheet.usedPieces
+    final relevantPieces = [
+      for (final piece in sheet.usedPieces)
+        if (piece.surfaceLabel == layout.label) piece,
+    ];
+    final reusedCount = relevantPieces
         .where((piece) => piece.reusedOffcut)
         .length;
-    final freshCount = sheet.usedPieces.length - reusedCount;
-    final surfaces = {
-      for (final piece in sheet.usedPieces) piece.surfaceLabel,
-    }.toList()..sort();
+    final freshCount = relevantPieces.length - reusedCount;
+    final pieceDetails = [
+      for (final piece in relevantPieces) _formatPiece(piece),
+    ];
 
     return Container(
       width: 280,
@@ -3211,6 +3229,8 @@ class _ProjectSheetCard extends StatelessWidget {
               painter: _ProjectSheetExplorerPainter(
                 sheet: sheet,
                 rotateForLayout: rotateForLayout,
+                currentLayoutLabel: layout.label,
+                formatLength: _formatLength,
               ),
             ),
           ),
@@ -3227,13 +3247,14 @@ class _ProjectSheetCard extends StatelessWidget {
             '$neverReusedCount (${_formatArea(neverReusedArea)})',
           ),
           Text('Scrap: ${_formatArea(scrapArea)}'),
-          const SizedBox(height: 6),
-          Text(
-            surfaces.isEmpty
-                ? 'Surfaces: none'
-                : 'Surfaces: ${surfaces.join(', ')}',
-            style: const TextStyle(fontSize: 11),
-          ),
+          if (pieceDetails.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            for (var i = 0; i < pieceDetails.length; i++)
+              Text(
+                'Piece ${i + 1}: ${pieceDetails[i]}',
+                style: const TextStyle(fontSize: 11),
+              ),
+          ],
         ],
       ),
     );
@@ -3243,10 +3264,14 @@ class _ProjectSheetCard extends StatelessWidget {
 class _ProjectSheetExplorerPainter extends CustomPainter {
   final PlasterProjectSheet sheet;
   final bool rotateForLayout;
+  final String currentLayoutLabel;
+  final String Function(int value) formatLength;
 
   const _ProjectSheetExplorerPainter({
     required this.sheet,
     required this.rotateForLayout,
+    required this.currentLayoutLabel,
+    required this.formatLength,
   });
 
   @override
@@ -3293,7 +3318,13 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
         offset,
       );
       canvas.drawRect(pieceRect, piece.reusedOffcut ? reusedPaint : freshPaint);
-      _paintLabel(canvas, pieceRect, piece.surfaceLabel);
+      if (piece.surfaceLabel == currentLayoutLabel) {
+        _paintLabel(
+          canvas,
+          pieceRect,
+          '${formatLength(piece.width)}\n${formatLength(piece.height)}',
+        );
+      }
     }
 
     for (final offcut in sheet.offcuts) {
@@ -3379,7 +3410,8 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _ProjectSheetExplorerPainter oldDelegate) =>
       oldDelegate.sheet != sheet ||
-      oldDelegate.rotateForLayout != rotateForLayout;
+      oldDelegate.rotateForLayout != rotateForLayout ||
+      oldDelegate.currentLayoutLabel != currentLayoutLabel;
 }
 
 class _SurfaceLayoutViewerScreen extends StatelessWidget {
