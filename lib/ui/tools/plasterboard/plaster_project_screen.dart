@@ -3222,17 +3222,11 @@ class _ProjectSheetCard extends StatelessWidget {
             style: const TextStyle(fontSize: 11),
           ),
           const SizedBox(height: 8),
-          SizedBox(
-            width: 260,
-            height: 160,
-            child: CustomPaint(
-              painter: _ProjectSheetExplorerPainter(
-                sheet: sheet,
-                rotateForLayout: rotateForLayout,
-                currentLayoutLabel: layout.label,
-                formatLength: _formatLength,
-              ),
-            ),
+          _ProjectSheetDiagram(
+            sheet: sheet,
+            layout: layout,
+            rotateForLayout: rotateForLayout,
+            formatLength: _formatLength,
           ),
           const SizedBox(height: 8),
           Text('Fresh pieces: $freshCount'),
@@ -3257,6 +3251,153 @@ class _ProjectSheetCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _ProjectSheetDiagram extends StatelessWidget {
+  final PlasterProjectSheet sheet;
+  final PlasterSurfaceLayout layout;
+  final bool rotateForLayout;
+  final String Function(int value) formatLength;
+
+  const _ProjectSheetDiagram({
+    required this.sheet,
+    required this.layout,
+    required this.rotateForLayout,
+    required this.formatLength,
+  });
+
+  Future<void> _showPieceDetails(
+    BuildContext context,
+    PlasterProjectSheetPiece piece,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Sheet ${sheet.sheetNumber} Piece'),
+        content: Text(
+          '${formatLength(piece.width)} x ${formatLength(piece.height)}\n'
+          '${piece.reusedOffcut ? 'Reused offcut piece' : 'Fresh piece'}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleTap(BuildContext context, TapUpDetails details) {
+    final relevantPieces = [
+      for (final piece in sheet.usedPieces)
+        if (piece.surfaceLabel == layout.label) piece,
+    ];
+    if (relevantPieces.isEmpty) {
+      return;
+    }
+
+    final metrics = _ProjectSheetDiagramMetrics.fromSize(
+      sheet: sheet,
+      rotateForLayout: rotateForLayout,
+      size: const Size(260, 160),
+    );
+
+    for (final piece in relevantPieces.reversed) {
+      if (metrics
+          .sheetRectToCanvas(piece.x, piece.y, piece.width, piece.height)
+          .contains(details.localPosition)) {
+        unawaited(_showPieceDetails(context, piece));
+        return;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTapUp: (details) => _handleTap(context, details),
+    child: SizedBox(
+      width: 260,
+      height: 160,
+      child: CustomPaint(
+        painter: _ProjectSheetExplorerPainter(
+          sheet: sheet,
+          rotateForLayout: rotateForLayout,
+          currentLayoutLabel: layout.label,
+          formatLength: formatLength,
+        ),
+      ),
+    ),
+  );
+}
+
+class _ProjectSheetDiagramMetrics {
+  final PlasterProjectSheet sheet;
+  final bool rotateForLayout;
+  final double scale;
+  final Offset offset;
+
+  const _ProjectSheetDiagramMetrics({
+    required this.sheet,
+    required this.rotateForLayout,
+    required this.scale,
+    required this.offset,
+  });
+
+  factory _ProjectSheetDiagramMetrics.fromSize({
+    required PlasterProjectSheet sheet,
+    required bool rotateForLayout,
+    required Size size,
+  }) {
+    final displaySheetWidth = rotateForLayout
+        ? sheet.sheetHeight
+        : sheet.sheetWidth;
+    final displaySheetHeight = rotateForLayout
+        ? sheet.sheetWidth
+        : sheet.sheetHeight;
+    final scale = min(
+      size.width / displaySheetWidth,
+      size.height / displaySheetHeight,
+    );
+    final scaledWidth = displaySheetWidth * scale;
+    final scaledHeight = displaySheetHeight * scale;
+    final offset = Offset(
+      (size.width - scaledWidth) / 2,
+      (size.height - scaledHeight) / 2,
+    );
+    return _ProjectSheetDiagramMetrics(
+      sheet: sheet,
+      rotateForLayout: rotateForLayout,
+      scale: scale,
+      offset: offset,
+    );
+  }
+
+  Rect get bounds =>
+      offset &
+      Size(
+        (rotateForLayout ? sheet.sheetHeight : sheet.sheetWidth) * scale,
+        (rotateForLayout ? sheet.sheetWidth : sheet.sheetHeight) * scale,
+      );
+
+  Rect sheetRectToCanvas(int x, int y, int width, int height) {
+    if (!rotateForLayout) {
+      return Rect.fromLTWH(
+        offset.dx + x * scale,
+        offset.dy + y * scale,
+        width * scale,
+        height * scale,
+      );
+    }
+
+    return Rect.fromLTWH(
+      offset.dx + (sheet.sheetHeight - y - height) * scale,
+      offset.dy + x * scale,
+      height * scale,
+      width * scale,
     );
   }
 }
@@ -3288,34 +3429,20 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
     final unusedOffcutPaint = Paint()..color = const Color(0xFF4A90E2);
     final reusedLaterOffcutPaint = Paint()..color = const Color(0xFF0EA5A8);
     final scrapPaint = Paint()..color = const Color(0xFFE67E22);
-
-    final displaySheetWidth = rotateForLayout
-        ? sheet.sheetHeight
-        : sheet.sheetWidth;
-    final displaySheetHeight = rotateForLayout
-        ? sheet.sheetWidth
-        : sheet.sheetHeight;
-    final scale = min(
-      size.width / displaySheetWidth,
-      size.height / displaySheetHeight,
+    final metrics = _ProjectSheetDiagramMetrics.fromSize(
+      sheet: sheet,
+      rotateForLayout: rotateForLayout,
+      size: size,
     );
-    final scaledWidth = displaySheetWidth * scale;
-    final scaledHeight = displaySheetHeight * scale;
-    final offset = Offset(
-      (size.width - scaledWidth) / 2,
-      (size.height - scaledHeight) / 2,
-    );
-    final rect = offset & Size(scaledWidth, scaledHeight);
+    final rect = metrics.bounds;
     canvas.drawRect(rect, background);
 
     for (final piece in sheet.usedPieces) {
-      final pieceRect = _sheetRectToCanvas(
+      final pieceRect = metrics.sheetRectToCanvas(
         piece.x,
         piece.y,
         piece.width,
         piece.height,
-        scale,
-        offset,
       );
       canvas.drawRect(pieceRect, piece.reusedOffcut ? reusedPaint : freshPaint);
       if (piece.surfaceLabel == currentLayoutLabel) {
@@ -3328,13 +3455,11 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
     }
 
     for (final offcut in sheet.offcuts) {
-      final offcutRect = _sheetRectToCanvas(
+      final offcutRect = metrics.sheetRectToCanvas(
         offcut.x,
         offcut.y,
         offcut.width,
         offcut.height,
-        scale,
-        offset,
       );
       canvas.drawRect(
         offcutRect,
@@ -3345,31 +3470,6 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
     }
 
     canvas.drawRect(rect, border);
-  }
-
-  Rect _sheetRectToCanvas(
-    int x,
-    int y,
-    int width,
-    int height,
-    double scale,
-    Offset offset,
-  ) {
-    if (!rotateForLayout) {
-      return Rect.fromLTWH(
-        offset.dx + x * scale,
-        offset.dy + y * scale,
-        width * scale,
-        height * scale,
-      );
-    }
-
-    return Rect.fromLTWH(
-      offset.dx + (sheet.sheetHeight - y - height) * scale,
-      offset.dy + x * scale,
-      height * scale,
-      width * scale,
-    );
   }
 
   void _paintLabel(Canvas canvas, Rect rect, String text) {
