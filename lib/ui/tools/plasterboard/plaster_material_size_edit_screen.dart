@@ -89,8 +89,8 @@ class _PlasterMaterialSizeEditScreenState
     }
     final name = _nameController.text.trim().isEmpty
         ? '${PlasterGeometry.formatDisplayLength(width, _unitSystem)} x '
-              '${PlasterGeometry.formatDisplayLength(height, _unitSystem)}'
-            .replaceAll(RegExp(r'\s+(mm|ft|in|")'), '')
+                  '${PlasterGeometry.formatDisplayLength(height, _unitSystem)}'
+              .replaceAll(RegExp(r'\s+(mm|ft|in|")'), '')
         : _nameController.text.trim();
 
     final material = widget.material == null
@@ -127,12 +127,7 @@ class _PlasterMaterialSizeEditScreenState
     builder: (context) => Scaffold(
       appBar: AppBar(
         title: Text(_isNew ? 'Add Material Size' : 'Edit Material Size'),
-        actions: [
-          IconButton(
-            onPressed: _save,
-            icon: const Icon(Icons.save),
-          ),
-        ],
+        actions: [IconButton(onPressed: _save, icon: const Icon(Icons.save))],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -173,8 +168,7 @@ class _PlasterMaterialSizeEditScreenState
           TextField(
             controller: _widthController,
             decoration: InputDecoration(
-              labelText:
-                  'Width (${PlasterGeometry.unitLabel(_unitSystem)})',
+              labelText: 'Width (${PlasterGeometry.unitLabel(_unitSystem)})',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
@@ -182,8 +176,7 @@ class _PlasterMaterialSizeEditScreenState
           TextField(
             controller: _heightController,
             decoration: InputDecoration(
-              labelText:
-                  'Height (${PlasterGeometry.unitLabel(_unitSystem)})',
+              labelText: 'Length (${PlasterGeometry.unitLabel(_unitSystem)})',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),

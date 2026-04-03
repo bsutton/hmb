@@ -3602,7 +3602,8 @@ class _ProjectSheetCard extends StatelessWidget {
   String _formatPiece(PlasterProjectSheetPiece piece) {
     final sourceLabel = labels.subsheetLabelForPiece(sheet, piece);
     final sourceSuffix = sourceLabel == null ? '' : ' from $sourceLabel';
-    return '${_formatLength(piece.width)} x ${_formatLength(piece.height)}'
+    return 'width ${_formatLength(piece.width)} x '
+        'length ${_formatLength(piece.height)}'
         '${piece.reusedOffcut ? ' reused offcut' : ' fresh'}'
         '$sourceSuffix';
   }
@@ -3672,8 +3673,8 @@ class _ProjectSheetCard extends StatelessWidget {
             style: Theme.of(context).textTheme.titleSmall,
           ),
           Text(
-            '${_formatLength(displayWidth)} x '
-            '${_formatLength(displayHeight)}',
+            'Width ${_formatLength(displayWidth)} x '
+            'Length ${_formatLength(displayHeight)}',
             style: const TextStyle(fontSize: 11),
           ),
           const SizedBox(height: 8),
@@ -3739,7 +3740,8 @@ class _ProjectSheetDiagram extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         title: Text('Sheet ${labels.sheetLabel(sheet)} Piece'),
         content: Text(
-          '${formatLength(piece.width)} x ${formatLength(piece.height)}\n'
+          'Width ${formatLength(piece.width)} x '
+          'Length ${formatLength(piece.height)}\n'
           '${piece.reusedOffcut ? 'Reused offcut piece' : 'Fresh piece'}'
           '$sourceSheetLine',
         ),
@@ -3767,7 +3769,8 @@ class _ProjectSheetDiagram extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         title: Text('Sheet ${labels.sheetLabel(sheet)} Offcut'),
         content: Text(
-          '${formatLength(offcut.width)} x ${formatLength(offcut.height)}\n'
+          'Width ${formatLength(offcut.width)} x '
+          'Length ${formatLength(offcut.height)}\n'
           '$type',
         ),
         actions: [
