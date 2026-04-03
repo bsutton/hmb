@@ -1054,6 +1054,86 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     return true;
   }
 
+  void _logLineSelection(String source, int index) {
+    if (index < 0 || index >= _currentRoom.lines.length) {
+      Log.i('PLASTER_LINE_SELECTED source=$source, index=$index, invalid=true');
+      return;
+    }
+    final line = _currentRoom.lines[index];
+    final end = PlasterGeometry.lineEnd(_currentRoom.lines, index);
+    Log.i(
+      'PLASTER_LINE_SELECTED '
+      'source=$source, index=$index, lineId=${line.id}, '
+      'start=(${line.startX},${line.startY}), '
+      'end=(${end.x},${end.y}), '
+      'length=${line.length}',
+    );
+  }
+
+  void _logAxisToggleStart(
+    String axis,
+    int index,
+    PlasterRoomLine line,
+    IntPoint end,
+    List<PlasterRoomConstraint> constraints,
+  ) {
+    Log.i('PLASTER_AXIS_TOGGLE_START');
+    Log.i(
+      'axis=$axis, selectedLineIndex=$index, lineId=${line.id}, '
+      'start=(${line.startX},${line.startY}), end=(${end.x},${end.y}), '
+      'length=${line.length}',
+    );
+    Log.i('constraints=${_formatConstraintList(constraints)}');
+  }
+
+  void _logAxisToggleAttempt(
+    String name,
+    _RoomBundle bundle, {
+    int? pinnedVertexIndex,
+    IntPoint? pinnedVertexTarget,
+  }) {
+    final result = PlasterConstraintSolver.solve(
+      lines: bundle.lines,
+      constraints: bundle.constraints,
+      pinnedVertexIndex: pinnedVertexIndex,
+      pinnedVertexTarget: pinnedVertexTarget,
+    );
+    final violationText = result.violations.isEmpty
+        ? '<none>'
+        : result.violations
+              .map(
+                (violation) =>
+                    'lineId=${violation.constraint.lineId},'
+                    'type=${violation.constraint.type.name},'
+                    'error=${violation.error.toStringAsFixed(1)}',
+              )
+              .join(' | ');
+    final pinnedTargetText = pinnedVertexTarget == null
+        ? '<none>'
+        : '(${pinnedVertexTarget.x},${pinnedVertexTarget.y})';
+    Log.i(
+      'PLASTER_AXIS_TOGGLE_ATTEMPT '
+      'name=$name, converged=${result.converged}, '
+      'pinnedVertexIndex=$pinnedVertexIndex, '
+      'pinnedVertexTarget=$pinnedTargetText, '
+      'violations=$violationText',
+    );
+  }
+
+  String _formatConstraintList(List<PlasterRoomConstraint> constraints) {
+    if (constraints.isEmpty) {
+      return '<none>';
+    }
+    return constraints
+        .map(
+          (constraint) =>
+              '{lineId=${constraint.lineId},'
+              'type=${constraint.type.name},'
+              'target=${constraint.targetValue}}',
+        )
+        .join(', ');
+  }
+
   _RoomBundle _bundleWithAxisProjectedLine(
     _RoomBundle bundle,
     int lineIndex,
@@ -1581,6 +1661,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
     final lineEnd = PlasterGeometry.lineEnd(_currentRoom.lines, index);
     final nextIndex = (index + 1) % _currentRoom.lines.length;
+    _logAxisToggleStart('horizontal', index, line, lineEnd, constraints);
     final startPinnedBundle = _bundleWithAxisProjectedLine(
       bundle,
       index,
@@ -1593,6 +1674,19 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       PlasterConstraintType.horizontal,
       pinStart: false,
     );
+    _logAxisToggleAttempt(
+      'start-pinned',
+      startPinnedBundle,
+      pinnedVertexIndex: index,
+      pinnedVertexTarget: IntPoint(line.startX, line.startY),
+    );
+    _logAxisToggleAttempt(
+      'end-pinned',
+      endPinnedBundle,
+      pinnedVertexIndex: nextIndex,
+      pinnedVertexTarget: lineEnd,
+    );
+    _logAxisToggleAttempt('free', bundle);
     final solved =
         await _trySolveAndUpdateRoom(
           startPinnedBundle,
@@ -1649,6 +1743,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
     final lineEnd = PlasterGeometry.lineEnd(_currentRoom.lines, index);
     final nextIndex = (index + 1) % _currentRoom.lines.length;
+    _logAxisToggleStart('vertical', index, line, lineEnd, constraints);
     final startPinnedBundle = _bundleWithAxisProjectedLine(
       bundle,
       index,
@@ -1661,6 +1756,19 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       PlasterConstraintType.vertical,
       pinStart: false,
     );
+    _logAxisToggleAttempt(
+      'start-pinned',
+      startPinnedBundle,
+      pinnedVertexIndex: index,
+      pinnedVertexTarget: IntPoint(line.startX, line.startY),
+    );
+    _logAxisToggleAttempt(
+      'end-pinned',
+      endPinnedBundle,
+      pinnedVertexIndex: nextIndex,
+      pinnedVertexTarget: lineEnd,
+    );
+    _logAxisToggleAttempt('free', bundle);
     final solved =
         await _trySolveAndUpdateRoom(
           startPinnedBundle,
@@ -2165,6 +2273,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _syncRoomControllers();
     },
     onTapLine: (index) async {
+      _logLineSelection('tap', index);
       setState(() {
         _selectedLineIndex = index;
         _selectedIntersectionIndex = null;
