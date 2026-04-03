@@ -1394,7 +1394,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     unawaited(
       Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => _ProjectSheetExplorerScreen(sheets: sheets),
+          builder: (_) =>
+              _ProjectSheetExplorerScreen(sheets: sheets, layouts: layouts),
         ),
       ),
     );
@@ -3200,8 +3201,12 @@ class _SheetUsageDiagramPainter extends CustomPainter {
 
 class _ProjectSheetExplorerScreen extends StatelessWidget {
   final List<PlasterProjectSheet> sheets;
+  final List<PlasterSurfaceLayout> layouts;
 
-  const _ProjectSheetExplorerScreen({required this.sheets});
+  const _ProjectSheetExplorerScreen({
+    required this.sheets,
+    required this.layouts,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -3214,6 +3219,7 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
         (left, right) =>
             left.first.material.name.compareTo(right.first.material.name),
       );
+    final layoutByLabel = {for (final layout in layouts) layout.label: layout};
 
     return Scaffold(
       appBar: AppBar(title: const Text('Sheet Explorer')),
@@ -3222,6 +3228,20 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
         children: [
           const _ProjectSheetLegend(),
           const SizedBox(height: 16),
+          Text('Surfaces', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          for (final layout in layouts)
+            _SurfaceSheetExplorerSection(
+              layout: layout,
+              sheetNumbers: [
+                for (final sheet in sheets)
+                  if (sheet.usedPieces.any(
+                    (piece) => piece.surfaceLabel == layout.label,
+                  ))
+                    sheet.sheetNumber,
+              ],
+            ),
+          const SizedBox(height: 24),
           for (final group in orderedGroups) ...[
             Text(
               group.first.material.name,
@@ -3232,7 +3252,8 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
               spacing: 12,
               runSpacing: 12,
               children: [
-                for (final sheet in group) _ProjectSheetCard(sheet: sheet),
+                for (final sheet in group)
+                  _ProjectSheetCard(sheet: sheet, layoutByLabel: layoutByLabel),
               ],
             ),
             const SizedBox(height: 20),
@@ -3256,6 +3277,59 @@ class _ProjectSheetLegend extends StatelessWidget {
       _LegendChip(label: 'Reusable offcut', color: Color(0xFF4A90E2)),
       _LegendChip(label: 'Scrap', color: Color(0xFFE67E22)),
     ],
+  );
+}
+
+class _SurfaceSheetExplorerSection extends StatelessWidget {
+  final PlasterSurfaceLayout layout;
+  final List<int> sheetNumbers;
+
+  const _SurfaceSheetExplorerSection({
+    required this.layout,
+    required this.sheetNumbers,
+  });
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SurfaceLayoutDiagram(
+            layout: layout,
+            unitSystem: layout.material.unitSystem,
+            width: 112,
+            height: 72,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  layout.label,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${layout.material.name}  '
+                  '${layout.sheetsAcross} across x ${layout.sheetsDown} high',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                Text(layout.direction.layoutLabel),
+                const SizedBox(height: 6),
+                Text(
+                  sheetNumbers.isEmpty
+                      ? 'Sheets: none'
+                      : 'Sheets: ${sheetNumbers.join(', ')}',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
   );
 }
 
@@ -3289,8 +3363,9 @@ class _LegendChip extends StatelessWidget {
 
 class _ProjectSheetCard extends StatelessWidget {
   final PlasterProjectSheet sheet;
+  final Map<String, PlasterSurfaceLayout> layoutByLabel;
 
-  const _ProjectSheetCard({required this.sheet});
+  const _ProjectSheetCard({required this.sheet, required this.layoutByLabel});
 
   String _formatLength(int value) =>
       PlasterGeometry.formatDisplayLength(value, sheet.material.unitSystem);
@@ -3312,6 +3387,9 @@ class _ProjectSheetCard extends StatelessWidget {
         .where((piece) => piece.reusedOffcut)
         .length;
     final freshCount = sheet.usedPieces.length - reusedCount;
+    final surfaces = {
+      for (final piece in sheet.usedPieces) piece.surfaceLabel,
+    }.toList()..sort();
 
     return Container(
       width: 280,
@@ -3345,6 +3423,13 @@ class _ProjectSheetCard extends StatelessWidget {
           Text('Reused-offcut pieces: $reusedCount'),
           Text('Reusable offcuts: ${_formatArea(reusableArea)}'),
           Text('Scrap: ${_formatArea(scrapArea)}'),
+          const SizedBox(height: 6),
+          Text(
+            surfaces.isEmpty
+                ? 'Surfaces: none'
+                : 'Surfaces: ${surfaces.join(', ')}',
+            style: const TextStyle(fontSize: 11),
+          ),
         ],
       ),
     );
