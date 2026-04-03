@@ -3001,7 +3001,6 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labels = _ExplorerSheetLabels(sheets);
     final orderedLayouts = [...layouts]
       ..sort((left, right) {
         if (left.isCeiling != right.isCeiling) {
@@ -3036,6 +3035,7 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
                     ))
                       sheet,
                 ];
+                final labels = _ExplorerSheetLabels(layoutSheets);
                 final sheetNumbers = [
                   for (final sheet in layoutSheets) labels.sheetLabel(sheet),
                 ];
