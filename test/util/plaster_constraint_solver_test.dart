@@ -128,6 +128,119 @@ void main() {
       ),
     ];
 
+    List<PlasterRoomLine> latestDumpLines() => [
+      PlasterRoomLine.forInsert(
+        roomId: 1,
+        seqNo: 0,
+        startX: -1519,
+        startY: 112068,
+        length: 130000,
+      )..id = 1,
+      PlasterRoomLine.forInsert(
+        roomId: 1,
+        seqNo: 1,
+        startX: 128481,
+        startY: 112068,
+        length: 23000,
+      )..id = 2,
+      PlasterRoomLine.forInsert(
+        roomId: 1,
+        seqNo: 2,
+        startX: 122000,
+        startY: 90000,
+        length: 26926,
+      )..id = 3,
+      PlasterRoomLine.forInsert(
+        roomId: 1,
+        seqNo: 3,
+        startX: 108000,
+        startY: 67000,
+        length: 25000,
+      )..id = 8,
+      PlasterRoomLine.forInsert(
+        roomId: 1,
+        seqNo: 4,
+        startX: 108000,
+        startY: 42000,
+        length: 37000,
+      )..id = 7,
+      PlasterRoomLine.forInsert(
+        roomId: 1,
+        seqNo: 5,
+        startX: 71000,
+        startY: 42000,
+        length: 17726,
+      )..id = 6,
+      PlasterRoomLine.forInsert(
+        roomId: 1,
+        seqNo: 6,
+        startX: 76481,
+        startY: 58857,
+        length: 78000,
+        plasterSelected: false,
+      )..id = 5,
+      PlasterRoomLine.forInsert(
+        roomId: 1,
+        seqNo: 7,
+        startX: -1519,
+        startY: 58857,
+        length: 53211,
+        plasterSelected: false,
+      )..id = 4,
+    ];
+
+    List<PlasterRoomConstraint> latestDumpConstraints() => [
+      PlasterRoomConstraint.forInsert(
+        roomId: 1,
+        lineId: 1,
+        type: PlasterConstraintType.horizontal,
+      ),
+      PlasterRoomConstraint.forInsert(
+        roomId: 1,
+        lineId: 1,
+        type: PlasterConstraintType.lineLength,
+        targetValue: 130000,
+      ),
+      PlasterRoomConstraint.forInsert(
+        roomId: 1,
+        lineId: 2,
+        type: PlasterConstraintType.lineLength,
+        targetValue: 23000,
+      ),
+      PlasterRoomConstraint.forInsert(
+        roomId: 1,
+        lineId: 4,
+        type: PlasterConstraintType.vertical,
+      ),
+      PlasterRoomConstraint.forInsert(
+        roomId: 1,
+        lineId: 5,
+        type: PlasterConstraintType.horizontal,
+      ),
+      PlasterRoomConstraint.forInsert(
+        roomId: 1,
+        lineId: 5,
+        type: PlasterConstraintType.lineLength,
+        targetValue: 78000,
+      ),
+      PlasterRoomConstraint.forInsert(
+        roomId: 1,
+        lineId: 7,
+        type: PlasterConstraintType.horizontal,
+      ),
+      PlasterRoomConstraint.forInsert(
+        roomId: 1,
+        lineId: 8,
+        type: PlasterConstraintType.vertical,
+      ),
+      PlasterRoomConstraint.forInsert(
+        roomId: 1,
+        lineId: 8,
+        type: PlasterConstraintType.lineLength,
+        targetValue: 25000,
+      ),
+    ];
+
     test('solves a line length constraint', () {
       final lines = seededLines();
       final moved = PlasterGeometry.setLength(lines, 0, 45000);
@@ -372,6 +485,55 @@ void main() {
         isTrue,
         reason: 'line 2 should be able to become horizontal in the dumped room',
       );
+    });
+
+    test('latest dumped room can horizontalize selected line within '
+        'rounding tolerance', () {
+      final lines = latestDumpLines();
+      final constraints = [
+        ...latestDumpConstraints(),
+        PlasterRoomConstraint.forInsert(
+          roomId: 1,
+          lineId: 3,
+          type: PlasterConstraintType.horizontal,
+        ),
+      ];
+
+      final targetLineIndex = lines.indexWhere((line) => line.id == 3);
+      expect(targetLineIndex, isNonNegative);
+      final nextIndex = (targetLineIndex + 1) % lines.length;
+      final targetLine = lines[targetLineIndex];
+      final targetEnd = PlasterGeometry.lineEnd(lines, targetLineIndex);
+
+      final startPinnedLines = List<PlasterRoomLine>.from(lines);
+      startPinnedLines[nextIndex] = startPinnedLines[nextIndex].copyWith(
+        startY: targetLine.startY,
+      );
+
+      final endPinnedLines = List<PlasterRoomLine>.from(lines);
+      endPinnedLines[targetLineIndex] = endPinnedLines[targetLineIndex]
+          .copyWith(startY: targetEnd.y);
+
+      final startPinnedSolve = PlasterConstraintSolver.solve(
+        lines: startPinnedLines,
+        constraints: constraints,
+        pinnedVertexIndex: targetLineIndex,
+        pinnedVertexTarget: IntPoint(targetLine.startX, targetLine.startY),
+      );
+      final endPinnedSolve = PlasterConstraintSolver.solve(
+        lines: endPinnedLines,
+        constraints: constraints,
+        pinnedVertexIndex: nextIndex,
+        pinnedVertexTarget: targetEnd,
+      );
+      final freeSolve = PlasterConstraintSolver.solve(
+        lines: lines,
+        constraints: constraints,
+      );
+
+      expect(startPinnedSolve.converged, isTrue);
+      expect(endPinnedSolve.converged, isTrue);
+      expect(freeSolve.converged, isTrue);
     });
   });
 }

@@ -36,7 +36,7 @@ class PlasterConstraintViolation {
 
 class PlasterConstraintSolver {
   static const _maxIterations = 80;
-  static const _positionTolerance = 0.75;
+  static const _positionTolerance = 1.0;
   static const _angleToleranceRadians = pi / 1800;
   static const _angleToleranceDegrees = 1.5;
 
@@ -325,10 +325,9 @@ class PlasterConstraintSolver {
       double? error;
       switch (constraint.type) {
         case PlasterConstraintType.lineLength:
-          error =
-              (line.length - (constraint.targetValue ?? line.length))
-                  .abs()
-                  .toDouble();
+          error = (line.length - (constraint.targetValue ?? line.length))
+              .abs()
+              .toDouble();
         case PlasterConstraintType.horizontal:
           error = (line.startY - end.y).abs().toDouble();
         case PlasterConstraintType.vertical:
