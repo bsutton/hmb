@@ -36,7 +36,12 @@ class PlasterConstraintViolation {
 
 class PlasterConstraintSolver {
   static const _maxIterations = 80;
-  static const _positionTolerance = 1.0;
+  // The iterative solver operates in double space and should converge a bit
+  // tighter than the final persisted geometry allows.
+  static const _solverPositionTolerance = 0.75;
+  // Room geometry is persisted as integer minor units, so the final snapped
+  // result needs to tolerate a one-unit residual after rounding.
+  static const _snappedGeometryTolerance = 1.0;
   static const _angleToleranceRadians = pi / 1800;
   static const _angleToleranceDegrees = 1.5;
 
@@ -122,7 +127,7 @@ class PlasterConstraintSolver {
         }
       }
       _applyPinned(points, pinnedIndex, pinnedVertexTarget);
-      if (maxError <= _positionTolerance) {
+      if (maxError <= _solverPositionTolerance) {
         break;
       }
     }
@@ -356,9 +361,9 @@ class PlasterConstraintSolver {
     PlasterConstraintType type,
     double error,
   ) => switch (type) {
-    PlasterConstraintType.lineLength => error <= _positionTolerance,
-    PlasterConstraintType.horizontal => error <= _positionTolerance,
-    PlasterConstraintType.vertical => error <= _positionTolerance,
+    PlasterConstraintType.lineLength => error <= _snappedGeometryTolerance,
+    PlasterConstraintType.horizontal => error <= _snappedGeometryTolerance,
+    PlasterConstraintType.vertical => error <= _snappedGeometryTolerance,
     PlasterConstraintType.jointAngle => error <= _angleToleranceDegrees,
   };
 }
