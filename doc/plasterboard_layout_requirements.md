@@ -311,6 +311,132 @@ allowance, not merged into the actual layout waste figure.
 
 It should not be calculated by applying waste separately to each surface.
 
+## Benchmarking and Solver Comparison
+
+Changes to the layout solver must be evaluated against a versioned benchmark
+corpus. This is how the project compares solver generations without silently
+rewriting history when solver inputs evolve.
+
+### Benchmark artifacts
+
+The current benchmark artifacts are:
+
+- fixture corpus:
+  `test/fixtures/plaster_solver/v1/benchmark_fixture_v1.dart`
+- baseline thresholds:
+  `test/fixtures/plaster_solver/v1/baseline_results_v1.dart`
+- adapter/loader support:
+  `test/util/plaster_solver_benchmark_support.dart`
+- executable benchmark test:
+  `test/util/plaster_geometry_benchmark_test.dart`
+
+Each benchmark run is defined by:
+
+- fixture schema version
+- scoring version
+- solver family
+
+These versions must not be conflated.
+
+### Fixture versioning rules
+
+When solver inputs change:
+
+- do not overwrite an older fixture set in place
+- add a new fixture version instead, such as `v2`
+- keep older fixture versions runnable where practical
+- adapt older fixture versions forward through the loader if the new solver can
+  still interpret them safely with defaults
+
+Examples of changes that may require a new fixture version:
+
+- adding per-ceiling overrides
+- adding fixing-face width inputs
+- changing how framing or support metadata is modeled
+
+### Scoring versioning rules
+
+If the meaning of a "good" solution changes, the scoring version must change.
+
+Examples:
+
+- adding a new penalty for poor support alignment
+- increasing or reducing the importance of waste
+- adding a new quality metric beyond sheet count, waste, and joint tape
+
+Changing the scoring meaning is not the same as changing the solver.
+
+### Current benchmark metrics
+
+The current benchmark corpus tracks these metrics:
+
+- total sheet count
+- estimated waste percent
+- total joint tape length
+
+These metrics are used because they cover:
+
+- ordering efficiency
+- material waste
+- join complexity / finishing effort
+
+They are baseline quality checks, not yet proof of optimality.
+
+### Running the benchmark
+
+Run the versioned plasterboard benchmark with:
+
+```bash
+flutter test test/util/plaster_geometry_benchmark_test.dart
+```
+
+Run full analysis after benchmark-related changes with:
+
+```bash
+dart analyze
+```
+
+### Comparing solver generations
+
+To compare two solver versions:
+
+1. Run both solvers against the same benchmark fixture version.
+2. Use the same scoring version when comparing results.
+3. Compare each named scenario by:
+   - sheet count
+   - waste percent
+   - joint tape length
+4. Record changes explicitly rather than editing the old baseline to fit the
+   new solver.
+
+If the new solver improves the result consistently, update the baseline
+thresholds intentionally in a new commit with explanation.
+
+If the new solver requires materially different inputs, introduce a new fixture
+version and document the adapter/defaulting strategy.
+
+### Baseline room corpus
+
+The current baseline corpus includes:
+
+- square walls-only room
+- square room with ceiling
+- bedroom with ceiling
+- living room walls-only
+- hallway with ceiling
+- large open room with ceiling
+- notched family room with ceiling
+
+This set is intentionally mixed:
+
+- simple rectangles
+- elongated rooms
+- larger ceilings
+- non-rectangular plans
+
+Future additions should expand the corpus rather than replace it unless a new
+fixture version is intentionally introduced.
+
 ## Scoring and Search
 
 The optimizer should not minimize waste alone.
