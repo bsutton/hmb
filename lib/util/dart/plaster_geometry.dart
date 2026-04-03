@@ -101,6 +101,38 @@ class PlasterSheetUsage {
   );
 }
 
+class PlasterProjectSheetPiece extends PlasterSheetUsagePiece {
+  final String surfaceLabel;
+  final bool reusedOffcut;
+
+  const PlasterProjectSheetPiece({
+    required super.x,
+    required super.y,
+    required super.width,
+    required super.height,
+    required this.surfaceLabel,
+    required this.reusedOffcut,
+  });
+}
+
+class PlasterProjectSheet {
+  final int sheetNumber;
+  final PlasterMaterialSize material;
+  final int sheetWidth;
+  final int sheetHeight;
+  final List<PlasterProjectSheetPiece> usedPieces;
+  final List<PlasterSheetOffcut> offcuts;
+
+  const PlasterProjectSheet({
+    required this.sheetNumber,
+    required this.material,
+    required this.sheetWidth,
+    required this.sheetHeight,
+    required this.usedPieces,
+    required this.offcuts,
+  });
+}
+
 class PlasterSurfaceLayout {
   final int roomId;
   final int? lineId;
@@ -405,6 +437,46 @@ class _PlacementChoice {
     required this.fragmentationPenalty,
     required this.reusableArea,
   });
+}
+
+class _PackableSurfacePiece {
+  final String surfaceLabel;
+  final int width;
+  final int height;
+
+  const _PackableSurfacePiece({
+    required this.surfaceLabel,
+    required this.width,
+    required this.height,
+  });
+}
+
+class _ExplorerPackedSheet {
+  final List<_FreeRect> freeRects;
+  final List<PlasterProjectSheetPiece> usedPieces;
+
+  const _ExplorerPackedSheet({
+    required this.freeRects,
+    required this.usedPieces,
+  });
+
+  _ExplorerPackedSheet copy() => _ExplorerPackedSheet(
+    freeRects: [
+      for (final rect in freeRects)
+        _FreeRect(rect.x, rect.y, rect.width, rect.height),
+    ],
+    usedPieces: [
+      for (final piece in usedPieces)
+        PlasterProjectSheetPiece(
+          x: piece.x,
+          y: piece.y,
+          width: piece.width,
+          height: piece.height,
+          surfaceLabel: piece.surfaceLabel,
+          reusedOffcut: piece.reusedOffcut,
+        ),
+    ],
+  );
 }
 
 class _PlasterSearchBudget {
@@ -2078,6 +2150,175 @@ class PlasterGeometry {
     );
   }
 
+  static List<_ExplorerPackedSheet> _packSurfacePiecesForExplorer({
+    required List<_PackableSurfacePiece> pieces,
+    required int sheetWidth,
+    required int sheetHeight,
+    required int minReusableEdge,
+  }) {
+    if (pieces.isEmpty) {
+      return const [];
+    }
+
+    final sorted = [...pieces]
+      ..sort((left, right) {
+        final areaCompare = (right.width * right.height).compareTo(
+          left.width * left.height,
+        );
+        if (areaCompare != 0) {
+          return areaCompare;
+        }
+        final heightCompare = right.height.compareTo(left.height);
+        if (heightCompare != 0) {
+          return heightCompare;
+        }
+        return right.width.compareTo(left.width);
+      });
+
+    var sheets = <_ExplorerPackedSheet>[];
+    for (final piece in sorted) {
+      final state = _applyExplorerPiece(
+        sheets: sheets,
+        piece: piece,
+        sheetWidth: sheetWidth,
+        sheetHeight: sheetHeight,
+        minReusableEdge: minReusableEdge,
+      );
+      sheets = state;
+    }
+    return sheets;
+  }
+
+  static List<_ExplorerPackedSheet> _applyExplorerPiece({
+    required List<_ExplorerPackedSheet> sheets,
+    required _PackableSurfacePiece piece,
+    required int sheetWidth,
+    required int sheetHeight,
+    required int minReusableEdge,
+  }) {
+    final choices =
+        <
+          ({
+            int sheetIndex,
+            int rectIndex,
+            int pieceWidth,
+            int pieceHeight,
+            List<_FreeRect> freeRects,
+            int leftoverArea,
+            int fragmentationPenalty,
+            int reusableArea,
+          })
+        >[];
+
+    final orientations = <(int, int)>[
+      (piece.width, piece.height),
+      if (piece.width != piece.height) (piece.height, piece.width),
+    ];
+
+    for (var sheetIndex = 0; sheetIndex < sheets.length; sheetIndex++) {
+      final sheet = sheets[sheetIndex];
+      for (var rectIndex = 0; rectIndex < sheet.freeRects.length; rectIndex++) {
+        final rect = sheet.freeRects[rectIndex];
+        for (final orientation in orientations) {
+          if (orientation.$1 > rect.width || orientation.$2 > rect.height) {
+            continue;
+          }
+          for (final splitRects in _guillotineSplitVariants(
+            rect: rect,
+            pieceWidth: orientation.$1,
+            pieceHeight: orientation.$2,
+          )) {
+            final pruned = [...splitRects];
+            _pruneFreeRects(pruned);
+            choices.add((
+              sheetIndex: sheetIndex,
+              rectIndex: rectIndex,
+              pieceWidth: orientation.$1,
+              pieceHeight: orientation.$2,
+              freeRects: pruned,
+              leftoverArea: rect.area - orientation.$1 * orientation.$2,
+              fragmentationPenalty: _fragmentationPenalty(
+                pruned,
+                minReusableEdge,
+              ),
+              reusableArea: _reusableArea(pruned, minReusableEdge),
+            ));
+          }
+        }
+      }
+    }
+
+    for (final orientation in orientations) {
+      if (orientation.$1 > sheetWidth || orientation.$2 > sheetHeight) {
+        continue;
+      }
+      for (final splitRects in _guillotineSplitVariants(
+        rect: _FreeRect(0, 0, sheetWidth, sheetHeight),
+        pieceWidth: orientation.$1,
+        pieceHeight: orientation.$2,
+      )) {
+        final pruned = [...splitRects];
+        _pruneFreeRects(pruned);
+        choices.add((
+          sheetIndex: sheets.length,
+          rectIndex: -1,
+          pieceWidth: orientation.$1,
+          pieceHeight: orientation.$2,
+          freeRects: pruned,
+          leftoverArea:
+              sheetWidth * sheetHeight - orientation.$1 * orientation.$2,
+          fragmentationPenalty: _fragmentationPenalty(pruned, minReusableEdge),
+          reusableArea: _reusableArea(pruned, minReusableEdge),
+        ));
+      }
+    }
+
+    choices.sort((left, right) {
+      final newSheetCompare = left.sheetIndex.compareTo(right.sheetIndex);
+      if (newSheetCompare != 0) {
+        return newSheetCompare;
+      }
+      final leftoverCompare = left.leftoverArea.compareTo(right.leftoverArea);
+      if (leftoverCompare != 0) {
+        return leftoverCompare;
+      }
+      final fragmentationCompare = left.fragmentationPenalty.compareTo(
+        right.fragmentationPenalty,
+      );
+      if (fragmentationCompare != 0) {
+        return fragmentationCompare;
+      }
+      return right.reusableArea.compareTo(left.reusableArea);
+    });
+
+    final choice = choices.first;
+    final nextSheets = [for (final sheet in sheets) sheet.copy()];
+    if (choice.sheetIndex == nextSheets.length) {
+      nextSheets.add(const _ExplorerPackedSheet(freeRects: [], usedPieces: []));
+    }
+    final targetSheet = nextSheets[choice.sheetIndex];
+    final freeRects = [for (final rect in targetSheet.freeRects) rect];
+    final consumedRect = choice.rectIndex >= 0
+        ? freeRects.removeAt(choice.rectIndex)
+        : _FreeRect(0, 0, sheetWidth, sheetHeight);
+    freeRects.addAll(choice.freeRects);
+    nextSheets[choice.sheetIndex] = _ExplorerPackedSheet(
+      freeRects: freeRects,
+      usedPieces: [
+        ...targetSheet.usedPieces,
+        PlasterProjectSheetPiece(
+          x: consumedRect.x,
+          y: consumedRect.y,
+          width: choice.pieceWidth,
+          height: choice.pieceHeight,
+          surfaceLabel: piece.surfaceLabel,
+          reusedOffcut: choice.rectIndex >= 0,
+        ),
+      ],
+    );
+    return nextSheets;
+  }
+
   static List<_PlacementChoice> _placementChoices({
     required _PackingState state,
     required int pieceWidth,
@@ -2544,6 +2785,95 @@ class PlasterGeometry {
       .firstWhere((shape) => shape.room.id == layout.roomId)
       .room
       .unitSystem;
+
+  static List<PlasterProjectSheet> buildProjectSheetExplorer(
+    List<PlasterRoomShape> roomShapes,
+    List<PlasterSurfaceLayout> layouts,
+  ) {
+    final groupedPieces = <String, List<_PackableSurfacePiece>>{};
+    final groupedMaterials = <String, PlasterMaterialSize>{};
+    final groupedSheetSizes = <String, (int, int)>{};
+
+    for (final layout in layouts) {
+      final roomUnitSystem = _unitSystemForArea(layout, roomShapes);
+      final key =
+          '${layout.material.id}:${layout.material.unitSystem.name}:'
+          '${layout.material.width}:${layout.material.height}';
+      final pieces = groupedPieces.putIfAbsent(key, () => []);
+      for (final piece in layout.placements) {
+        pieces.add(
+          _PackableSurfacePiece(
+            surfaceLabel: layout.label,
+            width: convertLength(
+              piece.width,
+              roomUnitSystem,
+              layout.material.unitSystem,
+            ),
+            height: convertLength(
+              piece.height,
+              roomUnitSystem,
+              layout.material.unitSystem,
+            ),
+          ),
+        );
+      }
+      groupedMaterials.putIfAbsent(key, () => layout.material);
+      groupedSheetSizes.putIfAbsent(
+        key,
+        () => (layout.material.width, layout.material.height),
+      );
+    }
+
+    var nextSheetNumber = 1;
+    final orderedKeys = groupedPieces.keys.toList()
+      ..sort((left, right) {
+        final leftMaterial = groupedMaterials[left]!;
+        final rightMaterial = groupedMaterials[right]!;
+        final nameCompare = leftMaterial.name.compareTo(rightMaterial.name);
+        if (nameCompare != 0) {
+          return nameCompare;
+        }
+        return leftMaterial.id.compareTo(rightMaterial.id);
+      });
+
+    final sheets = <PlasterProjectSheet>[];
+    for (final key in orderedKeys) {
+      final material = groupedMaterials[key]!;
+      final sheetSize = groupedSheetSizes[key]!;
+      final packedSheets = _packSurfacePiecesForExplorer(
+        pieces: groupedPieces[key]!,
+        sheetWidth: sheetSize.$1,
+        sheetHeight: sheetSize.$2,
+        minReusableEdge: minEdgePiece(_unitSystemForMaterialKey(key)),
+      );
+      for (final packedSheet in packedSheets) {
+        sheets.add(
+          PlasterProjectSheet(
+            sheetNumber: nextSheetNumber++,
+            material: material,
+            sheetWidth: sheetSize.$1,
+            sheetHeight: sheetSize.$2,
+            usedPieces: packedSheet.usedPieces,
+            offcuts: [
+              for (final rect in packedSheet.freeRects)
+                PlasterSheetOffcut(
+                  x: rect.x,
+                  y: rect.y,
+                  width: rect.width,
+                  height: rect.height,
+                  reusable:
+                      rect.width >=
+                          minEdgePiece(_unitSystemForMaterialKey(key)) &&
+                      rect.height >=
+                          minEdgePiece(_unitSystemForMaterialKey(key)),
+                ),
+            ],
+          ),
+        );
+      }
+    }
+    return sheets;
+  }
 
   static (int, int) _classifyCorners(PlasterRoomShape shape) {
     if (shape.lines.length < 3) {

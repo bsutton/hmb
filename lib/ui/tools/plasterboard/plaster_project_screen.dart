@@ -1376,6 +1376,30 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
   }
 
+  List<PlasterRoomShape> _roomShapesForLayouts() => [
+    for (final bundle in _rooms)
+      PlasterRoomShape(
+        project: _project,
+        room: bundle.room,
+        lines: bundle.lines,
+        openings: bundle.openings,
+      ),
+  ];
+
+  void _openSheetExplorer(List<PlasterSurfaceLayout> layouts) {
+    final sheets = PlasterGeometry.buildProjectSheetExplorer(
+      _roomShapesForLayouts(),
+      layouts,
+    );
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => _ProjectSheetExplorerScreen(sheets: sheets),
+        ),
+      ),
+    );
+  }
+
   String _formatKg(double value) => value.toStringAsFixed(value < 10 ? 1 : 0);
 
   void _moveOpeningLocally(int index, IntPoint point, int anchorOffset) {
@@ -2317,7 +2341,23 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Sheet Layout', style: Theme.of(context).textTheme.titleMedium),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Sheet Layout',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: layouts.isEmpty
+                    ? null
+                    : () => _openSheetExplorer(layouts),
+                icon: const Icon(Icons.account_tree_outlined),
+                label: const Text('Sheet Explorer'),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           _buildAnalysisStatus(),
           ..._buildSheetLayoutCards(layouts),
@@ -3156,6 +3196,255 @@ class _SheetUsageDiagramPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _SheetUsageDiagramPainter oldDelegate) =>
       oldDelegate.usage != usage || oldDelegate.unitSystem != unitSystem;
+}
+
+class _ProjectSheetExplorerScreen extends StatelessWidget {
+  final List<PlasterProjectSheet> sheets;
+
+  const _ProjectSheetExplorerScreen({required this.sheets});
+
+  @override
+  Widget build(BuildContext context) {
+    final grouped = <int, List<PlasterProjectSheet>>{};
+    for (final sheet in sheets) {
+      grouped.putIfAbsent(sheet.material.id, () => []).add(sheet);
+    }
+    final orderedGroups = grouped.values.toList()
+      ..sort(
+        (left, right) =>
+            left.first.material.name.compareTo(right.first.material.name),
+      );
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Sheet Explorer')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const _ProjectSheetLegend(),
+          const SizedBox(height: 16),
+          for (final group in orderedGroups) ...[
+            Text(
+              group.first.material.name,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final sheet in group) _ProjectSheetCard(sheet: sheet),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ProjectSheetLegend extends StatelessWidget {
+  const _ProjectSheetLegend();
+
+  @override
+  Widget build(BuildContext context) => const Wrap(
+    spacing: 12,
+    runSpacing: 8,
+    children: [
+      _LegendChip(label: 'Fresh sheet piece', color: Color(0xFF4DD8B0)),
+      _LegendChip(label: 'Reused offcut piece', color: Color(0xFF8B5CF6)),
+      _LegendChip(label: 'Reusable offcut', color: Color(0xFF4A90E2)),
+      _LegendChip(label: 'Scrap', color: Color(0xFFE67E22)),
+    ],
+  );
+}
+
+class _LegendChip extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _LegendChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.white24),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(label),
+      ],
+    ),
+  );
+}
+
+class _ProjectSheetCard extends StatelessWidget {
+  final PlasterProjectSheet sheet;
+
+  const _ProjectSheetCard({required this.sheet});
+
+  String _formatLength(int value) =>
+      PlasterGeometry.formatDisplayLength(value, sheet.material.unitSystem);
+
+  String _formatArea(int area) =>
+      PlasterGeometry.formatDisplayArea(area, sheet.material.unitSystem);
+
+  @override
+  Widget build(BuildContext context) {
+    final reusableArea = sheet.offcuts.fold<int>(
+      0,
+      (sum, offcut) => sum + (offcut.reusable ? offcut.area : 0),
+    );
+    final scrapArea = sheet.offcuts.fold<int>(
+      0,
+      (sum, offcut) => sum + (offcut.reusable ? 0 : offcut.area),
+    );
+    final reusedCount = sheet.usedPieces
+        .where((piece) => piece.reusedOffcut)
+        .length;
+    final freshCount = sheet.usedPieces.length - reusedCount;
+
+    return Container(
+      width: 280,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.white24),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Sheet ${sheet.sheetNumber}',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          Text(
+            '${_formatLength(sheet.sheetWidth)} x '
+            '${_formatLength(sheet.sheetHeight)}',
+            style: const TextStyle(fontSize: 11),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: 260,
+            height: 160,
+            child: CustomPaint(
+              painter: _ProjectSheetExplorerPainter(sheet: sheet),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text('Fresh pieces: $freshCount'),
+          Text('Reused-offcut pieces: $reusedCount'),
+          Text('Reusable offcuts: ${_formatArea(reusableArea)}'),
+          Text('Scrap: ${_formatArea(scrapArea)}'),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProjectSheetExplorerPainter extends CustomPainter {
+  final PlasterProjectSheet sheet;
+
+  const _ProjectSheetExplorerPainter({required this.sheet});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final border = Paint()
+      ..color = Colors.white70
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    final background = Paint()
+      ..color = Colors.white.withSafeOpacity(0.04)
+      ..style = PaintingStyle.fill;
+    final freshPaint = Paint()..color = const Color(0xFF4DD8B0);
+    final reusedPaint = Paint()..color = const Color(0xFF8B5CF6);
+    final offcutPaint = Paint()..color = const Color(0xFF4A90E2);
+    final scrapPaint = Paint()..color = const Color(0xFFE67E22);
+
+    final scale = min(
+      size.width / sheet.sheetWidth,
+      size.height / sheet.sheetHeight,
+    );
+    final scaledWidth = sheet.sheetWidth * scale;
+    final scaledHeight = sheet.sheetHeight * scale;
+    final offset = Offset(
+      (size.width - scaledWidth) / 2,
+      (size.height - scaledHeight) / 2,
+    );
+    final rect = offset & Size(scaledWidth, scaledHeight);
+    canvas.drawRect(rect, background);
+
+    for (final piece in sheet.usedPieces) {
+      final pieceRect = Rect.fromLTWH(
+        offset.dx + piece.x * scale,
+        offset.dy + piece.y * scale,
+        piece.width * scale,
+        piece.height * scale,
+      );
+      canvas.drawRect(pieceRect, piece.reusedOffcut ? reusedPaint : freshPaint);
+      _paintLabel(canvas, pieceRect, piece.surfaceLabel);
+    }
+
+    for (final offcut in sheet.offcuts) {
+      final offcutRect = Rect.fromLTWH(
+        offset.dx + offcut.x * scale,
+        offset.dy + offcut.y * scale,
+        offcut.width * scale,
+        offcut.height * scale,
+      );
+      canvas.drawRect(offcutRect, offcut.reusable ? offcutPaint : scrapPaint);
+    }
+
+    canvas.drawRect(rect, border);
+  }
+
+  void _paintLabel(Canvas canvas, Rect rect, String text) {
+    if (rect.width < 48 || rect.height < 24) {
+      return;
+    }
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 8,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 3,
+      ellipsis: '…',
+    )..layout(maxWidth: rect.width - 8);
+    final bg = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: rect.center,
+        width: min(rect.width - 4, painter.width + 8),
+        height: painter.height + 6,
+      ),
+      const Radius.circular(6),
+    );
+    canvas.drawRRect(bg, Paint()..color = const Color(0xBB111827));
+    painter.paint(
+      canvas,
+      Offset(
+        bg.left + (bg.width - painter.width) / 2,
+        bg.top + (bg.height - painter.height) / 2,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ProjectSheetExplorerPainter oldDelegate) =>
+      oldDelegate.sheet != sheet;
 }
 
 class _SurfaceLayoutViewerScreen extends StatelessWidget {
