@@ -3266,7 +3266,7 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
                         runSpacing: 12,
                         children: [
                           for (final sheet in layoutSheets)
-                            _ProjectSheetCard(sheet: sheet),
+                            _ProjectSheetCard(sheet: sheet, layout: layout),
                         ],
                       ),
                   ],
@@ -3387,8 +3387,9 @@ class _LegendChip extends StatelessWidget {
 
 class _ProjectSheetCard extends StatelessWidget {
   final PlasterProjectSheet sheet;
+  final PlasterSurfaceLayout layout;
 
-  const _ProjectSheetCard({required this.sheet});
+  const _ProjectSheetCard({required this.sheet, required this.layout});
 
   String _formatLength(int value) =>
       PlasterGeometry.formatDisplayLength(value, sheet.material.unitSystem);
@@ -3396,8 +3397,42 @@ class _ProjectSheetCard extends StatelessWidget {
   String _formatArea(int area) =>
       PlasterGeometry.formatDisplayArea(area, sheet.material.unitSystem);
 
+  bool get _rotateForLayout {
+    final relevantPieces = [
+      for (final piece in sheet.usedPieces)
+        if (piece.surfaceLabel == layout.label) piece,
+    ];
+    if (relevantPieces.isEmpty) {
+      return false;
+    }
+
+    var landscapeArea = 0;
+    var portraitArea = 0;
+    for (final piece in relevantPieces) {
+      final area = piece.area;
+      if (piece.width >= piece.height) {
+        landscapeArea += area;
+      } else {
+        portraitArea += area;
+      }
+    }
+    if (landscapeArea == portraitArea) {
+      return layout.direction == PlasterSheetDirection.horizontal
+          ? sheet.sheetWidth < sheet.sheetHeight
+          : sheet.sheetWidth > sheet.sheetHeight;
+    }
+    final targetLandscape = landscapeArea > portraitArea;
+    final stockLandscape = sheet.sheetWidth >= sheet.sheetHeight;
+    return targetLandscape != stockLandscape;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final rotateForLayout = _rotateForLayout;
+    final displayWidth = rotateForLayout ? sheet.sheetHeight : sheet.sheetWidth;
+    final displayHeight = rotateForLayout
+        ? sheet.sheetWidth
+        : sheet.sheetHeight;
     final reusableOffcuts = [
       for (final offcut in sheet.offcuts)
         if (offcut.reusable) offcut,
@@ -3442,8 +3477,8 @@ class _ProjectSheetCard extends StatelessWidget {
             style: Theme.of(context).textTheme.titleSmall,
           ),
           Text(
-            '${_formatLength(sheet.sheetWidth)} x '
-            '${_formatLength(sheet.sheetHeight)}',
+            '${_formatLength(displayWidth)} x '
+            '${_formatLength(displayHeight)}',
             style: const TextStyle(fontSize: 11),
           ),
           const SizedBox(height: 8),
@@ -3451,7 +3486,10 @@ class _ProjectSheetCard extends StatelessWidget {
             width: 260,
             height: 160,
             child: CustomPaint(
-              painter: _ProjectSheetExplorerPainter(sheet: sheet),
+              painter: _ProjectSheetExplorerPainter(
+                sheet: sheet,
+                rotateForLayout: rotateForLayout,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -3482,8 +3520,12 @@ class _ProjectSheetCard extends StatelessWidget {
 
 class _ProjectSheetExplorerPainter extends CustomPainter {
   final PlasterProjectSheet sheet;
+  final bool rotateForLayout;
 
-  const _ProjectSheetExplorerPainter({required this.sheet});
+  const _ProjectSheetExplorerPainter({
+    required this.sheet,
+    required this.rotateForLayout,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -3500,12 +3542,18 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
     final reusedLaterOffcutPaint = Paint()..color = const Color(0xFF0EA5A8);
     final scrapPaint = Paint()..color = const Color(0xFFE67E22);
 
+    final displaySheetWidth = rotateForLayout
+        ? sheet.sheetHeight
+        : sheet.sheetWidth;
+    final displaySheetHeight = rotateForLayout
+        ? sheet.sheetWidth
+        : sheet.sheetHeight;
     final scale = min(
-      size.width / sheet.sheetWidth,
-      size.height / sheet.sheetHeight,
+      size.width / displaySheetWidth,
+      size.height / displaySheetHeight,
     );
-    final scaledWidth = sheet.sheetWidth * scale;
-    final scaledHeight = sheet.sheetHeight * scale;
+    final scaledWidth = displaySheetWidth * scale;
+    final scaledHeight = displaySheetHeight * scale;
     final offset = Offset(
       (size.width - scaledWidth) / 2,
       (size.height - scaledHeight) / 2,
@@ -3514,22 +3562,26 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
     canvas.drawRect(rect, background);
 
     for (final piece in sheet.usedPieces) {
-      final pieceRect = Rect.fromLTWH(
-        offset.dx + piece.x * scale,
-        offset.dy + piece.y * scale,
-        piece.width * scale,
-        piece.height * scale,
+      final pieceRect = _sheetRectToCanvas(
+        piece.x,
+        piece.y,
+        piece.width,
+        piece.height,
+        scale,
+        offset,
       );
       canvas.drawRect(pieceRect, piece.reusedOffcut ? reusedPaint : freshPaint);
       _paintLabel(canvas, pieceRect, piece.surfaceLabel);
     }
 
     for (final offcut in sheet.offcuts) {
-      final offcutRect = Rect.fromLTWH(
-        offset.dx + offcut.x * scale,
-        offset.dy + offcut.y * scale,
-        offcut.width * scale,
-        offcut.height * scale,
+      final offcutRect = _sheetRectToCanvas(
+        offcut.x,
+        offcut.y,
+        offcut.width,
+        offcut.height,
+        scale,
+        offset,
       );
       canvas.drawRect(
         offcutRect,
@@ -3540,6 +3592,31 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
     }
 
     canvas.drawRect(rect, border);
+  }
+
+  Rect _sheetRectToCanvas(
+    int x,
+    int y,
+    int width,
+    int height,
+    double scale,
+    Offset offset,
+  ) {
+    if (!rotateForLayout) {
+      return Rect.fromLTWH(
+        offset.dx + x * scale,
+        offset.dy + y * scale,
+        width * scale,
+        height * scale,
+      );
+    }
+
+    return Rect.fromLTWH(
+      offset.dx + (sheet.sheetHeight - y - height) * scale,
+      offset.dy + x * scale,
+      height * scale,
+      width * scale,
+    );
   }
 
   void _paintLabel(Canvas canvas, Rect rect, String text) {
@@ -3579,7 +3656,8 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ProjectSheetExplorerPainter oldDelegate) =>
-      oldDelegate.sheet != sheet;
+      oldDelegate.sheet != sheet ||
+      oldDelegate.rotateForLayout != rotateForLayout;
 }
 
 class _SurfaceLayoutViewerScreen extends StatelessWidget {
