@@ -2902,7 +2902,10 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
           placement.height,
           unitSystem,
         );
-        _paintSheetLabel(canvas, sheetRect, '$pieceWidth\n$pieceHeight');
+        final label = i < sheetNumbers.length
+            ? '${sheetNumbers[i]}\n$pieceWidth\n$pieceHeight'
+            : '$pieceWidth\n$pieceHeight';
+        _paintSheetLabel(canvas, sheetRect, label);
       } else if (i < sheetNumbers.length) {
         _paintSheetLabel(canvas, sheetRect, '${sheetNumbers[i]}');
       }
@@ -2911,32 +2914,42 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
   }
 
   void _paintSheetLabel(Canvas canvas, Rect rect, String text) {
-    final compactLabel = !text.contains('\n');
+    final lineCount = '\n'.allMatches(text).length + 1;
+    final compactLabel = lineCount == 1;
     if (compactLabel) {
       if (rect.width < 22 || rect.height < 14) {
         return;
       }
-    } else if (rect.width < 54 || rect.height < 26) {
+    } else if (lineCount == 2) {
+      if (rect.width < 54 || rect.height < 26) {
+        return;
+      }
+    } else if (rect.width < 64 || rect.height < 40) {
       return;
     }
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: compactLabel ? 7 : 10,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-      maxLines: compactLabel ? 1 : 2,
-    )..layout(maxWidth: rect.width - (compactLabel ? 4 : 8));
+    final textPainter =
+        TextPainter(
+          text: TextSpan(
+            text: text,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: compactLabel ? 7 : (lineCount == 2 ? 10 : 8),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+          maxLines: compactLabel ? 1 : lineCount,
+        )..layout(
+          maxWidth: rect.width - (compactLabel ? 4 : (lineCount == 2 ? 8 : 10)),
+        );
     final background = RRect.fromRectAndRadius(
       Rect.fromCenter(
         center: rect.center,
-        width: textPainter.width + (compactLabel ? 4 : 8),
-        height: textPainter.height + (compactLabel ? 4 : 6),
+        width:
+            textPainter.width + (compactLabel ? 4 : (lineCount == 2 ? 8 : 10)),
+        height:
+            textPainter.height + (compactLabel ? 4 : (lineCount == 2 ? 6 : 8)),
       ),
       const Radius.circular(6),
     );
@@ -3079,6 +3092,7 @@ class _SurfaceSheetExplorerSection extends StatelessWidget {
           builder: (_) => _SurfaceLayoutViewerScreen(
             layout: layout,
             unitSystem: layout.material.unitSystem,
+            sheetNumbers: sheetNumbers,
           ),
         ),
       ),
@@ -3589,10 +3603,12 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
 class _SurfaceLayoutViewerScreen extends StatelessWidget {
   final PlasterSurfaceLayout layout;
   final PreferredUnitSystem unitSystem;
+  final List<int> sheetNumbers;
 
   const _SurfaceLayoutViewerScreen({
     required this.layout,
     required this.unitSystem,
+    this.sheetNumbers = const [],
   });
 
   @override
@@ -3655,6 +3671,8 @@ class _SurfaceLayoutViewerScreen extends StatelessWidget {
                           width: max(240, diagramWidth),
                           height: max(240, diagramHeight),
                           showSheetMeasurements: true,
+                          sheetNumbers: sheetNumbers,
+                          showDimensionsOverlay: false,
                         ),
                       ),
                     );
