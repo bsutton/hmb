@@ -2791,7 +2791,7 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
   final double width;
   final double height;
   final bool showSheetMeasurements;
-  final List<int> sheetNumbers;
+  final List<String> sheetNumbers;
   final bool showDimensionsOverlay;
 
   const _SurfaceLayoutDiagram({
@@ -2800,7 +2800,7 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
     this.width = 132,
     this.height = 84,
     this.showSheetMeasurements = false,
-    this.sheetNumbers = const [],
+    this.sheetNumbers = const <String>[],
     this.showDimensionsOverlay = true,
   });
 
@@ -2847,13 +2847,13 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
   final PlasterSurfaceLayout layout;
   final PreferredUnitSystem unitSystem;
   final bool showSheetMeasurements;
-  final List<int> sheetNumbers;
+  final List<String> sheetNumbers;
 
   const _SurfaceLayoutDiagramPainter({
     required this.layout,
     required this.unitSystem,
     required this.showSheetMeasurements,
-    this.sheetNumbers = const [],
+    this.sheetNumbers = const <String>[],
   });
 
   @override
@@ -2894,7 +2894,7 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
         ..drawRect(sheetRect, sheet)
         ..drawRect(sheetRect, sheetBorder);
       if (i < sheetNumbers.length) {
-        _paintSheetNumberBadge(canvas, sheetRect, '${sheetNumbers[i]}');
+        _paintSheetNumberBadge(canvas, sheetRect, sheetNumbers[i]);
       }
       if (showSheetMeasurements) {
         final pieceWidth = PlasterGeometry.formatDisplayLength(
@@ -3001,6 +3001,7 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labels = _ExplorerSheetLabels(sheets);
     final orderedLayouts = [...layouts]
       ..sort((left, right) {
         if (left.isCeiling != right.isCeiling) {
@@ -3036,7 +3037,7 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
                       sheet,
                 ];
                 final sheetNumbers = [
-                  for (final sheet in layoutSheets) sheet.sheetNumber,
+                  for (final sheet in layoutSheets) labels.sheetLabel(sheet),
                 ];
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -3057,7 +3058,11 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
                         runSpacing: 12,
                         children: [
                           for (final sheet in layoutSheets)
-                            _ProjectSheetCard(sheet: sheet, layout: layout),
+                            _ProjectSheetCard(
+                              sheet: sheet,
+                              layout: layout,
+                              labels: labels,
+                            ),
                         ],
                       ),
                   ],
@@ -3095,9 +3100,62 @@ class _ProjectSheetLegend extends StatelessWidget {
   );
 }
 
+class _ExplorerSheetLabels {
+  final Map<int, String> _sheetLabelsByNumber;
+  final Map<String, String> _subsheetLabelsByPair;
+
+  factory _ExplorerSheetLabels(List<PlasterProjectSheet> sheets) {
+    final sheetLabelsByNumber = <int, String>{};
+    for (var i = 0; i < sheets.length; i++) {
+      sheetLabelsByNumber[sheets[i].sheetNumber] = '${i + 1}';
+    }
+
+    final nextBranchIndexBySource = <int, int>{};
+    final subsheetLabelsByPair = <String, String>{};
+    for (final sheet in sheets) {
+      final sourceSheets = <int>{
+        for (final piece in sheet.usedPieces)
+          if (piece.reusedOffcut && piece.sourceSheetNumber != null)
+            piece.sourceSheetNumber!,
+      }.toList()..sort();
+      for (final sourceSheet in sourceSheets) {
+        final pairKey = '$sourceSheet:${sheet.sheetNumber}';
+        final branchIndex = nextBranchIndexBySource.update(
+          sourceSheet,
+          (current) => current + 1,
+          ifAbsent: () => 1,
+        );
+        final sourceLabel = sheetLabelsByNumber[sourceSheet] ?? '$sourceSheet';
+        subsheetLabelsByPair[pairKey] = '$sourceLabel.$branchIndex';
+      }
+    }
+
+    return _ExplorerSheetLabels._(sheetLabelsByNumber, subsheetLabelsByPair);
+  }
+
+  const _ExplorerSheetLabels._(
+    this._sheetLabelsByNumber,
+    this._subsheetLabelsByPair,
+  );
+
+  String sheetLabel(PlasterProjectSheet sheet) =>
+      _sheetLabelsByNumber[sheet.sheetNumber] ?? '${sheet.sheetNumber}';
+
+  String? subsheetLabelForPiece(
+    PlasterProjectSheet sheet,
+    PlasterProjectSheetPiece piece,
+  ) {
+    if (!piece.reusedOffcut || piece.sourceSheetNumber == null) {
+      return null;
+    }
+    final pairKey = '${piece.sourceSheetNumber}:${sheet.sheetNumber}';
+    return _subsheetLabelsByPair[pairKey];
+  }
+}
+
 class _SurfaceSheetExplorerSection extends StatelessWidget {
   final PlasterSurfaceLayout layout;
-  final List<int> sheetNumbers;
+  final List<String> sheetNumbers;
 
   const _SurfaceSheetExplorerSection({
     required this.layout,
@@ -3204,8 +3262,13 @@ class _LegendChip extends StatelessWidget {
 class _ProjectSheetCard extends StatelessWidget {
   final PlasterProjectSheet sheet;
   final PlasterSurfaceLayout layout;
+  final _ExplorerSheetLabels labels;
 
-  const _ProjectSheetCard({required this.sheet, required this.layout});
+  const _ProjectSheetCard({
+    required this.sheet,
+    required this.layout,
+    required this.labels,
+  });
 
   String _formatLength(int value) =>
       PlasterGeometry.formatDisplayLength(value, sheet.material.unitSystem);
@@ -3213,9 +3276,13 @@ class _ProjectSheetCard extends StatelessWidget {
   String _formatArea(int area) =>
       PlasterGeometry.formatDisplayArea(area, sheet.material.unitSystem);
 
-  String _formatPiece(PlasterProjectSheetPiece piece) =>
-      '${_formatLength(piece.width)} x ${_formatLength(piece.height)}'
-      '${piece.reusedOffcut ? ' reused offcut' : ' fresh'}';
+  String _formatPiece(PlasterProjectSheetPiece piece) {
+    final sourceLabel = labels.subsheetLabelForPiece(sheet, piece);
+    final sourceSuffix = sourceLabel == null ? '' : ' from $sourceLabel';
+    return '${_formatLength(piece.width)} x ${_formatLength(piece.height)}'
+        '${piece.reusedOffcut ? ' reused offcut' : ' fresh'}'
+        '$sourceSuffix';
+  }
 
   bool get _rotateForLayout {
     final stockLandscape = sheet.sheetWidth >= sheet.sheetHeight;
@@ -3278,7 +3345,7 @@ class _ProjectSheetCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Sheet ${sheet.sheetNumber}',
+            'Sheet ${labels.sheetLabel(sheet)}',
             style: Theme.of(context).textTheme.titleSmall,
           ),
           Text(
@@ -3292,6 +3359,7 @@ class _ProjectSheetCard extends StatelessWidget {
             layout: layout,
             rotateForLayout: rotateForLayout,
             formatLength: _formatLength,
+            labels: labels,
           ),
           const SizedBox(height: 8),
           Text('Fresh pieces: $freshCount'),
@@ -3325,26 +3393,28 @@ class _ProjectSheetDiagram extends StatelessWidget {
   final PlasterSurfaceLayout layout;
   final bool rotateForLayout;
   final String Function(int value) formatLength;
+  final _ExplorerSheetLabels labels;
 
   const _ProjectSheetDiagram({
     required this.sheet,
     required this.layout,
     required this.rotateForLayout,
     required this.formatLength,
+    required this.labels,
   });
 
   Future<void> _showPieceDetails(
     BuildContext context,
     PlasterProjectSheetPiece piece,
   ) async {
-    final sourceSheetLine =
-        piece.reusedOffcut && piece.sourceSheetNumber != null
-        ? '\nFrom Sheet ${piece.sourceSheetNumber}'
-        : '';
+    final sourceLabel = labels.subsheetLabelForPiece(sheet, piece);
+    final sourceSheetLine = sourceLabel == null
+        ? ''
+        : '\nFrom Sheet $sourceLabel';
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Sheet ${sheet.sheetNumber} Piece'),
+        title: Text('Sheet ${labels.sheetLabel(sheet)} Piece'),
         content: Text(
           '${formatLength(piece.width)} x ${formatLength(piece.height)}\n'
           '${piece.reusedOffcut ? 'Reused offcut piece' : 'Fresh piece'}'
@@ -3372,7 +3442,7 @@ class _ProjectSheetDiagram extends StatelessWidget {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Sheet ${sheet.sheetNumber} Offcut'),
+        title: Text('Sheet ${labels.sheetLabel(sheet)} Offcut'),
         content: Text(
           '${formatLength(offcut.width)} x ${formatLength(offcut.height)}\n'
           '$type',
@@ -3622,12 +3692,12 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
 class _SurfaceLayoutViewerScreen extends StatelessWidget {
   final PlasterSurfaceLayout layout;
   final PreferredUnitSystem unitSystem;
-  final List<int> sheetNumbers;
+  final List<String> sheetNumbers;
 
   const _SurfaceLayoutViewerScreen({
     required this.layout,
     required this.unitSystem,
-    this.sheetNumbers = const [],
+    this.sheetNumbers = const <String>[],
   });
 
   @override
