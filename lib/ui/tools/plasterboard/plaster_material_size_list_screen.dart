@@ -13,10 +13,7 @@ import 'plaster_material_size_edit_screen.dart';
 class PlasterMaterialSizeListScreen extends StatelessWidget {
   final Parent<PlasterProject> parent;
 
-  const PlasterMaterialSizeListScreen({
-    required this.parent,
-    super.key,
-  });
+  const PlasterMaterialSizeListScreen({required this.parent, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,27 +44,21 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
       cardHeight: 116,
       details: (material, cardDetail) => LayoutBuilder(
         builder: (context, constraints) {
-          final widthText = Text(
-            'Width: ${PlasterGeometry.formatDisplayLength(
-              material.width,
-              material.unitSystem,
-            )}',
+          final widthLabel = PlasterGeometry.formatDisplayLength(
+            material.width,
+            material.unitSystem,
           );
-          final heightText = Text(
-            'Height: ${PlasterGeometry.formatDisplayLength(
-              material.height,
-              material.unitSystem,
-            )}',
+          final lengthLabel = PlasterGeometry.formatDisplayLength(
+            material.height,
+            material.unitSystem,
           );
+          final widthText = Text('Width: $widthLabel');
+          final lengthText = Text('Length: $lengthLabel');
 
           if (constraints.maxWidth < 420) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                widthText,
-                const SizedBox(height: 4),
-                heightText,
-              ],
+              children: [widthText, const SizedBox(height: 4), lengthText],
             );
           }
 
@@ -75,7 +66,7 @@ class PlasterMaterialSizeListScreen extends StatelessWidget {
             children: [
               Expanded(child: widthText),
               const SizedBox(width: 12),
-              Expanded(child: heightText),
+              Expanded(child: lengthText),
             ],
           );
         },
