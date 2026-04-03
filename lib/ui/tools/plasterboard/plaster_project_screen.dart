@@ -4487,6 +4487,9 @@ class _RoomPainter extends CustomPainter {
 }
 
 class _CanvasTransform {
+  static const _horizontalPadding = 72.0;
+  static const _verticalPadding = 72.0;
+
   final List<PlasterRoomLine> lines;
   final Size size;
   late final double _scale;
@@ -4506,11 +4509,13 @@ class _CanvasTransform {
     _maxY = ys.last;
     final width = (_maxX - _minX).abs().toDouble().clamp(1, double.infinity);
     final height = (_maxY - _minY).abs().toDouble().clamp(1, double.infinity);
-    _scale = (size.width - 40) / width < (size.height - 40) / height
-        ? (size.width - 40) / width
-        : (size.height - 40) / height;
-    _offsetX = 20;
-    _offsetY = 20;
+    final availableWidth = max(1, size.width - (_horizontalPadding * 2));
+    final availableHeight = max(1, size.height - (_verticalPadding * 2));
+    _scale = availableWidth / width < availableHeight / height
+        ? availableWidth / width
+        : availableHeight / height;
+    _offsetX = _horizontalPadding;
+    _offsetY = _verticalPadding;
   }
 
   Offset toCanvasPoint(int x, int y) =>
