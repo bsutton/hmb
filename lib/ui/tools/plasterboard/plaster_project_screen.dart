@@ -3503,6 +3503,7 @@ class _ProjectSheetDiagram extends StatelessWidget {
           rotateForLayout: rotateForLayout,
           currentLayoutLabel: layout.label,
           formatLength: formatLength,
+          labels: labels,
         ),
       ),
     ),
@@ -3582,12 +3583,14 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
   final bool rotateForLayout;
   final String currentLayoutLabel;
   final String Function(int value) formatLength;
+  final _ExplorerSheetLabels labels;
 
   const _ProjectSheetExplorerPainter({
     required this.sheet,
     required this.rotateForLayout,
     required this.currentLayoutLabel,
     required this.formatLength,
+    required this.labels,
   });
 
   @override
@@ -3620,6 +3623,12 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
         piece.height,
       );
       canvas.drawRect(pieceRect, piece.reusedOffcut ? reusedPaint : freshPaint);
+      if (piece.reusedOffcut) {
+        final subsheetLabel = labels.subsheetLabelForPiece(sheet, piece);
+        if (subsheetLabel != null) {
+          _paintPieceBadge(canvas, pieceRect, subsheetLabel);
+        }
+      }
       if (piece.surfaceLabel == currentLayoutLabel) {
         _paintLabel(
           canvas,
@@ -3645,6 +3654,41 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
     }
 
     canvas.drawRect(rect, border);
+  }
+
+  void _paintPieceBadge(Canvas canvas, Rect rect, String text) {
+    if (rect.width < 26 || rect.height < 18) {
+      return;
+    }
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 7,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout(maxWidth: rect.width - 8);
+    final badge = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        rect.left + 4,
+        rect.top + 4,
+        painter.width + 8,
+        painter.height + 6,
+      ),
+      const Radius.circular(10),
+    );
+    canvas.drawRRect(badge, Paint()..color = const Color(0xDD111827));
+    painter.paint(
+      canvas,
+      Offset(
+        badge.left + (badge.width - painter.width) / 2,
+        badge.top + (badge.height - painter.height) / 2,
+      ),
+    );
   }
 
   void _paintLabel(Canvas canvas, Rect rect, String text) {
@@ -3686,7 +3730,8 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
   bool shouldRepaint(covariant _ProjectSheetExplorerPainter oldDelegate) =>
       oldDelegate.sheet != sheet ||
       oldDelegate.rotateForLayout != rotateForLayout ||
-      oldDelegate.currentLayoutLabel != currentLayoutLabel;
+      oldDelegate.currentLayoutLabel != currentLayoutLabel ||
+      oldDelegate.labels != labels;
 }
 
 class _SurfaceLayoutViewerScreen extends StatelessWidget {
