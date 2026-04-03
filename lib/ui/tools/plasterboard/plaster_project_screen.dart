@@ -2016,6 +2016,31 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       );
     }
 
+    if (_isRoomEditorOnly) {
+      if (isMobileLandscape) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildEditorToolbar(vertical: true, excludeConstraints: true),
+            const SizedBox(width: 12),
+            Expanded(child: _buildRoomCanvas()),
+            const SizedBox(width: 12),
+            _buildEditorToolbar(vertical: true, constraintsOnly: true),
+          ],
+        );
+      }
+
+      return LayoutBuilder(
+        builder: (context, constraints) => Column(
+          children: [
+            _buildEditorToolbar(wrap: constraints.maxWidth < 520),
+            const SizedBox(height: 8),
+            _buildRoomCanvas(),
+          ],
+        ),
+      );
+    }
+
     final roomUnitLabel = PlasterGeometry.unitLabel(
       _currentRoom.room.unitSystem,
     );
