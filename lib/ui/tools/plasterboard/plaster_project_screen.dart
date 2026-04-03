@@ -2893,6 +2893,9 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
       canvas
         ..drawRect(sheetRect, sheet)
         ..drawRect(sheetRect, sheetBorder);
+      if (i < sheetNumbers.length) {
+        _paintSheetNumberBadge(canvas, sheetRect, '${sheetNumbers[i]}');
+      }
       if (showSheetMeasurements) {
         final pieceWidth = PlasterGeometry.formatDisplayLength(
           placement.width,
@@ -2902,54 +2905,70 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
           placement.height,
           unitSystem,
         );
-        final label = i < sheetNumbers.length
-            ? '${sheetNumbers[i]}\n$pieceWidth\n$pieceHeight'
-            : '$pieceWidth\n$pieceHeight';
-        _paintSheetLabel(canvas, sheetRect, label);
-      } else if (i < sheetNumbers.length) {
-        _paintSheetLabel(canvas, sheetRect, '${sheetNumbers[i]}');
+        _paintSheetDimensions(canvas, sheetRect, '$pieceWidth\n$pieceHeight');
       }
     }
     canvas.drawRect(rect, border);
   }
 
-  void _paintSheetLabel(Canvas canvas, Rect rect, String text) {
-    final lineCount = '\n'.allMatches(text).length + 1;
-    final compactLabel = lineCount == 1;
-    if (compactLabel) {
-      if (rect.width < 22 || rect.height < 14) {
-        return;
-      }
-    } else if (lineCount == 2) {
-      if (rect.width < 54 || rect.height < 26) {
-        return;
-      }
-    } else if (rect.width < 64 || rect.height < 40) {
+  void _paintSheetNumberBadge(Canvas canvas, Rect rect, String text) {
+    if (rect.width < 18 || rect.height < 18) {
       return;
     }
-    final textPainter =
-        TextPainter(
-          text: TextSpan(
-            text: text,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: compactLabel ? 7 : (lineCount == 2 ? 10 : 8),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          textAlign: TextAlign.center,
-          textDirection: TextDirection.ltr,
-          maxLines: compactLabel ? 1 : lineCount,
-        )..layout(
-          maxWidth: rect.width - (compactLabel ? 4 : (lineCount == 2 ? 8 : 10)),
-        );
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 7,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout(maxWidth: rect.width - 6);
+    final badge = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        rect.left + 4,
+        rect.top + 4,
+        textPainter.width + 8,
+        textPainter.height + 6,
+      ),
+      const Radius.circular(10),
+    );
+    canvas.drawRRect(badge, Paint()..color = const Color(0xDD111827));
+    textPainter.paint(
+      canvas,
+      Offset(
+        badge.left + (badge.width - textPainter.width) / 2,
+        badge.top + (badge.height - textPainter.height) / 2,
+      ),
+    );
+  }
+
+  void _paintSheetDimensions(Canvas canvas, Rect rect, String text) {
+    if (rect.width < 54 || rect.height < 26) {
+      return;
+    }
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+      maxLines: 2,
+    )..layout(maxWidth: rect.width - 8);
     final background = RRect.fromRectAndRadius(
       Rect.fromCenter(
         center: rect.center,
-        width:
-            textPainter.width + (compactLabel ? 4 : (lineCount == 2 ? 8 : 10)),
-        height:
-            textPainter.height + (compactLabel ? 4 : (lineCount == 2 ? 6 : 8)),
+        width: textPainter.width + 8,
+        height: textPainter.height + 6,
       ),
       const Radius.circular(6),
     );
