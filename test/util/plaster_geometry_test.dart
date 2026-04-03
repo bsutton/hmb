@@ -586,6 +586,73 @@ void main() {
       expect(rowHeights.every((height) => height >= 6000), isTrue);
     });
 
+    test('ceiling prefers longer sheet when it yields fewer valid sheets', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Long Ceiling',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+      );
+      final lines = [
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 0,
+          startX: 0,
+          startY: 0,
+          length: 131840,
+          plasterSelected: false,
+        ),
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 1,
+          startX: 131840,
+          startY: 0,
+          length: 54130,
+          plasterSelected: false,
+        ),
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 2,
+          startX: 131840,
+          startY: 54130,
+          length: 131840,
+          plasterSelected: false,
+        ),
+        PlasterRoomLine.forInsert(
+          roomId: 1,
+          seqNo: 3,
+          startX: 0,
+          startY: 54130,
+          length: 54130,
+          plasterSelected: false,
+        ),
+      ];
+      final shortSheet = PlasterMaterialSize.forInsert(
+        supplierId: 1,
+        name: '1200 x 2700',
+        unitSystem: PreferredUnitSystem.metric,
+        width: 12000,
+        height: 27000,
+      )..id = 1;
+      final longSheet = PlasterMaterialSize.forInsert(
+        supplierId: 1,
+        name: '1200 x 4200',
+        unitSystem: PreferredUnitSystem.metric,
+        width: 12000,
+        height: 42000,
+      )..id = 2;
+
+      final layouts = PlasterGeometry.calculateLayout(
+        [PlasterRoomShape(room: room, lines: lines, openings: const [])],
+        [shortSheet, longSheet],
+      );
+
+      final ceiling = layouts.singleWhere((layout) => layout.isCeiling);
+
+      expect(ceiling.material.id, longSheet.id);
+      expect(ceiling.sheetCount, lessThan(25));
+    });
+
     test('sheet usage reports guillotine-cut offcuts for trimmed sheets', () {
       final room = PlasterRoom.forInsert(
         projectId: 1,

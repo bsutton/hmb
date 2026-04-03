@@ -1569,96 +1569,114 @@ class PlasterGeometry {
     required int framingSpacing,
     required int framingOffset,
   }) {
-    final patterns = <List<(int, int)>>[];
-    final seen = <String>{};
-    final studPositions = <int>{0, surfaceWidth};
+    if (surfaceWidth <= 0 || sheetWidth <= 0) {
+      return const [];
+    }
+    if (surfaceWidth <= sheetWidth) {
+      return surfaceWidth < minEdge
+          ? const []
+          : [
+              [(0, surfaceWidth)],
+            ];
+    }
+
+    final supportCenters = <int>{0, surfaceWidth};
     if (framingSpacing > 0) {
-      var stud = framingOffset;
-      while (stud < 0) {
-        stud += framingSpacing;
+      var support = framingOffset;
+      while (support < 0) {
+        support += framingSpacing;
       }
-      for (; stud < surfaceWidth; stud += framingSpacing) {
-        if (stud > 0) {
-          studPositions.add(stud);
+      for (; support < surfaceWidth; support += framingSpacing) {
+        if (support > 0) {
+          supportCenters.add(support);
         }
       }
     }
+    final orderedCenters = supportCenters.toList()..sort();
+    const maxPatternsPerStart = 16;
+    final memo = <int, List<List<(int, int)>>>{};
 
-    final orderedStuds = studPositions.toList()..sort();
-    for (final startCut in orderedStuds) {
-      if (startCut != 0 && (startCut < minEdge || startCut >= sheetWidth)) {
-        continue;
+    List<List<(int, int)>> patternsFrom(int startIndex) {
+      final cached = memo[startIndex];
+      if (cached != null) {
+        return cached;
       }
-      final available = surfaceWidth - startCut;
-      if (available <= 0) {
-        continue;
+      final start = orderedCenters[startIndex];
+      if (start == surfaceWidth) {
+        return memo[startIndex] = [const []];
       }
-      final fullCount = available ~/ sheetWidth;
-      final endPiece = available % sheetWidth;
-      if (fullCount == 0 && startCut == 0 && surfaceWidth <= sheetWidth) {
-        if (surfaceWidth >= minEdge) {
-          patterns.add([(0, surfaceWidth)]);
+
+      final patterns = <List<(int, int)>>[];
+      final seen = <String>{};
+      for (
+        var nextIndex = startIndex + 1;
+        nextIndex < orderedCenters.length;
+        nextIndex++
+      ) {
+        final end = orderedCenters[nextIndex];
+        final pieceWidth = end - start;
+        if (pieceWidth > sheetWidth) {
+          break;
         }
-        continue;
+        if (pieceWidth < minEdge) {
+          continue;
+        }
+        final remaining = surfaceWidth - end;
+        if (remaining > 0 && remaining < minEdge) {
+          continue;
+        }
+        for (final suffix in patternsFrom(nextIndex)) {
+          final candidate = [(start, pieceWidth), ...suffix];
+          final signature = candidate
+              .map((piece) => '${piece.$1}:${piece.$2}')
+              .join(',');
+          if (!seen.add(signature)) {
+            continue;
+          }
+          patterns.add(candidate);
+        }
       }
-      if (endPiece != 0 && endPiece < minEdge) {
-        continue;
+      patterns.sort(
+        (left, right) => _compareRowPatterns(left, right, sheetWidth),
+      );
+      if (patterns.length > maxPatternsPerStart) {
+        patterns.removeRange(maxPatternsPerStart, patterns.length);
       }
-
-      final row = <(int, int)>[];
-      var x = 0;
-      if (startCut > 0) {
-        row.add((x, startCut));
-        x += startCut;
-      }
-      for (var i = 0; i < fullCount; i++) {
-        row.add((x, sheetWidth));
-        x += sheetWidth;
-      }
-      if (endPiece > 0) {
-        row.add((x, endPiece));
-        x += endPiece;
-      }
-      if (x != surfaceWidth) {
-        continue;
-      }
-      final joints = _jointPositionsForPattern(row);
-      final validJoints = joints.every(studPositions.contains);
-      if (!validJoints) {
-        continue;
-      }
-      final signature = row.map((piece) => '${piece.$1}:${piece.$2}').join(',');
-      if (seen.add(signature)) {
-        patterns.add(row);
-      }
+      return memo[startIndex] = patterns;
     }
 
-    patterns.sort((left, right) {
-      final leftCutCount = left.where((piece) => piece.$2 != sheetWidth).length;
-      final rightCutCount = right
-          .where((piece) => piece.$2 != sheetWidth)
-          .length;
-      if (leftCutCount != rightCutCount) {
-        return leftCutCount.compareTo(rightCutCount);
-      }
-      final leftJoints = _jointPositionsForPattern(left).length;
-      final rightJoints = _jointPositionsForPattern(right).length;
-      if (leftJoints != rightJoints) {
-        return leftJoints.compareTo(rightJoints);
-      }
-      final leftWaste = left.fold<int>(
-        0,
-        (sum, piece) =>
-            sum + (piece.$2 == sheetWidth ? 0 : sheetWidth - piece.$2),
-      );
-      final rightWaste = right.fold<int>(
-        0,
-        (sum, piece) =>
-            sum + (piece.$2 == sheetWidth ? 0 : sheetWidth - piece.$2),
-      );
+    return patternsFrom(0);
+  }
+
+  static int _compareRowPatterns(
+    List<(int, int)> left,
+    List<(int, int)> right,
+    int sheetWidth,
+  ) {
+    final leftCutCount = left.where((piece) => piece.$2 != sheetWidth).length;
+    final rightCutCount = right.where((piece) => piece.$2 != sheetWidth).length;
+    if (leftCutCount != rightCutCount) {
+      return leftCutCount.compareTo(rightCutCount);
+    }
+    final leftJoints = _jointPositionsForPattern(left).length;
+    final rightJoints = _jointPositionsForPattern(right).length;
+    if (leftJoints != rightJoints) {
+      return leftJoints.compareTo(rightJoints);
+    }
+    final leftWaste = left.fold<int>(
+      0,
+      (sum, piece) =>
+          sum + (piece.$2 == sheetWidth ? 0 : sheetWidth - piece.$2),
+    );
+    final rightWaste = right.fold<int>(
+      0,
+      (sum, piece) =>
+          sum + (piece.$2 == sheetWidth ? 0 : sheetWidth - piece.$2),
+    );
+    if (leftWaste != rightWaste) {
       return leftWaste.compareTo(rightWaste);
-    });
-    return patterns;
+    }
+    return left.length.compareTo(right.length);
   }
 
   static List<List<(int, int)>>? _selectRowPatterns({
