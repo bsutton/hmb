@@ -96,6 +96,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   Stopwatch? _analysisStopwatch;
   Timer? _analysisTimer;
   var _hasLoadedProjectState = false;
+  ScaffoldMessengerState? _scaffoldMessenger;
 
   bool get _isRoomEditorOnly => widget.editorOnlyRoomId != null;
 
@@ -223,6 +224,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
     final route = ModalRoute.of(context);
     if (route != null) {
       routeObserver
@@ -420,7 +422,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         setState(() {
           _isAnalyzing = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
+        _scaffoldMessenger?.showSnackBar(
           SnackBar(content: Text('Layout analysis failed: ${message.error}')),
         );
         unawaited(_stopAnalysis(markStopped: false));
@@ -907,7 +909,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     final violation = result.violations.isEmpty
         ? null
         : result.violations.first;
-    final messenger = ScaffoldMessenger.maybeOf(context);
+    final messenger = _scaffoldMessenger;
     if (messenger == null) {
       return;
     }
