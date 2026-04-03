@@ -900,14 +900,18 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     return updated;
   }
 
-  Future<void> _showSolveError(PlasterSolveResult result) async {
+  void _showSolveError(PlasterSolveResult result) {
     if (!mounted) {
       return;
     }
     final violation = result.violations.isEmpty
         ? null
         : result.violations.first;
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) {
+      return;
+    }
+    messenger.showSnackBar(
       SnackBar(
         content: Text(
           violation == null
@@ -955,7 +959,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
     if (!result.converged) {
       if (showError) {
-        await _showSolveError(result);
+        _showSolveError(result);
       }
       return;
     }
