@@ -3210,16 +3210,17 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grouped = <int, List<PlasterProjectSheet>>{};
-    for (final sheet in sheets) {
-      grouped.putIfAbsent(sheet.material.id, () => []).add(sheet);
-    }
-    final orderedGroups = grouped.values.toList()
-      ..sort(
-        (left, right) =>
-            left.first.material.name.compareTo(right.first.material.name),
-      );
-    final layoutByLabel = {for (final layout in layouts) layout.label: layout};
+    final orderedLayouts = [...layouts]
+      ..sort((left, right) {
+        if (left.isCeiling != right.isCeiling) {
+          return left.isCeiling ? -1 : 1;
+        }
+        final roomCompare = left.roomId.compareTo(right.roomId);
+        if (roomCompare != 0) {
+          return roomCompare;
+        }
+        return left.label.compareTo(right.label);
+      });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Sheet Explorer')),
@@ -3228,33 +3229,49 @@ class _ProjectSheetExplorerScreen extends StatelessWidget {
         children: [
           const _ProjectSheetLegend(),
           const SizedBox(height: 16),
-          Text('Surfaces', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          for (final layout in layouts)
-            _SurfaceSheetExplorerSection(
-              layout: layout,
-              sheetNumbers: [
-                for (final sheet in sheets)
-                  if (sheet.usedPieces.any(
-                    (piece) => piece.surfaceLabel == layout.label,
-                  ))
-                    sheet.sheetNumber,
-              ],
-            ),
-          const SizedBox(height: 24),
-          for (final group in orderedGroups) ...[
+          for (final layout in orderedLayouts) ...[
             Text(
-              group.first.material.name,
+              layout.isCeiling ? 'Ceiling' : 'Wall',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                for (final sheet in group)
-                  _ProjectSheetCard(sheet: sheet, layoutByLabel: layoutByLabel),
-              ],
+            Builder(
+              builder: (context) {
+                final layoutSheets = [
+                  for (final sheet in sheets)
+                    if (sheet.usedPieces.any(
+                      (piece) => piece.surfaceLabel == layout.label,
+                    ))
+                      sheet,
+                ];
+                final sheetNumbers = [
+                  for (final sheet in layoutSheets) sheet.sheetNumber,
+                ];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SurfaceSheetExplorerSection(
+                      layout: layout,
+                      sheetNumbers: sheetNumbers,
+                    ),
+                    const SizedBox(height: 12),
+                    if (layoutSheets.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 8, bottom: 8),
+                        child: Text('No sheets assigned.'),
+                      )
+                    else
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          for (final sheet in layoutSheets)
+                            _ProjectSheetCard(sheet: sheet),
+                        ],
+                      ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 20),
           ],
@@ -3363,9 +3380,8 @@ class _LegendChip extends StatelessWidget {
 
 class _ProjectSheetCard extends StatelessWidget {
   final PlasterProjectSheet sheet;
-  final Map<String, PlasterSurfaceLayout> layoutByLabel;
 
-  const _ProjectSheetCard({required this.sheet, required this.layoutByLabel});
+  const _ProjectSheetCard({required this.sheet});
 
   String _formatLength(int value) =>
       PlasterGeometry.formatDisplayLength(value, sheet.material.unitSystem);
