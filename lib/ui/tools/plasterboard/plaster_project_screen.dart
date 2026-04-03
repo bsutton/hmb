@@ -4459,10 +4459,20 @@ class _RoomPainter extends CustomPainter {
         ),
         const Radius.circular(6),
       );
-      canvas.drawRRect(
-        labelBounds,
-        Paint()..color = Colors.white.withSafeOpacity(0.92),
-      );
+      final labelFill = Paint()
+        ..color = isSelected
+            ? const Color(0xFFFFE2BF).withSafeOpacity(0.96)
+            : Colors.white.withSafeOpacity(0.92);
+      canvas.drawRRect(labelBounds, labelFill);
+      if (isSelected) {
+        canvas.drawRRect(
+          labelBounds,
+          Paint()
+            ..color = Colors.orange.withSafeOpacity(0.9)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.2,
+        );
+      }
       labelPainter.paint(canvas, labelOffset);
       _paintOpeningsForLine(
         canvas: canvas,
