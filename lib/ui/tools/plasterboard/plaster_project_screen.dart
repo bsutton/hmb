@@ -2904,7 +2904,7 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
         );
         _paintSheetLabel(canvas, sheetRect, '$pieceWidth\n$pieceHeight');
       } else if (i < sheetNumbers.length) {
-        _paintSheetLabel(canvas, sheetRect, '#${sheetNumbers[i]}');
+        _paintSheetLabel(canvas, sheetRect, '${sheetNumbers[i]}');
       }
     }
     canvas.drawRect(rect, border);
