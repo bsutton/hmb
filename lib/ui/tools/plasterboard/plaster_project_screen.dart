@@ -3291,7 +3291,14 @@ class _ProjectSheetLegend extends StatelessWidget {
     children: [
       _LegendChip(label: 'Fresh sheet piece', color: Color(0xFF4DD8B0)),
       _LegendChip(label: 'Reused offcut piece', color: Color(0xFF8B5CF6)),
-      _LegendChip(label: 'Reusable offcut', color: Color(0xFF4A90E2)),
+      _LegendChip(
+        label: 'Reusable offcut not reused',
+        color: Color(0xFF4A90E2),
+      ),
+      _LegendChip(
+        label: 'Reusable offcut reused later',
+        color: Color(0xFF0EA5A8),
+      ),
       _LegendChip(label: 'Scrap', color: Color(0xFFE67E22)),
     ],
   );
@@ -3391,14 +3398,27 @@ class _ProjectSheetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reusableArea = sheet.offcuts.fold<int>(
+    final reusableOffcuts = [
+      for (final offcut in sheet.offcuts)
+        if (offcut.reusable) offcut,
+    ];
+    final reusableArea = reusableOffcuts.fold<int>(
       0,
-      (sum, offcut) => sum + (offcut.reusable ? offcut.area : 0),
+      (sum, offcut) => sum + offcut.area,
     );
     final scrapArea = sheet.offcuts.fold<int>(
       0,
       (sum, offcut) => sum + (offcut.reusable ? 0 : offcut.area),
     );
+    final reusedLaterCount = reusableOffcuts
+        .where((offcut) => offcut.reusedLater)
+        .length;
+    final reusedLaterArea = reusableOffcuts.fold<int>(
+      0,
+      (sum, offcut) => sum + (offcut.reusedLater ? offcut.area : 0),
+    );
+    final neverReusedCount = reusableOffcuts.length - reusedLaterCount;
+    final neverReusedArea = reusableArea - reusedLaterArea;
     final reusedCount = sheet.usedPieces
         .where((piece) => piece.reusedOffcut)
         .length;
@@ -3438,6 +3458,14 @@ class _ProjectSheetCard extends StatelessWidget {
           Text('Fresh pieces: $freshCount'),
           Text('Reused-offcut pieces: $reusedCount'),
           Text('Reusable offcuts: ${_formatArea(reusableArea)}'),
+          Text(
+            'Reused later: '
+            '$reusedLaterCount (${_formatArea(reusedLaterArea)})',
+          ),
+          Text(
+            'Not reused: '
+            '$neverReusedCount (${_formatArea(neverReusedArea)})',
+          ),
           Text('Scrap: ${_formatArea(scrapArea)}'),
           const SizedBox(height: 6),
           Text(
@@ -3468,7 +3496,8 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     final freshPaint = Paint()..color = const Color(0xFF4DD8B0);
     final reusedPaint = Paint()..color = const Color(0xFF8B5CF6);
-    final offcutPaint = Paint()..color = const Color(0xFF4A90E2);
+    final unusedOffcutPaint = Paint()..color = const Color(0xFF4A90E2);
+    final reusedLaterOffcutPaint = Paint()..color = const Color(0xFF0EA5A8);
     final scrapPaint = Paint()..color = const Color(0xFFE67E22);
 
     final scale = min(
@@ -3502,7 +3531,12 @@ class _ProjectSheetExplorerPainter extends CustomPainter {
         offcut.width * scale,
         offcut.height * scale,
       );
-      canvas.drawRect(offcutRect, offcut.reusable ? offcutPaint : scrapPaint);
+      canvas.drawRect(
+        offcutRect,
+        offcut.reusable
+            ? (offcut.reusedLater ? reusedLaterOffcutPaint : unusedOffcutPaint)
+            : scrapPaint,
+      );
     }
 
     canvas.drawRect(rect, border);

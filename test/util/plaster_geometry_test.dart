@@ -875,5 +875,89 @@ void main() {
         greaterThanOrEqualTo(rawTakeoff.totalSheetCount),
       );
     });
+
+    test('sheet explorer marks reusable offcuts that are reused later', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Explorer',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+      )..id = 1;
+      final shape = PlasterRoomShape(
+        room: room,
+        lines: PlasterGeometry.defaultLines(
+          roomId: 1,
+          unitSystem: PreferredUnitSystem.metric,
+        ),
+        openings: const [],
+      );
+      final material = PlasterMaterialSize.forInsert(
+        supplierId: 1,
+        name: '1200 x 2700',
+        unitSystem: PreferredUnitSystem.metric,
+        width: 12000,
+        height: 27000,
+      );
+      final layouts = [
+        PlasterSurfaceLayout(
+          roomId: 1,
+          lineId: 1,
+          isCeiling: false,
+          label: 'wall 1',
+          material: material,
+          direction: PlasterSheetDirection.horizontal,
+          width: 6000,
+          height: 27000,
+          area: 6000 * 27000,
+          sheetsAcross: 1,
+          sheetsDown: 1,
+          sheetCount: 1,
+          sheetCountWithWaste: 1,
+          placements: const [
+            PlasterSheetPlacement(x: 0, y: 0, width: 6000, height: 27000),
+          ],
+          sheetUsage: const [],
+          estimatedJointTapeLength: 0,
+          estimatedScrewCount: 0,
+          estimatedGlueKg: 0,
+          estimatedPlasterKg: 0,
+        ),
+        PlasterSurfaceLayout(
+          roomId: 1,
+          lineId: 2,
+          isCeiling: false,
+          label: 'wall 2',
+          material: material,
+          direction: PlasterSheetDirection.horizontal,
+          width: 3000,
+          height: 27000,
+          area: 3000 * 27000,
+          sheetsAcross: 1,
+          sheetsDown: 1,
+          sheetCount: 1,
+          sheetCountWithWaste: 1,
+          placements: const [
+            PlasterSheetPlacement(x: 0, y: 0, width: 3000, height: 27000),
+          ],
+          sheetUsage: const [],
+          estimatedJointTapeLength: 0,
+          estimatedScrewCount: 0,
+          estimatedGlueKg: 0,
+          estimatedPlasterKg: 0,
+        ),
+      ];
+
+      final sheets = PlasterGeometry.buildProjectSheetExplorer([
+        shape,
+      ], layouts);
+
+      expect(sheets, hasLength(1));
+      expect(
+        sheets.single.offcuts.any(
+          (offcut) => offcut.reusable && offcut.reusedLater,
+        ),
+        isTrue,
+      );
+    });
   });
 }

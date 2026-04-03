@@ -67,6 +67,7 @@ class PlasterSheetUsagePiece {
 
 class PlasterSheetOffcut extends PlasterSheetUsagePiece {
   final bool reusable;
+  final bool reusedLater;
 
   const PlasterSheetOffcut({
     required super.x,
@@ -74,6 +75,7 @@ class PlasterSheetOffcut extends PlasterSheetUsagePiece {
     required super.width,
     required super.height,
     required this.reusable,
+    this.reusedLater = false,
   });
 }
 
@@ -313,8 +315,15 @@ class _FreeRect {
   final int y;
   final int width;
   final int height;
+  final bool reusedLater;
 
-  const _FreeRect(this.x, this.y, this.width, this.height);
+  const _FreeRect(
+    this.x,
+    this.y,
+    this.width,
+    this.height, {
+    this.reusedLater = false,
+  });
 
   bool isContainedIn(_FreeRect other) =>
       x >= other.x &&
@@ -372,7 +381,13 @@ class _PackedSheet {
   _PackedSheet copy() => _PackedSheet(
     freeRects: [
       for (final rect in freeRects)
-        _FreeRect(rect.x, rect.y, rect.width, rect.height),
+        _FreeRect(
+          rect.x,
+          rect.y,
+          rect.width,
+          rect.height,
+          reusedLater: rect.reusedLater,
+        ),
     ],
     usedPieces: [
       for (final piece in usedPieces)
@@ -463,7 +478,13 @@ class _ExplorerPackedSheet {
   _ExplorerPackedSheet copy() => _ExplorerPackedSheet(
     freeRects: [
       for (final rect in freeRects)
-        _FreeRect(rect.x, rect.y, rect.width, rect.height),
+        _FreeRect(
+          rect.x,
+          rect.y,
+          rect.width,
+          rect.height,
+          reusedLater: rect.reusedLater,
+        ),
     ],
     usedPieces: [
       for (final piece in usedPieces)
@@ -2141,6 +2162,7 @@ class PlasterGeometry {
                   reusable:
                       rect.width >= minReusableEdge &&
                       rect.height >= minReusableEdge,
+                  reusedLater: rect.reusedLater,
                 ),
             ],
             sheetWidth: sheetWidth,
@@ -2301,7 +2323,17 @@ class PlasterGeometry {
     final consumedRect = choice.rectIndex >= 0
         ? freeRects.removeAt(choice.rectIndex)
         : _FreeRect(0, 0, sheetWidth, sheetHeight);
-    freeRects.addAll(choice.freeRects);
+    final offcutWasReused = choice.rectIndex >= 0 || consumedRect.reusedLater;
+    freeRects.addAll([
+      for (final rect in choice.freeRects)
+        _FreeRect(
+          rect.x,
+          rect.y,
+          rect.width,
+          rect.height,
+          reusedLater: offcutWasReused,
+        ),
+    ]);
     nextSheets[choice.sheetIndex] = _ExplorerPackedSheet(
       freeRects: freeRects,
       usedPieces: [
@@ -2866,6 +2898,7 @@ class PlasterGeometry {
                           minEdgePiece(_unitSystemForMaterialKey(key)) &&
                       rect.height >=
                           minEdgePiece(_unitSystemForMaterialKey(key)),
+                  reusedLater: rect.reusedLater,
                 ),
             ],
           ),
