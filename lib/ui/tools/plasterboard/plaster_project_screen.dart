@@ -3882,6 +3882,20 @@ class _RoomCanvas extends StatefulWidget {
   State<_RoomCanvas> createState() => _RoomCanvasState();
 }
 
+enum _RoomTapTargetType { intersection, line }
+
+class _RoomTapTarget {
+  final _RoomTapTargetType type;
+  final int index;
+  final double distance;
+
+  const _RoomTapTarget({
+    required this.type,
+    required this.index,
+    required this.distance,
+  });
+}
+
 class _RoomCanvasState extends State<_RoomCanvas> {
   int? _dragIndex;
   int? _dragOpeningIndex;
@@ -4123,6 +4137,107 @@ class _RoomCanvasState extends State<_RoomCanvas> {
     }
   }
 
+  Future<void> _handleTapSelection(
+    BuildContext context,
+    Offset localPosition,
+    _CanvasTransform transform,
+  ) async {
+    final openingIndex = transform.hitOpening(
+      widget.bundle.openings,
+      localPosition,
+    );
+    if (openingIndex != null) {
+      await widget.onTapOpening(openingIndex);
+      return;
+    }
+
+    final candidates =
+        <_RoomTapTarget>[
+          ...transform
+              .hitIntersectionCandidates(localPosition)
+              .map(
+                (candidate) => _RoomTapTarget(
+                  type: _RoomTapTargetType.intersection,
+                  index: candidate.$1,
+                  distance: candidate.$2,
+                ),
+              ),
+          ...transform
+              .hitLineCandidates(localPosition)
+              .map(
+                (candidate) => _RoomTapTarget(
+                  type: _RoomTapTargetType.line,
+                  index: candidate.$1,
+                  distance: candidate.$2,
+                ),
+              ),
+        ]..sort((left, right) {
+          final distanceCompare = left.distance.compareTo(right.distance);
+          if (distanceCompare != 0) {
+            return distanceCompare;
+          }
+          if (left.type != right.type) {
+            return left.type == _RoomTapTargetType.line ? -1 : 1;
+          }
+          return left.index.compareTo(right.index);
+        });
+
+    final uniqueCandidates = <_RoomTapTarget>[];
+    final seen = <String>{};
+    for (final candidate in candidates) {
+      final key = '${candidate.type.name}:${candidate.index}';
+      if (seen.add(key)) {
+        uniqueCandidates.add(candidate);
+      }
+    }
+
+    if (uniqueCandidates.isEmpty) {
+      if (transform.hitPolygon(localPosition)) {
+        await widget.onTapCeiling();
+      }
+      return;
+    }
+
+    if (uniqueCandidates.length == 1) {
+      final candidate = uniqueCandidates.first;
+      if (candidate.type == _RoomTapTargetType.intersection) {
+        await widget.onTapIntersection(candidate.index);
+      } else {
+        await widget.onTapLine(candidate.index);
+      }
+      return;
+    }
+
+    final selected = await showModalBottomSheet<_RoomTapTarget>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final candidate in uniqueCandidates)
+              ListTile(
+                title: Text(
+                  candidate.type == _RoomTapTargetType.line
+                      ? 'Select W${candidate.index + 1}'
+                      : 'Select vertex',
+                ),
+                onTap: () => Navigator.of(sheetContext).pop(candidate),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (selected == null || !mounted) {
+      return;
+    }
+    if (selected.type == _RoomTapTargetType.intersection) {
+      await widget.onTapIntersection(selected.index);
+    } else {
+      await widget.onTapLine(selected.index);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
@@ -4158,31 +4273,9 @@ class _RoomCanvasState extends State<_RoomCanvas> {
           panEnabled: !_isDraggingGeometry,
           scaleEnabled: !_isDraggingGeometry,
           child: GestureDetector(
-            onTapUp: (details) async {
-              final openingIndex = transform.hitOpening(
-                widget.bundle.openings,
-                details.localPosition,
-              );
-              if (openingIndex != null) {
-                await widget.onTapOpening(openingIndex);
-                return;
-              }
-              final pointIndex = transform.hitIntersection(
-                details.localPosition,
-              );
-              if (pointIndex != null) {
-                await widget.onTapIntersection(pointIndex);
-                return;
-              }
-              final lineIndex = transform.hitLine(details.localPosition);
-              if (lineIndex != null) {
-                await widget.onTapLine(lineIndex);
-                return;
-              }
-              if (transform.hitPolygon(details.localPosition)) {
-                await widget.onTapCeiling();
-              }
-            },
+            onTapUp: (details) => unawaited(
+              _handleTapSelection(context, details.localPosition, transform),
+            ),
             child: CustomPaint(
               size: size,
               painter: _RoomPainter(
@@ -4560,26 +4653,47 @@ class _CanvasTransform {
   }
 
   int? hitIntersection(Offset offset) {
+    final candidates = hitIntersectionCandidates(offset);
+    if (candidates.isEmpty) {
+      return null;
+    }
+    return candidates.first.$1;
+  }
+
+  List<(int, double)> hitIntersectionCandidates(Offset offset) {
+    final candidates = <(int, double)>[];
     for (var i = 0; i < lines.length; i++) {
       final point = toCanvasPoint(lines[i].startX, lines[i].startY);
-      if ((point - offset).distance <= 12) {
-        return i;
+      final distance = (point - offset).distance;
+      if (distance <= 12) {
+        candidates.add((i, distance));
       }
     }
-    return null;
+    candidates.sort((left, right) => left.$2.compareTo(right.$2));
+    return candidates;
   }
 
   int? hitLine(Offset offset) {
+    final candidates = hitLineCandidates(offset);
+    if (candidates.isEmpty) {
+      return null;
+    }
+    return candidates.first.$1;
+  }
+
+  List<(int, double)> hitLineCandidates(Offset offset) {
+    final candidates = <(int, double)>[];
     for (var i = 0; i < lines.length; i++) {
       final start = toCanvasPoint(lines[i].startX, lines[i].startY);
       final endPoint = PlasterGeometry.lineEnd(lines, i);
       final end = toCanvasPoint(endPoint.x, endPoint.y);
       final distance = _distanceToSegment(offset, start, end);
       if (distance <= 10) {
-        return i;
+        candidates.add((i, distance));
       }
     }
-    return null;
+    candidates.sort((left, right) => left.$2.compareTo(right.$2));
+    return candidates;
   }
 
   int? hitOpening(List<PlasterRoomOpening> openings, Offset offset) {
