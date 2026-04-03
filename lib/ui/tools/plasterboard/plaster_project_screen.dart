@@ -3398,31 +3398,12 @@ class _ProjectSheetCard extends StatelessWidget {
       PlasterGeometry.formatDisplayArea(area, sheet.material.unitSystem);
 
   bool get _rotateForLayout {
-    final relevantPieces = [
-      for (final piece in sheet.usedPieces)
-        if (piece.surfaceLabel == layout.label) piece,
-    ];
-    if (relevantPieces.isEmpty) {
-      return false;
-    }
-
-    var landscapeArea = 0;
-    var portraitArea = 0;
-    for (final piece in relevantPieces) {
-      final area = piece.area;
-      if (piece.width >= piece.height) {
-        landscapeArea += area;
-      } else {
-        portraitArea += area;
-      }
-    }
-    if (landscapeArea == portraitArea) {
-      return layout.direction == PlasterSheetDirection.horizontal
-          ? sheet.sheetWidth < sheet.sheetHeight
-          : sheet.sheetWidth > sheet.sheetHeight;
-    }
-    final targetLandscape = landscapeArea > portraitArea;
     final stockLandscape = sheet.sheetWidth >= sheet.sheetHeight;
+    final targetLandscape = switch (layout.direction) {
+      PlasterSheetDirection.horizontal => true,
+      PlasterSheetDirection.vertical => false,
+      PlasterSheetDirection.auto => stockLandscape,
+    };
     return targetLandscape != stockLandscape;
   }
 
