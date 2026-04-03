@@ -2911,27 +2911,32 @@ class _SurfaceLayoutDiagramPainter extends CustomPainter {
   }
 
   void _paintSheetLabel(Canvas canvas, Rect rect, String text) {
-    if (rect.width < 54 || rect.height < 26) {
+    final compactLabel = !text.contains('\n');
+    if (compactLabel) {
+      if (rect.width < 22 || rect.height < 14) {
+        return;
+      }
+    } else if (rect.width < 54 || rect.height < 26) {
       return;
     }
     final textPainter = TextPainter(
       text: TextSpan(
         text: text,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
-          fontSize: 10,
+          fontSize: compactLabel ? 7 : 10,
           fontWeight: FontWeight.w600,
         ),
       ),
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
-      maxLines: 2,
-    )..layout(maxWidth: rect.width - 8);
+      maxLines: compactLabel ? 1 : 2,
+    )..layout(maxWidth: rect.width - (compactLabel ? 4 : 8));
     final background = RRect.fromRectAndRadius(
       Rect.fromCenter(
         center: rect.center,
-        width: textPainter.width + 8,
-        height: textPainter.height + 6,
+        width: textPainter.width + (compactLabel ? 4 : 8),
+        height: textPainter.height + (compactLabel ? 4 : 6),
       ),
       const Radius.circular(6),
     );
