@@ -106,6 +106,8 @@ class PlasterSheetUsage {
 class PlasterProjectSheetPiece extends PlasterSheetUsagePiece {
   final String surfaceLabel;
   final bool reusedOffcut;
+  final int? sourceSheetIndex;
+  final int? sourceSheetNumber;
 
   const PlasterProjectSheetPiece({
     required super.x,
@@ -114,6 +116,8 @@ class PlasterProjectSheetPiece extends PlasterSheetUsagePiece {
     required super.height,
     required this.surfaceLabel,
     required this.reusedOffcut,
+    this.sourceSheetIndex,
+    this.sourceSheetNumber,
   });
 }
 
@@ -495,6 +499,8 @@ class _ExplorerPackedSheet {
           height: piece.height,
           surfaceLabel: piece.surfaceLabel,
           reusedOffcut: piece.reusedOffcut,
+          sourceSheetIndex: piece.sourceSheetIndex,
+          sourceSheetNumber: piece.sourceSheetNumber,
         ),
     ],
   );
@@ -2345,6 +2351,7 @@ class PlasterGeometry {
           height: choice.pieceHeight,
           surfaceLabel: piece.surfaceLabel,
           reusedOffcut: choice.rectIndex >= 0,
+          sourceSheetIndex: choice.rectIndex >= 0 ? choice.sheetIndex : null,
         ),
       ],
     );
@@ -2872,6 +2879,7 @@ class PlasterGeometry {
     for (final key in orderedKeys) {
       final material = groupedMaterials[key]!;
       final sheetSize = groupedSheetSizes[key]!;
+      final groupStartSheetNumber = nextSheetNumber;
       final packedSheets = _packSurfacePiecesForExplorer(
         pieces: groupedPieces[key]!,
         sheetWidth: sheetSize.$1,
@@ -2885,7 +2893,21 @@ class PlasterGeometry {
             material: material,
             sheetWidth: sheetSize.$1,
             sheetHeight: sheetSize.$2,
-            usedPieces: packedSheet.usedPieces,
+            usedPieces: [
+              for (final piece in packedSheet.usedPieces)
+                PlasterProjectSheetPiece(
+                  x: piece.x,
+                  y: piece.y,
+                  width: piece.width,
+                  height: piece.height,
+                  surfaceLabel: piece.surfaceLabel,
+                  reusedOffcut: piece.reusedOffcut,
+                  sourceSheetIndex: piece.sourceSheetIndex,
+                  sourceSheetNumber: piece.sourceSheetIndex == null
+                      ? null
+                      : groupStartSheetNumber + piece.sourceSheetIndex!,
+                ),
+            ],
             offcuts: [
               for (final rect in packedSheet.freeRects)
                 PlasterSheetOffcut(

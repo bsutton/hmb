@@ -959,5 +959,110 @@ void main() {
         isTrue,
       );
     });
+
+    test('sheet explorer records source sheet number for reused pieces', () {
+      final room = PlasterRoom.forInsert(
+        projectId: 1,
+        name: 'Explorer Provenance',
+        unitSystem: PreferredUnitSystem.metric,
+        ceilingHeight: 24000,
+      )..id = 1;
+      final shape = PlasterRoomShape(
+        room: room,
+        lines: PlasterGeometry.defaultLines(
+          roomId: 1,
+          unitSystem: PreferredUnitSystem.metric,
+        ),
+        openings: const [],
+      );
+      final material = PlasterMaterialSize.forInsert(
+        supplierId: 1,
+        name: '1200 x 2700',
+        unitSystem: PreferredUnitSystem.metric,
+        width: 12000,
+        height: 27000,
+      );
+      final multiSheetLayouts = [
+        PlasterSurfaceLayout(
+          roomId: 1,
+          lineId: 1,
+          isCeiling: false,
+          label: 'wall 1',
+          material: material,
+          direction: PlasterSheetDirection.horizontal,
+          width: 9000,
+          height: 27000,
+          area: 9000 * 27000,
+          sheetsAcross: 1,
+          sheetsDown: 1,
+          sheetCount: 1,
+          sheetCountWithWaste: 1,
+          placements: const [
+            PlasterSheetPlacement(x: 0, y: 0, width: 9000, height: 27000),
+          ],
+          sheetUsage: const [],
+          estimatedJointTapeLength: 0,
+          estimatedScrewCount: 0,
+          estimatedGlueKg: 0,
+          estimatedPlasterKg: 0,
+        ),
+        PlasterSurfaceLayout(
+          roomId: 1,
+          lineId: 2,
+          isCeiling: false,
+          label: 'wall 2',
+          material: material,
+          direction: PlasterSheetDirection.horizontal,
+          width: 9000,
+          height: 27000,
+          area: 9000 * 27000,
+          sheetsAcross: 1,
+          sheetsDown: 1,
+          sheetCount: 1,
+          sheetCountWithWaste: 1,
+          placements: const [
+            PlasterSheetPlacement(x: 0, y: 0, width: 9000, height: 27000),
+          ],
+          sheetUsage: const [],
+          estimatedJointTapeLength: 0,
+          estimatedScrewCount: 0,
+          estimatedGlueKg: 0,
+          estimatedPlasterKg: 0,
+        ),
+        PlasterSurfaceLayout(
+          roomId: 1,
+          lineId: 3,
+          isCeiling: false,
+          label: 'wall 3',
+          material: material,
+          direction: PlasterSheetDirection.horizontal,
+          width: 3000,
+          height: 27000,
+          area: 3000 * 27000,
+          sheetsAcross: 1,
+          sheetsDown: 1,
+          sheetCount: 1,
+          sheetCountWithWaste: 1,
+          placements: const [
+            PlasterSheetPlacement(x: 0, y: 0, width: 3000, height: 27000),
+          ],
+          sheetUsage: const [],
+          estimatedJointTapeLength: 0,
+          estimatedScrewCount: 0,
+          estimatedGlueKg: 0,
+          estimatedPlasterKg: 0,
+        ),
+      ];
+
+      final multiSheetExplorer = PlasterGeometry.buildProjectSheetExplorer([
+        shape,
+      ], multiSheetLayouts);
+
+      expect(multiSheetExplorer, hasLength(2));
+      final reusedPiece = multiSheetExplorer
+          .expand((sheet) => sheet.usedPieces)
+          .firstWhere((piece) => piece.reusedOffcut);
+      expect(reusedPiece.sourceSheetNumber, equals(1));
+    });
   });
 }

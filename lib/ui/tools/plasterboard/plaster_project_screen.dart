@@ -2792,6 +2792,7 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
   final double height;
   final bool showSheetMeasurements;
   final List<int> sheetNumbers;
+  final bool showDimensionsOverlay;
 
   const _SurfaceLayoutDiagram({
     required this.layout,
@@ -2800,6 +2801,7 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
     this.height = 84,
     this.showSheetMeasurements = false,
     this.sheetNumbers = const [],
+    this.showDimensionsOverlay = true,
   });
 
   @override
@@ -2827,13 +2829,15 @@ class _SurfaceLayoutDiagram extends StatelessWidget {
           showSheetMeasurements: showSheetMeasurements,
           sheetNumbers: sheetNumbers,
         ),
-        child: Center(
-          child: Text(
-            'w: $widthLabel\nh: $heightLabel',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 10),
-          ),
-        ),
+        child: showDimensionsOverlay
+            ? Center(
+                child: Text(
+                  'w: $widthLabel\nh: $heightLabel',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 10),
+                ),
+              )
+            : null,
       ),
     );
   }
@@ -3076,6 +3080,7 @@ class _SurfaceSheetExplorerSection extends StatelessWidget {
             width: 112,
             height: 72,
             sheetNumbers: sheetNumbers,
+            showDimensionsOverlay: false,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -3272,13 +3277,18 @@ class _ProjectSheetDiagram extends StatelessWidget {
     BuildContext context,
     PlasterProjectSheetPiece piece,
   ) async {
+    final sourceSheetLine =
+        piece.reusedOffcut && piece.sourceSheetNumber != null
+        ? '\nFrom Sheet ${piece.sourceSheetNumber}'
+        : '';
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text('Sheet ${sheet.sheetNumber} Piece'),
         content: Text(
           '${formatLength(piece.width)} x ${formatLength(piece.height)}\n'
-          '${piece.reusedOffcut ? 'Reused offcut piece' : 'Fresh piece'}',
+          '${piece.reusedOffcut ? 'Reused offcut piece' : 'Fresh piece'}'
+          '$sourceSheetLine',
         ),
         actions: [
           TextButton(
