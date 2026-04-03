@@ -3322,19 +3322,17 @@ class _ProjectSheetDiagram extends StatelessWidget {
       for (final piece in sheet.usedPieces)
         if (piece.surfaceLabel == layout.label) piece,
     ];
-    if (relevantPieces.isEmpty) {
-      return;
-    }
-
     final metrics = _ProjectSheetDiagramMetrics.fromSize(
       sheet: sheet,
       rotateForLayout: rotateForLayout,
       size: const Size(260, 160),
     );
+    const hitSlop = 8.0;
 
     for (final piece in relevantPieces.reversed) {
       if (metrics
           .sheetRectToCanvas(piece.x, piece.y, piece.width, piece.height)
+          .inflate(hitSlop)
           .contains(details.localPosition)) {
         unawaited(_showPieceDetails(context, piece));
         return;
@@ -3344,6 +3342,7 @@ class _ProjectSheetDiagram extends StatelessWidget {
     for (final offcut in sheet.offcuts.reversed) {
       if (metrics
           .sheetRectToCanvas(offcut.x, offcut.y, offcut.width, offcut.height)
+          .inflate(hitSlop)
           .contains(details.localPosition)) {
         unawaited(_showOffcutDetails(context, offcut));
         return;
