@@ -24,8 +24,10 @@ class PlasterProject extends Entity<PlasterProject> {
   final int wastePercent;
   final int wallStudSpacing;
   final int wallStudOffset;
+  final int wallFixingFaceWidth;
   final int ceilingFramingSpacing;
   final int ceilingFramingOffset;
+  final int ceilingFixingFaceWidth;
 
   PlasterProject._({
     required super.id,
@@ -36,8 +38,10 @@ class PlasterProject extends Entity<PlasterProject> {
     required this.wastePercent,
     required this.wallStudSpacing,
     required this.wallStudOffset,
+    required this.wallFixingFaceWidth,
     required this.ceilingFramingSpacing,
     required this.ceilingFramingOffset,
+    required this.ceilingFixingFaceWidth,
     required super.createdDate,
     required super.modifiedDate,
   });
@@ -50,8 +54,10 @@ class PlasterProject extends Entity<PlasterProject> {
     this.supplierId,
     this.wallStudSpacing = 6000,
     this.wallStudOffset = 0,
+    this.wallFixingFaceWidth = 450,
     this.ceilingFramingSpacing = 4500,
     this.ceilingFramingOffset = 0,
+    this.ceilingFixingFaceWidth = 450,
   }) : super.forInsert();
 
   PlasterProject copyWith({
@@ -62,8 +68,10 @@ class PlasterProject extends Entity<PlasterProject> {
     int? wastePercent,
     int? wallStudSpacing,
     int? wallStudOffset,
+    int? wallFixingFaceWidth,
     int? ceilingFramingSpacing,
     int? ceilingFramingOffset,
+    int? ceilingFixingFaceWidth,
   }) => PlasterProject._(
     id: id,
     name: name ?? this.name,
@@ -77,8 +85,11 @@ class PlasterProject extends Entity<PlasterProject> {
     wastePercent: wastePercent ?? this.wastePercent,
     wallStudSpacing: wallStudSpacing ?? this.wallStudSpacing,
     wallStudOffset: wallStudOffset ?? this.wallStudOffset,
+    wallFixingFaceWidth: wallFixingFaceWidth ?? this.wallFixingFaceWidth,
     ceilingFramingSpacing: ceilingFramingSpacing ?? this.ceilingFramingSpacing,
     ceilingFramingOffset: ceilingFramingOffset ?? this.ceilingFramingOffset,
+    ceilingFixingFaceWidth:
+        ceilingFixingFaceWidth ?? this.ceilingFixingFaceWidth,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
   );
@@ -92,8 +103,10 @@ class PlasterProject extends Entity<PlasterProject> {
     wastePercent: map['waste_percent'] as int? ?? 15,
     wallStudSpacing: map['wall_stud_spacing'] as int? ?? 6000,
     wallStudOffset: map['wall_stud_offset'] as int? ?? 0,
+    wallFixingFaceWidth: map['wall_fixing_face_width'] as int? ?? 450,
     ceilingFramingSpacing: map['ceiling_framing_spacing'] as int? ?? 4500,
     ceilingFramingOffset: map['ceiling_framing_offset'] as int? ?? 0,
+    ceilingFixingFaceWidth: map['ceiling_fixing_face_width'] as int? ?? 450,
     createdDate: DateTime.parse(map['created_date'] as String),
     modifiedDate: DateTime.parse(map['modified_date'] as String),
   );
@@ -108,8 +121,10 @@ class PlasterProject extends Entity<PlasterProject> {
     'waste_percent': wastePercent,
     'wall_stud_spacing': wallStudSpacing,
     'wall_stud_offset': wallStudOffset,
+    'wall_fixing_face_width': wallFixingFaceWidth,
     'ceiling_framing_spacing': ceilingFramingSpacing,
     'ceiling_framing_offset': ceilingFramingOffset,
+    'ceiling_fixing_face_width': ceilingFixingFaceWidth,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

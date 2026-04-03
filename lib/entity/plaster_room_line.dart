@@ -18,6 +18,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
   final PlasterSheetDirection sheetDirection;
   final int? studSpacingOverride;
   final int? studOffsetOverride;
+  final int? fixingFaceWidthOverride;
 
   PlasterRoomLine._({
     required super.id,
@@ -30,6 +31,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     required this.sheetDirection,
     required this.studSpacingOverride,
     required this.studOffsetOverride,
+    required this.fixingFaceWidthOverride,
     required super.createdDate,
     required super.modifiedDate,
   });
@@ -44,6 +46,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     this.sheetDirection = PlasterSheetDirection.auto,
     this.studSpacingOverride,
     this.studOffsetOverride,
+    this.fixingFaceWidthOverride,
   }) : super.forInsert();
 
   PlasterRoomLine copyWith({
@@ -56,6 +59,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     PlasterSheetDirection? sheetDirection,
     Object? studSpacingOverride = _unsetPlasterRoomLineField,
     Object? studOffsetOverride = _unsetPlasterRoomLineField,
+    Object? fixingFaceWidthOverride = _unsetPlasterRoomLineField,
   }) => PlasterRoomLine._(
     id: id,
     roomId: roomId ?? this.roomId,
@@ -73,6 +77,10 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
         identical(studOffsetOverride, _unsetPlasterRoomLineField)
         ? this.studOffsetOverride
         : studOffsetOverride as int?,
+    fixingFaceWidthOverride:
+        identical(fixingFaceWidthOverride, _unsetPlasterRoomLineField)
+        ? this.fixingFaceWidthOverride
+        : fixingFaceWidthOverride as int?,
     createdDate: createdDate,
     modifiedDate: DateTime.now(),
   );
@@ -91,6 +99,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
         ),
         studSpacingOverride: map['stud_spacing_override'] as int?,
         studOffsetOverride: map['stud_offset_override'] as int?,
+        fixingFaceWidthOverride: map['fixing_face_width_override'] as int?,
         createdDate: DateTime.parse(map['created_date'] as String),
         modifiedDate: DateTime.parse(map['modified_date'] as String),
       );
@@ -107,6 +116,7 @@ class PlasterRoomLine extends Entity<PlasterRoomLine> {
     'sheet_direction': sheetDirection.storageValue,
     'stud_spacing_override': studSpacingOverride,
     'stud_offset_override': studOffsetOverride,
+    'fixing_face_width_override': fixingFaceWidthOverride,
     'created_date': createdDate.toIso8601String(),
     'modified_date': modifiedDate.toIso8601String(),
   };

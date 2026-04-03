@@ -56,10 +56,16 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   final _ceilingHeightController = TextEditingController();
   final _wallStudSpacingController = TextEditingController();
   final _wallStudOffsetController = TextEditingController();
+  final _wallFixingFaceWidthController = TextEditingController();
   final _ceilingFramingSpacingController = TextEditingController();
   final _ceilingFramingOffsetController = TextEditingController();
+  final _ceilingFixingFaceWidthController = TextEditingController();
+  final _roomCeilingFramingSpacingController = TextEditingController();
+  final _roomCeilingFramingOffsetController = TextEditingController();
+  final _roomCeilingFixingFaceWidthController = TextEditingController();
   final _lineStudSpacingController = TextEditingController();
   final _lineStudOffsetController = TextEditingController();
+  final _lineFixingFaceWidthController = TextEditingController();
   final _selectedJob = SelectedJob();
   final _selectedTask = SelectedTask();
   final _selectedSupplier = SelectedSupplier();
@@ -165,6 +171,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ? PreferredUnitSystem.metric
             : bundles.first.room.unitSystem,
       );
+      _wallFixingFaceWidthController.text = _formatLengthEntry(
+        project.wallFixingFaceWidth,
+        roomUnitSystem: bundles.isEmpty
+            ? PreferredUnitSystem.metric
+            : bundles.first.room.unitSystem,
+      );
       _ceilingFramingSpacingController.text = _formatLengthEntry(
         project.ceilingFramingSpacing,
         roomUnitSystem: bundles.isEmpty
@@ -173,6 +185,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       );
       _ceilingFramingOffsetController.text = _formatLengthEntry(
         project.ceilingFramingOffset,
+        roomUnitSystem: bundles.isEmpty
+            ? PreferredUnitSystem.metric
+            : bundles.first.room.unitSystem,
+      );
+      _ceilingFixingFaceWidthController.text = _formatLengthEntry(
+        project.ceilingFixingFaceWidth,
         roomUnitSystem: bundles.isEmpty
             ? PreferredUnitSystem.metric
             : bundles.first.room.unitSystem,
@@ -271,10 +289,16 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     _ceilingHeightController.dispose();
     _wallStudSpacingController.dispose();
     _wallStudOffsetController.dispose();
+    _wallFixingFaceWidthController.dispose();
     _ceilingFramingSpacingController.dispose();
     _ceilingFramingOffsetController.dispose();
+    _ceilingFixingFaceWidthController.dispose();
+    _roomCeilingFramingSpacingController.dispose();
+    _roomCeilingFramingOffsetController.dispose();
+    _roomCeilingFixingFaceWidthController.dispose();
     _lineStudSpacingController.dispose();
     _lineStudOffsetController.dispose();
+    _lineFixingFaceWidthController.dispose();
     super.dispose();
   }
 
@@ -501,6 +525,27 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       _currentRoom.room.ceilingHeight,
       _currentRoom.room.unitSystem,
     ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
+    _roomCeilingFramingSpacingController.text =
+        _currentRoom.room.ceilingFramingSpacingOverride == null
+        ? ''
+        : _formatLengthEntry(
+            _currentRoom.room.ceilingFramingSpacingOverride!,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
+    _roomCeilingFramingOffsetController.text =
+        _currentRoom.room.ceilingFramingOffsetOverride == null
+        ? ''
+        : _formatLengthEntry(
+            _currentRoom.room.ceilingFramingOffsetOverride!,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
+    _roomCeilingFixingFaceWidthController.text =
+        _currentRoom.room.ceilingFixingFaceWidthOverride == null
+        ? ''
+        : _formatLengthEntry(
+            _currentRoom.room.ceilingFixingFaceWidthOverride!,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
     final selectedLine = _selectedLineIndex == null
         ? null
         : _currentRoom.lines[_selectedLineIndex!];
@@ -514,6 +559,13 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         ? ''
         : _formatLengthEntry(
             selectedLine!.studOffsetOverride!,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
+    _lineFixingFaceWidthController.text =
+        selectedLine?.fixingFaceWidthOverride == null
+        ? ''
+        : _formatLengthEntry(
+            selectedLine!.fixingFaceWidthOverride!,
             roomUnitSystem: _currentRoom.room.unitSystem,
           );
   }
@@ -564,6 +616,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     }
     await _commitRoomName();
     await _commitCeilingHeight();
+    await _commitSelectedRoomCeilingOverrides();
     await _commitSelectedLineFramingOverrides();
   }
 
@@ -605,6 +658,14 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                 : _currentRoom.room.unitSystem,
           ) ??
           _project.wallStudOffset,
+      wallFixingFaceWidth:
+          _parseLengthEntry(
+            _wallFixingFaceWidthController.text,
+            roomUnitSystem: _rooms.isEmpty
+                ? PreferredUnitSystem.metric
+                : _currentRoom.room.unitSystem,
+          ) ??
+          _project.wallFixingFaceWidth,
       ceilingFramingSpacing:
           _parseLengthEntry(
             _ceilingFramingSpacingController.text,
@@ -621,6 +682,14 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                 : _currentRoom.room.unitSystem,
           ) ??
           _project.ceilingFramingOffset,
+      ceilingFixingFaceWidth:
+          _parseLengthEntry(
+            _ceilingFixingFaceWidthController.text,
+            roomUnitSystem: _rooms.isEmpty
+                ? PreferredUnitSystem.metric
+                : _currentRoom.room.unitSystem,
+          ) ??
+          _project.ceilingFixingFaceWidth,
     );
     await DaoPlasterProject().update(updated);
     _project = updated;
@@ -666,6 +735,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     final currentLine = _currentRoom.lines[_selectedLineIndex!];
     final spacingText = _lineStudSpacingController.text.trim();
     final offsetText = _lineStudOffsetController.text.trim();
+    final fixingFaceText = _lineFixingFaceWidthController.text.trim();
     final spacing = spacingText.isEmpty
         ? null
         : _parseLengthEntry(
@@ -678,8 +748,15 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             offsetText,
             roomUnitSystem: _currentRoom.room.unitSystem,
           );
+    final fixingFaceWidth = fixingFaceText.isEmpty
+        ? null
+        : _parseLengthEntry(
+            fixingFaceText,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
     if ((spacingText.isNotEmpty && spacing == null) ||
-        (offsetText.isNotEmpty && offset == null)) {
+        (offsetText.isNotEmpty && offset == null) ||
+        (fixingFaceText.isNotEmpty && fixingFaceWidth == null)) {
       _syncRoomControllers();
       if (mounted) {
         setState(() {});
@@ -687,17 +764,234 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       return;
     }
     if (currentLine.studSpacingOverride == spacing &&
-        currentLine.studOffsetOverride == offset) {
+        currentLine.studOffsetOverride == offset &&
+        currentLine.fixingFaceWidthOverride == fixingFaceWidth) {
       return;
     }
     final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
     lines[_selectedLineIndex!] = currentLine.copyWith(
       studSpacingOverride: spacing,
       studOffsetOverride: offset,
+      fixingFaceWidthOverride: fixingFaceWidth,
     );
     await _updateCurrentRoom(
       _currentRoom.copyWith(lines: lines),
       trackUndo: false,
+    );
+  }
+
+  Future<void> _commitSelectedRoomCeilingOverrides() async {
+    if (_rooms.isEmpty) {
+      return;
+    }
+    final spacingText = _roomCeilingFramingSpacingController.text.trim();
+    final offsetText = _roomCeilingFramingOffsetController.text.trim();
+    final fixingFaceText = _roomCeilingFixingFaceWidthController.text.trim();
+    final spacing = spacingText.isEmpty
+        ? null
+        : _parseLengthEntry(
+            spacingText,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
+    final offset = offsetText.isEmpty
+        ? null
+        : _parseLengthEntry(
+            offsetText,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
+    final fixingFaceWidth = fixingFaceText.isEmpty
+        ? null
+        : _parseLengthEntry(
+            fixingFaceText,
+            roomUnitSystem: _currentRoom.room.unitSystem,
+          );
+    if ((spacingText.isNotEmpty && spacing == null) ||
+        (offsetText.isNotEmpty && offset == null) ||
+        (fixingFaceText.isNotEmpty && fixingFaceWidth == null)) {
+      _syncRoomControllers();
+      if (mounted) {
+        setState(() {});
+      }
+      return;
+    }
+    final room = _currentRoom.room;
+    if (room.ceilingFramingSpacingOverride == spacing &&
+        room.ceilingFramingOffsetOverride == offset &&
+        room.ceilingFixingFaceWidthOverride == fixingFaceWidth) {
+      return;
+    }
+    await _updateCurrentRoom(
+      _currentRoom.copyWith(
+        room: room.copyWith(
+          ceilingFramingSpacingOverride: spacing,
+          ceilingFramingOffsetOverride: offset,
+          ceilingFixingFaceWidthOverride: fixingFaceWidth,
+        ),
+      ),
+      trackUndo: false,
+    );
+  }
+
+  Future<void> _openEditorFramingSettings() async {
+    if (_rooms.isEmpty || !mounted) {
+      return;
+    }
+    final roomUnitLabel = PlasterGeometry.unitLabel(
+      _currentRoom.room.unitSystem,
+    );
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Room framing settings',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _ceilingHeightController,
+                  decoration: InputDecoration(
+                    labelText: 'Ceiling Height ($roomUnitLabel)',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  onSubmitted: (_) => unawaited(_commitCeilingHeight()),
+                  onEditingComplete: () => unawaited(_commitCeilingHeight()),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _roomCeilingFramingSpacingController,
+                  decoration: InputDecoration(
+                    labelText:
+                        'Ceiling Framing Spacing Override ($roomUnitLabel)',
+                    helperText: 'Leave blank to use project default.',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  onSubmitted: (_) =>
+                      unawaited(_commitSelectedRoomCeilingOverrides()),
+                  onEditingComplete: () =>
+                      unawaited(_commitSelectedRoomCeilingOverrides()),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _roomCeilingFramingOffsetController,
+                  decoration: InputDecoration(
+                    labelText:
+                        'Ceiling Framing Offset Override ($roomUnitLabel)',
+                    helperText: 'Leave blank to use project default.',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  onSubmitted: (_) =>
+                      unawaited(_commitSelectedRoomCeilingOverrides()),
+                  onEditingComplete: () =>
+                      unawaited(_commitSelectedRoomCeilingOverrides()),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _roomCeilingFixingFaceWidthController,
+                  decoration: InputDecoration(
+                    labelText:
+                        'Ceiling Fixing Face Width Override ($roomUnitLabel)',
+                    helperText: 'Leave blank to use project default.',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  onSubmitted: (_) =>
+                      unawaited(_commitSelectedRoomCeilingOverrides()),
+                  onEditingComplete: () =>
+                      unawaited(_commitSelectedRoomCeilingOverrides()),
+                ),
+                if (_selectedLineIndex != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Selected wall',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _lineStudSpacingController,
+                    decoration: InputDecoration(
+                      labelText: 'Wall Stud Spacing Override ($roomUnitLabel)',
+                      helperText: 'Leave blank to use project default.',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    onSubmitted: (_) =>
+                        unawaited(_commitSelectedLineFramingOverrides()),
+                    onEditingComplete: () =>
+                        unawaited(_commitSelectedLineFramingOverrides()),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _lineStudOffsetController,
+                    decoration: InputDecoration(
+                      labelText: 'Wall Stud Offset Override ($roomUnitLabel)',
+                      helperText: 'Leave blank to use project default.',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    onSubmitted: (_) =>
+                        unawaited(_commitSelectedLineFramingOverrides()),
+                    onEditingComplete: () =>
+                        unawaited(_commitSelectedLineFramingOverrides()),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _lineFixingFaceWidthController,
+                    decoration: InputDecoration(
+                      labelText:
+                          'Wall Fixing Face Width Override ($roomUnitLabel)',
+                      helperText: 'Leave blank to use project default.',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    onSubmitted: (_) =>
+                        unawaited(_commitSelectedLineFramingOverrides()),
+                    onEditingComplete: () =>
+                        unawaited(_commitSelectedLineFramingOverrides()),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton(
+                    onPressed: () async {
+                      await _commitCeilingHeight();
+                      await _commitSelectedRoomCeilingOverrides();
+                      await _commitSelectedLineFramingOverrides();
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: const Text('Apply'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -2874,6 +3168,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                 : _project.name,
           ),
           actions: [
+            if (_isRoomEditorOnly && _rooms.isNotEmpty)
+              IconButton(
+                onPressed: () => unawaited(_openEditorFramingSettings()),
+                icon: const Icon(Icons.tune),
+                tooltip: 'Room framing settings',
+              ),
             if (!_isRoomEditorOnly) ...[
               IconButton(
                 onPressed: () => unawaited(_saveProject()),
@@ -2959,6 +3259,18 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                         onSubmitted: (_) => unawaited(_saveProject()),
                       ),
                       TextField(
+                        controller: _wallFixingFaceWidthController,
+                        decoration: InputDecoration(
+                          labelText:
+                              'Default Wall Fixing Face Width '
+                              '(${PlasterGeometry.unitLabel(displayUnit)})',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onSubmitted: (_) => unawaited(_saveProject()),
+                      ),
+                      TextField(
                         controller: _ceilingFramingSpacingController,
                         decoration: InputDecoration(
                           labelText:
@@ -2975,6 +3287,18 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                         decoration: InputDecoration(
                           labelText:
                               'Default Ceiling Framing Offset '
+                              '(${PlasterGeometry.unitLabel(displayUnit)})',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onSubmitted: (_) => unawaited(_saveProject()),
+                      ),
+                      TextField(
+                        controller: _ceilingFixingFaceWidthController,
+                        decoration: InputDecoration(
+                          labelText:
+                              'Default Ceiling Fixing Face Width '
                               '(${PlasterGeometry.unitLabel(displayUnit)})',
                         ),
                         keyboardType: const TextInputType.numberWithOptions(

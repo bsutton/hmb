@@ -5,11 +5,14 @@
 import 'dart:isolate';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
+
 import '../../entity/plaster_material_size.dart';
 import '../../entity/plaster_project.dart';
 import '../../entity/plaster_room.dart';
 import '../../entity/plaster_room_line.dart';
 import '../../entity/plaster_room_opening.dart';
+import 'log.dart';
 import 'measurement_type.dart';
 import 'plaster_layout_scoring.dart';
 import 'plaster_sheet_direction.dart';
@@ -627,6 +630,8 @@ void plasterAnalyzeProjectInIsolate(PlasterAnalysisIsolateRequest message) {
 }
 
 class PlasterGeometry {
+  static const _debugSurfaceCandidateLogging = true;
+
   static const metricUnitsPerMm = 10;
   static const imperialUnitsPerInch = 1000;
   static const inchesPerFoot = 12;
@@ -1209,6 +1214,19 @@ class PlasterGeometry {
   }) {
     final candidates = <PlasterSurfaceLayout>[];
     final seen = <String>{};
+    final framingSpacing = isCeiling
+        ? _ceilingFramingSpacing(shape)
+        : _wallStudSpacing(shape, line);
+    final framingOffset = isCeiling
+        ? _ceilingFramingOffset(shape)
+        : _wallStudOffset(shape, line);
+    final fixingFaceWidth = isCeiling
+        ? _ceilingFixingFaceWidth(shape)
+        : _wallFixingFaceWidth(shape, line);
+    final framingDetail =
+        'framingSpacing=$framingSpacing, '
+        'framingOffset=$framingOffset, '
+        'fixingFaceWidth=$fixingFaceWidth';
     for (final material in materials) {
       final sheetWidth = convertLength(
         material.width,
@@ -1220,16 +1238,35 @@ class PlasterGeometry {
         material.unitSystem,
         room.unitSystem,
       );
-      for (final candidate in _directionCandidates(
+      final directionCandidates = _directionCandidates(
         direction: direction,
         sheetWidth: sheetWidth,
         sheetHeight: sheetHeight,
         surfaceWidth: width,
         surfaceHeight: height,
-      )) {
+      );
+      if (directionCandidates.isEmpty) {
+        _logSurfaceCandidateDecision(
+          label: label,
+          material: material,
+          direction: direction,
+          decision: 'rejected',
+          detail: 'no valid direction candidates, $framingDetail',
+        );
+      }
+      for (final candidate in directionCandidates) {
         if (!isCeiling &&
             candidate.$1 == PlasterSheetDirection.vertical &&
             candidate.$3 < height) {
+          _logSurfaceCandidateDecision(
+            label: label,
+            material: material,
+            direction: candidate.$1,
+            decision: 'rejected',
+            detail:
+                'vertical wall board shorter than wall height, '
+                '$framingDetail',
+          );
           continue;
         }
         final plans = _buildDeterministicPlacementPlans(
@@ -1243,6 +1280,19 @@ class PlasterGeometry {
           direction: candidate.$1,
           isCeiling: isCeiling,
         );
+        if (plans.isEmpty) {
+          _logSurfaceCandidateDecision(
+            label: label,
+            material: material,
+            direction: candidate.$1,
+            decision: 'rejected',
+            detail:
+                'no deterministic placement plans generated, '
+                '$framingDetail',
+          );
+          continue;
+        }
+        var acceptedForCandidate = false;
         for (final plan in plans) {
           final packed = _packPieces(
             pieces: plan.$1,
@@ -1260,6 +1310,7 @@ class PlasterGeometry {
           if (!seen.add(signature)) {
             continue;
           }
+          acceptedForCandidate = true;
           final surface = PlasterSurfaceLayout(
             roomId: room.id,
             lineId: lineId,
@@ -1286,6 +1337,27 @@ class PlasterGeometry {
             estimatedPlasterKg: _estimatePlasterKg(area, candidate.$1),
           );
           candidates.add(surface);
+          _logSurfaceCandidateDecision(
+            label: label,
+            material: material,
+            direction: candidate.$1,
+            decision: 'accepted',
+            detail:
+                'sheetCount=${surface.sheetCount}, '
+                'sheetsAcross=${surface.sheetsAcross}, '
+                'sheetsDown=${surface.sheetsDown}, '
+                'jointTape=${surface.estimatedJointTapeLength}, '
+                '$framingDetail',
+          );
+        }
+        if (!acceptedForCandidate) {
+          _logSurfaceCandidateDecision(
+            label: label,
+            material: material,
+            direction: candidate.$1,
+            decision: 'rejected',
+            detail: 'all generated plans were duplicates, $framingDetail',
+          );
         }
       }
     }
@@ -1307,6 +1379,30 @@ class PlasterGeometry {
         );
       });
     return sorted;
+  }
+
+  static void _logSurfaceCandidateDecision({
+    required String label,
+    required PlasterMaterialSize material,
+    required PlasterSheetDirection direction,
+    required String decision,
+    required String detail,
+  }) {
+    if (!_debugSurfaceCandidateLogging) {
+      return;
+    }
+    final message =
+        'PLASTER_SURFACE_CANDIDATE '
+        'surface="$label", '
+        'material="${material.name}", '
+        'direction=${direction.name}, '
+        'decision=$decision, '
+        'detail=$detail';
+    try {
+      Log.i(message);
+    } catch (_) {
+      debugPrint(message);
+    }
   }
 
   static List<(List<PlasterSheetPlacement>, int, int)>
@@ -1413,11 +1509,28 @@ class PlasterGeometry {
   static int _wallStudOffset(PlasterRoomShape shape, PlasterRoomLine? line) =>
       line?.studOffsetOverride ?? shape.project?.wallStudOffset ?? 0;
 
+  static int _wallFixingFaceWidth(
+    PlasterRoomShape shape,
+    PlasterRoomLine? line,
+  ) =>
+      line?.fixingFaceWidthOverride ??
+      shape.project?.wallFixingFaceWidth ??
+      450;
+
   static int _ceilingFramingSpacing(PlasterRoomShape shape) =>
-      shape.project?.ceilingFramingSpacing ?? 4500;
+      shape.room.ceilingFramingSpacingOverride ??
+      shape.project?.ceilingFramingSpacing ??
+      4500;
 
   static int _ceilingFramingOffset(PlasterRoomShape shape) =>
-      shape.project?.ceilingFramingOffset ?? 0;
+      shape.room.ceilingFramingOffsetOverride ??
+      shape.project?.ceilingFramingOffset ??
+      0;
+
+  static int _ceilingFixingFaceWidth(PlasterRoomShape shape) =>
+      shape.room.ceilingFixingFaceWidthOverride ??
+      shape.project?.ceilingFixingFaceWidth ??
+      450;
 
   static List<int>? _buildCourseHeights({
     required int surfaceHeight,

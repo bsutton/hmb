@@ -107,6 +107,48 @@ The chosen direction is not decorative metadata. It must alter:
 The UI and PDF must describe the resulting layout clearly. Ambiguous labels
 such as bare `3 x 1` should be avoided.
 
+### 5a. Framing metadata is part of the solver input
+
+Support alignment is driven by framing metadata, not by sheet size alone.
+
+The solver must resolve framing settings in this order:
+
+- per-wall override for wall surfaces
+- per-ceiling override for ceiling surfaces
+- project default
+
+The framing model must distinguish between:
+
+- spacing: center-to-center support distance
+- offset: the first support centerline offset from the surface origin
+- fixing face width: the width of the support face available for fixing
+
+Current placement rule:
+
+- butt joints must land on the centerline of the support face
+
+That means spacing and offset define where joint centerlines may occur. The
+fixing face width must still be persisted and exposed to the user, but it does
+not currently relax the centerline landing rule.
+
+Required persisted settings:
+
+- project defaults
+  - wall stud spacing
+  - wall stud offset
+  - wall fixing face width
+  - ceiling framing spacing
+  - ceiling framing offset
+  - ceiling fixing face width
+- per-wall overrides
+  - stud spacing
+  - stud offset
+  - fixing face width
+- per-ceiling overrides
+  - framing spacing
+  - framing offset
+  - fixing face width
+
 ## Additional Practical Rules
 
 These are general drywall/plasterboard layout rules that should guide future

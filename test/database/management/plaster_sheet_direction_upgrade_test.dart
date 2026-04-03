@@ -91,4 +91,58 @@ void main() {
       delete(dbPath);
     }
   });
+
+  test('v169 adds fixing face widths and ceiling override columns', () async {
+    final dbPath = join(createTempDir(), 'plaster_framing_v169.db');
+    final db = await CliDatabaseFactory().openDatabase(
+      dbPath,
+      options: OpenDatabaseOptions(),
+    );
+
+    try {
+      final source = ProjectScriptSource();
+      for (final script in [
+        'assets/sql/upgrade_scripts/v163.sql',
+        'assets/sql/upgrade_scripts/v166.sql',
+        'assets/sql/upgrade_scripts/v167.sql',
+        'assets/sql/upgrade_scripts/v169.sql',
+      ]) {
+        final sql = await source.loadSQL(script);
+        final statements = await parseSqlFile(sql);
+        for (final statement in statements) {
+          await db.execute(statement);
+        }
+      }
+
+      final projectColumns = await db.rawQuery(
+        'PRAGMA table_info(plaster_project)',
+      );
+      final roomColumns = await db.rawQuery('PRAGMA table_info(plaster_room)');
+      final lineColumns = await db.rawQuery(
+        'PRAGMA table_info(plaster_room_line)',
+      );
+      final projectNames = {
+        for (final row in projectColumns) row['name'] as String? ?? '': true,
+      };
+      final roomNames = {
+        for (final row in roomColumns) row['name'] as String? ?? '': true,
+      };
+      final lineNames = {
+        for (final row in lineColumns) row['name'] as String? ?? '': true,
+      };
+
+      expect(projectNames.containsKey('wall_fixing_face_width'), isTrue);
+      expect(projectNames.containsKey('ceiling_fixing_face_width'), isTrue);
+      expect(roomNames.containsKey('ceiling_framing_spacing_override'), isTrue);
+      expect(roomNames.containsKey('ceiling_framing_offset_override'), isTrue);
+      expect(
+        roomNames.containsKey('ceiling_fixing_face_width_override'),
+        isTrue,
+      );
+      expect(lineNames.containsKey('fixing_face_width_override'), isTrue);
+    } finally {
+      await db.close();
+      delete(dbPath);
+    }
+  });
 }
