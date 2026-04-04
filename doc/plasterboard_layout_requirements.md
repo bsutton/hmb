@@ -367,6 +367,8 @@ The current benchmark artifacts are:
   `test/fixtures/plaster_solver/v1/benchmark_fixture_v1.dart`
 - baseline thresholds:
   `test/fixtures/plaster_solver/v1/baseline_results_v1.dart`
+- recorded current results:
+  `test/fixtures/plaster_solver/v1/current_results_v1.dart`
 - adapter/loader support:
   `test/util/plaster_solver_benchmark_support.dart`
 - executable benchmark test:
@@ -431,6 +433,41 @@ Run the versioned plasterboard benchmark with:
 ```bash
 flutter test test/util/plaster_geometry_benchmark_test.dart
 ```
+
+Run the on-demand benchmark report with:
+
+```bash
+dart run tool/plasterboard_benchmark_report.dart
+```
+
+Generate a new snapshot block for a solver version with:
+
+```bash
+dart run tool/plasterboard_benchmark_snapshot.dart
+```
+
+Use that output to create a new versioned results file, for example a new
+`current_results_v2.dart` or `legacy_results_v2.dart`, instead of editing older
+solver snapshots in place.
+
+The report prints, for each benchmark scenario:
+
+- actual sheet count
+- actual waste percent
+- actual joint-tape length
+- current headroom against the checked-in baseline caps
+- delta against the checked-in current-result snapshot
+
+It also prints aggregate totals across the full corpus, including:
+
+- total surface area
+- total purchased board area
+- total estimated waste area
+- weighted waste percent
+
+Do not compare benchmark scenarios by summing their individual waste
+percentages. Aggregate waste must be calculated from total waste area divided
+by total surface area.
 
 Run full analysis after benchmark-related changes with:
 

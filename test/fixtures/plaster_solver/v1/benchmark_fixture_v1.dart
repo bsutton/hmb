@@ -181,5 +181,24 @@ const plasterSolverBenchmarkFixtureSetV1 = SolverBenchmarkFixtureSetV1(
         ),
       ],
     ),
+    SolverBenchmarkScenarioV1(
+      id: 'large_ceiling_13_184x5_413',
+      name: '13.184m x 5.413m ceiling stress case',
+      rooms: [
+        SolverBenchmarkRoomV1(
+          roomId: 8,
+          projectId: 1,
+          name: '13.184m x 5.413m ceiling stress case',
+          ceilingHeight: 24000,
+          plasterCeiling: true,
+          points: [
+            IntPoint(0, 0),
+            IntPoint(131840, 0),
+            IntPoint(131840, 54130),
+            IntPoint(0, 54130),
+          ],
+        ),
+      ],
+    ),
   ],
 );

@@ -73,5 +73,11 @@ const plasterSolverBaselineResultsV1 = SolverBenchmarkBaselineSetV1(
       maxWastePercent: 180,
       maxJointTapeLength: 850000,
     ),
+    SolverBenchmarkBaselineV1(
+      scenarioId: 'large_ceiling_13_184x5_413',
+      maxSheets: 50,
+      maxWastePercent: 40,
+      maxJointTapeLength: 1800000,
+    ),
   ],
 );

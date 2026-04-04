@@ -5,8 +5,6 @@
 import 'dart:isolate';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
-
 import '../../entity/plaster_material_size.dart';
 import '../../entity/plaster_project.dart';
 import '../../entity/plaster_room.dart';
@@ -630,7 +628,7 @@ void plasterAnalyzeProjectInIsolate(PlasterAnalysisIsolateRequest message) {
 }
 
 class PlasterGeometry {
-  static const _debugSurfaceCandidateLogging = true;
+  static var debugSurfaceCandidateLogging = false;
 
   static const metricUnitsPerMm = 10;
   static const imperialUnitsPerInch = 1000;
@@ -1388,7 +1386,7 @@ class PlasterGeometry {
     required String decision,
     required String detail,
   }) {
-    if (!_debugSurfaceCandidateLogging) {
+    if (!debugSurfaceCandidateLogging) {
       return;
     }
     final message =
@@ -1401,7 +1399,7 @@ class PlasterGeometry {
     try {
       Log.i(message);
     } catch (_) {
-      debugPrint(message);
+      print(message);
     }
   }
 

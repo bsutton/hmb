@@ -6,6 +6,7 @@ import 'package:hmb/util/dart/plaster_geometry.dart';
 
 import '../fixtures/plaster_solver/v1/baseline_results_v1.dart';
 import '../fixtures/plaster_solver/v1/benchmark_fixture_v1.dart';
+import '../fixtures/plaster_solver/v1/current_results_v1.dart';
 
 class SolverBenchmarkScenario {
   final String id;
@@ -38,12 +39,14 @@ class SolverBenchmarkCorpus {
   final String scoringVersion;
   final List<SolverBenchmarkScenario> scenarios;
   final Map<String, SolverBenchmarkBaseline> baselinesByScenarioId;
+  final Map<String, SolverBenchmarkSnapshot> snapshotsByScenarioId;
 
   const SolverBenchmarkCorpus({
     required this.schemaVersion,
     required this.scoringVersion,
     required this.scenarios,
     required this.baselinesByScenarioId,
+    required this.snapshotsByScenarioId,
   });
 }
 
@@ -51,8 +54,28 @@ class SolverBenchmarkMetrics {
   final int totalSheetCount;
   final double wastePercent;
   final int jointTapeLength;
+  final int surfaceArea;
+  final int purchasedBoardArea;
+  final int estimatedWasteArea;
 
   const SolverBenchmarkMetrics({
+    required this.totalSheetCount,
+    required this.wastePercent,
+    required this.jointTapeLength,
+    required this.surfaceArea,
+    required this.purchasedBoardArea,
+    required this.estimatedWasteArea,
+  });
+}
+
+class SolverBenchmarkSnapshot {
+  final String scenarioId;
+  final int totalSheetCount;
+  final double wastePercent;
+  final int jointTapeLength;
+
+  const SolverBenchmarkSnapshot({
+    required this.scenarioId,
     required this.totalSheetCount,
     required this.wastePercent,
     required this.jointTapeLength,
@@ -62,6 +85,7 @@ class SolverBenchmarkMetrics {
 SolverBenchmarkCorpus loadPlasterSolverBenchmarkCorpus() {
   const fixtures = plasterSolverBenchmarkFixtureSetV1;
   const baselines = plasterSolverBaselineResultsV1;
+  const snapshots = plasterSolverCurrentResultsV1;
 
   if (fixtures.schemaVersion != baselines.schemaVersion) {
     throw StateError(
@@ -73,6 +97,18 @@ SolverBenchmarkCorpus loadPlasterSolverBenchmarkCorpus() {
     throw StateError(
       'Fixture scoring version ${fixtures.scoringVersion} does not match '
       'baseline scoring version ${baselines.scoringVersion}.',
+    );
+  }
+  if (fixtures.schemaVersion != snapshots.schemaVersion) {
+    throw StateError(
+      'Fixture schema version ${fixtures.schemaVersion} does not match '
+      'snapshot schema version ${snapshots.schemaVersion}.',
+    );
+  }
+  if (fixtures.scoringVersion != snapshots.scoringVersion) {
+    throw StateError(
+      'Fixture scoring version ${fixtures.scoringVersion} does not match '
+      'snapshot scoring version ${snapshots.scoringVersion}.',
     );
   }
 
@@ -96,6 +132,15 @@ SolverBenchmarkCorpus loadPlasterSolverBenchmarkCorpus() {
           maxJointTapeLength: baseline.maxJointTapeLength,
         ),
     },
+    snapshotsByScenarioId: {
+      for (final snapshot in snapshots.results)
+        snapshot.scenarioId: SolverBenchmarkSnapshot(
+          scenarioId: snapshot.scenarioId,
+          totalSheetCount: snapshot.totalSheetCount,
+          wastePercent: snapshot.wastePercent,
+          jointTapeLength: snapshot.jointTapeLength,
+        ),
+    },
   );
 }
 
@@ -112,6 +157,9 @@ SolverBenchmarkMetrics calculateSolverBenchmarkMetrics(
       0,
       (sum, layout) => sum + layout.estimatedJointTapeLength,
     ),
+    surfaceArea: takeoff.surfaceArea,
+    purchasedBoardArea: takeoff.purchasedBoardArea,
+    estimatedWasteArea: takeoff.estimatedWasteArea,
   );
 }
 
