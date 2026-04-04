@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:hmb/entity/entity.g.dart';
 import 'package:hmb/util/dart/measurement_type.dart';
 import 'package:hmb/util/dart/plaster_geometry.dart';
+import 'package:hmb/util/dart/plaster_sheet_direction.dart';
+import 'package:plasterboard_explorer/plasterboard_explorer_models.dart';
 
 import '../fixtures/plaster_solver/v1/baseline_results_v1.dart';
 import '../fixtures/plaster_solver/v1/benchmark_fixture_v1.dart';
@@ -162,6 +164,113 @@ SolverBenchmarkMetrics calculateSolverBenchmarkMetrics(
     estimatedWasteArea: takeoff.estimatedWasteArea,
   );
 }
+
+BenchmarkVisualScenarioSnapshot calculateBenchmarkVisualSnapshot(
+  SolverBenchmarkScenario scenario,
+  List<PlasterMaterialSize> materials,
+) {
+  final layouts = PlasterGeometry.calculateLayout(scenario.shapes, materials);
+  final takeoff = PlasterGeometry.calculateTakeoff(scenario.shapes, layouts, 0);
+  final sheets = PlasterGeometry.buildProjectSheetExplorer(
+    scenario.shapes,
+    layouts,
+  );
+  return buildBenchmarkVisualScenarioSnapshot(
+    scenarioId: scenario.id,
+    scenarioName: scenario.name,
+    layouts: layouts,
+    sheets: sheets,
+    takeoff: takeoff,
+  );
+}
+
+BenchmarkVisualScenarioSnapshot buildBenchmarkVisualScenarioSnapshot({
+  required String scenarioId,
+  required String scenarioName,
+  required List<PlasterSurfaceLayout> layouts,
+  required List<PlasterProjectSheet> sheets,
+  required PlasterTakeoffSummary takeoff,
+}) => BenchmarkVisualScenarioSnapshot(
+  scenarioId: scenarioId,
+  scenarioName: scenarioName,
+  totalSheetCount: takeoff.totalSheetCount,
+  wastePercent: takeoff.estimatedWastePercent,
+  jointTapeLength: layouts.fold<int>(
+    0,
+    (sum, layout) => sum + layout.estimatedJointTapeLength,
+  ),
+  layouts: [
+    for (final layout in layouts)
+      BenchmarkVisualSurfaceLayout(
+        roomId: layout.roomId,
+        lineId: layout.lineId,
+        isCeiling: layout.isCeiling,
+        label: layout.label,
+        materialName: layout.material.name,
+        unitSystem: _mapUnitSystem(layout.material.unitSystem),
+        direction: _mapSheetDirection(layout.direction),
+        width: layout.width,
+        height: layout.height,
+        sheetCount: layout.sheetCount,
+        sheetsAcross: layout.sheetsAcross,
+        sheetsDown: layout.sheetsDown,
+        placements: [
+          for (final placement in layout.placements)
+            BenchmarkVisualSheetPlacement(
+              x: placement.x,
+              y: placement.y,
+              width: placement.width,
+              height: placement.height,
+            ),
+        ],
+      ),
+  ],
+  sheets: [
+    for (final sheet in sheets)
+      BenchmarkVisualProjectSheet(
+        sheetNumber: sheet.sheetNumber,
+        materialName: sheet.material.name,
+        unitSystem: _mapUnitSystem(sheet.material.unitSystem),
+        sheetWidth: sheet.sheetWidth,
+        sheetHeight: sheet.sheetHeight,
+        usedPieces: [
+          for (final piece in sheet.usedPieces)
+            BenchmarkVisualProjectSheetPiece(
+              surfaceLabel: piece.surfaceLabel,
+              reusedOffcut: piece.reusedOffcut,
+              sourceSheetNumber: piece.sourceSheetNumber,
+              x: piece.x,
+              y: piece.y,
+              width: piece.width,
+              height: piece.height,
+            ),
+        ],
+        offcuts: [
+          for (final offcut in sheet.offcuts)
+            BenchmarkVisualOffcut(
+              reusable: offcut.reusable,
+              reusedLater: offcut.reusedLater,
+              x: offcut.x,
+              y: offcut.y,
+              width: offcut.width,
+              height: offcut.height,
+            ),
+        ],
+      ),
+  ],
+);
+
+ExplorerUnitSystem _mapUnitSystem(PreferredUnitSystem unitSystem) =>
+    unitSystem == PreferredUnitSystem.metric
+    ? ExplorerUnitSystem.metric
+    : ExplorerUnitSystem.imperial;
+
+ExplorerSheetDirection _mapSheetDirection(PlasterSheetDirection direction) =>
+    switch (direction) {
+      PlasterSheetDirection.auto => ExplorerSheetDirection.auto,
+      PlasterSheetDirection.horizontal => ExplorerSheetDirection.horizontal,
+      PlasterSheetDirection.vertical => ExplorerSheetDirection.vertical,
+    };
 
 PlasterRoomShape _roomToShape(SolverBenchmarkRoomV1 room) {
   final entity = PlasterRoom.forInsert(
