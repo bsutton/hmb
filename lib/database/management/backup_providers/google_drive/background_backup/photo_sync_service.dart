@@ -19,6 +19,7 @@ import 'dart:isolate';
 import 'package:dcli_core/dcli_core.dart';
 import 'package:googleapis/drive/v3.dart' as gdrive;
 import 'package:path/path.dart' as p;
+import 'package:sentry/sentry.dart';
 
 import '../../../../../dao/dao_photo.dart';
 import '../../../../../dao/dao_photo_delete_queue.dart';
@@ -69,14 +70,18 @@ class PhotoSyncService {
   Timer? _retryTimer;
   var _autoRetryAttempts = 0;
   var _syncHadError = false;
+  String? _lastErrorSummary;
 
   final StreamController<ProgressUpdate> _controller =
+      StreamController.broadcast();
+  final StreamController<String> _errorController =
       StreamController.broadcast();
 
   factory PhotoSyncService() => _instance;
   PhotoSyncService._();
 
   Stream<ProgressUpdate> get progressStream => _controller.stream;
+  Stream<String> get errorStream => _errorController.stream;
 
   bool get isRunning => _isolate != null;
 
@@ -127,6 +132,7 @@ class PhotoSyncService {
       return;
     }
     _syncHadError = false;
+    _lastErrorSummary = null;
 
     _receivePort = ReceivePort();
     _errorPort = ReceivePort();
@@ -192,9 +198,17 @@ class PhotoSyncService {
 
   void _onSyncError(dynamic error) {
     _syncHadError = true;
+    _lastErrorSummary = _formatSyncError(error);
+    unawaited(
+      Sentry.captureMessage(
+        'Photo sync isolate failed: $_lastErrorSummary',
+        level: SentryLevel.error,
+      ),
+    );
+    _errorController.add(_lastErrorSummary!);
     _controller.add(
       ProgressUpdate(
-        'Photo sync interrupted due to communication error.',
+        'Photo sync failed.',
         0,
         0,
       ),
@@ -225,6 +239,19 @@ class PhotoSyncService {
     _retryTimer = Timer(_retryDelay, () {
       unawaited(start());
     });
+  }
+
+  String _formatSyncError(dynamic error) {
+    if (error is List && error.length >= 2) {
+      final message = '${error[0]}'.trim();
+      final stack = '${error[1]}'.trim();
+      if (stack.isEmpty) {
+        return message;
+      }
+      final firstStackLine = stack.split('\n').first.trim();
+      return '$message [$firstStackLine]';
+    }
+    return '$error';
   }
 
   Future<void> resumeIfNeeded() async {
@@ -374,11 +401,16 @@ properties has { key='photoId' and value='$idStr' } and trashed=false''';
 
 /// In the isolate, after each successful upload, send the payload itself:
 Future<void> _photoSyncEntry(PhotoSyncParams params) async {
-  await uploadPhotosInBackup(
-    sendPort: params.sendPort,
-    authHeaders: params.authHeaders,
-    photoPayloads: params.photos,
-    deletePayloads: params.deletes,
-  );
-  Isolate.exit();
+  try {
+    await uploadPhotosInBackup(
+      sendPort: params.sendPort,
+      authHeaders: params.authHeaders,
+      photoPayloads: params.photos,
+      deletePayloads: params.deletes,
+    );
+  } catch (e, st) {
+    Error.throwWithStackTrace(e, st);
+  } finally {
+    Isolate.exit();
+  }
 }

@@ -50,6 +50,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   late final BackupProvider _provider;
   DateTime? _lastBackup;
   late final StreamSubscription<ProgressUpdate> _photoSub;
+  late final StreamSubscription<String> _photoErrorSub;
 
   @override
   void initState() {
@@ -57,6 +58,11 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
     // Listen for photo sync progress
     _photoSub = PhotoSyncService().progressStream.listen((update) {
       setState(() => _photoStageDescription = update.stageDescription);
+    });
+    _photoErrorSub = PhotoSyncService().errorStream.listen((message) {
+      if (mounted) {
+        HMBToast.error('Photo sync failed: $message');
+      }
     });
   }
 
@@ -74,6 +80,7 @@ class _BackupDashboardPageState extends DeferredState<BackupDashboardPage> {
   @override
   void dispose() {
     unawaited(_photoSub.cancel());
+    unawaited(_photoErrorSub.cancel());
     super.dispose();
   }
 

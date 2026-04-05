@@ -127,9 +127,20 @@ Future<void> uploadPhotosInBackup({
         ..body = metadata,
     );
 
+    if (initResp.statusCode < 200 || initResp.statusCode >= 300) {
+      final body = await initResp.stream.bytesToString();
+      throw HttpException(
+        'Failed to initialize resumable upload for photo ${photoPayload.id}: '
+        '${initResp.statusCode} ${initResp.reasonPhrase ?? ''} ${body.trim()}',
+      );
+    }
+
     final uploadUrl = initResp.headers['location'];
     if (uploadUrl == null) {
-      continue;
+      throw StateError(
+        'Google Drive did not return an upload URL for photo '
+        '${photoPayload.id}.',
+      );
     }
 
     final bytes = await file.readAsBytes();
@@ -141,34 +152,39 @@ Future<void> uploadPhotosInBackup({
 
     final uploadResp = await http.Response.fromStream(uploadStreamResponse);
 
-    if (uploadResp.statusCode == 200 || uploadResp.statusCode == 201) {
-      final fileJson = jsonDecode(uploadResp.body) as Map<String, dynamic>;
-      final cloudFileId = fileJson['id'] as String?;
-      final cloudMd5 = fileJson['md5Checksum'] as String?;
-      final cloudModifiedDate = DateTime.tryParse(
-        fileJson['modifiedTime'] as String? ?? '',
+    if (uploadResp.statusCode != 200 && uploadResp.statusCode != 201) {
+      throw HttpException(
+        'Photo ${photoPayload.id} upload failed: ${uploadResp.statusCode} '
+        '${uploadResp.reasonPhrase ?? ''} ${uploadResp.body.trim()}',
       );
-      sendPort
-        ..send(
-          PhotoUploaded(
-            photoPayload.id,
-            photoPayload.pathToCloudStorage,
-            3,
-            cloudFileId: cloudFileId,
-            cloudMd5: cloudMd5,
-            cloudModifiedDate: cloudModifiedDate,
-          ),
-        )
-        ..send(
-          ProgressUpdate(
-            'Photo ${photoPayload.id} synced',
-            stageNo++,
-            stageCount,
-          ),
-        );
-      // Used to test that meta data uploads work.
-      // await hasPhotoIdProperty(fileId: cloudFileId!, driveApi: driveApi);
     }
+
+    final fileJson = jsonDecode(uploadResp.body) as Map<String, dynamic>;
+    final cloudFileId = fileJson['id'] as String?;
+    final cloudMd5 = fileJson['md5Checksum'] as String?;
+    final cloudModifiedDate = DateTime.tryParse(
+      fileJson['modifiedTime'] as String? ?? '',
+    );
+    sendPort
+      ..send(
+        PhotoUploaded(
+          photoPayload.id,
+          photoPayload.pathToCloudStorage,
+          3,
+          cloudFileId: cloudFileId,
+          cloudMd5: cloudMd5,
+          cloudModifiedDate: cloudModifiedDate,
+        ),
+      )
+      ..send(
+        ProgressUpdate(
+          'Photo ${photoPayload.id} synced',
+          stageNo++,
+          stageCount,
+        ),
+      );
+    // Used to test that meta data uploads work.
+    // await hasPhotoIdProperty(fileId: cloudFileId!, driveApi: driveApi);
   }
 
   driveApi.close();
