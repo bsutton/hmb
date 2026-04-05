@@ -2142,176 +2142,78 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ) !=
             null;
     final isSelectedLinePlaster = selectedLine?.plasterSelected ?? false;
-    final primaryButtons = <PlasterboardEditorToolAction>[
-      PlasterboardEditorToolAction(
-        id: 'toggle-selection-mode',
-        icon: _selectionMode ? Icons.touch_app : Icons.ads_click,
-        label: _selectionMode ? 'Select Mode' : 'Edit Mode',
-        helpText:
-            'Toggle between selection mode and direct geometry editing. '
-            'Selection mode lets you pick walls, joints, and openings so you '
-            'can apply tools to them.',
-        selected: _selectionMode,
-        onPressed: () => setState(() => _selectionMode = !_selectionMode),
+    final toolbarButtons = buildRoomEditorToolbarActions(
+      state: RoomEditorToolbarState(
+        selectionMode: _selectionMode,
+        snapToGrid: _snapToGrid,
+        showGrid: _showGrid,
+        hasLine: hasLine,
+        hasIntersection: hasIntersection,
+        hasOpening: hasOpening,
+        hasLineLengthConstraint: hasLineLengthConstraint,
+        hasHorizontalConstraint: hasHorizontalConstraint,
+        hasVerticalConstraint: hasVerticalConstraint,
+        hasAngleConstraint: hasAngleConstraint,
+        isSelectedLinePlaster: isSelectedLinePlaster,
+        isSelectedOpeningDoor:
+            selectedOpening?.type == PlasterOpeningType.door,
       ),
-      PlasterboardEditorToolAction(
-        id: 'undo',
-        icon: Icons.undo,
-        label: 'Undo',
-        helpText:
-            'Restore the previous room-editing step, including geometry and '
-            'openings.',
-        enabled: _undo.isNotEmpty,
-        onPressed: () async {
-          if (_undo.isEmpty) {
-            return;
-          }
-          _redo.add(_currentRoom.deepCopy());
-          final previous = _undo.removeLast();
-          _rooms[_selectedRoomIndex] = previous;
-          await _saveRoomBundle(previous);
-          _syncRoomControllers();
-          setState(() {});
-        },
-      ),
-      PlasterboardEditorToolAction(
-        id: 'redo',
-        icon: Icons.redo,
-        label: 'Redo',
-        helpText: 'Reapply the most recently undone room-editing step.',
-        enabled: _redo.isNotEmpty,
-        onPressed: () async {
-          if (_redo.isEmpty) {
-            return;
-          }
-          _undo.add(_currentRoom.deepCopy());
-          final next = _redo.removeLast();
-          _rooms[_selectedRoomIndex] = next;
-          await _saveRoomBundle(next);
-          _syncRoomControllers();
-          setState(() {});
-        },
-      ),
-      PlasterboardEditorToolAction(
-        id: 'fit',
-        icon: Icons.fit_screen,
-        label: 'Fit',
-        helpText:
-            'Reset the drawing zoom and pan so the current room fits back into '
-            'view.',
-        onPressed: () => setState(() => _fitCanvasRequest++),
-      ),
-      PlasterboardEditorToolAction(
-        id: 'toggle-snap',
-        icon: _snapToGrid ? Icons.grid_on : Icons.grid_off,
-        label: _snapToGrid ? 'Snap On' : 'Snap Off',
-        helpText:
-            'Turn grid snapping on or off when moving points and openings.',
-        selected: _snapToGrid,
-        onPressed: () => setState(() => _snapToGrid = !_snapToGrid),
-      ),
-      PlasterboardEditorToolAction(
-        id: 'toggle-grid',
-        icon: _showGrid ? Icons.border_all : Icons.border_clear,
-        label: _showGrid ? 'Grid On' : 'Grid Off',
-        helpText: 'Show or hide the background drawing grid.',
-        selected: _showGrid,
-        onPressed: () => setState(() => _showGrid = !_showGrid),
-      ),
-      PlasterboardEditorToolAction(
-        id: 'deselect',
-        icon: Icons.deselect,
-        label: 'Deselect',
-        helpText: 'Clear the current wall, joint, or opening selection.',
-        enabled: hasLine || hasIntersection || hasOpening,
-        onPressed: () => setState(_clearSelection),
-      ),
-      PlasterboardEditorToolAction(
-        id: 'split',
-        icon: Icons.content_cut,
-        label: 'Split',
-        helpText:
-            'Split the selected wall into two connected wall segments at its '
-            'midpoint.',
-        enabled: hasLine,
-        onPressed: hasLine ? () => _splitLine(_selectedLineIndex!) : null,
-      ),
-      PlasterboardEditorToolAction(
-        id: 'door',
-        icon: Icons.door_front_door_outlined,
-        label: 'Door',
-        helpText: 'Add a door opening to the selected wall.',
-        enabled: hasLine,
-        onPressed: hasLine
+      callbacks: RoomEditorToolbarCallbacks(
+        onToggleSelectionMode: () =>
+            setState(() => _selectionMode = !_selectionMode),
+        onUndo: _undo.isEmpty
+            ? null
+            : () async {
+                if (_undo.isEmpty) {
+                  return;
+                }
+                _redo.add(_currentRoom.deepCopy());
+                final previous = _undo.removeLast();
+                _rooms[_selectedRoomIndex] = previous;
+                await _saveRoomBundle(previous);
+                _syncRoomControllers();
+                setState(() {});
+              },
+        onRedo: _redo.isEmpty
+            ? null
+            : () async {
+                if (_redo.isEmpty) {
+                  return;
+                }
+                _undo.add(_currentRoom.deepCopy());
+                final next = _redo.removeLast();
+                _rooms[_selectedRoomIndex] = next;
+                await _saveRoomBundle(next);
+                _syncRoomControllers();
+                setState(() {});
+              },
+        onFit: () => setState(() => _fitCanvasRequest++),
+        onToggleSnapToGrid: () => setState(() => _snapToGrid = !_snapToGrid),
+        onToggleShowGrid: () => setState(() => _showGrid = !_showGrid),
+        onDeselect: () => setState(_clearSelection),
+        onSplit: hasLine ? () => _splitLine(_selectedLineIndex!) : null,
+        onAddDoor: hasLine
             ? () => _addOpeningToLine(
                 _selectedLineIndex!,
                 PlasterOpeningType.door,
               )
             : null,
-      ),
-      PlasterboardEditorToolAction(
-        id: 'window',
-        icon: Icons.web_asset_outlined,
-        label: 'Window',
-        helpText: 'Add a window opening to the selected wall.',
-        enabled: hasLine,
-        onPressed: hasLine
+        onAddWindow: hasLine
             ? () => _addOpeningToLine(
                 _selectedLineIndex!,
                 PlasterOpeningType.window,
               )
             : null,
-      ),
-      PlasterboardEditorToolAction(
-        id: 'edit-opening',
-        icon: selectedOpening?.type == PlasterOpeningType.door
-            ? Icons.door_front_door_outlined
-            : Icons.web_asset_outlined,
-        label: hasOpening ? 'Edit Opening' : 'Opening',
-        helpText: 'Edit the currently selected door or window opening.',
-        enabled: hasOpening,
-        selected: hasOpening,
-        onPressed: hasOpening
+        onEditOpening: hasOpening
             ? () => _editOpening(_selectedOpeningIndex!)
             : null,
-      ),
-      PlasterboardEditorToolAction(
-        id: 'delete-opening',
-        icon: Icons.delete_outline,
-        label: 'Delete Opening',
-        helpText: 'Remove the currently selected door or window opening.',
-        enabled: hasOpening,
-        onPressed: hasOpening
+        onDeleteOpening: hasOpening
             ? () => _deleteOpening(_selectedOpeningIndex!)
             : null,
-      ),
-      PlasterboardEditorToolAction(
-        id: 'toggle-line-plaster',
-        icon: isSelectedLinePlaster
-            ? Icons.layers_clear_outlined
-            : Icons.layers_outlined,
-        label: isSelectedLinePlaster ? 'Exclude' : 'Include',
-        helpText:
-            'Include or exclude the selected wall from plasterboard layout '
-            'calculation.',
-        enabled: hasLine,
-        onPressed: hasLine
+        onToggleLinePlaster: hasLine
             ? () => _toggleLinePlasterSelected(_selectedLineIndex!)
             : null,
-      ),
-    ];
-
-    final constraintButtons = <PlasterboardEditorToolAction>[
-      PlasterboardEditorToolAction(
-        id: 'length',
-        icon: Icons.straighten,
-        label: hasLineLengthConstraint ? 'Remove Length' : 'Length',
-        helpText:
-            'Set or remove a fixed length constraint on the selected wall. '
-            'This is a wall constraint tool.',
-        enabled: hasLine,
-        selected: hasLineLengthConstraint,
-        onPressed: hasLine
+        onToggleLineLength: hasLine
             ? () {
                 if (hasLineLengthConstraint) {
                   unawaited(_removeLineLengthConstraint(_selectedLineIndex!));
@@ -2320,53 +2222,16 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                 }
               }
             : null,
-      ),
-      PlasterboardEditorToolAction(
-        id: 'horizontal',
-        icon: Icons.horizontal_rule,
-        label: hasHorizontalConstraint ? 'Remove Horizontal' : 'Horizontal',
-        helpText: 'Set or remove a horizontal constraint on the selected wall.',
-        enabled: hasLine,
-        selected: hasHorizontalConstraint,
-        onPressed: hasLine
+        onToggleHorizontal: hasLine
             ? () => _toggleHorizontalConstraint(_selectedLineIndex!)
             : null,
-      ),
-      PlasterboardEditorToolAction(
-        id: 'vertical',
-        iconWidget: const RotatedBox(
-          quarterTurns: 1,
-          child: Icon(Icons.horizontal_rule),
-        ),
-        label: hasVerticalConstraint ? 'Remove Vertical' : 'Vertical',
-        helpText: 'Set or remove a vertical constraint on the selected wall.',
-        enabled: hasLine,
-        selected: hasVerticalConstraint,
-        onPressed: hasLine
+        onToggleVertical: hasLine
             ? () => _toggleVerticalConstraint(_selectedLineIndex!)
             : null,
-      ),
-      PlasterboardEditorToolAction(
-        id: 'joint',
-        icon: Icons.polyline,
-        label: 'Joint',
-        helpText:
-            'Open joint actions for the selected corner, including joining '
-            'lines and managing joint-angle constraints.',
-        enabled: hasIntersection,
-        onPressed: hasIntersection
+        onJointAction: hasIntersection
             ? () => _deleteIntersection(_selectedIntersectionIndex!)
             : null,
-      ),
-      PlasterboardEditorToolAction(
-        id: 'angle',
-        icon: Icons.architecture,
-        label: hasAngleConstraint ? 'Remove Angle' : 'Angle',
-        helpText:
-            'Set or remove a fixed angle constraint on the selected joint.',
-        enabled: hasIntersection,
-        selected: hasAngleConstraint,
-        onPressed: hasIntersection
+        onToggleAngle: hasIntersection
             ? () {
                 if (hasAngleConstraint) {
                   unawaited(
@@ -2378,13 +2243,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               }
             : null,
       ),
-    ];
-
-    final toolbarButtons = constraintsOnly
-        ? constraintButtons
-        : excludeConstraints
-        ? primaryButtons
-        : [...primaryButtons, ...constraintButtons];
+      constraintsOnly: constraintsOnly,
+      excludeConstraints: excludeConstraints,
+    );
     return PlasterboardEditorToolbar(
       actions: toolbarButtons,
       vertical: vertical,
