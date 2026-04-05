@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'editor_toolbar_models.dart';
 
-class PlasterboardEditorToolbar extends StatelessWidget {
-  final List<PlasterboardEditorToolAction> actions;
+class RoomEditorToolbar extends StatelessWidget {
+  final List<RoomEditorToolAction> actions;
   final bool vertical;
   final bool wrap;
 
-  const PlasterboardEditorToolbar({
-    super.key,
+  const RoomEditorToolbar({
     required this.actions,
+    super.key,
     this.vertical = false,
     this.wrap = false,
   });
@@ -57,7 +57,7 @@ class PlasterboardEditorToolbar extends StatelessWidget {
 }
 
 class _ToolbarButton extends StatelessWidget {
-  final PlasterboardEditorToolAction action;
+  final RoomEditorToolAction action;
 
   const _ToolbarButton({required this.action});
 

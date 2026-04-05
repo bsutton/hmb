@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class PlasterboardEditorToolAction {
+class RoomEditorToolAction {
   final String id;
   final String label;
   final String helpText;
@@ -10,7 +10,7 @@ class PlasterboardEditorToolAction {
   final Widget? iconWidget;
   final VoidCallback? onPressed;
 
-  const PlasterboardEditorToolAction({
+  const RoomEditorToolAction({
     required this.id,
     required this.label,
     required this.helpText,
@@ -94,14 +94,14 @@ class RoomEditorToolbarCallbacks {
   });
 }
 
-List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
+List<RoomEditorToolAction> buildRoomEditorToolbarActions({
   required RoomEditorToolbarState state,
   required RoomEditorToolbarCallbacks callbacks,
   bool constraintsOnly = false,
   bool excludeConstraints = false,
 }) {
-  final primaryButtons = <PlasterboardEditorToolAction>[
-    PlasterboardEditorToolAction(
+  final primaryButtons = <RoomEditorToolAction>[
+    RoomEditorToolAction(
       id: 'toggle-selection-mode',
       icon: state.selectionMode ? Icons.touch_app : Icons.ads_click,
       label: state.selectionMode ? 'Select Mode' : 'Edit Mode',
@@ -112,7 +112,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       selected: state.selectionMode,
       onPressed: callbacks.onToggleSelectionMode,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'undo',
       icon: Icons.undo,
       label: 'Undo',
@@ -122,7 +122,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       enabled: callbacks.onUndo != null,
       onPressed: callbacks.onUndo,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'redo',
       icon: Icons.redo,
       label: 'Redo',
@@ -130,7 +130,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       enabled: callbacks.onRedo != null,
       onPressed: callbacks.onRedo,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'fit',
       icon: Icons.fit_screen,
       label: 'Fit',
@@ -139,16 +139,15 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
           'view.',
       onPressed: callbacks.onFit,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'toggle-snap',
       icon: state.snapToGrid ? Icons.grid_on : Icons.grid_off,
       label: state.snapToGrid ? 'Snap On' : 'Snap Off',
-      helpText:
-          'Turn grid snapping on or off when moving points and openings.',
+      helpText: 'Turn grid snapping on or off when moving points and openings.',
       selected: state.snapToGrid,
       onPressed: callbacks.onToggleSnapToGrid,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'toggle-grid',
       icon: state.showGrid ? Icons.border_all : Icons.border_clear,
       label: state.showGrid ? 'Grid On' : 'Grid Off',
@@ -156,7 +155,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       selected: state.showGrid,
       onPressed: callbacks.onToggleShowGrid,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'deselect',
       icon: Icons.deselect,
       label: 'Deselect',
@@ -164,7 +163,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       enabled: state.hasLine || state.hasIntersection || state.hasOpening,
       onPressed: callbacks.onDeselect,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'split',
       icon: Icons.content_cut,
       label: 'Split',
@@ -174,7 +173,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       enabled: state.hasLine,
       onPressed: callbacks.onSplit,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'door',
       icon: Icons.door_front_door_outlined,
       label: 'Door',
@@ -182,7 +181,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       enabled: state.hasLine,
       onPressed: callbacks.onAddDoor,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'window',
       icon: Icons.web_asset_outlined,
       label: 'Window',
@@ -190,7 +189,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       enabled: state.hasLine,
       onPressed: callbacks.onAddWindow,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'edit-opening',
       icon: state.isSelectedOpeningDoor
           ? Icons.door_front_door_outlined
@@ -201,7 +200,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       selected: state.hasOpening,
       onPressed: callbacks.onEditOpening,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'delete-opening',
       icon: Icons.delete_outline,
       label: 'Delete Opening',
@@ -209,7 +208,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       enabled: state.hasOpening,
       onPressed: callbacks.onDeleteOpening,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'toggle-line-plaster',
       icon: state.isSelectedLinePlaster
           ? Icons.layers_clear_outlined
@@ -223,8 +222,8 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
     ),
   ];
 
-  final constraintButtons = <PlasterboardEditorToolAction>[
-    PlasterboardEditorToolAction(
+  final constraintButtons = <RoomEditorToolAction>[
+    RoomEditorToolAction(
       id: 'length',
       icon: Icons.straighten,
       label: state.hasLineLengthConstraint ? 'Remove Length' : 'Length',
@@ -235,7 +234,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       selected: state.hasLineLengthConstraint,
       onPressed: callbacks.onToggleLineLength,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'horizontal',
       icon: Icons.horizontal_rule,
       label: state.hasHorizontalConstraint ? 'Remove Horizontal' : 'Horizontal',
@@ -244,7 +243,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       selected: state.hasHorizontalConstraint,
       onPressed: callbacks.onToggleHorizontal,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'vertical',
       iconWidget: const RotatedBox(
         quarterTurns: 1,
@@ -256,7 +255,7 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       selected: state.hasVerticalConstraint,
       onPressed: callbacks.onToggleVertical,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'joint',
       icon: Icons.polyline,
       label: 'Joint',
@@ -266,12 +265,11 @@ List<PlasterboardEditorToolAction> buildRoomEditorToolbarActions({
       enabled: state.hasIntersection,
       onPressed: callbacks.onJointAction,
     ),
-    PlasterboardEditorToolAction(
+    RoomEditorToolAction(
       id: 'angle',
       icon: Icons.architecture,
       label: state.hasAngleConstraint ? 'Remove Angle' : 'Angle',
-      helpText:
-          'Set or remove a fixed angle constraint on the selected joint.',
+      helpText: 'Set or remove a fixed angle constraint on the selected joint.',
       enabled: state.hasIntersection,
       selected: state.hasAngleConstraint,
       onPressed: callbacks.onToggleAngle,

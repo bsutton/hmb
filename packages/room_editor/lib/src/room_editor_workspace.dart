@@ -658,11 +658,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       constraintsOnly: constraintsOnly,
       excludeConstraints: excludeConstraints,
     );
-    return PlasterboardEditorToolbar(
-      actions: actions,
-      vertical: vertical,
-      wrap: wrap,
-    );
+    return RoomEditorToolbar(actions: actions, vertical: vertical, wrap: wrap);
   }
 
   Widget _buildCanvas() => RoomEditorCanvas(
