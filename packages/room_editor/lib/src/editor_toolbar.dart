@@ -17,20 +17,24 @@ class RoomEditorToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final compact = screenWidth < 420;
+    final tier = switch (screenWidth) {
+      < 420 => _ToolbarDensity.tight,
+      < 560 => _ToolbarDensity.compact,
+      _ => _ToolbarDensity.normal,
+    };
 
     if (vertical) {
       return SizedBox(
-        width: compact ? 104 : 116,
+        width: tier.columnWidth,
         child: GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: compact ? 4 : 6,
-          crossAxisSpacing: compact ? 4 : 6,
+          mainAxisSpacing: tier.spacing,
+          crossAxisSpacing: tier.spacing,
           children: [
             for (final action in actions)
-              _ToolbarButton(action: action, compact: compact),
+              _ToolbarButton(action: action, tier: tier),
           ],
         ),
       );
@@ -38,11 +42,11 @@ class RoomEditorToolbar extends StatelessWidget {
 
     if (wrap) {
       return Wrap(
-        spacing: compact ? 4 : 6,
-        runSpacing: compact ? 4 : 6,
+        spacing: tier.spacing,
+        runSpacing: tier.spacing,
         children: [
           for (final action in actions)
-            _ToolbarButton(action: action, compact: compact),
+            _ToolbarButton(action: action, tier: tier),
         ],
       );
     }
@@ -52,8 +56,8 @@ class RoomEditorToolbar extends StatelessWidget {
       child: Row(
         children: [
           for (final action in actions) ...[
-            _ToolbarButton(action: action, compact: compact),
-            SizedBox(width: compact ? 4 : 6),
+            _ToolbarButton(action: action, tier: tier),
+            SizedBox(width: tier.spacing),
           ],
         ],
       ),
@@ -61,11 +65,48 @@ class RoomEditorToolbar extends StatelessWidget {
   }
 }
 
+enum _ToolbarDensity { normal, compact, tight }
+
+extension on _ToolbarDensity {
+  double get columnWidth => switch (this) {
+    _ToolbarDensity.normal => 116,
+    _ToolbarDensity.compact => 108,
+    _ToolbarDensity.tight => 100,
+  };
+
+  double get spacing => switch (this) {
+    _ToolbarDensity.normal => 6,
+    _ToolbarDensity.compact => 5,
+    _ToolbarDensity.tight => 4,
+  };
+
+  double get buttonSize => switch (this) {
+    _ToolbarDensity.normal => 48,
+    _ToolbarDensity.compact => 44,
+    _ToolbarDensity.tight => 40,
+  };
+
+  double get iconSize => switch (this) {
+    _ToolbarDensity.normal => 24,
+    _ToolbarDensity.compact => 22,
+    _ToolbarDensity.tight => 20,
+  };
+
+  VisualDensity get visualDensity => switch (this) {
+    _ToolbarDensity.normal => VisualDensity.standard,
+    _ToolbarDensity.compact => const VisualDensity(
+      horizontal: -1,
+      vertical: -1,
+    ),
+    _ToolbarDensity.tight => const VisualDensity(horizontal: -2, vertical: -2),
+  };
+}
+
 class _ToolbarButton extends StatelessWidget {
   final RoomEditorToolAction action;
-  final bool compact;
+  final _ToolbarDensity tier;
 
-  const _ToolbarButton({required this.action, required this.compact});
+  const _ToolbarButton({required this.action, required this.tier});
 
   Future<void> _showHelp(BuildContext context) async {
     await showDialog<void>(
@@ -92,14 +133,12 @@ class _ToolbarButton extends StatelessWidget {
       onLongPress: () => _showHelp(context),
       child: IconButton.filledTonal(
         constraints: BoxConstraints.tightFor(
-          width: compact ? 44 : 48,
-          height: compact ? 44 : 48,
+          width: tier.buttonSize,
+          height: tier.buttonSize,
         ),
         padding: EdgeInsets.zero,
-        iconSize: compact ? 20 : 24,
-        visualDensity: compact
-            ? const VisualDensity(horizontal: -2, vertical: -2)
-            : VisualDensity.standard,
+        iconSize: tier.iconSize,
+        visualDensity: tier.visualDensity,
         isSelected: action.selected,
         onPressed: action.enabled ? action.onPressed : null,
         icon: action.iconWidget ?? Icon(action.icon),
