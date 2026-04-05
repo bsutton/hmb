@@ -39,7 +39,7 @@ class RoomEditorShell extends StatelessWidget {
       children: [
         primaryTools,
         SizedBox(height: editorOnly ? 8 : spacing),
-        canvas,
+        if (editorOnly) Expanded(child: canvas) else canvas,
       ],
     );
   }

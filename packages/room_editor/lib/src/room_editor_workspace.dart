@@ -179,6 +179,71 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     _externalSelectionController?.value = _selection;
   }
 
+  double _dragSolutionDistance(
+    List<RoomEditorLine> candidate,
+    List<RoomEditorLine> reference, {
+    required int movedIndex,
+    required RoomEditorIntPoint movedTarget,
+  }) {
+    var score = 0.0;
+    for (var i = 0; i < candidate.length; i++) {
+      final desiredX = i == movedIndex ? movedTarget.x : reference[i].startX;
+      final desiredY = i == movedIndex ? movedTarget.y : reference[i].startY;
+      final dx = candidate[i].startX - desiredX;
+      final dy = candidate[i].startY - desiredY;
+      final weight = i == movedIndex ? 4.0 : 1.0;
+      score += (dx * dx + dy * dy) * weight;
+    }
+    return score;
+  }
+
+  RoomEditorDocument? _solveClosestDragDocument(
+    int movedIndex,
+    RoomEditorIntPoint movedTarget,
+  ) {
+    final seeds = <RoomEditorDocument>[
+      _document,
+      if (_gestureBaseDocument != null &&
+          _gestureBaseDocument!.bundle.lines != _document.bundle.lines)
+        _gestureBaseDocument!,
+    ];
+    RoomEditorDocument? bestDocument;
+    double? bestScore;
+
+    for (final seed in seeds) {
+      final lines = List<RoomEditorLine>.from(seed.bundle.lines);
+      lines[movedIndex] = lines[movedIndex].copyWith(
+        startX: movedTarget.x,
+        startY: movedTarget.y,
+      );
+      final candidate = seed.copyWith(
+        bundle: seed.bundle.copyWith(lines: lines),
+      );
+      final result = _solveDocument(
+        candidate,
+        pinnedVertexIndex: movedIndex,
+        pinnedVertexTarget: movedTarget,
+      );
+      if (!result.converged) {
+        continue;
+      }
+      final score = _dragSolutionDistance(
+        result.lines,
+        _document.bundle.lines,
+        movedIndex: movedIndex,
+        movedTarget: movedTarget,
+      );
+      if (bestScore == null || score < bestScore) {
+        bestScore = score;
+        bestDocument = candidate.copyWith(
+          bundle: candidate.bundle.copyWith(lines: result.lines),
+        );
+      }
+    }
+
+    return bestDocument;
+  }
+
   Future<bool> _trySolveAndCommit(
     RoomEditorDocument document, {
     int? pinnedVertexIndex,
@@ -204,7 +269,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     _gestureBaseDocument ??= _document;
   }
 
-  void _commitGestureEdit() {
+  Future<void> _commitGestureEdit() async {
     _gestureBaseDocument = null;
     widget.onDocumentCommitted(_document);
   }
@@ -675,28 +740,16 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     callbacks: RoomEditorCanvasCallbacks(
       onStartMoveIntersection: _beginGestureEdit,
       onMoveIntersection: (index, point) {
-        final base = _gestureBaseDocument ?? _document;
         final target = _snapToGrid
             ? RoomCanvasGeometry.snapPoint(point, _bundle.unitSystem)
             : point;
-        final lines = List<RoomEditorLine>.from(base.bundle.lines);
-        lines[index] = lines[index].copyWith(
-          startX: target.x,
-          startY: target.y,
-        );
-        final result = _solveDocument(
-          base.copyWith(bundle: base.bundle.copyWith(lines: lines)),
-          pinnedVertexIndex: index,
-          pinnedVertexTarget: target,
-        );
-        if (result.converged) {
-          _replaceDocument(
-            base.copyWith(bundle: base.bundle.copyWith(lines: result.lines)),
-          );
+        final solved = _solveClosestDragDocument(index, target);
+        if (solved != null) {
+          _replaceDocument(solved);
         }
       },
       onEndMoveIntersection: () async {
-        _commitGestureEdit();
+        await _commitGestureEdit();
       },
       onStartMoveOpening: _beginGestureEdit,
       onMoveOpening: _moveOpeningLocally,

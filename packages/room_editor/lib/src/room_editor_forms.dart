@@ -40,90 +40,155 @@ class RoomEditorDetailsForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                key: ValueKey('room-name-$roomId'),
-                controller: roomNameController,
-                decoration: const InputDecoration(labelText: 'Room Name'),
-                onSubmitted: (_) => unawaited(onCommitRoomName()),
-                onEditingComplete: () => unawaited(onCommitRoomName()),
-                onTapOutside: (_) => unawaited(onCommitRoomName()),
-              ),
+    builder: (context, constraints) {
+      final media = MediaQuery.of(context);
+      final isDesktopLike = constraints.maxWidth >= 1100;
+      final wideTopRow = constraints.maxWidth >= 640;
+      final canvasHeight = isDesktopLike
+          ? (media.size.height * 0.68).clamp(440.0, 820.0)
+          : (constraints.maxWidth * 0.72).clamp(
+              media.size.shortestSide < 700 ? 320.0 : 360.0,
+              560.0,
+            );
+      final details = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (wideTopRow)
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: ValueKey('room-name-$roomId'),
+                    controller: roomNameController,
+                    decoration: const InputDecoration(labelText: 'Room Name'),
+                    onSubmitted: (_) => unawaited(onCommitRoomName()),
+                    onEditingComplete: () => unawaited(onCommitRoomName()),
+                    onTapOutside: (_) => unawaited(onCommitRoomName()),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButtonFormField<RoomEditorUnitSystem>(
+                    key: ValueKey('room-unit-$roomId-${unitSystem.name}'),
+                    initialValue: unitSystem,
+                    decoration: const InputDecoration(labelText: 'Units'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: RoomEditorUnitSystem.metric,
+                        child: Text('Metric'),
+                      ),
+                      DropdownMenuItem(
+                        value: RoomEditorUnitSystem.imperial,
+                        child: Text('Imperial'),
+                      ),
+                    ],
+                    onChanged: onUnitChanged,
+                  ),
+                ),
+              ],
+            )
+          else ...[
+            TextField(
+              key: ValueKey('room-name-$roomId'),
+              controller: roomNameController,
+              decoration: const InputDecoration(labelText: 'Room Name'),
+              onSubmitted: (_) => unawaited(onCommitRoomName()),
+              onEditingComplete: () => unawaited(onCommitRoomName()),
+              onTapOutside: (_) => unawaited(onCommitRoomName()),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: DropdownButtonFormField<RoomEditorUnitSystem>(
-                key: ValueKey('room-unit-$roomId-${unitSystem.name}'),
-                initialValue: unitSystem,
-                decoration: const InputDecoration(labelText: 'Units'),
-                items: const [
-                  DropdownMenuItem(
-                    value: RoomEditorUnitSystem.metric,
-                    child: Text('Metric'),
-                  ),
-                  DropdownMenuItem(
-                    value: RoomEditorUnitSystem.imperial,
-                    child: Text('Imperial'),
-                  ),
-                ],
-                onChanged: onUnitChanged,
-              ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<RoomEditorUnitSystem>(
+              key: ValueKey('room-unit-$roomId-${unitSystem.name}'),
+              initialValue: unitSystem,
+              decoration: const InputDecoration(labelText: 'Units'),
+              items: const [
+                DropdownMenuItem(
+                  value: RoomEditorUnitSystem.metric,
+                  child: Text('Metric'),
+                ),
+                DropdownMenuItem(
+                  value: RoomEditorUnitSystem.imperial,
+                  child: Text('Imperial'),
+                ),
+              ],
+              onChanged: onUnitChanged,
             ),
           ],
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          key: ValueKey('ceiling-height-$roomId-${unitSystem.name}'),
-          controller: ceilingHeightController,
-          decoration: InputDecoration(labelText: 'Ceiling Height ($unitLabel)'),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onSubmitted: (_) => unawaited(onCommitCeilingHeight()),
-          onEditingComplete: () => unawaited(onCommitCeilingHeight()),
-          onTapOutside: (_) => unawaited(onCommitCeilingHeight()),
-        ),
-        if (selectedLineId != null &&
-            lineStudSpacingController != null &&
-            lineStudOffsetController != null &&
-            onCommitSelectedLineOverrides != null) ...[
           const SizedBox(height: 8),
           TextField(
-            key: ValueKey('line-stud-spacing-$selectedLineId-${unitSystem.name}'),
-            controller: lineStudSpacingController,
-            decoration: InputDecoration(
-              labelText: 'Wall Stud Spacing Override ($unitLabel)',
-              helperText: 'Leave blank to use project default.',
-            ),
+            key: ValueKey('ceiling-height-$roomId-${unitSystem.name}'),
+            controller: ceilingHeightController,
+            decoration: InputDecoration(labelText: 'Ceiling Height ($unitLabel)'),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onSubmitted: (_) => unawaited(onCommitSelectedLineOverrides!()),
-            onEditingComplete: () =>
-                unawaited(onCommitSelectedLineOverrides!()),
-            onTapOutside: (_) => unawaited(onCommitSelectedLineOverrides!()),
+            onSubmitted: (_) => unawaited(onCommitCeilingHeight()),
+            onEditingComplete: () => unawaited(onCommitCeilingHeight()),
+            onTapOutside: (_) => unawaited(onCommitCeilingHeight()),
           ),
+          if (selectedLineId != null &&
+              lineStudSpacingController != null &&
+              lineStudOffsetController != null &&
+              onCommitSelectedLineOverrides != null) ...[
+            const SizedBox(height: 8),
+            TextField(
+              key: ValueKey(
+                'line-stud-spacing-$selectedLineId-${unitSystem.name}',
+              ),
+              controller: lineStudSpacingController,
+              decoration: InputDecoration(
+                labelText: 'Wall Stud Spacing Override ($unitLabel)',
+                helperText: 'Leave blank to use project default.',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onSubmitted: (_) => unawaited(onCommitSelectedLineOverrides!()),
+              onEditingComplete: () =>
+                  unawaited(onCommitSelectedLineOverrides!()),
+              onTapOutside: (_) => unawaited(onCommitSelectedLineOverrides!()),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              key: ValueKey(
+                'line-stud-offset-$selectedLineId-${unitSystem.name}',
+              ),
+              controller: lineStudOffsetController,
+              decoration: InputDecoration(
+                labelText: 'Wall Stud Offset Override ($unitLabel)',
+                helperText: 'Leave blank to use project default.',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onSubmitted: (_) => unawaited(onCommitSelectedLineOverrides!()),
+              onEditingComplete: () =>
+                  unawaited(onCommitSelectedLineOverrides!()),
+              onTapOutside: (_) => unawaited(onCommitSelectedLineOverrides!()),
+            ),
+          ],
           const SizedBox(height: 8),
-          TextField(
-            key: ValueKey('line-stud-offset-$selectedLineId-${unitSystem.name}'),
-            controller: lineStudOffsetController,
-            decoration: InputDecoration(
-              labelText: 'Wall Stud Offset Override ($unitLabel)',
-              helperText: 'Leave blank to use project default.',
-            ),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onSubmitted: (_) => unawaited(onCommitSelectedLineOverrides!()),
-            onEditingComplete: () =>
-                unawaited(onCommitSelectedLineOverrides!()),
-            onTapOutside: (_) => unawaited(onCommitSelectedLineOverrides!()),
-          ),
+          editorTools,
         ],
-        const SizedBox(height: 8),
-        editorTools,
-        const SizedBox(height: 8),
-        canvas,
-      ],
-    ),
+      );
+
+      if (isDesktopLike) {
+        final detailsWidth = (constraints.maxWidth * 0.3).clamp(320.0, 420.0);
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: detailsWidth, child: details),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(height: canvasHeight, child: canvas),
+            ),
+          ],
+        );
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          details,
+          const SizedBox(height: 8),
+          SizedBox(height: canvasHeight, child: canvas),
+        ],
+      );
+    },
   );
 }
 

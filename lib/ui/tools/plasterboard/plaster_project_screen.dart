@@ -2328,11 +2328,14 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           ],
         ),
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(12),
-            child: _isRoomEditorOnly
-                ? _buildRoomEditorSection(isMobileLandscape)
-                : Column(
+          child: _isRoomEditorOnly
+              ? Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: _buildRoomEditorSection(isMobileLandscape),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       TextField(
@@ -2465,7 +2468,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
                       _buildTakeoffSection(_takeoff, displayUnit),
                     ],
                   ),
-          ),
+                ),
         ),
       );
     },
