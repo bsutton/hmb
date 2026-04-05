@@ -2339,7 +2339,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     },
   );
 
-  RoomEditorBundle _toEditorBundle(_RoomBundle bundle) => RoomEditorBundle(
+  RoomEditorBundle _toEditorBundle(_RoomBundle bundle) => buildRoomEditorBundle(
     roomName: bundle.room.name,
     unitSystem: bundle.room.unitSystem == PreferredUnitSystem.metric
         ? RoomEditorUnitSystem.metric
@@ -2347,7 +2347,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     plasterCeiling: bundle.room.plasterCeiling,
     lines: [
       for (final line in bundle.lines)
-        RoomEditorLine(
+        (
           id: line.id,
           seqNo: line.seqNo,
           startX: line.startX,
@@ -2358,7 +2358,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     ],
     openings: [
       for (final opening in bundle.openings)
-        RoomEditorOpening(
+        (
           id: opening.id,
           lineId: opening.lineId,
           type: opening.type == PlasterOpeningType.door

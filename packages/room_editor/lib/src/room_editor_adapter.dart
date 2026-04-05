@@ -1,0 +1,53 @@
+import 'room_canvas_models.dart';
+
+typedef RoomEditorLineRecord = ({
+  int id,
+  int seqNo,
+  int startX,
+  int startY,
+  int length,
+  bool plasterSelected,
+});
+
+typedef RoomEditorOpeningRecord = ({
+  int id,
+  int lineId,
+  RoomEditorOpeningType type,
+  int offsetFromStart,
+  int width,
+  int height,
+});
+
+RoomEditorBundle buildRoomEditorBundle({
+  required String roomName,
+  required RoomEditorUnitSystem unitSystem,
+  required bool plasterCeiling,
+  required Iterable<RoomEditorLineRecord> lines,
+  required Iterable<RoomEditorOpeningRecord> openings,
+}) => RoomEditorBundle(
+  roomName: roomName,
+  unitSystem: unitSystem,
+  plasterCeiling: plasterCeiling,
+  lines: [
+    for (final line in lines)
+      RoomEditorLine(
+        id: line.id,
+        seqNo: line.seqNo,
+        startX: line.startX,
+        startY: line.startY,
+        length: line.length,
+        plasterSelected: line.plasterSelected,
+      ),
+  ],
+  openings: [
+    for (final opening in openings)
+      RoomEditorOpening(
+        id: opening.id,
+        lineId: opening.lineId,
+        type: opening.type,
+        offsetFromStart: opening.offsetFromStart,
+        width: opening.width,
+        height: opening.height,
+      ),
+  ],
+);
