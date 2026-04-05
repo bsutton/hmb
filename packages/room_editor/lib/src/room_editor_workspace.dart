@@ -18,6 +18,7 @@ class RoomEditorWorkspace extends StatefulWidget {
   final bool showConstraintsInLandscape;
   final ValueChanged<RoomEditorDocument> onDocumentCommitted;
   final ValueChanged<RoomEditorCommand>? onCommand;
+  final RoomEditorSelectionController? selectionController;
 
   const RoomEditorWorkspace({
     super.key,
@@ -27,6 +28,7 @@ class RoomEditorWorkspace extends StatefulWidget {
     this.landscape = false,
     this.editorOnly = false,
     this.showConstraintsInLandscape = true,
+    this.selectionController,
   });
 
   @override
@@ -43,11 +45,14 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   RoomEditorDocument? _gestureBaseDocument;
 
   RoomEditorBundle get _bundle => _document.bundle;
+  RoomEditorSelectionController? get _externalSelectionController =>
+      widget.selectionController;
 
   @override
   void initState() {
     super.initState();
     _document = widget.document;
+    _selection = _externalSelectionController?.value ?? const RoomEditorSelection();
   }
 
   @override
@@ -56,6 +61,16 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     if (oldWidget.document != widget.document) {
       _document = widget.document;
     }
+    if (oldWidget.selectionController != widget.selectionController) {
+      _selection = _externalSelectionController?.value ?? _selection;
+    }
+  }
+
+  void _setSelection(RoomEditorSelection selection) {
+    setState(() {
+      _selection = selection;
+    });
+    _externalSelectionController?.value = selection;
   }
 
   List<RoomEditorConstraint> _constraintsWithoutLineType(
@@ -327,9 +342,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         onFit: () => setState(() => _fitCanvasRequest++),
         onToggleSnapToGrid: () => setState(() => _snapToGrid = !_snapToGrid),
         onToggleShowGrid: () => setState(() => _showGrid = !_showGrid),
-        onDeselect: () => setState(
-          () => _selection = const RoomEditorSelection(),
-        ),
+        onDeselect: () => _setSelection(const RoomEditorSelection()),
         onSplit: hasLine ? () => _emitCommand(RoomEditorCommandType.splitLine) : null,
         onAddDoor: hasLine ? () => _emitCommand(RoomEditorCommandType.addDoor) : null,
         onAddWindow: hasLine ? () => _emitCommand(RoomEditorCommandType.addWindow) : null,
@@ -425,19 +438,13 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         _commitGestureEdit();
       },
       onTapIntersection: (index) async {
-        setState(() {
-          _selection = RoomEditorSelection(selectedIntersectionIndex: index);
-        });
+        _setSelection(RoomEditorSelection(selectedIntersectionIndex: index));
       },
       onTapOpening: (index) async {
-        setState(() {
-          _selection = RoomEditorSelection(selectedOpeningIndex: index);
-        });
+        _setSelection(RoomEditorSelection(selectedOpeningIndex: index));
       },
       onTapLine: (index) async {
-        setState(() {
-          _selection = RoomEditorSelection(selectedLineIndex: index);
-        });
+        _setSelection(RoomEditorSelection(selectedLineIndex: index));
         if (_selectionMode) {
           final lines = List<RoomEditorLine>.from(_bundle.lines);
           final line = lines[index];
@@ -466,7 +473,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => RoomEditorShell(
       landscape: widget.landscape,
-      editorOnly: widget.editorOnly,
+        editorOnly: widget.editorOnly,
       primaryTools: _buildToolbar(
         vertical: widget.landscape,
         wrap: !widget.landscape && constraints.maxWidth < 520,

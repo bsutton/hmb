@@ -158,6 +158,10 @@ class RoomEditorSelection {
   });
 }
 
+class RoomEditorSelectionController extends ValueNotifier<RoomEditorSelection> {
+  RoomEditorSelectionController([super.value = const RoomEditorSelection()]);
+}
+
 class RoomEditorCanvasCallbacks {
   final VoidCallback onStartMoveIntersection;
   final RoomEditorMoveIntersectionCallback onMoveIntersection;

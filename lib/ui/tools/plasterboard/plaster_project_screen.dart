@@ -2138,245 +2138,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     await _solveAndUpdateRoom(_currentRoom.copyWith(constraints: constraints));
   }
 
-  Widget _buildEditorToolbar({
-    bool vertical = false,
-    bool wrap = false,
-    bool constraintsOnly = false,
-    bool excludeConstraints = false,
-  }) {
-    final hasLine = _selectedLineIndex != null;
-    final hasIntersection = _selectedIntersectionIndex != null;
-    final hasOpening = _selectedOpeningIndex != null;
-    final selectedLine = hasLine
-        ? _currentRoom.lines[_selectedLineIndex!]
-        : null;
-    final selectedOpening = hasOpening
-        ? _currentRoom.openings[_selectedOpeningIndex!]
-        : null;
-    final hasLineLengthConstraint =
-        selectedLine != null &&
-        _constraintForLine(selectedLine.id, PlasterConstraintType.lineLength) !=
-            null;
-    final hasHorizontalConstraint =
-        selectedLine != null &&
-        _constraintForLine(selectedLine.id, PlasterConstraintType.horizontal) !=
-            null;
-    final hasVerticalConstraint =
-        selectedLine != null &&
-        _constraintForLine(selectedLine.id, PlasterConstraintType.vertical) !=
-            null;
-    final selectedIntersectionLine = hasIntersection
-        ? _currentRoom.lines[_selectedIntersectionIndex!]
-        : null;
-    final hasAngleConstraint =
-        selectedIntersectionLine != null &&
-        _constraintForLine(
-              selectedIntersectionLine.id,
-              PlasterConstraintType.jointAngle,
-            ) !=
-            null;
-    final isSelectedLinePlaster = selectedLine?.plasterSelected ?? false;
-    final toolbarButtons = buildRoomEditorToolbarActions(
-      state: RoomEditorToolbarState(
-        selectionMode: _selectionMode,
-        snapToGrid: _snapToGrid,
-        showGrid: _showGrid,
-        hasLine: hasLine,
-        hasIntersection: hasIntersection,
-        hasOpening: hasOpening,
-        hasLineLengthConstraint: hasLineLengthConstraint,
-        hasHorizontalConstraint: hasHorizontalConstraint,
-        hasVerticalConstraint: hasVerticalConstraint,
-        hasAngleConstraint: hasAngleConstraint,
-        isSelectedLinePlaster: isSelectedLinePlaster,
-        isSelectedOpeningDoor:
-            selectedOpening?.type == PlasterOpeningType.door,
-      ),
-      callbacks: RoomEditorToolbarCallbacks(
-        onToggleSelectionMode: () =>
-            setState(() => _selectionMode = !_selectionMode),
-        onUndo: _undo.isEmpty
-            ? null
-            : () async {
-                if (_undo.isEmpty) {
-                  return;
-                }
-                _redo.add(_currentRoom.deepCopy());
-                final previous = _undo.removeLast();
-                _rooms[_selectedRoomIndex] = previous;
-                await _saveRoomBundle(previous);
-                _syncRoomControllers();
-                setState(() {});
-              },
-        onRedo: _redo.isEmpty
-            ? null
-            : () async {
-                if (_redo.isEmpty) {
-                  return;
-                }
-                _undo.add(_currentRoom.deepCopy());
-                final next = _redo.removeLast();
-                _rooms[_selectedRoomIndex] = next;
-                await _saveRoomBundle(next);
-                _syncRoomControllers();
-                setState(() {});
-              },
-        onFit: () => setState(() => _fitCanvasRequest++),
-        onToggleSnapToGrid: () => setState(() => _snapToGrid = !_snapToGrid),
-        onToggleShowGrid: () => setState(() => _showGrid = !_showGrid),
-        onDeselect: () => setState(_clearSelection),
-        onSplit: hasLine ? () => _splitLine(_selectedLineIndex!) : null,
-        onAddDoor: hasLine
-            ? () => _addOpeningToLine(
-                _selectedLineIndex!,
-                PlasterOpeningType.door,
-              )
-            : null,
-        onAddWindow: hasLine
-            ? () => _addOpeningToLine(
-                _selectedLineIndex!,
-                PlasterOpeningType.window,
-              )
-            : null,
-        onEditOpening: hasOpening
-            ? () => _editOpening(_selectedOpeningIndex!)
-            : null,
-        onDeleteOpening: hasOpening
-            ? () => _deleteOpening(_selectedOpeningIndex!)
-            : null,
-        onToggleLinePlaster: hasLine
-            ? () => _toggleLinePlasterSelected(_selectedLineIndex!)
-            : null,
-        onToggleLineLength: hasLine
-            ? () {
-                if (hasLineLengthConstraint) {
-                  unawaited(_removeLineLengthConstraint(_selectedLineIndex!));
-                } else {
-                  unawaited(_editLineLengthConstraint(_selectedLineIndex!));
-                }
-              }
-            : null,
-        onToggleHorizontal: hasLine
-            ? () => _toggleHorizontalConstraint(_selectedLineIndex!)
-            : null,
-        onToggleVertical: hasLine
-            ? () => _toggleVerticalConstraint(_selectedLineIndex!)
-            : null,
-        onJointAction: hasIntersection
-            ? () => _deleteIntersection(_selectedIntersectionIndex!)
-            : null,
-        onToggleAngle: hasIntersection
-            ? () {
-                if (hasAngleConstraint) {
-                  unawaited(
-                    _removeAngleConstraint(_selectedIntersectionIndex!),
-                  );
-                } else {
-                  unawaited(_editAngleConstraint(_selectedIntersectionIndex!));
-                }
-              }
-            : null,
-      ),
-      constraintsOnly: constraintsOnly,
-      excludeConstraints: excludeConstraints,
-    );
-    return PlasterboardEditorToolbar(
-      actions: toolbarButtons,
-      vertical: vertical,
-      wrap: wrap,
-    );
-  }
-
-  Widget _buildRoomCanvas() => RoomEditorCanvas(
-    bundle: _toEditorBundle(_currentRoom),
-    selectionMode: _selectionMode,
-    snapToGrid: _snapToGrid,
-    showGrid: _showGrid,
-    fitRequestId: _fitCanvasRequest,
-    selection: RoomEditorSelection(
-      selectedLineIndex: _selectedLineIndex,
-      selectedIntersectionIndex: _selectedIntersectionIndex,
-      selectedOpeningIndex: _selectedOpeningIndex,
-    ),
-    callbacks: RoomEditorCanvasCallbacks(
-      onStartMoveIntersection: _beginRoomGestureEdit,
-      onMoveIntersection: (index, point) {
-        final baseRoom = _gestureBaseRoom ?? _currentRoom;
-        final worldPoint = _fromEditorPoint(point);
-        final target = _snapToGrid
-            ? PlasterGeometry.snapPoint(worldPoint, baseRoom.room.unitSystem)
-            : worldPoint;
-        final lines = PlasterGeometry.moveIntersection(
-          baseRoom.lines,
-          index,
-          target,
-        );
-        unawaited(
-          _solveAndUpdateRoom(
-            baseRoom.copyWith(lines: lines),
-            pinnedVertexIndex: index,
-            pinnedVertexTarget: target,
-            persist: false,
-            trackUndo: false,
-            showError: false,
-          ),
-        );
-      },
-      onEndMoveIntersection: () async {
-        await _commitRoomGestureEdit();
-      },
-      onStartMoveOpening: _beginRoomGestureEdit,
-      onMoveOpening: (index, point, anchorOffset) =>
-          _moveOpeningLocally(index, _fromEditorPoint(point), anchorOffset),
-      onEndMoveOpening: () async {
-        await _commitRoomGestureEdit();
-      },
-      onTapIntersection: (index) async {
-        setState(() {
-          _selectedIntersectionIndex = index;
-          _selectedLineIndex = null;
-          _selectedOpeningIndex = null;
-        });
-        _syncRoomControllers();
-      },
-      onTapOpening: (index) async {
-        setState(() {
-          _selectedOpeningIndex = index;
-          _selectedLineIndex = null;
-          _selectedIntersectionIndex = null;
-        });
-        _syncRoomControllers();
-      },
-      onTapLine: (index) async {
-        _logLineSelection('tap', index);
-        setState(() {
-          _selectedLineIndex = index;
-          _selectedIntersectionIndex = null;
-          _selectedOpeningIndex = null;
-        });
-        _syncRoomControllers();
-        if (_selectionMode) {
-          final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
-          final line = lines[index];
-          lines[index] = line.copyWith(plasterSelected: !line.plasterSelected);
-          await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
-        }
-      },
-      onTapCeiling: () async {
-        if (!_selectionMode) {
-          return;
-        }
-        await _updateCurrentRoom(
-          _currentRoom.copyWith(
-            room: _currentRoom.room.copyWith(
-              plasterCeiling: !_currentRoom.room.plasterCeiling,
-            ),
-          ),
-        );
-      },
-    ),
-  );
-
   RoomEditorBundle _toEditorBundle(_RoomBundle bundle) => buildRoomEditorBundle(
     roomName: bundle.room.name,
     unitSystem: bundle.room.unitSystem == PreferredUnitSystem.metric
@@ -2498,9 +2259,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     }
   }
 
-  IntPoint _fromEditorPoint(RoomEditorIntPoint point) =>
-      IntPoint(point.x, point.y);
-
   Widget _buildRoomEditorSection(bool isMobileLandscape) {
     if (_rooms.isEmpty) {
       return const Padding(
@@ -2529,7 +2287,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     final roomUnitLabel = PlasterGeometry.unitLabel(
       _currentRoom.room.unitSystem,
     );
-    final roomFields = RoomEditorDetailsForm(
+    final roomFields = RoomEditorPanel(
       roomId: _currentRoom.room.id,
       unitSystem:
           _currentRoom.room.unitSystem == PreferredUnitSystem.metric
@@ -2568,25 +2326,32 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       onCommitRoomName: _commitRoomName,
       onCommitCeilingHeight: _commitCeilingHeight,
       onCommitSelectedLineOverrides: _commitSelectedLineFramingOverrides,
-      editorTools: LayoutBuilder(
-        builder: (context, constraints) =>
-            _buildEditorToolbar(wrap: constraints.maxWidth < 520),
-      ),
-      canvas: _buildRoomCanvas(),
+      document: _toEditorDocument(_currentRoom),
+      landscape: false,
+      onDocumentCommitted: (document) async {
+        await _updateCurrentRoom(
+          _fromEditorDocument(document, _currentRoom),
+          trackUndo: false,
+        );
+      },
+      onCommand: (command) async {
+        await _handleEditorWorkspaceCommand(command);
+      },
     );
 
     if (isMobileLandscape) {
-      return RoomEditorShell(
+      return RoomEditorWorkspace(
+        document: _toEditorDocument(_currentRoom),
         landscape: true,
-        primaryTools: _buildEditorToolbar(
-          vertical: true,
-          excludeConstraints: true,
-        ),
-        canvas: _buildRoomCanvas(),
-        constraintTools: _buildEditorToolbar(
-          vertical: true,
-          constraintsOnly: true,
-        ),
+        onDocumentCommitted: (document) async {
+          await _updateCurrentRoom(
+            _fromEditorDocument(document, _currentRoom),
+            trackUndo: false,
+          );
+        },
+        onCommand: (command) async {
+          await _handleEditorWorkspaceCommand(command);
+        },
       );
     }
 
