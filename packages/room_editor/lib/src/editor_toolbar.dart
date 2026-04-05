@@ -19,8 +19,8 @@ class RoomEditorToolbar extends StatelessWidget {
     builder: (context, constraints) {
       final windowWidth = MediaQuery.sizeOf(context).width;
       final tier = switch (windowWidth) {
-        < 420 => _ToolbarDensity.tight,
-        < 560 => _ToolbarDensity.compact,
+        < 560 => _ToolbarDensity.tight,
+        < 760 => _ToolbarDensity.compact,
         _ => _ToolbarDensity.normal,
       };
 
