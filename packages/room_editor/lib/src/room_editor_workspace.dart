@@ -19,6 +19,8 @@ class RoomEditorWorkspace extends StatefulWidget {
   final bool showConstraintsInLandscape;
   final ValueChanged<RoomEditorDocument> onDocumentCommitted;
   final ValueChanged<RoomEditorCommand>? onCommand;
+  final VoidCallback? onUndo;
+  final VoidCallback? onRedo;
   final RoomEditorSelectionController? selectionController;
 
   const RoomEditorWorkspace({
@@ -30,6 +32,8 @@ class RoomEditorWorkspace extends StatefulWidget {
     this.editorOnly = false,
     this.showConstraintsInLandscape = true,
     this.selectionController,
+    this.onUndo,
+    this.onRedo,
   });
 
   @override
@@ -592,8 +596,8 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       callbacks: RoomEditorToolbarCallbacks(
         onToggleSelectionMode: () =>
             setState(() => _selectionMode = !_selectionMode),
-        onUndo: null,
-        onRedo: null,
+        onUndo: widget.onUndo,
+        onRedo: widget.onRedo,
         onFit: () => setState(() => _fitCanvasRequest++),
         onToggleSnapToGrid: () => setState(() => _snapToGrid = !_snapToGrid),
         onToggleShowGrid: () => setState(() => _showGrid = !_showGrid),

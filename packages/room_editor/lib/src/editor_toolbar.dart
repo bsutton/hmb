@@ -78,12 +78,17 @@ class _ToolbarButton extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onLongPress: () => action.enabled ? _showHelp(context) : null,
-    child: IconButton.filledTonal(
-      isSelected: action.selected,
-      onPressed: action.enabled ? action.onPressed : null,
-      icon: action.iconWidget ?? Icon(action.icon),
+  Widget build(BuildContext context) => Tooltip(
+    message: action.helpText,
+    triggerMode: TooltipTriggerMode.longPress,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: () => _showHelp(context),
+      child: IconButton.filledTonal(
+        isSelected: action.selected,
+        onPressed: action.enabled ? action.onPressed : null,
+        icon: action.iconWidget ?? Icon(action.icon),
+      ),
     ),
   );
 }

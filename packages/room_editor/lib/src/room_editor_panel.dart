@@ -20,6 +20,8 @@ class RoomEditorPanel extends StatefulWidget {
   final bool landscape;
   final ValueChanged<RoomEditorDocument> onDocumentCommitted;
   final ValueChanged<RoomEditorCommand>? onCommand;
+  final VoidCallback? onUndo;
+  final VoidCallback? onRedo;
 
   const RoomEditorPanel({
     super.key,
@@ -37,6 +39,8 @@ class RoomEditorPanel extends StatefulWidget {
     this.lineStudOffsetController,
     this.onCommitSelectedLineOverrides,
     this.onCommand,
+    this.onUndo,
+    this.onRedo,
     this.landscape = false,
   });
 
@@ -60,31 +64,34 @@ class _RoomEditorPanelState extends State<RoomEditorPanel> {
   }
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<RoomEditorSelection>(
-    valueListenable: _selectionController,
-    builder: (context, selection, _) => RoomEditorDetailsForm(
-      roomId: widget.roomId,
-      unitSystem: widget.unitSystem,
-      unitLabel: widget.unitLabel,
-      roomNameController: widget.roomNameController,
-      ceilingHeightController: widget.ceilingHeightController,
-      selectedLineId: selection.selectedLineIndex == null
-          ? null
-          : widget.document.bundle.lines[selection.selectedLineIndex!].id,
-      lineStudSpacingController: widget.lineStudSpacingController,
-      lineStudOffsetController: widget.lineStudOffsetController,
-      onUnitChanged: widget.onUnitChanged,
-      onCommitRoomName: widget.onCommitRoomName,
-      onCommitCeilingHeight: widget.onCommitCeilingHeight,
-      onCommitSelectedLineOverrides: widget.onCommitSelectedLineOverrides,
-      editorTools: const SizedBox.shrink(),
-      canvas: RoomEditorWorkspace(
-        document: widget.document,
-        landscape: widget.landscape,
-        selectionController: _selectionController,
-        onDocumentCommitted: widget.onDocumentCommitted,
-        onCommand: widget.onCommand,
-      ),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<RoomEditorSelection>(
+        valueListenable: _selectionController,
+        builder: (context, selection, _) => RoomEditorDetailsForm(
+          roomId: widget.roomId,
+          unitSystem: widget.unitSystem,
+          unitLabel: widget.unitLabel,
+          roomNameController: widget.roomNameController,
+          ceilingHeightController: widget.ceilingHeightController,
+          selectedLineId: selection.selectedLineIndex == null
+              ? null
+              : widget.document.bundle.lines[selection.selectedLineIndex!].id,
+          lineStudSpacingController: widget.lineStudSpacingController,
+          lineStudOffsetController: widget.lineStudOffsetController,
+          onUnitChanged: widget.onUnitChanged,
+          onCommitRoomName: widget.onCommitRoomName,
+          onCommitCeilingHeight: widget.onCommitCeilingHeight,
+          onCommitSelectedLineOverrides: widget.onCommitSelectedLineOverrides,
+          editorTools: const SizedBox.shrink(),
+          canvas: RoomEditorWorkspace(
+            document: widget.document,
+            landscape: widget.landscape,
+            selectionController: _selectionController,
+            onDocumentCommitted: widget.onDocumentCommitted,
+            onCommand: widget.onCommand,
+            onUndo: widget.onUndo,
+            onRedo: widget.onRedo,
+          ),
+        ),
+      );
 }

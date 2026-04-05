@@ -1271,6 +1271,24 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     await _startAnalysis();
   }
 
+  Future<void> _undoRoomEdit() async {
+    if (_undo.isEmpty) {
+      return;
+    }
+    final previous = _undo.removeLast();
+    _redo.add(_currentRoom.deepCopy());
+    await _updateCurrentRoom(previous.deepCopy(), trackUndo: false);
+  }
+
+  Future<void> _redoRoomEdit() async {
+    if (_redo.isEmpty) {
+      return;
+    }
+    final next = _redo.removeLast();
+    _undo.add(_currentRoom.deepCopy());
+    await _updateCurrentRoom(next.deepCopy(), trackUndo: false);
+  }
+
   Future<void> _previewPdf() async {
     await _commitPendingRoomEdits();
     await _startAnalysis(awaitCompletion: true);
@@ -1825,11 +1843,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         document: _toEditorDocument(_currentRoom),
         landscape: isMobileLandscape,
         editorOnly: true,
+        onUndo: _undo.isEmpty ? null : () => unawaited(_undoRoomEdit()),
+        onRedo: _redo.isEmpty ? null : () => unawaited(_redoRoomEdit()),
         onDocumentCommitted: (document) async {
-          await _updateCurrentRoom(
-            _fromEditorDocument(document, _currentRoom),
-            trackUndo: false,
-          );
+          await _updateCurrentRoom(_fromEditorDocument(document, _currentRoom));
         },
         onCommand: (command) async {
           await _handleEditorWorkspaceCommand(command);
@@ -1876,11 +1893,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       onCommitCeilingHeight: _commitCeilingHeight,
       onCommitSelectedLineOverrides: _commitSelectedLineFramingOverrides,
       document: _toEditorDocument(_currentRoom),
+      onUndo: _undo.isEmpty ? null : () => unawaited(_undoRoomEdit()),
+      onRedo: _redo.isEmpty ? null : () => unawaited(_redoRoomEdit()),
       onDocumentCommitted: (document) async {
-        await _updateCurrentRoom(
-          _fromEditorDocument(document, _currentRoom),
-          trackUndo: false,
-        );
+        await _updateCurrentRoom(_fromEditorDocument(document, _currentRoom));
       },
       onCommand: (command) async {
         await _handleEditorWorkspaceCommand(command);
