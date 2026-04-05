@@ -15,54 +15,58 @@ class RoomEditorToolbar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final tier = switch (screenWidth) {
-      < 420 => _ToolbarDensity.tight,
-      < 560 => _ToolbarDensity.compact,
-      _ => _ToolbarDensity.normal,
-    };
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final availableWidth = constraints.maxWidth.isFinite
+          ? constraints.maxWidth
+          : MediaQuery.sizeOf(context).width;
+      final tier = switch (availableWidth) {
+        < 420 => _ToolbarDensity.tight,
+        < 560 => _ToolbarDensity.compact,
+        _ => _ToolbarDensity.normal,
+      };
 
-    if (vertical) {
-      return SizedBox(
-        width: tier.columnWidth,
-        child: GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: tier.spacing,
-          crossAxisSpacing: tier.spacing,
+      if (vertical) {
+        return SizedBox(
+          width: tier.columnWidth,
+          child: GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: tier.spacing,
+            crossAxisSpacing: tier.spacing,
+            children: [
+              for (final action in actions)
+                _ToolbarButton(action: action, tier: tier),
+            ],
+          ),
+        );
+      }
+
+      if (wrap) {
+        return Wrap(
+          spacing: tier.spacing,
+          runSpacing: tier.spacing,
           children: [
             for (final action in actions)
               _ToolbarButton(action: action, tier: tier),
           ],
+        );
+      }
+
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final action in actions) ...[
+              _ToolbarButton(action: action, tier: tier),
+              SizedBox(width: tier.spacing),
+            ],
+          ],
         ),
       );
-    }
-
-    if (wrap) {
-      return Wrap(
-        spacing: tier.spacing,
-        runSpacing: tier.spacing,
-        children: [
-          for (final action in actions)
-            _ToolbarButton(action: action, tier: tier),
-        ],
-      );
-    }
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final action in actions) ...[
-            _ToolbarButton(action: action, tier: tier),
-            SizedBox(width: tier.spacing),
-          ],
-        ],
-      ),
-    );
-  }
+    },
+  );
 }
 
 enum _ToolbarDensity { normal, compact, tight }
