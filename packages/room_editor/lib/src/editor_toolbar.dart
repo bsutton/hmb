@@ -23,7 +23,7 @@ class RoomEditorToolbar extends StatelessWidget {
         < 760 => _ToolbarDensity.compact,
         _ => _ToolbarDensity.normal,
       };
-      final tier = vertical ? _ToolbarDensity.tight : baseTier;
+      final tier = vertical ? _ToolbarDensity.split : baseTier;
 
       if (vertical) {
         return SizedBox(
@@ -68,31 +68,35 @@ class RoomEditorToolbar extends StatelessWidget {
   );
 }
 
-enum _ToolbarDensity { normal, compact, tight }
+enum _ToolbarDensity { normal, compact, tight, split }
 
 extension on _ToolbarDensity {
   double get columnWidth => switch (this) {
     _ToolbarDensity.normal => 116,
     _ToolbarDensity.compact => 96,
     _ToolbarDensity.tight => 88,
+    _ToolbarDensity.split => 76,
   };
 
   double get spacing => switch (this) {
     _ToolbarDensity.normal => 6,
     _ToolbarDensity.compact => 4,
     _ToolbarDensity.tight => 3,
+    _ToolbarDensity.split => 2,
   };
 
   double get buttonSize => switch (this) {
     _ToolbarDensity.normal => 48,
     _ToolbarDensity.compact => 40,
     _ToolbarDensity.tight => 36,
+    _ToolbarDensity.split => 32,
   };
 
   double get iconSize => switch (this) {
     _ToolbarDensity.normal => 24,
     _ToolbarDensity.compact => 20,
     _ToolbarDensity.tight => 18,
+    _ToolbarDensity.split => 16,
   };
 
   VisualDensity get visualDensity => switch (this) {
@@ -102,6 +106,7 @@ extension on _ToolbarDensity {
       vertical: -1,
     ),
     _ToolbarDensity.tight => const VisualDensity(horizontal: -2, vertical: -2),
+    _ToolbarDensity.split => const VisualDensity(horizontal: -3, vertical: -3),
   };
 }
 
