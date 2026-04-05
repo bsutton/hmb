@@ -16,17 +16,21 @@ class RoomEditorToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final compact = screenWidth < 420;
+
     if (vertical) {
       return SizedBox(
-        width: 116,
+        width: compact ? 104 : 116,
         child: GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
+          mainAxisSpacing: compact ? 4 : 6,
+          crossAxisSpacing: compact ? 4 : 6,
           children: [
-            for (final action in actions) _ToolbarButton(action: action),
+            for (final action in actions)
+              _ToolbarButton(action: action, compact: compact),
           ],
         ),
       );
@@ -34,10 +38,11 @@ class RoomEditorToolbar extends StatelessWidget {
 
     if (wrap) {
       return Wrap(
-        spacing: 6,
-        runSpacing: 6,
+        spacing: compact ? 4 : 6,
+        runSpacing: compact ? 4 : 6,
         children: [
-          for (final action in actions) _ToolbarButton(action: action),
+          for (final action in actions)
+            _ToolbarButton(action: action, compact: compact),
         ],
       );
     }
@@ -47,8 +52,8 @@ class RoomEditorToolbar extends StatelessWidget {
       child: Row(
         children: [
           for (final action in actions) ...[
-            _ToolbarButton(action: action),
-            const SizedBox(width: 6),
+            _ToolbarButton(action: action, compact: compact),
+            SizedBox(width: compact ? 4 : 6),
           ],
         ],
       ),
@@ -58,8 +63,9 @@ class RoomEditorToolbar extends StatelessWidget {
 
 class _ToolbarButton extends StatelessWidget {
   final RoomEditorToolAction action;
+  final bool compact;
 
-  const _ToolbarButton({required this.action});
+  const _ToolbarButton({required this.action, required this.compact});
 
   Future<void> _showHelp(BuildContext context) async {
     await showDialog<void>(
@@ -85,6 +91,15 @@ class _ToolbarButton extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onLongPress: () => _showHelp(context),
       child: IconButton.filledTonal(
+        constraints: BoxConstraints.tightFor(
+          width: compact ? 44 : 48,
+          height: compact ? 44 : 48,
+        ),
+        padding: EdgeInsets.zero,
+        iconSize: compact ? 20 : 24,
+        visualDensity: compact
+            ? const VisualDensity(horizontal: -2, vertical: -2)
+            : VisualDensity.standard,
         isSelected: action.selected,
         onPressed: action.enabled ? action.onPressed : null,
         icon: action.iconWidget ?? Icon(action.icon),
