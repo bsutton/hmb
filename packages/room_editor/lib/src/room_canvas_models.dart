@@ -146,6 +146,20 @@ class RoomEditorDocument {
   );
 }
 
+class RoomEditorOpeningDraft {
+  final RoomEditorOpeningType type;
+  final int width;
+  final int height;
+  final int sillHeight;
+
+  const RoomEditorOpeningDraft({
+    required this.type,
+    required this.width,
+    required this.height,
+    this.sillHeight = 0,
+  });
+}
+
 class RoomEditorSelection {
   final int? selectedLineIndex;
   final int? selectedIntersectionIndex;
@@ -190,13 +204,13 @@ class RoomEditorCanvasCallbacks {
 
 enum RoomEditorCommandType {
   splitLine,
-  addDoor,
-  addWindow,
+  addOpening,
   editOpening,
   deleteOpening,
-  editLineLength,
-  jointAction,
-  editAngle,
+  setLineLength,
+  joinIntersection,
+  setAngle,
+  removeAngle,
 }
 
 class RoomEditorCommand {
@@ -204,6 +218,8 @@ class RoomEditorCommand {
   final int? lineIndex;
   final int? openingIndex;
   final int? intersectionIndex;
+  final int? intValue;
+  final RoomEditorOpeningDraft? openingDraft;
   final RoomEditorDocument document;
 
   const RoomEditorCommand({
@@ -212,5 +228,7 @@ class RoomEditorCommand {
     this.lineIndex,
     this.openingIndex,
     this.intersectionIndex,
+    this.intValue,
+    this.openingDraft,
   });
 }

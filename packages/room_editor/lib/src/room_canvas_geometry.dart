@@ -63,6 +63,42 @@ class RoomCanvasGeometry {
     return _formatFeetAndInches(feet, wholeInches, sixteenths);
   }
 
+  static String unitLabel(RoomEditorUnitSystem unitSystem) =>
+      unitSystem == RoomEditorUnitSystem.metric ? 'mm' : 'ft/in';
+
+  static int? parseDisplayLength(
+    String raw,
+    RoomEditorUnitSystem unitSystem,
+  ) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    if (unitSystem == RoomEditorUnitSystem.metric) {
+      final parsed = double.tryParse(trimmed);
+      if (parsed == null) {
+        return null;
+      }
+      return (parsed * metricUnitsPerMm).round();
+    }
+
+    final feetInches = RegExp(
+      r"""^\s*(\d+)\s*'\s*(?:(\d+(?:\.\d+)?)\s*(?:")?)?\s*$""",
+    ).firstMatch(trimmed);
+    if (feetInches != null) {
+      final feet = int.tryParse(feetInches.group(1) ?? '0') ?? 0;
+      final inches = double.tryParse(feetInches.group(2) ?? '0') ?? 0;
+      return ((feet * inchesPerFoot + inches) * imperialUnitsPerInch).round();
+    }
+
+    final plain = double.tryParse(trimmed);
+    if (plain != null) {
+      return (plain * imperialUnitsPerInch).round();
+    }
+
+    return null;
+  }
+
   static String _formatFeetAndInches(int feet, int inches, int sixteenths) {
     final normalizedFeet = feet + inches ~/ inchesPerFoot;
     final normalizedInches = inches % inchesPerFoot;

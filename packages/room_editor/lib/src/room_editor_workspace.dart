@@ -9,6 +9,7 @@ import 'room_canvas.dart';
 import 'room_canvas_geometry.dart';
 import 'room_canvas_models.dart';
 import 'room_constraint_solver.dart';
+import 'room_editor_dialogs.dart';
 import 'room_editor_shell.dart';
 
 class RoomEditorWorkspace extends StatefulWidget {
@@ -272,6 +273,156 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     );
   }
 
+  Future<void> _emitLengthCommand() async {
+    final lineIndex = _selection.selectedLineIndex;
+    if (lineIndex == null) {
+      return;
+    }
+    final length = await showRoomEditorLengthDialog(
+      context: context,
+      unitSystem: _bundle.unitSystem,
+      initialValue: _bundle.lines[lineIndex].length,
+    );
+    if (length == null || !mounted || widget.onCommand == null) {
+      return;
+    }
+    widget.onCommand!(
+      RoomEditorCommand(
+        type: RoomEditorCommandType.setLineLength,
+        document: _document,
+        lineIndex: lineIndex,
+        intValue: length,
+      ),
+    );
+  }
+
+  Future<void> _emitOpeningCommand(RoomEditorOpeningType type) async {
+    final lineIndex = _selection.selectedLineIndex;
+    if (lineIndex == null) {
+      return;
+    }
+    final opening = await showRoomEditorOpeningDialog(
+      context: context,
+      unitSystem: _bundle.unitSystem,
+      type: type,
+    );
+    if (opening == null || !mounted || widget.onCommand == null) {
+      return;
+    }
+    widget.onCommand!(
+      RoomEditorCommand(
+        type: RoomEditorCommandType.addOpening,
+        document: _document,
+        lineIndex: lineIndex,
+        openingDraft: opening,
+      ),
+    );
+  }
+
+  Future<void> _emitEditOpeningCommand() async {
+    final openingIndex = _selection.selectedOpeningIndex;
+    if (openingIndex == null) {
+      return;
+    }
+    final opening = _bundle.openings[openingIndex];
+    final updated = await showRoomEditorOpeningDialog(
+      context: context,
+      unitSystem: _bundle.unitSystem,
+      type: opening.type,
+      initialOpening: RoomEditorOpeningDraft(
+        type: opening.type,
+        width: opening.width,
+        height: opening.height,
+        sillHeight: opening.height,
+      ),
+      title: opening.type == RoomEditorOpeningType.door
+          ? 'Edit Door'
+          : 'Edit Window',
+      confirmLabel: 'Save',
+    );
+    if (updated == null || !mounted || widget.onCommand == null) {
+      return;
+    }
+    widget.onCommand!(
+      RoomEditorCommand(
+        type: RoomEditorCommandType.editOpening,
+        document: _document,
+        openingIndex: openingIndex,
+        openingDraft: updated,
+      ),
+    );
+  }
+
+  Future<void> _emitJointCommand() async {
+    final intersectionIndex = _selection.selectedIntersectionIndex;
+    if (intersectionIndex == null || widget.onCommand == null) {
+      return;
+    }
+    final line = _bundle.lines[intersectionIndex];
+    final hasAngleConstraint = _document.constraints.any(
+      (constraint) =>
+          constraint.lineId == line.id &&
+          constraint.type == RoomEditorConstraintType.jointAngle,
+    );
+    final action = await showRoomEditorJointActionSheet(
+      context: context,
+      hasAngleConstraint: hasAngleConstraint,
+    );
+    if (action == null || !mounted) {
+      return;
+    }
+    if (action == 'join') {
+      widget.onCommand!(
+        RoomEditorCommand(
+          type: RoomEditorCommandType.joinIntersection,
+          document: _document,
+          intersectionIndex: intersectionIndex,
+        ),
+      );
+      return;
+    }
+    if (action == 'remove-angle') {
+      widget.onCommand!(
+        RoomEditorCommand(
+          type: RoomEditorCommandType.removeAngle,
+          document: _document,
+          intersectionIndex: intersectionIndex,
+        ),
+      );
+      return;
+    }
+    final angle = await showRoomEditorAngleDialog(
+      context: context,
+      initialValue: hasAngleConstraint
+          ? _document.constraints
+                .firstWhere(
+                  (constraint) =>
+                      constraint.lineId == line.id &&
+                      constraint.type == RoomEditorConstraintType.jointAngle,
+                )
+                .targetValue ??
+              RoomEditorConstraintSolver.currentAngleValue(
+                _bundle.lines,
+                intersectionIndex,
+              )
+          : RoomEditorConstraintSolver.currentAngleValue(
+              _bundle.lines,
+              intersectionIndex,
+            ),
+    );
+    if (angle == null || !mounted) {
+      return;
+    }
+    widget.onCommand!(
+      RoomEditorCommand(
+        type: RoomEditorCommandType.setAngle,
+        document: _document,
+        intersectionIndex: intersectionIndex,
+        intValue: angle,
+      ),
+    );
+  }
+
   Widget _buildToolbar({
     required bool vertical,
     required bool wrap,
@@ -344,10 +495,10 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         onToggleShowGrid: () => setState(() => _showGrid = !_showGrid),
         onDeselect: () => _setSelection(const RoomEditorSelection()),
         onSplit: hasLine ? () => _emitCommand(RoomEditorCommandType.splitLine) : null,
-        onAddDoor: hasLine ? () => _emitCommand(RoomEditorCommandType.addDoor) : null,
-        onAddWindow: hasLine ? () => _emitCommand(RoomEditorCommandType.addWindow) : null,
+        onAddDoor: hasLine ? () => unawaited(_emitOpeningCommand(RoomEditorOpeningType.door)) : null,
+        onAddWindow: hasLine ? () => unawaited(_emitOpeningCommand(RoomEditorOpeningType.window)) : null,
         onEditOpening: hasOpening
-            ? () => _emitCommand(RoomEditorCommandType.editOpening)
+            ? () => unawaited(_emitEditOpeningCommand())
             : null,
         onDeleteOpening: hasOpening
             ? () => _emitCommand(RoomEditorCommandType.deleteOpening)
@@ -367,7 +518,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
               }
             : null,
         onToggleLineLength: hasLine
-            ? () => _emitCommand(RoomEditorCommandType.editLineLength)
+            ? () => unawaited(_emitLengthCommand())
             : null,
         onToggleHorizontal: hasLine
             ? () => unawaited(
@@ -386,10 +537,10 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
                 )
             : null,
         onJointAction: hasIntersection
-            ? () => _emitCommand(RoomEditorCommandType.jointAction)
+            ? () => unawaited(_emitJointCommand())
             : null,
         onToggleAngle: hasIntersection
-            ? () => _emitCommand(RoomEditorCommandType.editAngle)
+            ? () => unawaited(_emitJointCommand())
             : null,
       ),
       constraintsOnly: constraintsOnly,
