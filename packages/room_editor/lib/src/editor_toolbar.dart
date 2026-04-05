@@ -23,7 +23,7 @@ class RoomEditorToolbar extends StatelessWidget {
         < 760 => _ToolbarDensity.compact,
         _ => _ToolbarDensity.normal,
       };
-      final tier = vertical ? baseTier.compacted : baseTier;
+      final tier = vertical ? _ToolbarDensity.tight : baseTier;
 
       if (vertical) {
         return SizedBox(
@@ -71,12 +71,6 @@ class RoomEditorToolbar extends StatelessWidget {
 enum _ToolbarDensity { normal, compact, tight }
 
 extension on _ToolbarDensity {
-  _ToolbarDensity get compacted => switch (this) {
-    _ToolbarDensity.normal => _ToolbarDensity.compact,
-    _ToolbarDensity.compact => _ToolbarDensity.tight,
-    _ToolbarDensity.tight => _ToolbarDensity.tight,
-  };
-
   double get columnWidth => switch (this) {
     _ToolbarDensity.normal => 116,
     _ToolbarDensity.compact => 96,
