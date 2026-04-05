@@ -5,6 +5,7 @@
 export 'src/editor_toolbar.dart';
 export 'src/editor_toolbar_models.dart';
 export 'src/room_editor_adapter.dart';
+export 'src/room_constraint_solver.dart';
 export 'src/room_canvas.dart';
 export 'src/room_canvas_models.dart';
 export 'src/room_canvas_geometry.dart';

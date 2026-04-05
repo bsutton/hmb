@@ -17,7 +17,6 @@ import '../../../main.dart';
 import '../../../util/dart/app_settings.dart';
 import '../../../util/dart/log.dart';
 import '../../../util/dart/measurement_type.dart';
-import '../../../util/dart/plaster_constraint_solver.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../../util/dart/plaster_sheet_direction.dart';
 import 'package:room_editor/room_editor.dart';
@@ -1140,7 +1139,51 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     return updated;
   }
 
-  void _showSolveError(PlasterSolveResult result) {
+  List<RoomEditorConstraint> _toEditorConstraints(_RoomBundle bundle) => [
+    for (final constraint in bundle.constraints)
+      RoomEditorConstraint(
+        lineId: constraint.lineId,
+        type: switch (constraint.type) {
+          PlasterConstraintType.lineLength =>
+            RoomEditorConstraintType.lineLength,
+          PlasterConstraintType.horizontal =>
+            RoomEditorConstraintType.horizontal,
+          PlasterConstraintType.vertical =>
+            RoomEditorConstraintType.vertical,
+          PlasterConstraintType.jointAngle =>
+            RoomEditorConstraintType.jointAngle,
+        },
+        targetValue: constraint.targetValue,
+      ),
+  ];
+
+  List<PlasterRoomLine> _fromEditorSolvedLines(
+    _RoomBundle bundle,
+    List<RoomEditorLine> solved,
+  ) => [
+    for (var i = 0; i < bundle.lines.length; i++)
+      bundle.lines[i].copyWith(
+        seqNo: solved[i].seqNo,
+        startX: solved[i].startX,
+        startY: solved[i].startY,
+        length: solved[i].length,
+      ),
+  ];
+
+  RoomEditorSolveResult _solveEditorRoom(
+    _RoomBundle bundle, {
+    int? pinnedVertexIndex,
+    IntPoint? pinnedVertexTarget,
+  }) => RoomEditorConstraintSolver.solve(
+    lines: _toEditorBundle(bundle).lines,
+    constraints: _toEditorConstraints(bundle),
+    pinnedVertexIndex: pinnedVertexIndex,
+    pinnedVertexTarget: pinnedVertexTarget == null
+        ? null
+        : RoomEditorIntPoint(pinnedVertexTarget.x, pinnedVertexTarget.y),
+  );
+
+  void _showSolveError(RoomEditorSolveResult result) {
     if (!mounted) {
       return;
     }
@@ -1162,23 +1205,23 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
   }
 
-  String _formatSolveViolation(PlasterConstraintViolation violation) {
+  String _formatSolveViolation(RoomEditorConstraintViolation violation) {
     final unitSystem = _currentRoom.room.unitSystem;
     final requestedLength = PlasterGeometry.formatDisplayLength(
       violation.constraint.targetValue ?? 0,
       unitSystem,
     );
     return switch (violation.constraint.type) {
-      PlasterConstraintType.lineLength =>
+      RoomEditorConstraintType.lineLength =>
         'The requested line length conflicts with existing constraints. '
             'Requested length: $requestedLength.',
-      PlasterConstraintType.horizontal =>
+      RoomEditorConstraintType.horizontal =>
         'This line cannot remain horizontal '
             'with the current constraints.',
-      PlasterConstraintType.vertical =>
+      RoomEditorConstraintType.vertical =>
         'This line cannot remain vertical '
             'with the current constraints.',
-      PlasterConstraintType.jointAngle =>
+      RoomEditorConstraintType.jointAngle =>
         'This joint cannot keep its current angle constraint.',
     };
   }
@@ -1191,9 +1234,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     bool trackUndo = true,
     bool showError = true,
   }) async {
-    final result = PlasterConstraintSolver.solve(
-      lines: bundle.lines,
-      constraints: bundle.constraints,
+    final result = _solveEditorRoom(
+      bundle,
       pinnedVertexIndex: pinnedVertexIndex,
       pinnedVertexTarget: pinnedVertexTarget,
     );
@@ -1203,7 +1245,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       }
       return;
     }
-    final solvedBundle = bundle.copyWith(lines: result.lines);
+    final solvedBundle = bundle.copyWith(
+      lines: _fromEditorSolvedLines(bundle, result.lines),
+    );
     if (persist) {
       await _updateCurrentRoom(solvedBundle, trackUndo: trackUndo);
     } else {
@@ -1218,16 +1262,17 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     bool persist = true,
     bool trackUndo = true,
   }) async {
-    final result = PlasterConstraintSolver.solve(
-      lines: bundle.lines,
-      constraints: bundle.constraints,
+    final result = _solveEditorRoom(
+      bundle,
       pinnedVertexIndex: pinnedVertexIndex,
       pinnedVertexTarget: pinnedVertexTarget,
     );
     if (!result.converged) {
       return false;
     }
-    final solvedBundle = bundle.copyWith(lines: result.lines);
+    final solvedBundle = bundle.copyWith(
+      lines: _fromEditorSolvedLines(bundle, result.lines),
+    );
     if (persist) {
       await _updateCurrentRoom(solvedBundle, trackUndo: trackUndo);
     } else {
@@ -1274,9 +1319,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     int? pinnedVertexIndex,
     IntPoint? pinnedVertexTarget,
   }) {
-    final result = PlasterConstraintSolver.solve(
-      lines: bundle.lines,
-      constraints: bundle.constraints,
+    final result = _solveEditorRoom(
+      bundle,
       pinnedVertexIndex: pinnedVertexIndex,
       pinnedVertexTarget: pinnedVertexTarget,
     );
@@ -1882,12 +1926,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         ) ||
         await _trySolveAndUpdateRoom(bundle);
     if (!solved) {
-      _showSolveError(
-        PlasterConstraintSolver.solve(
-          lines: bundle.lines,
-          constraints: bundle.constraints,
-        ),
-      );
+      _showSolveError(_solveEditorRoom(bundle));
     }
   }
 
@@ -1964,12 +2003,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         ) ||
         await _trySolveAndUpdateRoom(bundle);
     if (!solved) {
-      _showSolveError(
-        PlasterConstraintSolver.solve(
-          lines: bundle.lines,
-          constraints: bundle.constraints,
-        ),
-      );
+      _showSolveError(_solveEditorRoom(bundle));
     }
   }
 
@@ -2017,8 +2051,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         builder: (_) => _AngleDialog(
           initialValue:
               angleConstraint?.targetValue ??
-              PlasterConstraintSolver.currentAngleValue(
-                _currentRoom.lines,
+              RoomEditorConstraintSolver.currentAngleValue(
+                _toEditorBundle(_currentRoom).lines,
                 index,
               ),
         ),
@@ -2073,8 +2107,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       builder: (_) => _AngleDialog(
         initialValue:
             angleConstraint?.targetValue ??
-            PlasterConstraintSolver.currentAngleValue(
-              _currentRoom.lines,
+            RoomEditorConstraintSolver.currentAngleValue(
+              _toEditorBundle(_currentRoom).lines,
               index,
             ),
       ),
@@ -4302,7 +4336,7 @@ class _AngleDialogState extends State<_AngleDialog> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: PlasterConstraintSolver.angleValueToDegrees(
+      text: RoomEditorConstraintSolver.angleValueToDegrees(
         widget.initialValue,
       ).toStringAsFixed(1),
     );
@@ -4349,7 +4383,7 @@ class _AngleDialogState extends State<_AngleDialog> {
           }
           Navigator.of(
             context,
-          ).pop(PlasterConstraintSolver.degreesToAngleValue(value));
+          ).pop(RoomEditorConstraintSolver.degreesToAngleValue(value));
         },
         child: const Text('Save'),
       ),
