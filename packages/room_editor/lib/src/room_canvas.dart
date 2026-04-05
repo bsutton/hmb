@@ -13,21 +13,9 @@ class RoomEditorCanvas extends StatefulWidget {
   final bool snapToGrid;
   final bool showGrid;
   final int fitRequestId;
-  final int? selectedLineIndex;
-  final int? selectedIntersectionIndex;
-  final int? selectedOpeningIndex;
+  final RoomEditorSelection selection;
+  final RoomEditorCanvasCallbacks callbacks;
   final double height;
-  final VoidCallback onStartMoveIntersection;
-  final void Function(int index, RoomEditorIntPoint point) onMoveIntersection;
-  final Future<void> Function() onEndMoveIntersection;
-  final VoidCallback onStartMoveOpening;
-  final void Function(int index, RoomEditorIntPoint point, int anchorOffset)
-  onMoveOpening;
-  final Future<void> Function() onEndMoveOpening;
-  final Future<void> Function(int index) onTapIntersection;
-  final Future<void> Function(int index) onTapOpening;
-  final Future<void> Function(int index) onTapLine;
-  final Future<void> Function() onTapCeiling;
 
   const RoomEditorCanvas({
     super.key,
@@ -36,19 +24,8 @@ class RoomEditorCanvas extends StatefulWidget {
     required this.snapToGrid,
     required this.showGrid,
     required this.fitRequestId,
-    required this.selectedLineIndex,
-    required this.selectedIntersectionIndex,
-    required this.selectedOpeningIndex,
-    required this.onStartMoveIntersection,
-    required this.onMoveIntersection,
-    required this.onEndMoveIntersection,
-    required this.onStartMoveOpening,
-    required this.onMoveOpening,
-    required this.onEndMoveOpening,
-    required this.onTapIntersection,
-    required this.onTapOpening,
-    required this.onTapLine,
-    required this.onTapCeiling,
+    required this.selection,
+    required this.callbacks,
     this.height = 360,
   });
 
@@ -149,9 +126,9 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     if (draggingOpening || draggingIntersection) {
       setState(() {});
       if (draggingOpening) {
-        unawaited(widget.onEndMoveOpening());
+        unawaited(widget.callbacks.onEndMoveOpening());
       } else {
-        unawaited(widget.onEndMoveIntersection());
+        unawaited(widget.callbacks.onEndMoveIntersection());
       }
     }
   }
@@ -237,7 +214,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
 
     final dragTransform = _dragTransform ?? transform;
     if (_dragOpeningIndex != null) {
-      widget.onMoveOpening(
+      widget.callbacks.onMoveOpening(
         _dragOpeningIndex!,
         dragTransform.toWorld(event.localPosition),
         _dragOpeningAnchorOffset,
@@ -245,7 +222,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
       return;
     }
     if (_dragIndex != null) {
-      widget.onMoveIntersection(
+      widget.callbacks.onMoveIntersection(
         _dragIndex!,
         dragTransform.toWorld(event.localPosition),
       );
@@ -260,9 +237,9 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     if (_pendingDragOpeningIndex != null) {
       _dragOpeningIndex = _pendingDragOpeningIndex;
       _dragOpeningAnchorOffset = _pendingDragOpeningAnchorOffset;
-      widget.onStartMoveOpening();
+      widget.callbacks.onStartMoveOpening();
       setState(() {});
-      widget.onMoveOpening(
+      widget.callbacks.onMoveOpening(
         _dragOpeningIndex!,
         dragTransform.toWorld(event.localPosition),
         _dragOpeningAnchorOffset,
@@ -272,9 +249,9 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
 
     if (_pendingDragIndex != null) {
       _dragIndex = _pendingDragIndex;
-      widget.onStartMoveIntersection();
+      widget.callbacks.onStartMoveIntersection();
       setState(() {});
-      widget.onMoveIntersection(
+      widget.callbacks.onMoveIntersection(
         _dragIndex!,
         dragTransform.toWorld(event.localPosition),
       );
@@ -304,9 +281,9 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     if (draggingOpening || draggingIntersection) {
       setState(() {});
       if (draggingOpening) {
-        unawaited(widget.onEndMoveOpening());
+        unawaited(widget.callbacks.onEndMoveOpening());
       } else {
-        unawaited(widget.onEndMoveIntersection());
+        unawaited(widget.callbacks.onEndMoveIntersection());
       }
     }
   }
@@ -321,7 +298,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
       localPosition,
     );
     if (openingIndex != null) {
-      await widget.onTapOpening(openingIndex);
+      await widget.callbacks.onTapOpening(openingIndex);
       return;
     }
 
@@ -367,7 +344,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
 
     if (uniqueCandidates.isEmpty) {
       if (transform.hitPolygon(localPosition)) {
-        await widget.onTapCeiling();
+        await widget.callbacks.onTapCeiling();
       }
       return;
     }
@@ -375,9 +352,9 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     if (uniqueCandidates.length == 1) {
       final candidate = uniqueCandidates.first;
       if (candidate.type == _RoomTapTargetType.intersection) {
-        await widget.onTapIntersection(candidate.index);
+        await widget.callbacks.onTapIntersection(candidate.index);
       } else {
-        await widget.onTapLine(candidate.index);
+        await widget.callbacks.onTapLine(candidate.index);
       }
       return;
     }
@@ -406,9 +383,9 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
       return;
     }
     if (selected.type == _RoomTapTargetType.intersection) {
-      await widget.onTapIntersection(selected.index);
+      await widget.callbacks.onTapIntersection(selected.index);
     } else {
-      await widget.onTapLine(selected.index);
+      await widget.callbacks.onTapLine(selected.index);
     }
   }
 
@@ -457,9 +434,10 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
                 transform: transform,
                 selectionMode: widget.selectionMode,
                 showGrid: widget.showGrid,
-                selectedLineIndex: widget.selectedLineIndex,
-                selectedIntersectionIndex: widget.selectedIntersectionIndex,
-                selectedOpeningIndex: widget.selectedOpeningIndex,
+                selectedLineIndex: widget.selection.selectedLineIndex,
+                selectedIntersectionIndex:
+                    widget.selection.selectedIntersectionIndex,
+                selectedOpeningIndex: widget.selection.selectedOpeningIndex,
               ),
             ),
           ),

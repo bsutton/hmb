@@ -2,6 +2,13 @@ enum RoomEditorUnitSystem { metric, imperial }
 
 enum RoomEditorOpeningType { door, window }
 
+typedef RoomEditorMoveIntersectionCallback =
+    void Function(int index, RoomEditorIntPoint point);
+typedef RoomEditorMoveOpeningCallback =
+    void Function(int index, RoomEditorIntPoint point, int anchorOffset);
+typedef RoomEditorTapIndexedCallback = Future<void> Function(int index);
+typedef RoomEditorTapCeilingCallback = Future<void> Function();
+
 class RoomEditorIntPoint {
   final int x;
   final int y;
@@ -105,4 +112,42 @@ class RoomEditorBundle {
     lines: lines ?? this.lines,
     openings: openings ?? this.openings,
   );
+}
+
+class RoomEditorSelection {
+  final int? selectedLineIndex;
+  final int? selectedIntersectionIndex;
+  final int? selectedOpeningIndex;
+
+  const RoomEditorSelection({
+    this.selectedLineIndex,
+    this.selectedIntersectionIndex,
+    this.selectedOpeningIndex,
+  });
+}
+
+class RoomEditorCanvasCallbacks {
+  final VoidCallback onStartMoveIntersection;
+  final RoomEditorMoveIntersectionCallback onMoveIntersection;
+  final Future<void> Function() onEndMoveIntersection;
+  final VoidCallback onStartMoveOpening;
+  final RoomEditorMoveOpeningCallback onMoveOpening;
+  final Future<void> Function() onEndMoveOpening;
+  final RoomEditorTapIndexedCallback onTapIntersection;
+  final RoomEditorTapIndexedCallback onTapOpening;
+  final RoomEditorTapIndexedCallback onTapLine;
+  final RoomEditorTapCeilingCallback onTapCeiling;
+
+  const RoomEditorCanvasCallbacks({
+    required this.onStartMoveIntersection,
+    required this.onMoveIntersection,
+    required this.onEndMoveIntersection,
+    required this.onStartMoveOpening,
+    required this.onMoveOpening,
+    required this.onEndMoveOpening,
+    required this.onTapIntersection,
+    required this.onTapOpening,
+    required this.onTapLine,
+    required this.onTapCeiling,
+  });
 }

@@ -2259,84 +2259,88 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     snapToGrid: _snapToGrid,
     showGrid: _showGrid,
     fitRequestId: _fitCanvasRequest,
-    selectedLineIndex: _selectedLineIndex,
-    selectedIntersectionIndex: _selectedIntersectionIndex,
-    selectedOpeningIndex: _selectedOpeningIndex,
-    onStartMoveIntersection: _beginRoomGestureEdit,
-    onMoveIntersection: (index, point) {
-      final baseRoom = _gestureBaseRoom ?? _currentRoom;
-      final worldPoint = _fromEditorPoint(point);
-      final target = _snapToGrid
-          ? PlasterGeometry.snapPoint(worldPoint, baseRoom.room.unitSystem)
-          : worldPoint;
-      final lines = PlasterGeometry.moveIntersection(
-        baseRoom.lines,
-        index,
-        target,
-      );
-      unawaited(
-        _solveAndUpdateRoom(
-          baseRoom.copyWith(lines: lines),
-          pinnedVertexIndex: index,
-          pinnedVertexTarget: target,
-          persist: false,
-          trackUndo: false,
-          showError: false,
-        ),
-      );
-    },
-    onEndMoveIntersection: () async {
-      await _commitRoomGestureEdit();
-    },
-    onStartMoveOpening: _beginRoomGestureEdit,
-    onMoveOpening: (index, point, anchorOffset) =>
-        _moveOpeningLocally(index, _fromEditorPoint(point), anchorOffset),
-    onEndMoveOpening: () async {
-      await _commitRoomGestureEdit();
-    },
-    onTapIntersection: (index) async {
-      setState(() {
-        _selectedIntersectionIndex = index;
-        _selectedLineIndex = null;
-        _selectedOpeningIndex = null;
-      });
-      _syncRoomControllers();
-    },
-    onTapOpening: (index) async {
-      setState(() {
-        _selectedOpeningIndex = index;
-        _selectedLineIndex = null;
-        _selectedIntersectionIndex = null;
-      });
-      _syncRoomControllers();
-    },
-    onTapLine: (index) async {
-      _logLineSelection('tap', index);
-      setState(() {
-        _selectedLineIndex = index;
-        _selectedIntersectionIndex = null;
-        _selectedOpeningIndex = null;
-      });
-      _syncRoomControllers();
-      if (_selectionMode) {
-        final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
-        final line = lines[index];
-        lines[index] = line.copyWith(plasterSelected: !line.plasterSelected);
-        await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
-      }
-    },
-    onTapCeiling: () async {
-      if (!_selectionMode) {
-        return;
-      }
-      await _updateCurrentRoom(
-        _currentRoom.copyWith(
-          room: _currentRoom.room.copyWith(
-            plasterCeiling: !_currentRoom.room.plasterCeiling,
+    selection: RoomEditorSelection(
+      selectedLineIndex: _selectedLineIndex,
+      selectedIntersectionIndex: _selectedIntersectionIndex,
+      selectedOpeningIndex: _selectedOpeningIndex,
+    ),
+    callbacks: RoomEditorCanvasCallbacks(
+      onStartMoveIntersection: _beginRoomGestureEdit,
+      onMoveIntersection: (index, point) {
+        final baseRoom = _gestureBaseRoom ?? _currentRoom;
+        final worldPoint = _fromEditorPoint(point);
+        final target = _snapToGrid
+            ? PlasterGeometry.snapPoint(worldPoint, baseRoom.room.unitSystem)
+            : worldPoint;
+        final lines = PlasterGeometry.moveIntersection(
+          baseRoom.lines,
+          index,
+          target,
+        );
+        unawaited(
+          _solveAndUpdateRoom(
+            baseRoom.copyWith(lines: lines),
+            pinnedVertexIndex: index,
+            pinnedVertexTarget: target,
+            persist: false,
+            trackUndo: false,
+            showError: false,
           ),
-        ),
-      );
-    },
+        );
+      },
+      onEndMoveIntersection: () async {
+        await _commitRoomGestureEdit();
+      },
+      onStartMoveOpening: _beginRoomGestureEdit,
+      onMoveOpening: (index, point, anchorOffset) =>
+          _moveOpeningLocally(index, _fromEditorPoint(point), anchorOffset),
+      onEndMoveOpening: () async {
+        await _commitRoomGestureEdit();
+      },
+      onTapIntersection: (index) async {
+        setState(() {
+          _selectedIntersectionIndex = index;
+          _selectedLineIndex = null;
+          _selectedOpeningIndex = null;
+        });
+        _syncRoomControllers();
+      },
+      onTapOpening: (index) async {
+        setState(() {
+          _selectedOpeningIndex = index;
+          _selectedLineIndex = null;
+          _selectedIntersectionIndex = null;
+        });
+        _syncRoomControllers();
+      },
+      onTapLine: (index) async {
+        _logLineSelection('tap', index);
+        setState(() {
+          _selectedLineIndex = index;
+          _selectedIntersectionIndex = null;
+          _selectedOpeningIndex = null;
+        });
+        _syncRoomControllers();
+        if (_selectionMode) {
+          final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
+          final line = lines[index];
+          lines[index] = line.copyWith(plasterSelected: !line.plasterSelected);
+          await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
+        }
+      },
+      onTapCeiling: () async {
+        if (!_selectionMode) {
+          return;
+        }
+        await _updateCurrentRoom(
+          _currentRoom.copyWith(
+            room: _currentRoom.room.copyWith(
+              plasterCeiling: !_currentRoom.room.plasterCeiling,
+            ),
+          ),
+        );
+      },
+    ),
   );
 
   RoomEditorBundle _toEditorBundle(_RoomBundle bundle) => buildRoomEditorBundle(
