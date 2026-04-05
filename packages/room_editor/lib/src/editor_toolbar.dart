@@ -72,26 +72,26 @@ enum _ToolbarDensity { normal, compact, tight }
 extension on _ToolbarDensity {
   double get columnWidth => switch (this) {
     _ToolbarDensity.normal => 116,
-    _ToolbarDensity.compact => 108,
-    _ToolbarDensity.tight => 100,
+    _ToolbarDensity.compact => 96,
+    _ToolbarDensity.tight => 88,
   };
 
   double get spacing => switch (this) {
     _ToolbarDensity.normal => 6,
-    _ToolbarDensity.compact => 5,
-    _ToolbarDensity.tight => 4,
+    _ToolbarDensity.compact => 4,
+    _ToolbarDensity.tight => 3,
   };
 
   double get buttonSize => switch (this) {
     _ToolbarDensity.normal => 48,
-    _ToolbarDensity.compact => 44,
-    _ToolbarDensity.tight => 40,
+    _ToolbarDensity.compact => 40,
+    _ToolbarDensity.tight => 36,
   };
 
   double get iconSize => switch (this) {
     _ToolbarDensity.normal => 24,
-    _ToolbarDensity.compact => 22,
-    _ToolbarDensity.tight => 20,
+    _ToolbarDensity.compact => 20,
+    _ToolbarDensity.tight => 18,
   };
 
   VisualDensity get visualDensity => switch (this) {
