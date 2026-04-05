@@ -16,6 +16,7 @@ typedef RoomEditorOpeningRecord = ({
   int offsetFromStart,
   int width,
   int height,
+  int sillHeight,
 });
 
 RoomEditorBundle buildRoomEditorBundle({
@@ -48,6 +49,7 @@ RoomEditorBundle buildRoomEditorBundle({
         offsetFromStart: opening.offsetFromStart,
         width: opening.width,
         height: opening.height,
+        sillHeight: opening.sillHeight,
       ),
   ],
 );

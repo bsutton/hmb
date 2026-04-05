@@ -53,7 +53,10 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   void initState() {
     super.initState();
     _document = widget.document;
-    _selection = _externalSelectionController?.value ?? const RoomEditorSelection();
+    _selection = _normalizeSelection(
+      _externalSelectionController?.value ?? const RoomEditorSelection(),
+      _document,
+    );
   }
 
   @override
@@ -61,18 +64,48 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.document != widget.document) {
       _document = widget.document;
+      _selection = _normalizeSelection(_selection, _document);
     }
     if (oldWidget.selectionController != widget.selectionController) {
-      _selection = _externalSelectionController?.value ?? _selection;
+      _selection = _normalizeSelection(
+        _externalSelectionController?.value ?? _selection,
+        _document,
+      );
     }
+    _externalSelectionController?.value = _selection;
   }
 
   void _setSelection(RoomEditorSelection selection) {
+    final normalized = _normalizeSelection(selection, _document);
     setState(() {
-      _selection = selection;
+      _selection = normalized;
     });
-    _externalSelectionController?.value = selection;
+    _externalSelectionController?.value = normalized;
   }
+
+  RoomEditorSelection _normalizeSelection(
+    RoomEditorSelection selection,
+    RoomEditorDocument document,
+  ) => RoomEditorSelection(
+    selectedLineIndex:
+        selection.selectedLineIndex != null &&
+            selection.selectedLineIndex! >= 0 &&
+            selection.selectedLineIndex! < document.bundle.lines.length
+        ? selection.selectedLineIndex
+        : null,
+    selectedIntersectionIndex:
+        selection.selectedIntersectionIndex != null &&
+            selection.selectedIntersectionIndex! >= 0 &&
+            selection.selectedIntersectionIndex! < document.bundle.lines.length
+        ? selection.selectedIntersectionIndex
+        : null,
+    selectedOpeningIndex:
+        selection.selectedOpeningIndex != null &&
+            selection.selectedOpeningIndex! >= 0 &&
+            selection.selectedOpeningIndex! < document.bundle.openings.length
+        ? selection.selectedOpeningIndex
+        : null,
+  );
 
   List<RoomEditorConstraint> _constraintsWithoutLineType(
     List<RoomEditorConstraint> constraints,
@@ -137,7 +170,9 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   void _replaceDocument(RoomEditorDocument document) {
     setState(() {
       _document = document;
+      _selection = _normalizeSelection(_selection, document);
     });
+    _externalSelectionController?.value = _selection;
   }
 
   Future<bool> _trySolveAndCommit(
@@ -176,7 +211,9 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     int anchorOffset,
   ) {
     final opening = _bundle.openings[index];
-    final lineIndex = _bundle.lines.indexWhere((line) => line.id == opening.lineId);
+    final lineIndex = _bundle.lines.indexWhere(
+      (line) => line.id == opening.lineId,
+    );
     if (lineIndex < 0) {
       return;
     }
@@ -197,7 +234,9 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     openings[index] = opening.copyWith(
       offsetFromStart: offset.clamp(0, maxOffset),
     );
-    _replaceDocument(_document.copyWith(bundle: _bundle.copyWith(openings: openings)));
+    _replaceDocument(
+      _document.copyWith(bundle: _bundle.copyWith(openings: openings)),
+    );
   }
 
   Future<void> _toggleAxisConstraint(
@@ -206,7 +245,8 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   ) async {
     final line = _bundle.lines[index];
     final existing = _document.constraints.any(
-      (constraint) => constraint.lineId == line.id && constraint.type == axisType,
+      (constraint) =>
+          constraint.lineId == line.id && constraint.type == axisType,
     );
     final opposing = axisType == RoomEditorConstraintType.horizontal
         ? RoomEditorConstraintType.vertical
@@ -296,6 +336,19 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     );
   }
 
+  void _emitRemoveLengthCommand() {
+    if (_selection.selectedLineIndex == null || widget.onCommand == null) {
+      return;
+    }
+    widget.onCommand!(
+      RoomEditorCommand(
+        type: RoomEditorCommandType.removeLineLength,
+        document: _document,
+        lineIndex: _selection.selectedLineIndex,
+      ),
+    );
+  }
+
   Future<void> _emitOpeningCommand(RoomEditorOpeningType type) async {
     final lineIndex = _selection.selectedLineIndex;
     if (lineIndex == null) {
@@ -333,7 +386,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         type: opening.type,
         width: opening.width,
         height: opening.height,
-        sillHeight: opening.height,
+        sillHeight: opening.sillHeight,
       ),
       title: opening.type == RoomEditorOpeningType.door
           ? 'Edit Door'
@@ -395,20 +448,65 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       context: context,
       initialValue: hasAngleConstraint
           ? _document.constraints
-                .firstWhere(
-                  (constraint) =>
-                      constraint.lineId == line.id &&
-                      constraint.type == RoomEditorConstraintType.jointAngle,
+                    .firstWhere(
+                      (constraint) =>
+                          constraint.lineId == line.id &&
+                          constraint.type ==
+                              RoomEditorConstraintType.jointAngle,
+                    )
+                    .targetValue ??
+                RoomEditorConstraintSolver.currentAngleValue(
+                  _bundle.lines,
+                  intersectionIndex,
                 )
-                .targetValue ??
-              RoomEditorConstraintSolver.currentAngleValue(
-                _bundle.lines,
-                intersectionIndex,
-              )
           : RoomEditorConstraintSolver.currentAngleValue(
               _bundle.lines,
               intersectionIndex,
             ),
+    );
+    if (angle == null || !mounted) {
+      return;
+    }
+    widget.onCommand!(
+      RoomEditorCommand(
+        type: RoomEditorCommandType.setAngle,
+        document: _document,
+        intersectionIndex: intersectionIndex,
+        intValue: angle,
+      ),
+    );
+  }
+
+  Future<void> _emitAngleCommand() async {
+    final intersectionIndex = _selection.selectedIntersectionIndex;
+    if (intersectionIndex == null || widget.onCommand == null) {
+      return;
+    }
+    final line = _bundle.lines[intersectionIndex];
+    RoomEditorConstraint? angleConstraint;
+    for (final constraint in _document.constraints) {
+      if (constraint.lineId == line.id &&
+          constraint.type == RoomEditorConstraintType.jointAngle) {
+        angleConstraint = constraint;
+        break;
+      }
+    }
+    if (angleConstraint != null) {
+      widget.onCommand!(
+        RoomEditorCommand(
+          type: RoomEditorCommandType.removeAngle,
+          document: _document,
+          intersectionIndex: intersectionIndex,
+        ),
+      );
+      return;
+    }
+    final angle = await showRoomEditorAngleDialog(
+      context: context,
+      initialValue: RoomEditorConstraintSolver.currentAngleValue(
+        _bundle.lines,
+        intersectionIndex,
+      ),
     );
     if (angle == null || !mounted) {
       return;
@@ -429,9 +527,15 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     bool constraintsOnly = false,
     bool excludeConstraints = false,
   }) {
-    final hasLine = _selection.selectedLineIndex != null;
-    final hasIntersection = _selection.selectedIntersectionIndex != null;
-    final hasOpening = _selection.selectedOpeningIndex != null;
+    final hasLine =
+        _selection.selectedLineIndex != null &&
+        _selection.selectedLineIndex! < _bundle.lines.length;
+    final hasIntersection =
+        _selection.selectedIntersectionIndex != null &&
+        _selection.selectedIntersectionIndex! < _bundle.lines.length;
+    final hasOpening =
+        _selection.selectedOpeningIndex != null &&
+        _selection.selectedOpeningIndex! < _bundle.openings.length;
     final selectedLine = hasLine
         ? _bundle.lines[_selection.selectedLineIndex!]
         : null;
@@ -494,9 +598,15 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         onToggleSnapToGrid: () => setState(() => _snapToGrid = !_snapToGrid),
         onToggleShowGrid: () => setState(() => _showGrid = !_showGrid),
         onDeselect: () => _setSelection(const RoomEditorSelection()),
-        onSplit: hasLine ? () => _emitCommand(RoomEditorCommandType.splitLine) : null,
-        onAddDoor: hasLine ? () => unawaited(_emitOpeningCommand(RoomEditorOpeningType.door)) : null,
-        onAddWindow: hasLine ? () => unawaited(_emitOpeningCommand(RoomEditorOpeningType.window)) : null,
+        onSplit: hasLine
+            ? () => _emitCommand(RoomEditorCommandType.splitLine)
+            : null,
+        onAddDoor: hasLine
+            ? () => unawaited(_emitOpeningCommand(RoomEditorOpeningType.door))
+            : null,
+        onAddWindow: hasLine
+            ? () => unawaited(_emitOpeningCommand(RoomEditorOpeningType.window))
+            : null,
         onEditOpening: hasOpening
             ? () => unawaited(_emitEditOpeningCommand())
             : null,
@@ -518,29 +628,31 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
               }
             : null,
         onToggleLineLength: hasLine
-            ? () => unawaited(_emitLengthCommand())
+            ? () => hasLineLengthConstraint
+                  ? _emitRemoveLengthCommand()
+                  : unawaited(_emitLengthCommand())
             : null,
         onToggleHorizontal: hasLine
             ? () => unawaited(
-                  _toggleAxisConstraint(
-                    _selection.selectedLineIndex!,
-                    RoomEditorConstraintType.horizontal,
-                  ),
-                )
+                _toggleAxisConstraint(
+                  _selection.selectedLineIndex!,
+                  RoomEditorConstraintType.horizontal,
+                ),
+              )
             : null,
         onToggleVertical: hasLine
             ? () => unawaited(
-                  _toggleAxisConstraint(
-                    _selection.selectedLineIndex!,
-                    RoomEditorConstraintType.vertical,
-                  ),
-                )
+                _toggleAxisConstraint(
+                  _selection.selectedLineIndex!,
+                  RoomEditorConstraintType.vertical,
+                ),
+              )
             : null,
         onJointAction: hasIntersection
             ? () => unawaited(_emitJointCommand())
             : null,
         onToggleAngle: hasIntersection
-            ? () => unawaited(_emitJointCommand())
+            ? () => unawaited(_emitAngleCommand())
             : null,
       ),
       constraintsOnly: constraintsOnly,
@@ -568,7 +680,10 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
             ? RoomCanvasGeometry.snapPoint(point, _bundle.unitSystem)
             : point;
         final lines = List<RoomEditorLine>.from(base.bundle.lines);
-        lines[index] = lines[index].copyWith(startX: target.x, startY: target.y);
+        lines[index] = lines[index].copyWith(
+          startX: target.x,
+          startY: target.y,
+        );
         final result = _solveDocument(
           base.copyWith(bundle: base.bundle.copyWith(lines: lines)),
           pinnedVertexIndex: index,
@@ -624,21 +739,16 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => RoomEditorShell(
       landscape: widget.landscape,
-        editorOnly: widget.editorOnly,
+      editorOnly: widget.editorOnly,
       primaryTools: _buildToolbar(
         vertical: widget.landscape,
         wrap: !widget.landscape && constraints.maxWidth < 520,
         excludeConstraints: widget.landscape,
       ),
       canvas: _buildCanvas(),
-      constraintTools:
-          widget.landscape && widget.showConstraintsInLandscape
-              ? _buildToolbar(
-                  vertical: true,
-                  wrap: false,
-                  constraintsOnly: true,
-                )
-              : null,
+      constraintTools: widget.landscape && widget.showConstraintsInLandscape
+          ? _buildToolbar(vertical: true, wrap: false, constraintsOnly: true)
+          : null,
     ),
   );
 }

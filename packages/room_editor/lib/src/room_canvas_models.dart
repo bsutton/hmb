@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 enum RoomEditorUnitSystem { metric, imperial }
 
 enum RoomEditorOpeningType { door, window }
@@ -59,6 +61,7 @@ class RoomEditorOpening {
   final int offsetFromStart;
   final int width;
   final int height;
+  final int sillHeight;
 
   const RoomEditorOpening({
     required this.id,
@@ -67,6 +70,7 @@ class RoomEditorOpening {
     required this.offsetFromStart,
     required this.width,
     required this.height,
+    this.sillHeight = 0,
   });
 
   RoomEditorOpening copyWith({
@@ -76,6 +80,7 @@ class RoomEditorOpening {
     int? offsetFromStart,
     int? width,
     int? height,
+    int? sillHeight,
   }) => RoomEditorOpening(
     id: id ?? this.id,
     lineId: lineId ?? this.lineId,
@@ -83,6 +88,7 @@ class RoomEditorOpening {
     offsetFromStart: offsetFromStart ?? this.offsetFromStart,
     width: width ?? this.width,
     height: height ?? this.height,
+    sillHeight: sillHeight ?? this.sillHeight,
   );
 }
 
@@ -132,10 +138,7 @@ class RoomEditorDocument {
   final RoomEditorBundle bundle;
   final List<RoomEditorConstraint> constraints;
 
-  const RoomEditorDocument({
-    required this.bundle,
-    required this.constraints,
-  });
+  const RoomEditorDocument({required this.bundle, required this.constraints});
 
   RoomEditorDocument copyWith({
     RoomEditorBundle? bundle,
@@ -208,6 +211,7 @@ enum RoomEditorCommandType {
   editOpening,
   deleteOpening,
   setLineLength,
+  removeLineLength,
   joinIntersection,
   setAngle,
   removeAngle,

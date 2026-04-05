@@ -7,8 +7,8 @@ import 'dart:isolate';
 import 'dart:math';
 
 import 'package:deferred_state/deferred_state.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:room_editor/room_editor.dart';
 
 import '../../../dao/dao.g.dart';
 import '../../../entity/entity.g.dart';
@@ -18,7 +18,6 @@ import '../../../util/dart/log.dart';
 import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../../util/dart/plaster_sheet_direction.dart';
-import 'package:room_editor/room_editor.dart';
 import '../../crud/base_nested/list_nested_screen.dart';
 import '../../dialog/email_dialog.dart';
 import '../../nav/nav.g.dart';
@@ -75,16 +74,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
   Job? _job;
   Task? _task;
   Supplier? _supplier;
-  var _selectionMode = false;
-  var _snapToGrid = true;
-  var _showGrid = true;
-  var _fitCanvasRequest = 0;
   var _selectedRoomIndex = 0;
   int? _selectedLineIndex;
-  int? _selectedIntersectionIndex;
-  int? _selectedOpeningIndex;
-  var _hasPendingRoomGesture = false;
-  _RoomBundle? _gestureBaseRoom;
   List<_RoomBundle> _rooms = [];
   List<PlasterMaterialSize> _materials = [];
   List<PlasterSurfaceLayout> _layouts = const [];
@@ -619,15 +610,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     await _commitSelectedLineFramingOverrides();
   }
 
-  void _clearSelection() {
-    _selectedLineIndex = null;
-    _selectedIntersectionIndex = null;
-    _selectedOpeningIndex = null;
-    if (_rooms.isNotEmpty) {
-      _syncRoomControllers();
-    }
-  }
-
   Future<void> _saveProject() async {
     await _commitPendingRoomEdits();
     final previousSupplierId = _project.supplierId;
@@ -865,8 +847,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             onCommitCeilingHeight: _commitCeilingHeight,
             onCommitSelectedRoomCeilingOverrides:
                 _commitSelectedRoomCeilingOverrides,
-            onCommitSelectedLineOverrides:
-                _commitSelectedLineFramingOverrides,
+            onCommitSelectedLineOverrides: _commitSelectedLineFramingOverrides,
             onApply: () async {
               await _commitCeilingHeight();
               await _commitSelectedRoomCeilingOverrides();
@@ -1147,8 +1128,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             RoomEditorConstraintType.lineLength,
           PlasterConstraintType.horizontal =>
             RoomEditorConstraintType.horizontal,
-          PlasterConstraintType.vertical =>
-            RoomEditorConstraintType.vertical,
+          PlasterConstraintType.vertical => RoomEditorConstraintType.vertical,
           PlasterConstraintType.jointAngle =>
             RoomEditorConstraintType.jointAngle,
         },
@@ -1254,139 +1234,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     }
   }
 
-  Future<bool> _trySolveAndUpdateRoom(
-    _RoomBundle bundle, {
-    int? pinnedVertexIndex,
-    IntPoint? pinnedVertexTarget,
-    bool persist = true,
-    bool trackUndo = true,
-  }) async {
-    final result = _solveEditorRoom(
-      bundle,
-      pinnedVertexIndex: pinnedVertexIndex,
-      pinnedVertexTarget: pinnedVertexTarget,
-    );
-    if (!result.converged) {
-      return false;
-    }
-    final solvedBundle = bundle.copyWith(
-      lines: _fromEditorSolvedLines(bundle, result.lines),
-    );
-    if (persist) {
-      await _updateCurrentRoom(solvedBundle, trackUndo: trackUndo);
-    } else {
-      _replaceCurrentRoomLocally(solvedBundle, trackUndo: trackUndo);
-    }
-    return true;
-  }
-
-  void _logLineSelection(String source, int index) {
-    if (index < 0 || index >= _currentRoom.lines.length) {
-      Log.i('PLASTER_LINE_SELECTED source=$source, index=$index, invalid=true');
-      return;
-    }
-    final line = _currentRoom.lines[index];
-    final end = PlasterGeometry.lineEnd(_currentRoom.lines, index);
-    Log.i(
-      'PLASTER_LINE_SELECTED '
-      'source=$source, index=$index, lineId=${line.id}, '
-      'start=(${line.startX},${line.startY}), '
-      'end=(${end.x},${end.y}), '
-      'length=${line.length}',
-    );
-  }
-
-  void _logAxisToggleStart(
-    String axis,
-    int index,
-    PlasterRoomLine line,
-    IntPoint end,
-    List<PlasterRoomConstraint> constraints,
-  ) {
-    Log.i('PLASTER_AXIS_TOGGLE_START');
-    Log.i(
-      'axis=$axis, selectedLineIndex=$index, lineId=${line.id}, '
-      'start=(${line.startX},${line.startY}), end=(${end.x},${end.y}), '
-      'length=${line.length}',
-    );
-    Log.i('constraints=${_formatConstraintList(constraints)}');
-  }
-
-  void _logAxisToggleAttempt(
-    String name,
-    _RoomBundle bundle, {
-    int? pinnedVertexIndex,
-    IntPoint? pinnedVertexTarget,
-  }) {
-    final result = _solveEditorRoom(
-      bundle,
-      pinnedVertexIndex: pinnedVertexIndex,
-      pinnedVertexTarget: pinnedVertexTarget,
-    );
-    final violationText = result.violations.isEmpty
-        ? '<none>'
-        : result.violations
-              .map(
-                (violation) =>
-                    'lineId=${violation.constraint.lineId},'
-                    'type=${violation.constraint.type.name},'
-                    'error=${violation.error.toStringAsFixed(1)}',
-              )
-              .join(' | ');
-    final pinnedTargetText = pinnedVertexTarget == null
-        ? '<none>'
-        : '(${pinnedVertexTarget.x},${pinnedVertexTarget.y})';
-    Log.i(
-      'PLASTER_AXIS_TOGGLE_ATTEMPT '
-      'name=$name, converged=${result.converged}, '
-      'pinnedVertexIndex=$pinnedVertexIndex, '
-      'pinnedVertexTarget=$pinnedTargetText, '
-      'violations=$violationText',
-    );
-  }
-
-  String _formatConstraintList(List<PlasterRoomConstraint> constraints) {
-    if (constraints.isEmpty) {
-      return '<none>';
-    }
-    return constraints
-        .map(
-          (constraint) =>
-              '{lineId=${constraint.lineId},'
-              'type=${constraint.type.name},'
-              'target=${constraint.targetValue}}',
-        )
-        .join(', ');
-  }
-
-  _RoomBundle _bundleWithAxisProjectedLine(
-    _RoomBundle bundle,
-    int lineIndex,
-    PlasterConstraintType axisType, {
-    required bool pinStart,
-  }) {
-    final lines = List<PlasterRoomLine>.from(bundle.lines);
-    final nextIndex = (lineIndex + 1) % lines.length;
-    final start = lines[lineIndex];
-    final end = PlasterGeometry.lineEnd(lines, lineIndex);
-
-    if (axisType == PlasterConstraintType.horizontal) {
-      if (pinStart) {
-        lines[nextIndex] = lines[nextIndex].copyWith(startY: start.startY);
-      } else {
-        lines[lineIndex] = lines[lineIndex].copyWith(startY: end.y);
-      }
-    } else if (axisType == PlasterConstraintType.vertical) {
-      if (pinStart) {
-        lines[nextIndex] = lines[nextIndex].copyWith(startX: start.startX);
-      } else {
-        lines[lineIndex] = lines[lineIndex].copyWith(startX: end.x);
-      }
-    }
-
-    return bundle.copyWith(lines: lines);
-  }
-
   Future<void> _updateCurrentRoom(
     _RoomBundle bundle, {
     bool trackUndo = true,
@@ -1408,16 +1255,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     }
   }
 
-  void _beginRoomGestureEdit() {
-    if (_hasPendingRoomGesture) {
-      return;
-    }
-    _undo.add(_currentRoom.deepCopy());
-    _redo.clear();
-    _hasPendingRoomGesture = true;
-    _gestureBaseRoom = _currentRoom.deepCopy();
-  }
-
   Future<void> _persistCurrentRoom(_RoomBundle bundle) async {
     await _persistRoomBundle(_selectedRoomIndex, bundle);
   }
@@ -1432,15 +1269,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       setState(() {});
     }
     await _startAnalysis();
-  }
-
-  Future<void> _commitRoomGestureEdit() async {
-    if (!_hasPendingRoomGesture || _rooms.isEmpty) {
-      return;
-    }
-    _hasPendingRoomGesture = false;
-    _gestureBaseRoom = null;
-    await _persistCurrentRoom(_currentRoom.deepCopy());
   }
 
   Future<void> _previewPdf() async {
@@ -1593,13 +1421,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     await _solveAndUpdateRoom(_currentRoom.copyWith(constraints: constraints));
   }
 
-  Future<void> _toggleLinePlasterSelected(int index) async {
-    final lines = List<PlasterRoomLine>.from(_currentRoom.lines);
-    final line = lines[index];
-    lines[index] = line.copyWith(plasterSelected: !line.plasterSelected);
-    await _updateCurrentRoom(_currentRoom.copyWith(lines: lines));
-  }
-
   Future<void> _addOpeningToLine(
     int index,
     PlasterOpeningType type,
@@ -1693,10 +1514,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     final openings = List<PlasterRoomOpening>.from(_currentRoom.openings)
       ..removeAt(index);
     await _updateCurrentRoom(_currentRoom.copyWith(openings: openings));
-    if (!mounted) {
-      return;
-    }
-    setState(() => _selectedOpeningIndex = null);
   }
 
   Future<void> _joinIntersection(int index) async {
@@ -1801,189 +1618,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
 
   String _formatKg(double value) => value.toStringAsFixed(value < 10 ? 1 : 0);
 
-  void _moveOpeningLocally(int index, IntPoint point, int anchorOffset) {
-    final opening = _currentRoom.openings[index];
-    final lineIndex = _lineIndexForOpening(opening);
-    if (lineIndex < 0) {
-      return;
-    }
-    final line = _currentRoom.lines[lineIndex];
-    final end = PlasterGeometry.lineEnd(_currentRoom.lines, lineIndex);
-    final dx = end.x - line.startX;
-    final dy = end.y - line.startY;
-    final lengthSquared = dx * dx + dy * dy;
-    if (lengthSquared == 0) {
-      return;
-    }
-    final projected =
-        ((point.x - line.startX) * dx + (point.y - line.startY) * dy) /
-        lengthSquared;
-    final offset = (projected * line.length).round() - anchorOffset;
-    final maxOffset = max(0, line.length - opening.width);
-    final openings = List<PlasterRoomOpening>.from(_currentRoom.openings);
-    openings[index] = opening.copyWith(
-      offsetFromStart: offset.clamp(0, maxOffset),
-    );
-    _replaceCurrentRoomLocally(
-      _currentRoom.copyWith(openings: openings),
-      trackUndo: false,
-    );
-  }
-
-  Future<void> _toggleHorizontalConstraint(int index) async {
-    final line = _currentRoom.lines[index];
-    final hasHorizontalConstraint =
-        _constraintForLine(line.id, PlasterConstraintType.horizontal) != null;
-    final constraints = !hasHorizontalConstraint
-        ? _upsertConstraint(
-            _constraintsWithoutLineType(
-              _constraintsWithoutLineType(
-                _currentRoom.constraints,
-                line.id,
-                PlasterConstraintType.vertical,
-              ),
-              line.id,
-              PlasterConstraintType.horizontal,
-            ),
-            PlasterRoomConstraint.forInsert(
-              roomId: _currentRoom.room.id,
-              lineId: line.id,
-              type: PlasterConstraintType.horizontal,
-            ),
-          )
-        : _constraintsWithoutLineType(
-            _currentRoom.constraints,
-            line.id,
-            PlasterConstraintType.horizontal,
-          );
-    final bundle = _currentRoom.copyWith(constraints: constraints);
-    if (hasHorizontalConstraint) {
-      await _solveAndUpdateRoom(bundle);
-      return;
-    }
-
-    final lineEnd = PlasterGeometry.lineEnd(_currentRoom.lines, index);
-    final nextIndex = (index + 1) % _currentRoom.lines.length;
-    _logAxisToggleStart('horizontal', index, line, lineEnd, constraints);
-    final startPinnedBundle = _bundleWithAxisProjectedLine(
-      bundle,
-      index,
-      PlasterConstraintType.horizontal,
-      pinStart: true,
-    );
-    final endPinnedBundle = _bundleWithAxisProjectedLine(
-      bundle,
-      index,
-      PlasterConstraintType.horizontal,
-      pinStart: false,
-    );
-    _logAxisToggleAttempt(
-      'start-pinned',
-      startPinnedBundle,
-      pinnedVertexIndex: index,
-      pinnedVertexTarget: IntPoint(line.startX, line.startY),
-    );
-    _logAxisToggleAttempt(
-      'end-pinned',
-      endPinnedBundle,
-      pinnedVertexIndex: nextIndex,
-      pinnedVertexTarget: lineEnd,
-    );
-    _logAxisToggleAttempt('free', bundle);
-    final solved =
-        await _trySolveAndUpdateRoom(
-          startPinnedBundle,
-          pinnedVertexIndex: index,
-          pinnedVertexTarget: IntPoint(line.startX, line.startY),
-        ) ||
-        await _trySolveAndUpdateRoom(
-          endPinnedBundle,
-          pinnedVertexIndex: nextIndex,
-          pinnedVertexTarget: lineEnd,
-        ) ||
-        await _trySolveAndUpdateRoom(bundle);
-    if (!solved) {
-      _showSolveError(_solveEditorRoom(bundle));
-    }
-  }
-
-  Future<void> _toggleVerticalConstraint(int index) async {
-    final line = _currentRoom.lines[index];
-    final hasVerticalConstraint =
-        _constraintForLine(line.id, PlasterConstraintType.vertical) != null;
-    final constraints = !hasVerticalConstraint
-        ? _upsertConstraint(
-            _constraintsWithoutLineType(
-              _constraintsWithoutLineType(
-                _currentRoom.constraints,
-                line.id,
-                PlasterConstraintType.horizontal,
-              ),
-              line.id,
-              PlasterConstraintType.vertical,
-            ),
-            PlasterRoomConstraint.forInsert(
-              roomId: _currentRoom.room.id,
-              lineId: line.id,
-              type: PlasterConstraintType.vertical,
-            ),
-          )
-        : _constraintsWithoutLineType(
-            _currentRoom.constraints,
-            line.id,
-            PlasterConstraintType.vertical,
-          );
-    final bundle = _currentRoom.copyWith(constraints: constraints);
-    if (hasVerticalConstraint) {
-      await _solveAndUpdateRoom(bundle);
-      return;
-    }
-
-    final lineEnd = PlasterGeometry.lineEnd(_currentRoom.lines, index);
-    final nextIndex = (index + 1) % _currentRoom.lines.length;
-    _logAxisToggleStart('vertical', index, line, lineEnd, constraints);
-    final startPinnedBundle = _bundleWithAxisProjectedLine(
-      bundle,
-      index,
-      PlasterConstraintType.vertical,
-      pinStart: true,
-    );
-    final endPinnedBundle = _bundleWithAxisProjectedLine(
-      bundle,
-      index,
-      PlasterConstraintType.vertical,
-      pinStart: false,
-    );
-    _logAxisToggleAttempt(
-      'start-pinned',
-      startPinnedBundle,
-      pinnedVertexIndex: index,
-      pinnedVertexTarget: IntPoint(line.startX, line.startY),
-    );
-    _logAxisToggleAttempt(
-      'end-pinned',
-      endPinnedBundle,
-      pinnedVertexIndex: nextIndex,
-      pinnedVertexTarget: lineEnd,
-    );
-    _logAxisToggleAttempt('free', bundle);
-    final solved =
-        await _trySolveAndUpdateRoom(
-          startPinnedBundle,
-          pinnedVertexIndex: index,
-          pinnedVertexTarget: IntPoint(line.startX, line.startY),
-        ) ||
-        await _trySolveAndUpdateRoom(
-          endPinnedBundle,
-          pinnedVertexIndex: nextIndex,
-          pinnedVertexTarget: lineEnd,
-        ) ||
-        await _trySolveAndUpdateRoom(bundle);
-    if (!solved) {
-      _showSolveError(_solveEditorRoom(bundle));
-    }
-  }
-
   Future<void> _setAngleConstraint(int index, int angleValue) async {
     final angleConstraint = _constraintForLine(
       _currentRoom.lines[index].id,
@@ -2039,6 +1673,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           offsetFromStart: opening.offsetFromStart,
           width: opening.width,
           height: opening.height,
+          sillHeight: opening.sillHeight,
         ),
     ],
   );
@@ -2070,6 +1705,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           offsetFromStart: document.bundle.openings[i].offsetFromStart,
           width: document.bundle.openings[i].width,
           height: document.bundle.openings[i].height,
+          sillHeight: document.bundle.openings[i].sillHeight,
         ),
     ],
     constraints: [
@@ -2082,8 +1718,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               PlasterConstraintType.lineLength,
             RoomEditorConstraintType.horizontal =>
               PlasterConstraintType.horizontal,
-            RoomEditorConstraintType.vertical =>
-              PlasterConstraintType.vertical,
+            RoomEditorConstraintType.vertical => PlasterConstraintType.vertical,
             RoomEditorConstraintType.jointAngle =>
               PlasterConstraintType.jointAngle,
           },
@@ -2137,6 +1772,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         if (command.lineIndex != null && command.intValue != null) {
           await _setLineLengthConstraint(command.lineIndex!, command.intValue!);
         }
+      case RoomEditorCommandType.removeLineLength:
+        if (command.lineIndex != null) {
+          await _removeLineLengthConstraint(command.lineIndex!);
+        }
       case RoomEditorCommandType.joinIntersection:
         if (command.intersectionIndex != null) {
           await _joinIntersection(command.intersectionIndex!);
@@ -2185,16 +1824,12 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     );
     final roomFields = RoomEditorPanel(
       roomId: _currentRoom.room.id,
-      unitSystem:
-          _currentRoom.room.unitSystem == PreferredUnitSystem.metric
-              ? RoomEditorUnitSystem.metric
-              : RoomEditorUnitSystem.imperial,
+      unitSystem: _currentRoom.room.unitSystem == PreferredUnitSystem.metric
+          ? RoomEditorUnitSystem.metric
+          : RoomEditorUnitSystem.imperial,
       unitLabel: roomUnitLabel,
       roomNameController: _roomNameController,
       ceilingHeightController: _ceilingHeightController,
-      selectedLineId: _selectedLineIndex == null
-          ? null
-          : _currentRoom.lines[_selectedLineIndex!].id,
       lineStudSpacingController: _lineStudSpacingController,
       lineStudOffsetController: _lineStudOffsetController,
       onUnitChanged: (value) async {
@@ -2223,7 +1858,6 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       onCommitCeilingHeight: _commitCeilingHeight,
       onCommitSelectedLineOverrides: _commitSelectedLineFramingOverrides,
       document: _toEditorDocument(_currentRoom),
-      landscape: false,
       onDocumentCommitted: (document) async {
         await _updateCurrentRoom(
           _fromEditorDocument(document, _currentRoom),
