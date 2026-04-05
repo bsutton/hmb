@@ -60,6 +60,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
   Offset? _secondaryPanPosition;
   var _activePointerCount = 0;
   _CanvasTransform? _dragTransform;
+  _CanvasWorldBounds? _dragViewportBounds;
   final _transformationController = TransformationController();
 
   @override
@@ -140,6 +141,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     _gesturePointer = null;
     _gestureStartPosition = null;
     _dragTransform = null;
+    _dragViewportBounds = null;
   }
 
   bool _isSecondaryMousePanEvent(PointerEvent event) =>
@@ -182,6 +184,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     );
     if (_pendingDragOpeningIndex != null) {
       _dragTransform = transform;
+      _dragViewportBounds ??= _CanvasWorldBounds.fromLines(widget.bundle.lines);
       _pendingDragOpeningAnchorOffset = transform.openingDragAnchorOffset(
         widget.bundle.openings,
         event.localPosition,
@@ -194,6 +197,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     _pendingDragIndex = transform.hitIntersection(event.localPosition);
     if (_pendingDragIndex != null) {
       _dragTransform = transform;
+      _dragViewportBounds ??= _CanvasWorldBounds.fromLines(widget.bundle.lines);
     }
   }
 
@@ -392,7 +396,11 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      final size = Size(constraints.maxWidth, widget.height);
+      final resolvedHeight =
+          constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+          ? constraints.maxHeight
+          : widget.height;
+      final size = Size(constraints.maxWidth, resolvedHeight);
       if (widget.bundle.lines.isEmpty) {
         return Container(
           height: size.height,
@@ -409,7 +417,14 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
           ),
         );
       }
-      final transform = _CanvasTransform(widget.bundle.lines, size);
+      final viewportBounds =
+          _dragViewportBounds ??
+          _CanvasWorldBounds.fromLines(widget.bundle.lines);
+      final transform = _CanvasTransform(
+        widget.bundle.lines,
+        size,
+        bounds: viewportBounds,
+      );
       return Listener(
         behavior: HitTestBehavior.opaque,
         onPointerDown: (event) => _handlePointerDown(event, transform),
@@ -758,13 +773,15 @@ class _CanvasTransform {
   late final int _maxX;
   late final int _maxY;
 
-  _CanvasTransform(this.lines, this.size) {
-    final xs = lines.map((line) => line.startX).toList()..sort();
-    final ys = lines.map((line) => line.startY).toList()..sort();
-    _minX = xs.first;
-    _minY = ys.first;
-    _maxX = xs.last;
-    _maxY = ys.last;
+  _CanvasTransform(
+    this.lines,
+    this.size, {
+    required _CanvasWorldBounds bounds,
+  }) {
+    _minX = bounds.minX;
+    _minY = bounds.minY;
+    _maxX = bounds.maxX;
+    _maxY = bounds.maxY;
     final width = (_maxX - _minX).abs().toDouble().clamp(1, double.infinity);
     final height = (_maxY - _minY).abs().toDouble().clamp(1, double.infinity);
     final availableWidth = max(1, size.width - (_horizontalPadding * 2));
@@ -790,22 +807,26 @@ class _CanvasTransform {
 
   int gridStartX(RoomEditorUnitSystem unitSystem) {
     final grid = RoomCanvasGeometry.defaultGridSize(unitSystem);
-    return (_minX / grid).floor() * grid;
+    final worldLeft = toWorld(Offset.zero).x;
+    return (worldLeft / grid).floor() * grid;
   }
 
   int gridStartY(RoomEditorUnitSystem unitSystem) {
     final grid = RoomCanvasGeometry.defaultGridSize(unitSystem);
-    return (_minY / grid).floor() * grid;
+    final worldTop = toWorld(Offset.zero).y;
+    return (worldTop / grid).floor() * grid;
   }
 
   int gridEndX(RoomEditorUnitSystem unitSystem) {
     final grid = RoomCanvasGeometry.defaultGridSize(unitSystem);
-    return (_maxX / grid).ceil() * grid;
+    final worldRight = toWorld(Offset(size.width, 0)).x;
+    return (worldRight / grid).ceil() * grid;
   }
 
   int gridEndY(RoomEditorUnitSystem unitSystem) {
     final grid = RoomCanvasGeometry.defaultGridSize(unitSystem);
-    return (_maxY / grid).ceil() * grid;
+    final worldBottom = toWorld(Offset(0, size.height)).y;
+    return (worldBottom / grid).ceil() * grid;
   }
 
   int? hitIntersection(Offset offset) {
@@ -953,6 +974,31 @@ class _CanvasTransform {
     final clamped = t.clamp(0.0, 1.0);
     final projection = Offset(a.dx + dx * clamped, a.dy + dy * clamped);
     return (p - projection).distance;
+  }
+}
+
+class _CanvasWorldBounds {
+  final int minX;
+  final int minY;
+  final int maxX;
+  final int maxY;
+
+  const _CanvasWorldBounds({
+    required this.minX,
+    required this.minY,
+    required this.maxX,
+    required this.maxY,
+  });
+
+  factory _CanvasWorldBounds.fromLines(List<RoomEditorLine> lines) {
+    final xs = lines.map((line) => line.startX).toList()..sort();
+    final ys = lines.map((line) => line.startY).toList()..sort();
+    return _CanvasWorldBounds(
+      minX: xs.first,
+      minY: ys.first,
+      maxX: xs.last,
+      maxY: ys.last,
+    );
   }
 }
 
