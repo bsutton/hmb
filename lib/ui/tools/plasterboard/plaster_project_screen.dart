@@ -20,6 +20,7 @@ import '../../../util/dart/measurement_type.dart';
 import '../../../util/dart/plaster_constraint_solver.dart';
 import '../../../util/dart/plaster_geometry.dart';
 import '../../../util/dart/plaster_sheet_direction.dart';
+import 'package:room_editor/room_editor.dart';
 import '../../crud/base_nested/list_nested_screen.dart';
 import '../../dialog/email_dialog.dart';
 import '../../nav/nav.g.dart';
@@ -2254,8 +2255,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ) !=
             null;
     final isSelectedLinePlaster = selectedLine?.plasterSelected ?? false;
-    final primaryButtons = <Widget>[
-      _ToolbarButton(
+    final primaryButtons = <PlasterboardEditorToolAction>[
+      PlasterboardEditorToolAction(
+        id: 'toggle-selection-mode',
         icon: _selectionMode ? Icons.touch_app : Icons.ads_click,
         label: _selectionMode ? 'Select Mode' : 'Edit Mode',
         helpText:
@@ -2265,7 +2267,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         selected: _selectionMode,
         onPressed: () => setState(() => _selectionMode = !_selectionMode),
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'undo',
         icon: Icons.undo,
         label: 'Undo',
         helpText:
@@ -2284,7 +2287,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           setState(() {});
         },
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'redo',
         icon: Icons.redo,
         label: 'Redo',
         helpText: 'Reapply the most recently undone room-editing step.',
@@ -2301,7 +2305,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           setState(() {});
         },
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'fit',
         icon: Icons.fit_screen,
         label: 'Fit',
         helpText:
@@ -2309,7 +2314,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             'view.',
         onPressed: () => setState(() => _fitCanvasRequest++),
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'toggle-snap',
         icon: _snapToGrid ? Icons.grid_on : Icons.grid_off,
         label: _snapToGrid ? 'Snap On' : 'Snap Off',
         helpText:
@@ -2317,21 +2323,24 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         selected: _snapToGrid,
         onPressed: () => setState(() => _snapToGrid = !_snapToGrid),
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'toggle-grid',
         icon: _showGrid ? Icons.border_all : Icons.border_clear,
         label: _showGrid ? 'Grid On' : 'Grid Off',
         helpText: 'Show or hide the background drawing grid.',
         selected: _showGrid,
         onPressed: () => setState(() => _showGrid = !_showGrid),
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'deselect',
         icon: Icons.deselect,
         label: 'Deselect',
         helpText: 'Clear the current wall, joint, or opening selection.',
         enabled: hasLine || hasIntersection || hasOpening,
         onPressed: () => setState(_clearSelection),
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'split',
         icon: Icons.content_cut,
         label: 'Split',
         helpText:
@@ -2340,7 +2349,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         enabled: hasLine,
         onPressed: hasLine ? () => _splitLine(_selectedLineIndex!) : null,
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'door',
         icon: Icons.door_front_door_outlined,
         label: 'Door',
         helpText: 'Add a door opening to the selected wall.',
@@ -2352,7 +2362,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               )
             : null,
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'window',
         icon: Icons.web_asset_outlined,
         label: 'Window',
         helpText: 'Add a window opening to the selected wall.',
@@ -2364,7 +2375,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               )
             : null,
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'edit-opening',
         icon: selectedOpening?.type == PlasterOpeningType.door
             ? Icons.door_front_door_outlined
             : Icons.web_asset_outlined,
@@ -2376,7 +2388,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ? () => _editOpening(_selectedOpeningIndex!)
             : null,
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'delete-opening',
         icon: Icons.delete_outline,
         label: 'Delete Opening',
         helpText: 'Remove the currently selected door or window opening.',
@@ -2385,7 +2398,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ? () => _deleteOpening(_selectedOpeningIndex!)
             : null,
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'toggle-line-plaster',
         icon: isSelectedLinePlaster
             ? Icons.layers_clear_outlined
             : Icons.layers_outlined,
@@ -2400,8 +2414,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       ),
     ];
 
-    final constraintButtons = <Widget>[
-      _ToolbarButton(
+    final constraintButtons = <PlasterboardEditorToolAction>[
+      PlasterboardEditorToolAction(
+        id: 'length',
         icon: Icons.straighten,
         label: hasLineLengthConstraint ? 'Remove Length' : 'Length',
         helpText:
@@ -2419,7 +2434,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
               }
             : null,
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'horizontal',
         icon: Icons.horizontal_rule,
         label: hasHorizontalConstraint ? 'Remove Horizontal' : 'Horizontal',
         helpText: 'Set or remove a horizontal constraint on the selected wall.',
@@ -2429,7 +2445,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ? () => _toggleHorizontalConstraint(_selectedLineIndex!)
             : null,
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'vertical',
         iconWidget: const RotatedBox(
           quarterTurns: 1,
           child: Icon(Icons.horizontal_rule),
@@ -2442,7 +2459,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ? () => _toggleVerticalConstraint(_selectedLineIndex!)
             : null,
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'joint',
         icon: Icons.polyline,
         label: 'Joint',
         helpText:
@@ -2453,7 +2471,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             ? () => _deleteIntersection(_selectedIntersectionIndex!)
             : null,
       ),
-      _ToolbarButton(
+      PlasterboardEditorToolAction(
+        id: 'angle',
         icon: Icons.architecture,
         label: hasAngleConstraint ? 'Remove Angle' : 'Angle',
         helpText:
@@ -2479,40 +2498,15 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         : excludeConstraints
         ? primaryButtons
         : [...primaryButtons, ...constraintButtons];
-
-    if (vertical) {
-      return SizedBox(
-        width: 116,
-        child: GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          children: toolbarButtons,
-        ),
-      );
-    }
-
-    if (wrap) {
-      return Wrap(spacing: 6, runSpacing: 6, children: toolbarButtons);
-    }
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final button in toolbarButtons) ...[
-            button,
-            const SizedBox(width: 6),
-          ],
-        ],
-      ),
+    return PlasterboardEditorToolbar(
+      actions: toolbarButtons,
+      vertical: vertical,
+      wrap: wrap,
     );
   }
 
-  Widget _buildRoomCanvas() => _RoomCanvas(
-    bundle: _currentRoom,
+  Widget _buildRoomCanvas() => RoomEditorCanvas(
+    bundle: _toEditorBundle(_currentRoom),
     selectionMode: _selectionMode,
     snapToGrid: _snapToGrid,
     showGrid: _showGrid,
@@ -2523,9 +2517,10 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     onStartMoveIntersection: _beginRoomGestureEdit,
     onMoveIntersection: (index, point) {
       final baseRoom = _gestureBaseRoom ?? _currentRoom;
+      final worldPoint = _fromEditorPoint(point);
       final target = _snapToGrid
-          ? PlasterGeometry.snapPoint(point, baseRoom.room.unitSystem)
-          : point;
+          ? PlasterGeometry.snapPoint(worldPoint, baseRoom.room.unitSystem)
+          : worldPoint;
       final lines = PlasterGeometry.moveIntersection(
         baseRoom.lines,
         index,
@@ -2546,7 +2541,8 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       await _commitRoomGestureEdit();
     },
     onStartMoveOpening: _beginRoomGestureEdit,
-    onMoveOpening: _moveOpeningLocally,
+    onMoveOpening: (index, point, anchorOffset) =>
+        _moveOpeningLocally(index, _fromEditorPoint(point), anchorOffset),
     onEndMoveOpening: () async {
       await _commitRoomGestureEdit();
     },
@@ -2594,6 +2590,41 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       );
     },
   );
+
+  RoomEditorBundle _toEditorBundle(_RoomBundle bundle) => RoomEditorBundle(
+    roomName: bundle.room.name,
+    unitSystem: bundle.room.unitSystem == PreferredUnitSystem.metric
+        ? RoomEditorUnitSystem.metric
+        : RoomEditorUnitSystem.imperial,
+    plasterCeiling: bundle.room.plasterCeiling,
+    lines: [
+      for (final line in bundle.lines)
+        RoomEditorLine(
+          id: line.id,
+          seqNo: line.seqNo,
+          startX: line.startX,
+          startY: line.startY,
+          length: line.length,
+          plasterSelected: line.plasterSelected,
+        ),
+    ],
+    openings: [
+      for (final opening in bundle.openings)
+        RoomEditorOpening(
+          id: opening.id,
+          lineId: opening.lineId,
+          type: opening.type == PlasterOpeningType.door
+              ? RoomEditorOpeningType.door
+              : RoomEditorOpeningType.window,
+          offsetFromStart: opening.offsetFromStart,
+          width: opening.width,
+          height: opening.height,
+        ),
+    ],
+  );
+
+  IntPoint _fromEditorPoint(RoomEditorIntPoint point) =>
+      IntPoint(point.x, point.y);
 
   Widget _buildRoomEditorSection(bool isMobileLandscape) {
     if (_rooms.isEmpty) {
@@ -3361,55 +3392,6 @@ class _RoomBundle {
     lines: [for (final line in lines) line.copyWith()],
     openings: [for (final opening in openings) opening.copyWith()],
     constraints: [for (final constraint in constraints) constraint.copyWith()],
-  );
-}
-
-class _ToolbarButton extends StatelessWidget {
-  final IconData? icon;
-  final Widget? iconWidget;
-  final String label;
-  final String helpText;
-  final bool enabled;
-  final bool selected;
-  final VoidCallback? onPressed;
-
-  const _ToolbarButton({
-    required this.label,
-    required this.helpText,
-    this.icon,
-    this.iconWidget,
-    this.enabled = true,
-    this.selected = false,
-    this.onPressed,
-  }) : assert(
-         icon != null || iconWidget != null,
-         'Provide either icon or iconWidget.',
-       );
-
-  Future<void> _showHelp(BuildContext context) async {
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(label),
-        content: Text(helpText),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onLongPress: () => unawaited(_showHelp(context)),
-    child: IconButton.filledTonal(
-      isSelected: selected,
-      onPressed: enabled ? onPressed : null,
-      icon: iconWidget ?? Icon(icon),
-    ),
   );
 }
 
@@ -4477,1020 +4459,6 @@ class _SurfaceLayoutViewerScreen extends StatelessWidget {
         },
       ),
     );
-  }
-}
-
-class _RoomCanvas extends StatefulWidget {
-  final _RoomBundle bundle;
-  final bool selectionMode;
-  final bool snapToGrid;
-  final bool showGrid;
-  final int fitRequestId;
-  final int? selectedLineIndex;
-  final int? selectedIntersectionIndex;
-  final int? selectedOpeningIndex;
-  final VoidCallback onStartMoveIntersection;
-  final void Function(int index, IntPoint point) onMoveIntersection;
-  final Future<void> Function() onEndMoveIntersection;
-  final VoidCallback onStartMoveOpening;
-  final void Function(int index, IntPoint point, int anchorOffset)
-  onMoveOpening;
-  final Future<void> Function() onEndMoveOpening;
-  final Future<void> Function(int index) onTapIntersection;
-  final Future<void> Function(int index) onTapOpening;
-  final Future<void> Function(int index) onTapLine;
-  final Future<void> Function() onTapCeiling;
-
-  const _RoomCanvas({
-    required this.bundle,
-    required this.selectionMode,
-    required this.snapToGrid,
-    required this.showGrid,
-    required this.fitRequestId,
-    required this.selectedLineIndex,
-    required this.selectedIntersectionIndex,
-    required this.selectedOpeningIndex,
-    required this.onStartMoveIntersection,
-    required this.onMoveIntersection,
-    required this.onEndMoveIntersection,
-    required this.onStartMoveOpening,
-    required this.onMoveOpening,
-    required this.onEndMoveOpening,
-    required this.onTapIntersection,
-    required this.onTapOpening,
-    required this.onTapLine,
-    required this.onTapCeiling,
-  });
-
-  @override
-  State<_RoomCanvas> createState() => _RoomCanvasState();
-}
-
-enum _RoomTapTargetType { intersection, line }
-
-class _RoomTapTarget {
-  final _RoomTapTargetType type;
-  final int index;
-  final double distance;
-
-  const _RoomTapTarget({
-    required this.type,
-    required this.index,
-    required this.distance,
-  });
-}
-
-class _RoomCanvasState extends State<_RoomCanvas> {
-  int? _dragIndex;
-  int? _dragOpeningIndex;
-  var _dragOpeningAnchorOffset = 0;
-  int? _pendingDragIndex;
-  int? _pendingDragOpeningIndex;
-  var _pendingDragOpeningAnchorOffset = 0;
-  int? _gesturePointer;
-  Offset? _gestureStartPosition;
-  int? _secondaryPanPointer;
-  Offset? _secondaryPanPosition;
-  var _activePointerCount = 0;
-  _CanvasTransform? _dragTransform;
-  final _transformationController = TransformationController();
-
-  @override
-  void dispose() {
-    _transformationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant _RoomCanvas oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.fitRequestId != widget.fitRequestId) {
-      _transformationController.value = Matrix4.identity();
-    }
-  }
-
-  void _handlePointerSignal(PointerSignalEvent event, Size size) {
-    if (event is! PointerScrollEvent) {
-      return;
-    }
-
-    GestureBinding.instance.pointerSignalResolver.register(event, (
-      resolvedEvent,
-    ) {
-      final scrollEvent = resolvedEvent as PointerScrollEvent;
-      final localPosition = scrollEvent.localPosition;
-      if (localPosition.dx < 0 ||
-          localPosition.dy < 0 ||
-          localPosition.dx > size.width ||
-          localPosition.dy > size.height) {
-        return;
-      }
-
-      final currentScale = _transformationController.value.getMaxScaleOnAxis();
-      final scaleDelta = exp(-scrollEvent.scrollDelta.dy / 240);
-      final nextScale = (currentScale * scaleDelta).clamp(0.5, 4.0);
-      final appliedDelta = nextScale / currentScale;
-      if (appliedDelta == 1) {
-        return;
-      }
-
-      final zoomMatrix = Matrix4.identity()
-        ..translateByDouble(localPosition.dx, localPosition.dy, 0, 1)
-        ..scaleByDouble(appliedDelta, appliedDelta, 1, 1)
-        ..translateByDouble(-localPosition.dx, -localPosition.dy, 0, 1);
-      _transformationController.value = zoomMatrix.multiplied(
-        _transformationController.value,
-      );
-    });
-  }
-
-  bool get _isDraggingGeometry =>
-      _dragIndex != null || _dragOpeningIndex != null;
-
-  void _cancelGeometryDrag() {
-    final draggingOpening = _dragOpeningIndex != null;
-    final draggingIntersection = _dragIndex != null;
-
-    _dragOpeningIndex = null;
-    _dragOpeningAnchorOffset = 0;
-    _dragIndex = null;
-    _clearPendingGesture();
-
-    if (draggingOpening || draggingIntersection) {
-      setState(() {});
-      if (draggingOpening) {
-        unawaited(widget.onEndMoveOpening());
-      } else {
-        unawaited(widget.onEndMoveIntersection());
-      }
-    }
-  }
-
-  void _clearPendingGesture() {
-    _pendingDragIndex = null;
-    _pendingDragOpeningIndex = null;
-    _pendingDragOpeningAnchorOffset = 0;
-    _gesturePointer = null;
-    _gestureStartPosition = null;
-    _dragTransform = null;
-  }
-
-  bool _isSecondaryMousePanEvent(PointerEvent event) =>
-      event.kind == PointerDeviceKind.mouse &&
-      (event.buttons & kSecondaryMouseButton) != 0;
-
-  void _panCanvas(Offset delta) {
-    if (delta == Offset.zero) {
-      return;
-    }
-    final panMatrix = Matrix4.identity()
-      ..translateByDouble(delta.dx, delta.dy, 0, 1);
-    _transformationController.value = panMatrix.multiplied(
-      _transformationController.value,
-    );
-  }
-
-  void _handlePointerDown(PointerDownEvent event, _CanvasTransform transform) {
-    _activePointerCount++;
-    if (_isSecondaryMousePanEvent(event)) {
-      _cancelGeometryDrag();
-      _secondaryPanPointer = event.pointer;
-      _secondaryPanPosition = event.localPosition;
-      return;
-    }
-    if (_activePointerCount > 1) {
-      _cancelGeometryDrag();
-      return;
-    }
-    if (_isDraggingGeometry) {
-      _clearPendingGesture();
-      return;
-    }
-
-    _gesturePointer = event.pointer;
-    _gestureStartPosition = event.localPosition;
-    _pendingDragOpeningIndex = transform.hitOpening(
-      widget.bundle.openings,
-      event.localPosition,
-    );
-    if (_pendingDragOpeningIndex != null) {
-      _dragTransform = transform;
-      _pendingDragOpeningAnchorOffset = transform.openingDragAnchorOffset(
-        widget.bundle.openings,
-        event.localPosition,
-        _pendingDragOpeningIndex!,
-      );
-      _pendingDragIndex = null;
-      return;
-    }
-
-    _pendingDragIndex = transform.hitIntersection(event.localPosition);
-    if (_pendingDragIndex != null) {
-      _dragTransform = transform;
-    }
-  }
-
-  void _handlePointerMove(PointerMoveEvent event, _CanvasTransform transform) {
-    if (_secondaryPanPointer == event.pointer &&
-        _isSecondaryMousePanEvent(event)) {
-      final previous = _secondaryPanPosition;
-      if (previous != null) {
-        _panCanvas(event.localPosition - previous);
-      }
-      _secondaryPanPosition = event.localPosition;
-      return;
-    }
-
-    if (_gesturePointer != event.pointer || _activePointerCount != 1) {
-      return;
-    }
-
-    final dragTransform = _dragTransform ?? transform;
-    if (_dragOpeningIndex != null) {
-      widget.onMoveOpening(
-        _dragOpeningIndex!,
-        dragTransform.toWorld(event.localPosition),
-        _dragOpeningAnchorOffset,
-      );
-      return;
-    }
-    if (_dragIndex != null) {
-      widget.onMoveIntersection(
-        _dragIndex!,
-        dragTransform.toWorld(event.localPosition),
-      );
-      return;
-    }
-
-    final start = _gestureStartPosition;
-    if (start == null || (event.localPosition - start).distance <= 6) {
-      return;
-    }
-
-    if (_pendingDragOpeningIndex != null) {
-      _dragOpeningIndex = _pendingDragOpeningIndex;
-      _dragOpeningAnchorOffset = _pendingDragOpeningAnchorOffset;
-      widget.onStartMoveOpening();
-      setState(() {});
-      widget.onMoveOpening(
-        _dragOpeningIndex!,
-        dragTransform.toWorld(event.localPosition),
-        _dragOpeningAnchorOffset,
-      );
-      return;
-    }
-
-    if (_pendingDragIndex != null) {
-      _dragIndex = _pendingDragIndex;
-      widget.onStartMoveIntersection();
-      setState(() {});
-      widget.onMoveIntersection(
-        _dragIndex!,
-        dragTransform.toWorld(event.localPosition),
-      );
-    }
-  }
-
-  void _handlePointerEnd(int pointer) {
-    if (_activePointerCount > 0) {
-      _activePointerCount--;
-    }
-    if (_secondaryPanPointer == pointer) {
-      _secondaryPanPointer = null;
-      _secondaryPanPosition = null;
-    }
-    if (_gesturePointer != pointer) {
-      return;
-    }
-
-    final draggingOpening = _dragOpeningIndex != null;
-    final draggingIntersection = _dragIndex != null;
-
-    _dragOpeningIndex = null;
-    _dragOpeningAnchorOffset = 0;
-    _dragIndex = null;
-    _clearPendingGesture();
-
-    if (draggingOpening || draggingIntersection) {
-      setState(() {});
-      if (draggingOpening) {
-        unawaited(widget.onEndMoveOpening());
-      } else {
-        unawaited(widget.onEndMoveIntersection());
-      }
-    }
-  }
-
-  Future<void> _handleTapSelection(
-    BuildContext context,
-    Offset localPosition,
-    _CanvasTransform transform,
-  ) async {
-    final openingIndex = transform.hitOpening(
-      widget.bundle.openings,
-      localPosition,
-    );
-    if (openingIndex != null) {
-      await widget.onTapOpening(openingIndex);
-      return;
-    }
-
-    final candidates =
-        <_RoomTapTarget>[
-          ...transform
-              .hitIntersectionCandidates(localPosition)
-              .map(
-                (candidate) => _RoomTapTarget(
-                  type: _RoomTapTargetType.intersection,
-                  index: candidate.$1,
-                  distance: candidate.$2,
-                ),
-              ),
-          ...transform
-              .hitLineCandidates(localPosition)
-              .map(
-                (candidate) => _RoomTapTarget(
-                  type: _RoomTapTargetType.line,
-                  index: candidate.$1,
-                  distance: candidate.$2,
-                ),
-              ),
-        ]..sort((left, right) {
-          final distanceCompare = left.distance.compareTo(right.distance);
-          if (distanceCompare != 0) {
-            return distanceCompare;
-          }
-          if (left.type != right.type) {
-            return left.type == _RoomTapTargetType.line ? -1 : 1;
-          }
-          return left.index.compareTo(right.index);
-        });
-
-    final uniqueCandidates = <_RoomTapTarget>[];
-    final seen = <String>{};
-    for (final candidate in candidates) {
-      final key = '${candidate.type.name}:${candidate.index}';
-      if (seen.add(key)) {
-        uniqueCandidates.add(candidate);
-      }
-    }
-
-    if (uniqueCandidates.isEmpty) {
-      if (transform.hitPolygon(localPosition)) {
-        await widget.onTapCeiling();
-      }
-      return;
-    }
-
-    if (uniqueCandidates.length == 1) {
-      final candidate = uniqueCandidates.first;
-      if (candidate.type == _RoomTapTargetType.intersection) {
-        await widget.onTapIntersection(candidate.index);
-      } else {
-        await widget.onTapLine(candidate.index);
-      }
-      return;
-    }
-
-    final selected = await showModalBottomSheet<_RoomTapTarget>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final candidate in uniqueCandidates)
-              ListTile(
-                title: Text(
-                  candidate.type == _RoomTapTargetType.line
-                      ? 'Select W${candidate.index + 1}'
-                      : 'Select vertex',
-                ),
-                onTap: () => Navigator.of(sheetContext).pop(candidate),
-              ),
-          ],
-        ),
-      ),
-    );
-
-    if (selected == null || !mounted) {
-      return;
-    }
-    if (selected.type == _RoomTapTargetType.intersection) {
-      await widget.onTapIntersection(selected.index);
-    } else {
-      await widget.onTapLine(selected.index);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final size = Size(constraints.maxWidth, 360);
-      if (widget.bundle.lines.isEmpty) {
-        return Container(
-          height: size.height,
-          width: size.width,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Text(
-            'This room has no wall geometry yet. Add or recreate the room '
-            'to start drawing.',
-            textAlign: TextAlign.center,
-          ),
-        );
-      }
-      final transform = _CanvasTransform(widget.bundle.lines, size);
-      return Listener(
-        behavior: HitTestBehavior.opaque,
-        onPointerDown: (event) => _handlePointerDown(event, transform),
-        onPointerMove: (event) => _handlePointerMove(event, transform),
-        onPointerUp: (event) => _handlePointerEnd(event.pointer),
-        onPointerCancel: (event) => _handlePointerEnd(event.pointer),
-        onPointerSignal: (event) => _handlePointerSignal(event, size),
-        child: InteractiveViewer(
-          transformationController: _transformationController,
-          minScale: 0.5,
-          maxScale: 4,
-          panEnabled: !_isDraggingGeometry,
-          scaleEnabled: !_isDraggingGeometry,
-          child: GestureDetector(
-            onTapUp: (details) => unawaited(
-              _handleTapSelection(context, details.localPosition, transform),
-            ),
-            child: CustomPaint(
-              size: size,
-              painter: _RoomPainter(
-                bundle: widget.bundle,
-                transform: transform,
-                selectionMode: widget.selectionMode,
-                snapToGrid: widget.snapToGrid,
-                showGrid: widget.showGrid,
-                selectedLineIndex: widget.selectedLineIndex,
-                selectedIntersectionIndex: widget.selectedIntersectionIndex,
-                selectedOpeningIndex: widget.selectedOpeningIndex,
-              ),
-            ),
-          ),
-        ),
-      );
-    },
-  );
-}
-
-class _RoomPainter extends CustomPainter {
-  final _RoomBundle bundle;
-  final _CanvasTransform transform;
-  final bool selectionMode;
-  final bool snapToGrid;
-  final bool showGrid;
-  final int? selectedLineIndex;
-  final int? selectedIntersectionIndex;
-  final int? selectedOpeningIndex;
-
-  const _RoomPainter({
-    required this.bundle,
-    required this.transform,
-    required this.selectionMode,
-    required this.snapToGrid,
-    required this.showGrid,
-    required this.selectedLineIndex,
-    required this.selectedIntersectionIndex,
-    required this.selectedOpeningIndex,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    _paintGrid(canvas, size);
-    final polygon = Path();
-    final lines = bundle.lines;
-    if (lines.isEmpty) {
-      return;
-    }
-    final first = transform.toCanvasPoint(
-      lines.first.startX,
-      lines.first.startY,
-    );
-    polygon.moveTo(first.dx, first.dy);
-    for (var i = 1; i < lines.length; i++) {
-      final point = transform.toCanvasPoint(lines[i].startX, lines[i].startY);
-      polygon.lineTo(point.dx, point.dy);
-    }
-    polygon.close();
-    final polygonDirection = _polygonDirection(lines);
-
-    final fill = Paint()
-      ..color =
-          (bundle.room.plasterCeiling
-                  ? Colors.blue.withSafeOpacity(0.08)
-                  : Colors.grey.withSafeOpacity(0.05))
-              .withSafeOpacity(selectionMode ? 0.2 : 0.08)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(polygon, fill);
-
-    for (var i = 0; i < lines.length; i++) {
-      final line = lines[i];
-      final start = transform.toCanvasPoint(line.startX, line.startY);
-      final endPoint = PlasterGeometry.lineEnd(lines, i);
-      final end = transform.toCanvasPoint(endPoint.x, endPoint.y);
-      final isSelected = selectedLineIndex == i;
-      final isSelectedIntersection = selectedIntersectionIndex == i;
-      final paint = Paint()
-        ..color = isSelected
-            ? Colors.orange
-            : (line.plasterSelected ? Colors.blue : Colors.grey)
-        ..strokeWidth = isSelected ? 5 : 3;
-      final vertexColor = isSelectedIntersection
-          ? Colors.redAccent
-          : (isSelected
-                ? Colors.orange
-                : (line.plasterSelected ? Colors.blue : Colors.grey));
-      canvas
-        ..drawLine(start, end, paint)
-        ..drawCircle(
-          start,
-          isSelected || isSelectedIntersection ? 7 : 6,
-          Paint()..color = vertexColor,
-        );
-      final mid = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
-      final dx = end.dx - start.dx;
-      final dy = end.dy - start.dy;
-      final segmentLength = sqrt(dx * dx + dy * dy);
-      final normal = segmentLength == 0
-          ? const Offset(0, -1)
-          : Offset(-dy / segmentLength, dx / segmentLength);
-      final outsideNormal = polygonDirection >= 0 ? -normal : normal;
-      final labelText = PlasterGeometry.formatDisplayLength(
-        line.length,
-        bundle.room.unitSystem,
-      );
-      final labelPainter = TextPainter(
-        text: TextSpan(
-          text: labelText,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final labelOffset =
-          mid +
-          outsideNormal * 40 -
-          Offset(labelPainter.width / 2, labelPainter.height / 2);
-      final wallLabelPainter = TextPainter(
-        text: TextSpan(
-          text: 'W${i + 1}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final wallLabelOffset =
-          mid +
-          outsideNormal * 20 -
-          Offset(wallLabelPainter.width / 2, wallLabelPainter.height / 2);
-      final wallLabelBounds = RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-          wallLabelOffset.dx - 5,
-          wallLabelOffset.dy - 2,
-          wallLabelPainter.width + 10,
-          wallLabelPainter.height + 4,
-        ),
-        const Radius.circular(8),
-      );
-      canvas.drawRRect(
-        wallLabelBounds,
-        Paint()..color = Colors.black.withSafeOpacity(0.8),
-      );
-      wallLabelPainter.paint(canvas, wallLabelOffset);
-      final labelBounds = RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-          labelOffset.dx - 4,
-          labelOffset.dy - 2,
-          labelPainter.width + 8,
-          labelPainter.height + 4,
-        ),
-        const Radius.circular(6),
-      );
-      final labelFill = Paint()
-        ..color = isSelected
-            ? const Color(0xFFFFE2BF).withSafeOpacity(0.96)
-            : Colors.white.withSafeOpacity(0.92);
-      canvas.drawRRect(labelBounds, labelFill);
-      if (isSelected) {
-        canvas.drawRRect(
-          labelBounds,
-          Paint()
-            ..color = Colors.orange.withSafeOpacity(0.9)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.2,
-        );
-      }
-      labelPainter.paint(canvas, labelOffset);
-      _paintOpeningsForLine(
-        canvas: canvas,
-        line: line,
-        start: start,
-        end: end,
-        normal: normal,
-        selectedOpeningId: selectedOpeningIndex == null
-            ? null
-            : bundle.openings[selectedOpeningIndex!].id,
-      );
-    }
-  }
-
-  double _polygonDirection(List<PlasterRoomLine> lines) {
-    var area = 0.0;
-    for (var i = 0; i < lines.length; i++) {
-      final line = lines[i];
-      final end = PlasterGeometry.lineEnd(lines, i);
-      area += (line.startX * end.y) - (end.x * line.startY);
-    }
-    return area;
-  }
-
-  void _paintOpeningsForLine({
-    required Canvas canvas,
-    required PlasterRoomLine line,
-    required Offset start,
-    required Offset end,
-    required Offset normal,
-    required int? selectedOpeningId,
-  }) {
-    final openings = bundle.openings
-        .where((opening) => opening.lineId == line.id)
-        .toList();
-    if (openings.isEmpty) {
-      return;
-    }
-
-    final dx = end.dx - start.dx;
-    final dy = end.dy - start.dy;
-    final canvasLength = sqrt(dx * dx + dy * dy);
-    if (canvasLength == 0 || line.length <= 0) {
-      return;
-    }
-
-    final direction = Offset(dx / canvasLength, dy / canvasLength);
-    final markerOffset = normal * 10;
-
-    for (final opening in openings) {
-      final openingStartRatio = opening.offsetFromStart / line.length;
-      final openingEndRatio =
-          (opening.offsetFromStart + opening.width) / line.length;
-      final openingStart =
-          start + direction * (canvasLength * openingStartRatio) + markerOffset;
-      final openingEnd =
-          start + direction * (canvasLength * openingEndRatio) + markerOffset;
-      final paint = Paint()
-        ..color = opening.id == selectedOpeningId
-            ? Colors.orangeAccent
-            : opening.type == PlasterOpeningType.door
-            ? Colors.brown.shade300
-            : Colors.lightBlueAccent
-        ..strokeWidth = opening.id == selectedOpeningId ? 8 : 6
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(openingStart, openingEnd, paint);
-
-      final markerMid = Offset(
-        (openingStart.dx + openingEnd.dx) / 2,
-        (openingStart.dy + openingEnd.dy) / 2,
-      );
-      final markerLabel = opening.type == PlasterOpeningType.door ? 'D' : 'W';
-      final labelPainter = TextPainter(
-        text: TextSpan(
-          text: markerLabel,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final markerRect = RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: markerMid + normal * 14,
-          width: labelPainter.width + 10,
-          height: labelPainter.height + 6,
-        ),
-        const Radius.circular(8),
-      );
-      canvas.drawRRect(
-        markerRect,
-        Paint()..color = Colors.black.withSafeOpacity(0.75),
-      );
-      labelPainter.paint(
-        canvas,
-        Offset(
-          markerRect.left + (markerRect.width - labelPainter.width) / 2,
-          markerRect.top + (markerRect.height - labelPainter.height) / 2,
-        ),
-      );
-    }
-  }
-
-  void _paintGrid(Canvas canvas, Size size) {
-    if (!showGrid || bundle.lines.isEmpty) {
-      return;
-    }
-    final gridSize = PlasterGeometry.defaultGridSize(bundle.room.unitSystem);
-    final gridPaint = Paint()
-      ..color = Colors.grey.withSafeOpacity(0.16)
-      ..strokeWidth = 1;
-    final startGridX = transform.gridStartX(bundle.room.unitSystem);
-    final startGridY = transform.gridStartY(bundle.room.unitSystem);
-    final endGridX = transform.gridEndX(bundle.room.unitSystem);
-    final endGridY = transform.gridEndY(bundle.room.unitSystem);
-    for (var x = startGridX; x <= endGridX; x += gridSize) {
-      final canvasX = transform.canvasXForWorldX(x);
-      canvas.drawLine(
-        Offset(canvasX, 0),
-        Offset(canvasX, size.height),
-        gridPaint,
-      );
-    }
-    for (var y = startGridY; y <= endGridY; y += gridSize) {
-      final canvasY = transform.canvasYForWorldY(y);
-      canvas.drawLine(
-        Offset(0, canvasY),
-        Offset(size.width, canvasY),
-        gridPaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _RoomPainter oldDelegate) =>
-      oldDelegate.bundle != bundle ||
-      oldDelegate.selectionMode != selectionMode ||
-      oldDelegate.snapToGrid != snapToGrid ||
-      oldDelegate.showGrid != showGrid ||
-      oldDelegate.selectedLineIndex != selectedLineIndex ||
-      oldDelegate.selectedIntersectionIndex != selectedIntersectionIndex ||
-      oldDelegate.selectedOpeningIndex != selectedOpeningIndex;
-}
-
-class _CanvasTransform {
-  static const _horizontalPadding = 72.0;
-  static const _verticalPadding = 72.0;
-
-  final List<PlasterRoomLine> lines;
-  final Size size;
-  late final double _scale;
-  late final double _offsetX;
-  late final double _offsetY;
-  late final int _minX;
-  late final int _minY;
-  late final int _maxX;
-  late final int _maxY;
-
-  _CanvasTransform(this.lines, this.size) {
-    final xs = lines.map((line) => line.startX).toList()..sort();
-    final ys = lines.map((line) => line.startY).toList()..sort();
-    _minX = xs.first;
-    _minY = ys.first;
-    _maxX = xs.last;
-    _maxY = ys.last;
-    final width = (_maxX - _minX).abs().toDouble().clamp(1, double.infinity);
-    final height = (_maxY - _minY).abs().toDouble().clamp(1, double.infinity);
-    final availableWidth = max(1, size.width - (_horizontalPadding * 2));
-    final availableHeight = max(1, size.height - (_verticalPadding * 2));
-    _scale = availableWidth / width < availableHeight / height
-        ? availableWidth / width
-        : availableHeight / height;
-    _offsetX = _horizontalPadding;
-    _offsetY = _verticalPadding;
-  }
-
-  Offset toCanvasPoint(int x, int y) =>
-      Offset(_offsetX + (x - _minX) * _scale, _offsetY + (y - _minY) * _scale);
-
-  double canvasXForWorldX(int x) => _offsetX + (x - _minX) * _scale;
-
-  double canvasYForWorldY(int y) => _offsetY + (y - _minY) * _scale;
-
-  IntPoint toWorld(Offset offset) => IntPoint(
-    _minX + ((offset.dx - _offsetX) / _scale).round(),
-    _minY + ((offset.dy - _offsetY) / _scale).round(),
-  );
-
-  double gridSpacing(PreferredUnitSystem unitSystem) =>
-      PlasterGeometry.defaultGridSize(unitSystem) * _scale;
-
-  int gridStartX(PreferredUnitSystem unitSystem) {
-    final grid = PlasterGeometry.defaultGridSize(unitSystem);
-    return (_minX / grid).floor() * grid;
-  }
-
-  int gridStartY(PreferredUnitSystem unitSystem) {
-    final grid = PlasterGeometry.defaultGridSize(unitSystem);
-    return (_minY / grid).floor() * grid;
-  }
-
-  int gridEndX(PreferredUnitSystem unitSystem) {
-    final grid = PlasterGeometry.defaultGridSize(unitSystem);
-    return (_maxX / grid).ceil() * grid;
-  }
-
-  int gridEndY(PreferredUnitSystem unitSystem) {
-    final grid = PlasterGeometry.defaultGridSize(unitSystem);
-    return (_maxY / grid).ceil() * grid;
-  }
-
-  int? hitIntersection(Offset offset) {
-    final candidates = hitIntersectionCandidates(offset);
-    if (candidates.isEmpty) {
-      return null;
-    }
-    return candidates.first.$1;
-  }
-
-  List<(int, double)> hitIntersectionCandidates(Offset offset) {
-    final candidates = <(int, double)>[];
-    for (var i = 0; i < lines.length; i++) {
-      final point = toCanvasPoint(lines[i].startX, lines[i].startY);
-      final distance = (point - offset).distance;
-      if (distance <= 12) {
-        candidates.add((i, distance));
-      }
-    }
-    candidates.sort((left, right) => left.$2.compareTo(right.$2));
-    return candidates;
-  }
-
-  int? hitLine(Offset offset) {
-    final candidates = hitLineCandidates(offset);
-    if (candidates.isEmpty) {
-      return null;
-    }
-    return candidates.first.$1;
-  }
-
-  List<(int, double)> hitLineCandidates(Offset offset) {
-    final candidates = <(int, double)>[];
-    for (var i = 0; i < lines.length; i++) {
-      final start = toCanvasPoint(lines[i].startX, lines[i].startY);
-      final endPoint = PlasterGeometry.lineEnd(lines, i);
-      final end = toCanvasPoint(endPoint.x, endPoint.y);
-      final distance = _distanceToSegment(offset, start, end);
-      if (distance <= 10) {
-        candidates.add((i, distance));
-      }
-    }
-    candidates.sort((left, right) => left.$2.compareTo(right.$2));
-    return candidates;
-  }
-
-  int? hitOpening(List<PlasterRoomOpening> openings, Offset offset) {
-    for (var i = 0; i < openings.length; i++) {
-      final opening = openings[i];
-      final lineIndex = lines.indexWhere((line) => line.id == opening.lineId);
-      if (lineIndex < 0) {
-        continue;
-      }
-      final marker = _openingMarker(lines[lineIndex], opening);
-      if (marker == null) {
-        continue;
-      }
-      if (marker.contains(offset)) {
-        return i;
-      }
-    }
-    return null;
-  }
-
-  int openingDragAnchorOffset(
-    List<PlasterRoomOpening> openings,
-    Offset offset,
-    int openingIndex,
-  ) {
-    if (openingIndex < 0 || openingIndex >= openings.length) {
-      return 0;
-    }
-    final opening = openings[openingIndex];
-    final lineIndex = lines.indexWhere((line) => line.id == opening.lineId);
-    if (lineIndex < 0) {
-      return 0;
-    }
-    final line = lines[lineIndex];
-    final end = PlasterGeometry.lineEnd(lines, lineIndex);
-    final dx = end.x - line.startX;
-    final dy = end.y - line.startY;
-    final lengthSquared = dx * dx + dy * dy;
-    if (lengthSquared == 0 || line.length <= 0) {
-      return 0;
-    }
-    final world = toWorld(offset);
-    final projected =
-        ((world.x - line.startX) * dx + (world.y - line.startY) * dy) /
-        lengthSquared;
-    final positionOnLine = (projected * line.length).round();
-    return (positionOnLine - opening.offsetFromStart).clamp(0, opening.width);
-  }
-
-  _OpeningMarker? _openingMarker(
-    PlasterRoomLine line,
-    PlasterRoomOpening opening,
-  ) {
-    final lineIndex = lines.indexOf(line);
-    if (lineIndex < 0 || line.length <= 0) {
-      return null;
-    }
-    final start = toCanvasPoint(line.startX, line.startY);
-    final endPoint = PlasterGeometry.lineEnd(lines, lineIndex);
-    final end = toCanvasPoint(endPoint.x, endPoint.y);
-    final dx = end.dx - start.dx;
-    final dy = end.dy - start.dy;
-    final canvasLength = sqrt(dx * dx + dy * dy);
-    if (canvasLength == 0) {
-      return null;
-    }
-    final direction = Offset(dx / canvasLength, dy / canvasLength);
-    final normal = Offset(-dy / canvasLength, dx / canvasLength);
-    final markerOffset = normal * 10;
-    final openingStartRatio = opening.offsetFromStart / line.length;
-    final openingEndRatio =
-        (opening.offsetFromStart + opening.width) / line.length;
-    final openingStart =
-        start + direction * (canvasLength * openingStartRatio) + markerOffset;
-    final openingEnd =
-        start + direction * (canvasLength * openingEndRatio) + markerOffset;
-    final markerMid = Offset(
-      (openingStart.dx + openingEnd.dx) / 2,
-      (openingStart.dy + openingEnd.dy) / 2,
-    );
-    final badgeCenter = markerMid + normal * 14;
-    return _OpeningMarker(
-      start: openingStart,
-      end: openingEnd,
-      badgeHitBox: Rect.fromCircle(center: badgeCenter, radius: 12),
-    );
-  }
-
-  bool hitPolygon(Offset offset) {
-    final path = Path();
-    final first = toCanvasPoint(lines.first.startX, lines.first.startY);
-    path.moveTo(first.dx, first.dy);
-    for (var i = 1; i < lines.length; i++) {
-      final point = toCanvasPoint(lines[i].startX, lines[i].startY);
-      path.lineTo(point.dx, point.dy);
-    }
-    path.close();
-    return path.contains(offset);
-  }
-
-  double _distanceToSegment(Offset p, Offset a, Offset b) {
-    final dx = b.dx - a.dx;
-    final dy = b.dy - a.dy;
-    if (dx == 0 && dy == 0) {
-      return (p - a).distance;
-    }
-    final t =
-        (((p.dx - a.dx) * dx) + ((p.dy - a.dy) * dy)) / (dx * dx + dy * dy);
-    final clamped = t.clamp(0.0, 1.0);
-    final projection = Offset(a.dx + dx * clamped, a.dy + dy * clamped);
-    return (p - projection).distance;
-  }
-}
-
-class _OpeningMarker {
-  final Offset start;
-  final Offset end;
-  final Rect badgeHitBox;
-
-  const _OpeningMarker({
-    required this.start,
-    required this.end,
-    required this.badgeHitBox,
-  });
-
-  bool contains(Offset point) {
-    if (badgeHitBox.contains(point)) {
-      return true;
-    }
-    return _distanceToSegment(point, start, end) <= 6;
-  }
-
-  double _distanceToSegment(Offset p, Offset a, Offset b) {
-    final dx = b.dx - a.dx;
-    final dy = b.dy - a.dy;
-    if (dx == 0 && dy == 0) {
-      return (p - a).distance;
-    }
-    final t =
-        (((p.dx - a.dx) * dx) + ((p.dy - a.dy) * dy)) / (dx * dx + dy * dy);
-    final clamped = t.clamp(0.0, 1.0);
-    final projection = Offset(a.dx + dx * clamped, a.dy + dy * clamped);
-    return (p - projection).distance;
   }
 }
 
