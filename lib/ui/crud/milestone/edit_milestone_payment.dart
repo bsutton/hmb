@@ -273,7 +273,7 @@ class _EditMilestonesScreenState extends DeferredState<EditMilestonesScreen> {
           Expanded(
             child: ReorderableListView(
               // padding: const EdgeInsets.only(right: 28),
-              onReorderItem: _onReorder,
+              onReorder: _onReorder,
               children: List.generate(milestones.length, (index) {
                 final milestone = milestones[index];
                 return MilestoneTile(
