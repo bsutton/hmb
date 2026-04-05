@@ -1684,48 +1684,66 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         constraints: _toEditorConstraints(bundle),
       );
 
+  PlasterConstraintType _fromEditorConstraintType(
+    RoomEditorConstraintType type,
+  ) => switch (type) {
+    RoomEditorConstraintType.lineLength => PlasterConstraintType.lineLength,
+    RoomEditorConstraintType.horizontal => PlasterConstraintType.horizontal,
+    RoomEditorConstraintType.vertical => PlasterConstraintType.vertical,
+    RoomEditorConstraintType.jointAngle => PlasterConstraintType.jointAngle,
+  };
+
   _RoomBundle _fromEditorDocument(
     RoomEditorDocument document,
     _RoomBundle base,
-  ) => base.copyWith(
-    room: base.room.copyWith(plasterCeiling: document.bundle.plasterCeiling),
-    lines: [
-      for (var i = 0; i < base.lines.length; i++)
-        base.lines[i].copyWith(
-          seqNo: document.bundle.lines[i].seqNo,
-          startX: document.bundle.lines[i].startX,
-          startY: document.bundle.lines[i].startY,
-          length: document.bundle.lines[i].length,
-          plasterSelected: document.bundle.lines[i].plasterSelected,
-        ),
-    ],
-    openings: [
-      for (var i = 0; i < base.openings.length; i++)
-        base.openings[i].copyWith(
-          offsetFromStart: document.bundle.openings[i].offsetFromStart,
-          width: document.bundle.openings[i].width,
-          height: document.bundle.openings[i].height,
-          sillHeight: document.bundle.openings[i].sillHeight,
-        ),
-    ],
-    constraints: [
-      for (final constraint in document.constraints)
-        PlasterRoomConstraint.forInsert(
-          roomId: base.room.id,
-          lineId: constraint.lineId,
-          type: switch (constraint.type) {
-            RoomEditorConstraintType.lineLength =>
-              PlasterConstraintType.lineLength,
-            RoomEditorConstraintType.horizontal =>
-              PlasterConstraintType.horizontal,
-            RoomEditorConstraintType.vertical => PlasterConstraintType.vertical,
-            RoomEditorConstraintType.jointAngle =>
-              PlasterConstraintType.jointAngle,
-          },
-          targetValue: constraint.targetValue,
-        ),
-    ],
-  );
+  ) {
+    final existingConstraintsByKey =
+        <(int, PlasterConstraintType), PlasterRoomConstraint>{
+          for (final constraint in base.constraints)
+            (constraint.lineId, constraint.type): constraint,
+        };
+
+    return base.copyWith(
+      room: base.room.copyWith(plasterCeiling: document.bundle.plasterCeiling),
+      lines: [
+        for (var i = 0; i < base.lines.length; i++)
+          base.lines[i].copyWith(
+            seqNo: document.bundle.lines[i].seqNo,
+            startX: document.bundle.lines[i].startX,
+            startY: document.bundle.lines[i].startY,
+            length: document.bundle.lines[i].length,
+            plasterSelected: document.bundle.lines[i].plasterSelected,
+          ),
+      ],
+      openings: [
+        for (var i = 0; i < base.openings.length; i++)
+          base.openings[i].copyWith(
+            offsetFromStart: document.bundle.openings[i].offsetFromStart,
+            width: document.bundle.openings[i].width,
+            height: document.bundle.openings[i].height,
+            sillHeight: document.bundle.openings[i].sillHeight,
+          ),
+      ],
+      constraints: [
+        for (final constraint in document.constraints)
+          (() {
+            final type = _fromEditorConstraintType(constraint.type);
+            final existing =
+                existingConstraintsByKey[(constraint.lineId, type)];
+            return existing?.copyWith(
+                  targetValue: constraint.targetValue,
+                  clearTargetValue: constraint.targetValue == null,
+                ) ??
+                PlasterRoomConstraint.forInsert(
+                  roomId: base.room.id,
+                  lineId: constraint.lineId,
+                  type: type,
+                  targetValue: constraint.targetValue,
+                );
+          })(),
+      ],
+    );
+  }
 
   Future<void> _handleEditorWorkspaceCommand(RoomEditorCommand command) async {
     switch (command.type) {
