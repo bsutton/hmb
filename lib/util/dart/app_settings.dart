@@ -42,10 +42,13 @@ class AppSettings {
   static const _plasterExtraSheetWeightKey = 'plasterExtraSheetWeight';
   static const _plasterJointLengthWeightKey = 'plasterJointLengthWeight';
   static const _plasterCutPieceWeightKey = 'plasterCutPieceWeight';
+  static const _plasterButtJointWeightKey = 'plasterButtJointWeight';
   static const _plasterHighJointWeightKey = 'plasterHighJointWeight';
   static const _plasterSmallPieceWeightKey = 'plasterSmallPieceWeight';
   static const _plasterFragmentationWeightKey =
       'plasterFragmentationWeight';
+  static const _plasterVerticalWallPenaltyWeightKey =
+      'plasterVerticalWallPenaltyWeight';
 
   static Future<int> getPhotoCacheMaxMb() async {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
@@ -159,6 +162,10 @@ class AppSettings {
         _plasterJointLengthWeightKey,
         defaults.jointLengthWeight,
       ),
+      buttJointWeight: readInt(
+        _plasterButtJointWeightKey,
+        defaults.buttJointWeight,
+      ),
       cutPieceWeight: readInt(
         _plasterCutPieceWeightKey,
         defaults.cutPieceWeight,
@@ -175,6 +182,10 @@ class AppSettings {
         _plasterFragmentationWeightKey,
         defaults.fragmentationWeight,
       ),
+      verticalWallPenaltyWeight: readInt(
+        _plasterVerticalWallPenaltyWeightKey,
+        defaults.verticalWallPenaltyWeight,
+      ),
     );
   }
 
@@ -184,10 +195,13 @@ class AppSettings {
     final settings = SettingsYaml.load(pathToSettings: await getSettingsPath());
     settings[_plasterExtraSheetWeightKey] = scoring.extraSheetWeight;
     settings[_plasterJointLengthWeightKey] = scoring.jointLengthWeight;
+    settings[_plasterButtJointWeightKey] = scoring.buttJointWeight;
     settings[_plasterCutPieceWeightKey] = scoring.cutPieceWeight;
     settings[_plasterHighJointWeightKey] = scoring.highJointWeight;
     settings[_plasterSmallPieceWeightKey] = scoring.smallPieceWeight;
     settings[_plasterFragmentationWeightKey] = scoring.fragmentationWeight;
+    settings[_plasterVerticalWallPenaltyWeightKey] =
+        scoring.verticalWallPenaltyWeight;
     await settings.save();
   }
 }
