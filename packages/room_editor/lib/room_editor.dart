@@ -11,3 +11,4 @@ export 'src/room_canvas_models.dart';
 export 'src/room_canvas_geometry.dart';
 export 'src/room_editor_forms.dart';
 export 'src/room_editor_shell.dart';
+export 'src/room_editor_workspace.dart';

@@ -3,20 +3,6 @@ import 'dart:math';
 import 'room_canvas_geometry.dart';
 import 'room_canvas_models.dart';
 
-enum RoomEditorConstraintType { lineLength, horizontal, vertical, jointAngle }
-
-class RoomEditorConstraint {
-  final int lineId;
-  final RoomEditorConstraintType type;
-  final int? targetValue;
-
-  const RoomEditorConstraint({
-    required this.lineId,
-    required this.type,
-    this.targetValue,
-  });
-}
-
 class RoomEditorConstraintViolation {
   final RoomEditorConstraint constraint;
   final int lineIndex;

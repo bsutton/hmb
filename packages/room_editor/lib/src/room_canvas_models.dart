@@ -2,6 +2,8 @@ enum RoomEditorUnitSystem { metric, imperial }
 
 enum RoomEditorOpeningType { door, window }
 
+enum RoomEditorConstraintType { lineLength, horizontal, vertical, jointAngle }
+
 typedef RoomEditorMoveIntersectionCallback =
     void Function(int index, RoomEditorIntPoint point);
 typedef RoomEditorMoveOpeningCallback =
@@ -114,6 +116,36 @@ class RoomEditorBundle {
   );
 }
 
+class RoomEditorConstraint {
+  final int lineId;
+  final RoomEditorConstraintType type;
+  final int? targetValue;
+
+  const RoomEditorConstraint({
+    required this.lineId,
+    required this.type,
+    this.targetValue,
+  });
+}
+
+class RoomEditorDocument {
+  final RoomEditorBundle bundle;
+  final List<RoomEditorConstraint> constraints;
+
+  const RoomEditorDocument({
+    required this.bundle,
+    required this.constraints,
+  });
+
+  RoomEditorDocument copyWith({
+    RoomEditorBundle? bundle,
+    List<RoomEditorConstraint>? constraints,
+  }) => RoomEditorDocument(
+    bundle: bundle ?? this.bundle,
+    constraints: constraints ?? this.constraints,
+  );
+}
+
 class RoomEditorSelection {
   final int? selectedLineIndex;
   final int? selectedIntersectionIndex;
@@ -149,5 +181,32 @@ class RoomEditorCanvasCallbacks {
     required this.onTapOpening,
     required this.onTapLine,
     required this.onTapCeiling,
+  });
+}
+
+enum RoomEditorCommandType {
+  splitLine,
+  addDoor,
+  addWindow,
+  editOpening,
+  deleteOpening,
+  editLineLength,
+  jointAction,
+  editAngle,
+}
+
+class RoomEditorCommand {
+  final RoomEditorCommandType type;
+  final int? lineIndex;
+  final int? openingIndex;
+  final int? intersectionIndex;
+  final RoomEditorDocument document;
+
+  const RoomEditorCommand({
+    required this.type,
+    required this.document,
+    this.lineIndex,
+    this.openingIndex,
+    this.intersectionIndex,
   });
 }
