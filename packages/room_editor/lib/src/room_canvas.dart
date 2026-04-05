@@ -159,6 +159,11 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     );
   }
 
+  Offset _toCanvasSpace(Offset viewportPosition) {
+    final inverse = Matrix4.inverted(_transformationController.value);
+    return MatrixUtils.transformPoint(inverse, viewportPosition);
+  }
+
   void _handlePointerDown(PointerDownEvent event, _CanvasTransform transform) {
     _activePointerCount++;
     if (_isSecondaryMousePanEvent(event)) {
@@ -177,24 +182,25 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     }
 
     _gesturePointer = event.pointer;
-    _gestureStartPosition = event.localPosition;
+    final canvasPosition = _toCanvasSpace(event.localPosition);
+    _gestureStartPosition = canvasPosition;
     _pendingDragOpeningIndex = transform.hitOpening(
       widget.bundle.openings,
-      event.localPosition,
+      canvasPosition,
     );
     if (_pendingDragOpeningIndex != null) {
       _dragTransform = transform;
       _dragViewportBounds ??= _CanvasWorldBounds.fromLines(widget.bundle.lines);
       _pendingDragOpeningAnchorOffset = transform.openingDragAnchorOffset(
         widget.bundle.openings,
-        event.localPosition,
+        canvasPosition,
         _pendingDragOpeningIndex!,
       );
       _pendingDragIndex = null;
       return;
     }
 
-    _pendingDragIndex = transform.hitIntersection(event.localPosition);
+    _pendingDragIndex = transform.hitIntersection(canvasPosition);
     if (_pendingDragIndex != null) {
       _dragTransform = transform;
       _dragViewportBounds ??= _CanvasWorldBounds.fromLines(widget.bundle.lines);
@@ -217,10 +223,11 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     }
 
     final dragTransform = _dragTransform ?? transform;
+    final canvasPosition = _toCanvasSpace(event.localPosition);
     if (_dragOpeningIndex != null) {
       widget.callbacks.onMoveOpening(
         _dragOpeningIndex!,
-        dragTransform.toWorld(event.localPosition),
+        dragTransform.toWorld(canvasPosition),
         _dragOpeningAnchorOffset,
       );
       return;
@@ -228,13 +235,13 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     if (_dragIndex != null) {
       widget.callbacks.onMoveIntersection(
         _dragIndex!,
-        dragTransform.toWorld(event.localPosition),
+        dragTransform.toWorld(canvasPosition),
       );
       return;
     }
 
     final start = _gestureStartPosition;
-    if (start == null || (event.localPosition - start).distance <= 6) {
+    if (start == null || (canvasPosition - start).distance <= 6) {
       return;
     }
 
@@ -245,7 +252,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
       setState(() {});
       widget.callbacks.onMoveOpening(
         _dragOpeningIndex!,
-        dragTransform.toWorld(event.localPosition),
+        dragTransform.toWorld(canvasPosition),
         _dragOpeningAnchorOffset,
       );
       return;
@@ -257,7 +264,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
       setState(() {});
       widget.callbacks.onMoveIntersection(
         _dragIndex!,
-        dragTransform.toWorld(event.localPosition),
+        dragTransform.toWorld(canvasPosition),
       );
     }
   }
@@ -440,7 +447,11 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
           scaleEnabled: !_isDraggingGeometry,
           child: GestureDetector(
             onTapUp: (details) => unawaited(
-              _handleTapSelection(context, details.localPosition, transform),
+              _handleTapSelection(
+                context,
+                _toCanvasSpace(details.localPosition),
+                transform,
+              ),
             ),
             child: CustomPaint(
               size: size,
