@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'room_canvas_models.dart';
+import '../room_editor.dart';
 
 class RoomCanvasGeometry {
   static const metricUnitsPerMm = 10;
@@ -66,10 +67,7 @@ class RoomCanvasGeometry {
   static String unitLabel(RoomEditorUnitSystem unitSystem) =>
       unitSystem == RoomEditorUnitSystem.metric ? 'mm' : 'ft/in';
 
-  static int? parseDisplayLength(
-    String raw,
-    RoomEditorUnitSystem unitSystem,
-  ) {
+  static int? parseDisplayLength(String raw, RoomEditorUnitSystem unitSystem) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) {
       return null;

@@ -1,40 +1,16 @@
 import 'dart:math';
 
+import '../room_editor.dart';
+
+import 'mutable_point.dart';
 import 'room_canvas_geometry.dart';
 import 'room_canvas_models.dart';
-
-class RoomEditorConstraintViolation {
-  final RoomEditorConstraint constraint;
-  final int lineIndex;
-  final double error;
-
-  const RoomEditorConstraintViolation({
-    required this.constraint,
-    required this.lineIndex,
-    required this.error,
-  });
-}
-
-class RoomEditorSolveResult {
-  final List<RoomEditorLine> lines;
-  final bool converged;
-  final double maxError;
-  final List<RoomEditorConstraintViolation> violations;
-
-  const RoomEditorSolveResult({
-    required this.lines,
-    required this.converged,
-    required this.maxError,
-    required this.violations,
-  });
-}
+import 'room_editor_solve_result.dart';
 
 class RoomEditorConstraintSolver {
   static const _maxIterations = 80;
   static const _solverPositionTolerance = 0.75;
-  static const _snappedGeometryTolerance = 1.0;
   static const _angleToleranceRadians = pi / 1800;
-  static const _angleToleranceDegrees = 1.5;
 
   static const jointAngleUnitsPerDegree = 1000;
 
@@ -63,7 +39,7 @@ class RoomEditorConstraintSolver {
     }
 
     final points = [
-      for (final line in lines) _MutablePoint.xy(line.startX, line.startY),
+      for (final line in lines) MutablePoint.xy(line.startX, line.startY),
     ];
     final pinnedIndex = pinnedVertexIndex;
     if (pinnedIndex != null && pinnedVertexTarget != null) {
@@ -77,7 +53,9 @@ class RoomEditorConstraintSolver {
     for (var iteration = 0; iteration < _maxIterations; iteration++) {
       maxError = 0;
       for (final constraint in constraints) {
-        final lineIndex = lines.indexWhere((line) => line.id == constraint.lineId);
+        final lineIndex = lines.indexWhere(
+          (line) => line.id == constraint.lineId,
+        );
         if (lineIndex == -1) {
           continue;
         }
@@ -129,18 +107,23 @@ class RoomEditorConstraintSolver {
         ),
     ]);
 
-    final violations = _constraintViolations(solved, constraints);
+    final violations = RoomEditorConstraintViolation.constraintViolations(
+      solved,
+      constraints,
+    );
     final converged = violations.isEmpty;
-    return RoomEditorSolveResult(
+    final result = RoomEditorSolveResult(
       lines: solved,
       converged: converged,
       maxError: violations.isEmpty ? 0 : violations.first.error,
       violations: violations,
     );
+    print(result);
+    return result;
   }
 
   static void _applyPinned(
-    List<_MutablePoint> points,
+    List<MutablePoint> points,
     int? pinnedVertexIndex,
     RoomEditorIntPoint? pinnedVertexTarget,
   ) {
@@ -153,8 +136,8 @@ class RoomEditorConstraintSolver {
   }
 
   static double _enforceLength(
-    _MutablePoint a,
-    _MutablePoint b,
+    MutablePoint a,
+    MutablePoint b,
     double targetLength,
   ) {
     final dx = b.x - a.x;
@@ -187,7 +170,7 @@ class RoomEditorConstraintSolver {
     return error.abs();
   }
 
-  static double _enforceHorizontal(_MutablePoint a, _MutablePoint b) {
+  static double _enforceHorizontal(MutablePoint a, MutablePoint b) {
     final error = a.y - b.y;
     final targetY = (a.y + b.y) / 2;
     if (!a.pinned && !b.pinned) {
@@ -201,7 +184,7 @@ class RoomEditorConstraintSolver {
     return error.abs();
   }
 
-  static double _enforceVertical(_MutablePoint a, _MutablePoint b) {
+  static double _enforceVertical(MutablePoint a, MutablePoint b) {
     final error = a.x - b.x;
     final targetX = (a.x + b.x) / 2;
     if (!a.pinned && !b.pinned) {
@@ -216,13 +199,13 @@ class RoomEditorConstraintSolver {
   }
 
   static double _enforceAngle(
-    _MutablePoint prev,
-    _MutablePoint pivot,
-    _MutablePoint next,
+    MutablePoint prev,
+    MutablePoint pivot,
+    MutablePoint next,
     double targetAngleRadians,
   ) {
-    final prevVector = _MutablePoint(prev.x - pivot.x, prev.y - pivot.y);
-    final nextVector = _MutablePoint(next.x - pivot.x, next.y - pivot.y);
+    final prevVector = MutablePoint(prev.x - pivot.x, prev.y - pivot.y);
+    final nextVector = MutablePoint(next.x - pivot.x, next.y - pivot.y);
     final prevLength = prevVector.length;
     final nextLength = nextVector.length;
     if (prevLength == 0 || nextLength == 0) {
@@ -272,10 +255,10 @@ class RoomEditorConstraintSolver {
     return error.abs() * 100;
   }
 
-  static _MutablePoint _rotate(_MutablePoint point, double radians) {
+  static MutablePoint _rotate(MutablePoint point, double radians) {
     final cosAngle = cos(radians);
     final sinAngle = sin(radians);
-    return _MutablePoint(
+    return MutablePoint(
       point.x * cosAngle - point.y * sinAngle,
       point.x * sinAngle + point.y * cosAngle,
     );
@@ -289,11 +272,11 @@ class RoomEditorConstraintSolver {
     final prevPoint = lines[prevIndex];
     final pivot = lines[lineIndex];
     final nextPoint = lines[(lineIndex + 1) % lines.length];
-    final a = _MutablePoint(
+    final a = MutablePoint(
       prevPoint.startX.toDouble() - pivot.startX.toDouble(),
       prevPoint.startY.toDouble() - pivot.startY.toDouble(),
     );
-    final b = _MutablePoint(
+    final b = MutablePoint(
       nextPoint.startX.toDouble() - pivot.startX.toDouble(),
       nextPoint.startY.toDouble() - pivot.startY.toDouble(),
     );
@@ -301,74 +284,4 @@ class RoomEditorConstraintSolver {
     final cross = a.x * b.y - a.y * b.x;
     return atan2(cross.abs(), dot) * 180 / pi;
   }
-
-  static List<RoomEditorConstraintViolation> _constraintViolations(
-    List<RoomEditorLine> lines,
-    List<RoomEditorConstraint> constraints,
-  ) {
-    final violations = <RoomEditorConstraintViolation>[];
-    for (final constraint in constraints) {
-      final lineIndex = lines.indexWhere((line) => line.id == constraint.lineId);
-      if (lineIndex == -1) {
-        continue;
-      }
-      final end = RoomCanvasGeometry.lineEnd(lines, lineIndex);
-      final line = lines[lineIndex];
-      double? error;
-      switch (constraint.type) {
-        case RoomEditorConstraintType.lineLength:
-          error =
-              (line.length - (constraint.targetValue ?? line.length)).abs()
-                  .toDouble();
-        case RoomEditorConstraintType.horizontal:
-          error = (line.startY - end.y).abs().toDouble();
-        case RoomEditorConstraintType.vertical:
-          error = (line.startX - end.x).abs().toDouble();
-        case RoomEditorConstraintType.jointAngle:
-          final actualAngle = currentAngleValue(lines, lineIndex);
-          error =
-              (actualAngle - (constraint.targetValue ?? actualAngle)).abs() /
-              jointAngleUnitsPerDegree;
-      }
-      if (!_isConstraintSatisfied(constraint.type, error)) {
-        violations.add(
-          RoomEditorConstraintViolation(
-            constraint: constraint,
-            lineIndex: lineIndex,
-            error: error,
-          ),
-        );
-      }
-    }
-    violations.sort((a, b) => b.error.compareTo(a.error));
-    return violations;
-  }
-
-  static bool _isConstraintSatisfied(
-    RoomEditorConstraintType type,
-    double error,
-  ) => switch (type) {
-    RoomEditorConstraintType.lineLength => error <= _snappedGeometryTolerance,
-    RoomEditorConstraintType.horizontal => error <= _snappedGeometryTolerance,
-    RoomEditorConstraintType.vertical => error <= _snappedGeometryTolerance,
-    RoomEditorConstraintType.jointAngle => error <= _angleToleranceDegrees,
-  };
-}
-
-class _MutablePoint {
-  double x;
-  double y;
-  bool pinned;
-
-  _MutablePoint(this.x, this.y) : pinned = false;
-
-  _MutablePoint.xy(int x, int y)
-      : x = x.toDouble(),
-        y = y.toDouble(),
-        pinned = false;
-
-  double get length => sqrt(x * x + y * y);
-
-  _MutablePoint operator *(double factor) =>
-      _MutablePoint(x * factor, y * factor);
 }

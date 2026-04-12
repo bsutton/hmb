@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../room_editor.dart';
 import 'room_canvas_geometry.dart';
 import 'room_canvas_models.dart';
 

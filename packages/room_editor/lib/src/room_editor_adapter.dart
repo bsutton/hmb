@@ -1,5 +1,7 @@
 import 'room_canvas_models.dart';
 
+import '../room_editor.dart';
+
 typedef RoomEditorLineRecord = ({
   int id,
   int seqNo,

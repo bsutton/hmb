@@ -1,0 +1,13 @@
+// Project-local debug tasks
+//
+// For more documentation on how to configure debug tasks,
+// see: https://zed.dev/docs/debugger
+[
+  {
+    "label": "HMB",
+    "adapter": "Dart",
+    "type": "dart",
+    "request": "launch",
+    "program": "lib/main.dart",
+  },
+]

@@ -4,13 +4,16 @@
 
 export 'src/editor_toolbar.dart';
 export 'src/editor_toolbar_models.dart';
-export 'src/room_editor_adapter.dart';
-export 'src/room_constraint_solver.dart';
 export 'src/room_canvas.dart';
-export 'src/room_canvas_models.dart';
 export 'src/room_canvas_geometry.dart';
+export 'src/room_canvas_models.dart';
+export 'src/room_constraint_solver.dart';
+export 'src/room_editor_adapter.dart';
+export 'src/room_editor_constraint_violation.dart';
 export 'src/room_editor_dialogs.dart';
 export 'src/room_editor_forms.dart';
+export 'src/room_editor_line.dart';
 export 'src/room_editor_panel.dart';
 export 'src/room_editor_shell.dart';
+export 'src/room_editor_solve_result.dart';
 export 'src/room_editor_workspace.dart';
