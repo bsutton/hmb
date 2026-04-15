@@ -52,6 +52,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   late final FocusNode _focusNode;
   int? _draggedIntersectionIndex;
   RoomEditorIntPoint? _draggedIntersectionTarget;
+  RoomEditorDragSolveResult? _lastPreviewSolveResult;
   var _rigidDragNotificationShownForGesture = false;
   Map<RoomEditorConstraintKey, Offset> _constraintVisualOffsets = {};
 
@@ -97,6 +98,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         if (!mounted || result.solvedDocument == null) {
           return;
         }
+        _lastPreviewSolveResult = result;
         _maybeShowRigidDragNotification(result);
         _replaceDocument(result.solvedDocument!);
       },
@@ -373,10 +375,12 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     _gestureBaseDocument ??= _document;
     _draggedIntersectionIndex = null;
     _draggedIntersectionTarget = null;
+    _lastPreviewSolveResult = null;
     _rigidDragNotificationShownForGesture = false;
   }
 
   Future<void> _commitGestureEdit() async {
+    final commitStartedAtMicros = DateTime.now().microsecondsSinceEpoch;
     final baseDocument = _gestureBaseDocument;
     _gestureBaseDocument = null;
     _dragSolverScheduler.cancel();
@@ -385,22 +389,47 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     _draggedIntersectionIndex = null;
     _draggedIntersectionTarget = null;
     if (draggedIntersectionIndex != null && draggedIntersectionTarget != null) {
-      final finalResult = RoomEditorDragSolver.solve(
-        RoomEditorDragSolveRequest(
-          currentDocument: _document,
-          gestureBaseDocument: baseDocument,
-          movedIndex: draggedIntersectionIndex,
-          movedTarget: draggedIntersectionTarget,
-          emitDistanceThreshold: RoomCanvasGeometry.defaultGridSize(
-            _bundle.unitSystem,
-          ).toDouble(),
-        ),
-      );
+      final finalResult =
+          _reusePreviewSolveResult(
+            draggedIntersectionIndex,
+            draggedIntersectionTarget,
+          ) ??
+          (() {
+            debugPrint(
+              '[room_drag] commit solve requested'
+              ' movedIndex=$draggedIntersectionIndex'
+              ' movedTarget=$draggedIntersectionTarget',
+            );
+            final commitStopwatch = Stopwatch()..start();
+            final result = RoomEditorDragSolver.solve(
+              RoomEditorDragSolveRequest(
+                currentDocument: _document,
+                gestureBaseDocument: baseDocument,
+                movedIndex: draggedIntersectionIndex,
+                movedTarget: draggedIntersectionTarget,
+                emitDistanceThreshold: RoomCanvasGeometry.defaultGridSize(
+                  _bundle.unitSystem,
+                ).toDouble(),
+                phase: RoomEditorDragSolvePhase.commit,
+                createdAtMicros: commitStartedAtMicros,
+              ),
+            );
+            commitStopwatch.stop();
+            debugPrint(
+              '[room_drag] commit solve completed'
+              ' traceId=${result.request.traceId}'
+              ' solved=${result.solvedDocument != null}'
+              ' solveDuration=${commitStopwatch.elapsedMilliseconds}ms'
+              ''' totalLag=${((DateTime.now().microsecondsSinceEpoch - commitStartedAtMicros) / 1000).round()}ms''',
+            );
+            return result;
+          })();
       if (finalResult.solvedDocument != null) {
         _maybeShowRigidDragNotification(finalResult);
         _replaceDocument(finalResult.solvedDocument!);
       }
     }
+    _lastPreviewSolveResult = null;
     debugPrint(
       '[room_drag] commit document=${_formatLines(_document.bundle.lines)}',
     );
@@ -409,6 +438,30 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       return;
     }
     widget.onDocumentCommitted(_document);
+  }
+
+  RoomEditorDragSolveResult? _reusePreviewSolveResult(
+    int draggedIntersectionIndex,
+    RoomEditorIntPoint draggedIntersectionTarget,
+  ) {
+    final previewResult = _lastPreviewSolveResult;
+    if (previewResult == null || previewResult.solvedDocument == null) {
+      return null;
+    }
+    final request = previewResult.request;
+    if (request.phase != RoomEditorDragSolvePhase.preview ||
+        request.movedIndex != draggedIntersectionIndex ||
+        request.movedTarget.x != draggedIntersectionTarget.x ||
+        request.movedTarget.y != draggedIntersectionTarget.y) {
+      return null;
+    }
+    debugPrint(
+      '[room_drag] reusing preview solve result'
+      ' traceId=${request.traceId}'
+      ' movedIndex=$draggedIntersectionIndex'
+      ' movedTarget=$draggedIntersectionTarget',
+    );
+    return previewResult;
   }
 
   void _maybeShowRigidDragNotification(RoomEditorDragSolveResult result) {

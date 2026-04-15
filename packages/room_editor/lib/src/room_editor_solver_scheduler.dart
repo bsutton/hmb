@@ -29,12 +29,21 @@ abstract class RoomEditorSolverScheduler {
   RoomEditorSolverScheduler({required this.onEmit, required this.executor});
 
   void cancel() {
+    final active = _activeRequest;
+    final queued = _queuedRequest;
     _epoch++;
     _activeRequest = null;
     _queuedRequest = null;
     _activeRequestKey = null;
     _queuedRequestKey = null;
     _latestPointerTarget = null;
+    if (active != null || queued != null) {
+      debugPrint(
+        '[room_drag] cancel epoch=$_epoch'
+        ' active=${active == null ? "<none>" : _traceLabel(active)}'
+        ' queued=${queued == null ? "<none>" : _traceLabel(queued)}',
+      );
+    }
   }
 
   void schedule(RoomEditorDragSolveRequest request) {
@@ -44,28 +53,45 @@ abstract class RoomEditorSolverScheduler {
     final requestKey = _requestKey(request);
     _latestPointerTarget = request.movedTarget;
     if (_activeRequestKey == requestKey) {
-      debugPrint('Dropping duplicate active solve request $request');
+      debugPrint(
+        'Dropping duplicate active solve request'
+        ' ${_traceLabel(request)}',
+      );
       return;
     }
     if (_queuedRequestKey == requestKey) {
-      debugPrint('Dropping duplicate queued solve request $request');
+      debugPrint(
+        'Dropping duplicate queued solve request'
+        ' ${_traceLabel(request)}',
+      );
       return;
     }
     if (_activeRequest == null) {
       if (_lastCompletedRequestKey == requestKey) {
-        debugPrint('Dropping duplicate completed solve request $request');
+        debugPrint(
+          'Dropping duplicate completed solve request'
+          ' ${_traceLabel(request)}',
+        );
         return;
       }
-      debugPrint('Scheduling new solve request $request');
+      debugPrint(
+        'Scheduling new solve request ${_traceLabel(request)}'
+        ' queueLag=${_latencyMs(request)}ms',
+      );
       _start(request, _epoch, requestKey);
       return;
     }
     if (_queuedRequest != null) {
       debugPrint(
-        'Replacing queued solve request $_queuedRequest with $request',
+        'Replacing queued solve request'
+        ' ${_traceLabel(_queuedRequest!)}'
+        ' with ${_traceLabel(request)}',
       );
     } else {
-      debugPrint('Queuing new solve request $request');
+      debugPrint(
+        'Queuing new solve request ${_traceLabel(request)}'
+        ' queueLag=${_latencyMs(request)}ms',
+      );
     }
     _queuedRequest = request;
     _queuedRequestKey = requestKey;
@@ -89,11 +115,22 @@ abstract class RoomEditorSolverScheduler {
   Future<void> _run(RoomEditorDragSolveRequest request, int epoch) async {
     final stopWatch = Stopwatch()..start();
     debugPrint('*' * 80);
-    debugPrint('Running solve request $request');
+    debugPrint(
+      'Running solve request ${_traceLabel(request)}'
+      ' startLag=${_latencyMs(request)}ms',
+    );
     debugPrint('*' * 80);
 
     final result = await executor(request);
     if (_disposed || epoch != _epoch) {
+      stopWatch.stop();
+      debugPrint(
+        '[room_drag] discarding stale solve result'
+        ' ${_traceLabel(request)}'
+        ' solveDuration=${stopWatch.elapsedMilliseconds}ms'
+        ' totalLag=${_latencyMs(request)}ms'
+        ' epoch=$epoch currentEpoch=$_epoch disposed=$_disposed',
+      );
       return;
     }
     if (_isRelevant(result)) {
@@ -108,7 +145,9 @@ abstract class RoomEditorSolverScheduler {
     stopWatch.stop();
     debugPrint('*' * 80);
     debugPrint(
-      'Completed solve in ${stopWatch.elapsedMilliseconds} ms request $request',
+      'Completed solve ${_traceLabel(request)}'
+      ' solveDuration=${stopWatch.elapsedMilliseconds}ms'
+      ' totalLag=${_latencyMs(request)}ms',
     );
     debugPrint('*' * 80);
 
@@ -158,6 +197,16 @@ ${constraint.lineId}:${constraint.type.name}:${constraint.targetValue ?? '-'}'''
     final dy = result.request.movedTarget.y - latest.y;
     return sqrt(dx * dx + dy * dy) <= result.request.emitDistanceThreshold;
   }
+
+  String _traceLabel(RoomEditorDragSolveRequest request) =>
+      '#${request.traceId}'
+      ' phase=${request.phase.name}'
+      ' movedIndex=${request.movedIndex}'
+      ' movedTarget=${request.movedTarget}';
+
+  int _latencyMs(RoomEditorDragSolveRequest request) =>
+      ((DateTime.now().microsecondsSinceEpoch - request.createdAtMicros) / 1000)
+          .round();
 }
 
 RoomEditorSolverScheduler createRoomEditorSolverScheduler({
