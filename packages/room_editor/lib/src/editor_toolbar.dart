@@ -101,11 +101,8 @@ extension on _ToolbarDensity {
 
   VisualDensity get visualDensity => switch (this) {
     _ToolbarDensity.normal => VisualDensity.standard,
-    _ToolbarDensity.compact => const VisualDensity(
-      horizontal: -1,
-      vertical: -1,
-    ),
-    _ToolbarDensity.tight => const VisualDensity(horizontal: -2, vertical: -2),
+    _ToolbarDensity.compact => VisualDensity.comfortable,
+    _ToolbarDensity.tight => VisualDensity.compact,
     _ToolbarDensity.split => const VisualDensity(horizontal: -3, vertical: -3),
   };
 }

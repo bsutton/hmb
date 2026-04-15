@@ -39,10 +39,13 @@ class RoomEditorConstraintViolation {
         case RoomEditorConstraintType.vertical:
           error = (line.startX - end.x).abs().toDouble();
         case RoomEditorConstraintType.jointAngle:
-          final actualAngle = currentAngleValue(lines, lineIndex);
+          final actualAngle = RoomEditorConstraintSolver.currentAngleValue(
+            lines,
+            lineIndex,
+          );
           error =
               (actualAngle - (constraint.targetValue ?? actualAngle)).abs() /
-              jointAngleUnitsPerDegree;
+              RoomEditorConstraintSolver.jointAngleUnitsPerDegree;
       }
       if (!_isConstraintSatisfied(constraint.type, error)) {
         violations.add(

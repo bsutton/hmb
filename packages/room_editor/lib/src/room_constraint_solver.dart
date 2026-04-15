@@ -1,16 +1,15 @@
 import 'dart:math';
 
-import '../room_editor.dart';
+import 'package:flutter/foundation.dart';
 
+import '../room_editor.dart';
 import 'mutable_point.dart';
-import 'room_canvas_geometry.dart';
-import 'room_canvas_models.dart';
-import 'room_editor_solve_result.dart';
 
 class RoomEditorConstraintSolver {
   static const _maxIterations = 80;
   static const _solverPositionTolerance = 0.75;
   static const _angleToleranceRadians = pi / 1800;
+  static var debugLoggingEnabled = true;
 
   static const jointAngleUnitsPerDegree = 1000;
 
@@ -28,7 +27,16 @@ class RoomEditorConstraintSolver {
     required List<RoomEditorConstraint> constraints,
     int? pinnedVertexIndex,
     RoomEditorIntPoint? pinnedVertexTarget,
+    List<({int index, RoomEditorIntPoint target})> additionalPinnedVertices =
+        const [],
   }) {
+    _logSolveStart(
+      lines: lines,
+      constraints: constraints,
+      pinnedVertexIndex: pinnedVertexIndex,
+      pinnedVertexTarget: pinnedVertexTarget,
+      additionalPinnedVertices: additionalPinnedVertices,
+    );
     if (lines.isEmpty) {
       return const RoomEditorSolveResult(
         lines: [],
@@ -48,9 +56,17 @@ class RoomEditorConstraintSolver {
         ..y = pinnedVertexTarget.y.toDouble()
         ..pinned = true;
     }
+    for (final pin in additionalPinnedVertices) {
+      points[pin.index]
+        ..x = pin.target.x.toDouble()
+        ..y = pin.target.y.toDouble()
+        ..pinned = true;
+    }
 
     var maxError = 0.0;
+    var iterations = 0;
     for (var iteration = 0; iteration < _maxIterations; iteration++) {
+      iterations = iteration + 1;
       maxError = 0;
       for (final constraint in constraints) {
         final lineIndex = lines.indexWhere(
@@ -93,7 +109,12 @@ class RoomEditorConstraintSolver {
             );
         }
       }
-      _applyPinned(points, pinnedIndex, pinnedVertexTarget);
+      _applyPinned(
+        points,
+        pinnedIndex,
+        pinnedVertexTarget,
+        additionalPinnedVertices,
+      );
       if (maxError <= _solverPositionTolerance) {
         break;
       }
@@ -118,21 +139,129 @@ class RoomEditorConstraintSolver {
       maxError: violations.isEmpty ? 0 : violations.first.error,
       violations: violations,
     );
-    print(result);
+    _logSolveEnd(
+      result: result,
+      iterations: iterations,
+      lines: lines,
+      solved: solved,
+      pinnedVertexIndex: pinnedVertexIndex,
+      pinnedVertexTarget: pinnedVertexTarget,
+      additionalPinnedVertices: additionalPinnedVertices,
+      loopMaxError: maxError,
+    );
     return result;
+  }
+
+  static void _logSolveStart({
+    required List<RoomEditorLine> lines,
+    required List<RoomEditorConstraint> constraints,
+    required int? pinnedVertexIndex,
+    required RoomEditorIntPoint? pinnedVertexTarget,
+    required List<({int index, RoomEditorIntPoint target})>
+    additionalPinnedVertices,
+  }) {
+    if (!debugLoggingEnabled ||
+        (pinnedVertexIndex == null && additionalPinnedVertices.isEmpty)) {
+      return;
+    }
+    debugPrint(
+      '[room_solver] start'
+      ' pinnedIndex=$pinnedVertexIndex'
+      ' pinnedTarget=${_formatPoint(pinnedVertexTarget)}'
+      ' extraPins=${_formatPins(additionalPinnedVertices)}'
+      ' lines=${_formatLines(lines)}'
+      ' constraints=${_formatConstraints(constraints)}',
+    );
+  }
+
+  static void _logSolveEnd({
+    required RoomEditorSolveResult result,
+    required int iterations,
+    required List<RoomEditorLine> lines,
+    required List<RoomEditorLine> solved,
+    required int? pinnedVertexIndex,
+    required RoomEditorIntPoint? pinnedVertexTarget,
+    required List<({int index, RoomEditorIntPoint target})>
+    additionalPinnedVertices,
+    required double loopMaxError,
+  }) {
+    if (!debugLoggingEnabled ||
+        (pinnedVertexIndex == null && additionalPinnedVertices.isEmpty)) {
+      return;
+    }
+    debugPrint(
+      '[room_solver] end'
+      ' pinnedIndex=$pinnedVertexIndex'
+      ' pinnedTarget=${_formatPoint(pinnedVertexTarget)}'
+      ' extraPins=${_formatPins(additionalPinnedVertices)}'
+      ' converged=${result.converged}'
+      ' iterations=$iterations'
+      ' loopMaxError=${loopMaxError.toStringAsFixed(3)}'
+      ' violationMaxError=${result.maxError.toStringAsFixed(3)}'
+      ' before=${_formatLines(lines)}'
+      ' after=${_formatLines(solved)}'
+      ' violations=${_formatViolations(result.violations)}',
+    );
+  }
+
+  static String _formatPoint(RoomEditorIntPoint? point) =>
+      point == null ? '<none>' : '(${point.x},${point.y})';
+
+  static String _formatPins(
+    List<({int index, RoomEditorIntPoint target})> pins,
+  ) => pins.isEmpty
+      ? '<none>'
+      : [
+          for (final pin in pins) '${pin.index}:${_formatPoint(pin.target)}',
+        ].join(', ');
+
+  static String _formatLines(List<RoomEditorLine> lines) => [
+    for (var i = 0; i < lines.length; i++)
+      {
+        '$i:${lines[i].id}@(${lines[i].startX},${lines[i].startY})',
+        '->${_formatPoint(RoomCanvasGeometry.lineEnd(lines, i))}',
+      },
+  ].join(' | ');
+
+  static String _formatConstraints(List<RoomEditorConstraint> constraints) => [
+    for (final constraint in constraints)
+      {
+        '${constraint.lineId}:${constraint.type.name}',
+        '=${constraint.targetValue ?? '-'}',
+      },
+  ].join(', ');
+
+  static String _formatViolations(
+    List<RoomEditorConstraintViolation> violations,
+  ) {
+    if (violations.isEmpty) {
+      return '<none>';
+    }
+    return [
+      for (final violation in violations)
+        {
+          '${violation.constraint.lineId}:${violation.constraint.type.name}',
+          '@${violation.error.toStringAsFixed(3)}',
+        },
+    ].join(', ');
   }
 
   static void _applyPinned(
     List<MutablePoint> points,
     int? pinnedVertexIndex,
     RoomEditorIntPoint? pinnedVertexTarget,
+    List<({int index, RoomEditorIntPoint target})> additionalPinnedVertices,
   ) {
-    if (pinnedVertexIndex == null || pinnedVertexTarget == null) {
-      return;
+    if (pinnedVertexIndex != null && pinnedVertexTarget != null) {
+      points[pinnedVertexIndex]
+        ..x = pinnedVertexTarget.x.toDouble()
+        ..y = pinnedVertexTarget.y.toDouble();
     }
-    points[pinnedVertexIndex]
-      ..x = pinnedVertexTarget.x.toDouble()
-      ..y = pinnedVertexTarget.y.toDouble();
+    for (final pin in additionalPinnedVertices) {
+      points[pin.index]
+        ..x = pin.target.x.toDouble()
+        ..y = pin.target.y.toDouble();
+    }
   }
 
   static double _enforceLength(

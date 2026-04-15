@@ -11,10 +11,8 @@ Future<int?> showRoomEditorLengthDialog({
   required int initialValue,
 }) => showDialog<int>(
   context: context,
-  builder: (_) => _LengthDialog(
-    unitSystem: unitSystem,
-    initialValue: initialValue,
-  ),
+  builder: (_) =>
+      _LengthDialog(unitSystem: unitSystem, initialValue: initialValue),
 );
 
 Future<int?> showRoomEditorAngleDialog({
@@ -352,8 +350,9 @@ class _OpeningDialogState extends State<_OpeningDialog> {
       ).replaceFirst(RegExp(r'\s+[A-Za-z/"]+$'), '');
     } else if (widget.unitSystem == RoomEditorUnitSystem.metric) {
       _width.text = widget.type == RoomEditorOpeningType.door ? '820' : '1200';
-      _height.text =
-          widget.type == RoomEditorOpeningType.door ? '2040' : '1200';
+      _height.text = widget.type == RoomEditorOpeningType.door
+          ? '2040'
+          : '1200';
       _sill.text = widget.type == RoomEditorOpeningType.window ? '900' : '0';
     } else {
       _width.text = widget.type == RoomEditorOpeningType.door
@@ -386,7 +385,8 @@ class _OpeningDialogState extends State<_OpeningDialog> {
           controller: _width,
           keyboardType: TextInputType.text,
           decoration: InputDecoration(
-            labelText: 'Width (${RoomCanvasGeometry.unitLabel(widget.unitSystem)})',
+            labelText:
+                'Width (${RoomCanvasGeometry.unitLabel(widget.unitSystem)})',
           ),
         ),
         TextField(
@@ -402,8 +402,8 @@ class _OpeningDialogState extends State<_OpeningDialog> {
             controller: _sill,
             keyboardType: TextInputType.text,
             decoration: InputDecoration(
-              labelText:
-                  'Sill Height (${RoomCanvasGeometry.unitLabel(widget.unitSystem)})',
+              labelText: '''
+Sill Height (${RoomCanvasGeometry.unitLabel(widget.unitSystem)})''',
             ),
           ),
       ],

@@ -19,7 +19,10 @@ class RoomEditorToolAction {
     this.icon,
     this.iconWidget,
     this.onPressed,
-  }) : assert(icon != null || iconWidget != null);
+  }) : assert(
+         icon != null || iconWidget != null,
+         'Either icon or iconWidget must be provided',
+       );
 }
 
 class RoomEditorToolbarState {
@@ -33,6 +36,7 @@ class RoomEditorToolbarState {
   final bool hasHorizontalConstraint;
   final bool hasVerticalConstraint;
   final bool hasAngleConstraint;
+  final bool showAllConstraints;
   final bool isSelectedLinePlaster;
   final bool isSelectedOpeningDoor;
 
@@ -47,6 +51,7 @@ class RoomEditorToolbarState {
     required this.hasHorizontalConstraint,
     required this.hasVerticalConstraint,
     required this.hasAngleConstraint,
+    required this.showAllConstraints,
     required this.isSelectedLinePlaster,
     required this.isSelectedOpeningDoor,
   });
@@ -66,11 +71,12 @@ class RoomEditorToolbarCallbacks {
   final VoidCallback? onEditOpening;
   final VoidCallback? onDeleteOpening;
   final VoidCallback? onToggleLinePlaster;
-  final VoidCallback? onToggleLineLength;
-  final VoidCallback? onToggleHorizontal;
-  final VoidCallback? onToggleVertical;
+  final VoidCallback? onSetLineLength;
+  final VoidCallback? onSetHorizontal;
+  final VoidCallback? onSetVertical;
   final VoidCallback? onJointAction;
-  final VoidCallback? onToggleAngle;
+  final VoidCallback? onSetAngle;
+  final VoidCallback onToggleShowAllConstraints;
 
   const RoomEditorToolbarCallbacks({
     required this.onToggleSelectionMode,
@@ -86,11 +92,12 @@ class RoomEditorToolbarCallbacks {
     required this.onEditOpening,
     required this.onDeleteOpening,
     required this.onToggleLinePlaster,
-    required this.onToggleLineLength,
-    required this.onToggleHorizontal,
-    required this.onToggleVertical,
+    required this.onSetLineLength,
+    required this.onSetHorizontal,
+    required this.onSetVertical,
     required this.onJointAction,
-    required this.onToggleAngle,
+    required this.onSetAngle,
+    required this.onToggleShowAllConstraints,
   });
 }
 
@@ -226,22 +233,22 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
     RoomEditorToolAction(
       id: 'length',
       icon: Icons.straighten,
-      label: state.hasLineLengthConstraint ? 'Remove Length' : 'Length',
+      label: 'Length',
       helpText:
-          'Set or remove a fixed length constraint on the selected wall. '
-          'This is a wall constraint tool.',
+          'Set or edit a fixed length constraint on the selected wall. '
+          'Delete the constraint from its canvas icon.',
       enabled: state.hasLine,
-      selected: state.hasLineLengthConstraint,
-      onPressed: callbacks.onToggleLineLength,
+      onPressed: callbacks.onSetLineLength,
     ),
     RoomEditorToolAction(
       id: 'horizontal',
       icon: Icons.horizontal_rule,
-      label: state.hasHorizontalConstraint ? 'Remove Horizontal' : 'Horizontal',
-      helpText: 'Set or remove a horizontal constraint on the selected wall.',
+      label: 'Horizontal',
+      helpText:
+          'Set a horizontal constraint on the selected wall. Delete the '
+          'constraint from its canvas icon.',
       enabled: state.hasLine,
-      selected: state.hasHorizontalConstraint,
-      onPressed: callbacks.onToggleHorizontal,
+      onPressed: callbacks.onSetHorizontal,
     ),
     RoomEditorToolAction(
       id: 'vertical',
@@ -249,11 +256,12 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
         quarterTurns: 1,
         child: Icon(Icons.horizontal_rule),
       ),
-      label: state.hasVerticalConstraint ? 'Remove Vertical' : 'Vertical',
-      helpText: 'Set or remove a vertical constraint on the selected wall.',
+      label: 'Vertical',
+      helpText:
+          'Set a vertical constraint on the selected wall. Delete the '
+          'constraint from its canvas icon.',
       enabled: state.hasLine,
-      selected: state.hasVerticalConstraint,
-      onPressed: callbacks.onToggleVertical,
+      onPressed: callbacks.onSetVertical,
     ),
     RoomEditorToolAction(
       id: 'joint',
@@ -268,11 +276,24 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
     RoomEditorToolAction(
       id: 'angle',
       icon: Icons.architecture,
-      label: state.hasAngleConstraint ? 'Remove Angle' : 'Angle',
-      helpText: 'Set or remove a fixed angle constraint on the selected joint.',
+      label: 'Angle',
+      helpText:
+          'Set or edit a fixed angle constraint on the selected joint. '
+          'Delete the constraint from its canvas icon.',
       enabled: state.hasIntersection,
-      selected: state.hasAngleConstraint,
-      onPressed: callbacks.onToggleAngle,
+      onPressed: callbacks.onSetAngle,
+    ),
+    RoomEditorToolAction(
+      id: 'show-all-constraints',
+      icon: state.showAllConstraints
+          ? Icons.visibility
+          : Icons.visibility_outlined,
+      label: 'All Constraints',
+      helpText:
+          'Show or hide every constraint annotation. When off, only the '
+          "selected element's constraints are shown.",
+      selected: state.showAllConstraints,
+      onPressed: callbacks.onToggleShowAllConstraints,
     ),
   ];
 

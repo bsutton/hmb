@@ -1,5 +1,4 @@
-import 'room_editor_line.dart';
-import 'room_editor_constraint_voiloation.dart';
+import '../room_editor.dart';
 
 class RoomEditorSolveResult {
   final List<RoomEditorLine> lines;

@@ -9,9 +9,9 @@ class RoomEditorShell extends StatelessWidget {
   final double spacing;
 
   const RoomEditorShell({
-    super.key,
     required this.primaryTools,
     required this.canvas,
+    super.key,
     this.constraintTools,
     this.landscape = false,
     this.editorOnly = false,

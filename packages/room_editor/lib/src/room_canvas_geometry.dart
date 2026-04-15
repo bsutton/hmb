@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'room_canvas_models.dart';
 import '../room_editor.dart';
 
 class RoomCanvasGeometry {

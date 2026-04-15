@@ -21,7 +21,6 @@ class RoomEditorDetailsForm extends StatelessWidget {
   final Widget canvas;
 
   const RoomEditorDetailsForm({
-    super.key,
     required this.roomId,
     required this.unitSystem,
     required this.unitLabel,
@@ -32,6 +31,7 @@ class RoomEditorDetailsForm extends StatelessWidget {
     required this.onCommitCeilingHeight,
     required this.editorTools,
     required this.canvas,
+    super.key,
     this.selectedLineId,
     this.lineStudSpacingController,
     this.lineStudOffsetController,
@@ -118,7 +118,9 @@ class RoomEditorDetailsForm extends StatelessWidget {
           TextField(
             key: ValueKey('ceiling-height-$roomId-${unitSystem.name}'),
             controller: ceilingHeightController,
-            decoration: InputDecoration(labelText: 'Ceiling Height ($unitLabel)'),
+            decoration: InputDecoration(
+              labelText: 'Ceiling Height ($unitLabel)',
+            ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onSubmitted: (_) => unawaited(onCommitCeilingHeight()),
             onEditingComplete: () => unawaited(onCommitCeilingHeight()),
@@ -138,7 +140,9 @@ class RoomEditorDetailsForm extends StatelessWidget {
                 labelText: 'Wall Stud Spacing Override ($unitLabel)',
                 helperText: 'Leave blank to use project default.',
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               onSubmitted: (_) => unawaited(onCommitSelectedLineOverrides!()),
               onEditingComplete: () =>
                   unawaited(onCommitSelectedLineOverrides!()),
@@ -154,7 +158,9 @@ class RoomEditorDetailsForm extends StatelessWidget {
                 labelText: 'Wall Stud Offset Override ($unitLabel)',
                 helperText: 'Leave blank to use project default.',
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               onSubmitted: (_) => unawaited(onCommitSelectedLineOverrides!()),
               onEditingComplete: () =>
                   unawaited(onCommitSelectedLineOverrides!()),
@@ -208,7 +214,6 @@ class RoomEditorFramingSettingsSheet extends StatelessWidget {
   final Future<void> Function() onApply;
 
   const RoomEditorFramingSettingsSheet({
-    super.key,
     required this.unitLabel,
     required this.ceilingHeightController,
     required this.roomCeilingFramingSpacingController,
@@ -218,6 +223,7 @@ class RoomEditorFramingSettingsSheet extends StatelessWidget {
     required this.onCommitCeilingHeight,
     required this.onCommitSelectedRoomCeilingOverrides,
     required this.onApply,
+    super.key,
     this.lineStudSpacingController,
     this.lineStudOffsetController,
     this.lineFixingFaceWidthController,
@@ -237,9 +243,7 @@ class RoomEditorFramingSettingsSheet extends StatelessWidget {
         const SizedBox(height: 12),
         TextField(
           controller: ceilingHeightController,
-          decoration: InputDecoration(
-            labelText: 'Ceiling Height ($unitLabel)',
-          ),
+          decoration: InputDecoration(labelText: 'Ceiling Height ($unitLabel)'),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           onSubmitted: (_) => unawaited(onCommitCeilingHeight()),
           onEditingComplete: () => unawaited(onCommitCeilingHeight()),
@@ -252,8 +256,7 @@ class RoomEditorFramingSettingsSheet extends StatelessWidget {
             helperText: 'Leave blank to use project default.',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onSubmitted: (_) =>
-              unawaited(onCommitSelectedRoomCeilingOverrides()),
+          onSubmitted: (_) => unawaited(onCommitSelectedRoomCeilingOverrides()),
           onEditingComplete: () =>
               unawaited(onCommitSelectedRoomCeilingOverrides()),
         ),
@@ -265,8 +268,7 @@ class RoomEditorFramingSettingsSheet extends StatelessWidget {
             helperText: 'Leave blank to use project default.',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onSubmitted: (_) =>
-              unawaited(onCommitSelectedRoomCeilingOverrides()),
+          onSubmitted: (_) => unawaited(onCommitSelectedRoomCeilingOverrides()),
           onEditingComplete: () =>
               unawaited(onCommitSelectedRoomCeilingOverrides()),
         ),
@@ -278,8 +280,7 @@ class RoomEditorFramingSettingsSheet extends StatelessWidget {
             helperText: 'Leave blank to use project default.',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onSubmitted: (_) =>
-              unawaited(onCommitSelectedRoomCeilingOverrides()),
+          onSubmitted: (_) => unawaited(onCommitSelectedRoomCeilingOverrides()),
           onEditingComplete: () =>
               unawaited(onCommitSelectedRoomCeilingOverrides()),
         ),
@@ -289,10 +290,7 @@ class RoomEditorFramingSettingsSheet extends StatelessWidget {
             lineFixingFaceWidthController != null &&
             onCommitSelectedLineOverrides != null) ...[
           const SizedBox(height: 16),
-          Text(
-            'Selected wall',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
+          Text('Selected wall', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
           TextField(
             controller: lineStudSpacingController,

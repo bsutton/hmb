@@ -24,7 +24,6 @@ class RoomEditorPanel extends StatefulWidget {
   final VoidCallback? onRedo;
 
   const RoomEditorPanel({
-    super.key,
     required this.roomId,
     required this.unitSystem,
     required this.unitLabel,
@@ -35,6 +34,7 @@ class RoomEditorPanel extends StatefulWidget {
     required this.onCommitCeilingHeight,
     required this.document,
     required this.onDocumentCommitted,
+    super.key,
     this.lineStudSpacingController,
     this.lineStudOffsetController,
     this.onCommitSelectedLineOverrides,
