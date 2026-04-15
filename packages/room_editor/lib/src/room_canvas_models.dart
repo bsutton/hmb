@@ -26,6 +26,9 @@ class RoomEditorIntPoint {
   final int y;
 
   const RoomEditorIntPoint(this.x, this.y);
+
+  @override
+  String toString() => '($x, $y)';
 }
 
 class RoomEditorOpening {

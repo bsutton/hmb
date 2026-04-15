@@ -9,6 +9,9 @@ class RoomEditorConstraintSolver {
   static const _maxIterations = 80;
   static const _solverPositionTolerance = 0.75;
   static const _angleToleranceRadians = pi / 1800;
+  static const _stagnationIterations = 6;
+  static const _stagnationErrorEpsilon = 0.01;
+  static const _stagnationMovementEpsilon = 0.01;
   static var debugLoggingEnabled = true;
 
   static const jointAngleUnitsPerDegree = 1000;
@@ -65,6 +68,9 @@ class RoomEditorConstraintSolver {
 
     var maxError = 0.0;
     var iterations = 0;
+    var stagnationCount = 0;
+    double? previousMaxError;
+    var previousPositions = [for (final point in points) (point.x, point.y)];
     for (var iteration = 0; iteration < _maxIterations; iteration++) {
       iterations = iteration + 1;
       maxError = 0;
@@ -115,7 +121,20 @@ class RoomEditorConstraintSolver {
         pinnedVertexTarget,
         additionalPinnedVertices,
       );
+      final movement = _positionDelta(points, previousPositions);
+      if (previousMaxError != null &&
+          (previousMaxError - maxError).abs() <= _stagnationErrorEpsilon &&
+          movement <= _stagnationMovementEpsilon) {
+        stagnationCount++;
+      } else {
+        stagnationCount = 0;
+      }
+      previousMaxError = maxError;
+      previousPositions = [for (final point in points) (point.x, point.y)];
       if (maxError <= _solverPositionTolerance) {
+        break;
+      }
+      if (stagnationCount >= _stagnationIterations) {
         break;
       }
     }
@@ -148,6 +167,7 @@ class RoomEditorConstraintSolver {
       pinnedVertexTarget: pinnedVertexTarget,
       additionalPinnedVertices: additionalPinnedVertices,
       loopMaxError: maxError,
+      stagnated: stagnationCount >= _stagnationIterations,
     );
     return result;
   }
@@ -184,6 +204,7 @@ class RoomEditorConstraintSolver {
     required List<({int index, RoomEditorIntPoint target})>
     additionalPinnedVertices,
     required double loopMaxError,
+    required bool stagnated,
   }) {
     if (!debugLoggingEnabled ||
         (pinnedVertexIndex == null && additionalPinnedVertices.isEmpty)) {
@@ -196,12 +217,26 @@ class RoomEditorConstraintSolver {
       ' extraPins=${_formatPins(additionalPinnedVertices)}'
       ' converged=${result.converged}'
       ' iterations=$iterations'
+      ' stagnated=$stagnated'
       ' loopMaxError=${loopMaxError.toStringAsFixed(3)}'
       ' violationMaxError=${result.maxError.toStringAsFixed(3)}'
       ' before=${_formatLines(lines)}'
       ' after=${_formatLines(solved)}'
       ' violations=${_formatViolations(result.violations)}',
     );
+  }
+
+  static double _positionDelta(
+    List<MutablePoint> points,
+    List<(double, double)> previousPositions,
+  ) {
+    var maxDelta = 0.0;
+    for (var i = 0; i < points.length; i++) {
+      final dx = points[i].x - previousPositions[i].$1;
+      final dy = points[i].y - previousPositions[i].$2;
+      maxDelta = max(maxDelta, sqrt(dx * dx + dy * dy));
+    }
+    return maxDelta;
   }
 
   static String _formatPoint(RoomEditorIntPoint? point) =>

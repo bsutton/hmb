@@ -1,0 +1,631 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:room_editor/room_editor.dart';
+import 'package:room_editor/src/room_editor_drag_solver.dart';
+
+void main() {
+  test(
+    'rigid orthogonal systems clamp impossible drags to current document',
+    () {
+      final document = RoomEditorDocument(
+        bundle: buildRoomEditorBundle(
+          roomName: 'Rigid',
+          unitSystem: RoomEditorUnitSystem.metric,
+          plasterCeiling: true,
+          lines: const [
+            (
+              id: 1,
+              seqNo: 1,
+              startX: 0,
+              startY: 0,
+              length: 3600,
+              plasterSelected: true,
+            ),
+            (
+              id: 2,
+              seqNo: 2,
+              startX: 3600,
+              startY: 0,
+              length: 2400,
+              plasterSelected: true,
+            ),
+            (
+              id: 3,
+              seqNo: 3,
+              startX: 3600,
+              startY: 2400,
+              length: 1800,
+              plasterSelected: true,
+            ),
+            (
+              id: 4,
+              seqNo: 4,
+              startX: 1800,
+              startY: 2400,
+              length: 1200,
+              plasterSelected: true,
+            ),
+            (
+              id: 5,
+              seqNo: 5,
+              startX: 1800,
+              startY: 1200,
+              length: 1800,
+              plasterSelected: true,
+            ),
+            (
+              id: 6,
+              seqNo: 6,
+              startX: 0,
+              startY: 1200,
+              length: 1200,
+              plasterSelected: true,
+            ),
+          ],
+          openings: const [],
+        ),
+        constraints: const [
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 3600,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 2400,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1800,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1200,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1800,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1200,
+          ),
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+        ],
+      );
+
+      final result = RoomEditorDragSolver.solve(
+        RoomEditorDragSolveRequest(
+          currentDocument: document,
+          gestureBaseDocument: document,
+          movedIndex: 2,
+          movedTarget: const RoomEditorIntPoint(4000, 2000),
+          emitDistanceThreshold: 100,
+        ),
+      );
+
+      expect(result.rigidConstraintClamp, isTrue);
+      expect(result.solvedDocument, same(document));
+      expect(result.solvedDocument!.bundle.lines[2].startX, 3600);
+      expect(result.solvedDocument!.bundle.lines[2].startY, 2400);
+    },
+  );
+
+  test(
+    'dragging a vertex respects incoming vertical constraint and still moves',
+    () {
+      final document = RoomEditorDocument(
+        bundle: buildRoomEditorBundle(
+          roomName: 'Projected drag',
+          unitSystem: RoomEditorUnitSystem.metric,
+          plasterCeiling: true,
+          lines: const [
+            (
+              id: 1,
+              seqNo: 1,
+              startX: 0,
+              startY: 0,
+              length: 3600,
+              plasterSelected: true,
+            ),
+            (
+              id: 2,
+              seqNo: 2,
+              startX: 3600,
+              startY: 0,
+              length: 2400,
+              plasterSelected: true,
+            ),
+            (
+              id: 3,
+              seqNo: 3,
+              startX: 3600,
+              startY: 2400,
+              length: 1800,
+              plasterSelected: true,
+            ),
+            (
+              id: 4,
+              seqNo: 4,
+              startX: 1800,
+              startY: 2400,
+              length: 1200,
+              plasterSelected: true,
+            ),
+            (
+              id: 5,
+              seqNo: 5,
+              startX: 1800,
+              startY: 1200,
+              length: 1800,
+              plasterSelected: true,
+            ),
+            (
+              id: 6,
+              seqNo: 6,
+              startX: 0,
+              startY: 1200,
+              length: 1200,
+              plasterSelected: true,
+            ),
+          ],
+          openings: const [],
+        ),
+        constraints: const [
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 3600,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1800,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1800,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1200,
+          ),
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+        ],
+      );
+
+      final result = RoomEditorDragSolver.solve(
+        RoomEditorDragSolveRequest(
+          currentDocument: document,
+          gestureBaseDocument: document,
+          movedIndex: 2,
+          movedTarget: const RoomEditorIntPoint(4000, 3000),
+          emitDistanceThreshold: 100,
+        ),
+      );
+
+      expect(result.rigidConstraintClamp, isFalse);
+      expect(result.solvedDocument, isNotNull);
+      expect(result.solvedDocument!.bundle.lines[2].startX, 3600);
+      expect(result.solvedDocument!.bundle.lines[2].startY, 3000);
+      expect(result.solvedDocument!.bundle.lines[3].startY, 3000);
+    },
+  );
+
+  test(
+    '''
+dragging a vertex can move horizontally when incoming line is vertical with fixed length''',
+    () {
+      final document = RoomEditorDocument(
+        bundle: buildRoomEditorBundle(
+          roomName: 'Horizontal move',
+          unitSystem: RoomEditorUnitSystem.metric,
+          plasterCeiling: true,
+          lines: const [
+            (
+              id: 1,
+              seqNo: 1,
+              startX: 0,
+              startY: -1,
+              length: 3600,
+              plasterSelected: true,
+            ),
+            (
+              id: 2,
+              seqNo: 2,
+              startX: 3600,
+              startY: -2,
+              length: 2230,
+              plasterSelected: true,
+            ),
+            (
+              id: 3,
+              seqNo: 3,
+              startX: 3600,
+              startY: 2228,
+              length: 1800,
+              plasterSelected: true,
+            ),
+            (
+              id: 4,
+              seqNo: 4,
+              startX: 1800,
+              startY: 2228,
+              length: 1029,
+              plasterSelected: true,
+            ),
+            (
+              id: 5,
+              seqNo: 5,
+              startX: 1800,
+              startY: 1199,
+              length: 1800,
+              plasterSelected: true,
+            ),
+            (
+              id: 6,
+              seqNo: 6,
+              startX: 0,
+              startY: 1199,
+              length: 1200,
+              plasterSelected: true,
+            ),
+          ],
+          openings: const [],
+        ),
+        constraints: const [
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1800,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1200,
+          ),
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 2230,
+          ),
+        ],
+      );
+
+      final result = RoomEditorDragSolver.solve(
+        RoomEditorDragSolveRequest(
+          currentDocument: document,
+          gestureBaseDocument: document,
+          movedIndex: 2,
+          movedTarget: const RoomEditorIntPoint(3535, 2055),
+          emitDistanceThreshold: 100,
+        ),
+      );
+
+      expect(result.rigidConstraintClamp, isFalse);
+      expect(result.solvedDocument, isNotNull);
+      expect(result.solvedDocument!.bundle.lines[2].startX, 3535);
+      expect(result.solvedDocument!.bundle.lines[2].startY, 2228);
+      expect(result.solvedDocument!.bundle.lines[1].startX, 3535);
+      expect(result.solvedDocument!.bundle.lines[1].startY, -2);
+    },
+  );
+
+  test(
+    'dragging a vertex can move horizontally when incoming line is only vertical',
+    () {
+      final document = RoomEditorDocument(
+        bundle: buildRoomEditorBundle(
+          roomName: 'Horizontal move without fixed length',
+          unitSystem: RoomEditorUnitSystem.metric,
+          plasterCeiling: true,
+          lines: const [
+            (
+              id: 1,
+              seqNo: 1,
+              startX: 0,
+              startY: 0,
+              length: 2251,
+              plasterSelected: true,
+            ),
+            (
+              id: 2,
+              seqNo: 2,
+              startX: 2251,
+              startY: 0,
+              length: 2401,
+              plasterSelected: true,
+            ),
+            (
+              id: 3,
+              seqNo: 3,
+              startX: 2251,
+              startY: 2401,
+              length: 451,
+              plasterSelected: true,
+            ),
+            (
+              id: 4,
+              seqNo: 4,
+              startX: 1800,
+              startY: 2401,
+              length: 1201,
+              plasterSelected: true,
+            ),
+            (
+              id: 5,
+              seqNo: 5,
+              startX: 1800,
+              startY: 1200,
+              length: 1800,
+              plasterSelected: true,
+            ),
+            (
+              id: 6,
+              seqNo: 6,
+              startX: 0,
+              startY: 1200,
+              length: 1200,
+              plasterSelected: true,
+            ),
+          ],
+          openings: const [],
+        ),
+        constraints: const [
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1200,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1800,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1200,
+          ),
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+        ],
+      );
+
+      final result = RoomEditorDragSolver.solve(
+        RoomEditorDragSolveRequest(
+          currentDocument: document,
+          gestureBaseDocument: document,
+          movedIndex: 2,
+          movedTarget: const RoomEditorIntPoint(2292, 2401),
+          emitDistanceThreshold: 100,
+        ),
+      );
+
+      expect(result.rigidConstraintClamp, isFalse);
+      expect(result.solvedDocument, isNotNull);
+      expect(result.solvedDocument!.bundle.lines[2].startX, 2292);
+      expect(result.solvedDocument!.bundle.lines[2].startY, 2401);
+      expect(result.solvedDocument!.bundle.lines[1].startX, 2292);
+      expect(result.solvedDocument!.bundle.lines[1].startY, 0);
+    },
+  );
+}

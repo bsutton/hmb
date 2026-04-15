@@ -52,6 +52,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   late final FocusNode _focusNode;
   int? _draggedIntersectionIndex;
   RoomEditorIntPoint? _draggedIntersectionTarget;
+  var _rigidDragNotificationShownForGesture = false;
   Map<RoomEditorConstraintKey, Offset> _constraintVisualOffsets = {};
 
   RoomEditorBundle get _bundle => _document.bundle;
@@ -96,6 +97,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         if (!mounted || result.solvedDocument == null) {
           return;
         }
+        _maybeShowRigidDragNotification(result);
         _replaceDocument(result.solvedDocument!);
       },
     );
@@ -371,6 +373,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     _gestureBaseDocument ??= _document;
     _draggedIntersectionIndex = null;
     _draggedIntersectionTarget = null;
+    _rigidDragNotificationShownForGesture = false;
   }
 
   Future<void> _commitGestureEdit() async {
@@ -394,6 +397,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         ),
       );
       if (finalResult.solvedDocument != null) {
+        _maybeShowRigidDragNotification(finalResult);
         _replaceDocument(finalResult.solvedDocument!);
       }
     }
@@ -405,6 +409,28 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       return;
     }
     widget.onDocumentCommitted(_document);
+  }
+
+  void _maybeShowRigidDragNotification(RoomEditorDragSolveResult result) {
+    if (_rigidDragNotificationShownForGesture || !result.rigidConstraintClamp) {
+      return;
+    }
+    _rigidDragNotificationShownForGesture = true;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) {
+      return;
+    }
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This room is rigid. Remove one or more constraints to modify '
+            'the room.',
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
   }
 
   String _formatPoint(RoomEditorIntPoint? point) =>
