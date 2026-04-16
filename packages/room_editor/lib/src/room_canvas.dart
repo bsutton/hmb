@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../room_editor.dart';
 
@@ -75,7 +77,18 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
   final _transformationController = TransformationController();
 
   @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      unawaited(BrowserContextMenu.disableContextMenu());
+    }
+  }
+
+  @override
   void dispose() {
+    if (kIsWeb) {
+      unawaited(BrowserContextMenu.enableContextMenu());
+    }
     _transformationController.dispose();
     super.dispose();
   }
@@ -1371,8 +1384,8 @@ List<_ConstraintVisual> buildConstraintVisuals({
   required RoomEditorSelection selection,
   required bool showAllConstraints,
   required Map<RoomEditorConstraintKey, Offset> customOffsets,
-  Set<RoomEditorConstraintKey> highlightedKeys = const {},
   required _CanvasTransform transform,
+  Set<RoomEditorConstraintKey> highlightedKeys = const {},
 }) {
   final lines = document.bundle.lines;
   if (lines.isEmpty || document.constraints.isEmpty) {
