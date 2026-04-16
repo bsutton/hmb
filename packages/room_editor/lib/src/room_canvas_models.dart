@@ -10,6 +10,8 @@ enum RoomEditorConstraintType { lineLength, horizontal, vertical, jointAngle }
 
 typedef RoomEditorMoveIntersectionCallback =
     void Function(int index, RoomEditorIntPoint point);
+typedef RoomEditorMoveLineCallback =
+    void Function(int index, Offset worldDelta);
 typedef RoomEditorMoveOpeningCallback =
     void Function(int index, RoomEditorIntPoint point, int anchorOffset);
 typedef RoomEditorTapIndexedCallback = Future<void> Function(int index);
@@ -207,6 +209,9 @@ class RoomEditorCanvasCallbacks {
   final VoidCallback onStartMoveIntersection;
   final RoomEditorMoveIntersectionCallback onMoveIntersection;
   final Future<void> Function() onEndMoveIntersection;
+  final VoidCallback onStartMoveLine;
+  final RoomEditorMoveLineCallback onMoveLine;
+  final Future<void> Function() onEndMoveLine;
   final VoidCallback onStartMoveOpening;
   final RoomEditorMoveOpeningCallback onMoveOpening;
   final Future<void> Function() onEndMoveOpening;
@@ -222,6 +227,9 @@ class RoomEditorCanvasCallbacks {
     required this.onStartMoveIntersection,
     required this.onMoveIntersection,
     required this.onEndMoveIntersection,
+    required this.onStartMoveLine,
+    required this.onMoveLine,
+    required this.onEndMoveLine,
     required this.onStartMoveOpening,
     required this.onMoveOpening,
     required this.onEndMoveOpening,

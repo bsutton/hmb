@@ -630,7 +630,7 @@ dragging a vertex can move horizontally when incoming line is vertical with fixe
   );
 
   test(
-    'dragging a vertex can move horizontally when outgoing line is horizontal with downstream fixed support',
+    '''dragging a vertex can move horizontally when outgoing line is horizontal with downstream fixed support''',
     () {
       final document = RoomEditorDocument(
         bundle: buildRoomEditorBundle(

@@ -186,9 +186,6 @@ ${constraint.lineId}:${constraint.type.name}:${constraint.targetValue ?? '-'}'''
   ].join(';');
 
   bool _isRelevant(RoomEditorDragSolveResult result) {
-    if (result.solvedDocument == null) {
-      return false;
-    }
     final latest = _latestPointerTarget;
     if (latest == null) {
       return false;

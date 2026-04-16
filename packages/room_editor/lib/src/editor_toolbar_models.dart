@@ -171,14 +171,17 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       onPressed: callbacks.onDeselect,
     ),
     RoomEditorToolAction(
-      id: 'split',
-      icon: Icons.content_cut,
-      label: 'Split',
-      helpText:
-          'Split the selected wall into two connected wall segments at its '
-          'midpoint.',
-      enabled: state.hasLine,
-      onPressed: callbacks.onSplit,
+      id: 'topology',
+      icon: state.hasIntersection ? Icons.join_inner : Icons.content_cut,
+      label: state.hasIntersection ? 'Join' : 'Split',
+      helpText: state.hasIntersection
+          ? 'Remove the selected corner and join the adjacent walls.'
+          : 'Split the selected wall into two connected wall segments at its '
+                'midpoint.',
+      enabled: state.hasIntersection || state.hasLine,
+      onPressed: state.hasIntersection
+          ? callbacks.onJointAction
+          : callbacks.onSplit,
     ),
     RoomEditorToolAction(
       id: 'door',
@@ -262,16 +265,6 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
           'constraint from its canvas icon.',
       enabled: state.hasLine,
       onPressed: callbacks.onSetVertical,
-    ),
-    RoomEditorToolAction(
-      id: 'joint',
-      icon: Icons.polyline,
-      label: 'Joint',
-      helpText:
-          'Open joint actions for the selected corner, including joining '
-          'lines and managing joint-angle constraints.',
-      enabled: state.hasIntersection,
-      onPressed: callbacks.onJointAction,
     ),
     RoomEditorToolAction(
       id: 'angle',

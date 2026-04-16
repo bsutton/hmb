@@ -41,37 +41,6 @@ Future<RoomEditorOpeningDraft?> showRoomEditorOpeningDialog({
   ),
 );
 
-Future<String?> showRoomEditorJointActionSheet({
-  required BuildContext context,
-  required bool hasAngleConstraint,
-}) => showModalBottomSheet<String>(
-  context: context,
-  builder: (_) => SafeArea(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ListTile(
-          title: const Text('Join line'),
-          onTap: () => Navigator.of(context).pop('join'),
-        ),
-        ListTile(
-          title: Text(
-            hasAngleConstraint
-                ? 'Change angle constraint'
-                : 'Set angle constraint',
-          ),
-          onTap: () => Navigator.of(context).pop('angle'),
-        ),
-        if (hasAngleConstraint)
-          ListTile(
-            title: const Text('Remove angle constraint'),
-            onTap: () => Navigator.of(context).pop('remove-angle'),
-          ),
-      ],
-    ),
-  ),
-);
-
 class _LengthDialog extends StatefulWidget {
   final RoomEditorUnitSystem unitSystem;
   final int initialValue;
