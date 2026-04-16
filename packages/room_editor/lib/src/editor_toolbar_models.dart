@@ -26,39 +26,46 @@ class RoomEditorToolAction {
 }
 
 class RoomEditorToolbarState {
-  final bool selectionMode;
   final bool snapToGrid;
   final bool showGrid;
-  final bool hasLine;
-  final bool hasIntersection;
+  final int selectedLineCount;
+  final int selectedIntersectionCount;
   final bool hasOpening;
+  final bool canSplit;
+  final bool canJoin;
   final bool hasLineLengthConstraint;
   final bool hasHorizontalConstraint;
   final bool hasVerticalConstraint;
   final bool hasAngleConstraint;
+  final bool canSetAngle;
+  final bool canSetRightAngle;
+  final bool canSetParallel;
   final bool showAllConstraints;
-  final bool isSelectedLinePlaster;
+  final bool areSelectedLinesIncluded;
   final bool isSelectedOpeningDoor;
 
   const RoomEditorToolbarState({
-    required this.selectionMode,
     required this.snapToGrid,
     required this.showGrid,
-    required this.hasLine,
-    required this.hasIntersection,
+    required this.selectedLineCount,
+    required this.selectedIntersectionCount,
     required this.hasOpening,
+    required this.canSplit,
+    required this.canJoin,
     required this.hasLineLengthConstraint,
     required this.hasHorizontalConstraint,
     required this.hasVerticalConstraint,
     required this.hasAngleConstraint,
+    required this.canSetAngle,
+    required this.canSetRightAngle,
+    required this.canSetParallel,
     required this.showAllConstraints,
-    required this.isSelectedLinePlaster,
+    required this.areSelectedLinesIncluded,
     required this.isSelectedOpeningDoor,
   });
 }
 
 class RoomEditorToolbarCallbacks {
-  final VoidCallback onToggleSelectionMode;
   final VoidCallback? onUndo;
   final VoidCallback? onRedo;
   final VoidCallback onFit;
@@ -76,10 +83,11 @@ class RoomEditorToolbarCallbacks {
   final VoidCallback? onSetVertical;
   final VoidCallback? onJointAction;
   final VoidCallback? onSetAngle;
+  final VoidCallback? onSetRightAngle;
+  final VoidCallback? onSetParallel;
   final VoidCallback onToggleShowAllConstraints;
 
   const RoomEditorToolbarCallbacks({
-    required this.onToggleSelectionMode,
     required this.onUndo,
     required this.onRedo,
     required this.onFit,
@@ -97,6 +105,8 @@ class RoomEditorToolbarCallbacks {
     required this.onSetVertical,
     required this.onJointAction,
     required this.onSetAngle,
+    required this.onSetRightAngle,
+    required this.onSetParallel,
     required this.onToggleShowAllConstraints,
   });
 }
@@ -108,17 +118,6 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
   bool excludeConstraints = false,
 }) {
   final primaryButtons = <RoomEditorToolAction>[
-    RoomEditorToolAction(
-      id: 'toggle-selection-mode',
-      icon: state.selectionMode ? Icons.touch_app : Icons.ads_click,
-      label: state.selectionMode ? 'Select Mode' : 'Edit Mode',
-      helpText:
-          'Toggle between selection mode and direct geometry editing. '
-          'Selection mode lets you pick walls, joints, and openings so you '
-          'can apply tools to them.',
-      selected: state.selectionMode,
-      onPressed: callbacks.onToggleSelectionMode,
-    ),
     RoomEditorToolAction(
       id: 'undo',
       icon: Icons.undo,
@@ -165,30 +164,31 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
     RoomEditorToolAction(
       id: 'deselect',
       icon: Icons.deselect,
-      label: 'Deselect',
+      label: 'Deselect All',
       helpText: 'Clear the current wall, joint, or opening selection.',
-      enabled: state.hasLine || state.hasIntersection || state.hasOpening,
+      enabled:
+          state.selectedLineCount > 0 ||
+          state.selectedIntersectionCount > 0 ||
+          state.hasOpening,
       onPressed: callbacks.onDeselect,
     ),
     RoomEditorToolAction(
       id: 'topology',
-      icon: state.hasIntersection ? Icons.join_inner : Icons.content_cut,
-      label: state.hasIntersection ? 'Join' : 'Split',
-      helpText: state.hasIntersection
+      icon: state.canJoin ? Icons.join_inner : Icons.content_cut,
+      label: state.canJoin ? 'Join' : 'Split',
+      helpText: state.canJoin
           ? 'Remove the selected corner and join the adjacent walls.'
           : 'Split the selected wall into two connected wall segments at its '
                 'midpoint.',
-      enabled: state.hasIntersection || state.hasLine,
-      onPressed: state.hasIntersection
-          ? callbacks.onJointAction
-          : callbacks.onSplit,
+      enabled: state.canJoin || state.canSplit,
+      onPressed: state.canJoin ? callbacks.onJointAction : callbacks.onSplit,
     ),
     RoomEditorToolAction(
       id: 'door',
       icon: Icons.door_front_door_outlined,
       label: 'Door',
       helpText: 'Add a door opening to the selected wall.',
-      enabled: state.hasLine,
+      enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onAddDoor,
     ),
     RoomEditorToolAction(
@@ -196,7 +196,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       icon: Icons.web_asset_outlined,
       label: 'Window',
       helpText: 'Add a window opening to the selected wall.',
-      enabled: state.hasLine,
+      enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onAddWindow,
     ),
     RoomEditorToolAction(
@@ -220,14 +220,14 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
     ),
     RoomEditorToolAction(
       id: 'toggle-line-plaster',
-      icon: state.isSelectedLinePlaster
+      icon: state.areSelectedLinesIncluded
           ? Icons.layers_clear_outlined
           : Icons.layers_outlined,
-      label: state.isSelectedLinePlaster ? 'Exclude' : 'Include',
+      label: state.areSelectedLinesIncluded ? 'Exclude' : 'Include',
       helpText:
-          'Include or exclude the selected wall from plasterboard layout '
-          'calculation.',
-      enabled: state.hasLine,
+          'Include or exclude the selected wall or walls from '
+          'plasterboard layout calculation.',
+      enabled: state.selectedLineCount > 0,
       onPressed: callbacks.onToggleLinePlaster,
     ),
   ];
@@ -240,7 +240,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       helpText:
           'Set or edit a fixed length constraint on the selected wall. '
           'Delete the constraint from its canvas icon.',
-      enabled: state.hasLine,
+      enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onSetLineLength,
     ),
     RoomEditorToolAction(
@@ -250,7 +250,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       helpText:
           'Set a horizontal constraint on the selected wall. Delete the '
           'constraint from its canvas icon.',
-      enabled: state.hasLine,
+      enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onSetHorizontal,
     ),
     RoomEditorToolAction(
@@ -263,7 +263,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       helpText:
           'Set a vertical constraint on the selected wall. Delete the '
           'constraint from its canvas icon.',
-      enabled: state.hasLine,
+      enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onSetVertical,
     ),
     RoomEditorToolAction(
@@ -271,10 +271,31 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       icon: Icons.architecture,
       label: 'Angle',
       helpText:
-          'Set or edit a fixed angle constraint on the selected joint. '
+          'Set or edit a fixed angle constraint on the selected joint or the '
+          'shared corner of two adjacent selected walls. '
           'Delete the constraint from its canvas icon.',
-      enabled: state.hasIntersection,
+      enabled: state.canSetAngle,
       onPressed: callbacks.onSetAngle,
+    ),
+    RoomEditorToolAction(
+      id: 'right-angle',
+      icon: Icons.square_foot,
+      label: 'Right Angle',
+      helpText:
+          'Set a 90 degree angle constraint on the selected joint or the '
+          'shared corner of two adjacent selected walls.',
+      enabled: state.canSetRightAngle,
+      onPressed: callbacks.onSetRightAngle,
+    ),
+    RoomEditorToolAction(
+      id: 'parallel',
+      icon: Icons.compare_arrows,
+      label: 'Parallel',
+      helpText:
+          'Set a parallel constraint between two selected walls. Delete the '
+          'constraint from its canvas icon.',
+      enabled: state.canSetParallel,
+      onPressed: callbacks.onSetParallel,
     ),
     RoomEditorToolAction(
       id: 'show-all-constraints',

@@ -451,6 +451,8 @@ class RoomEditorDragSolver {
         case RoomEditorConstraintType.horizontal:
         case RoomEditorConstraintType.vertical:
           axisIds.add(constraint.lineId);
+        case RoomEditorConstraintType.parallel:
+          break;
       }
     }
     return lines.every((line) => lineLengthIds.contains(line.id)) &&

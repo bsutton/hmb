@@ -5,7 +5,13 @@
 
 import 'entity.dart';
 
-enum PlasterConstraintType { lineLength, horizontal, vertical, jointAngle }
+enum PlasterConstraintType {
+  lineLength,
+  horizontal,
+  vertical,
+  jointAngle,
+  parallel,
+}
 
 class PlasterRoomConstraint extends Entity<PlasterRoomConstraint> {
   final int roomId;

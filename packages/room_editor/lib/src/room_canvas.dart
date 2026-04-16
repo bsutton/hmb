@@ -636,9 +636,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
     }
 
     if (uniqueCandidates.isEmpty) {
-      if (transform.hitPolygon(localPosition)) {
-        await widget.callbacks.onTapCeiling();
-      }
+      await widget.callbacks.onTapCeiling();
       return;
     }
 
@@ -767,9 +765,9 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
                 selectionMode: widget.selectionMode,
                 showGrid: widget.showGrid,
                 constraintVisuals: constraintVisuals,
-                selectedLineIndex: widget.selection.selectedLineIndex,
-                selectedIntersectionIndex:
-                    widget.selection.selectedIntersectionIndex,
+                selectedLineIndices: widget.selection.selectedLineIndices,
+                selectedIntersectionIndices:
+                    widget.selection.selectedIntersectionIndices,
                 selectedOpeningIndex: widget.selection.selectedOpeningIndex,
               ),
             ),
@@ -786,8 +784,8 @@ class _RoomPainter extends CustomPainter {
   final bool selectionMode;
   final bool showGrid;
   final List<_ConstraintVisual> constraintVisuals;
-  final int? selectedLineIndex;
-  final int? selectedIntersectionIndex;
+  final Set<int> selectedLineIndices;
+  final Set<int> selectedIntersectionIndices;
   final int? selectedOpeningIndex;
 
   RoomEditorBundle get bundle => document.bundle;
@@ -798,8 +796,8 @@ class _RoomPainter extends CustomPainter {
     required this.selectionMode,
     required this.showGrid,
     required this.constraintVisuals,
-    required this.selectedLineIndex,
-    required this.selectedIntersectionIndex,
+    required this.selectedLineIndices,
+    required this.selectedIntersectionIndices,
     required this.selectedOpeningIndex,
   });
 
@@ -839,8 +837,8 @@ class _RoomPainter extends CustomPainter {
       final start = transform.toCanvasPoint(line.startX, line.startY);
       final endPoint = RoomCanvasGeometry.lineEnd(lines, i);
       final end = transform.toCanvasPoint(endPoint.x, endPoint.y);
-      final isSelected = selectedLineIndex == i;
-      final isSelectedIntersection = selectedIntersectionIndex == i;
+      final isSelected = selectedLineIndices.contains(i);
+      final isSelectedIntersection = selectedIntersectionIndices.contains(i);
       final paint = Paint()
         ..color = isSelected
             ? Colors.orange
@@ -1094,8 +1092,13 @@ class _RoomPainter extends CustomPainter {
       oldDelegate.selectionMode != selectionMode ||
       oldDelegate.showGrid != showGrid ||
       oldDelegate.constraintVisuals != constraintVisuals ||
-      oldDelegate.selectedLineIndex != selectedLineIndex ||
-      oldDelegate.selectedIntersectionIndex != selectedIntersectionIndex ||
+      oldDelegate.selectedLineIndices.length != selectedLineIndices.length ||
+      !oldDelegate.selectedLineIndices.containsAll(selectedLineIndices) ||
+      oldDelegate.selectedIntersectionIndices.length !=
+          selectedIntersectionIndices.length ||
+      !oldDelegate.selectedIntersectionIndices.containsAll(
+        selectedIntersectionIndices,
+      ) ||
       oldDelegate.selectedOpeningIndex != selectedOpeningIndex;
 }
 
@@ -1406,23 +1409,22 @@ List<_ConstraintVisual> buildConstraintVisuals({
     if (showAllConstraints) {
       return true;
     }
-    if (selection.selectedLineIndex != null &&
-        selection.selectedLineIndex! >= 0 &&
-        selection.selectedLineIndex! < lines.length) {
-      final selectedLine = lines[selection.selectedLineIndex!];
-      if (selectedLine.id == constraint.lineId &&
-          constraint.type != RoomEditorConstraintType.jointAngle) {
-        return true;
-      }
+    final selectedLineIds = {
+      for (final index in selection.selectedLineIndices)
+        if (index >= 0 && index < lines.length) lines[index].id,
+    };
+    if ((selectedLineIds.contains(constraint.lineId) ||
+            selectedLineIds.contains(constraint.targetValue)) &&
+        constraint.type != RoomEditorConstraintType.jointAngle) {
+      return true;
     }
-    if (selection.selectedIntersectionIndex != null &&
-        selection.selectedIntersectionIndex! >= 0 &&
-        selection.selectedIntersectionIndex! < lines.length) {
-      final selectedIntersection = lines[selection.selectedIntersectionIndex!];
-      if (selectedIntersection.id == constraint.lineId &&
-          constraint.type == RoomEditorConstraintType.jointAngle) {
-        return true;
-      }
+    final selectedIntersectionIds = {
+      for (final index in selection.selectedIntersectionIndices)
+        if (index >= 0 && index < lines.length) lines[index].id,
+    };
+    if (selectedIntersectionIds.contains(constraint.lineId) &&
+        constraint.type == RoomEditorConstraintType.jointAngle) {
+      return true;
     }
     return false;
   });
@@ -1498,11 +1500,14 @@ List<_ConstraintVisual> buildConstraintVisuals({
         );
       case RoomEditorConstraintType.horizontal:
       case RoomEditorConstraintType.vertical:
+      case RoomEditorConstraintType.parallel:
         final anchorWorld = (startWorld + endWorld) / 2;
         final tangentShift =
             constraint.type == RoomEditorConstraintType.horizontal
             ? tangent * tangentShiftDistance
-            : -tangent * tangentShiftDistance;
+            : constraint.type == RoomEditorConstraintType.vertical
+            ? -tangent * tangentShiftDistance
+            : Offset.zero;
         final offsetWorld =
             customOffsets[key] ??
             (outsideNormal * transform.worldDistanceForCanvasDistance(42)) +
@@ -1518,9 +1523,12 @@ List<_ConstraintVisual> buildConstraintVisuals({
             anchorWorld: anchorWorld,
             center: center,
             hitBox: Rect.fromCenter(center: center, width: 26, height: 26),
-            badgeText: constraint.type == RoomEditorConstraintType.horizontal
-                ? '—'
-                : '|',
+            badgeText: switch (constraint.type) {
+              RoomEditorConstraintType.horizontal => '—',
+              RoomEditorConstraintType.vertical => '|',
+              RoomEditorConstraintType.parallel => '||',
+              _ => null,
+            },
           ),
         );
       case RoomEditorConstraintType.jointAngle:

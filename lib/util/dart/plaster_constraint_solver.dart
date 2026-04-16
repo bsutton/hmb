@@ -4,10 +4,9 @@
 
 import 'dart:math';
 
-import 'package:room_editor/room_editor.dart';
-
 import '../../entity/plaster_room_constraint.dart';
 import '../../entity/plaster_room_line.dart';
+import 'plaster_constraint_violation.dart';
 import 'plaster_geometry.dart';
 
 class PlasterSolveResult {
@@ -24,8 +23,6 @@ class PlasterSolveResult {
   });
 }
 
-
-
 class PlasterConstraintSolver {
   static const _maxIterations = 80;
   // The iterative solver operates in double space and should converge a bit
@@ -33,9 +30,8 @@ class PlasterConstraintSolver {
   static const _solverPositionTolerance = 0.75;
   // Room geometry is persisted as integer minor units, so the final snapped
   // result needs to tolerate a one-unit residual after rounding.
-  static const _snappedGeometryTolerance = 1.0;
+
   static const _angleToleranceRadians = pi / 1800;
-  static const _angleToleranceDegrees = 1.5;
 
   static const jointAngleUnitsPerDegree = 1000;
 
@@ -114,6 +110,23 @@ class PlasterConstraintSolver {
                 points[lineIndex],
                 points[nextIndex],
                 angleValueToDegrees(constraint.targetValue ?? 90000) * pi / 180,
+              ),
+            );
+          case PlasterConstraintType.parallel:
+            final targetLineIndex = lines.indexWhere(
+              (line) => line.id == constraint.targetValue,
+            );
+            if (targetLineIndex == -1) {
+              continue;
+            }
+            final targetNextIndex = (targetLineIndex + 1) % points.length;
+            maxError = max(
+              maxError,
+              _enforceParallel(
+                points[lineIndex],
+                points[nextIndex],
+                points[targetLineIndex],
+                points[targetNextIndex],
               ),
             );
         }
@@ -278,6 +291,61 @@ class PlasterConstraintSolver {
     return error.abs() * 100;
   }
 
+  static double _enforceParallel(
+    _MutablePoint a,
+    _MutablePoint b,
+    _MutablePoint targetA,
+    _MutablePoint targetB,
+  ) {
+    final targetDx = targetB.x - targetA.x;
+    final targetDy = targetB.y - targetA.y;
+    final targetLength = sqrt(targetDx * targetDx + targetDy * targetDy);
+    final currentDx = b.x - a.x;
+    final currentDy = b.y - a.y;
+    final currentLength = sqrt(currentDx * currentDx + currentDy * currentDy);
+    if (targetLength == 0 || currentLength == 0) {
+      return 0;
+    }
+    final targetUnitX = targetDx / targetLength;
+    final targetUnitY = targetDy / targetLength;
+    final dot = currentDx * targetUnitX + currentDy * targetUnitY;
+    final sign = dot >= 0 ? 1.0 : -1.0;
+    final desiredDx = targetUnitX * currentLength * sign;
+    final desiredDy = targetUnitY * currentLength * sign;
+    final desiredEndX = a.x + desiredDx;
+    final desiredEndY = a.y + desiredDy;
+    final desiredStartX = b.x - desiredDx;
+    final desiredStartY = b.y - desiredDy;
+    final error = min(
+      sqrt(
+        (b.x - desiredEndX) * (b.x - desiredEndX) +
+            (b.y - desiredEndY) * (b.y - desiredEndY),
+      ),
+      sqrt(
+        (a.x - desiredStartX) * (a.x - desiredStartX) +
+            (a.y - desiredStartY) * (a.y - desiredStartY),
+      ),
+    );
+
+    if (!a.pinned && !b.pinned) {
+      a
+        ..x = (a.x + desiredStartX) / 2
+        ..y = (a.y + desiredStartY) / 2;
+      b
+        ..x = (b.x + desiredEndX) / 2
+        ..y = (b.y + desiredEndY) / 2;
+    } else if (a.pinned && !b.pinned) {
+      b
+        ..x = desiredEndX
+        ..y = desiredEndY;
+    } else if (!a.pinned && b.pinned) {
+      a
+        ..x = desiredStartX
+        ..y = desiredStartY;
+    }
+    return error;
+  }
+
   static _MutablePoint _rotate(_MutablePoint point, double radians) {
     final cosAngle = cos(radians);
     final sinAngle = sin(radians);
@@ -307,7 +375,6 @@ class PlasterConstraintSolver {
     final cross = a.x * b.y - a.y * b.x;
     return atan2(cross.abs(), dot) * 180 / pi;
   }
-
 }
 
 class _MutablePoint {

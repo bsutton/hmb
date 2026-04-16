@@ -1,6 +1,14 @@
+import 'dart:math';
+
 import '../../entity/plaster_room_constraint.dart';
+import '../../entity/plaster_room_line.dart';
+import 'plaster_constraint_solver.dart';
+import 'plaster_geometry.dart';
 
 class PlasterConstraintViolation {
+  static const _snappedGeometryTolerance = 1.0;
+  static const _angleToleranceDegrees = 1.5;
+
   final PlasterRoomConstraint constraint;
   final int lineIndex;
   final double error;
@@ -17,9 +25,10 @@ class PlasterConstraintViolation {
         PlasterConstraintType.horizontal => error <= _snappedGeometryTolerance,
         PlasterConstraintType.vertical => error <= _snappedGeometryTolerance,
         PlasterConstraintType.jointAngle => error <= _angleToleranceDegrees,
+        PlasterConstraintType.parallel => error <= _angleToleranceDegrees,
       };
 
-  static List<PlasterConstraintViolation> _constraintViolations(
+  static List<PlasterConstraintViolation> constraintViolations(
     List<PlasterRoomLine> lines,
     List<PlasterRoomConstraint> constraints,
   ) {
@@ -44,10 +53,25 @@ class PlasterConstraintViolation {
         case PlasterConstraintType.vertical:
           error = (line.startX - end.x).abs().toDouble();
         case PlasterConstraintType.jointAngle:
-          final actualAngle = currentAngleValue(lines, lineIndex);
+          final actualAngle = PlasterConstraintSolver.currentAngleValue(
+            lines,
+            lineIndex,
+          );
           error =
               (actualAngle - (constraint.targetValue ?? actualAngle)).abs() /
-              jointAngleUnitsPerDegree;
+              PlasterConstraintSolver.jointAngleUnitsPerDegree;
+        case PlasterConstraintType.parallel:
+          final targetLineIndex = lines.indexWhere(
+            (line) => line.id == constraint.targetValue,
+          );
+          if (targetLineIndex == -1) {
+            continue;
+          }
+          final targetEnd = PlasterGeometry.lineEnd(lines, targetLineIndex);
+          final targetLine = lines[targetLineIndex];
+          final lineAngle = _lineAngle(line, end);
+          final targetAngle = _lineAngle(targetLine, targetEnd);
+          error = _parallelAngleErrorDegrees(lineAngle, targetAngle);
       }
       if (!_isConstraintSatisfied(constraint.type, error)) {
         violations.add(
@@ -71,5 +95,15 @@ class PlasterConstraintViolation {
     PlasterConstraintType.horizontal => error <= _snappedGeometryTolerance,
     PlasterConstraintType.vertical => error <= _snappedGeometryTolerance,
     PlasterConstraintType.jointAngle => error <= _angleToleranceDegrees,
+    PlasterConstraintType.parallel => error <= _angleToleranceDegrees,
   };
+
+  static double _lineAngle(PlasterRoomLine line, IntPoint end) =>
+      atan2((end.y - line.startY).toDouble(), (end.x - line.startX).toDouble());
+
+  static double _parallelAngleErrorDegrees(double left, double right) {
+    final difference = (left - right).abs();
+    final normalized = min(difference, (pi - difference).abs());
+    return normalized * 180 / pi;
+  }
 }

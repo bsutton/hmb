@@ -6,7 +6,13 @@ enum RoomEditorUnitSystem { metric, imperial }
 
 enum RoomEditorOpeningType { door, window }
 
-enum RoomEditorConstraintType { lineLength, horizontal, vertical, jointAngle }
+enum RoomEditorConstraintType {
+  lineLength,
+  horizontal,
+  vertical,
+  jointAngle,
+  parallel,
+}
 
 typedef RoomEditorMoveIntersectionCallback =
     void Function(int index, RoomEditorIntPoint point);
@@ -166,21 +172,45 @@ class RoomEditorOpeningDraft {
 }
 
 class RoomEditorSelection {
-  final int? selectedLineIndex;
-  final int? selectedIntersectionIndex;
+  final Set<int> selectedLineIndices;
+  final Set<int> selectedIntersectionIndices;
   final int? selectedOpeningIndex;
   final RoomEditorConstraintKey? selectedConstraintKey;
 
-  const RoomEditorSelection({
-    this.selectedLineIndex,
-    this.selectedIntersectionIndex,
+  RoomEditorSelection({
+    int? selectedLineIndex,
+    Iterable<int> selectedLineIndices = const <int>[],
+    int? selectedIntersectionIndex,
+    Iterable<int> selectedIntersectionIndices = const <int>[],
     this.selectedOpeningIndex,
     this.selectedConstraintKey,
-  });
+  }) : selectedLineIndices = {
+         if (selectedLineIndex != null) selectedLineIndex,
+         ...selectedLineIndices,
+       },
+       selectedIntersectionIndices = {
+         if (selectedIntersectionIndex != null) selectedIntersectionIndex,
+         ...selectedIntersectionIndices,
+       };
+
+  const RoomEditorSelection.empty()
+    : selectedLineIndices = const {},
+      selectedIntersectionIndices = const {},
+      selectedOpeningIndex = null,
+      selectedConstraintKey = null;
+
+  int? get selectedLineIndex =>
+      selectedLineIndices.length == 1 ? selectedLineIndices.first : null;
+
+  int? get selectedIntersectionIndex => selectedIntersectionIndices.length == 1
+      ? selectedIntersectionIndices.first
+      : null;
 }
 
 class RoomEditorSelectionController extends ValueNotifier<RoomEditorSelection> {
-  RoomEditorSelectionController([super.value = const RoomEditorSelection()]);
+  RoomEditorSelectionController([
+    super.value = const RoomEditorSelection.empty(),
+  ]);
 }
 
 class RoomEditorHistory {

@@ -40,12 +40,11 @@ class RoomEditorWorkspace extends StatefulWidget {
 
 class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   late RoomEditorDocument _document;
-  var _selectionMode = false;
   var _snapToGrid = true;
   var _showGrid = true;
   var _showAllConstraints = false;
   var _fitCanvasRequest = 0;
-  var _selection = const RoomEditorSelection();
+  var _selection = const RoomEditorSelection.empty();
   RoomEditorDocument? _gestureBaseDocument;
   var _localHistory = const RoomEditorHistory();
   late final RoomEditorSolverScheduler _dragSolverScheduler;
@@ -67,6 +66,10 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   RoomEditorHistory get _history => _historyController?.value ?? _localHistory;
   bool get _canUndo => _history.undoStack.isNotEmpty;
   bool get _canRedo => _history.redoStack.isNotEmpty;
+  Set<int> get _selectedLineIndices => _selection.selectedLineIndices;
+  Set<int> get _selectedIntersectionIndices =>
+      _selection.selectedIntersectionIndices;
+
   int? get _selectedWallIndex {
     final lineIndex = _selection.selectedLineIndex;
     if (lineIndex != null &&
@@ -74,6 +77,10 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         lineIndex < _bundle.lines.length) {
       return lineIndex;
     }
+    return null;
+  }
+
+  int? get _selectedIntersectionIndex {
     final intersectionIndex = _selection.selectedIntersectionIndex;
     if (intersectionIndex != null &&
         intersectionIndex >= 0 &&
@@ -89,7 +96,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     _document = widget.document;
     _focusNode = FocusNode(debugLabel: 'RoomEditorWorkspace');
     _selection = _normalizeSelection(
-      _externalSelectionController?.value ?? const RoomEditorSelection(),
+      _externalSelectionController?.value ?? const RoomEditorSelection.empty(),
       _document,
     );
     _constraintVisualOffsets = _pruneConstraintVisualOffsets(
@@ -124,7 +131,8 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       _highlightedConstraintKeys = {
         for (final key in _highlightedConstraintKeys)
           if (_document.constraints.any(
-            (constraint) => RoomEditorConstraintKey.fromConstraint(constraint) == key,
+            (constraint) =>
+                RoomEditorConstraintKey.fromConstraint(constraint) == key,
           ))
             key,
       };
@@ -180,6 +188,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     RoomEditorConstraintType.horizontal => 'horizontal',
     RoomEditorConstraintType.vertical => 'vertical',
     RoomEditorConstraintType.jointAngle => 'angle',
+    RoomEditorConstraintType.parallel => 'parallel',
   };
 
   String _constraintOwnerLabel(RoomEditorConstraintKey key) {
@@ -213,18 +222,14 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     RoomEditorSelection selection,
     RoomEditorDocument document,
   ) => RoomEditorSelection(
-    selectedLineIndex:
-        selection.selectedLineIndex != null &&
-            selection.selectedLineIndex! >= 0 &&
-            selection.selectedLineIndex! < document.bundle.lines.length
-        ? selection.selectedLineIndex
-        : null,
-    selectedIntersectionIndex:
-        selection.selectedIntersectionIndex != null &&
-            selection.selectedIntersectionIndex! >= 0 &&
-            selection.selectedIntersectionIndex! < document.bundle.lines.length
-        ? selection.selectedIntersectionIndex
-        : null,
+    selectedLineIndices: {
+      for (final index in selection.selectedLineIndices)
+        if (index >= 0 && index < document.bundle.lines.length) index,
+    },
+    selectedIntersectionIndices: {
+      for (final index in selection.selectedIntersectionIndices)
+        if (index >= 0 && index < document.bundle.lines.length) index,
+    },
     selectedOpeningIndex:
         selection.selectedOpeningIndex != null &&
             selection.selectedOpeningIndex! >= 0 &&
@@ -255,6 +260,48 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         if (activeKeys.contains(entry.key)) entry.key: entry.value,
     };
   }
+
+  bool _areAdjacentLines(int first, int second) {
+    final count = _bundle.lines.length;
+    if (count < 2) {
+      return false;
+    }
+    return (first + 1) % count == second || (second + 1) % count == first;
+  }
+
+  int? _sharedIntersectionForSelectedLines() {
+    if (_selectedLineIndices.length != 2) {
+      return null;
+    }
+    final ordered = _selectedLineIndices.toList()..sort();
+    final first = ordered[0];
+    final second = ordered[1];
+    if (!_areAdjacentLines(first, second)) {
+      return null;
+    }
+    if ((first + 1) % _bundle.lines.length == second) {
+      return second;
+    }
+    return first;
+  }
+
+  int? get _joinTargetIntersectionIndex =>
+      _selectedIntersectionIndex ?? _sharedIntersectionForSelectedLines();
+
+  int? get _angleTargetIntersectionIndex => _joinTargetIntersectionIndex;
+
+  ({int first, int second})? get _parallelTargetLines {
+    if (_selectedLineIndices.length != 2) {
+      return null;
+    }
+    final ordered = _selectedLineIndices.toList()..sort();
+    return (first: ordered[0], second: ordered[1]);
+  }
+
+  bool get _canSplit => _selectedLineIndices.length == 1;
+  bool get _canJoin => _joinTargetIntersectionIndex != null;
+  bool get _canSetAngle => _angleTargetIntersectionIndex != null;
+  bool get _canSetParallel => _parallelTargetLines != null;
 
   List<RoomEditorConstraint> _constraintsWithoutLineType(
     List<RoomEditorConstraint> constraints,
@@ -398,8 +445,11 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     RoomEditorIntPoint? pinnedVertexTarget,
     String? failureMessage,
   }) async {
-    final requestedViolations = RoomEditorConstraintViolation
-        .constraintViolations(document.bundle.lines, document.constraints);
+    final requestedViolations =
+        RoomEditorConstraintViolation.constraintViolations(
+          document.bundle.lines,
+          document.constraints,
+        );
     final result = _solveDocument(
       document,
       pinnedVertexIndex: pinnedVertexIndex,
@@ -428,6 +478,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   }
 
   void _beginGestureEdit() {
+    _clearHighlightedConstraints();
     _gestureBaseDocument ??= _document;
     _draggedIntersectionIndex = null;
     _draggedIntersectionTarget = null;
@@ -651,23 +702,24 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     if (messenger == null) {
       return;
     }
-    final details = result.violations.take(3).map((violation) {
-      final key = RoomEditorConstraintKey.fromConstraint(violation.constraint);
-      final ownerLabel = _constraintOwnerLabel(key);
-      final constraintLabel = _constraintLabel(violation.constraint.type);
-      return '$constraintLabel on $ownerLabel';
-    }).join(', ');
+    final details = result.violations
+        .take(3)
+        .map((violation) {
+          final key = RoomEditorConstraintKey.fromConstraint(
+            violation.constraint,
+          );
+          final ownerLabel = _constraintOwnerLabel(key);
+          final constraintLabel = _constraintLabel(violation.constraint.type);
+          return '$constraintLabel on $ownerLabel';
+        })
+        .join(', ');
     final message = details.isEmpty
-        ? (failureMessage ?? 'This action conflicts with the current constraints.')
+        ? (failureMessage ??
+              'This action conflicts with the current constraints.')
         : '${failureMessage ?? 'Blocked by current constraints'}: $details.';
     messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: const Duration(seconds: 4),
-        ),
-      );
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _formatPoint(RoomEditorIntPoint? point) =>
@@ -889,7 +941,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   }
 
   Future<void> _joinSelectedIntersectionLocally() async {
-    final intersectionIndex = _selection.selectedIntersectionIndex;
+    final intersectionIndex = _joinTargetIntersectionIndex;
     if (intersectionIndex == null) {
       return;
     }
@@ -912,7 +964,8 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         bundle: _bundle.copyWith(lines: updatedLines),
         constraints: constraints,
       ),
-      failureMessage: 'This corner cannot be removed with the current constraints',
+      failureMessage:
+          'This corner cannot be removed with the current constraints',
     );
     if (!solved) {
       return;
@@ -1151,8 +1204,8 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     );
   }
 
-  Future<void> _emitAngleCommand() async {
-    final intersectionIndex = _selection.selectedIntersectionIndex;
+  Future<void> _emitAngleCommand({int? fixedAngle}) async {
+    final intersectionIndex = _angleTargetIntersectionIndex;
     if (intersectionIndex == null) {
       return;
     }
@@ -1162,15 +1215,17 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       type: RoomEditorConstraintType.jointAngle,
     );
     final angleConstraint = _constraintForKey(key);
-    final angle = await showRoomEditorAngleDialog(
-      context: context,
-      initialValue:
-          angleConstraint?.targetValue ??
-          RoomEditorConstraintSolver.currentAngleValue(
-            _bundle.lines,
-            intersectionIndex,
-          ),
-    );
+    final angle =
+        fixedAngle ??
+        await showRoomEditorAngleDialog(
+          context: context,
+          initialValue:
+              angleConstraint?.targetValue ??
+              RoomEditorConstraintSolver.currentAngleValue(
+                _bundle.lines,
+                intersectionIndex,
+              ),
+        );
     if (angle == null || !mounted) {
       return;
     }
@@ -1201,6 +1256,33 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     );
   }
 
+  Future<void> _setParallelConstraint() async {
+    final pair = _parallelTargetLines;
+    if (pair == null) {
+      return;
+    }
+    final sourceLine = _bundle.lines[pair.first];
+    final targetLine = _bundle.lines[pair.second];
+    final key = RoomEditorConstraintKey(
+      lineId: sourceLine.id,
+      type: RoomEditorConstraintType.parallel,
+    );
+    final constraints = _upsertConstraint(
+      _document.constraints,
+      RoomEditorConstraint(
+        lineId: sourceLine.id,
+        type: RoomEditorConstraintType.parallel,
+        targetValue: targetLine.id,
+      ),
+    );
+    final solved = await _trySolveAndCommit(
+      _document.copyWith(constraints: constraints),
+    );
+    if (solved && mounted) {
+      _selectConstraint(key);
+    }
+  }
+
   Widget _buildToolbar({
     required bool vertical,
     required bool wrap,
@@ -1209,9 +1291,6 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   }) {
     final effectiveLineIndex = _selectedWallIndex;
     final hasLine = effectiveLineIndex != null;
-    final hasIntersection =
-        _selection.selectedIntersectionIndex != null &&
-        _selection.selectedIntersectionIndex! < _bundle.lines.length;
     final hasOpening =
         _selection.selectedOpeningIndex != null &&
         _selection.selectedOpeningIndex! < _bundle.openings.length;
@@ -1240,8 +1319,8 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
               constraint.lineId == selectedLine.id &&
               constraint.type == RoomEditorConstraintType.vertical,
         );
-    final selectedIntersectionLine = hasIntersection
-        ? _bundle.lines[_selection.selectedIntersectionIndex!]
+    final selectedIntersectionLine = _angleTargetIntersectionIndex != null
+        ? _bundle.lines[_angleTargetIntersectionIndex!]
         : null;
     final hasAngleConstraint =
         selectedIntersectionLine != null &&
@@ -1252,27 +1331,30 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         );
     final actions = buildRoomEditorToolbarActions(
       state: RoomEditorToolbarState(
-        selectionMode: _selectionMode,
         snapToGrid: _snapToGrid,
         showGrid: _showGrid,
-        hasLine: hasLine,
-        hasIntersection: hasIntersection,
+        selectedLineCount: _selectedLineIndices.length,
+        selectedIntersectionCount: _selectedIntersectionIndices.length,
         hasOpening: hasOpening,
+        canSplit: _canSplit,
+        canJoin: _canJoin,
         hasLineLengthConstraint: hasLineLengthConstraint,
         hasHorizontalConstraint: hasHorizontalConstraint,
         hasVerticalConstraint: hasVerticalConstraint,
         hasAngleConstraint: hasAngleConstraint,
+        canSetAngle: _canSetAngle,
+        canSetRightAngle: _canSetAngle,
+        canSetParallel: _canSetParallel,
         showAllConstraints: _showAllConstraints,
-        isSelectedLinePlaster: selectedLine?.plasterSelected ?? false,
+        areSelectedLinesIncluded:
+            _selectedLineIndices.isNotEmpty &&
+            _selectedLineIndices.every(
+              (index) => _bundle.lines[index].plasterSelected,
+            ),
         isSelectedOpeningDoor:
             selectedOpening?.type == RoomEditorOpeningType.door,
       ),
       callbacks: RoomEditorToolbarCallbacks(
-        onToggleSelectionMode: () =>
-            setState(() {
-              _clearHighlightedConstraintsState();
-              _selectionMode = !_selectionMode;
-            }),
         onUndo: _canUndo ? _undoLocally : null,
         onRedo: _canRedo ? _redoLocally : null,
         onFit: () => setState(() {
@@ -1289,9 +1371,9 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         }),
         onDeselect: () {
           _clearHighlightedConstraints();
-          _setSelection(const RoomEditorSelection());
+          _setSelection(const RoomEditorSelection.empty());
         },
-        onSplit: hasLine
+        onSplit: _canSplit
             ? () {
                 _clearHighlightedConstraints();
                 unawaited(_splitSelectedLineLocally());
@@ -1321,14 +1403,17 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
                 _emitCommand(RoomEditorCommandType.deleteOpening);
               }
             : null,
-        onToggleLinePlaster: hasLine
+        onToggleLinePlaster: _selectedLineIndices.isNotEmpty
             ? () {
                 _clearHighlightedConstraints();
                 final lines = List<RoomEditorLine>.from(_bundle.lines);
-                final line = lines[effectiveLineIndex];
-                lines[effectiveLineIndex] = line.copyWith(
-                  plasterSelected: !line.plasterSelected,
+                final include = !_selectedLineIndices.every(
+                  (index) => lines[index].plasterSelected,
                 );
+                for (final index in _selectedLineIndices) {
+                  final line = lines[index];
+                  lines[index] = line.copyWith(plasterSelected: include);
+                }
                 final next = _document.copyWith(
                   bundle: _bundle.copyWith(lines: lines),
                 );
@@ -1363,16 +1448,34 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
                 );
               }
             : null,
-        onJointAction: hasIntersection
+        onJointAction: _canJoin
             ? () {
                 _clearHighlightedConstraints();
                 unawaited(_joinSelectedIntersectionLocally());
               }
             : null,
-        onSetAngle: hasIntersection
+        onSetAngle: _canSetAngle
             ? () {
                 _clearHighlightedConstraints();
                 unawaited(_emitAngleCommand());
+              }
+            : null,
+        onSetRightAngle: _canSetAngle
+            ? () {
+                _clearHighlightedConstraints();
+                unawaited(
+                  _emitAngleCommand(
+                    fixedAngle: RoomEditorConstraintSolver.degreesToAngleValue(
+                      90,
+                    ),
+                  ),
+                );
+              }
+            : null,
+        onSetParallel: _canSetParallel
+            ? () {
+                _clearHighlightedConstraints();
+                unawaited(_setParallelConstraint());
               }
             : null,
         onToggleShowAllConstraints: () => setState(() {
@@ -1388,7 +1491,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
 
   Widget _buildCanvas() => RoomEditorCanvas(
     document: _document,
-    selectionMode: _selectionMode,
+    selectionMode: false,
     snapToGrid: _snapToGrid,
     showGrid: _showGrid,
     showAllConstraints: _showAllConstraints,
@@ -1399,7 +1502,6 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     callbacks: RoomEditorCanvasCallbacks(
       onStartMoveIntersection: _beginGestureEdit,
       onMoveIntersection: (index, point) {
-        _clearHighlightedConstraints();
         final target = _snapToGrid
             ? RoomCanvasGeometry.snapPoint(point, _bundle.unitSystem)
             : point;
@@ -1422,7 +1524,6 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       },
       onStartMoveLine: _beginGestureEdit,
       onMoveLine: (index, worldDelta) {
-        _clearHighlightedConstraints();
         final gridSize = RoomCanvasGeometry.defaultGridSize(_bundle.unitSystem);
         final delta = _snapToGrid
             ? Offset(
@@ -1437,7 +1538,6 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       },
       onStartMoveOpening: _beginGestureEdit,
       onMoveOpening: (index, point, anchorOffset) {
-        _clearHighlightedConstraints();
         _moveOpeningLocally(index, point, anchorOffset);
       },
       onEndMoveOpening: () async {
@@ -1445,7 +1545,11 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       },
       onTapIntersection: (index) async {
         _clearHighlightedConstraints();
-        _setSelection(RoomEditorSelection(selectedIntersectionIndex: index));
+        final next = Set<int>.from(_selectedIntersectionIndices);
+        if (!next.add(index)) {
+          next.remove(index);
+        }
+        _setSelection(RoomEditorSelection(selectedIntersectionIndices: next));
       },
       onTapOpening: (index) async {
         _clearHighlightedConstraints();
@@ -1453,26 +1557,15 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       },
       onTapLine: (index) async {
         _clearHighlightedConstraints();
-        _setSelection(RoomEditorSelection(selectedLineIndex: index));
-        if (_selectionMode) {
-          final lines = List<RoomEditorLine>.from(_bundle.lines);
-          final line = lines[index];
-          lines[index] = line.copyWith(plasterSelected: !line.plasterSelected);
-          final next = _document.copyWith(
-            bundle: _bundle.copyWith(lines: lines),
-          );
-          _commitDocument(next);
+        final next = Set<int>.from(_selectedLineIndices);
+        if (!next.add(index)) {
+          next.remove(index);
         }
+        _setSelection(RoomEditorSelection(selectedLineIndices: next));
       },
       onTapCeiling: () async {
         _clearHighlightedConstraints();
-        if (!_selectionMode) {
-          return;
-        }
-        final next = _document.copyWith(
-          bundle: _bundle.copyWith(plasterCeiling: !_bundle.plasterCeiling),
-        );
-        _commitDocument(next);
+        _setSelection(const RoomEditorSelection.empty());
       },
       onTapConstraint: (key) async {
         if (!_highlightedConstraintKeys.contains(key)) {

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import '../room_editor.dart';
 
 class RoomEditorConstraintViolation {
@@ -46,6 +48,18 @@ class RoomEditorConstraintViolation {
           error =
               (actualAngle - (constraint.targetValue ?? actualAngle)).abs() /
               RoomEditorConstraintSolver.jointAngleUnitsPerDegree;
+        case RoomEditorConstraintType.parallel:
+          final targetLineIndex = lines.indexWhere(
+            (line) => line.id == constraint.targetValue,
+          );
+          if (targetLineIndex == -1) {
+            continue;
+          }
+          final targetEnd = RoomCanvasGeometry.lineEnd(lines, targetLineIndex);
+          final targetLine = lines[targetLineIndex];
+          final lineAngle = _lineAngle(line, end);
+          final targetAngle = _lineAngle(targetLine, targetEnd);
+          error = _parallelAngleErrorDegrees(lineAngle, targetAngle);
       }
       if (!_isConstraintSatisfied(constraint.type, error)) {
         violations.add(
@@ -69,5 +83,15 @@ class RoomEditorConstraintViolation {
     RoomEditorConstraintType.horizontal => error <= _snappedGeometryTolerance,
     RoomEditorConstraintType.vertical => error <= _snappedGeometryTolerance,
     RoomEditorConstraintType.jointAngle => error <= _angleToleranceDegrees,
+    RoomEditorConstraintType.parallel => error <= _angleToleranceDegrees,
   };
+
+  static double _lineAngle(RoomEditorLine line, RoomEditorIntPoint end) =>
+      atan2((end.y - line.startY).toDouble(), (end.x - line.startX).toDouble());
+
+  static double _parallelAngleErrorDegrees(double left, double right) {
+    final difference = (left - right).abs();
+    final normalized = min(difference, (pi - difference).abs());
+    return normalized * 180 / pi;
+  }
 }

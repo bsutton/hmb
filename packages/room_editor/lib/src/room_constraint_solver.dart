@@ -113,6 +113,23 @@ class RoomEditorConstraintSolver {
                 angleValueToDegrees(constraint.targetValue ?? 90000) * pi / 180,
               ),
             );
+          case RoomEditorConstraintType.parallel:
+            final targetLineIndex = lines.indexWhere(
+              (line) => line.id == constraint.targetValue,
+            );
+            if (targetLineIndex == -1) {
+              continue;
+            }
+            final targetNextIndex = (targetLineIndex + 1) % points.length;
+            maxError = max(
+              maxError,
+              _enforceParallel(
+                points[lineIndex],
+                points[nextIndex],
+                points[targetLineIndex],
+                points[targetNextIndex],
+              ),
+            );
         }
       }
       _applyPinned(
@@ -417,6 +434,61 @@ class RoomEditorConstraintSolver {
       ..x = pivot.x + nextRotated.x
       ..y = pivot.y + nextRotated.y;
     return error.abs() * 100;
+  }
+
+  static double _enforceParallel(
+    MutablePoint a,
+    MutablePoint b,
+    MutablePoint targetA,
+    MutablePoint targetB,
+  ) {
+    final targetDx = targetB.x - targetA.x;
+    final targetDy = targetB.y - targetA.y;
+    final targetLength = sqrt(targetDx * targetDx + targetDy * targetDy);
+    final currentDx = b.x - a.x;
+    final currentDy = b.y - a.y;
+    final currentLength = sqrt(currentDx * currentDx + currentDy * currentDy);
+    if (targetLength == 0 || currentLength == 0) {
+      return 0;
+    }
+    final targetUnitX = targetDx / targetLength;
+    final targetUnitY = targetDy / targetLength;
+    final dot = currentDx * targetUnitX + currentDy * targetUnitY;
+    final sign = dot >= 0 ? 1.0 : -1.0;
+    final desiredDx = targetUnitX * currentLength * sign;
+    final desiredDy = targetUnitY * currentLength * sign;
+    final desiredEndX = a.x + desiredDx;
+    final desiredEndY = a.y + desiredDy;
+    final desiredStartX = b.x - desiredDx;
+    final desiredStartY = b.y - desiredDy;
+    final error = min(
+      sqrt(
+        (b.x - desiredEndX) * (b.x - desiredEndX) +
+            (b.y - desiredEndY) * (b.y - desiredEndY),
+      ),
+      sqrt(
+        (a.x - desiredStartX) * (a.x - desiredStartX) +
+            (a.y - desiredStartY) * (a.y - desiredStartY),
+      ),
+    );
+
+    if (!a.pinned && !b.pinned) {
+      a
+        ..x = (a.x + desiredStartX) / 2
+        ..y = (a.y + desiredStartY) / 2;
+      b
+        ..x = (b.x + desiredEndX) / 2
+        ..y = (b.y + desiredEndY) / 2;
+    } else if (a.pinned && !b.pinned) {
+      b
+        ..x = desiredEndX
+        ..y = desiredEndY;
+    } else if (!a.pinned && b.pinned) {
+      a
+        ..x = desiredStartX
+        ..y = desiredStartY;
+    }
+    return error;
   }
 
   static MutablePoint _rotate(MutablePoint point, double radians) {

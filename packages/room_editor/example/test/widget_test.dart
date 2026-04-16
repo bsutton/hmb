@@ -16,7 +16,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final selectionController = RoomEditorSelectionController(
-      const RoomEditorSelection(selectedLineIndex: 0),
+      RoomEditorSelection(selectedLineIndex: 0),
     );
     final document = RoomEditorDocument(
       bundle: buildRoomEditorBundle(

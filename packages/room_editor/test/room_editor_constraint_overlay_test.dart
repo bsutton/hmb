@@ -6,7 +6,7 @@ void main() {
   test('selected line exposes visible constraint overlays', () {
     final visuals = debugDescribeConstraintVisuals(
       document: _document,
-      selection: const RoomEditorSelection(selectedLineIndex: 3),
+      selection: RoomEditorSelection(selectedLineIndex: 3),
       showAllConstraints: false,
       size: const Size(900, 700),
     );
@@ -29,7 +29,7 @@ void main() {
     () {
       final visuals = debugDescribeConstraintVisuals(
         document: _document,
-        selection: const RoomEditorSelection(),
+        selection: const RoomEditorSelection.empty(),
         showAllConstraints: true,
         size: const Size(900, 700),
       );

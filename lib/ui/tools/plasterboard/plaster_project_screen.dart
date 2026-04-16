@@ -1131,6 +1131,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           PlasterConstraintType.vertical => RoomEditorConstraintType.vertical,
           PlasterConstraintType.jointAngle =>
             RoomEditorConstraintType.jointAngle,
+          PlasterConstraintType.parallel => RoomEditorConstraintType.parallel,
         },
         targetValue: constraint.targetValue,
       ),
@@ -1202,6 +1203,9 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             'with the current constraints.',
       RoomEditorConstraintType.jointAngle =>
         'This joint cannot keep its current angle constraint.',
+      RoomEditorConstraintType.parallel =>
+        'These lines cannot remain parallel '
+            'with the current constraints.',
     };
   }
 
@@ -1709,6 +1713,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
     RoomEditorConstraintType.horizontal => PlasterConstraintType.horizontal,
     RoomEditorConstraintType.vertical => PlasterConstraintType.vertical,
     RoomEditorConstraintType.jointAngle => PlasterConstraintType.jointAngle,
+    RoomEditorConstraintType.parallel => PlasterConstraintType.parallel,
   };
 
   _RoomBundle _fromEditorDocument(
@@ -1720,6 +1725,23 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
           for (final constraint in base.constraints)
             (constraint.lineId, constraint.type): constraint,
         };
+    final constraints = <PlasterRoomConstraint>[];
+    for (final constraint in document.constraints) {
+      final type = _fromEditorConstraintType(constraint.type);
+      final existing = existingConstraintsByKey[(constraint.lineId, type)];
+      constraints.add(
+        existing?.copyWith(
+              targetValue: constraint.targetValue,
+              clearTargetValue: constraint.targetValue == null,
+            ) ??
+            PlasterRoomConstraint.forInsert(
+              roomId: base.room.id,
+              lineId: constraint.lineId,
+              type: type,
+              targetValue: constraint.targetValue,
+            ),
+      );
+    }
 
     return base.copyWith(
       room: base.room.copyWith(plasterCeiling: document.bundle.plasterCeiling),
@@ -1742,24 +1764,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             sillHeight: document.bundle.openings[i].sillHeight,
           ),
       ],
-      constraints: [
-        for (final constraint in document.constraints)
-          (() {
-            final type = _fromEditorConstraintType(constraint.type);
-            final existing =
-                existingConstraintsByKey[(constraint.lineId, type)];
-            return existing?.copyWith(
-                  targetValue: constraint.targetValue,
-                  clearTargetValue: constraint.targetValue == null,
-                ) ??
-                PlasterRoomConstraint.forInsert(
-                  roomId: base.room.id,
-                  lineId: constraint.lineId,
-                  type: type,
-                  targetValue: constraint.targetValue,
-                );
-          })(),
-      ],
+      constraints: constraints,
     );
   }
 
