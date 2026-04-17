@@ -178,6 +178,14 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     setState(_clearHighlightedConstraintsState);
   }
 
+  Set<RoomEditorConstraintKey> _constraintKeysForViolations(
+    List<RoomEditorConstraintViolation> violations, {
+    int limit = 3,
+  }) => {
+    for (final violation in violations.take(limit))
+      RoomEditorConstraintKey.fromConstraint(violation.constraint),
+  };
+
   int? _lineIndexForConstraintKey(RoomEditorConstraintKey key) {
     final index = _bundle.lines.indexWhere((line) => line.id == key.lineId);
     return index >= 0 ? index : null;
@@ -653,11 +661,16 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       return;
     }
     _rigidDragNotificationShownForGesture = true;
+    final attemptedDocument = _attemptedDocumentForDragResult(result);
     setState(() {
-      _highlightedConstraintKeys = {
-        for (final constraint in _document.constraints)
-          RoomEditorConstraintKey.fromConstraint(constraint),
-      };
+      _highlightedConstraintKeys = attemptedDocument == null
+          ? {}
+          : _constraintKeysForViolations(
+              RoomEditorConstraintViolation.constraintViolations(
+                attemptedDocument.bundle.lines,
+                attemptedDocument.constraints,
+              ),
+            );
     });
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) {
@@ -693,10 +706,9 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     String? failureMessage,
   }) {
     setState(() {
-      _highlightedConstraintKeys = {
-        for (final violation in result.violations.take(3))
-          RoomEditorConstraintKey.fromConstraint(violation.constraint),
-      };
+      _highlightedConstraintKeys = _constraintKeysForViolations(
+        result.violations,
+      );
     });
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) {
@@ -720,6 +732,22 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  RoomEditorDocument? _attemptedDocumentForDragResult(
+    RoomEditorDragSolveResult result,
+  ) {
+    final request = result.request;
+    final source = request.gestureBaseDocument ?? request.currentDocument;
+    final lines = List<RoomEditorLine>.from(source.bundle.lines);
+    if (request.movedIndex < 0 || request.movedIndex >= lines.length) {
+      return null;
+    }
+    lines[request.movedIndex] = lines[request.movedIndex].copyWith(
+      startX: request.movedTarget.x,
+      startY: request.movedTarget.y,
+    );
+    return source.copyWith(bundle: source.bundle.copyWith(lines: lines));
   }
 
   String _formatPoint(RoomEditorIntPoint? point) =>
@@ -1537,9 +1565,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         await _commitGestureEdit();
       },
       onStartMoveOpening: _beginGestureEdit,
-      onMoveOpening: (index, point, anchorOffset) {
-        _moveOpeningLocally(index, point, anchorOffset);
-      },
+      onMoveOpening: _moveOpeningLocally,
       onEndMoveOpening: () async {
         await _commitGestureEdit();
       },

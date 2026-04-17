@@ -765,6 +765,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
                 selectionMode: widget.selectionMode,
                 showGrid: widget.showGrid,
                 constraintVisuals: constraintVisuals,
+                highlightedConstraintKeys: widget.highlightedConstraintKeys,
                 selectedLineIndices: widget.selection.selectedLineIndices,
                 selectedIntersectionIndices:
                     widget.selection.selectedIntersectionIndices,
@@ -784,6 +785,7 @@ class _RoomPainter extends CustomPainter {
   final bool selectionMode;
   final bool showGrid;
   final List<_ConstraintVisual> constraintVisuals;
+  final Set<RoomEditorConstraintKey> highlightedConstraintKeys;
   final Set<int> selectedLineIndices;
   final Set<int> selectedIntersectionIndices;
   final int? selectedOpeningIndex;
@@ -796,6 +798,7 @@ class _RoomPainter extends CustomPainter {
     required this.selectionMode,
     required this.showGrid,
     required this.constraintVisuals,
+    required this.highlightedConstraintKeys,
     required this.selectedLineIndices,
     required this.selectedIntersectionIndices,
     required this.selectedOpeningIndex,
@@ -831,22 +834,48 @@ class _RoomPainter extends CustomPainter {
     final visibleConstraintKeys = {
       for (final visual in constraintVisuals) visual.key,
     };
+    final fullyConstrained = _isDocumentFullyConstrained(document);
+    final highlightedLineIds = <int>{
+      for (final key in highlightedConstraintKeys) key.lineId,
+    };
+    for (final key in highlightedConstraintKeys) {
+      if (key.type != RoomEditorConstraintType.parallel) {
+        continue;
+      }
+      for (final constraint in document.constraints) {
+        if (RoomEditorConstraintKey.fromConstraint(constraint) != key) {
+          continue;
+        }
+        final targetLineId = constraint.targetValue;
+        if (targetLineId != null) {
+          highlightedLineIds.add(targetLineId);
+        }
+        break;
+      }
+    }
+    final baseLineColor = fullyConstrained ? Colors.black : Colors.blue;
 
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i];
       final start = transform.toCanvasPoint(line.startX, line.startY);
       final endPoint = RoomCanvasGeometry.lineEnd(lines, i);
       final end = transform.toCanvasPoint(endPoint.x, endPoint.y);
+      final isHighlighted = highlightedLineIds.contains(line.id);
       final isSelected = selectedLineIndices.contains(i);
       final isSelectedIntersection = selectedIntersectionIndices.contains(i);
-      final paint = Paint()
-        ..color = isSelected
-            ? Colors.orange
-            : (line.plasterSelected ? Colors.blue : Colors.grey)
-        ..strokeWidth = isSelected ? 5 : 3;
-      final vertexColor = isSelectedIntersection
+      final effectiveLineColor = isHighlighted
+          ? const Color(0xFFFF6B6B)
+          : isSelected
           ? Colors.orange
-          : (line.plasterSelected ? Colors.blue : Colors.grey);
+          : baseLineColor;
+      final paint = Paint()
+        ..color = effectiveLineColor
+        ..strokeWidth = isSelected ? 5 : 3;
+      final vertexColor = isHighlighted
+          ? const Color(0xFFFF6B6B)
+          : isSelectedIntersection
+          ? Colors.orange
+          : baseLineColor;
       canvas
         ..drawLine(start, end, paint)
         ..drawCircle(
@@ -1092,6 +1121,11 @@ class _RoomPainter extends CustomPainter {
       oldDelegate.selectionMode != selectionMode ||
       oldDelegate.showGrid != showGrid ||
       oldDelegate.constraintVisuals != constraintVisuals ||
+      oldDelegate.highlightedConstraintKeys.length !=
+          highlightedConstraintKeys.length ||
+      !oldDelegate.highlightedConstraintKeys.containsAll(
+        highlightedConstraintKeys,
+      ) ||
       oldDelegate.selectedLineIndices.length != selectedLineIndices.length ||
       !oldDelegate.selectedLineIndices.containsAll(selectedLineIndices) ||
       oldDelegate.selectedIntersectionIndices.length !=
@@ -1100,6 +1134,34 @@ class _RoomPainter extends CustomPainter {
         selectedIntersectionIndices,
       ) ||
       oldDelegate.selectedOpeningIndex != selectedOpeningIndex;
+}
+
+bool _isDocumentFullyConstrained(RoomEditorDocument document) {
+  final lines = document.bundle.lines;
+  if (lines.isEmpty) {
+    return false;
+  }
+  final lineLengthIds = <int>{};
+  final orientedIds = <int>{};
+  final angleIds = <int>{};
+  for (final constraint in document.constraints) {
+    switch (constraint.type) {
+      case RoomEditorConstraintType.lineLength:
+        lineLengthIds.add(constraint.lineId);
+      case RoomEditorConstraintType.horizontal:
+      case RoomEditorConstraintType.vertical:
+      case RoomEditorConstraintType.parallel:
+        orientedIds.add(constraint.lineId);
+      case RoomEditorConstraintType.jointAngle:
+        angleIds.add(constraint.lineId);
+    }
+  }
+  return lines.every(
+    (line) =>
+        lineLengthIds.contains(line.id) &&
+        orientedIds.contains(line.id) &&
+        angleIds.contains(line.id),
+  );
 }
 
 enum _ConstraintVisualKind { badge, dimension }
