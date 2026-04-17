@@ -887,6 +887,9 @@ class _RoomPainter extends CustomPainter {
       final dx = end.dx - start.dx;
       final dy = end.dy - start.dy;
       final segmentLength = sqrt(dx * dx + dy * dy);
+      final tangent = segmentLength == 0
+          ? const Offset(1, 0)
+          : Offset(dx / segmentLength, dy / segmentLength);
       final normal = segmentLength == 0
           ? const Offset(0, -1)
           : Offset(-dy / segmentLength, dx / segmentLength);
@@ -905,6 +908,7 @@ class _RoomPainter extends CustomPainter {
       final wallLabelOffset =
           mid +
           outsideNormal * 20 -
+          tangent * 24 -
           Offset(wallLabelPainter.width / 2, wallLabelPainter.height / 2);
       final wallLabelBounds = RRect.fromRectAndRadius(
         Rect.fromLTWH(
@@ -1704,6 +1708,9 @@ Rect _computeCanvasPaintBounds({
     final dx = end.dx - start.dx;
     final dy = end.dy - start.dy;
     final segmentLength = sqrt(dx * dx + dy * dy);
+    final tangent = segmentLength == 0
+        ? const Offset(1, 0)
+        : Offset(dx / segmentLength, dy / segmentLength);
     final normal = segmentLength == 0
         ? const Offset(0, -1)
         : Offset(-dy / segmentLength, dx / segmentLength);
@@ -1723,6 +1730,7 @@ Rect _computeCanvasPaintBounds({
     final wallLabelOffset =
         mid +
         outsideNormal * 20 -
+        tangent * 24 -
         Offset(wallLabelPainter.width / 2, wallLabelPainter.height / 2);
     includeRect(
       Rect.fromLTWH(

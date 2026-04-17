@@ -292,8 +292,8 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       icon: Icons.compare_arrows,
       label: 'Parallel',
       helpText:
-          'Set a parallel constraint between two selected walls. Delete the '
-          'constraint from its canvas icon.',
+          'Set a parallel constraint between two selected non-adjacent walls. '
+          'Delete the constraint from its canvas icon.',
       enabled: state.canSetParallel,
       onPressed: callbacks.onSetParallel,
     ),

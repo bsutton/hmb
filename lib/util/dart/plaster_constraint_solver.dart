@@ -297,51 +297,100 @@ class PlasterConstraintSolver {
     _MutablePoint targetA,
     _MutablePoint targetB,
   ) {
-    final targetDx = targetB.x - targetA.x;
-    final targetDy = targetB.y - targetA.y;
-    final targetLength = sqrt(targetDx * targetDx + targetDy * targetDy);
     final currentDx = b.x - a.x;
     final currentDy = b.y - a.y;
     final currentLength = sqrt(currentDx * currentDx + currentDy * currentDy);
+    final targetDx = targetB.x - targetA.x;
+    final targetDy = targetB.y - targetA.y;
+    final targetLength = sqrt(targetDx * targetDx + targetDy * targetDy);
     if (targetLength == 0 || currentLength == 0) {
       return 0;
     }
-    final targetUnitX = targetDx / targetLength;
-    final targetUnitY = targetDy / targetLength;
-    final dot = currentDx * targetUnitX + currentDy * targetUnitY;
-    final sign = dot >= 0 ? 1.0 : -1.0;
-    final desiredDx = targetUnitX * currentLength * sign;
-    final desiredDy = targetUnitY * currentLength * sign;
-    final desiredEndX = a.x + desiredDx;
-    final desiredEndY = a.y + desiredDy;
-    final desiredStartX = b.x - desiredDx;
-    final desiredStartY = b.y - desiredDy;
-    final error = min(
+
+    final currentUnitX = currentDx / currentLength;
+    final currentUnitY = currentDy / currentLength;
+    var targetUnitX = targetDx / targetLength;
+    var targetUnitY = targetDy / targetLength;
+    final dot = currentUnitX * targetUnitX + currentUnitY * targetUnitY;
+    if (dot < 0) {
+      targetUnitX = -targetUnitX;
+      targetUnitY = -targetUnitY;
+    }
+
+    var combinedX = currentUnitX + targetUnitX;
+    var combinedY = currentUnitY + targetUnitY;
+    final combinedLength = sqrt(combinedX * combinedX + combinedY * combinedY);
+    if (combinedLength == 0) {
+      combinedX = currentUnitX;
+      combinedY = currentUnitY;
+    } else {
+      combinedX /= combinedLength;
+      combinedY /= combinedLength;
+    }
+
+    final sourceError = _alignLineToDirection(
+      a,
+      b,
+      currentLength,
+      combinedX,
+      combinedY,
+    );
+    final targetError = _alignLineToDirection(
+      targetA,
+      targetB,
+      targetLength,
+      combinedX,
+      combinedY,
+    );
+    return max(sourceError, targetError);
+  }
+
+  static double _alignLineToDirection(
+    _MutablePoint start,
+    _MutablePoint end,
+    double length,
+    double directionX,
+    double directionY,
+  ) {
+    final currentDx = end.x - start.x;
+    final currentDy = end.y - start.y;
+    final sign = currentDx * directionX + currentDy * directionY >= 0
+        ? 1.0
+        : -1.0;
+    final desiredDx = directionX * length * sign;
+    final desiredDy = directionY * length * sign;
+    final centerX = (start.x + end.x) / 2;
+    final centerY = (start.y + end.y) / 2;
+    final desiredStartX = centerX - desiredDx / 2;
+    final desiredStartY = centerY - desiredDy / 2;
+    final desiredEndX = centerX + desiredDx / 2;
+    final desiredEndY = centerY + desiredDy / 2;
+    final error = max(
       sqrt(
-        (b.x - desiredEndX) * (b.x - desiredEndX) +
-            (b.y - desiredEndY) * (b.y - desiredEndY),
+        (start.x - desiredStartX) * (start.x - desiredStartX) +
+            (start.y - desiredStartY) * (start.y - desiredStartY),
       ),
       sqrt(
-        (a.x - desiredStartX) * (a.x - desiredStartX) +
-            (a.y - desiredStartY) * (a.y - desiredStartY),
+        (end.x - desiredEndX) * (end.x - desiredEndX) +
+            (end.y - desiredEndY) * (end.y - desiredEndY),
       ),
     );
 
-    if (!a.pinned && !b.pinned) {
-      a
-        ..x = (a.x + desiredStartX) / 2
-        ..y = (a.y + desiredStartY) / 2;
-      b
-        ..x = (b.x + desiredEndX) / 2
-        ..y = (b.y + desiredEndY) / 2;
-    } else if (a.pinned && !b.pinned) {
-      b
-        ..x = desiredEndX
-        ..y = desiredEndY;
-    } else if (!a.pinned && b.pinned) {
-      a
-        ..x = desiredStartX
-        ..y = desiredStartY;
+    if (!start.pinned && !end.pinned) {
+      start
+        ..x = (start.x + desiredStartX) / 2
+        ..y = (start.y + desiredStartY) / 2;
+      end
+        ..x = (end.x + desiredEndX) / 2
+        ..y = (end.y + desiredEndY) / 2;
+    } else if (start.pinned && !end.pinned) {
+      end
+        ..x = start.x + desiredDx
+        ..y = start.y + desiredDy;
+    } else if (!start.pinned && end.pinned) {
+      start
+        ..x = end.x - desiredDx
+        ..y = end.y - desiredDy;
     }
     return error;
   }

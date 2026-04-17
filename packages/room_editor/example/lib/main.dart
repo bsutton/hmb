@@ -113,11 +113,7 @@ class _RoomEditorHarnessScreenState extends State<_RoomEditorHarnessScreen> {
                             for (final constraint in _document.constraints)
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 8),
-                                child: Text(
-                                  'line ${constraint.lineId}: '
-                                  '${constraint.type.name} '
-                                  '${constraint.targetValue ?? ''}',
-                                ),
+                                child: Text(_describeConstraint(constraint)),
                               ),
                           ],
                         ),
@@ -136,10 +132,36 @@ class _RoomEditorHarnessScreenState extends State<_RoomEditorHarnessScreen> {
   String _describeLine(int index) {
     final line = _document.bundle.lines[index];
     final end = RoomCanvasGeometry.lineEnd(_document.bundle.lines, index);
-    return '[$index] id=${line.id} '
+    return 'W${index + 1} '
         'start=(${line.startX}, ${line.startY}) '
         'end=(${end.x}, ${end.y}) '
         'length=${line.length}';
+  }
+
+  String _describeConstraint(RoomEditorConstraint constraint) {
+    final ownerIndex = _document.bundle.lines.indexWhere(
+      (line) => line.id == constraint.lineId,
+    );
+    final ownerLabel = ownerIndex == -1
+        ? 'wall ${constraint.lineId}'
+        : 'W${ownerIndex + 1}';
+    final targetLabel = constraint.type == RoomEditorConstraintType.parallel
+        ? _describeParallelTarget(constraint.targetValue)
+        : constraint.targetValue?.toString();
+    final suffix = targetLabel == null || targetLabel.isEmpty
+        ? ''
+        : ' $targetLabel';
+    return '$ownerLabel: ${constraint.type.name}$suffix';
+  }
+
+  String? _describeParallelTarget(int? targetLineId) {
+    if (targetLineId == null) {
+      return null;
+    }
+    final targetIndex = _document.bundle.lines.indexWhere(
+      (line) => line.id == targetLineId,
+    );
+    return targetIndex == -1 ? 'wall $targetLineId' : 'W${targetIndex + 1}';
   }
 }
 

@@ -8,6 +8,98 @@ import '../room_editor.dart';
 import 'room_editor_drag_solver.dart';
 import 'room_editor_solver_scheduler.dart';
 
+Set<RoomEditorConstraintKey> deriveConstraintConflictHighlightKeys({
+  required List<RoomEditorConstraintViolation> solverViolations,
+  Iterable<RoomEditorConstraintKey> requestedConstraintKeys = const [],
+  int limit = 3,
+}) {
+  final requested = requestedConstraintKeys.toList(growable: false);
+  final keys = <RoomEditorConstraintKey>{...requested};
+  for (final violation in solverViolations) {
+    if (keys.length >= limit + requested.length) {
+      break;
+    }
+    keys.add(RoomEditorConstraintKey.fromConstraint(violation.constraint));
+  }
+  return keys;
+}
+
+({int first, int second})? parallelTargetLinesForSelection({
+  required Set<int> selectedLineIndices,
+  required int lineCount,
+}) {
+  if (selectedLineIndices.length != 2 || lineCount < 2) {
+    return null;
+  }
+  final ordered = selectedLineIndices.toList()..sort();
+  final first = ordered[0];
+  final second = ordered[1];
+  final adjacent =
+      (first + 1) % lineCount == second || (second + 1) % lineCount == first;
+  if (adjacent) {
+    return null;
+  }
+  return (first: first, second: second);
+}
+
+({int source, int target}) chooseParallelConstraintDirection({
+  required ({int first, int second}) pair,
+  required List<RoomEditorLine> lines,
+  required List<RoomEditorConstraint> constraints,
+}) {
+  int scoreForLine(int index) {
+    final lineId = lines[index].id;
+    var score = 0;
+    for (final constraint in constraints) {
+      if (constraint.lineId != lineId) {
+        continue;
+      }
+      switch (constraint.type) {
+        case RoomEditorConstraintType.lineLength:
+          score += 3;
+        case RoomEditorConstraintType.horizontal:
+        case RoomEditorConstraintType.vertical:
+          score += 3;
+        case RoomEditorConstraintType.jointAngle:
+          score += 2;
+        case RoomEditorConstraintType.parallel:
+          score += 1;
+      }
+    }
+    return score;
+  }
+
+  final firstScore = scoreForLine(pair.first);
+  final secondScore = scoreForLine(pair.second);
+  if (firstScore == secondScore) {
+    return (source: pair.first, target: pair.second);
+  }
+  return firstScore < secondScore
+      ? (source: pair.first, target: pair.second)
+      : (source: pair.second, target: pair.first);
+}
+
+RoomEditorConstraint? existingParallelConstraintForPair({
+  required ({int first, int second}) pair,
+  required List<RoomEditorLine> lines,
+  required List<RoomEditorConstraint> constraints,
+}) {
+  final firstId = lines[pair.first].id;
+  final secondId = lines[pair.second].id;
+  for (final constraint in constraints) {
+    if (constraint.type != RoomEditorConstraintType.parallel) {
+      continue;
+    }
+    final targetId = constraint.targetValue;
+    final matchesForward = constraint.lineId == firstId && targetId == secondId;
+    final matchesReverse = constraint.lineId == secondId && targetId == firstId;
+    if (matchesForward || matchesReverse) {
+      return constraint;
+    }
+  }
+  return null;
+}
+
 class RoomEditorWorkspace extends StatefulWidget {
   final RoomEditorDocument document;
   final bool landscape;
@@ -172,6 +264,8 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   }
 
   void _clearHighlightedConstraints() {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
     if (_highlightedConstraintKeys.isEmpty) {
       return;
     }
@@ -214,11 +308,19 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     if (lineIndex == null) {
       return;
     }
+    final constraint = _constraintForKey(key);
+    final selectedLineIndices = switch (key.type) {
+      RoomEditorConstraintType.parallel => {
+        lineIndex,
+        if (constraint?.targetValue != null)
+          _bundle.lines.indexWhere((line) => line.id == constraint!.targetValue),
+      }.where((index) => index >= 0).toSet(),
+      RoomEditorConstraintType.jointAngle => <int>{},
+      _ => {lineIndex},
+    };
     _setSelection(
       RoomEditorSelection(
-        selectedLineIndex: key.type == RoomEditorConstraintType.jointAngle
-            ? null
-            : lineIndex,
+        selectedLineIndices: selectedLineIndices,
         selectedIntersectionIndex:
             key.type == RoomEditorConstraintType.jointAngle ? lineIndex : null,
         selectedConstraintKey: key,
@@ -298,13 +400,11 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
 
   int? get _angleTargetIntersectionIndex => _joinTargetIntersectionIndex;
 
-  ({int first, int second})? get _parallelTargetLines {
-    if (_selectedLineIndices.length != 2) {
-      return null;
-    }
-    final ordered = _selectedLineIndices.toList()..sort();
-    return (first: ordered[0], second: ordered[1]);
-  }
+  ({int first, int second})? get _parallelTargetLines =>
+      parallelTargetLinesForSelection(
+        selectedLineIndices: _selectedLineIndices,
+        lineCount: _bundle.lines.length,
+      );
 
   bool get _canSplit => _selectedLineIndices.length == 1;
   bool get _canJoin => _joinTargetIntersectionIndex != null;
@@ -452,6 +552,8 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     int? pinnedVertexIndex,
     RoomEditorIntPoint? pinnedVertexTarget,
     String? failureMessage,
+    Set<RoomEditorConstraintKey> requestedConstraintKeys = const {},
+    bool showFailureNotification = true,
   }) async {
     final requestedViolations =
         RoomEditorConstraintViolation.constraintViolations(
@@ -464,7 +566,18 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       pinnedVertexTarget: pinnedVertexTarget,
     );
     if (!result.converged) {
-      final displayResult = requestedViolations.isNotEmpty
+      final displayResult = requestedConstraintKeys.isNotEmpty
+          ? (result.violations.isNotEmpty
+                ? result
+                : RoomEditorSolveResult(
+                    lines: document.bundle.lines,
+                    converged: false,
+                    maxError: requestedViolations.isEmpty
+                        ? 0
+                        : requestedViolations.first.error,
+                    violations: requestedViolations,
+                  ))
+          : requestedViolations.isNotEmpty
           ? RoomEditorSolveResult(
               lines: document.bundle.lines,
               converged: false,
@@ -472,10 +585,13 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
               violations: requestedViolations,
             )
           : result;
-      _showConstraintConflictNotification(
-        displayResult,
-        failureMessage: failureMessage,
-      );
+      if (showFailureNotification) {
+        _showConstraintConflictNotification(
+          displayResult,
+          failureMessage: failureMessage,
+          requestedConstraintKeys: requestedConstraintKeys,
+        );
+      }
       return false;
     }
     final solved = document.copyWith(
@@ -704,11 +820,15 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   void _showConstraintConflictNotification(
     RoomEditorSolveResult result, {
     String? failureMessage,
+    Set<RoomEditorConstraintKey> requestedConstraintKeys = const {},
   }) {
     setState(() {
-      _highlightedConstraintKeys = _constraintKeysForViolations(
-        result.violations,
-      );
+      _highlightedConstraintKeys = requestedConstraintKeys.isEmpty
+          ? _constraintKeysForViolations(result.violations)
+          : deriveConstraintConflictHighlightKeys(
+              solverViolations: result.violations,
+              requestedConstraintKeys: requestedConstraintKeys,
+            );
     });
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) {
@@ -852,13 +972,17 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
           startPinnedDocument,
           pinnedVertexIndex: index,
           pinnedVertexTarget: RoomEditorIntPoint(line.startX, line.startY),
+          requestedConstraintKeys: {key},
+          showFailureNotification: false,
         ) ||
         await _trySolveAndCommit(
           endPinnedDocument,
           pinnedVertexIndex: nextIndex,
           pinnedVertexTarget: lineEnd,
+          requestedConstraintKeys: {key},
+          showFailureNotification: false,
         ) ||
-        await _trySolveAndCommit(document);
+        await _trySolveAndCommit(document, requestedConstraintKeys: {key});
     if (solved && mounted) {
       _selectConstraint(key);
     }
@@ -1049,6 +1173,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     );
     final solved = await _trySolveAndCommit(
       _document.copyWith(constraints: constraints),
+      requestedConstraintKeys: {key},
     );
     if (solved && mounted) {
       _selectConstraint(key);
@@ -1268,6 +1393,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       );
       final solved = await _trySolveAndCommit(
         _document.copyWith(constraints: constraints),
+        requestedConstraintKeys: {key},
       );
       if (solved && mounted) {
         _selectConstraint(key);
@@ -1289,22 +1415,45 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     if (pair == null) {
       return;
     }
-    final sourceLine = _bundle.lines[pair.first];
-    final targetLine = _bundle.lines[pair.second];
+    final existing = existingParallelConstraintForPair(
+      pair: pair,
+      lines: _bundle.lines,
+      constraints: _document.constraints,
+    );
+    if (existing != null) {
+      _clearHighlightedConstraints();
+      ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+      _selectConstraint(RoomEditorConstraintKey.fromConstraint(existing));
+      return;
+    }
+    final direction = chooseParallelConstraintDirection(
+      pair: pair,
+      lines: _bundle.lines,
+      constraints: _document.constraints,
+    );
+    final sourceLine = _bundle.lines[direction.source];
+    final targetLine = _bundle.lines[direction.target];
     final key = RoomEditorConstraintKey(
       lineId: sourceLine.id,
       type: RoomEditorConstraintType.parallel,
     );
-    final constraints = _upsertConstraint(
-      _document.constraints,
+    final constraints = [
+      for (final constraint in _document.constraints)
+        if (!(constraint.type == RoomEditorConstraintType.parallel &&
+            ((constraint.lineId == sourceLine.id &&
+                    constraint.targetValue == targetLine.id) ||
+                (constraint.lineId == targetLine.id &&
+                    constraint.targetValue == sourceLine.id))))
+          constraint,
       RoomEditorConstraint(
         lineId: sourceLine.id,
         type: RoomEditorConstraintType.parallel,
         targetValue: targetLine.id,
       ),
-    );
+    ];
     final solved = await _trySolveAndCommit(
       _document.copyWith(constraints: constraints),
+      requestedConstraintKeys: {key},
     );
     if (solved && mounted) {
       _selectConstraint(key);
