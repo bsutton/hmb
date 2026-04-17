@@ -319,13 +319,18 @@ String? validateRoomEditorOpeningDraft({
     return 'Opening dimensions must be greater than zero.';
   }
   if (maxWidth != null && width > maxWidth) {
-    return 'Opening width must not exceed wall length (${RoomCanvasGeometry.formatDisplayLength(maxWidth, unitSystem)}).';
+    return '''
+Opening width must not exceed wall length (${RoomCanvasGeometry.formatDisplayLength(maxWidth, unitSystem)}).''';
   }
   if (maxHeight != null && height > maxHeight) {
-    return 'Opening height must not exceed wall height (${RoomCanvasGeometry.formatDisplayLength(maxHeight, unitSystem)}).';
+    return '''
+Opening height must not exceed wall height (${RoomCanvasGeometry.formatDisplayLength(maxHeight, unitSystem)}).''';
   }
-  if (maxHeight != null && type == RoomEditorOpeningType.window && sillHeight + height > maxHeight) {
-    return 'Window sill height plus window height must fit within the wall height (${RoomCanvasGeometry.formatDisplayLength(maxHeight, unitSystem)}).';
+  if (maxHeight != null &&
+      type == RoomEditorOpeningType.window &&
+      sillHeight + height > maxHeight) {
+    return '''
+Window sill height plus window height must fit within the wall height (${RoomCanvasGeometry.formatDisplayLength(maxHeight, unitSystem)}).''';
   }
   return null;
 }
@@ -436,9 +441,7 @@ Sill Height (${RoomCanvasGeometry.unitLabel(widget.unitSystem)})''',
           const SizedBox(height: 12),
           Text(
             _errorText!,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.error,
-            ),
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ],
       ],

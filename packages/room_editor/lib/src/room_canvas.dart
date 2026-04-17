@@ -995,21 +995,20 @@ class _RoomPainter extends CustomPainter {
           );
         }
         if (isImplicitLengthHighlighted) {
-          final highlightedLabelPainter =
-              TextPainter(
-                  text: const TextSpan(),
-                  textDirection: TextDirection.ltr,
-                )
-                ..text = TextSpan(
-                  text: labelText,
-                  style: const TextStyle(
-                    color: Color(0xFFC62828),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                )
-                ..layout();
-          highlightedLabelPainter.paint(canvas, labelOffset);
+          TextPainter(
+              text: const TextSpan(),
+              textDirection: TextDirection.ltr,
+            )
+            ..text = TextSpan(
+              text: labelText,
+              style: const TextStyle(
+                color: Color(0xFFC62828),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            )
+            ..layout()
+            ..paint(canvas, labelOffset);
         } else {
           labelPainter.paint(canvas, labelOffset);
         }
@@ -1341,10 +1340,10 @@ class _ConstraintVisual {
         ..color = accentColor
         ..strokeWidth = selected ? 2.2 : 1.8
         ..strokeCap = StrokeCap.round;
-      const inset = 7.0;
-      const slant = Offset(9, -5);
-      const separation = Offset(2.5, 4);
-      final firstStart = Offset(hitBox.left + inset, hitBox.center.dy + 2);
+      const inset = 6.0;
+      const slant = Offset(11, -6);
+      const separation = Offset(3.0, 5.0);
+      final firstStart = Offset(hitBox.left + inset, hitBox.center.dy + 3);
       final firstEnd = firstStart + slant;
       canvas
         ..drawLine(firstStart, firstEnd, parallelPaint)

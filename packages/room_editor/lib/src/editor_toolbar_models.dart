@@ -293,7 +293,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
     ),
     RoomEditorToolAction(
       id: 'parallel',
-      icon: Icons.drag_handle,
+      icon: Icons.segment,
       label: 'Parallel',
       helpText:
           'Set a parallel constraint between two selected non-adjacent walls.',

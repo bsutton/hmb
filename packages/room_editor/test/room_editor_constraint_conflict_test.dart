@@ -275,13 +275,13 @@ void main() {
   test(
     'detects implicit adjacent wall-length conflicts for a moved corner',
     () {
-      final source = RoomEditorDocument(
+      const source = RoomEditorDocument(
         bundle: RoomEditorBundle(
           roomName: 'Test',
           unitSystem: RoomEditorUnitSystem.metric,
           plasterCeiling: false,
           lines: [
-            const RoomEditorLine(
+            RoomEditorLine(
               id: 1,
               seqNo: 1,
               startX: 0,
@@ -289,7 +289,7 @@ void main() {
               length: 100,
               plasterSelected: true,
             ),
-            const RoomEditorLine(
+            RoomEditorLine(
               id: 2,
               seqNo: 2,
               startX: 100,
@@ -297,7 +297,7 @@ void main() {
               length: 50,
               plasterSelected: true,
             ),
-            const RoomEditorLine(
+            RoomEditorLine(
               id: 3,
               seqNo: 3,
               startX: 100,
@@ -305,7 +305,7 @@ void main() {
               length: 100,
               plasterSelected: true,
             ),
-            const RoomEditorLine(
+            RoomEditorLine(
               id: 4,
               seqNo: 4,
               startX: 0,
@@ -314,9 +314,9 @@ void main() {
               plasterSelected: true,
             ),
           ],
-          openings: const [],
+          openings: [],
         ),
-        constraints: const [],
+        constraints: [],
       );
       final attempted = source.copyWith(
         bundle: source.bundle.copyWith(
@@ -389,13 +389,13 @@ void main() {
   test(
     'ignores implicit length conflicts when the moved corner is unchanged',
     () {
-      final source = RoomEditorDocument(
+      const source = RoomEditorDocument(
         bundle: RoomEditorBundle(
           roomName: 'Test',
           unitSystem: RoomEditorUnitSystem.metric,
           plasterCeiling: false,
           lines: [
-            const RoomEditorLine(
+            RoomEditorLine(
               id: 1,
               seqNo: 1,
               startX: 0,
@@ -403,7 +403,7 @@ void main() {
               length: 100,
               plasterSelected: true,
             ),
-            const RoomEditorLine(
+            RoomEditorLine(
               id: 2,
               seqNo: 2,
               startX: 100,
@@ -411,7 +411,7 @@ void main() {
               length: 50,
               plasterSelected: true,
             ),
-            const RoomEditorLine(
+            RoomEditorLine(
               id: 3,
               seqNo: 3,
               startX: 100,
@@ -419,7 +419,7 @@ void main() {
               length: 100,
               plasterSelected: true,
             ),
-            const RoomEditorLine(
+            RoomEditorLine(
               id: 4,
               seqNo: 4,
               startX: 0,
@@ -428,9 +428,9 @@ void main() {
               plasterSelected: true,
             ),
           ],
-          openings: const [],
+          openings: [],
         ),
-        constraints: const [],
+        constraints: [],
       );
 
       expect(
@@ -440,6 +440,298 @@ void main() {
           movedVertexIndex: 2,
         ),
         isEmpty,
+      );
+    },
+  );
+
+  test(
+    '''
+blocking constraint analysis identifies constraints whose removal restores solvability''',
+    () {
+      const document = RoomEditorDocument(
+        bundle: RoomEditorBundle(
+          roomName: 'Test',
+          unitSystem: RoomEditorUnitSystem.metric,
+          plasterCeiling: false,
+          lines: [
+            RoomEditorLine(
+              id: 1,
+              seqNo: 1,
+              startX: 0,
+              startY: 0,
+              length: 3600,
+              plasterSelected: true,
+            ),
+            RoomEditorLine(
+              id: 2,
+              seqNo: 2,
+              startX: 3600,
+              startY: 0,
+              length: 2400,
+              plasterSelected: true,
+            ),
+            RoomEditorLine(
+              id: 3,
+              seqNo: 3,
+              startX: 3600,
+              startY: 2400,
+              length: 3600,
+              plasterSelected: true,
+            ),
+            RoomEditorLine(
+              id: 4,
+              seqNo: 4,
+              startX: 0,
+              startY: 2400,
+              length: 2400,
+              plasterSelected: true,
+            ),
+          ],
+          openings: [],
+        ),
+        constraints: [
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 2400,
+          ),
+        ],
+      );
+      final failed = RoomEditorConstraintSolver.solve(
+        lines: document.bundle.lines,
+        constraints: document.constraints,
+        pinnedVertexIndex: 1,
+        pinnedVertexTarget: const RoomEditorIntPoint(3600, 0),
+        additionalPinnedVertices: const [
+          (index: 2, target: RoomEditorIntPoint(3600, 2400)),
+        ],
+      );
+
+      expect(failed.converged, isFalse);
+      final blocking = deriveBlockingConstraintViolations(
+        document: document,
+        pinnedVertexIndex: 1,
+        pinnedVertexTarget: const RoomEditorIntPoint(3600, 0),
+        additionalPinnedVertices: const [
+          (index: 2, target: RoomEditorIntPoint(3600, 2400)),
+        ],
+        failedSolveResult: failed,
+      );
+
+      expect(
+        blocking.map(
+          (v) => RoomEditorConstraintKey.fromConstraint(v.constraint),
+        ),
+        anyOf(
+          contains(
+            const RoomEditorConstraintKey(
+              lineId: 2,
+              type: RoomEditorConstraintType.horizontal,
+            ),
+          ),
+          contains(
+            const RoomEditorConstraintKey(
+              lineId: 2,
+              type: RoomEditorConstraintType.vertical,
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+
+  test(
+    'blocking analysis identifies W4 and W6 lengths for the rigid notch drag',
+    () {
+      const attempted = RoomEditorDocument(
+        bundle: RoomEditorBundle(
+          roomName: 'Test',
+          unitSystem: RoomEditorUnitSystem.metric,
+          plasterCeiling: false,
+          lines: [
+            RoomEditorLine(
+              id: 1,
+              seqNo: 1,
+              startX: 0,
+              startY: 0,
+              length: 3600,
+              plasterSelected: true,
+            ),
+            RoomEditorLine(
+              id: 2,
+              seqNo: 2,
+              startX: 3600,
+              startY: 0,
+              length: 3000,
+              plasterSelected: true,
+            ),
+            RoomEditorLine(
+              id: 3,
+              seqNo: 3,
+              startX: 3600,
+              startY: 3000,
+              length: 1800,
+              plasterSelected: true,
+            ),
+            RoomEditorLine(
+              id: 4,
+              seqNo: 4,
+              startX: 1800,
+              startY: 2400,
+              length: 1200,
+              plasterSelected: true,
+            ),
+            RoomEditorLine(
+              id: 5,
+              seqNo: 5,
+              startX: 1800,
+              startY: 1200,
+              length: 1800,
+              plasterSelected: true,
+            ),
+            RoomEditorLine(
+              id: 6,
+              seqNo: 6,
+              startX: 0,
+              startY: 1200,
+              length: 1200,
+              plasterSelected: true,
+            ),
+          ],
+          openings: [],
+        ),
+        constraints: [
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 3600,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1200,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.horizontal,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1800,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.vertical,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.lineLength,
+            targetValue: 1200,
+          ),
+          RoomEditorConstraint(
+            lineId: 1,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 2,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 3,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 4,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 5,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+          RoomEditorConstraint(
+            lineId: 6,
+            type: RoomEditorConstraintType.jointAngle,
+            targetValue: 90000,
+          ),
+        ],
+      );
+
+      final failed = RoomEditorConstraintSolver.solve(
+        lines: attempted.bundle.lines,
+        constraints: attempted.constraints,
+        pinnedVertexIndex: 2,
+        pinnedVertexTarget: const RoomEditorIntPoint(3600, 3000),
+        additionalPinnedVertices: const [
+          (index: 0, target: RoomEditorIntPoint(0, 0)),
+        ],
+      );
+
+      expect(failed.converged, isFalse);
+      final blocking = deriveBlockingConstraintViolations(
+        document: attempted,
+        pinnedVertexIndex: 2,
+        pinnedVertexTarget: const RoomEditorIntPoint(3600, 3000),
+        additionalPinnedVertices: const [
+          (index: 0, target: RoomEditorIntPoint(0, 0)),
+        ],
+        failedSolveResult: failed,
+        limit: 6,
+      );
+      final keys = blocking
+          .map(
+            (violation) =>
+                RoomEditorConstraintKey.fromConstraint(violation.constraint),
+          )
+          .toSet();
+
+      expect(
+        keys,
+        contains(
+          const RoomEditorConstraintKey(
+            lineId: 4,
+            type: RoomEditorConstraintType.lineLength,
+          ),
+        ),
+      );
+      expect(
+        keys,
+        contains(
+          const RoomEditorConstraintKey(
+            lineId: 6,
+            type: RoomEditorConstraintType.lineLength,
+          ),
+        ),
       );
     },
   );

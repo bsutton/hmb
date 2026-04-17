@@ -632,6 +632,12 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       if (showFailureNotification) {
         _showConstraintConflictNotification(
           displayResult,
+          blockingViolations: _blockingViolationsForFailedSolve(
+            document: document,
+            result: result,
+            pinnedVertexIndex: pinnedVertexIndex,
+            pinnedVertexTarget: pinnedVertexTarget,
+          ),
           failureMessage: failureMessage,
           requestedConstraintKeys: requestedConstraintKeys,
         );
@@ -822,42 +828,64 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     }
     _rigidDragNotificationShownForGesture = true;
     final attemptedDocument = _attemptedDocumentForDragResult(result);
-    final implicitLengthConflicts = attemptedDocument == null
-        ? <int>{}
-        : filterImplicitLengthConflictLineIndices(
-            lineIndices: _implicitLengthConflictLineIndicesForDragResult(
-              result,
+    final blockingViolations = attemptedDocument == null
+        ? const <RoomEditorConstraintViolation>[]
+        : _blockingViolationsForFailedSolve(
+            document: attemptedDocument,
+            result: _solveDocument(
               attemptedDocument,
+              pinnedVertexIndex: result.request.movedIndex,
+              pinnedVertexTarget: result.request.movedTarget,
             ),
-            lines: _bundle.lines,
-            constraints: _document.constraints,
+            pinnedVertexIndex: result.request.movedIndex,
+            pinnedVertexTarget: result.request.movedTarget,
           );
     setState(() {
-      _highlightedImplicitLengthLineIndices = implicitLengthConflicts;
-      _highlightedConstraintKeys = attemptedDocument == null
-          ? {}
-          : implicitLengthConflicts.isNotEmpty
-          ? _lineLengthConstraintKeysForLineIndices(implicitLengthConflicts)
-          : _constraintKeysForViolations(
-              RoomEditorConstraintViolation.constraintViolations(
-                attemptedDocument.bundle.lines,
-                attemptedDocument.constraints,
-              ),
-            );
+      _highlightedImplicitLengthLineIndices = {};
+      _highlightedConstraintKeys = _constraintKeysForViolations(
+        blockingViolations,
+      );
     });
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) {
       return;
     }
-    final message = implicitLengthConflicts.isNotEmpty
-        ? 'Blocked by current constraints: moving this corner would change wall lengths on ${_wallListLabel(implicitLengthConflicts)}.'
-        : 'This room is rigid. Remove one or more constraints to modify the room.';
+    final details = blockingViolations
+        .take(3)
+        .map((violation) {
+          final key = RoomEditorConstraintKey.fromConstraint(
+            violation.constraint,
+          );
+          final ownerLabel = _constraintOwnerLabel(key);
+          final constraintLabel = _constraintLabel(violation.constraint.type);
+          return '$constraintLabel on $ownerLabel';
+        })
+        .join(', ');
+    final message = details.isEmpty
+        ? '''
+This room is rigid. Remove one or more constraints to modify the room.'''
+        : 'Blocked by current constraints: $details.';
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
       );
   }
+
+  List<RoomEditorConstraintViolation> _blockingViolationsForFailedSolve({
+    required RoomEditorDocument document,
+    required RoomEditorSolveResult result,
+    int? pinnedVertexIndex,
+    RoomEditorIntPoint? pinnedVertexTarget,
+    List<({int index, RoomEditorIntPoint target})> additionalPinnedVertices =
+        const [],
+  }) => deriveBlockingConstraintViolations(
+    document: document,
+    pinnedVertexIndex: pinnedVertexIndex,
+    pinnedVertexTarget: pinnedVertexTarget,
+    additionalPinnedVertices: additionalPinnedVertices,
+    failedSolveResult: result,
+  );
 
   void _showJoinBlockedNotification(String message) {
     final messenger = ScaffoldMessenger.maybeOf(context);
@@ -873,15 +901,16 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
 
   void _showConstraintConflictNotification(
     RoomEditorSolveResult result, {
+    required List<RoomEditorConstraintViolation> blockingViolations,
     String? failureMessage,
     Set<RoomEditorConstraintKey> requestedConstraintKeys = const {},
   }) {
     setState(() {
       _highlightedImplicitLengthLineIndices = {};
       _highlightedConstraintKeys = requestedConstraintKeys.isEmpty
-          ? _constraintKeysForViolations(result.violations)
+          ? _constraintKeysForViolations(blockingViolations)
           : deriveConstraintConflictHighlightKeys(
-              solverViolations: result.violations,
+              solverViolations: blockingViolations,
               requestedConstraintKeys: requestedConstraintKeys,
             );
     });
@@ -889,7 +918,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     if (messenger == null) {
       return;
     }
-    final details = result.violations
+    final details = blockingViolations
         .take(3)
         .map((violation) {
           final key = RoomEditorConstraintKey.fromConstraint(
@@ -907,46 +936,6 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  Set<int> _implicitLengthConflictLineIndicesForDragResult(
-    RoomEditorDragSolveResult result,
-    RoomEditorDocument attemptedDocument,
-  ) {
-    final sourceDocument =
-        result.request.gestureBaseDocument ?? result.request.currentDocument;
-    return deriveImplicitLengthConflictLineIndices(
-      sourceDocument: sourceDocument,
-      attemptedDocument: attemptedDocument,
-      movedVertexIndex: result.request.movedIndex,
-    );
-  }
-
-  Set<RoomEditorConstraintKey> _lineLengthConstraintKeysForLineIndices(
-    Iterable<int> lineIndices,
-  ) => {
-    for (final lineIndex in lineIndices)
-      if (lineIndex >= 0 && lineIndex < _bundle.lines.length)
-        for (final constraint in _document.constraints)
-          if (constraint.lineId == _bundle.lines[lineIndex].id &&
-              constraint.type == RoomEditorConstraintType.lineLength)
-            RoomEditorConstraintKey.fromConstraint(constraint),
-  };
-
-  String _wallListLabel(Iterable<int> lineIndices) {
-    final labels = [
-      for (final index in lineIndices.toList()..sort()) 'W${index + 1}',
-    ];
-    if (labels.isEmpty) {
-      return '';
-    }
-    if (labels.length == 1) {
-      return labels.first;
-    }
-    if (labels.length == 2) {
-      return '${labels.first} and ${labels.last}';
-    }
-    return '${labels.sublist(0, labels.length - 1).join(', ')}, and ${labels.last}';
   }
 
   RoomEditorDocument? _attemptedDocumentForDragResult(

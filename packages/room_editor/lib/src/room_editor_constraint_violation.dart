@@ -102,6 +102,142 @@ class RoomEditorConstraintViolation {
   }
 }
 
+List<RoomEditorConstraintViolation> deriveBlockingConstraintViolations({
+  required RoomEditorDocument document,
+  int? pinnedVertexIndex,
+  RoomEditorIntPoint? pinnedVertexTarget,
+  List<({int index, RoomEditorIntPoint target})> additionalPinnedVertices =
+      const [],
+  RoomEditorSolveResult? failedSolveResult,
+  int limit = 3,
+}) {
+  final baseline =
+      failedSolveResult ??
+      RoomEditorConstraintSolver.solve(
+        lines: document.bundle.lines,
+        constraints: document.constraints,
+        pinnedVertexIndex: pinnedVertexIndex,
+        pinnedVertexTarget: pinnedVertexTarget,
+        additionalPinnedVertices: additionalPinnedVertices,
+      );
+  if (baseline.converged || document.constraints.isEmpty) {
+    return const [];
+  }
+
+  final previousLogging = RoomEditorConstraintSolver.debugLoggingEnabled;
+  RoomEditorConstraintSolver.debugLoggingEnabled = false;
+  try {
+    final baselinePenalty = _solvePenalty(baseline);
+    final attemptedLines = document.bundle.lines;
+    final candidates = <_BlockingConstraintCandidate>[];
+    for (final constraint in document.constraints) {
+      final reducedConstraints = [
+        for (final candidate in document.constraints)
+          if (!_sameConstraint(candidate, constraint)) candidate,
+      ];
+      final rerun = RoomEditorConstraintSolver.solve(
+        lines: attemptedLines,
+        constraints: reducedConstraints,
+        pinnedVertexIndex: pinnedVertexIndex,
+        pinnedVertexTarget: pinnedVertexTarget,
+        additionalPinnedVertices: additionalPinnedVertices,
+      );
+      final improvement = baselinePenalty - _solvePenalty(rerun);
+      final materiallyImproves =
+          rerun.converged ||
+          improvement > max(1.0, max(baseline.maxError, 1) * 0.1);
+      if (!materiallyImproves) {
+        continue;
+      }
+      final lineIndex = document.bundle.lines.indexWhere(
+        (line) => line.id == constraint.lineId,
+      );
+      candidates.add(
+        _BlockingConstraintCandidate(
+          violation: RoomEditorConstraintViolation(
+            constraint: constraint,
+            lineIndex: lineIndex < 0 ? 0 : lineIndex,
+            error: improvement,
+          ),
+          converged: rerun.converged,
+          improvement: improvement,
+          geometryDeviation: _geometryDeviationPenalty(
+            rerun.lines,
+            attemptedLines,
+          ),
+        ),
+      );
+    }
+    candidates.sort(_compareBlockingConstraintCandidates);
+    if (candidates.isNotEmpty) {
+      return candidates
+          .take(limit)
+          .map((candidate) => candidate.violation)
+          .toList(growable: false);
+    }
+  } finally {
+    RoomEditorConstraintSolver.debugLoggingEnabled = previousLogging;
+  }
+
+  return baseline.violations.take(limit).toList(growable: false);
+}
+
+int _compareBlockingConstraintCandidates(
+  _BlockingConstraintCandidate left,
+  _BlockingConstraintCandidate right,
+) {
+  if (left.converged != right.converged) {
+    return left.converged ? -1 : 1;
+  }
+  final geometryComparison = left.geometryDeviation.compareTo(
+    right.geometryDeviation,
+  );
+  if (geometryComparison != 0) {
+    return geometryComparison;
+  }
+  return right.improvement.compareTo(left.improvement);
+}
+
+double _solvePenalty(RoomEditorSolveResult result) {
+  var penalty = result.maxError + (result.violations.length * 1000);
+  if (!result.converged) {
+    penalty += 100000;
+  }
+  return penalty;
+}
+
+double _geometryDeviationPenalty(
+  List<RoomEditorLine> actual,
+  List<RoomEditorLine> attempted,
+) {
+  final count = min(actual.length, attempted.length);
+  var penalty = 0.0;
+  for (var index = 0; index < count; index++) {
+    penalty += (actual[index].startX - attempted[index].startX).abs();
+    penalty += (actual[index].startY - attempted[index].startY).abs();
+  }
+  return penalty;
+}
+
+class _BlockingConstraintCandidate {
+  final RoomEditorConstraintViolation violation;
+  final bool converged;
+  final double improvement;
+  final double geometryDeviation;
+
+  const _BlockingConstraintCandidate({
+    required this.violation,
+    required this.converged,
+    required this.improvement,
+    required this.geometryDeviation,
+  });
+}
+
+bool _sameConstraint(RoomEditorConstraint left, RoomEditorConstraint right) =>
+    left.lineId == right.lineId &&
+    left.type == right.type &&
+    left.targetValue == right.targetValue;
+
 RoomEditorDocumentConstraintState deriveRoomEditorDocumentConstraintState(
   RoomEditorDocument document,
 ) {
