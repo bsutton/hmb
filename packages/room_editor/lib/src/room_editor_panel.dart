@@ -19,6 +19,7 @@ class RoomEditorPanel extends StatefulWidget {
   final RoomEditorDocument document;
   final bool landscape;
   final ValueChanged<RoomEditorDocument> onDocumentCommitted;
+  final int? ceilingHeight;
   final ValueChanged<RoomEditorCommand>? onCommand;
   final VoidCallback? onUndo;
   final VoidCallback? onRedo;
@@ -34,6 +35,7 @@ class RoomEditorPanel extends StatefulWidget {
     required this.onCommitCeilingHeight,
     required this.document,
     required this.onDocumentCommitted,
+    this.ceilingHeight,
     super.key,
     this.lineStudSpacingController,
     this.lineStudOffsetController,
@@ -88,6 +90,7 @@ class _RoomEditorPanelState extends State<RoomEditorPanel> {
             landscape: widget.landscape,
             selectionController: _selectionController,
             onDocumentCommitted: widget.onDocumentCommitted,
+            ceilingHeight: widget.ceilingHeight,
             onCommand: widget.onCommand,
             onUndo: widget.onUndo,
             onRedo: widget.onRedo,

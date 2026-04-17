@@ -2,6 +2,12 @@ import 'dart:math';
 
 import '../room_editor.dart';
 
+enum RoomEditorDocumentConstraintState {
+  underConstrained,
+  fullyConstrained,
+  invalid,
+}
+
 class RoomEditorConstraintViolation {
   static const _snappedGeometryTolerance = 1.0;
   static const _angleToleranceDegrees = 1.5;
@@ -94,4 +100,80 @@ class RoomEditorConstraintViolation {
     final normalized = min(difference, (pi - difference).abs());
     return normalized * 180 / pi;
   }
+}
+
+RoomEditorDocumentConstraintState deriveRoomEditorDocumentConstraintState(
+  RoomEditorDocument document,
+) {
+  final lines = document.bundle.lines;
+  if (lines.isEmpty) {
+    return RoomEditorDocumentConstraintState.underConstrained;
+  }
+
+  final directViolations = RoomEditorConstraintViolation.constraintViolations(
+    lines,
+    document.constraints,
+  );
+  if (directViolations.isNotEmpty) {
+    return RoomEditorDocumentConstraintState.invalid;
+  }
+
+  if (_documentHasMobility(document)) {
+    return RoomEditorDocumentConstraintState.underConstrained;
+  }
+
+  return RoomEditorDocumentConstraintState.fullyConstrained;
+}
+
+bool _documentHasMobility(RoomEditorDocument document) {
+  final lines = document.bundle.lines;
+  if (lines.length < 2 || document.constraints.isEmpty) {
+    return true;
+  }
+
+  final probes = <({int vertexIndex, RoomEditorIntPoint target})>[];
+  final vertexCount = lines.length;
+  final candidateIndices = <int>{0, 1 % vertexCount, vertexCount ~/ 2};
+
+  for (final index in candidateIndices) {
+    final line = lines[index];
+    probes..add((
+      vertexIndex: index,
+      target: RoomEditorIntPoint(line.startX + 24, line.startY),
+    ))
+    ..add((
+      vertexIndex: index,
+      target: RoomEditorIntPoint(line.startX, line.startY + 24),
+    ));
+  }
+
+  final previousLogging = RoomEditorConstraintSolver.debugLoggingEnabled;
+  RoomEditorConstraintSolver.debugLoggingEnabled = false;
+  try {
+    for (final probe in probes) {
+      var anchorIndex = (probe.vertexIndex + (vertexCount ~/ 2)) % vertexCount;
+      if (anchorIndex == probe.vertexIndex) {
+        anchorIndex = (probe.vertexIndex + 1) % vertexCount;
+      }
+      final anchorLine = lines[anchorIndex];
+      final result = RoomEditorConstraintSolver.solve(
+        lines: lines,
+        constraints: document.constraints,
+        pinnedVertexIndex: probe.vertexIndex,
+        pinnedVertexTarget: probe.target,
+        additionalPinnedVertices: [
+          (
+            index: anchorIndex,
+            target: RoomEditorIntPoint(anchorLine.startX, anchorLine.startY),
+          ),
+        ],
+      );
+      if (result.converged) {
+        return true;
+      }
+    }
+  } finally {
+    RoomEditorConstraintSolver.debugLoggingEnabled = previousLogging;
+  }
+  return false;
 }

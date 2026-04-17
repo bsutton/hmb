@@ -27,6 +27,8 @@ Future<RoomEditorOpeningDraft?> showRoomEditorOpeningDialog({
   required BuildContext context,
   required RoomEditorUnitSystem unitSystem,
   required RoomEditorOpeningType type,
+  int? maxWidth,
+  int? maxHeight,
   RoomEditorOpeningDraft? initialOpening,
   String? title,
   String? confirmLabel,
@@ -35,6 +37,8 @@ Future<RoomEditorOpeningDraft?> showRoomEditorOpeningDialog({
   builder: (_) => _OpeningDialog(
     unitSystem: unitSystem,
     type: type,
+    maxWidth: maxWidth,
+    maxHeight: maxHeight,
     initialOpening: initialOpening,
     title: title,
     confirmLabel: confirmLabel,
@@ -276,6 +280,8 @@ class _AngleDialogState extends State<_AngleDialog> {
 class _OpeningDialog extends StatefulWidget {
   final RoomEditorUnitSystem unitSystem;
   final RoomEditorOpeningType type;
+  final int? maxWidth;
+  final int? maxHeight;
   final RoomEditorOpeningDraft? initialOpening;
   final String title;
   final String confirmLabel;
@@ -283,6 +289,8 @@ class _OpeningDialog extends StatefulWidget {
   const _OpeningDialog({
     required this.unitSystem,
     required this.type,
+    this.maxWidth,
+    this.maxHeight,
     this.initialOpening,
     String? title,
     String? confirmLabel,
@@ -295,10 +303,38 @@ class _OpeningDialog extends StatefulWidget {
   State<_OpeningDialog> createState() => _OpeningDialogState();
 }
 
+String? validateRoomEditorOpeningDraft({
+  required RoomEditorOpeningType type,
+  required RoomEditorUnitSystem unitSystem,
+  required int? width,
+  required int? height,
+  required int sillHeight,
+  int? maxWidth,
+  int? maxHeight,
+}) {
+  if (width == null || height == null) {
+    return 'Enter valid opening dimensions.';
+  }
+  if (width <= 0 || height <= 0 || sillHeight < 0) {
+    return 'Opening dimensions must be greater than zero.';
+  }
+  if (maxWidth != null && width > maxWidth) {
+    return 'Opening width must not exceed wall length (${RoomCanvasGeometry.formatDisplayLength(maxWidth, unitSystem)}).';
+  }
+  if (maxHeight != null && height > maxHeight) {
+    return 'Opening height must not exceed wall height (${RoomCanvasGeometry.formatDisplayLength(maxHeight, unitSystem)}).';
+  }
+  if (maxHeight != null && type == RoomEditorOpeningType.window && sillHeight + height > maxHeight) {
+    return 'Window sill height plus window height must fit within the wall height (${RoomCanvasGeometry.formatDisplayLength(maxHeight, unitSystem)}).';
+  }
+  return null;
+}
+
 class _OpeningDialogState extends State<_OpeningDialog> {
   final _width = TextEditingController();
   final _height = TextEditingController();
   final _sill = TextEditingController();
+  String? _errorText;
 
   @override
   void initState() {
@@ -357,6 +393,13 @@ class _OpeningDialogState extends State<_OpeningDialog> {
             labelText:
                 'Width (${RoomCanvasGeometry.unitLabel(widget.unitSystem)})',
           ),
+          onChanged: (_) {
+            if (_errorText != null) {
+              setState(() {
+                _errorText = null;
+              });
+            }
+          },
         ),
         TextField(
           controller: _height,
@@ -365,6 +408,13 @@ class _OpeningDialogState extends State<_OpeningDialog> {
             labelText:
                 'Height (${RoomCanvasGeometry.unitLabel(widget.unitSystem)})',
           ),
+          onChanged: (_) {
+            if (_errorText != null) {
+              setState(() {
+                _errorText = null;
+              });
+            }
+          },
         ),
         if (widget.type == RoomEditorOpeningType.window)
           TextField(
@@ -374,7 +424,23 @@ class _OpeningDialogState extends State<_OpeningDialog> {
               labelText: '''
 Sill Height (${RoomCanvasGeometry.unitLabel(widget.unitSystem)})''',
             ),
+            onChanged: (_) {
+              if (_errorText != null) {
+                setState(() {
+                  _errorText = null;
+                });
+              }
+            },
           ),
+        if (_errorText != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _errorText!,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ],
       ],
     ),
     actions: [
@@ -398,14 +464,26 @@ Sill Height (${RoomCanvasGeometry.unitLabel(widget.unitSystem)})''',
                 widget.unitSystem,
               ) ??
               0;
-          if (width == null || height == null) {
+          final error = validateRoomEditorOpeningDraft(
+            type: widget.type,
+            unitSystem: widget.unitSystem,
+            width: width,
+            height: height,
+            sillHeight: sill,
+            maxWidth: widget.maxWidth,
+            maxHeight: widget.maxHeight,
+          );
+          if (error != null) {
+            setState(() {
+              _errorText = error;
+            });
             return;
           }
           Navigator.of(context).pop(
             RoomEditorOpeningDraft(
               type: widget.type,
-              width: width,
-              height: height,
+              width: width!,
+              height: height!,
               sillHeight: sill,
             ),
           );

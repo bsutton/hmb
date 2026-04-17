@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'room_canvas_models.dart';
+
 class RoomEditorToolAction {
   final String id;
   final String label;
@@ -26,6 +28,7 @@ class RoomEditorToolAction {
 }
 
 class RoomEditorToolbarState {
+  final RoomEditorGridControlsMode gridControlsMode;
   final bool snapToGrid;
   final bool showGrid;
   final int selectedLineCount;
@@ -45,6 +48,7 @@ class RoomEditorToolbarState {
   final bool isSelectedOpeningDoor;
 
   const RoomEditorToolbarState({
+    required this.gridControlsMode,
     required this.snapToGrid,
     required this.showGrid,
     required this.selectedLineCount,
@@ -145,22 +149,26 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
           'view.',
       onPressed: callbacks.onFit,
     ),
-    RoomEditorToolAction(
-      id: 'toggle-snap',
-      icon: state.snapToGrid ? Icons.grid_on : Icons.grid_off,
-      label: state.snapToGrid ? 'Snap On' : 'Snap Off',
-      helpText: 'Turn grid snapping on or off when moving points and openings.',
-      selected: state.snapToGrid,
-      onPressed: callbacks.onToggleSnapToGrid,
-    ),
-    RoomEditorToolAction(
-      id: 'toggle-grid',
-      icon: state.showGrid ? Icons.border_all : Icons.border_clear,
-      label: state.showGrid ? 'Grid On' : 'Grid Off',
-      helpText: 'Show or hide the background drawing grid.',
-      selected: state.showGrid,
-      onPressed: callbacks.onToggleShowGrid,
-    ),
+    if (state.gridControlsMode != RoomEditorGridControlsMode.none)
+      RoomEditorToolAction(
+        id: 'toggle-grid',
+        icon: state.showGrid ? Icons.border_all : Icons.border_clear,
+        label: state.showGrid ? 'Grid On' : 'Grid Off',
+        helpText: 'Show or hide the background drawing grid.',
+        selected: state.showGrid,
+        onPressed: callbacks.onToggleShowGrid,
+      ),
+    if (state.gridControlsMode == RoomEditorGridControlsMode.gridAndSnap)
+      RoomEditorToolAction(
+        id: 'toggle-snap',
+        icon: state.snapToGrid ? Icons.grid_on : Icons.grid_off,
+        label: state.snapToGrid ? 'Snap On' : 'Snap Off',
+        helpText:
+            'Turn grid snapping on or off when moving points and openings.',
+        selected: state.snapToGrid,
+        enabled: state.showGrid,
+        onPressed: callbacks.onToggleSnapToGrid,
+      ),
     RoomEditorToolAction(
       id: 'deselect',
       icon: Icons.deselect,
@@ -238,8 +246,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       icon: Icons.straighten,
       label: 'Length',
       helpText:
-          'Set or edit a fixed length constraint on the selected wall. '
-          'Delete the constraint from its canvas icon.',
+          'Set or edit a fixed length constraint on the selected wall.',
       enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onSetLineLength,
     ),
@@ -248,8 +255,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       icon: Icons.horizontal_rule,
       label: 'Horizontal',
       helpText:
-          'Set a horizontal constraint on the selected wall. Delete the '
-          'constraint from its canvas icon.',
+          'Set a horizontal constraint on the selected wall.',
       enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onSetHorizontal,
     ),
@@ -261,8 +267,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       ),
       label: 'Vertical',
       helpText:
-          'Set a vertical constraint on the selected wall. Delete the '
-          'constraint from its canvas icon.',
+          'Set a vertical constraint on the selected wall.',
       enabled: state.selectedLineCount == 1,
       onPressed: callbacks.onSetVertical,
     ),
@@ -272,8 +277,7 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
       label: 'Angle',
       helpText:
           'Set or edit a fixed angle constraint on the selected joint or the '
-          'shared corner of two adjacent selected walls. '
-          'Delete the constraint from its canvas icon.',
+          'shared corner of two adjacent selected walls.',
       enabled: state.canSetAngle,
       onPressed: callbacks.onSetAngle,
     ),
@@ -289,11 +293,10 @@ List<RoomEditorToolAction> buildRoomEditorToolbarActions({
     ),
     RoomEditorToolAction(
       id: 'parallel',
-      icon: Icons.compare_arrows,
+      icon: Icons.drag_handle,
       label: 'Parallel',
       helpText:
-          'Set a parallel constraint between two selected non-adjacent walls. '
-          'Delete the constraint from its canvas icon.',
+          'Set a parallel constraint between two selected non-adjacent walls.',
       enabled: state.canSetParallel,
       onPressed: callbacks.onSetParallel,
     ),

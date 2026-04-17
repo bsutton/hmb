@@ -111,6 +111,8 @@ class RoomEditorWorkspace extends StatefulWidget {
   final VoidCallback? onRedo;
   final RoomEditorSelectionController? selectionController;
   final RoomEditorHistoryController? historyController;
+  final RoomEditorGridControlsMode gridControlsMode;
+  final int? ceilingHeight;
 
   const RoomEditorWorkspace({
     required this.document,
@@ -124,6 +126,8 @@ class RoomEditorWorkspace extends StatefulWidget {
     this.historyController,
     this.onUndo,
     this.onRedo,
+    this.gridControlsMode = RoomEditorGridControlsMode.none,
+    this.ceilingHeight,
   });
 
   @override
@@ -132,10 +136,12 @@ class RoomEditorWorkspace extends StatefulWidget {
 
 class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   late RoomEditorDocument _document;
-  var _snapToGrid = true;
-  var _showGrid = true;
+  var _snapToGrid = false;
+  var _showGrid = false;
   var _showAllConstraints = false;
   var _fitCanvasRequest = 0;
+  RoomEditorDocument? _cachedConstraintStateDocument;
+  RoomEditorDocumentConstraintState? _cachedConstraintState;
   var _selection = const RoomEditorSelection.empty();
   RoomEditorDocument? _gestureBaseDocument;
   var _localHistory = const RoomEditorHistory();
@@ -180,6 +186,17 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       return intersectionIndex;
     }
     return null;
+  }
+
+  RoomEditorDocumentConstraintState get _documentConstraintState {
+    if (!identical(_cachedConstraintStateDocument, _document) ||
+        _cachedConstraintState == null) {
+      _cachedConstraintStateDocument = _document;
+      _cachedConstraintState = deriveRoomEditorDocumentConstraintState(
+        _document,
+      );
+    }
+    return _cachedConstraintState!;
   }
 
   @override
@@ -313,7 +330,9 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       RoomEditorConstraintType.parallel => {
         lineIndex,
         if (constraint?.targetValue != null)
-          _bundle.lines.indexWhere((line) => line.id == constraint!.targetValue),
+          _bundle.lines.indexWhere(
+            (line) => line.id == constraint!.targetValue,
+          ),
       }.where((index) => index >= 0).toSet(),
       RoomEditorConstraintType.jointAngle => <int>{},
       _ => {lineIndex},
@@ -988,26 +1007,21 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     }
   }
 
-  void _emitCommand(RoomEditorCommandType type) {
-    if (widget.onCommand == null) {
-      return;
-    }
-    widget.onCommand!(
-      RoomEditorCommand(
-        type: type,
-        document: _document,
-        lineIndex: _selection.selectedLineIndex,
-        openingIndex: _selection.selectedOpeningIndex,
-        intersectionIndex: _selection.selectedIntersectionIndex,
-      ),
-    );
-  }
-
   int _nextLineId(List<RoomEditorLine> lines) {
     var maxId = 0;
     for (final line in lines) {
       if (line.id > maxId) {
         maxId = line.id;
+      }
+    }
+    return maxId + 1;
+  }
+
+  int _nextOpeningId(List<RoomEditorOpening> openings) {
+    var maxId = 0;
+    for (final opening in openings) {
+      if (opening.id > maxId) {
+        maxId = opening.id;
       }
     }
     return maxId + 1;
@@ -1309,18 +1323,13 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       context: context,
       unitSystem: _bundle.unitSystem,
       type: type,
+      maxWidth: _bundle.lines[lineIndex].length,
+      maxHeight: widget.ceilingHeight,
     );
-    if (opening == null || !mounted || widget.onCommand == null) {
+    if (opening == null || !mounted) {
       return;
     }
-    widget.onCommand!(
-      RoomEditorCommand(
-        type: RoomEditorCommandType.addOpening,
-        document: _document,
-        lineIndex: lineIndex,
-        openingDraft: opening,
-      ),
-    );
+    await _addOpeningLocally(lineIndex, opening);
   }
 
   Future<void> _emitEditOpeningCommand() async {
@@ -1329,10 +1338,13 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       return;
     }
     final opening = _bundle.openings[openingIndex];
+    final lineIndex = _bundle.lines.indexWhere((line) => line.id == opening.lineId);
     final updated = await showRoomEditorOpeningDialog(
       context: context,
       unitSystem: _bundle.unitSystem,
       type: opening.type,
+      maxWidth: lineIndex == -1 ? null : _bundle.lines[lineIndex].length,
+      maxHeight: widget.ceilingHeight,
       initialOpening: RoomEditorOpeningDraft(
         type: opening.type,
         width: opening.width,
@@ -1344,17 +1356,84 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
           : 'Edit Window',
       confirmLabel: 'Save',
     );
-    if (updated == null || !mounted || widget.onCommand == null) {
+    if (updated == null || !mounted) {
       return;
     }
-    widget.onCommand!(
-      RoomEditorCommand(
-        type: RoomEditorCommandType.editOpening,
-        document: _document,
-        openingIndex: openingIndex,
-        openingDraft: updated,
-      ),
+    await _editOpeningLocally(openingIndex, updated);
+  }
+
+  Future<void> _addOpeningLocally(
+    int lineIndex,
+    RoomEditorOpeningDraft openingDraft,
+  ) async {
+    final line = _bundle.lines[lineIndex];
+    final centeredOffset = max(0, (line.length - openingDraft.width) ~/ 2);
+    final maxOffset = max(0, line.length - openingDraft.width);
+    final nextOpening = RoomEditorOpening(
+      id: _nextOpeningId(_bundle.openings),
+      lineId: line.id,
+      type: openingDraft.type,
+      offsetFromStart: centeredOffset.clamp(0, maxOffset),
+      width: openingDraft.width,
+      height: openingDraft.height,
+      sillHeight: openingDraft.sillHeight,
     );
+    final next = _document.copyWith(
+      bundle: _bundle.copyWith(openings: [..._bundle.openings, nextOpening]),
+    );
+    _commitDocument(next);
+    if (mounted) {
+      _setSelection(
+        RoomEditorSelection(selectedOpeningIndex: _bundle.openings.length - 1),
+      );
+    }
+  }
+
+  Future<void> _editOpeningLocally(
+    int openingIndex,
+    RoomEditorOpeningDraft openingDraft,
+  ) async {
+    if (openingIndex < 0 || openingIndex >= _bundle.openings.length) {
+      return;
+    }
+    final existing = _bundle.openings[openingIndex];
+    final lineIndex = _bundle.lines.indexWhere(
+      (line) => line.id == existing.lineId,
+    );
+    if (lineIndex == -1) {
+      return;
+    }
+    final line = _bundle.lines[lineIndex];
+    final maxOffset = max(0, line.length - openingDraft.width);
+    final openings = List<RoomEditorOpening>.from(_bundle.openings);
+    openings[openingIndex] = existing.copyWith(
+      type: openingDraft.type,
+      width: openingDraft.width,
+      height: openingDraft.height,
+      sillHeight: openingDraft.sillHeight,
+      offsetFromStart: existing.offsetFromStart.clamp(0, maxOffset),
+    );
+    _commitDocument(
+      _document.copyWith(bundle: _bundle.copyWith(openings: openings)),
+    );
+    if (mounted) {
+      _setSelection(RoomEditorSelection(selectedOpeningIndex: openingIndex));
+    }
+  }
+
+  void _deleteSelectedOpeningLocally() {
+    final openingIndex = _selection.selectedOpeningIndex;
+    if (openingIndex == null ||
+        openingIndex < 0 ||
+        openingIndex >= _bundle.openings.length) {
+      return;
+    }
+    final openings = List<RoomEditorOpening>.from(_bundle.openings)
+      ..removeAt(openingIndex);
+    _commitDocument(
+      _document.copyWith(bundle: _bundle.copyWith(openings: openings)),
+    );
+    _setSelection(const RoomEditorSelection.empty());
   }
 
   Future<void> _emitAngleCommand({int? fixedAngle}) async {
@@ -1508,6 +1587,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         );
     final actions = buildRoomEditorToolbarActions(
       state: RoomEditorToolbarState(
+        gridControlsMode: widget.gridControlsMode,
         snapToGrid: _snapToGrid,
         showGrid: _showGrid,
         selectedLineCount: _selectedLineIndices.length,
@@ -1545,6 +1625,9 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         onToggleShowGrid: () => setState(() {
           _clearHighlightedConstraintsState();
           _showGrid = !_showGrid;
+          if (!_showGrid) {
+            _snapToGrid = false;
+          }
         }),
         onDeselect: () {
           _clearHighlightedConstraints();
@@ -1577,7 +1660,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
         onDeleteOpening: hasOpening
             ? () {
                 _clearHighlightedConstraints();
-                _emitCommand(RoomEditorCommandType.deleteOpening);
+                _deleteSelectedOpeningLocally();
               }
             : null,
         onToggleLinePlaster: _selectedLineIndices.isNotEmpty
@@ -1672,6 +1755,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     snapToGrid: _snapToGrid,
     showGrid: _showGrid,
     showAllConstraints: _showAllConstraints,
+    documentConstraintState: _documentConstraintState,
     constraintVisualOffsets: _constraintVisualOffsets,
     highlightedConstraintKeys: _highlightedConstraintKeys,
     fitRequestId: _fitCanvasRequest,

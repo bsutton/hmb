@@ -14,6 +14,7 @@ class RoomEditorCanvas extends StatefulWidget {
   final bool snapToGrid;
   final bool showGrid;
   final bool showAllConstraints;
+  final RoomEditorDocumentConstraintState documentConstraintState;
   final Map<RoomEditorConstraintKey, Offset> constraintVisualOffsets;
   final Set<RoomEditorConstraintKey> highlightedConstraintKeys;
   final int fitRequestId;
@@ -27,6 +28,7 @@ class RoomEditorCanvas extends StatefulWidget {
     required this.snapToGrid,
     required this.showGrid,
     required this.showAllConstraints,
+    required this.documentConstraintState,
     required this.constraintVisualOffsets,
     required this.highlightedConstraintKeys,
     required this.fitRequestId,
@@ -764,6 +766,7 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
                 transform: transform,
                 selectionMode: widget.selectionMode,
                 showGrid: widget.showGrid,
+                documentConstraintState: widget.documentConstraintState,
                 constraintVisuals: constraintVisuals,
                 highlightedConstraintKeys: widget.highlightedConstraintKeys,
                 selectedLineIndices: widget.selection.selectedLineIndices,
@@ -784,6 +787,7 @@ class _RoomPainter extends CustomPainter {
   final _CanvasTransform transform;
   final bool selectionMode;
   final bool showGrid;
+  final RoomEditorDocumentConstraintState documentConstraintState;
   final List<_ConstraintVisual> constraintVisuals;
   final Set<RoomEditorConstraintKey> highlightedConstraintKeys;
   final Set<int> selectedLineIndices;
@@ -797,6 +801,7 @@ class _RoomPainter extends CustomPainter {
     required this.transform,
     required this.selectionMode,
     required this.showGrid,
+    required this.documentConstraintState,
     required this.constraintVisuals,
     required this.highlightedConstraintKeys,
     required this.selectedLineIndices,
@@ -834,7 +839,9 @@ class _RoomPainter extends CustomPainter {
     final visibleConstraintKeys = {
       for (final visual in constraintVisuals) visual.key,
     };
-    final fullyConstrained = _isDocumentFullyConstrained(document);
+    final fullyConstrained =
+        documentConstraintState ==
+        RoomEditorDocumentConstraintState.fullyConstrained;
     final highlightedLineIds = <int>{
       for (final key in highlightedConstraintKeys) key.lineId,
     };
@@ -1124,6 +1131,7 @@ class _RoomPainter extends CustomPainter {
       oldDelegate.document != document ||
       oldDelegate.selectionMode != selectionMode ||
       oldDelegate.showGrid != showGrid ||
+      oldDelegate.documentConstraintState != documentConstraintState ||
       oldDelegate.constraintVisuals != constraintVisuals ||
       oldDelegate.highlightedConstraintKeys.length !=
           highlightedConstraintKeys.length ||
@@ -1138,34 +1146,6 @@ class _RoomPainter extends CustomPainter {
         selectedIntersectionIndices,
       ) ||
       oldDelegate.selectedOpeningIndex != selectedOpeningIndex;
-}
-
-bool _isDocumentFullyConstrained(RoomEditorDocument document) {
-  final lines = document.bundle.lines;
-  if (lines.isEmpty) {
-    return false;
-  }
-  final lineLengthIds = <int>{};
-  final orientedIds = <int>{};
-  final angleIds = <int>{};
-  for (final constraint in document.constraints) {
-    switch (constraint.type) {
-      case RoomEditorConstraintType.lineLength:
-        lineLengthIds.add(constraint.lineId);
-      case RoomEditorConstraintType.horizontal:
-      case RoomEditorConstraintType.vertical:
-      case RoomEditorConstraintType.parallel:
-        orientedIds.add(constraint.lineId);
-      case RoomEditorConstraintType.jointAngle:
-        angleIds.add(constraint.lineId);
-    }
-  }
-  return lines.every(
-    (line) =>
-        lineLengthIds.contains(line.id) &&
-        orientedIds.contains(line.id) &&
-        angleIds.contains(line.id),
-  );
 }
 
 enum _ConstraintVisualKind { badge, dimension }
@@ -1319,6 +1299,25 @@ class _ConstraintVisual {
           ..style = PaintingStyle.stroke
           ..strokeWidth = selected ? 2.0 : 1.2,
       );
+    if (badgeText == '||') {
+      final parallelPaint = Paint()
+        ..color = accentColor
+        ..strokeWidth = selected ? 2.2 : 1.8
+        ..strokeCap = StrokeCap.round;
+      const inset = 7.0;
+      const slant = Offset(9, -5);
+      const separation = Offset(2.5, 4);
+      final firstStart = Offset(hitBox.left + inset, hitBox.center.dy + 2);
+      final firstEnd = firstStart + slant;
+      canvas
+        ..drawLine(firstStart, firstEnd, parallelPaint)
+        ..drawLine(
+          firstStart + separation,
+          firstEnd + separation,
+          parallelPaint,
+        );
+      return;
+    }
     final painter = TextPainter(
       text: TextSpan(
         text: badgeText ?? String.fromCharCode(icon!.codePoint),
@@ -1619,6 +1618,9 @@ List<_ConstraintVisual> buildConstraintVisuals({
             customOffsets[key] ??
             bisector * transform.worldDistanceForCanvasDistance(52);
         final center = transform.toCanvasOffset(startWorld + offsetWorld);
+        final isRightAngle =
+            (constraint.targetValue ?? 0) ==
+            RoomEditorConstraintSolver.degreesToAngleValue(90);
         visuals.add(
           _ConstraintVisual(
             key: key,
@@ -1629,7 +1631,7 @@ List<_ConstraintVisual> buildConstraintVisuals({
             anchorWorld: startWorld,
             center: center,
             hitBox: Rect.fromCenter(center: center, width: 26, height: 26),
-            icon: Icons.architecture,
+            icon: isRightAngle ? Icons.square_foot : Icons.architecture,
           ),
         );
     }

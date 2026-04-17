@@ -6,6 +6,8 @@ enum RoomEditorUnitSystem { metric, imperial }
 
 enum RoomEditorOpeningType { door, window }
 
+enum RoomEditorGridControlsMode { none, gridOnly, gridAndSnap }
+
 enum RoomEditorConstraintType {
   lineLength,
   horizontal,

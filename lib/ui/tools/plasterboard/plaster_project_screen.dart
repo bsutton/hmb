@@ -1853,6 +1853,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
         onDocumentCommitted: (document) async {
           await _updateCurrentRoom(_fromEditorDocument(document, _currentRoom));
         },
+        ceilingHeight: _currentRoom.room.ceilingHeight,
         onCommand: (command) async {
           await _handleEditorWorkspaceCommand(command);
         },
@@ -1903,6 +1904,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
       onDocumentCommitted: (document) async {
         await _updateCurrentRoom(_fromEditorDocument(document, _currentRoom));
       },
+      ceilingHeight: _currentRoom.room.ceilingHeight,
       onCommand: (command) async {
         await _handleEditorWorkspaceCommand(command);
       },
@@ -1918,6 +1920,7 @@ class _PlasterProjectScreenState extends DeferredState<PlasterProjectScreen>
             trackUndo: false,
           );
         },
+        ceilingHeight: _currentRoom.room.ceilingHeight,
         onCommand: (command) async {
           await _handleEditorWorkspaceCommand(command);
         },

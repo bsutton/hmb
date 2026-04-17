@@ -452,8 +452,8 @@ class RoomEditorConstraintSolver {
       return 0;
     }
 
-    var currentUnitX = currentDx / currentLength;
-    var currentUnitY = currentDy / currentLength;
+    final currentUnitX = currentDx / currentLength;
+    final currentUnitY = currentDy / currentLength;
     var targetUnitX = targetDx / targetLength;
     var targetUnitY = targetDy / targetLength;
     final dot = currentUnitX * targetUnitX + currentUnitY * targetUnitY;
