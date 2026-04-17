@@ -137,14 +137,15 @@ bool _documentHasMobility(RoomEditorDocument document) {
 
   for (final index in candidateIndices) {
     final line = lines[index];
-    probes..add((
-      vertexIndex: index,
-      target: RoomEditorIntPoint(line.startX + 24, line.startY),
-    ))
-    ..add((
-      vertexIndex: index,
-      target: RoomEditorIntPoint(line.startX, line.startY + 24),
-    ));
+    probes
+      ..add((
+        vertexIndex: index,
+        target: RoomEditorIntPoint(line.startX + 24, line.startY),
+      ))
+      ..add((
+        vertexIndex: index,
+        target: RoomEditorIntPoint(line.startX, line.startY + 24),
+      ));
   }
 
   final previousLogging = RoomEditorConstraintSolver.debugLoggingEnabled;
@@ -176,4 +177,41 @@ bool _documentHasMobility(RoomEditorDocument document) {
     RoomEditorConstraintSolver.debugLoggingEnabled = previousLogging;
   }
   return false;
+}
+
+Set<int> deriveImplicitLengthConflictLineIndices({
+  required RoomEditorDocument sourceDocument,
+  required RoomEditorDocument attemptedDocument,
+  required int movedVertexIndex,
+  double tolerance = 1.0,
+}) {
+  final sourceLines = sourceDocument.bundle.lines;
+  final attemptedLines = attemptedDocument.bundle.lines;
+  if (sourceLines.length != attemptedLines.length || sourceLines.isEmpty) {
+    return {};
+  }
+  if (movedVertexIndex < 0 || movedVertexIndex >= sourceLines.length) {
+    return {};
+  }
+
+  final previousIndex =
+      (movedVertexIndex - 1 + sourceLines.length) % sourceLines.length;
+  final affected = <int>{previousIndex, movedVertexIndex};
+
+  return {
+    for (final lineIndex in affected)
+      if ((_actualLineLength(sourceLines, lineIndex) -
+                  _actualLineLength(attemptedLines, lineIndex))
+              .abs() >
+          tolerance)
+        lineIndex,
+  };
+}
+
+double _actualLineLength(List<RoomEditorLine> lines, int lineIndex) {
+  final line = lines[lineIndex];
+  final end = RoomCanvasGeometry.lineEnd(lines, lineIndex);
+  final dx = (end.x - line.startX).toDouble();
+  final dy = (end.y - line.startY).toDouble();
+  return sqrt(dx * dx + dy * dy);
 }

@@ -17,6 +17,7 @@ class RoomEditorCanvas extends StatefulWidget {
   final RoomEditorDocumentConstraintState documentConstraintState;
   final Map<RoomEditorConstraintKey, Offset> constraintVisualOffsets;
   final Set<RoomEditorConstraintKey> highlightedConstraintKeys;
+  final Set<int> highlightedImplicitLengthLineIndices;
   final int fitRequestId;
   final RoomEditorSelection selection;
   final RoomEditorCanvasCallbacks callbacks;
@@ -31,6 +32,7 @@ class RoomEditorCanvas extends StatefulWidget {
     required this.documentConstraintState,
     required this.constraintVisualOffsets,
     required this.highlightedConstraintKeys,
+    required this.highlightedImplicitLengthLineIndices,
     required this.fitRequestId,
     required this.selection,
     required this.callbacks,
@@ -769,6 +771,8 @@ class _RoomEditorCanvasState extends State<RoomEditorCanvas> {
                 documentConstraintState: widget.documentConstraintState,
                 constraintVisuals: constraintVisuals,
                 highlightedConstraintKeys: widget.highlightedConstraintKeys,
+                highlightedImplicitLengthLineIndices:
+                    widget.highlightedImplicitLengthLineIndices,
                 selectedLineIndices: widget.selection.selectedLineIndices,
                 selectedIntersectionIndices:
                     widget.selection.selectedIntersectionIndices,
@@ -790,6 +794,7 @@ class _RoomPainter extends CustomPainter {
   final RoomEditorDocumentConstraintState documentConstraintState;
   final List<_ConstraintVisual> constraintVisuals;
   final Set<RoomEditorConstraintKey> highlightedConstraintKeys;
+  final Set<int> highlightedImplicitLengthLineIndices;
   final Set<int> selectedLineIndices;
   final Set<int> selectedIntersectionIndices;
   final int? selectedOpeningIndex;
@@ -804,6 +809,7 @@ class _RoomPainter extends CustomPainter {
     required this.documentConstraintState,
     required this.constraintVisuals,
     required this.highlightedConstraintKeys,
+    required this.highlightedImplicitLengthLineIndices,
     required this.selectedLineIndices,
     required this.selectedIntersectionIndices,
     required this.selectedOpeningIndex,
@@ -844,6 +850,8 @@ class _RoomPainter extends CustomPainter {
         RoomEditorDocumentConstraintState.fullyConstrained;
     final highlightedLineIds = <int>{
       for (final key in highlightedConstraintKeys) key.lineId,
+      for (final index in highlightedImplicitLengthLineIndices)
+        if (index >= 0 && index < lines.length) lines[index].id,
     };
     for (final key in highlightedConstraintKeys) {
       if (key.type != RoomEditorConstraintType.parallel) {
@@ -937,6 +945,8 @@ class _RoomPainter extends CustomPainter {
           type: RoomEditorConstraintType.lineLength,
         ),
       );
+      final isImplicitLengthHighlighted = highlightedImplicitLengthLineIndices
+          .contains(i);
       if (!hasVisibleLengthConstraint) {
         final labelText = RoomCanvasGeometry.formatDisplayLength(
           line.length,
@@ -967,20 +977,42 @@ class _RoomPainter extends CustomPainter {
           const Radius.circular(6),
         );
         final labelFill = Paint()
-          ..color = isSelected
+          ..color = isImplicitLengthHighlighted
+              ? _withOpacity(const Color(0xFFFFE5E5), 0.96)
+              : isSelected
               ? _withOpacity(const Color(0xFFFFE2BF), 0.96)
               : _withOpacity(Colors.white, 0.92);
         canvas.drawRRect(labelBounds, labelFill);
-        if (isSelected) {
+        if (isImplicitLengthHighlighted || isSelected) {
           canvas.drawRRect(
             labelBounds,
             Paint()
-              ..color = _withOpacity(Colors.orange, 0.9)
+              ..color = isImplicitLengthHighlighted
+                  ? _withOpacity(const Color(0xFFFF6B6B), 0.95)
+                  : _withOpacity(Colors.orange, 0.9)
               ..style = PaintingStyle.stroke
               ..strokeWidth = 1.2,
           );
         }
-        labelPainter.paint(canvas, labelOffset);
+        if (isImplicitLengthHighlighted) {
+          final highlightedLabelPainter =
+              TextPainter(
+                  text: const TextSpan(),
+                  textDirection: TextDirection.ltr,
+                )
+                ..text = TextSpan(
+                  text: labelText,
+                  style: const TextStyle(
+                    color: Color(0xFFC62828),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                )
+                ..layout();
+          highlightedLabelPainter.paint(canvas, labelOffset);
+        } else {
+          labelPainter.paint(canvas, labelOffset);
+        }
       }
       _paintOpeningsForLine(
         canvas: canvas,
@@ -1135,6 +1167,11 @@ class _RoomPainter extends CustomPainter {
       oldDelegate.constraintVisuals != constraintVisuals ||
       oldDelegate.highlightedConstraintKeys.length !=
           highlightedConstraintKeys.length ||
+      oldDelegate.highlightedImplicitLengthLineIndices.length !=
+          highlightedImplicitLengthLineIndices.length ||
+      !oldDelegate.highlightedImplicitLengthLineIndices.containsAll(
+        highlightedImplicitLengthLineIndices,
+      ) ||
       !oldDelegate.highlightedConstraintKeys.containsAll(
         highlightedConstraintKeys,
       ) ||

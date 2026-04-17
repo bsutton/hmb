@@ -79,6 +79,25 @@ Set<RoomEditorConstraintKey> deriveConstraintConflictHighlightKeys({
       : (source: pair.second, target: pair.first);
 }
 
+Set<int> filterImplicitLengthConflictLineIndices({
+  required Set<int> lineIndices,
+  required List<RoomEditorLine> lines,
+  required List<RoomEditorConstraint> constraints,
+}) {
+  final constrainedLineIds = {
+    for (final constraint in constraints)
+      if (constraint.type == RoomEditorConstraintType.lineLength)
+        constraint.lineId,
+  };
+  return {
+    for (final index in lineIndices)
+      if (index >= 0 &&
+          index < lines.length &&
+          constrainedLineIds.contains(lines[index].id))
+        index,
+  };
+}
+
 RoomEditorConstraint? existingParallelConstraintForPair({
   required ({int first, int second}) pair,
   required List<RoomEditorLine> lines,
@@ -155,6 +174,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
   var _rigidDragNotificationShownForGesture = false;
   Map<RoomEditorConstraintKey, Offset> _constraintVisualOffsets = {};
   Set<RoomEditorConstraintKey> _highlightedConstraintKeys = {};
+  Set<int> _highlightedImplicitLengthLineIndices = {};
 
   RoomEditorBundle get _bundle => _document.bundle;
   RoomEditorSelectionController? get _externalSelectionController =>
@@ -245,6 +265,10 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
           ))
             key,
       };
+      _highlightedImplicitLengthLineIndices = {
+        for (final index in _highlightedImplicitLengthLineIndices)
+          if (index >= 0 && index < _document.bundle.lines.length) index,
+      };
     }
     if (oldWidget.selectionController != widget.selectionController) {
       _selection = _normalizeSelection(
@@ -278,6 +302,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
 
   void _clearHighlightedConstraintsState() {
     _highlightedConstraintKeys = {};
+    _highlightedImplicitLengthLineIndices = {};
   }
 
   void _clearHighlightedConstraints() {
@@ -797,9 +822,22 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     }
     _rigidDragNotificationShownForGesture = true;
     final attemptedDocument = _attemptedDocumentForDragResult(result);
+    final implicitLengthConflicts = attemptedDocument == null
+        ? <int>{}
+        : filterImplicitLengthConflictLineIndices(
+            lineIndices: _implicitLengthConflictLineIndicesForDragResult(
+              result,
+              attemptedDocument,
+            ),
+            lines: _bundle.lines,
+            constraints: _document.constraints,
+          );
     setState(() {
+      _highlightedImplicitLengthLineIndices = implicitLengthConflicts;
       _highlightedConstraintKeys = attemptedDocument == null
           ? {}
+          : implicitLengthConflicts.isNotEmpty
+          ? _lineLengthConstraintKeysForLineIndices(implicitLengthConflicts)
           : _constraintKeysForViolations(
               RoomEditorConstraintViolation.constraintViolations(
                 attemptedDocument.bundle.lines,
@@ -811,16 +849,13 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     if (messenger == null) {
       return;
     }
+    final message = implicitLengthConflicts.isNotEmpty
+        ? 'Blocked by current constraints: moving this corner would change wall lengths on ${_wallListLabel(implicitLengthConflicts)}.'
+        : 'This room is rigid. Remove one or more constraints to modify the room.';
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        const SnackBar(
-          content: Text(
-            'This room is rigid. Remove one or more constraints to modify '
-            'the room.',
-          ),
-          duration: Duration(seconds: 3),
-        ),
+        SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
       );
   }
 
@@ -842,6 +877,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     Set<RoomEditorConstraintKey> requestedConstraintKeys = const {},
   }) {
     setState(() {
+      _highlightedImplicitLengthLineIndices = {};
       _highlightedConstraintKeys = requestedConstraintKeys.isEmpty
           ? _constraintKeysForViolations(result.violations)
           : deriveConstraintConflictHighlightKeys(
@@ -871,6 +907,46 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Set<int> _implicitLengthConflictLineIndicesForDragResult(
+    RoomEditorDragSolveResult result,
+    RoomEditorDocument attemptedDocument,
+  ) {
+    final sourceDocument =
+        result.request.gestureBaseDocument ?? result.request.currentDocument;
+    return deriveImplicitLengthConflictLineIndices(
+      sourceDocument: sourceDocument,
+      attemptedDocument: attemptedDocument,
+      movedVertexIndex: result.request.movedIndex,
+    );
+  }
+
+  Set<RoomEditorConstraintKey> _lineLengthConstraintKeysForLineIndices(
+    Iterable<int> lineIndices,
+  ) => {
+    for (final lineIndex in lineIndices)
+      if (lineIndex >= 0 && lineIndex < _bundle.lines.length)
+        for (final constraint in _document.constraints)
+          if (constraint.lineId == _bundle.lines[lineIndex].id &&
+              constraint.type == RoomEditorConstraintType.lineLength)
+            RoomEditorConstraintKey.fromConstraint(constraint),
+  };
+
+  String _wallListLabel(Iterable<int> lineIndices) {
+    final labels = [
+      for (final index in lineIndices.toList()..sort()) 'W${index + 1}',
+    ];
+    if (labels.isEmpty) {
+      return '';
+    }
+    if (labels.length == 1) {
+      return labels.first;
+    }
+    if (labels.length == 2) {
+      return '${labels.first} and ${labels.last}';
+    }
+    return '${labels.sublist(0, labels.length - 1).join(', ')}, and ${labels.last}';
   }
 
   RoomEditorDocument? _attemptedDocumentForDragResult(
@@ -1338,7 +1414,9 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
       return;
     }
     final opening = _bundle.openings[openingIndex];
-    final lineIndex = _bundle.lines.indexWhere((line) => line.id == opening.lineId);
+    final lineIndex = _bundle.lines.indexWhere(
+      (line) => line.id == opening.lineId,
+    );
     final updated = await showRoomEditorOpeningDialog(
       context: context,
       unitSystem: _bundle.unitSystem,
@@ -1758,6 +1836,7 @@ class _RoomEditorWorkspaceState extends State<RoomEditorWorkspace> {
     documentConstraintState: _documentConstraintState,
     constraintVisualOffsets: _constraintVisualOffsets,
     highlightedConstraintKeys: _highlightedConstraintKeys,
+    highlightedImplicitLengthLineIndices: _highlightedImplicitLengthLineIndices,
     fitRequestId: _fitCanvasRequest,
     selection: _selection,
     callbacks: RoomEditorCanvasCallbacks(

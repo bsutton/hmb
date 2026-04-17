@@ -272,6 +272,178 @@ void main() {
     );
   });
 
+  test(
+    'detects implicit adjacent wall-length conflicts for a moved corner',
+    () {
+      final source = RoomEditorDocument(
+        bundle: RoomEditorBundle(
+          roomName: 'Test',
+          unitSystem: RoomEditorUnitSystem.metric,
+          plasterCeiling: false,
+          lines: [
+            const RoomEditorLine(
+              id: 1,
+              seqNo: 1,
+              startX: 0,
+              startY: 0,
+              length: 100,
+              plasterSelected: true,
+            ),
+            const RoomEditorLine(
+              id: 2,
+              seqNo: 2,
+              startX: 100,
+              startY: 0,
+              length: 50,
+              plasterSelected: true,
+            ),
+            const RoomEditorLine(
+              id: 3,
+              seqNo: 3,
+              startX: 100,
+              startY: 50,
+              length: 100,
+              plasterSelected: true,
+            ),
+            const RoomEditorLine(
+              id: 4,
+              seqNo: 4,
+              startX: 0,
+              startY: 50,
+              length: 50,
+              plasterSelected: true,
+            ),
+          ],
+          openings: const [],
+        ),
+        constraints: const [],
+      );
+      final attempted = source.copyWith(
+        bundle: source.bundle.copyWith(
+          lines: [
+            ...source.bundle.lines.take(2),
+            source.bundle.lines[2].copyWith(startX: 100, startY: 70),
+            source.bundle.lines[3],
+          ],
+        ),
+      );
+
+      expect(
+        deriveImplicitLengthConflictLineIndices(
+          sourceDocument: source,
+          attemptedDocument: attempted,
+          movedVertexIndex: 2,
+        ),
+        {1, 2},
+      );
+    },
+  );
+
+  test(
+    'filters implicit length conflicts to explicit line-length constraints',
+    () {
+      final lines = <RoomEditorLine>[
+        const RoomEditorLine(
+          id: 1,
+          seqNo: 1,
+          startX: 0,
+          startY: 0,
+          length: 100,
+          plasterSelected: true,
+        ),
+        const RoomEditorLine(
+          id: 2,
+          seqNo: 2,
+          startX: 100,
+          startY: 0,
+          length: 50,
+          plasterSelected: true,
+        ),
+        const RoomEditorLine(
+          id: 3,
+          seqNo: 3,
+          startX: 100,
+          startY: 50,
+          length: 100,
+          plasterSelected: true,
+        ),
+      ];
+
+      expect(
+        filterImplicitLengthConflictLineIndices(
+          lineIndices: {1, 2},
+          lines: lines,
+          constraints: const [
+            RoomEditorConstraint(
+              lineId: 3,
+              type: RoomEditorConstraintType.lineLength,
+              targetValue: 100,
+            ),
+          ],
+        ),
+        {2},
+      );
+    },
+  );
+
+  test(
+    'ignores implicit length conflicts when the moved corner is unchanged',
+    () {
+      final source = RoomEditorDocument(
+        bundle: RoomEditorBundle(
+          roomName: 'Test',
+          unitSystem: RoomEditorUnitSystem.metric,
+          plasterCeiling: false,
+          lines: [
+            const RoomEditorLine(
+              id: 1,
+              seqNo: 1,
+              startX: 0,
+              startY: 0,
+              length: 100,
+              plasterSelected: true,
+            ),
+            const RoomEditorLine(
+              id: 2,
+              seqNo: 2,
+              startX: 100,
+              startY: 0,
+              length: 50,
+              plasterSelected: true,
+            ),
+            const RoomEditorLine(
+              id: 3,
+              seqNo: 3,
+              startX: 100,
+              startY: 50,
+              length: 100,
+              plasterSelected: true,
+            ),
+            const RoomEditorLine(
+              id: 4,
+              seqNo: 4,
+              startX: 0,
+              startY: 50,
+              length: 50,
+              plasterSelected: true,
+            ),
+          ],
+          openings: const [],
+        ),
+        constraints: const [],
+      );
+
+      expect(
+        deriveImplicitLengthConflictLineIndices(
+          sourceDocument: source,
+          attemptedDocument: source,
+          movedVertexIndex: 2,
+        ),
+        isEmpty,
+      );
+    },
+  );
+
   test('limits added solver conflicts beyond requested constraints', () {
     const requestedKey = RoomEditorConstraintKey(
       lineId: 9,
